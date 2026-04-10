@@ -77,11 +77,18 @@ entry "Data access verified 2026-04-09 — critical path dissolves".
 - **Access URL:** https://www.finngen.fi/en/access_results → application form at https://elomake.helsinki.fi/lomakkeet/124935/lomake.html
 - **Contact:** `finngen-info@helsinki.fi`
 - **Gating:** Not purely click-through — a lightweight registration form (name, institution, purpose). No reviewed DUA. Download instructions sent by email after form submission. Same-day to next-day access.
-- **Current release:** R13/DF13 (Dec 2025). R14 scheduled Feb 2026 per the FinnGen roadmap — check if R14 has dropped by the time we need these.
+- **Current release:** **R12** — confirmed 2026-04-10 via registration email from `elomake@helsinki.fi` / `finngen-servicedesk@helsinki.fi`. (Earlier research assumed R13/R14 would be live; actual current public release is R12. Revisit before Phase 9 in case R13+ drops.)
 - **Eligibility:** Academic researchers from US R1 institutions apply directly. Individual-level data goes through Fingenious / FINBB separately (not needed).
 - **Cost:** Free. Hosted on Google Cloud Storage.
-- **Status:** `registration-required` (click-wrap, not a gate).
-- **HPC connectivity:** Verified 2026-04-10 — FinnGen R10 sumstats bucket reachable: `curl -sI https://storage.googleapis.com/finngen-public-data-r10/summary_stats/finngen_R10_BMI_IRN.gz` returned HTTP 200. R13/R14 bucket names (`finngen-public-data-r13`, `finngen-public-data-r14`) returned 404 -- actual R13/R14 download URLs may differ from R10 naming convention, or data may be served via a different distribution mechanism. Check after registration for exact URLs.
+- **Status:** `registration-required` (click-wrap, not a gate). **Registered 2026-04-10.**
+- **HPC connectivity:** Verified 2026-04-10 — R10 sumstats bucket reachable (legacy check). Actual R12 URLs now confirmed via post-registration email (see User access below).
+- **User access verified 2026-04-10:** Carter completed the elomake.helsinki.fi registration form (lomake 124935) on 2026-04-10 ~19:15 UTC. Confirmation email received immediately from `finngen-servicedesk@helsinki.fi`. Confirmed R12 download endpoints:
+  - **Web browser:** `https://console.cloud.google.com/storage/browser/finngen-public-data-r12/summary_stats/`
+  - **Additional folders:** `/finemap/`, `/annotations/`, `/hla/`, `/meta_analysis/ukbb/`, `/lof/`, `/lab_values/`
+  - **Direct HTTP download (wget/curl):** `https://storage.googleapis.com/finngen-public-data-r12/summary_stats/release/finngen_R12_<PHENOTYPE>.gz`
+  - **GCS native path:** `gs://finngen-public-data-r12/...`
+  - **Example phenotype file:** `finngen_R12_AB1_ACTINOMYCOSIS.gz`
+  - **Ready for Phase 9 replication.** Phase 9 Snakemake download rules should use the `finngen-public-data-r12` bucket name and the `summary_stats/release/` path prefix.
 
 ### 5. Pan-UKBB (trans-ancestry MR instruments for Phase 3, replication for Phase 9)
 
@@ -166,7 +173,7 @@ MR / replication use case.
 **Day 1 (Phase 0 Track 0a):**
 - [x] Register a Synapse account and certify as a researcher (`syn51364943` for UKB-PPP) — *Completed 2026-04-10: Certification Quiz passed 15/15; syn51364943 project page fully accessible; S3 bucket `s3://ukbiobank.opendata.sagebase.org/` confirmed reachable*
 - [ ] Download deCODE pQTL sumstats from the summarydata portal **after a manual browser verification** that the dataset inventory matches expectations — *HPC connectivity verified 2026-04-10 (HTTP 200); portal page loads but file inventory requires browser verification (client-side rendering)*
-- [ ] Register on `finngen.fi/en/access_results` (click-wrap form, same-day) — *HPC connectivity verified 2026-04-10 (R10 bucket HTTP 200); R13/R14 URL patterns TBD after registration*
+- [x] Register on `finngen.fi/en/access_results` (click-wrap form, same-day) — *Completed 2026-04-10: form submitted via elomake (lomake 124935); confirmation email received from finngen-servicedesk@helsinki.fi; **actual current release is R12** (not R13/R14); bucket `finngen-public-data-r12` with `summary_stats/release/` path prefix; ready for Phase 9*
 - [x] Download GTEx v8 eQTL + sQTL flat files — *HPC connectivity verified 2026-04-10: GCS bucket reachable at `bulk-qtl/v8/single-tissue-cis-qtl/` (HTTP 200, 1.56 GB tar confirmed). Correct path prefix is `bulk-qtl/`, not `bulk-gex/`. Ready for Snakemake download rule.*
 - [x] Verify Pan-UKBB manifest + try a tiny download as an S3 connectivity sanity check — *verified 2026-04-10: phenotype_manifest.tsv.bgz returned HTTP 200 from S3*
 - [x] Download BBJ `hum0197-v3` ZIPs for BMI, T2D, stroke, asthma, BP traits — *HPC connectivity verified 2026-04-10: hum0197.v3.BBJ.T2D.v1.zip returned HTTP 200 (~1.6 GB). NBDC server accessible.*
