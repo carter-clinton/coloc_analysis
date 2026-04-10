@@ -1,211 +1,255 @@
-# ROADMAP.md
+# Roadmap: coloc_analysis
 
-Phase index for the coloc_analysis manuscript revision. Tier assignments
-are locked per `DECISIONS.md` "Scope tier". Phase numbering follows
-`Revision_Plan.md`.
+## Overview
 
-Legend: **T1** = must-ship spine. **T2** = conditional on Checkpoint #1
-(end of T1). **T3** = conditional on Checkpoint #2 (end of T2). **M** =
-manuscript work (runs in parallel with later phases).
+Cross-ancestry colocalization revision from descriptive catalog to mechanistically resolved framework. Tiered execution: T1 spine (Phases 0, 1, 2, 5, 9) ships an honest AJHG submission. T2 (Phases 3, 4, 8) adds MR + matched-N + PRS for Nature Genetics ambition — gated on Checkpoint #1. T3 (Phases 6, 7, 10) adds selection scans + deep learning — gated on Checkpoint #2. Phase 11 (manuscript) runs in parallel from Phase 9 onward.
 
----
+## Phases
 
-## Milestone: Pre-revision → submission-ready revision
+**Phase Numbering:** Preserves Revision_Plan.md numbering. Phases are non-sequential because T2/T3 phases interleave.
 
-| # | Phase | Tier | Status | Depends on | Maps to REQ |
-|---|---|---|---|---|---|
-| **0** | Data access + infrastructure | T1 | planned | — | REQ-1, REQ-9, REQ-12 |
-| **1** | coloc.susie fine-mapping spine | T1 | not started | Phase 0 | REQ-2 |
-| **2** | 3-way QTL colocalization | T1 | not started | Phase 1, Track 0a DUAs | REQ-3, REQ-7 |
-| **5** | Pathway + partitioned heritability | T1 | not started | Phase 1 | REQ-7 |
-| **9** | Replication in independent cohorts | T1 | not started | Phases 1, 2, Track 0a DUAs | — |
-| **CP#1** | **Checkpoint #1** (end of T1 — go/no-go for T2) | — | — | Phases 0, 1, 2, 5, 9 | REQ-11 |
-| **3** | Mendelian randomization | T2 | gated | CP#1 | REQ-4 |
-| **4** | Matched-N cross-ancestry concordance | T2 | gated | CP#1 | — |
-| **8** | Cross-ancestry PRS (PRS-CSx) | T2 | gated | CP#1 | REQ-6, REQ-8 |
-| **CP#2** | **Checkpoint #2** (end of T2 — go/no-go for T3) | — | — | Phases 3, 4, 8 | REQ-11 |
-| **6** | Selection scans + polygenic selection | T3 | gated | CP#2 | REQ-5 |
-| **7** | Single-cell + EpiMap + ABC | T3 | gated | CP#2 | — |
-| **10** | Deep-learning variant effect + MPRA overlap | T3 | gated | CP#2 | — |
-| **11** | Manuscript + figures + submission | M | in parallel | Phase 9 onward | REQ-8, REQ-10 |
+**Tier Legend:** **T1** = must-ship spine. **T2** = gated on CP#1. **T3** = gated on CP#2. **M** = manuscript (parallel).
 
----
+- [ ] **Phase 0: Data access + infrastructure** - DUAs, data ingest, Snakemake skeleton, CI smoke test [T1]
+- [ ] **Phase 1: coloc.susie fine-mapping spine** - SuSiE-RSS + coloc.susie replaces coloc.abf [T1]
+- [ ] **Phase 2: 3-way QTL colocalization** - eQTL/pQTL/sQTL coloc, gene-tissue matrix, threshold sweep [T1]
+- [ ] **Phase 5: Pathway + partitioned heritability** - MAGMA, g:Profiler, LDSC-SEG, HESS [T1]
+- [ ] **Phase 9: Replication in independent cohorts** - FinnGen, GBMI, MVP, AoU, BBJ [T1]
+- [ ] **Phase 3: Mendelian randomization** - Bidirectional MR, weak-instrument mitigation [T2, gated on CP#1]
+- [ ] **Phase 4: Matched-N cross-ancestry concordance** - Power-corrected Table 2 replacement [T2, gated on CP#1]
+- [ ] **Phase 8: Cross-ancestry PRS** - PRS-CSx, calibration, clinical utility, equity trade-off [T2, gated on CP#1]
+- [ ] **Phase 6: Selection scans + polygenic selection** - iHS/SDS/PBS, thrifty-gene tests [T3, gated on CP#2]
+- [ ] **Phase 7: Single-cell + EpiMap + ABC** - Cell-type-resolved integration [T3, gated on CP#2]
+- [ ] **Phase 10: Deep-learning variant effect + MPRA overlap** - Enformer/Borzoi/Sei/AlphaMissense [T3, gated on CP#2]
+- [ ] **Phase 11: Manuscript + figures + submission** - Full manuscript assembly and submission [M, parallel from Phase 9]
 
-## Phase detail
+## Phase Details
 
-### Phase 0 — Data access + infrastructure (T1)
+### Phase 0: Data access + infrastructure
+**Goal**: Establish all data sources, fix legacy issues, build reproducible Snakemake skeleton with CI smoke test. Two parallel sub-tracks: Track 0a (DUA applications, non-blocking) and Track 0b (infrastructure, blocks Phase 1).
+**Depends on**: Nothing (first phase)
+**Requirements**: REQ-1, REQ-9, REQ-12
+**Tier**: T1
+**Success Criteria** (what must be TRUE):
+  1. All 7 open-access data sources downloaded or confirmed reachable
+  2. All of Us institutional DURA status documented in .planning/data_access.md
+  3. Corrupted supplementary tables (Table 1, 3, S4) fixed and DIAMANTE T2D dedup resolved
+  4. Legacy hardcoded paths parameterized via config/pipeline.yaml (grep returns 0 matches)
+  5. Conda envs pinned under envs/*.yml with exact versions
+  6. Snakemake skeleton built with per-trait/ancestry schema validation
+  7. Toy 3-locus CI smoke test completes in under 15 minutes
+  8. OSF pre-registration submitted
+**Plans**: TBD
 
-Runs as **two parallel sub-tracks**.
+Track 0a detail (non-blocking DUAs):
+- UKB-PPP (Synapse), deCODE pQTL, FinnGen, GTEx v8, Pan-UKBB, BBJ, MVP — all same-day registration/download
+- All of Us Researcher Workbench — institutional DURA check first
+- UK Biobank main DUA deferred (not-needed-unless status)
 
-**Track 0a — DUA applications (non-blocking):**
-- UK Biobank (main), UKB-PPP, deCODE pQTL, FinnGen (latest release), MVP,
-  All of Us (Researcher Workbench), BBJ, Pan-UKBB.
-- Tracked in `.planning/data_access.md`.
-- Does **not** block any later phase until a specific DUA-gated slice is
-  reached.
+Track 0b detail (infrastructure, blocks Phase 1):
+- Fix corrupted supplementary tables per Revision_Plan.md section 10
+- Audit DIAMANTE T2D dedup (76/63%/26 denominator mismatch)
+- Drop KCNJ11 asthma-HTN Tier-1 signal (n_SNPs=6 < 50 threshold)
+- Ingest new ancestry GWAS: AFR BMI (Gurdasani 2019), AFR HTN (Hoffmann), AFR T2D, EAS (BBJ), Hispanic (PAGE/HCHS)
+- Parameterize 174 hardcoded path references (REQ-12)
+- Pin conda envs (REQ-9)
+- Build Snakemake skeleton with schema validation
+- Build toy 3-locus CI subset (REQ-9)
+- OSF pre-registration
 
-**Track 0b — Infrastructure (blocks Phase 1):**
-1. Fix corrupted supplementary tables (Table 1, 3, S4) per `Revision_Plan.md` §10.
-2. Audit DIAMANTE T2D dedup (resolve the 76 / 63% / 26 denominator mismatch).
-3. Drop KCNJ11 asthma-HTN Tier-1 signal (n_SNPs=6 < ≥50 threshold).
-4. Ingest new ancestry GWAS sumstats: AFR BMI (Gurdasani 2019), AFR HTN
-   (Hoffmann), AFR T2D expansion, EAS (BBJ), Hispanic (PAGE / HCHS).
-5. Parameterize legacy hardcoded paths via `config/pipeline.yaml` (REQ-12).
-6. Pin conda envs under `envs/*.yml` with exact versions (REQ-9).
-7. Build Snakemake skeleton with per-trait/ancestry schema validation.
-8. Build the **toy 3-locus subset** for nightly CI smoke test (REQ-9).
-9. OSF pre-registration submission.
-10. Repoint / remove the broken `harmonized_fixed` symlink (already done at
-    bootstrap — remains in the archived shadow dirs).
-11. Track 0a DUA application tracker live.
+### Phase 1: coloc.susie fine-mapping spine
+**Goal**: Replace coloc.abf with coloc.susie across the entire pipeline. SuSiE-RSS fine-mapping per trait x ancestry with explicit complex-region policy and sensitivity sweeps.
+**Depends on**: Phase 0 (Track 0b)
+**Requirements**: REQ-2
+**Tier**: T1
+**Success Criteria** (what must be TRUE):
+  1. SuSiE-RSS fine-mapping completes for all trait x ancestry combinations
+  2. config/susie_policy.yaml exists with explicit rules for convergence failures, L cap, min_abs_corr
+  3. min_abs_corr sensitivity sweep (3+ values) reported for complex regions as supplementary table
+  4. coloc.susie replaces coloc.abf in the pipeline (no coloc.abf calls remain)
+  5. Per-locus fine-mapping QC report generated
+**Plans**: TBD
 
-### Phase 1 — coloc.susie fine-mapping spine (T1)
+Seeds: src/legacy/region_analysis/scripts/run_susie_rss.R, src/legacy/genome_wide/scripts/run_coloc_genomewide.R
 
-1. SuSiE-RSS fine-mapping per trait × ancestry. Seeds from
-   `src/legacy/region_analysis/scripts/run_susie_rss.R`.
-2. **Complex-region policy:** convergence handling, `L` cap rules,
-   `min_abs_corr` sensitivity sweep (REQ-2).
-3. coloc.susie on credible-set pairs — **replaces `coloc.abf`** in both
-   `src/legacy/region_analysis/scripts/run_coloc.R` and
-   `src/legacy/genome_wide/scripts/run_coloc_genomewide.R`.
-4. Sensitivity sweep on coloc prior `p12 ∈ {1e-6, 1e-5, 1e-4}`.
-5. Output: credible sets + per-pair PP.H4 + per-locus fine-mapping QC report.
+### Phase 2: 3-way QTL colocalization
+**Goal**: Build the causal gene x tissue x cell-type matrix through eQTL, pQTL, and sQTL colocalization with rigorous threshold sweep and negative controls. Highest-leverage T1 phase.
+**Depends on**: Phase 1, Track 0a DUAs (for pQTL)
+**Requirements**: REQ-3, REQ-7
+**Tier**: T1
+**Success Criteria** (what must be TRUE):
+  1. GTEx v8 eQTL coloc completed per tissue, cross-referenced to Open Targets Locus2Gene
+  2. sQTL coloc (GTEx) completed
+  3. PP.H4 threshold sweep across {0.5, 0.7, 0.8, 0.9} reported with tier counts per ancestry
+  4. Negative controls (HLA, pigmentation, eye-color gene sets) all null — PP.H4 < threshold
+  5. Causal gene x tissue x cell-type matrix assembled
+  6. Tier A/B/C confidence assignment with reported threshold dependence
+**Plans**: TBD
 
-### Phase 2 — 3-way QTL colocalization (T1, highest-leverage)
+UKB-PPP + deCODE pQTL coloc blocked on Track 0a DUAs. Single-cell eQTL (OneK1K, CLUES) included if data available.
 
-1. GTEx v8 eQTL coloc per tissue, cross-referenced to Open Targets Locus2Gene.
-2. UKB-PPP + deCODE pQTL coloc *(blocked on Track 0a DUAs)*.
-3. sQTL coloc (GTEx sQTL).
-4. Single-cell eQTL coloc (OneK1K, CLUES) — cell-type resolved.
-5. Causal gene × tissue × cell-type matrix assembly.
-6. **PP.H4 threshold sweep** (REQ-3) across `{0.5, 0.7, 0.8, 0.9}`.
-7. **Negative controls** (REQ-7): HLA, pigmentation, eye-color gene sets.
-8. Tier A / B / C confidence assignment with reported threshold dependence.
+### Phase 5: Pathway + partitioned heritability
+**Goal**: Formal pathway enrichment with proper nulls and partitioned heritability analysis. Replaces the ad-hoc enrichment from the original manuscript.
+**Depends on**: Phase 1
+**Requirements**: REQ-7
+**Tier**: T1
+**Success Criteria** (what must be TRUE):
+  1. MAGMA gene-based + gene-set enrichment completed
+  2. g:Profiler run with discoverability-matched null (per-trait background)
+  3. LDSC partitioned heritability reported per pathway per trait
+  4. LDSC-SEG tissue-specific heritability completed
+  5. Negative-control pathway set is null (enrichment q > 0.05)
+  6. Permutation null for colocalization gene list computed
+**Plans**: TBD
 
-### Phase 5 — Pathway + partitioned heritability (T1)
+### Phase 9: Replication in independent cohorts
+**Goal**: Validate T1 findings in independent cohorts to establish reproducibility for the submission.
+**Depends on**: Phases 1, 2; Track 0a DUAs (for FinnGen, MVP, AoU, BBJ)
+**Requirements**: (none directly; supports overall validity)
+**Tier**: T1
+**Success Criteria** (what must be TRUE):
+  1. At least 2 independent cohort replications completed (from FinnGen, GBMI, MVP, AoU, BBJ)
+  2. Replication-adjusted effect sizes calculated
+  3. Hold-out replication tables generated for supplementary material
+**Plans**: TBD
 
-*Phase 5 is promoted ahead of 3 and 4 because it's part of the T1 spine.*
-
-1. MAGMA gene-based + gene-set enrichment.
-2. g:Profiler with **discoverability-matched null** (per-trait background).
-3. LDSC partitioned heritability — % heritability per pathway, per trait.
-4. LDSC-SEG tissue-specific heritability.
-5. HESS local genetic covariance between trait pairs.
-6. Permutation null for the colocalization gene list.
-7. **Negative-control pathway set** (REQ-7).
-
-### Phase 9 — Replication in independent cohorts (T1)
-
-1. FinnGen replication *(DUA-gated)*.
-2. GBMI replication.
-3. MVP replication *(DUA-gated)*.
-4. All of Us replication *(DUA-gated)*.
-5. BBJ replication *(DUA-gated)*.
-6. Replication-adjusted effect sizes + hold-out replication tables.
-
----
-
-### Checkpoint #1 — End of T1 spine
-
-**Produces:** `.planning/checkpoints/T1_review.md` with:
-- Tier A signals that survived the PP.H4 sweep + replication.
-- Ancestry-level power retention under matched-N preview expectations.
-- Go / no-go decision for T2 phases with explicit evidence.
-- Submission target: AJHG (T1 alone) vs. Nat Genet pivot (proceed to T2).
+### Checkpoint #1: End of T1 spine
+**Type**: Decision gate (not a phase)
+**Depends on**: Phases 0, 1, 2, 5, 9 all complete
+**Requirements**: REQ-11
+**Produces**: .planning/checkpoints/T1_review.md with:
+- Tier A signals that survived PP.H4 sweep + replication
+- Ancestry-level power retention under matched-N preview
+- Go/no-go decision for T2 with explicit evidence
+- Submission target: AJHG (T1 alone) vs. Nat Genet pivot (proceed to T2)
 
 **No T2 phase is planned until this file exists with a "go" verdict.**
 
----
+### Phase 3: Mendelian randomization
+**Goal**: Establish causal direction between trait pairs via bidirectional MR with robust weak-instrument mitigation for non-EUR ancestries.
+**Depends on**: CP#1 (go verdict)
+**Requirements**: REQ-4
+**Tier**: T2 (gated)
+**Success Criteria** (what must be TRUE):
+  1. IVW + MR-Egger + weighted median triangulation completed for all trait pairs
+  2. MR-PRESSO + MR-CAUSE outlier robustness applied
+  3. MR-RAPS implemented for AFR and EAS with explicit ancestry-specific vs. trans-ancestry choice
+  4. Weak-instrument diagnostic table (F-stat, I-squared, Q-stat) produced per ancestry per trait pair
+  5. Bidirectional causal graph assembled
+**Plans**: TBD
 
-### Phase 3 — Mendelian randomization (T2, gated)
+Seeds: src/legacy/region_analysis/scripts/create_mr_design.py, src/legacy/region_analysis/workflow/rules/mr.smk
 
-1. IVW + MR-Egger + weighted median (baseline triangulation).
-2. MR-PRESSO + MR-CAUSE (outlier robustness).
-3. Steiger filtering.
-4. Locus-specific MR using coloc.susie credible sets as instruments.
-5. **Weak-instrument mitigation** (REQ-4): MR-RAPS for AFR/EAS, trans-
-   ancestry MR, explicit ancestry-specific vs. trans-ancestry choice.
-6. Bidirectional causal graph across trait pairs.
+### Phase 4: Matched-N cross-ancestry concordance
+**Goal**: Replace broken Table 2 with power-corrected cross-ancestry concordance using matched-N bootstrap.
+**Depends on**: CP#1 (go verdict)
+**Requirements**: (none directly; fixes Table 2)
+**Tier**: T2 (gated)
+**Success Criteria** (what must be TRUE):
+  1. EUR down-sampled to match AFR N with 100x bootstrap concordance
+  2. Expected detection probability under Hou et al. 2023 null computed
+  3. LDSC cross-ancestry r_g calculated as global benchmark
+  4. New Table 2 generated, replacing old incomparable-trait-pair comparison
+**Plans**: TBD
 
-Seeds from `src/legacy/region_analysis/scripts/create_mr_design.py` +
-`src/legacy/region_analysis/workflow/rules/mr.smk` (both currently stubs).
+### Phase 8: Cross-ancestry PRS
+**Goal**: Build and evaluate cross-ancestry polygenic risk scores with full calibration and clinical utility metrics, quantifying the equity-vs-accuracy trade-off.
+**Depends on**: CP#1 (go verdict)
+**Requirements**: REQ-6, REQ-8
+**Tier**: T2 (gated)
+**Success Criteria** (what must be TRUE):
+  1. PRS-CSx training in EUR and transfer to AFR/EAS/Hispanic completed
+  2. Pathway-restricted vs. genome-wide PRS comparison reported
+  3. Discrimination metrics (R-squared, AUC, incremental C-statistic) produced per ancestry
+  4. Calibration metrics (Hosmer-Lemeshow, slope, intercept, obs-vs-expected plot) produced
+  5. Clinical utility metrics (NRI, DCA, net benefit) produced
+  6. Equity-vs-accuracy trade-off quantified with explicit numbers for AFR/EAS/Hispanic vs. EUR
+**Plans**: TBD
 
-### Phase 4 — Matched-N cross-ancestry concordance (T2, gated)
+Seeds: src/legacy/region_analysis/scripts/create_pgs_manifest.py, src/legacy/region_analysis/workflow/rules/pgs.smk
 
-**Replaces the broken Table 2.**
-
-1. Down-sample EUR to match AFR N; 100× bootstrap concordance.
-2. Expected detection probability under Hou et al. 2023 null.
-3. TRACTOR for AFR-American ancestry-stratified effects.
-4. LDSC cross-ancestry `r_g` as global benchmark.
-5. Ancestry-specific variant testing.
-6. **New Table 2:** power-corrected concordance replacing the old
-   incomparable-trait-pair comparison.
-
-### Phase 8 — Cross-ancestry PRS (T2, gated)
-
-1. PRS-CSx training in EUR.
-2. Transfer to AFR / EAS / Hispanic.
-3. Pathway-restricted vs. genome-wide PRS comparison.
-4. **Discrimination:** R², AUC (REQ-6).
-5. **Calibration:** Hosmer-Lemeshow, calibration slope + intercept (REQ-6).
-6. **Clinical utility:** NRI, decision-curve analysis, net benefit (REQ-6).
-7. **Equity-vs-accuracy trade-off** quantification (REQ-8).
-
-Seeds from `src/legacy/region_analysis/scripts/create_pgs_manifest.py` +
-`src/legacy/region_analysis/workflow/rules/pgs.smk` (both currently stubs).
-
----
-
-### Checkpoint #2 — End of T2
-
-**Produces:** `.planning/checkpoints/T2_review.md` with:
+### Checkpoint #2: End of T2
+**Type**: Decision gate (not a phase)
+**Depends on**: Phases 3, 4, 8 all complete
+**Requirements**: REQ-11
+**Produces**: .planning/checkpoints/T2_review.md with:
 - Are T1+T2 results a Nature Genetics story or a Nature Metabolism story?
 - Is T3 worth the schedule risk?
-- Updated journal target decision.
+- Updated journal target decision
 
 **No T3 phase is planned until this file exists.**
 
----
+### Phase 6: Selection scans + polygenic selection
+**Goal**: Test evolutionary medicine hypotheses with formal selection scans and polygenic selection tests. Pre-specified fallback framing required before execution.
+**Depends on**: CP#2 (go verdict)
+**Requirements**: REQ-5
+**Tier**: T3 (gated)
+**Success Criteria** (what must be TRUE):
+  1. iHS, SDS, PBS, XP-EHH scans completed across 1000G + HGDP
+  2. Pathway-level enrichment of selection signatures computed
+  3. Pre-specified fallback framing exists in PLAN.md before first execution run
+  4. Thrifty-gene and antagonistic-pleiotropy hypothesis tests completed
+**Plans**: TBD
 
-### Phase 6 — Selection scans + polygenic selection (T3, gated)
+### Phase 7: Single-cell + EpiMap + ABC
+**Goal**: Cell-type-resolved regulatory integration using single-cell eQTL, chromatin state, and enhancer-gene models.
+**Depends on**: CP#2 (go verdict)
+**Requirements**: (none directly; adds mechanistic depth)
+**Tier**: T3 (gated)
+**Success Criteria** (what must be TRUE):
+  1. Cell-type-resolved eQTL integration completed
+  2. Roadmap/EpiMap chromatin state overlap analysis done
+  3. ABC enhancer-gene linking model applied to credible-set variants
+  4. CELLECT/scDRS enrichment computed
+**Plans**: TBD
 
-1. iHS, SDS, PBS, XP-EHH across 1000G + HGDP.
-2. Pathway-level enrichment of selection signatures.
-3. Thrifty-gene and antagonistic-pleiotropy hypothesis tests.
-4. **Pre-specified fallback framing** (REQ-5) — written **before**
-   execution — that reframes the narrative around locus-level signals if
-   the polygenic test is null.
+### Phase 10: Deep-learning variant effect + MPRA overlap
+**Goal**: Computational variant effect prediction and validation against experimental MPRA data.
+**Depends on**: CP#2 (go verdict)
+**Requirements**: (none directly; adds functional evidence)
+**Tier**: T3 (gated)
+**Success Criteria** (what must be TRUE):
+  1. Enformer + Borzoi inference completed per credible-set variant
+  2. Sei regulatory activity scores computed
+  3. AlphaMissense coding-variant scores retrieved
+  4. Overlap with public MPRA datasets (Abell 2022, Tewhey 2016) quantified
+  5. Composite functional-evidence score produced per variant
+**Plans**: TBD
 
-### Phase 7 — Single-cell + EpiMap + ABC (T3, gated)
+### Phase 11: Manuscript + figures + submission
+**Goal**: Assemble the full manuscript with regenerated figures, methods rewrite, equity framing, cover letters, and submission package.
+**Depends on**: Phase 9 (runs in parallel from Phase 9 onward)
+**Requirements**: REQ-8, REQ-10
+**Tier**: M (parallel)
+**Success Criteria** (what must be TRUE):
+  1. Figures 1-6 regenerated from new analytical data
+  2. New Table 2 (matched-N) + regenerated Tables 1, 3
+  3. Methods section rewritten — one subsection per analytical phase
+  4. Equity-as-trade-off framing reconciled across abstract/intro/discussion (REQ-8)
+  5. Cover letters written per target journal (REQ-10)
+  6. GitHub repo public release + Zenodo DOI minted
+  7. OSF final registration updated
+**Plans**: TBD
 
-1. Cell-type-resolved eQTL integration.
-2. Roadmap / EpiMap chromatin state overlap.
-3. ABC enhancer-gene linking model.
-4. CELLECT / scDRS enrichment.
+## Progress
 
-### Phase 10 — Deep-learning variant effect + MPRA overlap (T3, gated)
+**Execution Order:**
+T1: 0 → 1 → 2 → 5 → 9 → CP#1
+T2 (if go): 3, 4, 8 → CP#2
+T3 (if go): 6, 7, 10
+M: 11 (parallel from Phase 9)
 
-1. Enformer inference per credible-set variant.
-2. Borzoi inference.
-3. Sei regulatory activity.
-4. AlphaMissense coding-variant scores.
-5. Overlap with public MPRA datasets (Abell 2022, Tewhey 2016).
-6. Composite functional-evidence score per variant.
-
----
-
-### Phase 11 — Manuscript + figures + submission (M, parallel)
-
-Runs in parallel with Phase 9 onward.
-
-1. Figure regeneration (Figures 1-6 from new data).
-2. New Table 2 (matched-N) + regenerated Tables 1, 3.
-3. Methods rewrite — one subsection per analytical phase.
-4. Response-to-reviewers framework (pre-submission, forces rigor).
-5. **Equity-as-trade-off framing** reconciled across abstract / intro /
-   discussion (REQ-8).
-6. Target journal selection cover letters (REQ-10).
-7. OSF final registration update + data deposit.
-8. GitHub repo public release + Zenodo DOI.
-9. Submission package assembly.
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 0. Data access + infrastructure | 0/TBD | Not started | - |
+| 1. coloc.susie fine-mapping | 0/TBD | Not started | - |
+| 2. 3-way QTL colocalization | 0/TBD | Not started | - |
+| 5. Pathway + partitioned h2 | 0/TBD | Not started | - |
+| 9. Replication | 0/TBD | Not started | - |
+| 3. Mendelian randomization | - | Gated (T2) | - |
+| 4. Matched-N concordance | - | Gated (T2) | - |
+| 8. Cross-ancestry PRS | - | Gated (T2) | - |
+| 6. Selection scans | - | Gated (T3) | - |
+| 7. Single-cell + EpiMap | - | Gated (T3) | - |
+| 10. DL variant effect | - | Gated (T3) | - |
+| 11. Manuscript | - | Not started | - |
