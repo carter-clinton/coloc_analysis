@@ -1,0 +1,302 @@
+# data/manifest.yaml -- Data source catalog with provenance (D-03, D-12)
+# Every source records genome_build; GRCh38 sources are flagged needs_liftover: true (D-02).
+# Fields: source, description, genome_build, ancestry, trait(s), local_path_pattern,
+#   remote_url, doi, license, access_model, download_date, md5.
+
+sources:
+
+  # ============================================================
+  # Legacy GWAS datasets (from config/datasets.yaml)
+  # ============================================================
+
+  yengo2018_bmi:
+    description: "Yengo et al. 2018 BMI meta-analysis (Locke et al. + UKBiobank)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EUR
+    traits: [bmi]
+    local_path_pattern: "cache/downloads/yengo2018_bmi/{filename}"
+    remote_url: "https://cnsgenomics.com/data/yengo_et_al_2018_hmg"
+    doi: "10.1093/hmg/ddy271"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  giant_bmi_eur:
+    description: "GIANT BMI European summary statistics (formatted release)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EUR
+    traits: [bmi]
+    local_path_pattern: "cache/downloads/giant_bmi/{filename}"
+    remote_url: "https://giant-consortium.web.broadinstitute.org/images/3/37"
+    doi: "10.1038/ng.3538"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  gwas_catalog_t2d_eur:
+    description: "GWAS Catalog GCST90018926 T2D (GRCh37)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EUR
+    traits: [t2d]
+    local_path_pattern: "cache/downloads/t2d_alt_eur/{filename}"
+    remote_url: "https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90018001-GCST90019000/GCST90018926"
+    doi: null
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  diamante2022_t2d:
+    description: "DIAMANTE 2022 T2D summary statistics (EUR + TRANS + AFR)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: [EUR, TRANS, AFR]
+    traits: [t2d]
+    local_path_pattern: "cache/downloads/diamante2022_t2d/{filename}"
+    remote_url: "https://diagram-consortium.org/downloads"
+    doi: "10.1038/s41588-022-01058-3"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  evangelou2018_bp:
+    description: "Evangelou et al. 2018 UKB+ICBP blood pressure meta-analysis"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EUR
+    traits: [hypertension]
+    local_path_pattern: "cache/downloads/evangelou2018_bp/{filename}"
+    remote_url: "https://grasp.nhlbi.nih.gov/downloads/ResultsAug2019/2018/Evangelou"
+    doi: "10.1038/s41588-018-0205-x"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  gbmi_asthma:
+    description: "GBMI asthma summary statistics (May 2021 release, EUR + AFR)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: [EUR, AFR]
+    traits: [asthma]
+    local_path_pattern: "cache/downloads/gbmi_asthma/{filename}"
+    remote_url: "https://gbmi-sumstats.s3.amazonaws.com"
+    doi: "10.1016/j.cell.2021.11.003"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  gigastroke2022_eur:
+    description: "GIGASTROKE 2022 stroke EUR summary stats (GCST90104539; GRCh37)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EUR
+    traits: [stroke]
+    local_path_pattern: "cache/downloads/gigastroke2022_eur/{filename}"
+    remote_url: "https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90104001-GCST90105000/GCST90104539"
+    doi: "10.1038/s41586-022-05165-3"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  megastroke_metastroke:
+    description: "METASTROKE / MEGASTROKE ischemic stroke results (EUR + AFR)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: [EUR, AFR]
+    traits: [stroke]
+    local_path_pattern: "cache/downloads/megastroke/{filename}"
+    remote_url: "https://personal.broadinstitute.org/ryank"
+    doi: "10.1016/S1474-4422(12)70234-X"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  # ============================================================
+  # New ancestry GWAS datasets (D-20, D-21)
+  # ============================================================
+
+  gurdasani2019_bmi_afr:
+    description: "Gurdasani et al. 2019 African BMI GWAS (Uganda Genome Resource + APCDR meta-analysis)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: AFR
+    traits: [bmi]
+    local_path_pattern: "cache/downloads/gurdasani2019_bmi_afr/{filename}"
+    remote_url: "https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST007001-GCST008000/GCST007846"
+    doi: "10.1016/j.cell.2019.01.019"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  hoffmann_htn_afr:
+    description: "Hoffmann et al. 2017 African ancestry blood pressure GWAS (COGENT-BP)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: AFR
+    traits: [hypertension]
+    local_path_pattern: "cache/downloads/hoffmann_htn_afr/{filename}"
+    remote_url: "https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST004001-GCST005000/GCST004883"
+    doi: "10.1038/ng.3921"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  bbj_eas:
+    description: "BioBank Japan (BBJ) East Asian GWAS summary statistics (hum0197-v3)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EAS
+    traits: [bmi, t2d, stroke, asthma, hypertension]
+    local_path_pattern: "cache/downloads/bbj_eas/{filename}"
+    remote_url: "https://humandbs.dbcls.jp/files/hum0197"
+    doi: "10.1038/s41588-018-0047-6"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  page_hchs_his:
+    description: "PAGE consortium + HCHS/SOL Hispanic/Latino GWAS summary statistics"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: HIS
+    traits: [bmi, hypertension]
+    local_path_pattern: "cache/downloads/page_hchs_his/{filename}"
+    remote_url: "https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics"
+    doi: "10.1038/s41586-019-1310-4"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  # ============================================================
+  # QTL sources (for Phase 2: 3-way coloc)
+  # ============================================================
+
+  ukbppp_pqtl:
+    description: "UK Biobank Pharma Proteomics Project (UKB-PPP) pQTL summary statistics (Sun et al. 2023)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EUR
+    traits: [pqtl]
+    local_path_pattern: "data/raw/ukbppp/{filename}"
+    remote_url: "https://www.synapse.org/Synapse:syn51364943"
+    doi: "10.1038/s41586-023-06592-6"
+    license: "Synapse Terms of Service"
+    access_model: registration-required
+    download_date: null
+    md5: null
+
+  decode_pqtl:
+    description: "deCODE Genetics pQTL summary statistics (Ferkingstad et al. 2021)"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: EUR
+    traits: [pqtl]
+    local_path_pattern: "data/raw/decode/{filename}"
+    remote_url: "https://www.decode.com/summarydata/"
+    doi: "10.1038/s41588-021-00978-w"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  gtex_v8:
+    description: "GTEx v8 eQTL and sQTL summary statistics"
+    genome_build: GRCh38
+    needs_liftover: true
+    ancestry: multi
+    traits: [eqtl, sqtl]
+    local_path_pattern: "data/raw/gtex_v8/{filename}"
+    remote_url: "https://gtexportal.org/home/downloads/adult-gtex/qtl"
+    doi: "10.1126/science.aaz1776"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  # ============================================================
+  # Replication cohorts (for Phase 9)
+  # ============================================================
+
+  finngen:
+    description: "FinnGen R13/R14 summary statistics for replication"
+    genome_build: GRCh38
+    needs_liftover: true
+    ancestry: EUR
+    traits: [bmi, t2d, hypertension, asthma, stroke]
+    local_path_pattern: "data/raw/finngen/{filename}"
+    remote_url: "https://www.finngen.fi/en/access_results"
+    doi: "10.1038/s41586-023-06681-6"
+    license: "CC BY 4.0"
+    access_model: registration-required
+    download_date: null
+    md5: null
+
+  pan_ukbb:
+    description: "Pan-UKBB trans-ancestry GWAS summary statistics"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: [EUR, AFR, EAS, AMR, CSA, MID]
+    traits: [bmi, t2d, hypertension, asthma, stroke]
+    local_path_pattern: "data/raw/pan_ukbb/{filename}"
+    remote_url: "https://pan.ukbb.broadinstitute.org/downloads"
+    doi: "10.1038/s41588-024-01863-1"
+    license: "CC BY 4.0"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  mvp:
+    description: "Million Veteran Program GWAS summary statistics via dbGaP"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: [EUR, AFR, HIS]
+    traits: [t2d, hypertension, stroke]
+    local_path_pattern: "data/raw/mvp/{filename}"
+    remote_url: "https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs001672"
+    doi: null
+    license: "dbGaP"
+    access_model: open-access
+    download_date: null
+    md5: null
+
+  all_of_us:
+    description: "All of Us Controlled Tier -- GWAS summary statistics (exported from Researcher Workbench)"
+    genome_build: GRCh38
+    needs_liftover: true
+    ancestry: [EUR, AFR, HIS, EAS]
+    traits: [bmi, t2d, hypertension, asthma, stroke]
+    local_path_pattern: "data/raw/all_of_us/{filename}"
+    remote_url: "https://workbench.researchallofus.org"
+    doi: null
+    license: "All of Us DUA"
+    access_model: credentialed
+    download_date: null
+    md5: null
+
+  gbmi_replication:
+    description: "GBMI multi-ancestry meta-analysis summary statistics for replication"
+    genome_build: GRCh37
+    needs_liftover: false
+    ancestry: multi
+    traits: [asthma, t2d]
+    local_path_pattern: "data/raw/gbmi/{filename}"
+    remote_url: "https://www.globalbiobankmeta.org/resources"
+    doi: "10.1016/j.cell.2021.11.003"
+    license: "public"
+    access_model: open-access
+    download_date: null
+    md5: null

@@ -1,0 +1,18 @@
+# envs/r_coloc.yml -- Pinned R + coloc + susieR + hyprcoloc environment (D-24)
+# Seeded from src/legacy/region_analysis/envs/r_stats_env.yml with version pins added.
+# Version pins verified: R 4.4.2, coloc 5.2.3, susieR 0.14.2 (from RESEARCH.md).
+name: r_coloc
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base=4.4.2
+  - r-data.table=1.16.4
+  - r-tidyverse=2.0.0
+  - r-optparse=1.7.5
+  - r-yaml=2.3.10
+  - r-susier=0.14.2
+  - r-coloc=5.2.3
+  - r-hyprcoloc=1.0
+  - htslib=1.21
