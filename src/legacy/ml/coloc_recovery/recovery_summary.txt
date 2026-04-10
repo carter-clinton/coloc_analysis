@@ -1,0 +1,20 @@
+COLOC_ERROR RECOVERY SUMMARY
+==================================================
+
+Total COLOC_ERROR tests: 861
+High-confidence rescues: 0
+Probable signals: 0
+
+Breakdown by trait pair:
+  bmi-asthma: 15 errors, 0 rescued
+  bmi-hypertension: 4 errors, 0 rescued
+  bmi-stroke: 4 errors, 0 rescued
+  bmi-t2d: 4 errors, 0 rescued
+  hypertension-asthma: 70 errors, 0 rescued
+  stroke-asthma: 372 errors, 0 rescued
+  t2d-asthma: 392 errors, 0 rescued
+
+Interpretation:
+- Imputed values represent expected H4 based on similar successful tests
+- High-confidence rescues are likely true signals obscured by data issues
+- These regions warrant re-analysis with cleaned/deduplicated data

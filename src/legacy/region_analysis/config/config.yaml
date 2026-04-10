@@ -1,0 +1,132 @@
+traits:
+  - bmi
+  - t2d
+  - hypertension
+  - asthma
+  - stroke
+
+ancestries:
+  - EUR
+  - AFR
+
+# build for coordinates
+genome_build: GRCh37   # or GRCh38; we'll harmonize everything consistently
+
+# where files live (relative to project_root)
+paths:
+  raw_sumstats: "data_raw/sumstats"
+  harmonized_sumstats: "data_processed/sumstats_harmonized"
+  harmonized_sumstats_fixed: "data_processed/sumstats_harmonized_fixed"
+  regions_curated: "config/regions_tiled.csv"
+  regions_bed: "data_processed/regions/regions.bed"
+  ld_1kg_root: "data_raw/1kg"
+  ld_reference: "data_processed/ld_reference"
+  ref_fasta: ""
+  cache_downloads: "cache/downloads"
+
+# 1000 Genomes setup for LD
+onekg:
+  version: phase3
+  populations:
+    AFR: ["YRI", "LWK", "GWD", "MSL", "ESN"]
+    EUR: ["CEU", "TSI", "GBR", "FIN", "IBS"]
+  chromosomes:
+    - "1"
+    - "2"
+    - "3"
+    - "4"
+    - "5"
+    - "6"
+    - "7"
+    - "8"
+    - "9"
+    - "10"
+    - "11"
+    - "12"
+    - "13"
+    - "14"
+    - "15"
+    - "16"
+    - "17"
+    - "18"
+    - "19"
+    - "20"
+    - "21"
+    - "22"
+  ftp_base: "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502"
+  vcf_template: "ALL.chr{chrom}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
+  panel_url: "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel"
+
+# plink / bcftools params
+plink:
+  maf: 0.01
+  geno: 0.01
+
+resources:
+  default_threads: 4
+  default_mem_mb: 8000
+
+# Switch to corrected sumstats when available.
+use_fixed_sumstats: true
+
+# Preferred source for each trait's primary GWAS download.
+dataset_priority:
+  bmi: yengo2018_bmi
+  t2d: diamante2022_t2d
+  hypertension: evangelou2018_bp
+  asthma: gbmi_asthma
+  stroke: megastroke_metastroke
+
+multitrait:
+  methods:
+    - mashr
+    - susie
+  window_kb: 500
+  region_padding_kb: 50
+
+pgs:
+  methods:
+    - prs_csx
+    - ldpred2
+  target_ancestries:
+    - EUR
+    - AFR
+  ld_reference_dir: "data_processed/ld_reference"
+
+mr:
+  hypotheses:
+    - exposure: bmi
+      outcome: t2d
+      note: "BMI -> T2D causal hypothesis"
+    - exposure: bmi
+      outcome: hypertension
+      note: "BMI -> hypertension"
+    - exposure: hypertension
+      outcome: stroke
+      note: "BP -> stroke mediation"
+
+trait_ancestries:
+  bmi:
+    - EUR
+  t2d:
+    - EUR
+    - TRANS
+    - AFR
+  hypertension:
+    - EUR
+  asthma:
+    - EUR
+    - AFR
+  stroke:
+    - EUR
+    - AFR
+
+enable_ld_pipeline: true
+
+finemap:
+  output_dir: "results/fine_mapping"
+  methods:
+    - susie
+  credible_set: 0.95
+  ld_reference_dir: "data_processed/ld_reference"
+  rscript_bin: "/share/clintonlab/ckclinto/admix_map/.conda/admix_map_r_hyprcoloc/bin/Rscript"

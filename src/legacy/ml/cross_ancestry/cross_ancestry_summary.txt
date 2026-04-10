@@ -1,0 +1,16 @@
+CROSS-ANCESTRY COLOCALIZATION SUMMARY
+==================================================
+
+EUR successful tests: 4270
+AFR successful tests: 1148
+Matched comparisons: 907
+
+Classification breakdown:
+  VALIDATED: 0 (0.0%)
+  SUGGESTIVE: 0 (0.0%)
+  POWER_LIMITED: 6 (0.7%)
+  AFR_ENRICHED: 7 (0.8%)
+  MODERATE_BOTH: 1 (0.1%)
+  CONCORDANT_NULL: 893 (98.5%)
+
+Correlation (EUR H4 vs AFR H4): r = 0.0587

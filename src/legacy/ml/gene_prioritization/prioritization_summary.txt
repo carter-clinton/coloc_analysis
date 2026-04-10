@@ -1,0 +1,21 @@
+GENE PRIORITIZATION SUMMARY
+==================================================
+
+Total signals analyzed: 76
+Signals with gene match in database: 12
+High-priority genes (score >= 0.5): 9
+Unique drug targets: 4
+
+Drug targets:
+  KCNJ11: Sulfonylureas (glyburide, glimepiride)
+  LEP: Metreleptin (for lipodystrophy)
+  MC4R: Setmelanotide (FDA approved for genetic obesity)
+  PCSK9: Evolocumab, Alirocumab (PCSK9 inhibitors)
+
+Scoring weights:
+  - Gene constraint (pLI): 15%
+  - Disease relevance: 30%
+  - Tissue expression: 20%
+  - PPI connectivity: 10%
+  - Druggability: 15%
+  - Biological plausibility: 10%

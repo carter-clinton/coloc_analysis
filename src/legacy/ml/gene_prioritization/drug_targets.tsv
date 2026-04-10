@@ -1,0 +1,5 @@
+Gene	Drug	Mechanism	Region	Trait_Pair	H4	Priority_Score
+MC4R	Setmelanotide (FDA approved for genetic obesity)	Melanocortin 4 receptor - satiety signaling	18:49750000-59250000	bmi-t2d	0.9990	0.669
+LEP	Metreleptin (for lipodystrophy)	Leptin - satiety hormone	7:128750000-132250000	bmi-t2d	0.9648	0.816
+PCSK9	Evolocumab, Alirocumab (PCSK9 inhibitors)	LDL receptor degradation	1:55750000-58250000	t2d-hypertension	0.9195	0.787
+KCNJ11	Sulfonylureas (glyburide, glimepiride)	K-ATP channel subunit in beta cells	11:15750000-19250000	bmi-t2d	0.8500	0.908

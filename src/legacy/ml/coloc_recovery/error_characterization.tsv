@@ -1,0 +1,11 @@
+Trait_Pair	N_Errors	N_Success	Mean_H4	Max_H4	Pct_High_H4	Involves_Asthma
+t2d-asthma	392	698	0.0189	0.5606	0.1	True
+stroke-asthma	372	547	0.0082	0.1696	0.0	True
+hypertension-asthma	70	295	0.0369	0.9948	0.7	True
+bmi-asthma	15	61	0.0408	0.3272	0.0	True
+bmi-hypertension	4	543	0.0564	1.0000	4.4	False
+bmi-stroke	4	543	0.0167	0.7596	0.4	False
+bmi-t2d	4	543	0.1392	1.0000	13.1	False
+hypertension-stroke	0	547	0.0552	0.9910	3.7	False
+t2d-hypertension	0	547	0.0371	0.9993	2.6	False
+t2d-stroke	0	1094	0.0177	0.9264	0.6	False

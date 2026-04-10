@@ -1,0 +1,10 @@
+Gene	Region	Trait_Pair	H4	Priority_Score	Pathway
+KCNJ11	11:15750000-19250000	bmi-t2d	0.8500	0.908	Insulin_secretion
+TCF7L2	10:113750000-117250000	bmi-t2d	1.0000	0.819	Wnt_signaling
+LEP	7:128750000-132250000	bmi-t2d	0.9648	0.816	Appetite_regulation
+PCSK9	1:55750000-58250000	t2d-hypertension	0.9195	0.787	Cholesterol
+IRS1	2:225750000-231250000	t2d-hypertension	0.9826	0.781	Insulin_signaling
+SH2B3	12:107750000-117250000	hypertension-stroke	0.9910	0.676	JAK_STAT
+MC4R	18:49750000-59250000	bmi-t2d	0.9990	0.669	Appetite_regulation
+SORT1	1:106750000-111250000	bmi-hypertension	0.9853	0.552	Lipid_transport
+ABO	9:135750000-138250000	hypertension-stroke	0.9881	0.544	Blood_group

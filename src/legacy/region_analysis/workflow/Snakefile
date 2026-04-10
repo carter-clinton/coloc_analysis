@@ -1,0 +1,141 @@
+import os
+import csv
+import yaml
+
+# Path is relative to the working directory (project root)
+configfile: "config/config.yaml"
+
+TRAITS = config["traits"]
+ANCESTRIES = config["ancestries"]
+TRAIT_ANCESTRIES = config.get("trait_ancestries")
+
+HARMONIZED_DIR = config["paths"].get("harmonized_sumstats_fixed") \
+    if config.get("use_fixed_sumstats") else config["paths"]["harmonized_sumstats"]
+TRAIT_ANCESTRY_PAIRS = []
+if TRAIT_ANCESTRIES:
+    for trait in TRAITS:
+        ancestries = TRAIT_ANCESTRIES.get(trait, ANCESTRIES)
+        for anc in ancestries:
+            TRAIT_ANCESTRY_PAIRS.append((trait, anc))
+else:
+    for trait in TRAITS:
+        for anc in ANCESTRIES:
+            TRAIT_ANCESTRY_PAIRS.append((trait, anc))
+
+REGION_INFOS = []
+REGION_SAFE_TO_ID = {}
+REGION_METADATA = {}
+with open(config["paths"]["regions_curated"], newline="") as fh:
+    reader = csv.DictReader(fh)
+    for row in reader:
+        orig = row["region_id"]
+        safe = orig.replace(".", "_").replace("/", "_")
+        suffix = 1
+        while safe in REGION_SAFE_TO_ID:
+            suffix += 1
+            safe = f"{safe}_{suffix}"
+        start = int(float(row["start"]))
+        end = int(float(row["end"]))
+        chrom = row["chr"].replace("chr", "").replace("CHR", "")
+        REGION_INFOS.append((orig, safe))
+        REGION_SAFE_TO_ID[safe] = orig
+        REGION_METADATA[safe] = {
+            "chr": chrom,
+            "start": start,
+            "end": end,
+        }
+REGION_SAFE_IDS = [safe for _, safe in REGION_INFOS]
+
+HARMONIZED_ALL = [
+    os.path.join(
+        HARMONIZED_DIR,
+        f"{trait}.{ancestry}.tsv.bgz"
+    )
+    for trait, ancestry in TRAIT_ANCESTRY_PAIRS
+]
+
+FINEMAP_CONFIG = config.get("finemap", {})
+FINEMAP_METHODS = FINEMAP_CONFIG.get("methods", [])
+FINEMAP_DIR = FINEMAP_CONFIG.get("output_dir", "results/fine_mapping")
+
+if FINEMAP_METHODS:
+    FINEMAP_MANIFEST = os.path.join(FINEMAP_DIR, "finemap_manifest.tsv")
+    UNIQUE_TRAIT_ANC = sorted(set(TRAIT_ANCESTRY_PAIRS))
+    FINEMAP_OUTPUTS = [
+        os.path.join(
+            FINEMAP_DIR,
+            method,
+            f"{trait}.{ancestry}.{region_safe}.json",
+        )
+        for method in FINEMAP_METHODS
+        for trait, ancestry in UNIQUE_TRAIT_ANC
+        for _, region_safe in REGION_INFOS
+    ]
+    FINEMAP_SUMMARY = os.path.join(FINEMAP_DIR, "finemap_summary.tsv")
+    FINEMAP_FILTERED_TARGETS = [
+        "results/fine_mapping/finemap_summary_augmented.tsv",
+        "results/fine_mapping/finemap_tier1_high_conf.tsv",
+        "results/fine_mapping/finemap_tier2_relaxed.tsv",
+        "results/fine_mapping/finemap_tier3_coloc.tsv",
+    ]
+else:
+    FINEMAP_MANIFEST = None
+    FINEMAP_OUTPUTS = []
+    FINEMAP_SUMMARY = None
+    FINEMAP_FILTERED_TARGETS = []
+
+# include modular rule files; paths are relative to this Snakefile (workflow/)
+include: "rules/sumstats.smk"
+include: "rules/regions.smk"
+include: "rules/multitrait.smk"
+include: "rules/pgs.smk"
+include: "rules/mr.smk"
+include: "rules/qc.smk"
+
+if FINEMAP_METHODS:
+    include: "rules/finemap.smk"
+
+ENABLE_LD = config.get("enable_ld_pipeline", False)
+if ENABLE_LD:
+    include: "rules/ld_reference.smk"
+    LD_TARGETS = [
+        os.path.join(
+            config["paths"]["ld_reference"],
+            ancestry,
+            f"{region_safe}.rds",
+        )
+        for ancestry in ANCESTRIES
+        for _, region_safe in REGION_INFOS
+    ]
+else:
+    LD_TARGETS = []
+
+ALL_TARGETS = (
+    HARMONIZED_ALL
+    + [config["paths"]["regions_bed"]]
+    + LD_TARGETS
+    + FINEMAP_OUTPUTS
+    + ([FINEMAP_MANIFEST] if FINEMAP_MANIFEST else [])
+    + ([FINEMAP_SUMMARY] if FINEMAP_SUMMARY else [])
+    + FINEMAP_FILTERED_TARGETS
+    + [
+        "results/multitrait/harmonized_manifest.tsv",
+        "results/multitrait/coloc_manifest.tsv",
+        "results/multitrait/coloc_summary.tsv",
+        "results/multitrait/coloc_summary_augmented.tsv",
+        "results/multitrait/hyprcoloc_manifest.tsv",
+        "results/multitrait/hyprcoloc_summary.tsv",
+        "results/pgs/pgs_manifest.tsv",
+        "results/mr/mr_manifest.tsv",
+        "results/qc/harmonized_summary.tsv",
+        "results/qc/region_overlap.tsv",
+        "results/qc/region_trait_qc.tsv",
+        "results/multitrait/placeholder.done",
+        "results/pgs/placeholder.done",
+        "results/mr/placeholder.done",
+    ]
+)
+
+rule all:
+    input:
+        ALL_TARGETS

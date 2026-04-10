@@ -1,0 +1,13 @@
+name: la_multitrait_r
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-data.table
+  - r-tidyverse
+  - r-optparse
+  - r-susieR
+  - r-coloc
+  - htslib

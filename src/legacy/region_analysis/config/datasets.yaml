@@ -1,0 +1,251 @@
+datasets:
+  gbmi_asthma:
+    description: "GBMI asthma summary statistics (May 2021 release)."
+    base_url: "https://gbmi-sumstats.s3.amazonaws.com"
+    defaults:
+      compression: "gzip"
+      sep: "\t"
+      delim_whitespace: true
+      column_map:
+        CHR: ["CHR", "chr", "#CHR", "#chr"]
+        POS: ["POS", "pos"]
+        REF: ["REF", "NEA", "non_effect_allele"]
+        ALT: ["ALT", "EA", "effect_allele"]
+        BETA: ["inv_var_meta_beta", "BETA", "beta"]
+        SE: ["inv_var_meta_sebeta", "SE", "se"]
+        P: ["inv_var_meta_p", "P", "pval", "p_value"]
+        EAF: ["all_meta_AF", "EAF", "af", "effect_allele_frequency"]
+        N_CASE: ["N_case", "case_n", "NCASE"]
+        N_CTRL: ["N_ctrl", "control_n", "NCONTROL"]
+    traits:
+      asthma:
+        ancestries:
+          EUR:
+            path: "Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz"
+            md5: ""
+          AFR:
+            path: "Asthma_Bothsex_afr_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz"
+            md5: ""
+
+  yengo2018_bmi:
+    description: "Yengo et al. 2018 BMI meta-analysis."
+    base_url: "https://cnsgenomics.com/data/yengo_et_al_2018_hmg"
+    defaults:
+      compression: "gzip"
+      sep: "\t"
+      delim_whitespace: true
+      column_map:
+        CHR: ["CHR", "chr"]
+        POS: ["BP", "POS", "bp"]
+        REF: ["A2", "NEA"]
+        ALT: ["A1", "EA"]
+        BETA: ["b", "BETA"]
+        SE: ["se", "SE"]
+        P: ["p", "P"]
+        EAF: ["Freq1", "EAF", "freq1"]
+        N: ["N", "n_total"]
+    traits:
+      bmi:
+        ancestries:
+          EUR:
+            path: "Meta-analysis_Locke_et_al%2BUKBiobank_2018_UPDATED.txt.gz"
+            local_path: "cache/downloads/yengo2018_bmi/Meta-analysis_Locke_et_al%2BUKBiobank_2018_UPDATED.txt.gz"
+            md5: ""
+
+  giant_bmi_eur:
+    description: "GIANT BMI European summary statistics (formatted release)."
+    base_url: "https://giant-consortium.web.broadinstitute.org/images/3/37"
+    defaults:
+      compression: "gzip"
+      sep: "\t"
+      delim_whitespace: false
+      column_map:
+        CHR: ["CHR"]
+        POS: ["POS"]
+        REF: ["REF"]
+        ALT: ["ALT"]
+        BETA: ["beta", "BETA"]
+        SE: ["se", "SE"]
+        P: ["Pvalue", "P"]
+        EAF: ["EUR_MAF", "EAF"]
+      snp_id_columns: ["SNPNAME"]
+    traits:
+      bmi:
+        ancestries:
+          EUR:
+            path: "BMI_European.fmt.txt.gz"
+            local_path: "cache/downloads/giant_bmi/BMI_European.fmt.txt.gz"
+            sample_size: 339224
+
+  gwas_catalog_t2d_eur:
+    description: "GWAS Catalog GCST90018926 T2D (GRCh37; includes large EUR component)."
+    base_url: "https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90018001-GCST90019000/GCST90018926"
+    defaults:
+      compression: "gzip"
+      sep: "\t"
+      delim_whitespace: false
+      column_map:
+        CHR: ["chromosome"]
+        POS: ["base_pair_location"]
+        REF: ["other_allele"]
+        ALT: ["effect_allele"]
+        BETA: ["beta"]
+        SE: ["standard_error"]
+        P: ["p_value"]
+        EAF: ["effect_allele_frequency"]
+      snp_id_columns: ["variant_id"]
+    traits:
+      t2d:
+        ancestries:
+          EUR:
+            path: "GCST90018926_buildGRCh37.tsv.gz"
+            local_path: "cache/downloads/t2d_alt_eur/GCST90018926_buildGRCh37.tsv.gz"
+            sample_size: 667504
+
+  gigastroke2022_eur:
+    description: "GIGASTROKE 2022 stroke (EUR) summary stats (GCST90104539; GRCh37)."
+    base_url: "https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90104001-GCST90105000/GCST90104539"
+    defaults:
+      compression: "gzip"
+      sep: "\t"
+      delim_whitespace: false
+      column_map:
+        CHR: ["chromosome"]
+        POS: ["base_pair_location"]
+        REF: ["other_allele"]
+        ALT: ["effect_allele"]
+        BETA: ["beta"]
+        SE: ["standard_error"]
+        P: ["p_value"]
+        EAF: ["effect_allele_frequency"]
+    traits:
+      stroke:
+        ancestries:
+          EUR:
+            path: "GCST90104539_buildGRCh37.tsv.gz"
+            local_path: "cache/downloads/gigastroke2022_eur/GCST90104539_buildGRCh37.tsv.gz"
+            sample_size: 1308460
+
+  diamante2022_t2d:
+    description: "DIAMANTE 2022 T2D summary statistics."
+    base_url: "https://diagram-consortium.org/downloads"
+    defaults:
+      compression: "gzip"
+      sep: "\t"
+      delim_whitespace: true
+      column_map:
+        CHR: ["chr", "CHR", "chromosome(b37)", "chromosome"]
+        POS: ["pos", "POS", "position(b37)", "base_pair_location"]
+        REF: ["nea", "REF", "non_effect_allele", "other_allele"]
+        ALT: ["ea", "ALT", "effect_allele"]
+        BETA: ["beta", "BETA", "Fixed-effects_beta"]
+        SE: ["se", "SE", "Fixed-effects_SE", "standard_error"]
+        P: ["pval", "P", "p_value", "Fixed-effects_p-value"]
+        EAF: ["eaf", "EAF", "effect_allele_frequency"]
+    traits:
+      t2d:
+        ancestries:
+          EUR:
+            path: "DIAMANTE-EUR.sumstat.txt.gz"
+            local_path: "cache/downloads/diamante2022_t2d/DIAMANTE-EUR.sumstat.txt.gz"
+            md5: ""
+            sample_size: 898130    # ~74k cases + 824k controls (DIAMANTE EUR)
+          TRANS:
+            path: "DIAMANTE-TA.sumstat.txt.gz"
+            local_path: "cache/downloads/diamante2022_t2d/DIAMANTE-TA.sumstat.txt.gz"
+            md5: ""
+            sample_size: 1408284   # ~180k cases + 1.23M controls (multi-ancestry)
+          AFR:
+            path: "Suzuki.Nature2024.T2DGGI.AFA.sumstats.zip"
+            local_path: "cache/downloads/t2dggi_afa/Suzuki.Nature2024.T2DGGI.AFA.sumstats.zip"
+            zip_member: "AFA_Metal_LDSC-CORR_Neff.v2.txt"
+            compression: "infer"
+            sep: "\t"
+            delim_whitespace: false
+            column_map:
+              CHR: ["Chromsome"]
+              POS: ["Position"]
+              REF: ["NonEffectAllele"]
+              ALT: ["EffectAllele"]
+              BETA: ["Beta"]
+              SE: ["SE"]
+              P: ["Pval"]
+              EAF: ["EAF"]
+              N_CASE: ["Ncases"]
+              N_CTRL: ["Ncontrols"]
+              N: ["Neff"]
+            sample_size: 154000
+
+  evangelou2018_bp:
+    description: "Evangelou et al. 2018 UKB+ICBP blood pressure meta-analysis."
+    base_url: "https://grasp.nhlbi.nih.gov/downloads/ResultsAug2019/2018/Evangelou"
+    defaults:
+      compression: "gzip"
+      sep: "\t"
+      delim_whitespace: true
+      column_map:
+        CHR: ["CHR", "chr", "MarkerName"]
+        POS: ["BP", "POS"]
+        REF: ["REF_ALLELE", "NEA", "non_effect_allele", "Allele2"]
+        ALT: ["EFFECT_ALLELE", "EA", "effect_allele", "Allele1"]
+        BETA: ["BETA", "beta", "Effect"]
+        SE: ["SE", "se", "StdErr"]
+        P: ["PVAL", "pvalue", "p", "P"]
+        EAF: ["EAF", "effect_allele_frequency", "Freq1"]
+        N: ["TotalSampleSize", "N_effective", "N"]
+    traits:
+      hypertension:
+        note: "Systolic blood pressure meta-analysis proxy for hypertension risk."
+        ancestries:
+          EUR:
+            path: "UKB-ICBPmeta750k_SBPsummaryResults.txt.gz"
+            md5: ""
+
+  megastroke_metastroke:
+    description: "METASTROKE / MEGASTROKE ischemic stroke results (Traylor 2012)."
+    base_url: "https://personal.broadinstitute.org/ryank"
+    defaults:
+      compression: "infer"
+      sep: "\t"
+      delim_whitespace: false
+      column_map:
+        CHR: ["chr", "CHR", "chromosome"]
+        POS: ["pos", "POS", "bp", "position", "base_pair_location"]
+        REF: ["ref", "a2", "NEA", "Allele2", "other_allele"]
+        ALT: ["alt", "a1", "EA", "Allele1", "effect_allele"]
+        BETA: ["beta", "BETA", "Effect"]
+        SE: ["se", "SE", "StdErr", "standard_error"]
+        P: ["p", "P", "P.value"]
+        EAF: ["EAF", "effect_allele_frequency", "Freq1"]
+        N_CASE: ["Ncase", "Cases", "N_CASE"]
+        N_CTRL: ["Ncontrol", "Controls", "N_CTRL"]
+        N: ["TotalSampleSize", "N_total"]
+    sample_size: 75000   # approximate combined sample size when N columns missing
+    traits:
+      stroke:
+        ancestries:
+          EUR:
+            path: "3490334.Traylor.2012.zip"
+            md5: ""
+            zip_member: "metastroke.all.chr.bp"
+            rsid_map:
+              template: "data_raw/1kg/vcf/chr{chrom}.vcf.gz"
+              chromosomes: ["12"]
+          AFR:
+            path: "GCST90104553_buildGRCh37.tsv.gz"
+            local_path: "cache/downloads/gigastroke2022_afram/GCST90104553_buildGRCh37.tsv.gz"
+            compression: "gzip"
+            sep: "\t"
+            delim_whitespace: false
+            column_map:
+              CHR: ["chromosome"]
+              POS: ["base_pair_location"]
+              EAF: ["effect_allele_frequency"]
+              BETA: ["beta"]
+              SE: ["standard_error"]
+              P: ["p_value"]
+              ALT: ["effect_allele"]
+              REF: ["other_allele"]
+            rsid_map:
+              template: "data_raw/1kg/vcf/chr{chrom}.vcf.gz"
+            sample_size: 20271   # approx 241 AA cases + 20,030 controls

@@ -1,0 +1,22 @@
+name: la_multitrait
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - snakemake==8.*
+  - pandas
+  - numpy
+  - scipy
+  - pyarrow
+  - cytoolz
+  - pyyaml
+  - click
+  - requests
+  - htslib
+  - pip
+  - plink
+  - bcftools
+  - pip:
+      - loguru
