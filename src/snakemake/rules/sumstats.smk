@@ -179,19 +179,9 @@ rule validate_sumstats:
         mem_mb=config["resources"]["default_mem_mb"],
     shell:
         r"""
-        mkdir -p $(dirname {output.report})
-        {PYTHON_BIN} -c "
-import gzip, sys
-required = ['CHR', 'POS', 'REF', 'ALT', 'BETA', 'SE', 'P']
-with gzip.open('{input.harmonized}', 'rt') as f:
-    header = f.readline().strip().split('\t')
-missing = [c for c in required if c not in header]
-with open('{output.report}', 'w') as out:
-    out.write('trait\tancestry\tstatus\tmissing_columns\n')
-    status = 'PASS' if not missing else 'FAIL'
-    out.write('{wildcards.trait}\t{wildcards.ancestry}\t' + status + '\t' + ','.join(missing) + '\n')
-if missing:
-    print(f'WARNING: Missing columns: {{missing}}', file=sys.stderr)
-    sys.exit(1)
-"
+        {PYTHON_BIN} src/python/validate_sumstats.py \
+            --input {input.harmonized} \
+            --output {output.report} \
+            --trait {wildcards.trait} \
+            --ancestry {wildcards.ancestry}
         """
