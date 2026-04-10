@@ -1,0 +1,28 @@
+# LSF cluster configuration for Snakemake on NCSU cluster.
+# Tune queue, time, and mem_mb to your environment.
+
+__default__:
+  queue: "short"      # TODO: replace with your actual queue
+  time: "04:00"       # walltime HH:MM
+  mem_mb: 8000
+  threads: 4
+
+download_sumstats:
+  time: "02:00"
+  mem_mb: 4000
+  threads: 1
+
+harmonize_sumstats:
+  time: "04:00"
+  mem_mb: 8000
+  threads: 2
+
+make_regions_from_loci:
+  time: "01:00"
+  mem_mb: 2000
+  threads: 1
+
+prepare_ld_plink:
+  time: "24:00"
+  mem_mb: 32000
+  threads: 4

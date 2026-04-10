@@ -1,0 +1,8 @@
+name: la_multitrait_plink
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - plink
+  - bcftools

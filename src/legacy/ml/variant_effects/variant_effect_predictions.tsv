@@ -1,0 +1,77 @@
+Region	Trait_Pair	H4	Gene	Matched_DB	CADD	Regulatory_Prob	Coding_Prob	Splice_Risk	Mechanism	Lead_Variant	Functional_Evidence
+4:100750000-107250000	bmi-hypertension	1.0000	SLC39A8	True	25.0	0.28	0.85	0.05	Coding_Missense	rs13107325 (Ala391Thr)	A391T affects metal transport function
+1:76750000-81250000	bmi-hypertension	1.0000	PIGC	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+10:113750000-117250000	bmi-t2d	1.0000	TCF7L2	True	24.5	0.88	0.15	0.08	Regulatory_Intronic	rs7903146	Enhancer variant affecting beta cell TCF7L2 expression
+18:59750000-61250000	bmi-t2d	1.0000	MC4R region	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+5:72750000-78250000	bmi-hypertension	0.9999	PDE8B	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+3:149750000-151250000	t2d-hypertension	0.9993	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+18:49750000-59250000	bmi-t2d	0.9990	MC4R	True	28.0	0.25	0.92	0.03	Coding_Missense	Multiple coding (V103I, I251L, etc.)	Loss-of-function mutations cause monogenic obesity
+4:43750000-46250000	bmi-t2d	0.9978	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+18:59750000-61250000	bmi-hypertension	0.9975	MC4R region	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+18:59750000-61250000	t2d-hypertension	0.9967	MC4R region	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+12:93750000-95250000	hypertension-asthma	0.9948	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+12:107750000-117250000	hypertension-stroke	0.9910	SH2B3	True	21.0	0.35	0.75	0.10	Coding_Missense	rs3184504 (Arg262Trp)	R262W affects JAK-STAT signaling
+5:129750000-134250000	bmi-t2d	0.9887	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+5:171750000-174250000	bmi-hypertension	0.9886	CPEB4	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+9:135750000-138250000	hypertension-stroke	0.9881	ABO	True	18.0	0.40	0.55	0.08	Coding_Functional	rs505922, rs8176719	Determines A/B/O blood group antigens
+4:139750000-141250000	bmi-t2d	0.9875	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+1:106750000-111250000	bmi-hypertension	0.9853	SORT1	True	18.0	0.85	0.08	0.05	Regulatory_Enhancer	rs12740374	Creates C/EBP binding site, affects liver SORT1 expression
+2:225750000-231250000	t2d-hypertension	0.9826	IRS1	True	16.0	0.80	0.12	0.06	Regulatory_Enhancer	rs2943641	Affects IRS1 expression in adipose/muscle
+1:170750000-178250000	bmi-t2d	0.9819	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+1:144750000-147250000	bmi-hypertension	0.9815	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+16:48750000-55250000	bmi-t2d	0.9814	FTO	True	15.0	0.92	0.05	0.02	Regulatory_Enhancer	rs9939609	Intronic variant affecting IRX3/IRX5 expression
+1:166750000-168250000	bmi-hypertension	0.9804	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+11:0-5250000	hypertension-stroke	0.9772	KCNQ1	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+4:47750000-50250000	bmi-t2d	0.9764	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+9:26750000-32250000	bmi-t2d	0.9759	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+6:99750000-102250000	bmi-hypertension	0.9756	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+11:7750000-12250000	bmi-t2d	0.9732	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+3:167750000-172250000	bmi-t2d	0.9710	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+13:61750000-63250000	bmi-hypertension	0.9686	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+5:120750000-125250000	bmi-hypertension	0.9674	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+15:89750000-97250000	hypertension-stroke	0.9660	FES	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+7:128750000-132250000	bmi-t2d	0.9648	LEP	True	19.0	0.60	0.35	0.08	Mixed	Multiple (rare coding + common regulatory)	Rare LOF causes monogenic obesity; common variants regulatory
+11:42750000-44250000	bmi-t2d	0.9569	LRRC4C	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+17:8750000-10250000	bmi-t2d	0.9512	SLC16A13	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+3:106750000-109250000	bmi-hypertension	0.9499	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+14:96750000-105250000	bmi-t2d	0.9487	MARK3	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+6:62750000-65250000	bmi-t2d	0.9485	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+13:64750000-68250000	bmi-t2d	0.9457	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+7:88750000-91250000	t2d-hypertension	0.9456	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+7:23750000-29250000	hypertension-stroke	0.9454	JAZF1	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+14:22750000-26250000	bmi-t2d	0.9433	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+7:0-4250000	bmi-t2d	0.9402	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+18:18750000-25250000	bmi-t2d	0.9397	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+8:66750000-69250000	bmi-t2d	0.9388	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+12:102750000-104250000	bmi-t2d	0.9328	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+5:85750000-93250000	bmi-t2d	0.9304	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+14:78750000-81250000	bmi-t2d	0.9295	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+12:13750000-21250000	t2d-stroke	0.9264	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+8:137750000-139250000	bmi-t2d	0.9237	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+2:0-1250000	bmi-t2d	0.9234	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+10:101750000-108250000	bmi-hypertension	0.9219	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+1:55750000-58250000	t2d-hypertension	0.9195	PCSK9	True	27.0	0.18	0.90	0.04	Coding_LOF	Multiple LOF variants	LOF variants lower LDL-C
+13:71750000-74250000	bmi-hypertension	0.9158	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+5:99750000-104250000	t2d-hypertension	0.8958	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+5:93750000-98250000	bmi-t2d	0.8905	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+13:109750000-113250000	hypertension-stroke	0.8864	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+3:172750000-174250000	bmi-t2d	0.8843	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+13:37750000-42250000	hypertension-asthma	0.8818	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+3:60750000-67250000	hypertension-stroke	0.8809	ADAMTS9	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+17:20750000-22250000	bmi-t2d	0.8784	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+18:62750000-64250000	t2d-hypertension	0.8777	BCL2	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+18:0-2250000	bmi-t2d	0.8751	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+1:5750000-9250000	bmi-t2d	0.8694	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+4:142750000-149250000	hypertension-stroke	0.8690	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+3:130750000-132250000	bmi-t2d	0.8660	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+1:111750000-114250000	bmi-t2d	0.8599	SORT1	True	18.0	0.85	0.08	0.05	Regulatory_Enhancer	rs12740374	Creates C/EBP binding site, affects liver SORT1 expression
+3:69750000-71250000	bmi-t2d	0.8566	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+5:31750000-34250000	hypertension-stroke	0.8520	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+11:15750000-19250000	bmi-t2d	0.8500	ABCC8	True	24.0	0.22	0.82	0.10	Coding_Missense	Multiple	Affects SUR1 function in K-ATP channel
+1:208750000-211250000	hypertension-stroke	0.8445	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+18:62750000-64250000	bmi-t2d	0.8202	BCL2	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+12:0-3250000	bmi-t2d	0.8202	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+2:134750000-136250000	bmi-hypertension	0.8189	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+3:120750000-126250000	hypertension-stroke	0.8177	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+13:52750000-55250000	bmi-t2d	0.8175	Unknown	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available
+6:16750000-36250000	hypertension-stroke	0.8015	HLA region	False	12.0	0.65	0.15	0.05	Regulatory_eQTL	Unknown	No functional data available

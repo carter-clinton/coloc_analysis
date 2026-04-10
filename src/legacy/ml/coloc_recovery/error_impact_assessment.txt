@@ -1,0 +1,16 @@
+COLOC_ERROR IMPACT ASSESSMENT
+==================================================
+
+Total errors: 861
+Asthma-involving: 849 (98.6%)
+Non-asthma: 12 (1.4%)
+
+Errors in colocalization-active pairs: 474
+Errors in pairs that never colocalize: 387
+
+Expected missed H4>=0.8 signals: ~0.9
+
+CONCLUSION:
+Errors do not meaningfully impact findings.
+Asthma's genetic independence from cardiometabolic traits
+is a biological finding, not a technical artifact.

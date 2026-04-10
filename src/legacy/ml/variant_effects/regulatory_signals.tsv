@@ -1,0 +1,6 @@
+Gene	Region	Trait_Pair	H4	Regulatory_Prob	Mechanism
+TCF7L2	10:113750000-117250000	bmi-t2d	1.0000	0.88	Regulatory_Intronic
+SORT1	1:106750000-111250000	bmi-hypertension	0.9853	0.85	Regulatory_Enhancer
+IRS1	2:225750000-231250000	t2d-hypertension	0.9826	0.80	Regulatory_Enhancer
+FTO	16:48750000-55250000	bmi-t2d	0.9814	0.92	Regulatory_Enhancer
+SORT1	1:111750000-114250000	bmi-t2d	0.8599	0.85	Regulatory_Enhancer
