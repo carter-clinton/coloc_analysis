@@ -48,17 +48,25 @@ miniconda*/
 # --- Snakemake ---
 .snakemake/
 
-# --- Data: never commit, always symlink ---
-data/raw/
-data/processed/
-data/external/
+# --- Data: never commit actual data files, but track the symlinks that
+# point at /rs1 so a fresh clone on the same HPC inherits the data layout ---
+data/raw/*
+data/processed/*
+data/external/*
+!data/raw/region_analysis
+!data/processed/region_analysis
+!data/processed/genome_wide
+!data/raw/README.md
+!data/processed/README.md
+!data/external/README.md
 
-# --- Results / logs: regeneratable ---
-results/
+# --- Results / logs: regeneratable, except legacy symlinks ---
+results/*
 logs/
 *.log
+!results/README.md
+!results/legacy
 !envs/.gitkeep
-!results/.gitkeep
 
 # --- Figures: commit tracked outputs, but skip scratch ---
 figures/scratch/
