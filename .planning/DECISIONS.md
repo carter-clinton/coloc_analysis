@@ -236,6 +236,41 @@ letter per target journal. Checkpoint #2 decides between Nat Genet
 
 ---
 
+## 2026-04-09 — All of Us: already have Controlled Tier; workbench-in / summary-out strategy
+
+**Decision:** Carter already has All of Us Controlled Tier access. AoU
+individual-level data stays inside the Researcher Workbench (Google Cloud).
+Summary statistics and aggregate metrics can be exported. The pipeline
+architecture for AoU-touching phases is:
+
+- **Phase 9 (replication, T1):** Export GWAS summary statistics from AoU
+  (either pre-computed or by running GWAS inside the workbench), bring them
+  back to HPC, and run replication comparison alongside FinnGen / BBJ /
+  MVP / etc. on HPC.
+- **Phase 8 (PRS, T2):** Upload PRS-CSx weight files (~MBs, trained on HPC
+  from public sumstats) into the workbench → score AoU participants against
+  the weights inside the workbench → compute all validation metrics
+  (R², AUC, Hosmer-Lemeshow, calibration slopes, NRI, DCA) inside the
+  workbench → export summary-level performance tables and plots.
+
+**Alternatives considered:** (a) Skip AoU entirely — we have 5+ replication
+cohorts, but AoU uniquely adds Hispanic representation, which is valuable
+for the cross-ancestry equity story; (b) Move the entire pipeline into the
+workbench — overkill, expensive, and loses Snakemake reproducibility.
+
+**Why:** The Researcher Workbench is a walled garden for individual-level
+data. The upload-weights / score-inside / export-summaries pattern is the
+standard approach for external PRS validation against AoU and keeps 95% of
+the pipeline on HPC where Snakemake reproducibility is enforced.
+
+**How to apply:** Phase 8 planning must include workbench-specific slices:
+(1) package PRS weights for upload, (2) write a workbench-compatible scoring
+script (PLINK2 or Hail — both available in AoU), (3) write a validation
+metrics script that runs inside the workbench, (4) define the summary-level
+export format. Phase 9 planning needs a slice for AoU GWAS sumstat export.
+
+---
+
 ## 2026-04-09 — Git config scope: local only, no global changes
 
 **Decision:** `git config user.name` and `user.email` are set **locally**

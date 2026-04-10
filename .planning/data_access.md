@@ -23,7 +23,7 @@ T1 phase.
 | MVP (dbGaP phs001672) | replication (Phase 9) | Open dbGaP | None | $0 |
 | UK Biobank main | **not needed for sumstats work** | Full DUA | ~15 weeks | £3-9K+ |
 | UK Biobank individual-level (if ever needed) | Phase 8 PRS validation (optional) | Full DUA, Tier 2 | ~15 weeks | ~£6K+ |
-| All of Us Controlled Tier | Phase 8 PRS validation, Phase 9 replication | Institutional DURA + training | ~2 business days after DURA | $0 + GCP compute |
+| All of Us Controlled Tier | Phase 8 PRS validation, Phase 9 replication | **Already credentialed** | N/A | $0 + GCP compute |
 
 **Revised critical path:** Phase 2 (3-way QTL coloc) is **not** DUA-gated
 anymore — all three QTL sources (GTEx, UKB-PPP, deCODE) are downloadable on
@@ -121,24 +121,17 @@ MR / replication use case.
 
 ### 8. All of Us (Researcher Workbench, Controlled Tier — for Phase 8 PRS + Phase 9 replication)
 
-**This is the one real DUA-like gate in the project.**
+**Carter already has Controlled Tier access.** This is no longer a gate.
 
-- **Registration portal:** https://www.researchallofus.org/register/
 - **Workbench:** https://workbench.researchallofus.org
-- **Gating:** Controlled Tier requires NC State to have a signed **DURA**
-  (Data Use and Registration Agreement). Confirm with NC State's Signing
-  Official that an AoU DURA is in place — if not, getting one signed is
-  the longest step here.
-- **Per-researcher steps after the DURA is signed:**
-  1. Create Login.gov / ID.me verified account
-  2. Complete All of Us Responsible Conduct of Research training (RCR — not CITI)
-  3. Sign the Data User Code of Conduct
-  4. Apply for Controlled Tier access on the Workbench
-  5. ~2 business days for account activation
-- **Tier needed:** Controlled Tier (WGS + array + full demographics). Registered Tier only has EHR / survey / wearables / physical measures — insufficient for a cross-ancestry GWAS + PRS.
-- **Contact:** No public email. Use https://support.researchallofus.org.
-- **Cost:** Workbench access is free. Researchers pay GCP compute (Verily Pre / RW 2.0 as of Feb 2026).
-- **Status:** `institutional-DURA-check-first` — this is the one item on the tracker that genuinely needs an early action.
+- **Tier:** Controlled Tier (WGS + array + full demographics).
+- **Cost:** Workbench access is free. Researchers pay GCP compute.
+- **Contact:** https://support.researchallofus.org if issues arise.
+- **Architecture:** Individual-level data stays inside the workbench.
+  Summary stats and aggregate metrics (R², AUC, calibration plots, etc.)
+  can be exported. See DECISIONS.md entry "All of Us: workbench-in /
+  summary-out strategy" for the Phase 8 / Phase 9 design.
+- **Status:** `credentialed` — no action needed.
 
 ### 9. GBMI (Global Biobank Meta-analysis Initiative, Phase 9)
 
@@ -169,11 +162,11 @@ MR / replication use case.
 - [ ] Verify Pan-UKBB manifest + try a tiny download as an S3 connectivity sanity check
 - [ ] Download BBJ `hum0197-v3` ZIPs for BMI, T2D, stroke, asthma, BP traits
 - [ ] Confirm dbGaP access to MVP `phs001672` summary stats (no DAR needed)
-- [ ] **Contact NC State's Signing Official** to confirm whether All of Us DURA is in place for NCSU (if not, start that process — it's the single slowest DUA step in the revised tracker)
+- [x] ~~Contact NC State's Signing Official about AoU DURA~~ — **Carter already has Controlled Tier access (confirmed 2026-04-09)**
 
 **Week 1 of Phase 0:**
-- [ ] All of Us account creation + RCR training + Data User Code of Conduct (once DURA is confirmed)
 - [ ] Register with GBMI
+- [x] ~~All of Us account creation~~ — already credentialed
 
 **Not on Day 1 (deferred until or unless needed):**
 - [ ] UK Biobank main DUA — only if Phase 8 PRS decides it needs individual-level data that Pan-UKBB sumstats can't cover. Revisit at Phase 8 planning.
@@ -196,9 +189,9 @@ MR / replication use case.
 | Phase 2: deCODE pQTL coloc | Manual portal verification | Same-day |
 | Phase 2: GTEx eQTL/sQTL coloc | Download | Same-day |
 | Phase 3 (T2): cross-ancestry MR (Pan-UKBB) | Download | Same-day |
-| Phase 8 (T2): AoU PRS validation | **NC State AoU DURA check** | Unknown — contact Signing Official first |
+| Phase 8 (T2): AoU PRS validation | Already credentialed | Upload PRS weights, score inside workbench |
 | Phase 9: FinnGen replication | Click-wrap registration | Same-day |
 | Phase 9: BBJ replication | Download | Same-day |
 | Phase 9: MVP replication | dbGaP access | Same-day |
-| Phase 9: AoU replication | Same as Phase 8 above | Same as Phase 8 above |
+| Phase 9: AoU replication | Already credentialed | Export GWAS sumstats from workbench |
 | Phase 9: GBMI replication | Open portal | Same-day |
