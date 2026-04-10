@@ -1,0 +1,13 @@
+results/multitrait/coloc/ACE_AGT_1q42__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/APOE_19q13__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/APOL1_22q12__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/APOL1_MYH9_block_22q12q13__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/FTO_16q12__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/GNPDA2_4p12__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/HBB_11p15.4__EUR__bmi_vs_t2d.json
+results/multitrait/coloc/MC4R_18q21__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/NOS3_7q36__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/ORMDL3_GSDMB_17q12q21__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/PCSK1_5q15__EUR__asthma_vs_t2d.json
+results/multitrait/coloc/PPARG_3p25__EUR__stroke_vs_t2d.json
+results/multitrait/coloc/SEC16B_1q25.2__EUR__stroke_vs_t2d.json

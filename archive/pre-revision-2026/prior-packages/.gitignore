@@ -1,0 +1,10 @@
+# These are point-in-time binary bundles (zips, tarballs) recovered
+# from /rs1/.../coloc_analysis/ on 2026-02-11. They're preserved on
+# disk for reference but not tracked in git — they're opaque blobs
+# that don't diff well, and they can be reproduced from src/legacy/
+# create_reproducibility_package.sh if they're ever needed.
+#
+# See README.md in this directory for what each bundle contains.
+*.zip
+*.tar.gz
+*.tgz
