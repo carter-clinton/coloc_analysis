@@ -47,6 +47,7 @@ onekg:
     AFR: ["YRI", "LWK", "GWD", "MSL", "ESN"]
     EUR: ["CEU", "TSI", "GBR", "FIN", "IBS"]
     EAS: ["CHB", "JPT", "CHS", "CDX", "KHV"]
+    HIS: ["MXL", "PUR", "CLM", "PEL"]  # AMR super-population as HIS proxy
   chromosomes:
     - "1"
     - "2"
