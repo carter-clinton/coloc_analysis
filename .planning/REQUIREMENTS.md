@@ -11,17 +11,41 @@ REQ IDs they satisfy.
 
 ## REQ-1 — Data access runs in parallel from Day 1
 
-**Source:** `GSD_BRIEFING.md` §5.2 gap #1.
+**Source:** `GSD_BRIEFING.md` §5.2 gap #1. **Amended 2026-04-09** after
+verification research showed 6 of the 8 originally listed sources are
+actually open-access sumstats, not reviewed DUAs. See `DECISIONS.md` entry
+"Data access verified 2026-04-09 — critical path dissolves" for the full
+amendment.
 
-**Rule:** DUAs for UK Biobank (main + UKB-PPP), deCODE pQTL, FinnGen, MVP,
-All of Us, BBJ, and Pan-UKBB must be submitted on the **first working day**
-of Phase 0, not deferred to a later phase. The phase plan treats DUAs as
-**long-running parallel work**, not as a gate.
+**Rule (revised):** On the **first working day** of Phase 0, complete the
+Day-1 action checklist in `.planning/data_access.md`:
 
-**Acceptance:** every DUA application has a row in `.planning/data_access.md`
-with `date_submitted`, `expected_lead_time`, `tracking_id`, `status`, and
-`contact`. At least 6 of 7 applications are `submitted` before any Phase 1
-rule is run.
+1. Register a Synapse certified-user profile and pull UKB-PPP pQTL sumstats
+2. Manually verify the deCODE summarydata portal and download pQTL sumstats
+3. Register on FinnGen `elomake` form and pull R13/R14 sumstats
+4. Download GTEx v8 eQTL + sQTL flat files
+5. Sanity-check Pan-UKBB S3 connectivity with a tiny download
+6. Download BBJ hum0197-v3 ZIPs for all 5 traits
+7. Confirm dbGaP access to MVP `phs001672` sumstats
+8. **Contact NC State's Signing Official** to confirm whether an All of Us
+   institutional DURA is in place for NCSU. If not, start that process —
+   this is the single slowest remaining step after the verification pass.
+
+UK Biobank main DUA (individual-level) is **not required** for sumstats-level
+coloc, MR, or replication work. It is deferred to "not-needed-unless"
+status per DECISIONS.md and only revisited at Phase 8 planning if the PRS
+phase decides it needs individual-level data that Pan-UKBB sumstats can't
+cover.
+
+**Acceptance:**
+- All 7 open-access sources downloaded or confirmed reachable before any
+  Phase 1 rule is run (all same-day actions).
+- All of Us DURA status is documented in `.planning/data_access.md`
+  (either "DURA already signed" or "DURA process initiated, contact at
+  NC State = X, started YYYY-MM-DD").
+- `.planning/data_access.md` reflects the revised status legend
+  (`open-access`, `registration-required`, `institutional-DURA-check-first`,
+  `not-needed-unless`, `blocked`).
 
 ---
 
