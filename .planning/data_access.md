@@ -51,6 +51,7 @@ entry "Data access verified 2026-04-09 — critical path dissolves".
 - **Contact:** No dedicated access email. The AWS Open Data Registry lists the data steward as Matthias Arnold (`matthias.arnold@helmholtz-munich.de`), which is a secondary contact rather than a formal access coordinator. Use the Synapse discussion forum for questions.
 - **Status:** `open-access` — can be pulled Day 1 of Phase 0 / Phase 2.
 - **HPC connectivity:** Verified 2026-04-10 — `curl -sI https://www.synapse.org/Synapse:syn51364943` returned HTTP 200. Portal reachable from NCSU HPC.
+- **User access verified 2026-04-10:** Carter passed Synapse Certification Quiz 15/15 on 2026-04-10 19:10 UTC. `syn51364943` project page fully accessible (Wiki, Files, Tables, Discussion tabs visible). S3 bucket `s3://ukbiobank.opendata.sagebase.org/` exposed for direct HPC downloads. **Ready for Phase 2 pQTL coloc.**
 
 ### 2. deCODE pQTL (for Phase 2)
 
@@ -163,7 +164,7 @@ MR / replication use case.
 ## Action checklist (revised)
 
 **Day 1 (Phase 0 Track 0a):**
-- [ ] Register a Synapse account and certify as a researcher (`syn51364943` for UKB-PPP) — *HPC connectivity verified 2026-04-10 (HTTP 200); registration requires user action*
+- [x] Register a Synapse account and certify as a researcher (`syn51364943` for UKB-PPP) — *Completed 2026-04-10: Certification Quiz passed 15/15; syn51364943 project page fully accessible; S3 bucket `s3://ukbiobank.opendata.sagebase.org/` confirmed reachable*
 - [ ] Download deCODE pQTL sumstats from the summarydata portal **after a manual browser verification** that the dataset inventory matches expectations — *HPC connectivity verified 2026-04-10 (HTTP 200); portal page loads but file inventory requires browser verification (client-side rendering)*
 - [ ] Register on `finngen.fi/en/access_results` (click-wrap form, same-day) — *HPC connectivity verified 2026-04-10 (R10 bucket HTTP 200); R13/R14 URL patterns TBD after registration*
 - [x] Download GTEx v8 eQTL + sQTL flat files — *HPC connectivity verified 2026-04-10: GCS bucket reachable at `bulk-qtl/v8/single-tissue-cis-qtl/` (HTTP 200, 1.56 GB tar confirmed). Correct path prefix is `bulk-qtl/`, not `bulk-gex/`. Ready for Snakemake download rule.*
