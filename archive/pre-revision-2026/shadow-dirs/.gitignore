@@ -1,0 +1,10 @@
+# Don't track the contents of the archived shadow directories.
+# They exist on disk for audit-trail purposes only. The README
+# one directory up describes what's here; the individual files
+# (htslib binaries, broken symlinks, conda caches, hyprcoloc_src
+# git checkout) add no value to the git history.
+#
+# If anything in here turns out to matter later, copy it out of
+# the archive before tracking it.
+*
+!.gitignore
