@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 00-03-PLAN.md
-last_updated: "2026-04-10T19:31:09.570Z"
+stopped_at: Completed 00-04-PLAN.md
+last_updated: "2026-04-10T19:59:05.792Z"
 last_activity: 2026-04-10
 progress:
   total_phases: 12
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 00 (data-access-infrastructure) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-04-10
 
@@ -54,6 +54,7 @@ Progress: ░░░░░░░░░░ 0%
 *Updated after each plan completion*
 | Phase 00 P01 | 11min | 2 tasks | 10 files |
 | Phase 00 P03 | 17min | 2 tasks | 11 files |
+| Phase 00 P04 | 14min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [Phase 00]: Refactored rules delegate to legacy scripts rather than duplicating logic; all rscript_bin refs removed
 - [Phase 00]: DIAMANTE T2D dedup audit: position-level dedup is methodologically sound; 167K count unverifiable from existing artifacts
 - [Phase 00]: KCNJ11 confirmed absent from seed regions (only in coloc results with 6 variants < 50 threshold)
+- [Phase 00]: Snakefile.test reuses production rules via include directives -- no test-specific rule duplication (D-04)
+- [Phase 00]: CI smoke test defaults to dry-run; --full-run flag after data population
+- [Phase 00]: Expected PP.H4 regression values are approximate placeholders pending first real data run (T-00-09)
 
 ### Pending Todos
 
@@ -80,6 +84,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-10T19:31:09.566Z
-Stopped at: Completed 00-03-PLAN.md
+Last session: 2026-04-10T19:59:05.787Z
+Stopped at: Completed 00-04-PLAN.md
 Resume file: None
