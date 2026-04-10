@@ -273,13 +273,17 @@ rule build_coloc_clean_sets:
         mem_mb=config["resources"]["default_mem_mb"],
     shell:
         r"""
-        {PYTHON_BIN} src/legacy/region_analysis/scripts/build_coloc_clean_sets.py
+        {PYTHON_BIN} src/legacy/region_analysis/scripts/build_coloc_clean_sets.py \
+            --input {input.summary} \
+            --out-clean {output.clean} \
+            --out-clean-h4 {output.clean_h4}
         """
 
 
 rule build_coloc_h4_reports:
     input:
         summary=os.path.join(MULTITRAIT_DIR, "coloc_summary_augmented.tsv"),
+        clean_h4=os.path.join(MULTITRAIT_DIR, "coloc_clean_h4.tsv"),
     output:
         main=os.path.join(RESULTS_ROOT, "analysis", "coloc_main_h4.tsv"),
         candidate=os.path.join(RESULTS_ROOT, "analysis", "coloc_candidate_h4.tsv"),
@@ -291,7 +295,12 @@ rule build_coloc_h4_reports:
         mem_mb=config["resources"]["default_mem_mb"],
     shell:
         r"""
-        {PYTHON_BIN} src/legacy/region_analysis/scripts/build_coloc_h4_reports.py
+        {PYTHON_BIN} src/legacy/region_analysis/scripts/build_coloc_h4_reports.py \
+            --coloc-augmented {input.summary} \
+            --clean-h4 {input.clean_h4} \
+            --out-main {output.main} \
+            --out-candidate {output.candidate} \
+            --out-counts {output.counts}
         """
 
 
