@@ -64,19 +64,34 @@ with open(config["paths"]["regions_curated"], newline="") as fh:
 REGION_SAFE_IDS = [safe for _, safe in REGION_INFOS]
 
 # ---------------------------------------------------------------------------
-# Include the SAME production rules (D-04: refactor, not rewrite)
-# Paths are relative to the project root (snakemake invocation directory)
+# Build target lists needed by included rules (must precede includes)
 # ---------------------------------------------------------------------------
-include: "src/snakemake/rules/sumstats.smk"
-include: "src/snakemake/rules/regions.smk"
+HARMONIZED_ALL = [
+    os.path.join(HARMONIZED_DIR, f"{trait}.{ancestry}.tsv.bgz")
+    for trait, ancestry in TRAIT_ANCESTRY_PAIRS
+]
 
-# Fine-mapping (conditional)
+# Fine-mapping config (needed before finemap.smk include)
 FINEMAP_CONFIG = config.get("finemap", {})
 FINEMAP_METHODS = FINEMAP_CONFIG.get("methods", [])
 FINEMAP_DIR = FINEMAP_CONFIG.get(
     "output_dir",
     os.path.join(config["paths"]["results_root"], "fine_mapping"),
 )
+
+if FINEMAP_METHODS:
+    FINEMAP_MANIFEST = os.path.join(FINEMAP_DIR, "finemap_manifest.tsv")
+    UNIQUE_TRAIT_ANC = sorted(set(TRAIT_ANCESTRY_PAIRS))
+else:
+    FINEMAP_MANIFEST = None
+    UNIQUE_TRAIT_ANC = []
+
+# ---------------------------------------------------------------------------
+# Include the SAME production rules (D-04: refactor, not rewrite)
+# Paths are relative to the project root (snakemake invocation directory)
+# ---------------------------------------------------------------------------
+include: "src/snakemake/rules/sumstats.smk"
+include: "src/snakemake/rules/regions.smk"
 
 if FINEMAP_METHODS:
     include: "src/snakemake/rules/finemap.smk"
@@ -101,13 +116,7 @@ else:
 # Toy targets: harmonization + region BED + LD + finemap only
 # No multitrait, MR, PGS in the smoke test
 # ---------------------------------------------------------------------------
-HARMONIZED_ALL = [
-    os.path.join(HARMONIZED_DIR, f"{trait}.{ancestry}.tsv.bgz")
-    for trait, ancestry in TRAIT_ANCESTRY_PAIRS
-]
-
 if FINEMAP_METHODS:
-    UNIQUE_TRAIT_ANC = sorted(set(TRAIT_ANCESTRY_PAIRS))
     FINEMAP_OUTPUTS = [
         os.path.join(FINEMAP_DIR, method, f"{trait}.{ancestry}.{region_safe}.json")
         for method in FINEMAP_METHODS
