@@ -56,13 +56,25 @@ entry "Data access verified 2026-04-09 — critical path dissolves".
 ### 2. deCODE pQTL (for Phase 2)
 
 - **Access URL:** https://www.decode.com/summarydata/
-- **Gating:** Free direct download, no account, no DUA.
-- **Papers:** Ferkingstad et al. 2021 (Nat Genet, doi:10.1038/s41588-021-00978-w) — SomaScan v4, 35,559 Icelanders; and Eiriksdottir/Gudjonsson et al. 2023 (Nature, doi:10.1038/s41586-023-06563-x) — Olink + SomaScan cross-comparison.
+- **Gating:** **Revised 2026-04-10** — not a simple direct download. User clicks "Summary data (list)" for the Ferkingstad 2021 study, which triggers an email from `noreply-decode@decode.com` with an ephemeral link `https://download.decode.is/folder/<UUID>` **valid for only 5 days**. No account, no DUA, but the link mechanism blocks static-URL Snakemake download rules.
+- **Papers:** Ferkingstad et al. 2021 (Nat Genet, doi:10.1038/s41588-021-00978-w) — SomaScan v4, 35,559 Icelanders. (Earlier docs referenced Eiriksdottir/Gudjonsson 2023 — **not present on the portal**; that paper was a methods cross-comparison, not a new release.)
 - **Caveat:** Individual-level Icelander genotypes are **not** released under Icelandic law. We don't need them.
-- **Contact:** No public access email. Corresponding author for both papers is Kari Stefansson (`kstefans@decode.is`), but the data availability statements point to the summarydata portal, not email.
-- **Verification note:** The research agent could not scrape the decode.com/summarydata page directly (client-side rendering). **Recommended: do a manual browser visit to confirm the dataset inventory before committing pipeline paths.**
-- **Status:** `open-access` — pending a one-time browser verification.
-- **HPC connectivity:** Verified 2026-04-10 — `curl -sI https://www.decode.com/summarydata/` returned HTTP 200. Portal page loads (content is client-side rendered; actual file inventory still requires manual browser verification).
+- **Contact:** No public access email. Corresponding author is Kari Stefansson (`kstefans@decode.is`), but the data availability statement points to the summarydata portal.
+- **Dataset inventory (verified 2026-04-10 via browser):**
+  - **24,271 files** — one file per SOMAmer (SomaScan aptamer), ~910 MB each
+  - **Total size: ~24 TB**
+  - **File naming pattern:** `{SOMAMERID}_{VERSION}_{GENE}_{PROTEIN}.txt.gz` — e.g., `10000_28_CRYBB2_CRBB2.txt.gz`, `10001_7_RAF1_c_Raf.txt.gz`
+  - **Index pagination:** 100 files per page, 243 pages total
+  - **Separate files:** ReadMe (2 KB, schema docs), Extra annotation (430 MB), Excluded variants (52 MB)
+  - **Web UI:** https://download.decode.is/folder/<UUID> with searchable file list, checkbox selection, and "Download Files" button
+- **Status:** `open-access` (email-gated ephemeral link) — one-time browser request required per download session.
+- **HPC connectivity:** Verified 2026-04-10 — portal page loads (HTTP 200, client-side rendered). Email-delivered folder URL confirmed functional in browser.
+
+**CRITICAL architecture implication for Phase 2:** The original assumption that deCODE pQTL could be pulled via a static Snakemake download rule is **wrong**. Phase 2 must instead use a two-step flow: (1) targeted protein-filter step (derive candidate gene list from lead SNPs at our ~50 pleiotropic loci + literature-curated trait-associated proteins, realistic target ~100-500 proteins), (2) manual re-request of the deCODE portal link when ready, followed by a subset download of only the SOMAmer files matching the target gene list. Bulk 24 TB download is not feasible (download-window-limited and not needed — we only need proteins mapped to our trait loci). Gene name is embedded in the filename, so `grep <gene>` against the file index suffices for filtering.
+
+**Phase 0 downloads (recommended, before link expires 2026-04-15):**
+- [ ] ReadMe file (~2 KB) — documents column schema for format parsers
+- [ ] 3-5 representative SOMAmer files (~3-5 GB total) — for format validation and parser development
 
 ### 3. GTEx v8 (eQTL + sQTL — for Phase 2)
 
@@ -172,7 +184,8 @@ MR / replication use case.
 
 **Day 1 (Phase 0 Track 0a):**
 - [x] Register a Synapse account and certify as a researcher (`syn51364943` for UKB-PPP) — *Completed 2026-04-10: Certification Quiz passed 15/15; syn51364943 project page fully accessible; S3 bucket `s3://ukbiobank.opendata.sagebase.org/` confirmed reachable*
-- [ ] Download deCODE pQTL sumstats from the summarydata portal **after a manual browser verification** that the dataset inventory matches expectations — *HPC connectivity verified 2026-04-10 (HTTP 200); portal page loads but file inventory requires browser verification (client-side rendering)*
+- [x] Verify deCODE summarydata portal inventory in browser — *Completed 2026-04-10: 24,271 SOMAmer files confirmed (24 TB total); ephemeral download link mechanism confirmed (5-day validity); file naming pattern `{SOMAMERID}_{VERSION}_{GENE}_{PROTEIN}.txt.gz` captured. **Phase 2 architecture impact recorded** — see dataset inventory entry above.*
+- [ ] Phase 2 targeted deCODE download (deferred) — will re-request the portal link when Phase 2 is ready to consume pQTL; filter to ~100-500 trait-relevant proteins before downloading
 - [x] Register on `finngen.fi/en/access_results` (click-wrap form, same-day) — *Completed 2026-04-10: form submitted via elomake (lomake 124935); confirmation email received from finngen-servicedesk@helsinki.fi; **actual current release is R12** (not R13/R14); bucket `finngen-public-data-r12` with `summary_stats/release/` path prefix; ready for Phase 9*
 - [x] Download GTEx v8 eQTL + sQTL flat files — *HPC connectivity verified 2026-04-10: GCS bucket reachable at `bulk-qtl/v8/single-tissue-cis-qtl/` (HTTP 200, 1.56 GB tar confirmed). Correct path prefix is `bulk-qtl/`, not `bulk-gex/`. Ready for Snakemake download rule.*
 - [x] Verify Pan-UKBB manifest + try a tiny download as an S3 connectivity sanity check — *verified 2026-04-10: phenotype_manifest.tsv.bgz returned HTTP 200 from S3*
