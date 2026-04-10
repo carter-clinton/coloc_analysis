@@ -20,6 +20,7 @@ harmonized_sumstats directory.
 
 import argparse
 import csv
+import gzip
 import os
 import subprocess
 import sys
@@ -41,10 +42,9 @@ def subset_sumstats(input_bgz, output_path, regions):
     Uses tabix for indexed region queries (O(log n) per region) rather than
     scanning the entire file.
     """
-    # Get header from the bgzipped file
-    header_cmd = ["bash", "-c", "zcat '{}' | head -1".format(input_bgz)]
-    header_result = subprocess.run(header_cmd, capture_output=True, text=True, check=True)
-    header = header_result.stdout
+    # Get header from the bgzipped file using Python gzip (no shell injection risk)
+    with gzip.open(input_bgz, 'rt') as _f:
+        header = _f.readline()
 
     # Query each toy locus region via tabix
     rows = []
