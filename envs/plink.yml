@@ -1,0 +1,12 @@
+# envs/plink.yml -- Pinned PLINK + bcftools environment (D-24)
+# Seeded from src/legacy/region_analysis/envs/plink_env.yml with version pins added.
+# Uses =version format (not =version=build) for platform portability.
+name: plink
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - plink=1.90b6.21
+  - plink2=2.00a6.1
+  - bcftools=1.21
