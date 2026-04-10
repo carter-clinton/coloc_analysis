@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/ckclinto/**)",
+      "Read(//share/clintonlab/ckclinto/coloc_analysis/**)",
+      "Bash(python3)",
+      "Bash(rm -f /home/ckclinto/.gh_token_temp)",
+      "Bash(mv /share/clintonlab/ckclinto/coloc_analysis/gsd-2 /share/clintonlab/ckclinto/gsd-2)",
+      "Read(//share/clintonlab/ckclinto/**)",
+      "Bash(git -C /share/clintonlab/ckclinto/gsd-2 status)",
+      "Bash(npm --version)",
+      "Bash(module avail:*)",
+      "Bash(conda env:*)"
+    ]
+  }
+}

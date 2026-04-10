@@ -1,0 +1,116 @@
+# ----------------------------------------------------------------------
+# coloc_analysis .gitignore
+#
+# Conventions:
+#   - Code (R/Py/Shell/Snakemake) is committed.
+#   - Configuration (YAML/JSON/TSV manifests) is committed.
+#   - Raw and processed data are NOT committed; they live at /rs1 and
+#     are symlinked under data/ (see data/README.md).
+#   - Results and logs are regeneratable; not committed.
+#   - Conda environments are pinned via envs/*.yml and NOT via conda pkg
+#     caches.
+# ----------------------------------------------------------------------
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+~$*
+*.swp
+*.swo
+*~
+.vscode-server/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- R ---
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# --- Conda / env caches ---
+.conda/
+conda_envs/
+conda_pkgs/
+pip_cache/
+pip_tmp/
+miniconda*/
+
+# --- Snakemake ---
+.snakemake/
+
+# --- Data: never commit, always symlink ---
+data/raw/
+data/processed/
+data/external/
+
+# --- Results / logs: regeneratable ---
+results/
+logs/
+*.log
+!envs/.gitkeep
+!results/.gitkeep
+
+# --- Figures: commit tracked outputs, but skip scratch ---
+figures/scratch/
+figures/tmp/
+
+# --- Large binary / genomics files ---
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.bcf
+*.bcf.csi
+*.bgen
+*.bgen.bgi
+*.bed
+*.bim
+*.fam
+*.plink
+*.ld
+*.ldmatrix
+*.rds
+*.RData
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.parquet
+*.feather
+*.bam
+*.bai
+*.cram
+*.crai
+*.fasta
+*.fa
+*.fa.gz
+*.fasta.gz
+*.fq
+*.fq.gz
+*.fastq
+*.fastq.gz
+*.sam
+*.sam.gz
+
+# --- tmp / scratch ---
+tmp/
+scratch/
+*.tmp
+*.tmp.*
+.cache/
+
+# --- GSD transient state (keep persistent state like PROJECT.md) ---
+.planning/**/tmp/
+.planning/**/*.lock
+
+# --- Claude Code local state ---
+.claude/local/
