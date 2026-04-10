@@ -1,0 +1,116 @@
+# config/pipeline.yaml -- single source of truth for all filesystem paths
+# All paths are relative to the project root unless marked absolute.
+# Seeded from src/legacy/region_analysis/config/config.yaml with D-08, D-09,
+# D-01, D-22 applied. Hardcoded rscript_bin removed per D-25.
+
+traits:
+  - bmi
+  - t2d
+  - hypertension
+  - asthma
+  - stroke
+
+ancestries:
+  - EUR
+  - AFR
+  - EAS    # Added per D-22
+  - HIS    # Added per D-22
+
+genome_build: GRCh37  # Per D-01: primary coordinate system
+
+paths:
+  data_root: "data"
+  raw_sumstats: "data/raw/sumstats"
+  harmonized_sumstats: "data/processed/sumstats_harmonized"
+  regions_curated: "config/regions_curated.csv"
+  regions_tiled: "config/regions_tiled.csv"
+  regions_bed: "data/processed/regions/regions.bed"
+  ld_1kg_root: "data/raw/1kg"
+  ld_reference: "data/processed/ld_reference"
+  results_root: "results"
+  finemap_output: "results/fine_mapping"
+  cache_downloads: "cache/downloads"
+  liftover_chains: "data/external/liftover"
+
+# Per-trait ancestry mapping (which ancestries are available per trait)
+trait_ancestries:
+  bmi: [EUR, AFR, EAS]
+  t2d: [EUR, TRANS, AFR, EAS]
+  hypertension: [EUR, AFR, HIS]
+  asthma: [EUR, AFR]
+  stroke: [EUR, AFR, EAS]
+
+# 1000 Genomes setup for LD (carried from legacy)
+onekg:
+  version: phase3
+  populations:
+    AFR: ["YRI", "LWK", "GWD", "MSL", "ESN"]
+    EUR: ["CEU", "TSI", "GBR", "FIN", "IBS"]
+    EAS: ["CHB", "JPT", "CHS", "CDX", "KHV"]
+  chromosomes:
+    - "1"
+    - "2"
+    - "3"
+    - "4"
+    - "5"
+    - "6"
+    - "7"
+    - "8"
+    - "9"
+    - "10"
+    - "11"
+    - "12"
+    - "13"
+    - "14"
+    - "15"
+    - "16"
+    - "17"
+    - "18"
+    - "19"
+    - "20"
+    - "21"
+    - "22"
+  ftp_base: "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502"
+  vcf_template: "ALL.chr{chrom}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
+  panel_url: "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel"
+
+plink:
+  maf: 0.01
+  geno: 0.01
+
+resources:
+  default_threads: 4
+  default_mem_mb: 8000
+
+use_fixed_sumstats: true
+
+dataset_priority:
+  bmi: yengo2018_bmi
+  t2d: diamante2022_t2d
+  hypertension: evangelou2018_bp
+  asthma: gbmi_asthma
+  stroke: megastroke_metastroke
+
+finemap:
+  output_dir: "results/fine_mapping"
+  methods: [susie]
+  credible_set: 0.95
+  ld_reference_dir: "data/processed/ld_reference"
+
+enable_ld_pipeline: true
+
+multitrait:
+  methods: [mashr, susie]
+  window_kb: 500
+  region_padding_kb: 50
+
+pgs:
+  methods: [prs_csx, ldpred2]
+  target_ancestries: [EUR, AFR, EAS, HIS]
+  ld_reference_dir: "data/processed/ld_reference"
+
+mr:
+  hypotheses:
+    - {exposure: bmi, outcome: t2d, note: "BMI -> T2D causal hypothesis"}
+    - {exposure: bmi, outcome: hypertension, note: "BMI -> hypertension"}
+    - {exposure: hypertension, outcome: stroke, note: "BP -> stroke mediation"}

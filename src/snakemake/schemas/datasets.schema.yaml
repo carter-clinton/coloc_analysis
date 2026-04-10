@@ -1,0 +1,94 @@
+# JSON Schema Draft-07 for config/datasets.yaml validation
+# Used by Snakemake validate() to catch missing required fields in dataset definitions.
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "Datasets Configuration"
+description: "Schema for config/datasets.yaml -- per-source column maps and download URLs for GWAS sumstats harmonization."
+type: object
+required:
+  - datasets
+
+properties:
+  datasets:
+    type: object
+    description: "Map of dataset keys to their configuration"
+    patternProperties:
+      "^[a-zA-Z0-9_]+$":
+        type: object
+        required:
+          - description
+          - base_url
+          - defaults
+          - traits
+        properties:
+          description:
+            type: string
+            description: "Human-readable dataset description"
+          base_url:
+            type: string
+            description: "Base URL for downloading sumstats files"
+          defaults:
+            type: object
+            required:
+              - column_map
+            properties:
+              compression:
+                type: string
+              sep:
+                type: string
+              delim_whitespace:
+                type: boolean
+              column_map:
+                type: object
+                description: "Maps canonical column names to source-specific aliases"
+                required:
+                  - CHR
+                  - POS
+                  - REF
+                  - ALT
+                  - BETA
+                  - SE
+                  - P
+                properties:
+                  CHR:
+                    type: array
+                    items:
+                      type: string
+                  POS:
+                    type: array
+                    items:
+                      type: string
+                  REF:
+                    type: array
+                    items:
+                      type: string
+                  ALT:
+                    type: array
+                    items:
+                      type: string
+                  BETA:
+                    type: array
+                    items:
+                      type: string
+                  SE:
+                    type: array
+                    items:
+                      type: string
+                  P:
+                    type: array
+                    items:
+                      type: string
+                  EAF:
+                    type: array
+                    items:
+                      type: string
+          sample_size:
+            type: integer
+            description: "Approximate total sample size (used when per-file N column is missing)"
+          traits:
+            type: object
+            description: "Per-trait ancestry and file mapping"
+            patternProperties:
+              "^[a-z0-9_]+$":
+                type: object
+
+additionalProperties: false
