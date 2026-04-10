@@ -114,6 +114,9 @@ if FINEMAP_METHODS:
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
 LD_ANCESTRIES = [a for a in ANCESTRIES if a in config.get("onekg", {}).get("populations", {})]
+# Only generate LD targets for regions whose chromosome has a 1000G VCF
+ONEKG_CHROMS = set(config.get("onekg", {}).get("chromosomes", []))
+LD_REGION_INFOS = [(orig, safe) for orig, safe in REGION_INFOS if REGION_METADATA[safe]["chr"] in ONEKG_CHROMS]
 if ENABLE_LD:
     include: "src/snakemake/rules/ld_reference.smk"
     LD_TARGETS = [
@@ -123,7 +126,7 @@ if ENABLE_LD:
             f"{region_safe}.rds",
         )
         for ancestry in LD_ANCESTRIES
-        for _, region_safe in REGION_INFOS
+        for _, region_safe in LD_REGION_INFOS
     ]
 else:
     LD_TARGETS = []
