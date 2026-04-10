@@ -75,6 +75,72 @@ downstream of a pending DUA.
 
 ---
 
+## 2026-04-09 — Data access verified — critical path dissolves
+
+**Decision:** Six of the eight data providers originally treated as DUA
+gates are actually **open-access summary statistics**. Only UK Biobank
+main (individual-level, not needed for sumstats coloc) and All of Us
+Controlled Tier (gated on an NC State institutional DURA) are real
+access gates. **Data access is no longer the longest critical path**
+in this revision.
+
+**What verification found** (full details in `data_access.md`):
+
+| Source | Was assumed | Actually is |
+|---|---|---|
+| UKB-PPP pQTL | Full UKB DUA + PPP-specific application, weeks | Open on Synapse `syn51364943` with a certified-user profile, same-day |
+| deCODE pQTL | Email request, weeks | Open direct download at `decode.com/summarydata`, no account |
+| FinnGen | DUA, weeks | Click-wrap registration form, same-day to next-day |
+| Pan-UKBB | DUA per the UKB umbrella | Open CC-BY-4.0 anonymous S3 download |
+| BBJ | JSPS-routed DUA, weeks | Open NBDC download `hum0197-v3`, no account |
+| MVP | VA approval, 8-16 weeks | **Individual-level is CLOSED to non-VA researchers** — but sumstats are on dbGaP `phs001672` with no DAR, same-day |
+| UK Biobank main | DUA, ~15 weeks, £3-9K+ | Still a real DUA — but **not needed** for sumstats-level coloc, MR, or replication work. Deferred to "not-needed-unless". |
+| All of Us Controlled Tier | DUA, 4-6 weeks | Requires NCSU to have a signed institutional DURA. If in place, ~2 business days for account activation. **This is the one real gate.** |
+
+**Why this matters:**
+
+- Phase 2 (3-way QTL coloc — the highest-leverage methodological change in
+  the revision) is no longer DUA-gated. All three QTL spines (GTEx, UKB-PPP,
+  deCODE) can be downloaded on Day 1.
+- Phase 9 (replication) has no DUA-gated sources in its primary path
+  (FinnGen, GBMI, BBJ, Pan-UKBB, MVP dbGaP are all open).
+- The only surviving gate is All of Us access for Phase 8 PRS work, and
+  that's a T2 phase anyway — it doesn't block the T1 spine at all.
+
+**The single Day-1 action that matters:** Contact NC State's Signing
+Official to confirm whether an All of Us institutional DURA is in place
+for NCSU. If yes, AoU access is ~2 days of per-researcher training +
+account activation. If no, starting a DURA at NC State is now the
+single slowest step in the revised access tracker.
+
+**Alternatives considered:** (a) Treat everything as DUAs anyway and
+submit them all on Day 1 regardless — wasteful; (b) Only verify the ones
+that matter for the next phase — leaves landmines in later phases. Doing
+the verification up front was the right call.
+
+**How to apply:**
+
+1. REQ-1 has been amended to describe the verified Day-1 checklist instead
+   of a blanket "submit all DUAs in parallel".
+2. `.planning/data_access.md` lists verified URLs, access models, and a
+   revised gates table.
+3. Phase 0 planning should include the Day-1 checklist as slices instead
+   of "track DUA applications".
+4. Phase 8 planning (T2, gated on CP#1) must start with "confirm AoU DURA
+   status with NC State's Signing Official" as slice 0 — everything else
+   in Phase 8 depends on it.
+5. UK Biobank main DUA stays deferred. Revisit only at Phase 8 planning
+   if the PRS work decides Pan-UKBB sumstats are insufficient.
+
+**Limit of the verification:** A verification pass via web research is not
+the same as actually completing the registrations, so the Day-1 checklist
+is still real work — it's just "download and register" work, not
+"apply-and-wait" work. Also, the research agent could not scrape the
+deCODE summarydata portal (client-side rendering), so that one still needs
+a manual browser visit before pipeline paths are hardcoded.
+
+---
+
 ## 2026-04-09 — Legacy code reuse: refactor in place, extend the Snakemake workflow
 
 **Decision:** Treat the recovered `src/legacy/` tree as the seed for the
