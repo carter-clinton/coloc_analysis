@@ -17,9 +17,10 @@ configfile: "config/pipeline.yaml"
 from snakemake.utils import validate
 validate(config, "src/snakemake/schemas/pipeline.schema.yaml")
 
-# Also load datasets config
+# Also load datasets config (with schema validation)
 with open("config/datasets.yaml") as _dsfh:
     DATASETS_CONFIG = yaml.safe_load(_dsfh)
+validate(DATASETS_CONFIG, "src/snakemake/schemas/datasets.schema.yaml")
 
 # ---------------------------------------------------------------------------
 # Global variables derived from config
