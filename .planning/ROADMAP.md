@@ -42,7 +42,7 @@ Cross-ancestry colocalization revision from descriptive catalog to mechanistical
 **Plans**: 4 plans
 
 Plans:
-- [ ] 00-01-PLAN.md — Config foundation: pipeline.yaml, datasets.yaml, cluster_lsf.yaml, schemas, conda envs, R config loader, data manifest
+- [x] 00-01-PLAN.md — Config foundation: pipeline.yaml, datasets.yaml, cluster_lsf.yaml, schemas, conda envs, R config loader, data manifest
 - [ ] 00-02-PLAN.md — Data access checklist: verify connectivity, portal registrations, OSF pre-registration
 - [ ] 00-03-PLAN.md — Snakemake skeleton: refactor 8 legacy rules, top-level Snakefile, path parameterization, data fixes
 - [ ] 00-04-PLAN.md — Toy 3-locus CI smoke test: test scaffolding, config override, subsetting script
