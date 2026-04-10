@@ -14,5 +14,7 @@ dependencies:
   - r-yaml=2.3.10
   - r-susier=0.14.2
   - r-coloc=5.2.3
-  - r-hyprcoloc=1.0
+  - r-remotes  # needed to install hyprcoloc from GitHub
   - htslib=1.21
+  # NOTE: hyprcoloc is not available via conda. After env creation, install via:
+  #   conda activate r_coloc && Rscript -e 'remotes::install_github("jrs95/hyprcoloc")'
