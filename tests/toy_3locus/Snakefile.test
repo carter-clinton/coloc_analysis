@@ -1,0 +1,129 @@
+"""Smoke test Snakefile for the toy 3-locus CI test (D-15, REQ-9).
+
+Uses the SAME production rules from src/snakemake/rules/ but with
+config_test.yaml overriding paths to tests/toy_3locus/ data.
+
+Invocation (from project root):
+    snakemake --snakefile tests/toy_3locus/Snakefile.test --cores 2 --use-conda
+    snakemake -n --snakefile tests/toy_3locus/Snakefile.test  # dry-run
+
+Only targets: harmonization, region BED, LD reference, fine-mapping.
+No multitrait, MR, or PGS rules (out of scope for smoke test).
+"""
+
+import os
+import csv
+import yaml
+
+# ---------------------------------------------------------------------------
+# Config loading and validation
+# ---------------------------------------------------------------------------
+configfile: "tests/toy_3locus/config_test.yaml"
+
+from snakemake.utils import validate
+validate(config, "src/snakemake/schemas/pipeline.schema.yaml")
+
+# ---------------------------------------------------------------------------
+# Global variables derived from config (mirrors production Snakefile)
+# ---------------------------------------------------------------------------
+TRAITS = config["traits"]
+ANCESTRIES = config["ancestries"]
+TRAIT_ANCESTRIES = config.get("trait_ancestries", {})
+
+HARMONIZED_DIR = config["paths"]["harmonized_sumstats"]
+
+# Build trait-ancestry pairs from trait_ancestries mapping
+TRAIT_ANCESTRY_PAIRS = []
+for _trait in TRAITS:
+    _ancestries = TRAIT_ANCESTRIES.get(_trait, ANCESTRIES)
+    for _anc in _ancestries:
+        TRAIT_ANCESTRY_PAIRS.append((_trait, _anc))
+
+# ---------------------------------------------------------------------------
+# Load toy regions from config path
+# ---------------------------------------------------------------------------
+REGION_INFOS = []
+REGION_SAFE_TO_ID = {}
+REGION_METADATA = {}
+with open(config["paths"]["regions_curated"], newline="") as fh:
+    reader = csv.DictReader(fh)
+    for row in reader:
+        orig = row["region_id"]
+        safe = orig.replace(".", "_").replace("/", "_")
+        suffix = 1
+        while safe in REGION_SAFE_TO_ID:
+            suffix += 1
+            safe = f"{safe}_{suffix}"
+        start = int(float(row["start"]))
+        end = int(float(row["end"]))
+        chrom = row["chr"].replace("chr", "").replace("CHR", "")
+        REGION_INFOS.append((orig, safe))
+        REGION_SAFE_TO_ID[safe] = orig
+        REGION_METADATA[safe] = {"chr": chrom, "start": start, "end": end}
+
+REGION_SAFE_IDS = [safe for _, safe in REGION_INFOS]
+
+# ---------------------------------------------------------------------------
+# Include the SAME production rules (D-04: refactor, not rewrite)
+# Paths are relative to the project root (snakemake invocation directory)
+# ---------------------------------------------------------------------------
+include: "src/snakemake/rules/sumstats.smk"
+include: "src/snakemake/rules/regions.smk"
+
+# Fine-mapping (conditional)
+FINEMAP_CONFIG = config.get("finemap", {})
+FINEMAP_METHODS = FINEMAP_CONFIG.get("methods", [])
+FINEMAP_DIR = FINEMAP_CONFIG.get(
+    "output_dir",
+    os.path.join(config["paths"]["results_root"], "fine_mapping"),
+)
+
+if FINEMAP_METHODS:
+    include: "src/snakemake/rules/finemap.smk"
+
+# LD reference (conditional)
+ENABLE_LD = config.get("enable_ld_pipeline", False)
+if ENABLE_LD:
+    include: "src/snakemake/rules/ld_reference.smk"
+    LD_TARGETS = [
+        os.path.join(
+            config["paths"]["ld_reference"],
+            ancestry,
+            f"{region_safe}.rds",
+        )
+        for ancestry in ANCESTRIES
+        for _, region_safe in REGION_INFOS
+    ]
+else:
+    LD_TARGETS = []
+
+# ---------------------------------------------------------------------------
+# Toy targets: harmonization + region BED + LD + finemap only
+# No multitrait, MR, PGS in the smoke test
+# ---------------------------------------------------------------------------
+HARMONIZED_ALL = [
+    os.path.join(HARMONIZED_DIR, f"{trait}.{ancestry}.tsv.bgz")
+    for trait, ancestry in TRAIT_ANCESTRY_PAIRS
+]
+
+if FINEMAP_METHODS:
+    UNIQUE_TRAIT_ANC = sorted(set(TRAIT_ANCESTRY_PAIRS))
+    FINEMAP_OUTPUTS = [
+        os.path.join(FINEMAP_DIR, method, f"{trait}.{ancestry}.{region_safe}.json")
+        for method in FINEMAP_METHODS
+        for trait, ancestry in UNIQUE_TRAIT_ANC
+        for _, region_safe in REGION_INFOS
+    ]
+else:
+    FINEMAP_OUTPUTS = []
+
+ALL_TARGETS = (
+    HARMONIZED_ALL
+    + [config["paths"]["regions_bed"]]
+    + LD_TARGETS
+    + FINEMAP_OUTPUTS
+)
+
+rule all:
+    input:
+        ALL_TARGETS
