@@ -1,0 +1,167 @@
+# JSON Schema Draft-07 for config/pipeline.yaml validation
+# Used by Snakemake validate() to catch missing required fields before rules fire.
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "Pipeline Configuration"
+description: "Schema for config/pipeline.yaml -- the single source of truth for all filesystem paths and pipeline parameters."
+type: object
+required:
+  - traits
+  - ancestries
+  - genome_build
+  - paths
+  - trait_ancestries
+  - onekg
+  - plink
+  - resources
+  - finemap
+
+properties:
+  traits:
+    type: array
+    description: "List of traits to analyze (e.g., bmi, t2d, hypertension)"
+    items:
+      type: string
+    minItems: 1
+
+  ancestries:
+    type: array
+    description: "List of ancestry groups in the analysis"
+    items:
+      type: string
+      enum: ["EUR", "AFR", "EAS", "HIS", "SAS", "AMR", "TRANS"]
+    minItems: 1
+
+  genome_build:
+    type: string
+    description: "Primary genome build for coordinates"
+    enum: ["GRCh37", "GRCh38"]
+
+  paths:
+    type: object
+    description: "All filesystem paths (relative to project root)"
+    required:
+      - raw_sumstats
+      - harmonized_sumstats
+      - regions_curated
+      - ld_1kg_root
+      - ld_reference
+      - results_root
+    properties:
+      data_root:
+        type: string
+      raw_sumstats:
+        type: string
+      harmonized_sumstats:
+        type: string
+      regions_curated:
+        type: string
+      regions_tiled:
+        type: string
+      regions_bed:
+        type: string
+      ld_1kg_root:
+        type: string
+      ld_reference:
+        type: string
+      results_root:
+        type: string
+      finemap_output:
+        type: string
+      cache_downloads:
+        type: string
+      liftover_chains:
+        type: string
+
+  trait_ancestries:
+    type: object
+    description: "Per-trait ancestry availability mapping"
+    patternProperties:
+      "^[a-z0-9_]+$":
+        type: array
+        items:
+          type: string
+
+  onekg:
+    type: object
+    description: "1000 Genomes reference panel configuration"
+    required:
+      - version
+      - populations
+      - chromosomes
+    properties:
+      version:
+        type: string
+      populations:
+        type: object
+      chromosomes:
+        type: array
+        items:
+          type: string
+      ftp_base:
+        type: string
+      vcf_template:
+        type: string
+      panel_url:
+        type: string
+
+  plink:
+    type: object
+    properties:
+      maf:
+        type: number
+        minimum: 0
+        maximum: 0.5
+      geno:
+        type: number
+        minimum: 0
+        maximum: 1
+
+  resources:
+    type: object
+    properties:
+      default_threads:
+        type: integer
+        minimum: 1
+      default_mem_mb:
+        type: integer
+        minimum: 1000
+
+  use_fixed_sumstats:
+    type: boolean
+
+  dataset_priority:
+    type: object
+    description: "Preferred dataset key per trait"
+
+  finemap:
+    type: object
+    required:
+      - output_dir
+      - methods
+    properties:
+      output_dir:
+        type: string
+      methods:
+        type: array
+        items:
+          type: string
+      credible_set:
+        type: number
+        minimum: 0
+        maximum: 1
+      ld_reference_dir:
+        type: string
+
+  enable_ld_pipeline:
+    type: boolean
+
+  multitrait:
+    type: object
+
+  pgs:
+    type: object
+
+  mr:
+    type: object
+
+additionalProperties: false
