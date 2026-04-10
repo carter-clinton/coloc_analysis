@@ -1,0 +1,63 @@
+# Toy 3-locus smoke test config
+# Overrides config/pipeline.yaml for tests/toy_3locus/ data
+# All paths point to tests/toy_3locus/ subdirectories (no production paths)
+
+traits:
+  - bmi
+  - t2d
+  - hypertension
+
+ancestries:
+  - EUR
+
+genome_build: GRCh37
+
+trait_ancestries:
+  bmi: [EUR]
+  t2d: [EUR]
+  hypertension: [EUR]
+
+paths:
+  data_root: "tests/toy_3locus/data"
+  raw_sumstats: "tests/toy_3locus/data/raw"
+  harmonized_sumstats: "tests/toy_3locus/data/harmonized"
+  regions_curated: "tests/toy_3locus/data/regions_toy.csv"
+  regions_tiled: "tests/toy_3locus/data/regions_toy.csv"
+  regions_bed: "tests/toy_3locus/data/regions_toy.bed"
+  ld_1kg_root: "tests/toy_3locus/data/1kg"
+  ld_reference: "tests/toy_3locus/data/ld_ref"
+  results_root: "tests/toy_3locus/results"
+  finemap_output: "tests/toy_3locus/results/fine_mapping"
+  cache_downloads: "tests/toy_3locus/cache"
+  liftover_chains: "data/external/liftover"
+
+onekg:
+  version: phase3
+  populations:
+    EUR: ["CEU", "TSI", "GBR", "FIN", "IBS"]
+  chromosomes: ["10", "12", "16"]  # Only chromosomes with toy loci
+  ftp_base: "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502"
+  vcf_template: "ALL.chr{chrom}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
+  panel_url: "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel"
+
+plink:
+  maf: 0.01
+  geno: 0.01
+
+resources:
+  default_threads: 2
+  default_mem_mb: 4000
+
+use_fixed_sumstats: false
+enable_ld_pipeline: true
+
+finemap:
+  output_dir: "tests/toy_3locus/results/fine_mapping"
+  methods: [susie]
+  credible_set: 0.95
+  ld_reference_dir: "tests/toy_3locus/data/ld_ref"
+
+dataset_priority:
+  bmi: yengo2018_bmi
+  t2d: diamante2022_t2d
+  hypertension: evangelou2018_bp

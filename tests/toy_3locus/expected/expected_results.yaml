@@ -1,0 +1,36 @@
+# Expected results for regression testing
+# PP.H4 values from legacy coloc.abf results
+# Pass criteria: actual PP.H4 within +/- 0.05 of expected (D-16)
+#
+# NOTE: These are approximate placeholders based on published literature and
+# legacy analysis patterns. After the first successful run with real data,
+# update these values from the actual coloc.abf output to establish the
+# regression baseline.
+
+loci:
+  FTO_16q12_2:
+    trait: bmi
+    ancestry: EUR
+    expected_pp_h4: 0.95  # Approximate from legacy; update after first run
+    tolerance: 0.05
+    notes: "Strong BMI signal; FTO is canonical obesity locus"
+
+  TCF7L2_10q25_2:
+    trait: t2d
+    ancestry: EUR
+    expected_pp_h4: 0.92  # Approximate from legacy; update after first run
+    tolerance: 0.05
+    notes: "Strong T2D signal; TCF7L2 is strongest T2D locus"
+
+  SH2B3_12q24_12:
+    trait: hypertension
+    ancestry: EUR
+    expected_pp_h4: 0.88  # Approximate from legacy; update after first run
+    tolerance: 0.05
+    notes: "Pleiotropic HTN/stroke locus; shared signal expected"
+
+pass_criteria:
+  all_loci_complete: true
+  pp_h4_within_tolerance: true
+  all_intermediates_exist: true
+  max_runtime_minutes: 15
