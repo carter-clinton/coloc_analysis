@@ -21,7 +21,8 @@ import yaml
 configfile: "tests/toy_3locus/config_test.yaml"
 
 from snakemake.utils import validate
-validate(config, "src/snakemake/schemas/pipeline.schema.yaml")
+# Schema path is resolved relative to this Snakefile (tests/toy_3locus/), so use ../.. to reach project root
+validate(config, "../../src/snakemake/schemas/pipeline.schema.yaml")
 
 # ---------------------------------------------------------------------------
 # Global variables derived from config (mirrors production Snakefile)
@@ -82,19 +83,32 @@ FINEMAP_DIR = FINEMAP_CONFIG.get(
 if FINEMAP_METHODS:
     FINEMAP_MANIFEST = os.path.join(FINEMAP_DIR, "finemap_manifest.tsv")
     UNIQUE_TRAIT_ANC = sorted(set(TRAIT_ANCESTRY_PAIRS))
+    # These globals must be defined BEFORE the finemap.smk include because
+    # finemap.smk references them at parse time in rule input/output bindings.
+    # Must mirror the production Snakefile's variable set exactly.
+    FINEMAP_OUTPUTS = [
+        os.path.join(FINEMAP_DIR, method, f"{trait}.{ancestry}.{region_safe}.json")
+        for method in FINEMAP_METHODS
+        for trait, ancestry in UNIQUE_TRAIT_ANC
+        for _, region_safe in REGION_INFOS
+    ]
+    FINEMAP_SUMMARY = os.path.join(FINEMAP_DIR, "finemap_summary.tsv")
 else:
     FINEMAP_MANIFEST = None
     UNIQUE_TRAIT_ANC = []
+    FINEMAP_OUTPUTS = []
+    FINEMAP_SUMMARY = None
 
 # ---------------------------------------------------------------------------
 # Include the SAME production rules (D-04: refactor, not rewrite)
-# Paths are relative to the project root (snakemake invocation directory)
+# Paths are resolved relative to this Snakefile (tests/toy_3locus/), so use
+# ../.. to reach project root where src/snakemake/rules/ lives.
 # ---------------------------------------------------------------------------
-include: "src/snakemake/rules/sumstats.smk"
-include: "src/snakemake/rules/regions.smk"
+include: "../../src/snakemake/rules/sumstats.smk"
+include: "../../src/snakemake/rules/regions.smk"
 
 if FINEMAP_METHODS:
-    include: "src/snakemake/rules/finemap.smk"
+    include: "../../src/snakemake/rules/finemap.smk"
 
 # LD reference (conditional)
 ENABLE_LD = config.get("enable_ld_pipeline", False)
@@ -104,7 +118,7 @@ LD_ANCESTRIES = [a for a in ANCESTRIES if a in config.get("onekg", {}).get("popu
 ONEKG_CHROMS = set(config.get("onekg", {}).get("chromosomes", []))
 LD_REGION_INFOS = [(orig, safe) for orig, safe in REGION_INFOS if REGION_METADATA[safe]["chr"] in ONEKG_CHROMS]
 if ENABLE_LD:
-    include: "src/snakemake/rules/ld_reference.smk"
+    include: "../../src/snakemake/rules/ld_reference.smk"
     LD_TARGETS = [
         os.path.join(
             config["paths"]["ld_reference"],
@@ -120,16 +134,9 @@ else:
 # ---------------------------------------------------------------------------
 # Toy targets: harmonization + region BED + LD + finemap only
 # No multitrait, MR, PGS in the smoke test
+# FINEMAP_OUTPUTS is defined earlier (above the finemap.smk include) — do not
+# redefine it here.
 # ---------------------------------------------------------------------------
-if FINEMAP_METHODS:
-    FINEMAP_OUTPUTS = [
-        os.path.join(FINEMAP_DIR, method, f"{trait}.{ancestry}.{region_safe}.json")
-        for method in FINEMAP_METHODS
-        for trait, ancestry in UNIQUE_TRAIT_ANC
-        for _, region_safe in REGION_INFOS
-    ]
-else:
-    FINEMAP_OUTPUTS = []
 
 ALL_TARGETS = (
     HARMONIZED_ALL
