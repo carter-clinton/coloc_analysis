@@ -18,7 +18,7 @@ Mechanistic resolution of pleiotropy at cardiometabolic loci: a cross-ancestry f
 
 ## 2. Authors
 
-Carter K. Clinton, Principal Investigator, ASHES Lab, Department of Biological Sciences, North Carolina State University, Raleigh, NC, USA. ORCID: *[insert ORCID iD]*.
+Carter K. Clinton, Principal Investigator, ASHES Lab, Department of Biological Sciences, North Carolina State University, Raleigh, NC, USA. ORCID: 0000-0003-2669-8200.
 
 Sole investigator at the time of pre-registration. Any collaborators added prior to manuscript submission will be disclosed via an OSF pre-registration update.
 

@@ -74,7 +74,7 @@ entry "Data access verified 2026-04-09 — critical path dissolves".
 
 **Phase 0 downloads (completed 2026-04-10):**
 - [x] ReadMe file — saved to `/rs1/researchers/c/ckclinto/coloc_analysis/data/raw/decode_pqtl/README.txt` (symlinked from `data/raw/decode_pqtl/`)
-- [x] 3 test SOMAmer files — `10000_28_CRYBB2_CRBB2.txt.gz` (953 MB), `10001_7_RAF1_c_Raf.txt.gz` (952 MB) — both gzip-intact. `10003_15_ZNF41_ZNF41.txt.gz` (13 MB) transferred but corrupt (gzip unexpected EOF) — not re-downloaded, 2 intact files sufficient for schema validation.
+- [x] 3 test SOMAmer files — all gzip-intact after re-download of ZNF41: `10000_28_CRYBB2_CRBB2.txt.gz` (910 MB), `10001_7_RAF1_c_Raf.txt.gz` (909 MB), `10003_15_ZNF41_ZNF41.txt.gz` (909 MB). `gzip -t` passes for all three (verified 2026-04-10).
 
 **⚠ Schema documentation bug (deCODE README):** The deCODE README lists column 9 as `min_log10_pval`, but the actual file header uses `minus_log10_pval`. Phase 2 `config/datasets.yaml` `column_map` for deCODE **must use the real column name** (`minus_log10_pval`). Verified 2026-04-10 via `zcat 10000_28_CRYBB2_CRBB2.txt.gz | head -1`. Actual 12-column schema: `Chrom  Pos  Name  rsids  effectAllele  otherAllele  Beta  Pval  minus_log10_pval  SE  N  ImpMAF`.
 
