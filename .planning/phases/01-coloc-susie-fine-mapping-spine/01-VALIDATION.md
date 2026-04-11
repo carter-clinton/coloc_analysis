@@ -2,7 +2,7 @@
 phase: 1
 slug: coloc-susie-fine-mapping-spine
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-04-11
 ---

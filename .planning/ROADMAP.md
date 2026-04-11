@@ -74,7 +74,15 @@ Track 0b detail (infrastructure, blocks Phase 1):
   3. min_abs_corr sensitivity sweep (3+ values) reported for complex regions as supplementary table
   4. coloc.susie replaces coloc.abf in the pipeline (no coloc.abf calls remain)
   5. Per-locus fine-mapping QC report generated
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Wave 1: policy YAML + schema + run_susie_rss.R in-place mod (fit persistence + retry ladder + policy loader + D1/D2/D3 diagnostics + sweep) + 4 G3_complex rows + cache-clear + A6 dispatch test with runsusie fallback + finemap.smk multi-output
+- [ ] 01-02-PLAN.md — Wave 2: UKBB-LD tiled EUR panel (Weissbrod 2020) via boto3 + per-region NPZ→.rds + HLA block-diagonal flag (parallel to 01-03)
+- [ ] 01-03-PLAN.md — Wave 2: HGDP+1kG AFR LD panel (gnomAD v3.1.2) via anonymous HTTPS + bcftools + plink2 (parallel to 01-02, pilot-scope fallback)
+- [ ] 01-04-PLAN.md — Wave 3: coloc.smk + run_coloc_susie.R + rename run_coloc.R → run_coloc_abf_legacy.R + rewire multitrait.smk
+- [ ] 01-05-PLAN.md — Wave 4: Quarto QC dashboard D1+D2+D3+D4+D6 with HLA red-flag styling
+- [ ] 01-06-PLAN.md — Wave 5: filter_finemap_summary.py update + first REAL CI smoke + methods_fragment.md + OSF amendment (DOI 10.17605/OSF.IO/PVB5J)
 
 Seeds: src/legacy/region_analysis/scripts/run_susie_rss.R, src/legacy/genome_wide/scripts/run_coloc_genomewide.R
 
