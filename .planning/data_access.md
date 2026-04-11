@@ -72,9 +72,13 @@ entry "Data access verified 2026-04-09 — critical path dissolves".
 
 **CRITICAL architecture implication for Phase 2:** The original assumption that deCODE pQTL could be pulled via a static Snakemake download rule is **wrong**. Phase 2 must instead use a two-step flow: (1) targeted protein-filter step (derive candidate gene list from lead SNPs at our ~50 pleiotropic loci + literature-curated trait-associated proteins, realistic target ~100-500 proteins), (2) manual re-request of the deCODE portal link when ready, followed by a subset download of only the SOMAmer files matching the target gene list. Bulk 24 TB download is not feasible (download-window-limited and not needed — we only need proteins mapped to our trait loci). Gene name is embedded in the filename, so `grep <gene>` against the file index suffices for filtering.
 
-**Phase 0 downloads (recommended, before link expires 2026-04-15):**
-- [ ] ReadMe file (~2 KB) — documents column schema for format parsers
-- [ ] 3-5 representative SOMAmer files (~3-5 GB total) — for format validation and parser development
+**Phase 0 downloads (completed 2026-04-10):**
+- [x] ReadMe file — saved to `/rs1/researchers/c/ckclinto/coloc_analysis/data/raw/decode_pqtl/README.txt` (symlinked from `data/raw/decode_pqtl/`)
+- [x] 3 test SOMAmer files — `10000_28_CRYBB2_CRBB2.txt.gz` (953 MB), `10001_7_RAF1_c_Raf.txt.gz` (952 MB) — both gzip-intact. `10003_15_ZNF41_ZNF41.txt.gz` (13 MB) transferred but corrupt (gzip unexpected EOF) — not re-downloaded, 2 intact files sufficient for schema validation.
+
+**⚠ Schema documentation bug (deCODE README):** The deCODE README lists column 9 as `min_log10_pval`, but the actual file header uses `minus_log10_pval`. Phase 2 `config/datasets.yaml` `column_map` for deCODE **must use the real column name** (`minus_log10_pval`). Verified 2026-04-10 via `zcat 10000_28_CRYBB2_CRBB2.txt.gz | head -1`. Actual 12-column schema: `Chrom  Pos  Name  rsids  effectAllele  otherAllele  Beta  Pval  minus_log10_pval  SE  N  ImpMAF`.
+
+**File count anomaly to investigate in Phase 2:** README says 4,907 aptamers, but the download portal listed 24,271 files. ~5× discrepancy — possibly multiple SeqId versions per aptamer or per-chromosome splits. Worth confirming before building the protein-filter step.
 
 ### 3. GTEx v8 (eQTL + sQTL — for Phase 2)
 
