@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-closeout
-stopped_at: "Phase 0 fully closed — code review fixed, all human verifications complete, OSF submitted (DOI 10.17605/OSF.IO/PVB5J), smoke test dry-run verified, security audit SECURED 10/10"
-last_updated: "2026-04-10T23:30:00.000Z"
-last_activity: 2026-04-10
+status: phase-discussed
+stopped_at: "Phase 1 context captured — 5 gray areas resolved, 01-CONTEXT.md written, ready for /gsd-plan-phase 1"
+last_updated: "2026-04-11T00:00:00.000Z"
+last_activity: 2026-04-11
 progress:
   total_phases: 12
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 00 — data-access-infrastructure
+**Current focus:** Phase 01 — coloc.susie fine-mapping spine
 
 ## Current Position
 
-Phase: 00 (data-access-infrastructure) — EXECUTING
-Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-04-10
+Phase: 01 (coloc-susie-fine-mapping-spine) — CONTEXT CAPTURED
+Plan: 0 of TBD
+Status: Ready for /gsd-plan-phase 1
+Last activity: 2026-04-11
 
 Progress: ░░░░░░░░░░ 0%
 
@@ -84,8 +84,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-10T23:30:00.000Z
-Stopped at: Phase 0 fully closed — code review fixed (8 findings), all 5 human verifications complete, OSF pre-registration submitted (DOI 10.17605/OSF.IO/PVB5J, public), smoke test scaffolding dry-run verified (5 bugs caught + fixed), security audit SECURED 10/10 threats closed. **Ready to plan Phase 1 (coloc.susie fine-mapping spine).**
+Last session: 2026-04-11T00:00:00.000Z
+Stopped at: Phase 1 discuss complete — 5 gray areas resolved (G1-G5), 01-CONTEXT.md captured at .planning/phases/01-coloc-susie-fine-mapping-spine/01-CONTEXT.md. Key decisions: (G1) persist SuSiE fit .rds + new coloc.smk rule; (G2) L=10 + sweep {0.1,0.5,0.9} + convergence retry ladder; (G3) hybrid complex-region definition with 6 curated loci; (G4) Option D hybrid LD (Pan-UKBB EUR + HGDP+1kG AFR + 1000G rest); (G5) QC dashboard with D1+D2+D3+D4+D6. **Ready for /gsd-plan-phase 1.**
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
