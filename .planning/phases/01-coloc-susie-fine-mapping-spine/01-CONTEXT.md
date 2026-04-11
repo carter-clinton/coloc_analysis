@@ -52,52 +52,50 @@ susie:
 
 complex_regions:
   pre_specified:
-    - region_id: HLA
+    # Narrowed from 6 to 4 regions per B-02 resolution (RESEARCH.md):
+    # LPA/KIV-2 and chr8 inversion deferred to Phase 2 (no trait data in current set).
+    - region_id: HLA_6p21
       chr: 6
       start: 25000000
       end: 35000000
       rationale: MHC; extreme long-range LD
-    - region_id: APOE
+      trait_list: [asthma]
+    - region_id: APOE_19q13
       chr: 19
       start: 44000000
       end: 46000000
       rationale: APOE/TOMM40/APOC1 complex signal
-    - region_id: LPA_KIV2
-      chr: 6
-      start: 160000000
-      end: 162000000
-      rationale: KIV-2 copy number variation
-    - region_id: 9p21
+      trait_list: [t2d, hypertension]
+    - region_id: 9p21_CDKN2A
       chr: 9
       start: 21000000
       end: 23000000
       rationale: CDKN2A/CDKN2B/ANRIL dense signal
+      trait_list: [t2d, stroke]
     - region_id: SLC2A9_urate
       chr: 4
       start: 9000000
       end: 11000000
-      rationale: Large urate effect, multi-signal
-    - region_id: chr8_inversion
-      chr: 8
-      start: 8000000
-      end: 12000000
-      rationale: Common inversion polymorphism
+      rationale: Large urate effect (indirect BP via urate)
+      trait_list: [hypertension]
   data_flagged:
     triggers:
       - l_saturated
       - n_cs_ge: 3   # at default min_abs_corr=0.5
 ```
 
-### G3 — Complex-region definition: **Hybrid (curated + data-flagged)**
+### G3 — Complex-region definition: **Hybrid (curated + data-flagged)** [UPDATED post-B-02]
 
-- Pre-specified list: HLA, APOE, LPA/KIV-2, 9p21, SLC2A9, chr8 inversion (6 regions — accepted as-is).
+- **Pre-specified list (4 regions, narrowed from original 6):** HLA_6p21, APOE_19q13, 9p21_CDKN2A, SLC2A9_urate. Each intersects the current trait set (bmi/t2d/hypertension/stroke/asthma).
+- **Deferred to Phase 2:** LPA/KIV-2 and chr8 inversion — no trait data in current set (lipids/CAD/allergic diseases not yet ingested). Documented in `01-06-PLAN.md` methods fragment and OSF amendment (DOI 10.17605/OSF.IO/PVB5J).
 - Data-flagged: any region with `l_saturated` OR `n_CS ≥ 3` at default `min_abs_corr=0.5`.
-- The REQ-2 supplementary sensitivity table has two row-groups: "known complex" and "data-flagged complex", each reporting `n_CS` and `total_PIP_sum` at `min_abs_corr ∈ {0.1, 0.5, 0.9}`.
+- The REQ-2 supplementary sensitivity table has two row-groups: "known complex" (4 pre-specified) and "data-flagged complex", each reporting `n_CS` and `total_PIP_sum` at `min_abs_corr ∈ {0.1, 0.5, 0.9}`.
+- **Amendment provenance:** B-02 resolution in `01-RESEARCH.md §Blockers`, user decision 2026-04-11.
 
-### G4 — LD reference source: **Option D hybrid (Pan-UKBB EUR + HGDP+1kG AFR + 1000G EAS/SAS/AMR)**
+### G4 — LD reference source: **Option D hybrid** [UPDATED post-B-01 → G6]
 
-- **EUR:** Pan-UKBB public LD matrices (aligns with Pan-UKBB sumstats provider's own finemapping). Requires new rule `download_panukbb_ld` + conversion to per-region `.rds` format matching legacy loader.
-- **AFR:** gnomAD HGDP+1000G merged panel (v3.1.2, AFR n ≈ 730 after merge vs 661 in 1000G alone). Requires new rule `build_hgdp_1kg_ld` + per-ancestry extraction. **Scope flag:** this is Phase-0-level plumbing added to Phase 1 — planner must account for extra compute/download time.
+- **EUR:** UKBB-LD tiled dataset (Weissbrod 2020, AWS Open Data Registry, 2,763 × 3Mb NPZ tiles, ~170 GB total). Replaces original "Pan-UKBB raw BlockMatrix" (14.1 TB, Hail-dependent) — see G6 below. New rule `download_ukbb_ld_tiles` + per-region NPZ→`.rds` conversion. HLA_6p21 spans 3-4 tiles; handled via block-diagonal concatenation with `ld_source="ukbb_ld_tiled_block_diagonal"` flag surfaced in QC dashboard.
+- **AFR:** gnomAD HGDP+1000G merged panel (v3.1.2, AFR n ≈ 730 after merge vs 661 in 1000G alone). Requires new rule `build_hgdp_1kg_ld` + per-ancestry extraction via anonymous HTTPS + bcftools + plink2. **Scope flag:** this is Phase-0-level plumbing added to Phase 1 — planner allocated 01-03-PLAN.md accordingly. Includes Scope A (full 22-chromosome)/B (pilot: 4 G3 + 8 existing regions) fallback decision.
 - **EAS, SAS, AMR:** 1000G Phase 3 (already cached from Phase 0 via `ld_reference.smk`). AMR has the weakest sample (n≈347) — documented caveat in methods.
 - Legacy LD loader in [run_susie_rss.R:22](src/legacy/region_analysis/scripts/run_susie_rss.R#L22) already handles per-ancestry subdirectories; wiring Pan-UKBB and HGDP+1kG is a matter of producing `.rds` files in the same `{LD_REF_DIR}/{ancestry}/{region}.rds` pattern.
 - Existing fallback chain (matched → regularized → identity) stays as-is.
