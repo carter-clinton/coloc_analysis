@@ -1,12 +1,15 @@
-# OSF Pre-Registration Draft — coloc_analysis
+# OSF Pre-Registration — coloc_analysis
 
-**Instructions for Carter:** This draft is written to fit the standard **OSF Preregistration** template. On osf.io, select **"OSF Preregistration"** and paste each section below into the matching form field. Section headings map 1:1 to OSF form fields.
+**Status:** SUBMITTED AND PUBLIC — 2026-04-10.
 
-After submission, record the DOI in `.planning/data_access.md`, e.g.:
+**DOI:** `10.17605/OSF.IO/PVB5J`
+**Registration URL:** https://osf.io/pvb5j/
+**Linked OSF project:** https://osf.io/az52u
+**Template:** OSF Preregistration
+**License:** CC0 1.0 Universal
+**Embargo:** None (registration is public immediately).
 
-```
-**OSF pre-registration:** doi:10.17605/OSF.IO/XXXXX (submitted YYYY-MM-DD)
-```
+This file preserves the full pre-registration text as an in-repository reference alongside the immutable OSF record. The canonical record is the OSF registration itself at the URL above. Any future deviations must be logged in `.planning/osf_deviations.md` and disclosed in the manuscript's "Deviations from pre-registration" section.
 
 ---
 
@@ -178,6 +181,30 @@ Not applicable. All summary statistics are used as released by each consortium f
 - Open-access summary statistics for seven of the primary data sources have been confirmed reachable from the investigator's HPC environment. Specifically: UKB-PPP Synapse certification is complete (verified 2026-04-10); deCODE summary data portal inventory has been verified via browser (verified 2026-04-10, ~4,907 aptamers × SomaScan v4); FinnGen R12 registration is complete with confirmed bucket URLs (registered 2026-04-10); GTEx v8 eQTL and sQTL GCS buckets are reachable; Pan-UKBB S3 bucket is reachable; BBJ PheWeb-JP hum0197-v3 is reachable; MVP dbGaP phs001672 summary statistics are accessible without a Data Access Request.
 - All of Us Researcher Workbench Controlled Tier credentials are active and will be used only for Phase 8 PRS validation under NCSU's institutional data use agreement. All individual-level data remain inside the Workbench.
 - UK Biobank main Data Use Agreement (individual-level) is *not* held and is *not* required for any pre-registered analysis.
+
+### 8.1 Foreknowledge of data and managing unintended influences
+
+**Foreknowledge level (OSF standard):** Authors have observed the data, but have not performed the proposed analyses. At least some of the data that will be used for this analysis plan has been accessed and observed by the investigator. The investigator has sufficiently observed relevant evidence to influence analytical design decisions. However, the investigator has not yet performed any of the proposed analyses in this plan and will not do so until after this plan is registered.
+
+**What prior observation of the data has influenced in the current design:** (i) the approximately 50 candidate pleiotropic cardiometabolic loci were identified through exploratory work using methods and cohorts different from those pre-registered here; (ii) the five-trait selection (BMI, type 2 diabetes, hypertension, ischemic stroke, asthma) reflects known cross-trait overlap observed during that exploratory work; (iii) the three negative-control gene sets (HLA, pigmentation, eye-color) are chosen because prior inspection established empirical null behavior at this scale. These influences are disclosed here so that any downstream reader can identify which elements of the study design are informed by prior observation versus drawn de novo.
+
+**What has NOT been done with the pre-registered analyses:** None of the pre-registered primary analyses have been conducted on the pre-registered analytical cohorts. The investigator has not run `coloc.susie`, SuSiE-RSS fine-mapping under the pre-specified policy, three-way QTL colocalization (eQTL + pQTL + sQTL), bidirectional Mendelian randomization with the pre-specified three-method triangulation, matched-N cross-ancestry bootstrap, LDSC partitioned heritability or LDSC-SEG, PRS-CSx cross-ancestry transfer, iHS / SDS / PBS / XP-EHH selection scans, polygenic selection tests, or deep-learning variant effect inference (Enformer, Borzoi, Sei, AlphaMissense) on any of the pre-registered primary analytical cohorts prior to this registration. The study also introduces substantial new cohort coverage that was not part of any prior work: Pan-UKBB trans-ancestry summary statistics, UKB-PPP pQTL (Sun et al. 2023), deCODE pQTL (Ferkingstad et al. 2021), GTEx v8 sQTL, FinnGen R12, AFR BMI (Gurdasani 2019), AFR hypertension (Hoffmann), AFR type 2 diabetes cohorts, EAS Biobank Japan, and Hispanic PAGE/HCHS.
+
+**Specific actions taken to reduce the risk of unintended influences:**
+
+1. **Analytical code is frozen at registration time.** All analysis code for the pre-registered methods (SuSiE-RSS, `coloc.susie`, three-way QTL integration, MR triangulation, matched-N bootstrap, LDSC workflows, PRS-CSx, selection scans, deep-learning inference) is committed to the project's version-controlled Snakemake pipeline with conda environments pinned to exact package versions in `envs/*.yml`. Code commits pinning the analysis plan are tagged at pre-registration time and cannot be silently altered without appearing in the commit history.
+
+2. **Primary results are not inspected prior to registration.** The investigator certifies that no primary-result outputs (PP.H4 posteriors from `coloc.susie`, MR causal estimates, bootstrap concordance values, selection scan statistics, deep-learning regulatory scores) have been generated from the pre-registered cohorts using the pre-registered methods. Intermediate QC outputs (harmonization success rates, fine-mapping convergence status, pipeline integrity checks) are inspected during infrastructure setup; these inspections do not constitute primary-result inspection and are logged in a QC inspection log committed to the project repository.
+
+3. **Negative controls are pre-specified as pipeline kill-switches.** Three negative-control gene sets (HLA genes; pigmentation genes including OCA2, SLC24A5, MC1R; eye-color genes) are pre-specified in `config/negative_controls.yaml` and run in every colocalization and enrichment analysis. A non-null result on any of these negative controls triggers a pipeline audit and blocks manuscript submission until the false positive is identified and corrected. This is a structural check on pipeline integrity that cannot be relaxed post-hoc.
+
+4. **All outcomes have pre-registered interpretations.** Six pre-registered failure modes are committed in §13.1 of the full pre-registration text. Each has a specific pre-committed response rather than post-hoc reinterpretation: a non-null negative control is a pipeline failure; zero Tier A signals means the manuscript is framed around negative findings; replication failure is reported as a primary finding; a null Mendelian randomization result is reported as null and not reframed; uninterpretable PRS calibration still requires the equity-vs-accuracy trade-off to be reported regardless of magnitude; a null polygenic selection result activates a pre-registered locus-level fallback framing rather than allowing the evolutionary-medicine narrative to be reshaped post-hoc.
+
+5. **Scope is tiered and gated.** Tier 2 analyses (Mendelian randomization, matched-N cross-ancestry concordance, PRS) are activated only if Tier 1 pre-registered gate criteria are met at Checkpoint #1. Tier 3 analyses (selection scans, single-cell integration, deep-learning) are activated only if Tier 2 pre-registered gate criteria are met at Checkpoint #2. Gate criteria are quantitative and committed in advance (§6), removing discretion to expand scope based on post-hoc observation of Tier 1 or Tier 2 results.
+
+6. **Quantitative pre-registration of effect sizes and thresholds.** The pre-registered hypotheses (H1–H11) include specific numeric predictions: approximately one-quarter of loci with Tier A causal gene assignment; at least half of Tier A signals replicating in at least one independent cohort; tissue distribution not concentrated above 40% in any single tissue; matched-N concordance drop of at least 20% absolute; PRS calibration slope deviation greater than 0.2 from unity in at least one ancestry; at least 20% concordance between Enformer/Borzoi regulatory predictions and MPRA data at credible-set variants. These are falsifiable numeric commitments rather than directional-only predictions.
+
+7. **Deviation policy.** Any deviation from this pre-registration is disclosed in the resulting manuscript under a dedicated "Deviations from pre-registration" subsection with per-deviation rationale. Deviations made after looking at primary results are flagged as post-hoc. A date-stamped deviation log is maintained in the project repository at `.planning/osf_deviations.md` and included as supplementary material.
 
 ---
 
@@ -362,7 +389,7 @@ Not pre-registered as a constraint. Rigor is prioritized over speed.
 
 ### 13.4 Code and reproducibility
 
-- **Repository.** `github.com/[insert username]/coloc_analysis` (made public on first submission).
+- **Repository.** `github.com/The-ASHES-Laboratory/coloc_analysis` (made public on first submission).
 - **Pipeline.** Snakemake 7.32.4 orchestrates all analyses. All conda environments are pinned to exact package versions in `envs/*.yml`.
 - **Containers.** Docker and Singularity images are built per phase and published on Zenodo with DOIs on first manuscript submission.
 - **Continuous integration.** Nightly 3-locus toy smoke test runs via LSF cron on the NCSU HPC through Phase 0; migrates to GitHub Actions on public release.
