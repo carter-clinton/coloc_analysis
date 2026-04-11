@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 00-04-PLAN.md
-last_updated: "2026-04-10T19:59:05.792Z"
+status: phase-closeout
+stopped_at: "Phase 0 fully closed — code review fixed, all human verifications complete, OSF submitted (DOI 10.17605/OSF.IO/PVB5J), smoke test dry-run verified, security audit SECURED 10/10"
+last_updated: "2026-04-10T23:30:00.000Z"
 last_activity: 2026-04-10
 progress:
   total_phases: 12
@@ -84,6 +84,16 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-10T19:59:05.787Z
-Stopped at: Completed 00-04-PLAN.md
+Last session: 2026-04-10T23:30:00.000Z
+Stopped at: Phase 0 fully closed — code review fixed (8 findings), all 5 human verifications complete, OSF pre-registration submitted (DOI 10.17605/OSF.IO/PVB5J, public), smoke test scaffolding dry-run verified (5 bugs caught + fixed), security audit SECURED 10/10 threats closed. **Ready to plan Phase 1 (coloc.susie fine-mapping spine).**
 Resume file: None
+
+## Phase 0 Closeout Artifacts (2026-04-10)
+
+- **Code review fixes:** 8 findings fixed in commits 6e3dc66..81ab1eb, report at .planning/phases/00-data-access-infrastructure/00-REVIEW-FIX.md (commit 1d5ed54)
+- **UKB-PPP Synapse access:** Carter certified 2026-04-10 (15/15 quiz), syn51364943 accessible, s3://ukbiobank.opendata.sagebase.org/ confirmed (commit 8b846b9)
+- **FinnGen R12 registration:** submitted 2026-04-10 via elomake.helsinki.fi, actual release is R12 (not R13/R14 as earlier research assumed), bucket finngen-public-data-r12 (commit e912c0c)
+- **deCODE portal verification:** email-gated ephemeral download link mechanism, 24,271 SOMAmer files / ~24 TB total (vs 4,907 aptamers in README — anomaly flagged for Phase 2). Ferkingstad 2021 confirmed. 3 test files downloaded to /rs1/researchers/c/ckclinto/coloc_analysis/data/raw/decode_pqtl/ (CRYBB2, RAF1, ZNF41 — all 909-910 MB, gzip-intact). README schema bug: actual column 9 is `minus_log10_pval` not `min_log10_pval`. Commits 4ce2972, 12ec691, 0901230
+- **OSF pre-registration:** DOI 10.17605/OSF.IO/PVB5J, public (no embargo), submitted 2026-04-10, linked project osf.io/az52u. Title: "Mechanistic resolution of pleiotropy at cardiometabolic loci...". Framed as original hypothesis-driven research per feedback memory. Draft at .planning/osf_prereg_draft.md. Commits e459563, 18995f0
+- **CI smoke test scaffolding:** dry-run verified 2026-04-10T23:14:00Z (29 jobs, 11 rules). 5 scaffolding bugs caught and fixed: (1) validate() schema path, (2-4) 3 include: paths, (5) FINEMAP_OUTPUTS/SUMMARY definition order. Python 3.13 + Snakemake 7.32.4 PEP 701 incompatibility discovered — dev env at /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/ (Python 3.11 + snakemake 7.32.4 + pulp<2.8). First real execution deferred to Phase 1. Commit c213f58
+- **Security audit:** SECURED 10/10 threats closed. Report at .planning/phases/00-data-access-infrastructure/00-SECURITY.md. 3 accepted risks (AR-00-01 config non-secrets, AR-00-02 portal registrations, AR-00-03 UCSC chain file). Commit 2030821
