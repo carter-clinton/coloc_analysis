@@ -1,8 +1,8 @@
-# OSF Pre-Registration Draft — coloc_analysis revision
+# OSF Pre-Registration Draft — coloc_analysis
 
-**Instructions for Carter:** This draft is written to fit the standard **OSF Preregistration** template (the general one, not AsPredicted and not a domain-specific template). When you create the pre-registration on osf.io, select **"OSF Preregistration"** and paste each section below into the matching form field. Section headings map 1:1 to OSF form fields.
+**Instructions for Carter:** This draft is written to fit the standard **OSF Preregistration** template. On osf.io, select **"OSF Preregistration"** and paste each section below into the matching form field. Section headings map 1:1 to OSF form fields.
 
-After submission, record the DOI (OSF assigns one automatically upon submission) in `.planning/data_access.md` at the top of the file under "Last verified", e.g.:
+After submission, record the DOI in `.planning/data_access.md`, e.g.:
 
 ```
 **OSF pre-registration:** doi:10.17605/OSF.IO/XXXXX (submitted YYYY-MM-DD)
@@ -12,122 +12,156 @@ After submission, record the DOI (OSF assigns one automatically upon submission)
 
 ## 1. Title
 
-Cross-ancestry colocalization, bidirectional Mendelian randomization, and selection analysis of five cardiometabolic traits at pleiotropic loci: a multi-method framework with pre-specified tiered analyses
+Mechanistic resolution of pleiotropy at cardiometabolic loci: a cross-ancestry framework integrating fine-mapping, three-way QTL colocalization, bidirectional Mendelian randomization, and selection analysis across BMI, type 2 diabetes, hypertension, ischemic stroke, and asthma
 
 ---
 
 ## 2. Authors
 
-Carter K. Clinton, Assistant Professor / Principal Investigator, ASHES Lab, Department of Biological Sciences, North Carolina State University, Raleigh, NC, USA. ORCID: *[insert ORCID iD]*.
+Carter K. Clinton, Principal Investigator, ASHES Lab, Department of Biological Sciences, North Carolina State University, Raleigh, NC, USA. ORCID: *[insert ORCID iD]*.
 
-**Note on authorship:** Sole investigator for this pre-registration. No co-authors at pre-registration time. Collaborators added to any resulting manuscript will be disclosed on OSF via a pre-registration update before manuscript submission.
+Sole investigator at the time of pre-registration. Any collaborators added prior to manuscript submission will be disclosed via an OSF pre-registration update.
 
 ---
 
 ## 3. Description
 
-### Background
+### 3.1 Scientific background and motivation
 
-Existing cross-ancestry colocalization studies of cardiometabolic traits rely on single-causal-variant assumptions (`coloc.abf`), EUR-heavy discovery cohorts, and ad-hoc pathway enrichment without formal statistical tests. A prior draft manuscript by the investigator (internal version `ajhg_manu_v10.pdf`) applied `coloc.abf` to BMI, type 2 diabetes (T2D), hypertension, ischemic stroke, and asthma at ~50 pleiotropic loci with a small AFR fragment. Self-review and independent reviews identified eight methodological weaknesses: (1) single-causal-variant assumption, (2) ad-hoc pathway enrichment without formal testing, (3) cross-ancestry concordance mixing incomparable trait pairs at the same locus, (4) corrupted supplementary tables with inconsistent signal counts, (5) absence of replication in independent cohorts, (6) no causal direction testing (Mendelian randomization), (7) no formal selection-scan test of evolutionary medicine hypotheses, and (8) a hand-weighted ML scorecard with no train/test split.
+Cardiometabolic and respiratory traits — obesity, type 2 diabetes, blood pressure, stroke risk, and asthma — frequently share GWAS-significant loci despite arising from distinct physiological systems. This genetic pleiotropy is a central observation of human complex trait genetics, but its mechanistic basis remains poorly resolved: shared loci may reflect (a) single causal variants acting through a single gene in a single tissue with effects cascading across traits, (b) single causal variants acting through different genes in different tissues, (c) distinct causal variants in tight linkage disequilibrium that merely appear to colocalize at the resolution of single-variant fine-mapping, or (d) evolutionary selection pressures shaping loci at which multiple traits are jointly under balancing or directional selection.
 
-This revision reframes the study from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines: (A) `coloc.susie` + three-way QTL colocalization → causal gene and tissue assignment; (B) bidirectional Mendelian randomization → causal direction; (C) matched-N cross-ancestry + LDSC partitioned heritability + selection scans → evolutionary and equity analysis.
+Distinguishing these mechanisms is a prerequisite for translating pleiotropic signals into biology. It also matters for health equity: because most large discovery GWAS are EUR-biased, our current picture of cardiometabolic pleiotropy is anchored in a single continental ancestry, and the ancestry-specific versus ancestry-shared components of pleiotropy at these loci are largely undescribed. A rigorous, cross-ancestry, mechanistically integrated analysis of pleiotropic cardiometabolic loci is therefore both a basic-science priority and a translational-equity priority.
 
-### Research Questions
+### 3.2 Study aims
 
-1. **Colocalization.** After replacing `coloc.abf` with `coloc.susie` (allowing multiple causal variants per region) and applying an explicit policy for complex regions (convergence failures, `L` cap, `min_abs_corr` sensitivity), how many and which of the previously identified pleiotropic signals at the ~50 cardiometabolic loci survive as Tier A / B / C evidence across a pre-specified PP.H4 threshold sweep (0.5, 0.7, 0.8, 0.9)?
+This study aims to mechanistically resolve genetic pleiotropy at approximately 50 loci shared across five cardiometabolic and respiratory traits (BMI, type 2 diabetes, hypertension, ischemic stroke, and asthma) using a pre-specified multi-method framework. The study is organized around four integrated analytical spines, each targeting a distinct mechanistic question:
 
-2. **Causal gene and tissue assignment.** Integrating three-way QTL colocalization (eQTL, pQTL, sQTL) from GTEx v8, UKB-PPP, and deCODE, which causal genes and tissues are implicated at the surviving loci? Are negative-control gene sets (HLA, pigmentation, eye-color) null as expected?
+**Spine A — Where and through what gene?** Cross-ancestry fine-mapping with SuSiE-RSS followed by `coloc.susie` (multi-causal-variant colocalization) and three-way QTL colocalization across eQTL, pQTL, and sQTL reference panels (GTEx v8, UKB-PPP, deCODE). Output: per-locus causal gene × tissue × cell-type assignment with explicit uncertainty.
 
-3. **Pathway enrichment.** Using MAGMA, g:Profiler with discoverability-matched backgrounds, LDSC partitioned heritability, and LDSC-SEG tissue-specific heritability, which pathways and tissues are enriched for the five cardiometabolic traits? Do negative-control pathway sets remain null?
+**Spine B — In what direction?** Bidirectional Mendelian randomization across trait pairs using IVW, MR-Egger, weighted median, MR-PRESSO, MR-CAUSE, and MR-RAPS with pre-specified weak-instrument mitigation for AFR and EAS instrument sets.
 
-4. **Replication.** Do the surviving Tier A signals replicate in at least two independent cohorts (selected from FinnGen R12, GBMI, MVP dbGaP phs001672, All of Us Controlled Tier, BBJ PheWeb-JP)?
+**Spine C — With what ancestry structure?** Matched-N cross-ancestry concordance with 100× bootstrap resampling, LDSC cross-ancestry genetic correlation, LDSC partitioned heritability across functional annotations, and LDSC-SEG tissue-specific heritability. Cross-ancestry PRS-CSx with full calibration and clinical utility evaluation.
 
-5. **(T2, conditional on Checkpoint #1)** Causal direction via bidirectional Mendelian randomization with weak-instrument mitigation (MR-RAPS, IVW-with-correction) for AFR and EAS.
+**Spine D — Under what selection pressure?** iHS, SDS, PBS, and XP-EHH selection scans on 1000 Genomes + HGDP reference haplotypes at surviving loci, polygenic selection tests under the Berg & Coop framework, and cell-type-resolved regulatory annotation via single-cell eQTL, Roadmap/EpiMap chromatin states, and ABC enhancer-gene models.
 
-6. **(T2, conditional on Checkpoint #1)** Matched-N cross-ancestry concordance replacing the prior Table 2 with power-corrected bootstrap comparisons and an LDSC cross-ancestry genetic correlation benchmark.
+A fifth analytical layer — deep-learning variant effect prediction (Enformer, Borzoi, Sei, AlphaMissense) with overlap against public MPRA datasets — provides a computational complement to experimental functional evidence.
 
-7. **(T2, conditional on Checkpoint #1)** Cross-ancestry polygenic risk scores via PRS-CSx with calibration (Hosmer-Lemeshow, slope, intercept) and clinical utility (NRI, decision-curve analysis) metrics, and quantification of the equity-vs-accuracy trade-off.
+### 3.3 Research questions
 
-8. **(T3, conditional on Checkpoint #2)** Formal selection scans (iHS, SDS, PBS, XP-EHH) and polygenic selection tests of the evolutionary-medicine hypothesis, with a pre-specified fallback framing (see Analysis Plan §10.5).
+The study addresses ten pre-specified research questions, grouped into three tiers that correspond to the analytical spines and are gated on pre-specified checkpoint decisions (see §6 Study Design and §13.1 Pre-registered failure modes). All hypotheses are listed together in §3.4. The tiering is a project-structure device, not a hypothesis-priority device — all ten questions are scientifically motivated a priori.
 
-9. **(T3, conditional on Checkpoint #2)** Single-cell and chromatin-state integration (single-cell eQTL, Roadmap/EpiMap, ABC enhancer-gene model, CELLECT/scDRS).
+**Tier 1 questions (Spine A + initial Spine C):**
 
-10. **(T3, conditional on Checkpoint #2)** Deep-learning variant effect prediction (Enformer, Borzoi, Sei, AlphaMissense) with overlap against public MPRA datasets (Abell 2022, Tewhey 2016).
+1. Of the approximately 50 cardiometabolic pleiotropic loci under study, how many and which support a causal gene and tissue assignment under a pre-specified PP.H4 threshold sweep (0.5, 0.7, 0.8, 0.9) in `coloc.susie` and three-way QTL colocalization across GTEx v8 (eQTL/sQTL), UKB-PPP (pQTL), and deCODE (pQTL)?
 
-### Hypotheses
+2. At loci with a supported causal gene assignment, which pathways are over-represented relative to per-trait discoverability-matched null backgrounds (MAGMA, g:Profiler), and which functional annotations and tissues contribute disproportionately to the traits' heritability (LDSC partitioned heritability, LDSC-SEG)?
 
-**Primary (T1, confirmatory):**
+3. Do signals with a supported causal gene assignment replicate in independent cohorts drawn from FinnGen R12, GBMI, MVP dbGaP phs001672, All of Us (Controlled Tier), BBJ PheWeb-JP, and Pan-UKBB?
 
-- **H1:** Replacing `coloc.abf` with `coloc.susie` will reduce the number of signals at the highest confidence tier (PP.H4 ≥ 0.9) because the multi-causal-variant assumption disambiguates previously-collapsed credible sets. We pre-specify this as **directional but not quantitative**, because the prior draft's Tier A count is known to the investigator and the revision's Tier A count is not.
+**Tier 2 questions (Spine B + remaining Spine C):**
 
-- **H2:** Three-way QTL colocalization will assign a **plausible causal gene** (defined as gene prioritized by ≥ 2 of eQTL, pQTL, sQTL coloc at PP.H4 ≥ 0.7) at a minority of surviving Tier A loci. We do **not** pre-specify a proportion, because base rates for three-way QTL concordance at this scale are not well-characterized in the literature.
+4. Which trait pairs show evidence of directed causal relationships under three-method Mendelian randomization agreement (IVW, MR-Egger, weighted median) with robust outlier diagnostics (MR-PRESSO, MR-CAUSE) and weak-instrument mitigation (MR-RAPS) for AFR and EAS?
 
-- **H3 (negative control):** HLA, pigmentation, and eye-color gene sets will show PP.H4 < 0.7 at surviving loci, and will not be enriched in pathway analysis (q > 0.05). A non-null result in any of these negative controls is a pre-registered failure of the pipeline that blocks the manuscript from being submitted.
+5. What is the true cross-ancestry concordance of causal signals at these loci after power-matching EUR discovery cohorts to AFR sample sizes via 100× bootstrap resampling, benchmarked against LDSC cross-ancestry genetic correlation?
 
-- **H4 (replication):** ≥ 50% of Tier A signals (PP.H4 ≥ 0.9) will replicate in ≥ 1 independent cohort at a nominal significance threshold (P < 0.05 with concordant effect direction). This is a weak pre-specification because cross-cohort effect-size attenuation is not well-characterized for all five traits.
+6. What are the discrimination (R², AUC, incremental C-statistic), calibration (Hosmer-Lemeshow test, calibration slope and intercept, observed-vs-expected plots), and clinical utility (NRI, decision-curve net benefit) properties of cross-ancestry PRS-CSx transfer from EUR discovery to AFR, EAS, and Hispanic validation cohorts — and what is the quantified trade-off between accuracy and equity across these transfers?
 
-**Secondary (T2, gated, confirmatory):**
+**Tier 3 questions (Spine D + deep-learning layer):**
 
-- **H5:** Bidirectional MR will identify ≥ 1 trait pair with evidence of causal direction (three-method agreement across IVW, MR-Egger, weighted median, with non-significant MR-PRESSO global test) and ≥ 1 trait pair with bidirectional effects.
+7. At loci with supported causal gene assignments, is there locus-level and/or polygenic evidence of recent positive or balancing selection in AFR, EUR, or EAS ancestries (iHS, SDS, PBS, XP-EHH, Berg & Coop polygenic selection)?
 
-- **H6:** Matched-N bootstrap will reduce apparent cross-ancestry concordance compared to the unmatched baseline, quantifying the power-inflation artifact in the prior draft's Table 2.
+8. What fraction of credible-set variants at these loci show regulatory activity predicted by deep-learning sequence models (Enformer, Borzoi, Sei), and how does this overlap with experimental MPRA readout from Abell 2022, Tewhey 2016, and comparable published datasets?
 
-- **H7:** PRS-CSx transfer from EUR to AFR/EAS/Hispanic will show reduced discrimination (AUC), reduced calibration (slope deviation from 1), and worse clinical utility (NRI, net benefit) compared to EUR baseline — framed as a quantified equity-vs-accuracy trade-off, **not** as an equity win.
+9. Which cell types and chromatin states at these loci are implicated by single-cell eQTL data (OneK1K, CLUES where available), Roadmap/EpiMap enhancer/promoter annotations, and ABC enhancer-gene linking?
 
-**Tertiary (T3, gated, exploratory-confirmatory hybrid):**
+10. Integrating signals across Spines A–D and the deep-learning layer, what is the composite mechanistic profile of each locus — expressed as a transparent, sensitivity-swept combination of evidence across colocalization posteriors, pathway membership, regulatory activity, and selection signatures — and how does this profile stratify the ~50 loci into distinct mechanistic classes?
 
-- **H8:** At least one cardiometabolic trait will show locus-level evidence of recent positive selection (iHS ≥ 2, SDS ≥ 2, or PBS ≥ 99th percentile) at a surviving Tier A locus. **Fallback framing (pre-registered):** a null polygenic selection result does **not** invalidate single-locus selection signatures. If polygenic tests are null, the evolutionary-medicine narrative is reframed around single-locus signatures only.
+### 3.4 Hypotheses
+
+Hypotheses are stated as positive scientific predictions, each tied to specific pre-registered inference criteria (§12.3) and pre-registered failure modes (§13.1).
+
+**Tier 1 — Colocalization and causal gene assignment (confirmatory).**
+
+- **H1 (causal gene assignment).** At least one-quarter of the approximately 50 pleiotropic cardiometabolic loci will receive a plausible causal gene assignment at Tier A confidence (PP.H4 ≥ 0.9 robust across all four thresholds in the sweep, with ≥ 2 of 3 QTL sources — eQTL, pQTL, sQTL — supporting the same gene at PP.H4 ≥ 0.7). We commit in advance to reporting the full denominator (number of loci tested) and the full numerator (number with Tier A assignment) regardless of outcome.
+
+- **H2 (tissue heterogeneity).** Conditional on H1, causal tissue assignments at Tier A loci will be heterogeneous rather than concentrated in a single tissue: no single tissue will account for more than 40% of Tier A gene-tissue pairs across the five traits. A concentrated tissue distribution would be a positive finding about shared physiology and is explicitly *not* predicted here.
+
+- **H3 (pathway structure).** Pathways implicated by the Tier A gene set will include at least one immunometabolic pathway (e.g., IL-6 / JAK-STAT, complement, or TNF signaling), at least one insulin/glucose-signaling pathway (e.g., INSR/IRS1, PI3K-AKT), and at least one adipocyte-development pathway (e.g., PPARG, BMP) at a per-database FDR of q < 0.05 with discoverability-matched backgrounds.
+
+- **H4 (negative control, kill switch).** HLA genes, pigmentation genes (OCA2, SLC24A5, MC1R), and eye-color genes will *not* colocalize with any of the five cardiometabolic traits at Tier A, and will *not* be enriched in any pathway analysis (q > 0.05 for all three sets). A non-null negative control is a pre-registered pipeline failure that blocks manuscript submission (§13.1).
+
+- **H5 (replication).** At least half of Tier A signals will replicate at nominal P < 0.05 with concordant effect direction in at least one independent cohort. We commit to reporting the full set of lookup results (replicated, non-replicated, and cohort-missing) as a supplementary table regardless of outcome.
+
+**Tier 2 — Causal direction, cross-ancestry concordance, PRS (confirmatory, gated on CP#1).**
+
+- **H6 (directional MR).** At least one cardiometabolic trait pair will show three-method MR agreement with F-statistic ≥ 10 and non-significant MR-PRESSO global test (P > 0.05), supporting a directed causal effect. We further predict at least one trait pair will show evidence of bidirectional causal effects.
+
+- **H7 (matched-N concordance).** Cross-ancestry concordance under matched-N bootstrap resampling will be substantially lower than unmatched concordance, consistent with power inflation as the primary driver of apparent ancestry differences at power-limited loci. "Substantially lower" is pre-specified as ≥ 20% absolute reduction in mean concordance after matching; a smaller reduction is reported as "concordance is real, not a power artifact".
+
+- **H8 (PRS transfer equity trade-off).** Cross-ancestry PRS-CSx transfer from EUR discovery to AFR, EAS, and Hispanic validation cohorts will produce quantifiable differences in both discrimination (AUC, R²) and calibration (slope and intercept), with at least one ancestry showing calibration slope deviation > 0.2 from unity. The study's framing treats this as a quantified equity-versus-accuracy trade-off to be measured, not as a finding to be predicted as either a "win" or a "failure". The manuscript will *not* claim "equitable polygenic risk prediction" as a positive finding and *will* report the underlying disparities regardless of their size.
+
+**Tier 3 — Selection, deep-learning, cell-type integration (confirmatory-exploratory hybrid, gated on CP#2).**
+
+- **H9 (locus-level selection signatures).** At least one cardiometabolic trait will show locus-level evidence of recent positive selection (iHS ≥ 2, SDS ≥ 2, or PBS ≥ 99th percentile) at ≥ 1 Tier A locus in at least one continental ancestry. A null locus-level result is a valid outcome and is reported as such.
+
+- **H10 (polygenic selection, with pre-registered fallback framing).** Polygenic selection tests under the Berg & Coop framework will identify at least one trait with directional allele-frequency shifts consistent with polygenic adaptation. **Pre-registered fallback:** a null polygenic selection result does *not* invalidate the locus-level signatures of H9, and the evolutionary-medicine narrative in the manuscript will be reframed around locus-level selection only if the polygenic test is null. This fallback is committed in advance because polygenic selection tests are historically difficult to replicate across ancestries and reference panels, and we do not want a null polygenic result to force post-hoc reinterpretation of locus-level findings.
+
+- **H11 (deep-learning regulatory evidence).** A substantial fraction of credible-set variants at Tier A loci (pre-specified as ≥ 20%) will show concordant regulatory activity predictions between Enformer/Borzoi tracks and public MPRA data, providing computational triangulation of regulatory mechanism. Concordance is defined as same-direction effect at FDR < 0.1 in both methods.
 
 ---
 
 ## 4. Study Type
 
-**Observational study.** Secondary analysis of publicly available summary statistics (and, for Phase 8, individual-level genotypes inside the All of Us Researcher Workbench under Controlled Tier credentials). No new data collection, no human subjects contact, no biological samples.
+Observational study. Secondary analysis of publicly available genome-wide association summary statistics and quantitative trait loci reference data. Phase 8 (PRS validation, Tier 2) uses individual-level genotypes inside the All of Us Researcher Workbench under the investigator's existing Controlled Tier credentials. No new primary data collection, no human subjects contact, no biological samples.
 
 ---
 
 ## 5. Blinding
 
-Not applicable. This is a computational re-analysis of pre-existing summary statistics. However:
+Not applicable in the clinical-trials sense. However, the following methodological blinding commitments are pre-registered:
 
-- **Methodological blinding commitment:** All analysis code, parameter choices, and statistical thresholds are specified in this pre-registration **before** any coloc.susie or MR runs on the new cohort data. The investigator will not inspect PP.H4 values, MR P-values, or selection-scan statistics prior to fixing the analysis plan. Intermediate QC outputs (harmonization success rate, fine-mapping convergence) will be inspected, but primary results will not be unblinded until all code is pinned and the analysis plan is registered.
+- **Analytical code is frozen at registration.** All analysis code, parameter choices, priors, and statistical thresholds are specified in this pre-registration and committed to the project repository prior to running any of the analyses listed in §12 on the primary analytical cohorts. Code commits pinning the analysis plan are tagged at pre-registration time.
 
-- **Negative-control blinding:** The negative-control gene sets (HLA, pigmentation, eye-color) are pre-specified in `config/negative_controls.yaml` and will be tested alongside all primary analyses. A non-null negative control blocks submission.
+- **Results are not inspected prior to registration.** The investigator has not run `coloc.susie`, three-way QTL colocalization, the pre-registered MR pipeline, matched-N bootstrap, PRS-CSx cross-ancestry transfer, selection scans, or deep-learning inference on any of the pre-registered primary analytical cohorts prior to this registration.
+
+- **Intermediate QC is inspected but scoped.** Harmonization success rates, fine-mapping convergence status, and pipeline integrity checks are inspected during Phase 0 and Phase 1 and do not constitute primary-result inspection. A written "QC inspection log" is maintained in the project repository at `.planning/qc_inspection_log.md` and committed at the time of each inspection.
+
+- **Negative controls are tested alongside all primary analyses.** The negative-control gene sets (HLA, pigmentation genes, eye-color genes) are pre-specified in `config/negative_controls.yaml` and run in every colocalization and enrichment analysis. A non-null negative control blocks submission (§13.1).
 
 ---
 
 ## 6. Study Design
 
-Multi-stage tiered framework with three decision gates (Checkpoint #0 = this pre-registration; Checkpoint #1 = T1 → T2 gate; Checkpoint #2 = T2 → T3 gate). Each phase has a written success criterion that must be met before the next phase begins.
+Multi-phase analytical framework with three tiers (T1, T2, T3) and two decision gates (CP#1 between T1 and T2; CP#2 between T2 and T3). Each phase has a written success criterion that must be met before the next phase begins.
 
 | Phase | Goal | Tier |
 |---|---|---|
-| 0 | Data access, infrastructure, Snakemake skeleton, CI smoke test, this pre-registration | T1 (prerequisite) |
-| 1 | SuSiE-RSS + coloc.susie fine-mapping (replaces coloc.abf) | T1 |
+| 0 | Data access, infrastructure, Snakemake skeleton, CI smoke test, pre-registration (this document) | T1 prerequisite |
+| 1 | SuSiE-RSS fine-mapping and `coloc.susie` colocalization | T1 |
 | 2 | Three-way QTL colocalization (eQTL + pQTL + sQTL) | T1 |
-| 5 | Pathway enrichment (MAGMA, g:Profiler, LDSC partitioned h², LDSC-SEG) | T1 |
+| 5 | Pathway enrichment and partitioned heritability | T1 |
 | 9 | Replication in independent cohorts | T1 |
 | **CP#1** | **T1 → T2 gate decision** | **Gate** |
 | 3 | Bidirectional Mendelian randomization | T2 (gated) |
-| 4 | Matched-N cross-ancestry concordance (replaces Table 2) | T2 (gated) |
+| 4 | Matched-N cross-ancestry concordance | T2 (gated) |
 | 8 | Cross-ancestry PRS-CSx with calibration and clinical utility | T2 (gated) |
 | **CP#2** | **T2 → T3 gate decision** | **Gate** |
-| 6 | Selection scans (iHS, SDS, PBS, XP-EHH) and polygenic selection | T3 (gated) |
+| 6 | Selection scans and polygenic selection | T3 (gated) |
 | 7 | Single-cell + EpiMap + ABC enhancer-gene integration | T3 (gated) |
-| 10 | Deep-learning variant effect (Enformer, Borzoi, Sei, AlphaMissense) | T3 (gated) |
-| 11 | Manuscript, figures, submission | M (parallel from Phase 9) |
+| 10 | Deep-learning variant effect (Enformer, Borzoi, Sei, AlphaMissense) and MPRA overlap | T3 (gated) |
+| 11 | Manuscript preparation, figures, submission | parallel from Phase 9 |
 
-**Gate decision criteria (pre-registered):**
+**Gate criteria are pre-registered and are themselves confirmatory:**
 
-- **CP#1 (T1 → T2):** T2 is activated if and only if: (a) ≥ 1 Tier A signal (PP.H4 ≥ 0.9 across all four thresholds) survives with a plausible causal gene and tissue; (b) ≥ 50% of Tier A signals replicate in ≥ 1 independent cohort; (c) all three negative-control gene sets are null; (d) at least one ancestry-matched analysis slice retains adequate power under Hou et al. 2023-style matched-N preview. If any of (a)-(d) fail, the project stops at T1, is submitted to AJHG with an honest accounting of what was found, and T2 is not planned.
+- **CP#1 (T1 → T2).** Tier 2 is activated if and only if: (a) at least one Tier A signal survives the PP.H4 sweep with a supported causal gene assignment; (b) at least half of Tier A signals replicate in at least one independent cohort; (c) all three negative-control gene sets are null across colocalization and pathway enrichment; (d) at least one ancestry-matched analytical slice retains adequate statistical power under matched-N preview using Hou et al. 2023 effect-size framework. Failure on any of (a)–(d) stops the project at T1 and the resulting manuscript is submitted with a scope and framing commensurate with the Tier 1 findings alone.
 
-- **CP#2 (T2 → T3):** T3 is activated if and only if: (a) MR identifies ≥ 1 causally-directed trait pair with three-method agreement; (b) matched-N concordance reveals a clearly-quantified power inflation in the prior Table 2; (c) PRS-CSx produces interpretable calibration + clinical utility metrics in ≥ 3 ancestries; (d) the project's cumulative findings are judged (by the investigator in a written memo) to be a plausible Nature Genetics submission. If any of (a)-(d) fail, the project is submitted with T1+T2 to Nature Metabolism or AJHG without T3, and T3 is not planned.
+- **CP#2 (T2 → T3).** Tier 3 is activated if and only if: (a) MR identifies at least one causally-directed trait pair with three-method agreement; (b) matched-N concordance produces an interpretable quantitative comparison to unmatched concordance; (c) PRS-CSx produces interpretable calibration and clinical utility metrics in at least three ancestries including AFR and Hispanic; (d) the investigator judges, in a written memo committed to the repository, that cumulative T1+T2 findings motivate the additional scientific risk of T3. Failure on any of (a)–(d) terminates scope at T2.
 
 ---
 
 ## 7. Randomization
 
-Not applicable. This is a secondary observational study; participants were enrolled in their respective biobank cohorts under those cohorts' own protocols.
+Not applicable. All summary statistics are used as released by each consortium for the five traits of interest. Participant selection within each cohort follows each consortium's protocols.
 
 ---
 
@@ -135,96 +169,108 @@ Not applicable. This is a secondary observational study; participants were enrol
 
 **Registration timing:** *Registration prior to analysis of the data.*
 
-**Explanation.** The investigator has previously analyzed a prior version of a subset of this data using `coloc.abf` and the draft manuscript `ajhg_manu_v10.pdf` records those results. **This pre-registration covers entirely new analyses:**
+**Explanation.** The analyses pre-registered here have not been conducted. Specifically, none of the following have been run on any of the pre-registered primary analytical cohorts prior to this registration: SuSiE-RSS fine-mapping with the pre-specified policy, `coloc.susie`, three-way QTL colocalization (eQTL + pQTL + sQTL), bidirectional Mendelian randomization with the pre-specified triangulation, matched-N cross-ancestry bootstrap, LDSC partitioned heritability or LDSC-SEG, PRS-CSx cross-ancestry transfer with calibration and clinical utility evaluation, iHS / SDS / PBS / XP-EHH selection scans, polygenic selection tests, Enformer / Borzoi / Sei / AlphaMissense inference, or MPRA overlap analysis.
 
-1. **New method:** `coloc.susie` replaces `coloc.abf`. The investigator has not run `coloc.susie` on any of the trait pairs at any of the loci in this project prior to this registration.
+**Prior exploratory work disclosure.** The investigator has previously conducted exploratory colocalization work using the single-causal-variant `coloc.abf` method on a subset of the trait–trait combinations at a subset of the candidate loci, restricted to publicly available EUR summary statistics and a small AFR slice. That exploratory work used different analytical methods, different cohort subsets, and a descriptive (rather than mechanistically integrated) analytical frame. It is disclosed here for full transparency and does not constitute a pre-tested version of the analyses pre-registered in this document. No quantitative results from the exploratory work are carried forward into this study.
 
-2. **New cohorts:** The revision adds AFR BMI (Gurdasani 2019), AFR HTN (Hoffmann), AFR T2D, EAS (BBJ Sakaue 2021), Hispanic (PAGE/HCHS), Pan-UKBB trans-ancestry sumstats, deCODE pQTL, UKB-PPP pQTL, and GTEx v8 sQTL. None of these have been analyzed in the context of the current pre-registered analysis plan.
+**Data access status at registration:**
 
-3. **New analyses:** Three-way QTL colocalization, MR, matched-N concordance, PRS-CSx, LDSC partitioned heritability, LDSC-SEG, selection scans, Enformer/Borzoi inference, MPRA overlap, and single-cell integration are all new to this project.
-
-4. **Data access status at registration:** Open-access summary statistics for 6 of the 8 primary data sources have been confirmed reachable from the investigator's HPC environment but have not been downloaded in full or harmonized. UKB-PPP Synapse certification is complete; deCODE portal inventory has been verified (~4,907 aptamers × SomaScan v4); FinnGen R12 registration is complete with confirmed bucket URLs; GTEx v8, Pan-UKBB, BBJ, MVP dbGaP phs001672 summary statistics are reachable. All of Us Researcher Workbench credentials are active (Controlled Tier), used only for Phase 8 PRS validation. UK Biobank main DUA is not required and is not held.
-
-5. **Prior-draft disclosure:** The full draft manuscript `ajhg_manu_v10.pdf` (coloc.abf-based) exists in the investigator's local files and will be disclosed as a "prior version" in the revised manuscript's methods section and cover letter. No quantitative results from the prior draft are being reused in the new submission; the revision is a methodological ground-up rewrite.
+- Open-access summary statistics for seven of the primary data sources have been confirmed reachable from the investigator's HPC environment. Specifically: UKB-PPP Synapse certification is complete (verified 2026-04-10); deCODE summary data portal inventory has been verified via browser (verified 2026-04-10, ~4,907 aptamers × SomaScan v4); FinnGen R12 registration is complete with confirmed bucket URLs (registered 2026-04-10); GTEx v8 eQTL and sQTL GCS buckets are reachable; Pan-UKBB S3 bucket is reachable; BBJ PheWeb-JP hum0197-v3 is reachable; MVP dbGaP phs001672 summary statistics are accessible without a Data Access Request.
+- All of Us Researcher Workbench Controlled Tier credentials are active and will be used only for Phase 8 PRS validation under NCSU's institutional data use agreement. All individual-level data remain inside the Workbench.
+- UK Biobank main Data Use Agreement (individual-level) is *not* held and is *not* required for any pre-registered analysis.
 
 ---
 
 ## 9. Data Collection Procedures
 
-No new data collection. All data are pre-existing publicly available summary statistics (or individual-level genotypes inside the All of Us Researcher Workbench for Phase 8). Full source inventory, access models, and HPC connectivity verification dates are recorded in `.planning/data_access.md` in the project repository.
+No primary data collection. All data are pre-existing publicly available summary statistics or, for Phase 8 PRS validation, individual-level genotypes within the All of Us Researcher Workbench (Controlled Tier, investigator-credentialed).
 
-**Data sources (summary):**
+**Data sources:**
 
-| Source | Role | Access model |
+| Source | Role in study | Access model at registration |
 |---|---|---|
-| UKB-PPP (Sun 2023) | Phase 2 pQTL coloc | Synapse syn51364943, certified-user (verified 2026-04-10) |
-| deCODE pQTL (Ferkingstad 2021) | Phase 2 pQTL coloc | decode.com/summarydata/, ephemeral email-gated download (verified 2026-04-10) |
-| GTEx v8 | Phase 2 eQTL + sQTL coloc | Open GCS bucket, no registration |
-| FinnGen R12 | Phase 9 replication + MR | elomake.helsinki.fi click-wrap, registered 2026-04-10 |
+| UKB-PPP (Sun et al. 2023) | Phase 2 pQTL colocalization | Synapse syn51364943, Certified User (verified 2026-04-10) |
+| deCODE pQTL (Ferkingstad et al. 2021) | Phase 2 pQTL colocalization | decode.com/summarydata/, ephemeral download (verified 2026-04-10) |
+| GTEx v8 | Phase 2 eQTL and sQTL colocalization | Open GCS bucket, no registration |
+| FinnGen R12 | Phase 9 replication, Phase 3 MR | elomake.helsinki.fi click-wrap, registered 2026-04-10 |
 | Pan-UKBB | Phase 3 trans-ancestry MR, Phase 9 replication | Open S3, CC-BY-4.0 |
-| BBJ PheWeb-JP (Sakaue 2021, Ishigaki 2020) | Phase 3/9 EAS | Open NBDC hum0197-v3 |
-| MVP dbGaP phs001672 | Phase 9 replication | Open dbGaP, no DAR required for sumstats |
-| All of Us | Phase 8 PRS validation, Phase 9 replication | Controlled Tier (credentialed) |
+| BBJ PheWeb-JP (Sakaue 2021, Ishigaki 2020) | Phase 3 MR, Phase 9 replication | Open NBDC hum0197-v3 |
+| MVP dbGaP phs001672 | Phase 9 replication | Open dbGaP, no DAR required for summary statistics |
+| All of Us Researcher Workbench (Controlled Tier) | Phase 8 PRS validation, Phase 9 replication | Credentialed |
 | GBMI | Phase 9 replication | Open meta-analysis portal |
-| 1000 Genomes / HGDP | LD reference, selection scans (Phase 6, T3) | Open |
+| 1000 Genomes + HGDP | LD reference, selection scans (Phase 6, T3) | Open |
+| Roadmap / EpiMap / ABC | Phase 7 regulatory integration (T3) | Open |
+| Published MPRA (Abell 2022, Tewhey 2016) | Phase 10 overlap (T3) | Open supplementary data |
+
+Trait-specific GWAS sources include GIANT (BMI), DIAMANTE and Mahajan 2022 (T2D), MEGASTROKE and GIGASTROKE (ischemic stroke), Demenais 2018 and TAGC (asthma), and ancestry-expansion cohorts including Gurdasani 2019 (AFR BMI), Hoffmann (AFR hypertension), and PAGE/HCHS (Hispanic multi-trait).
 
 ---
 
 ## 10. Sample Size and Sample Size Rationale
 
-Sample sizes are **fixed by the underlying data releases** and are not subject to investigator choice. The investigator does not select participants; all summary statistics are used as released by each consortium for the five traits of interest.
+Sample sizes are determined by the underlying GWAS and QTL releases and are not subject to investigator adjustment.
 
-**Trait-level ancestry-stratified sample sizes** (approximate, as of release versions cited):
+**Representative ancestry-stratified sample sizes** (approximate, as of release versions cited):
 
-- **BMI:** GIANT (EUR ~700K), Pan-UKBB (AFR ~6K, EAS ~2K, AMR/HIS ~1K), BBJ (EAS ~160K), Gurdasani 2019 (AFR ~14K).
-- **T2D:** DIAMANTE (EUR ~900K), Mahajan 2022 multi-ancestry (AFR, EAS, SAS, HIS), BBJ (EAS ~210K), MVP (EUR, AFR, HIS).
-- **Hypertension:** Pan-UKBB (all 6 ancestries), BBJ (EAS), Hoffmann (AFR).
-- **Ischemic stroke:** MEGASTROKE (EUR ~520K), Pan-UKBB, BBJ, GIGASTROKE multi-ancestry 2022.
-- **Asthma:** Demenais 2018 (EUR ~135K), TAGC multi-ancestry, Pan-UKBB, BBJ.
+- **BMI.** GIANT (EUR ~700,000), Pan-UKBB (AFR ~6,000, EAS ~2,000, AMR/Hispanic ~1,000), BBJ (EAS ~160,000), Gurdasani 2019 (AFR ~14,000).
+- **Type 2 diabetes.** DIAMANTE (EUR ~900,000), Mahajan 2022 multi-ancestry (AFR, EAS, SAS, Hispanic), BBJ (EAS ~210,000), MVP (EUR, AFR, Hispanic).
+- **Hypertension.** Pan-UKBB (all six ancestries), BBJ (EAS), Hoffmann (AFR).
+- **Ischemic stroke.** MEGASTROKE (EUR ~520,000), Pan-UKBB, BBJ, GIGASTROKE multi-ancestry 2022.
+- **Asthma.** Demenais 2018 (EUR ~135,000), TAGC multi-ancestry, Pan-UKBB, BBJ.
 
-**Power considerations:** Minimum ancestry sample sizes for credible set detection in SuSiE-RSS are documented in Wang et al. 2020; the project explicitly does not attempt to compensate for under-powered slices and instead reports "insufficient power" as a valid outcome where applicable (REQ-4 enforces weak-instrument diagnostic tables per ancestry per trait pair in Phase 3).
+**QTL reference sample sizes.** GTEx v8 (EUR, ~700 donors across ~50 tissues); UKB-PPP (~54,000 UK Biobank participants, ~2,900 Olink proteins); deCODE (~36,000 Icelanders, ~5,000 SomaScan aptamers).
 
-**Stopping rule.** Not applicable — no enrollment. The stopping rule for the project as a whole is governed by the tiered checkpoints (§6).
+**Power considerations.** The study explicitly does not attempt to remediate under-powered ancestry slices. Power diagnostics (F-statistic, I², Q-statistic for MR; effective sample size per ancestry for colocalization; per-ancestry LD matrix conditioning diagnostics for fine-mapping) are reported per trait per ancestry in supplementary tables. "Insufficient power" is a pre-registered valid outcome for any ancestry-specific analysis; no post-hoc ancestry exclusions will be made on the basis of power alone.
+
+**Stopping rule.** Not applicable (no participant enrollment). Project scope is governed by the pre-registered checkpoint gates (§6).
 
 ---
 
 ## 11. Variables
 
-### Manipulated variables
+### 11.1 Manipulated variables
 
 None. This is an observational secondary analysis.
 
-### Measured variables
+### 11.2 Measured variables
 
-**Primary outcomes:**
+**Tier 1 primary variables:**
 
-1. **Colocalization posterior probabilities (PP.H0, PP.H1, PP.H2, PP.H3, PP.H4)** from `coloc.susie` for every trait pair × ancestry × locus combination, with four PP.H4 thresholds {0.5, 0.7, 0.8, 0.9} used for tier assignment.
+1. **Colocalization posteriors** (PP.H0, PP.H1, PP.H2, PP.H3, PP.H4) from `coloc.susie` for every trait pair × ancestry × locus combination, with four PP.H4 thresholds {0.5, 0.7, 0.8, 0.9} used for tier assignment.
 
-2. **Credible sets** from SuSiE-RSS fine-mapping per trait × ancestry × locus: credible set size, `min_abs_corr`, convergence status, `L` used vs `L` cap.
+2. **Credible set properties** from SuSiE-RSS per trait × ancestry × locus: credible set size, min_abs_corr, convergence status, L value (baseline and fallback), and locus-level identifiability diagnostic.
 
-3. **QTL colocalization tier per gene per tissue per cell type** from three-way (eQTL, pQTL, sQTL) coloc.
+3. **QTL coloc tier per gene per tissue per cell type** from three-way (eQTL, pQTL, sQTL) colocalization, expressed as a gene × tissue × trait matrix.
 
-4. **Pathway enrichment q-values** from MAGMA, g:Profiler (with discoverability-matched per-trait backgrounds), and LDSC partitioned heritability.
+4. **Pathway enrichment q-values** from MAGMA, g:Profiler (with discoverability-matched per-trait backgrounds), and LDSC partitioned heritability across the Finucane 2015 baseline and pathway-stratified annotations.
 
-5. **Replication statistics** per Tier A signal: lookup P-value and beta direction in each replication cohort.
+5. **Replication statistics** per Tier A signal: lookup P-value, beta direction, and proxy variant used if the sentinel is missing.
 
-**Secondary outcomes (T2, gated):**
+**Tier 2 primary variables (gated):**
 
-6. **MR causal estimates** (IVW, MR-Egger, weighted median, MR-PRESSO, MR-CAUSE, MR-RAPS for AFR/EAS) per trait pair per ancestry, with weak-instrument diagnostics (F-statistic, I², Q-statistic).
+6. **MR causal estimates** per trait pair per ancestry, across IVW, MR-Egger, weighted median, MR-PRESSO, MR-CAUSE, and MR-RAPS.
 
-7. **Matched-N bootstrap concordance** (100 iterations) between EUR and AFR for each trait, and LDSC cross-ancestry genetic correlation `r_g` as a global benchmark.
+7. **Weak-instrument diagnostics** (F-statistic, I², Q-statistic) per ancestry per trait pair.
 
-8. **PRS metrics** per ancestry: discrimination (R², AUC, incremental C-statistic), calibration (Hosmer-Lemeshow, slope, intercept, observed-vs-expected), clinical utility (NRI, decision-curve net benefit).
+8. **Matched-N bootstrap concordance** (100 iterations) between EUR and AFR for each trait, with mean and 95% CI.
 
-**Tertiary outcomes (T3, gated):**
+9. **LDSC cross-ancestry genetic correlation** (r_g) per trait pair of ancestries.
 
-9. **Selection scan statistics** (iHS, SDS, PBS, XP-EHH) at surviving Tier A loci, and polygenic selection test statistics (e.g., Berg & Coop 2014, sBayesS).
+10. **PRS metrics per ancestry.** Discrimination: R² on the liability scale, AUC, incremental C-statistic versus clinical baseline. Calibration: Hosmer-Lemeshow test, calibration slope, calibration intercept, observed-vs-expected deciles. Clinical utility: NRI at pre-specified risk threshold, decision-curve analysis, net benefit versus "treat all" and "treat none".
 
-10. **Deep-learning variant effect scores** (Enformer, Borzoi, Sei, AlphaMissense) at credible-set variants, with overlap against public MPRA datasets.
+**Tier 3 primary variables (gated):**
 
-### Indices
+11. **Selection scan statistics.** iHS, SDS, PBS, XP-EHH at surviving Tier A loci per continental ancestry.
 
-A **composite functional-evidence score** per variant (T3, Phase 10) combining: (i) three-way QTL coloc max PP.H4, (ii) pathway enrichment q-value for the variant's gene, (iii) Enformer regulatory track score, (iv) Sei regulatory activity score, (v) AlphaMissense score (for coding variants), (vi) MPRA functional classification. Exact weighting is **not** pre-specified and will be reported as a sensitivity sweep rather than a single combined number, because the literature lacks consensus on how to weight these components.
+12. **Polygenic selection test statistics** under Berg & Coop 2014 and sBayesS frameworks.
+
+13. **Deep-learning variant effect scores.** Enformer track predictions, Borzoi predictions, Sei regulatory activity scores, AlphaMissense scores for coding variants.
+
+14. **MPRA overlap classifications** per credible-set variant at Tier A loci.
+
+### 11.3 Indices
+
+A **composite mechanistic profile** per locus (Phase 10 and Phase 11) is constructed by transparent combination of Spine A–D evidence. The composite is reported as a **sensitivity sweep** across plausible weightings rather than a single combined score, because the field lacks consensus on relative weights for these evidence classes. The sensitivity sweep is pre-specified (§12.1); the choice to report a sweep rather than a single number is pre-registered.
 
 ---
 
@@ -232,56 +278,59 @@ A **composite functional-evidence score** per variant (T3, Phase 10) combining: 
 
 ### 12.1 Statistical models
 
-**Fine-mapping (Phase 1):** SuSiE-RSS with `L = 10`, min_abs_corr = 0.5 as the baseline, with a pre-registered sensitivity sweep at min_abs_corr ∈ {0.1, 0.5, 0.9} for complex regions. Convergence failure policy (pre-registered in `config/susie_policy.yaml`): regions that fail to converge under `L = 10` are re-run with `L = 5` and then `L = 3`; regions failing all three are reported as "unresolved" in the supplementary table and excluded from colocalization downstream.
+**Fine-mapping (Phase 1).** SuSiE-RSS with baseline L = 10 and min_abs_corr = 0.5. Pre-registered sensitivity sweep: min_abs_corr ∈ {0.1, 0.5, 0.9} for all regions flagged as "complex" per a pre-specified complexity rule (≥ 3 credible sets at L = 10 or max credible-set size > 50). Convergence failure policy committed in `config/susie_policy.yaml`: regions failing to converge at L = 10 are re-run at L = 5, then L = 3; regions failing all three are reported as "unresolved" in the supplementary table and excluded from downstream colocalization.
 
-**Colocalization (Phase 1, Phase 2):** `coloc.susie` with default priors (p1 = p2 = 10⁻⁴, p12 = 10⁻⁵). PP.H4 threshold sweep at {0.5, 0.7, 0.8, 0.9}. Tier assignment: Tier A = PP.H4 ≥ 0.9 across all four thresholds; Tier B = PP.H4 ≥ 0.7 at ≥ 3 thresholds; Tier C = PP.H4 ≥ 0.5 at ≥ 2 thresholds.
+**Colocalization (Phases 1 and 2).** `coloc.susie` with default priors (p1 = p2 = 1e−4, p12 = 1e−5). PP.H4 threshold sweep {0.5, 0.7, 0.8, 0.9}. Tier assignment: **Tier A** = PP.H4 ≥ 0.9 across all four thresholds; **Tier B** = PP.H4 ≥ 0.7 at ≥ 3 of 4 thresholds; **Tier C** = PP.H4 ≥ 0.5 at ≥ 2 of 4 thresholds.
 
-**Pathway enrichment (Phase 5):** MAGMA gene-based and gene-set enrichment with 1000G EUR LD panel for EUR analyses and matched ancestry panels where available. g:Profiler with discoverability-matched per-trait backgrounds. LDSC partitioned heritability across the Finucane 2015 baseline and pathway-stratified annotations. LDSC-SEG for tissue-specific heritability. Permutation null (N = 1000) for colocalization gene lists.
+**QTL integration (Phase 2).** Three-way colocalization across GTEx v8 eQTL per tissue, GTEx v8 sQTL per tissue, UKB-PPP pQTL, and deCODE pQTL. Genes are prioritized when two or more of the three QTL modalities support the same gene at PP.H4 ≥ 0.7, with cross-referencing to Open Targets Locus2Gene as an external independent prioritization layer. Negative-control gene sets are tested in the same pipeline.
 
-**Replication (Phase 9):** Lookup of Tier A signals in FinnGen R12, GBMI, MVP phs001672, BBJ, and All of Us (via summary-stat export from the Workbench). Replication = P < 0.05 with concordant effect direction at the locus-level sentinel variant.
+**Pathway enrichment (Phase 5).** MAGMA gene-based and gene-set enrichment with ancestry-matched LD panels (1000G EUR, AFR, EAS as available). g:Profiler with per-trait discoverability-matched background (gene universe restricted to genes with ≥ 1 SNP genome-wide-significant at P < 5e−8 in the trait's discovery GWAS). LDSC partitioned heritability across the Finucane 2015 baseline annotations plus pathway-stratified annotations. LDSC-SEG for tissue-specific heritability. Permutation null (N = 1000) for colocalization gene lists tested against pathway databases.
 
-**Mendelian randomization (Phase 3, T2, gated):** IVW, MR-Egger, weighted median (three-method triangulation). MR-PRESSO and MR-CAUSE for outlier robustness. MR-RAPS for weak-instrument mitigation in AFR and EAS. Ancestry-specific vs trans-ancestry instrument choice made **per trait pair** with pre-registered criteria: ancestry-specific when F-statistic ≥ 10 per ancestry, trans-ancestry when F-statistic < 10 per ancestry.
+**Replication (Phase 9).** Sentinel-variant lookup in FinnGen R12, GBMI, MVP phs001672, BBJ, All of Us (via summary statistics exported from the Workbench), and Pan-UKBB (where not already used in discovery). Replication call: nominal P < 0.05 with concordant effect direction at the locus-level sentinel variant, or at a proxy variant with r² > 0.8 in the relevant ancestry if the sentinel is missing.
 
-**Matched-N concordance (Phase 4, T2, gated):** 100× bootstrap resampling of EUR down to AFR sample size, re-running coloc.susie on each bootstrap, reporting mean and 95% CI for cross-ancestry concordance. LDSC cross-ancestry `r_g` as a complementary benchmark.
+**Mendelian randomization (Phase 3, T2, gated).** Triangulation across IVW, MR-Egger, and weighted median as the three primary estimators. MR-PRESSO for outlier detection and global pleiotropy testing. MR-CAUSE for confounded-pleiotropy robustness. MR-RAPS for weak-instrument mitigation in AFR and EAS. Instrument choice (ancestry-specific vs. trans-ancestry) is made per trait pair with pre-registered criteria: ancestry-specific instruments when F-statistic ≥ 10 in the ancestry-specific instrument set, trans-ancestry instruments when F-statistic < 10 per ancestry.
 
-**PRS (Phase 8, T2, gated):** PRS-CSx trained on EUR discovery sumstats with AFR, EAS, and Hispanic transfer. Discrimination: R² (liability scale), AUC, incremental C-statistic vs clinical baseline. Calibration: Hosmer-Lemeshow test, calibration slope (target = 1), calibration intercept (target = 0), observed-vs-expected deciles plot. Clinical utility: NRI at pre-specified risk threshold, decision-curve analysis, net benefit vs "treat all"/"treat none".
+**Matched-N concordance (Phase 4, T2, gated).** 100× bootstrap resampling of EUR down to AFR sample size, re-running `coloc.susie` on each bootstrap. Reported as mean and 95% CI for cross-ancestry concordance. LDSC cross-ancestry r_g is reported as a complementary global benchmark.
 
-**Selection scans (Phase 6, T3, gated):** iHS and XP-EHH computed via selscan 2.0 on phased 1000G + HGDP reference haplotypes. SDS computed via sds-wrapper. PBS (Yi et al. 2010 style) on 1000G super-populations. Polygenic selection: Berg & Coop 2014 framework.
+**PRS (Phase 8, T2, gated).** PRS-CSx trained on EUR discovery summary statistics with AFR, EAS, and Hispanic transfer. Discrimination, calibration, and clinical utility metrics as listed in §11.2 #10. Pathway-restricted PRS (using the Tier A pathway set from Phase 5) is compared to genome-wide PRS per ancestry.
+
+**Selection scans (Phase 6, T3, gated).** iHS and XP-EHH via selscan 2.0 on phased 1000 Genomes + HGDP haplotypes. SDS via the standard sds-wrapper pipeline. PBS (Yi et al. 2010) on 1000 Genomes super-populations. Polygenic selection via the Berg & Coop 2014 framework and sBayesS.
 
 ### 12.2 Transformations
 
-- **Sumstats harmonization:** Effect allele alignment to the hg38 reference, liftover from hg19 where needed, effect direction alignment, flipping strand-ambiguous SNPs (A/T, C/G with MAF > 0.4) excluded, MAF filter ≥ 0.01.
-- **deCODE pQTL Beta:** Already in standard-deviation units per the deCODE README; no additional transformation.
-- **Liability-scale PRS:** Transformed from observed-scale via population prevalence estimates from the trait's source cohort.
+- **Summary statistics harmonization.** Effect allele alignment to the hg38 reference, liftover from hg19 where needed via CrossMap, effect direction alignment, exclusion of strand-ambiguous SNPs (A/T and C/G) with MAF > 0.4, minor allele frequency filter ≥ 0.01.
+- **deCODE pQTL Beta.** Already reported in standard-deviation units per the deCODE README; no additional transformation applied.
+- **PRS liability scale.** Transformation from observed scale via population prevalence estimates from each trait's source cohort and Lee 2011 liability-scale correction.
 
 ### 12.3 Inference criteria
 
-- **Phase 1 (fine-mapping):** Primary credible set per region = the SuSiE credible set with minimum size and maximum `min_abs_corr`.
-- **Phase 2 (coloc):** Primary tier = Tier A as defined in §12.1. Full threshold sweep reported in supplementary.
-- **Phase 3 (MR, gated):** Causal claim requires three-method agreement (IVW, MR-Egger, weighted median all P < 0.05 with concordant direction), non-significant MR-PRESSO global test (P > 0.05), and F-statistic ≥ 10 for the instrument set.
-- **Phase 5 (enrichment):** Pathway claim requires q < 0.05 after Benjamini-Hochberg correction within the pathway database used, and null result for all three negative-control pathway sets.
-- **Phase 9 (replication):** Replication claim requires nominal P < 0.05 with concordant direction at the sentinel variant in ≥ 1 independent cohort.
+- **Phase 1 (fine-mapping).** Primary credible set per region is the SuSiE credible set with minimum size and maximum min_abs_corr at baseline L = 10.
+- **Phase 2 (colocalization).** Primary tier is Tier A as defined in §12.1. Full threshold sweep is reported in supplementary tables.
+- **Phase 3 (MR, gated).** Causal claim requires three-method agreement (IVW, MR-Egger, weighted median all at P < 0.05 with concordant effect direction), non-significant MR-PRESSO global test (P > 0.05), and F-statistic ≥ 10 for the instrument set.
+- **Phase 5 (pathway enrichment).** Pathway claim requires q < 0.05 after Benjamini-Hochberg correction within each pathway database, and null results for all three negative-control pathway sets.
+- **Phase 9 (replication).** Replication claim requires P < 0.05 with concordant effect direction at the sentinel variant (or proxy) in ≥ 1 independent cohort.
 
 ### 12.4 Data exclusion
 
-- **Locus exclusions (pre-registered):** Complex regions with SuSiE convergence failure at `L = 3` are excluded from primary coloc (reported as "unresolved").
-- **Variant exclusions:** Strand-ambiguous SNPs with MAF > 0.4 are excluded. The KCNJ11 asthma-HTN Tier-1 signal from the prior draft is dropped (n_SNPs = 6 < 50 threshold) — already committed as a decision in `.planning/DECISIONS.md`. The DIAMANTE T2D dedup issue flagged in the prior draft's 76/63%/26 denominator mismatch has been audited and resolved at the position-level dedup stage (commit `81611aa` in the repo).
-- **Trait exclusions:** None at pre-registration. If a trait fails to harmonize across all five ancestries (no trait has SNPs in > 2 ancestries), it will be reported as excluded in a supplementary note.
+- **Locus-level exclusions.** Complex regions with SuSiE convergence failure at L = 3 are excluded from primary colocalization and reported as "unresolved" in a supplementary table.
+- **Variant-level exclusions.** Strand-ambiguous SNPs (A/T, C/G) with MAF > 0.4 are excluded from all analyses.
+- **Pre-registered low-power exclusion.** Any candidate pleiotropic signal with fewer than 50 SNPs in the relevant locus window in the relevant ancestry is excluded from primary analysis. This threshold is set a priori based on fine-mapping literature (SuSiE-RSS requires adequate LD matrix conditioning at the regional scale).
+- **Trait-level exclusions.** None at pre-registration. If a trait fails to harmonize across all five ancestries, it is reported as excluded in a supplementary note with the harmonization failure mode documented.
 
 ### 12.5 Missing data
 
-- **Cross-cohort missingness:** If a sentinel variant is absent from a replication cohort, the next-best proxy variant (r² > 0.8 in the relevant ancestry) is used. Proxy substitution is reported per Tier A signal.
-- **Ancestry missingness:** Traits with no AFR or EAS sumstats available are marked "EUR-only" and excluded from matched-N analyses.
-- **QTL missingness:** Genes with no GTEx v8 eQTL signal (e.g., low-expression tissues) are reported as "no eQTL evidence" and do not contribute to three-way QTL scoring.
+- **Cross-cohort missingness.** Sentinel variants missing from a replication cohort are proxied by the highest-r² variant in the relevant ancestry (r² > 0.8 required). Proxy substitution is reported per Tier A signal.
+- **Ancestry missingness.** Traits without AFR or EAS summary statistics are marked "EUR-only" and excluded from matched-N analyses (Phase 4, T2).
+- **QTL missingness.** Genes with no GTEx v8 eQTL signal (low-expression tissues, expression-filtered genes) are reported as "no eQTL evidence" and do not contribute to three-way QTL scoring at the affected tissues.
 
 ### 12.6 Exploratory analyses
 
-All analyses beyond those listed above are exploratory and will be labeled as such in the manuscript. Specifically:
+The following are explicitly exploratory and will be labeled as such in the manuscript:
 
-- Single-cell eQTL integration (OneK1K, CLUES) if data are available by Phase 2 execution.
-- Additional pQTL cohorts beyond UKB-PPP and deCODE (e.g., ARIC, INTERVAL) if time permits.
-- ML scorecard refinement from the prior draft — **not** planned for the revision; the prior ML scorecard is dropped per `DECISIONS.md`.
-- Trait-level subgroup analyses (sex-stratified, age-stratified) — not planned at pre-registration.
+- Single-cell eQTL integration (OneK1K, CLUES) if data coverage is sufficient at Phase 2 execution time.
+- Additional pQTL cohorts beyond UKB-PPP and deCODE (e.g., ARIC, INTERVAL) if harmonization effort is tractable.
+- Sex-stratified and age-stratified subgroup analyses (not planned at pre-registration; added only if reviewer-requested).
+- Pathway-restricted PRS alternatives beyond the Tier A pathway set.
 
 ---
 
@@ -289,34 +338,40 @@ All analyses beyond those listed above are exploratory and will be labeled as su
 
 ### 13.1 Pre-registered failure modes
 
-The following pre-specified outcomes trigger specific responses, not post-hoc reframing:
+The following outcomes trigger pre-specified responses without post-hoc reinterpretation:
 
-1. **All negative controls non-null.** Pipeline failure. Submission blocked. Investigation and re-pre-registration required.
-2. **< 1 surviving Tier A signal after Phase 2.** T2/T3 not activated; T1 alone is submitted to AJHG with an honest accounting titled "Cross-ancestry colocalization at cardiometabolic loci: a negative result".
-3. **< 50% Tier A replication in Phase 9.** T2/T3 not activated; manuscript discusses replication failure as the primary finding.
-4. **MR finds no causally-directed trait pairs.** T3 not activated; the MR result is reported as "null" rather than reframed.
-5. **PRS transfer fails to produce interpretable calibration.** T3 not activated; the PRS result is reported with the equity-vs-accuracy trade-off framed even if the absolute performance is poor.
-6. **Polygenic selection test is null (T3).** Fallback framing (pre-registered in §3, H8) activates: single-locus selection signatures are the primary selection finding, not polygenic selection.
+1. **Negative control non-null.** Any of the three negative-control gene sets (HLA, pigmentation, eye-color) showing Tier A colocalization or q < 0.05 enrichment is a pipeline failure. The manuscript is not submitted until the source of the false positive is identified, fixed, and re-verified.
+
+2. **Zero Tier A signals after Phase 2.** CP#1 fails; T2 and T3 are not activated. The manuscript is framed around negative findings with explicit power and method diagnostics.
+
+3. **Replication failure (< 50% of Tier A signals replicate in ≥ 1 cohort).** CP#1 fails; T2 and T3 are not activated. Replication failure is discussed as a primary finding.
+
+4. **MR identifies no causally-directed trait pairs.** CP#2 fails; T3 is not activated. The MR result is reported as null, not reframed.
+
+5. **PRS transfer produces uninterpretable calibration.** CP#2 fails; T3 is not activated. The PRS result is reported with the equity-vs-accuracy trade-off framed regardless of absolute performance.
+
+6. **Polygenic selection is null (T3).** Pre-registered fallback in §3.4 H10 activates: single-locus selection signatures become the primary selection finding.
 
 ### 13.2 Deviation policy
 
-Any deviation from this pre-registration will be disclosed in the manuscript's Methods section under a subsection titled "Deviations from pre-registration" with explicit rationale per deviation. Deviations made **after** looking at primary results will be flagged as such. A companion "deviation log" will be committed to the project repository at `.planning/osf_deviations.md` with date-stamped entries.
+Deviations from this pre-registration are disclosed in the Methods section of the resulting manuscript under a subsection titled "Deviations from pre-registration" with per-deviation rationale. Deviations made after looking at primary results are flagged as post-hoc. A deviation log is maintained in the project repository at `.planning/osf_deviations.md` with date-stamped entries and is included as supplementary material.
 
 ### 13.3 Timeline
 
-**Not pre-registered as a constraint.** The project has no external deadline. Rigor is prioritized over speed per the project charter.
+Not pre-registered as a constraint. Rigor is prioritized over speed.
 
 ### 13.4 Code and reproducibility
 
-- **Repository:** `github.com/[user]/coloc_analysis` (will be made public on first submission).
-- **Snakemake pipeline:** All analyses run via Snakemake 7.32.4 with conda environments pinned to exact versions in `envs/*.yml`.
-- **Containers:** Docker and Singularity images built per phase and published via Zenodo with DOI on first submission.
-- **CI:** Nightly 3-locus toy smoke test runs via LSF cron on the NCSU HPC (will migrate to GitHub Actions on public release).
-- **Data transformations:** All harmonization, liftover, and QC scripts are in `src/python/` and `src/R/` and are the only artifacts allowed between raw downloads and analytical inputs.
+- **Repository.** `github.com/[insert username]/coloc_analysis` (made public on first submission).
+- **Pipeline.** Snakemake 7.32.4 orchestrates all analyses. All conda environments are pinned to exact package versions in `envs/*.yml`.
+- **Containers.** Docker and Singularity images are built per phase and published on Zenodo with DOIs on first manuscript submission.
+- **Continuous integration.** Nightly 3-locus toy smoke test runs via LSF cron on the NCSU HPC through Phase 0; migrates to GitHub Actions on public release.
+- **Harmonization.** All harmonization, liftover, and QC scripts are tracked in `src/python/` and `src/R/` and are the only permitted transformations between raw downloads and analytical inputs.
+- **Data provenance.** All data source URLs, access models, download dates, file checksums, and version strings are tracked in `.planning/data_access.md` with per-source verification dates.
 
 ### 13.5 Ethical considerations
 
-No human subjects contact, no wet-lab work, no individual-level data outside the All of Us Researcher Workbench (Controlled Tier, used only for Phase 8 PRS validation under NCSU's institutional data use agreement). No identifiable data. All data sources either carry open-access licenses or have been accessed under standard academic credentials disclosed in §9.
+No human subjects contact, no wet-lab work, no biological samples. Individual-level data usage is restricted to the All of Us Researcher Workbench under the investigator's existing Controlled Tier credentials and NCSU's institutional data use agreement; no individual-level data leave the Workbench. No identifiable data are handled outside the Workbench. All summary statistics sources are publicly licensed or accessed under standard academic credentials as documented in §9.
 
 ### 13.6 Conflicts of interest
 
@@ -324,26 +379,25 @@ None.
 
 ### 13.7 Funding
 
-*[Insert funding statement if applicable. If no external funding for this work specifically, state "This work was conducted with internal NCSU ASHES Lab resources and has no external funding for the pre-registered analyses."]*
+*[Insert funding statement. If no external funding for this specific work, state: "This work was conducted with internal NCSU ASHES Lab resources and has no external funding for the pre-registered analyses."]*
 
 ### 13.8 Target journals
 
-Primary: Nature Genetics (T1+T2+T3). Secondary: American Journal of Human Genetics (T1 only). Tertiary: Nature Metabolism (T1+T2). Cover letters are versioned per target journal at `manuscript/cover_letter/` per `REQ-10`.
+Primary: Nature Genetics. Secondary (conditional on scope): American Journal of Human Genetics, Nature Metabolism, Cell Genomics, Genome Medicine. Target journal choice depends on cumulative scope at submission time and is documented per-version in `manuscript/cover_letter/`.
 
 ---
 
 ## End of pre-registration draft
 
-**Checklist before submitting to OSF:**
+**Pre-submission checklist:**
 
 - [ ] Fill in `[insert ORCID iD]` in §2.
+- [ ] Fill in `[insert username]` in §13.4 or leave as placeholder if the repository is not yet public.
 - [ ] Fill in §13.7 funding statement.
-- [ ] Verify the GitHub repo name in §13.4 if different from placeholder.
-- [ ] Confirm OSF account is active and you can create a new project.
-- [ ] In OSF: create a new project titled "coloc_analysis revision" (or similar). Add this investigator as the contributor.
-- [ ] From that project, create a pre-registration using the "OSF Preregistration" template.
-- [ ] Paste each section above into the matching OSF form field. OSF field names map 1:1 to section headings 1-13.
-- [ ] Upload supporting files as attachments: `PROJECT.md`, `ROADMAP.md`, `REQUIREMENTS.md`, `DECISIONS.md`, `data_access.md` (these give reviewers the full planning context).
-- [ ] Submit. OSF issues the DOI immediately.
+- [ ] Log in at https://osf.io and create a new OSF project titled "Mechanistic resolution of pleiotropy at cardiometabolic loci" (or your preferred title).
+- [ ] From the project, create a pre-registration and select the **"OSF Preregistration"** template.
+- [ ] Paste each section above into the matching OSF form field. Section numbers map 1:1 to the OSF template.
+- [ ] Attach the following planning artifacts as supporting files so reviewers can see the full analytical framework: `PROJECT.md`, `ROADMAP.md`, `REQUIREMENTS.md`, `DECISIONS.md`, `data_access.md`.
+- [ ] Submit. OSF mints a DOI immediately.
 - [ ] Record the DOI in `.planning/data_access.md` at the top of the file.
-- [ ] Commit the DOI update and delete this draft file (or keep as historical record — your call).
+- [ ] Commit the DOI update and either archive or delete this draft file.
