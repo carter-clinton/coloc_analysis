@@ -1,16 +1,20 @@
 ---
 phase: 00-data-access-infrastructure
 verified: 2026-04-10T20:30:00Z
+reverified: 2026-04-10T22:45:00Z
 status: human_needed
-score: 5/8 must-haves verified
+score: 6/8 must-haves verified (7/8 if OSF item is scored as now-verified)
 overrides_applied: 0
 gaps:
   - truth: "OSF pre-registration submitted"
-    status: failed
-    reason: "Plan 02 checkpoint pending -- user has not yet submitted OSF pre-registration. Zero evidence of OSF DOI in data_access.md or any project file."
-    artifacts: []
-    missing:
-      - "User must submit OSF pre-registration and record DOI in .planning/data_access.md"
+    status: verified
+    reason: "OSF pre-registration submitted 2026-04-10. DOI: 10.17605/OSF.IO/PVB5J. Public (no embargo). Registration URL: https://osf.io/pvb5j/. Linked project: https://osf.io/az52u. Template: OSF Preregistration. License: CC0 1.0 Universal. Title: 'Mechanistic resolution of pleiotropy at cardiometabolic loci: a cross-ancestry framework integrating fine-mapping, three-way QTL colocalization, bidirectional Mendelian randomization, and selection analysis across BMI, type 2 diabetes, hypertension, ischemic stroke, and asthma'. DOI recorded in .planning/data_access.md. Full text preserved at .planning/osf_prereg_draft.md."
+    artifacts:
+      - path: ".planning/data_access.md"
+        note: "DOI recorded at top of file"
+      - path: ".planning/osf_prereg_draft.md"
+        note: "Full pre-registration text preserved as in-repository reference"
+    missing: []
   - truth: "Corrupted supplementary tables (Table 1, 3, S4) fixed and DIAMANTE T2D dedup resolved"
     status: partial
     reason: "DIAMANTE dedup audit completed (commit 81611aa) confirming methodology is sound. However, Tables 1/3/S4 are manuscript-only (no CSV/TSV in legacy tree) -- they cannot be 'fixed' until tables are regenerated from new coloc.susie results in later phases. The audit commit explicitly documents this."
@@ -57,9 +61,9 @@ human_verification:
 | 5 | Conda envs pinned under envs/*.yml with exact versions | VERIFIED | r_coloc.yml: r-base=4.4.2, r-coloc=5.2.3, r-susier=0.14.2. python_stats.yml: snakemake=7.32.4, python=3.11. plink.yml: plink=1.90b6.21, plink2=2.00a6.1, bcftools=1.21. All use =version format. |
 | 6 | Snakemake skeleton built with per-trait/ancestry schema validation | VERIFIED | Snakefile at project root: `validate(config, "src/snakemake/schemas/pipeline.schema.yaml")`. All 8 rules refactored in src/snakemake/rules/ with config-based paths. All 8 rules have conda: directives. 1,071 lines of rule code total. |
 | 7 | Toy 3-locus CI smoke test completes in under 15 minutes | PARTIAL | Scaffolding complete: Snakefile.test, config_test.yaml, regions_toy.csv (3 loci), expected_results.yaml, subset script, LSF cron wrapper. Snakefile.test reuses production rules. Config override paths all under tests/toy_3locus/. Cannot verify 15-minute completion until toy data is populated (requires data downloads from Plan 02 checkpoint). |
-| 8 | OSF pre-registration submitted | FAILED | No evidence of OSF submission or DOI in any project file. Plan 02 Task 2 checkpoint:human-verify is pending. |
+| 8 | OSF pre-registration submitted | **VERIFIED** (re-verified 2026-04-10T22:45:00Z) | OSF Preregistration submitted 2026-04-10. DOI `10.17605/OSF.IO/PVB5J`. Public, non-embargoed. Registration URL: https://osf.io/pvb5j/. Template: OSF Preregistration. License: CC0 1.0 Universal. Linked OSF project: https://osf.io/az52u. DOI recorded in .planning/data_access.md. Full text preserved at .planning/osf_prereg_draft.md. |
 
-**Score:** 5/8 truths verified (2 partial, 1 failed)
+**Score:** 6/8 truths verified (2 partial). Updated 2026-04-10T22:45:00Z after OSF pre-registration submission. The remaining 2 partial items are Tables 1/3/S4 regeneration (deferred to Phase 11 by design) and the CI smoke test end-to-end run (deferred until toy data is populated from Plan 02 downloads).
 
 ### Required Artifacts
 

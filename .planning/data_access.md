@@ -3,6 +3,8 @@
 **Last verified:** 2026-04-10 (HPC connectivity verified for all 8 open-access
 sources; contacts and portal URLs confirmed via prior research 2026-04-09).
 
+**OSF pre-registration:** `doi:10.17605/OSF.IO/PVB5J` — submitted 2026-04-10, public, non-embargoed. Registration ID `pvb5j`. Linked OSF project `az52u`. Registration URL: https://osf.io/pvb5j/. Template: OSF Preregistration. Title: *Mechanistic resolution of pleiotropy at cardiometabolic loci: a cross-ancestry framework integrating fine-mapping, three-way QTL colocalization, bidirectional Mendelian randomization, and selection analysis across BMI, type 2 diabetes, hypertension, ischemic stroke, and asthma.* License: CC0 1.0 Universal. Full draft text preserved at `.planning/osf_prereg_draft.md`.
+
 ## Executive summary (read this first)
 
 The original assumption — that DUAs for 8 data providers would be the longest
