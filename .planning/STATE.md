@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v3.1.2
 milestone_name: milestone
-status: phase-discussed
-stopped_at: "Phase 1 context captured — 5 gray areas resolved, 01-CONTEXT.md written, ready for /gsd-plan-phase 1"
-last_updated: "2026-04-11T00:00:00.000Z"
-last_activity: 2026-04-11
+status: completed
+stopped_at: "Phase 1 Plan 01-01 complete — 10 tasks, 9 commits (630e3a2..9cc11a0), SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-01-SUMMARY.md. A6 dispatch resolved via annotate_susie branch (not plan's runsusie pre-spec). All 10 Wave 1 verification gates PASS. testthat-phase1: FAIL 0 / PASS 19. pytest: 2/2 pass. Snakemake dry-run: 29 jobs across 11 rules. Wave 2 (Plans 01-02 + 01-03) unblocked. Deferred: DEF-01-01 (--use-conda env path), DEF-01-02 (r_coloc env materialization), DEF-01-03 (unrelated unstaged files)."
+last_updated: "2026-04-12T02:32:38.166Z"
+last_activity: 2026-04-12
 progress:
   total_phases: 12
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_plans: 10
+  completed_plans: 5
+  percent: 50
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 
 ## Current Position
 
-Phase: 01 (coloc-susie-fine-mapping-spine) — CONTEXT CAPTURED
-Plan: 0 of TBD
-Status: Ready for /gsd-plan-phase 1
-Last activity: 2026-04-11
+Phase: 01 (coloc-susie-fine-mapping-spine) — WAVE 1 COMPLETE
+Plan: 1 of 6
+Status: Plan 01-01 complete; Wave 2 unblocked (Plans 01-02 and 01-03 ready)
+Last activity: 2026-04-12
 
-Progress: ░░░░░░░░░░ 0%
+Progress: ██░░░░░░░░ 17%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: ░░░░░░░░░░ 0%
 | Phase 00 P01 | 11min | 2 tasks | 10 files |
 | Phase 00 P03 | 17min | 2 tasks | 11 files |
 | Phase 00 P04 | 14min | 3 tasks | 7 files |
+| Phase 01 P01 | 18min | 10 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Recent decisions affecting current work:
 - [Phase 00]: Snakefile.test reuses production rules via include directives -- no test-specific rule duplication (D-04)
 - [Phase 00]: CI smoke test defaults to dry-run; --full-run flag after data population
 - [Phase 00]: Expected PP.H4 regression values are approximate placeholders pending first real data run (T-00-09)
+- [Phase 01]: [Phase 01-01]: A6 dispatch resolved via annotate_susie branch (NOT runsusie — plan pre-spec was factually wrong about runsusie signature); annotate_susie(fit, snp_names, R) applied before saveRDS so Wave 3 coloc.susie consumes .fit.rds directly
+- [Phase 01]: [Phase 01-01]: Structured 3-step retry ladder (primary -> max_iter_retry -> regularized LD) in run_susie_with_ladder helper; final identity-LD fallback preserved from prior behavior
+- [Phase 01]: [Phase 01-01]: Test environment bolted via .r_lib_phase1/ CRAN testthat on la_multitrait_r conda env (envs/r_coloc.yml deferred to DEF-01-02 in Wave 2/3)
 
 ### Pending Todos
 
@@ -84,8 +88,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-11T00:00:00.000Z
-Stopped at: Phase 1 discuss complete — 5 gray areas resolved (G1-G5), 01-CONTEXT.md captured at .planning/phases/01-coloc-susie-fine-mapping-spine/01-CONTEXT.md. Key decisions: (G1) persist SuSiE fit .rds + new coloc.smk rule; (G2) L=10 + sweep {0.1,0.5,0.9} + convergence retry ladder; (G3) hybrid complex-region definition with 6 curated loci; (G4) Option D hybrid LD (Pan-UKBB EUR + HGDP+1kG AFR + 1000G rest); (G5) QC dashboard with D1+D2+D3+D4+D6. **Ready for /gsd-plan-phase 1.**
+Last session: 2026-04-12T02:29:00.000Z
+Stopped at: Phase 1 Plan 01-01 complete — 10 tasks, 9 commits (630e3a2..9cc11a0), SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-01-SUMMARY.md. A6 dispatch resolved via annotate_susie branch (not plan's runsusie pre-spec). All 10 Wave 1 verification gates PASS. testthat-phase1: FAIL 0 / PASS 19. pytest: 2/2 pass. Snakemake dry-run: 29 jobs across 11 rules. Wave 2 (Plans 01-02 + 01-03) unblocked. Deferred: DEF-01-01 (--use-conda env path), DEF-01-02 (r_coloc env materialization), DEF-01-03 (unrelated unstaged files).
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
