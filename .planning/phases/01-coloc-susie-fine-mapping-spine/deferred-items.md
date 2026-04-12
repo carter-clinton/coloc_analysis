@@ -44,6 +44,38 @@ export PHASE1_PROJECT_ROOT=/gpfs_common/share01/clintonlab/ckclinto/coloc_analys
 
 **Resolution target:** Phase 1 Plan 01-02 or 01-03: materialize `envs/r_coloc.yml` via `conda env create -f envs/r_coloc.yml -p /rs1/researchers/c/ckclinto/conda_envs/r_coloc_phase1` so `--use-conda` can find the env (together with DEF-01-01).
 
+### DEF-01-04: `config/regions_curated.csv` is GRCh37; HGDP+1kG v2 BCFs are GRCh38
+
+**Discovered by:** Plan 01-03 Task 1-03-00 preflight (step 13)
+**Symptom:** `config/pipeline.yaml` declares `genome_build: GRCh37` and the
+curated-region coordinates in `config/regions_curated.csv` are GRCh37
+(FTO ~16:53.8-54.4 Mb, MC4R ~18:56-56.6 Mb, APOE ~19:44-46 Mb etc.), but
+the gnomAD v3.1.2 HGDP+1kG v2 phased BCFs use GRCh38 contigs
+(`##contig=<ID=chr22>`; chr22 in GRCh38 starts at ~10.5 Mb with different
+coordinates).
+
+**Impact:** `build_hgdp_1kg_ld` rule plumbing (Plan 01-03 Task 1-03-02)
+can be committed and dry-run-gated without fixing this, but the rule
+cannot be executed for real until either:
+- (a) curated regions are lifted GRCh37 -> GRCh38 via UCSC liftOver, or
+- (b) a per-ancestry region-coordinate layer is added to the pipeline
+  schema and the rule consumes lifted coordinates, or
+- (c) the panel is treated as GRCh38 and UKBB-LD (GRCh37) vs HGDP+1kG
+  (GRCh38) is managed as a two-build pipeline with explicit tagging.
+
+**Why not fix in Plan 01-03:** Rule 4 -- this is architectural (schema +
+new liftover stage + policy for mixing builds across panels). Plan 01-03
+is a plumbing plan (Rule 2 scope only); a liftover decision affects every
+downstream plan that consumes LD and needs its own plan.
+
+**Resolution target:** Plan 01-04 or 01-05 (first plan that actually
+executes `build_hgdp_1kg_ld` for real). Likely option (a) -- UCSC liftOver
+of `config/regions_curated.csv` to a companion `regions_curated_grch38.csv`
+with a `genome_build` column -- is lowest-friction. A deliberate
+decision point should be raised there.
+
+**Recorded in:** `01-03-scope-decision.md` Rationale section.
+
 ### DEF-01-03: Unrelated unstaged changes in working tree at start of Plan 01-01
 
 **Discovered by:** `git status` at start of execution
