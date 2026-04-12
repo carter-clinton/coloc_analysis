@@ -1,0 +1,50 @@
+{
+  "pair_id": "t2d__htn__EUR__FTO_16q12",
+  "status": "success",
+  "trait_a": "t2d",
+  "trait_b": "htn",
+  "ancestry": "EUR",
+  "region": "FTO_16q12",
+  "base_region": "FTO_16q12",
+  "summary": {
+    "idx1": 1,
+    "idx2": 1,
+    "nsnps": 523,
+    "hit1": "rs9939609",
+    "hit2": "rs9939609",
+    "PP.H0.abf": 0.01,
+    "PP.H1.abf": 0.02,
+    "PP.H2.abf": 0.02,
+    "PP.H3.abf": 0.05,
+    "PP.H4.abf": 0.90
+  },
+  "susie_pairs": [
+    {
+      "idx1": 1,
+      "idx2": 1,
+      "nsnps": 523,
+      "hit1": "rs9939609",
+      "hit2": "rs9939609",
+      "PP.H0.abf": 0.01,
+      "PP.H1.abf": 0.02,
+      "PP.H2.abf": 0.02,
+      "PP.H3.abf": 0.05,
+      "PP.H4.abf": 0.90
+    },
+    {
+      "idx1": 1,
+      "idx2": 2,
+      "nsnps": 523,
+      "hit1": "rs9939609",
+      "hit2": "rs7202116",
+      "PP.H0.abf": 0.03,
+      "PP.H1.abf": 0.15,
+      "PP.H2.abf": 0.12,
+      "PP.H3.abf": 0.60,
+      "PP.H4.abf": 0.10
+    }
+  ],
+  "n_pairs_total": 2,
+  "n_cs_a": 1,
+  "n_cs_b": 2
+}
