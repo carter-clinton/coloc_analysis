@@ -5,6 +5,12 @@ until the corresponding downloader rules produce real outputs. Once
 Task 1-02-02 (UKBB-LD) and Task 1-03-02 (HGDP+1kG) run, the `.rds` files
 appear under LD_REF_DIR and these tests assert real structure.
 
+Plan 01-03 Task 1-03-03 adds test_hgdp_afr_sample_count, which validates
+the AFR sample count recorded in the sidecar .meta.json. Bounds are
+950-1010 based on wave2b_preflight.log step 8 (1003 samples in
+metadata, 986 reconciled against chr22 BCF header) -- the plan pre-spec's
+~730 was an older 1kG-only figure.
+
 Environment variables:
     LD_REF_DIR  -- root of the LD reference cache (default: data/ld_reference)
 
@@ -78,3 +84,35 @@ def test_hgdp_afr_output():
         pytest.skip(f"{AFR_DIR} not yet populated (run Task 1-03-02)")
     rds_files = list(AFR_DIR.glob("*.rds"))
     assert len(rds_files) >= 1, f"No .rds files in {AFR_DIR}"
+
+
+def test_hgdp_afr_sample_count():
+    """AFR sample count recorded in sidecar .meta.json is in the expected range.
+
+    Plan 01-03 Task 1-03-03. Bounds are 950-1010 based on
+    wave2b_preflight.log step 8 (1003 in metadata, 986 reconciled
+    against chr22 BCF header). Anything outside this range indicates
+    either an upstream metadata re-release or a sample-id prefix
+    reconciliation regression (Pitfall 3).
+    """
+    if not AFR_DIR.exists():
+        pytest.skip(f"{AFR_DIR} not yet populated (run Task 1-03-02)")
+    meta_files = list(AFR_DIR.glob("*.meta.json"))
+    if not meta_files:
+        pytest.skip(
+            "AFR meta.json files not yet produced "
+            "(Task 1-03-02 rule plumbing-only until DEF-01-04 liftover resolves)"
+        )
+    for mf in meta_files:
+        m = json.loads(mf.read_text())
+        n = m.get("n_samples_afr")
+        assert n is not None, f"{mf} missing n_samples_afr"
+        assert 950 <= n <= 1010, (
+            f"AFR sample count {n} in {mf.name} outside expected 950-1010 range "
+            f"(preflight: 1003 metadata / 986 BCF-reconciled); "
+            f"either upstream panel re-released or Pitfall 3 prefix regression"
+        )
+        # Also check the ld_source flag survives (T-1-04 mitigation)
+        assert m.get("ld_source") == "hgdp_1kg_v3_1_2", (
+            f"{mf.name} missing or wrong ld_source: {m.get('ld_source')}"
+        )
