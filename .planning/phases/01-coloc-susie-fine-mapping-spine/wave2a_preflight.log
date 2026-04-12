@@ -1,0 +1,73 @@
+# Wave 2a preflight -- UKBB-LD bucket reachability + NPZ schema discovery
+# Run at: 2026-04-12T02:36:58Z
+# Plan: 01-02 (Task 1-02-00)
+
+=== 1. Bucket listing (anonymous HTTPS, first few keys) ===
+<?xml version="1.0" encoding="UTF-8"?>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>broad-alkesgroup-ukbb-ld</Name><Prefix>UKBB_LD/</Prefix><NextContinuationToken>1dfixyG8FqsVgmEl9E350R4SeYMcU/7jAM9BdB5f1lcpqfmU3klix3/1pqdereJIyNZL2fX2yKm/Saa8OUxBkg4JpAbEqEJI5</NextContinuationToken><KeyCount>10</KeyCount><MaxKeys>10</MaxKeys><IsTruncated>true</IsTruncated><Contents><Key>UKBB_LD/baselineLF_v2.2.UKB.polyfun.tar.gz</Key><LastModified>2023-05-25T14:19:36.000Z</LastModified><ETag>&quot;9c036817777a00c28b906dbb088dcc0d-1755&quot;</ETag><Size>29443072031</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/baselineLF_v2.2.UKB.tar.gz</Key><LastModified>2023-03-29T11:12:04.000Z</LastModified><ETag>&quot;eb594c6914579ae23469f97d6d048001-1328&quot;</ETag><Size>11135703856</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_100000001_103000001.gz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;103b48f03728ac16cf8a5aa7b37d9084&quot;</ETag><Size>173214</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_100000001_103000001.npz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;228bbc76ca5b829c337d883dcc66bf5e-27&quot;</ETag><Size>872829447</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_10000001_13000001.gz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;6910fd32f895cfa0f451cd567f716020&quot;</ETag><Size>219070</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_10000001_13000001.npz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;b23fa8d33f0ada72092618a9c16e1372-45&quot;</ETag><Size>1489884340</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_1000001_4000001.gz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;c4d4aa2685fa049083c13060cd5706c3&quot;</ETag><Size>252605</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_1000001_4000001.npz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;ebefd96c5e6d05d9b9bd3ff63e4164f1-61&quot;</ETag><Size>2015417066</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_101000001_104000001.gz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;3a57e6be779d7413f708db1e165e580a&quot;</ETag><Size>155865</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr10_101000001_104000001.npz</Key><LastModified>2023-03-21T14:30:14.000Z</LastModified><ETag>&quot;347bb2936cb7bac3ca7de26cc38da643-21&quot;</ETag><Size>677064602</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents></ListBucketResult>
+
+=== 2. Probe for plan's chr22 tile chr22_16000001_19000001 ===
+HTTP/1.1 200 OK
+x-amz-id-2: UZqC3Z6xWPcP9Qfr/U9N0tjXrXFUHZsUK4Eu6fIw5Jg9FkyQaOGEA2sBzJKwqgJHoh41QekvgVI=
+x-amz-request-id: EKEFN0KVJHF4WJ66
+Date: Sun, 12 Apr 2026 02:37:09 GMT
+Last-Modified: Tue, 21 Mar 2023 16:17:37 GMT
+
+=== 3. List first 5 chr22 tiles ===
+<?xml version="1.0" encoding="UTF-8"?>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>broad-alkesgroup-ukbb-ld</Name><Prefix>UKBB_LD/chr22_</Prefix><NextContinuationToken>197tHc5nDbVnmOh7CuGPqGPS8OwCzBdZXG5+nJVqIgDfq2j/w1GO3GcbMz/+3imF4nwzrOiGcx6wvEtxdaX6GrBnBqNiAGtgr</NextContinuationToken><KeyCount>10</KeyCount><MaxKeys>10</MaxKeys><IsTruncated>true</IsTruncated><Contents><Key>UKBB_LD/chr22_14000001_17000001.gz</Key><LastModified>2023-03-21T16:17:30.000Z</LastModified><ETag>&quot;24fc255f9e2a9b4215d674a6d8794ab9&quot;</ETag><Size>37388</Size><StorageClass>STANDARD</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_14000001_17000001.npz</Key><LastModified>2023-03-21T16:17:34.000Z</LastModified><ETag>&quot;50a437f13031b377eb7c734ef366e839-4&quot;</ETag><Size>30521066</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_15000001_18000001.gz</Key><LastModified>2023-03-21T16:17:36.000Z</LastModified><ETag>&quot;af587d6ebd16699a78a27308041c5aae&quot;</ETag><Size>109571</Size><StorageClass>STANDARD</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_15000001_18000001.npz</Key><LastModified>2023-03-21T16:17:33.000Z</LastModified><ETag>&quot;d26b09c99df5307e267b49cabd63f1b2-10&quot;</ETag><Size>331308242</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_16000001_19000001.gz</Key><LastModified>2023-03-21T16:17:40.000Z</LastModified><ETag>&quot;6261199f105295bf0470291cb70084c3&quot;</ETag><Size>179745</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_16000001_19000001.npz</Key><LastModified>2023-03-21T16:17:37.000Z</LastModified><ETag>&quot;938c98456a9fd5541632d485e9549a01-30&quot;</ETag><Size>977857979</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_17000001_20000001.gz</Key><LastModified>2023-03-21T16:17:41.000Z</LastModified><ETag>&quot;2963576a393e7ef5abe6dfae3ad5ad1f&quot;</ETag><Size>213411</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_17000001_20000001.npz</Key><LastModified>2023-03-21T16:17:38.000Z</LastModified><ETag>&quot;fb6865a3b5e0afe0f53232401979bf2a-43&quot;</ETag><Size>1417099569</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_18000001_21000001.gz</Key><LastModified>2023-03-21T16:17:42.000Z</LastModified><ETag>&quot;5e6431b5c4d124c39d5373d281882190&quot;</ETag><Size>189502</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents><Contents><Key>UKBB_LD/chr22_18000001_21000001.npz</Key><LastModified>2023-03-21T16:17:39.000Z</LastModified><ETag>&quot;0aae518cf30e7a855fcd5be841c70c1c-33&quot;</ETag><Size>1100432888</Size><StorageClass>INTELLIGENT_TIERING</StorageClass></Contents></ListBucketResult>
+=== 4. Download small tile for NPZ schema inspection (chr22_14000001_17000001 — 30MB) ===
+# Chose smaller sparse tile (30MB) over plan's chr22_16000001_19000001 (978MB) to minimize preflight footprint.
+total 30M
+-rw-rw----+ 1 ckclinto oit-rs-researcher-ckclinto 37K Apr 11 22:37 chr22_test.gz
+-rw-rw----+ 1 ckclinto oit-rs-researcher-ckclinto 30M Apr 11 22:37 chr22_test.npz
+
+=== 5. NPZ internal keys/schema ===
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+ModuleNotFoundError: No module named 'scipy'
+
+=== 5. NPZ internal keys/schema (rerun with nyabg-pytools env) ===
+SCIPY_SPARSE: yes
+  sparse format: coo
+  shape: (4059, 4059)
+  dtype: float32
+  nnz: 8239770
+  density: 0.500123
+scipy.sparse.load_npz failed: 'coo_matrix' object is not subscriptable
+NPZ_KEYS: ['row', 'col', 'format', 'shape', 'data']
+  row: shape=(8239770,) dtype=int32
+  col: shape=(8239770,) dtype=int32
+  format: shape=() dtype=|S3
+  shape: shape=(2,) dtype=int64
+  data: shape=(8239770,) dtype=float32
+
+=== 6. Variant TSV schema (first 3 lines of companion .gz) ===
+rsid	chromosome	position	allele1	allele2
+rs587755077	22	16050115	G	A
+rs587654921	22	16050213	C	T
+
+=== 7. Variant count (lines in .gz minus header) ===
+variant_tsv_lines=4060 (n_variants=4059)
+
+=== 8. SHA256 provenance (T-1-02 mitigation) ===
+078b3b80efffc8e9bd2338e870b754d9900c852b594614cd374ceac51663540f  /rs1/researchers/c/ckclinto/ukbb_ld_scratch/preflight/chr22_test.npz
+f8daf47ad28720d7e081fddbdac21195062868b19da155702df7750c9ec7c897  /rs1/researchers/c/ckclinto/ukbb_ld_scratch/preflight/chr22_test.gz
+
+=== 9. /rs1/researchers/c/ckclinto scratch budget ===
+Filesystem                              Size  Used Avail Use% Mounted on
+fas8700-03:/rs1/researchers/c/ckclinto   31T  1.7T   29T   6% /rs1/researchers/c/ckclinto
+
+=== 10. Summary ===
+NPZ_FORMAT: scipy.sparse.coo_matrix (keys: row, col, format, shape, data)
+NPZ_DTYPE: float32
+NPZ_MATRIX_SHAPE: (4059, 4059) for chr22_14000001_17000001 probe
+VARIANT_TSV_FORMAT: gzipped TSV with position-like columns (see section 6)
+SCHEMA_DEVIATION_FROM_PLAN: Plan pre-spec assumed upper-triangle flat key 'R'.
+  Actual format is scipy.sparse COO-stored symmetric (density ~0.5 = upper triangle).
+  Downloader in Task 1-02-02 MUST use scipy.sparse.load_npz() and .toarray().
+  Config npz_key_name becomes advisory / unused — remove from CLI flag.
+BUCKET_REACHABLE: yes (HTTPS + anonymous list works)
+SCRATCH_DIR: /rs1/researchers/c/ckclinto/ukbb_ld_scratch (29 TB available)
+  Plan's default /rs1/scratch/ukbb_ld does NOT exist — rule must use the ckclinto subpath.
+PREFLIGHT: PASS
