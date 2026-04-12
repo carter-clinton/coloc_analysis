@@ -1,0 +1,121 @@
+---
+title: "Phase 1 -- SuSiE fine-mapping QC dashboard"
+subtitle: "REQ-2 D1+D2+D3+D4+D6"
+format:
+  html:
+    embed-resources: true
+    toc: true
+params:
+  input_tsv: "results/finemap/qc_aggregated.tsv"
+  sweep_tsv: "results/finemap/sweep_complex_regions.tsv"
+---
+
+```{r setup, include=FALSE}
+suppressPackageStartupMessages({
+  library(data.table)
+  library(DT)
+})
+qc <- fread(params$input_tsv)
+```
+
+## Summary
+
+```{r summary-stats, echo=FALSE}
+cat("Total rows:", nrow(qc), "\n")
+cat("Unique regions:", length(unique(qc$region_id)), "\n")
+cat("Unique traits:", length(unique(qc$trait)), "\n")
+cat("Unique ancestries:", length(unique(qc$ancestry)), "\n")
+cat("Non-converged:", sum(qc$convergence_status == "non_converged", na.rm = TRUE), "\n")
+cat("L-saturated:", sum(qc$L_saturated == TRUE, na.rm = TRUE), "\n")
+cat("Block-diagonal LD (HLA):", sum(qc$ld_source == "ukbb_ld_tiled_block_diagonal", na.rm = TRUE), "\n")
+cat("Complex regions:", sum(qc$is_complex_region == TRUE, na.rm = TRUE), "\n")
+```
+
+## Per-locus table
+
+Row styling (applied via `DT::formatStyle` conditional formatting):
+
+- **Red** background if `ld_source == ukbb_ld_tiled_block_diagonal` (HLA statistical caveat, T-1-04)
+- **Orange** background if `convergence_status != converged_primary` (retry ladder exercised)
+- **Yellow** background if `L_saturated` (all L=10 effects retained)
+
+```{r per-locus-table, echo=FALSE}
+DT::datatable(
+  qc,
+  options = list(
+    pageLength = 50,
+    deferRender = TRUE,
+    scrollX = TRUE,
+    autoWidth = TRUE
+  ),
+  filter = "top",
+  rownames = FALSE,
+  class = "display compact"
+) |>
+  DT::formatStyle(
+    "ld_source",
+    backgroundColor = DT::styleEqual(
+      c("ukbb_ld_tiled_block_diagonal"),
+      c("#ffcccc")
+    )
+  ) |>
+  DT::formatStyle(
+    "convergence_status",
+    backgroundColor = DT::styleEqual(
+      c("non_converged", "converged_regularized", "converged_max_iter"),
+      c("#ff9999", "#ffd699", "#fff2cc")
+    )
+  ) |>
+  DT::formatStyle(
+    "L_saturated",
+    backgroundColor = DT::styleEqual(c("TRUE", "True", "true"), rep("#ffff99", 3))
+  ) |>
+  DT::formatStyle(
+    "is_complex_region",
+    backgroundColor = DT::styleEqual(c("TRUE", "True", "true"), rep("#e6ccff", 3))
+  )
+```
+
+## REQ-2 Complex-region sensitivity sweep
+
+```{r sweep-table, echo=FALSE}
+sweep_path <- params$sweep_tsv
+if (file.exists(sweep_path)) {
+  # The sweep TSV may have a comment header; skip lines starting with ##
+  sweep_raw <- readLines(sweep_path)
+  sweep_data <- sweep_raw[!grepl("^##", sweep_raw)]
+  if (length(sweep_data) > 1) {
+    sweep <- fread(text = paste(sweep_data, collapse = "\n"))
+    DT::datatable(
+      sweep,
+      options = list(
+        pageLength = 50,
+        deferRender = TRUE,
+        scrollX = TRUE
+      ),
+      filter = "top",
+      rownames = FALSE,
+      caption = "Supplementary: sensitivity sweep across min_abs_corr thresholds for complex regions"
+    )
+  } else {
+    cat("Sweep table is empty (no known_complex or data_flagged rows on current data).\n")
+  }
+} else {
+  cat("Sweep table not yet generated.\n")
+}
+```
+
+## Notes
+
+- `ld_source == "ukbb_ld_tiled_block_diagonal"` is the HLA_6p21 block-diagonal approximation (T-1-04 surfacing).
+  Cross-tile off-diagonal LD blocks are set to zero -- interpret HLA CS purity as optimistic.
+- `convergence_status != "converged_primary"` indicates the retry ladder was exercised.
+  `"non_converged"` is excluded from Tier 1 by `filter_finemap_summary.py` (Wave 5).
+- `L_saturated == TRUE` indicates all L=10 SuSiE effects were retained; a supplementary L=20 rerun
+  is available per policy (flag only; no inline refit).
+- `is_complex_region == TRUE` indicates the region is one of 4 pre-specified complex regions
+  (HLA_6p21, APOE_19q13, 9p21_CDKN2A, SLC2A9_urate) per `config/susie_policy.yaml`.
+- D4 columns (`n_CS_macor_*`) report the number of credible sets surviving at each
+  `min_abs_corr` threshold. Monotonically non-increasing by construction.
+- D5 diagnostic plots (regional association + LD heatmap) are generated on-demand from
+  cached `.fit.rds` files, per CONTEXT.md G5 design. Not inlined in this dashboard.
