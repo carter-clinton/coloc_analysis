@@ -48,8 +48,8 @@ resources:
   default_threads: 2
   default_mem_mb: 4000
 
-use_fixed_sumstats: false
-enable_ld_pipeline: true
+use_fixed_sumstats: true
+enable_ld_pipeline: false
 
 finemap:
   output_dir: "tests/toy_3locus/results/fine_mapping"

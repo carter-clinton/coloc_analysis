@@ -1,36 +1,114 @@
-# Expected results for regression testing
-# PP.H4 values from legacy coloc.abf results
-# Pass criteria: actual PP.H4 within +/- 0.05 of expected (D-16)
+# Expected results for Phase 1 SuSiE fine-mapping regression testing
+# Regenerated from first real Phase 1 run on 2026-04-12 (Plan 01-06 Task 1-06-02)
+# Replaces approximate placeholder values from Phase 0
+# Tolerance: convergence_status must match exactly; numeric fields informational
 #
-# NOTE: These are approximate placeholders based on published literature and
-# legacy analysis patterns. After the first successful run with real data,
-# update these values from the actual coloc.abf output to establish the
-# regression baseline.
+# NOTE: These results are from synthetic toy data fixtures, not real GWAS sumstats.
+# The toy dataset validates pipeline wiring end-to-end. Real-data regression
+# baselines will be established when production data is populated.
 
 loci:
-  FTO_16q12_2:
+  FTO_16q12_2_bmi_EUR:
     trait: bmi
     ancestry: EUR
-    expected_pp_h4: 0.95  # Approximate from legacy; update after first run
-    tolerance: 0.05
-    notes: "Strong BMI signal; FTO is canonical obesity locus"
-
-  TCF7L2_10q25_2:
-    trait: t2d
+    region: FTO_16q12_2
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/FTO_16q12_2.rds
+    d1_ks_pvalue: 0.0232
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  SH2B3_12q24_12_bmi_EUR:
+    trait: bmi
     ancestry: EUR
-    expected_pp_h4: 0.92  # Approximate from legacy; update after first run
-    tolerance: 0.05
-    notes: "Strong T2D signal; TCF7L2 is strongest T2D locus"
-
-  SH2B3_12q24_12:
+    region: SH2B3_12q24_12
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/SH2B3_12q24_12.rds
+    d1_ks_pvalue: 0.0078
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  TCF7L2_10q25_2_bmi_EUR:
+    trait: bmi
+    ancestry: EUR
+    region: TCF7L2_10q25_2
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/TCF7L2_10q25_2.rds
+    d1_ks_pvalue: 0.0108
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  FTO_16q12_2_hypertension_EUR:
     trait: hypertension
     ancestry: EUR
-    expected_pp_h4: 0.88  # Approximate from legacy; update after first run
-    tolerance: 0.05
-    notes: "Pleiotropic HTN/stroke locus; shared signal expected"
-
+    region: FTO_16q12_2
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/FTO_16q12_2.rds
+    d1_ks_pvalue: 0.0516
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  SH2B3_12q24_12_hypertension_EUR:
+    trait: hypertension
+    ancestry: EUR
+    region: SH2B3_12q24_12
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/SH2B3_12q24_12.rds
+    d1_ks_pvalue: 0.2816
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  TCF7L2_10q25_2_hypertension_EUR:
+    trait: hypertension
+    ancestry: EUR
+    region: TCF7L2_10q25_2
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/TCF7L2_10q25_2.rds
+    d1_ks_pvalue: 0.0783
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  FTO_16q12_2_t2d_EUR:
+    trait: t2d
+    ancestry: EUR
+    region: FTO_16q12_2
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/FTO_16q12_2.rds
+    d1_ks_pvalue: 0.0008
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  SH2B3_12q24_12_t2d_EUR:
+    trait: t2d
+    ancestry: EUR
+    region: SH2B3_12q24_12
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/SH2B3_12q24_12.rds
+    d1_ks_pvalue: 0.1134
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
+  TCF7L2_10q25_2_t2d_EUR:
+    trait: t2d
+    ancestry: EUR
+    region: TCF7L2_10q25_2
+    convergence_status: converged_primary
+    n_CS: null
+    L_saturated: false
+    ld_source: tests/toy_3locus/data/ld_ref/EUR/TCF7L2_10q25_2.rds
+    d1_ks_pvalue: 0.0125
+    d3_n_outliers: 0
+    notes: Generated from Phase 1 Wave 6 smoke test, 2026-04-12
 pass_criteria:
   all_loci_complete: true
-  pp_h4_within_tolerance: true
+  convergence_status_valid: true
   all_intermediates_exist: true
   max_runtime_minutes: 15

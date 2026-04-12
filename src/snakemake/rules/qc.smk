@@ -179,24 +179,29 @@ rule build_susie_qc_dashboard:
         mem_mb=4000,
     shell:
         r"""
+        # Resolve to absolute paths so knitting from the .qmd directory works
+        ABS_TSV=$(readlink -f {input.tsv})
+        ABS_SWEEP=$(readlink -f {input.sweep})
+        ABS_OUT=$(readlink -f $(dirname {output.html}))/$(basename {output.html})
+        ABS_OUTDIR=$(dirname "$ABS_OUT")
         # Try quarto first; fall back to rmarkdown::render if quarto missing
         if command -v quarto >/dev/null 2>&1; then
             quarto render {input.qmd} \
                 --to html \
-                -P input_tsv:{input.tsv} \
-                -P sweep_tsv:{input.sweep} \
+                -P input_tsv:"$ABS_TSV" \
+                -P sweep_tsv:"$ABS_SWEEP" \
                 --output $(basename {output.html}) \
-                --output-dir $(dirname {output.html})
+                --output-dir "$ABS_OUTDIR"
         else
             Rscript -e '
                 rmarkdown::render(
                   "{input.qmd}",
                   params = list(
-                    input_tsv = "{input.tsv}",
-                    sweep_tsv = "{input.sweep}"
+                    input_tsv = "'"$ABS_TSV"'",
+                    sweep_tsv = "'"$ABS_SWEEP"'"
                   ),
-                  output_file = basename("{output.html}"),
-                  output_dir = dirname("{output.html}")
+                  output_file = basename("'"$ABS_OUT"'"),
+                  output_dir = "'"$ABS_OUTDIR"'"
                 )
             '
         fi

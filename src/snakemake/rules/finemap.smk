@@ -33,6 +33,7 @@ rule build_finemap_manifest:
         methods=",".join(FINEMAP_METHODS),
     shell:
         r"""
+        PYTHONPATH=src/legacy/region_analysis:${{PYTHONPATH:-}} \
         {PYTHON_BIN} src/legacy/region_analysis/scripts/create_finemap_tasks.py \
             --harmonized {input.harmonized} \
             --regions {input.regions} \

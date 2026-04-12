@@ -550,12 +550,17 @@ krig <- tryCatch(
   error = function(e) NULL
 )
 d3 <- if (!is.null(krig)) {
-  conc <- krig$conc
-  list(
-    n_outliers = sum(conc$logLR > 2 & abs(conc$z) > 2, na.rm = TRUE),
-    max_logLR  = suppressWarnings(max(conc$logLR, na.rm = TRUE)),
-    lambda     = krig$lambda %||% NA_real_
-  )
+  # susieR::kriging_rss returns $conditional_dist (not $conc) in susieR >= 0.12
+  conc <- krig$conditional_dist %||% krig$conc
+  if (!is.null(conc) && !is.null(conc$logLR) && is.numeric(conc$z)) {
+    list(
+      n_outliers = sum(conc$logLR > 2 & abs(conc$z) > 2, na.rm = TRUE),
+      max_logLR  = suppressWarnings(max(conc$logLR, na.rm = TRUE)),
+      lambda     = krig$lambda %||% NA_real_
+    )
+  } else {
+    list(n_outliers = NA_integer_, max_logLR = NA_real_, lambda = NA_real_)
+  }
 } else list(n_outliers = NA_integer_, max_logLR = NA_real_, lambda = NA_real_)
 
 # Post-hoc min_abs_corr sweep (FREE -- no refit, Pattern 4)
