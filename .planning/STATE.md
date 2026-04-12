@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 Plan 01-02 complete -- 5 tasks, 4 commits (6a9af35..bdc1cc3). SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-02-SUMMARY.md. All 7 Wave 2a gates PASS. Preflight discovered NPZ is scipy.sparse COO (not flat 'R'); downloader adapts. Wave 2b (Plan 01-03 HGDP+1kG AFR) unblocked.
-last_updated: "2026-04-12T02:49:54.096Z"
+stopped_at: Phase 1 Plan 01-03 complete -- 4 tasks, 4 commits (b37468a..74ac9f8). HGDP+1kG AFR LD panel plumbing landed (Scope B pilot, 11 autosomal regions). All 9 Wave 2b gates PASS. Real execution gated on DEF-01-04 GRCh38 liftover of regions_curated.csv. Wave 3 (Plan 01-04 coloc.susie swap) unblocked.
+last_updated: "2026-04-12T03:09:25.309Z"
 last_activity: 2026-04-12
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 10
-  completed_plans: 6
-  percent: 60
+  completed_plans: 7
+  percent: 70
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 01 (coloc-susie-fine-mapping-spine) — WAVE 1 COMPLETE
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-04-12
 
@@ -57,6 +57,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 00 P04 | 14min | 3 tasks | 7 files |
 | Phase 01 P01 | 18min | 10 tasks | 17 files |
 | Phase 01 P02 | 11 | 5 tasks | 9 files |
+| Phase 01 P03 | 19 | 4 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,10 @@ Recent decisions affecting current work:
 - [Phase 01]: [Phase 01-02]: UKBB-LD NPZ schema is scipy.sparse coo_matrix (not upper-triangle flat 'R' as the plan pre-spec assumed); downloader uses scipy.sparse.load_npz().toarray() and drops --npz-key-name CLI flag
 - [Phase 01]: [Phase 01-02]: New rules must use absolute LD_BUILD_ENV = str(Path(workflow.basedir) / 'envs' / 'ld_build.yml') to sidestep DEF-01-01; documented pattern for Plan 01-03 to reuse
 - [Phase 01]: [Phase 01-02]: Scratch dir /rs1/scratch does not exist on this cluster (954 MB root stub); real ckclinto allocation at /rs1/researchers/c/ckclinto/ukbb_ld_scratch (29 TB) is the default in config + CLI
+- [Phase 01]: [Phase 01-03]: Scope B pilot chosen (11 autosomal regions) -- compute not the binding constraint (17 GB empirical vs 100 GB worst case) but GRCh38/GRCh37 build mismatch is. DEF-01-04 tracks the liftover gate.
+- [Phase 01]: [Phase 01-03]: Metadata URL corrected to release/3.1/secondary_analyses/hgdp_1kg/metadata_and_qc/gnomad_meta_v1.tsv; plan pre-spec path release/3.1.2/pca/... returns 404. Region column is hgdp_tgp_meta.Genetic.region (dot-separated Hail export), not genetic_region.
+- [Phase 01]: [Phase 01-03]: AFR sample count is 1003 metadata / 986 BCF-reconciled on the v2 panel (plan's ~730 was a 1kG-only estimate); Task 1-03-03 test bounds widened to 950-1010.
+- [Phase 01]: [Phase 01-03]: Snakemake params values wrapped in lambdas so '{chrom}' in BCF filename template is not misread as a wildcard; pattern documented for future rule authors.
 
 ### Pending Todos
 
@@ -88,12 +93,12 @@ None yet.
 
 ### Blockers/Concerns
 
-None.
+- DEF-01-04: GRCh38 liftover of config/regions_curated.csv required before build_hgdp_1kg_ld can execute end-to-end. Resolution targeted at Plan 01-04 or 01-05.
 
 ## Session Continuity
 
-Last session: 2026-04-12T02:49:54.092Z
-Stopped at: Phase 1 Plan 01-02 complete -- 5 tasks, 4 commits (6a9af35..bdc1cc3). SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-02-SUMMARY.md. All 7 Wave 2a gates PASS. Preflight discovered NPZ is scipy.sparse COO (not flat 'R'); downloader adapts. Wave 2b (Plan 01-03 HGDP+1kG AFR) unblocked.
+Last session: 2026-04-12T03:09:04.229Z
+Stopped at: Phase 1 Plan 01-03 complete -- 4 tasks, 4 commits (b37468a..74ac9f8). HGDP+1kG AFR LD panel plumbing landed (Scope B pilot, 11 autosomal regions). All 9 Wave 2b gates PASS. Real execution gated on DEF-01-04 GRCh38 liftover of regions_curated.csv. Wave 3 (Plan 01-04 coloc.susie swap) unblocked.
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
