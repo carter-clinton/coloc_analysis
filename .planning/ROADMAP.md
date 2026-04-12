@@ -87,7 +87,7 @@ Plans:
 Seeds: src/legacy/region_analysis/scripts/run_susie_rss.R, src/legacy/genome_wide/scripts/run_coloc_genomewide.R
 
 ### Phase 2: 3-way QTL colocalization
-**Goal**: Build the causal gene x tissue x cell-type matrix through eQTL, pQTL, and sQTL colocalization with rigorous threshold sweep and negative controls. Highest-leverage T1 phase.
+**Goal**: Build the causal gene x tissue x cell-type matrix through eQTL, pQTL, sQTL, and sc-eQTL colocalization with rigorous threshold sweep and negative controls. Highest-leverage T1 phase.
 **Depends on**: Phase 1, Track 0a DUAs (for pQTL)
 **Requirements**: REQ-3, REQ-7
 **Tier**: T1
@@ -95,12 +95,19 @@ Seeds: src/legacy/region_analysis/scripts/run_susie_rss.R, src/legacy/genome_wid
   1. GTEx v8 eQTL coloc completed per tissue, cross-referenced to Open Targets Locus2Gene
   2. sQTL coloc (GTEx) completed
   3. PP.H4 threshold sweep across {0.5, 0.7, 0.8, 0.9} reported with tier counts per ancestry
-  4. Negative controls (HLA, pigmentation, eye-color gene sets) all null — PP.H4 < threshold
+  4. Negative controls (HLA, cosmetic, blood group gene sets) all null — PP.H4 < threshold
   5. Causal gene x tissue x cell-type matrix assembled
   6. Tier A/B/C confidence assignment with reported threshold dependence
-**Plans**: TBD
+**Plans**: 5 plans
 
-UKB-PPP + deCODE pQTL coloc blocked on Track 0a DUAs. Single-cell eQTL (OneK1K, CLUES) included if data available.
+Plans:
+- [ ] 02-01-PLAN.md — Infrastructure: liftover + config (pph4_thresholds.yaml, negative_controls.yaml, qtl_sources.yaml) + conda env + LPA/KIV-2 policy update + QTL test fixtures
+- [ ] 02-02-PLAN.md — GTEx v8 eQTL coloc backbone: download rules + harmonize_eqtl.py + tissue-N lookup + run_qtl_coloc.R + qtl_coloc.smk manifest dispatch
+- [ ] 02-03-PLAN.md — GTEx v8 sQTL + UKB-PPP pQTL: harmonize_sqtl.py + harmonize_pqtl.py + sdY estimation + download_ukbppp.py + extended download rules
+- [ ] 02-04-PLAN.md — OneK1K sc-eQTL (14 immune cell types): download + harmonize + manifest extension (broad trigger on all loci)
+- [ ] 02-05-PLAN.md — Negative controls (3 curated + matched nulls) + PP.H4 threshold sweep + tier A/B/C assignment + L2G concordance + gene-tissue matrix + methods fragment
+
+Architecture: harmonize-then-unify. Per-source harmonization produces common intermediate TSV (variant_id, beta, se, maf, position, N, sdY, gene_id, tissue). One unified run_qtl_coloc.R consumes all sources.
 
 ### Phase 5: Pathway + partitioned heritability
 **Goal**: Formal pathway enrichment with proper nulls and partitioned heritability analysis. Replaces the ad-hoc enrichment from the original manuscript.
@@ -257,7 +264,7 @@ M: 11 (parallel from Phase 9)
 |-------|----------------|--------|-----------|
 | 0. Data access + infrastructure | 0/4 | Planning complete | - |
 | 1. coloc.susie fine-mapping | 0/TBD | Not started | - |
-| 2. 3-way QTL colocalization | 0/TBD | Not started | - |
+| 2. 3-way QTL colocalization | 0/5 | Planning complete | - |
 | 5. Pathway + partitioned h2 | 0/TBD | Not started | - |
 | 9. Replication | 0/TBD | Not started | - |
 | 3. Mendelian randomization | - | Gated (T2) | - |
