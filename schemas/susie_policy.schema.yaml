@@ -1,0 +1,52 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+type: object
+required: [susie, complex_regions]
+properties:
+  susie:
+    type: object
+    required: [L, coverage, max_iter_primary, max_iter_retry, min_abs_corr_sweep]
+    properties:
+      L: {type: integer, minimum: 1, maximum: 50}
+      coverage: {type: number, minimum: 0.5, maximum: 1.0}
+      max_iter_primary: {type: integer, minimum: 10}
+      max_iter_retry: {type: integer, minimum: 10}
+      ld_regularization_eps: {type: number, minimum: 0}
+      min_abs_corr_default: {type: number, minimum: 0, maximum: 1}
+      min_abs_corr_sweep:
+        type: array
+        minItems: 3
+        items: {type: number, minimum: 0, maximum: 1}
+      min_ld_overlap: {type: integer, minimum: 0}
+      min_ld_coverage: {type: number, minimum: 0, maximum: 1}
+      min_ld_min_use: {type: integer, minimum: 0}
+      l_saturation:
+        type: object
+        properties:
+          action: {enum: [flag, refit, error]}
+          supplementary_rerun_L: {type: integer}
+      convergence_failure:
+        type: object
+        properties:
+          action: {enum: [retry_ladder, exclude, error]}
+          ladder: {type: array, items: {type: string}}
+  complex_regions:
+    type: object
+    required: [pre_specified, data_flagged]
+    properties:
+      pre_specified:
+        type: array
+        minItems: 4
+        maxItems: 4
+        items:
+          type: object
+          required: [region_id, chr, start, end, rationale]
+          properties:
+            region_id: {type: string}
+            chr: {type: [integer, string]}
+            start: {type: integer, minimum: 0}
+            end: {type: integer, minimum: 0}
+            rationale: {type: string}
+      data_flagged:
+        type: object
+        properties:
+          triggers: {type: array}

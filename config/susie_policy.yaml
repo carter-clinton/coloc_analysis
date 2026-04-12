@@ -1,0 +1,52 @@
+# config/susie_policy.yaml
+# REQ-2 deliverable: explicit SuSiE policy for (a) convergence failures,
+# (b) L cap, (c) min_abs_corr sensitivity, (d) complex-region handling.
+# Loaded by src/legacy/region_analysis/scripts/run_susie_rss.R via yaml::read_yaml.
+
+susie:
+  L: 10
+  coverage: 0.95
+  max_iter_primary: 100
+  max_iter_retry: 200
+  ld_regularization_eps: 1.0e-4
+  min_abs_corr_default: 0.5
+  min_abs_corr_sweep: [0.1, 0.5, 0.9]
+  min_ld_overlap: 50
+  min_ld_coverage: 0.5
+  min_ld_min_use: 10
+  l_saturation:
+    action: flag
+    supplementary_rerun_L: 20
+  convergence_failure:
+    action: retry_ladder
+    ladder:
+      - increase_max_iter
+      - regularize_ld
+      - flag_and_exclude_tier1
+
+complex_regions:
+  pre_specified:
+    - region_id: 9p21_CDKN2A
+      chr: 9
+      start: 21000000
+      end: 23000000
+      rationale: CDKN2A/CDKN2B/ANRIL dense signal
+    - region_id: APOE_19q13
+      chr: 19
+      start: 44000000
+      end: 46000000
+      rationale: APOE/TOMM40/APOC1 complex signal
+    - region_id: HLA_6p21
+      chr: 6
+      start: 25000000
+      end: 35000000
+      rationale: MHC; extreme long-range LD; UKBB-LD tiled uses block-diagonal approximation
+    - region_id: SLC2A9_urate
+      chr: 4
+      start: 9000000
+      end: 11000000
+      rationale: Large urate effect (indirect BP via urate)
+  data_flagged:
+    triggers:
+      - l_saturated
+      - n_cs_ge: 3
