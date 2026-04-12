@@ -31,6 +31,10 @@ paths:
   # footprint when fully populated). Default is under the ckclinto /rs1
   # allocation; /rs1/scratch does NOT exist on this cluster.
   ukbb_ld_scratch: "/rs1/researchers/c/ckclinto/ukbb_ld_scratch"
+  # Plan 01-03: scratch cache for HGDP+1kG metadata TSV + per-region BCF
+  # slices. Empirical footprint is ~17 GB across 22 autosomes (preflight);
+  # kept separate from UKBB-LD cache for clean provenance and disk accounting.
+  hgdp_1kg_scratch: "/rs1/researchers/c/ckclinto/hgdp_1kg_scratch"
   results_root: "results"
   finemap_output: "results/fine_mapping"
   cache_downloads: "cache/downloads"
@@ -95,13 +99,41 @@ ukbb_ld:
   tile_window_mb: 3  # per-tile genomic window (for docs/QC)
   format: "scipy_sparse_coo"  # verified at wave2a_preflight
 
+# Plan 01-03 (Wave 2b): HGDP+1kG AFR panel via gnomAD v3.1.2 phased BCFs.
+# URL template + metadata column names verified in wave2b_preflight.log:
+# - BCF filename template is the plan pre-spec
+#   (hgdp1kgp_chr{chrom}.filtered.SNV_INDEL.phased.shapeit5.bcf).
+# - Metadata TSV lives under release/3.1/secondary_analyses/hgdp_1kg/
+#   metadata_and_qc/gnomad_meta_v1.tsv (NOT release/3.1.2/pca/... which
+#   the plan pre-spec assumed; that path 404s).
+# - Region column is `hgdp_tgp_meta.Genetic.region` (dot-separated Hail
+#   export), NOT `genetic_region`.
+# - AFR sample count: 1003 in metadata, 986 after reconciling against
+#   the chr22 BCF header. The Task 1-03-03 test bounds widen to
+#   950-1010 to reflect the v2 panel (plan's ~730 was a 1kG-only
+#   estimate).
+# - HGDP+1kG v2 BCFs are on GRCh38 while pipeline genome_build is
+#   GRCh37 -- DEF-01-04 tracks the required liftover before the rule
+#   can execute end-to-end.
+hgdp_1kg:
+  bucket: "gs://gcp-public-data--gnomad"
+  bcf_prefix: "resources/hgdp_1kg/phased_haplotypes_v2/"
+  bcf_fname_template: "hgdp1kgp_chr{chrom}.filtered.SNV_INDEL.phased.shapeit5.bcf"
+  metadata_url: "https://storage.googleapis.com/gcp-public-data--gnomad/release/3.1/secondary_analyses/hgdp_1kg/metadata_and_qc/gnomad_meta_v1.tsv"
+  region_column: "hgdp_tgp_meta.Genetic.region"
+  sample_column: "s"
+  genome_build: "GRCh38"
+  expected_afr_n_min: 950
+  expected_afr_n_max: 1010
+
 # Plan 01-02: per-ancestry LD source selection. The EUR leg points at the
-# UKBB-LD tiled panel (REQ-2 G4 hybrid + G6 substitution). AFR will be
-# swapped to HGDP+1kG in Plan 01-03. Other ancestries retain the legacy
-# 1000G-based build until their own wave.
+# UKBB-LD tiled panel (REQ-2 G4 hybrid + G6 substitution). AFR is now
+# wired to HGDP+1kG via the build_hgdp_1kg_ld rule (Plan 01-03); real
+# execution is gated on GRCh38 liftover (DEF-01-04). Other ancestries
+# retain the legacy 1000G-based build until their own wave.
 ld_reference:
   EUR_source: "ukbb_ld_tiled"         # -> data/processed/ld_reference/EUR_ukbb_ld
-  AFR_source: "onekg_phase3"          # Plan 01-03 will change to hgdp_1kg_afr
+  AFR_source: "hgdp_1kg_afr"          # -> data/processed/ld_reference/AFR_hgdp_1kg
   EAS_source: "onekg_phase3"
   HIS_source: "onekg_phase3"
 

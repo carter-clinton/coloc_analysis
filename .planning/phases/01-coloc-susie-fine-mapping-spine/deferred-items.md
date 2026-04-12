@@ -76,6 +76,29 @@ decision point should be raised there.
 
 **Recorded in:** `01-03-scope-decision.md` Rationale section.
 
+### DEF-01-05: Legacy `build_ld_rds` rule fires for `TRANS` ancestry without a sample list
+
+**Discovered by:** Plan 01-03 Task 1-03-02 full-pipeline dry-run
+**Symptom:** `snakemake --dry-run` (no target) raises
+`MissingInputException` on `data/raw/1kg/TRANS.samples` because the
+legacy `build_ld_rds` rule loops over `config.ancestries + one trait's
+trait_ancestries`, picking up `TRANS` from `trait_ancestries.t2d` even
+though `ancestries` top-level list excludes it and no
+`build_1kg_sample_lists` recipe writes `TRANS.samples`.
+
+**Verification this is pre-existing:** `git stash` reproduction without
+Plan 01-03 edits (step run 2026-04-11) hits the same error.
+
+**Impact:** Does NOT block `snakemake --dry-run build_hgdp_1kg_ld`
+(single-rule target) which is what the Plan 01-03 verify gate requires.
+Only blocks all-target dry-runs.
+
+**Resolution target:** Plan 01-04 or later. Likely fix: add a
+`TRANS.samples` stub (meta-ancestry covering all 1kG AFR+EUR+EAS) or
+guard the `build_ld_rds` output list with an ancestry filter.
+
+**Recorded in:** `.planning/phases/01-coloc-susie-fine-mapping-spine/deferred-items.md`.
+
 ### DEF-01-03: Unrelated unstaged changes in working tree at start of Plan 01-01
 
 **Discovered by:** `git status` at start of execution

@@ -46,6 +46,28 @@ UKBB_LD_REGION_INFOS = [
     if str(REGION_METADATA[safe].get("chr", "")).lstrip("chr") in _AUTOSOMES
 ]
 
+# Plan 01-03 (Wave 2b): HGDP+1kG AFR panel scratch cache + output dir.
+# /rs1/scratch does NOT exist on this cluster -- default under the
+# ckclinto /rs1 allocation (29 TB avail; verified in
+# wave2b_preflight.log step 11).
+HGDP_1KG_SCRATCH = config.get("paths", {}).get(
+    "hgdp_1kg_scratch",
+    "/rs1/researchers/c/ckclinto/hgdp_1kg_scratch",
+)
+HGDP_1KG_OUT_DIR = os.path.join(LD_REF_DIR, "AFR_hgdp_1kg")
+
+# Plan 01-03: HGDP+1kG v2 autosome BCFs are one file per chr1..chr22;
+# chrX uses a separate PAR / non-PAR triplet. For Scope B, restrict to
+# autosomal regions (mirrors UKBB_LD_REGION_INFOS), dropping BMI_Xq24.
+# Reuse of UKBB_LD_REGION_INFOS is avoided per handoff note (5): construct
+# the HGDP filter independently so changes to UKBB scope do not silently
+# alter AFR coverage.
+HGDP_REGION_INFOS = [
+    (orig, safe)
+    for orig, safe in REGION_INFOS
+    if str(REGION_METADATA[safe].get("chr", "")).lstrip("chr") in _AUTOSOMES
+]
+
 
 def vcf_path(chrom):
     return os.path.join(LD_ROOT, "vcf", f"chr{chrom}.vcf.gz")
@@ -245,4 +267,73 @@ rule download_ukbb_ld_tiles:
             --out-dir {params.out_dir} \
             --scratch-dir {params.scratch_dir} \
             --ancestry EUR
+        """
+
+
+# ---------------------------------------------------------------------------
+# Plan 01-03 (Wave 2b): HGDP+1kG AFR LD panel (gnomAD v3.1.2 phased BCFs)
+# ---------------------------------------------------------------------------
+# Builds per-region AFR LD by streaming gnomAD v3.1.2 phased BCFs from
+# the anonymous GCS public bucket via bcftools + plink2, converting the
+# plink square-LD output to .rds via plink_ld_to_rds.R. Outputs land at
+# {LD_REF_DIR}/AFR_hgdp_1kg/{region}.rds plus a sidecar .meta.json with
+# ld_source='hgdp_1kg_v3_1_2' and sha256 provenance (T-1-02, T-1-04).
+#
+# Scope B pilot (01-03-scope-decision.md): autosomal regions only (11 of
+# 12 curated regions; BMI_Xq24 excluded because chrX uses separate BCF
+# files in HGDP+1kG v2). Real execution is gated on GRCh38 liftover of
+# regions_curated.csv (DEF-01-04) -- this rule is plumbing-ready for
+# dry-run DAG resolution but should NOT be invoked end-to-end until
+# that deferred item is resolved.
+#
+# DEF-01-01 workaround: conda directive uses LD_BUILD_ENV (absolute
+# path) so --use-conda resolves correctly regardless of including
+# Snakefile -- reuses the Plan 01-02 pattern.
+rule build_hgdp_1kg_ld:
+    input:
+        regions=config["paths"]["regions_curated"],
+        script="src/snakemake/scripts/build_hgdp_1kg_ld.py",
+        rscript="src/snakemake/scripts/plink_ld_to_rds.R",
+    output:
+        rds=[
+            os.path.join(HGDP_1KG_OUT_DIR, f"{safe}.rds")
+            for _, safe in HGDP_REGION_INFOS
+        ],
+        meta=[
+            os.path.join(HGDP_1KG_OUT_DIR, f"{safe}.meta.json")
+            for _, safe in HGDP_REGION_INFOS
+        ],
+    params:
+        out_dir=HGDP_1KG_OUT_DIR,
+        scratch_dir=HGDP_1KG_SCRATCH,
+        # Wrap params in a lambda so Snakemake does not try to interpret
+        # '{chrom}' in the BCF filename template as a wildcard.
+        bcf_template=lambda wildcards: config.get("hgdp_1kg", {}).get(
+            "bcf_fname_template",
+            "hgdp1kgp_chr{chrom}.filtered.SNV_INDEL.phased.shapeit5.bcf",
+        ),
+        region_col=lambda wildcards: config.get("hgdp_1kg", {}).get(
+            "region_column", "hgdp_tgp_meta.Genetic.region"
+        ),
+        sample_col=lambda wildcards: config.get("hgdp_1kg", {}).get(
+            "sample_column", "s"
+        ),
+    conda:
+        LD_BUILD_ENV
+    threads: 4
+    resources:
+        mem_mb=16000,
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.out_dir} {params.scratch_dir}
+        {PYTHON_BIN} {input.script} \
+            --regions-csv {input.regions} \
+            --out-dir {params.out_dir} \
+            --scratch-dir {params.scratch_dir} \
+            --bcf-fname-template "{params.bcf_template}" \
+            --region-column "{params.region_col}" \
+            --sample-column "{params.sample_col}" \
+            --rscript Rscript \
+            --r-helper-script {input.rscript}
         """

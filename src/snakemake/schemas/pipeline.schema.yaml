@@ -74,6 +74,9 @@ properties:
       # Plan 01-02 (Wave 2a): UKBB-LD tile scratch cache (~170 GB when full)
       ukbb_ld_scratch:
         type: string
+      # Plan 01-03 (Wave 2b): HGDP+1kG BCF slice scratch cache
+      hgdp_1kg_scratch:
+        type: string
 
   trait_ancestries:
     type: object
@@ -180,6 +183,35 @@ properties:
         type: number
       format:
         type: string
+
+  # Plan 01-03 (Wave 2b): HGDP+1kG AFR LD panel config (gnomAD v3.1.2
+  # phased haplotypes v2). URL template + region column + sample column
+  # verified against bucket at wave2b_preflight.log.
+  hgdp_1kg:
+    type: object
+    description: "HGDP+1kG AFR LD panel configuration (gnomAD v3.1.2)"
+    properties:
+      bucket:
+        type: string
+      bcf_prefix:
+        type: string
+      bcf_fname_template:
+        type: string
+      metadata_url:
+        type: string
+      region_column:
+        type: string
+      sample_column:
+        type: string
+      genome_build:
+        type: string
+        enum: ["GRCh37", "GRCh38"]
+      expected_afr_n_min:
+        type: integer
+        minimum: 1
+      expected_afr_n_max:
+        type: integer
+        minimum: 1
 
   # Plan 01-02 (Wave 2a): per-ancestry LD source selector
   ld_reference:
