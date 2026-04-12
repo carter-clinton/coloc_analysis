@@ -1,19 +1,63 @@
 #!/usr/bin/env Rscript
+# A6 RESOLUTION (01-01-07 result 2026-04-12): coloc.susie requires annotate_susie-style
+# field additions (named pip, named sets, sld). Rather than switching to coloc::runsusie
+# (which takes a coloc dataset list, not raw z/R/n -- plan pre-spec was factually incorrect),
+# we call coloc:::annotate_susie(fit, snp_names, R) on each fit before saveRDS. This
+# produces a .fit.rds that coloc.susie can consume directly in Wave 3. Task 1-01-02 notes.
 suppressPackageStartupMessages({
   library(optparse)
   library(data.table)
   library(susieR)
   library(jsonlite)
   library(Matrix)
+  library(yaml)
+  library(digest)
+  library(coloc)
 })
 
 `%||%` <- function(x, y) {
   if (!is.null(x)) x else y
 }
 
-MIN_LD_OVERLAP <- as.integer(Sys.getenv("SUSIE_MIN_LD_OVERLAP", "50"))
-MIN_LD_COVERAGE <- as.numeric(Sys.getenv("SUSIE_MIN_LD_COVERAGE", "0.5"))
-MIN_LD_MIN_USE <- as.integer(Sys.getenv("SUSIE_MIN_LD_MIN_USE", "10"))
+# Helpers: regularize LD + structured retry ladder (REQ-2 convergence policy).
+# MIN_LD_* constants are now loaded from YAML policy at runtime (see below).
+
+regularize_ld <- function(R, eps = 1e-4) {
+  R_reg <- R + diag(eps, nrow(R))
+  (R_reg + t(R_reg)) / 2
+}
+
+run_susie_with_ladder <- function(z, R, policy, n) {
+  L_ <- policy$L
+  cov_ <- policy$coverage
+  max1 <- policy$max_iter_primary
+  max2 <- policy$max_iter_retry
+  eps  <- policy$ld_regularization_eps
+
+  susie_call <- function(R_use, max_it) {
+    args <- list(z = z, R = R_use, L = L_, coverage = cov_, max_iterations = max_it)
+    if (!is.null(n) && !is.na(n) && is.finite(n)) args$n <- n
+    do.call(susieR::susie_rss, args)
+  }
+
+  fit1 <- tryCatch(susie_call(R, max1), error = function(e) NULL)
+  if (!is.null(fit1) && isTRUE(fit1$converged))
+    return(list(fit = fit1, status = "converged_primary"))
+
+  fit2 <- tryCatch(susie_call(R, max2), error = function(e) NULL)
+  if (!is.null(fit2) && isTRUE(fit2$converged))
+    return(list(fit = fit2, status = "converged_max_iter"))
+
+  R_reg <- regularize_ld(R, eps)
+  fit3 <- tryCatch(susie_call(R_reg, max2), error = function(e) NULL)
+  if (!is.null(fit3) && isTRUE(fit3$converged))
+    return(list(fit = fit3, status = "converged_regularized"))
+
+  fit_keep <- fit3 %||% fit2 %||% fit1
+  if (!is.null(fit_keep) && !inherits(fit_keep, "susie"))
+    class(fit_keep) <- c("susie", class(fit_keep))
+  list(fit = fit_keep, status = "non_converged")
+}
 
 safe_region_id <- function(region_id) {
   gsub("[^A-Za-z0-9_]", "_", region_id)
@@ -190,11 +234,27 @@ option_list <- list(
   make_option("--ld-dir", type = "character", help = "Directory containing ancestry-specific LD (optional)"),
   make_option("--variant-list", type = "character", help = "Optional TSV restricting variants (CHR,POS,REF,ALT)"),
   make_option("--credible-set", type = "double", default = 0.95, help = "Credible set probability"),
+  make_option("--policy", type = "character", default = "config/susie_policy.yaml",
+              help = "Path to SuSiE policy YAML"),
   make_option("--output", type = "character", help = "Output JSON path")
 )
 
 opt <- parse_args(OptionParser(option_list = option_list))
 SUSIE_MAX_VARIANTS <- as.integer(Sys.getenv("SUSIE_MAX_VARIANTS", "6000"))
+
+# Load policy from YAML (REQ-2 #2). Replaces former env-var lookups (MIN_LD_OVERLAP, MIN_LD_COVERAGE, MIN_LD_MIN_USE).
+# Defaults preserve backward compatibility if policy is missing fields.
+policy <- yaml::read_yaml(opt$policy)
+MIN_LD_OVERLAP       <- policy$susie$min_ld_overlap       %||% 50L
+MIN_LD_COVERAGE      <- policy$susie$min_ld_coverage      %||% 0.5
+MIN_LD_MIN_USE       <- policy$susie$min_ld_min_use       %||% 10L
+L_DEFAULT            <- policy$susie$L                    %||% 10L
+COVERAGE             <- policy$susie$coverage             %||% 0.95
+MAX_ITER_PRIMARY     <- policy$susie$max_iter_primary     %||% 100L
+MAX_ITER_RETRY       <- policy$susie$max_iter_retry       %||% 200L
+LD_REG_EPS           <- policy$susie$ld_regularization_eps %||% 1e-4
+MIN_ABS_CORR_DEFAULT <- policy$susie$min_abs_corr_default %||% 0.5
+MIN_ABS_CORR_SWEEP   <- policy$susie$min_abs_corr_sweep   %||% c(0.1, 0.5, 0.9)
 
 regions <- fread(opt$`regions-csv`)
 if (!"region_id" %in% names(regions)) {
@@ -360,13 +420,6 @@ mean_n <- suppressWarnings(mean(as.numeric(subset$N), na.rm = TRUE))
 if (is.nan(mean_n) || is.infinite(mean_n)) {
   mean_n <- NA
 }
-run_susie <- function(R_mat) {
-  if (is.na(mean_n)) {
-    susie_rss(z = subset$z, R = R_mat, L = min(10, nrow(subset)), coverage = opt$`credible-set`)
-  } else {
-    susie_rss(z = subset$z, R = R_mat, L = min(10, nrow(subset)), coverage = opt$`credible-set`, n = mean_n)
-  }
-}
 ld_overlap_fraction <- ld_result$coverage %||% 0
 if (is.null(ld_result$R)) {
   message(sprintf("No LD matrix found for %s (%s). Falling back to identity.", opt$region, opt$ancestry))
@@ -380,33 +433,39 @@ if (is.null(ld_result$R)) {
   ld_source <- ld_result$source
   ld_status <- ld_result$status
 }
-regularize_ld <- function(R_mat, eps = 1e-6) {
-  diag(R_mat) <- diag(R_mat) + eps
-  (R_mat + t(R_mat)) / 2
-}
 
-fit <- tryCatch(
-  run_susie(R),
-  error = function(err) {
-    message(sprintf(
-      "susie_rss failed for %s (%s): %s. Trying regularized LD.",
-      opt$region, opt$ancestry, err$message
-    ))
-    R_reg <- regularize_ld(R, eps = 1e-4)
-    tryCatch(
-      run_susie(R_reg),
-      error = function(err2) {
-        message(sprintf(
-          "Regularized LD also failed for %s (%s): %s. Falling back to identity.",
-          opt$region, opt$ancestry, err2$message
-        ))
-        ld_status <<- paste(ld_status, "fallback_identity", sep = ";")
-        ld_source <<- "identity_fallback"
-        run_susie(diag(nrow(subset)))
-      }
-    )
-  }
+# REQ-2: structured retry ladder driven by YAML policy (Task 1-01-02).
+# Replaces former 2-step tryCatch (max_iter bump + local regularize_ld with eps=1e-6).
+ladder_policy <- list(
+  L = min(L_DEFAULT, nrow(subset)),
+  coverage = opt$`credible-set` %||% COVERAGE,
+  max_iter_primary = MAX_ITER_PRIMARY,
+  max_iter_retry = MAX_ITER_RETRY,
+  ld_regularization_eps = LD_REG_EPS
 )
+ladder_out <- run_susie_with_ladder(
+  z = subset$z,
+  R = R,
+  policy = ladder_policy,
+  n = mean_n
+)
+fit <- ladder_out$fit
+convergence_status <- ladder_out$status
+if (is.null(fit)) {
+  # Final identity fallback (preserves prior behavior of always returning a fit object)
+  message(sprintf(
+    "Retry ladder exhausted for %s (%s); falling back to identity LD.",
+    opt$region, opt$ancestry
+  ))
+  ld_status <- paste(ld_status, "fallback_identity", sep = ";")
+  ld_source <- "identity_fallback"
+  ladder_out <- run_susie_with_ladder(
+    z = subset$z, R = diag(nrow(subset)),
+    policy = ladder_policy, n = mean_n
+  )
+  fit <- ladder_out$fit
+  convergence_status <- paste(ladder_out$status, "identity_fallback", sep = ";")
+}
 cs <- susie_get_cs(fit)
 
 credible_sets <- list()
@@ -441,5 +500,100 @@ result <- list(
     pip = fit$pip[fit$pip > 0]
 )
 
+# ============================================================
+# Task 1-01-02: Fit persistence + D1/D2/D3 diagnostics + post-hoc sweep.
+# ============================================================
+
+# A6 fallback: annotate fit with coloc-compatible metadata (named pip, named sets, sld).
+# Must come BEFORE saveRDS so Wave 3 coloc.susie can consume the .fit.rds directly.
+if (!is.null(fit)) {
+  if (!inherits(fit, "susie")) class(fit) <- c("susie", class(fit))
+  snp_names <- if ("SNP_ID" %in% names(subset) && !all(is.na(subset$SNP_ID))) {
+    ifelse(is.na(subset$SNP_ID) | subset$SNP_ID == "",
+           sprintf("%s:%s", subset$CHR, subset$POS),
+           as.character(subset$SNP_ID))
+  } else {
+    sprintf("%s:%s", subset$CHR, subset$POS)
+  }
+  snp_names <- make.unique(snp_names)
+  fit <- tryCatch(
+    coloc:::annotate_susie(fit, snp_names, R),
+    error = function(e) {
+      message(sprintf("annotate_susie failed (%s); saving un-annotated fit.", conditionMessage(e)))
+      fit
+    }
+  )
+  fit_rds_path <- sub("\\.json$", ".fit.rds", opt$output)
+  dir.create(dirname(fit_rds_path), recursive = TRUE, showWarnings = FALSE)
+  saveRDS(fit, file = fit_rds_path)
+}
+
+# D1 -- z-score sanity
+z_ks <- tryCatch(ks.test(subset$z, "pnorm")$p.value, error = function(e) NA_real_)
+d1 <- list(
+  ks_pvalue = z_ks,
+  max_abs_z = suppressWarnings(max(abs(subset$z), na.rm = TRUE)),
+  lambda_gc = median(subset$z^2, na.rm = TRUE) / qchisq(0.5, df = 1)
+)
+
+# D2 -- convergence
+d2 <- list(
+  converged = isTRUE(fit$converged),
+  niter = fit$niter %||% NA_integer_,
+  elbo_final = if (!is.null(fit$elbo)) tail(fit$elbo, 1) else NA_real_,
+  convergence_status = convergence_status
+)
+
+# D3 -- LD quality via kriging_rss (never serialize ggplot -- Pitfall 8)
+krig <- tryCatch(
+  susieR::kriging_rss(z = subset$z, R = R, n = mean_n),
+  error = function(e) NULL
+)
+d3 <- if (!is.null(krig)) {
+  conc <- krig$conc
+  list(
+    n_outliers = sum(conc$logLR > 2 & abs(conc$z) > 2, na.rm = TRUE),
+    max_logLR  = suppressWarnings(max(conc$logLR, na.rm = TRUE)),
+    lambda     = krig$lambda %||% NA_real_
+  )
+} else list(n_outliers = NA_integer_, max_logLR = NA_real_, lambda = NA_real_)
+
+# Post-hoc min_abs_corr sweep (FREE -- no refit, Pattern 4)
+sweep_rows <- lapply(MIN_ABS_CORR_SWEEP, function(macor) {
+  cs_m <- tryCatch(
+    susieR::susie_get_cs(fit, Xcorr = R, coverage = COVERAGE, min_abs_corr = macor),
+    error = function(e) list(cs = list())
+  )
+  n_cs <- length(cs_m$cs %||% list())
+  list(
+    min_abs_corr = macor,
+    n_CS = n_cs,
+    cs_sizes = if (n_cs > 0) as.integer(sapply(cs_m$cs, length)) else integer(0),
+    cs_pip_sum = if (n_cs > 0) as.numeric(sapply(cs_m$cs, function(idx) sum(fit$pip[idx]))) else numeric(0)
+  )
+})
+
+# L saturation flag at default macor
+n_cs_default <- tryCatch(
+  length((susieR::susie_get_cs(fit, Xcorr = R, coverage = COVERAGE,
+                               min_abs_corr = MIN_ABS_CORR_DEFAULT)$cs) %||% list()),
+  error = function(e) NA_integer_
+)
+l_saturated <- isTRUE(n_cs_default >= L_DEFAULT)
+
+# Augment result list (backward compatible with summarize_finemap_results.py)
+result$min_abs_corr_sweep <- sweep_rows
+result$L_used              <- L_DEFAULT
+result$L_saturated         <- l_saturated
+result$converged           <- d2$converged
+result$niter               <- d2$niter
+result$elbo_final          <- d2$elbo_final
+result$convergence_status  <- convergence_status
+result$status              <- if (grepl("non_converged", convergence_status)) "non_converged" else "ok"
+result$d1_zscore_sanity    <- d1
+result$d2_convergence      <- d2
+result$d3_ld_quality       <- d3
+result$policy_hash         <- digest::digest(policy, algo = "sha1")
+
 dir.create(dirname(opt$output), showWarnings = FALSE, recursive = TRUE)
-write(toJSON(result, auto_unbox = TRUE, pretty = TRUE), file = opt$output)
+write(toJSON(result, auto_unbox = TRUE, pretty = TRUE, na = "null"), file = opt$output)

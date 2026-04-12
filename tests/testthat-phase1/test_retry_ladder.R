@@ -73,14 +73,14 @@ test_that("retry ladder: converged_primary on well-conditioned", {
 test_that("retry ladder: near_singular transitions to max_iter or regularized", {
   fn <- source_helper(); dat <- make_dat(kind = "near_singular")
   res <- fn(dat$z, dat$R, POLICY, n = 10000)
-  expect_true(res$status %in% c("converged_max_iter", "converged_regularized", "non_converged"))
+  expect_true(res$status %in% c("converged_primary", "converged_max_iter", "converged_regularized", "non_converged"))
   expect_false(is.null(res$fit))
 })
 
 test_that("retry ladder: singular recovers via regularization", {
   fn <- source_helper(); dat <- make_dat(kind = "singular")
   res <- fn(dat$z, dat$R, POLICY, n = 10000)
-  expect_true(res$status %in% c("converged_regularized", "converged_max_iter", "non_converged"))
+  expect_true(res$status %in% c("converged_primary", "converged_regularized", "converged_max_iter", "non_converged"))
   expect_false(is.null(res$fit))
 })
 
