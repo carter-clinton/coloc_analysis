@@ -48,6 +48,9 @@ miniconda*/
 # --- Snakemake ---
 .snakemake/
 
+# --- Phase 1 local R library (testthat + deps, compiled for testthat-phase1) ---
+.r_lib_phase1/
+
 # --- Data: never commit actual data files, but track the symlinks that
 # point at /rs1 so a fresh clone on the same HPC inherits the data layout ---
 data/raw/*

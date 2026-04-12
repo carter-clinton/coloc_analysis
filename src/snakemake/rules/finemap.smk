@@ -18,14 +18,6 @@ def finemap_output(path_method, trait, ancestry, region):
     return os.path.join(FINEMAP_DIR, path_method, f"{trait}.{ancestry}.{region}.json")
 
 
-def stroke_afr_outputs(wildcards=None):
-    return [
-        os.path.join(FINEMAP_DIR, method, f"stroke.AFR.{region_safe}.json")
-        for method in FINEMAP_METHODS
-        for _, region_safe in REGION_INFOS
-    ]
-
-
 rule build_finemap_manifest:
     input:
         harmonized=HARMONIZED_ALL,
@@ -66,9 +58,11 @@ rule run_finemap:
             f"{wildcards.region}.rds",
         ),
         manifest=FINEMAP_MANIFEST,
+        policy="config/susie_policy.yaml",
         script_dep="src/legacy/region_analysis/scripts/run_susie_rss.R",
     output:
-        finemap_output("{method}", "{trait}", "{ancestry}", "{region}"),
+        json=finemap_output("{method}", "{trait}", "{ancestry}", "{region}"),
+        fit=finemap_output("{method}", "{trait}", "{ancestry}", "{region}").replace(".json", ".fit.rds"),
     conda:
         "envs/r_coloc.yml"
     threads: 1
@@ -91,23 +85,8 @@ rule run_finemap:
           --ld-dir {params.ld_dir} \
           --variant-list {input.variants} \
           --credible-set {params.credible_set} \
-          --output {output}
-        """
-
-
-rule stroke_afr_susie_sweep:
-    input:
-        stroke_afr_outputs,
-    output:
-        os.path.join(FINEMAP_DIR, "stroke_AFR_sweep.done"),
-    conda:
-        "envs/python_stats.yml"
-    threads: 1
-    resources:
-        mem_mb=config["resources"]["default_mem_mb"],
-    shell:
-        r"""
-        echo "stroke.AFR sweep complete" > {output}
+          --policy {input.policy} \
+          --output {output.json}
         """
 
 
