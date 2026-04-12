@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 01-04-PLAN.md (Phase 1 success criterion #4 hard gate green)"
-last_updated: "2026-04-12T03:24:48.173Z"
+stopped_at: Completed 01-05-PLAN.md (QC dashboard D1-D4+D6, T-1-04 HLA flag surfaced)
+last_updated: "2026-04-12T03:35:41.395Z"
 last_activity: 2026-04-12
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 01 (coloc-susie-fine-mapping-spine) — WAVE 1 COMPLETE
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-04-12
 
@@ -59,6 +59,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 01 P02 | 11 | 5 tasks | 9 files |
 | Phase 01 P03 | 19 | 4 tasks | 9 files |
 | Phase 01 P04 | 22 | 5 tasks | 8 files |
+| Phase 01 P05 | 12min | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,7 @@ Recent decisions affecting current work:
 - [Phase 01]: [Phase 01-03]: Snakemake params values wrapped in lambdas so '{chrom}' in BCF filename template is not misread as a wildcard; pattern documented for future rule authors.
 - [Phase 01]: 01-04: Strategy A (delete legacy rule + redirect consumers) over Strategy B (in-place shell swap) for multitrait.smk rewire — physically separates coloc_susie/ from stale legacy coloc/ cache (T-1-05 mitigation)
 - [Phase 01]: 01-04: Pattern 6 Option A compat layer — best-pairwise (max PP.H4.abf) row promoted to top-level 'summary'; full pairwise list in 'susie_pairs' — preserves byte-identical compatibility with augment_coloc_summary.py
+- [Phase 01]: [Phase 01-05]: Tasks 2+4 merged -- aggregator + sweep table built in single commit; ld_source/ld_matrix dual-key tolerance (Rule 1 auto-fix); Quarto/RMarkdown fallback in dashboard rule; pyyaml added to env for policy parsing
 
 ### Pending Todos
 
@@ -100,8 +102,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T03:24:48.169Z
-Stopped at: Completed 01-04-PLAN.md (Phase 1 success criterion #4 hard gate green)
+Last session: 2026-04-12T03:35:41.390Z
+Stopped at: Completed 01-05-PLAN.md (QC dashboard D1-D4+D6, T-1-04 HLA flag surfaced)
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
