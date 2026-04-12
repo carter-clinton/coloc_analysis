@@ -19,7 +19,12 @@ import argparse
 import csv
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
+
+try:
+    import yaml
+except ImportError:
+    yaml = None  # type: ignore[assignment]
 
 
 DEFAULT_TIER1_OUT = "results/fine_mapping/finemap_tier1_high_conf.tsv"
@@ -204,11 +209,34 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--tier2-max-cs", type=int, default=5)
     p.add_argument("--tier2-min-top-pip", type=float, default=0.3)
     p.add_argument("--tier3-min-snps", type=int, default=30)
+    p.add_argument(
+        "--policy",
+        default="config/susie_policy.yaml",
+        help="Path to susie_policy.yaml for complex-region definitions.",
+    )
     return p
+
+
+def _load_complex_region_ids(policy_path: str) -> Set[str]:
+    """Load pre-specified complex region IDs from susie_policy.yaml."""
+    if yaml is None:
+        return set()
+    try:
+        with open(policy_path) as f:
+            policy = yaml.safe_load(f)
+        return {
+            r["region_id"]
+            for r in policy.get("complex_regions", {}).get("pre_specified", [])
+        }
+    except Exception:
+        return set()
 
 
 def main() -> None:
     args = _build_arg_parser().parse_args()
+
+    # Load complex-region IDs from policy YAML
+    complex_region_ids = _load_complex_region_ids(args.policy)
 
     summary_path = Path(args.summary)
     augment_path = Path(args.augment_out)
@@ -264,6 +292,29 @@ def main() -> None:
             ld_status_raw, ld_matrix_path = _load_ld_meta(json_path)
             ld_flag = _categorize_ld(ld_status_raw, ld_matrix_path)
 
+            # Extract Phase 1 fields from JSON (convergence_status,
+            # L_saturated, ld_source) — these are emitted by run_susie_rss.R
+            # and the LD panel scripts.
+            convergence_status = ""
+            l_saturated = ""
+            ld_source = ""
+            try:
+                _json_data = json.loads(json_path.read_text())
+                convergence_status = str(
+                    _json_data.get("convergence_status", "")
+                )
+                l_saturated = str(_json_data.get("L_saturated", ""))
+                # ld_source may be stored as 'ld_source' or 'ld_matrix'
+                ld_source = str(
+                    _json_data.get("ld_source", "")
+                    or _json_data.get("ld_matrix", "")
+                )
+            except Exception:
+                pass
+
+            # Complex-region flag from susie_policy.yaml pre-specified list
+            is_complex = region_id in complex_region_ids
+
             tier1_pass, tier1_issues = _evaluate_tier(
                 status=row.get("status"),
                 ld_flag=ld_flag,
@@ -281,6 +332,13 @@ def main() -> None:
                 **tier2_cfg,
             )
 
+            # Exclude non_converged from Tier 1 (G2c: convergence_failure
+            # ladder terminal state excluded from high-confidence tier)
+            if convergence_status == "non_converged":
+                tier1_pass = False
+                if "non_converged" not in tier1_issues:
+                    tier1_issues.append("non_converged")
+
             row["n_snps"] = n_snps if n_snps is not None else ""
             row["n_cs"] = n_cs if n_cs is not None else ""
             row["top_pip"] = (
@@ -292,6 +350,11 @@ def main() -> None:
             row["region_variant_total"] = (
                 region_variant_total if region_variant_total is not None else ""
             )
+            # Phase 1 augmented columns
+            row["convergence_status"] = convergence_status
+            row["L_saturated"] = l_saturated
+            row["is_complex_region"] = "yes" if is_complex else "no"
+            row["ld_source"] = ld_source
             row["high_confidence"] = "yes" if tier1_pass else "no"
             row["qc_notes"] = ";".join(tier1_issues)
             row["tier2_high_confidence"] = "yes" if tier2_pass else "no"
@@ -315,7 +378,11 @@ def main() -> None:
         "ld_flag",
         "ld_status_raw",
         "ld_matrix_path",
+        "ld_source",
         "region_variant_total",
+        "convergence_status",
+        "L_saturated",
+        "is_complex_region",
         "high_confidence",
         "qc_notes",
         "tier2_high_confidence",
