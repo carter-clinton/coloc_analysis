@@ -71,6 +71,9 @@ properties:
         type: string
       liftover_chains:
         type: string
+      # Plan 01-02 (Wave 2a): UKBB-LD tile scratch cache (~170 GB when full)
+      ukbb_ld_scratch:
+        type: string
 
   trait_ancestries:
     type: object
@@ -163,5 +166,33 @@ properties:
 
   mr:
     type: object
+
+  # Plan 01-02 (Wave 2a): UKBB-LD tiled EUR panel config
+  ukbb_ld:
+    type: object
+    description: "UKBB-LD (Weissbrod 2020) tiled EUR LD panel configuration"
+    properties:
+      bucket:
+        type: string
+      prefix:
+        type: string
+      tile_window_mb:
+        type: number
+      format:
+        type: string
+
+  # Plan 01-02 (Wave 2a): per-ancestry LD source selector
+  ld_reference:
+    type: object
+    description: "Per-ancestry LD source selection (REQ-2 G4/G6)"
+    properties:
+      EUR_source:
+        type: string
+      AFR_source:
+        type: string
+      EAS_source:
+        type: string
+      HIS_source:
+        type: string
 
 additionalProperties: false
