@@ -1,0 +1,21 @@
+{
+  "region_id": "SYNTHETIC_TEST",
+  "trait": "synthetic",
+  "ancestry": "EUR",
+  "status": "ok",
+  "converged": true,
+  "niter": 15,
+  "elbo_final": -123.45,
+  "convergence_status": "converged_primary",
+  "L_used": 10,
+  "L_saturated": false,
+  "min_abs_corr_sweep": [
+    {"min_abs_corr": 0.1, "n_CS": 3, "cs_sizes": [12, 8, 5], "cs_pip_sum": [0.95, 0.88, 0.74]},
+    {"min_abs_corr": 0.5, "n_CS": 2, "cs_sizes": [12, 8],    "cs_pip_sum": [0.95, 0.88]},
+    {"min_abs_corr": 0.9, "n_CS": 1, "cs_sizes": [12],       "cs_pip_sum": [0.95]}
+  ],
+  "d1_zscore_sanity": {"ks_pvalue": 0.42, "max_abs_z": 7.1, "lambda_gc": 1.02},
+  "d2_convergence": {"converged": true, "niter": 15, "elbo_final": -123.45, "convergence_status": "converged_primary"},
+  "d3_ld_quality":  {"n_outliers": 2, "max_logLR": 3.1, "lambda": 1.01},
+  "policy_hash": "test_hash"
+}

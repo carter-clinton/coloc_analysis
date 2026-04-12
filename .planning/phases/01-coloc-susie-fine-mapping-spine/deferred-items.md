@@ -1,0 +1,56 @@
+# Phase 1 Deferred Items
+
+Out-of-scope issues discovered during execution that are NOT caused by current plan changes.
+Tracked here for future phases; NOT fixed in this plan (scope boundary).
+
+## From Plan 01-01 (Wave 1 execution, 2026-04-12)
+
+### DEF-01-01: `snakemake --use-conda --dry-run` fails on env path resolution
+
+**Discovered by:** Task 1-01-08 dry-run verify step
+**Symptom:** Running `snakemake --snakefile tests/toy_3locus/Snakefile.test --cores 2 --use-conda --dry-run` raises:
+```
+WorkflowError: Failed to open source file
+/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/snakemake/rules/envs/python_stats.yml
+FileNotFoundError: [Errno 2] No such file or directory
+```
+
+**Verification this is pre-existing:** `git stash` of my Phase 1 edits, re-run same command, same error. The issue exists on the unmodified finemap.smk from Phase 0.
+
+**Root cause hypothesis:** Snakemake 7.32.4 resolves `conda: "envs/r_coloc.yml"` relative to the *included* rule file at `src/snakemake/rules/finemap.smk`, producing `src/snakemake/rules/envs/python_stats.yml`. The actual conda env files live at `envs/r_coloc.yml` (project root). Fix options:
+- Use absolute paths: `conda: str(Path(workflow.basedir) / "envs" / "r_coloc.yml")`
+- Symlink `src/snakemake/rules/envs -> ../../../envs`
+- Migrate to workflow-profile pattern
+
+**Impact:** Dry-run WITHOUT `--use-conda` works fine (29 jobs, 11 rules, DAG valid). Full conda-driven dry-runs and real runs are blocked until this is fixed.
+
+**Resolution target:** Phase 1 Plan 01-02 or 01-03 (LD + real smoke test plans) — must be fixed before the first real Wave 1 execution.
+
+**Workaround for Wave 1 verification:** Plan 01-01 uses `snakemake --dry-run` (no conda flag) which validates DAG topology including the new `.fit.rds` output and `--policy` CLI flag. This is sufficient for Wave 1 gating since no real R execution happens until Wave 5/smoke.
+
+### DEF-01-02: `envs/r_coloc.yml` is not yet materialized on disk
+
+**Discovered by:** Task 1-01-06 test_fit_roundtrip.R runtime
+**Symptom:** No pre-built conda env with the complete R stack (susieR + coloc + testthat + yaml + digest + data.table + Matrix + optparse + jsonlite).
+
+**Workaround applied:** Created `.r_lib_phase1/` (gitignored) as a CRAN-installed `testthat` library path bolted onto the existing `la_multitrait_r` conda env (which has susieR + coloc + yaml + ... but not testthat). Compiled `brio`, `diffobj`, `waldo`, `pkgload`, `testthat` from source using system `gcc` (11.5.0) — conda env shipped without `x86_64-conda-linux-gnu-cc`.
+
+**Usage:**
+```bash
+export R_LIBS_USER=/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.r_lib_phase1
+export PHASE1_PROJECT_ROOT=/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
+/rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/Rscript -e 'testthat::test_dir("tests/testthat-phase1")'
+```
+
+**Resolution target:** Phase 1 Plan 01-02 or 01-03: materialize `envs/r_coloc.yml` via `conda env create -f envs/r_coloc.yml -p /rs1/researchers/c/ckclinto/conda_envs/r_coloc_phase1` so `--use-conda` can find the env (together with DEF-01-01).
+
+### DEF-01-03: Unrelated unstaged changes in working tree at start of Plan 01-01
+
+**Discovered by:** `git status` at start of execution
+**Symptom:** Two files had unstaged modifications unrelated to Plan 01-01:
+- `.claude/settings.json`
+- `.planning/config.json`
+
+**Action taken:** Left untouched; not staged by any Plan 01-01 commit. No interference with Phase 1 work.
+
+**Resolution target:** Out of scope — user may commit/revert these separately.
