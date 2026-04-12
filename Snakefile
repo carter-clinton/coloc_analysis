@@ -111,6 +111,9 @@ include: "src/snakemake/rules/mr.smk"
 
 if FINEMAP_METHODS:
     include: "src/snakemake/rules/finemap.smk"
+    # coloc.smk must follow finemap.smk because run_coloc_susie consumes
+    # .fit.rds outputs from run_finemap (Phase 1 Wave 4, REQ-2 #4).
+    include: "src/snakemake/rules/coloc.smk"
 
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
