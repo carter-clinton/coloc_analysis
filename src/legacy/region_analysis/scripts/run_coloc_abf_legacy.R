@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+# =============================================================================
+# DEPRECATED: Category (a) -- the reference that run_coloc_susie.R replaces.
+# Renamed from run_coloc.R on 2026-04-11 as part of Phase 1 Wave 4 (01-04-PLAN).
+# No active Snakemake rule imports this file. Kept for reference only.
+# Do NOT add to any active rule. Use src/snakemake/scripts/run_coloc_susie.R
+# and src/snakemake/rules/coloc.smk instead.
+# Ticket: REQ-2 success criterion #4 (coloc.susie replaces coloc.abf).
+# =============================================================================
 suppressPackageStartupMessages({
   library(optparse)
   library(data.table)
