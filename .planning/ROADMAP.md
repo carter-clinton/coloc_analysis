@@ -80,7 +80,7 @@ Plans:
 - [x] 01-01-PLAN.md — Wave 1: policy YAML + schema + run_susie_rss.R in-place mod (fit persistence + retry ladder + policy loader + D1/D2/D3 diagnostics + sweep) + 4 G3_complex rows + cache-clear + A6 dispatch test with runsusie fallback + finemap.smk multi-output
 - [x] 01-02-PLAN.md — Wave 2: UKBB-LD tiled EUR panel (Weissbrod 2020) via boto3 + per-region NPZ→.rds + HLA block-diagonal flag
 - [x] 01-03-PLAN.md — Wave 3: HGDP+1kG AFR LD panel (gnomAD v3.1.2) via anonymous HTTPS + bcftools + plink2 (pilot-scope fallback). Serialized after 01-02 — shares ld_reference.smk + pipeline.yaml + test_ld_panels.py
-- [ ] 01-04-PLAN.md — Wave 4: coloc.smk + run_coloc_susie.R + rename run_coloc.R → run_coloc_abf_legacy.R + rewire multitrait.smk
+- [x] 01-04-PLAN.md — Wave 4: coloc.smk + run_coloc_susie.R + rename run_coloc.R → run_coloc_abf_legacy.R + rewire multitrait.smk
 - [ ] 01-05-PLAN.md — Wave 5: Quarto QC dashboard D1+D2+D3+D4+D6 with HLA red-flag styling + standalone REQ-2 supplementary sweep table
 - [ ] 01-06-PLAN.md — Wave 6: filter_finemap_summary.py update + first REAL CI smoke + methods_fragment.md + OSF amendment (DOI 10.17605/OSF.IO/PVB5J)
 
