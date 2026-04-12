@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: completed
-stopped_at: "Phase 1 Plan 01-01 complete — 10 tasks, 9 commits (630e3a2..9cc11a0), SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-01-SUMMARY.md. A6 dispatch resolved via annotate_susie branch (not plan's runsusie pre-spec). All 10 Wave 1 verification gates PASS. testthat-phase1: FAIL 0 / PASS 19. pytest: 2/2 pass. Snakemake dry-run: 29 jobs across 11 rules. Wave 2 (Plans 01-02 + 01-03) unblocked. Deferred: DEF-01-01 (--use-conda env path), DEF-01-02 (r_coloc env materialization), DEF-01-03 (unrelated unstaged files)."
-last_updated: "2026-04-12T02:32:38.166Z"
+status: executing
+stopped_at: Phase 1 Plan 01-02 complete -- 5 tasks, 4 commits (6a9af35..bdc1cc3). SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-02-SUMMARY.md. All 7 Wave 2a gates PASS. Preflight discovered NPZ is scipy.sparse COO (not flat 'R'); downloader adapts. Wave 2b (Plan 01-03 HGDP+1kG AFR) unblocked.
+last_updated: "2026-04-12T02:49:54.096Z"
 last_activity: 2026-04-12
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 10
-  completed_plans: 5
-  percent: 50
+  completed_plans: 6
+  percent: 60
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 01 (coloc-susie-fine-mapping-spine) — WAVE 1 COMPLETE
-Plan: 1 of 6
-Status: Plan 01-01 complete; Wave 2 unblocked (Plans 01-02 and 01-03 ready)
+Plan: 2 of 6
+Status: Ready to execute
 Last activity: 2026-04-12
 
 Progress: ██░░░░░░░░ 17%
@@ -56,6 +56,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 00 P03 | 17min | 2 tasks | 11 files |
 | Phase 00 P04 | 14min | 3 tasks | 7 files |
 | Phase 01 P01 | 18min | 10 tasks | 17 files |
+| Phase 01 P02 | 11 | 5 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 01]: [Phase 01-01]: A6 dispatch resolved via annotate_susie branch (NOT runsusie — plan pre-spec was factually wrong about runsusie signature); annotate_susie(fit, snp_names, R) applied before saveRDS so Wave 3 coloc.susie consumes .fit.rds directly
 - [Phase 01]: [Phase 01-01]: Structured 3-step retry ladder (primary -> max_iter_retry -> regularized LD) in run_susie_with_ladder helper; final identity-LD fallback preserved from prior behavior
 - [Phase 01]: [Phase 01-01]: Test environment bolted via .r_lib_phase1/ CRAN testthat on la_multitrait_r conda env (envs/r_coloc.yml deferred to DEF-01-02 in Wave 2/3)
+- [Phase 01]: [Phase 01-02]: UKBB-LD NPZ schema is scipy.sparse coo_matrix (not upper-triangle flat 'R' as the plan pre-spec assumed); downloader uses scipy.sparse.load_npz().toarray() and drops --npz-key-name CLI flag
+- [Phase 01]: [Phase 01-02]: New rules must use absolute LD_BUILD_ENV = str(Path(workflow.basedir) / 'envs' / 'ld_build.yml') to sidestep DEF-01-01; documented pattern for Plan 01-03 to reuse
+- [Phase 01]: [Phase 01-02]: Scratch dir /rs1/scratch does not exist on this cluster (954 MB root stub); real ckclinto allocation at /rs1/researchers/c/ckclinto/ukbb_ld_scratch (29 TB) is the default in config + CLI
 
 ### Pending Todos
 
@@ -88,8 +92,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-12T02:29:00.000Z
-Stopped at: Phase 1 Plan 01-01 complete — 10 tasks, 9 commits (630e3a2..9cc11a0), SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-01-SUMMARY.md. A6 dispatch resolved via annotate_susie branch (not plan's runsusie pre-spec). All 10 Wave 1 verification gates PASS. testthat-phase1: FAIL 0 / PASS 19. pytest: 2/2 pass. Snakemake dry-run: 29 jobs across 11 rules. Wave 2 (Plans 01-02 + 01-03) unblocked. Deferred: DEF-01-01 (--use-conda env path), DEF-01-02 (r_coloc env materialization), DEF-01-03 (unrelated unstaged files).
+Last session: 2026-04-12T02:49:54.092Z
+Stopped at: Phase 1 Plan 01-02 complete -- 5 tasks, 4 commits (6a9af35..bdc1cc3). SUMMARY at .planning/phases/01-coloc-susie-fine-mapping-spine/01-02-SUMMARY.md. All 7 Wave 2a gates PASS. Preflight discovered NPZ is scipy.sparse COO (not flat 'R'); downloader adapts. Wave 2b (Plan 01-03 HGDP+1kG AFR) unblocked.
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
