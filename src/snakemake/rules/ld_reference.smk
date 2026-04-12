@@ -4,10 +4,17 @@ Refactored from src/legacy/region_analysis/workflow/rules/ld_reference.smk.
 All paths parameterized via config["paths"] (D-09, D-10).
 Conda directives point to envs/ relative to project root (D-25).
 No hardcoded rscript_bin -- conda env resolves Rscript (D-25).
+
+Plan 01-02 (Wave 2a): adds download_ukbb_ld_tiles rule backing the UKBB-LD
+tiled EUR panel (Weissbrod 2020). That rule uses an absolute-path conda
+directive (str(Path(workflow.basedir) / "envs" / "ld_build.yml")) to
+sidestep DEF-01-01 (snakemake 7.32.4 resolves relative conda: paths from
+the included rule file rather than workflow.basedir).
 """
 
 import os
 import sys
+from pathlib import Path
 
 CHROMOSOMES = config["onekg"].get(
     "chromosomes",
@@ -17,6 +24,27 @@ CHROM_STRING = " ".join(CHROMOSOMES)
 LD_ROOT = config["paths"]["ld_1kg_root"]
 LD_REF_DIR = config["paths"]["ld_reference"]
 PYTHON_BIN = sys.executable
+
+# Plan 01-02: absolute path to envs/ld_build.yml so --use-conda resolves it
+# correctly regardless of which Snakefile included this module. See
+# deferred-items.md DEF-01-01.
+LD_BUILD_ENV = str(Path(workflow.basedir) / "envs" / "ld_build.yml")
+
+# Plan 01-02: UKBB-LD tile scratch cache (large, excluded from git)
+UKBB_LD_SCRATCH = config.get("paths", {}).get(
+    "ukbb_ld_scratch",
+    "/rs1/researchers/c/ckclinto/ukbb_ld_scratch",
+)
+UKBB_LD_OUT_DIR = os.path.join(LD_REF_DIR, "EUR_ukbb_ld")
+
+# Plan 01-02: UKBB-LD is EUR-only and autosomal. Drop X/Y/MT regions and
+# anything whose chromosome is not 1..22.
+_AUTOSOMES = {str(c) for c in range(1, 23)}
+UKBB_LD_REGION_INFOS = [
+    (orig, safe)
+    for orig, safe in REGION_INFOS
+    if str(REGION_METADATA[safe].get("chr", "")).lstrip("chr") in _AUTOSOMES
+]
 
 
 def vcf_path(chrom):
@@ -171,4 +199,50 @@ rule collect_region_variants:
             --regions-csv {input.regions} \
             --harmonized {input.harmonized} \
             --output {output}
+        """
+
+
+# ---------------------------------------------------------------------------
+# Plan 01-02 (Wave 2a): UKBB-LD tiled EUR panel (Weissbrod 2020)
+# ---------------------------------------------------------------------------
+# Downloads NPZ + variant TSV tiles anonymously from the AWS Open Data
+# Registry and extracts per-curated-region LD .rds + sidecar .meta.json
+# files into {LD_REF_DIR}/EUR_ukbb_ld/. HLA_6p21 spans multiple tiles and
+# gets block-diagonal treatment with ld_source='ukbb_ld_tiled_block_diagonal'
+# (T-1-04 mitigation). Non-autosomal regions are skipped (UKBB-LD is autosomes
+# only) via UKBB_LD_REGION_INFOS above.
+#
+# DEF-01-01 workaround: conda directive uses the absolute LD_BUILD_ENV path
+# (str(Path(workflow.basedir) / "envs" / "ld_build.yml")) so --use-conda
+# resolves it correctly regardless of the including Snakefile.
+rule download_ukbb_ld_tiles:
+    input:
+        regions=config["paths"]["regions_curated"],
+        script="src/snakemake/scripts/download_ukbb_ld_tiles.py",
+    output:
+        rds=[
+            os.path.join(UKBB_LD_OUT_DIR, f"{safe}.rds")
+            for _, safe in UKBB_LD_REGION_INFOS
+        ],
+        meta=[
+            os.path.join(UKBB_LD_OUT_DIR, f"{safe}.meta.json")
+            for _, safe in UKBB_LD_REGION_INFOS
+        ],
+    params:
+        out_dir=UKBB_LD_OUT_DIR,
+        scratch_dir=UKBB_LD_SCRATCH,
+    conda:
+        LD_BUILD_ENV
+    threads: 4
+    resources:
+        mem_mb=16000,
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.out_dir} {params.scratch_dir}
+        {PYTHON_BIN} {input.script} \
+            --regions-csv {input.regions} \
+            --out-dir {params.out_dir} \
+            --scratch-dir {params.scratch_dir} \
+            --ancestry EUR
         """

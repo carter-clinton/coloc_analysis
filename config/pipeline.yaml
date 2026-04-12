@@ -27,6 +27,10 @@ paths:
   regions_bed: "data/processed/regions/regions.bed"
   ld_1kg_root: "data/raw/1kg"
   ld_reference: "data/processed/ld_reference"
+  # Plan 01-02: scratch cache for UKBB-LD NPZ tiles (not committed; ~170 GB
+  # footprint when fully populated). Default is under the ckclinto /rs1
+  # allocation; /rs1/scratch does NOT exist on this cluster.
+  ukbb_ld_scratch: "/rs1/researchers/c/ckclinto/ukbb_ld_scratch"
   results_root: "results"
   finemap_output: "results/fine_mapping"
   cache_downloads: "cache/downloads"
@@ -78,6 +82,28 @@ onekg:
 plink:
   maf: 0.01
   geno: 0.01
+
+# Plan 01-02 (Wave 2a): UKBB-LD tiled EUR panel (Weissbrod 2020).
+# Bucket is a public AWS Open Data Registry entry; accessed anonymously via
+# boto3 UNSIGNED. NPZ layout verified by wave2a_preflight.log: scipy.sparse
+# coo_matrix (not upper-triangle flat as the plan pre-spec assumed), so the
+# downloader uses scipy.sparse.load_npz().toarray() and no 'npz_key_name'
+# knob is exposed on the CLI.
+ukbb_ld:
+  bucket: "broad-alkesgroup-ukbb-ld"
+  prefix: "UKBB_LD/"
+  tile_window_mb: 3  # per-tile genomic window (for docs/QC)
+  format: "scipy_sparse_coo"  # verified at wave2a_preflight
+
+# Plan 01-02: per-ancestry LD source selection. The EUR leg points at the
+# UKBB-LD tiled panel (REQ-2 G4 hybrid + G6 substitution). AFR will be
+# swapped to HGDP+1kG in Plan 01-03. Other ancestries retain the legacy
+# 1000G-based build until their own wave.
+ld_reference:
+  EUR_source: "ukbb_ld_tiled"         # -> data/processed/ld_reference/EUR_ukbb_ld
+  AFR_source: "onekg_phase3"          # Plan 01-03 will change to hgdp_1kg_afr
+  EAS_source: "onekg_phase3"
+  HIS_source: "onekg_phase3"
 
 resources:
   default_threads: 4
