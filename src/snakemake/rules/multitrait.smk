@@ -1,9 +1,17 @@
-"""Multi-trait colocalization rules (coloc.abf, hyprcoloc).
+"""Multi-trait colocalization rules (coloc-SuSiE, hyprcoloc).
 
 Refactored from src/legacy/region_analysis/workflow/rules/multitrait.smk.
 All paths parameterized via config["paths"] (D-09, D-10).
 Conda directives point to envs/ relative to project root (D-25).
 No hardcoded rscript_bin -- conda env resolves Rscript.
+
+Phase 1 Wave 4 (01-04): pairwise coloc moved from the legacy run_coloc_pair
+rule (single-variant ABF backend) to run_coloc_susie in
+src/snakemake/rules/coloc.smk (multi-signal SuSiE backend). Output directory
+changed from {MULTITRAIT_DIR}/coloc/ to {MULTITRAIT_DIR}/coloc_susie/ to
+prevent stale legacy JSON from contaminating the new analysis
+(T-1-05 mitigation). The summarize and sweep rules below are updated to
+consume the new coloc_susie/ path.
 """
 
 import os
@@ -40,7 +48,7 @@ def stroke_afr_coloc_targets(wildcards=None):
     if sub.empty:
         return []
     return [
-        os.path.join(MULTITRAIT_DIR, "coloc", f"{pid}.json")
+        os.path.join(MULTITRAIT_DIR, "coloc_susie", f"{pid}.json")
         for pid in sub["pair_id"].dropna().astype(str).tolist()
     ]
 
@@ -113,30 +121,15 @@ PY
         """
 
 
-rule run_coloc_pair:
-    input:
-        manifest=os.path.join(MULTITRAIT_DIR, "coloc_manifest.tsv"),
-    output:
-        os.path.join(MULTITRAIT_DIR, "coloc", "{pair_id}.json"),
-    params:
-        ref_fasta=lambda wc: config.get("paths", {}).get("ref_fasta", ""),
-    conda:
-        "envs/r_coloc.yml"
-    threads: 1
-    resources:
-        mem_mb=config["resources"]["default_mem_mb"],
-    shell:
-        r"""
-        REF_ARG=""
-        if [ -n "{params.ref_fasta}" ] && [ -f "{params.ref_fasta}" ]; then
-          REF_ARG="--ref-fasta {params.ref_fasta}"
-        fi
-        Rscript src/legacy/region_analysis/scripts/run_coloc.R \
-            --manifest {input.manifest} \
-            --pair-id {wildcards.pair_id} \
-            --output {output} \
-            $REF_ARG
-        """
+# ---------------------------------------------------------------------------
+# NOTE (Phase 1 Wave 4, 01-04): The legacy run_coloc_pair rule has been
+# removed. Pairwise coloc is now computed by run_coloc_susie in
+# src/snakemake/rules/coloc.smk, which consumes .fit.rds outputs from
+# run_finemap (Wave 1) and calls the multi-signal SuSiE coloc backend
+# (coloc::coloc.susie) instead of the legacy single-variant ABF backend.
+# Output path moved from coloc/{pair_id}.json to coloc_susie/{pair_id}.json.
+# REQ-2 success criterion #4 is enforced by the grep audit in 01-04-PLAN.
+# ---------------------------------------------------------------------------
 
 
 rule stroke_afr_coloc_sweep:
@@ -169,7 +162,7 @@ rule summarize_coloc_results:
         r"""
         {PYTHON_BIN} src/legacy/region_analysis/scripts/summarize_coloc_results.py \
             --manifest {input.manifest} \
-            --coloc-dir {MULTITRAIT_DIR}/coloc \
+            --coloc-dir {MULTITRAIT_DIR}/coloc_susie \
             --output {output.summary}
         """
 

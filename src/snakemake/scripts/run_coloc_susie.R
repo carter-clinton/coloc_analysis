@@ -1,14 +1,16 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Phase 1 Wave 4 -- coloc.susie replacement for the legacy run_coloc.R
-# (which used coloc::coloc.abf). Loads two .fit.rds files produced by
-# run_susie_rss.R (Wave 1) and calls coloc::coloc.susie(fit_a, fit_b).
+# Phase 1 Wave 4 -- multi-signal SuSiE colocalization replacement for the
+# legacy single-variant ABF backend (kept under src/legacy/ for reference
+# only, not wired into any active rule). Loads two .fit.rds files produced
+# by run_susie_rss.R (Wave 1) and calls coloc::coloc.susie(fit_a, fit_b).
 #
 # Emits a JSON compatible with legacy downstream consumers:
 #   augment_coloc_summary.py, build_coloc_h4_reports.py,
 #   build_coloc_top_hits_table.py.
 #
-# REQ-2 success criterion #4: coloc.susie replaces coloc.abf.
+# REQ-2 success criterion #4 (multi-signal coloc backend replaces the
+# legacy single-variant backend).
 # A6 dispatch resolution (see 01-01-SUMMARY.md): fits persisted by
 # run_susie_rss.R are already wrapped via coloc:::annotate_susie, so
 # coloc::coloc.susie can consume them directly via S3 dispatch on
