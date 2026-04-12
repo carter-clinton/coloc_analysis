@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 Plan 01-03 complete -- 4 tasks, 4 commits (b37468a..74ac9f8). HGDP+1kG AFR LD panel plumbing landed (Scope B pilot, 11 autosomal regions). All 9 Wave 2b gates PASS. Real execution gated on DEF-01-04 GRCh38 liftover of regions_curated.csv. Wave 3 (Plan 01-04 coloc.susie swap) unblocked.
-last_updated: "2026-04-12T03:09:25.309Z"
+stopped_at: "Completed 01-04-PLAN.md (Phase 1 success criterion #4 hard gate green)"
+last_updated: "2026-04-12T03:24:48.173Z"
 last_activity: 2026-04-12
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 10
-  completed_plans: 7
-  percent: 70
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 01 (coloc-susie-fine-mapping-spine) — WAVE 1 COMPLETE
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-04-12
 
@@ -58,6 +58,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 01 P01 | 18min | 10 tasks | 17 files |
 | Phase 01 P02 | 11 | 5 tasks | 9 files |
 | Phase 01 P03 | 19 | 4 tasks | 9 files |
+| Phase 01 P04 | 22 | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [Phase 01]: [Phase 01-03]: Metadata URL corrected to release/3.1/secondary_analyses/hgdp_1kg/metadata_and_qc/gnomad_meta_v1.tsv; plan pre-spec path release/3.1.2/pca/... returns 404. Region column is hgdp_tgp_meta.Genetic.region (dot-separated Hail export), not genetic_region.
 - [Phase 01]: [Phase 01-03]: AFR sample count is 1003 metadata / 986 BCF-reconciled on the v2 panel (plan's ~730 was a 1kG-only estimate); Task 1-03-03 test bounds widened to 950-1010.
 - [Phase 01]: [Phase 01-03]: Snakemake params values wrapped in lambdas so '{chrom}' in BCF filename template is not misread as a wildcard; pattern documented for future rule authors.
+- [Phase 01]: 01-04: Strategy A (delete legacy rule + redirect consumers) over Strategy B (in-place shell swap) for multitrait.smk rewire — physically separates coloc_susie/ from stale legacy coloc/ cache (T-1-05 mitigation)
+- [Phase 01]: 01-04: Pattern 6 Option A compat layer — best-pairwise (max PP.H4.abf) row promoted to top-level 'summary'; full pairwise list in 'susie_pairs' — preserves byte-identical compatibility with augment_coloc_summary.py
 
 ### Pending Todos
 
@@ -97,8 +100,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T03:09:04.229Z
-Stopped at: Phase 1 Plan 01-03 complete -- 4 tasks, 4 commits (b37468a..74ac9f8). HGDP+1kG AFR LD panel plumbing landed (Scope B pilot, 11 autosomal regions). All 9 Wave 2b gates PASS. Real execution gated on DEF-01-04 GRCh38 liftover of regions_curated.csv. Wave 3 (Plan 01-04 coloc.susie swap) unblocked.
+Last session: 2026-04-12T03:24:48.169Z
+Stopped at: Completed 01-04-PLAN.md (Phase 1 success criterion #4 hard gate green)
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
