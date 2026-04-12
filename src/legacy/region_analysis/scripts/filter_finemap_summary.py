@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# ============================================================
+# Phase 1 NOTE (REQ-2, B-03 resolved): When fit-persistence is first enabled,
+# {FINEMAP_DIR}/susie/ MUST be cleared before the first real execution.
+# Snakemake tracks file mtimes not rule versions; stale JSON outputs from
+# Phase 0 dry-runs bypass the new .fit.rds dependency and leave run_coloc_susie
+# permanently broken. Execute before first Wave 1 real run:
+#     rm -rf {FINEMAP_DIR}/susie/
+# OR pass --forceall run_finemap to snakemake.
+# Threat mitigation: T-1-05 (cache poisoning on fit-persistence switchover).
+# ============================================================
 """
 Augment the fine-mapping summary with LD metadata and derive a high-confidence subset.
 """
