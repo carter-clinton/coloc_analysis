@@ -1,9 +1,10 @@
-"""coloc.susie replacement rule (REQ-2 success criterion #4).
+"""Multi-signal SuSiE colocalization rule (REQ-2 success criterion #4).
 
-Replaces the legacy run_coloc_pair rule in multitrait.smk (coloc.abf).
-Depends on .fit.rds outputs from finemap.smk:run_finemap (Phase 1 Wave 1).
-Uses the legacy-compat JSON schema so downstream augment_coloc_summary.py,
-build_coloc_h4_reports.py, and build_coloc_top_hits_table.py continue working.
+Replaces the legacy run_coloc_pair rule in multitrait.smk (single-variant
+ABF backend). Depends on .fit.rds outputs from finemap.smk:run_finemap
+(Phase 1 Wave 1). Uses the legacy-compat JSON schema so downstream
+augment_coloc_summary.py, build_coloc_h4_reports.py, and
+build_coloc_top_hits_table.py continue working.
 
 Must be included AFTER finemap.smk and multitrait.smk in the top-level
 Snakefile so finemap_output() and MULTITRAIT_DIR are in scope.
