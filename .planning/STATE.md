@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 02-05-PLAN.md
-last_updated: "2026-04-13T01:27:41.021Z"
+status: planning
+stopped_at: Phase 1 closed — 01-06-SUMMARY written, OSF amendment posted 2026-04-13. Phase 5 context gathered, ready for planning.
+last_updated: "2026-04-13"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 15
-  completed_plans: 14
-  percent: 93
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 02 — 3-way-qtl-colocalization
+**Current focus:** Phase 05 — pathway + partitioned heritability
 
 ## Current Position
 
 Phase: 5
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Context gathered (05-CONTEXT.md exists) — ready for planning
 Last activity: 2026-04-13
 
 Progress: ██░░░░░░░░ 17%
@@ -119,8 +119,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T01:10:39.896Z
-Stopped at: Completed 02-05-PLAN.md
+Last session: 2026-04-13
+Stopped at: Phase 1 formally closed (01-06-SUMMARY + OSF amendment). Phase 5 context gathered, ready for /gsd-plan-phase 5.
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
