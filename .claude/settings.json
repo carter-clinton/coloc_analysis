@@ -10,7 +10,17 @@
       "Bash(git -C /share/clintonlab/ckclinto/gsd-2 status)",
       "Bash(npm --version)",
       "Bash(module avail:*)",
-      "Bash(conda env:*)"
+      "Bash(conda env:*)",
+      "Skill(gsd-discuss-phase)",
+      "Skill(gsd-discuss-phase:*)",
+      "Bash(du -sh /home/ckclinto/.cache/*/)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Skill(gsd-resume-work)",
+      "Skill(gsd-resume-work:*)",
+      "Skill(gsd-plan-phase)",
+      "Skill(gsd-plan-phase:*)",
+      "WebSearch"
     ]
   }
 }
