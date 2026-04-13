@@ -326,40 +326,195 @@ rule download_hess_panel:
 rule magma_annotate:
     """MAGMA Step 1: Annotate SNPs to genes using gene.loc and SNP locations.
 
-    Placeholder -- implementation in Plan 05-02.
+    Runs once per genome build. Input: MAGMA binary, g1000_eur.bim, NCBI37.3.gene.loc.
+    Output: gene_annotation.genes.annot
+    Shell calls run_magma.py --step annotate.
+    """
+    input:
+        magma=PATHWAY_CFG.get("magma_binary", "tools/magma_v1.10/magma"),
+        snp_loc=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur") + ".bim",
+        gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
+    output:
+        annot=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation.genes.annot"),
+    params:
+        out_prefix=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation"),
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} --step annotate \
+            --magma-binary {input.magma} \
+            --snp-loc {input.snp_loc} \
+            --gene-loc {input.gene_loc} \
+            --out {params.out_prefix}
+        """
+
+
+rule build_magma_set_file:
+    """Combine standard MSigDB GMTs + custom + negative controls into all_pathways.set.
+
+    Calls build_magma_geneset.py to merge all GMT files and convert to MAGMA .set format.
     """
     input:
         gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
+        kegg=os.path.join(
+            PATHWAY_CFG.get("msigdb_dir", "data/reference/msigdb"), "c2.cp.kegg.gmt"
+        ),
+        reactome=os.path.join(
+            PATHWAY_CFG.get("msigdb_dir", "data/reference/msigdb"), "c2.cp.reactome.gmt"
+        ),
+        gobp=os.path.join(
+            PATHWAY_CFG.get("msigdb_dir", "data/reference/msigdb"), "c5.go.bp.gmt"
+        ),
+        hallmark=os.path.join(
+            PATHWAY_CFG.get("msigdb_dir", "data/reference/msigdb"), "h.all.gmt"
+        ),
+        custom=PATHWAY_CFG.get("custom_pathway_gmt", "config/pathway_sets/custom_cardiometabolic.gmt"),
+        negctrl=PATHWAY_CFG.get("negative_control_gmt", "config/pathway_sets/negative_controls.gmt"),
     output:
-        annot=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}.{ancestry}.genes.annot"),
-    run:
-        pass
+        set_file=os.path.join(PATHWAY_RESULTS_DIR, "magma", "all_pathways.set"),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "build_magma_geneset.py"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} \
+            --gmt-files {input.kegg} {input.reactome} {input.gobp} {input.hallmark} \
+                        {input.custom} {input.negctrl} \
+            --gene-loc {input.gene_loc} \
+            --out {output.set_file}
+        """
 
 
 rule magma_gene_analysis:
     """MAGMA Step 2: Gene-level analysis using summary statistics.
 
-    Placeholder -- implementation in Plan 05-02.
+    Per trait x ancestry. Wildcard: {trait}_{ancestry}.
+    Shell calls run_magma.py --step gene with appropriate N calculation.
+    Critical: binary traits use effective N = 4/(1/n_case + 1/n_ctrl) per Pitfall 4.
     """
     input:
-        annot=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}.{ancestry}.genes.annot"),
+        magma=PATHWAY_CFG.get("magma_binary", "tools/magma_v1.10/magma"),
+        bfile_bed=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur") + ".bed",
+        annot=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation.genes.annot"),
+        sumstats=os.path.join(
+            config["paths"]["harmonized_sumstats"], "{trait}_{ancestry}.tsv"
+        ),
     output:
-        genes_raw=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}.{ancestry}.genes.raw"),
-    run:
-        pass
+        genes_raw=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}.genes.raw"),
+    params:
+        out_prefix=lambda wc: os.path.join(PATHWAY_RESULTS_DIR, "magma", f"{wc.trait}_{wc.ancestry}"),
+        bfile=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur"),
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+        trait=lambda wc: wc.trait,
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=8000,
+    shell:
+        """
+        python {params.script} --step gene \
+            --magma-binary {input.magma} \
+            --bfile {params.bfile} \
+            --pval {input.sumstats} \
+            --gene-annot {input.annot} \
+            --trait {params.trait} \
+            --sample-size 500000 \
+            --out {params.out_prefix}
+        """
 
 
 rule magma_geneset_analysis:
     """MAGMA Step 3: Gene-set (competitive) analysis.
 
-    Placeholder -- implementation in Plan 05-02.
+    Per trait x ancestry. Input: .genes.raw, all_pathways.set.
+    Output: {trait}_{ancestry}_geneset.gsa.out
+    Shell calls run_magma.py --step geneset.
     """
     input:
-        genes_raw=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}.{ancestry}.genes.raw"),
+        magma=PATHWAY_CFG.get("magma_binary", "tools/magma_v1.10/magma"),
+        genes_raw=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}.genes.raw"),
+        set_file=os.path.join(PATHWAY_RESULTS_DIR, "magma", "all_pathways.set"),
     output:
-        gsa=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}.{ancestry}.gsa.out"),
+        gsa=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset.gsa.out"),
+    params:
+        out_prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR, "magma", f"{wc.trait}_{wc.ancestry}_geneset"
+        ),
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} --step geneset \
+            --magma-binary {input.magma} \
+            --gene-results {input.genes_raw} \
+            --set-annot {input.set_file} \
+            --out {params.out_prefix}
+        """
+
+
+rule magma_fdr:
+    """Post-processing: Apply Benjamini-Hochberg FDR across all gene sets per trait.
+
+    Reads .gsa.out file for a trait x ancestry, applies FDR correction jointly
+    across ALL gene sets (standard + custom + negative controls) per D-01a/D-01b.
+    Outputs a TSV with added FDR_Q column.
+    """
+    input:
+        gsa=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset.gsa.out"),
+    output:
+        fdr=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset_fdr.tsv"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=2000,
     run:
-        pass
+        import pandas as pd
+        from scipy import stats as scipy_stats
+
+        # Read MAGMA .gsa.out (whitespace-delimited, may have comment header lines)
+        lines = []
+        header = None
+        with open(input.gsa) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if header is None:
+                    header = line
+                    continue
+                lines.append(line)
+
+        if not lines:
+            # Write empty output
+            with open(output.fdr, "w") as fout:
+                fout.write("VARIABLE\tTYPE\tNGENES\tBETA\tBETA_STD\tSE\tP\tFDR_Q\n")
+        else:
+            # Parse into dataframe
+            from io import StringIO
+            df = pd.read_csv(
+                StringIO(header + "\n" + "\n".join(lines)),
+                sep=r"\s+",
+            )
+
+            # Apply Benjamini-Hochberg FDR correction jointly across all gene sets
+            if "P" in df.columns and len(df) > 0:
+                from statsmodels.stats.multitest import multipletests
+                _, fdr_q, _, _ = multipletests(df["P"].values, method="fdr_bh")
+                df["FDR_Q"] = fdr_q
+            else:
+                df["FDR_Q"] = float("nan")
+
+            df.to_csv(output.fdr, sep="\t", index=False)
 
 
 rule ldsc_munge:
