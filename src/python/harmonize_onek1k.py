@@ -262,6 +262,8 @@ def _harmonize_onek1k_org_format(
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     parser = argparse.ArgumentParser(
         description="Harmonize OneK1K sc-eQTL data for coloc.susie"
     )
