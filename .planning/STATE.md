@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-04-12T22:39:14.253Z"
-last_activity: 2026-04-12 -- Phase 01 execution started
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-13T00:21:50.745Z"
+last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 1
-  total_plans: 10
-  completed_plans: 9
-  percent: 90
+  total_plans: 15
+  completed_plans: 10
+  percent: 67
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 01 — coloc-susie-fine-mapping-spine
+**Current focus:** Phase 02 — 3-way-qtl-colocalization
 
 ## Current Position
 
-Phase: 01 (coloc-susie-fine-mapping-spine) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 01
-Last activity: 2026-04-12 -- Phase 01 execution started
+Phase: 02 (3-way-qtl-colocalization) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-04-13
 
 Progress: ██░░░░░░░░ 17%
 
@@ -60,6 +60,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 01 P03 | 19 | 4 tasks | 9 files |
 | Phase 01 P04 | 22 | 5 tasks | 8 files |
 | Phase 01 P05 | 12min | 4 tasks | 5 files |
+| Phase 02 P01 | 8min | 2 tasks | 17 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-04: Strategy A (delete legacy rule + redirect consumers) over Strategy B (in-place shell swap) for multitrait.smk rewire — physically separates coloc_susie/ from stale legacy coloc/ cache (T-1-05 mitigation)
 - [Phase 01]: 01-04: Pattern 6 Option A compat layer — best-pairwise (max PP.H4.abf) row promoted to top-level 'summary'; full pairwise list in 'susie_pairs' — preserves byte-identical compatibility with augment_coloc_summary.py
 - [Phase 01]: [Phase 01-05]: Tasks 2+4 merged -- aggregator + sweep table built in single commit; ld_source/ld_matrix dual-key tolerance (Rule 1 auto-fix); Quarto/RMarkdown fallback in dashboard rule; pyyaml added to env for policy parsing
+- [Phase 02]: pyliftover installed into smoke_dev for actual coordinate liftover; chain file tamper-checked at >100KB
+- [Phase 02]: QTL fixture generator uses seed=42, 150 rows per file, 1 signal variant per region for coloc detection
 
 ### Pending Todos
 
@@ -102,9 +105,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T22:39:14.236Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-3-way-qtl-colocalization/02-CONTEXT.md
+Last session: 2026-04-13T00:21:50.741Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
