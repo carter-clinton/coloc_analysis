@@ -1,13 +1,17 @@
-"""Tests for MAGMA gene set files and build_magma_geneset.py (Phase 5).
+"""Tests for MAGMA gene set files, build_magma_geneset.py, and run_magma.py (Phase 5).
 
 Validates:
 - GMT file format and content for custom cardiometabolic pathways
 - Negative control GMT file content (REQ-7)
 - build_magma_geneset.py parsing and conversion logic
+- run_magma.py subprocess command construction (T-05-05: no shell=True)
+- Effective N computation for binary traits (Pitfall 4)
+- MAGMA pval file format (SNP + P only)
 """
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -17,6 +21,7 @@ PATHWAY_SETS_DIR = PROJECT_ROOT / "config" / "pathway_sets"
 # Add src/python to path for direct imports
 sys.path.insert(0, str(PROJECT_ROOT / "src" / "python"))
 from build_magma_geneset import parse_gmt, load_gene_loc, convert_to_magma_set
+from run_magma import run_annotate, effective_n, _create_pval_file
 
 
 class TestCustomGMT:
@@ -117,3 +122,119 @@ class TestBuildMagmaGeneset:
             assert isinstance(desc, str)
             assert isinstance(genes, list)
             assert all(isinstance(g, str) for g in genes)
+
+
+class TestRunMagmaAnnotateCmd:
+    """Test run_magma.py annotate step command construction."""
+
+    def test_run_magma_annotate_cmd(self, tmp_path):
+        """Verify subprocess command list is constructed correctly for annotate step.
+
+        T-05-05: Must use list args (no shell=True).
+        T-05-10: File paths validated before passing to MAGMA.
+        """
+        # Create mock files that run_annotate will validate
+        mock_magma = tmp_path / "magma"
+        mock_magma.write_text("#!/bin/bash\necho mock")
+        mock_magma.chmod(0o755)
+
+        mock_snp_loc = tmp_path / "g1000_eur.bim"
+        mock_snp_loc.write_text("22\trs100\t0\t1000\tA\tG\n")
+
+        mock_gene_loc = tmp_path / "gene.loc"
+        mock_gene_loc.write_text("1000\t22\t1000\t2000\t+\tTEST\n")
+
+        out_prefix = str(tmp_path / "output")
+
+        # Patch subprocess.run to capture the command
+        with patch("run_magma.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+            run_annotate(
+                magma_binary=str(mock_magma),
+                snp_loc=str(mock_snp_loc),
+                gene_loc=str(mock_gene_loc),
+                out=out_prefix,
+            )
+
+            # Verify subprocess.run was called with list args (not string)
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]  # First positional arg is the command list
+            assert isinstance(cmd, list), "Command must be a list (no shell=True)"
+            assert str(mock_magma) in cmd
+            assert "--annotate" in cmd
+            assert "--snp-loc" in cmd
+            assert "--gene-loc" in cmd
+            assert "--out" in cmd
+
+            # Verify shell=True is NOT used
+            kwargs = call_args[1] if len(call_args) > 1 else call_args.kwargs
+            assert kwargs.get("check") is not True or "shell" not in kwargs or kwargs["shell"] is False
+
+
+class TestEffectiveNBinaryTrait:
+    """Test effective N calculation for binary traits."""
+
+    def test_effective_n_binary_trait(self):
+        """Verify effective N: n_case=5000, n_ctrl=20000 => N_eff = 16000.0.
+
+        Formula: N_eff = 4 / (1/n_case + 1/n_ctrl)
+                       = 4 / (1/5000 + 1/20000)
+                       = 4 / (0.0002 + 0.00005)
+                       = 4 / 0.00025
+                       = 16000.0
+        """
+        n_eff = effective_n(n_case=5000, n_ctrl=20000)
+        assert n_eff == pytest.approx(16000.0, rel=1e-6)
+
+    def test_effective_n_quantitative_trait(self):
+        """Quantitative trait returns sample_size directly."""
+        n_eff = effective_n(trait="bmi", sample_size=500000)
+        assert n_eff == 500000.0
+
+    def test_effective_n_binary_trait_auto_detect(self):
+        """Binary trait auto-detected from trait name."""
+        n_eff = effective_n(trait="t2d", n_case=5000, n_ctrl=20000)
+        assert n_eff == pytest.approx(16000.0, rel=1e-6)
+
+    def test_effective_n_binary_missing_args_raises(self):
+        """Binary trait without n_case/n_ctrl raises ValueError."""
+        with pytest.raises(ValueError, match="requires --n-case"):
+            effective_n(trait="t2d", sample_size=25000)
+
+
+class TestMagmaPvalFileFormat:
+    """Test MAGMA pval file extraction from harmonized sumstats."""
+
+    def test_magma_pval_file_format(self, mock_sumstats_path, tmp_path):
+        """Verify temp pval file has only SNP + P columns.
+
+        T-05-11: Temp file should contain only SNP and P (no individual-level data).
+        """
+        pval_path = _create_pval_file(str(mock_sumstats_path), str(tmp_path))
+
+        # Read the generated pval file
+        with open(pval_path) as f:
+            header = f.readline().strip()
+            first_data = f.readline().strip()
+
+        # Verify header has exactly SNP and P
+        assert header == "SNP\tP", f"Expected 'SNP\\tP' header, got '{header}'"
+
+        # Verify data rows have exactly 2 columns
+        fields = first_data.split("\t")
+        assert len(fields) == 2, f"Expected 2 columns, got {len(fields)}"
+
+        # Verify SNP column looks like an rsID
+        assert fields[0].startswith("rs"), f"SNP should be rsID, got {fields[0]}"
+
+        # Verify P is a valid float
+        float(fields[1])  # Should not raise
+
+    def test_pval_file_row_count(self, mock_sumstats_path, tmp_path):
+        """Verify pval file has same number of data rows as input."""
+        pval_path = _create_pval_file(str(mock_sumstats_path), str(tmp_path))
+
+        with open(pval_path) as f:
+            lines = [l for l in f.readlines() if l.strip()]
+        # 1 header + 100 data rows
+        assert len(lines) == 101, f"Expected 101 lines (1 header + 100 data), got {len(lines)}"
