@@ -1,0 +1,15 @@
+# envs/magma.yml -- Python environment for MAGMA helper scripts (Phase 5)
+# Used by: build_magma_geneset.py, magma_annotate, magma_gene_analysis,
+#          magma_geneset_analysis rules in pathway.smk.
+# NOTE: This env is for Python helper scripts only. The MAGMA binary itself is
+# a statically linked Linux executable downloaded by the download_magma_binary rule.
+name: magma_helpers
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pandas>=2.0
+  - numpy>=1.24
+  - pyyaml>=6.0
+  - requests>=2.28

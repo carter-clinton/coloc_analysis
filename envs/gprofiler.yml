@@ -1,0 +1,14 @@
+# envs/gprofiler.yml -- R environment for g:Profiler enrichment analysis (Phase 5)
+# Used by: gprofiler_enrichment rule in pathway.smk.
+# g:Profiler2 R package provides programmatic access to the g:Profiler web
+# service for functional enrichment analysis (Kolberg et al. 2020).
+name: gprofiler_r
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base>=4.2
+  - r-gprofiler2
+  - r-dplyr
+  - r-readr
+  - r-yaml

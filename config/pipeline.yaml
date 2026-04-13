@@ -173,3 +173,45 @@ mr:
     - {exposure: bmi, outcome: t2d, note: "BMI -> T2D causal hypothesis"}
     - {exposure: bmi, outcome: hypertension, note: "BMI -> hypertension"}
     - {exposure: hypertension, outcome: stroke, note: "BP -> stroke mediation"}
+
+# Phase 5: Pathway + partitioned heritability analysis configuration.
+# All paths are relative to project root. Reference data downloaded by
+# pathway.smk download rules. Gene set files curated in config/pathway_sets/.
+pathway:
+  # MAGMA v1.10 (de Leeuw et al. 2015) -- gene-level and gene-set analysis
+  magma_binary: "tools/magma_v1.10/magma"
+  magma_gene_loc: "data/reference/magma/NCBI37.3.gene.loc"
+  magma_ref_panel: "data/reference/magma/g1000_eur"
+  magma_snp_synonyms: "data/reference/magma/dbsnp151.synonyms"
+
+  # LDSC (Bulik-Sullivan 2015) -- partitioned heritability and S-LDSC
+  ldsc_baseline: "data/reference/ldsc/baselineLD_v2.2"
+  ldsc_weights: "data/reference/ldsc/weights_hm3_no_hla"
+  ldsc_frq: "data/reference/ldsc/1000G_Phase3_frq"
+  ldsc_plink: "data/reference/ldsc/1000G_Phase3_plinkfiles"
+  ldsc_hapmap3: "data/reference/ldsc/w_hm3.snplist"
+
+  # LDSC-SEG tissue-specific enrichment (Finucane 2018)
+  ldsc_seg_gene_expr: "data/reference/ldsc_seg/Multi_tissue_gene_expr"
+  ldsc_seg_chromatin: "data/reference/ldsc_seg/Multi_tissue_chromatin"
+
+  # HESS (Shi 2017) -- local heritability and cross-trait genetic correlation
+  hess_ld_panel: "data/reference/hess/ld_panel"
+  hess_partition: "data/reference/hess/partition"
+
+  # MSigDB gene sets (Subramanian 2005) -- downloaded via msigdbr R package
+  msigdb_dir: "data/reference/msigdb"
+
+  # Custom curated pathway gene sets (Plan 05-01 Task 2)
+  custom_pathway_gmt: "config/pathway_sets/custom_cardiometabolic.gmt"
+  negative_control_gmt: "config/pathway_sets/negative_controls.gmt"
+
+  # Analysis parameters
+  snp_gene_window_kb: 100        # Window around gene boundaries for SNP-to-gene assignment
+  gprofiler_bg_window_kb: 500    # Background gene window for g:Profiler enrichment
+  permutation_n: 1000            # Number of permutations for empirical null (D-06c)
+  maf_reference: "data/reference/ldsc/1000G_Phase3_frq"
+  ld_score_reference: "data/reference/ldsc/baselineLD_v2.2"
+
+  # Output directory
+  results_dir: "results/pathway"

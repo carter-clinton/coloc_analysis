@@ -123,6 +123,11 @@ include: "src/snakemake/rules/qtl_download.smk"
 include: "src/snakemake/rules/qtl_coloc.smk"
 include: "src/snakemake/rules/negative_controls.smk"
 
+# Phase 5 pathway + partitioned heritability rules. Depends on config.pathway
+# section; download rules populate reference data, analysis rules consume
+# outputs from Phase 2 QTL coloc and Phase 1 fine-mapping.
+include: "src/snakemake/rules/pathway.smk"
+
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
 LD_ANCESTRIES = [a for a in ANCESTRIES if a in config.get("onekg", {}).get("populations", {})]

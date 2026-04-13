@@ -1,0 +1,19 @@
+# envs/hess_py27.yml -- Python 2.7 environment for HESS (Phase 5)
+# HESS (Shi et al. 2017) requires Python 2.7. This is end-of-life software;
+# use this env ONLY for HESS local rho-g analysis. Do NOT install additional
+# packages into this env or use it for any other purpose.
+#
+# WARNING: Python 2.7 is EOL. conda-forge dropped Py2.7; the `defaults`
+# channel is REQUIRED to resolve python=2.7. This env is intentionally
+# isolated and should never be used outside of HESS rules.
+name: hess_py27
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=2.7
+  - numpy=1.16
+  - pandas=0.24
+  - scipy=1.2
+  - pysnptools=0.3

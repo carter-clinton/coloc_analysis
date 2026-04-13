@@ -227,4 +227,57 @@ properties:
       HIS_source:
         type: string
 
+  # Phase 5: Pathway + partitioned heritability analysis
+  pathway:
+    type: object
+    description: "Pathway analysis reference data paths and parameters (Phase 5)"
+    properties:
+      magma_binary:
+        type: string
+      magma_gene_loc:
+        type: string
+      magma_ref_panel:
+        type: string
+      magma_snp_synonyms:
+        type: string
+      ldsc_baseline:
+        type: string
+      ldsc_weights:
+        type: string
+      ldsc_frq:
+        type: string
+      ldsc_plink:
+        type: string
+      ldsc_hapmap3:
+        type: string
+      ldsc_seg_gene_expr:
+        type: string
+      ldsc_seg_chromatin:
+        type: string
+      hess_ld_panel:
+        type: string
+      hess_partition:
+        type: string
+      msigdb_dir:
+        type: string
+      custom_pathway_gmt:
+        type: string
+      negative_control_gmt:
+        type: string
+      snp_gene_window_kb:
+        type: integer
+        minimum: 1
+      gprofiler_bg_window_kb:
+        type: integer
+        minimum: 1
+      permutation_n:
+        type: integer
+        minimum: 100
+      maf_reference:
+        type: string
+      ld_score_reference:
+        type: string
+      results_dir:
+        type: string
+
 additionalProperties: false
