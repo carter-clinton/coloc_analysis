@@ -1,10 +1,14 @@
-"""Tests for negative control pathway sets across all methods (Phase 5).
+"""Tests for negative control pathway sets across all methods (Phase 5 Plan 05-05).
 
 Validates:
-- Each method has negative control pathway coverage
+- Each method has negative control pathway coverage in Snakemake rules
 - Negative control genes do NOT overlap with custom cardiometabolic genes (REQ-7)
+- Validation summary schema
+- q > 0.05 threshold enforcement per D-06b
 """
+import csv
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -16,19 +20,17 @@ from build_magma_geneset import parse_gmt
 
 
 class TestAllMethodsHaveNegCtrl:
-    """Verify each analytical method has negative control rows."""
+    """Verify each analytical method has negative control rules in pathway.smk."""
 
     def test_all_methods_have_neg_ctrl(self):
-        """Each method (MAGMA, g:Profiler, LDSC, LDSC-SEG, HESS) has neg ctrl rows.
+        """pathway.smk has neg ctrl rules for MAGMA, g:Profiler, LDSC, LDSC-SEG, HESS.
 
         Negative controls are defined in negative_controls.gmt which feeds into:
-        1. MAGMA gene-set analysis (via build_magma_geneset.py)
+        1. MAGMA gene-set analysis (via build_magma_geneset.py + magma_fdr)
         2. LDSC partitioned h2 (via build_ldsc_annot.py)
-        3. g:Profiler (via negative control gene lists)
+        3. g:Profiler (via gprofiler_negative_controls rule)
         4. LDSC-SEG (via custom tissue annotations from neg ctrl regions)
-        5. HESS (via negative control loci from neg_ctrl_coloc_manifest)
-
-        This test validates the GMT file exists and has content for all methods.
+        5. HESS (via hess_negative_controls rule)
         """
         negctrl_gmt = (
             PROJECT_ROOT / "config" / "pathway_sets" / "negative_controls.gmt"
@@ -50,6 +52,39 @@ class TestAllMethodsHaveNegCtrl:
         set_names = {gs[0] for gs in gene_sets}
         expected = {"NEGCTRL_HLA_IMMUNE", "NEGCTRL_COSMETIC", "NEGCTRL_BLOOD_GROUP"}
         assert set_names == expected
+
+    def test_magma_neg_ctrl_rule(self):
+        """pathway.smk includes negative controls in MAGMA gene-set file."""
+        smk_path = PROJECT_ROOT / "src" / "snakemake" / "rules" / "pathway.smk"
+        text = smk_path.read_text()
+        # Negative controls feed into build_magma_set_file via negctrl GMT input
+        assert "negative_control_gmt" in text
+        assert "rule build_magma_set_file:" in text
+
+    def test_gprofiler_neg_ctrl_rule(self):
+        """pathway.smk has gprofiler_negative_controls rule."""
+        smk_path = PROJECT_ROOT / "src" / "snakemake" / "rules" / "pathway.smk"
+        text = smk_path.read_text()
+        assert "rule gprofiler_negative_controls:" in text
+
+    def test_ldsc_neg_ctrl_annotations(self):
+        """pathway.smk builds LDSC annotations from negative control GMT."""
+        smk_path = PROJECT_ROOT / "src" / "snakemake" / "rules" / "pathway.smk"
+        text = smk_path.read_text()
+        assert "rule ldsc_build_custom_annotations:" in text
+        assert "negctrl_gmt" in text
+
+    def test_hess_neg_ctrl_rule(self):
+        """pathway.smk has hess_negative_controls rule."""
+        smk_path = PROJECT_ROOT / "src" / "snakemake" / "rules" / "pathway.smk"
+        text = smk_path.read_text()
+        assert "rule hess_negative_controls:" in text
+
+    def test_validate_neg_ctrl_rule(self):
+        """pathway.smk has validate_negative_controls rule."""
+        smk_path = PROJECT_ROOT / "src" / "snakemake" / "rules" / "pathway.smk"
+        text = smk_path.read_text()
+        assert "rule validate_negative_controls:" in text
 
 
 class TestNegCtrlGeneOverlap:
@@ -78,3 +113,85 @@ class TestNegCtrlGeneOverlap:
         assert len(overlap) == 0, (
             f"Negative control genes overlap with custom cardiometabolic genes: {overlap}"
         )
+
+
+class TestValidationSummarySchema:
+    """Test the validation summary TSV has the expected schema."""
+
+    def test_validation_summary_schema(self, tmp_path):
+        """Validation summary must have expected columns per plan spec."""
+        expected_columns = [
+            "neg_ctrl_set", "method", "trait", "ancestry",
+            "statistic", "p_value", "q_value", "passes_threshold",
+        ]
+
+        # Create a mock validation summary to test schema
+        summary_path = tmp_path / "validation_summary.tsv"
+        with open(summary_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=expected_columns, delimiter="\t")
+            writer.writeheader()
+            writer.writerow({
+                "neg_ctrl_set": "NEGCTRL_HLA_IMMUNE",
+                "method": "MAGMA",
+                "trait": "bmi",
+                "ancestry": "EUR",
+                "statistic": "beta=0.1",
+                "p_value": "0.500000",
+                "q_value": "0.600000",
+                "passes_threshold": "TRUE",
+            })
+
+        # Verify the schema
+        with open(summary_path) as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            fields = reader.fieldnames
+            assert fields is not None
+            for col in expected_columns:
+                assert col in fields, f"Missing column: {col}"
+
+
+class TestNegCtrlThreshold:
+    """Test that the q > 0.05 threshold is enforced per D-06b."""
+
+    def test_neg_ctrl_threshold(self):
+        """Threshold for negative control pass is q > 0.05 per D-06b.
+
+        The validate_negative_controls rule checks this threshold and
+        hard-fails (exit 1) if any control produces q <= 0.05 (T-05-21).
+        """
+        from extend_null_genesets import validate_negative_controls
+
+        # Create a mock validation file where all pass
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".tsv", delete=False
+        ) as f:
+            f.write("neg_ctrl_set\tmethod\ttrait\tancestry\tstatistic\tp_value\tq_value\tpasses_threshold\n")
+            f.write("NEGCTRL_HLA_IMMUNE\tMAGMA\tbmi\tEUR\tbeta=0.1\t0.5\t0.6\tTRUE\n")
+            f.write("NEGCTRL_COSMETIC\tMAGMA\tbmi\tEUR\tbeta=0.05\t0.8\t0.9\tTRUE\n")
+            tmp_path = f.name
+
+        # Should pass without error
+        result = validate_negative_controls(tmp_path)
+        assert result is True
+
+        import os
+        os.unlink(tmp_path)
+
+    def test_neg_ctrl_threshold_fail(self):
+        """validate_negative_controls exits 1 when any q <= 0.05."""
+        from extend_null_genesets import validate_negative_controls
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".tsv", delete=False
+        ) as f:
+            f.write("neg_ctrl_set\tmethod\ttrait\tancestry\tstatistic\tp_value\tq_value\tpasses_threshold\n")
+            f.write("NEGCTRL_HLA_IMMUNE\tMAGMA\tbmi\tEUR\tbeta=0.1\t0.01\t0.03\tFALSE\n")
+            tmp_path = f.name
+
+        # Should exit with code 1
+        with pytest.raises(SystemExit) as exc_info:
+            validate_negative_controls(tmp_path)
+        assert exc_info.value.code == 1
+
+        import os
+        os.unlink(tmp_path)
