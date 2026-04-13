@@ -1,0 +1,17 @@
+# PP.H4 threshold configuration for QTL colocalization tier assignment.
+# REQ-3: threshold sweep at 4+ values; primary threshold is 0.8.
+primary_threshold: 0.8
+sweep_values: [0.5, 0.7, 0.8, 0.9]
+tier_definitions:
+  tier_a:
+    description: "Trait-trait coloc + QTL coloc resolves causal gene AND tissue/cell-type"
+    min_pph4_gwas: 0.8
+    min_pph4_qtl: 0.8
+  tier_b:
+    description: "Trait-trait coloc + QTL evidence in at least one tissue but not all converge"
+    min_pph4_gwas: 0.8
+    min_pph4_qtl: 0.5
+  tier_c:
+    description: "Trait-trait coloc only (no QTL support at operating threshold)"
+    min_pph4_gwas: 0.8
+    min_pph4_qtl: null
