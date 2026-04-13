@@ -105,7 +105,7 @@ Plans:
 - [x] 02-02-PLAN.md — GTEx v8 eQTL coloc backbone: download rules + harmonize_eqtl.py + tissue-N lookup + run_qtl_coloc.R + qtl_coloc.smk manifest dispatch
 - [x] 02-03-PLAN.md — GTEx v8 sQTL + UKB-PPP pQTL: harmonize_sqtl.py + harmonize_pqtl.py + sdY estimation + download_ukbppp.py + extended download rules
 - [x] 02-04-PLAN.md — OneK1K sc-eQTL (14 immune cell types): download + harmonize + manifest extension (broad trigger on all loci)
-- [ ] 02-05-PLAN.md — Negative controls (3 curated + matched nulls) + PP.H4 threshold sweep + tier A/B/C assignment + L2G concordance + gene-tissue matrix + methods fragment
+- [x] 02-05-PLAN.md — Negative controls (3 curated + matched nulls) + PP.H4 threshold sweep + tier A/B/C assignment + L2G concordance + gene-tissue matrix + methods fragment
 
 Architecture: harmonize-then-unify. Per-source harmonization produces common intermediate TSV (variant_id, beta, se, maf, position, N, sdY, gene_id, tissue). One unified run_qtl_coloc.R consumes all sources.
 
