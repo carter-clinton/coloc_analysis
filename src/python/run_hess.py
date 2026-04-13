@@ -39,12 +39,26 @@ Usage:
 """
 import argparse
 import csv
+import gzip
+import io
 import logging
 import math
 import os
 import subprocess
 import sys
 from pathlib import Path
+
+
+def _open_sumstats(path: str):
+    """Open a sumstats file, transparently handling .bgz/.gz compression.
+
+    Harmonized sumstats are bgzipped (`{trait}.{ancestry}.tsv.bgz`). BGZF
+    is gzip-compatible so gzip.open() handles both formats. Returns a
+    text-mode file handle.
+    """
+    if path.endswith(".bgz") or path.endswith(".gz"):
+        return io.TextIOWrapper(gzip.open(path, "rb"), encoding="utf-8")
+    return open(path, "r", encoding="utf-8")
 
 # Import shared effective-N logic
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -189,8 +203,8 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
     """
     required_cols = {"SNP", "REF", "ALT", "BETA", "SE", "N"}
 
-    # Read header to validate columns
-    with open(input_path) as f:
+    # Read header to validate columns (handle .bgz/.gz transparently -- WR-08)
+    with _open_sumstats(input_path) as f:
         header_line = f.readline().strip()
     input_cols = set(header_line.split("\t"))
     missing = required_cols - input_cols
@@ -205,7 +219,7 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
-    with open(input_path) as fin, open(output_path, "w") as fout:
+    with _open_sumstats(input_path) as fin, open(output_path, "w") as fout:
         reader = csv.DictReader(fin, delimiter="\t")
         fout.write("SNP\tA1\tA2\tZ\tN\n")
 
