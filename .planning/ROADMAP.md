@@ -121,7 +121,14 @@ Architecture: harmonize-then-unify. Per-source harmonization produces common int
   4. LDSC-SEG tissue-specific heritability completed
   5. Negative-control pathway set is null (enrichment q > 0.05)
   6. Permutation null for colocalization gene list computed
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Wave 1: Infrastructure — 4 conda envs, custom pathway GMT sets, negative control GMT, sumstats_utils.py, build_magma_geneset.py, build_ldsc_annot.py, munge_sumstats_ldsc.py, pathway.smk skeleton, test scaffolding
+- [ ] 05-02-PLAN.md — Wave 2: MAGMA 3-step enrichment (annotate, gene-analysis, gene-set) + g:Profiler with discoverability-matched 5-trait union background
+- [ ] 05-03-PLAN.md — Wave 3: LDSC partitioned heritability (baseline v2.2 + custom annotations) + LDSC-SEG tissue-specific enrichment (GTEx 53-tissue + Roadmap chromatin) + LDSC-SEG negative controls
+- [ ] 05-04-PLAN.md — Wave 4: HESS/rho-HESS local genetic covariance per trait pair x ancestry + HESS negative controls
+- [ ] 05-05-PLAN.md — Wave 5: Negative control validation (all 5 methods) + 1000 permutation null gene sets (matched for length, LD, MAF) + cross-method aggregation + methods fragment
 
 ### Phase 9: Replication in independent cohorts
 **Goal**: Validate T1 findings in independent cohorts to establish reproducibility for the submission.
