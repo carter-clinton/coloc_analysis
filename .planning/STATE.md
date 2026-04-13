@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-04-13T00:21:50.745Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-04-13T00:32:48.665Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 15
-  completed_plans: 10
-  percent: 67
+  completed_plans: 11
+  percent: 73
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 02 (3-way-qtl-colocalization) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -61,6 +61,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 01 P04 | 22 | 5 tasks | 8 files |
 | Phase 01 P05 | 12min | 4 tasks | 5 files |
 | Phase 02 P01 | 8min | 2 tasks | 17 files |
+| Phase 02 P02 | 7min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 01]: [Phase 01-05]: Tasks 2+4 merged -- aggregator + sweep table built in single commit; ld_source/ld_matrix dual-key tolerance (Rule 1 auto-fix); Quarto/RMarkdown fallback in dashboard rule; pyyaml added to env for policy parsing
 - [Phase 02]: pyliftover installed into smoke_dev for actual coordinate liftover; chain file tamper-checked at >100KB
 - [Phase 02]: QTL fixture generator uses seed=42, 150 rows per file, 1 signal variant per region for coloc detection
+- [Phase 02]: run_qtl_coloc.R fits SuSiE on QTL side (runsusie suffix=2) then calls coloc.susie; GWAS fit pre-fitted from Phase 1
+- [Phase 02]: Manifest builder cross-joins ALL QTL sources from config (not just eQTL); sQTL/pQTL/sc-eQTL rows appear once harmonized files exist
+- [Phase 02]: harmonize_eqtl.py pandas fallback when pysam unavailable; tabix path optimal but not required
 
 ### Pending Todos
 
@@ -105,8 +109,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T00:21:50.741Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-04-13T00:32:48.661Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
