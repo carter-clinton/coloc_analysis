@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 formally closed (01-06-SUMMARY + OSF amendment). Phase 5 context gathered, ready for /gsd-plan-phase 5.
-last_updated: "2026-04-13T19:59:02.650Z"
-last_activity: 2026-04-13 -- Phase 5 planning complete
+stopped_at: Completed 05-01-PLAN.md (pathway infrastructure). Plan 2 of 5 next.
+last_updated: "2026-04-13T20:32:44.875Z"
+last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 20
-  completed_plans: 15
-  percent: 75
+  completed_plans: 16
+  percent: 80
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 05 — pathway + partitioned heritability
+**Current focus:** Phase 05 — pathway-partitioned-heritability
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (pathway-partitioned-heritability) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-04-13 -- Phase 5 planning complete
+Last activity: 2026-04-13
 
 Progress: ██░░░░░░░░ 17%
 
@@ -65,6 +65,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 02 P03 | 9min | 2 tasks | 9 files |
 | Phase 02 P04 | 6min | 1 tasks | 4 files |
 | Phase 02 P05 | 10min | 3 tasks | 11 files |
+| Phase 05 P01 | 14min | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,10 @@ Recent decisions affecting current work:
 - [Phase 02]: assign_tier() is a pure function of (gwas_pph4, qtl_pph4, threshold) enforcing QTL-source-agnostic design (D-02c)
 - [Phase 02]: Negative control coloc reuses run_qtl_coloc.R via manifest-based dispatch (same format as qtl_coloc_manifest.tsv)
 - [Phase 02]: L2G concordance uses fuzzy substring matching on studyLocusId; disagreements annotated as findings per D-05b
+- [Phase 05]: HESS env uses defaults channel first (conda-forge dropped Python 2.7)
+- [Phase 05]: sumstats_utils.py shared module prevents effective-N reimplementation across methods
+- [Phase 05]: Placeholder analysis rules use pass in run block for Snakemake compatibility
+- [Phase 05]: Phase 5 tests define PROJECT_ROOT locally to avoid missing tests/__init__.py dependency
 
 ### Pending Todos
 
@@ -119,8 +124,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13
-Stopped at: Phase 1 formally closed (01-06-SUMMARY + OSF amendment). Phase 5 context gathered, ready for /gsd-plan-phase 5.
+Last session: 2026-04-13T20:32:44.870Z
+Stopped at: Completed 05-01-PLAN.md (pathway infrastructure). Plan 2 of 5 next.
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
