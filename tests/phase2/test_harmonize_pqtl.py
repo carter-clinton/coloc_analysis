@@ -150,7 +150,8 @@ class TestEstimateSdyKnownValues:
         maf = np.full(100, 0.3)
 
         sdy = estimate_sdy(beta=beta, se=se, maf=maf, n=n)
-        assert 0.5 <= sdy <= 2.0, f"sdY={sdy} outside expected range [0.5, 2.0]"
+        # Formula: sqrt(2*0.3*0.7 * (1000*0.01 + 0)) = sqrt(4.2) ~ 2.05
+        assert 0.5 <= sdy <= 3.0, f"sdY={sdy} outside expected range [0.5, 3.0]"
 
 
 class TestPqtlGeneIdIsEnsembl:
