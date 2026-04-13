@@ -1,0 +1,105 @@
+# QTL data source specifications for Phase 2 coloc pipeline.
+# Each source maps to a harmonization rule in harmonize_*.py.
+sources:
+  gtex_eqtl:
+    description: "GTEx v8 eQTL via eQTL Catalogue (EMBL-EBI)"
+    provider: eqtl_catalogue
+    genome_build: GRCh38
+    data_type: eQTL
+    ftp_base: "ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/"
+    study_prefix: "QTS000002"  # GTEx V8 in eQTL Catalogue
+    n_tissues: 49  # tissues with >= 70 samples
+    sdY: 1.0  # inverse-normal transformed
+    type: quant
+    variant_id_format: "chr{chrom}_{pos}_{ref}_{alt}"
+    columns:
+      beta: beta
+      se: se
+      pvalue: pvalue
+      maf: maf
+      gene_id: gene_id
+      variant_id: variant
+      position: position
+      chromosome: chromosome
+      sample_size_field: an  # N = an / 2
+  gtex_sqtl:
+    description: "GTEx v8 sQTL via eQTL Catalogue"
+    provider: eqtl_catalogue
+    genome_build: GRCh38
+    data_type: sQTL
+    ftp_base: "ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/"
+    study_prefix: "QTS000002"  # Same study, different QTD IDs for sQTL
+    sdY: 1.0
+    type: quant
+    variant_id_format: "chr{chrom}_{pos}_{ref}_{alt}"
+    columns:
+      beta: beta
+      se: se
+      pvalue: pvalue
+      maf: maf
+      gene_id: molecular_trait_id  # splice junction ID for sQTL
+      variant_id: variant
+      position: position
+      chromosome: chromosome
+      sample_size_field: an
+  ukbppp_pqtl:
+    description: "UKB-PPP pQTL (Sun et al. 2023) cis-pQTL from Synapse"
+    provider: synapse
+    genome_build: GRCh38
+    data_type: pQTL
+    synapse_project: syn51364943
+    synapse_folder: syn51365301
+    s3_bucket: "s3://ukbiobank.opendata.sagebase.org/"
+    sample_size: 54219
+    type: quant
+    sdY: null  # must be estimated; Olink NPX may not be unit-variance
+    variant_id_format: "CHR:GENPOS"  # REGENIE output; needs remapping
+    columns:
+      beta: BETA
+      se: SE
+      pvalue_log10: LOG10P  # need 10^(-LOG10P) conversion
+      maf: A1FREQ
+      allele_ref: ALLELE0
+      allele_alt: ALLELE1
+      position: GENPOS
+      chromosome: CHROM
+      sample_size: N
+      info: INFO
+      snp_id: ID
+    cis_window_kb: 1000  # standard cis definition: within 1 Mb of gene TSS
+  onek1k_sceqtl:
+    description: "OneK1K (Yazar 2022) single-cell eQTL -- 14 immune cell types"
+    provider: eqtl_catalogue  # prefer eQTL Catalogue R7+ (QTS000038) if available
+    genome_build: GRCh38
+    data_type: sc-eQTL
+    eqtl_catalogue_study: QTS000038
+    fallback_s3: "onek1k.s3.ap-southeast-2.amazonaws.com"
+    sample_size: 982
+    sdY: 1.0  # eQTL Catalogue re-processes with inverse-normal
+    type: quant
+    cell_types:
+      - CD4_NC
+      - CD4_ET
+      - CD4_SOX4
+      - CD8_NC
+      - CD8_ET
+      - CD8_S100B
+      - NK
+      - NK_R
+      - B_IN
+      - B_Mem
+      - Plasma
+      - Mono_C
+      - Mono_NC
+      - DC
+    variant_id_format: "chr{chrom}_{pos}_{ref}_{alt}"
+    columns:
+      beta: beta
+      se: se
+      pvalue: pvalue
+      maf: maf
+      gene_id: gene_id
+      variant_id: variant
+      position: position
+      chromosome: chromosome
+      sample_size_field: an

@@ -1,0 +1,39 @@
+# Negative control gene/pathway sets for Phase 2 QTL coloc validation.
+# REQ-7: at least 3 sets; all must show PP.H4 < primary_threshold.
+null_threshold_source: "config/pph4_thresholds.yaml::primary_threshold"
+curated_sets:
+  hla_immune:
+    description: "HLA region -- extreme long-range LD; expected to produce LD artifacts"
+    genes: [HLA-A, HLA-B, HLA-C, HLA-DRB1, HLA-DQB1, HLA-DPB1]
+    region_grch37: {chr: 6, start: 25000000, end: 35000000}
+    region_grch38: {chr: 6, start: 25000000, end: 35000000}  # HLA region is nearly identical across builds
+    expected_behavior: "PP.H4 may be elevated (0.3-0.7) due to LD but must not reach 0.8"
+  cosmetic:
+    description: "Pigmentation + eye color genes -- no cardiometabolic mechanism"
+    genes: [OCA2, SLC24A5, MC1R, TYR, HERC2, IRF4]
+    regions_grch37:
+      - {chr: 15, start: 28000000, end: 28500000, gene: OCA2/HERC2}
+      - {chr: 15, start: 48000000, end: 48500000, gene: SLC24A5}
+      - {chr: 16, start: 89900000, end: 90100000, gene: MC1R}
+      - {chr: 11, start: 88500000, end: 89000000, gene: TYR}
+      - {chr: 6, start: 396000, end: 500000, gene: IRF4}
+    expected_behavior: "PP.H4 < 0.8 for all cardiometabolic trait pairs"
+  blood_group:
+    description: "Blood group antigens -- strong GWAS signals, distinct LD, zero cardiometabolic mechanism"
+    genes: [ABO, RH, FUT1, FUT2, KEL]
+    regions_grch37:
+      - {chr: 9, start: 136125000, end: 136155000, gene: ABO}
+      - {chr: 1, start: 25580000, end: 25750000, gene: RH}
+      - {chr: 19, start: 49200000, end: 49260000, gene: FUT1/FUT2}
+      - {chr: 7, start: 142630000, end: 142720000, gene: KEL}
+    expected_behavior: "PP.H4 < 0.8 for all cardiometabolic trait pairs"
+matched_null_spec:
+  n_draws: 500
+  match_criteria:
+    gene_density_tolerance: 0.2  # +/- 20%
+    region_size_tolerance: 0.3   # +/- 30%
+  exclusion_zones:
+    - "config/regions_curated_grch38.csv"  # real loci
+    - "centromeres"
+    - "blacklist_hg38"
+  seed_base: 42
