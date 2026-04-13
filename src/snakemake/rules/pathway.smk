@@ -529,52 +529,26 @@ rule magma_fdr:
     Reads .gsa.out file for a trait x ancestry, applies FDR correction jointly
     across ALL gene sets (standard + custom + negative controls) per D-01a/D-01b.
     Outputs a TSV with added FDR_Q column.
-    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
+
+    WR-07 fix: previously used a `run:` block which cannot attach a conda env
+    in Snakemake 7.x, forcing statsmodels/scipy to live in the host interpreter.
+    Now shells out to src/python/magma_fdr.py inside envs/magma.yml, where the
+    dependencies are properly pinned.
     """
     input:
         gsa=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset.gsa.out"),
     output:
         fdr=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset_fdr.tsv"),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "magma_fdr.py"),
+    conda:
+        MAGMA_ENV
     resources:
         mem_mb=2000,
-    run:
-        import pandas as pd
-        from scipy import stats as scipy_stats
-
-        # Read MAGMA .gsa.out (whitespace-delimited, may have comment header lines)
-        lines = []
-        header = None
-        with open(input.gsa) as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if header is None:
-                    header = line
-                    continue
-                lines.append(line)
-
-        if not lines:
-            # Write empty output
-            with open(output.fdr, "w") as fout:
-                fout.write("VARIABLE\tTYPE\tNGENES\tBETA\tBETA_STD\tSE\tP\tFDR_Q\n")
-        else:
-            # Parse into dataframe
-            from io import StringIO
-            df = pd.read_csv(
-                StringIO(header + "\n" + "\n".join(lines)),
-                sep=r"\s+",
-            )
-
-            # Apply Benjamini-Hochberg FDR correction jointly across all gene sets
-            if "P" in df.columns and len(df) > 0:
-                from statsmodels.stats.multitest import multipletests
-                _, fdr_q, _, _ = multipletests(df["P"].values, method="fdr_bh")
-                df["FDR_Q"] = fdr_q
-            else:
-                df["FDR_Q"] = float("nan")
-
-            df.to_csv(output.fdr, sep="\t", index=False)
+    shell:
+        """
+        python {params.script} --gsa {input.gsa} --out {output.fdr}
+        """
 
 
 rule ldsc_munge:
