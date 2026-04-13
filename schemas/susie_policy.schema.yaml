@@ -36,7 +36,7 @@ properties:
       pre_specified:
         type: array
         minItems: 4
-        maxItems: 4
+        maxItems: 10
         items:
           type: object
           required: [region_id, chr, start, end, rationale]
