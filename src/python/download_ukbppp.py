@@ -114,7 +114,13 @@ def download_from_synapse(
             )
             raise FileNotFoundError(f"Not found in Synapse: {expected_filename}")
 
-    except Exception as e:
+    except (
+        synapseclient.core.exceptions.SynapseError,
+        FileNotFoundError,
+        ConnectionError,
+        TimeoutError,
+        OSError,
+    ) as e:
         logger.warning("Synapse download failed: %s. Trying S3 fallback.", e)
         return _download_from_s3(protein, chromosome, output_dir)
 
