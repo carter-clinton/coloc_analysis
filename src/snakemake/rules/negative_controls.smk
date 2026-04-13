@@ -124,5 +124,6 @@ rule pph4_threshold_sweep:
           --input {input.qtl_results} \
           --pph4-config {input.pph4_config} \
           --sweep \
-          --output {output.sweep_table}
+          --sweep-output {output.sweep_table} \
+          --output /dev/null
         """
