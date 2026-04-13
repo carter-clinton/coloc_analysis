@@ -123,5 +123,9 @@ scratch/
 .planning/**/tmp/
 .planning/**/*.lock
 
+# --- Synapse auth (T-02-08: never commit auth tokens) ---
+.synapseConfig
+.synapse_auth*
+
 # --- Claude Code local state ---
 .claude/local/
