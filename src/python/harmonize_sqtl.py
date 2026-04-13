@@ -158,6 +158,8 @@ def harmonize_sqtl(
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     parser = argparse.ArgumentParser(
         description="Harmonize eQTL Catalogue sQTL data for coloc.susie"
     )

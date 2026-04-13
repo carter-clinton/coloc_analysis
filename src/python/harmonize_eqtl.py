@@ -225,6 +225,8 @@ def write_harmonized(df: pd.DataFrame, output_path: str) -> None:
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     parser = argparse.ArgumentParser(
         description="Harmonize eQTL Catalogue data for coloc.susie"
     )

@@ -261,6 +261,8 @@ def download_onek1k(
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
     parser = argparse.ArgumentParser(
         description="Download OneK1K sc-eQTL data (eQTL Catalogue or onek1k.org)"
     )
