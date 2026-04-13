@@ -103,7 +103,7 @@ Seeds: src/legacy/region_analysis/scripts/run_susie_rss.R, src/legacy/genome_wid
 Plans:
 - [x] 02-01-PLAN.md — Infrastructure: liftover + config (pph4_thresholds.yaml, negative_controls.yaml, qtl_sources.yaml) + conda env + LPA/KIV-2 policy update + QTL test fixtures
 - [x] 02-02-PLAN.md — GTEx v8 eQTL coloc backbone: download rules + harmonize_eqtl.py + tissue-N lookup + run_qtl_coloc.R + qtl_coloc.smk manifest dispatch
-- [ ] 02-03-PLAN.md — GTEx v8 sQTL + UKB-PPP pQTL: harmonize_sqtl.py + harmonize_pqtl.py + sdY estimation + download_ukbppp.py + extended download rules
+- [x] 02-03-PLAN.md — GTEx v8 sQTL + UKB-PPP pQTL: harmonize_sqtl.py + harmonize_pqtl.py + sdY estimation + download_ukbppp.py + extended download rules
 - [ ] 02-04-PLAN.md — OneK1K sc-eQTL (14 immune cell types): download + harmonize + manifest extension (broad trigger on all loci)
 - [ ] 02-05-PLAN.md — Negative controls (3 curated + matched nulls) + PP.H4 threshold sweep + tier A/B/C assignment + L2G concordance + gene-tissue matrix + methods fragment
 

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-04-13T00:32:48.665Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-04-13T00:46:08.994Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 15
-  completed_plans: 11
-  percent: 73
+  completed_plans: 12
+  percent: 80
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 02 (3-way-qtl-colocalization) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -62,6 +62,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 01 P05 | 12min | 4 tasks | 5 files |
 | Phase 02 P01 | 8min | 2 tasks | 17 files |
 | Phase 02 P02 | 7min | 2 tasks | 8 files |
+| Phase 02 P03 | 9min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 02]: run_qtl_coloc.R fits SuSiE on QTL side (runsusie suffix=2) then calls coloc.susie; GWAS fit pre-fitted from Phase 1
 - [Phase 02]: Manifest builder cross-joins ALL QTL sources from config (not just eQTL); sQTL/pQTL/sc-eQTL rows appear once harmonized files exist
 - [Phase 02]: harmonize_eqtl.py pandas fallback when pysam unavailable; tabix path optimal but not required
+- [Phase 02]: LOG10P clipped to [0, 300] to handle edge-case negative values; real REGENIE LOG10P is non-negative but clipping prevents invalid pvalues > 1.0
+- [Phase 02]: sQTL reuses harmonize_eqtl core logic (_read_eqtl_file, write_harmonized); pQTL gene_id resolved via protein-to-Ensembl lookup table for reproducibility
+- [Phase 02]: UKB-PPP auth via SYNAPSE_AUTH_TOKEN env var only; .synapseConfig in .gitignore; Synapse + S3 unsigned fallback download pattern
 
 ### Pending Todos
 
@@ -109,8 +113,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T00:32:48.661Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-04-13T00:46:08.990Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
