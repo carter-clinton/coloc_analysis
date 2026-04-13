@@ -338,18 +338,26 @@ def aggregate_all_methods(
 
         geo_mean_p = _geometric_mean_p(p_values) if p_values else float("nan")
 
+        # WR-03 fix: guard format strings against NaN so missing values
+        # render as "NA" consistently instead of producing the string "nan"
+        # (Python's default float formatting for NaN).
+        def _fmt(val, prec):
+            if val is None or (isinstance(val, float) and math.isnan(val)):
+                return "NA"
+            return f"{val:.{prec}f}"
+
         enrichment_rows.append({
             "pathway": pathway,
-            "magma_beta": f"{best_magma['magma_beta']:.4f}" if best_magma else "NA",
-            "magma_p": f"{best_magma['magma_p']:.6f}" if best_magma else "NA",
-            "magma_q": f"{best_magma['magma_q']:.6f}" if best_magma else "NA",
-            "gprofiler_p": f"{gp_match['gprofiler_p']:.6f}" if gp_match else "NA",
-            "gprofiler_q": f"{gp_match['gprofiler_q']:.6f}" if gp_match else "NA",
-            "ldsc_h2_frac": f"{best_ldsc['ldsc_h2_frac']:.6f}" if best_ldsc else "NA",
-            "ldsc_enrichment": f"{best_ldsc['ldsc_enrichment']:.4f}" if best_ldsc else "NA",
-            "ldsc_p": f"{best_ldsc['ldsc_p']:.6f}" if best_ldsc else "NA",
+            "magma_beta": _fmt(best_magma.get("magma_beta"), 4) if best_magma else "NA",
+            "magma_p": _fmt(best_magma.get("magma_p"), 6) if best_magma else "NA",
+            "magma_q": _fmt(best_magma.get("magma_q"), 6) if best_magma else "NA",
+            "gprofiler_p": _fmt(gp_match.get("gprofiler_p"), 6) if gp_match else "NA",
+            "gprofiler_q": _fmt(gp_match.get("gprofiler_q"), 6) if gp_match else "NA",
+            "ldsc_h2_frac": _fmt(best_ldsc.get("ldsc_h2_frac"), 6) if best_ldsc else "NA",
+            "ldsc_enrichment": _fmt(best_ldsc.get("ldsc_enrichment"), 4) if best_ldsc else "NA",
+            "ldsc_p": _fmt(best_ldsc.get("ldsc_p"), 6) if best_ldsc else "NA",
             "n_methods_significant": n_sig,
-            "geometric_mean_p": f"{geo_mean_p:.6f}" if not math.isnan(geo_mean_p) else "NA",
+            "geometric_mean_p": _fmt(geo_mean_p, 6),
         })
 
     # Sort by n_methods_significant (desc), then geometric mean p (asc)
