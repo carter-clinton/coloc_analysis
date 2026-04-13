@@ -59,7 +59,10 @@ def parse_gene_loc(gene_loc_path):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            parts = line.split("\t")
+            # WR-04 fix: NCBI37.3.gene.loc is whitespace-delimited (spaces,
+            # not necessarily tabs). Match the split convention used by
+            # build_gprofiler_bg.py, build_ldsc_annot.py, build_magma_geneset.py.
+            parts = line.split()
             if len(parts) < 6:
                 continue
             entrez, chrom, start, end, strand, symbol = parts[:6]
