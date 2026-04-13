@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 05-02-PLAN.md (MAGMA + g:Profiler). Plan 3 of 5 next."
-last_updated: "2026-04-13T20:47:15.767Z"
+stopped_at: Completed 05-03-PLAN.md (LDSC partitioned h2 + LDSC-SEG). Plan 4 of 5 next.
+last_updated: "2026-04-13T20:58:05.902Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 20
-  completed_plans: 17
-  percent: 85
+  completed_plans: 18
+  percent: 90
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 05 (pathway-partitioned-heritability) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -67,6 +67,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 02 P05 | 10min | 3 tasks | 11 files |
 | Phase 05 P01 | 14min | 3 tasks | 22 files |
 | Phase 05 P02 | 11min | 2 tasks | 6 files |
+| Phase 05 P03 | 7min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,8 @@ Recent decisions affecting current work:
 - [Phase 05]: MAGMA annotate runs once per genome build (shared across traits)
 - [Phase 05]: FDR correction via statsmodels multipletests BH across all gene sets jointly per trait (D-01a/D-01b)
 - [Phase 05]: g:Profiler REST API default + R fallback; no_iea=True for IEA exclusion (D-03b)
+- [Phase 05]: Always --overlap-annot in LDSC h2; baseline v2.2 first in --ref-ld-chr (D-04a); post-munge SNP validation at 500K threshold; Bonferroni shared tissue analysis (D-05b)
+- [Phase 05]: .ldcts path rewriting extracts basenames + prepends local annot_dir (T-05-13); AST-based shell=True detection in tests
 
 ### Pending Todos
 
@@ -129,8 +132,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:47:15.723Z
-Stopped at: Completed 05-02-PLAN.md (MAGMA + g:Profiler). Plan 3 of 5 next.
+Last session: 2026-04-13T20:58:05.897Z
+Stopped at: Completed 05-03-PLAN.md (LDSC partitioned h2 + LDSC-SEG). Plan 4 of 5 next.
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
