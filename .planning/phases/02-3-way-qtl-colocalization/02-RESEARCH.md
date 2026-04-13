@@ -491,7 +491,7 @@ curated_sets:
 | A5 | Phase 1 .fit.rds objects use SNP names compatible with variant ID mapping | Coordinate Strategy | If .fit.rds uses positional indices without SNP names, mapping to GRCh38 QTL data requires rebuilding the SNP-to-position bridge |
 | A6 | UKB-PPP REGENIE output columns are CHROM, GENPOS, ID, ALLELE0, ALLELE1, A1FREQ, INFO, N, BETA, SE, LOG10P | Data Source Specifications | If column names differ, harmonization script needs adjustment; not a design risk |
 
-## Open Questions
+## Open Questions (DEFERRED TO EXECUTION -- Plan 02-01, Tasks 1-2)
 
 1. **UKB-PPP sdY estimation**
    - What we know: UKB-PPP measures protein abundance via Olink PEA. REGENIE output includes BETA and SE but not the trait SD.
@@ -513,6 +513,13 @@ curated_sets:
    - What's unclear: Whether the SNP IDs in UKBB-LD tiles use rsIDs (build-agnostic) or chr:pos (build-specific).
    - Recommendation: Inspect UKBB-LD metadata at execution time. If chr:pos, need to map via dbSNP.
 
+
+> **Resolution strategy:** All 4 questions are empirical and will be resolved by inspecting actual data files
+> during Plan 02-01 execution. Each plan task has conditional branches for each outcome.
+> Q1 (sdY): Plan 02-03 Task 1 estimate_sdy.py handles both cases.
+> Q2 (OneK1K availability): Plan 02-04 Task 1 download_onek1k.py has eQTL Catalogue primary / onek1k.org fallback.
+> Q3 (.fit.rds SNP naming): Plan 02-01 Task 1 variant_id_map.py + Plan 02-02 Task 2 run_qtl_coloc.R handle mapping.
+> Q4 (LD tile SNP IDs): Plan 02-02 Task 2 run_qtl_coloc.R inspects LD matrix metadata and maps accordingly.
 ## Environment Availability
 
 | Dependency | Required By | Available | Version | Fallback |
