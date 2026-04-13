@@ -182,8 +182,11 @@ def download_onek1k_org(cell_type: str, output_dir: str) -> str:
     os.makedirs(output_dir, exist_ok=True)
 
     try:
+        # T-02-01: TLS verification enabled; do not use --no-check-certificate.
+        # If the S3 endpoint has transient cert issues, wget will fail and the
+        # caller will see a clear error rather than silently accepting tampered data.
         subprocess.run(
-            ["wget", "-q", "--no-check-certificate", "-O", out_path, url],
+            ["wget", "-q", "-O", out_path, url],
             check=True,
             timeout=3600,
         )
