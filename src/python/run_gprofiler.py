@@ -296,13 +296,21 @@ def run_enrichment_r(
     str
         Path to the output TSV file.
     """
+    # WR-05 fix: escape values interpolated into the R script to prevent
+    # breakage on backslashes or quote characters in paths / gene symbols.
+    # R strings use the same escape conventions as C: backslash escapes
+    # backslash, double-quote escapes double-quote.
+    def _r_str(val: str) -> str:
+        return val.replace("\\", "\\\\").replace('"', '\\"')
+
     sources = sources or ["GO:BP", "KEGG", "REAC"]
-    sources_r = "c(" + ", ".join(f'"{s}"' for s in sources) + ")"
-    query_r = "c(" + ", ".join(f'"{g}"' for g in query_genes) + ")"
+    sources_r = "c(" + ", ".join(f'"{_r_str(s)}"' for s in sources) + ")"
+    query_r = "c(" + ", ".join(f'"{_r_str(g)}"' for g in query_genes) + ")"
+    safe_output = _r_str(output_path)
 
     bg_section = ""
     if background_genes:
-        bg_r = "c(" + ", ".join(f'"{g}"' for g in background_genes) + ")"
+        bg_r = "c(" + ", ".join(f'"{_r_str(g)}"' for g in background_genes) + ")"
         bg_section = f"""
 custom_bg <- {bg_r}
 domain_scope <- "custom"
@@ -337,7 +345,7 @@ results <- gost(
 if (!is.null(results) && !is.null(results$result)) {{
     write.table(
         results$result,
-        file = "{output_path}",
+        file = "{safe_output}",
         sep = "\\t",
         quote = FALSE,
         row.names = FALSE
