@@ -103,4 +103,14 @@ curated sets + 500 distance-matched nulls (REQ-7). Tier A/B/C confidence
 assignment. Open Targets L2G concordance. Gene x tissue x cell-type matrix.
 136 tests passing. 4 human verification items deferred to real-data execution.
 
+**Phase 5 (Pathway + Partitioned Heritability):** Complete (2026-04-13). Multi-method
+pathway enrichment replacing ad-hoc fold-enrichment: MAGMA gene-based + gene-set
+enrichment, g:Profiler with discoverability-matched 5-trait union background (Reimand
+2019), LDSC partitioned heritability per pathway (baseline v2.2), LDSC-SEG tissue-
+specific enrichment (GTEx 53-tissue + Roadmap chromatin), HESS/rho-HESS local genetic
+covariance with pleiotropic vs background z-test. Negative controls (HLA, cosmetic,
+blood group) validated across all methods (REQ-7). 1000 permutation null gene sets
+matched for size/LD/MAF. Cross-method aggregator with consensus ranking. Methods
+fragment with 6 canonical citations. 100 tests passing. 37 Snakemake rules.
+
 Last updated: 2026-04-13
