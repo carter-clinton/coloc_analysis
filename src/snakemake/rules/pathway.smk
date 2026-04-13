@@ -493,13 +493,12 @@ rule magma_fdr:
     Reads .gsa.out file for a trait x ancestry, applies FDR correction jointly
     across ALL gene sets (standard + custom + negative controls) per D-01a/D-01b.
     Outputs a TSV with added FDR_Q column.
+    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
     """
     input:
         gsa=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset.gsa.out"),
     output:
         fdr=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset_fdr.tsv"),
-    conda:
-        MAGMA_ENV
     resources:
         mem_mb=2000,
     run:
@@ -1000,7 +999,7 @@ rule hess_format_sumstats:
     """Convert harmonized sumstats to HESS format (SNP, A1, A2, Z, N).
 
     Per trait x ancestry. Z computed as BETA/SE. Binary traits use effective N.
-    Reuses Python 3 magma env for pandas.
+    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
     """
     input:
         sumstats=os.path.join(
@@ -1013,8 +1012,6 @@ rule hess_format_sumstats:
     params:
         script=os.path.join(workflow.basedir, "..", "..", "python", "run_hess.py"),
         trait=lambda wc: wc.trait,
-    conda:
-        MAGMA_ENV
     resources:
         mem_mb=4000,
     run:
@@ -1187,6 +1184,7 @@ rule hess_negative_controls:
     For each trait pair x ancestry, compares local covariance at negative
     control loci (HLA, cosmetic, blood group) vs genome-wide average.
     Negative controls should produce non-significant enrichment.
+    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
     """
     input:
         combined=os.path.join(
@@ -1203,8 +1201,6 @@ rule hess_negative_controls:
             "hess",
             "{trait1}_{trait2}_{ancestry}_neg_ctrl_compare.tsv",
         ),
-    conda:
-        MAGMA_ENV
     resources:
         mem_mb=2000,
     run:
@@ -1391,6 +1387,7 @@ rule gprofiler_negative_controls:
     Tests that negative control gene sets (HLA immune, cosmetic, blood group)
     produce q > 0.05 for cardiometabolic pathways (REQ-7 / D-06b).
     Concatenates results for all negative control sets.
+    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
     """
     input:
         negctrl_gmt=PATHWAY_CFG.get(
@@ -1402,8 +1399,6 @@ rule gprofiler_negative_controls:
     params:
         script=os.path.join(workflow.basedir, "..", "..", "python", "run_gprofiler.py"),
         outdir=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler"),
-    conda:
-        MAGMA_ENV
     resources:
         mem_mb=4000,
     run:
@@ -1757,3 +1752,64 @@ rule validate_negative_controls:
 
         # T-05-21: hard fail if any negative control shows q <= 0.05
         validate_negative_controls(output.summary)
+
+
+rule aggregate_pathway_results:
+    """Cross-method aggregation of all Phase 5 pathway results.
+
+    Reads MAGMA FDR, g:Profiler enrichment, LDSC h2, LDSC-SEG, HESS,
+    and negative control validation results. Produces:
+      A. pathway_enrichment_summary.tsv (per-pathway consensus ranking)
+      B. phase5_overview.tsv (one row per analytical component)
+    T-05-24: validates expected columns in each input file.
+    """
+    input:
+        magma_fdr=expand(
+            os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset_fdr.tsv"),
+            zip,
+            trait=[t for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+            ancestry=[a for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+        ),
+        gprofiler=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "enrichment_results.tsv"),
+        ldsc_h2=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "h2_summary.tsv"),
+        ldsc_seg=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_seg", "shared_tissue_summary.tsv"),
+        hess=os.path.join(PATHWAY_RESULTS_DIR, "hess", "local_covariance_summary.tsv"),
+        neg_ctrl=os.path.join(PATHWAY_RESULTS_DIR, "negative_controls", "validation_summary.tsv"),
+    output:
+        enrichment=os.path.join(PATHWAY_RESULTS_DIR, "pathway_enrichment_summary.tsv"),
+        overview=os.path.join(PATHWAY_RESULTS_DIR, "phase5_overview.tsv"),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "aggregate_pathway_results.py"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} \
+            --magma-dir $(dirname {input.magma_fdr[0]}) \
+            --gprofiler-dir $(dirname {input.gprofiler}) \
+            --ldsc-dir $(dirname {input.ldsc_h2}) \
+            --ldsc-seg-dir $(dirname {input.ldsc_seg}) \
+            --hess-dir $(dirname {input.hess}) \
+            --neg-ctrl-dir $(dirname {input.neg_ctrl}) \
+            --out {output.enrichment} \
+            --out-overview {output.overview}
+        """
+
+
+rule all_pathway:
+    """Top-level target collecting all Phase 5 pathway outputs.
+
+    Run with: snakemake all_pathway
+    This collects all final outputs from the 6 analytical components:
+    MAGMA, g:Profiler, LDSC partitioned, LDSC-SEG, HESS, permutation null,
+    negative controls, and the cross-method aggregation.
+    """
+    input:
+        enrichment_summary=os.path.join(PATHWAY_RESULTS_DIR, "pathway_enrichment_summary.tsv"),
+        overview=os.path.join(PATHWAY_RESULTS_DIR, "phase5_overview.tsv"),
+        neg_ctrl_validation=os.path.join(PATHWAY_RESULTS_DIR, "negative_controls", "validation_summary.tsv"),
+        permutation_empirical=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null", "empirical_pvalues.tsv"),
+        hess_summary=os.path.join(PATHWAY_RESULTS_DIR, "hess", "local_covariance_summary.tsv"),
+        ldsc_seg_shared=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_seg", "shared_tissue_summary.tsv"),
