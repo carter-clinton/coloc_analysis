@@ -187,27 +187,25 @@ def _read_with_tabix(input_path: str, region: dict) -> pd.DataFrame:
     region_start = int(region["start"])
     region_end = int(region["end"])
 
-    tbx = pysam.TabixFile(input_path)
-    header = tbx.header
-    if header:
-        col_names = header[-1].lstrip("#").split("\t")
-    else:
-        # Read first line manually to get column names
-        with gzip.open(input_path, "rt") as f:
-            col_names = f.readline().strip().split("\t")
+    with pysam.TabixFile(input_path) as tbx:
+        header = tbx.header
+        if header:
+            col_names = header[-1].lstrip("#").split("\t")
+        else:
+            # Read first line manually to get column names
+            with gzip.open(input_path, "rt") as f:
+                col_names = f.readline().strip().split("\t")
 
-    # Try with and without 'chr' prefix
-    rows = []
-    for chr_fmt in [region_chr, f"chr{region_chr}", region_chr.replace("chr", "")]:
-        try:
-            for row in tbx.fetch(chr_fmt, region_start, region_end):
-                rows.append(row.split("\t"))
-            if rows:
-                break
-        except ValueError:
-            continue
-
-    tbx.close()
+        # Try with and without 'chr' prefix
+        rows = []
+        for chr_fmt in [region_chr, f"chr{region_chr}", region_chr.replace("chr", "")]:
+            try:
+                for row in tbx.fetch(chr_fmt, region_start, region_end):
+                    rows.append(row.split("\t"))
+                if rows:
+                    break
+            except ValueError:
+                continue
 
     if not rows:
         return pd.DataFrame(columns=col_names)
