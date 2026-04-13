@@ -126,8 +126,16 @@ def _parse_api_results(data: dict) -> list:
             "source": entry.get("source", ""),
             "term_id": entry.get("native", ""),
             "term_name": entry.get("name", ""),
+            # g:Profiler returns FDR-adjusted p_value directly when
+            # significance_threshold_method="fdr" is set (see run_enrichment_api
+            # payload). The returned "p_value" IS the q_value in that case.
+            # We prefer an explicit "adjusted_p_value" field if the API ever
+            # provides one, falling back to "p_value". This guards against a
+            # silent duplication bug if the API schema changes.
             "p_value": entry.get("p_value", float("nan")),
-            "q_value": entry.get("p_value", float("nan")),  # After FDR
+            "q_value": entry.get(
+                "adjusted_p_value", entry.get("p_value", float("nan"))
+            ),
             "intersection_size": entry.get("intersection_size", 0),
             "query_size": entry.get("query_size", 0),
             "term_size": entry.get("term_size", 0),
