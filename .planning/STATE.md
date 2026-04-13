@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-04-13T00:46:08.994Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-04-13T00:55:49.021Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 15
-  completed_plans: 12
-  percent: 80
+  completed_plans: 13
+  percent: 87
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 02 (3-way-qtl-colocalization) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -63,6 +63,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 02 P01 | 8min | 2 tasks | 17 files |
 | Phase 02 P02 | 7min | 2 tasks | 8 files |
 | Phase 02 P03 | 9min | 2 tasks | 9 files |
+| Phase 02 P04 | 6min | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,7 @@ Recent decisions affecting current work:
 - [Phase 02]: LOG10P clipped to [0, 300] to handle edge-case negative values; real REGENIE LOG10P is non-negative but clipping prevents invalid pvalues > 1.0
 - [Phase 02]: sQTL reuses harmonize_eqtl core logic (_read_eqtl_file, write_harmonized); pQTL gene_id resolved via protein-to-Ensembl lookup table for reproducibility
 - [Phase 02]: UKB-PPP auth via SYNAPSE_AUTH_TOKEN env var only; .synapseConfig in .gitignore; Synapse + S3 unsigned fallback download pattern
+- [Phase 02]: OneK1K eQTL Catalogue format reuses harmonize_eqtl() directly (identical column schema); cell_type maps to tissue column; dual-source download with QTS000038 primary / onek1k.org S3 fallback
 
 ### Pending Todos
 
@@ -113,8 +115,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T00:46:08.990Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-04-13T00:55:49.017Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
