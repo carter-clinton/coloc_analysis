@@ -225,3 +225,101 @@ rule aggregate_qtl_coloc:
             --manifest {input.manifest} \
             --output {output.summary}
         """
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 Plan 05: Tier assignment, L2G concordance, gene-tissue matrix
+# ---------------------------------------------------------------------------
+
+# NEG_CTRL_DIR defined in negative_controls.smk (included before this file).
+# Redefined here for self-contained reference; Snakemake tolerates re-assignment.
+NEG_CTRL_DIR = os.path.join(config["paths"]["results_root"], "negative_controls")
+
+QTL_PROC_ENV_COLOC = str(
+    os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml")
+)
+
+
+rule assign_tiers:
+    """Assign Tier A/B/C confidence levels (D-02c, QTL-source-agnostic).
+
+    Combines GWAS-GWAS coloc results (trait-trait PP.H4) with QTL coloc
+    results to produce mechanistic tier assignments. Also produces the
+    PP.H4 threshold sweep table (REQ-3).
+    """
+    input:
+        qtl_results=os.path.join(QTL_COLOC_DIR, "qtl_coloc_summary.tsv"),
+        gwas_coloc=os.path.join(
+            config["paths"]["results_root"], "multitrait",
+            "coloc_summary.tsv",
+        ),
+        neg_ctrl_results=os.path.join(NEG_CTRL_DIR, "curated_neg_ctrl_results.tsv"),
+        pph4_config="config/pph4_thresholds.yaml",
+    output:
+        tiers=os.path.join(QTL_COLOC_DIR, "tier_assignments.tsv"),
+        sweep=os.path.join(QTL_COLOC_DIR, "pph4_threshold_sweep.tsv"),
+    params:
+        script=os.path.join("src", "python", "assign_tiers.py"),
+    conda:
+        QTL_PROC_ENV_COLOC
+    shell:
+        r"""
+        python {params.script} \
+          --input {input.qtl_results} \
+          --gwas-coloc {input.gwas_coloc} \
+          --pph4-config {input.pph4_config} \
+          --neg-ctrl-results {input.neg_ctrl_results} \
+          --output {output.tiers} \
+          --sweep --sweep-output {output.sweep}
+        """
+
+
+rule l2g_concordance:
+    """Compute Open Targets L2G concordance for Tier A loci (D-05a/D-05b).
+
+    L2G is independent corroboration, NOT a filter gate. Disagreements are
+    flagged as findings (potential distal enhancer-driven assignments).
+    """
+    input:
+        tiers=os.path.join(QTL_COLOC_DIR, "tier_assignments.tsv"),
+        l2g_dir=os.path.join(
+            config["paths"]["data_root"], "raw", "opentargets", "l2g_prediction",
+        ),
+    output:
+        concordance=os.path.join(QTL_COLOC_DIR, "l2g_concordance.tsv"),
+    params:
+        script=os.path.join("src", "python", "parse_l2g.py"),
+    conda:
+        QTL_PROC_ENV_COLOC
+    shell:
+        r"""
+        python {params.script} \
+          --l2g-dir {input.l2g_dir} \
+          --tier-table {input.tiers} \
+          --output {output.concordance}
+        """
+
+
+rule build_gene_tissue_matrix:
+    """Build gene x tissue x cell-type matrix from all QTL coloc results.
+
+    Produces both wide-format (heatmap-ready) and long-format (analysis-ready)
+    tables. Columns combine tissue/cell_type with QTL source for unambiguous
+    identification.
+    """
+    input:
+        qtl_results=os.path.join(QTL_COLOC_DIR, "qtl_coloc_summary.tsv"),
+    output:
+        matrix=os.path.join(QTL_COLOC_DIR, "gene_tissue_matrix.tsv"),
+        long_table=os.path.join(QTL_COLOC_DIR, "gene_tissue_long.tsv"),
+    params:
+        script=os.path.join("src", "python", "build_gene_tissue_matrix.py"),
+    conda:
+        QTL_PROC_ENV_COLOC
+    shell:
+        r"""
+        python {params.script} \
+          --input {input.qtl_results} \
+          --output-matrix {output.matrix} \
+          --output-long {output.long_table}
+        """
