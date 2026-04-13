@@ -46,6 +46,11 @@ complex_regions:
       start: 9000000
       end: 11000000
       rationale: Large urate effect (indirect BP via urate)
+    - region_id: LPA_KIV2_6q25
+      chr: 6
+      start: 160500000
+      end: 161700000
+      rationale: "LPA/KIV-2 copy number variation (2-40+ copies) creates non-standard LD; Phase 1 BMI-T2D anchor PP.H4=0.990. Use HGDP+1kG AFR LD panel."
   data_flagged:
     triggers:
       - l_saturated
