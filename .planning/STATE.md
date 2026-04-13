@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-03-PLAN.md (LDSC partitioned h2 + LDSC-SEG). Plan 4 of 5 next.
-last_updated: "2026-04-13T20:58:05.902Z"
+stopped_at: Completed 05-04-PLAN.md (HESS/rho-HESS local covariance). Plan 5 of 5 next.
+last_updated: "2026-04-13T21:08:10.816Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 20
-  completed_plans: 18
-  percent: 90
+  completed_plans: 19
+  percent: 95
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 05 (pathway-partitioned-heritability) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -68,6 +68,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 05 P01 | 14min | 3 tasks | 22 files |
 | Phase 05 P02 | 11min | 2 tasks | 6 files |
 | Phase 05 P03 | 7min | 2 tasks | 5 files |
+| Phase 05 P04 | 6min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,8 @@ Recent decisions affecting current work:
 - [Phase 05]: g:Profiler REST API default + R fallback; no_iea=True for IEA exclusion (D-03b)
 - [Phase 05]: Always --overlap-annot in LDSC h2; baseline v2.2 first in --ref-ld-chr (D-04a); post-munge SNP validation at 500K threshold; Bonferroni shared tissue analysis (D-05b)
 - [Phase 05]: .ldcts path rewriting extracts basenames + prepends local annot_dir (T-05-13); AST-based shell=True detection in tests
+- [Phase 05]: Python 2.7 HESS invoked via subprocess list args only (T-05-18); Z=BETA/SE with NaN rejection (T-05-19); GRCh37 build validation via reference SNPs (T-05-17)
+- [Phase 05]: TRAIT_PAIRS computed at Snakemake load time from config trait_ancestries intersection; hess_py27 for HESS rules, magma for Python 3 steps
 
 ### Pending Todos
 
@@ -132,8 +135,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:58:05.897Z
-Stopped at: Completed 05-03-PLAN.md (LDSC partitioned h2 + LDSC-SEG). Plan 4 of 5 next.
+Last session: 2026-04-13T21:08:10.812Z
+Stopped at: Completed 05-04-PLAN.md (HESS/rho-HESS local covariance). Plan 5 of 5 next.
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
