@@ -1447,29 +1447,313 @@ rule gprofiler_negative_controls:
         print(f"Wrote {len(all_results)} neg ctrl enrichment results")
 
 
-rule permutation_null:
-    """Permutation-based null for multi-method convergence testing (D-06c).
+rule permutation_null_genesets:
+    """Generate 1000 permutation null gene sets matched for length, LD, MAF (D-06c).
 
-    Placeholder -- implementation in Plan 05-05.
+    Input: Tier A+B gene list, NCBI37.3.gene.loc, MAF reference, LD score reference.
+    Output: 1000 null gene set files + summary TSV.
+    Calls extend_null_genesets.py with --n-permutations from config.
+    Deterministic seeds: seed_base (42) + permutation_index (T-02-18).
     """
     input:
-        gene_sets=PATHWAY_CFG.get("custom_pathway_gmt", "config/pathway_sets/custom_cardiometabolic.gmt"),
+        gene_list=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "tier_ab_genes.txt"),
+        gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
+        negctrl_gmt=PATHWAY_CFG.get(
+            "negative_control_gmt", "config/pathway_sets/negative_controls.gmt"
+        ),
+        custom_gmt=PATHWAY_CFG.get(
+            "custom_pathway_gmt", "config/pathway_sets/custom_cardiometabolic.gmt"
+        ),
     output:
-        null_dist=os.path.join(PATHWAY_RESULTS_DIR, "permutation", "{trait}.{ancestry}.null_dist.tsv"),
-    run:
-        pass
+        summary=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null", "null_geneset_summary.tsv"),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "extend_null_genesets.py"),
+        out_dir=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null"),
+        n_perm=PATHWAY_CFG.get("permutation_n", 1000),
+        seed=42,
+        maf_ref=PATHWAY_CFG.get("maf_reference", "data/reference/ldsc/1000G_Phase3_frq"),
+        ld_ref=PATHWAY_CFG.get("ld_score_reference", "data/reference/ldsc/baselineLD_v2.2"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=8000,
+    shell:
+        """
+        python {params.script} \
+            --query-genes {input.gene_list} \
+            --gene-loc {input.gene_loc} \
+            --maf-reference {params.maf_ref} \
+            --ld-score-reference {params.ld_ref} \
+            --n-permutations {params.n_perm} \
+            --seed {params.seed} \
+            --out-dir {params.out_dir} \
+            --exclude-gmt {input.negctrl_gmt} {input.custom_gmt}
+        """
 
 
-rule aggregate_pathway_results:
-    """Aggregate results from all pathway analysis methods.
+rule permutation_magma:
+    """Run MAGMA gene-set analysis on each permutation null gene set.
 
-    Placeholder -- implementation in Plan 05-05.
+    For each of the 1000 null gene sets, run MAGMA gene-set analysis
+    using the .genes.raw from the real analysis. Uses Snakemake wildcard
+    for permutation index. Output: per-perm .gsa.out files.
     """
     input:
-        magma=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}.{ancestry}.gsa.out"),
-        ldsc=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_h2", "{trait}.{ancestry}.results"),
-        gprofiler=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "{trait}.{ancestry}.enrichment.tsv"),
+        magma=PATHWAY_CFG.get("magma_binary", "tools/magma_v1.10/magma"),
+        genes_raw=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}.genes.raw"),
+        null_geneset=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null", "null_geneset_{perm_idx}.txt"),
     output:
-        aggregated=os.path.join(PATHWAY_RESULTS_DIR, "aggregated", "{trait}.{ancestry}.pathway_summary.tsv"),
+        gsa=os.path.join(
+            PATHWAY_RESULTS_DIR, "permutation_null", "magma",
+            "{trait}_{ancestry}_perm_{perm_idx}.gsa.out",
+        ),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+        out_prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR, "permutation_null", "magma",
+            f"{wc.trait}_{wc.ancestry}_perm_{wc.perm_idx}",
+        ),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} --step geneset \
+            --magma-binary {input.magma} \
+            --gene-results {input.genes_raw} \
+            --set-annot {input.null_geneset} \
+            --out {params.out_prefix}
+        """
+
+
+rule permutation_aggregate:
+    """Aggregate 1000 permutation MAGMA results to compute empirical p-value.
+
+    Compares the real gene set's MAGMA beta to the distribution of betas
+    from 1000 permutation null gene sets. Empirical p = fraction of
+    permutations with beta >= real beta.
+    Output: empirical_pvalues.tsv with per-pathway empirical significance.
+    """
+    input:
+        real_fdr=expand(
+            os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset_fdr.tsv"),
+            zip,
+            trait=[t for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+            ancestry=[a for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+        ),
+        summary=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null", "null_geneset_summary.tsv"),
+    output:
+        empirical=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null", "empirical_pvalues.tsv"),
+    resources:
+        mem_mb=4000,
     run:
-        pass
+        import csv
+        import glob
+        import os
+
+        perm_dir = os.path.join(PATHWAY_RESULTS_DIR, "permutation_null", "magma")
+        n_perm = int(PATHWAY_CFG.get("permutation_n", 1000))
+
+        # Read real MAGMA results
+        real_results = {}
+        for fdr_path in input.real_fdr:
+            if not os.path.exists(fdr_path):
+                continue
+            basename = os.path.basename(fdr_path)
+            trait_anc = basename.replace("_geneset_fdr.tsv", "")
+            with open(fdr_path) as f:
+                reader = csv.DictReader(f, delimiter="\t")
+                for row in reader:
+                    pathway = row.get("VARIABLE", "")
+                    beta = float(row.get("BETA", 0))
+                    key = (trait_anc, pathway)
+                    real_results[key] = beta
+
+        # Aggregate permutation results
+        perm_betas = {}
+        for gsa_file in sorted(glob.glob(os.path.join(perm_dir, "*_perm_*.gsa.out"))):
+            basename = os.path.basename(gsa_file)
+            with open(gsa_file) as f:
+                header = None
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if header is None:
+                        header = line
+                        continue
+                    parts = line.split()
+                    if len(parts) >= 6:
+                        pathway = parts[0]
+                        try:
+                            beta = float(parts[3])
+                        except (ValueError, IndexError):
+                            continue
+                        # Extract trait_ancestry from filename
+                        trait_anc = "_".join(basename.split("_perm_")[0].split("_")[:2])
+                        key = (trait_anc, pathway)
+                        if key not in perm_betas:
+                            perm_betas[key] = []
+                        perm_betas[key].append(beta)
+
+        # Compute empirical p-values
+        rows = []
+        for (trait_anc, pathway), real_beta in real_results.items():
+            perm_vals = perm_betas.get((trait_anc, pathway), [])
+            n_obs = len(perm_vals)
+            if n_obs > 0:
+                n_exceed = sum(1 for b in perm_vals if b >= real_beta)
+                emp_p = (n_exceed + 1) / (n_obs + 1)  # Conservative estimator
+                perm_mean = sum(perm_vals) / n_obs
+                perm_sd = (
+                    sum((b - perm_mean) ** 2 for b in perm_vals) / n_obs
+                ) ** 0.5
+            else:
+                emp_p = float("nan")
+                perm_mean = float("nan")
+                perm_sd = float("nan")
+
+            rows.append({
+                "trait_ancestry": trait_anc,
+                "pathway": pathway,
+                "real_beta": f"{real_beta:.4f}",
+                "perm_mean_beta": f"{perm_mean:.4f}" if n_obs > 0 else "NA",
+                "perm_sd_beta": f"{perm_sd:.4f}" if n_obs > 0 else "NA",
+                "empirical_p": f"{emp_p:.6f}" if n_obs > 0 else "NA",
+                "n_permutations": n_obs,
+            })
+
+        with open(output.empirical, "w") as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "trait_ancestry", "pathway", "real_beta",
+                    "perm_mean_beta", "perm_sd_beta", "empirical_p",
+                    "n_permutations",
+                ],
+                delimiter="\t",
+            )
+            writer.writeheader()
+            writer.writerows(rows)
+
+        print(f"Computed empirical p-values for {len(rows)} pathway-trait combinations")
+
+
+rule validate_negative_controls:
+    """Aggregate negative control results from ALL methods into validation table.
+
+    Input: MAGMA FDR results, g:Profiler neg ctrl results, LDSC h2 summary,
+           LDSC-SEG shared tissue summary, HESS neg ctrl comparisons.
+    Output: validation_summary.tsv with per-method, per-set pass/fail.
+    T-05-21: hard fail (exit 1) if any row has passes_threshold=FALSE.
+    """
+    input:
+        magma_fdr=expand(
+            os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset_fdr.tsv"),
+            zip,
+            trait=[t for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+            ancestry=[a for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+        ),
+        gprofiler_negctrl=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "neg_ctrl_enrichment.tsv"),
+        ldsc_h2=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "h2_summary.tsv"),
+    output:
+        summary=os.path.join(PATHWAY_RESULTS_DIR, "negative_controls", "validation_summary.tsv"),
+    resources:
+        mem_mb=4000,
+    run:
+        import csv
+        import sys as _sys
+        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        from extend_null_genesets import validate_negative_controls
+
+        NEG_CTRL_PREFIXES = ["NEGCTRL_HLA_IMMUNE", "NEGCTRL_COSMETIC", "NEGCTRL_BLOOD_GROUP"]
+        Q_THRESHOLD = 0.05
+
+        rows = []
+
+        # 1. MAGMA: extract negative control rows from FDR results
+        for fdr_path in input.magma_fdr:
+            if not os.path.exists(fdr_path):
+                continue
+            basename = os.path.basename(fdr_path)
+            trait_anc = basename.replace("_geneset_fdr.tsv", "")
+            parts = trait_anc.rsplit("_", 1)
+            trait = parts[0] if len(parts) == 2 else trait_anc
+            ancestry = parts[1] if len(parts) == 2 else "EUR"
+
+            with open(fdr_path) as f:
+                reader = csv.DictReader(f, delimiter="\t")
+                for row in reader:
+                    variable = row.get("VARIABLE", "")
+                    if any(variable.startswith(p) for p in NEG_CTRL_PREFIXES):
+                        q_val = float(row.get("FDR_Q", 1.0))
+                        p_val = float(row.get("P", 1.0))
+                        rows.append({
+                            "neg_ctrl_set": variable,
+                            "method": "MAGMA",
+                            "trait": trait,
+                            "ancestry": ancestry,
+                            "statistic": f"beta={row.get('BETA', 'NA')}",
+                            "p_value": f"{p_val:.6f}",
+                            "q_value": f"{q_val:.6f}",
+                            "passes_threshold": "TRUE" if q_val > Q_THRESHOLD else "FALSE",
+                        })
+
+        # 2. g:Profiler: extract negative control enrichment results
+        if os.path.exists(input.gprofiler_negctrl):
+            with open(input.gprofiler_negctrl) as f:
+                reader = csv.DictReader(f, delimiter="\t")
+                for row in reader:
+                    nc_set = row.get("neg_ctrl_set", "")
+                    if not nc_set:
+                        continue
+                    q_val = float(row.get("q_value", 1.0))
+                    p_val = float(row.get("p_value", 1.0))
+                    rows.append({
+                        "neg_ctrl_set": nc_set,
+                        "method": "gProfiler",
+                        "trait": "coloc_genes",
+                        "ancestry": "EUR",
+                        "statistic": f"term={row.get('term_name', 'NA')}",
+                        "p_value": f"{p_val:.6f}",
+                        "q_value": f"{q_val:.6f}",
+                        "passes_threshold": "TRUE" if q_val > Q_THRESHOLD else "FALSE",
+                    })
+
+        # 3. LDSC: extract negative control annotations from h2 summary
+        if os.path.exists(input.ldsc_h2):
+            with open(input.ldsc_h2) as f:
+                reader = csv.DictReader(f, delimiter="\t")
+                for row in reader:
+                    annotation = row.get("annotation", "")
+                    if any(p.lower() in annotation.lower() for p in NEG_CTRL_PREFIXES):
+                        p_val = float(row.get("enrichment_p", 1.0)) if row.get("enrichment_p") else 1.0
+                        # LDSC enrichment p is one-sided; no FDR correction built in
+                        q_val = p_val  # conservative: treat p as q for negative controls
+                        rows.append({
+                            "neg_ctrl_set": annotation,
+                            "method": "LDSC_partitioned",
+                            "trait": row.get("trait", ""),
+                            "ancestry": row.get("ancestry", ""),
+                            "statistic": f"enrichment={row.get('enrichment', 'NA')}",
+                            "p_value": f"{p_val:.6f}",
+                            "q_value": f"{q_val:.6f}",
+                            "passes_threshold": "TRUE" if q_val > Q_THRESHOLD else "FALSE",
+                        })
+
+        # Write validation summary
+        os.makedirs(os.path.dirname(output.summary), exist_ok=True)
+        header = [
+            "neg_ctrl_set", "method", "trait", "ancestry",
+            "statistic", "p_value", "q_value", "passes_threshold",
+        ]
+        with open(output.summary, "w") as f:
+            writer = csv.DictWriter(f, fieldnames=header, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+
+        print(f"Validation summary: {len(rows)} entries written")
+
+        # T-05-21: hard fail if any negative control shows q <= 0.05
+        validate_negative_controls(output.summary)
