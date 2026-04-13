@@ -127,14 +127,34 @@ def sample_null_loci(args, neg_config):
         import shutil
         shutil.copy(str(real_bed), str(exclusion_bed))
     else:
-        # Cat and sort exclusion BEDs
-        cat_cmd = f"cat {' '.join(exclusion_parts)} | sort -k1,1 -k2,2n | bedtools merge"
+        # Cat, sort, and merge exclusion BEDs using safe subprocess pipeline
+        # (no shell=True to avoid command injection via file paths)
         try:
-            result = subprocess.run(
-                cat_cmd, shell=True, capture_output=True, text=True, check=True
+            cat_proc = subprocess.Popen(
+                ["cat"] + exclusion_parts,
+                stdout=subprocess.PIPE,
             )
+            sort_proc = subprocess.Popen(
+                ["sort", "-k1,1", "-k2,2n"],
+                stdin=cat_proc.stdout,
+                stdout=subprocess.PIPE,
+            )
+            cat_proc.stdout.close()
+            merge_proc = subprocess.Popen(
+                ["bedtools", "merge"],
+                stdin=sort_proc.stdout,
+                stdout=subprocess.PIPE,
+                text=True,
+            )
+            sort_proc.stdout.close()
+            stdout, _ = merge_proc.communicate()
+            # Check for errors in the pipeline
+            cat_proc.wait()
+            sort_proc.wait()
+            if merge_proc.returncode != 0:
+                raise subprocess.CalledProcessError(merge_proc.returncode, "bedtools merge")
             with open(exclusion_bed, "w") as f:
-                f.write(result.stdout)
+                f.write(stdout)
         except (subprocess.CalledProcessError, FileNotFoundError):
             logger.warning("bedtools merge failed; using real loci as exclusion zones only")
             import shutil
