@@ -115,6 +115,13 @@ if FINEMAP_METHODS:
     # .fit.rds outputs from run_finemap (Phase 1 Wave 4, REQ-2 #4).
     include: "src/snakemake/rules/coloc.smk"
 
+# Phase 2 QTL coloc rules. qtl_download.smk defines QTL_RAW_DIR and
+# QTL_HARMONIZED_DIR; qtl_coloc.smk uses those plus finemap_output() from
+# finemap.smk. Order: download -> coloc (coloc uses _qtl_manifest_field
+# and QTL_HARMONIZED_DIR from download).
+include: "src/snakemake/rules/qtl_download.smk"
+include: "src/snakemake/rules/qtl_coloc.smk"
+
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
 LD_ANCESTRIES = [a for a in ANCESTRIES if a in config.get("onekg", {}).get("populations", {})]
