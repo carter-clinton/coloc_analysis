@@ -70,6 +70,7 @@ logs/
 !results/README.md
 !results/legacy
 !envs/.gitkeep
+tests/toy_3locus/results/
 
 # --- Figures: commit tracked outputs, but skip scratch ---
 figures/scratch/
