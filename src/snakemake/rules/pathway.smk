@@ -461,7 +461,7 @@ rule magma_gene_analysis:
         bfile_bed=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur") + ".bed",
         annot=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation.genes.annot"),
         sumstats=os.path.join(
-            config["paths"]["harmonized_sumstats"], "{trait}_{ancestry}.tsv"
+            config["paths"]["harmonized_sumstats"], "{trait}.{ancestry}.tsv.bgz"
         ),
     output:
         genes_raw=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}.genes.raw"),
@@ -585,7 +585,9 @@ rule ldsc_munge:
     with HapMap3 merge. Post-munge validation warns if < 500K SNPs (Pitfall 2).
     """
     input:
-        sumstats=os.path.join(config["paths"]["harmonized_sumstats"], "{trait}_{ancestry}.tsv"),
+        sumstats=os.path.join(
+            config["paths"]["harmonized_sumstats"], "{trait}.{ancestry}.tsv.bgz"
+        ),
         hapmap3=PATHWAY_CFG.get("ldsc_hapmap3", "data/reference/ldsc/w_hm3.snplist"),
     output:
         munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
@@ -1044,7 +1046,7 @@ rule hess_format_sumstats:
     """
     input:
         sumstats=os.path.join(
-            config["paths"]["harmonized_sumstats"], "{trait}_{ancestry}.tsv"
+            config["paths"]["harmonized_sumstats"], "{trait}.{ancestry}.tsv.bgz"
         ),
     output:
         hess_sumstats=os.path.join(
@@ -1326,7 +1328,7 @@ rule build_gprofiler_background:
     input:
         gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
         sumstats=expand(
-            os.path.join(config["paths"]["harmonized_sumstats"], "{trait}_EUR.tsv"),
+            os.path.join(config["paths"]["harmonized_sumstats"], "{trait}.EUR.tsv.bgz"),
             trait=config.get("traits", []),
         ),
     output:

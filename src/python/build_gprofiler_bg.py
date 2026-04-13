@@ -26,10 +26,24 @@ References:
     Reimand et al. 2019 Nat Protoc (g:Profiler best practices)
 """
 import argparse
+import gzip
+import io
 import logging
 import os
 import sys
 from pathlib import Path
+
+
+def _open_sumstats(path: str):
+    """Open a sumstats file, transparently handling .bgz/.gz compression.
+
+    Harmonized sumstats are bgzipped (`{trait}.{ancestry}.tsv.bgz`), but the
+    file is readable by gzip since BGZF is a gzip-compatible format. Returns a
+    text-mode file handle.
+    """
+    if path.endswith(".bgz") or path.endswith(".gz"):
+        return io.TextIOWrapper(gzip.open(path, "rb"), encoding="utf-8")
+    return open(path, "r", encoding="utf-8")
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -90,7 +104,7 @@ def _read_gws_snps(sumstats_path: str, p_threshold: float = 5e-8) -> list:
         Each tuple is (chrom, position) for significant SNPs.
     """
     gws_snps = []
-    with open(sumstats_path) as fh:
+    with _open_sumstats(sumstats_path) as fh:
         header_line = fh.readline().strip()
         columns = header_line.split("\t")
         col_lower = [c.lower() for c in columns]
@@ -325,8 +339,12 @@ def main():
 
     # Build sumstats file paths
     traits = [t.strip() for t in args.traits.split(",")]
+    # Harmonized sumstats live at `{dir}/{trait}.{ancestry}.tsv.bgz` (dot
+    # separator, bgzipped) per src/snakemake/rules/sumstats.smk. The previous
+    # underscore pattern did not match on-disk files and silently returned
+    # zero background genes (WR-01).
     sumstats_paths = [
-        os.path.join(args.sumstats_dir, f"{trait}_{args.ancestry}.tsv")
+        os.path.join(args.sumstats_dir, f"{trait}.{args.ancestry}.tsv.bgz")
         for trait in traits
     ]
 

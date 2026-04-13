@@ -20,12 +20,26 @@ References:
     MAGMA manual v1.10: ctg.cncr.nl/software/MAGMA/doc/manual_v1.10.pdf
 """
 import argparse
+import gzip
+import io
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+
+def _open_sumstats(path: str):
+    """Open a sumstats file, transparently handling .bgz/.gz compression.
+
+    Harmonized sumstats are bgzipped (`{trait}.{ancestry}.tsv.bgz`), and
+    BGZF is gzip-compatible. Returns a text-mode file handle.
+    """
+    if path.endswith(".bgz") or path.endswith(".gz"):
+        return io.TextIOWrapper(gzip.open(path, "rb"), encoding="utf-8")
+    return open(path, "r", encoding="utf-8")
 
 # Allow importing shared module from same directory
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -177,7 +191,7 @@ def _create_pval_file(sumstats_path: str, tmpdir: str) -> str:
     """
     pval_path = os.path.join(tmpdir, "magma_pval_input.txt")
 
-    with open(sumstats_path) as fin:
+    with _open_sumstats(sumstats_path) as fin:
         header_line = fin.readline().strip()
         columns = header_line.split("\t")
 
