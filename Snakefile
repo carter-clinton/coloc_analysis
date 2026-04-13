@@ -121,6 +121,7 @@ if FINEMAP_METHODS:
 # and QTL_HARMONIZED_DIR from download).
 include: "src/snakemake/rules/qtl_download.smk"
 include: "src/snakemake/rules/qtl_coloc.smk"
+include: "src/snakemake/rules/negative_controls.smk"
 
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
