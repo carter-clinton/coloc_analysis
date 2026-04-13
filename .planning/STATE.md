@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: executing
-stopped_at: Completed 05-04-PLAN.md (HESS/rho-HESS local covariance). Plan 5 of 5 next.
-last_updated: "2026-04-13T21:08:10.816Z"
+status: verifying
+stopped_at: Completed 05-05-PLAN.md (aggregation + permutation null). Phase 5 complete (5/5 plans).
+last_updated: "2026-04-13T21:31:30.041Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 20
-  completed_plans: 19
-  percent: 95
+  completed_plans: 20
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 
 Phase: 05 (pathway-partitioned-heritability) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-13
 
 Progress: ██░░░░░░░░ 17%
@@ -69,6 +69,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 05 P02 | 11min | 2 tasks | 6 files |
 | Phase 05 P03 | 7min | 2 tasks | 5 files |
 | Phase 05 P04 | 6min | 2 tasks | 3 files |
+| Phase 05 P05 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,9 @@ Recent decisions affecting current work:
 - [Phase 05]: .ldcts path rewriting extracts basenames + prepends local annot_dir (T-05-13); AST-based shell=True detection in tests
 - [Phase 05]: Python 2.7 HESS invoked via subprocess list args only (T-05-18); Z=BETA/SE with NaN rejection (T-05-19); GRCh37 build validation via reference SNPs (T-05-17)
 - [Phase 05]: TRAIT_PAIRS computed at Snakemake load time from config trait_ancestries intersection; hess_py27 for HESS rules, magma for Python 3 steps
+- [Phase 05]: 3-criterion gene set matching (length, LD complexity, MAF) per D-06c; maf_reference and ld_score_reference REQUIRED
+- [Phase 05]: Fixed 4 conda+run incompatibilities in pathway.smk for Snakemake 7.32.4 (magma_fdr, hess_format_sumstats, hess_negative_controls, gprofiler_negative_controls)
+- [Phase 05]: Consensus ranking: n_methods_significant desc + geometric mean p asc; empirical p = (n_exceed+1)/(n_total+1)
 
 ### Pending Todos
 
@@ -135,8 +139,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T21:08:10.812Z
-Stopped at: Completed 05-04-PLAN.md (HESS/rho-HESS local covariance). Plan 5 of 5 next.
+Last session: 2026-04-13T21:31:30.036Z
+Stopped at: Completed 05-05-PLAN.md (aggregation + permutation null). Phase 5 complete (5/5 plans).
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
