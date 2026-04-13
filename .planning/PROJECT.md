@@ -88,9 +88,19 @@ story.
 
 ## Current status
 
-As of the bootstrap commit: canonical repo initialized on GPFS; research
--analysis directory layout created; ~11.5 MB of prior analysis code recovered
-from `/rs1/researchers/c/ckclinto/coloc_analysis/` into `src/legacy/`; summary
-docs and target manifests preserved in `docs/legacy/`; data directories
-symlinked from `/rs1`. **Ready for `/gsd-new-project` → `/gsd-discuss-phase 0`
-→ `/gsd-plan-phase 0`.**
+**Phase 0 (Data Access & Infrastructure):** Complete. Snakemake skeleton with
+CI smoke test, data access DUAs (UKB-PPP, FinnGen, deCODE), OSF pre-registration.
+
+**Phase 1 (SuSiE Fine-Mapping):** Complete. coloc.susie pipeline with EUR
+(UKBB-LD) and AFR (HGDP+1kG) LD panels, 3-step retry ladder, pairwise SuSiE
+coloc, sweep/summary dashboard.
+
+**Phase 2 (3-way QTL Colocalization):** Complete (2026-04-13). Full QTL coloc
+pipeline: GTEx v8 eQTL (49 tissues) + sQTL + UKB-PPP pQTL + OneK1K sc-eQTL
+(14 immune cell types). Unified run_qtl_coloc.R with manifest-driven dispatch.
+PP.H4 threshold sweep {0.5, 0.7, 0.8, 0.9} (REQ-3). Negative controls — 3
+curated sets + 500 distance-matched nulls (REQ-7). Tier A/B/C confidence
+assignment. Open Targets L2G concordance. Gene x tissue x cell-type matrix.
+136 tests passing. 4 human verification items deferred to real-data execution.
+
+Last updated: 2026-04-13
