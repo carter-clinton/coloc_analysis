@@ -213,5 +213,33 @@ pathway:
   maf_reference: "data/reference/ldsc/1000G_Phase3_frq"
   ld_score_reference: "data/reference/ldsc/baselineLD_v2.2"
 
+  # Per-trait sample size metadata for MAGMA, LDSC, and HESS effective-N
+  # computation. Binary traits use N_eff = 4 / (1/n_case + 1/n_ctrl);
+  # quantitative traits use sample_size directly. Values below are published
+  # totals from the dataset_priority references (see config/datasets.yaml).
+  # Per-ancestry totals should be overridden once exact post-harmonization
+  # counts are known from the downloaded sumstats. Downstream rules fall back
+  # to the default sample_size when ancestry-specific values are absent.
+  trait_counts:
+    bmi:
+      type: quantitative
+      sample_size: 694649              # Yengo 2018 total N (EUR)
+    t2d:
+      type: binary
+      n_case: 180834                   # DIAMANTE 2022 multi-ancestry cases
+      n_ctrl: 1159055                  # DIAMANTE 2022 multi-ancestry controls
+    hypertension:
+      type: binary
+      n_case: 129909                   # Evangelou 2018 / Hoffmann AFR cases proxy
+      n_ctrl: 354689                   # Evangelou 2018 controls proxy
+    asthma:
+      type: binary
+      n_case: 153763                   # GBMI 2021 asthma cases
+      n_ctrl: 1647022                  # GBMI 2021 asthma controls
+    stroke:
+      type: binary
+      n_case: 67162                    # MEGASTROKE 2018 any-stroke cases
+      n_ctrl: 454450                   # MEGASTROKE 2018 controls
+
   # Output directory
   results_dir: "results/pathway"

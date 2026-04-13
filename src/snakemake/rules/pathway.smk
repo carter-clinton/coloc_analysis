@@ -22,6 +22,38 @@ import os
 PATHWAY_CFG = config.get("pathway", {})
 PATHWAY_RESULTS_DIR = PATHWAY_CFG.get("results_dir", "results/pathway")
 
+# Per-trait sample-size metadata for effective-N computation (CR-02 fix).
+# Binary traits must pass --n-case/--n-ctrl so run_magma.py / run_ldsc_*.py
+# can compute N_eff = 4 / (1/n_case + 1/n_ctrl) per Pitfall 4. Quantitative
+# traits pass --sample-size directly. The configured values live in
+# config/pipeline.yaml under pathway.trait_counts. When a trait is missing
+# from the config or has zero counts, helper rules fall back to legacy
+# totals from datasets.yaml (or raise at runtime for binary traits).
+TRAIT_COUNTS = PATHWAY_CFG.get("trait_counts", {})
+
+
+def _magma_n_flags(trait: str) -> str:
+    """Render the correct MAGMA --sample-size or --n-case/--n-ctrl flags.
+
+    Dispatches on pathway.trait_counts[trait].type:
+      - "binary":      emits "--n-case N --n-ctrl N" (run_magma.py computes N_eff)
+      - "quantitative": emits "--sample-size N"
+    Falls back to an empty string when the trait is absent; run_magma.py will
+    then raise, surfacing misconfiguration instead of silently using a hard-coded N.
+    """
+    entry = TRAIT_COUNTS.get(trait, {}) or {}
+    ttype = entry.get("type", "").lower()
+    if ttype == "binary":
+        n_case = entry.get("n_case")
+        n_ctrl = entry.get("n_ctrl")
+        if n_case and n_ctrl:
+            return f"--n-case {int(n_case)} --n-ctrl {int(n_ctrl)}"
+    elif ttype == "quantitative":
+        n = entry.get("sample_size")
+        if n:
+            return f"--sample-size {int(n)}"
+    return ""
+
 # Conda env paths (absolute, per DEF-01-02 pattern)
 MAGMA_ENV = str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "magma.yml"))
 LDSC_ENV = str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "ldsc_py3.yml"))
@@ -438,6 +470,10 @@ rule magma_gene_analysis:
         bfile=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur"),
         script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
         trait=lambda wc: wc.trait,
+        # CR-02 fix: emit --n-case/--n-ctrl for binary traits so run_magma.py
+        # computes N_eff = 4/(1/n_case + 1/n_ctrl); emit --sample-size for
+        # quantitative traits. Previously hardcoded to --sample-size 500000.
+        n_flags=lambda wc: _magma_n_flags(wc.trait),
     conda:
         MAGMA_ENV
     resources:
@@ -450,7 +486,7 @@ rule magma_gene_analysis:
             --pval {input.sumstats} \
             --gene-annot {input.annot} \
             --trait {params.trait} \
-            --sample-size 500000 \
+            {params.n_flags} \
             --out {params.out_prefix}
         """
 
@@ -560,6 +596,11 @@ rule ldsc_munge:
         script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_partitioned.py"),
         ldsc_dir="tools/ldsc",
         trait=lambda wc: wc.trait,
+        # CR-02 fix: LDSC munge must also use effective N for binary traits.
+        # run_ldsc_partitioned.py accepts --sample-size OR --n-case/--n-ctrl and
+        # derives N_eff internally. _magma_n_flags() is reused because the CLI
+        # surface is identical (both scripts share sumstats_utils.compute_effective_n).
+        n_flags=lambda wc: _magma_n_flags(wc.trait),
     conda:
         LDSC_ENV
     resources:
@@ -570,7 +611,7 @@ rule ldsc_munge:
             --ldsc-dir {params.ldsc_dir} \
             --sumstats {input.sumstats} \
             --hapmap3 {input.hapmap3} \
-            --sample-size 500000 \
+            {params.n_flags} \
             --trait {params.trait} \
             --out {params.out_prefix}
         """
