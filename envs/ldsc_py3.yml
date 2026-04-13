@@ -7,12 +7,14 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11
-  - pandas>=2.0
-  - numpy>=1.24
-  - scipy>=1.11
-  - bitarray>=2.8
-  - pyyaml>=6.0
-  - pip
+  # REQ-9: exact version pins for reproducibility. Versions chosen to match
+  # the conda-forge snapshot at the time of Phase 5 initial build (Apr 2026).
+  - python=3.11.8
+  - pandas=2.2.1
+  - numpy=1.26.4
+  - scipy=1.11.4
+  - bitarray=2.9.2
+  - pyyaml=6.0.1
+  - pip=24.0
   - pip:
       - ldsc-python3 @ git+https://github.com/abdenlab/ldsc-python3.git

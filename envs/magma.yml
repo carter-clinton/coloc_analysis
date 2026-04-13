@@ -8,8 +8,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11
-  - pandas>=2.0
-  - numpy>=1.24
-  - pyyaml>=6.0
-  - requests>=2.28
+  # REQ-9: exact version pins for reproducibility. Versions chosen to match
+  # the conda-forge snapshot at the time of Phase 5 initial build (Apr 2026).
+  - python=3.11.8
+  - pandas=2.2.1
+  - numpy=1.26.4
+  - pyyaml=6.0.1
+  - requests=2.31.0
