@@ -192,28 +192,30 @@ def _harmonize_onek1k_org_format(
     if "chromosome" in df.columns:
         df["chromosome"] = df["chromosome"].astype(str).str.replace("chr", "", regex=False)
 
-    # Liftover from GRCh37 to GRCh38
+    # Liftover from GRCh37 to GRCh38 (required: onek1k_org data is GRCh37,
+    # but region filters expect GRCh38; skipping liftover silently drops variants)
     try:
         from pyliftover import LiftOver
-
-        lo = LiftOver("hg19", "hg38")
-        lifted_positions = []
-        for _, row in df.iterrows():
-            chrom = f"chr{row['chromosome']}"
-            pos = int(row["position"])
-            result = lo.convert_coordinate(chrom, pos)
-            if result and len(result) > 0:
-                lifted_positions.append(int(result[0][1]))
-            else:
-                lifted_positions.append(None)
-        df["position"] = lifted_positions
-        df = df.dropna(subset=["position"])
-        df["position"] = df["position"].astype(int)
     except ImportError:
-        logger.warning(
-            "pyliftover not available; positions remain in GRCh37. "
-            "Install pyliftover for coordinate liftover."
+        raise ImportError(
+            "pyliftover is required for onek1k_org format (GRCh37->GRCh38 liftover). "
+            "Install with: pip install pyliftover"
         )
+
+    lo = LiftOver("hg19", "hg38")
+
+    def _liftover_pos(chrom, pos):
+        result = lo.convert_coordinate(f"chr{chrom}", int(pos))
+        if result and len(result) > 0:
+            return int(result[0][1])
+        return None
+
+    df["position"] = df.apply(
+        lambda row: _liftover_pos(row["chromosome"], row["position"]),
+        axis=1,
+    )
+    df = df.dropna(subset=["position"])
+    df["position"] = df["position"].astype(int)
 
     # Region filter
     region_chr = str(region["chr"]).replace("chr", "")
