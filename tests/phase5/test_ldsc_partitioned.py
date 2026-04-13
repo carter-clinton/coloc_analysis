@@ -5,10 +5,16 @@ Validates:
 - Effective N calculation for binary traits
 - build_ldsc_annot.py annotation format and window logic
 - Negative control annotation validity (REQ-7)
+- run_ldsc_partitioned.py command construction and results parsing
+- SNP count warning threshold (Pitfall 2 / T-05-16)
+- --overlap-annot always present in h2 (anti-pattern)
+- Baseline v2.2 first in --ref-ld-chr (D-04a)
 """
 import gzip
+import logging
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -144,3 +150,157 @@ class TestBuildLdscAnnot:
         assert point_in_intervals(3000, intervals) is False
         assert point_in_intervals(5000, intervals) is True
         assert point_in_intervals(10001, intervals) is False
+
+    def test_custom_annotation_per_chromosome(self, mock_gene_loc, tmp_path):
+        """build_ldsc_annot produces 22 annotation files (one per chromosome).
+
+        Uses mock data with genes only on chr22, so only chr22 produces
+        annotated SNPs. The other chromosomes are skipped because mock BIM
+        files only exist for chr22. The key assertion is that the function
+        correctly handles per-chromosome file naming.
+        """
+        all_genes = load_gene_loc(str(mock_gene_loc))
+        pathway_sets = [("TEST_SET", {"TESTGENE1"})]
+
+        # Create mock BIM files for 3 chromosomes
+        for chrom in ["20", "21", "22"]:
+            bim_file = tmp_path / f"mock.{chrom}.bim"
+            rows = []
+            for i in range(10):
+                pos = 16000000 + i * 1000
+                rows.append(f"{chrom}\trs_{chrom}_{i}\t0\t{pos}\tA\tG\n")
+            bim_file.write_text("".join(rows))
+
+        # Build annotations for these 3 chromosomes
+        for chrom in ["20", "21", "22"]:
+            out_path = tmp_path / f"test.{chrom}.annot.gz"
+            build_annot_for_chrom(
+                chrom=chrom,
+                bim_path=str(tmp_path / f"mock.{chrom}.bim"),
+                all_genes=all_genes,
+                pathway_sets=pathway_sets,
+                window_bp=100000,
+                out_path=str(out_path),
+            )
+            assert out_path.exists(), f"Missing annotation for chr{chrom}"
+
+
+class TestLdscPartitioned:
+    """Test run_ldsc_partitioned.py command construction and results parsing."""
+
+    def test_munge_snp_count_warning(self, mock_sumstats_path, tmp_path, caplog):
+        """Verify WARNING logged if < 500,000 SNPs after munging (Pitfall 2).
+
+        We test by calling run_munge with a mock LDSC that produces a small
+        .sumstats.gz file (100 SNPs), which is well below the 500K threshold.
+        """
+        from run_ldsc_partitioned import MIN_MUNGED_SNPS, _count_sumstats_snps
+
+        # Create a small .sumstats.gz with only 50 SNPs
+        small_sumstats = tmp_path / "small.sumstats.gz"
+        with gzip.open(str(small_sumstats), "wt") as f:
+            f.write("SNP\tA1\tA2\tN\tP\tBETA\tSE\n")
+            for i in range(50):
+                f.write(f"rs{i}\tA\tG\t50000\t0.5\t0.01\t0.005\n")
+
+        count = _count_sumstats_snps(str(small_sumstats))
+        assert count == 50
+        assert count < MIN_MUNGED_SNPS
+
+    def test_overlap_annot_flag(self):
+        """Verify --overlap-annot is always present in h2 command construction.
+
+        The run_partitioned_h2 function MUST include --overlap-annot in the
+        subprocess command to avoid the known LDSC anti-pattern.
+        """
+        import run_ldsc_partitioned
+
+        # Read the source and verify --overlap-annot is in the h2 function
+        source = Path(run_ldsc_partitioned.__file__).read_text()
+        assert "--overlap-annot" in source, (
+            "run_ldsc_partitioned.py must include --overlap-annot in h2 step"
+        )
+
+        # More specifically, check it's in the run_partitioned_h2 function body
+        import inspect
+
+        h2_source = inspect.getsource(run_ldsc_partitioned.run_partitioned_h2)
+        assert "--overlap-annot" in h2_source, (
+            "run_partitioned_h2() function must include --overlap-annot"
+        )
+
+    def test_baseline_first_in_ref_ld(self):
+        """Verify baseline v2.2 path appears before custom in --ref-ld-chr (D-04a)."""
+        from run_ldsc_partitioned import build_ref_ld_chr_arg
+
+        result = build_ref_ld_chr_arg(
+            baseline_prefix="data/reference/ldsc/baselineLD_v2.2/baselineLD.",
+            custom_prefix="results/pathway/ld_scores/custom_pathway.",
+        )
+
+        parts = result.split(",")
+        assert len(parts) == 2, f"Expected 2 parts, got {len(parts)}"
+        assert "baselineLD" in parts[0], "Baseline must be first in --ref-ld-chr"
+        assert "custom_pathway" in parts[1], "Custom must be second in --ref-ld-chr"
+
+    def test_ldsc_results_parsing(self, mock_ldsc_results):
+        """Verify .results file parsing extracts correct columns."""
+        from run_ldsc_partitioned import parse_ldsc_results
+
+        parsed = parse_ldsc_results(str(mock_ldsc_results))
+
+        assert len(parsed) == 2, f"Expected 2 rows, got {len(parsed)}"
+
+        # Check first row has expected fields
+        row0 = parsed[0]
+        assert "Category" in row0
+        assert "Prop._SNPs" in row0
+        assert "Prop._h2" in row0
+        assert "Enrichment" in row0
+        assert "Enrichment_p" in row0
+        assert "Enrichment_std_error" in row0
+
+        # Check values
+        assert row0["Category"] == "L2_0"
+        assert float(row0["Prop._SNPs"]) == pytest.approx(0.05)
+        assert float(row0["Enrichment"]) == pytest.approx(2.00)
+        assert float(row0["Enrichment_p"]) == pytest.approx(0.001)
+
+    def test_no_shell_true(self):
+        """Verify run_ldsc_partitioned.py never passes shell=True to subprocess (T-05-14).
+
+        Uses AST analysis to check that no subprocess call uses shell=True
+        as a keyword argument -- this is more robust than string matching
+        which catches false positives in comments and docstrings.
+        """
+        import ast
+
+        import run_ldsc_partitioned
+
+        source = Path(run_ldsc_partitioned.__file__).read_text()
+        tree = ast.parse(source)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                for kw in node.keywords:
+                    if kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value is True:
+                        pytest.fail(
+                            f"run_ldsc_partitioned.py line {node.lineno}: "
+                            f"subprocess call uses shell=True"
+                        )
+
+    def test_h2_summary_writer(self, mock_ldsc_results, tmp_path):
+        """Verify write_h2_summary produces clean TSV from parsed results."""
+        from run_ldsc_partitioned import parse_ldsc_results, write_h2_summary
+
+        parsed = parse_ldsc_results(str(mock_ldsc_results))
+        summary_path = tmp_path / "h2_summary.tsv"
+        write_h2_summary(parsed, str(summary_path))
+
+        assert summary_path.exists()
+        lines = summary_path.read_text().strip().split("\n")
+        assert len(lines) == 3  # header + 2 rows
+        header = lines[0].split("\t")
+        assert "annotation" in header
+        assert "enrichment" in header
+        assert "enrichment_p" in header

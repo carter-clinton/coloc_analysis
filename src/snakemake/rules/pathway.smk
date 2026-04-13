@@ -520,40 +520,419 @@ rule magma_fdr:
 rule ldsc_munge:
     """LDSC sumstats munging: convert harmonized sumstats to LDSC format.
 
-    Placeholder -- implementation in Plan 05-03.
+    Per trait x ancestry. Calls run_ldsc_partitioned.py --step munge.
+    Pre-formats via munge_sumstats_ldsc.py then runs official LDSC munging
+    with HapMap3 merge. Post-munge validation warns if < 500K SNPs (Pitfall 2).
     """
     input:
-        sumstats=os.path.join(config["paths"]["harmonized_sumstats"], "{trait}.{ancestry}.tsv.bgz"),
+        sumstats=os.path.join(config["paths"]["harmonized_sumstats"], "{trait}_{ancestry}.tsv"),
+        hapmap3=PATHWAY_CFG.get("ldsc_hapmap3", "data/reference/ldsc/w_hm3.snplist"),
     output:
-        munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_munged", "{trait}.{ancestry}.sumstats.gz"),
-    run:
-        pass
+        munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
+    params:
+        out_prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", f"{wc.trait}_{wc.ancestry}"
+        ),
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_partitioned.py"),
+        ldsc_dir="tools/ldsc",
+        trait=lambda wc: wc.trait,
+    conda:
+        LDSC_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} --step munge \
+            --ldsc-dir {params.ldsc_dir} \
+            --sumstats {input.sumstats} \
+            --hapmap3 {input.hapmap3} \
+            --sample-size 500000 \
+            --trait {params.trait} \
+            --out {params.out_prefix}
+        """
+
+
+rule ldsc_build_custom_annotations:
+    """Build custom pathway annotations for LDSC partitioned h2.
+
+    Runs once per genome build. Creates per-chromosome binary annotation files
+    from custom cardiometabolic gene sets + negative controls using 100 kb
+    gene windows (D-04c). Produces 22 .annot.gz files.
+    """
+    input:
+        gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
+        custom_gmt=PATHWAY_CFG.get("custom_pathway_gmt", "config/pathway_sets/custom_cardiometabolic.gmt"),
+        negctrl_gmt=PATHWAY_CFG.get("negative_control_gmt", "config/pathway_sets/negative_controls.gmt"),
+    output:
+        annot=expand(
+            os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway.{chr}.annot.gz"),
+            chr=range(1, 23),
+        ),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "build_ldsc_annot.py"),
+        bim_prefix=os.path.join(
+            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_Phase3_plinkfiles"),
+            "1000G.EUR.QC",
+        ),
+        out_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway"),
+        window_kb=PATHWAY_CFG.get("snp_gene_window_kb", 100),
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} \
+            --bim-prefix {params.bim_prefix} \
+            --gene-loc {input.gene_loc} \
+            --gmt-files {input.custom_gmt} {input.negctrl_gmt} \
+            --window-kb {params.window_kb} \
+            --out-prefix {params.out_prefix}
+        """
+
+
+rule ldsc_compute_custom_ld_scores:
+    """Compute LD scores for custom pathway annotations.
+
+    Per chromosome. Input: custom annotations from ldsc_build_custom_annotations,
+    1000G Phase 3 plink files. Output: per-chromosome .l2.ldscore.gz files.
+    T-05-15: mem_mb=8000 for baseline LD computation.
+    """
+    input:
+        annot=os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway.{chr}.annot.gz"
+        ),
+        hapmap3=PATHWAY_CFG.get("ldsc_hapmap3", "data/reference/ldsc/w_hm3.snplist"),
+    output:
+        ldscore=os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway.{chr}.l2.ldscore.gz"
+        ),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_partitioned.py"),
+        ldsc_dir="tools/ldsc",
+        annot_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway"),
+        bfile_prefix=os.path.join(
+            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_Phase3_plinkfiles"),
+            "1000G.EUR.QC",
+        ),
+        out_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway"),
+        chrom=lambda wc: wc.chr,
+    conda:
+        LDSC_ENV
+    resources:
+        mem_mb=8000,
+    shell:
+        """
+        python {params.script} --step compute-ld-scores \
+            --ldsc-dir {params.ldsc_dir} \
+            --annot-prefix {params.annot_prefix} \
+            --bfile-prefix {params.bfile_prefix} \
+            --out-prefix {params.out_prefix} \
+            --hapmap3 {input.hapmap3} \
+            --chromosomes {params.chrom}
+        """
 
 
 rule ldsc_partitioned_h2:
-    """LDSC partitioned heritability with custom + baseline annotations.
+    """LDSC partitioned heritability with baseline v2.2 + custom annotations.
 
-    Placeholder -- implementation in Plan 05-03.
+    Per trait x ancestry. Always includes --overlap-annot flag (anti-pattern).
+    Baseline v2.2 always first in --ref-ld-chr (D-04a).
+    T-05-15: mem_mb=8000 for baseline model.
     """
     input:
-        munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_munged", "{trait}.{ancestry}.sumstats.gz"),
+        munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
+        custom_ld=expand(
+            os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway.{chr}.l2.ldscore.gz"),
+            chr=range(1, 23),
+        ),
     output:
-        results=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_h2", "{trait}.{ancestry}.results"),
-    run:
-        pass
+        results=os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_partitioned", "{trait}_{ancestry}_pathway_h2.results"
+        ),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_partitioned.py"),
+        ldsc_dir="tools/ldsc",
+        baseline_prefix=os.path.join(
+            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
+        ),
+        custom_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway."),
+        w_ld_chr=os.path.join(
+            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
+        ),
+        frqfile_chr=os.path.join(
+            PATHWAY_CFG.get("ldsc_frq", "data/reference/ldsc/1000G_Phase3_frq"), "1000G.EUR.QC."
+        ),
+        out_prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_partitioned", f"{wc.trait}_{wc.ancestry}_pathway_h2"
+        ),
+    conda:
+        LDSC_ENV
+    resources:
+        mem_mb=8000,
+    shell:
+        """
+        python {params.script} --step h2 \
+            --ldsc-dir {params.ldsc_dir} \
+            --sumstats {input.munged} \
+            --ref-ld-chr {params.baseline_prefix},{params.custom_prefix} \
+            --w-ld-chr {params.w_ld_chr} \
+            --frqfile-chr {params.frqfile_chr} \
+            --out {params.out_prefix}
+        """
 
 
-rule ldsc_seg:
-    """LDSC-SEG tissue-specific enrichment (Finucane 2018).
+rule ldsc_aggregate_h2:
+    """Aggregate all per-trait LDSC partitioned h2 .results into a summary TSV.
 
-    Placeholder -- implementation in Plan 05-03.
+    Columns: trait, ancestry, annotation, prop_snps, prop_h2, enrichment,
+    enrichment_p, enrichment_se.
     """
     input:
-        munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_munged", "{trait}.{ancestry}.sumstats.gz"),
+        results=expand(
+            os.path.join(
+                PATHWAY_RESULTS_DIR, "ldsc_partitioned", "{trait}_{ancestry}_pathway_h2.results"
+            ),
+            zip,
+            trait=[t for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+            ancestry=[a for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+        ),
     output:
-        results=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}.{ancestry}.cell_type_results.txt"),
+        summary=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "h2_summary.tsv"),
+    resources:
+        mem_mb=2000,
     run:
-        pass
+        import csv
+
+        header = [
+            "trait", "ancestry", "annotation", "prop_snps", "prop_h2",
+            "enrichment", "enrichment_p", "enrichment_se",
+        ]
+
+        rows = []
+        for results_path in input.results:
+            # Extract trait_ancestry from filename
+            basename = os.path.basename(results_path)
+            # Format: {trait}_{ancestry}_pathway_h2.results
+            parts = basename.replace("_pathway_h2.results", "").rsplit("_", 1)
+            if len(parts) == 2:
+                trait, ancestry = parts
+            else:
+                trait, ancestry = basename, "unknown"
+
+            if not os.path.exists(results_path):
+                continue
+
+            with open(results_path) as f:
+                reader = csv.DictReader(f, delimiter="\t")
+                for row in reader:
+                    rows.append({
+                        "trait": trait,
+                        "ancestry": ancestry,
+                        "annotation": row.get("Category", ""),
+                        "prop_snps": row.get("Prop._SNPs", ""),
+                        "prop_h2": row.get("Prop._h2", ""),
+                        "enrichment": row.get("Enrichment", ""),
+                        "enrichment_p": row.get("Enrichment_p", ""),
+                        "enrichment_se": row.get("Enrichment_std_error", ""),
+                    })
+
+        with open(output.summary, "w") as f:
+            writer = csv.DictWriter(f, fieldnames=header, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+
+        print(f"Aggregated {len(rows)} h2 results from {len(input.results)} files")
+
+
+rule ldsc_seg_gene_expr:
+    """LDSC-SEG tissue-specific enrichment: GTEx 53-tissue gene expression.
+
+    Per trait x ancestry. Uses pre-built Multi_tissue_gene_expr.ldcts from
+    Finucane 2018. Calls run_ldsc_seg.py with --h2-cts (NOT --h2).
+    """
+    input:
+        munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
+    output:
+        results=os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_gene_expr.cell_type_results.txt"
+        ),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_seg.py"),
+        ldsc_dir="tools/ldsc",
+        ref_ld_chr=os.path.join(
+            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
+        ),
+        w_ld_chr=os.path.join(
+            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
+        ),
+        ldcts=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
+            "Multi_tissue_gene_expr.ldcts",
+        ),
+        out_prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_seg", f"{wc.trait}_{wc.ancestry}_gene_expr"
+        ),
+    conda:
+        LDSC_ENV
+    resources:
+        mem_mb=8000,
+    shell:
+        """
+        python {params.script} \
+            --ldsc-dir {params.ldsc_dir} \
+            --sumstats {input.munged} \
+            --ref-ld-chr {params.ref_ld_chr} \
+            --w-ld-chr {params.w_ld_chr} \
+            --ldcts-file {params.ldcts} \
+            --out {params.out_prefix}
+        """
+
+
+rule ldsc_seg_chromatin:
+    """LDSC-SEG tissue-specific enrichment: Roadmap Epigenomics chromatin.
+
+    Per trait x ancestry. Uses pre-built Multi_tissue_chromatin.ldcts.
+    """
+    input:
+        munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
+    output:
+        results=os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_chromatin.cell_type_results.txt"
+        ),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_seg.py"),
+        ldsc_dir="tools/ldsc",
+        ref_ld_chr=os.path.join(
+            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
+        ),
+        w_ld_chr=os.path.join(
+            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
+        ),
+        ldcts=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_chromatin", "data/reference/ldsc_seg/Multi_tissue_chromatin"),
+            "Multi_tissue_chromatin.ldcts",
+        ),
+        out_prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR, "ldsc_seg", f"{wc.trait}_{wc.ancestry}_chromatin"
+        ),
+    conda:
+        LDSC_ENV
+    resources:
+        mem_mb=8000,
+    shell:
+        """
+        python {params.script} \
+            --ldsc-dir {params.ldsc_dir} \
+            --sumstats {input.munged} \
+            --ref-ld-chr {params.ref_ld_chr} \
+            --w-ld-chr {params.w_ld_chr} \
+            --ldcts-file {params.ldcts} \
+            --out {params.out_prefix}
+        """
+
+
+rule ldsc_seg_shared_tissues:
+    """Aggregate LDSC-SEG results and identify tissues shared between trait pairs.
+
+    Input: all gene_expr and chromatin .cell_type_results.txt files.
+    Output: shared tissue summary per D-05b.
+    """
+    input:
+        gene_expr=expand(
+            os.path.join(
+                PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_gene_expr.cell_type_results.txt"
+            ),
+            zip,
+            trait=[t for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+            ancestry=[a for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+        ),
+        chromatin=expand(
+            os.path.join(
+                PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_chromatin.cell_type_results.txt"
+            ),
+            zip,
+            trait=[t for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+            ancestry=[a for t in config.get("traits", []) for a in config.get("trait_ancestries", {}).get(t, ["EUR"])],
+        ),
+    output:
+        summary=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_seg", "shared_tissue_summary.tsv"),
+    resources:
+        mem_mb=4000,
+    run:
+        import sys as _sys
+        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        from run_ldsc_seg import identify_shared_tissues, parse_seg_results
+
+        # Collect all results
+        all_seg = {}
+        for f in input.gene_expr + input.chromatin:
+            basename = os.path.basename(f)
+            # Extract trait from filename
+            parts = basename.replace(".cell_type_results.txt", "").rsplit("_", 2)
+            if len(parts) >= 2:
+                trait = parts[0]
+                if trait not in all_seg:
+                    all_seg[trait] = []
+                parsed = parse_seg_results(f)
+                all_seg[trait].extend(parsed)
+
+        # Define trait pairs for shared tissue analysis (D-05b)
+        trait_pairs = [
+            ("bmi", "t2d"),
+            ("hypertension", "stroke"),
+            ("bmi", "hypertension"),
+            ("t2d", "stroke"),
+            ("bmi", "asthma"),
+        ]
+
+        shared = identify_shared_tissues(all_seg, trait_pairs)
+
+        with open(output.summary, "w") as fout:
+            fout.write("trait1\ttrait2\tshared_tissue\tp_trait1\tp_trait2\n")
+            for row in shared:
+                fout.write(
+                    f"{row['trait1']}\t{row['trait2']}\t{row['shared_tissue']}\t"
+                    f"{row['p_trait1']}\t{row['p_trait2']}\n"
+                )
+
+        print(f"Found {len(shared)} shared tissue enrichments across {len(trait_pairs)} pairs")
+
+
+rule fix_ldcts_paths:
+    """Fix downloaded .ldcts files to use local annotation paths.
+
+    One-time fix: rewrites absolute paths from Broad download to local
+    relative paths. Validates each referenced LD score file exists.
+    T-05-13: validates and rewrites .ldcts paths.
+    """
+    input:
+        gene_expr_ldcts=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
+            "Multi_tissue_gene_expr.ldcts",
+        ),
+        chromatin_ldcts=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_chromatin", "data/reference/ldsc_seg/Multi_tissue_chromatin"),
+            "Multi_tissue_chromatin.ldcts",
+        ),
+    output:
+        gene_expr_fixed=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
+            "Multi_tissue_gene_expr_fixed.ldcts",
+        ),
+        chromatin_fixed=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_chromatin", "data/reference/ldsc_seg/Multi_tissue_chromatin"),
+            "Multi_tissue_chromatin_fixed.ldcts",
+        ),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_seg.py"),
+    resources:
+        mem_mb=1000,
+    run:
+        import sys as _sys
+        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        from run_ldsc_seg import fix_ldcts_paths
+
+        fix_ldcts_paths(input.gene_expr_ldcts, output.gene_expr_fixed)
+        fix_ldcts_paths(input.chromatin_ldcts, output.chromatin_fixed)
 
 
 rule hess_local_rhog:
