@@ -569,18 +569,172 @@ rule hess_local_rhog:
         pass
 
 
+rule build_gprofiler_background:
+    """Build discoverability-matched background gene list per D-03a (Reimand 2019).
+
+    Input: harmonized sumstats for all 5 traits (EUR), NCBI37.3.gene.loc.
+    Output: background_genes.txt (one gene symbol per line).
+    Uses 500 kb window around each GWS SNP (P < 5e-8), union across traits.
+    """
+    input:
+        gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
+        sumstats=expand(
+            os.path.join(config["paths"]["harmonized_sumstats"], "{trait}_EUR.tsv"),
+            trait=config.get("traits", []),
+        ),
+    output:
+        bg_genes=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "background_genes.txt"),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "build_gprofiler_bg.py"),
+        sumstats_dir=config["paths"]["harmonized_sumstats"],
+        traits=",".join(config.get("traits", [])),
+        window_kb=PATHWAY_CFG.get("gprofiler_bg_window_kb", 500),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} \
+            --sumstats-dir {params.sumstats_dir} \
+            --traits {params.traits} \
+            --ancestry EUR \
+            --gene-loc {input.gene_loc} \
+            --window-kb {params.window_kb} \
+            --p-threshold 5e-8 \
+            --out {output.bg_genes}
+        """
+
+
+rule extract_tier_ab_genes:
+    """Extract Tier A + Tier B gene symbols from Phase 2 tier assignments.
+
+    Input: tier_assignments.tsv from Phase 2.
+    Output: tier_ab_genes.txt (unique gene symbols with PP.H4 >= 0.5 per Tier B).
+    Tier A: gwas PP.H4 >= 0.8 AND qtl PP.H4 >= 0.8
+    Tier B: gwas PP.H4 >= 0.8 AND qtl PP.H4 >= 0.5
+    """
+    input:
+        tiers=os.path.join(config["paths"]["results_root"], "qtl_coloc", "tier_assignments.tsv"),
+    output:
+        gene_list=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "tier_ab_genes.txt"),
+    resources:
+        mem_mb=2000,
+    run:
+        import pandas as pd
+
+        df = pd.read_csv(input.tiers, sep="\t")
+
+        # Filter to Tier A + Tier B entries
+        tier_ab = df[df["tier"].isin(["Tier A", "Tier B"])]
+
+        # Extract unique gene symbols
+        if "gene_symbol" in tier_ab.columns:
+            genes = sorted(tier_ab["gene_symbol"].dropna().unique())
+        elif "gene" in tier_ab.columns:
+            genes = sorted(tier_ab["gene"].dropna().unique())
+        else:
+            raise ValueError(
+                f"No gene column found in tier assignments. "
+                f"Available columns: {list(df.columns)}"
+            )
+
+        with open(output.gene_list, "w") as f:
+            for gene in genes:
+                f.write(f"{gene}\n")
+
+        print(f"Extracted {len(genes)} Tier A+B genes")
+
+
 rule gprofiler_enrichment:
     """g:Profiler functional enrichment of coloc-nominated genes.
 
-    Uses gprofiler2 R package with evcodes=TRUE per D-03b.
-    Placeholder -- implementation in Plan 05-04.
+    Uses run_gprofiler.py with REST API, custom background, and
+    evcodes=TRUE per D-03b to exclude electronic GO annotations.
+    Sources: GO:BP, KEGG, REAC.
     """
     input:
-        gene_list=os.path.join(PATHWAY_RESULTS_DIR, "gene_lists", "{trait}.{ancestry}.genes.txt"),
+        gene_list=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "tier_ab_genes.txt"),
+        bg_genes=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "background_genes.txt"),
     output:
-        results=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "{trait}.{ancestry}.enrichment.tsv"),
+        results=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "enrichment_results.tsv"),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_gprofiler.py"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+    shell:
+        """
+        python {params.script} \
+            --gene-list {input.gene_list} \
+            --background {input.bg_genes} \
+            --sources GO:BP,KEGG,REAC \
+            --exclude-iea \
+            --out {output.results}
+        """
+
+
+rule gprofiler_negative_controls:
+    """Run g:Profiler enrichment on each negative control gene set separately.
+
+    Tests that negative control gene sets (HLA immune, cosmetic, blood group)
+    produce q > 0.05 for cardiometabolic pathways (REQ-7 / D-06b).
+    Concatenates results for all negative control sets.
+    """
+    input:
+        negctrl_gmt=PATHWAY_CFG.get(
+            "negative_control_gmt", "config/pathway_sets/negative_controls.gmt"
+        ),
+        bg_genes=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "background_genes.txt"),
+    output:
+        results=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "neg_ctrl_enrichment.tsv"),
+    params:
+        script=os.path.join(workflow.basedir, "..", "..", "python", "run_gprofiler.py"),
+        outdir=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler"),
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
     run:
-        pass
+        import sys
+        sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        from build_magma_geneset import parse_gmt
+        from run_gprofiler import run_enrichment_api, _write_results_tsv, _read_gene_list
+
+        bg_genes = _read_gene_list(input.bg_genes)
+        neg_ctrl_sets = parse_gmt(input.negctrl_gmt)
+
+        all_results = []
+        for set_name, _desc, gene_list in neg_ctrl_sets:
+            print(f"Running g:Profiler on negative control: {set_name}")
+            try:
+                results = run_enrichment_api(
+                    query_genes=gene_list,
+                    background_genes=bg_genes,
+                    sources=["GO:BP", "KEGG", "REAC"],
+                    exclude_iea=True,
+                )
+                for r in results:
+                    r["neg_ctrl_set"] = set_name
+                    r["is_negative_control"] = "TRUE"
+                all_results.extend(results)
+            except Exception as e:
+                print(f"Warning: {set_name} enrichment failed: {e}")
+
+        # Write concatenated results
+        columns = [
+            "source", "term_id", "term_name", "p_value", "q_value",
+            "intersection_size", "query_size", "term_size",
+            "effective_domain_size", "genes", "neg_ctrl_set", "is_negative_control",
+        ]
+        with open(output.results, "w") as fout:
+            fout.write("\t".join(columns) + "\n")
+            for row in all_results:
+                values = [str(row.get(col, "")) for col in columns]
+                fout.write("\t".join(values) + "\n")
+
+        print(f"Wrote {len(all_results)} neg ctrl enrichment results")
 
 
 rule permutation_null:
