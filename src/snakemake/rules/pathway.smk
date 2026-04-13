@@ -1225,8 +1225,10 @@ rule hess_negative_controls:
     """Run HESS compare on negative control gene sets (REQ-7 / D-06b).
 
     For each trait pair x ancestry, compares local covariance at negative
-    control loci (HLA, cosmetic, blood group) vs genome-wide average.
-    Negative controls should produce non-significant enrichment.
+    control loci (HLA, cosmetic, blood group) vs genome-wide average. Maps
+    each GMT row to genomic coordinates via NCBI37.3.gene.loc, writes a
+    temporary regions CSV per set, and invokes compare_pleiotropic_vs_background.
+    Negative controls should produce non-significant enrichment by design.
     Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
     """
     input:
@@ -1238,27 +1240,149 @@ rule hess_negative_controls:
         negctrl_gmt=PATHWAY_CFG.get(
             "negative_control_gmt", "config/pathway_sets/negative_controls.gmt"
         ),
+        gene_loc=PATHWAY_CFG.get(
+            "magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"
+        ),
     output:
         results=os.path.join(
             PATHWAY_RESULTS_DIR,
             "hess",
             "{trait1}_{trait2}_{ancestry}_neg_ctrl_compare.tsv",
         ),
+    params:
+        window_kb=PATHWAY_CFG.get("snp_gene_window_kb", 100),
     resources:
         mem_mb=2000,
     run:
-        # Negative control comparison uses the same framework but
-        # checks that control loci do NOT show significant enrichment
+        # WR-06 fix: implement real negative control comparison. Previously
+        # only a placeholder header was written. For each negative control
+        # gene set in the GMT file, map symbols to genomic coordinates via
+        # the gene.loc reference, write a temporary regions CSV, and call
+        # compare_pleiotropic_vs_background to test whether local covariance
+        # at those loci differs from genome-wide. Expected result: NOT
+        # significant (p >= 0.05) for all negative control sets.
+        import csv as _csv
         import sys as _sys
+        import tempfile as _tempfile
         _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
         from run_hess import compare_pleiotropic_vs_background
 
-        # For negative controls, we use the curated regions file but
-        # the expectation is non-significance (logged in output)
-        with open(output.results, "w") as f:
-            f.write("neg_ctrl_set\tmean_pleio\tmean_bg\tratio\tz_score\tp_value\n")
-            f.write("# Negative control comparison placeholder\n")
-            f.write("# Full implementation uses GMT gene sets mapped to genomic coordinates\n")
+        # Parse gene.loc into a symbol -> (chr, start, end) map
+        gene_coords = {}
+        with open(input.gene_loc) as gf:
+            for line in gf:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split()
+                if len(parts) < 6:
+                    continue
+                _entrez, chrom, start, end, _strand, symbol = parts[:6]
+                try:
+                    gene_coords[symbol] = (
+                        str(chrom).replace("chr", ""),
+                        int(start),
+                        int(end),
+                    )
+                except ValueError:
+                    continue
+
+        window_bp = int(params.window_kb) * 1000
+
+        header = ["neg_ctrl_set", "n_genes_mapped", "mean_pleio", "mean_bg",
+                  "ratio", "z_score", "p_value", "significant_at_0.05"]
+        rows = []
+
+        with open(input.negctrl_gmt) as gmt_fh:
+            for gmt_line in gmt_fh:
+                gmt_line = gmt_line.strip()
+                if not gmt_line:
+                    continue
+                fields = gmt_line.split("\t")
+                if len(fields) < 3:
+                    continue
+                set_name, _desc, *genes = fields
+
+                # Map genes to coordinates, applying +/- window_kb
+                regions = []
+                for sym in genes:
+                    if sym in gene_coords:
+                        chrom, gstart, gend = gene_coords[sym]
+                        regions.append({
+                            "region_id": f"{set_name}_{sym}",
+                            "chr": chrom,
+                            "start": max(0, gstart - window_bp),
+                            "end": gend + window_bp,
+                        })
+
+                if not regions:
+                    rows.append({
+                        "neg_ctrl_set": set_name,
+                        "n_genes_mapped": 0,
+                        "mean_pleio": "NA",
+                        "mean_bg": "NA",
+                        "ratio": "NA",
+                        "z_score": "NA",
+                        "p_value": "NA",
+                        "significant_at_0.05": "NA",
+                    })
+                    continue
+
+                # Write temporary regions CSV for compare_pleiotropic_vs_background
+                with _tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".csv", delete=False
+                ) as tmp:
+                    writer = _csv.DictWriter(
+                        tmp, fieldnames=["region_id", "chr", "start", "end"]
+                    )
+                    writer.writeheader()
+                    writer.writerows(regions)
+                    tmp_path = tmp.name
+
+                try:
+                    result = compare_pleiotropic_vs_background(
+                        combined_path=input.combined,
+                        regions_path=tmp_path,
+                    )
+                    p_val = result.get("p_value", float("nan"))
+                    rows.append({
+                        "neg_ctrl_set": set_name,
+                        "n_genes_mapped": len(regions),
+                        "mean_pleio": result.get("mean_pleio", "NA"),
+                        "mean_bg": result.get("mean_bg", "NA"),
+                        "ratio": result.get("ratio", "NA"),
+                        "z_score": result.get("z_score", "NA"),
+                        "p_value": p_val,
+                        "significant_at_0.05": (
+                            "yes" if isinstance(p_val, (int, float))
+                            and p_val == p_val  # NaN check
+                            and p_val < 0.05
+                            else "no"
+                        ),
+                    })
+                except (ValueError, FileNotFoundError) as e:
+                    # No overlapping partitions is expected behaviour for
+                    # small negative-control sets; record NA and continue.
+                    rows.append({
+                        "neg_ctrl_set": set_name,
+                        "n_genes_mapped": len(regions),
+                        "mean_pleio": "NA",
+                        "mean_bg": "NA",
+                        "ratio": "NA",
+                        "z_score": "NA",
+                        "p_value": "NA",
+                        "significant_at_0.05": f"NA (error: {e})",
+                    })
+                finally:
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
+
+        with open(output.results, "w") as out_fh:
+            writer = _csv.DictWriter(out_fh, fieldnames=header, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
 
 
 rule hess_aggregate:
