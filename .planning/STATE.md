@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md (pathway infrastructure). Plan 2 of 5 next.
-last_updated: "2026-04-13T20:32:44.875Z"
+stopped_at: "Completed 05-02-PLAN.md (MAGMA + g:Profiler). Plan 3 of 5 next."
+last_updated: "2026-04-13T20:47:15.767Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 20
-  completed_plans: 16
-  percent: 80
+  completed_plans: 17
+  percent: 85
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 05 (pathway-partitioned-heritability) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-13
 
@@ -66,6 +66,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 02 P04 | 6min | 1 tasks | 4 files |
 | Phase 02 P05 | 10min | 3 tasks | 11 files |
 | Phase 05 P01 | 14min | 3 tasks | 22 files |
+| Phase 05 P02 | 11min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,10 @@ Recent decisions affecting current work:
 - [Phase 05]: sumstats_utils.py shared module prevents effective-N reimplementation across methods
 - [Phase 05]: Placeholder analysis rules use pass in run block for Snakemake compatibility
 - [Phase 05]: Phase 5 tests define PROJECT_ROOT locally to avoid missing tests/__init__.py dependency
+- [Phase 05]: requests imported at module level with try/except for test mockability
+- [Phase 05]: MAGMA annotate runs once per genome build (shared across traits)
+- [Phase 05]: FDR correction via statsmodels multipletests BH across all gene sets jointly per trait (D-01a/D-01b)
+- [Phase 05]: g:Profiler REST API default + R fallback; no_iea=True for IEA exclusion (D-03b)
 
 ### Pending Todos
 
@@ -124,8 +129,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:32:44.870Z
-Stopped at: Completed 05-01-PLAN.md (pathway infrastructure). Plan 2 of 5 next.
+Last session: 2026-04-13T20:47:15.723Z
+Stopped at: Completed 05-02-PLAN.md (MAGMA + g:Profiler). Plan 3 of 5 next.
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
