@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-04-13T00:55:49.021Z"
+status: verifying
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-04-13T01:10:39.900Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 12
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 15
-  completed_plans: 13
-  percent: 87
+  completed_plans: 14
+  percent: 93
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 
 Phase: 02 (3-way-qtl-colocalization) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-13
 
 Progress: ██░░░░░░░░ 17%
@@ -64,6 +64,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 02 P02 | 7min | 2 tasks | 8 files |
 | Phase 02 P03 | 9min | 2 tasks | 9 files |
 | Phase 02 P04 | 6min | 1 tasks | 4 files |
+| Phase 02 P05 | 10min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,9 @@ Recent decisions affecting current work:
 - [Phase 02]: sQTL reuses harmonize_eqtl core logic (_read_eqtl_file, write_harmonized); pQTL gene_id resolved via protein-to-Ensembl lookup table for reproducibility
 - [Phase 02]: UKB-PPP auth via SYNAPSE_AUTH_TOKEN env var only; .synapseConfig in .gitignore; Synapse + S3 unsigned fallback download pattern
 - [Phase 02]: OneK1K eQTL Catalogue format reuses harmonize_eqtl() directly (identical column schema); cell_type maps to tissue column; dual-source download with QTS000038 primary / onek1k.org S3 fallback
+- [Phase 02]: assign_tier() is a pure function of (gwas_pph4, qtl_pph4, threshold) enforcing QTL-source-agnostic design (D-02c)
+- [Phase 02]: Negative control coloc reuses run_qtl_coloc.R via manifest-based dispatch (same format as qtl_coloc_manifest.tsv)
+- [Phase 02]: L2G concordance uses fuzzy substring matching on studyLocusId; disagreements annotated as findings per D-05b
 
 ### Pending Todos
 
@@ -115,8 +119,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T00:55:49.017Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-04-13T01:10:39.896Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
