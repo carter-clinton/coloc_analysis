@@ -200,6 +200,20 @@ rule download_ldsc_baseline:
         r"""
         mkdir -p {params.outdir}
 
+        # Idempotency guard (D-02, D-03): if references are already staged on disk,
+        # touch the flag + snplist outputs and exit cleanly. Prevents re-fetching
+        # ~5 GB from Broad S3 + GCS requester-pays (the latter fails without auth)
+        # on systems where Carter has manually staged the data from Zenodo.
+        if [ -f {params.outdir}/baselineLD.22.l2.M ] && \
+           [ -d {params.outdir}/1000G_EUR_Phase3_plink ] && \
+           [ -d {params.outdir}/1000G_Phase3_frq ] && \
+           [ -d {params.outdir}/1000G_Phase3_weights_hm3_no_MHC ] && \
+           [ -f {output.hapmap3} ]; then
+            echo "download_ldsc_baseline: detected pre-staged LDSC reference data on disk; skipping download" >&2
+            touch {output.baseline_done}
+            exit 0
+        fi
+
         # Baseline LD scores v2.2
         wget --max-redirect=3 --timeout=300 -q -O {params.outdir}/baselineLD_v2.2.tgz \
             {params.baseline_url}
