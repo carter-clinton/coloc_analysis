@@ -150,6 +150,19 @@ rule download_magma_ref:
         r"""
         mkdir -p {params.outdir}
 
+        # Idempotency guard (qsk D-02, D-03): skip if MAGMA reference data already staged.
+        # CNCR (ctg.cncr.nl) uses a JavaScript gate that blocks curl/wget for aux_files + ref_data.
+        # When Carter has manually downloaded + scp'd these files, the rule must detect and
+        # short-circuit; otherwise it hangs on the JS-gated URLs.
+        if [ -f {params.outdir}/NCBI37.3.gene.loc ] && \
+           [ -f {params.outdir}/g1000_eur.bim ] && \
+           [ -f {params.outdir}/g1000_eur.fam ] && \
+           [ -f {params.outdir}/dbsnp151.synonyms ]; then
+            echo "download_magma_ref: detected pre-staged MAGMA reference data on disk; skipping download" >&2
+            touch {output.gene_loc} {output.ref_prefix} {output.synonyms}
+            exit 0
+        fi
+
         # Gene location file
         wget --max-redirect=3 --timeout=300 -q -O {params.outdir}/NCBI37.3.gene.loc.gz \
             {params.gene_loc_url}
@@ -269,6 +282,18 @@ rule download_ldsc_seg:
         r"""
         mkdir -p {params.outdir}
 
+        # Idempotency guard (qsk D-02, D-03): skip if LDSC-SEG data already staged.
+        # Upstream URL is GCS requester-pays (fails without GCP auth). Carter's manual
+        # staging landed at data/reference/ldsc/Multi_tissue_*; symlinks under ldsc_seg/
+        # are created out-of-band (see 260414-qsk plan Change A). The [ -d ] checks
+        # resolve through those symlinks.
+        if [ -d {params.outdir}/Multi_tissue_gene_expr_1000Gv3_ldscores ] && \
+           [ -d {params.outdir}/Multi_tissue_chromatin_1000Gv3_ldscores ]; then
+            echo "download_ldsc_seg: detected pre-staged LDSC-SEG data (via symlink) on disk; skipping download" >&2
+            touch {output.gene_expr_done} {output.chromatin_done}
+            exit 0
+        fi
+
         # Multi-tissue gene expression LD scores
         wget --max-redirect=3 --timeout=300 -q -O {params.outdir}/Multi_tissue_gene_expr.tgz \
             {params.gene_expr_url}
@@ -365,6 +390,19 @@ rule download_hess_panel:
     shell:
         r"""
         mkdir -p {params.outdir}
+
+        # Idempotency guard (qsk D-02, D-03): skip if HESS panel + partition data already staged.
+        # UCLA Box "shared/static/..." links are ephemeral (expire or break without notice).
+        # Carter staged LD panel as a symlink farm (data/reference/hess/ld_panel/EUR/chr{1..22}.{bed,bim,fam})
+        # pointing into ldsc/1000G_EUR_Phase3_plink, and partition files from Bitbucket ldetect-data.
+        if [ -f {params.outdir}/ld_panel/EUR/chr22.bim ] && \
+           [ -f {params.outdir}/partition/EUR_fourier_ls-all.bed ] && \
+           [ -f {params.outdir}/partition/AFR_fourier_ls-all.bed ] && \
+           [ -f {params.outdir}/partition/EAS_fourier_ls-all.bed ]; then
+            echo "download_hess_panel: detected pre-staged HESS panel + partition data on disk; skipping download" >&2
+            touch {output.ld_done} {output.partition_done}
+            exit 0
+        fi
 
         # LD reference panel
         wget --max-redirect=5 --timeout=600 -q -O {params.outdir}/hess_ld_panel.tar.gz \
