@@ -139,7 +139,14 @@ Plans:
   1. At least 2 independent cohort replications completed (from FinnGen, GBMI, MVP, AoU, BBJ)
   2. Replication-adjusted effect sizes calculated
   3. Hold-out replication tables generated for supplementary material
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Wave 1: Infrastructure — envs (GCTA, r_coloc extended), config/replication_cohorts.yaml (4 cohorts × 5 traits), MVP phs001672 FTP enumeration, replication.smk skeleton (20+ rules), tests/phase9/ scaffolding (9 files)
+- [ ] 09-02-PLAN.md — Wave 2: Ingest + harmonize 4 cohorts — FinnGen R12 + GBMI + MVP + BBJ harmonizers with canonical 10-column schema + GRCh38→37 liftover + palindromic SNP exclusion
+- [ ] 09-03-PLAN.md — Wave 3: Replication manifest (signal × cohort crossmap per D-02/D-05) + run_replication_susie.R (reuses Phase 1 susie_policy.yaml) + run_fiqt.R (winnerscurse::FDR_IQT)
+- [ ] 09-04-PLAN.md — Wave 4: coloc.susie re-estimation with PP.H4 sweep {0.5,0.7,0.8,0.9} + per-cohort Bonferroni effect-size test + same-direction + post-hoc power + IVW meta (metafor)
+- [ ] 09-05-PLAN.md — Wave 5: COJO sensitivity (1000G EUR/AFR with N<4000 caveat) + master_table.tsv + cross_ancestry_generalization_tier_ab.tsv (BBJ Tier A+B only, D-05c) + replication_holdout_supplementary.tsv + methods fragment
 
 ### Checkpoint #1: End of T1 spine
 **Type**: Decision gate (not a phase)
