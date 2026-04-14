@@ -416,19 +416,62 @@ rule run_fiqt_on_discovery:
         "Rscript {workflow.basedir}/src/snakemake/scripts/run_fiqt.R "
         "{input.signals} {output}"
 
-rule compute_per_cohort_effect_size_test:
+rule collect_replication_effect_sizes:
+    """Plan 09-04 Task 2 Step 1b (I-5 revision producer): read the manifest +
+    Wave-2 harmonized sumstats for this cohort and emit one (beta, se, p, eaf,
+    N) row per signal_id routed to this cohort. Consumed by
+    compute_per_cohort_effect_size_test.
+    """
     input:
-        fiqt="results/replication/fiqt/discovery_beta_fiqt.tsv"
+        manifest = _replication_manifest_path(),
+        script_dep = "src/python/collect_replication_effect_sizes.py",
     output:
-        touch("results/replication/effect_size/{signal_id}_{cohort}.tsv")
+        "results/replication/effect_size_raw/{cohort}.tsv"
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-04 — per-cohort effect-size test {wildcards.signal_id}/{wildcards.cohort}' && touch {output}"
+        "python {workflow.basedir}/src/python/collect_replication_effect_sizes.py "
+        "--manifest {input.manifest} --cohort {wildcards.cohort} --out {output}"
+
+
+rule compute_per_cohort_effect_size_test:
+    """Plan 09-04 Task 2 — per-cohort Bonferroni + same-direction + post-hoc
+    power + joint criterion (D-03a + pitfalls #4, #5). Output is per-cohort
+    (one TSV per cohort, not per-signal) to keep the Bonferroni denominator
+    computation single-source.
+    """
+    input:
+        effect = "results/replication/effect_size_raw/{cohort}.tsv",
+        fiqt   = "results/replication/fiqt/discovery_beta_fiqt.tsv",
+        coloc  = "results/replication/coloc/sweep_aggregated_{cohort}.tsv",
+        script_dep = "src/python/compute_per_cohort_effect_size_test.py",
+    output:
+        "results/replication/effect_size/{cohort}.tsv"
+    conda:
+        R_COLOC_ENV
+    shell:
+        "python {workflow.basedir}/src/python/compute_per_cohort_effect_size_test.py "
+        "--effect {input.effect} --fiqt {input.fiqt} --coloc {input.coloc} "
+        "--cohort {wildcards.cohort} --out {output}"
+
 
 rule ivw_meta_aggregate:
+    """Plan 09-04 Task 2 — IVW fixed-effect meta-analysis across ancestry-matched
+    replication cohorts per signal (D-06b, T-09-17). Uses metafor::rma.uni(FE).
+    Consumes per_cohort_combined.tsv which is a Plan 09-05 Task 2 aggregator
+    over the per-cohort tables; that aggregator concatenates the per-cohort
+    effect_size/{cohort}.tsv outputs into a single long TSV.
+    """
+    input:
+        per_cohort = "results/replication/effect_size/per_cohort_combined.tsv",
+        script_dep = "src/snakemake/scripts/aggregate_replication_meta.R",
     output:
-        touch("results/replication/meta/{signal_id}_{ancestry}.meta.tsv")
+        "results/replication/meta/ivw_meta.tsv"
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-04 Task 3 — IVW meta {wildcards.signal_id}/{wildcards.ancestry}' && touch {output}"
+        "Rscript {workflow.basedir}/src/snakemake/scripts/aggregate_replication_meta.R "
+        "{input.per_cohort} {output}"
 
 # ============================================================
 # §F. COJO SENSITIVITY — implemented by Plan 09-05
