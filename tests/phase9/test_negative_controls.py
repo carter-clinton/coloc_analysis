@@ -39,8 +39,20 @@ def test_hla_fails_replication_joint():
     if not joint_cols:
         pytest.xfail("no *_replicated_joint_0.8 columns — pre-execution schema")
 
-    # Missing joint -> treat as fail-null (absent evidence).
-    n_fail = (hla[joint_cols].fillna(False).astype(bool) == False).sum(axis=1)
+    # WR-11 fix: the previous `fillna(False).astype(bool) == False` counted
+    # NaN AS False — so an all-NaN joint matrix (partial run, columns not
+    # populated) trivially satisfied the assertion and masked genuine
+    # regressions. Require that at least one cohort produced a non-NaN
+    # joint flag per HLA row; otherwise xfail to signal "cannot validate".
+    has_any_real = hla[joint_cols].notna().any(axis=1)
+    if not has_any_real.all():
+        pytest.xfail(
+            f"{(~has_any_real).sum()} HLA rows have no populated "
+            "*_replicated_joint_0.8 column — cannot validate scientific "
+            "Layer 3 negative control (partial run?)"
+        )
+    # NaN treated as "neither True nor False" so it doesn't count as a fail.
+    n_fail = (hla[joint_cols] == False).sum(axis=1)
     # ≥ 70% of HLA rows must fail in ≥3 cohorts (T-09-21)
     assert (n_fail >= 3).mean() > 0.7, (
         "HLA negative control unexpectedly replicates (scientific Layer 3 fail)"
