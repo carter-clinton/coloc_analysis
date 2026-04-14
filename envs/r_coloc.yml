@@ -22,9 +22,9 @@ dependencies:
   # Phase 9 additions (2026-04-14): metafor for IVW meta (D-06b),
   # winnerscurse for FIQT winner's-curse correction (D-04a).
   # winnerscurse is GitHub-only; src/snakemake/scripts/run_fiqt.R lazy-installs
-  # on first use — no manual step required. For reproducibility, the pinned
-  # commit SHA is documented in docs/methods_fragment.md after first successful
-  # install (currently unpinned: upgrade="never" prevents further pulls once
-  # the user has a working version).
+  # on first use — no manual step required. Installs are SHA-pinned to
+  # commit `2ed00bb` (amandaforde/winnerscurse, 2024-03-07) so fresh hosts
+  # reproduce the same FIQT implementation. If the pin is ever changed,
+  # also update docs/methods/phase9_replication.md L62 in the same commit.
   - r-metafor>=3.0
   - r-data.table>=1.14

@@ -24,12 +24,22 @@
 suppressPackageStartupMessages({
   # Lazy install: winnerscurse is GitHub-only (no CRAN / Bioconductor).
   # envs/r_coloc.yml already ships r-remotes so this one-time install works.
+  #
+  # CR-02 fix: pin to commit SHA `2ed00bb` (2024-03-07, amandaforde/winnerscurse)
+  # so fresh installs on any host resolve to the SAME implementation the
+  # methods doc claims (docs/methods/phase9_replication.md L62). Without
+  # this pin, a fresh install resolves to HEAD and a compromised or silently
+  # changed upstream would drift FIQT corrections without any pipeline trace.
+  # `upgrade = "never"` alone is insufficient because it only protects
+  # SUBSEQUENT upgrades, not the first install on a fresh host.
+  WINNERSCURSE_PINNED_SHA <- "2ed00bb"
   if (!requireNamespace("winnerscurse", quietly = TRUE)) {
     if (!requireNamespace("remotes", quietly = TRUE)) {
       install.packages("remotes", repos = "https://cloud.r-project.org")
     }
     remotes::install_github(
       "amandaforde/winnerscurse",
+      ref = WINNERSCURSE_PINNED_SHA,
       upgrade = "never",
       quiet = TRUE
     )
