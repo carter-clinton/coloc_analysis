@@ -189,8 +189,44 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T04:31:37.096Z
-Stopped at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
+Last session: 2026-04-14T15:05:00Z
+Stopped at: Phase 0 first-production data infrastructure landed (32 GB references). `snakemake all_pathway --dry-run` resolves end-to-end (579-job DAG). Phase 9 fully secured + smoke-validated. Ready for narrow real-data execution OR full Phase 0/1/2/5 LSF launch.
+
+### What landed during 2026-04-14 sessions
+
+**Phase 9 closeout:**
+- 5/5 plans executed + verified (`human_needed` for real-data UAT)
+- Code review: 13/13 critical+warning findings fixed (commits 57bd450..94333af)
+- Security audit: 22/22 threats closed (T-09-01 re-disposed `mitigate` → `accept` per HPC + open-public + HTTPS justification, see 09-SECURITY.md)
+- Strategy A pre-flight smoke: TCF7L2/T2D × 4 cohorts PASS, β=0.23-0.32 same-direction GWAS-significant (see 09-SMOKE.md)
+- 4 quick tasks executed: 260413-ro7 (DAG wiring), 260413-vtk (file path bugs), 260414-clp (genome build config) + Option β trait_ancestries trim (commit 084d22f)
+
+**Phase 0 first-production data infrastructure (this session, 2026-04-14):**
+- 1kG Phase 3 VCFs chr1-22 + chrX (~17 GB) downloaded via NCBI mirror (EBI URL was broken — workaround captured) — `data/raw/1kg/vcf/`
+- LDSC reference data (~17 GB extracted): baseline v2.2 ldscores + bedfiles (bzip2-mislabeled-as-tgz pitfall handled), plinkfiles (1000G EUR), weights HM3 (EUR + EAS), frq, snplist, eur_w_ld_chr, Multi_tissue_gene_expr + chromatin (LDSC-SEG) — `data/reference/ldsc/` (Carter manually downloaded from Zenodo + scp'd; Broad GCS requires auth)
+- MAGMA 4 files (570 MB): static binary v1.10, NCBI37.3 gene loc, g1000_eur (bed/bim/fam), dbsnp151.synonyms — `data/reference/magma/` (Carter manually downloaded from CNCR + scp'd; CNCR uses JS gate that blocks curl)
+- HESS partition bed files (EUR/AFR/EAS, from Bitbucket ldetect-data) — `data/reference/hess/partition/`
+- HESS LD panel — symlink farm `data/reference/hess/ld_panel/EUR/chr{1..22}.{bed,bim,fam}` → LDSC's 1000G_EUR_Phase3_plink/ extracted plinkfiles (66 symlinks; same data, different naming convention)
+- HESS source code cloned to `tools/hess/`
+- DEF-RO7-03 fix on disk: symlink `data/processed/sumstats_harmonized` → `region_analysis/sumstats_harmonized_fixed`
+
+**Resumption pointers:**
+- `.planning/phases/09-replication-in-independent-cohorts/09-PHASE0-LAUNCH.md` — full Phase 0 launch report + 5 URL-rot findings
+- `.planning/phases/09-replication-in-independent-cohorts/09-SMOKE.md` — Phase 9 pre-flight smoke report (TCF7L2/T2D × 4 cohorts) + 4 findings
+- `.planning/phases/09-replication-in-independent-cohorts/09-HUMAN-UAT.md` — 3 deferred items for real-data execution
+
+**Open items (all deferred, none blocking):**
+- `data/raw/1kg/TRANS.samples` generator — VCFs exist, panel file exists, just need a script to produce sample-list union (DEF-RO7-01)
+- t2d.TRANS Phase 1 SuSiE rule wiring — config drops TRANS for t2d during smoke; `results/fine_mapping/susie/*.TRANS.*.json` rule path needs investigation
+- Missing trait×ancestry ingestion: bmi/AFR + bmi/EAS + hypertension/AFR + hypertension/HIS + stroke/EAS + t2d/EAS — Phase 0 D-20 work
+- `config/pipeline.yaml` `onekg.ftp_base` cosmetic update from broken EBI to working NCBI mirror
+
+**Recommended next-session moves (in order):**
+1. Narrow real-data execution: `snakemake harmonize_sumstats download_msigdb` etc. — exercises a few rules against real data, ~10-30 min, catches latent runtime bugs
+2. Or: target a single Phase 5 branch end-to-end (e.g., `snakemake magma_fdr` for EUR traits) — ~30-60 min compute
+3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
+4. Address open items above as they become blocking
+
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)

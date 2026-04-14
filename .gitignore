@@ -51,6 +51,15 @@ miniconda*/
 # --- Phase 1 local R library (testthat + deps, compiled for testthat-phase1) ---
 .r_lib_phase1/
 
+# --- Phase 0/5/9 downloaded reference data + upstream tool sources ---
+# Reference data (~30 GB LDSC + MAGMA + HESS + 1kG VCFs) lands here during
+# first-production runs; not committed per project convention. See
+# data/reference/README.md if we ever add one.
+data/reference/
+# Upstream tool source clones (e.g., tools/hess/ — HESS Python 2.7 source
+# from huwenboshi/hess). Re-cloneable via git clone; not vendored in-repo.
+tools/
+
 # --- Data: never commit actual data files, but track the symlinks that
 # point at /rs1 so a fresh clone on the same HPC inherits the data layout ---
 data/raw/*
