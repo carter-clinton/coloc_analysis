@@ -18,6 +18,7 @@ T-05-05: no shell=True in Python wrappers; Snakemake shell blocks use only confi
 T-05-06: wget --max-redirect=3 --timeout=300 on all download rules.
 """
 import os
+from pathlib import Path
 
 PATHWAY_CFG = config.get("pathway", {})
 PATHWAY_RESULTS_DIR = PATHWAY_CFG.get("results_dir", "results/pathway")
@@ -55,10 +56,10 @@ def _magma_n_flags(trait: str) -> str:
     return ""
 
 # Conda env paths (absolute, per DEF-01-02 pattern)
-MAGMA_ENV = str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "magma.yml"))
-LDSC_ENV = str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "ldsc_py3.yml"))
-HESS_ENV = str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "hess_py27.yml"))
-GPROFILER_ENV = str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "gprofiler.yml"))
+MAGMA_ENV = str(Path(workflow.basedir) / "envs" / "magma.yml")
+LDSC_ENV = str(Path(workflow.basedir) / "envs" / "ldsc_py3.yml")
+HESS_ENV = str(Path(workflow.basedir) / "envs" / "hess_py27.yml")
+GPROFILER_ENV = str(Path(workflow.basedir) / "envs" / "gprofiler.yml")
 
 # Trait configuration for HESS trait pair generation
 TRAITS = config.get("traits", ["bmi", "t2d", "hypertension", "asthma", "stroke"])
