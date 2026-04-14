@@ -57,10 +57,24 @@ rule download_finngen_r12:
         "curl -fsSL {params.url}.tbi -o {output.tbi}"
 
 rule download_gbmi:
-    output:
-        touch("data/raw/replication/gbmi/{trait}_{ancestry}.downloaded")
+    """Download the per-trait GBMI all-ancestry meta file. Per-ancestry
+    strata are extracted downstream by harmonize_gbmi via the prefix map
+    (see src/python/harmonize_gbmi.py). One download serves all ancestries
+    for a trait, so {ancestry} is captured into the filename only as a
+    record of intent; the same source URL is used.
+
+    NOTE: The GBMI portal ('https://www.globalbiobankmeta.org/resources')
+    serves some files behind a Google Forms gate — if curl 404s the
+    operator should manually download and place the file at `{output}`.
+    """
+    output: "data/raw/replication/gbmi/{trait}_{ancestry}.tsv.gz"
+    params:
+        portal = lambda wc: config['cohorts']['gbmi']['portal_url'],
     shell:
-        "echo 'TODO plan 09-02 Task 2 — download GBMI {wildcards.trait}/{wildcards.ancestry}' && touch {output}"
+        # Best-effort automated fetch; portal may require manual download
+        # (document caveat in data_access.md).
+        "curl -fsSL '{params.portal}/{wildcards.trait}/all_ancestries.tsv.gz' -o {output} || "
+        "(echo 'ERROR: GBMI portal download failed — see .planning/data_access.md for manual steps' && exit 1)"
 
 rule download_mvp_phs001672:
     output:
@@ -105,12 +119,23 @@ rule harmonize_finngen:
         "--case-n {params.case_n} --qc-out {output.qc}"
 
 rule harmonize_gbmi:
-    input:
-        "data/raw/replication/gbmi/{trait}_{ancestry}.downloaded"
-    output:
-        touch("data/processed/replication/harmonized/gbmi/{trait}_{ancestry}.tsv.gz")
+    """Extract a per-ancestry stratum from the GBMI all-ancestry meta file
+    and rename to the canonical schema. B-2 guard: fails loudly if the
+    requested ancestry's prefix columns are absent (no silent empty output).
+
+    Output pattern intentionally mirrors the download step — one harmonized
+    file per (trait, ancestry) pair so the panel definitions in
+    config['panels'] can refer to them directly.
+    """
+    input: "data/raw/replication/gbmi/{trait}_{ancestry}.tsv.gz"
+    output: "data/processed/replication/harmonized/gbmi/{trait}_{ancestry}.tsv.gz"
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-02 — harmonize GBMI {wildcards.trait}/{wildcards.ancestry}' && touch {output}"
+        "python {workflow.basedir}/src/python/harmonize_gbmi.py "
+        "--input {input} "
+        "--output-prefix data/processed/replication/harmonized/gbmi/{wildcards.trait} "
+        "--trait {wildcards.trait} --ancestry {wildcards.ancestry}"
 
 rule harmonize_mvp:
     input:
