@@ -43,10 +43,18 @@ R_COLOC_ENV = str(Path(workflow.basedir) / "envs" / "r_coloc.yml")
 # §A. COHORT INGEST — implemented by Plan 09-02
 # ============================================================
 rule download_finngen_r12:
+    """Fetch FinnGen R12 per-endpoint sumstats + tabix index from the
+    public GCS HTTP mirror. URL shape:
+        {http_mirror}/finngen_R12_{endpoint}.gz[.tbi]
+    """
     output:
-        touch("data/raw/replication/finngen_r12/{trait}.downloaded")
+        gz = "data/raw/replication/finngen_r12/finngen_R12_{endpoint}.gz",
+        tbi = "data/raw/replication/finngen_r12/finngen_R12_{endpoint}.gz.tbi",
+    params:
+        url = lambda wc: f"{config['cohorts']['finngen_r12']['http_mirror']}/finngen_R12_{wc.endpoint}.gz"
     shell:
-        "echo 'TODO plan 09-02 Task 1 — download FinnGen R12 {wildcards.trait}' && touch {output}"
+        "curl -fsSL {params.url} -o {output.gz} && "
+        "curl -fsSL {params.url}.tbi -o {output.tbi}"
 
 rule download_gbmi:
     output:
@@ -78,12 +86,23 @@ rule extract_bbj_zip:
 # §B. HARMONIZATION — implemented by Plan 09-02
 # ============================================================
 rule harmonize_finngen:
+    """Rename FinnGen R12 raw schema to canonical, liftover GRCh38->37,
+    and drop palindromic ambiguous SNPs (RESEARCH pitfalls #1 + #2)."""
     input:
-        "data/raw/replication/finngen_r12/{trait}.downloaded"
+        gz = "data/raw/replication/finngen_r12/finngen_R12_{endpoint}.gz",
+        chain = "data/raw/liftover/hg38ToHg19.over.chain.gz",
     output:
-        touch("data/processed/replication/harmonized/finngen_r12/{trait}.tsv.gz")
+        tsv = "data/processed/replication/harmonized/finngen_r12/{trait}_{endpoint}.tsv.gz",
+        qc  = "data/processed/replication/harmonized/finngen_r12/{trait}_{endpoint}.qc.json",
+    params:
+        case_n = lambda wc: config['cohorts']['finngen_r12']['traits'][wc.trait]['case_n'],
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-02 — harmonize FinnGen {wildcards.trait}' && touch {output}"
+        "python {workflow.basedir}/src/python/harmonize_finngen.py "
+        "--input {input.gz} --output {output.tsv} "
+        "--chain-file {input.chain} --trait {wildcards.trait} "
+        "--case-n {params.case_n} --qc-out {output.qc}"
 
 rule harmonize_gbmi:
     input:
