@@ -15,9 +15,54 @@ import os
 import subprocess
 import sys
 import tempfile
+from functools import lru_cache
 from pathlib import Path
+from typing import Optional, Tuple
 
 import pandas as pd
+
+
+@lru_cache(maxsize=4)
+def _load_pyliftover(chain_file: str):
+    """Load and cache a pyliftover LiftOver object per chain file."""
+    from pyliftover import LiftOver
+
+    return LiftOver(chain_file)
+
+
+def liftover_coordinates(
+    chain_file: str, chrom: str, pos: int
+) -> Optional[Tuple[str, int]]:
+    """Lift a single (chrom, pos) coordinate through a UCSC chain file.
+
+    Pure-Python pyliftover implementation — avoids subprocess overhead when
+    calling per-variant (callers that can batch should prefer
+    :func:`liftover_sumstats` which uses the UCSC liftOver binary).
+
+    Parameters
+    ----------
+    chain_file : str
+        Path to UCSC chain file (e.g., hg38ToHg19.over.chain.gz).
+    chrom : str
+        Source chromosome (with or without 'chr' prefix).
+    pos : int
+        Source position, 1-based (GWAS convention).
+
+    Returns
+    -------
+    (new_chrom, new_pos) tuple on success, or ``None`` if the coordinate
+    cannot be lifted over. The returned chromosome has no ``chr`` prefix.
+    """
+    lo = _load_pyliftover(chain_file)
+    chrom_str = str(chrom)
+    chrom_pref = chrom_str if chrom_str.startswith("chr") else f"chr{chrom_str}"
+    # pyliftover uses 0-based half-open coords; GWAS pos is 1-based.
+    result = lo.convert_coordinate(chrom_pref, int(pos) - 1)
+    if not result:
+        return None
+    new_chrom, new_pos0, _strand, _score = result[0]
+    new_chrom = new_chrom.replace("chr", "")
+    return (new_chrom, int(new_pos0) + 1)
 
 
 def liftover_sumstats(
