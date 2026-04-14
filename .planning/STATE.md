@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: executing
-stopped_at: Completed 09-04-PLAN.md (coloc.susie + Bonferroni + IVW meta)
-last_updated: "2026-04-14T04:16:54.761Z"
+status: verifying
+stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
+last_updated: "2026-04-14T04:31:37.101Z"
 last_activity: 2026-04-14
 progress:
   total_phases: 12
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 25
-  completed_plans: 24
-  percent: 96
+  completed_plans: 25
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 
 Phase: 09 (replication-in-independent-cohorts) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-14
 
 Progress: ██░░░░░░░░ 17%
@@ -75,6 +75,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 09 P02 | 11min | 5 tasks | 14 files |
 | Phase 09 P03 | 13 | 2 tasks | 7 files |
 | Phase 09 P04 | 18min | 2 tasks | 8 files |
+| Phase 09 P05 | 7min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,10 @@ Recent decisions affecting current work:
 - [Phase 09]: [Phase 09-04]: collect_replication_effect_sizes.py materialized as standalone I-5 producer (plan iteration 2 revision)
 - [Phase 09]: [Phase 09-04]: .rds fixtures committed via .gitignore exception (tests/**/fixtures/*.rds) for deterministic CI
 - [Phase 09]: [Phase 09-04]: posthoc_power returns NaN on invalid input (distinguishes 'could not compute' from zero power)
+- [Phase 09]: [Phase 09-05]: COJO --cojo-slct depends on pathway.smk .baseline_download_done (not .download_ldsc_baseline.done — plan draft's assumed flag path differs from pathway.smk's emit)
+- [Phase 09]: [Phase 09-05]: I-3 per-cohort sample_overlap_flag implemented via KNOWN_OVERLAP_PAIRS dict with ('*', cohort) wildcard fallback; 6 cohorts (incl. bbj) emit flag columns for QC traceability
+- [Phase 09]: [Phase 09-05]: Gotcha #1 COJO-N=503 caveat enforced at 3 layers (shell WARN stderr / pytest assertion on '4000'+'WARN' tokens / methods-doc narrative); COJO framed TIER-2 supplementary, not primary replication
+- [Phase 09]: [Phase 09-05]: Added aggregate_per_cohort_combined rule to unblock ivw_meta_aggregate (Plan 09-04) + assemble_replication_holdout_supplementary (Plan 09-05) — Plan 09-04 docstring promised aggregator but no rule produced it (Rule 2 fix)
 
 ### Pending Todos
 
@@ -182,8 +187,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T04:16:42.514Z
-Stopped at: Completed 09-04-PLAN.md (coloc.susie + Bonferroni + IVW meta)
+Last session: 2026-04-14T04:31:37.096Z
+Stopped at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
