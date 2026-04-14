@@ -80,10 +80,22 @@ aggregate_ivw <- function(per_cohort_tsv, output_tsv) {
   }
 
   # Exclude generalization rows (BBJ) per D-05c if the flag is present.
+  # WR-06 fix: coerce safely from any of (logical, "True"/"TRUE"/"true"
+  # with optional whitespace, 0/1, "0"/"1"). NA is treated as FALSE
+  # (i.e., kept in meta) only when the row is already ancestry-matched
+  # upstream; the NA->FALSE coercion here preserves the prior behavior
+  # for NA rows but adds defensive handling for pandas 0/1 booleans and
+  # whitespace-padded strings.
   if ("is_generalization" %in% names(df)) {
-    df <- df[
-      !(is_generalization %in% c("True", "TRUE", TRUE, "true"))
-    ]
+    is_gen_raw <- df$is_generalization
+    is_gen_norm <- trimws(tolower(as.character(is_gen_raw)))
+    is_gen_bool <- ifelse(
+      is.na(is_gen_raw) | is_gen_norm %in% c("", "na"),
+      FALSE,
+      is_gen_norm %in% c("true", "t", "1")
+    )
+    df[, is_generalization := is_gen_bool]
+    df <- df[is_generalization == FALSE]
   }
 
   # Group by (signal_id, cohort_ancestry); meta per group.
