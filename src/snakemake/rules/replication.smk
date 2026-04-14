@@ -474,23 +474,66 @@ rule ivw_meta_aggregate:
         "{input.per_cohort} {output}"
 
 # ============================================================
-# §F. COJO SENSITIVITY — implemented by Plan 09-05
+# §F. COJO SENSITIVITY — implemented by Plan 09-05 Task 1
 # ============================================================
+# Gotcha #1 layer-2 enforcement: the 1000G Phase 3 LD reference (503 EUR /
+# 661 AFR samples) is below GCTA's recommended N>=4000 threshold. run_cojo.sh
+# emits a WARN stderr at runtime; methods doc embeds the caveat in docs/methods/
+# phase9_replication.md (Task 2). Downstream consumers treat COJO as TIER-2
+# SENSITIVITY supplementary, NOT primary replication (D-04c + RESEARCH §6 Opt D).
+
+# {ancestry} wildcard = EUR|AFR (matches Broad LDSC 1000G.{EUR|AFR}.QC.{chrom}
+# naming). {locus} is the region stub chrN_start_end.
+wildcard_constraints:
+    ancestry = "EUR|AFR",
+    chrom = r"\d+",
+
 rule prepare_cojo_ma:
+    """Extract a single locus from the canonical harmonized sumstats and emit
+    GCTA .ma (8-column: SNP A1 A2 freq b se p N). Consumed by run_cojo_slct.
+
+    {locus} is derived from the region string chr:start-end as chrN_start_end
+    (see build_cojo_sensitivity_table._region_to_filename_stub).
+    """
+    input:
+        sumstats = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "replication_sumstats_path"),
+        manifest = _replication_manifest_path(),
+        script_dep = "src/snakemake/scripts/prepare_cojo_ma.py",
     output:
-        touch("results/replication/cojo/input/{cohort}_{trait}_{locus}.ma")
+        ma = "results/replication/cojo/input/{cohort}_{trait}_{locus}_{signal_id}.ma"
+    params:
+        region = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "region"),
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-05 Task 1 — prepare COJO .ma for {wildcards.cohort}/{wildcards.trait}/{wildcards.locus}' && touch {output}"
+        "python {workflow.basedir}/src/snakemake/scripts/prepare_cojo_ma.py "
+        "--sumstats {input.sumstats} --region {params.region} --out {output.ma}"
 
 rule run_cojo_slct:
+    """GCTA 1.94.1 --cojo-slct wrapper at a single (cohort, trait, locus) with
+    1000G Phase 3 {EUR|AFR} LD reference. Consumes the LDSC download flag
+    (download_ldsc_baseline in pathway.smk) to guarantee PLINK files exist.
+
+    Flag file path `data/reference/ldsc/.baseline_download_done` is the
+    touched output of pathway.smk rule `download_ldsc_baseline` (RO7 DAG
+    wiring convention).
+    """
     input:
-        ma="results/replication/cojo/input/{cohort}_{trait}_{locus}.ma"
+        ma = "results/replication/cojo/input/{cohort}_{trait}_{locus}_{signal_id}.ma",
+        plink_bed = "data/reference/ldsc/1000G_Phase3_plinkfiles/1000G.{ancestry}.QC.{chrom}.bed",
+        plink_done = "data/reference/ldsc/.baseline_download_done",
+        snp_list = "results/replication/cojo/input/{cohort}_{trait}_{locus}_{signal_id}.snps",
+        script_dep = "src/snakemake/scripts/run_cojo.sh",
     output:
-        touch("results/replication/cojo/{cohort}_{trait}_{locus}.cojo.tsv")
+        jma = "results/replication/cojo/{cohort}_{trait}_{locus}_{signal_id}_{ancestry}_{chrom}.jma.cojo"
+    params:
+        plink_prefix = lambda wc, input: input.plink_bed[:-4],  # strip '.bed'
+        out_prefix = lambda wc, output: output.jma[:-len(".jma.cojo")],
     conda:
         GCTA_ENV
     shell:
-        "echo 'TODO plan 09-05 Task 1 — run gcta --cojo-slct {wildcards.cohort}/{wildcards.trait}/{wildcards.locus}' && touch {output}"
+        "bash {workflow.basedir}/src/snakemake/scripts/run_cojo.sh "
+        "{input.ma} {params.plink_prefix} {input.snp_list} {params.out_prefix}"
 
 # ============================================================
 # §G. AGGREGATION — implemented by Plan 09-05
@@ -508,10 +551,22 @@ rule assemble_cross_ancestry_generalization_bbj:
         "echo 'TODO plan 09-05 Task 2 — assemble BBJ cross-ancestry generalization (tier A/B only)' && touch {output}"
 
 rule assemble_cojo_sensitivity_supplementary:
+    """Aggregate all .jma.cojo outputs across (signal × cohort) into the
+    cojo_sensitivity.tsv supplementary table (D-04c). Missing / skipped loci
+    are silently omitted — COJO is TIER-2 SENSITIVITY, not a hard gate.
+    """
+    input:
+        manifest = _replication_manifest_path(),
+        script_dep = "src/python/build_cojo_sensitivity_table.py",
     output:
-        touch("results/replication/cojo_sensitivity.tsv")
+        "results/replication/cojo_sensitivity.tsv"
+    params:
+        cojo_dir = "results/replication/cojo",
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-05 Task 2 — assemble COJO sensitivity supplementary' && touch {output}"
+        "python {workflow.basedir}/src/python/build_cojo_sensitivity_table.py "
+        "--cojo-dir {params.cojo_dir} --manifest {input.manifest} --out {output}"
 
 rule assemble_replication_holdout_supplementary:
     output:
