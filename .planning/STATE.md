@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 05-05-PLAN.md (aggregation + permutation null). Phase 5 complete (5/5 plans).
-last_updated: "2026-04-13T21:45:34.308Z"
-last_activity: 2026-04-13
+status: executing
+stopped_at: Completed 09-01-PLAN.md (Phase 9 infrastructure skeleton)
+last_updated: "2026-04-14T03:28:31.312Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 12
   completed_phases: 4
-  total_plans: 20
-  completed_plans: 20
-  percent: 100
+  total_plans: 25
+  completed_plans: 21
+  percent: 84
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 05 — pathway-partitioned-heritability
+**Current focus:** Phase 09 — replication-in-independent-cohorts
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-14 — Completed quick task 260413-vtk: Fix 3 file-path bugs in Phase 9 plans
+Phase: 09 (replication-in-independent-cohorts) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-04-14
 
 Progress: ██░░░░░░░░ 17%
 
@@ -71,6 +71,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 05 P03 | 7min | 2 tasks | 5 files |
 | Phase 05 P04 | 6min | 2 tasks | 3 files |
 | Phase 05 P05 | 20min | 2 tasks | 6 files |
+| Phase 09 P01 | 23min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -130,6 +131,11 @@ Recent decisions affecting current work:
 - [Phase 05]: Fixed 4 conda+run incompatibilities in pathway.smk for Snakemake 7.32.4 (magma_fdr, hess_format_sumstats, hess_negative_controls, gprofiler_negative_controls)
 - [Phase 05]: Consensus ranking: n_methods_significant desc + geometric mean p asc; empirical p = (n_exceed+1)/(n_total+1)
 - [Quick RO7 2026-04-13]: Phase 5 DAG wiring gap closed — consumer rules now depend on download-rule flag files (commit bfb04f8); pre-existing ld_reference.smk / sumstats.smk issues logged as DEF-RO7-01 and deferred.
+- [Phase 09]: MVP phs001672 enumerated: T2D + quantitative BP released; stroke/asthma/BMI NOT_RELEASED (resolves RESEARCH A1)
+- [Phase 09]: MVP genome build is GRCh38 (not GRCh37 as plan draft); liftover_required flipped true
+- [Phase 09]: MVP column_map uses dbGaP GWAS-central schema (|β| + Coded Allele) not REGENIE; harmonizer must reconstruct signed β
+- [Phase 09]: configfile: directive takes string literal; path is project-root-relative (matches top-level Snakefile)
+- [Phase 09]: workflow.basedir resolves to project root; envs/ paths use Path(workflow.basedir)/'envs'/... (no .parent.parent)
 
 ### Pending Todos
 
@@ -152,8 +158,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T21:31:30.036Z
-Stopped at: Completed 05-05-PLAN.md (aggregation + permutation null). Phase 5 complete (5/5 plans).
+Last session: 2026-04-14T03:28:20.043Z
+Stopped at: Completed 09-01-PLAN.md (Phase 9 infrastructure skeleton)
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
