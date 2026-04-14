@@ -282,19 +282,85 @@ rule validate_harmonized_sumstats:
 # ============================================================
 # §C. MANIFEST & SUSIE FIT — implemented by Plan 09-03
 # ============================================================
+
+def _replication_manifest_path():
+    """Canonical replication manifest location."""
+    return "data/processed/replication/manifest.tsv"
+
+
+def _replication_manifest_row(signal_id: str, cohort: str):
+    """Resolve a single row from the replication manifest.
+
+    Returns a dict or None if the manifest does not yet exist / id missing.
+    Mirrors the Phase-2 `_qtl_coloc_manifest_row` convention.
+    """
+    import pandas as _pd
+    path = _replication_manifest_path()
+    if not Path(path).exists():
+        return None
+    df = _pd.read_csv(path, sep="\t", dtype=str)
+    if "signal_id" not in df.columns or "cohort" not in df.columns:
+        return None
+    sub = df[(df["signal_id"] == signal_id) & (df["cohort"] == cohort)]
+    if len(sub) != 1:
+        return None
+    return sub.iloc[0].to_dict()
+
+
+def _manifest_lookup(signal_id: str, cohort: str, field: str, default: str = "MISSING"):
+    row = _replication_manifest_row(signal_id, cohort)
+    if row is None:
+        return default
+    return row.get(field, default)
+
+
 rule build_replication_manifest:
+    """Build the Phase 9 replication manifest — signal × cohort × ancestry
+    crossmap. Consumes Phase 1 credible-set summary + Phase 2 tier
+    assignments; emits one row per (signal, cohort) target pair.
+
+    Honors D-02b (Tier C excluded), D-05 (ancestry-matched routing),
+    D-05c (BBJ tier_ab_only generalization), D-08 (LD panel routing).
+    """
+    input:
+        credset = "results/fine_mapping/credible_set_summary.tsv",
+        tiers   = "results/qtl_coloc/tier_assignments.tsv",
+        config  = "config/replication_cohorts.yaml",
+        script_dep = "src/python/build_replication_manifest.py",
     output:
-        touch("data/processed/replication/manifest.tsv")
+        _replication_manifest_path()
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-03 Task 1 — build replication manifest' && touch {output}"
+        "python {workflow.basedir}/src/python/build_replication_manifest.py "
+        "--credset {input.credset} --tiers {input.tiers} "
+        "--config {input.config} --out {output}"
+
 
 rule fit_replication_susie:
+    """Re-fit SuSiE-RSS on the replication cohort at a single (signal_id, cohort)
+    pair. Reuses Phase-1 config/susie_policy.yaml (D-08 reuse, not fork) and
+    per-cohort LD panel routed by manifest.
+    """
     input:
-        manifest="data/processed/replication/manifest.tsv"
+        manifest = _replication_manifest_path(),
+        policy   = "config/susie_policy.yaml",
+        script_dep = "src/snakemake/scripts/run_replication_susie.R",
     output:
-        touch("results/replication/fits/{signal_id}_{cohort}.fit.rds")
+        "results/replication/fits/{signal_id}_{cohort}.fit.rds"
+    params:
+        sumstats = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "replication_sumstats_path"),
+        region   = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "region"),
+        ld_panel = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "ld_panel"),
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-03 Task 2 — fit SuSiE for {wildcards.signal_id}/{wildcards.cohort}' && touch {output}"
+        "Rscript {workflow.basedir}/src/snakemake/scripts/run_replication_susie.R "
+        "sumstats={params.sumstats} "
+        "region={params.region} "
+        "ld_panel={params.ld_panel} "
+        "policy={input.policy} "
+        "out={output}"
 
 # ============================================================
 # §D. COLOC RE-ESTIMATION — implemented by Plan 09-04
