@@ -1,8 +1,8 @@
-"""Phase 9 — Replication in Independent Cohorts (skeleton rules).
+"""Phase 9 — Replication in Independent Cohorts (production rules).
 
-This file is a SKELETON. Every rule in it is a placeholder whose recipe
-is `echo 'TODO plan 09-0X' && touch {output}` so the DAG resolves cleanly
-while downstream plans 09-02 through 09-05 fill in real implementations.
+This file was seeded as a Wave-1 skeleton and progressively filled in by
+Plans 09-02 through 09-05. All §F (COJO) and §G (aggregation) rules are
+now production-grade; no placeholder recipes remain.
 
 Structure mirrors RESEARCH §17 (A through G):
 
@@ -536,19 +536,93 @@ rule run_cojo_slct:
         "{input.ma} {params.plink_prefix} {input.snp_list} {params.out_prefix}"
 
 # ============================================================
-# §G. AGGREGATION — implemented by Plan 09-05
+# §G. AGGREGATION — implemented by Plan 09-05 Task 2
 # ============================================================
-rule assemble_master_replication_table:
+# Produces the four D-07 output artifacts consumed by Phase 11 manuscript
+# figures + supplementary tables. Pipeline terminus: `all_replication`.
+
+rule aggregate_per_cohort_combined:
+    """Concatenate per-cohort effect_size/{cohort}.tsv into a single long
+    TSV consumed by IVW meta (aggregate_replication_meta.R) and by the
+    leave-one-cohort-out hold-out (build_replication_holdout.py).
+
+    The cohort list is pulled from config['panels'] (EUR + AFR + BBJ EAS
+    for completeness; downstream IVW excludes is_generalization=TRUE
+    rows per T-09-17).
+    """
+    input:
+        lambda wc: [
+            f"results/replication/effect_size/{cohort}.tsv"
+            for cohort in config.get("panels", {}).get("all_replication_cohorts", [
+                "finngen_r12", "gbmi_eur", "gbmi_afr",
+                "mvp_eur", "mvp_afr", "bbj",
+            ])
+        ]
     output:
-        touch("results/replication/master_table.tsv")
+        "results/replication/effect_size/per_cohort_combined.tsv"
+    run:
+        import pandas as _pd
+        frames = []
+        for p in input:
+            try:
+                frames.append(_pd.read_csv(p, sep="\t"))
+            except (_pd.errors.EmptyDataError, FileNotFoundError):
+                continue
+        if frames:
+            combined = _pd.concat(frames, ignore_index=True, sort=False)
+        else:
+            combined = _pd.DataFrame(columns=[
+                "signal_id", "cohort", "cohort_ancestry",
+                "beta_replication", "se_replication",
+            ])
+        combined.to_csv(output[0], sep="\t", index=False)
+
+rule assemble_master_replication_table:
+    """Assemble the canonical replication matrix per RESEARCH §16.
+
+    Merges: manifest + FIQT discovery corrections + per-cohort effect/coloc
+    + IVW meta (I-2: merge on (signal_id, discovery_ancestry)). Emits
+    per-cohort sample_overlap_flag columns (I-3) + low_maf_founder_flag.
+    """
+    input:
+        manifest = _replication_manifest_path(),
+        fiqt = "results/replication/fiqt/discovery_beta_fiqt.tsv",
+        meta = "results/replication/meta/ivw_meta.tsv",
+        coloc_dir_flag = "results/replication/coloc",  # directory marker
+        per_cohort_finngen = "results/replication/effect_size/finngen_r12.tsv",
+        per_cohort_gbmi_eur = "results/replication/effect_size/gbmi_eur.tsv",
+        per_cohort_gbmi_afr = "results/replication/effect_size/gbmi_afr.tsv",
+        per_cohort_mvp_eur = "results/replication/effect_size/mvp_eur.tsv",
+        per_cohort_mvp_afr = "results/replication/effect_size/mvp_afr.tsv",
+        script_dep = "src/python/build_master_replication_table.py",
+    output:
+        "results/replication/master_table.tsv"
+    params:
+        per_cohort_dir = "results/replication/effect_size",
+        coloc_dir = "results/replication/coloc",
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-05 Task 2 — assemble master replication table' && touch {output}"
+        "python {workflow.basedir}/src/python/build_master_replication_table.py "
+        "--manifest {input.manifest} --fiqt {input.fiqt} "
+        "--per-cohort-dir {params.per_cohort_dir} --coloc-dir {params.coloc_dir} "
+        "--meta {input.meta} --out {output}"
 
 rule assemble_cross_ancestry_generalization_bbj:
+    """Assemble the Tier A+B × BBJ-EAS cross-ancestry generalization panel
+    per D-05c. No credible_set_SNP rows. is_generalization=True always.
+    """
+    input:
+        manifest = _replication_manifest_path(),
+        bbj = "results/replication/effect_size/bbj.tsv",
+        script_dep = "src/python/build_cross_ancestry_panel.py",
     output:
-        touch("results/replication/cross_ancestry_generalization_tier_ab.tsv")
+        "results/replication/cross_ancestry_generalization_tier_ab.tsv"
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-05 Task 2 — assemble BBJ cross-ancestry generalization (tier A/B only)' && touch {output}"
+        "python {workflow.basedir}/src/python/build_cross_ancestry_panel.py "
+        "--manifest {input.manifest} --bbj-cohort {input.bbj} --out {output}"
 
 rule assemble_cojo_sensitivity_supplementary:
     """Aggregate all .jma.cojo outputs across (signal × cohort) into the
@@ -569,10 +643,20 @@ rule assemble_cojo_sensitivity_supplementary:
         "--cojo-dir {params.cojo_dir} --manifest {input.manifest} --out {output}"
 
 rule assemble_replication_holdout_supplementary:
+    """Leave-one-cohort-out IVW meta per signal (RESEARCH §16 recommendation).
+    Complements the primary IVW meta with a jack-knife sensitivity that
+    surfaces cohort-driven outlier effects.
+    """
+    input:
+        per_cohort = "results/replication/effect_size/per_cohort_combined.tsv",
+        script_dep = "src/python/build_replication_holdout.py",
     output:
-        touch("results/replication/replication_holdout_supplementary.tsv")
+        "results/replication/replication_holdout_supplementary.tsv"
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-05 Task 2 — assemble replication hold-out supplementary' && touch {output}"
+        "python {workflow.basedir}/src/python/build_replication_holdout.py "
+        "--per-cohort {input.per_cohort} --out {output}"
 
 # ============================================================
 # Top-level aggregate target (Plan 09-05 final)
