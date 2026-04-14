@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import zipfile
 from pathlib import Path
@@ -36,12 +37,18 @@ def extract_bbj_zip(zip_path: Path, out_dir: Path) -> Path:
     Returns the path of the extracted payload file (first entry whose
     filename ends in .tsv or .txt and does NOT contain 'readme').
 
+    Zip-slip safe (CR-01 fix, CVE-2007-4559 family): each member's final
+    resolved path is verified to remain under ``out_dir`` before the entry
+    is extracted. Entries that resolve outside ``out_dir`` raise a
+    ``ValueError`` rather than silently writing out-of-tree.
+
     Raises
     ------
     ValueError
-        When no .tsv/.txt payload can be found in the zip.
+        When no .tsv/.txt payload can be found in the zip, or when any
+        entry would escape ``out_dir`` (path traversal).
     """
-    out_dir = Path(out_dir)
+    out_dir = Path(out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path) as zf:
         candidates = [
@@ -55,7 +62,19 @@ def extract_bbj_zip(zip_path: Path, out_dir: Path) -> Path:
                 f"{zip_path}: no .tsv/.txt file found in zip (entries: "
                 f"{zf.namelist()})"
             )
-        zf.extractall(out_dir)
+        # Per-entry safe extraction: resolve the final target and confirm
+        # it stays under out_dir. Prevents zip-slip via "../" or absolute
+        # path entries (CR-01, CVE-2007-4559).
+        for member in zf.namelist():
+            target = (out_dir / member).resolve()
+            if target != out_dir and not str(target).startswith(
+                str(out_dir) + os.sep
+            ):
+                raise ValueError(
+                    f"{zip_path}: refusing to extract {member!r} — "
+                    "path traversal detected (zip-slip)"
+                )
+            zf.extract(member, out_dir)
         return out_dir / candidates[0]
 
 
