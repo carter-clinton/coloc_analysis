@@ -131,6 +131,23 @@ def process_cohort(
         effect_df.merge(fiqt_df, on="signal_id", how="left")
         .merge(coloc_df, on=["signal_id", "cohort"], how="left")
     )
+
+    # WR-10 fix: defensive guard against (signal_id, cohort) duplicates from
+    # upstream aggregators. If coloc_df emits >1 row per pair (e.g., multiple
+    # credible-set pairs from coloc.susie) the merge cross-joins, and the
+    # per-row Bonferroni test would give a single signal multiple shots at
+    # the threshold — inflating replication rate in a way that defeats
+    # RESEARCH pitfall #4. The upstream sweep aggregator is expected to
+    # collapse to one row per (signal, cohort) with pph4_best already
+    # applied; this guard catches any regression in that invariant.
+    dup = df.groupby(["signal_id", "cohort"]).size()
+    if (dup > 1).any():
+        raise ValueError(
+            "process_cohort: duplicated (signal_id, cohort) rows after "
+            f"merge: {dup[dup > 1].to_dict()}. Upstream sweep aggregator "
+            "must collapse to one row per (signal_id, cohort)."
+        )
+
     n_in_cohort = df["signal_id"].nunique()
     alpha_bonf = compute_bonferroni(n_in_cohort)
 
