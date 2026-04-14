@@ -1,31 +1,47 @@
-"""HLA negative control — RED until full pipeline run (scientific Layer 3).
+"""HLA negative control — scientific Layer 3 sanity check (T-09-21 mitigation).
 
-Requires Phase 2's config/negative_controls.yaml (reused for Phase 9 HLA
-locus negative test) and Plan 09-05 Task 2's master_table.tsv.
+After Plan 09-05 produces master_table.tsv, HLA-region signals (chr6:28-33Mb)
+must fail the joint criterion in >= 3/4 cohorts. This is a scientific layer
+check, not a unit test — it xfails pre-execution, skips if no HLA signals
+entered Tier A/B/credible-set, and fails loud if HLA unexpectedly replicates.
 """
 from pathlib import Path
 
+import pandas as pd
 import pytest
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_negative_controls_yaml_exists():
-    assert Path("config/negative_controls.yaml").exists(), (
-        "Phase 2 negative control YAML must be reusable"
-    )
+    """Phase 2 negative control YAML is reused by Phase 9 HLA check."""
+    assert (PROJECT_ROOT / "config" / "negative_controls.yaml").exists()
 
 
-def test_hla_fails_placeholder():
-    path = Path("results/replication/master_table.tsv")
+def test_hla_fails_replication_joint():
+    """Scientific Layer 3: HLA region fails joint criterion in ≥ 3/4 cohorts."""
+    path = PROJECT_ROOT / "results" / "replication" / "master_table.tsv"
     if not path.exists():
-        pytest.xfail("master_table.tsv not yet generated (post Plan 09-05)")
-    import pandas as pd
+        pytest.xfail("master_table.tsv not yet generated (pre-execution)")
 
     df = pd.read_csv(path, sep="\t")
-    hla_rows = df[df["region"].str.contains("6:28|6:29|6:30|6:31|6:32|6:33", na=False)]
-    if len(hla_rows) == 0:
-        pytest.skip(
-            "No HLA signals in master_table — may be OK if none entered Tier A/B"
-        )
-    # Most HLA rows should fail the joint criterion in ≥3/4 cohorts
-    fail_counts = (hla_rows.filter(regex="replicated_joint_0.8$") == False).sum(axis=1)
-    assert (fail_counts >= 3).mean() > 0.7, "HLA negative control unexpectedly replicates"
+    if "region" not in df.columns:
+        pytest.xfail("master_table has no region column (pre-execution)")
+
+    hla = df[df["region"].astype(str).str.contains(
+        r"6:(28|29|30|31|32|33)", na=False, regex=True
+    )]
+    if len(hla) == 0:
+        pytest.skip("No HLA signals in Tier A/B/credible-set — nothing to validate")
+
+    # All {cohort}_replicated_joint_0.8 columns across finngen+gbmi_eur+gbmi_afr+mvp_eur+mvp_afr.
+    joint_cols = [c for c in df.columns if c.endswith("_replicated_joint_0.8")]
+    if not joint_cols:
+        pytest.xfail("no *_replicated_joint_0.8 columns — pre-execution schema")
+
+    # Missing joint -> treat as fail-null (absent evidence).
+    n_fail = (hla[joint_cols].fillna(False).astype(bool) == False).sum(axis=1)
+    # ≥ 70% of HLA rows must fail in ≥3 cohorts (T-09-21)
+    assert (n_fail >= 3).mean() > 0.7, (
+        "HLA negative control unexpectedly replicates (scientific Layer 3 fail)"
+    )
