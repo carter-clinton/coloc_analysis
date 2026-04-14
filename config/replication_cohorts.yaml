@@ -13,8 +13,11 @@ cohorts:
   # ------------------------------------------------------------------
   finngen_r12:
     ancestry: EUR  # Finnish-EUR with founder-effect caveat (RESEARCH §14)
-    genome_build: GRCh38
-    liftover_required: true  # to GRCh37
+    # Empirically verified GRCh37 in Phase 9 smoke 2026-04-14
+    # (rs7903146 at chr10:112998590 — GRCh38 coord would be 114758349).
+    # See .planning/phases/09-replication-in-independent-cohorts/09-SMOKE.md Finding 1.
+    genome_build: GRCh37
+    liftover_required: false
     http_mirror: "https://storage.googleapis.com/finngen-public-data-r12/summary_stats/release"
     manifest_url: "https://storage.googleapis.com/finngen-public-data-r12/summary_stats/finngen_R12_manifest.tsv"
     file_pattern: "finngen_R12_{endpoint}.gz"
@@ -46,8 +49,12 @@ cohorts:
   # ------------------------------------------------------------------
   mvp_phs001672:
     ancestry: MULTI  # EUR, AFR, HIS, EAS, TRANS available for T2D
-    genome_build: GRCh38
-    liftover_required: true  # to GRCh37 (plan draft said false — corrected)
+    # dbGaP file header CLAIMS 'Human genome build: 38' but actual coords are GRCh37.
+    # Empirically verified in Phase 9 smoke 2026-04-14: rs7903146 at chr10:112998589
+    # (GRCh38 coord would be 114758349).
+    # See .planning/phases/09-replication-in-independent-cohorts/09-SMOKE.md Finding 1.
+    genome_build: GRCh37
+    liftover_required: false
     ftp_root: "https://ftp.ncbi.nlm.nih.gov/dbgap/studies/phs001672/analyses"
     file_pattern: "phs001672.{pha}.txt"
     column_map:
