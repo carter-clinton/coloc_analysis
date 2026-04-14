@@ -113,4 +113,23 @@ blood group) validated across all methods (REQ-7). 1000 permutation null gene se
 matched for size/LD/MAF. Cross-method aggregator with consensus ranking. Methods
 fragment with 6 canonical citations. 100 tests passing. 37 Snakemake rules.
 
-Last updated: 2026-04-13
+**Phase 9 (Replication in Independent Cohorts):** Complete (2026-04-14) — T1 spine
+closed. Four-cohort replication infrastructure (GBMI + FinnGen R12 + MVP dbGaP
+phs001672 + BBJ hum0197-v3; AoU deferred to Phase 8 T2). Joint effect-size +
+coloc.susie re-estimation criterion with PP.H4 sweep {0.5, 0.7, 0.8, 0.9} per
+D-03; FIQT winner's-curse correction (winnerscurse::FDR_IQT) per D-04a; 4-column
+effect-size reporting (discovery_raw / discovery_FIQT / replication / meta);
+metafor::rma.uni FE IVW meta per D-06b; COJO conditional+joint sensitivity with
+1000G N=503 caveat documented at 3 levels per RESEARCH gotcha #1; asymmetric
+ancestry design (match EUR/AFR; BBJ-EAS = generalization panel for Tier A+B only
+per D-05c). 4 D-07 output tables assembled: master_table, cross_ancestry_
+generalization_tier_ab, cojo_sensitivity, replication_holdout_supplementary.
+77 Phase 9 tests + 217 prior-phase regression tests passing. 25 Snakemake rules
+in replication.smk. Verification=human_needed: 3 items tracked in 09-HUMAN-UAT.md
+for real-data smoke execution (naturally concurrent with DEF-RO7-01/02/03).
+
+**T1 spine complete.** Phases 0, 1, 2, 5, 9 all done (25/25 plans). **Checkpoint
+#1 decision point reached** — AJHG (T1 only) vs. proceed with T2 (Phases 3, 4, 8)
+for Nature Genetics pitch. Awaiting real-data smoke + CP#1 write-up.
+
+Last updated: 2026-04-14
