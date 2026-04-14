@@ -801,12 +801,16 @@ rule render_replication_qc_dashboard
 
 **User confirmation needed on:** A1 (MVP coverage — planner must verify in Wave 1), A5 (FinnGen stroke endpoint — recommend `I9_STR_EXH` primary + `I9_STR` sensitivity; acceptable?), A9 (1000G EUR for COJO — accept caveat or expand Phase 9 to include Pan-UKBB PLINK reference?).
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **MVP per-trait sub-accession inventory (non-T2D):** dbGaP search didn't surface pha IDs for BMI / hypertension / stroke / asthma. Recommendation: add "Wave 1 Task 0: enumerate dbGaP phs001672 FTP listing" to Plan 09-01 — explicitly surface this uncertainty before coding download rules.
+   **RESOLVED: Plan 09-01 Task 1 Step 1 — dbGaP enumeration produces `config/mvp_phs001672_inventory.md` with concrete pha IDs or explicit NOT_RELEASED markers per trait × ancestry before any download rule is wired.**
 2. **BMI replication in cross-biobank layer:** GBMI lacks BMI. Options: (a) use Yengo 2022 GIANT as BMI cross-biobank proxy, (b) exclude BMI from "cross-biobank meta" layer and rely on per-ancestry native only. Recommendation: (a) with documented rationale.
+   **RESOLVED: Plan 09-01 YAML — GBMI BMI EXCLUDED (per D-02); BMI replication uses BBJ + MVP native only; no GIANT/Yengo substitution in T1 (config/replication_cohorts.yaml `cohorts.gbmi.traits.bmi.status = EXCLUDED`).**
 3. **Finnish-specific signals:** Do we apply an extra MAF-delta flag for Finnish founder-effect vs GBMI-EUR variants, or treat all FinnGen replications uniformly? Recommendation: compute ΔMAF column, flag > 0.05 in master_table; don't change inclusion logic.
+   **RESOLVED: Plan 09-05 `master_table.tsv` includes `low_maf_founder_flag` column per manifest row (see `build_master_replication_table.py::FINNISH_FOUNDER_FLAG_TRAITS`); inclusion logic unchanged.**
 4. **Hold-out supplementary format (D-07 #4):** CONTEXT.md lists `replication_holdout_supplementary.tsv` but doesn't specify schema. Recommendation: leave-one-cohort-out per-signal IVW meta with the held-out cohort's tested β for comparison.
+   **RESOLVED: Plan 09-05 Task 2 — `build_replication_holdout.py` uses leave-one-cohort-out IVW meta (`loco_meta` function); emits columns `signal_id, held_out_cohort, held_out_beta, held_out_se, loco_meta_beta, loco_meta_se, loco_n_cohorts`.**
 
 ## Sources
 
