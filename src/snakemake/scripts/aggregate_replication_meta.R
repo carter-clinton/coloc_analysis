@@ -51,8 +51,13 @@ ivw_meta_per_signal <- function(sub, min_cohorts = 2L) {
   )
   if (is.null(fit)) return(NULL)
 
+  # WR-08 fix: do NOT emit signal_id here — data.table's by-group return
+  # already carries the grouping columns (signal_id + cohort_ancestry).
+  # Emitting signal_id as a column of the returned data.table causes
+  # either "duplicated column signal_id" (newer data.table) or silent
+  # column drop (older data.table) depending on version. Let the grouping
+  # machinery attach grouping cols to avoid version-dependent behavior.
   data.table(
-    signal_id = valid$signal_id[1],
     meta_ancestry = valid$cohort_ancestry[1],
     beta_meta = as.numeric(fit$beta),
     se_meta = as.numeric(fit$se),
