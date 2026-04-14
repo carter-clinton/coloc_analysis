@@ -128,6 +128,11 @@ include: "src/snakemake/rules/negative_controls.smk"
 # outputs from Phase 2 QTL coloc and Phase 1 fine-mapping.
 include: "src/snakemake/rules/pathway.smk"
 
+# Phase 9 — replication cohorts (FinnGen R12, MVP phs001672, BBJ hum0197-v3,
+# GBMI). Skeleton rules with TODO placeholders; implementations added by
+# Plans 09-02 through 09-05.
+include: "src/snakemake/rules/replication.smk"
+
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
 LD_ANCESTRIES = [a for a in ANCESTRIES if a in config.get("onekg", {}).get("populations", {})]

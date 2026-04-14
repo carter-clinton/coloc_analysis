@@ -14,7 +14,13 @@ dependencies:
   - r-yaml=2.3.10
   - r-susier=0.14.2
   - r-coloc=5.2.3
-  - r-remotes  # needed to install hyprcoloc from GitHub
+  - r-remotes  # needed to install hyprcoloc from GitHub + winnerscurse (Phase 9)
   - htslib=1.21
   # NOTE: hyprcoloc is not available via conda. After env creation, install via:
   #   conda activate r_coloc && Rscript -e 'remotes::install_github("jrs95/hyprcoloc")'
+  #
+  # Phase 9 additions (2026-04-14): metafor for IVW meta (D-06b),
+  # remotes already present for winnerscurse GitHub install
+  # (Rscript -e 'remotes::install_github("amandaforde/winnerscurse")').
+  - r-metafor>=3.0
+  - r-data.table>=1.14
