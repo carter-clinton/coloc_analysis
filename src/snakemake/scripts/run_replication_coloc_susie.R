@@ -76,7 +76,10 @@ run_replication_coloc <- function(
 
   # Construct sweep column names up front so both success/failure paths
   # emit the same keys — simplifies Plan 09-05 join.
-  sweep_names <- sprintf("replicated_pph4_%s", format(pph4_thresholds, trim = TRUE))
+  # WR-04 fix: use %.1f so the formatted key is invariant to input precision
+  # (e.g. 0.80 vs 0.8 vs 0.8000000001 all yield "0.8"); matches Python-side
+  # compute_per_cohort_effect_size_test.pph4_sweep_colname.
+  sweep_names <- sprintf("replicated_pph4_%.1f", pph4_thresholds)
 
   if (is.null(res$summary) || !is.data.frame(res$summary) || nrow(res$summary) == 0L) {
     # Failure / no-signal path
