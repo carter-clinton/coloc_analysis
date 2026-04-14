@@ -40,13 +40,29 @@ paths:
   cache_downloads: "cache/downloads"
   liftover_chains: "data/external/liftover"
 
-# Per-trait ancestry mapping (which ancestries are available per trait)
+# Per-trait ancestry mapping (which ancestries are available per trait).
+#
+# SMOKE/FIRST-PROD STATE 2026-04-14: trimmed to trait×ancestry combos that
+# actually have harmonized sumstats on disk (closes DEF-RO7-02 for smoke).
+# Restore fuller mapping (below, commented) once EAS (BBJ) + HIS (Pan-UKBB
+# AMR / PAGE) sumstats are ingested via Phase 0 D-20 execution.
+#
+# Intended full mapping once ingest lands:
+#   bmi: [EUR, AFR, EAS]
+#   t2d: [EUR, TRANS, AFR, EAS]
+#   hypertension: [EUR, AFR, HIS]
+#   asthma: [EUR, AFR]
+#   stroke: [EUR, AFR, EAS]
 trait_ancestries:
-  bmi: [EUR, AFR, EAS]
-  t2d: [EUR, TRANS, AFR, EAS]
-  hypertension: [EUR, AFR, HIS]
+  # Note: t2d.TRANS harmonized file exists on disk but Phase 1 SuSiE rule
+  # wiring doesn't currently produce results/fine_mapping/susie/*.TRANS.*.json
+  # (dropped from smoke iteration 2026-04-14 — Phase 1 TRANS rule wiring is
+  # separate work).
+  bmi: [EUR]
+  t2d: [EUR, AFR]
+  hypertension: [EUR]
   asthma: [EUR, AFR]
-  stroke: [EUR, AFR, EAS]
+  stroke: [EUR, AFR]
 
 # 1000 Genomes setup for LD (carried from legacy)
 onekg:
