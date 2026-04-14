@@ -389,13 +389,20 @@ rule magma_annotate:
     """
     input:
         magma=PATHWAY_CFG.get("magma_binary", "tools/magma_v1.10/magma"),
-        snp_loc=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur") + ".bim",
         gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
+        # RO7 DAG wiring: flag-file dependency on download_magma_ref (ref_prefix touch).
+        # g1000_eur.bim/.fam are side-effects of the zip unpack and are not declared
+        # outputs of any rule, so they cannot live in `input:` (Snakemake would fail
+        # to find a producer). The .bed touch output is the declared hook; depending
+        # on it creates the DAG edge. The actual .bim filename is passed via params
+        # and consumed in the shell block below.
+        magma_ref_flag=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur") + ".bed",
     output:
         annot=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation.genes.annot"),
     params:
         out_prefix=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation"),
         script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+        snp_loc=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur") + ".bim",
     conda:
         MAGMA_ENV
     resources:
@@ -404,7 +411,7 @@ rule magma_annotate:
         """
         python {params.script} --step annotate \
             --magma-binary {input.magma} \
-            --snp-loc {input.snp_loc} \
+            --snp-loc {params.snp_loc} \
             --gene-loc {input.gene_loc} \
             --out {params.out_prefix}
         """
@@ -563,6 +570,8 @@ rule ldsc_munge:
             config["paths"]["harmonized_sumstats"], "{trait}.{ancestry}.tsv.bgz"
         ),
         hapmap3=PATHWAY_CFG.get("ldsc_hapmap3", "data/reference/ldsc/w_hm3.snplist"),
+        # RO7 DAG wiring: flag-file dependency on download_ldsc_baseline.
+        ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
     output:
         munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
     params:
@@ -604,6 +613,8 @@ rule ldsc_build_custom_annotations:
         gene_loc=PATHWAY_CFG.get("magma_gene_loc", "data/reference/magma/NCBI37.3.gene.loc"),
         custom_gmt=PATHWAY_CFG.get("custom_pathway_gmt", "config/pathway_sets/custom_cardiometabolic.gmt"),
         negctrl_gmt=PATHWAY_CFG.get("negative_control_gmt", "config/pathway_sets/negative_controls.gmt"),
+        # RO7 DAG wiring: flag-file dependency on download_ldsc_baseline (1000G plink files).
+        ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
     output:
         annot=expand(
             os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway.{chr}.annot.gz"),
@@ -642,6 +653,8 @@ rule ldsc_compute_custom_ld_scores:
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway.{chr}.annot.gz"
         ),
         hapmap3=PATHWAY_CFG.get("ldsc_hapmap3", "data/reference/ldsc/w_hm3.snplist"),
+        # RO7 DAG wiring: flag-file dependency on download_ldsc_baseline (1000G plink files).
+        ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
     output:
         ldscore=os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway.{chr}.l2.ldscore.gz"
@@ -685,6 +698,9 @@ rule ldsc_partitioned_h2:
             os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway.{chr}.l2.ldscore.gz"),
             chr=range(1, 23),
         ),
+        # RO7 DAG wiring: flag-file dependency on download_ldsc_baseline
+        # (baselineLD v2.2, weights, frq files referenced via params).
+        ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
     output:
         results=os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", "{trait}_{ancestry}_pathway_h2.results"
@@ -792,6 +808,9 @@ rule ldsc_seg_gene_expr:
     """
     input:
         munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
+        # RO7 DAG wiring: baseline/weights via params + gene-expr ldcts via params.
+        ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
+        ldsc_seg_gene_expr_flag="data/reference/ldsc_seg/.gene_expr_download_done",
     output:
         results=os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_gene_expr.cell_type_results.txt"
@@ -835,6 +854,9 @@ rule ldsc_seg_chromatin:
     """
     input:
         munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
+        # RO7 DAG wiring: baseline/weights via params + chromatin ldcts via params.
+        ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
+        ldsc_seg_chromatin_flag="data/reference/ldsc_seg/.chromatin_download_done",
     output:
         results=os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_chromatin.cell_type_results.txt"
@@ -946,14 +968,12 @@ rule fix_ldcts_paths:
     T-05-13: validates and rewrites .ldcts paths.
     """
     input:
-        gene_expr_ldcts=os.path.join(
-            PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
-            "Multi_tissue_gene_expr.ldcts",
-        ),
-        chromatin_ldcts=os.path.join(
-            PATHWAY_CFG.get("ldsc_seg_chromatin", "data/reference/ldsc_seg/Multi_tissue_chromatin"),
-            "Multi_tissue_chromatin.ldcts",
-        ),
+        # RO7 DAG wiring: flag-file dependencies on download_ldsc_seg (both sub-archives).
+        # The .ldcts files themselves are side-effects of the tgz unpack and are not
+        # declared outputs of any rule, so they cannot live in `input:`. They are
+        # passed to the run block via params; the flag-file inputs create the edge.
+        ldsc_seg_gene_expr_flag="data/reference/ldsc_seg/.gene_expr_download_done",
+        ldsc_seg_chromatin_flag="data/reference/ldsc_seg/.chromatin_download_done",
     output:
         gene_expr_fixed=os.path.join(
             PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
@@ -965,6 +985,14 @@ rule fix_ldcts_paths:
         ),
     params:
         script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_seg.py"),
+        gene_expr_ldcts=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
+            "Multi_tissue_gene_expr.ldcts",
+        ),
+        chromatin_ldcts=os.path.join(
+            PATHWAY_CFG.get("ldsc_seg_chromatin", "data/reference/ldsc_seg/Multi_tissue_chromatin"),
+            "Multi_tissue_chromatin.ldcts",
+        ),
     resources:
         mem_mb=1000,
     run:
@@ -972,8 +1000,8 @@ rule fix_ldcts_paths:
         _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
         from run_ldsc_seg import fix_ldcts_paths
 
-        fix_ldcts_paths(input.gene_expr_ldcts, output.gene_expr_fixed)
-        fix_ldcts_paths(input.chromatin_ldcts, output.chromatin_fixed)
+        fix_ldcts_paths(params.gene_expr_ldcts, output.gene_expr_fixed)
+        fix_ldcts_paths(params.chromatin_ldcts, output.chromatin_fixed)
 
 
 rule hess_validate_panel:
@@ -983,11 +1011,12 @@ rule hess_validate_panel:
     GRCh37 reference. Must run before any HESS analysis.
     """
     input:
-        bim=os.path.join(
-            PATHWAY_CFG.get("hess_ld_panel", "data/reference/hess/ld_panel"),
-            "EUR",
-            "chr1.bim",
-        ),
+        # RO7 DAG wiring: flag-file dependency on download_hess_panel.
+        # chr1.bim is a side-effect of the LD-panel tar unpack and is not a declared
+        # output of any rule, so it cannot live in `input:`. The .ld_panel_download_done
+        # touch file is the declared hook; bim is consulted indirectly via bfile_prefix
+        # in the shell block below.
+        hess_panel_ld_flag="data/reference/hess/.ld_panel_download_done",
     output:
         validated=touch("data/reference/hess/.build_validated"),
     params:
@@ -1058,16 +1087,14 @@ rule hess_local_rhog:
         sumstats2=os.path.join(
             PATHWAY_RESULTS_DIR, "hess", "sumstats", "{trait2}_{ancestry}_hess.tsv"
         ),
-        bfile_bim=os.path.join(
-            PATHWAY_CFG.get("hess_ld_panel", "data/reference/hess/ld_panel"),
-            "{ancestry}",
-            "chr{chrom}.bim",
-        ),
-        partition=os.path.join(
-            PATHWAY_CFG.get("hess_partition", "data/reference/hess/partition"),
-            "chr{chrom}.bed",
-        ),
         validated="data/reference/hess/.build_validated",
+        # RO7 DAG wiring: flag-file dependencies on download_hess_panel (both archives).
+        # chr{chrom}.bim and chr{chrom}.bed are side-effects of the tar unpack and are
+        # not declared outputs of any rule, so they cannot live in `input:`. They are
+        # referenced in the shell block via params; the flag-file inputs create the
+        # edge to download_hess_panel.
+        hess_panel_ld_flag="data/reference/hess/.ld_panel_download_done",
+        hess_panel_partition_flag="data/reference/hess/.partition_download_done",
     output:
         done=touch(
             os.path.join(
@@ -1088,6 +1115,10 @@ rule hess_local_rhog:
             wc.ancestry,
             f"chr{wc.chrom}",
         ),
+        partition=lambda wc: os.path.join(
+            PATHWAY_CFG.get("hess_partition", "data/reference/hess/partition"),
+            f"chr{wc.chrom}.bed",
+        ),
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR,
             "hess",
@@ -1105,7 +1136,7 @@ rule hess_local_rhog:
             --hess-script {params.hess_script} \
             --python27 $(which python) \
             --bfile {params.bfile} \
-            --partition {input.partition} \
+            --partition {params.partition} \
             --sumstats1 {input.sumstats1} \
             --sumstats2 {input.sumstats2} \
             --chrom {params.chrom} \
