@@ -138,18 +138,39 @@ rule download_mvp_phs001672:
         "curl -fsSL '{params.ftp}/phs001672.{wildcards.pha_id}.txt.gz' -o {output}"
 
 rule download_bbj_hum0197_v3:
+    """Fetch the NBDC hum0197.v3 zip for a single trait code. BBJ trait
+    codes come from config['cohorts']['bbj_hum0197_v3']['traits'] (T2D,
+    BMI, As, IS, SBP).
+    """
     output:
-        touch("data/raw/replication/bbj/{trait_code}.zip.downloaded")
+        "data/raw/replication/bbj/hum0197.v3.BBJ.{trait_code}.v1.zip"
+    params:
+        base = lambda wc: config['cohorts']['bbj_hum0197_v3']['http_base'],
     shell:
-        "echo 'TODO plan 09-02 Task 4 — download BBJ {wildcards.trait_code}' && touch {output}"
+        "curl -fsSL '{params.base}/hum0197.v3.BBJ.{wildcards.trait_code}.v1.zip' -o {output}"
 
 rule extract_bbj_zip:
+    """Extract the sumstats TSV payload from a BBJ zip. Skips README.*
+    entries. Output filename is normalized to 'sumstats.tsv' so the
+    harmonize step has a stable path independent of the zip's internal
+    layout.
+    """
     input:
-        "data/raw/replication/bbj/{trait_code}.zip.downloaded"
+        "data/raw/replication/bbj/hum0197.v3.BBJ.{trait_code}.v1.zip"
     output:
-        touch("data/raw/replication/bbj/{trait_code}.extracted")
-    shell:
-        "echo 'TODO plan 09-02 Task 4 — extract BBJ zip for {wildcards.trait_code}' && touch {output}"
+        "data/raw/replication/bbj/extracted/{trait_code}/sumstats.tsv"
+    run:
+        import sys as _sys
+        from pathlib import Path as _Path
+        _src_py = _Path(workflow.basedir) / "src" / "python"
+        if str(_src_py) not in _sys.path:
+            _sys.path.insert(0, str(_src_py))
+        from harmonize_bbj import extract_bbj_zip as _extract
+        _out = _Path(output[0])
+        _out.parent.mkdir(parents=True, exist_ok=True)
+        _found = _extract(_Path(input[0]), _out.parent)
+        if str(_found) != str(_out):
+            _found.rename(_out)
 
 # ============================================================
 # §B. HARMONIZATION — implemented by Plan 09-02
@@ -161,8 +182,8 @@ rule harmonize_finngen:
         gz = "data/raw/replication/finngen_r12/finngen_R12_{endpoint}.gz",
         chain = "data/raw/liftover/hg38ToHg19.over.chain.gz",
     output:
-        tsv = "data/processed/replication/harmonized/finngen_r12/{trait}_{endpoint}.tsv.gz",
-        qc  = "data/processed/replication/harmonized/finngen_r12/{trait}_{endpoint}.qc.json",
+        tsv = "data/processed/replication/harmonized_grch37/finngen_r12/{trait}_{endpoint}.tsv.gz",
+        qc  = "data/processed/replication/harmonized_grch37/finngen_r12/{trait}_{endpoint}.qc.json",
     params:
         case_n = lambda wc: config['cohorts']['finngen_r12']['traits'][wc.trait]['case_n'],
     conda:
@@ -183,13 +204,13 @@ rule harmonize_gbmi:
     config['panels'] can refer to them directly.
     """
     input: "data/raw/replication/gbmi/{trait}_{ancestry}.tsv.gz"
-    output: "data/processed/replication/harmonized/gbmi/{trait}_{ancestry}.tsv.gz"
+    output: "data/processed/replication/harmonized_grch37/gbmi/{trait}_{ancestry}.tsv.gz"
     conda:
         R_COLOC_ENV
     shell:
         "python {workflow.basedir}/src/python/harmonize_gbmi.py "
         "--input {input} "
-        "--output-prefix data/processed/replication/harmonized/gbmi/{wildcards.trait} "
+        "--output-prefix data/processed/replication/harmonized_grch37/gbmi/{wildcards.trait} "
         "--trait {wildcards.trait} --ancestry {wildcards.ancestry}"
 
 rule harmonize_mvp:
@@ -201,8 +222,8 @@ rule harmonize_mvp:
         gz = "data/raw/replication/mvp/{pha_id}.txt.gz",
         chain = "data/raw/liftover/hg38ToHg19.over.chain.gz",
     output:
-        tsv = "data/processed/replication/harmonized/mvp/{pha_id}.tsv.gz",
-        qc  = "data/processed/replication/harmonized/mvp/{pha_id}.qc.json",
+        tsv = "data/processed/replication/harmonized_grch37/mvp/{pha_id}.tsv.gz",
+        qc  = "data/processed/replication/harmonized_grch37/mvp/{pha_id}.qc.json",
     params:
         trait = lambda wc: _mvp_trait_from_pha(wc.pha_id),
         ancestry = lambda wc: _mvp_ancestry_from_pha(wc.pha_id),
@@ -216,28 +237,47 @@ rule harmonize_mvp:
         "--qc-out {output.qc}"
 
 rule harmonize_bbj:
+    """Harmonize a BBJ hum0197-v3 extracted TSV to canonical schema.
+    BBJ is always GRCh38 -> liftover required (chain file dependency).
+    """
     input:
-        "data/raw/replication/bbj/{trait_code}.extracted"
+        tsv = "data/raw/replication/bbj/extracted/{trait_code}/sumstats.tsv",
+        chain = "data/raw/liftover/hg38ToHg19.over.chain.gz",
     output:
-        touch("data/processed/replication/harmonized/bbj/{trait_code}.tsv.gz")
+        tsv = "data/processed/replication/harmonized_grch37/bbj/{trait}_{trait_code}.tsv.gz",
+        qc  = "data/processed/replication/harmonized_grch37/bbj/{trait}_{trait_code}.qc.json",
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-02 — harmonize BBJ {wildcards.trait_code}' && touch {output}"
+        "python {workflow.basedir}/src/python/harmonize_bbj.py "
+        "--input {input.tsv} --output {output.tsv} --chain-file {input.chain} "
+        "--trait {wildcards.trait} --trait-code {wildcards.trait_code} "
+        "--qc-out {output.qc}"
 
-rule liftover_replication_sumstats_grch38_to_37:
-    input:
-        "data/processed/replication/harmonized/{cohort}/{trait_file}.tsv.gz"
-    output:
-        touch("data/processed/replication/harmonized_grch37/{cohort}/{trait_file}.tsv.gz")
-    shell:
-        "echo 'TODO plan 09-02 — liftover {wildcards.cohort}/{wildcards.trait_file} GRCh38→GRCh37' && touch {output}"
+# NOTE: The Wave-1 skeleton originally included a standalone
+# liftover_replication_sumstats_grch38_to_37 rule. Wave-2 harmonizers apply
+# liftover INLINE (each harmonize_* invokes sumstats_utils.liftover_to_grch37
+# directly) so the output of harmonize_{finngen,mvp,bbj} is already GRCh37.
+# GBMI flagship releases are GRCh37 natively, so no liftover is needed.
+# The standalone rule has therefore been removed.
 
 rule validate_harmonized_sumstats:
+    """Canonical-schema + liftover-QC gate. Looks up the matching .qc.json
+    when present (harmonizers always emit one); FinnGen, MVP, and BBJ all
+    produce QC JSON, GBMI produces none (no liftover step)."""
     input:
-        "data/processed/replication/harmonized_grch37/{cohort}/{trait_file}.tsv.gz"
+        tsv = "data/processed/replication/harmonized_grch37/{cohort}/{trait_file}.tsv.gz",
     output:
         touch("data/processed/replication/harmonized_grch37/{cohort}/{trait_file}.validated")
+    params:
+        qc_path = lambda wc, input: str(input.tsv).replace(".tsv.gz", ".qc.json"),
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-02 — validate harmonized sumstats {wildcards.cohort}/{wildcards.trait_file}' && touch {output}"
+        "QC_FLAG=''; "
+        "if [ -f '{params.qc_path}' ]; then QC_FLAG='--qc {params.qc_path}'; fi; "
+        "python {workflow.basedir}/src/python/validate_replication_sumstats.py "
+        "--tsv {input.tsv} $QC_FLAG --max-drop 0.05 && touch {output}"
 
 # ============================================================
 # §C. MANIFEST & SUSIE FIT — implemented by Plan 09-03
