@@ -5,7 +5,15 @@ Used by MAGMA, LDSC, and HESS wrappers to avoid reimplementing
 effective-N logic in each individual script. Import as:
 
     from sumstats_utils import compute_effective_n, get_effective_n, TRAIT_TYPE
+
+Phase 9 additions (2026-04-14): `is_palindromic`, `filter_palindromic_ambiguous`,
+and `liftover_to_grch37` — shared by the 4 replication-cohort harmonizers
+(harmonize_finngen, harmonize_gbmi, harmonize_mvp, harmonize_bbj).
 """
+
+import pandas as pd
+
+from liftover import liftover_coordinates
 
 
 def compute_effective_n(n_case: float, n_ctrl: float) -> float:
@@ -95,3 +103,135 @@ def get_effective_n(
             f"got n_case={n_case}, n_ctrl={n_ctrl}"
         )
     return compute_effective_n(n_case, n_ctrl)
+
+
+# ==========================================================================
+# Phase 9 — Replication cohort harmonization helpers (Plan 09-02 Task 1)
+# ==========================================================================
+
+# A/T and C/G are palindromic on the forward strand — cannot resolve EA/OA
+# orientation by allele alone; MAF-band exclusion is required to avoid strand
+# flips (RESEARCH pitfall #2).
+PALINDROMIC_PAIRS = {("A", "T"), ("T", "A"), ("C", "G"), ("G", "C")}
+
+
+def is_palindromic(ea: str, oa: str) -> bool:
+    """Return True if (EA, OA) is a palindromic (strand-ambiguous) pair."""
+    return (ea.upper(), oa.upper()) in PALINDROMIC_PAIRS
+
+
+def filter_palindromic_ambiguous(
+    df: pd.DataFrame,
+    ea_col: str = "EA",
+    oa_col: str = "OA",
+    eaf_col: str = "EAF",
+    maf_band: tuple = (0.48, 0.52),
+) -> pd.DataFrame:
+    """Drop palindromic SNPs whose MAF lies in the ambiguity band.
+
+    Rows where EA/OA is a palindrome (A/T, T/A, C/G, G/C) **and** the
+    minor-allele frequency (MAF = min(EAF, 1-EAF)) falls inside
+    ``maf_band`` are removed outright. Surviving rows gain a boolean
+    ``palindromic_flag`` column so downstream coloc/meta code can track
+    them even when retained.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Harmonized sumstats with EA/OA/EAF columns.
+    ea_col, oa_col, eaf_col : str
+        Column names (defaults match the canonical schema).
+    maf_band : (float, float)
+        MAF interval where palindromic pairs are ambiguous. The standard
+        [0.48, 0.52] window follows GWAS harmonization practice (the exact
+        width is a tradeoff between strand-flip risk and power loss).
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered frame with a new ``palindromic_flag`` column. Input is not
+        modified in place.
+    """
+    pal_mask = df.apply(lambda r: is_palindromic(r[ea_col], r[oa_col]), axis=1)
+    maf = df[eaf_col].where(df[eaf_col] < 0.5, 1 - df[eaf_col])
+    ambig = pal_mask & maf.between(maf_band[0], maf_band[1])
+    keep = ~ambig
+    out = df.loc[keep].copy()
+    out["palindromic_flag"] = pal_mask.loc[keep].values
+    return out
+
+
+def liftover_to_grch37(
+    df: pd.DataFrame,
+    chain_file: str,
+    chr_col: str = "CHR",
+    bp_col: str = "BP",
+    max_drop_rate: float = 0.05,
+) -> "tuple[pd.DataFrame, dict]":
+    """Lift a harmonized sumstats DataFrame from GRCh38 to GRCh37.
+
+    Applies :func:`liftover.liftover_coordinates` per row and replaces
+    ``chr_col`` / ``bp_col`` in place (on the returned copy). Rows whose
+    coordinates cannot be lifted are dropped. If the drop rate exceeds
+    ``max_drop_rate`` the function raises ``RuntimeError`` — silent large
+    drops have been the source of real replication failures (RESEARCH
+    pitfall #1 references the same failure mode).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input sumstats with ``chr_col`` + ``bp_col`` (GRCh38 coords).
+    chain_file : str
+        Path to a UCSC chain file (e.g., hg38ToHg19.over.chain.gz).
+    chr_col, bp_col : str
+        Column names to rewrite.
+    max_drop_rate : float
+        Hard QC ceiling on fraction of rows that fail liftover. Default
+        0.05 (== 5 %). At-exact-threshold is permitted.
+
+    Returns
+    -------
+    (df_lifted, qc)
+        ``df_lifted`` has CHR/BP replaced with GRCh37 coordinates; unlifted
+        rows are dropped. ``qc`` dict has keys ``n_input``, ``n_lifted``,
+        ``n_dropped``, ``drop_rate``.
+
+    Raises
+    ------
+    RuntimeError
+        When ``drop_rate > max_drop_rate``.
+    """
+    n_in = len(df)
+    if n_in == 0:
+        qc = {
+            "n_input": 0,
+            "n_lifted": 0,
+            "n_dropped": 0,
+            "drop_rate": 0.0,
+        }
+        return df.copy(), qc
+
+    # The module-level import is re-resolved here so monkeypatching
+    # `sumstats_utils.liftover_coordinates` in unit tests propagates.
+    lifted = df.apply(
+        lambda r: liftover_coordinates(chain_file, str(r[chr_col]), int(r[bp_col])),
+        axis=1,
+    )
+    mask = lifted.notna()
+    out = df.loc[mask].copy()
+    if mask.any():
+        out[chr_col] = [t[0].replace("chr", "") for t in lifted[mask]]
+        out[bp_col] = [int(t[1]) for t in lifted[mask]]
+    qc = {
+        "n_input": n_in,
+        "n_lifted": int(mask.sum()),
+        "n_dropped": int((~mask).sum()),
+        "drop_rate": float((~mask).mean()),
+    }
+    if qc["drop_rate"] > max_drop_rate:
+        raise RuntimeError(
+            f"Liftover drop rate {qc['drop_rate']:.2%} exceeds "
+            f"{max_drop_rate:.0%} threshold (RESEARCH pitfall #1 — silent "
+            f"large liftover drops)"
+        )
+    return out, qc
