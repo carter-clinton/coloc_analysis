@@ -537,7 +537,7 @@ res <- coloc::coloc.susie(disc_fit, rep_fit)
 ### COJO conditional
 ```bash
 # Source: GCTA docs (cnsgenomics.com) + SISG 2024 practical 5
-gcta --bfile data/processed/ld_reference/1kg_EUR/chr${CHR} \
+gcta --bfile data/reference/ldsc/1000G_Phase3_plinkfiles/1000G.EUR.QC.${CHR} \
      --cojo-file ${COHORT}_${TRAIT}_chr${CHR}.ma \
      --cojo-slct --cojo-p 5e-8 --cojo-wind 10000 \
      --extract ${LOCUS}_snps.list \
