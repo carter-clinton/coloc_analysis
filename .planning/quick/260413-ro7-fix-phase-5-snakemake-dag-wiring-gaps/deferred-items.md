@@ -32,3 +32,72 @@ surface only once pathway.smk's download→consumer DAG edges resolve.
   `ld_reference.smk` that either (a) adds a `TRANS.samples` generator
   (union of EUR+AFR+EAS+AMR) or (b) gates the ancestry list to only the
   four continental labels at DAG-expand time.
+
+## DEF-RO7-02: pathway rules iterate config trait_ancestries beyond disk availability
+
+- **Discovered during:** 2026-04-13 post-RO7 smoke-test triage (narrowing
+  dry-run to per-branch targets after DEF-RO7-01 surfaced).
+- **File:** `src/snakemake/rules/sumstats.smk` (`dataset_descriptor` at
+  line 34, lambda at line 135); also affects `src/snakemake/rules/pathway.smk`
+  expand() calls at lines 752-753, 908-909, 916-917, 1709.
+- **Error (from LDSC/LDSC-SEG/HESS per-branch dry-run):**
+  ```
+  File src/snakemake/rules/sumstats.smk, line 135, in <lambda>
+  File src/snakemake/rules/sumstats.smk, line 34, in dataset_meta
+  File src/legacy/region_analysis/scripts/dataset_config.py, line 61, in dataset_descriptor
+  # triggered by wildcards trait=bmi, ancestry=AFR
+  ```
+- **Root cause:** `config/pipeline.yaml` declares `trait_ancestries` that
+  include combos not harmonized on disk (e.g., `bmi: [EUR, AFR, EAS]` — only
+  `bmi.EUR.tsv.bgz` exists). Pathway rules expand across the full config,
+  so Snakemake tries to produce the missing files via `harmonize_sumstats`,
+  which raises because no source is registered for those combos.
+- **Harmonized sumstats actually on disk** (at `data/processed/region_analysis/sumstats_harmonized_fixed/`):
+  asthma.{EUR,AFR}, bmi.EUR, hypertension.EUR, stroke.{EUR,AFR}, t2d.{EUR,AFR,TRANS}.
+- **Why deferred:** Outside RO7 scope (RO7 = single-file fix to pathway.smk).
+  This is a cross-file iteration policy issue that needs a design decision
+  (iterate config vs. disk vs. explicit allowlist).
+- **Impact:** Blocks per-branch smoke testing of MAGMA / LDSC partitioned /
+  LDSC-SEG / HESS in isolation — even though those branches don't need
+  tier_ab data or LD reference matrices.
+- **Recommended follow-up:** A follow-up quick task to either (a) filter
+  pathway expand() calls to trait×ancestry combos that have harmonized
+  files on disk, or (b) add an explicit allowlist in pipeline.yaml
+  (e.g., `pathway.smoke_trait_ancestries`) that defaults to the intersection
+  of config and disk.
+
+## DEF-RO7-03: config harmonized_sumstats path mismatch
+
+- **Discovered during:** 2026-04-13 post-RO7 prerequisite assessment.
+- **File:** `config/pipeline.yaml`, key `paths.harmonized_sumstats`.
+- **Issue:** Config declares `harmonized_sumstats: "data/processed/sumstats_harmonized"`
+  but actual data lives at `data/processed/region_analysis/sumstats_harmonized_fixed/`.
+  The `use_fixed_sumstats: true` flag elsewhere in config should be controlling
+  this but isn't applied to `paths.harmonized_sumstats`.
+- **Why deferred:** RO7 forbids config edits.
+- **Impact:** Will surface only after DEF-RO7-02 is resolved — at that point,
+  any pathway rule consuming the config path will fail to find files. Not
+  the proximate cause of current smoke-run failures.
+- **Recommended follow-up:** A single-line config fix (or resolve
+  `use_fixed_sumstats` conditionally) in the same quick task that addresses
+  DEF-RO7-02.
+
+---
+
+## Smoke-testing blockers — summary
+
+Full `snakemake all_pathway --dry-run` is blocked by three pre-existing
+(non-RO7) issues, in the order they surface:
+
+1. **DEF-RO7-02** blocks 4 of 6 branches (MAGMA, LDSC partitioned, LDSC-SEG,
+   HESS) — surfaces immediately via trait×ancestry expand().
+2. **DEF-RO7-01** blocks the g:Profiler branch + `all_pathway` aggregate —
+   surfaces via Phase 2 tier_assignments → Phase 1 LD reference → TRANS.samples.
+3. **DEF-RO7-03** will surface after DEF-RO7-02 is fixed.
+
+Decision (2026-04-13): Defer smoke testing until Phase 9 planning. The
+pathway.smk DAG wiring is confirmed correct by RO7 (no pathway.smk rules
+produce MissingInputException after RO7). Unit tests pass (100/100).
+Phase 9 replication will force re-exercising Phase 0/1/2 data paths,
+at which point these deferred items will surface in natural context
+with relevant data on hand.
