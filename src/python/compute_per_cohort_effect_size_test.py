@@ -78,6 +78,20 @@ def posthoc_power(beta_fiqt: float, se_rep: float, alpha: float) -> float:
     return float(norm.cdf(z_beta))
 
 
+def pph4_sweep_colname(threshold: float) -> str:
+    """Canonical column name for a PP.H4 sweep threshold.
+
+    WR-04 fix: Python's ``f"{0.80}"`` yields ``"0.8"`` but a caller passing
+    a non-exact float like ``0.75 + 0.05`` repr'd as ``"0.8000000001"`` would
+    silently break the Python↔R join (R emits via ``sprintf("%.1f", ...)``).
+    Pin both sides to one-decimal formatting so the column name is invariant
+    to input precision, matching the R synthesis in
+    ``src/snakemake/scripts/run_replication_coloc_susie.R`` (updated to
+    ``sprintf("replicated_pph4_%.1f", pph4_thresholds)``).
+    """
+    return f"replicated_pph4_{threshold:.1f}"
+
+
 def compute_joint_criterion(row: pd.Series, primary_threshold: float = 0.8) -> bool:
     """Return True iff the Bonferroni AND coloc criteria both hold.
 
@@ -88,7 +102,7 @@ def compute_joint_criterion(row: pd.Series, primary_threshold: float = 0.8) -> b
     Defensive: missing columns default to False (joint is a conjunction;
     absence of evidence → not replicated).
     """
-    key_pph4 = f"replicated_pph4_{primary_threshold}"
+    key_pph4 = pph4_sweep_colname(primary_threshold)
     bonf = bool(row.get("replicated_bonferroni", False))
     pph4 = bool(row.get(key_pph4, False))
     return bonf and pph4
