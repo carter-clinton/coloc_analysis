@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-03-PLAN.md (manifest + SuSiE re-fit + FIQT wrappers)
-last_updated: "2026-04-14T04:03:12.443Z"
+stopped_at: Completed 09-04-PLAN.md (coloc.susie + Bonferroni + IVW meta)
+last_updated: "2026-04-14T04:16:54.761Z"
 last_activity: 2026-04-14
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 25
-  completed_plans: 23
-  percent: 92
+  completed_plans: 24
+  percent: 96
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 09 (replication-in-independent-cohorts) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-14
 
@@ -74,6 +74,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 09 P01 | 23min | 3 tasks | 16 files |
 | Phase 09 P02 | 11min | 5 tasks | 14 files |
 | Phase 09 P03 | 13 | 2 tasks | 7 files |
+| Phase 09 P04 | 18min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,14 @@ Recent decisions affecting current work:
 - [Phase 09]: [Phase 09-03]: winnerscurse pinned SHA 2ed00bb (amandaforde/winnerscurse); lazy-install via remotes::install_github on first run_fiqt.R call — no manual post-conda step (r-remotes already in envs/r_coloc.yml from Phase 0)
 - [Phase 09]: [Phase 09-03]: se_FIQT column is passthrough=raw SE — winnerscurse emits only beta_FIQT; stable 2-col addition documents that SE of the corrected estimator equals raw SE to first order (formal shrinkage would need parametric bootstrap per row)
 - [Phase 09]: [Phase 09-03]: FIQT tests require multi-row BH context — single-row inputs at z=1.5 cannot exhibit shrinkage (BH is a no-op at n=1); tests use focal signal + 100-row null background
+- [Phase 09]: [Phase 09-04]: Single tryCatch wrapping both readRDS + coloc.susie (T-09-16 uniform failure surface)
+- [Phase 09]: [Phase 09-04]: Failure-path coloc JSON emits same sweep keys as success-path (no branching downstream)
+- [Phase 09]: [Phase 09-04]: Per-cohort (not per-signal) output for compute_per_cohort_effect_size_test (single-source Bonferroni denominator)
+- [Phase 09]: [Phase 09-04]: metafor::rma.uni(method='FE') over hand-rolled IVW (matches textbook to 4 decimals; gives QE/I^2 for free)
+- [Phase 09]: [Phase 09-04]: IVW meta groups by (signal_id, cohort_ancestry); is_generalization=TRUE (BBJ) excluded per D-05c (T-09-17)
+- [Phase 09]: [Phase 09-04]: collect_replication_effect_sizes.py materialized as standalone I-5 producer (plan iteration 2 revision)
+- [Phase 09]: [Phase 09-04]: .rds fixtures committed via .gitignore exception (tests/**/fixtures/*.rds) for deterministic CI
+- [Phase 09]: [Phase 09-04]: posthoc_power returns NaN on invalid input (distinguishes 'could not compute' from zero power)
 
 ### Pending Todos
 
@@ -173,8 +182,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T04:02:57.313Z
-Stopped at: Completed 09-03-PLAN.md (manifest + SuSiE re-fit + FIQT wrappers)
+Last session: 2026-04-14T04:16:42.514Z
+Stopped at: Completed 09-04-PLAN.md (coloc.susie + Bonferroni + IVW meta)
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
