@@ -39,6 +39,55 @@ REPLICATION_ROOT = Path(config.get("paths", {}).get("results_root", "results")) 
 GCTA_ENV = str(Path(workflow.basedir) / "envs" / "gcta.yml")
 R_COLOC_ENV = str(Path(workflow.basedir) / "envs" / "r_coloc.yml")
 
+
+def _build_mvp_pha_index():
+    """Invert config['cohorts']['mvp_phs001672']['traits'] to a
+    pha_id_norm -> (trait, ancestry_key) lookup. Used by harmonize_mvp
+    to resolve wildcards at rule evaluation.
+
+    Key normalization: real dbGaP files are named phs001672.phaNNNNNN.txt,
+    whereas the config carries versioned IDs like "pha004945.1". The
+    lookup strips the '.N' version suffix.
+    """
+    idx = {}
+    mvp = config.get('cohorts', {}).get('mvp_phs001672', {}).get('traits', {})
+    for trait, strata in mvp.items():
+        if not isinstance(strata, dict):
+            continue
+        # Skip traits with a top-level status: NOT_RELEASED_*
+        if strata.get('status', '').startswith('NOT_RELEASED'):
+            continue
+        for anc_key, meta in strata.items():
+            if not isinstance(meta, dict):
+                continue
+            pha = meta.get('pha')
+            if pha is None:
+                continue
+            pha_base = str(pha).split('.')[0]
+            idx[pha_base] = (trait, anc_key)
+    return idx
+
+
+_MVP_PHA_INDEX = _build_mvp_pha_index()
+
+
+def _mvp_trait_from_pha(pha_id: str) -> str:
+    base = str(pha_id).split('.')[0]
+    if base not in _MVP_PHA_INDEX:
+        raise ValueError(f"MVP pha_id '{pha_id}' not in config['cohorts']['mvp_phs001672']['traits']")
+    return _MVP_PHA_INDEX[base][0]
+
+
+def _mvp_ancestry_from_pha(pha_id: str) -> str:
+    """Return the ancestry stratum key (eur / afr / eas / his / trans /
+    eur_sbp / ...). Downstream harmonize_mvp uses this as-is; the panel
+    logic in Plan 09-04 will translate stratum keys into canonical
+    ancestry codes for the panel assignment."""
+    base = str(pha_id).split('.')[0]
+    if base not in _MVP_PHA_INDEX:
+        raise ValueError(f"MVP pha_id '{pha_id}' not in config['cohorts']['mvp_phs001672']['traits']")
+    return _MVP_PHA_INDEX[base][1]
+
 # ============================================================
 # §A. COHORT INGEST — implemented by Plan 09-02
 # ============================================================
@@ -77,10 +126,16 @@ rule download_gbmi:
         "(echo 'ERROR: GBMI portal download failed — see .planning/data_access.md for manual steps' && exit 1)"
 
 rule download_mvp_phs001672:
+    """Fetch a single MVP phs001672 analysis file from the dbGaP FTP.
+    The {pha_id} wildcard carries the dbGaP ID (e.g., 'pha004945.1' or
+    'pha004945') — downloaded as phs001672.{pha_id}.txt.gz.
+    """
     output:
-        touch("data/raw/replication/mvp/{pha_id}.downloaded")
+        "data/raw/replication/mvp/{pha_id}.txt.gz"
+    params:
+        ftp = lambda wc: config['cohorts']['mvp_phs001672']['ftp_root'],
     shell:
-        "echo 'TODO plan 09-02 Task 3 — download MVP {wildcards.pha_id}' && touch {output}"
+        "curl -fsSL '{params.ftp}/phs001672.{wildcards.pha_id}.txt.gz' -o {output}"
 
 rule download_bbj_hum0197_v3:
     output:
@@ -138,12 +193,27 @@ rule harmonize_gbmi:
         "--trait {wildcards.trait} --ancestry {wildcards.ancestry}"
 
 rule harmonize_mvp:
+    """Harmonize an MVP phs001672 analysis file -- dispatches on detected
+    schema (dbGaP GWAS-central or REGENIE-style). Phase 9 real data is
+    GRCh38 (Wave-1 correction) so --genome-build GRCh38 + chain file.
+    """
     input:
-        "data/raw/replication/mvp/{pha_id}.downloaded"
+        gz = "data/raw/replication/mvp/{pha_id}.txt.gz",
+        chain = "data/raw/liftover/hg38ToHg19.over.chain.gz",
     output:
-        touch("data/processed/replication/harmonized/mvp/{pha_id}.tsv.gz")
+        tsv = "data/processed/replication/harmonized/mvp/{pha_id}.tsv.gz",
+        qc  = "data/processed/replication/harmonized/mvp/{pha_id}.qc.json",
+    params:
+        trait = lambda wc: _mvp_trait_from_pha(wc.pha_id),
+        ancestry = lambda wc: _mvp_ancestry_from_pha(wc.pha_id),
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-02 — harmonize MVP {wildcards.pha_id}' && touch {output}"
+        "python {workflow.basedir}/src/python/harmonize_mvp.py "
+        "--input {input.gz} --output {output.tsv} "
+        "--pha-id {wildcards.pha_id} --trait {params.trait} --ancestry {params.ancestry} "
+        "--genome-build GRCh38 --chain-file {input.chain} "
+        "--qc-out {output.qc}"
 
 rule harmonize_bbj:
     input:
