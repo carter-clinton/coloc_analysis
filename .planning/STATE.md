@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-14T04:44:42.299Z"
-last_activity: 2026-04-14
+last_updated: "2026-04-14T23:10:00.000Z"
+last_activity: 2026-04-14 - Completed quick task 260414-qhr: Fix Phase 0 download rule idempotency
 progress:
   total_phases: 12
   completed_phases: 5
@@ -186,11 +186,22 @@ None yet.
 | 260413-ro7 | Fix Phase 5 Snakemake DAG wiring gaps | 2026-04-13 | bfb04f8 | [260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps](./quick/260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps/) |
 | 260413-vtk | Fix 3 file-path bugs in Phase 9 plans | 2026-04-14 | ea9ddd2 | [260413-vtk-fix-3-file-path-bugs-in-phase-9-plans](./quick/260413-vtk-fix-3-file-path-bugs-in-phase-9-plans/) |
 | 260414-clp | Fix genome-build config mismatch (Finding 1 from Phase 9 smoke) | 2026-04-14 | fb61c40 | [260414-clp-fix-genome-build-config-mismatch-in-phas](./quick/260414-clp-fix-genome-build-config-mismatch-in-phas/) |
+| 260414-qhr | Fix Phase 0 download rule idempotency (LDSC baseline preflight + MAGMA binary symlink) | 2026-04-14 | e936aea | [260414-qhr-fix-phase-0-download-rule-idempotency-1-](./quick/260414-qhr-fix-phase-0-download-rule-idempotency-1-/) |
 
 ## Session Continuity
 
-Last session: 2026-04-14T15:05:00Z
-Stopped at: Phase 0 first-production data infrastructure landed (32 GB references). `snakemake all_pathway --dry-run` resolves end-to-end (579-job DAG). Phase 9 fully secured + smoke-validated. Ready for narrow real-data execution OR full Phase 0/1/2/5 LSF launch.
+Last session: 2026-04-14T19:00:00Z
+Stopped at: Resume session surfaced narrow-scout scope blocker. The plan target rules are NOT idempotent against Carter's manually-staged 32 GB of references — `download_ldsc_baseline` would re-fetch ~5 GB from Broad/GCS (requester-pays auth failure expected); `download_magma_binary` would hit CNCR's JS gate that blocks curl; `download_sumstats` chains 8 fresh GWAS downloads because `data/raw/sumstats/` and `cache/downloads/` don't exist. Routing to `/gsd-quick` for Phase 0 idempotency hardening before any real-data execution. See findings below.
+
+### Finding 2026-04-14 PM — Phase 0 idempotency gap
+
+Dry-run inspection of Phase A narrow-scout targets revealed:
+- `download_ldsc_baseline` rule (src/snakemake/rules/pathway.smk:180-237) re-fetches 4 large tarballs (~5 GB total) from `broad-alkesgroup-ukbb-ld.s3.amazonaws.com` + GCS `requester-pays` paths. Manually-staged data IS on disk (`data/reference/ldsc/baselineLD.{1..22}.{annot.gz,l2.M,l2.M_5_50}`, `data/reference/ldsc/eur_w_ld_chr/w_hm3.snplist`, `data/reference/ldsc/w_hm3.snplist`) but the rule's flag file `data/reference/ldsc/.baseline_download_done` doesn't exist, so Snakemake re-runs.
+- `download_magma_binary` rule expects `tools/magma_v1.10/magma` which doesn't exist; Carter's manual download landed at `data/reference/magma/magma`. Path mismatch + JS-gated CNCR upstream.
+- `harmonize_sumstats` chains `download_sumstats` for 8 trait/ancestry combos (bmi.EUR, t2d.EUR, t2d.AFR, hypertension.EUR, asthma.EUR, asthma.AFR, stroke.EUR, stroke.AFR). Raw sumstats not on disk. Multiple URL-rot risk.
+- Existing harmonized .bgz files (Feb 11 timestamps, ~2.3 GB at `data/processed/region_analysis/sumstats_harmonized_fixed/`) would be overwritten because `config/datasets.yaml` mtime is newer.
+
+**Decision:** No real-data execution until Phase 0 download rules are made idempotent (skip-if-on-disk semantics) AND the magma binary path is reconciled. Routed to `/gsd-quick`.
 
 ### What landed during 2026-04-14 sessions
 
