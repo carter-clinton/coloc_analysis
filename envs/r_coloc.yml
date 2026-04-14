@@ -20,7 +20,11 @@ dependencies:
   #   conda activate r_coloc && Rscript -e 'remotes::install_github("jrs95/hyprcoloc")'
   #
   # Phase 9 additions (2026-04-14): metafor for IVW meta (D-06b),
-  # remotes already present for winnerscurse GitHub install
-  # (Rscript -e 'remotes::install_github("amandaforde/winnerscurse")').
+  # winnerscurse for FIQT winner's-curse correction (D-04a).
+  # winnerscurse is GitHub-only; src/snakemake/scripts/run_fiqt.R lazy-installs
+  # on first use — no manual step required. For reproducibility, the pinned
+  # commit SHA is documented in docs/methods_fragment.md after first successful
+  # install (currently unpinned: upgrade="never" prevents further pulls once
+  # the user has a working version).
   - r-metafor>=3.0
   - r-data.table>=1.14

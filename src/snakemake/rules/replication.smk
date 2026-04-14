@@ -378,10 +378,27 @@ rule run_replication_coloc_susie:
 # §E. FIQT + META — implemented by Plan 09-04
 # ============================================================
 rule run_fiqt_on_discovery:
+    """Apply FIQT (Bigdeli 2016) winner's-curse correction to discovery β̂.
+
+    Input is a TSV assembled from the Phase-1 credible-set lead SNPs + Phase-2
+    Tier A+B triples with columns (rsid, beta, se, n). Output adds beta_FIQT
+    and se_FIQT columns; row order follows winnerscurse's descending-|z|
+    contract.
+
+    Plan 09-04 Task 2 produces the discovery_signals.tsv input; this rule
+    consumes it verbatim. Plan 09-03 makes the wrapper real so 09-04 only
+    needs to assemble the signal list.
+    """
+    input:
+        signals = "results/replication/fiqt/discovery_signals.tsv",
+        script_dep = "src/snakemake/scripts/run_fiqt.R",
     output:
-        touch("results/replication/fiqt/discovery_beta_fiqt.tsv")
+        "results/replication/fiqt/discovery_beta_fiqt.tsv"
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-04 Task 2 — FIQT on discovery betas' && touch {output}"
+        "Rscript {workflow.basedir}/src/snakemake/scripts/run_fiqt.R "
+        "{input.signals} {output}"
 
 rule compute_per_cohort_effect_size_test:
     input:
