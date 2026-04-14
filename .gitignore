@@ -91,6 +91,7 @@ figures/tmp/
 *.ld
 *.ldmatrix
 *.rds
+!tests/**/fixtures/*.rds
 *.RData
 *.h5
 *.hdf5
