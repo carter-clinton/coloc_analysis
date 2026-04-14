@@ -185,6 +185,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260413-ro7 | Fix Phase 5 Snakemake DAG wiring gaps | 2026-04-13 | bfb04f8 | [260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps](./quick/260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps/) |
 | 260413-vtk | Fix 3 file-path bugs in Phase 9 plans | 2026-04-14 | ea9ddd2 | [260413-vtk-fix-3-file-path-bugs-in-phase-9-plans](./quick/260413-vtk-fix-3-file-path-bugs-in-phase-9-plans/) |
+| 260414-clp | Fix genome-build config mismatch (Finding 1 from Phase 9 smoke) | 2026-04-14 | fb61c40 | [260414-clp-fix-genome-build-config-mismatch-in-phas](./quick/260414-clp-fix-genome-build-config-mismatch-in-phas/) |
 
 ## Session Continuity
 
