@@ -112,42 +112,58 @@ rule download_gbmi:
     for a trait, so {ancestry} is captured into the filename only as a
     record of intent; the same source URL is used.
 
-    NOTE: The GBMI portal ('https://www.globalbiobankmeta.org/resources')
-    serves some files behind a Google Forms gate — if curl 404s the
-    operator should manually download and place the file at `{output}`.
+    NOTE (WR-03): The GBMI portal does NOT serve files at the templated
+    `{portal}/{trait}/all_ancestries.tsv.gz` path — real flagship files
+    use names like `GBMI_flagship_<endpoint>_<ancestry>_<release>.tsv.gz`
+    behind a Google Forms gate. This rule WILL 404 in practice; the
+    operator should manually download from
+    https://www.globalbiobankmeta.org/resources and place the file at
+    `{output}`. See .planning/data_access.md for concrete URL + filename.
     """
     output: "data/raw/replication/gbmi/{trait}_{ancestry}.tsv.gz"
     params:
         portal = lambda wc: config['cohorts']['gbmi']['portal_url'],
     shell:
-        # Best-effort automated fetch; portal may require manual download
-        # (document caveat in data_access.md).
+        # Best-effort automated fetch; portal template is aspirational, real
+        # files are behind a gated forms request (see docstring + data_access.md).
         "curl -fsSL '{params.portal}/{wildcards.trait}/all_ancestries.tsv.gz' -o {output} || "
-        "(echo 'ERROR: GBMI portal download failed — see .planning/data_access.md for manual steps' && exit 1)"
+        "{{ echo 'ERROR: GBMI portal fetch failed for {wildcards.trait}_{wildcards.ancestry}. The automated template is known to 404 — see .planning/data_access.md for the manual download procedure (Google Forms gate) and place the file at {output}.' >&2; exit 1; }}"
 
 rule download_mvp_phs001672:
     """Fetch a single MVP phs001672 analysis file from the dbGaP FTP.
     The {pha_id} wildcard carries the dbGaP ID (e.g., 'pha004945.1' or
     'pha004945') — downloaded as phs001672.{pha_id}.txt.gz.
+
+    NOTE (WR-03): The real dbGaP layout nests files under
+    `phs001672.v12.p1/analyses/<AnalysisGroup>/<pha_id>/` and filenames
+    embed `.MULTI.txt.gz`. This flat template will 404 for real releases;
+    the operator should follow `.planning/data_access.md` to hand-populate
+    the output path from the authenticated dbGaP download area.
     """
     output:
         "data/raw/replication/mvp/{pha_id}.txt.gz"
     params:
         ftp = lambda wc: config['cohorts']['mvp_phs001672']['ftp_root'],
     shell:
-        "curl -fsSL '{params.ftp}/phs001672.{wildcards.pha_id}.txt.gz' -o {output}"
+        "curl -fsSL '{params.ftp}/phs001672.{wildcards.pha_id}.txt.gz' -o {output} || "
+        "{{ echo 'ERROR: dbGaP FTP fetch failed for {wildcards.pha_id}. The flat URL template does NOT match dbGaPs real layout (phs001672.v12.p1/analyses/<AnalysisGroup>/<pha_id>/...MULTI.txt.gz) — see .planning/data_access.md for the authenticated download procedure and place the file at {output}.' >&2; exit 1; }}"
 
 rule download_bbj_hum0197_v3:
     """Fetch the NBDC hum0197.v3 zip for a single trait code. BBJ trait
     codes come from config['cohorts']['bbj_hum0197_v3']['traits'] (T2D,
     BMI, As, IS, SBP).
+
+    NOTE (WR-03): NBDC may require a data-transfer-agreement click-through
+    for some hum0197 files. If curl 404s or redirects to a login page,
+    follow `.planning/data_access.md` for the DTA workflow.
     """
     output:
         "data/raw/replication/bbj/hum0197.v3.BBJ.{trait_code}.v1.zip"
     params:
         base = lambda wc: config['cohorts']['bbj_hum0197_v3']['http_base'],
     shell:
-        "curl -fsSL '{params.base}/hum0197.v3.BBJ.{wildcards.trait_code}.v1.zip' -o {output}"
+        "curl -fsSL '{params.base}/hum0197.v3.BBJ.{wildcards.trait_code}.v1.zip' -o {output} || "
+        "{{ echo 'ERROR: NBDC BBJ fetch failed for trait_code={wildcards.trait_code}. NBDC may require a DTA click-through — see .planning/data_access.md for the manual procedure and place the zip at {output}.' >&2; exit 1; }}"
 
 rule extract_bbj_zip:
     """Extract the sumstats TSV payload from a BBJ zip. Skips README.*
