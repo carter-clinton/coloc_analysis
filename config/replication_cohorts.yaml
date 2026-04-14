@@ -1,0 +1,189 @@
+# Phase 9 cohort registry. Used by src/snakemake/rules/replication.smk.
+# Schema version: 1. Verified 2026-04-14 per .planning/data_access.md and
+# .planning/phases/09-replication-in-independent-cohorts/mvp_phs001672_inventory.md.
+#
+# Per-cohort genome_build values reflect upstream reality as of Apr 2026.
+# All rules in replication.smk liftover to GRCh37 before coloc / meta (matches
+# Phase 1 discovery panel build).
+
+cohorts:
+
+  # ------------------------------------------------------------------
+  # FinnGen R12 — Finnish EUR-ancestry founder population
+  # ------------------------------------------------------------------
+  finngen_r12:
+    ancestry: EUR  # Finnish-EUR with founder-effect caveat (RESEARCH §14)
+    genome_build: GRCh38
+    liftover_required: true  # to GRCh37
+    http_mirror: "https://storage.googleapis.com/finngen-public-data-r12/summary_stats/release"
+    manifest_url: "https://storage.googleapis.com/finngen-public-data-r12/summary_stats/finngen_R12_manifest.tsv"
+    file_pattern: "finngen_R12_{endpoint}.gz"
+    tabix_index: true
+    column_map:
+      chr: "#chrom"
+      bp: "pos"
+      oa: "ref"
+      ea: "alt"
+      snp: "rsids"
+      beta: "beta"
+      se: "sebeta"
+      p: "pval"
+      eaf: "af_alt"
+    traits:
+      t2d: {endpoint: "T2D", case_n: 65000}
+      hypertension: {endpoint: "I9_HYPTENSESS", case_n: 141737}
+      # Primary = I9_STR_EXH because it provides the broadest match to MEGASTROKE any-stroke discovery set;
+      # FinnGen R12 does NOT publish I9_STR_ISCH (ischemic-only) as a standalone endpoint, so BBJ-IS serves
+      # as the ischemic-only overlay for cross-cohort sensitivity (RESEARCH §1 + gotcha #3). M-1 revision.
+      stroke: {endpoint: "I9_STR_EXH", case_n: 30000, sensitivity_endpoint: "I9_STR"}  # primary=exhaustive; sensitivity=narrower
+      asthma: {endpoint: "J10_ASTHMA", case_n: 45000, sensitivity_endpoint: "J10_ASTHMA_EXMORE"}
+      bmi: {status: EXCLUDED, reason: "FinnGen endpoints are disease codes; BMI unavailable as quantitative lab value"}
+
+  # ------------------------------------------------------------------
+  # MVP dbGaP phs001672 — DIAMANTE 2022 + MVP quantitative BP
+  # Genome build per-file verified GRCh38 on 2026-04-14
+  # (plan draft claimed GRCh37 — corrected per mvp_phs001672_inventory.md)
+  # ------------------------------------------------------------------
+  mvp_phs001672:
+    ancestry: MULTI  # EUR, AFR, HIS, EAS, TRANS available for T2D
+    genome_build: GRCh38
+    liftover_required: true  # to GRCh37 (plan draft said false — corrected)
+    ftp_root: "https://ftp.ncbi.nlm.nih.gov/dbgap/studies/phs001672/analyses"
+    file_pattern: "phs001672.{pha}.txt"
+    column_map:
+      # MVP dbGaP text files use the dbGaP GWAS-central column schema,
+      # NOT raw REGENIE. Columns: "Chr ID", "Chr Position", "Allele1", "Allele2",
+      # "β" (absolute-value regression coefficient), "SE", "Coded Allele", "Sample size".
+      # NOTE: |β| is absolute-value; direction reconstructed from Coded Allele
+      # orientation during harmonization (Plan 09-02 Task 3).
+      chr: "Chr ID"
+      bp: "Chr Position"
+      oa_allele1: "Allele1"
+      ea_allele2: "Allele2"
+      snp: "SNP ID"
+      beta_abs: "β"
+      se: "SE"
+      p: "P-value"
+      coded_allele: "Coded Allele"
+      n: "Sample size"
+    traits:
+      # DIAMANTE 2022 primary panel (pha004943-4947)
+      t2d:
+        eur: {pha: "pha004945.1", citation: "Vujkovic_2022", cases: 148726, controls: 965732}
+        afr: {pha: "pha004943.1", citation: "Vujkovic_2022", cases: 24646, controls: 31446}
+        eas: {pha: "pha004944.1", citation: "Vujkovic_2022", cases: 46511, controls: 169776}
+        his: {pha: "pha004946.1", citation: "Vujkovic_2022", cases: 8616, controls: 11829}   # parked per D-05d
+        trans: {pha: "pha004947.1", citation: "Vujkovic_2022", cases: 228499, controls: 1178783}
+      # Hypertension: MVP has NO binary HTN; uses quantitative BP as proxy (matches BBJ).
+      # SBP primary; DBP+PP sensitivity. Cross-cohort meta with FinnGen I9_HYPTENSESS
+      # (binary) requires z-score-scale harmonization (RESEARCH §11 / D-04b).
+      hypertension:
+        eur_sbp: {pha: "pha005042.1", citation: "MVP_BP_2023", trait_note: "SBP-EUR-only; primary proxy for HTN"}
+        trans_sbp: {pha: "pha004732.1", citation: "Giri_2019", trait_note: "SBP-transethnic; primary proxy for HTN"}
+        eur_dbp: {pha: "pha005040.1", citation: "MVP_BP_2023", trait_note: "DBP sensitivity"}
+        eur_pp: {pha: "pha005041.1", citation: "MVP_BP_2023", trait_note: "PP sensitivity"}
+        trans_dbp: {pha: "pha004730.1", citation: "Giri_2019", trait_note: "DBP sensitivity"}
+        trans_pp: {pha: "pha004731.1", citation: "Giri_2019", trait_note: "PP sensitivity"}
+      # Stroke: NOT released as main-effect GWAS in phs001672. pha005247 is a
+      # T2D-conditioned interaction analysis only — not usable for coloc replication.
+      stroke:
+        status: NOT_RELEASED_AS_OF_2026-04
+        action: exclude_from_MVP_cohort_column
+        notes: "pha005247 reports only SNP×T2D interaction β; no main-effect stroke GWAS in MVP phs001672"
+      asthma:
+        status: NOT_RELEASED_AS_OF_2026-04
+        action: exclude_from_MVP_cohort_column
+        notes: "No asthma Name or Description match across 335 phs001672 analysis files"
+      bmi:
+        status: NOT_RELEASED_AS_OF_2026-04
+        action: exclude_from_MVP_cohort_column
+        notes: "pha013060/pha013064 are OSA_AdjBMI (obstructive sleep apnea BMI-adjusted), not standalone BMI"
+
+  # ------------------------------------------------------------------
+  # BBJ hum0197-v3 — Japanese EAS panel (NBDC)
+  # ------------------------------------------------------------------
+  bbj_hum0197_v3:
+    ancestry: EAS
+    genome_build: GRCh38
+    liftover_required: true
+    http_base: "https://humandbs.dbcls.jp/files/hum0197"
+    file_pattern: "hum0197.v3.BBJ.{trait_code}.v1.zip"
+    column_map:
+      chr: "CHR"
+      bp: "POS"
+      snp: "SNPID"
+      oa: "Allele1"
+      ea: "Allele2"
+      beta: "Beta"
+      se: "SE"
+      p: "p.value"
+      eaf: "AF"
+      n: "N"
+    traits:
+      bmi: {trait_code: "BMI"}
+      t2d: {trait_code: "T2D"}
+      asthma: {trait_code: "As"}
+      stroke: {trait_code: "IS", note: "ischemic-only; narrower than FinnGen I9_STR_EXH"}
+      hypertension: {trait_code: "SBP", note: "BBJ has no binary HTN; SBP used as quantitative BP proxy"}
+
+  # ------------------------------------------------------------------
+  # GBMI — Global Biobank Meta-Analysis Initiative (14 flagship endpoints)
+  # ------------------------------------------------------------------
+  gbmi:
+    ancestry: MULTI  # EUR/AFR/EAS/AMR/SAS available per endpoint
+    genome_build: GRCh37  # verify on portal browse; GBMI v1 flagship releases are build 37
+    liftover_required: false
+    portal_url: "https://www.globalbiobankmeta.org/resources"
+    column_map:
+      chr: "CHR"
+      bp: "POS"
+      oa: "REF"
+      ea: "ALT"
+      snp: "rsid"
+      beta: "all_meta_beta"
+      se: "all_meta_sebeta"
+      p: "all_meta_pval"
+      eaf: "all_meta_AF"
+      n: "all_meta_sample_N"
+    traits:
+      bmi: {status: EXCLUDED, reason: "GBMI is disease-endpoint meta; BMI not in 14 flagship endpoints. Use GIANT Yengo 2022 as alternative cross-biobank layer or omit."}
+      t2d: {status: "PHASE2_FOLLOWUP", portal_key: "t2d"}
+      hypertension: {portal_key: "hypertension", confirmed_flagship: true}
+      stroke: {portal_key: "stroke", confirmed_flagship: true}
+      asthma: {portal_key: "asthma", confirmed_flagship: true}
+
+# ----------------------------------------------------------------------
+# Primary ancestry-matched replication panels (D-05b)
+# ----------------------------------------------------------------------
+panels:
+  primary_eur:
+    discovery_ancestry: EUR
+    cohorts: [finngen_r12, gbmi_eur, mvp_eur]
+  primary_afr:
+    discovery_ancestry: AFR
+    cohorts: [mvp_afr, gbmi_afr]
+  generalization_eas:
+    discovery_ancestry: EUR  # cross-ancestry generalization, D-05c
+    cohorts: [bbj]
+    signal_scope: tier_ab_only  # D-05c — NO credible-set SNPs
+
+# ----------------------------------------------------------------------
+# PP.H4 sweep thresholds (D-03b, reused from Phase 2)
+# ----------------------------------------------------------------------
+pph4_thresholds: [0.5, 0.7, 0.8, 0.9]
+
+# ----------------------------------------------------------------------
+# LD reference mapping (D-08)
+# ----------------------------------------------------------------------
+ld_panels:
+  EUR: ukbb_ld          # reused from Phase 1 Plan 01-02
+  AFR: hgdp_1kg_afr     # reused from Phase 1 Plan 01-03
+  EAS: thousand_g_eas   # NEW for Phase 9; 1000G Phase 3 EAS from data/raw/1kg/ (RESEARCH §8 Option A)
+
+# ----------------------------------------------------------------------
+# COJO LD reference (D-04c supplementary)
+# ----------------------------------------------------------------------
+cojo_ld_reference:
+  EUR: thousand_g_eur   # 503 samples; below GCTA 4K threshold — document caveat in methods
+  AFR: thousand_g_afr   # 661 samples; same caveat
+  # Supplementary tier only; primary replication is coloc.susie re-estimation
