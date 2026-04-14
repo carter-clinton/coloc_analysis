@@ -61,11 +61,19 @@ def build_bbj_generalization(
         )
 
     # Merge BBJ effect-size if available.
+    # WR-09 fix: pandas' `suffixes=("", "_bbj")` only suffixes OVERLAPPING
+    # columns. Non-overlapping BBJ columns (beta_replication, se_replication,
+    # p_replication, ...) would enter the output unsuffixed and be
+    # indistinguishable from discovery β̂ in the generalization TSV. Rename
+    # all BBJ columns to `bbj_<name>` BEFORE merging so the column semantics
+    # are unambiguous for downstream consumers and the methods doc D-05c
+    # narrative.
     if bbj_cohort_tsv.exists() and bbj_cohort_tsv.stat().st_size > 0:
         bbj = pd.read_csv(bbj_cohort_tsv, sep="\t")
-        out = tier_ab_bbj.merge(
-            bbj, on="signal_id", how="left", suffixes=("", "_bbj")
-        )
+        bbj_renamed = bbj.rename(columns={
+            c: f"bbj_{c}" for c in bbj.columns if c != "signal_id"
+        })
+        out = tier_ab_bbj.merge(bbj_renamed, on="signal_id", how="left")
     else:
         out = tier_ab_bbj
 
