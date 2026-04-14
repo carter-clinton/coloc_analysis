@@ -341,6 +341,13 @@ rule fit_replication_susie:
     """Re-fit SuSiE-RSS on the replication cohort at a single (signal_id, cohort)
     pair. Reuses Phase-1 config/susie_policy.yaml (D-08 reuse, not fork) and
     per-cohort LD panel routed by manifest.
+
+    WR-01/WR-02 fix: forwards `type`, `case_n`, `ctrl_n`, `n` from the
+    manifest (when present) so case-control traits get the correct
+    effective-N at the SuSiE stage. Manifest fields default to "MISSING"
+    via `_manifest_lookup`; the R-side guard treats NA/MISSING identically
+    to NULL/0 and falls back to raw median-N only when counts are
+    unavailable.
     """
     input:
         manifest = _replication_manifest_path(),
@@ -352,6 +359,10 @@ rule fit_replication_susie:
         sumstats = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "replication_sumstats_path"),
         region   = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "region"),
         ld_panel = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "ld_panel"),
+        trait_type = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "trait_type", default="quant"),
+        case_n     = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "case_n", default=""),
+        ctrl_n     = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "ctrl_n", default=""),
+        total_n    = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "replication_total_n", default=""),
     conda:
         R_COLOC_ENV
     shell:
@@ -360,6 +371,10 @@ rule fit_replication_susie:
         "region={params.region} "
         "ld_panel={params.ld_panel} "
         "policy={input.policy} "
+        "type={params.trait_type} "
+        "case_n={params.case_n} "
+        "ctrl_n={params.ctrl_n} "
+        "n={params.total_n} "
         "out={output}"
 
 # ============================================================

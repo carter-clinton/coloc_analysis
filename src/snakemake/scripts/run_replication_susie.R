@@ -173,8 +173,20 @@ fit_replication_susie <- function(
   sumstats <- sumstats[match(common, sumstats$SNP)]
   ld_sub <- ld[common, common]
 
-  # Effective sample size
-  n_eff <- total_n %||% as.integer(stats::median(sumstats$N, na.rm = TRUE))
+  # Effective sample size (WR-01 fix: for case-control traits feed coloc's
+  # effective N = 4/(1/N_case + 1/N_ctrl) instead of raw median-N, matching
+  # sumstats_utils.compute_effective_n and preventing per-variant precision
+  # understatement downstream). For quant traits or when counts are
+  # unavailable, fall back to total_n / median(N).
+  cc_has_counts <- trait_type == "cc" &&
+    !is.null(case_n) && !is.null(ctrl_n) &&
+    !is.na(case_n) && !is.na(ctrl_n) &&
+    case_n > 0 && ctrl_n > 0
+  if (cc_has_counts) {
+    n_eff <- as.integer(4 / (1 / case_n + 1 / ctrl_n))
+  } else {
+    n_eff <- total_n %||% as.integer(stats::median(sumstats$N, na.rm = TRUE))
+  }
 
   D <- list(
     beta = sumstats$BETA,
@@ -187,7 +199,13 @@ fit_replication_susie <- function(
     MAF = pmin(sumstats$EAF, 1 - sumstats$EAF)
   )
   if (trait_type == "cc") {
-    if (is.null(case_n) || is.null(ctrl_n) || case_n == 0 || ctrl_n == 0) {
+    # WR-02 fix: guard against NA-coerced counts (the CLI entrypoint wraps
+    # as.integer(NA) when args are missing, and `NA == 0` is NA which causes
+    # `if()` to error with "missing value where TRUE/FALSE needed" instead of
+    # raising the intended stop()). Treat NA identically to NULL/0 here.
+    if (is.null(case_n) || is.null(ctrl_n) ||
+        is.na(case_n) || is.na(ctrl_n) ||
+        case_n == 0 || ctrl_n == 0) {
       stop("trait_type='cc' requires positive case_n and ctrl_n")
     }
     D$s <- case_n / (case_n + ctrl_n)
