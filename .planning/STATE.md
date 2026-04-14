@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-02-PLAN.md (FinnGen/GBMI/MVP/BBJ harmonizers)
-last_updated: "2026-04-14T03:45:04.535Z"
+stopped_at: Completed 09-03-PLAN.md (manifest + SuSiE re-fit + FIQT wrappers)
+last_updated: "2026-04-14T04:03:12.443Z"
 last_activity: 2026-04-14
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 25
-  completed_plans: 22
-  percent: 88
+  completed_plans: 23
+  percent: 92
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 09 (replication-in-independent-cohorts) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-14
 
@@ -73,6 +73,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 05 P05 | 20min | 2 tasks | 6 files |
 | Phase 09 P01 | 23min | 3 tasks | 16 files |
 | Phase 09 P02 | 11min | 5 tasks | 14 files |
+| Phase 09 P03 | 13 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -143,6 +144,12 @@ Recent decisions affecting current work:
 - [Phase 09]: [Phase 09-02]: Added liftover_coordinates helper to liftover.py (pyliftover-backed, lru_cache(maxsize=4)); avoids subprocess-per-row with the existing liftover_sumstats batch path
 - [Phase 09]: [Phase 09-02]: Project convention sys.path.insert + flat-name imports used throughout (plan draft's from src.python.X would require __init__.py and conflict with phase2/phase5 test patterns)
 - [Phase 09]: [Phase 09-02]: GBMI harmonizer B-2 guard raises ValueError with expected-vs-observed columns listed when an ancestry stratum's prefix columns are absent; prevents silent empty AFR panel output
+- [Phase 09]: [Phase 09-03]: Panel-driven manifest routing — build_replication_manifest reads config['panels'] directly so new cohorts appear in manifest via YAML change, not Python edit
+- [Phase 09]: [Phase 09-03]: BBJ generalization gated by signal_scope='tier_ab_only' at config level (D-05c) — not hardcoded in Python
+- [Phase 09]: [Phase 09-03]: run_replication_susie reuses Phase-1 susie_policy.yaml verbatim (D-08); simplified 2-stage retry ladder (vs Phase-1's 3-stage) because discovery fit has already been stabilised upstream
+- [Phase 09]: [Phase 09-03]: winnerscurse pinned SHA 2ed00bb (amandaforde/winnerscurse); lazy-install via remotes::install_github on first run_fiqt.R call — no manual post-conda step (r-remotes already in envs/r_coloc.yml from Phase 0)
+- [Phase 09]: [Phase 09-03]: se_FIQT column is passthrough=raw SE — winnerscurse emits only beta_FIQT; stable 2-col addition documents that SE of the corrected estimator equals raw SE to first order (formal shrinkage would need parametric bootstrap per row)
+- [Phase 09]: [Phase 09-03]: FIQT tests require multi-row BH context — single-row inputs at z=1.5 cannot exhibit shrinkage (BH is a no-op at n=1); tests use focal signal + 100-row null background
 
 ### Pending Todos
 
@@ -166,8 +173,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T03:44:42.796Z
-Stopped at: Completed 09-02-PLAN.md (FinnGen/GBMI/MVP/BBJ harmonizers)
+Last session: 2026-04-14T04:02:57.313Z
+Stopped at: Completed 09-03-PLAN.md (manifest + SuSiE re-fit + FIQT wrappers)
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
