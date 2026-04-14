@@ -222,10 +222,25 @@ def liftover_to_grch37(
     if mask.any():
         out[chr_col] = [t[0].replace("chr", "") for t in lifted[mask]]
         out[bp_col] = [int(t[1]) for t in lifted[mask]]
+
+    # WR-07 fix: bucket drop reasons so "unknown chromosome label" (e.g.,
+    # chrMT, chrM, chr0) is distinguishable from "failed liftover lookup"
+    # in the QC dict. This avoids silent mis-attribution of the 5% budget
+    # when a cohort uses a non-autosomal naming convention.
+    _AUTOSOMAL = {str(i) for i in range(1, 23)} | {f"chr{i}" for i in range(1, 23)}
+    _XY = {"X", "Y", "chrX", "chrY", "23", "24", "chr23", "chr24"}
+    dropped_chrs = df.loc[~mask, chr_col].astype(str)
+    n_dropped_unknown_chrom = int(
+        (~dropped_chrs.isin(_AUTOSOMAL | _XY)).sum()
+    )
+    n_dropped_liftover = int((~mask).sum() - n_dropped_unknown_chrom)
+
     qc = {
         "n_input": n_in,
         "n_lifted": int(mask.sum()),
         "n_dropped": int((~mask).sum()),
+        "n_dropped_unknown_chrom": n_dropped_unknown_chrom,
+        "n_dropped_liftover_failed": n_dropped_liftover,
         "drop_rate": float((~mask).mean()),
     }
     if qc["drop_rate"] > max_drop_rate:
