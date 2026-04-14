@@ -366,13 +366,29 @@ rule fit_replication_susie:
 # §D. COLOC RE-ESTIMATION — implemented by Plan 09-04
 # ============================================================
 rule run_replication_coloc_susie:
+    """Plan 09-04 Task 1 — coloc.susie(disc_fit, rep_fit) re-estimation for a
+    single (signal_id × cohort) pair. Emits PP.H4 sweep JSON per D-03b.
+
+    Discovery fit path is resolved from the manifest (not templated from the
+    {signal_id} wildcard) because Plan 09-03's manifest-builder encodes the
+    full Phase-1 fit layout `{trait}_{ancestry}_{region}.fit.rds` and we
+    honor that as the single source of truth (T-09-05 mitigation).
+    """
     input:
-        disc="results/fine_mapping/{signal_id}.fit.rds",
-        rep="results/replication/fits/{signal_id}_{cohort}.fit.rds"
+        disc = lambda wc: _manifest_lookup(wc.signal_id, wc.cohort, "discovery_fit_path"),
+        rep  = "results/replication/fits/{signal_id}_{cohort}.fit.rds",
+        script_dep = "src/snakemake/scripts/run_replication_coloc_susie.R",
     output:
-        touch("results/replication/coloc/{signal_id}_{cohort}.coloc.json")
+        "results/replication/coloc/{signal_id}_{cohort}.coloc.json"
+    params:
+        thresholds = lambda wc: ",".join(str(t) for t in config.get("pph4_thresholds", [0.5, 0.7, 0.8, 0.9])),
+    conda:
+        R_COLOC_ENV
     shell:
-        "echo 'TODO plan 09-04 Task 1 — coloc.susie {wildcards.signal_id}/{wildcards.cohort}' && touch {output}"
+        "Rscript {workflow.basedir}/src/snakemake/scripts/run_replication_coloc_susie.R "
+        "disc={input.disc} rep={input.rep} "
+        "signal_id={wildcards.signal_id} cohort={wildcards.cohort} "
+        "thresholds={params.thresholds} out={output}"
 
 # ============================================================
 # §E. FIQT + META — implemented by Plan 09-04
