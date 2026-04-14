@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 09-01-PLAN.md (Phase 9 infrastructure skeleton)
-last_updated: "2026-04-14T03:28:31.312Z"
+stopped_at: Completed 09-02-PLAN.md (FinnGen/GBMI/MVP/BBJ harmonizers)
+last_updated: "2026-04-14T03:45:04.535Z"
 last_activity: 2026-04-14
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 25
-  completed_plans: 21
-  percent: 84
+  completed_plans: 22
+  percent: 88
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 09 (replication-in-independent-cohorts) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-14
 
@@ -72,6 +72,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 05 P04 | 6min | 2 tasks | 3 files |
 | Phase 05 P05 | 20min | 2 tasks | 6 files |
 | Phase 09 P01 | 23min | 3 tasks | 16 files |
+| Phase 09 P02 | 11min | 5 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,12 @@ Recent decisions affecting current work:
 - [Phase 09]: MVP column_map uses dbGaP GWAS-central schema (|β| + Coded Allele) not REGENIE; harmonizer must reconstruct signed β
 - [Phase 09]: configfile: directive takes string literal; path is project-root-relative (matches top-level Snakefile)
 - [Phase 09]: workflow.basedir resolves to project root; envs/ paths use Path(workflow.basedir)/'envs'/... (no .parent.parent)
+- [Phase 09]: [Phase 09-02]: Schema-dispatching MVP harmonizer supports BOTH REGENIE-style (fixture) AND dbGaP GWAS-central (real phs001672); _detect_schema() routes on observed columns
+- [Phase 09]: [Phase 09-02]: dbGaP signed BETA reconstructed from |β| + Coded Allele orientation via reconstruct_signed_beta() — sign=+1 when coded==EA, -1 when coded==OA
+- [Phase 09]: [Phase 09-02]: Inline liftover per harmonizer (not a standalone rule); obsolete liftover_replication_sumstats rule removed; outputs write directly to harmonized_grch37/ aligning with 09-03 consumer paths
+- [Phase 09]: [Phase 09-02]: Added liftover_coordinates helper to liftover.py (pyliftover-backed, lru_cache(maxsize=4)); avoids subprocess-per-row with the existing liftover_sumstats batch path
+- [Phase 09]: [Phase 09-02]: Project convention sys.path.insert + flat-name imports used throughout (plan draft's from src.python.X would require __init__.py and conflict with phase2/phase5 test patterns)
+- [Phase 09]: [Phase 09-02]: GBMI harmonizer B-2 guard raises ValueError with expected-vs-observed columns listed when an ancestry stratum's prefix columns are absent; prevents silent empty AFR panel output
 
 ### Pending Todos
 
@@ -148,6 +155,7 @@ None yet.
 - DEF-RO7-02: pathway.smk expand() iterates `config.trait_ancestries` beyond what's harmonized on disk; `harmonize_sumstats` raises on missing combos (e.g., bmi/AFR). Blocks per-branch smoke testing of MAGMA / LDSC partitioned / LDSC-SEG / HESS.
 - DEF-RO7-03: `config/pipeline.yaml` `paths.harmonized_sumstats` points to wrong dir (`data/processed/sumstats_harmonized` vs actual `data/processed/region_analysis/sumstats_harmonized_fixed/`). Will surface after DEF-RO7-02 is resolved.
 - **Decision 2026-04-13:** Phase 5 real-data smoke testing deferred to Phase 9 planning window. Pathway.smk DAG wiring confirmed correct (RO7); remaining blockers are all upstream/config issues surfaced by deeper DAG resolution. Will re-address when Phase 0/1/2 data paths are re-exercised for replication cohorts. Details: `.planning/quick/260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps/deferred-items.md`.
+- DEF-09-02-01: Pre-existing phase2 test collection failures in 3 files (ModuleNotFoundError: tests). Not caused by Wave 2; logged in deferred-items.md
 
 ### Quick Tasks Completed
 
@@ -158,8 +166,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T03:28:20.043Z
-Stopped at: Completed 09-01-PLAN.md (Phase 9 infrastructure skeleton)
+Last session: 2026-04-14T03:44:42.796Z
+Stopped at: Completed 09-02-PLAN.md (FinnGen/GBMI/MVP/BBJ harmonizers)
 Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
