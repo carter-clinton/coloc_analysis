@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-14T23:10:00.000Z"
-last_activity: 2026-04-14 - Completed quick task 260414-qhr: Fix Phase 0 download rule idempotency
+last_updated: "2026-04-14T23:30:00.000Z"
+last_activity: 2026-04-14 - Completed quick task 260414-qsk: Batch idempotency guards across 3 remaining Phase 0 download rules
 progress:
   total_phases: 12
   completed_phases: 5
@@ -187,6 +187,7 @@ None yet.
 | 260413-vtk | Fix 3 file-path bugs in Phase 9 plans | 2026-04-14 | ea9ddd2 | [260413-vtk-fix-3-file-path-bugs-in-phase-9-plans](./quick/260413-vtk-fix-3-file-path-bugs-in-phase-9-plans/) |
 | 260414-clp | Fix genome-build config mismatch (Finding 1 from Phase 9 smoke) | 2026-04-14 | fb61c40 | [260414-clp-fix-genome-build-config-mismatch-in-phas](./quick/260414-clp-fix-genome-build-config-mismatch-in-phas/) |
 | 260414-qhr | Fix Phase 0 download rule idempotency (LDSC baseline preflight + MAGMA binary symlink) | 2026-04-14 | e936aea | [260414-qhr-fix-phase-0-download-rule-idempotency-1-](./quick/260414-qhr-fix-phase-0-download-rule-idempotency-1-/) |
+| 260414-qsk | Batch idempotency guards across 3 remaining Phase 0 download rules (magma_ref + ldsc_seg + hess_panel) | 2026-04-14 | 8b66203 | [260414-qsk-batch-idempotency-hardening-across-4-rem](./quick/260414-qsk-batch-idempotency-hardening-across-4-rem/) |
 
 ## Session Continuity
 
