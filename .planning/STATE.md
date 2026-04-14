@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 Phase: 9
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-04-13 — Completed quick task 260413-ro7: Fix Phase 5 Snakemake DAG wiring gaps
+Last activity: 2026-04-14 — Completed quick task 260413-vtk: Fix 3 file-path bugs in Phase 9 plans
 
 Progress: ██░░░░░░░░ 17%
 
@@ -148,6 +148,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260413-ro7 | Fix Phase 5 Snakemake DAG wiring gaps | 2026-04-13 | bfb04f8 | [260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps](./quick/260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps/) |
+| 260413-vtk | Fix 3 file-path bugs in Phase 9 plans | 2026-04-14 | ea9ddd2 | [260413-vtk-fix-3-file-path-bugs-in-phase-9-plans](./quick/260413-vtk-fix-3-file-path-bugs-in-phase-9-plans/) |
 
 ## Session Continuity
 
