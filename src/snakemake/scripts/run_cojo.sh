@@ -42,7 +42,11 @@ if [ ! -f "${FAM_FILE}" ]; then
   exit 3
 fi
 
-N_SAMPLES=$(wc -l < "${FAM_FILE}")
+# WR-05 fix: awk counts records without relying on trailing newline and
+# emits a pure integer on all platforms (BSD/GNU), unlike `wc -l` which
+# prefixes leading whitespace on BSD/macOS and undercounts by 1 when the
+# input lacks a trailing newline.
+N_SAMPLES=$(awk 'END {print NR}' "${FAM_FILE}")
 if [ "${N_SAMPLES}" -lt 4000 ]; then
   echo "WARN: LD reference ${PLINK_PREFIX} has N=${N_SAMPLES} (< 4000 GCTA threshold). COJO results are TIER-2 SENSITIVITY per RESEARCH §6 Option D / gotcha #1." >&2
 fi
