@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-15T04:15:00.000Z"
-last_activity: 2026-04-15 - CP#1 interim review issued at .planning/checkpoints/T1_review.md — conditional-go to T2 planning in parallel with T1 first-production LSF launch; final CP#1 verdict pending on full-DAG completion
+stopped_at: Phase 4 context gathered (Option C in flight — Track A complete; Track B LSF launch pending user)
+last_updated: "2026-04-15T14:40:13.209Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 12
   completed_phases: 5
@@ -199,14 +199,16 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T04:15:00Z
-Stopped at: **Four-step checkpoint-close batch complete.**
+Last session: 2026-04-15T14:40:13.191Z
+Stopped at: Phase 4 context gathered (Option C in flight — Track A complete; Track B LSF launch pending user)
+
 1. **ww3** — bmi.EUR magma_fdr scout closed (v9 reached 3/3; 9617 FDR rows; top hit CUSTOM_APPETITE_REGULATION q=7.25e-11). Commit `7f97a20`.
 2. **wzy** — Env yml hardening: `defaults` channel dropped from 6 yamls, `bin/setup-envs.sh` added with direct-mamba fallback for libmamba 2.5 interop bug, envs/README.md rewritten with 4-item Pitfalls section. Closes scout issues #4/#5/#6/#7. Commit `60d3c2f`.
 3. **Phase 5 validation audit** — Retroactive `05-VALIDATION.md` reconciled: 8→10 task rows, all ⬜→✅ green (100/100 pytest pass in 53.2s), Manual-Only expanded 3→10 with scout-gap integration. Commit `489d6af`.
 4. **CP#1 interim review** — `.planning/checkpoints/T1_review.md` issued with conditional-go verdict. T2 research + planning authorized in parallel with T1 first-production LSF launch. Decision rule for submission target (NG vs AJHG) recorded pre-data at 3 Tier A thresholds.
 
 **Recommended next-session moves (in order):**
+
 1. Begin T2 planning — start with **Phase 4 (matched-N cross-ancestry)** per CP#1 §"What T2 planning should start on now". `/gsd-plan-phase 4` or `/gsd-discuss-phase 4` first.
 2. **First-production LSF launch** of T1 Phases 0→1→2 end-to-end — required to produce Tier A signal counts for CP#1-final. `snakemake all --cores N` or a targeted staged-run sequence.
 3. Scout the remaining Phase 5 branches (g:Profiler, LDSC partitioned, LDSC-SEG, HESS) — each its own `/gsd-quick` + narrow target, or bundle into one `snakemake all_pathway --cores N` LSF launch. Unresolved risks surface in `05-VALIDATION.md` Manual-Only items 1-10.
@@ -218,6 +220,7 @@ Stopped at: **Four-step checkpoint-close batch complete.**
 ### Finding 2026-04-14 PM — Phase 0 idempotency gap
 
 Dry-run inspection of Phase A narrow-scout targets revealed:
+
 - `download_ldsc_baseline` rule (src/snakemake/rules/pathway.smk:180-237) re-fetches 4 large tarballs (~5 GB total) from `broad-alkesgroup-ukbb-ld.s3.amazonaws.com` + GCS `requester-pays` paths. Manually-staged data IS on disk (`data/reference/ldsc/baselineLD.{1..22}.{annot.gz,l2.M,l2.M_5_50}`, `data/reference/ldsc/eur_w_ld_chr/w_hm3.snplist`, `data/reference/ldsc/w_hm3.snplist`) but the rule's flag file `data/reference/ldsc/.baseline_download_done` doesn't exist, so Snakemake re-runs.
 - `download_magma_binary` rule expects `tools/magma_v1.10/magma` which doesn't exist; Carter's manual download landed at `data/reference/magma/magma`. Path mismatch + JS-gated CNCR upstream.
 - `harmonize_sumstats` chains `download_sumstats` for 8 trait/ancestry combos (bmi.EUR, t2d.EUR, t2d.AFR, hypertension.EUR, asthma.EUR, asthma.AFR, stroke.EUR, stroke.AFR). Raw sumstats not on disk. Multiple URL-rot risk.
@@ -228,6 +231,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 ### What landed during 2026-04-14 sessions
 
 **Phase 9 closeout:**
+
 - 5/5 plans executed + verified (`human_needed` for real-data UAT)
 - Code review: 13/13 critical+warning findings fixed (commits 57bd450..94333af)
 - Security audit: 22/22 threats closed (T-09-01 re-disposed `mitigate` → `accept` per HPC + open-public + HTTPS justification, see 09-SECURITY.md)
@@ -235,6 +239,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 - 4 quick tasks executed: 260413-ro7 (DAG wiring), 260413-vtk (file path bugs), 260414-clp (genome build config) + Option β trait_ancestries trim (commit 084d22f)
 
 **Phase 0 first-production data infrastructure (this session, 2026-04-14):**
+
 - 1kG Phase 3 VCFs chr1-22 + chrX (~17 GB) downloaded via NCBI mirror (EBI URL was broken — workaround captured) — `data/raw/1kg/vcf/`
 - LDSC reference data (~17 GB extracted): baseline v2.2 ldscores + bedfiles (bzip2-mislabeled-as-tgz pitfall handled), plinkfiles (1000G EUR), weights HM3 (EUR + EAS), frq, snplist, eur_w_ld_chr, Multi_tissue_gene_expr + chromatin (LDSC-SEG) — `data/reference/ldsc/` (Carter manually downloaded from Zenodo + scp'd; Broad GCS requires auth)
 - MAGMA 4 files (570 MB): static binary v1.10, NCBI37.3 gene loc, g1000_eur (bed/bim/fam), dbsnp151.synonyms — `data/reference/magma/` (Carter manually downloaded from CNCR + scp'd; CNCR uses JS gate that blocks curl)
@@ -244,23 +249,26 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 - DEF-RO7-03 fix on disk: symlink `data/processed/sumstats_harmonized` → `region_analysis/sumstats_harmonized_fixed`
 
 **Resumption pointers:**
+
 - `.planning/phases/09-replication-in-independent-cohorts/09-PHASE0-LAUNCH.md` — full Phase 0 launch report + 5 URL-rot findings
 - `.planning/phases/09-replication-in-independent-cohorts/09-SMOKE.md` — Phase 9 pre-flight smoke report (TCF7L2/T2D × 4 cohorts) + 4 findings
 - `.planning/phases/09-replication-in-independent-cohorts/09-HUMAN-UAT.md` — 3 deferred items for real-data execution
 
 **Open items (all deferred, none blocking):**
+
 - `data/raw/1kg/TRANS.samples` generator — VCFs exist, panel file exists, just need a script to produce sample-list union (DEF-RO7-01)
 - t2d.TRANS Phase 1 SuSiE rule wiring — config drops TRANS for t2d during smoke; `results/fine_mapping/susie/*.TRANS.*.json` rule path needs investigation
 - Missing trait×ancestry ingestion: bmi/AFR + bmi/EAS + hypertension/AFR + hypertension/HIS + stroke/EAS + t2d/EAS — Phase 0 D-20 work
 - `config/pipeline.yaml` `onekg.ftp_base` cosmetic update from broken EBI to working NCBI mirror
 
 **Recommended next-session moves (in order):**
+
 1. Narrow real-data execution: `snakemake harmonize_sumstats download_msigdb` etc. — exercises a few rules against real data, ~10-30 min, catches latent runtime bugs
 2. Or: target a single Phase 5 branch end-to-end (e.g., `snakemake magma_fdr` for EUR traits) — ~30-60 min compute
 3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
 4. Address open items above as they become blocking
 
-Resume file: None
+Resume file: .planning/phases/04-matched-n-cross-ancestry-concordance/04-CONTEXT.md
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
