@@ -350,20 +350,21 @@ rule download_msigdb:
             close(con)
         }}
 
+        # msigdbr >=10.0 API: collection=/subcollection= (was category=/subcategory=); KEGG_LEGACY preserves Phase 5 dev assumptions (186 sets, original KEGG).
         # KEGG
-        kegg <- msigdbr(species="Homo sapiens", category="C2", subcategory="CP:KEGG")
+        kegg <- msigdbr(species="Homo sapiens", collection="C2", subcollection="CP:KEGG_LEGACY")
         write_gmt(kegg, "{params.outdir}/c2.cp.kegg.gmt")
 
         # Reactome
-        reactome <- msigdbr(species="Homo sapiens", category="C2", subcategory="CP:REACTOME")
+        reactome <- msigdbr(species="Homo sapiens", collection="C2", subcollection="CP:REACTOME")
         write_gmt(reactome, "{params.outdir}/c2.cp.reactome.gmt")
 
         # GO Biological Process
-        gobp <- msigdbr(species="Homo sapiens", category="C5", subcategory="GO:BP")
+        gobp <- msigdbr(species="Homo sapiens", collection="C5", subcollection="GO:BP")
         write_gmt(gobp, "{params.outdir}/c5.go.bp.gmt")
 
-        # Hallmark
-        hallmark <- msigdbr(species="Homo sapiens", category="H")
+        # Hallmark (no subcollection in msigdbr 26)
+        hallmark <- msigdbr(species="Homo sapiens", collection="H")
         write_gmt(hallmark, "{params.outdir}/h.all.gmt")
 
         cat("MSigDB download complete\\n")
