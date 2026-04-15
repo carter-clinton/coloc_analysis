@@ -160,6 +160,8 @@ Plans:
 
 **No T2 phase is planned until this file exists with a "go" verdict.**
 
+**Status 2026-04-15:** Interim CP#1 issued at `.planning/checkpoints/T1_review.md` — code-complete conditional-go. T2 research + planning authorized in parallel with T1 first-production LSF launch. CP#1-final pending on first-production completion.
+
 ### Phase 3: Mendelian randomization
 **Goal**: Establish causal direction between trait pairs via bidirectional MR with robust weak-instrument mitigation for non-EUR ancestries.
 **Depends on**: CP#1 (go verdict)

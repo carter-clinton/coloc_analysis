@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-15T03:45:00.000Z"
-last_activity: 2026-04-15 - Quick task ww3: bmi.EUR magma_fdr scout CLOSED — v9 reached 3/3 steps on 2026-04-14 23:40; bmi_EUR_geneset_fdr.tsv (9617 rows, 194 FDR<0.05, top hit CUSTOM_APPETITE_REGULATION q=7.25e-11)
+last_updated: "2026-04-15T04:15:00.000Z"
+last_activity: 2026-04-15 - CP#1 interim review issued at .planning/checkpoints/T1_review.md — conditional-go to T2 planning in parallel with T1 first-production LSF launch; final CP#1 verdict pending on full-DAG completion
 progress:
   total_phases: 12
   completed_phases: 5
@@ -199,15 +199,19 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T03:45:00Z
-Stopped at: **bmi.EUR magma_fdr scout CLOSED.** v8 (2026-04-14 22:45-22:51) surfaced 10th bug (`run_magma.py` SNP column alias → fixed at commit 7a3aa5a/vro). v9 (2026-04-14 22:53-23:40) reached 3/3 steps and produced `bmi_EUR_geneset_fdr.tsv` (9617 rows, 194 FDR<0.05, top hit CUSTOM_APPETITE_REGULATION q=7.25e-11 — biologically coherent for BMI). All three post-v7 fixes (uqf/v4r/vro) validated end-to-end. **MAGMA branch of Phase 5 proven on real data.** Remaining operational items: env yml workarounds (issues #4-#7 from SCOUT-FINDINGS.md), g:Profiler/LDSC/HESS branches unexercised against real data.
+Last session: 2026-04-15T04:15:00Z
+Stopped at: **Four-step checkpoint-close batch complete.**
+1. **ww3** — bmi.EUR magma_fdr scout closed (v9 reached 3/3; 9617 FDR rows; top hit CUSTOM_APPETITE_REGULATION q=7.25e-11). Commit `7f97a20`.
+2. **wzy** — Env yml hardening: `defaults` channel dropped from 6 yamls, `bin/setup-envs.sh` added with direct-mamba fallback for libmamba 2.5 interop bug, envs/README.md rewritten with 4-item Pitfalls section. Closes scout issues #4/#5/#6/#7. Commit `60d3c2f`.
+3. **Phase 5 validation audit** — Retroactive `05-VALIDATION.md` reconciled: 8→10 task rows, all ⬜→✅ green (100/100 pytest pass in 53.2s), Manual-Only expanded 3→10 with scout-gap integration. Commit `489d6af`.
+4. **CP#1 interim review** — `.planning/checkpoints/T1_review.md` issued with conditional-go verdict. T2 research + planning authorized in parallel with T1 first-production LSF launch. Decision rule for submission target (NG vs AJHG) recorded pre-data at 3 Tier A thresholds.
 
 **Recommended next-session moves (in order):**
-1. ✅ (ww3) Document scout v9 success — DONE
-2. `/gsd-quick` to codify env yml hardening: remove `defaults` channel from python_stats/magma/hess_py27.yml where feasible, document the libmamba 2.5 interop bug, add `bin/setup-envs.sh` helper that pre-creates all conda envs (SCOUT-FINDINGS issues #4-#7).
-3. `/gsd-validate-phase 5` retroactive audit — the 10 issues found suggest Phase 5 was developed without ever running end-to-end against real conda envs + real data.
-4. Draft `.planning/checkpoints/T1_review.md` with T2 go/no-go verdict (gates Phases 3/4/8).
-5. Scout the g:Profiler / LDSC partitioned / LDSC-SEG / HESS branches (each its own `/gsd-quick` + narrow target) OR launch `snakemake all_pathway --cores N` on LSF for full Phase 5 coverage.
+1. Begin T2 planning — start with **Phase 4 (matched-N cross-ancestry)** per CP#1 §"What T2 planning should start on now". `/gsd-plan-phase 4` or `/gsd-discuss-phase 4` first.
+2. **First-production LSF launch** of T1 Phases 0→1→2 end-to-end — required to produce Tier A signal counts for CP#1-final. `snakemake all --cores N` or a targeted staged-run sequence.
+3. Scout the remaining Phase 5 branches (g:Profiler, LDSC partitioned, LDSC-SEG, HESS) — each its own `/gsd-quick` + narrow target, or bundle into one `snakemake all_pathway --cores N` LSF launch. Unresolved risks surface in `05-VALIDATION.md` Manual-Only items 1-10.
+4. Resolve Phase 9 SMOKE Finding 1 (FinnGen + MVP genome_build config mismatch) before first-production Phase 9 — already captured as quick-260414-clp.
+5. After first-production T1 completes → reissue **CP#1-final** with numeric Tier A counts + cross-ancestry concordance magnitude.
 
 ### Earlier in this session (2026-04-14 PM)
 
