@@ -195,19 +195,21 @@ def _create_pval_file(sumstats_path: str, tmpdir: str) -> str:
         header_line = fin.readline().strip()
         columns = header_line.split("\t")
 
-        # Find SNP and P column indices (case-insensitive)
+        # Find SNP and P column indices (case-insensitive).
+        # Accept "SNP" (canonical harmonize_sumstats schema) or "SNP_ID"
+        # (legacy harmonized files produced before the schema convergence).
         col_lower = [c.lower() for c in columns]
         snp_idx = None
         p_idx = None
         for i, c in enumerate(col_lower):
-            if c == "snp":
+            if c in ("snp", "snp_id"):
                 snp_idx = i
             elif c == "p":
                 p_idx = i
 
         if snp_idx is None:
             raise ValueError(
-                f"Column 'SNP' not found in {sumstats_path}. "
+                f"Column 'SNP' or 'SNP_ID' not found in {sumstats_path}. "
                 f"Available columns: {columns}"
             )
         if p_idx is None:
