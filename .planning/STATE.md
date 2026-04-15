@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-15T02:25:00.000Z"
-last_activity: 2026-04-15 - Quick task uqf: msigdbr 26 API + KEGG_LEGACY landed (closes scout issue #8); 4 GMT files produced
+last_updated: "2026-04-15T03:45:00.000Z"
+last_activity: 2026-04-15 - Quick task ww3: bmi.EUR magma_fdr scout CLOSED — v9 reached 3/3 steps on 2026-04-14 23:40; bmi_EUR_geneset_fdr.tsv (9617 rows, 194 FDR<0.05, top hit CUSTOM_APPETITE_REGULATION q=7.25e-11)
 progress:
   total_phases: 12
   completed_phases: 5
@@ -193,18 +193,20 @@ None yet.
 | scout-260414-bmi-magma | bmi.EUR magma_fdr scout (halted 2/8 jobs; magma_annotate produced 107 MB real output; 9 Phase 5 issues found) | 2026-04-14 | 04f3629 | [260414-bmi-magma-scout](./quick/260414-bmi-magma-scout/) |
 | 260414-uqf | Update download_msigdb for msigdbr 26 API + KEGG_LEGACY pick; relax r-msigdbr/r-base pins (closes scout issue #8) | 2026-04-14 | 9cc6d49 | [260414-uqf-update-download-msigdb-rule-for-msigdbr-](./quick/260414-uqf-update-download-msigdb-rule-for-msigdbr-/) |
 | 260414-v4r | Pre-stage Yengo BMI: cnsgenomics throttle blocked download; pivoted to mtime-touch on existing harmonized .bgz; scout DAG 8→4 jobs (closes scout issue #9 functionally) | 2026-04-15 | _no-code_ | [260414-v4r-pre-stage-yengo-2018-bmi-eur-sumstats-ma](./quick/260414-v4r-pre-stage-yengo-2018-bmi-eur-sumstats-ma/) |
+| 260414-vro | Accept SNP_ID column alias in run_magma.py (closes scout bug #10 surfaced in v8) | 2026-04-14 | 7a3aa5a | _code-only_ |
+| 260414-ww3 | Resume bmi.EUR magma_fdr scout v8 — docs-only; scout v9 already reached 3/3 after vro, producing bmi_EUR_geneset_fdr.tsv (9617 rows; top hit CUSTOM_APPETITE_REGULATION q=7.25e-11). MAGMA branch of Phase 5 proven end-to-end on real data. | 2026-04-15 | _docs_ | [260414-ww3-resume-bmi-eur-magma-fdr-scout-v8-re-lau](./quick/260414-ww3-resume-bmi-eur-magma-fdr-scout-v8-re-lau/) |
 
 ## Session Continuity
 
-Last session: 2026-04-15T01:58:00Z
-Stopped at: bmi.EUR magma_fdr scout halted at 2/8 jobs after surfacing 9 distinct Phase 5 issues across 3.5 hours. magma_annotate produced first real Phase 5 output (107 MB gene_annotation.genes.annot). Open issues: (a) msigdbr 26 API drift in download_msigdb rule needs `collection=`/`subcollection=` rewrite + KEGG_LEGACY vs KEGG_MEDICUS decision; (b) cnsgenomics.com throttled our IP after many connection attempts during chaotic v1-v7 restarts (Yengo BMI URL is healthy independently). Full report at .planning/quick/260414-bmi-magma-scout/SCOUT-FINDINGS.md (commit 04f3629).
+Last session: 2026-04-15T03:45:00Z
+Stopped at: **bmi.EUR magma_fdr scout CLOSED.** v8 (2026-04-14 22:45-22:51) surfaced 10th bug (`run_magma.py` SNP column alias → fixed at commit 7a3aa5a/vro). v9 (2026-04-14 22:53-23:40) reached 3/3 steps and produced `bmi_EUR_geneset_fdr.tsv` (9617 rows, 194 FDR<0.05, top hit CUSTOM_APPETITE_REGULATION q=7.25e-11 — biologically coherent for BMI). All three post-v7 fixes (uqf/v4r/vro) validated end-to-end. **MAGMA branch of Phase 5 proven on real data.** Remaining operational items: env yml workarounds (issues #4-#7 from SCOUT-FINDINGS.md), g:Profiler/LDSC/HESS branches unexercised against real data.
 
 **Recommended next-session moves (in order):**
-1. `/gsd-quick` to update download_msigdb rule for msigdbr 26 API + pick KEGG_LEGACY (preserves prior assumptions).
-2. `/gsd-quick` to pre-stage Yengo BMI manually via wget to `data/raw/sumstats/bmi.EUR.raw.gz` (sidesteps throttle).
-3. Resume scout v8 — should complete all 8/8 jobs and produce `bmi_EUR_geneset_fdr.tsv`.
-4. `/gsd-quick` to codify env yml hardening (remove `defaults` channel where feasible, document libmamba 2.5 interop bug, add bin/setup-envs.sh helper).
-5. Consider `/gsd-validate-phase 5` retroactive audit before scaling to full LSF launch — the 9 issues found suggest Phase 5 was developed without ever running end-to-end against real conda envs + real data.
+1. ✅ (ww3) Document scout v9 success — DONE
+2. `/gsd-quick` to codify env yml hardening: remove `defaults` channel from python_stats/magma/hess_py27.yml where feasible, document the libmamba 2.5 interop bug, add `bin/setup-envs.sh` helper that pre-creates all conda envs (SCOUT-FINDINGS issues #4-#7).
+3. `/gsd-validate-phase 5` retroactive audit — the 10 issues found suggest Phase 5 was developed without ever running end-to-end against real conda envs + real data.
+4. Draft `.planning/checkpoints/T1_review.md` with T2 go/no-go verdict (gates Phases 3/4/8).
+5. Scout the g:Profiler / LDSC partitioned / LDSC-SEG / HESS branches (each its own `/gsd-quick` + narrow target) OR launch `snakemake all_pathway --cores N` on LSF for full Phase 5 coverage.
 
 ### Earlier in this session (2026-04-14 PM)
 

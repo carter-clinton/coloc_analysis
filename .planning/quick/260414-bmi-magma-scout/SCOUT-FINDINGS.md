@@ -2,8 +2,14 @@
 
 **Date:** 2026-04-14 / 2026-04-15
 **Goal:** Run `results/pathway/magma/bmi_EUR_geneset_fdr.tsv` end-to-end (8 jobs) against real data as a narrow scout before any LSF launch.
-**Wall time:** ~3.5 hrs across 7 launch attempts (v1–v7).
-**Outcome:** Scout halted at job 2/8. Surfaced **9 distinct Phase 5 issues** that would have all blown up a multi-hour LSF launch. **First real Phase 5 output produced**: `results/pathway/magma/gene_annotation.genes.annot` (107 MB) by `magma_annotate` (job 5/8).
+**Wall time:** ~3.5 hrs across 7 launch attempts (v1–v7) + 2 follow-on runs (v8, v9) after fixes.
+**Outcome:** Initial halt at job 2/8 surfaced **9 distinct Phase 5 issues**. After 3 follow-on quick tasks (uqf/v4r/vro), scout v9 **reached the target output**: `results/pathway/magma/bmi_EUR_geneset_fdr.tsv` (9617 rows, 194 FDR<0.05; top hit CUSTOM_APPETITE_REGULATION q=7.25e-11).
+
+> ## 🟢 Closure note (2026-04-15, quick task ww3)
+>
+> Scout target **achieved**. v8 exposed a 10th issue (run_magma.py SNP column alias → closed by vro, `7a3aa5a`). v9 then ran 22:53 → 23:40 and produced the FDR table. All three fixes (uqf/v4r/vro) validated end-to-end. See `.planning/quick/260414-ww3-resume-bmi-eur-magma-fdr-scout-v8-re-lau/SUMMARY.md`.
+>
+> **Remaining open issues:** #4, #5, #6, #7 (operational env workarounds — not yet committed, queued for next quick task on env hardening).
 
 ---
 
@@ -25,6 +31,14 @@
 | 5 | **Anaconda ToS interactive prompt blocker**: mamba 2.5 prompts `Confirm changes: [Y/n]` for any env touching `repo.anaconda.com` (i.e. `defaults` channel). Neither `--quiet`, `--yes`, `yes Y \| mamba`, `--accept-tos`, nor stdin redirection bypasses it. Plain `conda env create` hits the same since conda 23+ uses libmamba solver. | (a) Symlink prefix to existing compatible env (used for `python_stats` → `smoke_dev` since smoke_dev has identical core deps); (b) for envs with no symlinkable equivalent, in-place `mamba install -p` augmentation works because it doesn't trigger the same code path. | The `defaults` channel appears in `python_stats.yml`, `magma.yml`, and `hess_py27.yml` — all will hit this on fresh systems. |
 | 6 | **`python_stats` env uses `defaults` channel**: triggers issue #5. smoke_dev has all required deps for `harmonize_sumstats` (numpy, pandas, scipy, snakemake 7.32.4, pyyaml, requests, htslib). | Symlink `.snakemake/conda/<python_stats_hash>_` → `/rs1/researchers/c/ckclinto/conda_envs/smoke_dev` | If python_stats yml ever changes, the hash will change and the symlink needs to be re-created at the new hash. |
 | 7 | **gprofiler env hash drift after r-msigdbr addition**: the augmented env at hash `f2752ef7...` doesn't satisfy snakemake's NEW hash `d905eea1...` after the yml edit. | Symlink `.snakemake/conda/d905eea1...` → `f2752ef7...` | Same fragility as #6. |
+
+### Fixed after initial report (2026-04-14 → 2026-04-15)
+
+| # | Issue | Quick task | Commit | Status |
+|---|---|---|---|---|
+| 8 | `download_msigdb` msigdbr 26 API drift + KEGG_LEGACY choice | `260414-uqf` | `9cc6d49` | ✅ Fixed |
+| 9 | Yengo 2018 BMI throttle on cnsgenomics.com | `260414-v4r` | `deabbba` | ✅ Functionally resolved via mtime-touch on existing harmonized .bgz (scout DAG 8→4 jobs) |
+| 10 | `run_magma.py` column detection did not accept `SNP_ID` alias (surfaced in v8) | `260414-vro` | `7a3aa5a` | ✅ Fixed |
 
 ### Open issues (not yet addressed)
 
