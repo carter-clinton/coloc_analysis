@@ -3,9 +3,10 @@
 # Uses =version format (not =version=build) for platform portability.
 name: plink
 channels:
+  # defaults dropped (quick 260414-wzy): plink/plink2/bcftools on bioconda.
+  # Avoids Anaconda ToS prompt with mamba 2.5 (SCOUT-FINDINGS.md issue #5).
   - bioconda
   - conda-forge
-  - defaults
 dependencies:
   - plink=1.90b6.21
   - plink2=2.00a6.1
