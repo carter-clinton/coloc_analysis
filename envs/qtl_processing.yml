@@ -3,9 +3,11 @@
 # Conda env for downloading, lifting, and harmonizing eQTL/pQTL/sQTL data.
 name: qtl_processing
 channels:
+  # defaults dropped (quick 260414-wzy): all deps on conda-forge + bioconda
+  # (synapseclient is bioconda). Avoids Anaconda ToS prompt with mamba 2.5
+  # (SCOUT-FINDINGS.md issue #5).
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
   - python=3.11
   - synapseclient
