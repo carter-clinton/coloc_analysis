@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-15T01:35:00.000Z"
-last_activity: 2026-04-14 - Completed quick task 260414-tmq: Batch fix 30 Phase 5 script-path bugs + r-msigdbr
+last_updated: "2026-04-15T01:58:00.000Z"
+last_activity: 2026-04-14 - bmi.EUR magma_fdr scout halted 2/8 jobs; 9 Phase 5 issues found; magma_annotate produced 107 MB real output; SCOUT-FINDINGS.md committed
 progress:
   total_phases: 12
   completed_phases: 5
@@ -190,11 +190,21 @@ None yet.
 | 260414-qsk | Batch idempotency guards across 3 remaining Phase 0 download rules (magma_ref + ldsc_seg + hess_panel) | 2026-04-14 | 8b66203 | [260414-qsk-batch-idempotency-hardening-across-4-rem](./quick/260414-qsk-batch-idempotency-hardening-across-4-rem/) |
 | 260414-rbv | Fix Phase 5 conda env path bug in pathway.smk (3-level `..` escaped project root; surfaced live by `--use-conda`) | 2026-04-14 | 0f1f248 | [260414-rbv-fix-phase-5-conda-env-path-bug-in-pathwa](./quick/260414-rbv-fix-phase-5-conda-env-path-bug-in-pathwa/) |
 | 260414-tmq | Batch fix Phase 5 bugs from bmi.EUR magma_fdr scout (30 script-path `..` escapes + r-msigdbr added to gprofiler.yml + in-place env augment) | 2026-04-14 | 2414ea9, e193896 | [260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm](./quick/260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm/) |
+| scout-260414-bmi-magma | bmi.EUR magma_fdr scout (halted 2/8 jobs; magma_annotate produced 107 MB real output; 9 Phase 5 issues found) | 2026-04-14 | 04f3629 | [260414-bmi-magma-scout](./quick/260414-bmi-magma-scout/) |
 
 ## Session Continuity
 
-Last session: 2026-04-14T19:00:00Z
-Stopped at: Resume session surfaced narrow-scout scope blocker. The plan target rules are NOT idempotent against Carter's manually-staged 32 GB of references — `download_ldsc_baseline` would re-fetch ~5 GB from Broad/GCS (requester-pays auth failure expected); `download_magma_binary` would hit CNCR's JS gate that blocks curl; `download_sumstats` chains 8 fresh GWAS downloads because `data/raw/sumstats/` and `cache/downloads/` don't exist. Routing to `/gsd-quick` for Phase 0 idempotency hardening before any real-data execution. See findings below.
+Last session: 2026-04-15T01:58:00Z
+Stopped at: bmi.EUR magma_fdr scout halted at 2/8 jobs after surfacing 9 distinct Phase 5 issues across 3.5 hours. magma_annotate produced first real Phase 5 output (107 MB gene_annotation.genes.annot). Open issues: (a) msigdbr 26 API drift in download_msigdb rule needs `collection=`/`subcollection=` rewrite + KEGG_LEGACY vs KEGG_MEDICUS decision; (b) cnsgenomics.com throttled our IP after many connection attempts during chaotic v1-v7 restarts (Yengo BMI URL is healthy independently). Full report at .planning/quick/260414-bmi-magma-scout/SCOUT-FINDINGS.md (commit 04f3629).
+
+**Recommended next-session moves (in order):**
+1. `/gsd-quick` to update download_msigdb rule for msigdbr 26 API + pick KEGG_LEGACY (preserves prior assumptions).
+2. `/gsd-quick` to pre-stage Yengo BMI manually via wget to `data/raw/sumstats/bmi.EUR.raw.gz` (sidesteps throttle).
+3. Resume scout v8 — should complete all 8/8 jobs and produce `bmi_EUR_geneset_fdr.tsv`.
+4. `/gsd-quick` to codify env yml hardening (remove `defaults` channel where feasible, document libmamba 2.5 interop bug, add bin/setup-envs.sh helper).
+5. Consider `/gsd-validate-phase 5` retroactive audit before scaling to full LSF launch — the 9 issues found suggest Phase 5 was developed without ever running end-to-end against real conda envs + real data.
+
+### Earlier in this session (2026-04-14 PM)
 
 ### Finding 2026-04-14 PM — Phase 0 idempotency gap
 
