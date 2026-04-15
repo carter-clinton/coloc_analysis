@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-15T01:58:00.000Z"
-last_activity: 2026-04-14 - bmi.EUR magma_fdr scout halted 2/8 jobs; 9 Phase 5 issues found; magma_annotate produced 107 MB real output; SCOUT-FINDINGS.md committed
+last_updated: "2026-04-15T02:25:00.000Z"
+last_activity: 2026-04-15 - Quick task uqf: msigdbr 26 API + KEGG_LEGACY landed (closes scout issue #8); 4 GMT files produced
 progress:
   total_phases: 12
   completed_phases: 5
@@ -191,6 +191,7 @@ None yet.
 | 260414-rbv | Fix Phase 5 conda env path bug in pathway.smk (3-level `..` escaped project root; surfaced live by `--use-conda`) | 2026-04-14 | 0f1f248 | [260414-rbv-fix-phase-5-conda-env-path-bug-in-pathwa](./quick/260414-rbv-fix-phase-5-conda-env-path-bug-in-pathwa/) |
 | 260414-tmq | Batch fix Phase 5 bugs from bmi.EUR magma_fdr scout (30 script-path `..` escapes + r-msigdbr added to gprofiler.yml + in-place env augment) | 2026-04-14 | 2414ea9, e193896 | [260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm](./quick/260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm/) |
 | scout-260414-bmi-magma | bmi.EUR magma_fdr scout (halted 2/8 jobs; magma_annotate produced 107 MB real output; 9 Phase 5 issues found) | 2026-04-14 | 04f3629 | [260414-bmi-magma-scout](./quick/260414-bmi-magma-scout/) |
+| 260414-uqf | Update download_msigdb for msigdbr 26 API + KEGG_LEGACY pick; relax r-msigdbr/r-base pins (closes scout issue #8) | 2026-04-14 | 9cc6d49 | [260414-uqf-update-download-msigdb-rule-for-msigdbr-](./quick/260414-uqf-update-download-msigdb-rule-for-msigdbr-/) |
 
 ## Session Continuity
 
