@@ -454,7 +454,7 @@ rule magma_annotate:
         annot=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation.genes.annot"),
     params:
         out_prefix=os.path.join(PATHWAY_RESULTS_DIR, "magma", "gene_annotation"),
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_magma.py"),
         snp_loc=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur") + ".bim",
     conda:
         MAGMA_ENV
@@ -494,7 +494,7 @@ rule build_magma_set_file:
     output:
         set_file=os.path.join(PATHWAY_RESULTS_DIR, "magma", "all_pathways.set"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "build_magma_geneset.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "build_magma_geneset.py"),
     conda:
         MAGMA_ENV
     resources:
@@ -528,7 +528,7 @@ rule magma_gene_analysis:
     params:
         out_prefix=lambda wc: os.path.join(PATHWAY_RESULTS_DIR, "magma", f"{wc.trait}_{wc.ancestry}"),
         bfile=PATHWAY_CFG.get("magma_ref_panel", "data/reference/magma/g1000_eur"),
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_magma.py"),
         trait=lambda wc: wc.trait,
         # CR-02 fix: emit --n-case/--n-ctrl for binary traits so run_magma.py
         # computes N_eff = 4/(1/n_case + 1/n_ctrl); emit --sample-size for
@@ -568,7 +568,7 @@ rule magma_geneset_analysis:
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR, "magma", f"{wc.trait}_{wc.ancestry}_geneset"
         ),
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_magma.py"),
     conda:
         MAGMA_ENV
     resources:
@@ -600,7 +600,7 @@ rule magma_fdr:
     output:
         fdr=os.path.join(PATHWAY_RESULTS_DIR, "magma", "{trait}_{ancestry}_geneset_fdr.tsv"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "magma_fdr.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "magma_fdr.py"),
     conda:
         MAGMA_ENV
     resources:
@@ -631,7 +631,7 @@ rule ldsc_munge:
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", f"{wc.trait}_{wc.ancestry}"
         ),
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_partitioned.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_partitioned.py"),
         ldsc_dir="tools/ldsc",
         trait=lambda wc: wc.trait,
         # CR-02 fix: LDSC munge must also use effective N for binary traits.
@@ -674,7 +674,7 @@ rule ldsc_build_custom_annotations:
             chr=range(1, 23),
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "build_ldsc_annot.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "build_ldsc_annot.py"),
         bim_prefix=os.path.join(
             PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_Phase3_plinkfiles"),
             "1000G.EUR.QC",
@@ -713,7 +713,7 @@ rule ldsc_compute_custom_ld_scores:
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway.{chr}.l2.ldscore.gz"
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_partitioned.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_partitioned.py"),
         ldsc_dir="tools/ldsc",
         annot_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway"),
         bfile_prefix=os.path.join(
@@ -759,7 +759,7 @@ rule ldsc_partitioned_h2:
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", "{trait}_{ancestry}_pathway_h2.results"
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_partitioned.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_partitioned.py"),
         ldsc_dir="tools/ldsc",
         baseline_prefix=os.path.join(
             PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
@@ -869,7 +869,7 @@ rule ldsc_seg_gene_expr:
             PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_gene_expr.cell_type_results.txt"
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_seg.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_seg.py"),
         ldsc_dir="tools/ldsc",
         ref_ld_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
@@ -915,7 +915,7 @@ rule ldsc_seg_chromatin:
             PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_chromatin.cell_type_results.txt"
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_seg.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_seg.py"),
         ldsc_dir="tools/ldsc",
         ref_ld_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
@@ -975,7 +975,7 @@ rule ldsc_seg_shared_tissues:
         mem_mb=4000,
     run:
         import sys as _sys
-        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        _sys.path.insert(0, str(Path(workflow.basedir) / "src" / "python"))
         from run_ldsc_seg import identify_shared_tissues, parse_seg_results
 
         # Collect all results
@@ -1037,7 +1037,7 @@ rule fix_ldcts_paths:
             "Multi_tissue_chromatin_fixed.ldcts",
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_ldsc_seg.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_seg.py"),
         gene_expr_ldcts=os.path.join(
             PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
             "Multi_tissue_gene_expr.ldcts",
@@ -1050,7 +1050,7 @@ rule fix_ldcts_paths:
         mem_mb=1000,
     run:
         import sys as _sys
-        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        _sys.path.insert(0, str(Path(workflow.basedir) / "src" / "python"))
         from run_ldsc_seg import fix_ldcts_paths
 
         fix_ldcts_paths(params.gene_expr_ldcts, output.gene_expr_fixed)
@@ -1073,7 +1073,7 @@ rule hess_validate_panel:
     output:
         validated=touch("data/reference/hess/.build_validated"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_hess.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
         bfile_prefix=os.path.join(
             PATHWAY_CFG.get("hess_ld_panel", "data/reference/hess/ld_panel"),
             "EUR",
@@ -1109,13 +1109,13 @@ rule hess_format_sumstats:
             PATHWAY_RESULTS_DIR, "hess", "sumstats", "{trait}_{ancestry}_hess.tsv"
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_hess.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
         trait=lambda wc: wc.trait,
     resources:
         mem_mb=4000,
     run:
         import sys as _sys
-        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        _sys.path.insert(0, str(Path(workflow.basedir) / "src" / "python"))
         from run_hess import harmonized_to_hess
         harmonized_to_hess(
             input_path=input.sumstats,
@@ -1158,10 +1158,10 @@ rule hess_local_rhog:
             )
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_hess.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
         hess_script="tools/hess/hess.py",
         python27=os.path.join(
-            workflow.basedir, "..", "..", "..", ".snakemake", "conda",
+            workflow.basedir, ".snakemake", "conda",
         ),
         bfile=lambda wc: os.path.join(
             PATHWAY_CFG.get("hess_ld_panel", "data/reference/hess/ld_panel"),
@@ -1219,7 +1219,7 @@ rule hess_combine:
             "{trait1}_{trait2}_{ancestry}_combined.txt",
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_hess.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
         hess_script="tools/hess/hess.py",
         prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR,
@@ -1265,7 +1265,7 @@ rule hess_compare_pleio:
             "{trait1}_{trait2}_{ancestry}_pleio_vs_bg.tsv",
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_hess.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
     conda:
         MAGMA_ENV
     resources:
@@ -1322,7 +1322,7 @@ rule hess_negative_controls:
         import csv as _csv
         import sys as _sys
         import tempfile as _tempfile
-        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        _sys.path.insert(0, str(Path(workflow.basedir) / "src" / "python"))
         from run_hess import compare_pleiotropic_vs_background
 
         # Parse gene.loc into a symbol -> (chr, start, end) map
@@ -1516,7 +1516,7 @@ rule build_gprofiler_background:
     output:
         bg_genes=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "background_genes.txt"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "build_gprofiler_bg.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "build_gprofiler_bg.py"),
         sumstats_dir=config["paths"]["harmonized_sumstats"],
         traits=",".join(config.get("traits", [])),
         window_kb=PATHWAY_CFG.get("gprofiler_bg_window_kb", 500),
@@ -1590,7 +1590,7 @@ rule gprofiler_enrichment:
     output:
         results=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "enrichment_results.tsv"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_gprofiler.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_gprofiler.py"),
     conda:
         MAGMA_ENV
     resources:
@@ -1622,13 +1622,13 @@ rule gprofiler_negative_controls:
     output:
         results=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler", "neg_ctrl_enrichment.tsv"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_gprofiler.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_gprofiler.py"),
         outdir=os.path.join(PATHWAY_RESULTS_DIR, "gprofiler"),
     resources:
         mem_mb=4000,
     run:
         import sys
-        sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        sys.path.insert(0, str(Path(workflow.basedir) / "src" / "python"))
         from build_magma_geneset import parse_gmt
         from run_gprofiler import run_enrichment_api, _write_results_tsv, _read_gene_list
 
@@ -1687,7 +1687,7 @@ rule permutation_null_genesets:
     output:
         summary=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null", "null_geneset_summary.tsv"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "extend_null_genesets.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "extend_null_genesets.py"),
         out_dir=os.path.join(PATHWAY_RESULTS_DIR, "permutation_null"),
         n_perm=PATHWAY_CFG.get("permutation_n", 1000),
         seed=42,
@@ -1728,7 +1728,7 @@ rule permutation_magma:
             "{trait}_{ancestry}_perm_{perm_idx}.gsa.out",
         ),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "run_magma.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_magma.py"),
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR, "permutation_null", "magma",
             f"{wc.trait}_{wc.ancestry}_perm_{wc.perm_idx}",
@@ -1884,7 +1884,7 @@ rule validate_negative_controls:
     run:
         import csv
         import sys as _sys
-        _sys.path.insert(0, os.path.join(workflow.basedir, "..", "..", "python"))
+        _sys.path.insert(0, str(Path(workflow.basedir) / "src" / "python"))
         from extend_null_genesets import validate_negative_controls
 
         NEG_CTRL_PREFIXES = ["NEGCTRL_HLA_IMMUNE", "NEGCTRL_COSMETIC", "NEGCTRL_BLOOD_GROUP"]
@@ -2004,7 +2004,7 @@ rule aggregate_pathway_results:
         enrichment=os.path.join(PATHWAY_RESULTS_DIR, "pathway_enrichment_summary.tsv"),
         overview=os.path.join(PATHWAY_RESULTS_DIR, "phase5_overview.tsv"),
     params:
-        script=os.path.join(workflow.basedir, "..", "..", "python", "aggregate_pathway_results.py"),
+        script=str(Path(workflow.basedir) / "src" / "python" / "aggregate_pathway_results.py"),
     conda:
         MAGMA_ENV
     resources:
