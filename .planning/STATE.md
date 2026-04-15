@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: verifying
 stopped_at: Completed 09-05-PLAN.md (Phase 9 complete — ready for /gsd-verify-work)
-last_updated: "2026-04-14T23:46:00.000Z"
-last_activity: 2026-04-14 - Completed quick task 260414-rbv: Fix Phase 5 conda env path bug in pathway.smk
+last_updated: "2026-04-15T01:35:00.000Z"
+last_activity: 2026-04-14 - Completed quick task 260414-tmq: Batch fix 30 Phase 5 script-path bugs + r-msigdbr
 progress:
   total_phases: 12
   completed_phases: 5
@@ -189,6 +189,7 @@ None yet.
 | 260414-qhr | Fix Phase 0 download rule idempotency (LDSC baseline preflight + MAGMA binary symlink) | 2026-04-14 | e936aea | [260414-qhr-fix-phase-0-download-rule-idempotency-1-](./quick/260414-qhr-fix-phase-0-download-rule-idempotency-1-/) |
 | 260414-qsk | Batch idempotency guards across 3 remaining Phase 0 download rules (magma_ref + ldsc_seg + hess_panel) | 2026-04-14 | 8b66203 | [260414-qsk-batch-idempotency-hardening-across-4-rem](./quick/260414-qsk-batch-idempotency-hardening-across-4-rem/) |
 | 260414-rbv | Fix Phase 5 conda env path bug in pathway.smk (3-level `..` escaped project root; surfaced live by `--use-conda`) | 2026-04-14 | 0f1f248 | [260414-rbv-fix-phase-5-conda-env-path-bug-in-pathwa](./quick/260414-rbv-fix-phase-5-conda-env-path-bug-in-pathwa/) |
+| 260414-tmq | Batch fix Phase 5 bugs from bmi.EUR magma_fdr scout (30 script-path `..` escapes + r-msigdbr added to gprofiler.yml + in-place env augment) | 2026-04-14 | 2414ea9, e193896 | [260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm](./quick/260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm/) |
 
 ## Session Continuity
 
