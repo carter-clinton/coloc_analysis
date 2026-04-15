@@ -192,6 +192,7 @@ None yet.
 | 260414-tmq | Batch fix Phase 5 bugs from bmi.EUR magma_fdr scout (30 script-path `..` escapes + r-msigdbr added to gprofiler.yml + in-place env augment) | 2026-04-14 | 2414ea9, e193896 | [260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm](./quick/260414-tmq-batch-fix-phase-5-bugs-from-bmi-eur-magm/) |
 | scout-260414-bmi-magma | bmi.EUR magma_fdr scout (halted 2/8 jobs; magma_annotate produced 107 MB real output; 9 Phase 5 issues found) | 2026-04-14 | 04f3629 | [260414-bmi-magma-scout](./quick/260414-bmi-magma-scout/) |
 | 260414-uqf | Update download_msigdb for msigdbr 26 API + KEGG_LEGACY pick; relax r-msigdbr/r-base pins (closes scout issue #8) | 2026-04-14 | 9cc6d49 | [260414-uqf-update-download-msigdb-rule-for-msigdbr-](./quick/260414-uqf-update-download-msigdb-rule-for-msigdbr-/) |
+| 260414-v4r | Pre-stage Yengo BMI: cnsgenomics throttle blocked download; pivoted to mtime-touch on existing harmonized .bgz; scout DAG 8→4 jobs (closes scout issue #9 functionally) | 2026-04-15 | _no-code_ | [260414-v4r-pre-stage-yengo-2018-bmi-eur-sumstats-ma](./quick/260414-v4r-pre-stage-yengo-2018-bmi-eur-sumstats-ma/) |
 
 ## Session Continuity
 
