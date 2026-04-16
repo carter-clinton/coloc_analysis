@@ -2,43 +2,44 @@
 # Seeded from src/legacy/region_analysis/config/cluster_lsf.yaml (D-07).
 # New rules (run_finemap, validate_sumstats, liftover_sumstats) added for Plan 03.
 
+# NCSU HPC LSF cluster config.
+# LSF_UNIT_FOR_LIMITS=GB — bsub_wrapper.sh converts mem_mb to GB.
+# Queue rules:
+#   serial:   1 slot only, no time cap, low prio — default for most rules
+#   standard: min 8 slots, 48h max — for multi-thread rules
+#   long:     min 2 slots, 10d max — for heavy compute
+# Do NOT cap wall time — let jobs run to completion.
+
 __default__:
-  queue: "short"
-  time: "04:00"
+  queue: "serial"
   mem_mb: 8000
-  threads: 4
+  threads: 1
 
 download_sumstats:
-  time: "02:00"
   mem_mb: 4000
   threads: 1
 
 harmonize_sumstats:
-  time: "04:00"
   mem_mb: 8000
-  threads: 2
+  threads: 1
 
 make_regions_from_loci:
-  time: "01:00"
   mem_mb: 2000
   threads: 1
 
 prepare_ld_plink:
-  time: "24:00"
+  queue: "long"
   mem_mb: 32000
   threads: 4
 
 run_finemap:
-  time: "08:00"
   mem_mb: 16000
   threads: 1
 
 validate_sumstats:
-  time: "01:00"
   mem_mb: 4000
   threads: 1
 
 liftover_sumstats:
-  time: "02:00"
   mem_mb: 8000
   threads: 1
