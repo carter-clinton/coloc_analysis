@@ -361,6 +361,24 @@ def run_local_rhog(hess_script, python27, bfile, partition,
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
+    # If partition file is genome-wide (ldetect format), filter to this
+    # chromosome and write a temp per-chromosome BED for HESS.
+    chrom_str = str(chrom)
+    chrom_tag = f"chr{chrom_str}"
+    with open(partition) as pfh:
+        header = pfh.readline()
+        lines = [l for l in pfh if l.strip().split()[0].replace("chr", "") == chrom_str]
+    if lines:
+        import tempfile
+        _part_tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=f"_chr{chrom_str}.bed", delete=False, dir=out_dir
+        )
+        _part_tmp.write(header)
+        _part_tmp.writelines(lines)
+        _part_tmp.close()
+        partition = _part_tmp.name
+        logger.info("Filtered partition to chr%s: %d blocks -> %s", chrom_str, len(lines), partition)
+
     # Build command (T-05-18: list args only, no shell=True)
     cmd = [
         python27,

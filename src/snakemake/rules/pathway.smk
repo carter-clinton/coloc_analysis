@@ -1182,7 +1182,7 @@ rule hess_local_rhog:
         ),
         partition=lambda wc: os.path.join(
             PATHWAY_CFG.get("hess_partition", "data/reference/hess/partition"),
-            f"chr{wc.chrom}.bed",
+            f"{wc.ancestry}_fourier_ls-all.bed",
         ),
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR,
