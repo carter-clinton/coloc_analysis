@@ -61,6 +61,12 @@ def per_locus_detection_prob(
     beta_hat = np.asarray(beta_hat, dtype=float)
     se = np.asarray(se, dtype=float)
 
+    if np.any(se <= 0):
+        raise ValueError(
+            f"SE must be positive; found {np.sum(se <= 0)} non-positive values. "
+            "Check tier_a input for data quality issues."
+        )
+
     ncp = (beta_hat / se) ** 2
     # P(chi^2_1(NCP) >= T) = survival function of noncentral chi-squared
     return stats.ncx2.sf(chi2_threshold, df=1, nc=ncp)
