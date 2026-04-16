@@ -551,7 +551,7 @@ rule run_cojo_slct:
     """
     input:
         ma = "results/replication/cojo/input/{cohort}_{trait}_{locus}_{signal_id}.ma",
-        plink_bed = "data/reference/ldsc/1000G_Phase3_plinkfiles/1000G.{ancestry}.QC.{chrom}.bed",
+        plink_bed = "data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.{ancestry}.QC.{chrom}.bed",
         plink_done = "data/reference/ldsc/.baseline_download_done",
         snp_list = "results/replication/cojo/input/{cohort}_{trait}_{locus}_{signal_id}.snps",
         script_dep = "src/snakemake/scripts/run_cojo.sh",

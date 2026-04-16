@@ -165,12 +165,51 @@ def effective_n(
     raise ValueError("Must provide --sample-size or both --n-case and --n-ctrl")
 
 
-def _create_pval_file(sumstats_path: str, tmpdir: str) -> str:
+def _load_bim_pos_to_rsid(bfile: str) -> dict:
+    """Build a CHR:POS -> rsID lookup from a plink .bim file.
+
+    Used when sumstats SNP IDs are in positional format (e.g., "1:13668")
+    but MAGMA's reference panel uses rsIDs. Only entries with rsIDs
+    (starting with "rs") are included.
+
+    Parameters
+    ----------
+    bfile : str
+        Plink bfile prefix (expects {bfile}.bim).
+
+    Returns
+    -------
+    dict
+        Mapping of "CHR:POS" -> rsID.
+    """
+    bim_path = f"{bfile}.bim"
+    pos_to_rs = {}
+    with open(bim_path) as fh:
+        for line in fh:
+            fields = line.strip().split()
+            if len(fields) < 4:
+                continue
+            chrom = fields[0]
+            rsid = fields[1]
+            pos = fields[3]
+            if rsid.startswith("rs"):
+                key = f"{chrom}:{pos}"
+                # Keep first rsID if duplicates exist
+                if key not in pos_to_rs:
+                    pos_to_rs[key] = rsid
+    return pos_to_rs
+
+
+def _create_pval_file(sumstats_path: str, tmpdir: str, bfile: str = None) -> str:
     """Extract SNP + P columns from harmonized sumstats for MAGMA.
 
     MAGMA --pval expects a whitespace-delimited file with at minimum
     SNP and P columns. We extract only these to avoid MAGMA choking
     on extra columns in harmonized sumstats.
+
+    When sumstats use positional SNP IDs (e.g., "1:13668") instead of
+    rsIDs, and a bfile is provided, remaps to rsIDs using the .bim file
+    so that MAGMA can match SNPs against the reference panel.
 
     Parameters
     ----------
@@ -178,6 +217,8 @@ def _create_pval_file(sumstats_path: str, tmpdir: str) -> str:
         Path to harmonized sumstats TSV.
     tmpdir : str
         Directory for the temporary pval file.
+    bfile : str, optional
+        Plink bfile prefix for positional-to-rsID remapping.
 
     Returns
     -------
@@ -201,11 +242,17 @@ def _create_pval_file(sumstats_path: str, tmpdir: str) -> str:
         col_lower = [c.lower() for c in columns]
         snp_idx = None
         p_idx = None
+        chr_idx = None
+        pos_idx = None
         for i, c in enumerate(col_lower):
             if c in ("snp", "snp_id"):
                 snp_idx = i
             elif c == "p":
                 p_idx = i
+            elif c == "chr":
+                chr_idx = i
+            elif c == "pos":
+                pos_idx = i
 
         if snp_idx is None:
             raise ValueError(
@@ -218,19 +265,69 @@ def _create_pval_file(sumstats_path: str, tmpdir: str) -> str:
                 f"Available columns: {columns}"
             )
 
+        # Detect if SNP IDs need remapping: peek at first data line
+        peek_line = fin.readline()
+        if not peek_line.strip():
+            logger.warning("Empty sumstats file: %s", sumstats_path)
+            with open(pval_path, "w") as fout:
+                fout.write("SNP\tP\n")
+            return pval_path
+
+        peek_fields = peek_line.strip().split("\t")
+        first_snp = peek_fields[snp_idx] if len(peek_fields) > snp_idx else ""
+        needs_remap = not first_snp.startswith("rs") and bfile is not None
+
+        # Build positional lookup if needed
+        pos_to_rs = {}
+        if needs_remap:
+            logger.info(
+                "SNP IDs are positional (e.g., '%s'); building CHR:POS -> rsID "
+                "lookup from %s.bim for MAGMA compatibility",
+                first_snp, bfile,
+            )
+            pos_to_rs = _load_bim_pos_to_rsid(bfile)
+            logger.info("Loaded %d rsID mappings from BIM file", len(pos_to_rs))
+
         n_written = 0
+        n_remapped = 0
         with open(pval_path, "w") as fout:
             fout.write("SNP\tP\n")
-            for line in fin:
-                fields = line.strip().split("\t")
-                if len(fields) > max(snp_idx, p_idx):
-                    snp_val = fields[snp_idx]
-                    p_val = fields[p_idx]
-                    # Skip rows with missing values
-                    if snp_val and p_val and p_val.lower() != "na":
-                        fout.write(f"{snp_val}\t{p_val}\n")
-                        n_written += 1
 
+            # Process the peeked line first, then the rest
+            from itertools import chain
+            for line in chain([peek_line], fin):
+                fields = line.strip().split("\t")
+                if len(fields) <= max(snp_idx, p_idx):
+                    continue
+                snp_val = fields[snp_idx]
+                p_val = fields[p_idx]
+                # Skip rows with missing values
+                if not snp_val or not p_val or p_val.lower() == "na":
+                    continue
+
+                if needs_remap:
+                    # Try direct lookup first (SNP_ID is already CHR:POS)
+                    rsid = pos_to_rs.get(snp_val)
+                    if rsid is None and chr_idx is not None and pos_idx is not None:
+                        # Fallback: build key from CHR + POS columns
+                        if len(fields) > max(chr_idx, pos_idx):
+                            key = f"{fields[chr_idx]}:{fields[pos_idx]}"
+                            rsid = pos_to_rs.get(key)
+                    if rsid is not None:
+                        snp_val = rsid
+                        n_remapped += 1
+                    else:
+                        # Skip SNPs we can't remap
+                        continue
+
+                fout.write(f"{snp_val}\t{p_val}\n")
+                n_written += 1
+
+    if needs_remap:
+        logger.info(
+            "Remapped %d positional SNP IDs to rsIDs for MAGMA compatibility",
+            n_remapped,
+        )
     logger.info(
         "Created MAGMA pval file with %d SNPs: %s", n_written, pval_path
     )
@@ -344,9 +441,10 @@ def run_gene_analysis(
     Path(out).parent.mkdir(parents=True, exist_ok=True)
 
     # Create temp pval file with only SNP + P columns
+    # Pass bfile so _create_pval_file can remap positional SNP IDs to rsIDs
     tmpdir = tempfile.mkdtemp(prefix="magma_pval_")
     try:
-        pval_file = _create_pval_file(pval, tmpdir)
+        pval_file = _create_pval_file(pval, tmpdir, bfile=bfile)
 
         cmd = [
             magma_binary,

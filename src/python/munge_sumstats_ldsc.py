@@ -91,6 +91,13 @@ def convert_sumstats(
         in_cols = header_line.split("\t")
         col_idx = {col: i for i, col in enumerate(in_cols)}
 
+        # Accept SNP_ID as alias for SNP (canonical harmonized column name)
+        snp_col = "SNP"
+        if "SNP" not in in_cols and "SNP_ID" in in_cols:
+            snp_col = "SNP_ID"
+            in_cols.append("SNP")  # satisfy the required_cols check
+            col_idx["SNP"] = col_idx["SNP_ID"]
+
         # T-05-04: validate required columns
         missing = REQUIRED_INPUT_COLS - set(in_cols)
         if missing:

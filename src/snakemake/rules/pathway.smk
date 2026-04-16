@@ -677,7 +677,7 @@ rule ldsc_build_custom_annotations:
     params:
         script=str(Path(workflow.basedir) / "src" / "python" / "build_ldsc_annot.py"),
         bim_prefix=os.path.join(
-            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_Phase3_plinkfiles"),
+            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_EUR_Phase3_plink"),
             "1000G.EUR.QC",
         ),
         out_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway"),
@@ -718,7 +718,7 @@ rule ldsc_compute_custom_ld_scores:
         ldsc_dir="tools/ldsc",
         annot_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "annotations", "custom_pathway"),
         bfile_prefix=os.path.join(
-            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_Phase3_plinkfiles"),
+            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_EUR_Phase3_plink"),
             "1000G.EUR.QC",
         ),
         out_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway"),
