@@ -67,7 +67,6 @@ def load_eur_sumstats(path: str) -> pd.DataFrame:
     beta (or BETA), se (or SE), N (optional).
     """
     # Handle both .bgz and .tsv.gz
-    open_fn = gzip.open if path.endswith((".gz", ".bgz")) else open
     df = pd.read_csv(path, sep="\t", compression="gzip" if path.endswith((".gz", ".bgz")) else None)
 
     # Normalize column names to lowercase
