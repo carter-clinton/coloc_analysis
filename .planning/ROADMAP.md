@@ -190,7 +190,7 @@ Seeds: src/legacy/region_analysis/scripts/create_mr_design.py, src/legacy/region
 **Plans**: 5 plans (04-01 scaffold+config, 04-02 bootstrap engine, 04-03 concordance metrics, 04-04 LDSC rg + Hou null, 04-05 assembly+smoke gate)
 
 Plans:
-- [ ] 04-01-PLAN.md — Scaffold, config, Wave 0 test stubs, bmi.AFR dependency surface
+- [x] 04-01-PLAN.md — Scaffold, config, Wave 0 test stubs, bmi.AFR dependency surface
 - [ ] 04-02-PLAN.md — Bootstrap engine (SE-inflation + SuSiE refit + coloc.susie per bootstrap)
 - [ ] 04-03-PLAN.md — Concordance metrics (Tier A retention + Jaccard + sign agreement)
 - [ ] 04-04-PLAN.md — LDSC 30-test r_g matrix + Hou-null detection probability
