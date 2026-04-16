@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 4 context gathered (Option C in flight — Track A complete; Track B LSF launch pending user)
-last_updated: "2026-04-15T14:40:13.209Z"
-last_activity: 2026-04-14
+stopped_at: Phase 4 research complete (04-RESEARCH.md fb107ca) — 2 CONFIRMED / 3 CONTESTED / 1 SUPERSEDED; discuss-phase iteration pending for B-2 (Hou citation) / A-2 (LDSC → S-LDXR) / C-1 (Pan-UKBB → MVP/AoU)
+last_updated: "2026-04-15T20:40:00.000Z"
+last_activity: 2026-04-15
 progress:
   total_phases: 12
   completed_phases: 5
@@ -199,21 +199,34 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T14:40:13.191Z
-Stopped at: Phase 4 context gathered (Option C in flight — Track A complete; Track B LSF launch pending user)
+Last session: 2026-04-15T20:40:00.000Z
+Stopped at: Phase 4 research complete — 04-RESEARCH.md committed (fb107ca, 474 lines). 5 of 6 decisions need attention; user picked discuss-phase iteration as next route.
+
+### This session (2026-04-15 PM)
+
+1. **Phase 4 research (B → A → C priority, F1 verdict-table format, G3 alternatives-no-pick policy)** — gsd-phase-researcher returned:
+   - **B-1 CONFIRMED** — SE-inflation bootstrap (Zou 2022 SuSiE-RSS + MultiSuSiE 2025 support independent-Z + fixed-R refit)
+   - **B-2 CONTESTED** — D-05 Hou 2023 citation error: PMC10403901 resolves to PMC11120833 = *radmix* paper, no NCP framework. OSF pre-reg does not name Hou → internal CONTEXT.md fix, not an OSF deviation
+   - **B-3 CONTESTED** — 20pp H7 threshold has no literature precedent; defensible only because pre-registered (changing requires OSF amendment)
+   - **A-1 CONTESTED** — compute envelope scales 5-60 weeks depending on LSF concurrent-core quota; pilot run (100 fits ≈ 1 hr) needed before full launch
+   - **A-2 CONTESTED** — standard LDSC cannot compute cross-ancestry r_g per author FAQ; need **S-LDXR / Popcorn / cov-LDSC**. AFR sample sizes (stroke ~24k, asthma ~15k) above 5k minimum but SE>0.3 expected
+   - **C-1 SUPERSEDED** — Pan-UKBB AFR BMI (N~6k) → **MVP phs002453 (N~55.5k, dbGaP public 2024-07-22)** or **AoU BMI AFR (N~54.9k)**, both ~9× larger; SE-inflation goes from 10.8× (noise-dominated) to 3.55× (comparable to other 4 traits)
+   - Open: Mahajan 2022 §6 SE-inflation PDF verification; MVP phs002453 DAR status; D-05 NCP framework original source (Hou 2019? Hormozdiari 2020? Pasaniuc-Price 2017? this study's construction?); NCSU LSF concurrent-core quota
+
+### Recommended next-session moves (in order)
+
+1. **`/gsd-discuss-phase 4`** — resolve B-2 / A-2 / C-1 amendments to 04-CONTEXT.md. Menu picks come from the alternatives column of 04-RESEARCH.md §Verdict Table. Do NOT touch B-1 / B-3 (B-1 CONFIRMED; B-3 pre-reg-locked). A-1 becomes a planning-layer pilot-run task, not a CONTEXT amendment.
+2. **Before discuss-phase**, resolve 2 researcher-unreachable questions: (a) verify MVP phs002453 DAR status (open vs DAR-gated) via dbGaP; (b) check NCSU LSF concurrent-core quota to calibrate A-1 pilot estimate.
+3. After discuss-phase → **`/gsd-plan-phase 4`** — references amended CONTEXT.md + RESEARCH.md.
+4. In parallel: **first-production LSF launch** of T1 Phases 0→1→2 end-to-end — required to produce Tier A signal counts for CP#1-final. Does not block Phase 4 planning.
+5. After first-production T1 completes → reissue **CP#1-final** with numeric Tier A counts + cross-ancestry concordance magnitude.
+
+### Earlier in this session (2026-04-15 AM)
 
 1. **ww3** — bmi.EUR magma_fdr scout closed (v9 reached 3/3; 9617 FDR rows; top hit CUSTOM_APPETITE_REGULATION q=7.25e-11). Commit `7f97a20`.
 2. **wzy** — Env yml hardening: `defaults` channel dropped from 6 yamls, `bin/setup-envs.sh` added with direct-mamba fallback for libmamba 2.5 interop bug, envs/README.md rewritten with 4-item Pitfalls section. Closes scout issues #4/#5/#6/#7. Commit `60d3c2f`.
 3. **Phase 5 validation audit** — Retroactive `05-VALIDATION.md` reconciled: 8→10 task rows, all ⬜→✅ green (100/100 pytest pass in 53.2s), Manual-Only expanded 3→10 with scout-gap integration. Commit `489d6af`.
 4. **CP#1 interim review** — `.planning/checkpoints/T1_review.md` issued with conditional-go verdict. T2 research + planning authorized in parallel with T1 first-production LSF launch. Decision rule for submission target (NG vs AJHG) recorded pre-data at 3 Tier A thresholds.
-
-**Recommended next-session moves (in order):**
-
-1. Begin T2 planning — start with **Phase 4 (matched-N cross-ancestry)** per CP#1 §"What T2 planning should start on now". `/gsd-plan-phase 4` or `/gsd-discuss-phase 4` first.
-2. **First-production LSF launch** of T1 Phases 0→1→2 end-to-end — required to produce Tier A signal counts for CP#1-final. `snakemake all --cores N` or a targeted staged-run sequence.
-3. Scout the remaining Phase 5 branches (g:Profiler, LDSC partitioned, LDSC-SEG, HESS) — each its own `/gsd-quick` + narrow target, or bundle into one `snakemake all_pathway --cores N` LSF launch. Unresolved risks surface in `05-VALIDATION.md` Manual-Only items 1-10.
-4. Resolve Phase 9 SMOKE Finding 1 (FinnGen + MVP genome_build config mismatch) before first-production Phase 9 — already captured as quick-260414-clp.
-5. After first-production T1 completes → reissue **CP#1-final** with numeric Tier A counts + cross-ancestry concordance magnitude.
 
 ### Earlier in this session (2026-04-14 PM)
 
