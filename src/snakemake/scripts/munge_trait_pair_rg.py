@@ -83,7 +83,10 @@ def parse_ldsc_rg_log(log_path):
     return result
 
 
-def parse_filename(log_path):
+KNOWN_TRAITS = {"t2d", "stroke", "hypertension", "asthma", "bmi"}
+
+
+def parse_filename(log_path, known_traits=KNOWN_TRAITS):
     """Extract trait1, trait2, ancestry1, ancestry2 from log filename.
 
     Expected format: {trait1}_{trait2}_{ancestry1}_{ancestry2}.log
@@ -107,6 +110,20 @@ def parse_filename(log_path):
     else:
         # Single trait name — same-trait test
         trait1 = trait2 = trait_split[0]
+
+    # Validate parsed traits against known trait list to catch silent misparsing
+    # (e.g., if a trait name ever contains an underscore)
+    if known_traits:
+        if trait1 not in known_traits:
+            raise ValueError(
+                f"Parsed trait1='{trait1}' not in known traits {known_traits} "
+                f"from {log_path}. Check underscore splitting."
+            )
+        if trait2 not in known_traits:
+            raise ValueError(
+                f"Parsed trait2='{trait2}' not in known traits {known_traits} "
+                f"from {log_path}. Check underscore splitting."
+            )
 
     return trait1, trait2, ancestry1, ancestry2
 
