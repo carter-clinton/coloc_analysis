@@ -79,9 +79,11 @@ def assemble(tier_a_tsv, jaccard_tsv, detection_tsv, rg_matrix_tsv,
         out_table2: Output path for table2.tsv (D-06a).
         out_table2_jaccard: Output path for table2_jaccard.tsv (D-06b).
     """
-    cfg = yaml.safe_load(open(config_yaml))
+    with open(config_yaml) as fh:
+        cfg = yaml.safe_load(fh)
     threshold_pp = cfg["h7_reduction_threshold_pp"]  # 20
-    ns = yaml.safe_load(open(trait_sample_sizes_yaml))
+    with open(trait_sample_sizes_yaml) as fh:
+        ns = yaml.safe_load(fh)
 
     tier = pd.read_csv(tier_a_tsv, sep="\t")
     jac = pd.read_csv(jaccard_tsv, sep="\t")
