@@ -1,6 +1,6 @@
 ---
 phase: 04-matched-n-cross-ancestry-concordance
-reviewed: 2026-04-15T00:00:00Z
+reviewed: 2026-04-16T03:52:49Z
 depth: standard
 files_reviewed: 22
 files_reviewed_list:
@@ -28,348 +28,149 @@ files_reviewed_list:
   - tests/test_matched_n_table2.py
   - tests/test_matched_n_tier_a.py
 findings:
-  critical: 1
-  warning: 7
-  info: 5
-  total: 13
+  critical: 0
+  warning: 2
+  info: 4
+  total: 6
 status: issues_found
 ---
 
-# Phase 4: Code Review Report
+# Phase 4: Code Review Report (Re-Review)
 
-**Reviewed:** 2026-04-15
+**Reviewed:** 2026-04-16T03:52:49Z
 **Depth:** standard
 **Files Reviewed:** 22
 **Status:** issues_found
 
 ## Summary
 
-Phase 4 implements matched-N cross-ancestry concordance via a SE-inflation bootstrap + coloc.susie pipeline feeding into Table 2 and a supplementary violin figure. The statistical core (SE inflation formula, NCP computation, BH-FDR, H7 verdict logic) is mathematically correct and well-tested. The test suite is thorough, with determinism tests, boundary tests, schema guards, and D-02e regression guards.
+This is a re-review following the application of 7 of 8 fixes from the prior review. All 7 targeted fixes were correctly applied with no regressions introduced. WR-05 (missing DAG edge) remains intentionally skipped as a structural Snakemake change.
 
-One critical bug exists in `run_matched_coloc.R`: after the `tryCatch` block returns `result`, the TSV-writing section references `fit_afr` and `fit_eur` directly, but those variables are scoped inside the `tryCatch` expression and are not available in the outer function scope in standard R evaluation. This will produce a "object 'fit_afr' not found" error for every successful run.
+One new warning was found during fix verification: a pre-existing logic bug in `run_matched_coloc.R` that was not caught in the prior review. `length(result$n_cs_afr)` in the CS size extraction bounds check is always `1` (length of a scalar in R), which silently produces `NA` for `cs_afr_size` and `cs_eur_size` on all multi-signal coloc pairs where `idx1 >= 2` or `idx2 >= 2`. The bug does not affect `pph4`, Tier A retention, H7 verdicts, or any primary analysis output; it corrupts only the `cs_afr_size` / `cs_eur_size` columns in `coloc_summary.tsv` for multi-signal loci.
 
-Seven warnings cover: a filename-parsing fragility that will silently misparse any trait containing an underscore (only matters if traits are ever renamed), two resource/correctness issues in `bootstrap_driver.py`, a missing `seed_range_collision` guard in the seed formula, an unhandled edge case in `compute_detection_probability.py` when SE is zero, an implicit dependency issue in the Snakemake DAG, and redundant unused file handle in `bootstrap_driver.py`.
+The statistical core (SE inflation, NCP computation, BH-FDR, H7 verdict, Tier A retention, Jaccard) remains correct and well-tested. The pipeline is sound for single-signal loci, which are the large majority of T1 GWAS loci.
 
 ---
 
-## Critical Issues
+## Fix Verification
 
-### CR-01: `fit_afr` / `fit_eur` referenced outside `tryCatch` scope in `run_matched_coloc.R`
-
-**File:** `src/snakemake/scripts/run_matched_coloc.R:121-136`
-
-**Issue:** The variables `fit_afr` and `fit_eur` are assigned inside the `tryCatch({...})` expression body (lines 57–58). In R, the tryCatch body is evaluated in a child environment; assignments made inside it do not propagate to the enclosing environment. After the tryCatch block, `result` is available, but `fit_afr` and `fit_eur` are not. Lines 128–135 then directly index `fit_afr$sets$cs` and `fit_eur$sets$cs`:
-
-```r
-cs_afr_list <- fit_afr$sets$cs %||% list()   # line 130 — fit_afr is not defined here
-cs_eur_list <- fit_eur$sets$cs %||% list()   # line 134 — fit_eur is not defined here
-```
-
-Any production run where `result$status == "success"` will immediately error with "object 'fit_afr' not found", silently producing only the failure-path empty TSV.
-
-**Fix:** Hoist the fit objects out of tryCatch by assigning them before the tryCatch and adding the availability check at the top, or store the fits on the result list and reference them via `result`:
-
-```r
-# Option A: assign fits before tryCatch, guard availability
-fit_afr <- tryCatch(readRDS(opt$afr_fit), error = function(e) NULL)
-fit_eur <- tryCatch(readRDS(opt$eur_matched_fit), error = function(e) NULL)
-
-if (is.null(fit_afr) || is.null(fit_eur)) {
-  result <- list(status = "error", error_message = "Failed to load fit RDS",
-                 n_cs_afr = NA_integer_, n_cs_eur = NA_integer_, summary = NULL)
-} else {
-  result <- tryCatch({
-    # ... existing coloc logic ...
-    list(status = "success", ..., fit_afr = fit_afr, fit_eur = fit_eur)
-  }, error = function(e) { ... })
-}
-```
-
-Or (Option B, minimal diff): store fits on the result list and reference via `result$fit_afr`:
-
-```r
-# Inside the success branch of tryCatch, add to the returned list:
-list(
-  status = "success",
-  ...
-  fit_afr = fit_afr,  # store for outer use
-  fit_eur = fit_eur,
-  ...
-)
-# Then in the TSV section:
-cs_afr_list <- result$fit_afr$sets$cs %||% list()
-cs_eur_list <- result$fit_eur$sets$cs %||% list()
-```
+| Prior ID | Description | Status |
+|----------|-------------|--------|
+| CR-01 | `fit_afr`/`fit_eur` scope in `run_matched_coloc.R` | FIXED — stored on result list, accessed via `result$fit_afr` |
+| WR-01 | trait validation in `munge_trait_pair_rg.py` `parse_filename` | FIXED — `known_traits` guard added with ValueError on mismatch |
+| WR-02 | pseudo-sumstats written to output_dir instead of `/tmp` | FIXED — `tempfile.gettempdir()` used; cleanup in `finally` block |
+| WR-03 | SE=0 not guarded in `compute_detection_probability.py` | FIXED — `np.any(se <= 0)` raises `ValueError` before NCP computation |
+| WR-04 | seed collision risk undocumented in `compute_seed` | FIXED — `Notes` section added to docstring with safe-range annotation |
+| WR-05 | `compute_tier_a_retention` uses manifest as DAG proxy | SKIPPED (intentional — structural Snakemake change deferred) |
+| WR-06 | dead `open_fn` variable in `bootstrap_driver.py` | FIXED — variable removed; `pd.read_csv` handles compression directly |
+| WR-07 | bare `open()` without context manager in `assemble_table2.py` | FIXED — both config file reads use `with open()` |
 
 ---
 
 ## Warnings
 
-### WR-01: Filename parser silently misparsed if any trait contains an underscore
+### WR-01 (new): `length(result$n_cs_afr)` outer guard is always 1, making `cs_afr_size` and `cs_eur_size` NA for all multi-signal pairs
 
-**File:** `src/snakemake/scripts/munge_trait_pair_rg.py:86-111`
+**File:** `src/snakemake/scripts/run_matched_coloc.R:130,136`
 
-**Issue:** `parse_filename` splits the log stem with `rsplit("_", 2)`, then splits the `trait_part` with `rsplit("_", 1)`. The 5 current T1 traits (t2d, stroke, hypertension, asthma, bmi) are all single-word, so this works today. However, the comment on line 100 acknowledges the limitation: "traits have underscores." If a trait were ever named (e.g.) `type_2_diabetes`, a filename like `type_2_diabetes_stroke_EUR_AFR.log` would produce `trait1 = "type_2"`, `trait2 = "diabetes"` — a silent wrong parse producing bad rows in `rg_raw.tsv` and corrupting the FDR table. The failure is silent (no ValueError).
+**Issue:** The outer bounds check for CS size extraction reads:
 
-**Fix:** Add a post-parse validation step that checks the reconstructed trait names against the known trait list from config:
-
-```python
-KNOWN_TRAITS = {"t2d", "stroke", "hypertension", "asthma", "bmi"}
-
-def parse_filename(log_path, known_traits=KNOWN_TRAITS):
-    ...
-    # After parsing trait1, trait2:
-    if known_traits and trait1 not in known_traits:
-        raise ValueError(
-            f"Parsed trait1='{trait1}' not in known traits {known_traits} "
-            f"from {log_path}. Check underscore splitting."
-        )
-    return trait1, trait2, ancestry1, ancestry2
+```r
+cs_afr_size <- if (!is.na(idx1) && idx1 <= length(result$n_cs_afr)) {
 ```
 
----
+`result$n_cs_afr` is a scalar integer (e.g., `3` for three credible sets). `length()` of any scalar in R is always `1`. So `idx1 <= length(result$n_cs_afr)` reduces to `idx1 <= 1`. For any coloc signal pair where `idx1 >= 2` (multi-signal loci), the outer condition evaluates `FALSE` and `cs_afr_size` is set to `NA_integer_` without inspecting the credible set list. The same bug appears on line 136 for `cs_eur_size` via `result$n_cs_eur`.
 
-### WR-02: Temporary pseudo-sumstats file not deleted on Rscript success path if `os.unlink` silently fails
+The inner guard on line 133 (`idx1 <= length(cs_afr_list)`) is correct and would properly bound-check against the actual CS count — but it is never reached for `idx1 >= 2` because the outer guard short-circuits first.
 
-**File:** `src/snakemake/scripts/bootstrap_driver.py:151-193`
+For single-signal loci (`idx1 = 1, idx2 = 1`), which are the majority of T1 GWAS loci, this bug is silent. For multi-signal loci, `cs_afr_size` and `cs_eur_size` are incorrectly `NA` in `coloc_summary.tsv`, which propagates to the supplementary table. The primary metrics (`pph4`, Tier A retention, H7 verdict) are not affected.
 
-**Issue:** The temp file `tmp_path` is created without `delete=True` (correct for Windows compat, acceptable on Linux) and culled in the `finally` block (line 190). However, the temp file is written in the inner `with` block, but the `finally` clause only runs after `subprocess.run`. If the Rscript call is very long-running and the LSF job is killed (SIGKILL), the `finally` block does not execute, leaving a potentially large pseudo-sumstats file in `output_dir`. With 100k fits on GPFS, this is a real quota concern.
+**Fix:** Replace `length(result$n_cs_afr)` with `result$n_cs_afr` (and similarly for `n_cs_eur`):
 
-More importantly: the temp file is created in the **output directory** (`dir=str(output_dir)`) on `/rs1`, not in `/tmp`. Since `output_dir.mkdir(parents=True, exist_ok=True)` precedes the temp file write (line 149), there is no issue with directory creation, but leaked files would be in the same directory as the `.fit.rds` outputs, potentially confusing downstream glob-based R scripts.
+```r
+cs_afr_size <- if (!is.na(idx1) && idx1 <= result$n_cs_afr) {
+  cs_afr_list <- result$fit_afr$sets$cs %||% list()
+  if (idx1 <= length(cs_afr_list)) length(cs_afr_list[[idx1]]) else NA_integer_
+} else NA_integer_
 
-**Fix:** Use Python's `tempfile.NamedTemporaryFile` with `dir=tempfile.gettempdir()` so leaked files go to `/tmp` (which is periodically cleared), and only write the final output to `/rs1`:
-
-```python
-with tempfile.NamedTemporaryFile(
-    mode="w", suffix="_pseudo.tsv",
-    dir=tempfile.gettempdir(),   # use /tmp, not the output dir
-    delete=False, prefix=f"bootstrap_{args.bootstrap_idx}_"
-) as tmp:
-    tmp_path = tmp.name
-    ...
+cs_eur_size <- if (!is.na(idx2) && idx2 <= result$n_cs_eur) {
+  cs_eur_list <- result$fit_eur$sets$cs %||% list()
+  if (idx2 <= length(cs_eur_list)) length(cs_eur_list[[idx2]]) else NA_integer_
+} else NA_integer_
 ```
 
----
+### WR-02 (carry-over): Missing DAG edge — `compute_tier_a_retention` uses manifest as bootstrap proxy
 
-### WR-03: `compute_detection_probability.py` — division by zero when SE is 0
+**File:** `src/snakemake/rules/matched_n.smk:339-345, 347-379`
 
-**File:** `src/python/compute_detection_probability.py:64`
+**Issue:** `_expand_bootstrap_coloc_tsvs()` returns only the manifest path rather than the actual `coloc_summary.tsv` outputs. If `run_matched_coloc` jobs fail silently (writing empty TSVs), Snakemake will consider `compute_tier_a_retention` ready as soon as the manifest exists, without verifying bootstrap coloc outputs are present and non-empty. This was WR-05 in the prior review and remains intentionally skipped.
 
-**Issue:** `ncp = (beta_hat / se) ** 2` at line 64. If any row has `se_afr == 0` (e.g., a monomorphic variant or a data ingestion error), this produces `inf` NCP, and `stats.ncx2.sf(threshold, df=1, nc=np.inf)` returns `nan` silently. The NaN then propagates into the arithmetic mean at line 98, making the trait-level expected concordance `nan` without any warning or error. The test suite does not cover this edge case.
-
-**Fix:** Add an explicit guard before the NCP computation:
-
-```python
-se = np.asarray(se, dtype=float)
-if np.any(se <= 0):
-    raise ValueError(
-        f"SE must be positive; found {np.sum(se <= 0)} non-positive values. "
-        "Check tier_a input for data quality issues."
-    )
-ncp = (beta_hat / se) ** 2
-```
-
----
-
-### WR-04: Seed formula collision for trait_id=0
-
-**File:** `src/python/se_inflation.py:103-122` and `config/matched_n.yaml:9`
-
-**Issue:** The seed formula is `seed = seed_base * trait_id + bootstrap_idx`. For `trait_id=0` (t2d), the seed equals `bootstrap_idx` directly (e.g., seed=1 for bootstrap 1, seed=2 for bootstrap 2). While these are unique, they are the same small integers that a caller might pass as `seed=1` in ad-hoc testing — increasing the chance of unintentional seed reuse in downstream user code. More critically: if `bootstrap_n` ever exceeds `seed_base` (100 bootstraps today, seed_base=1000 — fine), or if a sixth trait is added with `trait_id=1`, bootstrap 999 of trait_id=1 collides with bootstrap 1999 of trait_id=1 only — no collision between traits. But `trait_id=0, bootstrap_idx=1000` would collide with `trait_id=1, bootstrap_idx=0` (which is never used since bootstrap_idx starts at 1 per the manifest). This is safe today but fragile.
-
-The real concern is that `compute_seed(trait_id=0, bootstrap_idx=1)` returns `1` — a very small seed that will produce the same RNG state as any other caller who happens to use seed=1.
-
-**Fix:** Offset by a large constant to avoid low-seed overlap:
-
-```python
-def compute_seed(trait_id: int, bootstrap_idx: int, seed_base: int = 1000) -> int:
-    """seed = seed_base * (trait_id + 1) + bootstrap_idx"""
-    # Adding 1 to trait_id ensures trait_id=0 never produces seed=bootstrap_idx
-    return seed_base * (trait_id + 1) + bootstrap_idx
-```
-
-Note: this is a **pre-registration concern** if the formula was pre-registered. Changing it after OSF registration requires a logged deviation. If the current formula is locked in by pre-registration, document the collision risk with a comment instead of changing the code.
-
----
-
-### WR-05: Snakemake `compute_tier_a_retention` rule has a proxy input instead of true file dependencies
-
-**File:** `src/snakemake/rules/matched_n.smk:339-345` and `347-379`
-
-**Issue:** The helper function `_expand_bootstrap_coloc_tsvs()` at line 339 is defined but immediately returns only the manifest path — not the actual bootstrap coloc TSVs:
-
-```python
-def _expand_bootstrap_coloc_tsvs():
-    """Expand all bootstrap coloc_summary.tsv paths for all traits."""
-    # This collects the coloc_summary.tsv inputs needed by the retention rule.
-    # Actual paths are trait x region x bootstrap, but since we glob at runtime
-    # inside the R script, we depend on the manifest as a proxy for completion.
-    return str(MATCHED_N_OUT / "manifest.tsv")
-```
-
-This function is defined but **never actually called** in the `compute_tier_a_retention` rule input (the rule already lists `manifest` explicitly). More importantly, the rule does not declare the bootstrap coloc TSVs as inputs. The R script globbing over `results/matched_n/coloc/**` at runtime means Snakemake has no DAG edges from `run_matched_coloc` to `compute_tier_a_retention`. If `run_matched_coloc` fails for some bootstraps and Snakemake is rerun, the retention rule will succeed (no missing inputs) but silently produce incorrect concordance estimates from incomplete bootstrap data.
-
-**Fix:** Either (a) enumerate the actual coloc TSV paths as inputs (best for DAG correctness, but requires materializing the manifest before the DAG is constructed — a known Snakemake challenge), or (b) add a sentinel file written by a rule that runs after all bootstrap colocs complete:
-
-```python
-# Option B: add a sentinel rule
-rule bootstrap_coloc_complete:
-    input:
-        expand(
-            str(MATCHED_N_OUT / "coloc/{trait}/{region}/bootstrap_{b}/coloc_summary.tsv"),
-            trait=MATCHED_N_TRAITS,
-            region=...,   # from manifest
-            b=range(1, BOOTSTRAP_N + 1),
-        ),
-    output:
-        touch(str(MATCHED_N_OUT / "bootstrap_coloc.done")),
-
-# Then compute_tier_a_retention depends on:
-# input: ..., done=str(MATCHED_N_OUT / "bootstrap_coloc.done")
-```
-
----
-
-### WR-06: `open_fn` created but never used in `bootstrap_driver.py`
-
-**File:** `src/snakemake/scripts/bootstrap_driver.py:70-71`
-
-**Issue:** Lines 70–71:
-```python
-open_fn = gzip.open if path.endswith((".gz", ".bgz")) else open
-df = pd.read_csv(path, sep="\t", compression="gzip" if path.endswith((".gz", ".bgz")) else None)
-```
-
-`open_fn` is assigned and immediately ignored; `pd.read_csv` uses its own `compression` parameter instead. This is harmless but dead code.
-
-**Fix:** Delete the `open_fn` line (line 70):
-
-```python
-# Remove:
-# open_fn = gzip.open if path.endswith((".gz", ".bgz")) else open
-df = pd.read_csv(path, sep="\t", compression="gzip" if path.endswith((".gz", ".bgz")) else None)
-```
-
----
-
-### WR-07: `assemble_table2.py` opens config files without context managers
-
-**File:** `src/python/assemble_table2.py:82-84`
-
-**Issue:**
-```python
-cfg = yaml.safe_load(open(config_yaml))
-ns = yaml.safe_load(open(trait_sample_sizes_yaml))
-```
-
-`open()` without a `with` statement leaks file handles. On CPython these are closed by the garbage collector, but on PyPy or under certain LSF environments with high ulimit pressure, unclosed handles accumulate. The `assemble()` function is called once per pipeline run, so the impact is minimal but the pattern is inconsistent with Python best practice.
-
-**Fix:**
-```python
-with open(config_yaml) as fh:
-    cfg = yaml.safe_load(fh)
-with open(trait_sample_sizes_yaml) as fh:
-    ns = yaml.safe_load(fh)
-```
+**Status:** Skipped per prior decision. Documented here for completeness.
 
 ---
 
 ## Info
 
-### IN-01: Schema missing `pilot_region` field (present in config but not in schema)
+### IN-01: `pilot_region` in `config/matched_n.yaml` not declared in schema
 
 **File:** `schemas/matched_n.schema.yaml` and `config/matched_n.yaml:55`
 
-**Issue:** `config/matched_n.yaml` defines `pilot_region: TCF7L2_10q25_2` (line 55), but the schema has `additionalProperties: false` and does not include a `pilot_region` property. This means the config will fail schema validation as written. Either the schema validation is not actually run (no error observed yet because validation hasn't been wired into CI), or the schema is never used against the actual config file.
+**Issue:** `config/matched_n.yaml` defines `pilot_region: TCF7L2_10q25_2` (line 55). The schema has `additionalProperties: false` and does not include `pilot_region` in `properties`. Any YAML schema validator applied to the config will reject it as invalid.
 
-**Fix:** Add to `schemas/matched_n.schema.yaml`:
+**Fix:** Add to `schemas/matched_n.schema.yaml` under `properties` (no need to add to `required`):
+
 ```yaml
-  pilot_region:
-    type: string
-    minLength: 1
-    description: "Pilot region for A-1 smoke calibration gate"
+pilot_region:
+  type: string
+  minLength: 1
+  description: "Single region for A-1 smoke pilot calibration gate"
 ```
 
----
+### IN-02: Comment in `config/matched_n.yaml` says "30 r_g tests" but there are 35
 
-### IN-02: `rg_ancestry_pairs` comment says "30 tests" but code generates 35
+**File:** `config/matched_n.yaml:23`
 
-**File:** `config/matched_n.yaml:44-45` and `src/snakemake/rules/matched_n.smk:217-224`
+**Issue:** Line 23 reads `# D-04c: BH-FDR q<0.05 across ALL 30 r_g tests`. The actual count is 35: 30 cross-trait pairs (10 × 3 strata) plus 5 same-trait EUR-AFR benchmarks. The Snakemake rule correctly documents 35 at `matched_n.smk:209`. The discrepancy creates ambiguity when auditing the config against the pre-registration.
 
-**Issue:** The config comment at line 44 says "D-04a: 3 ancestry-pair strata for r_g matrix" and line 217 comment says "D-04a: 10 cross-trait pairs x 3 ancestry-pair strata = 30 tests." The `collect_rg_logs` rule docstring (line 276) and `apply_rg_fdr` docstring (line 297) correctly say "35 tests," but the comment in `RG_COMBOS` (line 220) says "30 tests" in the inline comment on that line. The FDR correction in `apply_fdr.py` operates on all valid rows regardless of count, so the statistical computation is correct — this is a documentation inconsistency, not a code bug.
+**Fix:** Update the comment: `# D-04c: BH-FDR q<0.05 across ALL 35 r_g tests (30 cross-trait + 5 same-trait EUR-AFR benchmarks)`
 
-**Fix:** Update the `# D-04a:` comment at line 217 to note "30 cross-trait + 5 same-trait = 35 total."
+### IN-03: Hardcoded `/rs1` Rscript path in `test_matched_n_tier_a.py`
 
----
+**File:** `tests/test_matched_n_tier_a.py:33-35`
 
-### IN-03: `n_sign_agree` uses `sum(valid_signs == 1L)` which will not count `TRUE` booleans
+**Issue:** `_RSCRIPT_CANDIDATES` hardcodes `/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript`. The test falls back to `shutil.which("Rscript")` if the path does not exist, so CI on other systems is not broken. Acceptable for the solo HPC context; no action required.
 
-**File:** `src/snakemake/scripts/compute_tier_a_retention.R:203` and `src/snakemake/scripts/compute_jaccard.R:220`
+### IN-04: `_write_failure_rds` embeds raw error string into R code without escaping
 
-**Issue:** `n_agree <- sum(valid_signs == 1L)`. The `lead_sign_agree` column in `coloc_summary.tsv` is written as `integer()` from `run_matched_coloc.R`, so `1L` comparison is correct for integer values. However, if the TSV is read back by `data.table::fread` and the column is coerced to logical (`TRUE`/`FALSE`) rather than integer (`1L`/`0L`), the comparison `== 1L` would evaluate `TRUE == 1L` as `TRUE` in R (R coerces for comparison), so this will work. The risk is subtle: if fread decides the column is character (e.g., due to a mix of `1` and `NA` in string form), the comparison silently returns `FALSE` for all rows. Adding an explicit `as.integer()` coercion before the sum would be more defensive.
+**File:** `src/snakemake/scripts/bootstrap_driver.py:205,210-212`
 
-**Fix:**
-```r
-n_agree <- sum(as.integer(valid_signs) == 1L)
-```
+**Issue:** `error_msg[:200]` and `output_path` are interpolated directly into an f-string that becomes R source code passed to `Rscript -e`. If `error_msg` contains a double-quote, backslash, or newline (all common in R error messages), the generated R code is syntactically invalid and the failure RDS is not written. The `except CalledProcessError` fallback touches an empty file, which is safe for Snakemake but loses the error message. This was IN-05 in the prior review.
 
----
+**Fix:** Sanitize both strings before interpolation:
 
-### IN-04: `test_matched_n_tier_a.py` hardcodes `/rs1` conda env path
-
-**File:** `tests/test_matched_n_tier_a.py:33-36`
-
-**Issue:**
 ```python
-_RSCRIPT_CANDIDATES = [
-    "/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript",
-]
-```
-
-This is a hardcoded absolute path to the author's personal conda environment. It will silently skip (via `pytest.skip`) on any machine that does not have this exact path, including CI environments and collaborator machines. The fallback to `shutil.which("Rscript")` is appropriate, but the candidate list should use a relative or environment-variable-driven path.
-
-**Fix:**
-```python
-import os
-_RSCRIPT_CANDIDATES = [
-    os.environ.get("RSCRIPT_PATH", ""),
-    "/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript",
-]
-_RSCRIPT_CANDIDATES = [c for c in _RSCRIPT_CANDIDATES if c]
-```
-
----
-
-### IN-05: `_write_failure_rds` in `bootstrap_driver.py` embeds raw error string into R code without escaping
-
-**File:** `src/snakemake/scripts/bootstrap_driver.py:202-213`
-
-**Issue:**
-```python
+safe_msg = (error_msg[:200]
+            .replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", " "))
+safe_path = output_path.replace("\\", "\\\\").replace('"', '\\"')
 r_code = f"""
 failure <- list(
-    ...
-    error = "{error_msg[:200]}",
-    ...
-)
-"""
-```
-
-The `error_msg` string is sliced to 200 characters and interpolated directly into R source code. If the error message contains a double-quote, backslash, or newline (common in R error output), this produces syntactically invalid R code and the `subprocess.run` call in `_write_failure_rds` will itself fail, falling through to the empty-file fallback. The `CalledProcessError` in the outer `_write_failure_rds` is silently suppressed (except for the empty-file creation). The downstream effect is an empty `.rds` file rather than a proper failure sentinel, which `run_matched_coloc.R` will fail to `readRDS` with a "not an rds file" error rather than detecting the `susie_failure` class.
-
-**Fix:** Escape the error message for safe R string embedding:
-```python
-safe_msg = error_msg[:200].replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ").replace("\r", "")
-r_code = f"""
-failure <- list(
+    status = "susie_failure",
+    bootstrap_idx = {bootstrap_idx}L,
     error = "{safe_msg}",
-    ...
+    converged = FALSE,
+    sets = list(cs = list())
 )
+class(failure) <- c("susie_failure", "list")
+dir.create(dirname("{safe_path}"), recursive = TRUE, showWarnings = FALSE)
+saveRDS(failure, "{safe_path}")
+cat("Wrote failure RDS:", "{safe_path}", "\\n")
 """
 ```
 
 ---
 
-_Reviewed: 2026-04-15_
+_Reviewed: 2026-04-16T03:52:49Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
