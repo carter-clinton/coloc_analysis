@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 research complete — 04-RESEARCH.md committed (fb107ca, 474 lines). 5 of 6 decisions need attention; user picked discuss-phase iteration as next route.
-last_updated: "2026-04-16T02:13:05.414Z"
-last_activity: 2026-04-16 -- Phase 04 execution started
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-16T02:26:17.846Z"
+last_activity: 2026-04-16
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 30
-  completed_plans: 25
-  percent: 83
+  completed_plans: 26
+  percent: 87
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 04 (matched-n-cross-ancestry-concordance) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 04
-Last activity: 2026-04-16 -- Phase 04 execution started
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-04-16
 
 Progress: ██░░░░░░░░ 17%
 
@@ -77,6 +77,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 09 P03 | 13 | 2 tasks | 7 files |
 | Phase 09 P04 | 18min | 2 tasks | 8 files |
 | Phase 09 P05 | 7min | 2 tasks | 11 files |
+| Phase 04 P01 | 8min | 4 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,9 @@ Recent decisions affecting current work:
 - [Phase 09]: [Phase 09-05]: I-3 per-cohort sample_overlap_flag implemented via KNOWN_OVERLAP_PAIRS dict with ('*', cohort) wildcard fallback; 6 cohorts (incl. bbj) emit flag columns for QC traceability
 - [Phase 09]: [Phase 09-05]: Gotcha #1 COJO-N=503 caveat enforced at 3 layers (shell WARN stderr / pytest assertion on '4000'+'WARN' tokens / methods-doc narrative); COJO framed TIER-2 supplementary, not primary replication
 - [Phase 09]: [Phase 09-05]: Added aggregate_per_cohort_combined rule to unblock ivw_meta_aggregate (Plan 09-04) + assemble_replication_holdout_supplementary (Plan 09-05) — Plan 09-04 docstring promised aggregator but no rule produced it (Rule 2 fix)
+- [Phase 04]: bootstrap_fits_root on /rs1 allocation to avoid GPFS quota pressure
+- [Phase 04]: NCSU LSF standard queue: 1024 concurrent slots per user (resolves A-1 compute concern)
+- [Phase 04]: Root tests/conftest.py created with phase4/5/9 markers (no root conftest existed)
 
 ### Pending Todos
 
@@ -199,8 +203,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T20:40:00.000Z
-Stopped at: Phase 4 research complete — 04-RESEARCH.md committed (fb107ca, 474 lines). 5 of 6 decisions need attention; user picked discuss-phase iteration as next route.
+Last session: 2026-04-16T02:26:17.841Z
+Stopped at: Completed 04-01-PLAN.md
 
 ### This session (2026-04-15 PM)
 
@@ -281,7 +285,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
 4. Address open items above as they become blocking
 
-Resume file: .planning/phases/04-matched-n-cross-ancestry-concordance/04-CONTEXT.md
+Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
