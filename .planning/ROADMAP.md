@@ -194,7 +194,7 @@ Plans:
 - [x] 04-02-PLAN.md — Bootstrap engine (SE-inflation + SuSiE refit + coloc.susie per bootstrap)
 - [x] 04-03-PLAN.md — Concordance metrics (Tier A retention + Jaccard + sign agreement)
 - [x] 04-04-PLAN.md — LDSC 30-test r_g matrix + Hou-null detection probability
-- [ ] 04-05-PLAN.md — Smoke-pilot gate + Table 2 assembly + violin figure + supplementary outputs
+- [x] 04-05-PLAN.md — Smoke-pilot gate + Table 2 assembly + violin figure + supplementary outputs
 
 ### Phase 8: Cross-ancestry PRS
 **Goal**: Build and evaluate cross-ancestry polygenic risk scores with full calibration and clinical utility metrics, quantifying the equity-vs-accuracy trade-off.
