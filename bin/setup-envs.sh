@@ -81,7 +81,9 @@ skipped=0
 failed=0
 for yaml in "$CONDA_DIR"/*.yaml; do
   [[ -e "$yaml" ]] || continue
-  prefix="${yaml%.yaml}_"
+  # Snakemake convention: yaml is HASH_.yaml, env dir is HASH_/
+  # Strip .yaml suffix to get the prefix (which already ends in _).
+  prefix="${yaml%.yaml}"
   if [[ -d "$prefix/conda-meta" ]]; then
     skipped=$((skipped + 1))
     continue
