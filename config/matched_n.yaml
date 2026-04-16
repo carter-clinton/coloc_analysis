@@ -50,3 +50,6 @@ output_root: results/matched_n
 # Per CONTEXT Claude's Discretion: bootstrap fits stored on /rs1 allocation
 # to avoid GPFS quota pressure from 100 x fits per (trait, region)
 bootstrap_fits_root: /rs1/researchers/c/ckclinto/matched_n_fits
+
+# A-1 smoke pilot: single region for calibration gate
+pilot_region: TCF7L2_10q25_2
