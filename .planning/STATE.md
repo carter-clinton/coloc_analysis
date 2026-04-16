@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-04-16T02:26:17.846Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-04-16T02:41:14.150Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 30
-  completed_plans: 26
-  percent: 87
+  completed_plans: 27
+  percent: 90
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 04 (matched-n-cross-ancestry-concordance) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-16
 
@@ -78,6 +78,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 09 P04 | 18min | 2 tasks | 8 files |
 | Phase 09 P05 | 7min | 2 tasks | 11 files |
 | Phase 04 P01 | 8min | 4 tasks | 14 files |
+| Phase 04 P02 | 8min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -169,6 +170,7 @@ Recent decisions affecting current work:
 - [Phase 04]: bootstrap_fits_root on /rs1 allocation to avoid GPFS quota pressure
 - [Phase 04]: NCSU LSF standard queue: 1024 concurrent slots per user (resolves A-1 compute concern)
 - [Phase 04]: Root tests/conftest.py created with phase4/5/9 markers (no root conftest existed)
+- [Phase 04]: SE-inflation formula: SE_matched = SE_EUR * sqrt(N_EUR / N_AFR) per D-01a; Phase 1 run_susie_rss.R reused verbatim via subprocess; AFR .fit.rds held immutably fixed per D-01c
 
 ### Pending Todos
 
@@ -203,8 +205,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T02:26:17.841Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-04-16T02:41:14.144Z
+Stopped at: Completed 04-02-PLAN.md
 
 ### This session (2026-04-15 PM)
 
