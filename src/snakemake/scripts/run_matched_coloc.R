@@ -89,7 +89,9 @@ result <- tryCatch({
       n_cs_afr = length(cs_afr),
       n_cs_eur = length(cs_eur),
       summary = as.data.table(res$summary),
-      coloc_result = res
+      coloc_result = res,
+      fit_afr = fit_afr,
+      fit_eur = fit_eur
     )
   }
 }, error = function(e) {
@@ -126,13 +128,13 @@ if (result$status == "success" && !is.null(result$summary) && nrow(result$summar
     idx2 <- row$idx2 %||% NA_integer_
 
     cs_afr_size <- if (!is.na(idx1) && idx1 <= length(result$n_cs_afr)) {
-      # Get CS size from AFR fit
-      cs_afr_list <- fit_afr$sets$cs %||% list()
+      # Get CS size from AFR fit (stored on result list for scope safety)
+      cs_afr_list <- result$fit_afr$sets$cs %||% list()
       if (idx1 <= length(cs_afr_list)) length(cs_afr_list[[idx1]]) else NA_integer_
     } else NA_integer_
 
     cs_eur_size <- if (!is.na(idx2) && idx2 <= length(result$n_cs_eur)) {
-      cs_eur_list <- fit_eur$sets$cs %||% list()
+      cs_eur_list <- result$fit_eur$sets$cs %||% list()
       if (idx2 <= length(cs_eur_list)) length(cs_eur_list[[idx2]]) else NA_integer_
     } else NA_integer_
 
@@ -143,20 +145,20 @@ if (result$status == "success" && !is.null(result$summary) && nrow(result$summar
     # D-02c hook: lead-variant direction-of-effect sign agreement
     lead_sign_agree <- tryCatch({
       if (!is.na(lead_afr) && !is.na(lead_eur) &&
-          !is.null(fit_afr$mu) && !is.null(fit_eur$mu)) {
+          !is.null(result$fit_afr$mu) && !is.null(result$fit_eur$mu)) {
         # Compare sign of PIP-weighted effect at lead variants
         # This is a sanity check — should be ~100% agreement
-        afr_pip <- fit_afr$pip
-        eur_pip <- fit_eur$pip
+        afr_pip <- result$fit_afr$pip
+        eur_pip <- result$fit_eur$pip
 
         if (!is.null(names(afr_pip)) && !is.null(names(eur_pip))) {
           afr_idx <- match(lead_afr, names(afr_pip))
           eur_idx <- match(lead_eur, names(eur_pip))
           if (!is.na(afr_idx) && !is.na(eur_idx) &&
-              !is.null(fit_afr$mu) && !is.null(fit_eur$mu)) {
+              !is.null(result$fit_afr$mu) && !is.null(result$fit_eur$mu)) {
             # Use alpha-weighted mu for effect direction
-            afr_effect <- sum(fit_afr$alpha[, afr_idx] * fit_afr$mu[, afr_idx])
-            eur_effect <- sum(fit_eur$alpha[, eur_idx] * fit_eur$mu[, eur_idx])
+            afr_effect <- sum(result$fit_afr$alpha[, afr_idx] * result$fit_afr$mu[, afr_idx])
+            eur_effect <- sum(result$fit_eur$alpha[, eur_idx] * result$fit_eur$mu[, eur_idx])
             as.integer(sign(afr_effect) == sign(eur_effect))
           } else NA_integer_
         } else NA_integer_
