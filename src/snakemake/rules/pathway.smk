@@ -61,6 +61,19 @@ LDSC_ENV = str(Path(workflow.basedir) / "envs" / "ldsc_py3.yml")
 HESS_ENV = str(Path(workflow.basedir) / "envs" / "hess_py27.yml")
 GPROFILER_ENV = str(Path(workflow.basedir) / "envs" / "gprofiler.yml")
 
+# HESS Python 2.7 interpreter path for subprocess invocation.
+# run_hess.py (Python 3) invokes tools/hess/hess.py via --python27.
+# The hess_py27 conda env provides Py2.7; resolve its prefix from the
+# snakemake conda cache hash. Rules that call run_hess.py use MAGMA_ENV
+# (Python 3) and pass HESS_PY27_BIN via --python27.
+import hashlib as _hl
+_hess_yaml = Path(workflow.basedir) / "envs" / "hess_py27.yml"
+_hess_hash = _hl.md5(_hess_yaml.read_bytes()).hexdigest()
+# Snakemake conda prefix naming: find the matching env dir
+_conda_dir = Path(workflow.basedir) / ".snakemake" / "conda"
+_hess_py27_candidates = sorted(_conda_dir.glob("*_/bin/python2.7"))
+HESS_PY27_BIN = str(_hess_py27_candidates[0]) if _hess_py27_candidates else "python2.7"
+
 # Trait configuration for HESS trait pair generation
 TRAITS = config.get("traits", ["bmi", "t2d", "hypertension", "asthma", "stroke"])
 ANCESTRIES = config.get("ancestries", ["EUR", "AFR", "EAS", "HIS"])
@@ -1161,9 +1174,7 @@ rule hess_local_rhog:
     params:
         script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
         hess_script="tools/hess/hess.py",
-        python27=os.path.join(
-            workflow.basedir, ".snakemake", "conda",
-        ),
+        python27=HESS_PY27_BIN,
         bfile=lambda wc: os.path.join(
             PATHWAY_CFG.get("hess_ld_panel", "data/reference/hess/ld_panel"),
             wc.ancestry,
@@ -1180,7 +1191,7 @@ rule hess_local_rhog:
         ),
         chrom=lambda wc: wc.chrom,
     conda:
-        HESS_ENV
+        MAGMA_ENV
     resources:
         mem_mb=4000,
         runtime=30,
@@ -1188,7 +1199,7 @@ rule hess_local_rhog:
         """
         python {params.script} --step local-rhog \
             --hess-script {params.hess_script} \
-            --python27 $(which python) \
+            --python27 {params.python27} \
             --bfile {params.bfile} \
             --partition {params.partition} \
             --sumstats1 {input.sumstats1} \
@@ -1222,6 +1233,7 @@ rule hess_combine:
     params:
         script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
         hess_script="tools/hess/hess.py",
+        python27=HESS_PY27_BIN,
         prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR,
             "hess",
@@ -1233,14 +1245,14 @@ rule hess_combine:
             f"{wc.trait1}_{wc.trait2}_{wc.ancestry}_combined",
         ),
     conda:
-        HESS_ENV
+        MAGMA_ENV
     resources:
         mem_mb=4000,
     shell:
         """
         python {params.script} --step combine \
             --hess-script {params.hess_script} \
-            --python27 $(which python) \
+            --python27 {params.python27} \
             --prefix {params.prefix} \
             --out {params.out_prefix}
         """
