@@ -1,0 +1,52 @@
+# config/matched_n.yaml — Phase 4 matched-N cross-ancestry concordance
+# Pre-registered parameters per D-01/D-02/D-03/D-04/D-05/D-06.
+# Schema validation: schemas/matched_n.schema.yaml
+# OSF pre-registration: DOI 10.17605/OSF.IO/PVB5J §12.1
+
+# D-01b: Number of bootstrap resamples per (trait x region)
+bootstrap_n: 100
+
+# Seed formula: seed = seed_base * trait_id + bootstrap_idx
+# Deterministic and reproducible per CONTEXT Claude's Discretion
+seed_base: 1000
+
+# D-02d: Pre-registered H7 threshold — absolute pp reduction
+# If matched-N concordance drops >= 20pp vs unmatched => "power artifact"
+h7_reduction_threshold_pp: 20
+
+# D-02a: Tier A concordance threshold (PP.H4 >= 0.8 AND QTL coloc >= 0.8)
+concordance_threshold: 0.8
+
+# D-02b: Relaxed PP.H4 threshold for Jaccard gate
+relaxed_pph4_threshold: 0.5
+
+# D-04c: BH-FDR q-value threshold across ALL 30 r_g tests
+rg_fdr_q: 0.05
+
+# RESEARCH A-2 option (a): flag SE > 0.3 as unreliable
+rg_se_flag_threshold: 0.3
+
+# D-03a: Ancestry pairs for matched-N bootstrap (AFR-only per D-03b)
+ancestry_pairs:
+  - [EUR, AFR]
+
+# D-03a: 5 T1 traits
+traits:
+  - t2d
+  - stroke
+  - hypertension
+  - asthma
+  - bmi
+
+# D-04a: C(5,2) = 10 trait pairs
+rg_trait_pairs_n: 10
+
+# D-04a: 3 ancestry-pair strata for r_g matrix
+rg_ancestry_pairs: [EUR_EUR, AFR_AFR, EUR_AFR]
+
+# Output directories
+output_root: results/matched_n
+
+# Per CONTEXT Claude's Discretion: bootstrap fits stored on /rs1 allocation
+# to avoid GPFS quota pressure from 100 x fits per (trait, region)
+bootstrap_fits_root: /rs1/researchers/c/ckclinto/matched_n_fits
