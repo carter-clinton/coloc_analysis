@@ -288,3 +288,24 @@ rule collect_rg_logs:
             --log-dir results/matched_n/rg \
             --out {output.tsv}
         """
+
+
+# ---------------------------------------------------------------------------
+# FDR correction (D-04c) + SE flag (research A-2)
+# ---------------------------------------------------------------------------
+rule apply_rg_fdr:
+    """D-04c: BH-FDR q<0.05 across all 35 r_g tests jointly.
+
+    Also flags SE>0.3 as unreliable_se per research A-2 minimum-deviation.
+    Output is D-06d supplementary table (rg_matrix.tsv).
+    """
+    input:
+        tsv="results/matched_n/rg_raw.tsv",
+    output:
+        tsv="results/matched_n/rg_matrix.tsv",
+    shell:
+        """
+        python src/python/apply_fdr.py \
+            --in {input.tsv} --out {output.tsv} \
+            --fdr-q 0.05 --se-flag 0.3
+        """
