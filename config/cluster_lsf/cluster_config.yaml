@@ -33,7 +33,7 @@ prepare_ld_plink:
   threads: 4
 
 run_finemap:
-  mem_mb: 16000
+  mem_mb: 32000
   threads: 1
 
 validate_sumstats:
