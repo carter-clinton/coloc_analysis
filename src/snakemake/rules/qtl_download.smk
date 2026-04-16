@@ -18,6 +18,7 @@ T-02-13 mitigation: validate OneK1K file size + tabix index after download.
 """
 
 import os
+from pathlib import Path
 import json
 import sys
 
@@ -78,7 +79,7 @@ rule build_tissue_n_lookup:
     params:
         script=os.path.join("src", "python", "build_tissue_n_lookup.py"),
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
         r"""
         mkdir -p $(dirname {output.json})
@@ -108,7 +109,7 @@ rule harmonize_eqtl_region:
         tissue_name=lambda wc: _qtl_manifest_field(wc, "tissue"),
         tissue_n=lambda wc: _qtl_manifest_field(wc, "tissue_n"),
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
         r"""
         mkdir -p $(dirname {output.harmonized})
@@ -195,7 +196,7 @@ rule harmonize_sqtl_region:
         tissue_name=lambda wc: _qtl_manifest_field(wc, "tissue"),
         tissue_n=lambda wc: _qtl_manifest_field(wc, "tissue_n"),
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
         r"""
         mkdir -p $(dirname {output.harmonized})
@@ -228,7 +229,7 @@ rule download_ukbppp_protein:
         script=os.path.join("src", "python", "download_ukbppp.py"),
         synapse_project="syn51364943",
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     resources:
         mem_mb=4000,
     shell:
@@ -267,7 +268,7 @@ rule harmonize_pqtl_region:
         sample_size=54219,
         sdy="estimate",  # UKB-PPP Olink NPX may not be unit-variance
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
         r"""
         mkdir -p $(dirname {output.harmonized})
@@ -302,7 +303,7 @@ rule download_onek1k_cell_type:
     params:
         script=os.path.join("src", "python", "download_onek1k.py"),
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     resources:
         mem_mb=2000,
     shell:
@@ -345,7 +346,7 @@ rule harmonize_onek1k_region:
         region_start=lambda wc: _qtl_manifest_field(wc, "start_grch38"),
         region_end=lambda wc: _qtl_manifest_field(wc, "end_grch38"),
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
         r"""
         mkdir -p $(dirname {output.harmonized})

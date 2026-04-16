@@ -1,0 +1,15 @@
+# Snakemake profile for NCSU HPC LSF cluster.
+# Usage: snakemake --profile config/cluster_lsf [targets]
+#
+# - bsub_wrapper.sh converts mem_mb to GB and strips -W (no wall-time cap)
+# - serial queue by default (1 slot, no time cap)
+# - 1024 concurrent LSF slots per user on standard queue
+# - latency-wait=120 accounts for GPFS NFS propagation lag
+
+cluster: "config/bsub_wrapper.sh -q {cluster.queue} -n {cluster.threads} -R 'rusage[mem={cluster.mem_mb}]' -o logs/lsf/%J.{rule}.out -e logs/lsf/%J.{rule}.err"
+cluster-config: config/cluster_lsf/cluster_config.yaml
+jobs: 1024
+latency-wait: 120
+use-conda: true
+rerun-incomplete: true
+keep-going: true
