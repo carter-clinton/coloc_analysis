@@ -515,3 +515,37 @@ rule smoke_pilot_bootstrap:
             fh.write("\n".join(report_lines) + "\n")
 
         print(f"Pilot report written to {output.report}")
+
+
+# ---------------------------------------------------------------------------
+# D-06a Table 2 + D-06b Table 2b assembly (Plan 04-05 T2)
+# ---------------------------------------------------------------------------
+rule assemble_table2:
+    """D-06a: Final Table 2 (10 cols, 1 row/trait) + D-06b Jaccard Table 2b.
+
+    Merges tier_a_retention (D-02a), jaccard (D-02b), detection_probability
+    (D-05b), and rg_matrix (D-04d) into the publishable Table 2 with H7
+    verdict per D-02d (20pp threshold from config).
+    """
+    input:
+        tier=str(MATCHED_N_OUT / "tier_a_retention.tsv"),
+        jac=str(MATCHED_N_OUT / "jaccard.tsv"),
+        det=str(MATCHED_N_OUT / "detection_probability.tsv"),
+        rg=str(MATCHED_N_OUT / "rg_matrix.tsv"),
+        config_file="config/matched_n.yaml",
+        sample_sizes="config/trait_sample_sizes.yaml",
+    output:
+        table2=str(MATCHED_N_OUT / "table2.tsv"),
+        table2b=str(MATCHED_N_OUT / "table2_jaccard.tsv"),
+    shell:
+        """
+        python src/python/assemble_table2.py \
+            --tier {input.tier} \
+            --jaccard {input.jac} \
+            --detection {input.det} \
+            --rg {input.rg} \
+            --config {input.config_file} \
+            --sample-sizes {input.sample_sizes} \
+            --out-table2 {output.table2} \
+            --out-jaccard {output.table2b}
+        """
