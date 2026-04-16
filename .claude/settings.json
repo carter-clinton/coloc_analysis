@@ -20,7 +20,9 @@
       "Skill(gsd-resume-work:*)",
       "Skill(gsd-plan-phase)",
       "Skill(gsd-plan-phase:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(export PATH=\"/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH\")",
+      "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs config-get workflow.discuss_mode)"
     ]
   }
 }
