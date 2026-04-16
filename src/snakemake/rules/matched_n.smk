@@ -117,3 +117,89 @@ rule build_matched_n_manifest:
                         ])
 
         print(f"Manifest written: {sum(1 for _ in open(output.manifest)) - 1} rows")
+
+
+# ---------------------------------------------------------------------------
+# Helper: read AFR effective N for a trait from config or sample sizes file
+# ---------------------------------------------------------------------------
+def read_trait_afr_n(trait):
+    """Read AFR effective sample size for a trait.
+
+    First checks config/trait_sample_sizes.yaml, then falls back to
+    a hardcoded table from Phase 0 / Phase 4 CONTEXT D-03c.
+    """
+    import yaml as _yaml
+    from pathlib import Path as _P
+    sizes_path = _P("config/trait_sample_sizes.yaml")
+    if sizes_path.exists():
+        with open(sizes_path) as fh:
+            sizes = _yaml.safe_load(fh)
+        if trait in sizes and "AFR" in sizes[trait]:
+            return float(sizes[trait]["AFR"])
+    # Fallback: known values from Phase 0 / Phase 4 data access audit
+    _KNOWN_AFR_N = {
+        "t2d": 55525,       # DIAMANTE AFR
+        "stroke": 24000,    # MVP / GIGASTROKE AFR
+        "hypertension": 28000, # Pan-UKBB / MVP AFR
+        "asthma": 15000,    # Pan-UKBB / EAGLE AFR
+        "bmi": 55500,       # MVP phs002453 AFR (primary)
+    }
+    if trait in _KNOWN_AFR_N:
+        return float(_KNOWN_AFR_N[trait])
+    raise ValueError(f"Cannot determine AFR N for trait: {trait}")
+
+
+# ---------------------------------------------------------------------------
+# Per-bootstrap SuSiE refit (D-01b)
+# ---------------------------------------------------------------------------
+rule run_matched_bootstrap:
+    """D-01b: Per-bootstrap Z resampling + SuSiE refit via Phase 1 script."""
+    input:
+        eur_sumstats=lambda w: f"data/processed/region_analysis/sumstats_harmonized_fixed/{w.trait}_EUR.bgz",
+        ld_rds="results/ld_reference/ukbb_eur/{region}.rds",
+        manifest=str(MATCHED_N_OUT / "manifest.tsv"),
+        susie_policy="config/susie_policy.yaml",
+    output:
+        fit_rds=str(FITS_ROOT / "{trait}/{region}/bootstrap_{b}/eur_matched.fit.rds"),
+    params:
+        trait_id=lambda w: MATCHED_N_TRAITS.index(w.trait),
+        bootstrap_idx=lambda w: int(w.b),
+        afr_n=lambda w: read_trait_afr_n(w.trait),
+    resources:
+        mem_mb=8000,
+        runtime=60,
+    shell:
+        """
+        python src/snakemake/scripts/bootstrap_driver.py \
+            --trait {wildcards.trait} --trait-id {params.trait_id} \
+            --region {wildcards.region} \
+            --bootstrap-idx {params.bootstrap_idx} \
+            --eur-sumstats {input.eur_sumstats} \
+            --afr-n {params.afr_n} \
+            --ld-matrix-rds {input.ld_rds} \
+            --output-fit-rds {output.fit_rds}
+        """
+
+
+# ---------------------------------------------------------------------------
+# Per-bootstrap coloc.susie (D-01c)
+# ---------------------------------------------------------------------------
+rule run_matched_coloc:
+    """D-01c: coloc.susie per bootstrap; AFR discovery .fit.rds held fixed."""
+    input:
+        afr_fit="results/fine_mapping/susie/{trait}.AFR.{region}.fit.rds",
+        eur_matched_fit=str(FITS_ROOT / "{trait}/{region}/bootstrap_{b}/eur_matched.fit.rds"),
+    output:
+        coloc_rds=str(MATCHED_N_OUT / "coloc/{trait}/{region}/bootstrap_{b}/coloc.rds"),
+        coloc_tsv=str(MATCHED_N_OUT / "coloc/{trait}/{region}/bootstrap_{b}/coloc_summary.tsv"),
+    resources:
+        mem_mb=4000,
+        runtime=30,
+    shell:
+        """
+        Rscript src/snakemake/scripts/run_matched_coloc.R \
+            --afr-fit {input.afr_fit} \
+            --eur-matched-fit {input.eur_matched_fit} \
+            --output-rds {output.coloc_rds} \
+            --output-tsv {output.coloc_tsv}
+        """
