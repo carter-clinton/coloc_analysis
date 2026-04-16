@@ -1,0 +1,8 @@
+trait	ancestry	region_id	tier	pph4	gene
+test_trait	AFR	locusA	A	0.92	GENE_locusA
+test_trait	AFR	locusB	A	0.92	GENE_locusB
+test_trait	AFR	locusC	A	0.92	GENE_locusC
+test_trait	AFR	locusD	A	0.92	GENE_locusD
+test_trait	AFR	locusE	A	0.92	GENE_locusE
+test_trait	EUR	locusF	A	0.88	GENE_locusF
+test_trait	AFR	locusG	B	0.65	GENE_locusG
