@@ -118,5 +118,15 @@ def compute_seed(trait_id: int, bootstrap_idx: int, seed_base: int = 1000) -> in
     -------
     int
         Deterministic seed value.
+
+    Notes
+    -----
+    Known limitation: for trait_id=0, seed equals bootstrap_idx directly
+    (e.g., seed=1 for bootstrap 1), producing low seed values that could
+    overlap with ad-hoc seed choices. Additionally, if bootstrap_n ever
+    exceeds seed_base, seed collisions across traits are possible
+    (e.g., trait_id=0/bootstrap_idx=1000 collides with trait_id=1/bootstrap_idx=0).
+    Safe with current config (bootstrap_n=100, seed_base=1000, 5 traits).
+    Formula is pre-registered on OSF; changing it requires a logged deviation.
     """
     return seed_base * trait_id + bootstrap_idx
