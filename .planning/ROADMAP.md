@@ -193,7 +193,7 @@ Plans:
 - [x] 04-01-PLAN.md — Scaffold, config, Wave 0 test stubs, bmi.AFR dependency surface
 - [x] 04-02-PLAN.md — Bootstrap engine (SE-inflation + SuSiE refit + coloc.susie per bootstrap)
 - [ ] 04-03-PLAN.md — Concordance metrics (Tier A retention + Jaccard + sign agreement)
-- [ ] 04-04-PLAN.md — LDSC 30-test r_g matrix + Hou-null detection probability
+- [x] 04-04-PLAN.md — LDSC 30-test r_g matrix + Hou-null detection probability
 - [ ] 04-05-PLAN.md — Smoke-pilot gate + Table 2 assembly + violin figure + supplementary outputs
 
 ### Phase 8: Cross-ancestry PRS
