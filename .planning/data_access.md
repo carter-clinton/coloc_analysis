@@ -278,3 +278,68 @@ noise-dominated regime. Per RESEARCH C-1 (SUPERSEDED), MVP or AoU provide
   - [ ] Only use if Tier 1 AND Tier 2 both fail
   - [ ] Flag in Table 2 per D-03c / Deferred-d: "AFR-unavailable at scale"
   - [ ] Report global LDSC r_g (AFR vs EUR BMI) as proxy instead of matched-N bootstrap
+
+---
+
+## SE-inflation reference resolution (RESEARCH Q1)
+
+**Resolved:** 2026-04-16
+
+The SE-inflation formula `SE_EUR_matched = SE_EUR * sqrt(N_EUR / N_AFR)` is the
+analytic consequence of how Z-scores and beta/SE scale under reduced N with
+fixed per-variant effect size. This is a standard analytic rescaling documented
+across multiple references:
+
+- **Primary support:** Mahajan et al. 2022 Nature Genetics (DIAMANTE-AFR),
+  Methods section describes SE-inflation for cross-ancestry power matching at
+  T2D loci (DOI 10.1038/s41588-022-01058-3, PMID 35551307).
+- **Secondary support:** Zou et al. 2022 (SuSiE-RSS, PLOS Genet PMC9337707) —
+  supports independent-Z resampling with fixed R for SuSiE refit.
+- **Tertiary support:** MultiSuSiE 2025 (Nat Genet s41588-025-02450-5) —
+  confirms calibration of SuSiE refit under resampled Z in multi-ancestry
+  simulation.
+
+**Status:** Accept as established methodology. The formula is first-principles
+derivable (Var(beta_hat) scales as 1/N, so SE scales as sqrt(1/N), giving
+the ratio SE_matched/SE_full = sqrt(N_full/N_target)). No single paper
+"owns" this formula — it is textbook statistical genetics.
+
+---
+
+## NCSU LSF compute quota (RESEARCH Q4)
+
+**Queried:** 2026-04-16 via `bqueues -u ckclinto`
+
+### Standard partition (primary for Phase 4 bootstrap)
+
+| Property | Value |
+|----------|-------|
+| Queue name | `standard` |
+| Max concurrent slots (JL/U) | **1024** per user |
+| Queue-level max slots | unlimited |
+| Current load | 96 running / 79 pending (low contention) |
+| Priority | 64 |
+
+### Other relevant queues
+
+| Queue | JL/U | Max run time | Notes |
+|-------|------|-------------|-------|
+| `short` | 1024 | 2 hours | Good for bootstrap pilot (100 fits < 1 hr) |
+| `long` | 512 | 5 days | Fallback if standard wall-clock too tight |
+| `serial` | 1024 | 10 days | Single-core, longest wall-clock |
+| `debug` | 64 | 4 hours | Quick testing only |
+
+### Compute envelope calibration for Phase 4
+
+With 1024 concurrent slots on `standard`:
+- 300k SuSiE fits / 1024 parallel = ~293 sequential batches
+- At ~30 seconds/fit (Zou 2022 SuSiE-RSS benchmark, 1k SNPs/region): ~8,790 seconds = ~2.4 hours
+- At ~2 min/fit (conservative, larger regions): ~9,840 min / 1024 = ~9.6 hours
+- **Estimated wall-clock: 3-24 hours** depending on per-fit runtime, which the pilot
+  (1 trait x 10 regions x 10 bootstraps = 100 fits) will calibrate.
+- **A-1 RESEARCH verdict:** 3-5 day estimate is achievable under 1024-slot quota.
+  The original concern about needing 2000+ cores (RESEARCH A-1) is resolved — 1024
+  concurrent slots is sufficient.
+
+**Next action for Plan 04-05 T1:** Run pilot (100 fits) on `short` queue to
+measure per-fit wall-clock and extrapolate to full 300k launch.
