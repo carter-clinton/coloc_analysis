@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-04-16T02:59:05.599Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-04-16T03:10:39.431Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 30
-  completed_plans: 28
-  percent: 93
+  completed_plans: 29
+  percent: 97
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 ## Current Position
 
 Phase: 04 (matched-n-cross-ancestry-concordance) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-16
 
@@ -80,6 +80,7 @@ Progress: ██░░░░░░░░ 17%
 | Phase 04 P01 | 8min | 4 tasks | 14 files |
 | Phase 04 P02 | 8min | 3 tasks | 6 files |
 | Phase 04 P04 | 14min | 4 tasks | 7 files |
+| Phase 04 P03 | 8min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -173,6 +174,7 @@ Recent decisions affecting current work:
 - [Phase 04]: Root tests/conftest.py created with phase4/5/9 markers (no root conftest existed)
 - [Phase 04]: SE-inflation formula: SE_matched = SE_EUR * sqrt(N_EUR / N_AFR) per D-01a; Phase 1 run_susie_rss.R reused verbatim via subprocess; AFR .fit.rds held immutably fixed per D-01c
 - [Phase 04]: BH-FDR applied across all 35 r_g tests jointly (D-04c); SE>0.3 flagged not excluded (A-2); D-05 NCP framework is original-research construction (B-2 resolution)
+- [Phase 04]: Tier A criterion: max(pph4)>=0.8 AND any(pph4>=threshold) across signal rows; Jaccard over union of all CS variants per dataset
 
 ### Pending Todos
 
@@ -207,8 +209,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T02:59:05.593Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-04-16T03:10:39.426Z
+Stopped at: Completed 04-03-PLAN.md
 
 ### This session (2026-04-15 PM)
 
