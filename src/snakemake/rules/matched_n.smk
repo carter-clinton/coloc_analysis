@@ -356,6 +356,7 @@ rule compute_tier_a_retention:
     output:
         retention=str(MATCHED_N_OUT / "tier_a_retention.tsv"),
         sign=str(MATCHED_N_OUT / "sign_agreement.tsv"),
+        per_boot=str(MATCHED_N_OUT / "per_bootstrap_retention.tsv"),
     params:
         coloc_dir=str(MATCHED_N_OUT / "coloc"),
         unmatched_coloc_dir="results/phase2/coloc",
@@ -372,6 +373,7 @@ rule compute_tier_a_retention:
             --unmatched-coloc-dir {params.unmatched_coloc_dir} \
             --out {output.retention} \
             --out-sign {output.sign} \
+            --out-per-boot {output.per_boot} \
             --concordance-threshold {params.threshold} \
             --n-bootstraps {params.n_bootstraps}
         """
@@ -548,4 +550,27 @@ rule assemble_table2:
             --sample-sizes {input.sample_sizes} \
             --out-table2 {output.table2} \
             --out-jaccard {output.table2b}
+        """
+
+
+# ---------------------------------------------------------------------------
+# D-06c Supplementary violin figure (Plan 04-05 T3)
+# ---------------------------------------------------------------------------
+rule plot_violin:
+    """D-06c: Bootstrap concordance violin per trait with overlay lines.
+
+    One panel per trait via facet_wrap. Overlaid: dashed horizontal line at
+    unmatched concordance %, dotted line at Hou expected null %.
+    """
+    input:
+        per_boot=str(MATCHED_N_OUT / "per_bootstrap_retention.tsv"),
+        table2=str(MATCHED_N_OUT / "table2.tsv"),
+    output:
+        str(MATCHED_N_OUT / "supp_violin.pdf"),
+    shell:
+        """
+        Rscript src/snakemake/scripts/plot_violin.R \
+            --per-boot {input.per_boot} \
+            --table2 {input.table2} \
+            --out {output}
         """

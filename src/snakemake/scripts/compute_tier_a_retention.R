@@ -55,6 +55,9 @@ option_list <- list(
               help = "Output path for tier_a_retention.tsv"),
   make_option("--out-sign", dest = "out_sign", type = "character",
               help = "Output path for sign_agreement.tsv"),
+  make_option("--out-per-boot", dest = "out_per_boot", type = "character",
+              default = NULL,
+              help = "Output path for per_bootstrap_retention.tsv (D-06c violin input)"),
   make_option("--concordance-threshold", dest = "concordance_threshold",
               type = "double", default = 0.8,
               help = "PP.H4 threshold for Tier A (default 0.8, D-02a)"),
@@ -125,6 +128,7 @@ check_tier_a <- function(coloc_tsv_path, threshold) {
 # ---------------------------------------------------------------------------
 retention_results <- list()
 sign_results <- list()
+per_boot_rows <- list()  # for D-06c violin: trait x bootstrap_idx x retention
 
 for (trait in names(traits_with_loci)) {
   loci <- traits_with_loci[[trait]]
@@ -151,6 +155,15 @@ for (trait in names(traits_with_loci)) {
     }
 
     retention_per_boot[b] <- n_retained / n_tier_a
+  }
+
+  # Collect per-bootstrap rows for D-06c violin input
+  for (b in seq_len(n_boot)) {
+    per_boot_rows[[length(per_boot_rows) + 1L]] <- data.table(
+      trait = trait,
+      bootstrap_idx = b,
+      retention = retention_per_boot[b]
+    )
   }
 
   mean_ret <- mean(retention_per_boot)
@@ -219,6 +232,16 @@ if (!is.null(opt$out_sign)) {
   dir.create(dirname(opt$out_sign), recursive = TRUE, showWarnings = FALSE)
   fwrite(out_sign, opt$out_sign, sep = "\t")
   cat("[compute_tier_a_retention] wrote", nrow(out_sign), "traits to", opt$out_sign, "\n")
+}
+
+# ---------------------------------------------------------------------------
+# Write per-bootstrap retention (D-06c violin input)
+# ---------------------------------------------------------------------------
+if (!is.null(opt$out_per_boot)) {
+  out_per_boot <- rbindlist(per_boot_rows)
+  dir.create(dirname(opt$out_per_boot), recursive = TRUE, showWarnings = FALSE)
+  fwrite(out_per_boot, opt$out_per_boot, sep = "\t")
+  cat("[compute_tier_a_retention] wrote", nrow(out_per_boot), "per-bootstrap rows to", opt$out_per_boot, "\n")
 }
 
 cat("[compute_tier_a_retention] done.\n")
