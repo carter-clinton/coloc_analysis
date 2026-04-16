@@ -309,3 +309,25 @@ rule apply_rg_fdr:
             --in {input.tsv} --out {output.tsv} \
             --fdr-q 0.05 --se-flag 0.3
         """
+
+
+# ---------------------------------------------------------------------------
+# Detection probability (D-05a/b/d) — original-research construction
+# ---------------------------------------------------------------------------
+rule compute_detection_probability:
+    """D-05a/b/d: Per-locus detection probability under empirical NCP null.
+
+    ORIGINAL-RESEARCH CONSTRUCTION (per RESEARCH B-2 resolution 2026-04-15).
+    Computes NCP from empirical beta_hat/SE, then trait-level expected
+    concordance via arithmetic mean (D-05d). NOT Hou 2023 parametric prior
+    (D-05c).
+    """
+    input:
+        tier_a="results/phase2/tier_assignments.tsv",
+    output:
+        tsv="results/matched_n/detection_probability.tsv",
+    shell:
+        """
+        python src/python/compute_detection_probability.py \
+            --in {input.tier_a} --out {output.tsv}
+        """
