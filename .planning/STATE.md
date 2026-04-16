@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: executing
 stopped_at: Phase 4 research complete — 04-RESEARCH.md committed (fb107ca, 474 lines). 5 of 6 decisions need attention; user picked discuss-phase iteration as next route.
-last_updated: "2026-04-16T02:00:43.517Z"
-last_activity: 2026-04-16 -- Phase 04 planning complete
+last_updated: "2026-04-16T02:13:05.414Z"
+last_activity: 2026-04-16 -- Phase 04 execution started
 progress:
   total_phases: 12
   completed_phases: 5
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 09 — replication-in-independent-cohorts
+**Current focus:** Phase 04 — matched-n-cross-ancestry-concordance
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-04-16 -- Phase 04 planning complete
+Phase: 04 (matched-n-cross-ancestry-concordance) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 04
+Last activity: 2026-04-16 -- Phase 04 execution started
 
 Progress: ██░░░░░░░░ 17%
 
