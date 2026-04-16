@@ -331,3 +331,81 @@ rule compute_detection_probability:
         python src/python/compute_detection_probability.py \
             --in {input.tier_a} --out {output.tsv}
         """
+
+
+# ---------------------------------------------------------------------------
+# D-02a Tier A retention (Plan 04-03)
+# ---------------------------------------------------------------------------
+def _expand_bootstrap_coloc_tsvs():
+    """Expand all bootstrap coloc_summary.tsv paths for all traits."""
+    # This collects the coloc_summary.tsv inputs needed by the retention rule.
+    # Actual paths are trait x region x bootstrap, but since we glob at runtime
+    # inside the R script, we depend on the manifest as a proxy for completion.
+    return str(MATCHED_N_OUT / "manifest.tsv")
+
+
+rule compute_tier_a_retention:
+    """D-02a: Per-trait Tier A retention with 95% CI from 100 bootstraps.
+
+    D-02e EXPLICITLY NOT REUSED: Phase 9 joint criterion.
+    Also produces D-02c sign agreement and D-02d unmatched baseline.
+    """
+    input:
+        tier_assignments="results/phase2/tier_assignments.tsv",
+        manifest=str(MATCHED_N_OUT / "manifest.tsv"),
+    output:
+        retention=str(MATCHED_N_OUT / "tier_a_retention.tsv"),
+        sign=str(MATCHED_N_OUT / "sign_agreement.tsv"),
+    params:
+        coloc_dir=str(MATCHED_N_OUT / "coloc"),
+        unmatched_coloc_dir="results/phase2/coloc",
+        threshold=config.get("concordance_threshold", 0.8),
+        n_bootstraps=BOOTSTRAP_N,
+    resources:
+        mem_mb=4000,
+        runtime=30,
+    shell:
+        """
+        Rscript src/snakemake/scripts/compute_tier_a_retention.R \
+            --tier-assignments {input.tier_assignments} \
+            --coloc-dir {params.coloc_dir} \
+            --unmatched-coloc-dir {params.unmatched_coloc_dir} \
+            --out {output.retention} \
+            --out-sign {output.sign} \
+            --concordance-threshold {params.threshold} \
+            --n-bootstraps {params.n_bootstraps}
+        """
+
+
+# ---------------------------------------------------------------------------
+# D-02b Jaccard + D-02c sign agreement (Plan 04-03)
+# ---------------------------------------------------------------------------
+rule compute_jaccard_and_sign:
+    """D-02b: Per-trait credible-set Jaccard at PP.H4 >= 0.5 relaxed threshold.
+
+    D-02c: Lead-variant sign agreement (tertiary sanity check).
+    WARN to stderr if frac_sign_agree < 0.98 (flags pipeline bug).
+    """
+    input:
+        tier_assignments="results/phase2/tier_assignments.tsv",
+        manifest=str(MATCHED_N_OUT / "manifest.tsv"),
+    output:
+        jaccard=str(MATCHED_N_OUT / "jaccard.tsv"),
+        sign=str(MATCHED_N_OUT / "sign_agreement_jaccard.tsv"),
+    params:
+        coloc_dir=str(MATCHED_N_OUT / "coloc"),
+        relaxed_threshold=config.get("relaxed_pph4_threshold", 0.5),
+        n_bootstraps=BOOTSTRAP_N,
+    resources:
+        mem_mb=8000,
+        runtime=60,
+    shell:
+        """
+        Rscript src/snakemake/scripts/compute_jaccard.R \
+            --tier-assignments {input.tier_assignments} \
+            --coloc-dir {params.coloc_dir} \
+            --out-jaccard {output.jaccard} \
+            --out-sign {output.sign} \
+            --relaxed-threshold {params.relaxed_threshold} \
+            --n-bootstraps {params.n_bootstraps}
+        """
