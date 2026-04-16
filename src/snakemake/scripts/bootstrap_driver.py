@@ -149,7 +149,7 @@ def run_bootstrap(args):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with tempfile.NamedTemporaryFile(
-        mode="w", suffix="_pseudo.tsv", dir=str(output_dir),
+        mode="w", suffix="_pseudo.tsv", dir=tempfile.gettempdir(),
         delete=False, prefix=f"bootstrap_{args.bootstrap_idx}_"
     ) as tmp:
         tmp_path = tmp.name
