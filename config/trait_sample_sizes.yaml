@@ -1,0 +1,24 @@
+# config/trait_sample_sizes.yaml — Effective sample sizes per trait x ancestry
+# Used by assemble_table2.py for D-06a columns 2-4.
+# Sources: DIAMANTE, GIGASTROKE/MVP, Pan-UKBB, EAGLE, MVP phs002453
+# All values are N_eff (effective sample size for case-control traits).
+
+t2d:
+  AFR: 55525     # DIAMANTE AFR
+  EUR: 228499    # DIAMANTE EUR
+
+stroke:
+  AFR: 24000     # MVP / GIGASTROKE AFR stratum
+  EUR: 446696    # GIGASTROKE EUR
+
+hypertension:
+  AFR: 28000     # Pan-UKBB / MVP AFR
+  EUR: 463010    # Pan-UKBB EUR
+
+asthma:
+  AFR: 15000     # Pan-UKBB / EAGLE AFR
+  EUR: 408354    # Pan-UKBB EUR
+
+bmi:
+  AFR: 55500     # MVP phs002453 AFR (primary)
+  EUR: 681275    # Yengo 2018 / GIANT EUR
