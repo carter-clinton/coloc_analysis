@@ -201,7 +201,8 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
     ValueError
         If required columns are missing or all Z-scores are NaN.
     """
-    required_cols = {"SNP", "REF", "ALT", "BETA", "SE", "N"}
+    # Core columns always required; REF/ALT optional (some sumstats lack alleles)
+    core_required = {"SNP", "BETA", "SE", "N"}
 
     # Read header to validate columns (handle .bgz/.gz transparently -- WR-08)
     with _open_sumstats(input_path) as f:
@@ -212,13 +213,23 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
     snp_col = "SNP"
     if "SNP" not in input_cols and "SNP_ID" in input_cols:
         snp_col = "SNP_ID"
-        input_cols.add("SNP")  # satisfy the required_cols check
+        input_cols.add("SNP")  # satisfy the core_required check
 
-    missing = required_cols - input_cols
+    missing = core_required - input_cols
     if missing:
         raise ValueError(
             f"Harmonized sumstats missing required columns: {missing}. "
             f"Available: {sorted(input_cols)}"
+        )
+
+    # Determine allele column availability; use dummy alleles when absent
+    has_alleles = "REF" in input_cols and "ALT" in input_cols
+    if not has_alleles:
+        import logging
+        logging.getLogger(__name__).warning(
+            "REF/ALT columns missing from %s; using dummy alleles (A1=A, A2=G). "
+            "HESS h2 estimates remain valid because they depend on Z and N, not alleles.",
+            input_path,
         )
 
     stats = {"n_snps": 0, "n_dropped_nan_z": 0, "n_dropped_invalid_n": 0}
@@ -232,8 +243,12 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
 
         for row in reader:
             snp = row[snp_col]
-            a1 = row["ALT"]   # Effect allele
-            a2 = row["REF"]   # Other allele
+            if has_alleles:
+                a1 = row["ALT"]   # Effect allele
+                a2 = row["REF"]   # Other allele
+            else:
+                a1 = "A"  # Dummy allele; HESS uses Z and N, not alleles
+                a2 = "G"
 
             # Compute Z = BETA / SE (T-05-19)
             try:
