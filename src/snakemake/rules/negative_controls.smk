@@ -8,14 +8,13 @@ Three sub-pipelines:
 T-02-18 mitigation: deterministic seeds for null loci sampling.
 """
 import os
+from pathlib import Path
 import yaml
 
 NEG_CTRL_DIR = os.path.join(config["paths"]["results_root"], "negative_controls")
 QTL_COLOC_DIR = os.path.join(config["paths"]["results_root"], "qtl_coloc")
 
-QTL_PROC_ENV = str(
-    os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml")
-)
+QTL_PROC_ENV = str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
 
 
 rule generate_null_loci:

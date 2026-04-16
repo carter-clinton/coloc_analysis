@@ -139,8 +139,12 @@ include: "src/snakemake/rules/replication.smk"
 include: "src/snakemake/rules/matched_n.smk"
 
 ENABLE_LD = config.get("enable_ld_pipeline", False)
-# Only generate LD targets for ancestries with 1000G population mappings
-LD_ANCESTRIES = [a for a in ANCESTRIES if a in config.get("onekg", {}).get("populations", {})]
+# Only generate LD targets for ancestries that (a) appear in at least one
+# active trait_ancestry pair AND (b) have a 1000G population mapping.
+# This prevents the DAG from requesting EAS/HIS LD matrices before those
+# ancestries have harmonized sumstats on disk.
+_USED_ANCESTRIES = sorted(set(anc for _, anc in TRAIT_ANCESTRY_PAIRS))
+LD_ANCESTRIES = [a for a in _USED_ANCESTRIES if a in config.get("onekg", {}).get("populations", {})]
 # Only generate LD targets for regions whose chromosome has a 1000G VCF
 ONEKG_CHROMS = set(config.get("onekg", {}).get("chromosomes", []))
 LD_REGION_INFOS = [(orig, safe) for orig, safe in REGION_INFOS if REGION_METADATA[safe]["chr"] in ONEKG_CHROMS]

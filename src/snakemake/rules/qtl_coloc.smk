@@ -14,6 +14,7 @@ finemap_output() are in scope.
 
 import os
 import sys
+from pathlib import Path
 
 import pandas as pd
 
@@ -140,7 +141,7 @@ rule build_qtl_coloc_manifest:
         ld_reference=config["paths"]["ld_reference"],
         harmonized_dir=QTL_HARMONIZED_DIR,
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
         r"""
         mkdir -p $(dirname {output.manifest})
@@ -179,7 +180,7 @@ rule run_qtl_coloc:
         sdy=lambda wc: _qtl_manifest_field(wc, "sdy"),
         sample_size=lambda wc: _qtl_manifest_field(wc, "tissue_n"),
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "r_coloc.yml"))
+        str(Path(workflow.basedir) / "envs" / "r_coloc.yml")
     threads: 1
     resources:
         mem_mb=config["resources"]["default_mem_mb"],
@@ -217,7 +218,7 @@ rule aggregate_qtl_coloc:
         script=os.path.join("src", "python", "aggregate_qtl_coloc.py"),
         json_dir=QTL_COLOC_DIR,
     conda:
-        str(os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml"))
+        str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
         r"""
         python {params.script} \
@@ -236,7 +237,7 @@ rule aggregate_qtl_coloc:
 NEG_CTRL_DIR = os.path.join(config["paths"]["results_root"], "negative_controls")
 
 QTL_PROC_ENV_COLOC = str(
-    os.path.join(workflow.basedir, "..", "..", "..", "envs", "qtl_processing.yml")
+    str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
 )
 
 
