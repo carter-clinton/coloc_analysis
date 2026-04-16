@@ -349,6 +349,15 @@ def run_neg_ctrl_coloc(args, neg_config):
     """
     import pandas as pd
 
+    def _safe_str(val, default=""):
+        """Convert a pandas value to string, replacing NaN with default."""
+        import math
+        if val is None:
+            return default
+        if isinstance(val, float) and math.isnan(val):
+            return default
+        return str(val)
+
     manifest = pd.read_csv(args.manifest, sep="\t", dtype=str)
     results = []
 
@@ -364,16 +373,16 @@ def run_neg_ctrl_coloc(args, neg_config):
 
         cmd = [
             "Rscript", "src/snakemake/scripts/run_qtl_coloc.R",
-            "--gwas-fit", row.get("gwas_fit_path", ""),
-            "--qtl-sumstats", row.get("harmonized_qtl_path", ""),
-            "--ld-matrix", row.get("ld_matrix_path", ""),
-            "--qtl-source", row.get("qtl_source", ""),
-            "--tissue", row.get("tissue", ""),
-            "--gene-id", row.get("gene_id", ""),
-            "--region", row.get("region", ""),
-            "--ancestry", row.get("ancestry", ""),
-            "--sdy", str(row.get("sdy", "1.0")),
-            "--sample-size", str(row.get("tissue_n", "0")),
+            "--gwas-fit", _safe_str(row.get("gwas_fit_path")),
+            "--qtl-sumstats", _safe_str(row.get("harmonized_qtl_path")),
+            "--ld-matrix", _safe_str(row.get("ld_matrix_path")),
+            "--qtl-source", _safe_str(row.get("qtl_source")),
+            "--tissue", _safe_str(row.get("tissue")),
+            "--gene-id", _safe_str(row.get("gene_id")),
+            "--region", _safe_str(row.get("region")),
+            "--ancestry", _safe_str(row.get("ancestry")),
+            "--sdy", _safe_str(row.get("sdy"), "1.0"),
+            "--sample-size", _safe_str(row.get("tissue_n"), "0"),
             "--policy", "config/susie_policy.yaml",
             "--output", output_json,
         ]

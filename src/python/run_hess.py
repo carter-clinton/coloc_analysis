@@ -207,6 +207,13 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
     with _open_sumstats(input_path) as f:
         header_line = f.readline().strip()
     input_cols = set(header_line.split("\t"))
+
+    # Accept SNP_ID as alias for SNP (canonical harmonized column name)
+    snp_col = "SNP"
+    if "SNP" not in input_cols and "SNP_ID" in input_cols:
+        snp_col = "SNP_ID"
+        input_cols.add("SNP")  # satisfy the required_cols check
+
     missing = required_cols - input_cols
     if missing:
         raise ValueError(
@@ -224,7 +231,7 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
         fout.write("SNP\tA1\tA2\tZ\tN\n")
 
         for row in reader:
-            snp = row["SNP"]
+            snp = row[snp_col]
             a1 = row["ALT"]   # Effect allele
             a2 = row["REF"]   # Other allele
 

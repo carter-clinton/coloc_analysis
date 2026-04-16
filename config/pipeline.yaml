@@ -204,7 +204,7 @@ pathway:
   ldsc_baseline: "data/reference/ldsc/baselineLD_v2.2"
   ldsc_weights: "data/reference/ldsc/weights_hm3_no_hla"
   ldsc_frq: "data/reference/ldsc/1000G_Phase3_frq"
-  ldsc_plink: "data/reference/ldsc/1000G_Phase3_plinkfiles"
+  ldsc_plink: "data/reference/ldsc/1000G_EUR_Phase3_plink"
   ldsc_hapmap3: "data/reference/ldsc/w_hm3.snplist"
 
   # LDSC-SEG tissue-specific enrichment (Finucane 2018)
