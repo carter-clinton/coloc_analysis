@@ -133,6 +133,11 @@ include: "src/snakemake/rules/pathway.smk"
 # Plans 09-02 through 09-05.
 include: "src/snakemake/rules/replication.smk"
 
+# Phase 4 — matched-N cross-ancestry concordance (EUR-AFR bootstrap +
+# LDSC r_g matrix + Table 2). Skeleton rules with manifest generation;
+# implementations added by Plans 04-02 through 04-05.
+include: "src/snakemake/rules/matched_n.smk"
+
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
 LD_ANCESTRIES = [a for a in ANCESTRIES if a in config.get("onekg", {}).get("populations", {})]

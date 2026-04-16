@@ -230,3 +230,51 @@ MR / replication use case.
 | Phase 9: MVP replication | dbGaP access | Same-day |
 | Phase 9: AoU replication | Already credentialed | Export GWAS sumstats from workbench |
 | Phase 9: GBMI replication | Open portal | Same-day |
+
+---
+
+## bmi.AFR (Phase 4 dependency, 2026-04)
+
+**Context:** Phase 4 matched-N cross-ancestry concordance requires AFR BMI
+summary statistics for the EUR->AFR bootstrap. Pan-UKBB AFR BMI (N~6k) is
+insufficient — SE-inflation ratio sqrt(700k/6k) = 10.8x pushes bootstrap into
+noise-dominated regime. Per RESEARCH C-1 (SUPERSEDED), MVP or AoU provide
+~9x larger AFR BMI samples.
+
+### Tier 1: MVP phs002453 (preferred)
+
+- **Accession:** dbGaP phs002453
+- **Build:** GRCh38 (requires liftover to GRCh37 per Phase 1 LD panel convention)
+- **N_AFR:** ~55,525 (Huang et al. 2022 Nat Commun s41467-022-35553-2)
+- **SE-inflation ratio:** sqrt(700k/55.5k) = 3.55x (comparable to other 4 traits)
+- **Access:** dbGaP public release 2024-07-22 (NCBI Insights announcement).
+  No DAR required for summary statistics.
+- **Next action:**
+  - [ ] Verify phs002453 BMI AFR sumstats are downloadable without DAR
+  - [ ] If accessible: download + harmonize via Phase 9 MVP harmonizer pattern
+  - [ ] Liftover GRCh38 -> GRCh37 inline per Phase 9 09-02 harmonizer convention
+
+### Tier 2: AoU BMI AFR (alternative)
+
+- **Source:** All of Us Researcher Workbench
+- **Build:** GRCh38
+- **N_AFR:** ~54,940 (Nat Commun 2025 s41467-025-58420-2)
+- **SE-inflation ratio:** sqrt(700k/54.9k) = 3.57x
+- **Access:** AoU Researcher Workbench (Carter credentialed per CLAUDE.md).
+  Sumstats exportable; individual-level stays on Workbench.
+- **Next action:**
+  - [ ] If Tier 1 (MVP) not accessible: export BMI AFR sumstats from AoU Workbench
+  - [ ] Harmonize to project schema + liftover GRCh38 -> GRCh37
+
+### Tier 3: Pan-UKBB AFR BMI field 21001 (last-resort fallback)
+
+- **Source:** Pan-UKBB S3 bucket (pan.ukbb.broadinstitute.org)
+- **Build:** GRCh37
+- **N_AFR:** ~6,000 (phenotype manifest field 21001)
+- **SE-inflation ratio:** sqrt(700k/6k) = 10.8x (noise-dominated — H7 verdict
+  loses scientific grip per RESEARCH C-1)
+- **Access:** Open S3, anonymous download, CC BY 4.0.
+- **Next action:**
+  - [ ] Only use if Tier 1 AND Tier 2 both fail
+  - [ ] Flag in Table 2 per D-03c / Deferred-d: "AFR-unavailable at scale"
+  - [ ] Report global LDSC r_g (AFR vs EUR BMI) as proxy instead of matched-N bootstrap
