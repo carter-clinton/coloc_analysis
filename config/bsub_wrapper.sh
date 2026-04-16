@@ -1,12 +1,14 @@
 #!/bin/bash
 # bsub wrapper for Snakemake on NCSU HPC.
 # - Converts mem_mb to GB (LSF_UNIT_FOR_LIMITS=GB on this cluster)
-# - Does NOT pass -W (wall time) — let jobs run to completion
+# - Sets wall time to queue maximum (serial=5760 min, long=14400 min)
+#   since all queues default to 30 min RUNLIMIT
 # - Snakemake passes the jobscript as the last positional argument
 
 ARGS=()
 JOBSCRIPT=""
 MEM_GB=4
+QUEUE="serial"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -19,8 +21,13 @@ while [[ $# -gt 0 ]]; do
       ARGS+=("-R" "rusage[mem=${MEM_GB}]")
       shift 2
       ;;
+    -q)
+      QUEUE="$2"
+      ARGS+=("-q" "$2")
+      shift 2
+      ;;
     -W)
-      # Skip wall time — do not cap, let jobs run to completion
+      # Skip any incoming -W; we set wall time based on queue below
       shift 2
       ;;
     *)
@@ -35,6 +42,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Set wall time to queue maximum to override 30-min default RUNLIMIT.
+# serial max=5760 min (4 days), long max=14400 min (10 days),
+# standard max=2880 min (2 days).
+case "$QUEUE" in
+  long)     ARGS+=("-W" "14400") ;;
+  standard) ARGS+=("-W" "2880")  ;;
+  *)        ARGS+=("-W" "5760")  ;;
+esac
 
 mkdir -p logs/lsf 2>/dev/null
 

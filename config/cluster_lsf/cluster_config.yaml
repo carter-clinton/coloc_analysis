@@ -43,3 +43,14 @@ validate_sumstats:
 liftover_sumstats:
   mem_mb: 8000
   threads: 1
+
+# MAGMA gene analysis: EUR traits with >5M SNPs can need >30 min.
+# bsub_wrapper.sh now sets -W to queue max (no more TERM_RUNLIMIT).
+magma_gene_analysis:
+  mem_mb: 8000
+  threads: 1
+
+# LDSC LD score computation: some chromosomes can exceed 30 min.
+ldsc_compute_custom_ld_scores:
+  mem_mb: 8000
+  threads: 1
