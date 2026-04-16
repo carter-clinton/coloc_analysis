@@ -203,3 +203,88 @@ rule run_matched_coloc:
             --output-rds {output.coloc_rds} \
             --output-tsv {output.coloc_tsv}
         """
+
+
+# ---------------------------------------------------------------------------
+# LDSC r_g matrix (D-04a/b/d) — 35 total tests
+# ---------------------------------------------------------------------------
+import itertools
+
+RG_TRAITS = config["traits"]  # 5 T1 traits
+RG_TRAIT_PAIRS = list(itertools.combinations(RG_TRAITS, 2))  # 10 cross-trait pairs
+RG_ANCESTRY_PAIRS = config["rg_ancestry_pairs"]  # [EUR_EUR, AFR_AFR, EUR_AFR]
+
+# D-04a: 10 cross-trait pairs x 3 ancestry-pair strata = 30 tests
+# D-04b: 5 same-trait EUR-AFR benchmarks (is_global_benchmark=TRUE)
+# Total: 35 tests; BH-FDR q<0.05 across all 35 per D-04c
+RG_COMBOS = [
+    (t1, t2, ap) for (t1, t2) in RG_TRAIT_PAIRS for ap in RG_ANCESTRY_PAIRS
+] + [
+    (t, t, "EUR_AFR") for t in RG_TRAITS
+]
+
+
+def _parse_ancestry_pair(ap):
+    """Split 'EUR_AFR' -> ('EUR', 'AFR')."""
+    parts = ap.split("_")
+    return parts[0], parts[1]
+
+
+rule ldsc_rg:
+    """D-04a: Single LDSC r_g test for (trait1, trait2, ancestry_pair).
+
+    Reuses Phase 5 LDSC infrastructure (D-04d): munged sumstats + 1000G LD
+    scores + ldsc_py3 env. For EUR-AFR cross-ancestry tests, ref-ld-chr and
+    w-ld-chr both use EUR ldscores (LDSC default for cross-ancestry per
+    Bulik-Sullivan 2015 FAQ). SE>0.3 flag applied downstream by apply_fdr.py
+    (research A-2 minimum-deviation).
+    """
+    input:
+        munged_t1=lambda w: f"results/ldsc/munged/{w.trait1}_{w.ancestry1}.sumstats.gz",
+        munged_t2=lambda w: f"results/ldsc/munged/{w.trait2}_{w.ancestry2}.sumstats.gz",
+        ldscores=lambda w: f"data/reference/ldsc/ldscores_{w.ancestry1}/",
+    output:
+        log="results/matched_n/rg/{trait1}_{trait2}_{ancestry1}_{ancestry2}.log",
+    conda:
+        "../envs/ldsc_py3.yml"
+    resources:
+        mem_mb=4000,
+        runtime=30,
+    shell:
+        # NOTE: For EUR-AFR cross-ancestry r_g, ref-ld-chr and w-ld-chr
+        # both use EUR ldscores per LDSC convention. This is a known
+        # limitation; SE>0.3 flag applied downstream (research A-2).
+        """
+        python $(which ldsc.py) \
+            --rg {input.munged_t1},{input.munged_t2} \
+            --ref-ld-chr {input.ldscores} \
+            --w-ld-chr {input.ldscores} \
+            --out results/matched_n/rg/{wildcards.trait1}_{wildcards.trait2}_{wildcards.ancestry1}_{wildcards.ancestry2}
+        """
+
+
+def _expand_rg_log_paths():
+    """Expand all 35 r_g log paths from RG_COMBOS."""
+    paths = []
+    for (t1, t2, ap) in RG_COMBOS:
+        a1, a2 = _parse_ancestry_pair(ap)
+        paths.append(f"results/matched_n/rg/{t1}_{t2}_{a1}_{a2}.log")
+    return paths
+
+
+rule collect_rg_logs:
+    """Parse LDSC .log files into a single TSV for downstream FDR (D-04c).
+
+    Parses all 35 r_g test logs (30 cross-trait + 5 same-trait EUR-AFR
+    benchmarks) via munge_trait_pair_rg.py.
+    """
+    input:
+        logs=_expand_rg_log_paths(),
+    output:
+        tsv="results/matched_n/rg_raw.tsv",
+    shell:
+        """
+        python src/snakemake/scripts/munge_trait_pair_rg.py \
+            --log-dir results/matched_n/rg \
+            --out {output.tsv}
+        """
