@@ -7,12 +7,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
 
-from scripts.utils_logging import get_logger
+# Package-relative import shim: when invoked directly from the Snakemake rule
+# the script's parent (region_analysis/) is not on sys.path, so
+# `from scripts.utils_logging import get_logger` raises ModuleNotFoundError.
+# Prepend the region_analysis/ dir so the `scripts` package resolves.
+_LEGACY_REGION_DIR = Path(__file__).resolve().parent.parent
+if str(_LEGACY_REGION_DIR) not in sys.path:
+    sys.path.insert(0, str(_LEGACY_REGION_DIR))
+
+from scripts.utils_logging import get_logger  # noqa: E402
 
 logger = get_logger()
 
