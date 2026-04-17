@@ -891,9 +891,9 @@ rule ldsc_seg_gene_expr:
         w_ld_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
         ),
-        ldcts=os.path.join(
-            PATHWAY_CFG.get("ldsc_seg_gene_expr", "data/reference/ldsc_seg/Multi_tissue_gene_expr"),
-            "Multi_tissue_gene_expr.ldcts",
+        ldcts=PATHWAY_CFG.get(
+            "ldsc_seg_gene_expr_ldcts",
+            "data/reference/ldsc_seg/Multi_tissue_gene_expr.ldcts",
         ),
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_seg", f"{wc.trait}_{wc.ancestry}_gene_expr"
@@ -937,9 +937,9 @@ rule ldsc_seg_chromatin:
         w_ld_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
         ),
-        ldcts=os.path.join(
-            PATHWAY_CFG.get("ldsc_seg_chromatin", "data/reference/ldsc_seg/Multi_tissue_chromatin"),
-            "Multi_tissue_chromatin.ldcts",
+        ldcts=PATHWAY_CFG.get(
+            "ldsc_seg_chromatin_ldcts",
+            "data/reference/ldsc_seg/Multi_tissue_chromatin.ldcts",
         ),
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_seg", f"{wc.trait}_{wc.ancestry}_chromatin"
