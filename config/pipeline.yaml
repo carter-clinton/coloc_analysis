@@ -201,7 +201,8 @@ pathway:
   magma_snp_synonyms: "data/reference/magma/dbsnp151.synonyms"
 
   # LDSC (Bulik-Sullivan 2015) -- partitioned heritability and S-LDSC
-  ldsc_baseline: "data/reference/ldsc/baselineLD_v2.2"
+  # baselineLD.* files land directly in data/reference/ldsc/ (tar extracts flat)
+  ldsc_baseline: "data/reference/ldsc"
   ldsc_weights: "data/reference/ldsc/weights_hm3_no_hla"
   ldsc_frq: "data/reference/ldsc/1000G_Phase3_frq"
   ldsc_plink: "data/reference/ldsc/1000G_EUR_Phase3_plink"
@@ -230,7 +231,7 @@ pathway:
   gprofiler_bg_window_kb: 500    # Background gene window for g:Profiler enrichment
   permutation_n: 1000            # Number of permutations for empirical null (D-06c)
   maf_reference: "data/reference/ldsc/1000G_Phase3_frq"
-  ld_score_reference: "data/reference/ldsc/baselineLD_v2.2"
+  ld_score_reference: "data/reference/ldsc"
 
   # Per-trait sample size metadata for MAGMA, LDSC, and HESS effective-N
   # computation. Binary traits use N_eff = 4 / (1/n_case + 1/n_ctrl);
