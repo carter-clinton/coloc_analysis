@@ -103,6 +103,54 @@ TRAIT_PAIR_WILDCARDS = [
 CHROMOSOMES = [str(c) for c in range(1, 23)]
 
 
+def _ldsc_frqfile_chr(ancestry: str) -> str:
+    """Return the LDSC ``--frqfile-chr`` prefix for the given ancestry.
+
+    Context (Launch11 Bug 3 fix):
+    LDSC's ``check_ld_condition_number()`` rejects AFR sumstats when run
+    with the EUR frqfile (condition number ~5.6e20) because MAF-weighted
+    annotation overlaps require a frequency reference that matches the
+    ancestry of the summary statistics. The alkesgroup does not distribute
+    per-ancestry frq files for AFR; we generate them locally via
+    ``download_ldsc_afr_frq``. This helper dispatches the ``--frqfile-chr``
+    path on the ancestry wildcard so ldsc_partitioned_h2 / ldsc_seg_* each
+    point at the correct reference.
+
+    EUR-only traits stay on the pre-staged
+    ``data/reference/ldsc/1000G_Phase3_frq/1000G.EUR.QC.`` prefix. AFR
+    traits route to ``data/reference/ldsc/1000G_Phase3_frq_AFR/1000G.AFR.QC.``.
+    Other ancestries (EAS/HIS) fall back to EUR until per-ancestry frq
+    generation is needed — Phase 5 T1 scope ships only EUR + AFR traits.
+    """
+    ancestry = ancestry.upper()
+    if ancestry == "AFR":
+        return os.path.join(
+            PATHWAY_CFG.get(
+                "ldsc_frq_afr",
+                "data/reference/ldsc/1000G_Phase3_frq_AFR",
+            ),
+            "1000G.AFR.QC.",
+        )
+    return os.path.join(
+        PATHWAY_CFG.get("ldsc_frq", "data/reference/ldsc/1000G_Phase3_frq"),
+        "1000G.EUR.QC.",
+    )
+
+
+def _ldsc_frq_flag(ancestry: str) -> str:
+    """Return the sentinel input that gates the ancestry-specific frqfile.
+
+    AFR sumstats depend on ``download_ldsc_afr_frq`` (generated locally
+    from 1KG VCFs). EUR stays on the pre-staged frq files gated by
+    ``download_ldsc_baseline`` (sentinel already lives in every LDSC rule's
+    ``input`` as ``ldsc_baseline_flag``).
+    """
+    ancestry = ancestry.upper()
+    if ancestry == "AFR":
+        return "data/reference/ldsc/1000G_Phase3_frq_AFR/.afr_frq_done"
+    return "data/reference/ldsc/.baseline_download_done"
+
+
 # ==========================================================================
 # Download rules: reference data acquisition
 # ==========================================================================
@@ -277,6 +325,130 @@ rule download_ldsc_baseline:
         wget --max-redirect=3 --timeout=300 -q -O {params.outdir}/w_hm3.snplist.bz2 \
             {params.hapmap3_url}
         bzip2 -df {params.outdir}/w_hm3.snplist.bz2
+        """
+
+
+rule download_ldsc_afr_frq:
+    """Generate 1000G Phase 3 AFR per-chromosome allele-frequency files.
+
+    Context (Launch11 regression, Bug 3):
+    LDSC's ``check_ld_condition_number()`` rejects the regression when the
+    LD-score matrix is rank-deficient. Running AFR sumstats (asthma_AFR,
+    stroke_AFR, t2d_AFR) with EUR ``--frqfile-chr`` surfaces this
+    deficiency as ``ValueError: ERROR: LD Score matrix condition number
+    is 5.6e20. Remove collinear LD Scores or use the --invert-anyway
+    flag.`` because MAF-weighted annotation overlaps diverge when the
+    frequency reference doesn't match the ancestry of the sumstats.
+
+    Strategy:
+    No alkesgroup distribution ships per-ancestry frq files for AFR. We
+    generate them locally from the 1000 Genomes Phase 3 VCFs already on
+    disk (GRCh37/b37), filtering to the LDSC EUR-plink SNP set so the
+    per-chromosome variant IDs match the LD scores built on the same
+    panel.
+
+    Procedure (per chromosome 1..22):
+      1. ``plink --vcf data/raw/1kg/vcf/chr{N}.vcf.gz --double-id
+         --keep data/raw/1kg/AFR.samples --extract <EUR LDSC bim>
+         --make-bed --out <tmp>`` — 504 AFR samples, SNP set matched.
+      2. ``plink --bfile <tmp> --freq --out <frq_dir>/1000G.AFR.QC.{N}``.
+    Uses plink 1.9 (``envs/plink.yml``).
+
+    Output: sentinel ``.afr_frq_done`` flag + 22 ``1000G.AFR.QC.{N}.frq``.
+    The LDSC h2 / SEG rules depend on this sentinel when ``ancestry == AFR``.
+    """
+    input:
+        afr_samples="data/raw/1kg/AFR.samples",
+        vcfs=expand("data/raw/1kg/vcf/chr{chrom}.vcf.gz", chrom=CHROMOSOMES),
+        eur_bims=expand(
+            "data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC.{chrom}.bim",
+            chrom=CHROMOSOMES,
+        ),
+    output:
+        done=touch("data/reference/ldsc/1000G_Phase3_frq_AFR/.afr_frq_done"),
+        frqs=expand(
+            "data/reference/ldsc/1000G_Phase3_frq_AFR/1000G.AFR.QC.{chrom}.frq",
+            chrom=CHROMOSOMES,
+        ),
+    params:
+        outdir="data/reference/ldsc/1000G_Phase3_frq_AFR",
+        eur_bim_dir="data/reference/ldsc/1000G_EUR_Phase3_plink",
+        vcf_dir="data/raw/1kg/vcf",
+    conda:
+        str(Path(workflow.basedir) / "envs" / "plink.yml")
+    resources:
+        mem_mb=6000,
+        runtime=60,
+    threads: 2
+    shell:
+        r"""
+        mkdir -p {params.outdir}
+
+        # Idempotency: if all 22 frq files are already present and non-empty,
+        # just touch the sentinel and exit. This matches the pattern used by
+        # download_ldsc_baseline / download_ldsc_seg and lets an operator
+        # pre-stage the frq files if they prefer.
+        all_present=1
+        for chrom in {{1..22}}; do
+            f={params.outdir}/1000G.AFR.QC.${{chrom}}.frq
+            if [ ! -s "$f" ]; then
+                all_present=0
+                break
+            fi
+        done
+        if [ "$all_present" = "1" ]; then
+            echo "download_ldsc_afr_frq: all 22 AFR frq files present; skipping generation" >&2
+            touch {output.done}
+            exit 0
+        fi
+
+        # Generate frq per chromosome via plink 1.9
+        for chrom in {{1..22}}; do
+            tmpprefix={params.outdir}/_tmp_afr_chr${{chrom}}
+            vcf={params.vcf_dir}/chr${{chrom}}.vcf.gz
+            eurbim={params.eur_bim_dir}/1000G.EUR.QC.${{chrom}}.bim
+
+            if [ ! -f "$vcf" ]; then
+                echo "ERROR: 1KG VCF missing for chr${{chrom}}: $vcf" >&2
+                exit 1
+            fi
+            if [ ! -f "$eurbim" ]; then
+                echo "ERROR: LDSC EUR bim missing for chr${{chrom}}: $eurbim" >&2
+                exit 1
+            fi
+
+            # Extract AFR samples restricted to LDSC EUR SNP set
+            plink \
+                --vcf "$vcf" \
+                --double-id \
+                --keep {input.afr_samples} \
+                --extract "$eurbim" \
+                --make-bed \
+                --out "$tmpprefix" \
+                --memory 4000 \
+                --threads {threads}
+
+            # Compute AFR frequencies
+            plink \
+                --bfile "$tmpprefix" \
+                --freq \
+                --out {params.outdir}/1000G.AFR.QC.${{chrom}} \
+                --memory 4000 \
+                --threads {threads}
+
+            # Clean up intermediates (keep only .frq)
+            rm -f "$tmpprefix".bed "$tmpprefix".bim "$tmpprefix".fam \
+                  "$tmpprefix".log "$tmpprefix".nosex
+        done
+
+        # Final sanity check: every frq must exist and be non-empty
+        for chrom in {{1..22}}; do
+            f={params.outdir}/1000G.AFR.QC.${{chrom}}.frq
+            if [ ! -s "$f" ]; then
+                echo "ERROR: AFR frq missing/empty after generation: $f" >&2
+                exit 1
+            fi
+        done
         """
 
 
@@ -768,6 +940,12 @@ rule ldsc_partitioned_h2:
     Per trait x ancestry. Always includes --overlap-annot flag (anti-pattern).
     Baseline v2.2 always first in --ref-ld-chr (D-04a).
     T-05-15: mem_mb=8000 for baseline model.
+
+    Ancestry-specific frqfile (Launch12 Bug 3 fix): AFR sumstats route to
+    ``1000G.AFR.QC.`` prefix generated by ``download_ldsc_afr_frq``; EUR
+    stays on the alkesgroup-distributed ``1000G.EUR.QC.`` prefix. Mixing
+    ancestry between sumstats and frqfile surfaces LDSC's
+    ``check_ld_condition_number()`` rejection.
     """
     input:
         munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
@@ -778,6 +956,9 @@ rule ldsc_partitioned_h2:
         # RO7 DAG wiring: flag-file dependency on download_ldsc_baseline
         # (baselineLD v2.2, weights, frq files referenced via params).
         ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
+        # Ancestry-gated frq sentinel: .baseline_download_done for EUR,
+        # .afr_frq_done for AFR (see _ldsc_frq_flag helper).
+        frq_flag=lambda wc: _ldsc_frq_flag(wc.ancestry),
     output:
         results=os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", "{trait}_{ancestry}_pathway_h2.results"
@@ -792,9 +973,7 @@ rule ldsc_partitioned_h2:
         w_ld_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/1000G_Phase3_weights_hm3_no_MHC"), "weights.hm3_noMHC."
         ),
-        frqfile_chr=os.path.join(
-            PATHWAY_CFG.get("ldsc_frq", "data/reference/ldsc/1000G_Phase3_frq"), "1000G.EUR.QC."
-        ),
+        frqfile_chr=lambda wc: _ldsc_frqfile_chr(wc.ancestry),
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_partitioned", f"{wc.trait}_{wc.ancestry}_pathway_h2"
         ),
@@ -882,12 +1061,22 @@ rule ldsc_seg_gene_expr:
 
     Per trait x ancestry. Uses pre-built Multi_tissue_gene_expr.ldcts from
     Finucane 2018. Calls run_ldsc_seg.py with --h2-cts (NOT --h2).
+
+    Note on AFR gating: ``--h2-cts`` does not consume ``--frqfile-chr`` in
+    current LDSC (see run_ldsc_seg.py -- the cmd list omits the flag), so
+    no ancestry-specific frqfile is passed here today. The ``frq_flag``
+    input still gates the rule behind ``download_ldsc_afr_frq`` for AFR
+    traits so that (a) the ancestry-specific reference data is available
+    if/when a future change threads ``--frqfile-chr`` through the SEG
+    wrapper, and (b) the Launch12 fix batch ships a single ancestry
+    dispatch point consistent across all LDSC rules.
     """
     input:
         munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
         # RO7 DAG wiring: baseline/weights via params + gene-expr ldcts via params.
         ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
         ldsc_seg_gene_expr_flag="data/reference/ldsc_seg/.gene_expr_download_done",
+        frq_flag=lambda wc: _ldsc_frq_flag(wc.ancestry),
     output:
         results=os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_gene_expr.cell_type_results.txt"
@@ -928,12 +1117,19 @@ rule ldsc_seg_chromatin:
     """LDSC-SEG tissue-specific enrichment: Roadmap Epigenomics chromatin.
 
     Per trait x ancestry. Uses pre-built Multi_tissue_chromatin.ldcts.
+
+    Note on AFR gating: same as ldsc_seg_gene_expr -- ``--h2-cts`` does not
+    take ``--frqfile-chr``, so the ancestry-specific frq files are not
+    consumed here today. The ``frq_flag`` input gates AFR runs behind
+    ``download_ldsc_afr_frq`` so the ancestry dispatch is consistent with
+    ldsc_partitioned_h2.
     """
     input:
         munged=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "munged", "{trait}_{ancestry}.sumstats.gz"),
         # RO7 DAG wiring: baseline/weights via params + chromatin ldcts via params.
         ldsc_baseline_flag="data/reference/ldsc/.baseline_download_done",
         ldsc_seg_chromatin_flag="data/reference/ldsc_seg/.chromatin_download_done",
+        frq_flag=lambda wc: _ldsc_frq_flag(wc.ancestry),
     output:
         results=os.path.join(
             PATHWAY_RESULTS_DIR, "ldsc_seg", "{trait}_{ancestry}_chromatin.cell_type_results.txt"
