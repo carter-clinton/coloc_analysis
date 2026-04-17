@@ -310,6 +310,25 @@ def run_compute_ld_scores(
 
     os.makedirs(os.path.dirname(out_prefix) or ".", exist_ok=True)
 
+    # LDSC --print-snps expects a single-column file of SNP IDs (no header).
+    # w_hm3.snplist is a 3-column TSV (SNP, A1, A2) which LDSC reads with
+    # pd.read_csv(header=None) using comma separator — every row becomes one
+    # long string that never matches annotation rsIDs.  Extract column 1 to a
+    # temp file so the merge succeeds.
+    print_snps_path = None
+    if hapmap3 and os.path.exists(hapmap3):
+        snp_only = os.path.join(
+            os.path.dirname(out_prefix) or ".", ".print_snps_ids.txt"
+        )
+        with open(hapmap3) as fin, open(snp_only, "w") as fout:
+            for line in fin:
+                snp_id = line.split()[0]
+                if snp_id != "SNP":          # skip header
+                    fout.write(snp_id + "\n")
+        print_snps_path = snp_only
+        logger.info("Extracted %s SNP IDs from %s -> %s",
+                     sum(1 for _ in open(snp_only)), hapmap3, snp_only)
+
     n_processed = 0
     for chrom in chromosomes:
         annot_file = f"{annot_prefix}.{chrom}.annot.gz"
@@ -329,8 +348,8 @@ def run_compute_ld_scores(
             "--out", f"{out_prefix}.{chrom}",
         ]
 
-        if hapmap3 and os.path.exists(hapmap3):
-            cmd.extend(["--print-snps", hapmap3])
+        if print_snps_path:
+            cmd.extend(["--print-snps", print_snps_path])
 
         _run_command(cmd, f"LDSC compute LD scores chr{chrom}")
         n_processed += 1

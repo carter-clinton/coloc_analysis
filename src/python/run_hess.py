@@ -395,19 +395,22 @@ def run_local_rhog(hess_script, python27, bfile, partition,
         logger.info("Filtered partition to chr%s: %d blocks -> %s", chrom_str, len(lines), partition)
 
     # Build command (T-05-18: list args only, no shell=True)
+    # HESS argparse: --local-rhog takes nargs=2 (two sumstats file paths),
+    # --chrom is a separate flag.  Previous version incorrectly passed chrom
+    # as the first positional arg to --local-rhog and used non-existent
+    # --sumstats1/--sumstats2 flags.
     cmd = [
         python27,
         hess_script,
         "--local-rhog",
+        sumstats1,
+        sumstats2,
+        "--chrom",
         str(chrom),
         "--bfile",
         bfile,
         "--partition",
         partition,
-        "--sumstats1",
-        sumstats1,
-        "--sumstats2",
-        sumstats2,
         "--out",
         out,
     ]

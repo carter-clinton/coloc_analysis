@@ -207,17 +207,20 @@ def fix_ldcts_paths(
             tissue_name = parts[0]
             ld_paths = parts[1]
 
-            # Rewrite paths: replace any absolute prefix with annot_dir
+            # Rewrite paths: resolve each path relative to annot_dir (the
+            # directory containing the .ldcts file).  Paths in .ldcts may
+            # include subdirectories (e.g. "Multi_tissue_.../GTEx.1.") which
+            # must be preserved — os.path.basename would strip them.
             fixed_paths = []
             for path_entry in ld_paths.split(","):
                 path_entry = path_entry.strip()
-                # Extract just the filename/relative part
-                basename = os.path.basename(path_entry.rstrip("."))
-                if basename:
-                    fixed_path = os.path.join(annot_dir, basename) + "."
+                if os.path.isabs(path_entry):
+                    fixed_paths.append(path_entry)
+                elif path_entry:
+                    fixed_path = os.path.join(annot_dir, path_entry)
+                    fixed_paths.append(fixed_path)
                 else:
-                    fixed_path = path_entry
-                fixed_paths.append(fixed_path)
+                    fixed_paths.append(path_entry)
 
             fixed_line = f"{tissue_name}\t{','.join(fixed_paths)}"
             fout.write(fixed_line + "\n")
@@ -268,6 +271,15 @@ def run_tissue_enrichment(
     validate_ldcts_file(ldcts_file)
 
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+
+    # T-05-13 / production fix: .ldcts files contain relative paths like
+    # "Multi_tissue_gene_expr_1000Gv3_ldscores/GTEx.1." which are relative to
+    # the .ldcts file's directory.  LDSC resolves them from CWD (project root),
+    # so we rewrite to absolute paths via fix_ldcts_paths before invoking LDSC.
+    ldcts_dir = os.path.dirname(os.path.abspath(ldcts_file))
+    fixed_ldcts = out + ".ldcts_fixed"
+    fix_ldcts_paths(ldcts_file, fixed_ldcts, annot_dir=ldcts_dir)
+    ldcts_file = fixed_ldcts
 
     # CRITICAL: Use --h2-cts (NOT --h2) for tissue-specific analysis
     cmd = [
