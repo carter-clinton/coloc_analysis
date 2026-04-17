@@ -451,19 +451,199 @@ def run_local_rhog(hess_script, python27, bfile, partition,
         out,
     ]
 
-    logger.info("Running HESS local-rhog: %s", " ".join(cmd))
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=True,
+    return _run_hess_subprocess(cmd, "HESS local-rhog", out_for_log=out)
+
+
+def _filter_empty_loci(prefix, filt_prefix, chromosomes=range(1, 23)):
+    """Drop rank-deficient (empty) loci from HESS step1 outputs.
+
+    ``local_hsqg_step2`` computes a matrix A whose rows are per-locus
+    projections and rejects the estimation when ``rank(A) < number_of_loci``
+    (tools/hess/src/estimation.py ``local_hsqg_step2_helper``). A locus with
+    zero SNPs contributes a zero row (both ``.eig.gz`` and ``.prjsq.gz``
+    write an empty line for these loci — see estimation.py:81-82), which
+    guarantees rank deficiency. In practice, several trait-partition
+    combinations produce 1-4 such loci genome-wide when the harmonized
+    sumstats have no SNPs overlapping a HESS partition block.
+
+    This helper reads ``{prefix}_chr{N}.{info,eig,prjsq}.gz`` for each
+    chromosome, drops rows where ``nsnp == 0 OR rank == 0``, and writes
+    filtered copies as ``{filt_prefix}_chr{N}.{info,eig,prjsq}.gz``. The
+    three files are line-indexed, so the same row indices are dropped from
+    each. The filtered prefix is then passed to hess.py as ``--prefix``.
+
+    Parameters
+    ----------
+    prefix : str
+        Original step1 prefix. Reads ``{prefix}_chr{N}.*.gz``.
+    filt_prefix : str
+        Prefix for filtered copies. Writes ``{filt_prefix}_chr{N}.*.gz``.
+    chromosomes : iterable of int, default range(1, 23)
+        Chromosomes to process (autosomes).
+
+    Returns
+    -------
+    dict
+        Per-chromosome counts: ``{chrom: {"total": int, "kept": int, "dropped": int}}``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If any of the three step1 files is missing for a chromosome.
+    ValueError
+        If an info row and the corresponding eig/prjsq line counts disagree.
+    """
+    stats = {}
+    out_dir = os.path.dirname(filt_prefix)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    for chrom in chromosomes:
+        info_src = f"{prefix}_chr{chrom}.info.gz"
+        eig_src = f"{prefix}_chr{chrom}.eig.gz"
+        prjsq_src = f"{prefix}_chr{chrom}.prjsq.gz"
+
+        for src, label in [(info_src, "info"), (eig_src, "eig"), (prjsq_src, "prjsq")]:
+            if not os.path.exists(src):
+                raise FileNotFoundError(
+                    f"HESS step1 {label} file missing for chr{chrom}: {src}"
+                )
+
+        info_dst = f"{filt_prefix}_chr{chrom}.info.gz"
+        eig_dst = f"{filt_prefix}_chr{chrom}.eig.gz"
+        prjsq_dst = f"{filt_prefix}_chr{chrom}.prjsq.gz"
+
+        # Read info rows, decide which row indices to keep
+        with gzip.open(info_src, "rt") as fh:
+            info_lines = fh.readlines()
+
+        keep_mask = []
+        for line in info_lines:
+            parts = line.strip().split()
+            if len(parts) < 5:
+                # Malformed row — drop conservatively so hess.py doesn't NaN later
+                keep_mask.append(False)
+                continue
+            try:
+                nsnp = int(parts[2])
+                rank = int(parts[3])
+            except (ValueError, IndexError):
+                keep_mask.append(False)
+                continue
+            keep_mask.append(not (nsnp == 0 or rank == 0))
+
+        # Read eig/prjsq (one whitespace-delimited line per locus, possibly empty)
+        with gzip.open(eig_src, "rt") as fh:
+            eig_lines = fh.readlines()
+        with gzip.open(prjsq_src, "rt") as fh:
+            prjsq_lines = fh.readlines()
+
+        # HESS writes the same number of lines to all three files (one per locus).
+        # Any disagreement indicates corrupted step1 output.
+        if not (len(info_lines) == len(eig_lines) == len(prjsq_lines)):
+            raise ValueError(
+                f"HESS step1 file lengths disagree for chr{chrom}: "
+                f"info={len(info_lines)} eig={len(eig_lines)} "
+                f"prjsq={len(prjsq_lines)} (prefix={prefix})"
+            )
+
+        total = len(info_lines)
+        kept = sum(1 for k in keep_mask if k)
+        dropped = total - kept
+        stats[chrom] = {"total": total, "kept": kept, "dropped": dropped}
+
+        with gzip.open(info_dst, "wt") as fh_info, \
+             gzip.open(eig_dst, "wt") as fh_eig, \
+             gzip.open(prjsq_dst, "wt") as fh_prjsq:
+            for keep, i_line, e_line, p_line in zip(
+                keep_mask, info_lines, eig_lines, prjsq_lines
+            ):
+                if keep:
+                    fh_info.write(i_line)
+                    fh_eig.write(e_line)
+                    fh_prjsq.write(p_line)
+
+        if dropped:
+            logger.info(
+                "chr%s: filtered %d empty loci (nsnp==0 or rank==0); kept %d/%d",
+                chrom, dropped, kept, total,
+            )
+
+    total_dropped = sum(s["dropped"] for s in stats.values())
+    total_kept = sum(s["kept"] for s in stats.values())
+    logger.info(
+        "Filter summary for prefix %s: kept %d loci, dropped %d empty loci",
+        prefix, total_kept, total_dropped,
     )
+    return stats
+
+
+def _run_hess_subprocess(cmd, description, out_for_log=None):
+    """Invoke HESS (Py2.7) and surface diagnostics on failure.
+
+    Wraps ``subprocess.run(..., check=True)`` so that when hess.py exits
+    non-zero, the caller gets the child's ``stderr``, ``stdout``, AND the
+    hess.py-generated ``{out}.log`` all forwarded to the logger at ERROR
+    level before ``CalledProcessError`` propagates. The Launch11 diagnosis
+    in .planning/debug/t1-launch10-residual-failures.md §2026-04-17T21:14Z
+    showed that the real error (``Rank of A less than the number of loci``)
+    was hidden in the hess.py-authored log file because ``check=True``
+    swallows the child output.
+
+    Parameters
+    ----------
+    cmd : list of str
+        Full argv for ``subprocess.run`` (no shell).
+    description : str
+        Human-friendly description used in log lines.
+    out_for_log : str, optional
+        HESS ``--out`` value. If provided, ``{out_for_log}.log`` is read
+        and forwarded on failure.
+
+    Returns
+    -------
+    subprocess.CompletedProcess
+    """
+    logger.info("Running %s: %s", description, " ".join(cmd))
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        logger.error("%s failed (exit %s).", description, exc.returncode)
+        if exc.stdout:
+            logger.error("%s stdout:\n%s", description, exc.stdout)
+        if exc.stderr:
+            logger.error("%s stderr:\n%s", description, exc.stderr)
+        if out_for_log:
+            log_file = f"{out_for_log}.log"
+            if os.path.exists(log_file):
+                try:
+                    with open(log_file) as fh:
+                        log_contents = fh.read()
+                    logger.error(
+                        "%s hess.py log file (%s):\n%s",
+                        description, log_file, log_contents,
+                    )
+                except OSError as read_exc:
+                    logger.error(
+                        "Could not read hess.py log file %s: %s",
+                        log_file, read_exc,
+                    )
+            else:
+                logger.error(
+                    "%s did not emit a hess.py log file at %s",
+                    description, log_file,
+                )
+        raise
 
     if result.stdout:
-        logger.info("HESS stdout:\n%s", result.stdout)
+        logger.info("%s stdout:\n%s", description, result.stdout)
     if result.stderr:
-        logger.warning("HESS stderr:\n%s", result.stderr)
-
+        logger.warning("%s stderr:\n%s", description, result.stderr)
     return result
 
 
@@ -484,6 +664,15 @@ def run_hsqg_step2(hess_script, python27, prefix, out):
     with ``prefix={pair_prefix}_trait1`` and ``prefix={pair_prefix}_trait2`` to
     produce the two ``{out}.txt`` files that rho-HESS step 2 consumes via
     ``--local-hsqg-est file1 file2`` (nargs=2 at tools/hess/hess.py:176-177).
+
+    Pre-filter: ``local_hsqg_step2`` rejects rank-deficient projection
+    matrices (``Rank of A less than the number of loci``). Empty loci
+    (``nsnp == 0`` in the info row) always produce a zero-row and therefore
+    always rank-deficiency. This function pre-filters the three step1 files
+    (info, eig, prjsq) to drop empty loci before invoking hess.py. Filtered
+    copies are written as ``{prefix}_filt_chr{N}.*.gz`` and HESS is invoked
+    with ``--prefix {prefix}_filt``. See Launch11 regression (debug file
+    §2026-04-17T21:14Z).
 
     Parameters
     ----------
@@ -515,30 +704,23 @@ def run_hsqg_step2(hess_script, python27, prefix, out):
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
+    # Pre-filter empty loci (nsnp==0 or rank==0). Write filtered copies
+    # alongside the originals so Snakemake's existing .done sentinel still
+    # covers the originating step1 work. HESS reads filtered files only.
+    filt_prefix = f"{prefix}_filt"
+    _filter_empty_loci(prefix, filt_prefix)
+
     # Dispatch to local_hsqg_step2: prefix + out, no rho-HESS flags
     cmd = [
         python27,
         hess_script,
         "--prefix",
-        prefix,
+        filt_prefix,
         "--out",
         out,
     ]
 
-    logger.info("Running HESS local_hsqg_step2: %s", " ".join(cmd))
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    if result.stdout:
-        logger.info("HESS local_hsqg_step2 stdout:\n%s", result.stdout)
-    if result.stderr:
-        logger.warning("HESS local_hsqg_step2 stderr:\n%s", result.stderr)
-
-    return result
+    return _run_hess_subprocess(cmd, "HESS local_hsqg_step2", out_for_log=out)
 
 
 def run_combine(hess_script, python27, prefix, out,
@@ -611,24 +793,12 @@ def run_combine(hess_script, python27, prefix, out,
             "--num-shared", str(num_shared),
             "--local-hsqg-est", local_hsqg_est1, local_hsqg_est2,
         ]
-        logger.info("Running HESS local_rhog_step2: %s", " ".join(cmd))
+        description = "HESS local_rhog_step2"
     else:
         # Legacy / single-trait heritability path: retain backwards compat
-        logger.info("Running HESS local_hsqg_step2 (legacy path): %s", " ".join(cmd))
+        description = "HESS local_hsqg_step2 (legacy path)"
 
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    if result.stdout:
-        logger.info("HESS combine stdout:\n%s", result.stdout)
-    if result.stderr:
-        logger.warning("HESS combine stderr:\n%s", result.stderr)
-
-    return result
+    return _run_hess_subprocess(cmd, description, out_for_log=out)
 
 
 def compare_pleiotropic_vs_background(combined_path, regions_path):
