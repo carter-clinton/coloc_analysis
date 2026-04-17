@@ -786,7 +786,7 @@ rule ldsc_partitioned_h2:
         script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_partitioned.py"),
         ldsc_dir="tools/ldsc",
         baseline_prefix=os.path.join(
-            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
+            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc"), "baselineLD."
         ),
         custom_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway."),
         w_ld_chr=os.path.join(
@@ -896,7 +896,7 @@ rule ldsc_seg_gene_expr:
         script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_seg.py"),
         ldsc_dir="tools/ldsc",
         ref_ld_chr=os.path.join(
-            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
+            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc"), "baselineLD."
         ),
         w_ld_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
@@ -942,7 +942,7 @@ rule ldsc_seg_chromatin:
         script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_seg.py"),
         ldsc_dir="tools/ldsc",
         ref_ld_chr=os.path.join(
-            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc/baselineLD_v2.2"), "baselineLD."
+            PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc"), "baselineLD."
         ),
         w_ld_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
@@ -1222,6 +1222,8 @@ rule hess_local_rhog:
             --sumstats2 {input.sumstats2} \
             --chrom {params.chrom} \
             --out {params.out_prefix}
+        mkdir -p $(dirname {output.done})
+        touch {output.done}
         """
 
 
@@ -1734,7 +1736,7 @@ rule permutation_null_genesets:
         n_perm=PATHWAY_CFG.get("permutation_n", 1000),
         seed=42,
         maf_ref=PATHWAY_CFG.get("maf_reference", "data/reference/ldsc/1000G_Phase3_frq"),
-        ld_ref=PATHWAY_CFG.get("ld_score_reference", "data/reference/ldsc/baselineLD_v2.2"),
+        ld_ref=PATHWAY_CFG.get("ld_score_reference", "data/reference/ldsc"),
     conda:
         MAGMA_ENV
     resources:

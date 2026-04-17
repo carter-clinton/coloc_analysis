@@ -234,7 +234,7 @@ class TestLdscPartitioned:
         from run_ldsc_partitioned import build_ref_ld_chr_arg
 
         result = build_ref_ld_chr_arg(
-            baseline_prefix="data/reference/ldsc/baselineLD_v2.2/baselineLD.",
+            baseline_prefix="data/reference/ldsc/baselineLD.",
             custom_prefix="results/pathway/ld_scores/custom_pathway.",
         )
 
