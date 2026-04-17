@@ -367,6 +367,10 @@ if (nrow(subset) == 0) {
     variant_catalog_fallback = variant_catalog_fallback
   )
   write(toJSON(result, auto_unbox = TRUE, pretty = TRUE), file = opt$output)
+  # Write placeholder .fit.rds so Snakemake's dual-output rule doesn't raise
+  # MissingOutputException for regions with no variants.
+  fit_rds_path <- sub("\\.json$", ".fit.rds", opt$output)
+  saveRDS(list(status = "no_variants", region = opt$region), file = fit_rds_path)
   quit(status = 0)
 }
 
@@ -395,6 +399,13 @@ if (nrow(subset) > SUSIE_MAX_VARIANTS) {
     variant_catalog_fallback = variant_catalog_fallback
   )
   write(toJSON(result, auto_unbox = TRUE, pretty = TRUE), file = opt$output)
+  # Write placeholder .fit.rds so Snakemake's dual-output rule doesn't raise
+  # MissingOutputException for skipped dense regions (PYHIN1, HLA, etc.)
+  fit_rds_path <- sub("\\.json$", ".fit.rds", opt$output)
+  saveRDS(list(status = "too_many_variants",
+               region = opt$region,
+               n_variants = nrow(subset),
+               limit = SUSIE_MAX_VARIANTS), file = fit_rds_path)
   quit(status = 0)
 }
 

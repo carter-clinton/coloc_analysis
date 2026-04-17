@@ -214,6 +214,9 @@ pathway:
   # HESS (Shi 2017) -- local heritability and cross-trait genetic correlation
   hess_ld_panel: "data/reference/hess/ld_panel"
   hess_partition: "data/reference/hess/partition"
+  # Ancestries with staged LD panels for HESS. AFR panel not yet built
+  # (requires 1kG AFR vcf→plink conversion). EUR-only for now.
+  hess_ancestries: ["EUR"]
 
   # MSigDB gene sets (Subramanian 2005) -- downloaded via msigdbr R package
   msigdb_dir: "data/reference/msigdb"
