@@ -163,7 +163,7 @@ Plans:
 **Status 2026-04-15:** Interim CP#1 issued at `.planning/checkpoints/T1_review.md` — code-complete conditional-go. T2 research + planning authorized in parallel with T1 first-production LSF launch. CP#1-final pending on first-production completion.
 
 ### Phase 3: Mendelian randomization
-**Goal**: Establish causal direction between trait pairs via bidirectional MR with robust weak-instrument mitigation for non-EUR ancestries.
+**Goal**: Establish causal direction between all 10 unique trait pairs via bidirectional MR (20 directed tests) with robust weak-instrument mitigation for non-EUR ancestries, plus 3 MVMR mediation triangles.
 **Depends on**: CP#1 (go verdict)
 **Requirements**: REQ-4
 **Tier**: T2 (gated)
@@ -173,9 +173,16 @@ Plans:
   3. MR-RAPS implemented for AFR and EAS with explicit ancestry-specific vs. trans-ancestry choice
   4. Weak-instrument diagnostic table (F-stat, I-squared, Q-stat) produced per ancestry per trait pair
   5. Bidirectional causal graph assembled
-**Plans**: TBD
+**Plans**: 5 plans
 
-Seeds: src/legacy/region_analysis/scripts/create_mr_design.py, src/legacy/region_analysis/workflow/rules/mr.smk
+Plans:
+- [ ] 03-01-PLAN.md — Infrastructure: config expansion (20 bidirectional + 3 MVMR), envs/r_mr.yml, manifest builder update, test scaffolding
+- [ ] 03-02-PLAN.md — Instrument extraction: SuSiE CS lead SNPs + FIQT merge + allele recovery + complex-region flags + F-stat/I^2/Q-stat diagnostics
+- [ ] 03-03-PLAN.md — Bidirectional MR: 5 methods (IVW, Egger, median, PRESSO, RAPS) + CAUSE genome-wide + Steiger flagging + diagnostic plots
+- [ ] 03-04-PLAN.md — MVMR triangles (3 mediation paths) + trans-ancestry meta-MR (metafor FE + TEMR sensitivity)
+- [ ] 03-05-PLAN.md — Aggregation: majority rule (3+/5) + Bonferroni + evidence matrix + causal graph (Figure 5) + methods fragment
+
+Seeds: src/legacy/region_analysis/scripts/create_mr_design.py, src/snakemake/rules/mr.smk
 
 ### Phase 4: Matched-N cross-ancestry concordance
 **Goal**: Replace broken Table 2 with power-corrected cross-ancestry concordance using matched-N bootstrap.
@@ -290,7 +297,7 @@ M: 11 (parallel from Phase 9)
 | 2. 3-way QTL colocalization | 0/5 | Planning complete | - |
 | 5. Pathway + partitioned h2 | 0/TBD | Not started | - |
 | 9. Replication | 0/TBD | Not started | - |
-| 3. Mendelian randomization | - | Gated (T2) | - |
+| 3. Mendelian randomization | 0/5 | Planning complete | - |
 | 4. Matched-N concordance | - | Gated (T2) | - |
 | 8. Cross-ancestry PRS | - | Gated (T2) | - |
 | 6. Selection scans | - | Gated (T3) | - |
