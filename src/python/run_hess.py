@@ -280,8 +280,8 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
                 stats["n_remapped"] += 1
 
             if has_alleles:
-                a1 = row["ALT"]   # Effect allele
-                a2 = row["REF"]   # Other allele
+                a1 = row["ALT"].upper()   # Effect allele (HESS requires uppercase: KeyError on 'ag' etc.)
+                a2 = row["REF"].upper()   # Other allele
             else:
                 a1 = "A"  # Dummy allele; HESS uses Z and N, not alleles
                 a2 = "G"
