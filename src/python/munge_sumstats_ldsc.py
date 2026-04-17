@@ -36,8 +36,9 @@ from sumstats_utils import TRAIT_TYPE, get_effective_n
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-# Required columns in harmonized input
-REQUIRED_INPUT_COLS = {"SNP", "REF", "ALT", "BETA", "SE", "P", "N"}
+# Required columns in harmonized input (REF/ALT optional — some sumstats
+# like Yengo 2018 bmi.EUR lack alleles; LDSC merge-alleles reconciles via SNP ID)
+REQUIRED_INPUT_COLS = {"SNP", "BETA", "SE", "P", "N"}
 
 # LDSC output column order
 LDSC_COLS = ["SNP", "A1", "A2", "N", "P", "BETA", "SE"]
@@ -136,8 +137,14 @@ def convert_sumstats(
                     continue
 
                 snp = fields[col_idx["SNP"]]
-                a1 = fields[col_idx["ALT"]]  # Effect allele -> A1
-                a2 = fields[col_idx["REF"]]  # Other allele -> A2
+                # REF/ALT optional — use dummy alleles when absent (LDSC
+                # merge-alleles reconciles via SNP ID from w_hm3.snplist)
+                if "ALT" in col_idx and "REF" in col_idx:
+                    a1 = fields[col_idx["ALT"]]  # Effect allele -> A1
+                    a2 = fields[col_idx["REF"]]  # Other allele -> A2
+                else:
+                    a1 = "A"
+                    a2 = "T"
                 beta = fields[col_idx["BETA"]]
                 se = fields[col_idx["SE"]]
                 p = fields[col_idx["P"]]
