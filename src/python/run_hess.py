@@ -169,7 +169,8 @@ def validate_hess_panel_build(bfile_prefix):
 
 
 def harmonized_to_hess(input_path, output_path, sample_size=None,
-                       trait=None, n_case=None, n_ctrl=None):
+                       trait=None, n_case=None, n_ctrl=None,
+                       bim_prefix=None):
     """Convert project harmonized sumstats to HESS-compatible format.
 
     HESS requires columns: SNP, CHR, BP, A1, A2, Z, N
@@ -239,10 +240,26 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
             input_path,
         )
 
-    stats = {"n_snps": 0, "n_dropped_nan_z": 0, "n_dropped_invalid_n": 0}
+    stats = {"n_snps": 0, "n_dropped_nan_z": 0, "n_dropped_invalid_n": 0,
+             "n_remapped": 0, "n_no_rsid": 0}
     output_dir = os.path.dirname(output_path)
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
+
+    # Build chr:pos→rsID lookup if needed (detect from first SNP)
+    chrpos_lookup = None
+    if bim_prefix:
+        with _open_sumstats(input_path) as peek_fh:
+            peek_reader = csv.DictReader(peek_fh, delimiter="\t")
+            for peek_row in peek_reader:
+                peek_snp = peek_row.get(snp_col, "")
+                if peek_snp and ":" in peek_snp:
+                    parts = peek_snp.split(":")
+                    if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                        from munge_sumstats_ldsc import _build_chrpos_to_rsid
+                        logger.info("Detected chr:pos SNP IDs in HESS input. Building rsID lookup.")
+                        chrpos_lookup = _build_chrpos_to_rsid(bim_prefix)
+                break
 
     with _open_sumstats(input_path) as fin, open(output_path, "w") as fout:
         reader = csv.DictReader(fin, delimiter="\t")
@@ -252,6 +269,16 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
             snp = row[snp_col]
             chrom = row["CHR"]
             bp = row[pos_col]
+
+            # Remap chr:pos → rsID if lookup available
+            if chrpos_lookup is not None:
+                rsid = chrpos_lookup.get(snp)
+                if rsid is None:
+                    stats["n_no_rsid"] += 1
+                    continue
+                snp = rsid
+                stats["n_remapped"] += 1
+
             if has_alleles:
                 a1 = row["ALT"]   # Effect allele
                 a2 = row["REF"]   # Other allele
