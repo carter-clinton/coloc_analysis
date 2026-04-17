@@ -172,7 +172,7 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
                        trait=None, n_case=None, n_ctrl=None):
     """Convert project harmonized sumstats to HESS-compatible format.
 
-    HESS requires columns: SNP, A1, A2, Z, N
+    HESS requires columns: SNP, CHR, BP, A1, A2, Z, N
     Z is computed as BETA/SE.
 
     Parameters
@@ -202,7 +202,8 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
         If required columns are missing or all Z-scores are NaN.
     """
     # Core columns always required; REF/ALT optional (some sumstats lack alleles)
-    core_required = {"SNP", "BETA", "SE", "N"}
+    # HESS needs CHR and BP (= POS) in addition to Z-score columns.
+    core_required = {"SNP", "BETA", "SE", "N", "CHR", "POS"}
 
     # Read header to validate columns (handle .bgz/.gz transparently -- WR-08)
     with _open_sumstats(input_path) as f:
@@ -214,6 +215,12 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
     if "SNP" not in input_cols and "SNP_ID" in input_cols:
         snp_col = "SNP_ID"
         input_cols.add("SNP")  # satisfy the core_required check
+
+    # Accept BP as alias for POS
+    pos_col = "POS"
+    if "POS" not in input_cols and "BP" in input_cols:
+        pos_col = "BP"
+        input_cols.add("POS")  # satisfy the core_required check
 
     missing = core_required - input_cols
     if missing:
@@ -239,10 +246,12 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
 
     with _open_sumstats(input_path) as fin, open(output_path, "w") as fout:
         reader = csv.DictReader(fin, delimiter="\t")
-        fout.write("SNP\tA1\tA2\tZ\tN\n")
+        fout.write("SNP\tCHR\tBP\tA1\tA2\tZ\tN\n")
 
         for row in reader:
             snp = row[snp_col]
+            chrom = row["CHR"]
+            bp = row[pos_col]
             if has_alleles:
                 a1 = row["ALT"]   # Effect allele
                 a2 = row["REF"]   # Other allele
@@ -293,7 +302,7 @@ def harmonized_to_hess(input_path, output_path, sample_size=None,
                 continue
 
             n_int = int(round(n))
-            fout.write(f"{snp}\t{a1}\t{a2}\t{z:.6f}\t{n_int}\n")
+            fout.write(f"{snp}\t{chrom}\t{bp}\t{a1}\t{a2}\t{z:.6f}\t{n_int}\n")
             stats["n_snps"] += 1
 
     if stats["n_snps"] == 0:
