@@ -790,7 +790,7 @@ rule ldsc_partitioned_h2:
         ),
         custom_prefix=os.path.join(PATHWAY_RESULTS_DIR, "ldsc_partitioned", "ld_scores", "custom_pathway."),
         w_ld_chr=os.path.join(
-            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
+            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/1000G_Phase3_weights_hm3_no_MHC"), "weights.hm3_noMHC."
         ),
         frqfile_chr=os.path.join(
             PATHWAY_CFG.get("ldsc_frq", "data/reference/ldsc/1000G_Phase3_frq"), "1000G.EUR.QC."
@@ -899,7 +899,7 @@ rule ldsc_seg_gene_expr:
             PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc"), "baselineLD."
         ),
         w_ld_chr=os.path.join(
-            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
+            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/1000G_Phase3_weights_hm3_no_MHC"), "weights.hm3_noMHC."
         ),
         ldcts=PATHWAY_CFG.get(
             "ldsc_seg_gene_expr_ldcts",
@@ -945,7 +945,7 @@ rule ldsc_seg_chromatin:
             PATHWAY_CFG.get("ldsc_baseline", "data/reference/ldsc"), "baselineLD."
         ),
         w_ld_chr=os.path.join(
-            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/weights_hm3_no_hla"), "weights."
+            PATHWAY_CFG.get("ldsc_weights", "data/reference/ldsc/1000G_Phase3_weights_hm3_no_MHC"), "weights.hm3_noMHC."
         ),
         ldcts=PATHWAY_CFG.get(
             "ldsc_seg_chromatin_ldcts",
