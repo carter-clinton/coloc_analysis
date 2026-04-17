@@ -467,8 +467,92 @@ def run_local_rhog(hess_script, python27, bfile, partition,
     return result
 
 
-def run_combine(hess_script, python27, prefix, out):
-    """Combine per-chromosome rho-HESS results.
+def run_hsqg_step2(hess_script, python27, prefix, out):
+    """Run HESS local SNP-heritability step 2 for a single trait.
+
+    HESS dispatcher (tools/hess/hess.py:73-76) selects ``local_hsqg_step2`` when
+    ``--prefix`` and ``--out`` are provided and all three rho-HESS flags
+    (``--pheno-cor``, ``--num-shared``, ``--local-hsqg-est``) are absent. Reads
+    ``{prefix}_chr{N}.{info,eig,prjsq}.gz`` for chromosomes 1-22 and writes
+    ``{out}.txt`` (columns: chr, start, end, num_snp, k, local_h2g, var, se,
+    z, p).
+
+    This step is required because rho-HESS step 2 needs per-trait local
+    heritability estimates as ``--local-hsqg-est`` inputs (tools/hess/hess.py:84-87).
+    rho-HESS step 1 already writes per-trait files as
+    ``{pair_prefix}_trait{1,2}_chr{N}.{info,eig,prjsq}.gz``, so we invoke this
+    with ``prefix={pair_prefix}_trait1`` and ``prefix={pair_prefix}_trait2`` to
+    produce the two ``{out}.txt`` files that rho-HESS step 2 consumes via
+    ``--local-hsqg-est file1 file2`` (nargs=2 at tools/hess/hess.py:176-177).
+
+    Parameters
+    ----------
+    hess_script : str
+        Path to hess.py script.
+    python27 : str
+        Path to Python 2.7 interpreter in hess_py27 conda env.
+    prefix : str
+        Prefix for per-chromosome step1 outputs. Must resolve
+        ``{prefix}_chr{N}.{info,eig,prjsq}.gz`` for N in 1..22.
+    out : str
+        Output prefix. Writes ``{out}.txt``.
+
+    Returns
+    -------
+    subprocess.CompletedProcess
+
+    Raises
+    ------
+    FileNotFoundError
+        If python27 or hess_script is missing.
+    subprocess.CalledProcessError
+        If HESS exits non-zero.
+    """
+    python27 = _validate_path(python27, "Python 2.7 interpreter")
+    hess_script = _validate_path(hess_script, "HESS script")
+
+    out_dir = os.path.dirname(out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    # Dispatch to local_hsqg_step2: prefix + out, no rho-HESS flags
+    cmd = [
+        python27,
+        hess_script,
+        "--prefix",
+        prefix,
+        "--out",
+        out,
+    ]
+
+    logger.info("Running HESS local_hsqg_step2: %s", " ".join(cmd))
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    if result.stdout:
+        logger.info("HESS local_hsqg_step2 stdout:\n%s", result.stdout)
+    if result.stderr:
+        logger.warning("HESS local_hsqg_step2 stderr:\n%s", result.stderr)
+
+    return result
+
+
+def run_combine(hess_script, python27, prefix, out,
+                local_hsqg_est1=None, local_hsqg_est2=None,
+                pheno_cor=0.0, num_shared=0):
+    """Combine per-chromosome rho-HESS results (local_rhog_step2).
+
+    HESS dispatcher (tools/hess/hess.py:83-87) selects ``local_rhog_step2``
+    only when ``--pheno-cor``, ``--num-shared``, AND ``--local-hsqg-est`` are
+    ALL provided. Previous implementation passed only ``--prefix``/``--out``,
+    which routed to ``local_hsqg_step2`` (single-trait heritability), which
+    then failed with "Missing step 1 results" because rho-HESS step 1 writes
+    trait-specific files as ``{prefix}_trait{1,2}_chr{N}.info.gz``, not
+    ``{prefix}_chr{N}.info.gz``.
 
     Parameters
     ----------
@@ -477,9 +561,26 @@ def run_combine(hess_script, python27, prefix, out):
     python27 : str
         Path to Python 2.7 interpreter.
     prefix : str
-        Prefix for per-chromosome results (e.g., results/pathway/hess/bmi_t2d_EUR).
+        Prefix for per-chromosome rho-HESS step 1 results
+        (e.g., ``results/pathway/hess/bmi_t2d_EUR``). HESS step 2 reads
+        ``{prefix}_trait{1,2}_chr{N}.*.gz`` and ``{prefix}_chr{N}.{eig,prjprod}.gz``.
     out : str
-        Output prefix for combined results.
+        Output prefix for combined results. HESS writes ``{out}.txt``.
+    local_hsqg_est1 : str, optional
+        Path to trait1 local heritability estimates (``{out}.txt`` from
+        ``run_hsqg_step2`` with prefix=``{prefix}_trait1``). Required for
+        rho-HESS dispatch; without it HESS routes to single-trait step 2.
+    local_hsqg_est2 : str, optional
+        Path to trait2 local heritability estimates. Required for rho-HESS dispatch.
+    pheno_cor : float, default 0.0
+        Phenotype correlation between traits. 0.0 is valid when there is no
+        sample overlap (``num_shared == 0``), which holds for independent
+        cohorts (public sumstats from non-overlapping studies).
+    num_shared : int, default 0
+        Number of shared samples between the two GWAS cohorts. Setting this
+        to 0 tells HESS to skip sample-overlap bias correction (see
+        tools/hess/src/estimation.py:482-484 and 518: ``rhoe = 0.0 when
+        num_shared == 0``).
 
     Returns
     -------
@@ -501,7 +602,20 @@ def run_combine(hess_script, python27, prefix, out):
         out,
     ]
 
-    logger.info("Running HESS combine: %s", " ".join(cmd))
+    if local_hsqg_est1 is not None and local_hsqg_est2 is not None:
+        # Rho-HESS step 2 dispatch: --local-hsqg-est takes nargs=2 (one file per trait)
+        local_hsqg_est1 = _validate_path(local_hsqg_est1, "Local hsqg estimates (trait 1)")
+        local_hsqg_est2 = _validate_path(local_hsqg_est2, "Local hsqg estimates (trait 2)")
+        cmd += [
+            "--pheno-cor", str(pheno_cor),
+            "--num-shared", str(num_shared),
+            "--local-hsqg-est", local_hsqg_est1, local_hsqg_est2,
+        ]
+        logger.info("Running HESS local_rhog_step2: %s", " ".join(cmd))
+    else:
+        # Legacy / single-trait heritability path: retain backwards compat
+        logger.info("Running HESS local_hsqg_step2 (legacy path): %s", " ".join(cmd))
+
     result = subprocess.run(
         cmd,
         capture_output=True,
@@ -754,8 +868,8 @@ def main():
     parser.add_argument(
         "--step",
         required=True,
-        choices=["local-rhog", "combine", "compare"],
-        help="Execution step: local-rhog, combine, or compare",
+        choices=["local-rhog", "hsqg-step2", "combine", "compare"],
+        help="Execution step: local-rhog, hsqg-step2, combine, or compare",
     )
 
     # local-rhog args
@@ -773,6 +887,30 @@ def main():
 
     # combine args
     parser.add_argument("--prefix", help="Prefix for per-chromosome results")
+    parser.add_argument(
+        "--local-hsqg-est1",
+        help=(
+            "Path to trait 1 local heritability estimates "
+            "({out}.txt from --step hsqg-step2). When supplied with "
+            "--local-hsqg-est2, the combine step dispatches rho-HESS step 2."
+        ),
+    )
+    parser.add_argument(
+        "--local-hsqg-est2",
+        help="Path to trait 2 local heritability estimates (see --local-hsqg-est1).",
+    )
+    parser.add_argument(
+        "--pheno-cor",
+        type=float,
+        default=0.0,
+        help="Phenotype correlation between the two traits (default 0.0).",
+    )
+    parser.add_argument(
+        "--num-shared",
+        type=int,
+        default=0,
+        help="Number of shared samples between the two GWAS cohorts (default 0 = no overlap).",
+    )
 
     # compare args
     parser.add_argument("--combined-results", help="Combined rho-HESS output")
@@ -798,6 +936,20 @@ def main():
             out=args.out,
         )
 
+    elif args.step == "hsqg-step2":
+        for required in ["hess_script", "python27", "prefix", "out"]:
+            if getattr(args, required) is None:
+                parser.error(
+                    f"--{required.replace('_', '-')} required for --step hsqg-step2"
+                )
+
+        run_hsqg_step2(
+            hess_script=args.hess_script,
+            python27=args.python27,
+            prefix=args.prefix,
+            out=args.out,
+        )
+
     elif args.step == "combine":
         for required in ["hess_script", "python27", "prefix", "out"]:
             if getattr(args, required) is None:
@@ -808,6 +960,10 @@ def main():
             python27=args.python27,
             prefix=args.prefix,
             out=args.out,
+            local_hsqg_est1=args.local_hsqg_est1,
+            local_hsqg_est2=args.local_hsqg_est2,
+            pheno_cor=args.pheno_cor,
+            num_shared=args.num_shared,
         )
 
     elif args.step == "compare":

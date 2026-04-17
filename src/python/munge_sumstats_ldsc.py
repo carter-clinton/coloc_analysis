@@ -211,13 +211,17 @@ def convert_sumstats(
 
                 snp = fields[col_idx["SNP"]]
                 # REF/ALT optional — use dummy alleles when absent (LDSC
-                # merge-alleles reconciles via SNP ID from w_hm3.snplist)
+                # merge-alleles reconciles via SNP ID from w_hm3.snplist).
+                # A/G chosen (not A/T) because A/T is strand-ambiguous and
+                # LDSC filter_alleles() drops all strand-ambiguous variants,
+                # which would silently zero out the output. A/G matches the
+                # run_hess.py dummy-allele convention.
                 if "ALT" in col_idx and "REF" in col_idx:
                     a1 = fields[col_idx["ALT"]]  # Effect allele -> A1
                     a2 = fields[col_idx["REF"]]  # Other allele -> A2
                 else:
                     a1 = "A"
-                    a2 = "T"
+                    a2 = "G"
                 beta = fields[col_idx["BETA"]]
                 se = fields[col_idx["SE"]]
                 p = fields[col_idx["P"]]

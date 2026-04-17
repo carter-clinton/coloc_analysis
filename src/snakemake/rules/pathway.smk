@@ -1230,10 +1230,25 @@ rule hess_local_rhog:
         """
 
 
-rule hess_combine:
-    """Combine per-chromosome rho-HESS results for a trait pair x ancestry.
+rule hess_hsqg_step2:
+    """Per-trait local SNP-heritability step 2 for one trait within a pair.
 
-    Input: all 22 chromosome results. Output: combined local covariance file.
+    rho-HESS step 2 (hess_combine) requires per-trait local h2 estimates via
+    HESS's ``--local-hsqg-est`` flag (two files, nargs=2 at
+    tools/hess/hess.py:176-177). rho-HESS step 1 (hess_local_rhog) already
+    writes per-trait step 1 outputs as
+    ``{pair_prefix}_trait{1,2}_chr{N}.{info,eig,prjsq}.gz`` — those are the
+    exact input format HESS's ``local_hsqg_step2`` expects when given
+    ``--prefix {pair_prefix}_trait{1,2}``.
+
+    We therefore run this rule once per (pair, trait_slot) rather than once
+    per trait globally: each trait's local h2 is re-estimated within the
+    SNP intersection used by its own pair's step 1. This produces 14 jobs
+    (7 EUR pairs x 2 traits) per Launch with zero additional step 1 work.
+
+    Output ``{pair_prefix}_{trait_slot}.local.tsv`` (the HESS script writes
+    ``{out}.txt`` — we declare a .tsv-suffixed output that the rule copies to,
+    so Snakemake tracks a stable output path.)
     """
     input:
         chr_results=expand(
@@ -1244,6 +1259,80 @@ rule hess_combine:
                 ".done",
             ),
             chrom=CHROMOSOMES,
+        ),
+    output:
+        hsqg_tsv=os.path.join(
+            PATHWAY_RESULTS_DIR,
+            "hess",
+            "hsqg",
+            "{trait1}_{trait2}_{ancestry}_{trait_slot}.local.tsv",
+        ),
+    params:
+        script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
+        hess_script="tools/hess/hess.py",
+        python27=HESS_PY27_BIN,
+        prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR,
+            "hess",
+            f"{wc.trait1}_{wc.trait2}_{wc.ancestry}_{wc.trait_slot}",
+        ),
+        out_prefix=lambda wc: os.path.join(
+            PATHWAY_RESULTS_DIR,
+            "hess",
+            "hsqg",
+            f"{wc.trait1}_{wc.trait2}_{wc.ancestry}_{wc.trait_slot}.local",
+        ),
+    wildcard_constraints:
+        trait_slot="trait[12]",
+    conda:
+        MAGMA_ENV
+    resources:
+        mem_mb=4000,
+        runtime=30,
+    shell:
+        """
+        mkdir -p $(dirname {output.hsqg_tsv})
+        python {params.script} --step hsqg-step2 \
+            --hess-script {params.hess_script} \
+            --python27 {params.python27} \
+            --prefix {params.prefix} \
+            --out {params.out_prefix}
+        # HESS writes {{out}}.txt; rename to the Snakemake-declared .tsv path
+        mv {params.out_prefix}.txt {output.hsqg_tsv}
+        """
+
+
+rule hess_combine:
+    """Combine per-chromosome rho-HESS results for a trait pair x ancestry.
+
+    Dispatches HESS's ``local_rhog_step2`` via the full argument set required
+    at tools/hess/hess.py:83-87 (``--pheno-cor``, ``--num-shared``, AND
+    ``--local-hsqg-est`` all non-None). The two per-trait hsqg inputs come
+    from the sibling hess_hsqg_step2 rule. ``--pheno-cor 0 --num-shared 0``
+    is correct for non-overlapping public GWAS cohorts (the default coloc_analysis
+    trait ancestry design — see sample_overlap documentation in .planning/DECISIONS.md).
+    """
+    input:
+        chr_results=expand(
+            os.path.join(
+                PATHWAY_RESULTS_DIR,
+                "hess",
+                "{{trait1}}_{{trait2}}_{{ancestry}}_chr{chrom}",
+                ".done",
+            ),
+            chrom=CHROMOSOMES,
+        ),
+        hsqg_trait1=os.path.join(
+            PATHWAY_RESULTS_DIR,
+            "hess",
+            "hsqg",
+            "{trait1}_{trait2}_{ancestry}_trait1.local.tsv",
+        ),
+        hsqg_trait2=os.path.join(
+            PATHWAY_RESULTS_DIR,
+            "hess",
+            "hsqg",
+            "{trait1}_{trait2}_{ancestry}_trait2.local.tsv",
         ),
     output:
         combined=os.path.join(
@@ -1275,7 +1364,11 @@ rule hess_combine:
             --hess-script {params.hess_script} \
             --python27 {params.python27} \
             --prefix {params.prefix} \
-            --out {params.out_prefix}
+            --out {params.out_prefix} \
+            --local-hsqg-est1 {input.hsqg_trait1} \
+            --local-hsqg-est2 {input.hsqg_trait2} \
+            --pheno-cor 0 \
+            --num-shared 0
         """
 
 

@@ -119,7 +119,12 @@ def mock_bim_grch37(tmp_path):
 
 
 def test_harmonized_to_hess_columns(mock_harmonized_sumstats, tmp_path):
-    """Verify HESS output has exactly columns SNP, A1, A2, Z, N."""
+    """Verify HESS output has columns SNP, CHR, BP, A1, A2, Z, N.
+
+    HESS-format sumstats include CHR+BP (commit 5c0548b: Bug 4 — HESS
+    requires 7 cols, we previously output 5). The wrapper at
+    src/python/run_hess.py:266 writes this header.
+    """
     out_path = tmp_path / "hess_format.tsv"
     harmonized_to_hess(
         input_path=str(mock_harmonized_sumstats),
@@ -129,8 +134,8 @@ def test_harmonized_to_hess_columns(mock_harmonized_sumstats, tmp_path):
     with open(out_path) as f:
         header = f.readline().strip().split("\t")
 
-    assert header == ["SNP", "A1", "A2", "Z", "N"], (
-        f"Expected ['SNP', 'A1', 'A2', 'Z', 'N'], got {header}"
+    assert header == ["SNP", "CHR", "BP", "A1", "A2", "Z", "N"], (
+        f"Expected ['SNP', 'CHR', 'BP', 'A1', 'A2', 'Z', 'N'], got {header}"
     )
 
 
