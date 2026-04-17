@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-04-16T03:27:56.336Z"
+stopped_at: Phase 3 context gathered
+last_updated: "2026-04-17T03:25:37.351Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 12
@@ -213,10 +213,47 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T03:27:56.331Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-04-17T03:25:37.321Z
+Stopped at: Phase 3 context gathered
 
-### This session (2026-04-15 PM)
+### This session (2026-04-16 PM) — T1 Production Bug-Fix Sprint
+
+**9 pipeline bugs diagnosed and fixed** across 5 commits + 3 in-place tool patches:
+
+| # | Bug | Root Cause | Fix | Commit |
+|---|-----|-----------|-----|--------|
+| 1 | LDSC custom LD scores (22 failures) | `w_hm3.snplist` 3-col TSV, LDSC reads with comma sep | Extract 1-col SNP file | `04ea1cc` |
+| 2 | HESS `--local-rhog` arg order | nargs=2 expects FILES, not chrom | `--local-rhog F1 F2 --chrom N` | `04ea1cc` |
+| 3 | LDSC-SEG `.ldcts` path | Rule joined nonexistent subdir | Direct path + preserve subdirs in rewriter | `04ea1cc` |
+| 4 | HESS sumstats missing CHR+BP | HESS requires 7 cols, we output 5 | Add CHR+BP from input | `5c0548b` |
+| 5 | LDSC munge bmi.EUR no REF/ALT | Yengo 2018 lacks allele columns | Make REF/ALT optional, dummy alleles | `072de08` |
+| 6 | LDSC munge chr:pos SNP IDs | 5 traits use chr:pos, not rsIDs | Build chr:pos→rsID lookup from 1kG bim (10M entries) | `bd789c1` |
+| 7 | Dense-region SuSiE MissingOutput | R script skips but doesn't write .fit.rds | Write placeholder .fit.rds for skipped regions | `4efb9f8` |
+| 8 | g:Profiler no HTTPS on compute | Compute nodes lack outbound internet | Switch to R gprofiler2 fallback (`--use-r`) + fix conda env | `4efb9f8` |
+| 9 | HESS AFR no LD panel | AFR plink bfiles not staged | Scope HESS to EUR-only via `hess_ancestries` config | `4efb9f8` |
+
+Plus 3 in-place patches to `tools/ldsc/ldsc.py` (Py3 compat):
+
+- `"wb"` → `"w"` for `.M` and `.M_5_50` file writes
+- `traceback.format_exc(ex)` → `traceback.format_exc()`
+- `sumstats.cell_type_specific` → `sumstats.estimate_cell_type_specific_heritability`
+
+**Relaunch7 results** (27 completions from relaunch6 + 19 from relaunch7):
+
+- MAGMA: 8/8 COMPLETE (all trait×ancestry through FDR)
+- SuSiE: 93/96 JSON + 96 .fit.rds (3 dense-region still running)
+- LDSC custom LD scores: 18/22 chroms (chr 1-4 failed before in-place fix)
+- LDSC munge: 2/8 (asthma_AFR + asthma_EUR; others blocked by chr:pos or REF/ALT)
+
+**Relaunch8 launched** (PID 3962749, `logs/t1_production_relaunch8.log`):
+
+- 394 jobs targeting `all_pathway`
+- HESS: 220 EUR-only (was 286)
+- LDSC: 5 LD score chroms + 8 munge (rsID remapping) + 8 h2 + 16 SEG
+- SuSiE: 96 re-runs (updated R script with .fit.rds placeholder)
+- g:Profiler: 1 enrichment + 1 negative controls (R fallback)
+
+### Previous session (2026-04-15 PM)
 
 1. **Phase 4 research (B → A → C priority, F1 verdict-table format, G3 alternatives-no-pick policy)** — gsd-phase-researcher returned:
    - **B-1 CONFIRMED** — SE-inflation bootstrap (Zou 2022 SuSiE-RSS + MultiSuSiE 2025 support independent-Z + fixed-R refit)
@@ -295,7 +332,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
 4. Address open items above as they become blocking
 
-Resume file: None
+Resume file: .planning/phases/03-mendelian-randomization/03-CONTEXT.md
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
