@@ -82,12 +82,15 @@ TRAIT_ANCESTRIES = config.get("trait_ancestries", {})
 # Generate all trait pairs with shared ancestries for rho-HESS (D-02b).
 # 5 traits = 10 unique pairs. For each pair, run only for ancestries
 # available in BOTH traits (intersection of trait_ancestries).
+# Further filtered by hess_ancestries (only ancestries with staged LD panels).
+HESS_ANCESTRIES = set(PATHWAY_CFG.get("hess_ancestries", ANCESTRIES))
 TRAIT_PAIRS = []
 for _i, _t1 in enumerate(TRAITS):
     for _t2 in TRAITS[_i + 1:]:
         _shared_anc = sorted(
             set(TRAIT_ANCESTRIES.get(_t1, ANCESTRIES))
             & set(TRAIT_ANCESTRIES.get(_t2, ANCESTRIES))
+            & HESS_ANCESTRIES
         )
         for _anc in _shared_anc:
             TRAIT_PAIRS.append((_t1, _t2, _anc))
@@ -1606,7 +1609,9 @@ rule extract_tier_ab_genes:
 rule gprofiler_enrichment:
     """g:Profiler functional enrichment of coloc-nominated genes.
 
-    Uses run_gprofiler.py with REST API, custom background, and
+    Uses run_gprofiler.py with R gprofiler2 fallback (--use-r) because HPC
+    compute nodes lack outbound HTTPS to biit.cs.ut.ee.  R fallback uses
+    gprofiler2::gost() locally with identical parameters.
     evcodes=TRUE per D-03b to exclude electronic GO annotations.
     Sources: GO:BP, KEGG, REAC.
     """
@@ -1618,7 +1623,7 @@ rule gprofiler_enrichment:
     params:
         script=str(Path(workflow.basedir) / "src" / "python" / "run_gprofiler.py"),
     conda:
-        MAGMA_ENV
+        str(Path(workflow.basedir) / "envs" / "gprofiler.yml")
     resources:
         mem_mb=4000,
     shell:
@@ -1628,6 +1633,7 @@ rule gprofiler_enrichment:
             --background {input.bg_genes} \
             --sources GO:BP,KEGG,REAC \
             --exclude-iea \
+            --use-r \
             --out {output.results}
         """
 
@@ -1638,6 +1644,7 @@ rule gprofiler_negative_controls:
     Tests that negative control gene sets (HLA immune, cosmetic, blood group)
     produce q > 0.05 for cardiometabolic pathways (REQ-7 / D-06b).
     Concatenates results for all negative control sets.
+    Uses R gprofiler2 fallback (no outbound HTTPS on compute nodes).
     Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
     """
     input:
@@ -1653,24 +1660,33 @@ rule gprofiler_negative_controls:
     resources:
         mem_mb=4000,
     run:
-        import sys
+        import sys, csv, os, tempfile
         sys.path.insert(0, str(Path(workflow.basedir) / "src" / "python"))
         from build_magma_geneset import parse_gmt
-        from run_gprofiler import run_enrichment_api, _write_results_tsv, _read_gene_list
+        from run_gprofiler import run_enrichment_r, _read_gene_list
 
         bg_genes = _read_gene_list(input.bg_genes)
         neg_ctrl_sets = parse_gmt(input.negctrl_gmt)
 
         all_results = []
         for set_name, _desc, gene_list in neg_ctrl_sets:
-            print(f"Running g:Profiler on negative control: {set_name}")
+            print(f"Running g:Profiler (R fallback) on negative control: {set_name}")
             try:
-                results = run_enrichment_api(
+                tmp_out = os.path.join(params.outdir, f"neg_ctrl_{set_name}.tsv")
+                run_enrichment_r(
                     query_genes=gene_list,
                     background_genes=bg_genes,
                     sources=["GO:BP", "KEGG", "REAC"],
                     exclude_iea=True,
+                    output_path=tmp_out,
                 )
+                # Read R output TSV back as dicts
+                if os.path.exists(tmp_out):
+                    with open(tmp_out) as fh:
+                        reader = csv.DictReader(fh, delimiter="\t")
+                        results = list(reader)
+                else:
+                    results = []
                 for r in results:
                     r["neg_ctrl_set"] = set_name
                     r["is_negative_control"] = "TRUE"
