@@ -1203,7 +1203,10 @@ rule hess_local_rhog:
         out_prefix=lambda wc: os.path.join(
             PATHWAY_RESULTS_DIR,
             "hess",
-            f"{wc.trait1}_{wc.trait2}_{wc.ancestry}_chr{wc.chrom}",
+            # NO _chr{chrom} here: HESS appends `_chr{chrom}` itself, so the
+            # prefix must stop at the trait pair + ancestry for hess_combine
+            # (step 2) to find its {prefix}_chr{N}.{info,eig,prjsq}.gz inputs.
+            f"{wc.trait1}_{wc.trait2}_{wc.ancestry}",
         ),
         chrom=lambda wc: wc.chrom,
     conda:
