@@ -9,5 +9,5 @@ channels:
   - conda-forge
 dependencies:
   - plink=1.90b6.21
-  - plink2=2.00a6.1
+  - plink2=2.00a5.12
   - bcftools=1.21
