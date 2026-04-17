@@ -51,6 +51,48 @@ def open_maybe_gzip(path: str, mode: str = "rt"):
     return open(path, mode)
 
 
+def _build_chrpos_to_rsid(bim_prefix: str, chromosomes=None) -> dict:
+    """Build chr:pos → rsID lookup from 1000G plink bim files.
+
+    Parameters
+    ----------
+    bim_prefix : str
+        Path prefix for bim files (e.g. ".../1000G.EUR.QC").
+        Files expected at {prefix}.{chr}.bim.
+    chromosomes : list, optional
+        Chromosomes to load (default: 1-22).
+
+    Returns
+    -------
+    dict
+        Mapping of "chr:pos" strings to rsID strings.
+    """
+    if chromosomes is None:
+        chromosomes = [str(c) for c in range(1, 23)]
+    lookup = {}
+    for chrom in chromosomes:
+        bim_path = f"{bim_prefix}.{chrom}.bim"
+        try:
+            with open(bim_path) as f:
+                for line in f:
+                    parts = line.split()
+                    # bim format: CHR  rsID  CM  BP  A1  A2
+                    key = f"{parts[0]}:{parts[3]}"
+                    lookup[key] = parts[1]
+        except FileNotFoundError:
+            logger.warning("Bim file not found: %s, skipping chr%s", bim_path, chrom)
+    logger.info("Built chr:pos → rsID lookup: %d entries from %s", len(lookup), bim_prefix)
+    return lookup
+
+
+def _snp_is_chrpos(snp_id: str) -> bool:
+    """Check if a SNP ID is in chr:pos format (e.g. '1:752566')."""
+    if not snp_id or ":" not in snp_id:
+        return False
+    parts = snp_id.split(":")
+    return len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit()
+
+
 def convert_sumstats(
     input_path: str,
     output_path: str,
@@ -58,6 +100,7 @@ def convert_sumstats(
     n_case: float = None,
     n_ctrl: float = None,
     n_override: float = None,
+    bim_prefix: str = None,
 ) -> dict:
     """Convert harmonized sumstats to LDSC format.
 
@@ -75,17 +118,21 @@ def convert_sumstats(
         Number of controls (required for binary traits).
     n_override : float, optional
         If set, use this N for all rows (overrides per-row N and effective-N).
+    bim_prefix : str, optional
+        Path prefix for 1000G bim files (e.g. ".../1000G.EUR.QC").
+        Used to remap chr:pos SNP IDs to rsIDs when needed.
 
     Returns
     -------
     dict
-        Stats: {n_input: int, n_output: int, n_filtered: int}.
+        Stats: {n_input: int, n_output: int, n_filtered: int, n_remapped: int}.
     """
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
     n_input = 0
     n_output = 0
     n_filtered = 0
+    n_remapped = 0
 
     with open_maybe_gzip(input_path) as in_fh:
         header_line = in_fh.readline().strip()
@@ -106,6 +153,32 @@ def convert_sumstats(
                 ", ".join(in_cols),
             )
             sys.exit(1)
+
+        # Detect chr:pos SNP IDs by peeking at first non-empty SNP value.
+        # If detected, build lookup from 1000G bim files to remap to rsIDs
+        # (LDSC munge_sumstats.py --merge-alleles requires rsIDs).
+        chrpos_lookup = None
+        peek_pos = in_fh.tell()
+        for peek_line in in_fh:
+            peek_fields = peek_line.strip().split("\t")
+            if len(peek_fields) > col_idx["SNP"]:
+                peek_snp = peek_fields[col_idx["SNP"]]
+                if peek_snp and peek_snp != "." and peek_snp != "NA":
+                    if _snp_is_chrpos(peek_snp):
+                        if bim_prefix:
+                            logger.info(
+                                "Detected chr:pos SNP IDs (e.g. '%s'). "
+                                "Building rsID lookup from bim files.",
+                                peek_snp,
+                            )
+                            chrpos_lookup = _build_chrpos_to_rsid(bim_prefix)
+                        else:
+                            logger.warning(
+                                "Detected chr:pos SNP IDs but no bim_prefix "
+                                "provided — SNPs will not merge with HapMap3."
+                            )
+                    break
+        in_fh.seek(peek_pos)
 
         # Determine effective N
         use_effective_n = (
@@ -172,12 +245,24 @@ def convert_sumstats(
                     n_filtered += 1
                     continue
 
+                # Remap chr:pos → rsID if lookup is available
+                if chrpos_lookup is not None:
+                    rsid = chrpos_lookup.get(snp)
+                    if rsid is None:
+                        n_filtered += 1
+                        continue
+                    snp = rsid
+                    n_remapped += 1
+
                 out_fh.write(
                     f"{snp}\t{a1}\t{a2}\t{row_n}\t{p}\t{beta}\t{se}\n"
                 )
                 n_output += 1
 
-    return {"n_input": n_input, "n_output": n_output, "n_filtered": n_filtered}
+    return {
+        "n_input": n_input, "n_output": n_output,
+        "n_filtered": n_filtered, "n_remapped": n_remapped,
+    }
 
 
 def main():
@@ -218,6 +303,11 @@ def main():
         default=None,
         help="Override N for all rows (ignores per-row N and effective-N)",
     )
+    parser.add_argument(
+        "--bim-prefix",
+        default=None,
+        help="1000G bim prefix for chr:pos→rsID remapping (e.g. .../1000G.EUR.QC)",
+    )
     args = parser.parse_args()
 
     stats = convert_sumstats(
@@ -227,6 +317,7 @@ def main():
         n_case=args.n_case,
         n_ctrl=args.n_ctrl,
         n_override=args.n_override,
+        bim_prefix=args.bim_prefix,
     )
 
     logger.info(

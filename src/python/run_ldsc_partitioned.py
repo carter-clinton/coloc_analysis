@@ -156,6 +156,7 @@ def run_munge(
     n_case: float = None,
     n_ctrl: float = None,
     trait: str = None,
+    bim_prefix: str = None,
 ) -> dict:
     """Step: munge -- Convert sumstats to LDSC format and run munge_sumstats.py.
 
@@ -226,6 +227,7 @@ def run_munge(
         n_case=n_case,
         n_ctrl=n_ctrl,
         n_override=eff_n,
+        bim_prefix=bim_prefix,
     )
     logger.info(
         "Pre-formatted %d/%d variants (filtered %d)",
@@ -528,6 +530,10 @@ def main():
     parser.add_argument("--out", help="Output prefix")
     parser.add_argument("--out-prefix", help="Output prefix (compute-ld-scores)")
     parser.add_argument(
+        "--bim-prefix",
+        help="1000G bim prefix for chr:pos→rsID remapping in munge (e.g. .../1000G.EUR.QC)",
+    )
+    parser.add_argument(
         "--chromosomes",
         nargs="+",
         default=[str(c) for c in range(1, 23)],
@@ -547,6 +553,7 @@ def main():
             n_case=args.n_case,
             n_ctrl=args.n_ctrl,
             trait=args.trait,
+            bim_prefix=args.bim_prefix,
         )
 
     elif args.step == "compute-ld-scores":

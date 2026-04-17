@@ -647,6 +647,12 @@ rule ldsc_munge:
         ),
         script=str(Path(workflow.basedir) / "src" / "python" / "run_ldsc_partitioned.py"),
         ldsc_dir="tools/ldsc",
+        # 1000G bim prefix for chr:pos → rsID remapping (some sumstats use
+        # chr:pos SNP IDs which won't merge with w_hm3.snplist).
+        bim_prefix=os.path.join(
+            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_EUR_Phase3_plink"),
+            "1000G.EUR.QC",
+        ),
         trait=lambda wc: wc.trait,
         # CR-02 fix: LDSC munge must also use effective N for binary traits.
         # run_ldsc_partitioned.py accepts --sample-size OR --n-case/--n-ctrl and
@@ -663,6 +669,7 @@ rule ldsc_munge:
             --ldsc-dir {params.ldsc_dir} \
             --sumstats {input.sumstats} \
             --hapmap3 {input.hapmap3} \
+            --bim-prefix {params.bim_prefix} \
             {params.n_flags} \
             --trait {params.trait} \
             --out {params.out_prefix}
@@ -1109,9 +1116,10 @@ print('HESS panel GRCh37 validation PASSED')
 
 
 rule hess_format_sumstats:
-    """Convert harmonized sumstats to HESS format (SNP, A1, A2, Z, N).
+    """Convert harmonized sumstats to HESS format (SNP, CHR, BP, A1, A2, Z, N).
 
     Per trait x ancestry. Z computed as BETA/SE. Binary traits use effective N.
+    chr:pos SNP IDs are remapped to rsIDs via 1000G bim files.
     Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
     """
     input:
@@ -1125,6 +1133,10 @@ rule hess_format_sumstats:
     params:
         script=str(Path(workflow.basedir) / "src" / "python" / "run_hess.py"),
         trait=lambda wc: wc.trait,
+        bim_prefix=os.path.join(
+            PATHWAY_CFG.get("ldsc_plink", "data/reference/ldsc/1000G_EUR_Phase3_plink"),
+            "1000G.EUR.QC",
+        ),
     resources:
         mem_mb=4000,
     run:
@@ -1135,6 +1147,7 @@ rule hess_format_sumstats:
             input_path=input.sumstats,
             output_path=output.hess_sumstats,
             trait=params.trait,
+            bim_prefix=params.bim_prefix,
         )
 
 
