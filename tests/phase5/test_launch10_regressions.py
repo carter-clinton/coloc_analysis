@@ -19,6 +19,20 @@ Launch12 fix batch (this session):
      stdout + hess.py's own {out}.log on CalledProcessError.
   6. AFR ancestry LDSC frqfile dispatch — _ldsc_frqfile_chr() must return
      the AFR frq prefix when ancestry == "AFR" and the EUR prefix otherwise.
+
+Launch12 post-mortem (Bug 4 + Bug 5 — this session):
+  7. Rho-HESS empty-loci filter — run_combine() must pre-filter the 4 rho-HESS
+     step1 files ({prefix}_trait{1,2}_chr{N}.info.gz + {prefix}_chr{N}.{eig,prjprod}.gz)
+     and pass {prefix}_filt as --prefix to hess.py. Without this,
+     local_rhog_step2 builds A = diag(N1 * N2) and rejects
+     "Rank of A less than the number of loci" when any locus has nsnp==0
+     in either trait (confirmed for t2d_hypertension_EUR at chr12 locus 8,
+     start=8377536).
+  8. LDSC partitioned h2 --invert-anyway — run_partitioned_h2() must pass
+     --invert-anyway to bypass the condition-number hard-fail on the
+     joint baselineLD (97 cols) + custom_pathway matrix. Launch12 evidence:
+     ALL partitioned_h2 runs pre-this-fix raised cond-number error
+     (EUR + AFR alike); zero *.results files existed on disk.
 """
 import gzip
 import importlib.util
@@ -34,11 +48,13 @@ sys.path.insert(0, str(PROJECT_ROOT / "src" / "python"))
 
 from run_hess import (  # noqa: E402
     _filter_empty_loci,
+    _filter_empty_loci_rhog,
     _run_hess_subprocess,
     run_combine,
     run_hsqg_step2,
 )
 from munge_sumstats_ldsc import convert_sumstats  # noqa: E402
+from run_ldsc_partitioned import run_partitioned_h2  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -53,6 +69,10 @@ def test_run_combine_rho_hess_dispatch(tmp_path):
     local_hsqg_step2 which fails with "Missing step 1 results" because
     rho-HESS step 1 writes trait-specific info files as
     ``{prefix}_trait{1,2}_chr{N}.info.gz`` (not ``{prefix}_chr{N}.info.gz``).
+
+    Note: as of the Launch12 post-mortem fix (Bug 4), run_combine also
+    pre-filters empty loci via _filter_empty_loci_rhog, so this test must
+    write all four rho-HESS step1 fixture files for chromosomes 1..22.
     """
     # Create stub files so _validate_path doesn't reject them
     python27_bin = tmp_path / "python2.7"
@@ -67,6 +87,17 @@ def test_run_combine_rho_hess_dispatch(tmp_path):
 
     hsqg2 = tmp_path / "trait2.local.tsv"
     hsqg2.write_text("chr\tstart\tend\tnum_snp\tk\tlocal_h2g\tvar\tse\tz\tp\n")
+
+    prefix = str(tmp_path / "test_pair")
+    # Write rho-HESS step1 fixtures for all 22 chromosomes (one valid locus per chr)
+    for chrom in range(1, 23):
+        _write_rhog_step1_files(
+            prefix, chrom,
+            info1_rows=[(0, 500, 4, 2, 1000.0)],
+            info2_rows=[(0, 500, 5, 3, 2000.0)],
+            eig_rows=["0.5\t1.5"],
+            prjprod_rows=["0.05\t0.15"],
+        )
 
     # Intercept subprocess.run so we don't actually invoke HESS
     captured = {}
@@ -83,7 +114,7 @@ def test_run_combine_rho_hess_dispatch(tmp_path):
         run_combine(
             hess_script=str(hess_script),
             python27=str(python27_bin),
-            prefix=str(tmp_path / "test_pair"),
+            prefix=prefix,
             out=str(tmp_path / "test_pair_combined"),
             local_hsqg_est1=str(hsqg1),
             local_hsqg_est2=str(hsqg2),
@@ -637,4 +668,234 @@ def test_ldsc_frq_flag_routes_afr_to_afr_sentinel():
     )
     assert helper("EUR").endswith(".baseline_download_done"), (
         f"EUR ancestry must gate on .baseline_download_done; got {helper('EUR')}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Regression 7 (Launch12 post-mortem, Bug 4): rho-HESS empty-loci filter
+# wired into run_combine
+# ---------------------------------------------------------------------------
+
+
+def _write_rhog_step1_files(prefix, chrom, info1_rows, info2_rows, eig_rows, prjprod_rows):
+    """Helper for the rho-HESS step1 4-file fixture.
+
+    Writes ``{prefix}_trait1_chr{chrom}.info.gz``,
+    ``{prefix}_trait2_chr{chrom}.info.gz``,
+    ``{prefix}_chr{chrom}.eig.gz``, and ``{prefix}_chr{chrom}.prjprod.gz``.
+    All four files have the SAME number of lines (one per locus); empty
+    loci have an empty eig/prjprod line and a row in info{1,2} with
+    ``nsnp==0`` and ``rank==0``.
+    """
+    info1_path = Path(f"{prefix}_trait1_chr{chrom}.info.gz")
+    info2_path = Path(f"{prefix}_trait2_chr{chrom}.info.gz")
+    eig_path = Path(f"{prefix}_chr{chrom}.eig.gz")
+    prjprod_path = Path(f"{prefix}_chr{chrom}.prjprod.gz")
+    info1_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with gzip.open(info1_path, "wt") as fh:
+        for start, stop, nsnp, rank, nindv in info1_rows:
+            fh.write(f"{start}\t{stop}\t{nsnp}\t{rank}\t{nindv:.1f}\n")
+    with gzip.open(info2_path, "wt") as fh:
+        for start, stop, nsnp, rank, nindv in info2_rows:
+            fh.write(f"{start}\t{stop}\t{nsnp}\t{rank}\t{nindv:.1f}\n")
+    with gzip.open(eig_path, "wt") as fh:
+        for row in eig_rows:
+            fh.write(row + "\n")
+    with gzip.open(prjprod_path, "wt") as fh:
+        for row in prjprod_rows:
+            fh.write(row + "\n")
+
+
+def test_filter_empty_loci_rhog_drops_when_either_trait_is_empty(tmp_path):
+    """`_filter_empty_loci_rhog` must drop a locus row index k whenever
+    ``info1[k].nsnp == 0`` OR ``info2[k].nsnp == 0`` (or rank==0). Builds
+    a 1-chromosome fixture with 4 loci:
+      - locus 0: both traits have SNPs (KEEP)
+      - locus 1: trait1 empty, trait2 valid (DROP — defensive OR)
+      - locus 2: trait2 empty, trait1 valid (DROP — defensive OR)
+      - locus 3: both traits valid (KEEP)
+    Verifies all four output files (info1, info2, eig, prjprod) are
+    line-aligned at 2 rows after the filter.
+    """
+    prefix = str(tmp_path / "fake_pair")
+
+    _write_rhog_step1_files(
+        prefix, 1,
+        info1_rows=[
+            (0, 1000, 5, 3, 1000.0),       # KEEP
+            (1000, 2000, 0, 0, 0.0),       # DROP (trait1 empty)
+            (2000, 3000, 6, 4, 1500.0),    # KEEP from trait1 perspective, but trait2 empty -> DROP
+            (3000, 4000, 8, 5, 1500.0),    # KEEP
+        ],
+        info2_rows=[
+            (0, 1000, 7, 4, 2000.0),       # KEEP
+            (1000, 2000, 9, 5, 2000.0),    # KEEP from trait2 perspective, but trait1 empty -> DROP
+            (2000, 3000, 0, 0, 0.0),       # DROP (trait2 empty)
+            (3000, 4000, 10, 6, 2000.0),   # KEEP
+        ],
+        eig_rows=[
+            "1.0\t2.0\t3.0",
+            "",                              # locus 1 empty
+            "1.5\t2.5",
+            "1.8\t2.8\t3.8\t4.8",
+        ],
+        prjprod_rows=[
+            "0.1\t0.2\t0.3",
+            "",                              # locus 1 empty
+            "0.15\t0.25",
+            "0.18\t0.28\t0.38\t0.48",
+        ],
+    )
+
+    filt_prefix = str(tmp_path / "fake_pair_filt")
+    stats = _filter_empty_loci_rhog(prefix, filt_prefix, chromosomes=[1])
+
+    assert stats[1] == {"total": 4, "kept": 2, "dropped": 2}, stats
+
+    # All four filtered files must be line-aligned at 2 rows
+    with gzip.open(f"{filt_prefix}_trait1_chr1.info.gz", "rt") as fh:
+        info1_lines = [l for l in fh if l.strip()]
+    with gzip.open(f"{filt_prefix}_trait2_chr1.info.gz", "rt") as fh:
+        info2_lines = [l for l in fh if l.strip()]
+    with gzip.open(f"{filt_prefix}_chr1.eig.gz", "rt") as fh:
+        eig_lines = [l for l in fh if l.strip()]
+    with gzip.open(f"{filt_prefix}_chr1.prjprod.gz", "rt") as fh:
+        prjprod_lines = [l for l in fh if l.strip()]
+
+    assert len(info1_lines) == 2
+    assert len(info2_lines) == 2
+    assert len(eig_lines) == 2
+    assert len(prjprod_lines) == 2
+
+    # Surviving loci are the first and last (indices 0 and 3)
+    first = info1_lines[0].strip().split("\t")
+    last = info1_lines[1].strip().split("\t")
+    assert int(first[0]) == 0 and int(first[2]) == 5     # locus 0
+    assert int(last[0]) == 3000 and int(last[2]) == 8    # locus 3
+
+    assert eig_lines[0].strip() == "1.0\t2.0\t3.0"
+    assert eig_lines[1].strip() == "1.8\t2.8\t3.8\t4.8"
+
+
+def test_run_combine_pre_filters_empty_loci_and_passes_filtered_prefix(tmp_path):
+    """`run_combine` (rho-HESS dispatch) must call ``_filter_empty_loci_rhog``
+    and pass ``{prefix}_filt`` as ``--prefix`` to hess.py. Launch12 evidence:
+    even after the dispatch fix (commit 030130b), every hess_combine job
+    failed because the original prefix still pointed at unfiltered step1
+    files containing one or more empty loci (chr12 locus 8 for
+    t2d_hypertension_EUR; rank-deficiency rejection from estimation.py:506).
+    """
+    python27_bin = tmp_path / "python2.7"
+    python27_bin.write_text("#!/bin/sh\nexit 0\n")
+    python27_bin.chmod(0o755)
+
+    hess_script = tmp_path / "hess.py"
+    hess_script.write_text("# stub\n")
+
+    hsqg1 = tmp_path / "trait1.local.tsv"
+    hsqg1.write_text("chr\tstart\tend\tnum_snp\tk\tlocal_h2g\tvar\tse\tz\tp\n")
+    hsqg2 = tmp_path / "trait2.local.tsv"
+    hsqg2.write_text("chr\tstart\tend\tnum_snp\tk\tlocal_h2g\tvar\tse\tz\tp\n")
+
+    prefix = str(tmp_path / "pair_EUR")
+
+    # Build a minimal 22-chromosome fixture: each chr has 2 loci, neither empty
+    for chrom in range(1, 23):
+        _write_rhog_step1_files(
+            prefix, chrom,
+            info1_rows=[(0, 500, 4, 2, 1000.0), (500, 1500, 6, 4, 1000.0)],
+            info2_rows=[(0, 500, 5, 3, 2000.0), (500, 1500, 7, 4, 2000.0)],
+            eig_rows=["0.5\t1.5", "0.8\t1.8\t2.8\t3.8"],
+            prjprod_rows=["0.05\t0.15", "0.08\t0.18\t0.28\t0.38"],
+        )
+
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        r = mock.Mock()
+        r.stdout = ""
+        r.stderr = ""
+        r.returncode = 0
+        return r
+
+    with mock.patch("run_hess.subprocess.run", side_effect=fake_run):
+        run_combine(
+            hess_script=str(hess_script),
+            python27=str(python27_bin),
+            prefix=prefix,
+            out=str(tmp_path / "pair_EUR_combined"),
+            local_hsqg_est1=str(hsqg1),
+            local_hsqg_est2=str(hsqg2),
+            pheno_cor=0.0,
+            num_shared=0,
+        )
+
+    cmd = captured["cmd"]
+    prefix_idx = cmd.index("--prefix")
+    assert cmd[prefix_idx + 1] == f"{prefix}_filt", (
+        f"hess.py must be invoked with the filtered prefix; got {cmd[prefix_idx + 1]}"
+    )
+
+    # Filter outputs must exist on disk (proves the pre-filter actually ran)
+    assert Path(f"{prefix}_filt_trait1_chr1.info.gz").exists()
+    assert Path(f"{prefix}_filt_trait2_chr22.info.gz").exists()
+    assert Path(f"{prefix}_filt_chr1.eig.gz").exists()
+    assert Path(f"{prefix}_filt_chr22.prjprod.gz").exists()
+
+
+# ---------------------------------------------------------------------------
+# Regression 8 (Launch12 post-mortem, Bug 5): LDSC partitioned --invert-anyway
+# ---------------------------------------------------------------------------
+
+
+def test_run_partitioned_h2_passes_invert_anyway(tmp_path):
+    """`run_partitioned_h2` must include ``--invert-anyway`` in the cmd
+    passed to ldsc.py. Without it, every partitioned h2 invocation in this
+    pipeline (joint baselineLD v2.2 [97 cols] + custom_pathway annotation)
+    fails with ``ValueError: ERROR: LD Score matrix condition number is
+    {1e20}.`` regardless of ancestry. Launch12 confirmed:
+    hypertension_EUR_pathway_h2 (EUR frq) → cond 2.9e20;
+    t2d_AFR_pathway_h2 (AFR frq) → cond 8.8e19. Zero *.results files
+    existed on disk before this fix.
+    """
+    # Stub the LDSC dir so _validate_file passes
+    ldsc_dir = tmp_path / "ldsc"
+    ldsc_dir.mkdir()
+    (ldsc_dir / "ldsc.py").write_text("# stub\n")
+
+    sumstats = tmp_path / "munged.sumstats.gz"
+    with gzip.open(sumstats, "wt") as fh:
+        fh.write("SNP\tA1\tA2\tZ\tN\n")  # minimal header, _validate_file just checks existence
+
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        # Mimic _run_command behaviour: succeed; results parsing is a separate concern
+        # (parse_ldsc_results returns [] on missing file, which run_partitioned_h2 tolerates)
+        r = mock.Mock()
+        r.stdout = ""
+        r.stderr = ""
+        r.returncode = 0
+        return r
+
+    with mock.patch("run_ldsc_partitioned.subprocess.run", side_effect=fake_run):
+        run_partitioned_h2(
+            ldsc_dir=str(ldsc_dir),
+            sumstats=str(sumstats),
+            ref_ld_chr="data/baselineLD.,results/custom_pathway.",
+            w_ld_chr="data/weights.",
+            frqfile_chr="data/1000G.EUR.QC.",
+            out=str(tmp_path / "out_h2"),
+        )
+
+    cmd = captured["cmd"]
+    assert "--invert-anyway" in cmd, (
+        f"run_partitioned_h2 must pass --invert-anyway; got {cmd}"
+    )
+    # Sanity: --overlap-annot must still be there (Phase 5 anti-pattern guard)
+    assert "--overlap-annot" in cmd, (
+        f"run_partitioned_h2 must still pass --overlap-annot; got {cmd}"
     )
