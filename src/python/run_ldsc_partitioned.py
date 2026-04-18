@@ -372,6 +372,19 @@ def run_partitioned_h2(
     CRITICAL: Always includes --overlap-annot flag (anti-pattern prevention).
     Baseline v2.2 must be first entry in --ref-ld-chr (D-04a).
 
+    --invert-anyway is required for the canonical baselineLD v2.2 (97
+    annotations) + custom_pathway joint S-LDSC model. Per LDSC FAQ
+    (github.com/bulik/ldsc/wiki/FAQ) and ``check_ld_condition_number``
+    (tools/ldsc/ldscore/sumstats.py:312-338), the baselineLD matrix has
+    intrinsic numerical collinearity that drives ``np.linalg.cond`` above
+    the 1e5 hard threshold for ALL ancestries. Without --invert-anyway,
+    every partitioned h2 invocation in this pipeline raises
+    ``ValueError: ERROR: LD Score matrix condition number is {1e20}.``
+    Confirmed empirically in Launch12: hypertension_EUR_pathway_h2 with
+    EUR frq → cond 2.9e20; t2d_AFR with AFR frq → cond 8.8e19. See
+    .planning/debug/t1-launch10-residual-failures.md §2026-04-18T13:00Z
+    "Bug 5".
+
     Parameters
     ----------
     ldsc_dir : str
@@ -399,7 +412,10 @@ def run_partitioned_h2(
 
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
 
-    # CRITICAL: --overlap-annot is always included (anti-pattern prevention)
+    # CRITICAL: --overlap-annot is always included (anti-pattern prevention).
+    # CRITICAL: --invert-anyway is required to bypass the condition-number
+    # rejection for baselineLD + custom_pathway (cond > 1e5 always — see
+    # docstring above and tools/ldsc/ldscore/sumstats.py:326).
     cmd = [
         sys.executable, ldsc_py,
         "--h2", sumstats,
@@ -407,6 +423,7 @@ def run_partitioned_h2(
         "--w-ld-chr", w_ld_chr,
         "--overlap-annot",
         "--frqfile-chr", frqfile_chr,
+        "--invert-anyway",
         "--out", out,
     ]
 

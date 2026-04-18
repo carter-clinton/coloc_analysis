@@ -578,6 +578,154 @@ def _filter_empty_loci(prefix, filt_prefix, chromosomes=range(1, 23)):
     return stats
 
 
+def _filter_empty_loci_rhog(prefix, filt_prefix, chromosomes=range(1, 23)):
+    """Drop empty loci from rho-HESS step1 outputs (combine step input).
+
+    rho-HESS ``local_rhog_step2`` (tools/hess/src/estimation.py:458-508)
+    reads four per-chromosome files: ``{prefix}_trait1_chr{N}.info.gz``,
+    ``{prefix}_trait2_chr{N}.info.gz``, ``{prefix}_chr{N}.eig.gz``, and
+    ``{prefix}_chr{N}.prjprod.gz``. It then constructs the matrix
+    ``A = np.diag(info1['N'] * info2['N'])`` and rejects when
+    ``np.linalg.matrix_rank(A) < nloci``.
+
+    An empty locus (``nsnp == 0`` in either trait's info row) writes a row
+    with ``N == 0``, putting a zero on the diagonal of A and guaranteeing
+    rank deficiency. The Launch12 hess_combine failures all surface here:
+    ``[ERROR] Rank of A less than the number of loci.`` (estimation.py:506).
+
+    Counterpart to :func:`_filter_empty_loci` (which filters single-trait
+    ``local_hsqg_step2`` inputs read as ``{prefix}_chr{N}.{info,eig,prjsq}.gz``).
+    The rho-HESS file naming differs: trait-specific info files but
+    pair-shared eig/prjprod, so this function reads four per-chromosome
+    files and drops a row index ``k`` if EITHER ``info1[k].nsnp == 0`` OR
+    ``info2[k].nsnp == 0`` (HESS partitions are shared across the pair, so
+    in practice the empty-locus indices align between the two traits, but
+    we OR the masks defensively).
+
+    Parameters
+    ----------
+    prefix : str
+        Original step1 prefix (the trait pair x ancestry prefix). Reads
+        ``{prefix}_trait{1,2}_chr{N}.info.gz`` and
+        ``{prefix}_chr{N}.{eig,prjprod}.gz``.
+    filt_prefix : str
+        Prefix for filtered copies. Writes the same four file naming patterns.
+    chromosomes : iterable of int, default range(1, 23)
+        Chromosomes to process (autosomes).
+
+    Returns
+    -------
+    dict
+        Per-chromosome counts: ``{chrom: {"total": int, "kept": int, "dropped": int}}``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If any of the four step1 files is missing for a chromosome.
+    ValueError
+        If line counts disagree across the four files for a chromosome.
+    """
+    stats = {}
+    out_dir = os.path.dirname(filt_prefix)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    for chrom in chromosomes:
+        info1_src = f"{prefix}_trait1_chr{chrom}.info.gz"
+        info2_src = f"{prefix}_trait2_chr{chrom}.info.gz"
+        eig_src = f"{prefix}_chr{chrom}.eig.gz"
+        prjprod_src = f"{prefix}_chr{chrom}.prjprod.gz"
+
+        for src, label in [
+            (info1_src, "info (trait1)"),
+            (info2_src, "info (trait2)"),
+            (eig_src, "eig"),
+            (prjprod_src, "prjprod"),
+        ]:
+            if not os.path.exists(src):
+                raise FileNotFoundError(
+                    f"rho-HESS step1 {label} file missing for chr{chrom}: {src}"
+                )
+
+        info1_dst = f"{filt_prefix}_trait1_chr{chrom}.info.gz"
+        info2_dst = f"{filt_prefix}_trait2_chr{chrom}.info.gz"
+        eig_dst = f"{filt_prefix}_chr{chrom}.eig.gz"
+        prjprod_dst = f"{filt_prefix}_chr{chrom}.prjprod.gz"
+
+        with gzip.open(info1_src, "rt") as fh:
+            info1_lines = fh.readlines()
+        with gzip.open(info2_src, "rt") as fh:
+            info2_lines = fh.readlines()
+        with gzip.open(eig_src, "rt") as fh:
+            eig_lines = fh.readlines()
+        with gzip.open(prjprod_src, "rt") as fh:
+            prjprod_lines = fh.readlines()
+
+        if not (
+            len(info1_lines)
+            == len(info2_lines)
+            == len(eig_lines)
+            == len(prjprod_lines)
+        ):
+            raise ValueError(
+                f"rho-HESS step1 file lengths disagree for chr{chrom}: "
+                f"info1={len(info1_lines)} info2={len(info2_lines)} "
+                f"eig={len(eig_lines)} prjprod={len(prjprod_lines)} "
+                f"(prefix={prefix})"
+            )
+
+        keep_mask = []
+        for i1_line, i2_line in zip(info1_lines, info2_lines):
+            keep = True
+            for line in (i1_line, i2_line):
+                parts = line.strip().split()
+                if len(parts) < 5:
+                    keep = False
+                    break
+                try:
+                    nsnp = int(parts[2])
+                    rank = int(parts[3])
+                except (ValueError, IndexError):
+                    keep = False
+                    break
+                if nsnp == 0 or rank == 0:
+                    keep = False
+                    break
+            keep_mask.append(keep)
+
+        total = len(info1_lines)
+        kept = sum(1 for k in keep_mask if k)
+        dropped = total - kept
+        stats[chrom] = {"total": total, "kept": kept, "dropped": dropped}
+
+        with gzip.open(info1_dst, "wt") as fh_i1, \
+             gzip.open(info2_dst, "wt") as fh_i2, \
+             gzip.open(eig_dst, "wt") as fh_e, \
+             gzip.open(prjprod_dst, "wt") as fh_p:
+            for keep, i1l, i2l, el, pl in zip(
+                keep_mask, info1_lines, info2_lines, eig_lines, prjprod_lines
+            ):
+                if keep:
+                    fh_i1.write(i1l)
+                    fh_i2.write(i2l)
+                    fh_e.write(el)
+                    fh_p.write(pl)
+
+        if dropped:
+            logger.info(
+                "chr%s (rho-HESS): filtered %d empty loci; kept %d/%d",
+                chrom, dropped, kept, total,
+            )
+
+    total_dropped = sum(s["dropped"] for s in stats.values())
+    total_kept = sum(s["kept"] for s in stats.values())
+    logger.info(
+        "rho-HESS filter summary for prefix %s: kept %d loci, dropped %d empty loci",
+        prefix, total_kept, total_dropped,
+    )
+    return stats
+
+
 def _run_hess_subprocess(cmd, description, out_for_log=None):
     """Invoke HESS (Py2.7) and surface diagnostics on failure.
 
@@ -775,27 +923,42 @@ def run_combine(hess_script, python27, prefix, out,
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    cmd = [
-        python27,
-        hess_script,
-        "--prefix",
-        prefix,
-        "--out",
-        out,
-    ]
-
     if local_hsqg_est1 is not None and local_hsqg_est2 is not None:
-        # Rho-HESS step 2 dispatch: --local-hsqg-est takes nargs=2 (one file per trait)
+        # Rho-HESS step 2 dispatch: --local-hsqg-est takes nargs=2 (one file per trait).
+        # Pre-filter empty loci from the four step1 files (info1, info2, eig, prjprod):
+        # local_rhog_step2 builds A = diag(N1*N2), so an empty locus (nsnp==0 → N==0)
+        # puts a zero on the diagonal and rejects with rank-deficiency. See
+        # tools/hess/src/estimation.py:497-508 and the .planning/debug session
+        # §2026-04-18T13:00Z (Bug 4).
+        filt_prefix = f"{prefix}_filt"
+        _filter_empty_loci_rhog(prefix, filt_prefix)
         local_hsqg_est1 = _validate_path(local_hsqg_est1, "Local hsqg estimates (trait 1)")
         local_hsqg_est2 = _validate_path(local_hsqg_est2, "Local hsqg estimates (trait 2)")
-        cmd += [
+        cmd = [
+            python27,
+            hess_script,
+            "--prefix",
+            filt_prefix,
+            "--out",
+            out,
             "--pheno-cor", str(pheno_cor),
             "--num-shared", str(num_shared),
             "--local-hsqg-est", local_hsqg_est1, local_hsqg_est2,
         ]
         description = "HESS local_rhog_step2"
     else:
-        # Legacy / single-trait heritability path: retain backwards compat
+        # Legacy / single-trait heritability path: retain backwards compat.
+        # No pre-filter needed because the legacy code path historically passes the
+        # original prefix; if a caller starts hitting rank deficiency on this branch,
+        # add a _filter_empty_loci(prefix, ...) call here.
+        cmd = [
+            python27,
+            hess_script,
+            "--prefix",
+            prefix,
+            "--out",
+            out,
+        ]
         description = "HESS local_hsqg_step2 (legacy path)"
 
     return _run_hess_subprocess(cmd, description, out_for_log=out)
