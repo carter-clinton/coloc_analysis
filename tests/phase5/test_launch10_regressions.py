@@ -846,35 +846,105 @@ def test_run_combine_pre_filters_empty_loci_and_passes_filtered_prefix(tmp_path)
 
 
 # ---------------------------------------------------------------------------
-# Regression 8 (Launch12 post-mortem, Bug 5): LDSC partitioned --invert-anyway
+# Regression 8 (Launch13 Bug 5 RE-DIAGNOSIS): drop NEGCTRL_HLA_IMMUNE from
+# the partitioned-h2 LD score copy; --invert-anyway is REVERTED (was the
+# wrong fix — bypasses the safety gate but cannot solve a singular system).
 # ---------------------------------------------------------------------------
 
 
-def test_run_partitioned_h2_passes_invert_anyway(tmp_path):
-    """`run_partitioned_h2` must include ``--invert-anyway`` in the cmd
-    passed to ldsc.py. Without it, every partitioned h2 invocation in this
-    pipeline (joint baselineLD v2.2 [97 cols] + custom_pathway annotation)
-    fails with ``ValueError: ERROR: LD Score matrix condition number is
-    {1e20}.`` regardless of ancestry. Launch12 confirmed:
-    hypertension_EUR_pathway_h2 (EUR frq) → cond 2.9e20;
-    t2d_AFR_pathway_h2 (AFR frq) → cond 8.8e19. Zero *.results files
-    existed on disk before this fix.
+def _write_custom_ldscore_fixture(prefix, chrom, snps_per_chrom=10):
+    """Write a minimal 22-chr custom_pathway LD score triplet for testing.
+
+    Header matches the production custom_pathway header (11 annotations
+    in the same order as build_ldsc_annot.py emits them).
     """
-    # Stub the LDSC dir so _validate_file passes
+    annotations = [
+        "CUSTOM_INSULIN_SIGNALING",
+        "CUSTOM_APPETITE_REGULATION",
+        "CUSTOM_GLUCOSE_METABOLISM",
+        "CUSTOM_FATTY_ACID_METABOLISM",
+        "CUSTOM_INFLAMMATION",
+        "CUSTOM_VASCULAR_TONE",
+        "CUSTOM_LIPID_TRANSPORT",
+        "CUSTOM_ENERGY_STORAGE",
+        "NEGCTRL_HLA_IMMUNE",
+        "NEGCTRL_COSMETIC",
+        "NEGCTRL_BLOOD_GROUP",
+    ]
+    header_cols = ["CHR", "SNP", "BP"] + [f"{a}L2" for a in annotations]
+    ldscore_path = f"{prefix}{chrom}.l2.ldscore.gz"
+    Path(ldscore_path).parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(ldscore_path, "wt") as fh:
+        fh.write("\t".join(header_cols) + "\n")
+        for i in range(snps_per_chrom):
+            row = [str(chrom), f"rs{chrom}_{i}", str(100000 + i * 1000)]
+            # Each annotation: a known per-column value so we can verify drop
+            for j, _a in enumerate(annotations):
+                # 1.0 if annotation index matches (chrom + j) % len, else 0.5
+                row.append(f"{(j + 1) * 0.1:.3f}")
+            fh.write("\t".join(row) + "\n")
+    # M / M_5_50: one count per annotation (NO CHR/SNP/BP prefix)
+    m_values = [str(100 + i) for i in range(len(annotations))]  # 100..110
+    m_5_50_values = [str(50 + i) for i in range(len(annotations))]  # 50..60
+    Path(f"{prefix}{chrom}.l2.M").write_text("\t".join(m_values) + "\n")
+    Path(f"{prefix}{chrom}.l2.M_5_50").write_text("\t".join(m_5_50_values) + "\n")
+
+
+def test_run_partitioned_h2_drops_negctrl_hla_immune_and_omits_invert_anyway(tmp_path):
+    """``run_partitioned_h2`` must (a) build an ephemeral filtered copy of the
+    custom LD scores with ``NEGCTRL_HLA_IMMUNEL2`` dropped, (b) point
+    ``--ref-ld-chr`` at that filtered prefix, and (c) NOT include
+    ``--invert-anyway`` (reverted — was the wrong fix per debug session
+    Bug 5 RE-DIAGNOSIS; the column-drop addresses the actual root cause:
+    NEGCTRL_HLA_IMMUNE × ``weights.hm3_noMHC`` MHC-exclusion structural
+    mismatch produces a singular X^T X that no inversion strategy recovers).
+
+    Quantitative justification: with NEGCTRL_HLA_IMMUNEL2 dropped, the
+    asthma_EUR post-merge X^T X has cond ~ 5e3 (down from 1.16e20), full
+    rank, well below the 1e5 LDSC threshold; --invert-anyway is no longer
+    needed and is intentionally omitted.
+    """
+    from run_ldsc_partitioned import (  # noqa: E402
+        PARTITIONED_H2_DROP_ANNOTATIONS,
+        run_partitioned_h2,
+    )
+
+    # Stub LDSC dir
     ldsc_dir = tmp_path / "ldsc"
     ldsc_dir.mkdir()
     (ldsc_dir / "ldsc.py").write_text("# stub\n")
 
+    # Stub munged sumstats
     sumstats = tmp_path / "munged.sumstats.gz"
     with gzip.open(sumstats, "wt") as fh:
-        fh.write("SNP\tA1\tA2\tZ\tN\n")  # minimal header, _validate_file just checks existence
+        fh.write("SNP\tA1\tA2\tZ\tN\n")
+
+    # Build a 22-chr custom_pathway LD score fixture
+    custom_prefix = str(tmp_path / "ld_scores" / "custom_pathway.")
+    for chrom in range(1, 23):
+        _write_custom_ldscore_fixture(custom_prefix, chrom)
+
+    # baseline prefix can stay as a string — we never actually invoke LDSC
+    baseline_prefix = "data/baselineLD."
+    ref_ld_chr = f"{baseline_prefix},{custom_prefix}"
 
     captured = {}
 
     def fake_run(cmd, **kwargs):
         captured["cmd"] = cmd
-        # Mimic _run_command behaviour: succeed; results parsing is a separate concern
-        # (parse_ldsc_results returns [] on missing file, which run_partitioned_h2 tolerates)
+        # Sniff the rewritten ref-ld-chr arg + verify the filtered files
+        # exist BEFORE the call returns (so cleanup hasn't run yet).
+        ref_idx = cmd.index("--ref-ld-chr")
+        rewritten = cmd[ref_idx + 1]
+        captured["ref_ld_chr"] = rewritten
+        new_custom_prefix = rewritten.split(",")[-1]
+        captured["new_custom_prefix"] = new_custom_prefix
+        # Read chr1 of the filtered LD score and snapshot the header
+        chr1_path = f"{new_custom_prefix}1.l2.ldscore.gz"
+        with gzip.open(chr1_path, "rt") as fh:
+            captured["filt_header"] = fh.readline().rstrip("\n").split("\t")
+        captured["filt_m"] = Path(f"{new_custom_prefix}1.l2.M").read_text().strip().split("\t")
+        captured["filt_m_5_50"] = Path(f"{new_custom_prefix}1.l2.M_5_50").read_text().strip().split("\t")
         r = mock.Mock()
         r.stdout = ""
         r.stderr = ""
@@ -885,17 +955,187 @@ def test_run_partitioned_h2_passes_invert_anyway(tmp_path):
         run_partitioned_h2(
             ldsc_dir=str(ldsc_dir),
             sumstats=str(sumstats),
-            ref_ld_chr="data/baselineLD.,results/custom_pathway.",
+            ref_ld_chr=ref_ld_chr,
+            w_ld_chr="data/weights.hm3_noMHC.",
+            frqfile_chr="data/1000G.EUR.QC.",
+            out=str(tmp_path / "out_h2"),
+        )
+
+    cmd = captured["cmd"]
+
+    # (a) --ref-ld-chr was rewritten: baseline kept, custom prefix changed
+    assert captured["ref_ld_chr"] != ref_ld_chr, (
+        f"--ref-ld-chr should have been rewritten; still {captured['ref_ld_chr']!r}"
+    )
+    new_prefixes = captured["ref_ld_chr"].split(",")
+    assert new_prefixes[0] == baseline_prefix, (
+        f"baseline prefix must remain first (D-04a); got {new_prefixes[0]!r}"
+    )
+    assert new_prefixes[-1] != custom_prefix, (
+        f"custom prefix should differ from source; got {new_prefixes[-1]!r}"
+    )
+    # The filtered prefix must end with '.' (LDSC convention) and live in a
+    # tmp dir that did not exist before the call (we created none).
+    assert new_prefixes[-1].endswith("."), (
+        f"filtered custom prefix must end with '.'; got {new_prefixes[-1]!r}"
+    )
+
+    # (b) Filtered chr1 LD score header drops the NEGCTRL_HLA_IMMUNEL2 column
+    assert "NEGCTRL_HLA_IMMUNEL2" not in captured["filt_header"], (
+        f"NEGCTRL_HLA_IMMUNEL2 must be dropped; header={captured['filt_header']}"
+    )
+    # Other 10 annotations survive
+    for a in PARTITIONED_H2_DROP_ANNOTATIONS:
+        assert f"{a}L2" not in captured["filt_header"]
+    for keep_ann in [
+        "CUSTOM_INSULIN_SIGNALINGL2",
+        "CUSTOM_APPETITE_REGULATIONL2",
+        "CUSTOM_GLUCOSE_METABOLISML2",
+        "CUSTOM_FATTY_ACID_METABOLISML2",
+        "CUSTOM_INFLAMMATIONL2",
+        "CUSTOM_VASCULAR_TONEL2",
+        "CUSTOM_LIPID_TRANSPORTL2",
+        "CUSTOM_ENERGY_STORAGEL2",
+        "NEGCTRL_COSMETICL2",
+        "NEGCTRL_BLOOD_GROUPL2",
+    ]:
+        assert keep_ann in captured["filt_header"], (
+            f"{keep_ann} should be preserved; header={captured['filt_header']}"
+        )
+    # Dimensions: header had CHR/SNP/BP + 11 annotations → 14 cols; after drop → 13.
+    assert len(captured["filt_header"]) == 13, (
+        f"filtered header should have 13 cols; got {len(captured['filt_header'])}"
+    )
+
+    # M / M_5_50 lose the same column (M has 11 → 10)
+    assert len(captured["filt_m"]) == 10, captured["filt_m"]
+    assert len(captured["filt_m_5_50"]) == 10, captured["filt_m_5_50"]
+    # NEGCTRL_HLA_IMMUNE is annotation index 8 in our fixture; M values were
+    # 100,101,...,110 → drop idx 8 → 100,101,102,103,104,105,106,107,109,110
+    assert captured["filt_m"] == ["100", "101", "102", "103", "104", "105", "106", "107", "109", "110"]
+    assert captured["filt_m_5_50"] == ["50", "51", "52", "53", "54", "55", "56", "57", "59", "60"]
+
+    # (c) --invert-anyway is REVERTED — must NOT appear in cmd. The previous
+    # diagnosis (ffbabce) added it as a workaround for what was thought to be
+    # intrinsic baselineLD collinearity; the actual root cause is the
+    # MHC × no-MHC weights mismatch and the column-drop fully resolves it.
+    assert "--invert-anyway" not in cmd, (
+        f"--invert-anyway must be REVERTED (the column-drop is the real fix); got {cmd}"
+    )
+
+    # Sanity: --overlap-annot must still be there (Phase 5 anti-pattern guard)
+    assert "--overlap-annot" in cmd, (
+        f"run_partitioned_h2 must still pass --overlap-annot; got {cmd}"
+    )
+
+    # The temp dir was cleaned up after the call returns
+    assert not Path(captured["new_custom_prefix"]).parent.exists(), (
+        f"ephemeral filtered LD score dir {captured['new_custom_prefix']!r} should be removed; still exists"
+    )
+
+
+def test_strip_annotation_for_partitioned_h2_unit(tmp_path):
+    """Unit test for the column-drop helper. Round-trips a 3-chrom fixture
+    and verifies the drop is byte-for-byte correct (including M/M_5_50
+    sibling files), with the NEGCTRL_HLA_IMMUNE-equivalent column removed
+    from each chromosome.
+    """
+    from run_ldsc_partitioned import _strip_annotation_for_partitioned_h2
+
+    src_prefix = str(tmp_path / "src" / "custom_pathway.")
+    dst_prefix = str(tmp_path / "dst" / "custom_pathway_phh2.")
+    for chrom in (1, 6, 22):
+        _write_custom_ldscore_fixture(src_prefix, chrom, snps_per_chrom=5)
+
+    result = _strip_annotation_for_partitioned_h2(
+        src_prefix=src_prefix,
+        dst_prefix=dst_prefix,
+        drop_annotations=("NEGCTRL_HLA_IMMUNE",),
+        chromosomes=["1", "6", "22"],
+    )
+
+    assert result["chromosomes_processed"] == 3
+    assert result["dropped_annotations"] == ["NEGCTRL_HLA_IMMUNE"]
+    assert "NEGCTRL_HLA_IMMUNEL2" not in result["kept_annotations"]
+    assert len(result["kept_annotations"]) == 10  # 11 source annot - 1 drop
+
+    # Per-chrom: ldscore header + body shape, M/M_5_50 widths
+    for chrom in (1, 6, 22):
+        ld_path = f"{dst_prefix}{chrom}.l2.ldscore.gz"
+        with gzip.open(ld_path, "rt") as fh:
+            lines = fh.read().strip().split("\n")
+        header = lines[0].split("\t")
+        assert "NEGCTRL_HLA_IMMUNEL2" not in header, (chrom, header)
+        assert len(header) == 13  # CHR/SNP/BP + 10 annotations
+        # All body rows have the same width as the header
+        for row in lines[1:]:
+            assert len(row.split("\t")) == 13
+        # Body row count: snps_per_chrom = 5
+        assert len(lines) - 1 == 5
+
+        m = Path(f"{dst_prefix}{chrom}.l2.M").read_text().strip().split("\t")
+        m_5_50 = Path(f"{dst_prefix}{chrom}.l2.M_5_50").read_text().strip().split("\t")
+        assert len(m) == 10
+        assert len(m_5_50) == 10
+
+
+def test_strip_annotation_raises_when_drop_annotation_absent(tmp_path):
+    """Defensive: if the requested drop annotation is not in the source header,
+    raise ValueError immediately rather than silently producing an unfiltered
+    copy.
+    """
+    from run_ldsc_partitioned import _strip_annotation_for_partitioned_h2
+
+    src_prefix = str(tmp_path / "src" / "custom_pathway.")
+    dst_prefix = str(tmp_path / "dst" / "custom_pathway_phh2.")
+    _write_custom_ldscore_fixture(src_prefix, 1, snps_per_chrom=2)
+
+    with pytest.raises(ValueError, match="not in header"):
+        _strip_annotation_for_partitioned_h2(
+            src_prefix=src_prefix,
+            dst_prefix=dst_prefix,
+            drop_annotations=("NONEXISTENT_ANNOTATION",),
+            chromosomes=["1"],
+        )
+
+
+def test_strip_annotation_skipped_when_no_custom_prefix(tmp_path):
+    """If only one prefix is supplied to ref_ld_chr (no custom side), the
+    column-drop logic must NOT engage and the cmd must contain the original
+    ref_ld_chr verbatim. Sanity check on the guard.
+    """
+    from run_ldsc_partitioned import run_partitioned_h2
+
+    ldsc_dir = tmp_path / "ldsc"
+    ldsc_dir.mkdir()
+    (ldsc_dir / "ldsc.py").write_text("# stub\n")
+    sumstats = tmp_path / "munged.sumstats.gz"
+    with gzip.open(sumstats, "wt") as fh:
+        fh.write("SNP\tA1\tA2\tZ\tN\n")
+
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        r = mock.Mock()
+        r.stdout = ""
+        r.stderr = ""
+        r.returncode = 0
+        return r
+
+    with mock.patch("run_ldsc_partitioned.subprocess.run", side_effect=fake_run):
+        run_partitioned_h2(
+            ldsc_dir=str(ldsc_dir),
+            sumstats=str(sumstats),
+            ref_ld_chr="data/baselineLD.",  # no custom prefix
             w_ld_chr="data/weights.",
             frqfile_chr="data/1000G.EUR.QC.",
             out=str(tmp_path / "out_h2"),
         )
 
     cmd = captured["cmd"]
-    assert "--invert-anyway" in cmd, (
-        f"run_partitioned_h2 must pass --invert-anyway; got {cmd}"
+    ref_idx = cmd.index("--ref-ld-chr")
+    assert cmd[ref_idx + 1] == "data/baselineLD.", (
+        f"single-prefix ref_ld_chr must pass through unchanged; got {cmd[ref_idx + 1]!r}"
     )
-    # Sanity: --overlap-annot must still be there (Phase 5 anti-pattern guard)
-    assert "--overlap-annot" in cmd, (
-        f"run_partitioned_h2 must still pass --overlap-annot; got {cmd}"
-    )
+    assert "--invert-anyway" not in cmd

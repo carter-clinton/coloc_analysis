@@ -16,10 +16,20 @@ Critical design decisions:
   - Baseline v2.2 always first in --ref-ld-chr (D-04a)
   - Post-munge SNP count validation: warns if < 500,000 (Pitfall 2 / T-05-16)
   - Parses .results file to extract per-annotation enrichment metrics
+  - In ``run_partitioned_h2``: strips ``NEGCTRL_HLA_IMMUNEL2`` from a private
+    on-the-fly copy of the custom_pathway LD scores before invoking LDSC. The
+    annotation is HLA-region-specific (chr6 26–34 Mb, the canonical MHC) and
+    the standard LDSC weight file (``weights.hm3_noMHC``, Finucane 2015) excludes
+    MHC by design. The inner-join in ``read_ld_and_sumstats`` zeros the column
+    on the regression-eligible SNP set → singular X^T X → ``LinAlgError`` at
+    ``np.linalg.solve(xtx, xty)``. Filtering is partitioned-h2-specific so the
+    full custom_pathway files remain intact for LDSC-SEG and other consumers.
+    See ``.planning/debug/t1-launch10-residual-failures.md`` §
+    ``2026-04-18T20:55Z — Bug 5 RE-DIAGNOSIS`` for the SVD evidence.
 
 References:
     Bulik-Sullivan et al. 2015 Nat Genet (LDSC)
-    Finucane et al. 2015 Nat Genet (Partitioned heritability)
+    Finucane et al. 2015 Nat Genet (Partitioned heritability + MHC exclusion)
     Gazal et al. 2017 Nat Genet (Baseline v2.2)
 
 Usage:
@@ -47,8 +57,10 @@ import csv
 import gzip
 import logging
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # Allow importing shared module from same directory
@@ -60,6 +72,20 @@ logger = logging.getLogger(__name__)
 
 # Minimum expected SNP count after munging (Pitfall 2 / T-05-16)
 MIN_MUNGED_SNPS = 500000
+
+# Annotations to drop from a private copy of custom_pathway LD scores before
+# running ``ldsc.py --h2 --overlap-annot``. These columns have spatial
+# coverage that conflicts with ``weights.hm3_noMHC`` (the standard LDSC
+# weight file, Finucane 2015) — the inner-join in ``read_ld_and_sumstats``
+# zeros them out on the regression-eligible SNP set, producing a singular
+# X^T X. The annotations remain present in the canonical
+# ``custom_pathway.{N}.l2.ldscore.gz`` files for other consumers
+# (LDSC-SEG, etc.) — only the partitioned-h2 step uses the filtered copy.
+# Stored without the trailing ``L2`` suffix; the L2 suffix is added when
+# matching against header columns. See debug session
+# ``.planning/debug/t1-launch10-residual-failures.md`` §
+# ``2026-04-18T20:55Z — Bug 5 RE-DIAGNOSIS``.
+PARTITIONED_H2_DROP_ANNOTATIONS = ("NEGCTRL_HLA_IMMUNE",)
 
 
 def _validate_file(path: str, label: str) -> None:
@@ -145,6 +171,218 @@ def _count_sumstats_snps(sumstats_gz_path: str) -> int:
         for _ in f:
             count += 1
     return count
+
+
+def _drop_columns_from_ldscore(
+    src_path: str,
+    dst_path: str,
+    drop_annotations: tuple,
+) -> tuple:
+    """Stream a ``.l2.ldscore.gz`` file dropping the named annotation columns.
+
+    LDSC LD score files are tab-separated, gzipped, with a header row
+    ``CHR<TAB>SNP<TAB>BP<TAB>{ANNOT1}L2<TAB>{ANNOT2}L2 ...``. Each
+    annotation column ends in the ``L2`` suffix. This function rewrites
+    the file dropping any column whose header (without ``L2``) is in
+    ``drop_annotations``.
+
+    Parameters
+    ----------
+    src_path : str
+        Source ``.l2.ldscore.gz`` file path.
+    dst_path : str
+        Destination path (overwritten if exists).
+    drop_annotations : tuple of str
+        Annotation names WITHOUT the trailing ``L2`` suffix
+        (e.g. ``("NEGCTRL_HLA_IMMUNE",)``).
+
+    Returns
+    -------
+    tuple
+        ``(dropped_indices, kept_header_cols)`` where ``dropped_indices`` is
+        a list of 0-indexed column positions removed from the row and
+        ``kept_header_cols`` is the surviving header column names.
+
+    Raises
+    ------
+    ValueError
+        If ``src_path`` lacks the expected ``CHR/SNP/BP`` prefix, or if any
+        ``drop_annotations`` entry is not present in the header.
+    """
+    with gzip.open(src_path, "rt") as fin:
+        header_line = fin.readline().rstrip("\n")
+        cols = header_line.split("\t")
+        if len(cols) < 4 or cols[:3] != ["CHR", "SNP", "BP"]:
+            raise ValueError(
+                f"{src_path}: expected header to start with CHR/SNP/BP, got {cols[:3]}"
+            )
+
+        drop_set = {f"{a}L2" for a in drop_annotations}
+        # Identify which columns to drop, by 0-indexed position
+        dropped_indices = [i for i, c in enumerate(cols) if c in drop_set]
+        kept_indices = [i for i, _ in enumerate(cols) if i not in set(dropped_indices)]
+        kept_header = [cols[i] for i in kept_indices]
+
+        # Sanity: every requested annotation must be present
+        present_drop_names = {cols[i] for i in dropped_indices}
+        missing = drop_set - present_drop_names
+        if missing:
+            raise ValueError(
+                f"{src_path}: requested drop annotations not in header: {sorted(missing)}"
+            )
+
+        os.makedirs(os.path.dirname(dst_path) or ".", exist_ok=True)
+        with gzip.open(dst_path, "wt") as fout:
+            fout.write("\t".join(kept_header) + "\n")
+            for line in fin:
+                line = line.rstrip("\n")
+                if not line:
+                    continue
+                parts = line.split("\t")
+                if len(parts) != len(cols):
+                    raise ValueError(
+                        f"{src_path}: row width {len(parts)} != header width "
+                        f"{len(cols)} in line: {line[:120]!r}"
+                    )
+                fout.write("\t".join(parts[i] for i in kept_indices) + "\n")
+
+    return dropped_indices, kept_header
+
+
+def _drop_columns_from_m_file(
+    src_path: str,
+    dst_path: str,
+    annotation_drop_indices: list,
+) -> list:
+    """Drop columns from an LDSC ``.l2.M`` or ``.l2.M_5_50`` sibling file.
+
+    M files are single-line, tab-separated SNP counts — one entry per
+    annotation column (NO ``CHR/SNP/BP`` prefix). The annotation column
+    indices in the M file therefore correspond to LD-score header
+    indices shifted by 3 (i.e. ldscore col index = M col index + 3).
+
+    Parameters
+    ----------
+    src_path : str
+        Source ``.l2.M`` or ``.l2.M_5_50`` file path.
+    dst_path : str
+        Destination path (overwritten if exists).
+    annotation_drop_indices : list of int
+        0-indexed annotation positions to drop. These are *annotation* indices
+        (M-file positions), NOT LD-score header positions. Caller is
+        responsible for the index shift.
+
+    Returns
+    -------
+    list of str
+        Surviving M-file values.
+    """
+    with open(src_path) as f:
+        text = f.read().strip()
+    if not text:
+        raise ValueError(f"{src_path}: empty file")
+    parts = text.split("\t")
+    drop_set = set(annotation_drop_indices)
+    kept = [v for i, v in enumerate(parts) if i not in drop_set]
+    os.makedirs(os.path.dirname(dst_path) or ".", exist_ok=True)
+    with open(dst_path, "w") as f:
+        f.write("\t".join(kept) + "\n")
+    return kept
+
+
+def _strip_annotation_for_partitioned_h2(
+    src_prefix: str,
+    dst_prefix: str,
+    drop_annotations: tuple = PARTITIONED_H2_DROP_ANNOTATIONS,
+    chromosomes: list = None,
+) -> dict:
+    """Build a filtered private copy of a custom LD score set for partitioned-h2.
+
+    For each chromosome, reads
+    ``{src_prefix}{chrom}.l2.ldscore.gz`` plus the sibling ``.l2.M`` and
+    ``.l2.M_5_50`` files, drops the columns in ``drop_annotations``, and
+    writes the filtered triplet under ``{dst_prefix}{chrom}.l2.{ldscore.gz,M,M_5_50}``.
+
+    The destination prefix is intended to be a per-job ephemeral path
+    (e.g., a ``tempfile.mkdtemp`` directory) — the caller deletes it after
+    LDSC completes.
+
+    Parameters
+    ----------
+    src_prefix : str
+        Source prefix INCLUDING the trailing ``.`` separator
+        (e.g. ``"results/.../custom_pathway."``).
+    dst_prefix : str
+        Destination prefix INCLUDING the trailing ``.``.
+    drop_annotations : tuple of str, default PARTITIONED_H2_DROP_ANNOTATIONS
+        Annotation names WITHOUT the ``L2`` suffix.
+    chromosomes : list, optional
+        Chromosomes to process (default: 1..22).
+
+    Returns
+    -------
+    dict
+        ``{"chromosomes_processed": int, "kept_annotations": list,
+        "dropped_annotations": list}``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If any required source file is missing.
+    ValueError
+        If header validation fails or a requested drop annotation is absent.
+    """
+    if chromosomes is None:
+        chromosomes = [str(c) for c in range(1, 23)]
+
+    n_processed = 0
+    kept_annotations = None
+    for chrom in chromosomes:
+        src_ldscore = f"{src_prefix}{chrom}.l2.ldscore.gz"
+        src_m = f"{src_prefix}{chrom}.l2.M"
+        src_m_5_50 = f"{src_prefix}{chrom}.l2.M_5_50"
+        for label, p in (("ldscore", src_ldscore), ("M", src_m), ("M_5_50", src_m_5_50)):
+            _validate_file(p, f"custom LD score {label} chr{chrom}")
+
+        dst_ldscore = f"{dst_prefix}{chrom}.l2.ldscore.gz"
+        dst_m = f"{dst_prefix}{chrom}.l2.M"
+        dst_m_5_50 = f"{dst_prefix}{chrom}.l2.M_5_50"
+
+        dropped_indices, kept_header = _drop_columns_from_ldscore(
+            src_ldscore, dst_ldscore, drop_annotations
+        )
+        # M-file indices = ldscore indices shifted by -3 (CHR/SNP/BP not in M).
+        m_drop_indices = sorted({i - 3 for i in dropped_indices})
+        if any(i < 0 for i in m_drop_indices):
+            raise ValueError(
+                f"chr{chrom}: dropped index would map to negative M-file column "
+                f"(ldscore drop indices = {dropped_indices})"
+            )
+        _drop_columns_from_m_file(src_m, dst_m, m_drop_indices)
+        _drop_columns_from_m_file(src_m_5_50, dst_m_5_50, m_drop_indices)
+
+        # First chromosome establishes the canonical kept-annotation list.
+        # Subsequent chromosomes must match (defensive — header is identical
+        # across chrs in the canonical pipeline, but verify).
+        chrom_kept_annotations = [c for c in kept_header[3:]]
+        if kept_annotations is None:
+            kept_annotations = chrom_kept_annotations
+        elif chrom_kept_annotations != kept_annotations:
+            raise ValueError(
+                f"chr{chrom} kept annotations differ from chr{chromosomes[0]}: "
+                f"{chrom_kept_annotations} vs {kept_annotations}"
+            )
+        n_processed += 1
+
+    logger.info(
+        "Filtered partitioned-h2 LD scores: dropped %s, kept %d annotations across %d chromosomes (dst prefix: %s)",
+        list(drop_annotations), len(kept_annotations or []), n_processed, dst_prefix,
+    )
+    return {
+        "chromosomes_processed": n_processed,
+        "kept_annotations": kept_annotations or [],
+        "dropped_annotations": list(drop_annotations),
+    }
 
 
 def run_munge(
@@ -366,24 +604,40 @@ def run_partitioned_h2(
     w_ld_chr: str,
     frqfile_chr: str,
     out: str,
+    drop_annotations: tuple = PARTITIONED_H2_DROP_ANNOTATIONS,
 ) -> dict:
     """Step: h2 -- Run LDSC partitioned heritability.
 
     CRITICAL: Always includes --overlap-annot flag (anti-pattern prevention).
     Baseline v2.2 must be first entry in --ref-ld-chr (D-04a).
 
-    --invert-anyway is required for the canonical baselineLD v2.2 (97
-    annotations) + custom_pathway joint S-LDSC model. Per LDSC FAQ
-    (github.com/bulik/ldsc/wiki/FAQ) and ``check_ld_condition_number``
-    (tools/ldsc/ldscore/sumstats.py:312-338), the baselineLD matrix has
-    intrinsic numerical collinearity that drives ``np.linalg.cond`` above
-    the 1e5 hard threshold for ALL ancestries. Without --invert-anyway,
-    every partitioned h2 invocation in this pipeline raises
-    ``ValueError: ERROR: LD Score matrix condition number is {1e20}.``
-    Confirmed empirically in Launch12: hypertension_EUR_pathway_h2 with
-    EUR frq → cond 2.9e20; t2d_AFR with AFR frq → cond 8.8e19. See
-    .planning/debug/t1-launch10-residual-failures.md §2026-04-18T13:00Z
-    "Bug 5".
+    Per Bug 5 RE-DIAGNOSIS (debug session
+    ``.planning/debug/t1-launch10-residual-failures.md`` §
+    ``2026-04-18T20:55Z``), LDSC's
+    ``ValueError: LD Score matrix condition number is {1e20}`` for this
+    annotation set is NOT intrinsic baselineLD collinearity. It is a
+    structural mismatch between the ``NEGCTRL_HLA_IMMUNE`` annotation
+    (non-zero only on chr6 26–34 Mb, the canonical MHC) and the standard
+    LDSC weight file ``weights.hm3_noMHC`` (Finucane 2015, MHC excluded
+    by design). The inner-join in ``read_ld_and_sumstats`` zeros the
+    ``NEGCTRL_HLA_IMMUNEL2`` column on the regression-eligible SNP set →
+    rank-1 deficiency → ``LinAlgError`` at
+    ``np.linalg.solve(xtx, xty)`` (jackknife.py:376). ``--invert-anyway``
+    bypasses the safety gate but cannot solve a structurally singular
+    system.
+
+    Resolution (Carter, Option 1): when the custom_pathway prefix is the
+    last entry in ``ref_ld_chr``, this function builds an ephemeral
+    filtered copy of the custom LD score files in a per-job temp dir
+    with ``NEGCTRL_HLA_IMMUNEL2`` removed, points ``--ref-ld-chr`` at
+    the filtered prefix, and cleans up after LDSC completes. The
+    canonical ``custom_pathway.{N}.l2.ldscore.gz`` files are unchanged
+    so other consumers (LDSC-SEG) continue to see all 11 annotations.
+
+    Quantitative confirmation: post-drop cond(X_filt) on the asthma_EUR
+    post-merge subset = 4.97e3 (down from 1.16e20), full rank — well
+    below the 1e5 LDSC threshold; ``--invert-anyway`` is no longer needed
+    and is intentionally omitted.
 
     Parameters
     ----------
@@ -400,6 +654,10 @@ def run_partitioned_h2(
         Frequency file prefix (e.g., "1000G.EUR.QC.").
     out : str
         Output prefix. Produces {out}.results.
+    drop_annotations : tuple of str, default PARTITIONED_H2_DROP_ANNOTATIONS
+        Annotation names (no ``L2`` suffix) to strip from the custom
+        LD score prefix (last entry of ``ref_ld_chr``) for this
+        invocation only. Pass ``()`` to disable filtering.
 
     Returns
     -------
@@ -412,22 +670,72 @@ def run_partitioned_h2(
 
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
 
+    # Build a private filtered copy of the custom LD scores (last entry of
+    # ref_ld_chr per D-04a baseline-first convention). The filtered triplet
+    # lives under a per-job temp dir and is removed after LDSC returns
+    # (success or failure). Skipped if drop_annotations is empty or only
+    # one prefix is supplied (no custom side to filter).
+    ref_ld_prefixes = ref_ld_chr.split(",")
+    effective_ref_ld_chr = ref_ld_chr
+    tmp_dir = None
+    if drop_annotations and len(ref_ld_prefixes) >= 2:
+        custom_prefix_src = ref_ld_prefixes[-1]
+        # Sanity: the supplied prefix must end with the conventional separator
+        # so per-chrom files resolve as ``{prefix}{chrom}.l2.ldscore.gz``.
+        if not custom_prefix_src.endswith("."):
+            logger.warning(
+                "Custom LD score prefix %r does not end with '.'; "
+                "_strip_annotation_for_partitioned_h2 will still concatenate {prefix}{chrom}.",
+                custom_prefix_src,
+            )
+        tmp_dir = tempfile.mkdtemp(prefix="ldsc_partition_h2_filt_")
+        # Preserve the basename so log lines and any downstream filename parsing
+        # see a recognizable prefix (e.g. ``custom_pathway_phh2.``).
+        src_basename = os.path.basename(custom_prefix_src.rstrip("."))
+        filtered_prefix_basename = f"{src_basename}_phh2."
+        dst_prefix = os.path.join(tmp_dir, filtered_prefix_basename)
+        _strip_annotation_for_partitioned_h2(
+            src_prefix=custom_prefix_src,
+            dst_prefix=dst_prefix,
+            drop_annotations=drop_annotations,
+        )
+        effective_ref_ld_chr = ",".join(ref_ld_prefixes[:-1] + [dst_prefix])
+        logger.info(
+            "Partitioned h2: rewrote --ref-ld-chr custom prefix %s → %s "
+            "(dropped: %s)",
+            custom_prefix_src, dst_prefix, list(drop_annotations),
+        )
+
     # CRITICAL: --overlap-annot is always included (anti-pattern prevention).
-    # CRITICAL: --invert-anyway is required to bypass the condition-number
-    # rejection for baselineLD + custom_pathway (cond > 1e5 always — see
-    # docstring above and tools/ldsc/ldscore/sumstats.py:326).
+    # NOTE: --invert-anyway is intentionally OMITTED. The previous
+    # condition-number explosion was caused by NEGCTRL_HLA_IMMUNE × no-MHC
+    # weights, not intrinsic baseline collinearity — see docstring above.
+    # With the filtered custom prefix, post-merge cond(X) ~ 5e3, well below
+    # the 1e5 hard threshold.
     cmd = [
         sys.executable, ldsc_py,
         "--h2", sumstats,
-        "--ref-ld-chr", ref_ld_chr,
+        "--ref-ld-chr", effective_ref_ld_chr,
         "--w-ld-chr", w_ld_chr,
         "--overlap-annot",
         "--frqfile-chr", frqfile_chr,
-        "--invert-anyway",
         "--out", out,
     ]
 
-    _run_command(cmd, "LDSC partitioned h2")
+    try:
+        _run_command(cmd, "LDSC partitioned h2")
+    finally:
+        # Best-effort cleanup of the filtered LD score temp dir, even if LDSC
+        # raised. Leave the dir behind only if removal itself fails (in which
+        # case OS tmpfile cleanup will eventually reap it).
+        if tmp_dir and os.path.isdir(tmp_dir):
+            try:
+                shutil.rmtree(tmp_dir)
+            except OSError as cleanup_err:
+                logger.warning(
+                    "Failed to remove ephemeral filtered LD score dir %s: %s",
+                    tmp_dir, cleanup_err,
+                )
 
     # Parse results file
     results_path = out + ".results"
