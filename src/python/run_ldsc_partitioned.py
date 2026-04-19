@@ -249,6 +249,60 @@ def _drop_columns_from_ldscore(
     return dropped_indices, kept_header
 
 
+def _drop_columns_from_annot(
+    src_path: str,
+    dst_path: str,
+    drop_annotations: tuple,
+) -> tuple:
+    """Stream a ``.annot.gz`` file dropping the named annotation columns.
+
+    LDSC .annot files are tab-separated, gzipped, with header
+    ``CHR<TAB>BP<TAB>SNP<TAB>CM<TAB>{ANNOT1}<TAB>{ANNOT2} ...``.
+    Annotation column names do NOT carry the trailing ``L2`` suffix
+    (unlike the sibling ``.l2.ldscore.gz`` header). Match is by exact
+    column name against ``drop_annotations``.
+
+    Returns ``(dropped_indices, kept_header)`` where indices are 0-based
+    into the annot header (CHR/BP/SNP/CM come first).
+    """
+    with gzip.open(src_path, "rt") as fin:
+        header_line = fin.readline().rstrip("\n")
+        cols = header_line.split("\t")
+        if len(cols) < 5 or cols[:4] != ["CHR", "BP", "SNP", "CM"]:
+            raise ValueError(
+                f"{src_path}: expected header to start with CHR/BP/SNP/CM, got {cols[:4]}"
+            )
+
+        drop_set = set(drop_annotations)
+        dropped_indices = [i for i, c in enumerate(cols) if c in drop_set]
+        kept_indices = [i for i in range(len(cols)) if i not in set(dropped_indices)]
+        kept_header = [cols[i] for i in kept_indices]
+
+        present_drop_names = {cols[i] for i in dropped_indices}
+        missing = drop_set - present_drop_names
+        if missing:
+            raise ValueError(
+                f"{src_path}: requested drop annotations not in header: {sorted(missing)}"
+            )
+
+        os.makedirs(os.path.dirname(dst_path) or ".", exist_ok=True)
+        with gzip.open(dst_path, "wt") as fout:
+            fout.write("\t".join(kept_header) + "\n")
+            for line in fin:
+                line = line.rstrip("\n")
+                if not line:
+                    continue
+                parts = line.split("\t")
+                if len(parts) != len(cols):
+                    raise ValueError(
+                        f"{src_path}: row width {len(parts)} != header width "
+                        f"{len(cols)} in line: {line[:120]!r}"
+                    )
+                fout.write("\t".join(parts[i] for i in kept_indices) + "\n")
+
+    return dropped_indices, kept_header
+
+
 def _drop_columns_from_m_file(
     src_path: str,
     dst_path: str,
@@ -295,29 +349,39 @@ def _strip_annotation_for_partitioned_h2(
     dst_prefix: str,
     drop_annotations: tuple = PARTITIONED_H2_DROP_ANNOTATIONS,
     chromosomes: list = None,
+    annot_src_prefix: str = None,
 ) -> dict:
     """Build a filtered private copy of a custom LD score set for partitioned-h2.
 
     For each chromosome, reads
-    ``{src_prefix}{chrom}.l2.ldscore.gz`` plus the sibling ``.l2.M`` and
-    ``.l2.M_5_50`` files, drops the columns in ``drop_annotations``, and
-    writes the filtered triplet under ``{dst_prefix}{chrom}.l2.{ldscore.gz,M,M_5_50}``.
+    ``{src_prefix}{chrom}.l2.ldscore.gz`` plus the sibling ``.l2.M`` /
+    ``.l2.M_5_50`` AND ``{annot_src_prefix}{chrom}.annot.gz``, drops the
+    columns in ``drop_annotations``, and writes the filtered quadruplet
+    under ``{dst_prefix}{chrom}.{l2.ldscore.gz,l2.M,l2.M_5_50,annot.gz}``.
 
-    The destination prefix is intended to be a per-job ephemeral path
-    (e.g., a ``tempfile.mkdtemp`` directory) — the caller deletes it after
-    LDSC completes.
+    LDSC ``--overlap-annot`` reads ``.annot.gz`` files alongside LD
+    scores via ``parse.annot``; filtering LD scores without also
+    filtering annots leaves the annot matrix with the dropped column,
+    causing the overlap correction to see different categories than the
+    regression and ultimately an ``IOError`` once the annot prefix is
+    probed in the tempdir.
 
     Parameters
     ----------
     src_prefix : str
-        Source prefix INCLUDING the trailing ``.`` separator
-        (e.g. ``"results/.../custom_pathway."``).
+        LD-score source prefix INCLUDING the trailing ``.`` separator
+        (e.g. ``"results/.../ld_scores/custom_pathway."``).
     dst_prefix : str
         Destination prefix INCLUDING the trailing ``.``.
     drop_annotations : tuple of str, default PARTITIONED_H2_DROP_ANNOTATIONS
         Annotation names WITHOUT the ``L2`` suffix.
     chromosomes : list, optional
         Chromosomes to process (default: 1..22).
+    annot_src_prefix : str, optional
+        Annot source prefix (``{annot_src_prefix}{chrom}.annot.gz``).
+        Defaults to ``src_prefix`` with ``/ld_scores/`` substituted by
+        ``/annotations/`` — the project-convention sibling layout. Set
+        explicitly when the convention does not hold.
 
     Returns
     -------
@@ -330,10 +394,19 @@ def _strip_annotation_for_partitioned_h2(
     FileNotFoundError
         If any required source file is missing.
     ValueError
-        If header validation fails or a requested drop annotation is absent.
+        If header validation fails, a requested drop annotation is
+        absent, or the annot prefix cannot be derived from src_prefix.
     """
     if chromosomes is None:
         chromosomes = [str(c) for c in range(1, 23)]
+
+    if annot_src_prefix is None:
+        if "/ld_scores/" not in src_prefix:
+            raise ValueError(
+                f"Cannot derive annot_src_prefix from src_prefix={src_prefix!r} "
+                f"(expected '/ld_scores/' segment). Pass annot_src_prefix explicitly."
+            )
+        annot_src_prefix = src_prefix.replace("/ld_scores/", "/annotations/", 1)
 
     n_processed = 0
     kept_annotations = None
@@ -341,12 +414,19 @@ def _strip_annotation_for_partitioned_h2(
         src_ldscore = f"{src_prefix}{chrom}.l2.ldscore.gz"
         src_m = f"{src_prefix}{chrom}.l2.M"
         src_m_5_50 = f"{src_prefix}{chrom}.l2.M_5_50"
-        for label, p in (("ldscore", src_ldscore), ("M", src_m), ("M_5_50", src_m_5_50)):
+        src_annot = f"{annot_src_prefix}{chrom}.annot.gz"
+        for label, p in (
+            ("ldscore", src_ldscore),
+            ("M", src_m),
+            ("M_5_50", src_m_5_50),
+            ("annot", src_annot),
+        ):
             _validate_file(p, f"custom LD score {label} chr{chrom}")
 
         dst_ldscore = f"{dst_prefix}{chrom}.l2.ldscore.gz"
         dst_m = f"{dst_prefix}{chrom}.l2.M"
         dst_m_5_50 = f"{dst_prefix}{chrom}.l2.M_5_50"
+        dst_annot = f"{dst_prefix}{chrom}.annot.gz"
 
         dropped_indices, kept_header = _drop_columns_from_ldscore(
             src_ldscore, dst_ldscore, drop_annotations
@@ -360,6 +440,7 @@ def _strip_annotation_for_partitioned_h2(
             )
         _drop_columns_from_m_file(src_m, dst_m, m_drop_indices)
         _drop_columns_from_m_file(src_m_5_50, dst_m_5_50, m_drop_indices)
+        _drop_columns_from_annot(src_annot, dst_annot, drop_annotations)
 
         # First chromosome establishes the canonical kept-annotation list.
         # Subsequent chromosomes must match (defensive — header is identical

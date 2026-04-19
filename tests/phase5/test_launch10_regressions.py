@@ -852,11 +852,18 @@ def test_run_combine_pre_filters_empty_loci_and_passes_filtered_prefix(tmp_path)
 # ---------------------------------------------------------------------------
 
 
-def _write_custom_ldscore_fixture(prefix, chrom, snps_per_chrom=10):
-    """Write a minimal 22-chr custom_pathway LD score triplet for testing.
+def _write_custom_ldscore_fixture(prefix, chrom, snps_per_chrom=10, annot_prefix=None):
+    """Write a minimal 22-chr custom_pathway LD score + annot fixture for testing.
 
     Header matches the production custom_pathway header (11 annotations
     in the same order as build_ldsc_annot.py emits them).
+
+    Writes the LD-score triplet (``.l2.ldscore.gz`` / ``.l2.M`` / ``.l2.M_5_50``)
+    at ``{prefix}{chrom}.*``, and the matching ``.annot.gz`` at
+    ``{annot_prefix or prefix}{chrom}.annot.gz``. LDSC ``--overlap-annot``
+    reads both, so both must exist for the column-drop helper to succeed.
+    Pass ``annot_prefix`` to emulate the production sibling layout
+    (``.../ld_scores/custom_pathway.`` + ``.../annotations/custom_pathway.``).
     """
     annotations = [
         "CUSTOM_INSULIN_SIGNALING",
@@ -889,6 +896,20 @@ def _write_custom_ldscore_fixture(prefix, chrom, snps_per_chrom=10):
     Path(f"{prefix}{chrom}.l2.M").write_text("\t".join(m_values) + "\n")
     Path(f"{prefix}{chrom}.l2.M_5_50").write_text("\t".join(m_5_50_values) + "\n")
 
+    # Annot file: CHR BP SNP CM + annotation cols (no L2 suffix)
+    if annot_prefix is None:
+        annot_prefix = prefix
+    annot_header = ["CHR", "BP", "SNP", "CM"] + list(annotations)
+    annot_path = f"{annot_prefix}{chrom}.annot.gz"
+    Path(annot_path).parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(annot_path, "wt") as fh:
+        fh.write("\t".join(annot_header) + "\n")
+        for i in range(snps_per_chrom):
+            row = [str(chrom), str(100000 + i * 1000), f"rs{chrom}_{i}", "0.0"]
+            for j, _a in enumerate(annotations):
+                row.append("1" if (chrom + i + j) % 3 == 0 else "0")
+            fh.write("\t".join(row) + "\n")
+
 
 def test_run_partitioned_h2_drops_negctrl_hla_immune_and_omits_invert_anyway(tmp_path):
     """``run_partitioned_h2`` must (a) build an ephemeral filtered copy of the
@@ -919,10 +940,13 @@ def test_run_partitioned_h2_drops_negctrl_hla_immune_and_omits_invert_anyway(tmp
     with gzip.open(sumstats, "wt") as fh:
         fh.write("SNP\tA1\tA2\tZ\tN\n")
 
-    # Build a 22-chr custom_pathway LD score fixture
+    # Build a 22-chr custom_pathway LD score + annot fixture; LDSC reads
+    # .annot.gz alongside .l2.ldscore.gz under --overlap-annot, and our
+    # filter auto-derives the annot prefix via /ld_scores/ → /annotations/.
     custom_prefix = str(tmp_path / "ld_scores" / "custom_pathway.")
+    custom_annot_prefix = str(tmp_path / "annotations" / "custom_pathway.")
     for chrom in range(1, 23):
-        _write_custom_ldscore_fixture(custom_prefix, chrom)
+        _write_custom_ldscore_fixture(custom_prefix, chrom, annot_prefix=custom_annot_prefix)
 
     # baseline prefix can stay as a string — we never actually invoke LDSC
     baseline_prefix = "data/baselineLD."
@@ -1052,6 +1076,7 @@ def test_strip_annotation_for_partitioned_h2_unit(tmp_path):
         dst_prefix=dst_prefix,
         drop_annotations=("NEGCTRL_HLA_IMMUNE",),
         chromosomes=["1", "6", "22"],
+        annot_src_prefix=src_prefix,
     )
 
     assert result["chromosomes_processed"] == 3
@@ -1096,6 +1121,7 @@ def test_strip_annotation_raises_when_drop_annotation_absent(tmp_path):
             dst_prefix=dst_prefix,
             drop_annotations=("NONEXISTENT_ANNOTATION",),
             chromosomes=["1"],
+            annot_src_prefix=src_prefix,
         )
 
 
