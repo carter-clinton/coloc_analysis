@@ -48,13 +48,23 @@ _EQTLCAT_QTD_MAP = _load_yaml("config/eqtl_catalogue_qtd_map.yaml")
 _QTL_SOURCES_CFG = _load_yaml("config/qtl_sources.yaml").get("sources", {})
 
 
-def _resolve_eqtlcat_url(tissue, source_key, suffix):
-    """Resolve the eQTL Catalogue URL for a (tissue, source, suffix) triple.
+def _resolve_eqtlcat_url(tissue, source_key, suffix=None):
+    """Resolve the eQTL Catalogue URL for a (tissue, source) pair.
 
     source_key is the key in config/qtl_sources.yaml::sources (e.g. 'gtex_eqtl',
-    'gtex_sqtl'). Reads study_id + qtd_kind from qtl_sources.yaml (loaded at
-    module scope into _QTL_SOURCES_CFG) and the tissue -> QTD mapping from
-    config/eqtl_catalogue_qtd_map.yaml.
+    'gtex_sqtl'). Reads study_id + qtd_kind + upstream_suffix from
+    qtl_sources.yaml (loaded at module scope into _QTL_SOURCES_CFG) and the
+    tissue -> QTD mapping from config/eqtl_catalogue_qtd_map.yaml.
+
+    If `suffix` is None, uses the source's configured `upstream_suffix`. Pass
+    an explicit suffix (e.g. ".tbi" appended) when fetching a sibling file;
+    the helper concatenates it to upstream_suffix.
+
+    Note: per eQTL Catalogue's authoritative tabix_ftp_paths.tsv table,
+    gene-level (ge) quantifications publish full allpairs under `.all.tsv.gz`
+    while exon/tx/txrev/leafcutter publish only `.cc.tsv.gz` (a
+    credible-set-filtered subset). The configured `upstream_suffix` must
+    match the quant method for the QTD to resolve correctly.
 
     Raises ValueError with a descriptive message for unknown tissue/source.
     """
@@ -67,10 +77,18 @@ def _resolve_eqtlcat_url(tissue, source_key, suffix):
     base = src.get("ftp_base", "https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/")
     study_id = src.get("study_id")
     qtd_kind = src.get("qtd_kind")
+    configured_suffix = src.get("upstream_suffix")
     if not study_id or not qtd_kind:
         raise ValueError(
             f"Source '{source_key}' missing study_id or qtd_kind in qtl_sources.yaml "
             f"(study_id={study_id!r}, qtd_kind={qtd_kind!r})"
+        )
+    if suffix is None:
+        suffix = configured_suffix
+    if not suffix:
+        raise ValueError(
+            f"No upstream_suffix configured for source '{source_key}' "
+            f"and no explicit suffix provided"
         )
     tissues = _EQTLCAT_QTD_MAP.get("tissues", {})
     if tissue not in tissues:
@@ -103,8 +121,9 @@ rule download_eqtl_catalogue:
         tsv=os.path.join(QTL_RAW_DIR, "{dataset_id}.all.tsv.gz"),
         tbi=os.path.join(QTL_RAW_DIR, "{dataset_id}.all.tsv.gz.tbi"),
     params:
-        tsv_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_eqtl", ".cc.tsv.gz"),
-        tbi_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_eqtl", ".cc.tsv.gz.tbi"),
+        # Suffix defaulted from qtl_sources.yaml::gtex_eqtl.upstream_suffix (.all.tsv.gz for ge)
+        tsv_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_eqtl"),
+        tbi_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_eqtl") + ".tbi",
     resources:
         mem_mb=2000,
     shell:
@@ -204,8 +223,9 @@ rule download_sqtl_catalogue:
         tsv=os.path.join(QTL_RAW_SQTL_DIR, "{dataset_id}.all.tsv.gz"),
         tbi=os.path.join(QTL_RAW_SQTL_DIR, "{dataset_id}.all.tsv.gz.tbi"),
     params:
-        tsv_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_sqtl", ".cc.tsv.gz"),
-        tbi_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_sqtl", ".cc.tsv.gz.tbi"),
+        # Suffix defaulted from qtl_sources.yaml::gtex_sqtl.upstream_suffix (.cc.tsv.gz for leafcutter)
+        tsv_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_sqtl"),
+        tbi_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_sqtl") + ".tbi",
     resources:
         mem_mb=2000,
     shell:

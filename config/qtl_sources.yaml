@@ -12,11 +12,12 @@ sources:
     # bundled GTEx under QTS000002; this field is retained for release-history clarity
     # but download rules resolve (tissue, quant) -> QTD via config/eqtl_catalogue_qtd_map.yaml.
     study_id: "QTS000015"
-    # File suffix changed r7->r8: `.all.tsv.gz` was replaced by `.cc.tsv.gz` with the same
-    # allpairs schema (verified 2026-04-20: same column names + one extra `ma_samples`).
-    # On-disk filenames in data/raw/gtex_v8/ retain `.all.tsv.gz` for backward compatibility
-    # with the 2020 pre-download; sQTL files use `.all.tsv.gz` after rename-during-download.
-    upstream_suffix: ".cc.tsv.gz"
+    # Per eQTL Catalogue authoritative file table
+    # (eQTL-Catalogue-resources/tabix/tabix_ftp_paths.tsv), gene-level (ge) quantifications
+    # publish the full nominal allpairs as `.all.tsv.gz`. This IS the r7 allpairs file
+    # under the new QTD-addressed URL scheme (verified 2026-04-20: 3.6 GB, matches the
+    # byte-count of Carter's 2020 pre-download of Adipose_Subcutaneous).
+    upstream_suffix: ".all.tsv.gz"
     on_disk_suffix: ".all.tsv.gz"
     qtd_map: "config/eqtl_catalogue_qtd_map.yaml"
     qtd_kind: eqtl_qtd  # which field of qtd_map to use for this source
