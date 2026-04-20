@@ -59,6 +59,14 @@ def _qtl_coloc_per_id_jsons():
     per-id targets after `build_qtl_coloc_manifest` has run once and the
     user re-invokes snakemake (manifest is a checkpoint-style prerequisite).
 
+    Optional scope filter via `config["phase2_enabled_sources"]` (list of
+    qtl_source values, defaults to None = all sources). When set, only
+    manifest rows whose `qtl_source` is in the list contribute to the
+    per-id JSON target set. T1 first-production uses this to target
+    gtex_eqtl + gtex_sqtl only; pQTL (Synapse-auth prerequisite) and
+    sc-eQTL (OneK1K QTD-map prerequisite) are T2-deferred per CP#1-final
+    scope decision 2026-04-20.
+
     This mirrors the FINEMAP_OUTPUTS parse-time enumeration pattern in
     Snakefile (lines 80-88), but sources its row list from a materialized
     TSV rather than a config-driven cross product.
@@ -66,10 +74,14 @@ def _qtl_coloc_per_id_jsons():
     manifest_path = _qtl_coloc_manifest_path()
     if not os.path.exists(manifest_path):
         return []
+    enabled_sources = config.get("phase2_enabled_sources")
+    usecols = ["qtl_coloc_id", "qtl_source"] if enabled_sources else ["qtl_coloc_id"]
     try:
-        df = pd.read_csv(manifest_path, sep="\t", dtype=str, usecols=["qtl_coloc_id"])
+        df = pd.read_csv(manifest_path, sep="\t", dtype=str, usecols=usecols)
     except (ValueError, KeyError):
         return []
+    if enabled_sources:
+        df = df[df["qtl_source"].isin(enabled_sources)]
     return [
         os.path.join(QTL_COLOC_DIR, f"{qtl_coloc_id}.json")
         for qtl_coloc_id in df["qtl_coloc_id"].dropna().unique()
