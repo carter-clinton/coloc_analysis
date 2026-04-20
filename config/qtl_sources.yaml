@@ -6,8 +6,20 @@ sources:
     provider: eqtl_catalogue
     genome_build: GRCh38
     data_type: eQTL
-    ftp_base: "ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/"
-    study_prefix: "QTS000002"  # GTEx V8 in eQTL Catalogue
+    # HTTPS base (FTP deprecated on many HPC sites; HTTPS is the recommended transport).
+    ftp_base: "https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/"
+    # eQTL Catalogue r8 (2023-04) uses QTS000015 for GTEx v8. Earlier releases (2020)
+    # bundled GTEx under QTS000002; this field is retained for release-history clarity
+    # but download rules resolve (tissue, quant) -> QTD via config/eqtl_catalogue_qtd_map.yaml.
+    study_id: "QTS000015"
+    # File suffix changed r7->r8: `.all.tsv.gz` was replaced by `.cc.tsv.gz` with the same
+    # allpairs schema (verified 2026-04-20: same column names + one extra `ma_samples`).
+    # On-disk filenames in data/raw/gtex_v8/ retain `.all.tsv.gz` for backward compatibility
+    # with the 2020 pre-download; sQTL files use `.all.tsv.gz` after rename-during-download.
+    upstream_suffix: ".cc.tsv.gz"
+    on_disk_suffix: ".all.tsv.gz"
+    qtd_map: "config/eqtl_catalogue_qtd_map.yaml"
+    qtd_kind: eqtl_qtd  # which field of qtd_map to use for this source
     n_tissues: 49  # tissues with >= 70 samples
     sdY: 1.0  # inverse-normal transformed
     type: quant
@@ -27,8 +39,12 @@ sources:
     provider: eqtl_catalogue
     genome_build: GRCh38
     data_type: sQTL
-    ftp_base: "ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/"
-    study_prefix: "QTS000002"  # Same study, different QTD IDs for sQTL
+    ftp_base: "https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/"
+    study_id: "QTS000015"
+    upstream_suffix: ".cc.tsv.gz"
+    on_disk_suffix: ".all.tsv.gz"
+    qtd_map: "config/eqtl_catalogue_qtd_map.yaml"
+    qtd_kind: sqtl_qtd  # leafcutter sQTL QTDs
     sdY: 1.0
     type: quant
     variant_id_format: "chr{chrom}_{pos}_{ref}_{alt}"
