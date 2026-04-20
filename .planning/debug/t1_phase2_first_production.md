@@ -1,8 +1,10 @@
 ---
-status: awaiting_human_verify
+status: resolved
+resolved_at: 2026-04-20T15:06:10Z
 trigger: "t1_phase2_first_production (Stage A only) — Phase 2 QTL coloc first-production has never fired; Snakemake DAG has three architectural gaps (no all_qtl_coloc target, no parse-time QTL_COLOC_OUTPUTS enumeration, aggregate_qtl_coloc depends only on manifest not per-id JSONs)."
 created: 2026-04-20
-updated: 2026-04-20 (Stage B.5 audit + eQTL smoke complete; sQTL/sc-eQTL/pQTL smokes blocked)
+updated: 2026-04-20 (Stage B.5 audit + eQTL smoke complete; sQTL/sc-eQTL/pQTL smokes blocked; child session qtl_coloc_snp_name_mismatch resolved too_few_snps follow-on bug)
+child_session: .planning/debug/qtl_coloc_snp_name_mismatch.md
 ---
 
 ## Current Focus
@@ -293,6 +295,7 @@ Audit performed 2026-04-20 against:
     * (b) run_qtl_coloc.R expects a specific named-attribute on the fit object that differs between coloc.susie versions.
     * (c) Variant ID format mismatch between harmonized TSV (`chr16_53766288_C_T`) and the SuSiE fit's internal variant index (likely uses `16:53766288_C/T` or similar).
     This is a run_qtl_coloc.R-layer issue, NOT a manifest-layer issue. Out of scope for Stage B.5. Flag for Carter in checkpoint.
+    **UPDATE 2026-04-20 15:06 UTC:** Resolved in child debug session `.planning/debug/qtl_coloc_snp_name_mismatch.md`. Root cause was hypothesis (a) with a specific mechanism: Phase 1 `run_susie_rss.R` called `coloc:::annotate_susie` with an unnamed identity LD matrix (built via `diag(nrow(subset))` for every region that hit the `variants_exceed_threshold` LD sentinel — which is universal in T1 EUR). `annotate_susie` internally fails on unnamed LD because `.susie_setld` indexes by credible-set names. Fix: name the identity R matrix before the annotate_susie call (+12 lines). Coupled fix at Phase 2 run_qtl_coloc.R: match GWAS vs QTL via rsid (build-invariant) + handle the LD .rds list structure (+74/-25 lines). Ten affected Phase 1 fits regenerated (bmi.EUR.FTO_16q12 during debug verification, plus asthma.EUR.FTO_16q12, bmi.EUR.APOE_19q13, bmi.EUR.BMI_5q13_3, hypertension.EUR.APOE_19q13, hypertension.EUR.SH2B3_12q24, stroke.EUR.9p21_CDKN2A, stroke.EUR.SH2B3_12q24, t2d.AFR.FTO_16q12, t2d.EUR.FTO_16q12 post-checkpoint). eQTL smoke end-to-end: status=no_qtl_cs, n_snps_overlap=698 (was 0), pipeline fully functional.
 
 - timestamp: 2026-04-20 (sQTL/sc-eQTL/pQTL smoke BLOCKERS identified)
   checked: dry-run + on-disk data inventory:
