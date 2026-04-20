@@ -10,6 +10,7 @@ channels:
 dependencies:
   - r-base=4.4.2
   - r-data.table=1.16.4
+  - r-r.utils=2.12.3  # Stage B.5: data.table::fread() delegates gz I/O to R.utils::gunzip()
   - r-tidyverse=2.0.0
   - r-optparse=1.7.5
   - r-yaml=2.3.10
