@@ -18,16 +18,42 @@ single-cell resolution.
 
 Four QTL data sources provide complementary mechanistic layers:
 
-1. **GTEx v8 eQTL** (49 tissues with sample size >= 70; via eQTL Catalogue,
-   EMBL-EBI, study QTS000002). Inverse-normal transformed expression; sdY = 1.0.
-   Per-tissue sample sizes range from 73 (Cells_Leukemia_cell_line_CML) to 706
-   (Muscle_Skeletal). All tissues are tested at all loci (wide-net discovery per
-   D-03a); post-hoc filtering identifies the resolving tissue(s).
+1. **GTEx v8 eQTL** (49 tissues with sample size >= 70; via eQTL Catalogue r8
+   release, EMBL-EBI, study QTS000015, gene-level `ge` quantifications). Full
+   nominal all-pairs summary statistics are downloaded from the r8 sumstats tree
+   (`sumstats/QTS000015/{QTD_id}/{QTD_id}.all.tsv.gz`) per the authoritative
+   tabix_ftp_paths.tsv (github.com/eQTL-Catalogue/eQTL-Catalogue-resources).
+   Inverse-normal transformed expression; sdY = 1.0. Per-tissue sample sizes
+   range from 73 (Cells_Leukemia_cell_line_CML) to 706 (Muscle_Skeletal). All
+   tissues are tested at all loci (wide-net discovery per D-03a); post-hoc
+   filtering identifies the resolving tissue(s). The r7-to-r8 transition
+   (eQTL Catalogue 2023, Kerimov et al.) restructured file naming from
+   `{tissue}.all.tsv.gz` to `{QTD_id}.all.tsv.gz` but retained backward-
+   compatible column schema plus an added `ma_samples` column; harmonization
+   code reads columns by name and is robust to the reordering.
 
-2. **GTEx v8 sQTL** (splice quantitative trait loci; via eQTL Catalogue,
-   same study). Molecular trait ID encodes the splice junction. Adds a
-   splicing-level mechanistic layer (exon-skipping, intron retention, alternative
-   donor/acceptor) orthogonal to expression-level eQTL.
+2. **GTEx v8 sQTL** (splice quantitative trait loci; via eQTL Catalogue r8,
+   QTS000015, leafcutter quantifications). For the transcript-level
+   quantifications (exon, transcript usage, txrevise, leafcutter), eQTL
+   Catalogue r8 publishes fine-mapping-based filtered summary statistics as
+   `{QTD_id}.cc.tsv.gz` rather than full all-pairs (file-size reduction of
+   ~98%). Per Kerimov et al. (PLoS Genetics 2023,
+   doi:10.1371/journal.pgen.1010932, section "Fine-mapping-based filtering of
+   transcript-level summary statistics"), these files are constructed by first
+   identifying all independent signals at the gene level using SuSiE credible
+   sets, then retaining the nominal summary statistics only for the most
+   strongly-associated molecular trait per signal AND all of its tested
+   variants. The authors document that this format retains "the vast majority
+   of significant associations for colocalisation purposes" and that the
+   companion SuSiE log Bayes factor files (`{QTD_id}.lbf_variable.txt.gz`)
+   can be used directly in `coloc::coloc.susie`. We consume the `.cc.tsv.gz`
+   files with local SuSiE refitting (`coloc::runsusie`) to stay methodologically
+   symmetric with the eQTL branch and to expose the full r8 schema to our
+   internal quality-control pipeline. Molecular trait ID encodes the splice
+   junction (e.g., `16:53700000:53750000:clu_12345_+`); the gene_id column
+   maps each junction to its parent gene for region-consistent indexing. Adds
+   a splicing-level mechanistic layer (exon-skipping, intron retention,
+   alternative donor/acceptor) orthogonal to expression-level eQTL.
 
 3. **UKB-PPP pQTL** (Sun et al. 2023; approximately 2,923 proteins measured by
    Olink NPX in 54,219 individuals; cis-pQTL only, within 1 Mb of gene TSS).
@@ -66,18 +92,42 @@ run_qtl_coloc.R without source-specific conditional logic.
 
 ### coloc.susie workflow
 
-GWAS-vs-QTL colocalization uses coloc::coloc.susie (coloc v5.2.3). The GWAS
-side is represented by pre-fitted SuSiE objects (.fit.rds files from Phase 1),
-avoiding redundant re-fitting. The QTL side is fitted fresh via
-coloc::runsusie(suffix=2) with SuSiE-RSS and an LD matrix matched to the QTL
-study population. For GTEx and OneK1K (predominantly European donors), the
-UKBB-LD tiled EUR panel from Phase 1 is used.
+GWAS-vs-QTL colocalization uses `coloc::coloc.susie` (coloc v5.2.3; Wallace 2021,
+PLoS Genetics). The GWAS side is represented by pre-fitted SuSiE objects
+(`.fit.rds` files from Phase 1 with variant names preserved via
+`coloc:::annotate_susie` with an explicitly-named identity LD matrix fallback;
+see implementation note below), avoiding redundant re-fitting. The QTL side is
+fitted fresh via `coloc::runsusie(suffix=2)` with SuSiE-RSS and an LD matrix
+matched to the QTL study population. For GTEx and OneK1K (predominantly
+European donors), the UKBB-LD tiled EUR panel from Phase 1 is used. For regions
+whose variant catalog exceeds `LD_MAX_VARIANTS` (a compute-tractability
+threshold applied in Phase 1), SuSiE-RSS is fit with an identity LD matrix
+(`use_identity = TRUE` flag in the Phase 1 LD `.rds` list); the identity
+assumption is conservative and matches the fallback policy of the
+coloc-susie literature (Wallace 2021, "Identifying genetic variants that cause
+disease" -- Supp. §3).
+
+Variant-ID matching between the GWAS SuSiE fit and the harmonized QTL table
+uses **dbSNP rsid as the build-invariant common key**: GWAS sumstats carry
+rsid directly, while eQTL Catalogue allpairs files expose both the GRCh38
+`variant_id` (`chr{chrom}_{pos}_{ref}_{alt}` string) and the rsid column
+(dbSNP v151, per eQTL Catalogue r8 schema). Matching on rsid sidesteps the
+GRCh37/GRCh38 build asymmetry (Phase 1 fits are on GRCh37 sumstats; Phase 2
+QTL is on GRCh38), which would otherwise require position liftover on every
+variant row at coloc time. Variants without rsid assignment (typically indels
+or structural variants not in dbSNP) are dropped from the overlap with a
+warning. The `run_qtl_coloc.R` script additionally accepts a fallback
+`variant_id` match when rsid coverage is insufficient, but in practice the
+eQTL Catalogue r8 schema has >99.9% rsid assignment on tested cis-variants.
 
 The pipeline is manifest-driven: a QTL coloc manifest cross-joins
 (locus x tissue x gene x QTL_source x ancestry), and each row dispatches to a
-single run_qtl_coloc.R invocation. Output is a JSON containing the summary
+single `run_qtl_coloc.R` invocation. Output is a JSON containing the summary
 posterior (PP.H0 through PP.H4), pairwise credible-set comparisons, and metadata
-(n_cs_gwas, n_cs_qtl, n_snps_overlap).
+(`n_cs_gwas`, `n_cs_qtl`, `n_snps_overlap`, plus a status sentinel for edge
+cases: `ok`, `no_qtl_cs` if the QTL side's SuSiE refit produced zero credible
+sets, `too_few_snps` if overlap is below the coloc.susie minimum, or `error`
+with the underlying exception).
 
 ### Sample sizes and sdY
 
