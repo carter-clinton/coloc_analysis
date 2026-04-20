@@ -383,6 +383,25 @@ rule assign_tiers:
     Combines GWAS-GWAS coloc results (trait-trait PP.H4) with QTL coloc
     results to produce mechanistic tier assignments. Also produces the
     PP.H4 threshold sweep table (REQ-3).
+
+    Per REQ-7 negative-control strategy (2026-04-20 scope reconciliation):
+    primary HLA-immune coverage comes from HLA-trait rows already embedded
+    in the main qtl_coloc_summary.tsv (HLA_6p21 is a curated region; 113
+    rows × asthma trait). Cosmetic + blood-group negative controls require
+    Phase 1 fits for regions outside the curated 12 and are therefore
+    delivered through Phase 5's MAGMA / LDSC-SEG / HESS / g:Profiler
+    negative-control pipeline (all 3 curated sets). The dedicated Phase 2
+    `run_curated_negative_controls` rule is wired-but-partial (manifest
+    rows lack gwas_fit paths); its output, when present, contributes
+    Tier-A-surveillance rows with tier="negative_control" but is treated
+    as an optional input here: assign_tiers.py tolerates missing
+    neg_ctrl_results per its CLI contract
+    (`if args.neg_ctrl_results and os.path.exists(...)`).
+
+    Implementation: `neg_ctrl_results` is declared as a `params:` path
+    (not `input:`) so the rule can fire before `run_curated_negative_controls`
+    produces (or gracefully skips producing) its TSV. The script applies
+    its own existence check.
     """
     input:
         qtl_results=os.path.join(QTL_COLOC_DIR, "qtl_coloc_summary.tsv"),
@@ -390,22 +409,28 @@ rule assign_tiers:
             config["paths"]["results_root"], "multitrait",
             "coloc_summary.tsv",
         ),
-        neg_ctrl_results=os.path.join(NEG_CTRL_DIR, "curated_neg_ctrl_results.tsv"),
         pph4_config="config/pph4_thresholds.yaml",
     output:
         tiers=os.path.join(QTL_COLOC_DIR, "tier_assignments.tsv"),
         sweep=os.path.join(QTL_COLOC_DIR, "pph4_threshold_sweep.tsv"),
     params:
         script=os.path.join("src", "python", "assign_tiers.py"),
+        neg_ctrl_results=os.path.join(NEG_CTRL_DIR, "curated_neg_ctrl_results.tsv"),
     conda:
         QTL_PROC_ENV_COLOC
     shell:
         r"""
+        # neg-ctrl results are optional; assign_tiers.py tolerates missing file
+        if [ -f {params.neg_ctrl_results} ]; then
+          neg_ctrl_arg="--neg-ctrl-results {params.neg_ctrl_results}"
+        else
+          neg_ctrl_arg=""
+        fi
         python {params.script} \
           --input {input.qtl_results} \
           --gwas-coloc {input.gwas_coloc} \
           --pph4-config {input.pph4_config} \
-          --neg-ctrl-results {input.neg_ctrl_results} \
+          $neg_ctrl_arg \
           --output {output.tiers} \
           --sweep --sweep-output {output.sweep}
         """
