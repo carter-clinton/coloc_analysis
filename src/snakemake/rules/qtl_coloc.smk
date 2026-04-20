@@ -50,12 +50,123 @@ def _qtl_coloc_manifest_row(qtl_coloc_id):
     return row.iloc[0].to_dict()
 
 
+def _qtl_coloc_per_id_jsons():
+    """Enumerate per-id JSON output targets from the on-disk manifest.
+
+    Called at Snakefile parse time (inside this .smk file) to expose
+    QTL_COLOC_PER_ID_JSONS as a module-level global. Returns an empty list
+    when the manifest does not yet exist — Snakemake will then only expand
+    per-id targets after `build_qtl_coloc_manifest` has run once and the
+    user re-invokes snakemake (manifest is a checkpoint-style prerequisite).
+
+    This mirrors the FINEMAP_OUTPUTS parse-time enumeration pattern in
+    Snakefile (lines 80-88), but sources its row list from a materialized
+    TSV rather than a config-driven cross product.
+    """
+    manifest_path = _qtl_coloc_manifest_path()
+    if not os.path.exists(manifest_path):
+        return []
+    try:
+        df = pd.read_csv(manifest_path, sep="\t", dtype=str, usecols=["qtl_coloc_id"])
+    except (ValueError, KeyError):
+        return []
+    return [
+        os.path.join(QTL_COLOC_DIR, f"{qtl_coloc_id}.json")
+        for qtl_coloc_id in df["qtl_coloc_id"].dropna().unique()
+    ]
+
+
+# Module-level parse-time enumeration. Exposed as a global so that both
+# aggregate_qtl_coloc (below) and the Snakefile-level all_qtl_coloc target
+# can reference the same list without divergence.
+QTL_COLOC_PER_ID_JSONS = _qtl_coloc_per_id_jsons()
+
+# L2G concordance is gated on OpenTargets L2G prediction data existing on disk
+# (rule l2g_concordance input requires the directory). No auto-download rule
+# currently exists; if the dir is absent, omit l2g_concordance.tsv from the
+# default Phase 2 target list. Users can still request it explicitly once the
+# data is landed.
+_L2G_DIR = os.path.join(
+    config["paths"]["data_root"], "raw", "opentargets", "l2g_prediction"
+)
+_L2G_OUTPUTS = (
+    [os.path.join(QTL_COLOC_DIR, "l2g_concordance.tsv")]
+    if os.path.isdir(_L2G_DIR)
+    else []
+)
+
+QTL_COLOC_OUTPUTS = (
+    [_qtl_coloc_manifest_path()]
+    + QTL_COLOC_PER_ID_JSONS
+    + [
+        os.path.join(QTL_COLOC_DIR, "qtl_coloc_summary.tsv"),
+        os.path.join(QTL_COLOC_DIR, "tier_assignments.tsv"),
+        os.path.join(QTL_COLOC_DIR, "pph4_threshold_sweep.tsv"),
+        os.path.join(QTL_COLOC_DIR, "gene_tissue_matrix.tsv"),
+        os.path.join(QTL_COLOC_DIR, "gene_tissue_long.tsv"),
+    ]
+    + _L2G_OUTPUTS
+)
+
+
+def _qtl_manifest_row_by_wildcards(wildcards):
+    """Resolve a manifest row via multiple lookup strategies.
+
+    Tries in order:
+      1. wildcards.qtl_coloc_id (used by run_qtl_coloc in this file).
+      2. Compound key (tissue, gene_id, region) — used by
+         harmonize_eqtl_region / harmonize_sqtl_region / harmonize_pqtl_region
+         / harmonize_onek1k_region, whose wildcards don't carry qtl_coloc_id.
+         When (tissue, gene_id, region) matches multiple sources (e.g.
+         gtex_eqtl vs gtex_sqtl vs ukbppp_pqtl all with tissue=plasma),
+         additional disambiguation is delegated to qtl_source if the
+         wildcard carries it. In practice, path structure
+         (eqtl/sqtl/pqtl/sceqtl root segment) is not available here — we
+         take the first matching row.
+
+    Returns a dict (manifest row) or None if no match.
+    """
+    # Path 1: direct qtl_coloc_id lookup.
+    qtl_coloc_id = getattr(wildcards, "qtl_coloc_id", None)
+    if qtl_coloc_id is not None:
+        return _qtl_coloc_manifest_row(qtl_coloc_id)
+
+    manifest_path = _qtl_coloc_manifest_path()
+    if not os.path.exists(manifest_path):
+        return None
+    df = pd.read_csv(manifest_path, sep="\t", dtype=str)
+
+    # Path 2: compound key via available wildcards. Apply each present
+    # wildcard as an equality filter against its corresponding column.
+    filter_map = {
+        "tissue": "tissue",
+        "gene_id": "gene_id",
+        "region": "region",
+        "dataset_id": "dataset_id",
+        "cell_type": "tissue",   # harmonize_onek1k_region uses cell_type
+        "protein": "gene_id",    # legacy wildcard name → manifest gene_id
+    }
+    sub = df
+    for wc_name, col_name in filter_map.items():
+        wc_val = getattr(wildcards, wc_name, None)
+        if wc_val is None or col_name not in sub.columns:
+            continue
+        sub = sub[sub[col_name] == wc_val]
+        if len(sub) == 0:
+            return None
+    if len(sub) == 0:
+        return None
+    return sub.iloc[0].to_dict()
+
+
 def _qtl_manifest_field(wildcards, field):
     """Resolve a single field from the QTL coloc manifest for a given wildcard.
 
-    Used by qtl_download.smk (harmonize_eqtl_region) and by rules in this file.
+    Used by qtl_download.smk (harmonize_*_region) and by rules in this file.
+    Supports both qtl_coloc_id-keyed lookup (run_qtl_coloc) and compound-key
+    lookup (harmonize_* rules whose wildcards are path components).
     """
-    row = _qtl_coloc_manifest_row(wildcards.qtl_coloc_id)
+    row = _qtl_manifest_row_by_wildcards(wildcards)
     if row is None:
         return "MISSING_MANIFEST"
     return row.get(field, "MISSING_FIELD")
@@ -209,6 +320,19 @@ rule aggregate_qtl_coloc:
     Reads all JSON files in QTL_COLOC_DIR matching *.json, extracts the
     summary row (best PP.H4.abf pairwise comparison), and writes a flat TSV
     for downstream filtering and tiering.
+
+    Note: per-id JSONs are NOT declared as inputs of this rule. Doing so
+    would transitively propagate into rule all_pathway (via
+    extract_tier_ab_genes → assign_tiers → aggregate_qtl_coloc), which
+    would force all_pathway to require all 1243 QTL coloc jobs before it
+    can run — breaking the Launch10-15 pathway drain pattern.
+
+    Instead, rule all_qtl_coloc (in the top-level Snakefile) explicitly
+    lists QTL_COLOC_PER_ID_JSONS so that invoking all_qtl_coloc correctly
+    expands to all 1243 per-id coloc jobs. Invoking qtl_coloc_summary.tsv
+    directly will NOT backward-chain to per-id jobs — this is intentional
+    for Phase 5 compatibility. Phase 2 first-production fires via
+    all_qtl_coloc.
     """
     input:
         manifest=_qtl_coloc_manifest_path(),

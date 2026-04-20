@@ -196,3 +196,16 @@ ALL_TARGETS = (
 rule all:
     input:
         ALL_TARGETS
+
+
+# Phase 2 QTL coloc explicit opt-in target. QTL_COLOC_OUTPUTS is defined at
+# parse time inside src/snakemake/rules/qtl_coloc.smk (included above at
+# line 123), so it is a module-level global by the time this rule resolves.
+#
+# Phase 2 is intentionally NOT wired into ALL_TARGETS: CP#1-final memo
+# (.planning/checkpoints/T1_review_final_draft.md line 72) specifies that
+# Phase 2 fires as a separate named target from Launch10-15 pathway runs.
+# Invoke via: snakemake -s Snakefile all_qtl_coloc
+rule all_qtl_coloc:
+    input:
+        QTL_COLOC_OUTPUTS
