@@ -527,6 +527,20 @@ if (!is.null(fit)) {
     sprintf("%s:%s", subset$CHR, subset$POS)
   }
   snp_names <- make.unique(snp_names)
+  # t1_phase2_first_production bugfix (qtl_coloc_snp_name_mismatch, 2026-04-20):
+  # coloc:::annotate_susie calls .susie_setld(res$sets$cs, LD) which indexes
+  # LD by credible-set variant NAMES. When LD is an identity fallback built
+  # via diag(nrow(subset)), it has no dimnames and the name-based indexing
+  # errors with "no 'dimnames' attribute for array", causing annotate_susie
+  # to fail silently (tryCatch returns the un-annotated fit). This then
+  # blocks Phase 2 coloc (run_qtl_coloc.R cannot extract SNP names).
+  # Fix: attach snp_names as dimnames to R BEFORE annotate_susie so identity
+  # LD and real LD take the same code path. No behavioral change for
+  # already-named LD (dimnames overwrite is a no-op when length(snp_names)
+  # matches nrow(R)).
+  if (is.null(dimnames(R)) && nrow(R) == length(snp_names)) {
+    dimnames(R) <- list(snp_names, snp_names)
+  }
   fit <- tryCatch(
     coloc:::annotate_susie(fit, snp_names, R),
     error = function(e) {
