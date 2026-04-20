@@ -120,7 +120,13 @@ qtl_df[, position := as.integer(position)]
 # -------------------------------------------------------------------------
 # 3. Match SNPs between GWAS fit and QTL data
 # -------------------------------------------------------------------------
-# GWAS fit SNP names: in colnames(gwas_fit$alpha) or names(gwas_fit$pip)
+# qtl_coloc_snp_name_mismatch bugfix (2026-04-20):
+# GWAS SuSiE fits from run_susie_rss.R carry rsid names (sourced from
+# sumstats SNP_ID column) on $alpha colnames and $pip names, because Phase 1
+# sumstats are GRCh37 but harmonized QTL TSVs are GRCh38. Direct coord
+# matching would fail across builds. The harmonized TSV carries a parallel
+# `rsid` column populated for >99% of variants, so rsid is the build-
+# invariant common key between Phase 1 fit and Phase 2 QTL data.
 gwas_snps <- NULL
 if (!is.null(gwas_fit$alpha) && !is.null(colnames(gwas_fit$alpha))) {
   gwas_snps <- colnames(gwas_fit$alpha)
@@ -133,12 +139,24 @@ if (is.null(gwas_snps)) {
   quit(status = 0)
 }
 
-qtl_snps <- qtl_df$variant_id
+# Drop the sentinel "null" column (coloc::annotate_susie appends one when the
+# fit has fewer credible sets than L; it is not a real variant).
+gwas_snps <- gwas_snps[gwas_snps != "null"]
+
+# Match via rsid (build-invariant). Fall back to variant_id if rsid is absent
+# or unmatched (e.g. pQTL or future sources that may not carry rsid).
+if ("rsid" %in% names(qtl_df) && any(!is.na(qtl_df$rsid) & qtl_df$rsid != "" & qtl_df$rsid != "NA")) {
+  qtl_snps <- qtl_df$rsid
+  match_key <- "rsid"
+} else {
+  qtl_snps <- qtl_df$variant_id
+  match_key <- "variant_id"
+}
 overlap_snps <- intersect(gwas_snps, qtl_snps)
 n_snps_overlap <- length(overlap_snps)
 
-cat(sprintf("[run_qtl_coloc] GWAS snps: %d, QTL snps: %d, overlap: %d\n",
-            length(gwas_snps), length(qtl_snps), n_snps_overlap))
+cat(sprintf("[run_qtl_coloc] match_key=%s, GWAS snps: %d, QTL snps: %d, overlap: %d\n",
+            match_key, length(gwas_snps), length(qtl_snps), n_snps_overlap))
 
 # T-02-07: skip if too few overlapping SNPs
 if (n_snps_overlap < 50) {
@@ -148,30 +166,93 @@ if (n_snps_overlap < 50) {
 }
 
 # -------------------------------------------------------------------------
-# 4. Subset LD matrix to matching SNPs
+# 4. Load LD matrix and subset to matching SNPs
 # -------------------------------------------------------------------------
-ld_full <- readRDS(opt$ld_matrix)
-ld_snp_names <- rownames(ld_full) %||% colnames(ld_full)
-if (is.null(ld_snp_names)) {
-  write_status_json("too_few_snps", "LD matrix has no row/col names")
-  quit(status = 0)
+# qtl_coloc_snp_name_mismatch bugfix (2026-04-20):
+# The LD .rds produced by the Phase 1 ld_reference pipeline is a LIST with
+# components {R, variants, use_identity, status}. When the region's variant
+# count exceeds LD_MAX_VARIANTS (default 6000), R is NULL and use_identity
+# is TRUE. Previously this code assumed a bare matrix and would fail at
+# rownames(ld_full) == NULL. Handle all three forms:
+#   (a) list with R matrix and variants -> use obj$R with rsid rownames
+#       (sourced from obj$variants$SNP_ID when available).
+#   (b) list with use_identity=TRUE or R=NULL -> construct named identity
+#       matrix over overlap_snps; coloc::runsusie will still run (LD is
+#       the identity so SuSiE treats variants as independent).
+#   (c) bare matrix (legacy / future) -> use directly, require dimnames.
+ld_obj <- readRDS(opt$ld_matrix)
+
+build_ld_rownames <- function(obj) {
+  # Derive rsid-keyed names from the variants dataframe when available.
+  if (!is.list(obj) || is.null(obj$variants) || !is.data.frame(obj$variants)) {
+    return(NULL)
+  }
+  v <- obj$variants
+  if ("SNP_ID" %in% names(v) && any(!is.na(v$SNP_ID) & v$SNP_ID != "" & v$SNP_ID != "NA")) {
+    return(as.character(v$SNP_ID))
+  }
+  if (all(c("CHR", "POS") %in% names(v))) {
+    return(sprintf("%s:%s", v$CHR, v$POS))
+  }
+  NULL
 }
 
-# Final overlap must be in all three: GWAS fit, QTL data, LD matrix
-overlap_snps <- intersect(overlap_snps, ld_snp_names)
-n_snps_overlap <- length(overlap_snps)
-
-if (n_snps_overlap < 50) {
+if (is.list(ld_obj) && !is.matrix(ld_obj)) {
+  use_identity <- isTRUE(ld_obj$use_identity) || is.null(ld_obj$R)
+  if (use_identity) {
+    # Identity fallback: build a named identity over overlap_snps.
+    ld_matrix_subset <- diag(length(overlap_snps))
+    dimnames(ld_matrix_subset) <- list(overlap_snps, overlap_snps)
+    ld_snp_names <- overlap_snps  # trivially matches overlap
+    cat(sprintf("[run_qtl_coloc] LD .rds has use_identity=TRUE (status=%s); using identity matrix\n",
+                ld_obj$status %||% "unknown"))
+  } else {
+    ld_full <- ld_obj$R
+    ld_snp_names <- rownames(ld_full) %||% colnames(ld_full) %||% build_ld_rownames(ld_obj)
+    if (is.null(ld_snp_names)) {
+      write_status_json("too_few_snps", "LD matrix has no row/col names and no variants metadata")
+      quit(status = 0)
+    }
+    if (is.null(rownames(ld_full)) || is.null(colnames(ld_full))) {
+      # Attach rsid dimnames from obj$variants (parallel-ordered).
+      if (length(ld_snp_names) != nrow(ld_full)) {
+        write_status_json("too_few_snps",
+                          sprintf("LD rownames length %d != nrow %d",
+                                  length(ld_snp_names), nrow(ld_full)))
+        quit(status = 0)
+      }
+      dimnames(ld_full) <- list(ld_snp_names, ld_snp_names)
+    }
+  }
+} else if (is.matrix(ld_obj) || inherits(ld_obj, "Matrix")) {
+  ld_full <- as.matrix(ld_obj)
+  ld_snp_names <- rownames(ld_full) %||% colnames(ld_full)
+  if (is.null(ld_snp_names)) {
+    write_status_json("too_few_snps", "LD matrix has no row/col names")
+    quit(status = 0)
+  }
+} else {
   write_status_json("too_few_snps",
-                    sprintf("Only %d SNPs after LD intersection (need >= 50)", n_snps_overlap))
+                    sprintf("LD .rds has unexpected class: %s",
+                            paste(class(ld_obj), collapse = "/")))
   quit(status = 0)
 }
 
-# Subset and reorder LD matrix
-ld_matrix_subset <- ld_full[overlap_snps, overlap_snps, drop = FALSE]
+# Final overlap must include the LD matrix's named variants (unless identity
+# fallback, in which case we already built LD over overlap_snps).
+if (!exists("use_identity") || !isTRUE(use_identity)) {
+  overlap_snps <- intersect(overlap_snps, ld_snp_names)
+  n_snps_overlap <- length(overlap_snps)
+  if (n_snps_overlap < 50) {
+    write_status_json("too_few_snps",
+                      sprintf("Only %d SNPs after LD intersection (need >= 50)", n_snps_overlap))
+    quit(status = 0)
+  }
+  ld_matrix_subset <- ld_full[overlap_snps, overlap_snps, drop = FALSE]
+}
 
-# Subset QTL data to overlap SNPs (in same order)
-qtl_df <- qtl_df[match(overlap_snps, qtl_df$variant_id), ]
+# Subset QTL data to overlap SNPs (in same order as LD matrix rows).
+qtl_df <- qtl_df[match(overlap_snps, qtl_df[[match_key]]), ]
 
 # -------------------------------------------------------------------------
 # 5. Build QTL dataset list for coloc
@@ -179,7 +260,7 @@ qtl_df <- qtl_df[match(overlap_snps, qtl_df$variant_id), ]
 qtl_data <- list(
   beta     = qtl_df$beta,
   varbeta  = qtl_df$se^2,
-  snp      = qtl_df$variant_id,
+  snp      = overlap_snps,
   position = qtl_df$position,
   type     = "quant",
   N        = as.integer(opt$sample_size),
