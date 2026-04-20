@@ -15,16 +15,31 @@ SMK=/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake
 LOG="logs/phase2_firstprod_$(date +%Y%m%d_%H%M%S).log"
 mkdir -p logs/lsf logs
 
-# Fire all_qtl_coloc + negative controls + pph4 threshold sweep
+# Fire all_qtl_coloc (scope-filtered) + matched-null-loci supplementary.
+# Per REQ-7 scope reconciliation (commit 2026-04-20):
+#   - HLA-immune neg-ctrl: covered within all_qtl_coloc via 113 HLA_6p21/asthma
+#     rows from the curated regions manifest
+#   - cosmetic + blood_group: delivered via Phase 5 (MAGMA+LDSC-SEG+HESS+g:Profiler,
+#     all three curated_sets covered in Launch 15 outputs)
+#   - matched-null-loci: 500 bedtools-shuffle regions produce the empirical
+#     null distribution; target requested explicitly here as a supplement
+#   - run_curated_negative_controls: wired-but-partial (manifest lacks
+#     gwas_fit paths for cosmetic + blood_group regions outside the curated 12);
+#     made an optional input of assign_tiers so the primary QTL coloc can
+#     complete without it. The rule still exists and can be fired manually
+#     once Phase 1 is extended in T2.
 "$SMK" \
   --profile config/cluster_lsf \
   --config 'phase2_enabled_sources=["gtex_eqtl","gtex_sqtl"]' \
   --keep-going \
   all_qtl_coloc \
-  results/negative_controls/curated_neg_ctrl_results.tsv \
   results/negative_controls/null_loci_summary.tsv \
-  results/qtl_coloc/pph4_threshold_sweep.tsv \
   > "$LOG" 2>&1
 
 echo "Phase 2 first-production complete. Log: $LOG"
-echo "Results: results/qtl_coloc/tier_assignments.tsv"
+echo "Primary outputs:"
+echo "  results/qtl_coloc/tier_assignments.tsv"
+echo "  results/qtl_coloc/pph4_threshold_sweep.tsv"
+echo "  results/qtl_coloc/gene_tissue_matrix.tsv"
+echo "  results/qtl_coloc/gene_tissue_long.tsv"
+echo "  results/negative_controls/null_loci_summary.tsv"
