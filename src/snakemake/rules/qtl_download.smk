@@ -243,29 +243,56 @@ rule download_ukbppp_protein:
         """
 
 
+def _pqtl_download_input(wildcards):
+    """Resolve UKB-PPP download path for a given (tissue, gene_id, region).
+
+    The download output path embeds {chrom} which cannot be inferred from
+    the harmonize rule's output wildcards. Resolve chrom from the manifest
+    row via qtl_coloc.smk._qtl_manifest_field — same pattern used by
+    harmonize_onek1k_region for region_chr (line 345 of this file).
+    """
+    chrom = _qtl_manifest_field(wildcards, "chr")
+    return os.path.join(
+        QTL_RAW_PQTL_DIR,
+        wildcards.gene_id,
+        f"discovery_chr{chrom}_{wildcards.gene_id}.gz",
+    )
+
+
 rule harmonize_pqtl_region:
-    """Harmonize UKB-PPP pQTL data for a single (protein, region) pair.
+    """Harmonize UKB-PPP pQTL data for a single (tissue, gene_id, region) triple.
 
     Reads REGENIE output, converts LOG10P to pvalue, constructs variant_id,
     estimates sdY from summary statistics (Open Question 1: NPX may not be
     unit-variance).
+
+    Output-path structure matches the 4-segment manifest path
+    `pqtl/{tissue}/{gene_id}/{region}.harmonized.tsv.gz` (e.g.
+    `pqtl/plasma/FTO/FTO_16q12.harmonized.tsv.gz`), consistent with
+    sQTL/sceQTL 3-segment conventions. Prior 2-segment form
+    (`pqtl/{protein}/{region}`) did not match the path emitted by
+    build_qtl_coloc_manifest.py.
+
+    Input resolves chrom from the manifest via an input function, mirroring
+    the `_qtl_manifest_field(wc, "chr")` pattern in harmonize_onek1k_region.
     """
     input:
-        gz=os.path.join(QTL_RAW_PQTL_DIR, "{protein}", "discovery_chr{chrom}_{protein}.gz"),
+        gz=_pqtl_download_input,
         qtl_config="config/qtl_sources.yaml",
     output:
         harmonized=os.path.join(
             QTL_HARMONIZED_DIR,
             "pqtl",
-            "{protein}",
+            "{tissue}",
+            "{gene_id}",
             "{region}.harmonized.tsv.gz",
         ),
     params:
         script=os.path.join("src", "python", "harmonize_pqtl.py"),
-        region_chr=lambda wc: wc.chrom,
+        region_chr=lambda wc: _qtl_manifest_field(wc, "chr"),
         region_start=lambda wc: _qtl_manifest_field(wc, "start_grch38"),
         region_end=lambda wc: _qtl_manifest_field(wc, "end_grch38"),
-        sample_size=54219,
+        sample_size=lambda wc: _qtl_manifest_field(wc, "tissue_n"),
         sdy="estimate",  # UKB-PPP Olink NPX may not be unit-variance
     conda:
         str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
@@ -277,7 +304,7 @@ rule harmonize_pqtl_region:
             --region-chr {params.region_chr} \
             --region-start {params.region_start} \
             --region-end {params.region_end} \
-            --protein-name {wildcards.protein} \
+            --protein-name {wildcards.gene_id} \
             --sample-size {params.sample_size} \
             --sdy {params.sdy} \
             --qtl-source-config {input.qtl_config} \
@@ -322,6 +349,22 @@ rule download_onek1k_cell_type:
         """
 
 
+def _onek1k_download_input(wildcards):
+    """Resolve OneK1K download TSV path from manifest.
+
+    The download output has {cell_type}/{dataset_id}.all.tsv.gz — dataset_id
+    is not a wildcard of the harmonize rule's output, so resolve it from the
+    manifest (same pattern as _pqtl_download_input). For OneK1K, tissue==
+    cell_type and dataset_id==cell_type in practice.
+    """
+    dataset_id = _qtl_manifest_field(wildcards, "dataset_id")
+    return os.path.join(
+        ONEK1K_RAW_DIR,
+        wildcards.cell_type,
+        f"{dataset_id}.all.tsv.gz",
+    )
+
+
 rule harmonize_onek1k_region:
     """Harmonize OneK1K sc-eQTL data for a single (cell_type, gene, region) triple.
 
@@ -330,7 +373,7 @@ rule harmonize_onek1k_region:
     Cell type goes into the "tissue" column of the common intermediate TSV.
     """
     input:
-        tsv=os.path.join(ONEK1K_RAW_DIR, "{cell_type}", "{dataset_id}.all.tsv.gz"),
+        tsv=_onek1k_download_input,
         qtl_config="config/qtl_sources.yaml",
     output:
         harmonized=os.path.join(
