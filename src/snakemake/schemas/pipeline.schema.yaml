@@ -280,4 +280,23 @@ properties:
       results_dir:
         type: string
 
+  phase2_enabled_sources:
+    type: array
+    description: >
+      Optional Phase 2 scope filter: limits all_qtl_coloc to a subset of
+      qtl_sources.yaml sources. When unset or empty, all 4 sources expand
+      (gtex_eqtl + gtex_sqtl + ukbppp_pqtl + onek1k_sceqtl). T1
+      first-production (Path A) sets this to ["gtex_eqtl", "gtex_sqtl"]
+      per the CP#1-final scope decision (2026-04-20): pQTL requires
+      SYNAPSE_AUTH_TOKEN (T2 prerequisite) and sc-eQTL requires an eQTL
+      Catalogue dataset_map for OneK1K (T2 infrastructure). Consumed by
+      `_qtl_coloc_per_id_jsons()` in src/snakemake/rules/qtl_coloc.smk.
+    items:
+      type: string
+      enum:
+        - gtex_eqtl
+        - gtex_sqtl
+        - ukbppp_pqtl
+        - onek1k_sceqtl
+
 additionalProperties: false
