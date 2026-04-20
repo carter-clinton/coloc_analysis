@@ -1,0 +1,228 @@
+# eQTL Catalogue QTD (dataset_id) mapping for GTEx v8 (QTS000015).
+# Each tissue is mapped to two QTDs: one for gene-level eQTL (ge quant method)
+# and one for splice QTL (leafcutter quant method).
+#
+# Source: https://raw.githubusercontent.com/eQTL-Catalogue/eQTL-Catalogue-resources/master/data_tables/dataset_id_map.tsv
+# Retrieved: 2026-04-20
+#
+# Keys are GTEx-portal Title_Case tissue names (matching 
+# data/processed/qtl_harmonized/gtex_tissue_n_lookup.json). Values include:
+#   - eqtl_qtd: QTD id for the gene-level eQTL allpairs file
+#   - sqtl_qtd: QTD id for the leafcutter sQTL allpairs file
+#   - catalogue_name: eQTL Catalogue sample_group (lowercase, simplified)
+#
+# File URL pattern (as of eQTL Catalogue r8, 2023-04):
+#   https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000015/{QTD}/{QTD}.cc.tsv.gz
+# Tabix index:
+#   https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000015/{QTD}/{QTD}.cc.tsv.gz.tbi
+#
+# The file naming changed between eQTL Catalogue releases: the 2020 release used
+# `{tissue}.all.tsv.gz` at tissue-named URLs; the 2023 r8 release uses
+# `{QTD}.cc.tsv.gz` at QTD-named paths. Schema is backward-compatible (same column
+# names, different ordering, extra `ma_samples` column in new release).
+
+study_id: QTS000015
+study_label: GTEx
+release: r8
+retrieved_at: "2026-04-20"
+file_pattern:
+  sumstats_url: "https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/{study_id}/{qtd_id}/{qtd_id}.cc.tsv.gz"
+  tabix_url:    "https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/{study_id}/{qtd_id}/{qtd_id}.cc.tsv.gz.tbi"
+
+tissues:
+  Adipose_Subcutaneous:
+    eqtl_qtd: QTD000116
+    sqtl_qtd: QTD000120
+    catalogue_name: adipose_subcutaneous
+  Adipose_Visceral_Omentum:
+    eqtl_qtd: QTD000121
+    sqtl_qtd: QTD000125
+    catalogue_name: adipose_visceral
+  Adrenal_Gland:
+    eqtl_qtd: QTD000126
+    sqtl_qtd: QTD000130
+    catalogue_name: adrenal_gland
+  Artery_Aorta:
+    eqtl_qtd: QTD000131
+    sqtl_qtd: QTD000135
+    catalogue_name: artery_aorta
+  Artery_Coronary:
+    eqtl_qtd: QTD000136
+    sqtl_qtd: QTD000140
+    catalogue_name: artery_coronary
+  Artery_Tibial:
+    eqtl_qtd: QTD000141
+    sqtl_qtd: QTD000145
+    catalogue_name: artery_tibial
+  Brain_Amygdala:
+    eqtl_qtd: QTD000146
+    sqtl_qtd: QTD000150
+    catalogue_name: brain_amygdala
+  Brain_Anterior_cingulate_cortex_BA24:
+    eqtl_qtd: QTD000151
+    sqtl_qtd: QTD000155
+    catalogue_name: brain_anterior_cingulate_cortex
+  Brain_Caudate_basal_ganglia:
+    eqtl_qtd: QTD000156
+    sqtl_qtd: QTD000160
+    catalogue_name: brain_caudate
+  Brain_Cerebellar_Hemisphere:
+    eqtl_qtd: QTD000161
+    sqtl_qtd: QTD000165
+    catalogue_name: brain_cerebellar_hemisphere
+  Brain_Cerebellum:
+    eqtl_qtd: QTD000166
+    sqtl_qtd: QTD000170
+    catalogue_name: brain_cerebellum
+  Brain_Cortex:
+    eqtl_qtd: QTD000171
+    sqtl_qtd: QTD000175
+    catalogue_name: brain_cortex
+  Brain_Frontal_Cortex_BA9:
+    eqtl_qtd: QTD000176
+    sqtl_qtd: QTD000180
+    catalogue_name: brain_frontal_cortex
+  Brain_Hippocampus:
+    eqtl_qtd: QTD000181
+    sqtl_qtd: QTD000185
+    catalogue_name: brain_hippocampus
+  Brain_Hypothalamus:
+    eqtl_qtd: QTD000186
+    sqtl_qtd: QTD000190
+    catalogue_name: brain_hypothalamus
+  Brain_Nucleus_accumbens_basal_ganglia:
+    eqtl_qtd: QTD000191
+    sqtl_qtd: QTD000195
+    catalogue_name: brain_nucleus_accumbens
+  Brain_Putamen_basal_ganglia:
+    eqtl_qtd: QTD000196
+    sqtl_qtd: QTD000200
+    catalogue_name: brain_putamen
+  Brain_Spinal_cord_cervical_c-1:
+    eqtl_qtd: QTD000201
+    sqtl_qtd: QTD000205
+    catalogue_name: brain_spinal_cord
+  Brain_Substantia_nigra:
+    eqtl_qtd: QTD000206
+    sqtl_qtd: QTD000210
+    catalogue_name: brain_substantia_nigra
+  Breast_Mammary_Tissue:
+    eqtl_qtd: QTD000211
+    sqtl_qtd: QTD000215
+    catalogue_name: breast
+  Cells_Cultured_fibroblasts:
+    eqtl_qtd: QTD000216
+    sqtl_qtd: QTD000220
+    catalogue_name: fibroblast
+  Cells_EBV-transformed_lymphocytes:
+    eqtl_qtd: QTD000221
+    sqtl_qtd: QTD000225
+    catalogue_name: LCL
+  Colon_Sigmoid:
+    eqtl_qtd: QTD000226
+    sqtl_qtd: QTD000230
+    catalogue_name: colon_sigmoid
+  Colon_Transverse:
+    eqtl_qtd: QTD000231
+    sqtl_qtd: QTD000235
+    catalogue_name: colon_transverse
+  Esophagus_Gastroesophageal_Junction:
+    eqtl_qtd: QTD000236
+    sqtl_qtd: QTD000240
+    catalogue_name: esophagus_gej
+  Esophagus_Mucosa:
+    eqtl_qtd: QTD000241
+    sqtl_qtd: QTD000245
+    catalogue_name: esophagus_mucosa
+  Esophagus_Muscularis:
+    eqtl_qtd: QTD000246
+    sqtl_qtd: QTD000250
+    catalogue_name: esophagus_muscularis
+  Heart_Atrial_Appendage:
+    eqtl_qtd: QTD000251
+    sqtl_qtd: QTD000255
+    catalogue_name: heart_atrial_appendage
+  Heart_Left_Ventricle:
+    eqtl_qtd: QTD000256
+    sqtl_qtd: QTD000260
+    catalogue_name: heart_left_ventricle
+  Kidney_Cortex:
+    eqtl_qtd: QTD000261
+    sqtl_qtd: QTD000265
+    catalogue_name: kidney_cortex
+  Liver:
+    eqtl_qtd: QTD000266
+    sqtl_qtd: QTD000270
+    catalogue_name: liver
+  Lung:
+    eqtl_qtd: QTD000271
+    sqtl_qtd: QTD000275
+    catalogue_name: lung
+  Minor_Salivary_Gland:
+    eqtl_qtd: QTD000276
+    sqtl_qtd: QTD000280
+    catalogue_name: minor_salivary_gland
+  Muscle_Skeletal:
+    eqtl_qtd: QTD000281
+    sqtl_qtd: QTD000285
+    catalogue_name: muscle
+  Nerve_Tibial:
+    eqtl_qtd: QTD000286
+    sqtl_qtd: QTD000290
+    catalogue_name: nerve_tibial
+  Ovary:
+    eqtl_qtd: QTD000291
+    sqtl_qtd: QTD000295
+    catalogue_name: ovary
+  Pancreas:
+    eqtl_qtd: QTD000296
+    sqtl_qtd: QTD000300
+    catalogue_name: pancreas
+  Pituitary:
+    eqtl_qtd: QTD000301
+    sqtl_qtd: QTD000305
+    catalogue_name: pituitary
+  Prostate:
+    eqtl_qtd: QTD000306
+    sqtl_qtd: QTD000310
+    catalogue_name: prostate
+  Skin_Not_Sun_Exposed_Suprapubic:
+    eqtl_qtd: QTD000311
+    sqtl_qtd: QTD000315
+    catalogue_name: skin_not_sun_exposed
+  Skin_Sun_Exposed_Lower_leg:
+    eqtl_qtd: QTD000316
+    sqtl_qtd: QTD000320
+    catalogue_name: skin_sun_exposed
+  Small_Intestine_Terminal_Ileum:
+    eqtl_qtd: QTD000321
+    sqtl_qtd: QTD000325
+    catalogue_name: small_intestine
+  Spleen:
+    eqtl_qtd: QTD000326
+    sqtl_qtd: QTD000330
+    catalogue_name: spleen
+  Stomach:
+    eqtl_qtd: QTD000331
+    sqtl_qtd: QTD000335
+    catalogue_name: stomach
+  Testis:
+    eqtl_qtd: QTD000336
+    sqtl_qtd: QTD000340
+    catalogue_name: testis
+  Thyroid:
+    eqtl_qtd: QTD000341
+    sqtl_qtd: QTD000345
+    catalogue_name: thyroid
+  Uterus:
+    eqtl_qtd: QTD000346
+    sqtl_qtd: QTD000350
+    catalogue_name: uterus
+  Vagina:
+    eqtl_qtd: QTD000351
+    sqtl_qtd: QTD000355
+    catalogue_name: vagina
+  Whole_Blood:
+    eqtl_qtd: QTD000356
+    sqtl_qtd: QTD000360
+    catalogue_name: blood

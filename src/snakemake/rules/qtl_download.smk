@@ -22,6 +22,8 @@ from pathlib import Path
 import json
 import sys
 
+import yaml
+
 PYTHON_BIN = sys.executable
 QTL_RAW_DIR = os.path.join(config["paths"]["data_root"], "raw", "gtex_v8")
 QTL_RAW_SQTL_DIR = os.path.join(config["paths"]["data_root"], "raw", "gtex_v8_sqtl")
@@ -32,31 +34,86 @@ QTL_HARMONIZED_DIR = os.path.join(
 )
 
 
+# eQTL Catalogue URL resolution. `config/qtl_sources.yaml` is not merged into
+# Snakemake's `config` dict (rules read it via input paths); load it directly here
+# so module-scope helpers have access at param-evaluation time.
+def _load_yaml(path, default=None):
+    if not os.path.exists(path):
+        return default if default is not None else {}
+    with open(path) as f:
+        return yaml.safe_load(f) or (default if default is not None else {})
+
+
+_EQTLCAT_QTD_MAP = _load_yaml("config/eqtl_catalogue_qtd_map.yaml")
+_QTL_SOURCES_CFG = _load_yaml("config/qtl_sources.yaml").get("sources", {})
+
+
+def _resolve_eqtlcat_url(tissue, source_key, suffix):
+    """Resolve the eQTL Catalogue URL for a (tissue, source, suffix) triple.
+
+    source_key is the key in config/qtl_sources.yaml::sources (e.g. 'gtex_eqtl',
+    'gtex_sqtl'). Reads study_id + qtd_kind from qtl_sources.yaml (loaded at
+    module scope into _QTL_SOURCES_CFG) and the tissue -> QTD mapping from
+    config/eqtl_catalogue_qtd_map.yaml.
+
+    Raises ValueError with a descriptive message for unknown tissue/source.
+    """
+    src = _QTL_SOURCES_CFG.get(source_key)
+    if not src:
+        raise ValueError(
+            f"Unknown QTL source '{source_key}'. Available: "
+            f"{sorted(_QTL_SOURCES_CFG.keys())}"
+        )
+    base = src.get("ftp_base", "https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/")
+    study_id = src.get("study_id")
+    qtd_kind = src.get("qtd_kind")
+    if not study_id or not qtd_kind:
+        raise ValueError(
+            f"Source '{source_key}' missing study_id or qtd_kind in qtl_sources.yaml "
+            f"(study_id={study_id!r}, qtd_kind={qtd_kind!r})"
+        )
+    tissues = _EQTLCAT_QTD_MAP.get("tissues", {})
+    if tissue not in tissues:
+        raise ValueError(
+            f"Tissue '{tissue}' not found in {source_key} QTD map. "
+            f"Available ({len(tissues)}): {sorted(tissues.keys())[:5]}..."
+        )
+    qtd_id = tissues[tissue].get(qtd_kind)
+    if qtd_id is None:
+        raise ValueError(
+            f"QTD kind '{qtd_kind}' missing for tissue '{tissue}' in {source_key}"
+        )
+    return f"{base}{study_id}/{qtd_id}/{qtd_id}{suffix}"
+
+
 rule download_eqtl_catalogue:
     """Download a single eQTL Catalogue allpairs file + tabix index.
 
     T-02-04: validates downloaded file is non-empty.
     T-02-06: full local download avoids remote tabix rate limiting.
+
+    URL scheme updated 2026-04-20: eQTL Catalogue r8 (2023-04) moved from
+    `{ftp_base}{tissue}/{tissue}.all.tsv.gz` to
+    `{ftp_base}{study_id}/{qtd_id}/{qtd_id}.cc.tsv.gz`. File is saved locally
+    under the legacy `{tissue}.all.tsv.gz` name to avoid re-downloading the
+    3.6 GB-per-tissue eQTL files that were pre-staged from eQTL Catalogue r7
+    (2020) using the old URL scheme. Schema is r7<->r8 compatible.
     """
     output:
         tsv=os.path.join(QTL_RAW_DIR, "{dataset_id}.all.tsv.gz"),
         tbi=os.path.join(QTL_RAW_DIR, "{dataset_id}.all.tsv.gz.tbi"),
     params:
-        ftp_base=config.get("qtl_sources", {}).get(
-            "gtex_eqtl", {}
-        ).get(
-            "ftp_base",
-            "ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/",
-        ),
+        tsv_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_eqtl", ".cc.tsv.gz"),
+        tbi_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_eqtl", ".cc.tsv.gz.tbi"),
     resources:
         mem_mb=2000,
     shell:
         r"""
         mkdir -p $(dirname {output.tsv})
-        wget -q -O {output.tsv} \
-            "{params.ftp_base}{wildcards.dataset_id}/{wildcards.dataset_id}.all.tsv.gz"
-        wget -q -O {output.tbi} \
-            "{params.ftp_base}{wildcards.dataset_id}/{wildcards.dataset_id}.all.tsv.gz.tbi"
+        curl -sS -L --retry 3 --retry-delay 5 --max-time 7200 \
+            -o {output.tsv} "{params.tsv_url}"
+        curl -sS -L --retry 3 --retry-delay 5 --max-time 300 \
+            -o {output.tbi} "{params.tbi_url}"
 
         # T-02-04: validate non-empty download
         if [ ! -s {output.tsv} ]; then
@@ -133,28 +190,31 @@ rule harmonize_eqtl_region:
 rule download_sqtl_catalogue:
     """Download a single eQTL Catalogue sQTL allpairs file + tabix index.
 
-    Same FTP source as eQTL, different dataset IDs (sQTL-specific QTD IDs).
+    Same upstream as eQTL (eQTL Catalogue r8 QTS000015), different QTD ids
+    (sqtl_qtd = leafcutter quant method).  URL resolved via
+    config/eqtl_catalogue_qtd_map.yaml + _resolve_eqtlcat_url helper.
+
+    The upstream file is named `{qtd_id}.cc.tsv.gz` (r8 convention);
+    saved locally under `{tissue}.all.tsv.gz` to keep filesystem names
+    tissue-addressable and consistent with the manifest's dataset_id column.
+
     T-02-04: validates downloaded file is non-empty.
     """
     output:
         tsv=os.path.join(QTL_RAW_SQTL_DIR, "{dataset_id}.all.tsv.gz"),
         tbi=os.path.join(QTL_RAW_SQTL_DIR, "{dataset_id}.all.tsv.gz.tbi"),
     params:
-        ftp_base=config.get("qtl_sources", {}).get(
-            "gtex_sqtl", {}
-        ).get(
-            "ftp_base",
-            "ftp://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/",
-        ),
+        tsv_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_sqtl", ".cc.tsv.gz"),
+        tbi_url=lambda wc: _resolve_eqtlcat_url(wc.dataset_id, "gtex_sqtl", ".cc.tsv.gz.tbi"),
     resources:
         mem_mb=2000,
     shell:
         r"""
         mkdir -p $(dirname {output.tsv})
-        wget -q -O {output.tsv} \
-            "{params.ftp_base}{wildcards.dataset_id}/{wildcards.dataset_id}.all.tsv.gz"
-        wget -q -O {output.tbi} \
-            "{params.ftp_base}{wildcards.dataset_id}/{wildcards.dataset_id}.all.tsv.gz.tbi"
+        curl -sS -L --retry 3 --retry-delay 5 --max-time 7200 \
+            -o {output.tsv} "{params.tsv_url}"
+        curl -sS -L --retry 3 --retry-delay 5 --max-time 300 \
+            -o {output.tbi} "{params.tbi_url}"
 
         # T-02-04: validate non-empty download
         if [ ! -s {output.tsv} ]; then
@@ -164,6 +224,12 @@ rule download_sqtl_catalogue:
         fi
         if [ ! -s {output.tbi} ]; then
             echo "ERROR: downloaded sQTL tabix index is empty: {output.tbi}" >&2
+            rm -f {output.tsv} {output.tbi}
+            exit 1
+        fi
+        # Gzip integrity check: upstream truncation or aborted transfer must fail loud.
+        if ! gzip -t {output.tsv} 2>/dev/null; then
+            echo "ERROR: gzip integrity check failed for {output.tsv}" >&2
             rm -f {output.tsv} {output.tbi}
             exit 1
         fi
