@@ -300,3 +300,28 @@ AlphaMissense + public MPRA).
 `config/data_sources.yaml` must have a `license` field and a `public: true`
 field. DUAs count as public for this purpose as long as they're open to
 academic researchers.
+
+---
+
+## 2026-04-21 — Phase 2 Recovery: Z -> SuSiE -> Y -> CP#1-final sequence
+
+**Decision:** Phase 2 first-production (2026-04-20) returned 0 Tier A signals from 1,010 colocalizations. Rather than sign CP#1-final on this state and trigger the AJHG fallback, adopt a 4-stage recovery plan authored in `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md`:
+
+1. **Stage 1 (Z):** Diagnose + fix the trait-pair coloc gap (`results/multitrait/coloc_summary.tsv` = 1 byte) via `/gsd-debug multitrait_coloc_empty`.
+2. **Stage 2:** Raise Phase 1 SuSiE credible-set yield from 12/96 to >= 40/96 via `/gsd-debug susie_credible_set_yield` — address Category A (identity-LD fallback) by computing proper LD from 1000G, Category C (variant mismatch) via rsid/chr:pos harmonization, and introduce coloc.abf fallback for true-no-signal regions (Wallace 2021).
+3. **Stage 3 (Y):** Expand gene scope via new sub-plan `02-07-distal-gene-scope-expansion` (`/gsd-plan-phase`) — add published distal regulatory targets (FTO->IRX3/IRX5, CDKN2A/B->ANRIL, APOE->TOMM40/APOC1, SH2B3->ATXN2/BRAP). Pre-register expansion criterion BEFORE re-running.
+4. **Stage 4:** Full pipeline re-run + tier re-evaluation + CP#1-final decision via `/gsd-execute-phase` tail + `/gsd-verify-work`.
+
+**Alternatives considered:**
+- **X (Accept + AJHG):** Sign CP#1-final as-is, pivot to methods paper. Compliance-clean but discards substantial scientific value — the 26-row FTO signal with PP.H3=0.86, PP.H4=0.11 is textbook "shared locus, distinct causal variants" pointing at IRX3/IRX5 rather than FTO. Signing on a scope artifact would misrepresent the pipeline's output as a biological null.
+- **Y alone (skip Z + SuSiE diagnostic):** Expand gene scope without fixing trait-pair coloc or SuSiE yield. Would likely still produce 0 Tier A because tiering joins QTL coloc onto trait-pair coloc and 88% of regions lack credible sets regardless of gene scope.
+
+**Why this sequence:**
+- **Z first** because it's cheap and diagnostic (2-4 hrs) — establishes whether the trait-pair gap is (a) cascading from empty tier3, (b) a missing Snakemake target, or (c) downstream run errors.
+- **SuSiE second** because it's the structural bottleneck — gene-scope expansion only pays off at regions producing credible sets; trait-pair coloc gate is tied to finemap_tier3_coloc.tsv.
+- **Y third** because with credible sets in place at more regions, expanded gene queries have something to colocalize against.
+- **CP#1-final last** so the signing decision is made on corrected data, not artifact.
+
+**Pre-registration obligation:** Stage 3's gene-scope expansion MUST be pre-registered as an OSF amendment BEFORE re-running, to avoid p-hacking critique. Criterion: "For each curated region, add distal regulatory gene targets supported by at least one of: (a) published Hi-C or promoter-capture-Hi-C enhancer-promoter link, (b) ABC model score > 0.015, (c) published CRISPRi or MPRA evidence, (d) eQTL coloc in at least one GTEx tissue with PP.H4 > 0.5, each published in a peer-reviewed article with DOI prior to 2026-04-21."
+
+**How to apply:** Every step lands via a GSD command (`/gsd-debug`, `/gsd-plan-phase`, `/gsd-execute-phase`, `/gsd-verify-work`) with atomic commits. No direct source edits outside GSD workflows. All stage artifacts live under `.planning/phases/02-3-way-qtl-colocalization/` and `.planning/debug/`. Checkpoint outcomes update STATE.md and this file.

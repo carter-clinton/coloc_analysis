@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 3 context gathered
-last_updated: "2026-04-17T03:25:37.351Z"
-last_activity: 2026-04-16
+status: recovery_planning
+stopped_at: Phase 2 first-production fired end-to-end but returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations; RECOVERY_PLAN authored 2026-04-21 routing Z -> SuSiE -> Y -> CP#1-final
+last_updated: "2026-04-21T00:00:00.000Z"
+last_activity: 2026-04-21
 progress:
   total_phases: 12
   completed_phases: 6
@@ -21,14 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 04 — matched-n-cross-ancestry-concordance
+**Current focus:** Phase 02 — 3-way-qtl-colocalization RECOVERY (zero Tier A resolution — 4-stage plan committed 2026-04-21)
 
 ## Current Position
 
-Phase: 04 (matched-n-cross-ancestry-concordance) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-04-16
+Phase: 02 (3-way-qtl-colocalization) — RECOVERY PLAN in place
+Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages, 12-21 hrs)
+Status: recovery_planning -> awaiting user to fire Stage 1 (`/gsd-debug multitrait_coloc_empty`)
+Last activity: 2026-04-21
+
+**Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
+
+**Recovery sequence (authored 2026-04-21 by Carter):**
+- **Stage 1 (Z):** `/gsd-debug multitrait_coloc_empty` — diagnose + fix trait-pair coloc gap [2-4 hrs]
+- **Stage 2:** `/gsd-debug susie_credible_set_yield` — raise yield from 12/96 to >= 40/96 [4-8 hrs]
+- **Stage 3 (Y):** `/gsd-plan-phase` new sub-plan `02-07-distal-gene-scope-expansion` [4-6 hrs]
+- **Stage 4:** `/gsd-execute-phase` tail + `/gsd-verify-work` + CP#1-final decision [2-3 hrs]
+
+**T1 spine status:** Phases 0/1/2/5/9 code-complete; Launch15 drained 9/9 (2026-04-19) — pathway branch CLOSED. CP#1-final is blocked on Phase 2 recovery (this plan).
 
 Progress: ██░░░░░░░░ 17%
 
@@ -179,6 +189,10 @@ Recent decisions affecting current work:
 - [Phase 04]: H7 verdict uses >= semantics at 20pp boundary (boundary = power_artifact); frozen in test
 - [Phase 04]: Per-bootstrap retention emitted as additional output from existing retention rule (not separate rule)
 - [Phase 04]: Negative-control test uses pytest.skip when tier_assignments.tsv absent or lacks is_negative_control column
+- [Phase 02 first-production, 2026-04-20]: `rule all_qtl_coloc` lists `QTL_COLOC_PER_ID_JSONS` directly (not via `aggregate_qtl_coloc.input`) so Phase 2 firing is explicit and does not transitively break `all_pathway` (Phase 5 relies on empty tier_assignments → aggregate_qtl_coloc must stay manifest-only input)
+- [Phase 02 first-production, 2026-04-20]: Manifest builder is single source of truth for identifier conventions — `TRAIT_ALIASES` (htn→hypertension) + `GENE_SYMBOL_TO_ENSEMBL` (11 genes) applied at manifest-build time, not at harmonize-time. Downstream scripts stay decoupled.
+- [Phase 02 first-production, 2026-04-20]: pQTL rows keep gene SYMBOL as `gene_id` (UKB-PPP file naming uses symbols); eQTL/sQTL/sc-eQTL emit ENSG. Polymorphic by `qtl_source`. `gene_symbol` column added for traceability (additive, non-breaking).
+- [Phase 02 first-production, 2026-04-20]: NEW `BUG-AUDIT-12` surfaced — sQTL + sc-eQTL downloads expect eQTL-Catalogue QTD IDs; manifest emits tissue/cell-type names. Scoped OUT of Stage B.5. Next manifest-builder campaign.
 
 ### Pending Todos
 
@@ -192,6 +206,9 @@ None yet.
 - DEF-RO7-03: `config/pipeline.yaml` `paths.harmonized_sumstats` points to wrong dir (`data/processed/sumstats_harmonized` vs actual `data/processed/region_analysis/sumstats_harmonized_fixed/`). Will surface after DEF-RO7-02 is resolved.
 - **Decision 2026-04-13:** Phase 5 real-data smoke testing deferred to Phase 9 planning window. Pathway.smk DAG wiring confirmed correct (RO7); remaining blockers are all upstream/config issues surfaced by deeper DAG resolution. Will re-address when Phase 0/1/2 data paths are re-exercised for replication cohorts. Details: `.planning/quick/260413-ro7-fix-phase-5-snakemake-dag-wiring-gaps/deferred-items.md`.
 - DEF-09-02-01: Pre-existing phase2 test collection failures in 3 files (ModuleNotFoundError: tests). Not caused by Wave 2; logged in deferred-items.md
+- **BUG-Phase2-too-few-snps (active):** `run_qtl_coloc.R` can't match SNP names between harmonized TSV (`chr16_53766288_C_T`) and Phase 1 SuSiE fit's internal variant roster. 3 hypotheses in `.planning/debug/t1_phase2_first_production.md` (unnamed variants / coloc.susie API drift / variant-ID format). PRIMARY blocker for CP#1-final real numerics.
+- **BUG-AUDIT-12 (active):** Manifest emits tissue/cell-type names where sQTL + sc-eQTL eQTL-Catalogue downloads expect QTD IDs. Requires lookup table. Scoped out of Stage B.5.
+- **BUG-AUDIT-11 (active):** sdy passing path for pQTL — `--sdy 1.0` hardcoded in coloc CLI may override per-variant estimate from harmonize_pqtl.py. Needs investigation post-smoke.
 
 ### Quick Tasks Completed
 
@@ -213,10 +230,56 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-17T03:25:37.321Z
-Stopped at: Phase 3 context gathered
+Last session: 2026-04-20T17:00:00Z
+Stopped at: T1 Phase 2 first-production Stage A + B.5 committed (6 commits ending `07cf83a`); eQTL smoke end-to-end SUCCESS (FTO / Adipose_Subcutaneous / bmi.EUR / 16q12, 2601 variants harmonized) but `run_qtl_coloc.R` returns `status: too_few_snps` — SNP-name format mismatch between harmonized TSV and Phase 1 SuSiE fit. `/gsd-resume-work` plan approved; routing to Option 1 (debug) → Option 2 (multi-source raw-data policy) → Option 3 (CP#1-final signoff).
 
-### This session (2026-04-16 PM) — T1 Production Bug-Fix Sprint
+### This session (2026-04-20) — Resume routing + Option 1/2/3 chain
+
+1. **Plan approved** — `/home/ckclinto/.claude/plans/elegant-sprouting-sunrise.md` (3-option routing). Carter picked "all of the above, in order".
+2. **STATE.md refresh** (this edit) — closes the 2026-04-17 → 2026-04-20 gap. See "Launch10-15 drain" and "Phase 2 Stage A/B.5" entries below.
+3. **Option 1 next:** `/gsd-debug qtl_coloc_snp_name_mismatch` — see `.planning/debug/t1_phase2_first_production.md` for the handoff hypotheses (unnamed variants on SuSiE fit / coloc.susie API drift / variant-ID format mismatch).
+
+### Launch10-15 drain (2026-04-17 → 2026-04-19)
+
+Launch10-14 progressively fixed HESS/LDSC-partitioned/LDSC-SEG/SVD rank-deficiency bugs. Commits `030130b`..`a78f4d1`. Launch15 drained 9/9 on 2026-04-19. **Pathway branch CLOSED.** Only CP#1-final blocker is Phase 2 first-production.
+
+### T1 Phase 2 first-production debug (2026-04-20)
+
+- **Stage A** (commits `118bd67`, `028b50a`, `42580cf`): added `rule all_qtl_coloc` + parse-time `QTL_COLOC_OUTPUTS`; fixed pre-existing wildcard bugs in `qtl_download.smk` (`harmonize_pqtl_region` + `harmonize_onek1k_region`); polymorphic `_qtl_manifest_row_by_wildcards()`; conditional L2G gating. All three plan-prescribed verifications PASS. No regression in `all_pathway`.
+- **Stage B.5** (commits `f8b784b`, `a7d4eac`, `07cf83a`): added `TRAIT_ALIASES = {"htn": "hypertension"}` + `GENE_SYMBOL_TO_ENSEMBL` (11 genes) in `build_qtl_coloc_manifest.py`, added `r-r.utils` to `envs/r_coloc.yml`. Manifest regenerated (1243 rows; gwas_trait distribution: hypertension 565, bmi 226, t2d 226, asthma 226 — NO `htn`).
+- **eQTL smoke END-TO-END SUCCESS:** FTO/Adipose_Subcutaneous/bmi.EUR/16q12 → 2601 variants harmonized, valid JSON. BUT coloc returned `status: too_few_snps` / `n_snps_overlap: 0` — NEW downstream blocker in `run_qtl_coloc.R` (SNP-name format mismatch between harmonized TSV `chr16_53766288_C_T` and Phase 1 SuSiE fit). 3 hypotheses documented.
+- **sQTL/sc-eQTL/pQTL smokes BLOCKED** on: (a) raw data not staged (`data/raw/gtex_v8_sqtl/`, `data/raw/onek1k/`, `data/raw/ukbppp/` missing); (b) NEW `BUG-AUDIT-12` — manifest emits tissue/cell-type names where sQTL + sc-eQTL downloads expect eQTL-Catalogue QTD IDs; (c) no `SYNAPSE_AUTH_TOKEN` for pQTL. Scoped OUT of Stage B.5 per checkpoint constraint.
+
+### Archived prior session (2026-04-17 PM) — Phase 3 planning commit
+
+1. **Phase 3 planning batch committed** — `2eb364f docs(phase-03): complete planning batch — 5 waves + validation contract` (7 files, +2248/-4). ROADMAP.md updated, 5 PLANs + 03-VALIDATION.md landed. Execution gated on CP#1-final (T1 first-production completion).
+
+2. **T1 Launch10 status** (inspected 2026-04-17 14:20 EDT):
+   - `logs/t1_production_relaunch10.log` modified 14:17:56 — actively writing
+   - Progress: **225/287 steps (78%)**, 5 LSF jobs RUN in serial queue (job IDs 734688, 734652, 734719, 734717, 734726 submitted 11:33–11:34)
+   - **Residual errors (4 rule types × 7 = 28 failed steps):**
+     - `hess_combine` × 7 (asthma_stroke_EUR, t2d_asthma_EUR, plus 5 more pairs)
+     - `ldsc_seg_gene_expr` × 7
+     - `ldsc_seg_chromatin` × 7
+     - `ldsc_partitioned_h2` × 7
+     - plus `summarize_coloc_results` × 1, `ldsc_munge` × 1
+   - Two latest HEAD commits targeting HESS (`385cadf` strip `_chr{chrom}` from out_prefix, `d33e1f6` LDSC weights repoint) were in scope but 7 hess_combine failures persist — needs separate diagnosis
+   - Estimated ~2 hr to completion at ~2 min/job observed cadence
+
+3. **Launch8/9/10 timeline now clear** (memory was stale — listed Launch9 as staged-but-not-fired):
+   - Launch8: completed 2026-04-17 01:19 (Apr 16 PM start)
+   - Launch9: completed 2026-04-17 11:29 (ran overnight after 4 pre-Launch9 fixes)
+   - Launch10: started ~11:34 today after `385cadf` + `d33e1f6` landed, still running
+
+### Recommended next-session moves
+
+1. **Wait for Launch10 to drain** (est. ~2 hr from 14:20), or monitor via `tail -f logs/t1_production_relaunch10.log`.
+2. **If Launch10 exits with the 28 failed steps unresolved:** 4 systematic bugs remain. Route to `/gsd-debug t1_launch10_failures` with the 4 rule types as in-scope. Likely candidates: `hess_combine` still not finding combined output (maybe `format_hess` output path vs `hess_combine` input path mismatch), LDSC-SEG and LDSC-partitioned-h2 may share a root cause in the custom annot pipeline.
+3. **Once T1 clean:** Reissue CP#1-final with Tier A signal counts. Then `/clear` and `/gsd-execute-phase 3` (planning batch from this session).
+
+### Earlier sessions (archived for reference)
+
+### Previous session (2026-04-16 PM) — T1 Production Bug-Fix Sprint (archived)
 
 **9 pipeline bugs diagnosed and fixed** across 5 commits + 3 in-place tool patches:
 
