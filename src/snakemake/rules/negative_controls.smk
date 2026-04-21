@@ -23,6 +23,12 @@ rule generate_null_loci:
     Produces n_draws sets of null loci BED files, each matched on region size
     and gene density to real loci in regions_curated_grch38.csv. Seeds are
     deterministic: seed_base + draw_id (T-02-18 mitigation).
+
+    The sample_null_loci.py script writes its summary to
+    `{output_dir}/null_loci_summary.tsv` alongside the per-draw BED files.
+    The rule's declared output lives one directory up (NEG_CTRL_DIR root)
+    to keep it addressable as a pipeline target. The shell trailer copies
+    the summary up after the script completes.
     """
     input:
         regions="config/regions_curated_grch38.csv",
@@ -41,6 +47,7 @@ rule generate_null_loci:
           --regions {input.regions} \
           --neg-ctrl-config {input.neg_config} \
           --output-dir {params.output_dir}
+        cp {params.output_dir}/null_loci_summary.tsv {output.summary}
         """
 
 
