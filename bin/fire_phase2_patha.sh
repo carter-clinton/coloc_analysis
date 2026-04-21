@@ -28,11 +28,17 @@ mkdir -p logs/lsf logs
 #     made an optional input of assign_tiers so the primary QTL coloc can
 #     complete without it. The rule still exists and can be fired manually
 #     once Phase 1 is extended in T2.
+# Recovery Plan Stage 1 (2026-04-21): explicitly include the trait-pair
+# multitrait coloc summary as a target. Without it, the DAG does not
+# materialize results/multitrait/coloc_summary.tsv, causing assign_tiers
+# to emit "GWAS coloc file is empty" and collapse all tiers to zero.
+# See .planning/debug/multitrait_coloc_empty.md.
 "$SMK" \
   --profile config/cluster_lsf \
   --config 'phase2_enabled_sources=["gtex_eqtl","gtex_sqtl"]' \
   --keep-going \
   all_qtl_coloc \
+  results/multitrait/coloc_summary.tsv \
   results/negative_controls/null_loci_summary.tsv \
   > "$LOG" 2>&1
 
