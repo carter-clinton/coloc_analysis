@@ -126,8 +126,14 @@ def _evaluate_tier(
     ld_val = (ld_flag or "").lower()
     allowed_ld_set = {value.lower() for value in allowed_ld} if allowed_ld else None
 
-    if status_val != "success":
-        issues.append("status!=success")
+    # Accept both "success" (legacy run_susie_rss.R exit label) and "ok"
+    # (label emitted by commit f2c46dd's tail-overwrite on line 622 of
+    # run_susie_rss.R, which re-maps success-path fits to "ok"). Without the
+    # "ok" alias every converged SuSiE fit fails tier1/tier2/tier3 QC and
+    # cascades into empty multitrait coloc_manifest + coloc_summary. See
+    # .planning/debug/multitrait_coloc_empty.md (recovery_plan_stage_1).
+    if status_val not in {"success", "ok"}:
+        issues.append(f"status!={status_val or 'missing'}")
 
     if ld_val == "ld_missing":
         issues.append("ld_missing")
@@ -361,7 +367,11 @@ def main() -> None:
             row["tier2_qc_notes"] = ";".join(tier2_issues)
 
             augmented_rows.append(row)
-            tier3_pass = row.get("status", "").lower() == "success"
+            # Tier 3 accepts both legacy "success" label and current "ok" label
+            # emitted by run_susie_rss.R line 622 (commit f2c46dd). Keeping both
+            # maintains backward compatibility and unblocks multitrait coloc
+            # without requiring a Phase 1 SuSiE re-run.
+            tier3_pass = row.get("status", "").lower() in {"success", "ok"}
 
             if tier1_pass:
                 tier1_rows.append(dict(row))

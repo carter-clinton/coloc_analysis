@@ -77,7 +77,12 @@ def _coloc_susie_fit_input(which, wildcards):
             f"_MISSING_MANIFEST_{wildcards.pair_id}_{which}.fit.rds",
         )
     trait_key = "trait_a" if which == "a" else "trait_b"
-    return _fit_rds_for(row[trait_key], row["ancestry"], row["region"])
+    # Manifest schema (create_coloc_manifest.py) emits 'base_region', not
+    # 'region'. Original coloc.smk used row["region"] which KeyErrors on
+    # every pair (latent bug masked until Phase 1 tier3 gate first produced
+    # non-zero pairs — see .planning/debug/multitrait_coloc_empty.md,
+    # recovery_plan_stage_1). Analogous to commit 931a9c8 (QTL coloc rsid).
+    return _fit_rds_for(row[trait_key], row["ancestry"], row["base_region"])
 
 
 rule run_coloc_susie:
