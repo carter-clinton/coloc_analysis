@@ -1,13 +1,14 @@
 ---
 session: trait_pair_coloc_hard_failures
-status: fixed
+status: resolved
 opened: 2026-04-21
 closed: 2026-04-21
+resolved: 2026-04-21
 stage: recovery_plan_stage_1d
 parent_plan: .planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md
 predecessor_session: .planning/debug/multitrait_coloc_empty.md
 hypothesis: Cross-trait SNP naming drift inside coloc.susie() — port fix from commit 931a9c8
-next_action: Awaiting human verification (see Resolution).
+next_action: None. Orchestrator-verified 2026-04-21: all 4 JSONs land; SH2B3 bmi_vs_hypertension PP.H4=1.0 (new success); SH2B3 bmi_vs_stroke PP.H3=0.9986 (distinct-signal, correct biology); APOE + FTO no_posterior (scientifically valid); tier_assignments.tsv re-runs without KeyError. Commits 335f514 + e146702 in main.
 ---
 
 ## Current Focus
