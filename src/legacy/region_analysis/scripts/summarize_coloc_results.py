@@ -67,11 +67,14 @@ def main() -> None:
             columns=[
                 "pair_id",
                 "base_region",
+                "region",
                 "ancestry",
                 "trait_a",
                 "trait_b",
                 "PP.H3",
+                "PP.H3.abf",
                 "PP.H4",
+                "PP.H4.abf",
                 "nsnps",
                 "n_common_snps",
             ]
@@ -91,15 +94,25 @@ def main() -> None:
             continue
 
         summary = data.get("summary", {}) or {}
+        # Emit BOTH legacy (base_region / PP.H3 / PP.H4) and assign_tiers-
+        # compatible (region / PP.H3.abf / PP.H4.abf) column names. Downstream
+        # augment_coloc_summary.py reads the legacy set; assign_tiers.py reads
+        # the .abf-suffixed set. Single-file aliasing avoids forking the TSV.
+        base_region_val = row.get("base_region")
+        pp_h3 = summary.get("PP.H3.abf") or summary.get("PP.H3")
+        pp_h4 = summary.get("PP.H4.abf") or summary.get("PP.H4")
         records.append(
             {
                 "pair_id": pair_id,
-                "base_region": row.get("base_region"),
+                "base_region": base_region_val,
+                "region": base_region_val,
                 "ancestry": row.get("ancestry"),
                 "trait_a": row.get("trait_a"),
                 "trait_b": row.get("trait_b"),
-                "PP.H3": summary.get("PP.H3.abf") or summary.get("PP.H3"),
-                "PP.H4": summary.get("PP.H4.abf") or summary.get("PP.H4"),
+                "PP.H3": pp_h3,
+                "PP.H3.abf": pp_h3,
+                "PP.H4": pp_h4,
+                "PP.H4.abf": pp_h4,
                 "nsnps": summary.get("nsnps"),
                 "n_common_snps": data.get("n_common_snps"),
                 "n_merge_chrpos": data.get("n_merge_chrpos"),
