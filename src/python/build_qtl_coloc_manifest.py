@@ -91,6 +91,11 @@ GENE_SYMBOL_TO_ENSEMBL = {
     "APOE": "ENSG00000130203",
     "HLA": "ENSG00000206503",     # HLA-A proxy; audit required post-smoke
     "SLC2A9": "ENSG00000109107",
+    # Distal regulatory targets added 2026-04-21 per RECOVERY_PLAN Stage 3
+    # Option-C scope. Verified against Ensembl REST /lookup/id (GRCh38).
+    # Pre-registration: see DECISIONS.md 2026-04-21 entry.
+    "IRX3":  "ENSG00000177508",   # FTO_16q12 distal target (Smemo 2014, Claussnitzer 2015)
+    "ATXN2": "ENSG00000204842",   # SH2B3_12q24 distal target (Machiela 2011, Kato 2011)
 }
 
 # Sources that require Ensembl gene_id in the manifest. pQTL is excluded

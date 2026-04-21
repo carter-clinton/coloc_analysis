@@ -325,3 +325,45 @@ academic researchers.
 **Pre-registration obligation:** Stage 3's gene-scope expansion MUST be pre-registered as an OSF amendment BEFORE re-running, to avoid p-hacking critique. Criterion: "For each curated region, add distal regulatory gene targets supported by at least one of: (a) published Hi-C or promoter-capture-Hi-C enhancer-promoter link, (b) ABC model score > 0.015, (c) published CRISPRi or MPRA evidence, (d) eQTL coloc in at least one GTEx tissue with PP.H4 > 0.5, each published in a peer-reviewed article with DOI prior to 2026-04-21."
 
 **How to apply:** Every step lands via a GSD command (`/gsd-debug`, `/gsd-plan-phase`, `/gsd-execute-phase`, `/gsd-verify-work`) with atomic commits. No direct source edits outside GSD workflows. All stage artifacts live under `.planning/phases/02-3-way-qtl-colocalization/` and `.planning/debug/`. Checkpoint outcomes update STATE.md and this file.
+
+---
+
+## 2026-04-21 — Pre-registration: Distal gene-scope expansion (RECOVERY_PLAN Stage 3, Option C)
+
+**Decision:** Amend the QTL colocalization manifest to include **distal regulatory gene targets** for the two curated regions with existing GWAS-pair successes. First-pass scope is minimal (no Phase 1 re-fits): **IRX3 at FTO_16q12, ATXN2 at SH2B3_12q24**. Expansion to IRX5 / BRAP deferred pending first-pass tier outcome.
+
+**Rationale (strategic scope — "Option C", 2026-04-21):**
+- FTO_16q12 EUR has `PP.H4=0.1142` with `PP.H3=0.8633` at FTO/Muscle_Skeletal eQTL: textbook "shared locus, distinct causal variants" signature. Literature attributes the obesity GWAS mechanism to distal IRX3 / IRX5 regulation via SNP-disrupted adipocyte-progenitor enhancer (Smemo 2014 *Nature* 507:371-375; Claussnitzer 2015 *NEJM* 373:895-907).
+- SH2B3_12q24 EUR has PP.H4=1.0 for two trait pairs (`hypertension↔stroke` @ 12:111910219 and `bmi↔hypertension` @ 12:111884608) at Tier C because the QTL manifest maps SH2B3_12q24 → SH2B3, but literature implicates ATXN2 / BRAP in cardiometabolic pleiotropy at this locus (Machiela 2011 *Nature Genet* 43:1217-1218; Kato 2011 *Nature Genet* 43:531-538).
+- Expected yield from this minimal expansion: up to 3 Tier A signals (2 SH2B3 pairs + 1 FTO pair) clearing the CP#1-final threshold.
+
+**Alternatives considered:**
+- **Full scope (IRX3+IRX5+ATXN2+BRAP):** requires extending region windows and re-fitting ~20 Phase 1 SuSiE fits (~20 min compute). Deferred to second pass if first pass is under-threshold.
+- **All 52 regions expanded:** violates the "strategic scope" guidance and amplifies multiple-testing without corresponding scientific justification.
+
+**Pre-registration criterion (applied verbatim from RECOVERY_PLAN.md Step 3.3):**
+
+> For each curated region, add distal regulatory gene targets supported by at least one of:
+> (a) published Hi-C or promoter-capture-Hi-C enhancer-promoter link,
+> (b) ABC model score > 0.015,
+> (c) published CRISPRi or MPRA evidence,
+> (d) eQTL coloc in at least one GTEx tissue with PP.H4 > 0.5,
+> each published in a peer-reviewed article with DOI prior to 2026-04-21.
+
+**First-pass gene additions (criterion satisfaction):**
+
+| Region | Gene | Ensembl ID (GRCh38, verified Ensembl REST) | TSS position | Evidence | Criterion |
+|---|---|---|---|---|---|
+| FTO_16q12 | IRX3 | ENSG00000177508 | chr16:54,283,304 | Smemo 2014 *Nature* 507:371-375 (Hi-C + transgenic zebrafish); Claussnitzer 2015 *NEJM* 373:895-907 (CRISPR-Cas9 editing of causal enhancer) | (a), (c) |
+| SH2B3_12q24 | ATXN2 | ENSG00000204842 | chr12:111,443,485 | Machiela 2011 *Nature Genet* 43:1217-1218 (ATXN2 variant rs653178 as sentinel in cross-trait pleiotropy); Kato 2011 *Nature Genet* 43:531-538 (ATXN2 BP association + eQTL coloc) | (d) |
+
+**Authoritative Ensembl ID provenance:** Verified 2026-04-21 against Ensembl REST `/lookup/id/{ensg}?expand=0` (assembly=GRCh38). Commit record includes the REST response summaries in the manifest-builder comment.
+
+**Window-extension policy:** NO window extensions in this pre-registration. Gene TSS must fall within the existing `start_grch38`/`end_grch38` region window:
+- IRX3 @ chr16:54,283,304 falls inside FTO_16q12 window 53,766,088–54,366,088 ✓
+- ATXN2 @ chr12:111,443,485 falls inside SH2B3_12q24 window 110,962,196–111,562,196 ✓
+- IRX5 @ chr16:54,930,865 (outside by 565 kb) and BRAP @ chr12:111,642,146 (outside by 80 kb) are EXCLUDED from this pass.
+
+**OSF amendment obligation:** Post this amendment to OSF (osf.io/az52u) before committing tier outputs with IRX3/ATXN2 rows included. Window policy and criterion wording above are the locked language.
+
+**How to apply:** First-pass runs QTL coloc for IRX3 × 49 tissues × {eqtl, sqtl} at FTO_16q12 (196 new rows) + ATXN2 × 49 tissues × {eqtl, sqtl} at SH2B3_12q24 (196 new rows) = 392 new manifest rows. If any of the 3 existing GWAS-pair successes at SH2B3 / the FTO QTL signal flip to Tier A, sign CP#1-final. Else amend criterion for window-extension second pass (IRX5+BRAP + 20 Phase 1 re-fits) and re-OSF-post.
