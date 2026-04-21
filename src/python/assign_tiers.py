@@ -151,23 +151,42 @@ def assign_tiers_full(qtl_results_df, gwas_coloc_df, pph4_config,
     else:
         gwas_best = pd.DataFrame(columns=["region", "ancestry", "best_gwas_pph4"])
 
-    # Get best QTL PP.H4 per (region, ancestry) with resolving details
+    # Get best QTL PP.H4 per (region, ancestry) with resolving details.
+    # Groups can be all-NaN (every row in the group has status in
+    # {no_qtl_cs, too_few_snps, error, no_gwas_cs}, so PP.H4.abf is NaN);
+    # pandas idxmax raises on all-NaN since v1.3. Fall back to a synthetic
+    # "no QTL resolution" row for those groups so downstream merge still
+    # produces a complete GWAS-vs-QTL matrix.
     if not qtl_results_df.empty:
         qtl_grouped = qtl_results_df.groupby(["region", "ancestry"])
         qtl_best_list = []
         for (region, ancestry), group in qtl_grouped:
-            best_idx = group["PP.H4.abf"].idxmax()
-            best_row = group.loc[best_idx]
+            pph4_col = group["PP.H4.abf"]
             all_sources = group["qtl_source"].unique().tolist()
-            qtl_best_list.append({
-                "region": region,
-                "ancestry": ancestry,
-                "best_qtl_pph4": best_row["PP.H4.abf"],
-                "resolving_gene": best_row.get("gene_id", ""),
-                "resolving_tissue": best_row.get("tissue", ""),
-                "resolving_qtl_source": best_row.get("qtl_source", ""),
-                "all_supporting_sources": ";".join(all_sources),
-            })
+            if pph4_col.notna().any():
+                best_idx = pph4_col.idxmax()
+                best_row = group.loc[best_idx]
+                qtl_best_list.append({
+                    "region": region,
+                    "ancestry": ancestry,
+                    "best_qtl_pph4": best_row["PP.H4.abf"],
+                    "resolving_gene": best_row.get("gene_id", ""),
+                    "resolving_tissue": best_row.get("tissue", ""),
+                    "resolving_qtl_source": best_row.get("qtl_source", ""),
+                    "all_supporting_sources": ";".join(all_sources),
+                })
+            else:
+                # All rows in this (region, ancestry) have status != ok.
+                # Record the null-QTL row so merge produces the GWAS row.
+                qtl_best_list.append({
+                    "region": region,
+                    "ancestry": ancestry,
+                    "best_qtl_pph4": None,
+                    "resolving_gene": "",
+                    "resolving_tissue": "",
+                    "resolving_qtl_source": "",
+                    "all_supporting_sources": ";".join(all_sources),
+                })
         qtl_best = pd.DataFrame(qtl_best_list)
     else:
         qtl_best = pd.DataFrame(
@@ -243,16 +262,37 @@ def main():
 
     qtl_results = pd.read_csv(args.input, sep="\t")
 
-    # Load GWAS coloc if provided
+    # Load GWAS coloc if provided. Tolerate both missing file and empty file
+    # (zero-byte / header-only TSV produced by summarize_coloc_results when the
+    # upstream trait-pair manifest had no populated rows — e.g., Phase 1
+    # trait-pair coloc has not yet fired for this tier, or is scope-gated out).
+    gwas_coloc = pd.DataFrame(columns=["region", "ancestry", "PP.H4.abf"])
     if args.gwas_coloc and os.path.exists(args.gwas_coloc):
-        gwas_coloc = pd.read_csv(args.gwas_coloc, sep="\t")
-    else:
-        gwas_coloc = pd.DataFrame(columns=["region", "ancestry", "PP.H4.abf"])
+        try:
+            if os.path.getsize(args.gwas_coloc) > 0:
+                gwas_coloc = pd.read_csv(args.gwas_coloc, sep="\t")
+            else:
+                logger.warning(
+                    "GWAS coloc file is empty (0 bytes) — proceeding with no "
+                    "trait-pair evidence; tier assignments reflect QTL-only signals."
+                )
+        except pd.errors.EmptyDataError:
+            logger.warning(
+                "GWAS coloc file has no parseable columns — proceeding with no "
+                "trait-pair evidence."
+            )
 
-    # Load negative control results if provided
+    # Load negative control results if provided (same empty-tolerance logic)
     neg_ctrl_df = None
     if args.neg_ctrl_results and os.path.exists(args.neg_ctrl_results):
-        neg_ctrl_df = pd.read_csv(args.neg_ctrl_results, sep="\t")
+        try:
+            if os.path.getsize(args.neg_ctrl_results) > 0:
+                neg_ctrl_df = pd.read_csv(args.neg_ctrl_results, sep="\t")
+        except pd.errors.EmptyDataError:
+            logger.warning(
+                "Negative-control results file has no parseable columns — "
+                "proceeding without negative_control tier rows."
+            )
 
     # Full tier assignment
     tier_df = assign_tiers_full(qtl_results, gwas_coloc, pph4_config, neg_ctrl_df)
