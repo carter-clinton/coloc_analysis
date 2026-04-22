@@ -1,6 +1,12 @@
-# envs/plink.yml -- Pinned PLINK + bcftools environment (D-24)
+# envs/plink.yml -- Pinned PLINK + bcftools + R runtime (D-24)
 # Seeded from src/legacy/region_analysis/envs/plink_env.yml with version pins added.
 # Uses =version format (not =version=build) for platform portability.
+#
+# susie_credible_set_yield (2026-04-21): added r-base + r-data.table +
+# r-optparse so that build_ld_rds_1kg_eur can run plink_ld_to_rds.R in the
+# same conda env immediately after plink1 --r square, avoiding a second
+# conda activation step. These R packages are small (<40 MB marginal) and
+# match the versions already pinned in envs/ld_build.yml.
 name: plink
 channels:
   # defaults dropped (quick 260414-wzy): plink/plink2/bcftools on bioconda.
@@ -11,3 +17,6 @@ dependencies:
   - plink=1.90b6.21
   - plink2=2.00a5.12
   - bcftools=1.21
+  - r-base=4.4
+  - r-data.table
+  - r-optparse

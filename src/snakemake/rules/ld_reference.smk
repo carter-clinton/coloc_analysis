@@ -225,6 +225,115 @@ rule collect_region_variants:
 
 
 # ---------------------------------------------------------------------------
+# susie_credible_set_yield RECOVERY_PLAN Stage 2 (2026-04-21): real 1000G EUR
+# LD panel from the LDSC-landed 1000G Phase 3 plink files (GRCh37, HM3-filtered,
+# 503 EUR samples). Replaces the identity-placeholder EUR .rds files written
+# by build_ld_rds when n_variants > LD_MAX_VARIANTS=6000 (universal for all
+# 12 curated regions; see .planning/debug/susie_credible_set_yield.md).
+#
+# Scope: 11 EUR autosomal regions. Emits to the SAME path the finemap rule
+# reads from (data/processed/ld_reference/EUR/{region}.rds) and takes priority
+# over build_ld_rds via ruleorder below. BMI_Xq24 is excluded (chrX not in
+# LDSC's 1000G_EUR_Phase3_plink .bim files). HLA_6p21 at 69k HM3 variants
+# exceeds the 16k SUSIE_MAX_VARIANTS cap -- it stays on the UKBB-LD tiled
+# block-diagonal panel (already scaffolded in download_ukbb_ld_tiles).
+#
+# Why this over build_ld_rds (VCF-based): plink reads bed/bim/fam in a fraction
+# of the time of VCF streaming, and the LDSC 1000G EUR QC panel is already
+# HM3-filtered (matching what Phase 1 sumstats have post-harmonize), so LD
+# matches sumstats density. Narrow validation: SH2B3_12q24 EUR hypertension
+# CS collapsed from 10 L-saturated size-1 CS (identity LD artifact) to 4
+# purity=1.0 CS at positions 12:111884608, 12:111904371, 12:111910219,
+# 12:111932800 -- the exact leads from Stage 1d trait-pair coloc (PP.H4=1.0).
+ONEKG_EUR_PLINK_PREFIX = config.get("paths", {}).get(
+    "onekg_eur_plink_prefix",
+    "data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC",
+)
+
+# Regions eligible for the 1kG EUR plink build. Autosomal only; HLA on UKBB-LD.
+_AUTO_NO_HLA = {
+    safe
+    for _, safe in REGION_INFOS
+    if str(REGION_METADATA[safe].get("chr", "")).lstrip("chr") in _AUTOSOMES
+    and safe != "HLA_6p21"
+}
+
+# Regions eligible for the 1kG EUR plink-based LD build. Python regex
+# alternation (a|b|c) works reliably as a snakemake wildcard_constraints
+# pattern, whereas PCRE negative lookahead does not. HLA_6p21 stays on
+# the UKBB-LD tiled block-diagonal panel (download_ukbb_ld_tiles);
+# BMI_Xq24 stays on build_ld_rds (chrX not in LDSC 1000G QC plink).
+_ONEKG_EUR_ELIGIBLE_REGIONS = sorted(_AUTO_NO_HLA)
+_ONEKG_EUR_REGION_PATTERN = "|".join(
+    [r for r in _ONEKG_EUR_ELIGIBLE_REGIONS if r != "BMI_Xq24"]
+)
+
+ruleorder: build_ld_rds_1kg_eur > build_ld_rds
+
+
+rule build_ld_rds_1kg_eur:
+    """Build a real LD matrix RDS for one EUR autosomal region from 1000G
+    Phase 3 plink files and write it at the canonical LD-reference path that
+    finemap.smk::run_finemap consumes. HLA is excluded (stays on the UKBB-LD
+    tiled panel); chrX/BMI_Xq24 is excluded (not in LDSC 1000G QC plink).
+    """
+    wildcard_constraints:
+        ancestry=r"EUR",
+        region=_ONEKG_EUR_REGION_PATTERN,
+    input:
+        bed=lambda wildcards: f"{ONEKG_EUR_PLINK_PREFIX}.{REGION_METADATA[wildcards.region]['chr']}.bed",
+        bim=lambda wildcards: f"{ONEKG_EUR_PLINK_PREFIX}.{REGION_METADATA[wildcards.region]['chr']}.bim",
+        fam=lambda wildcards: f"{ONEKG_EUR_PLINK_PREFIX}.{REGION_METADATA[wildcards.region]['chr']}.fam",
+        rscript="src/snakemake/scripts/plink_ld_to_rds.R",
+    output:
+        rds=os.path.join(LD_REF_DIR, "{ancestry}", "{region}.rds"),
+    params:
+        bfile=lambda wildcards: f"{ONEKG_EUR_PLINK_PREFIX}.{REGION_METADATA[wildcards.region]['chr']}",
+        chrom=lambda wildcards: str(REGION_METADATA[wildcards.region]["chr"]),
+        start=lambda wildcards: int(REGION_METADATA[wildcards.region]["start"]),
+        end=lambda wildcards: int(REGION_METADATA[wildcards.region]["end"]),
+        region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region],
+        work_prefix=lambda wildcards: os.path.join(
+            LD_REF_DIR, "EUR_1kg_work", wildcards.region
+        ),
+    conda:
+        # plink.yml has plink1 (required for --r square), plink2, bcftools,
+        # and (added 2026-04-21 for this rule) r-base + r-data.table + r-optparse
+        # so plink_ld_to_rds.R can run in the same env immediately after plink1
+        # without a second conda activation.
+        "envs/plink.yml"
+    threads: 2
+    resources:
+        mem_mb=8000,
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.rds}) $(dirname {params.work_prefix})
+        # plink1 (not plink2) emits --r square output in the
+        # ntab-separated float layout that plink_ld_to_rds.R parses.
+        plink \
+            --bfile {params.bfile} \
+            --chr {params.chrom} \
+            --from-bp {params.start} \
+            --to-bp {params.end} \
+            --r square \
+            --write-snplist \
+            --make-just-bim \
+            --out {params.work_prefix} \
+            --threads {threads}
+        Rscript {input.rscript} \
+            --ld {params.work_prefix}.ld \
+            --variants {params.work_prefix}.bim \
+            --region-id {params.region_id} \
+            --ancestry {wildcards.ancestry} \
+            --ld-source onekg_phase3_eur_hm3 \
+            --output {output.rds}
+        # Keep the intermediate .ld/.bim/.snplist for provenance; remove only
+        # the large .ld file if space becomes a concern.
+        """
+
+
+# ---------------------------------------------------------------------------
 # Plan 01-02 (Wave 2a): UKBB-LD tiled EUR panel (Weissbrod 2020)
 # ---------------------------------------------------------------------------
 # Downloads NPZ + variant TSV tiles anonymously from the AWS Open Data
