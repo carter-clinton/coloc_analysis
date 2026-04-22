@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: recovery_planning
-stopped_at: Phase 2 first-production fired end-to-end but returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations; RECOVERY_PLAN authored 2026-04-21 routing Z -> SuSiE -> Y -> CP#1-final
-last_updated: "2026-04-21T00:00:00.000Z"
+status: recovery_stage_2_awaiting_fire
+stopped_at: "RECOVERY Stage 2 (susie_credible_set_yield) narrow validation COMPLETE -- fix committed, awaiting user LSF fire of production re-fit. Root cause (deeper than RECOVERY_PLAN framed it): build_ld_rds.py wrote identity-placeholder .rds files for every region with variants > LD_MAX_VARIANTS=6000 -> all 12 EUR + 12 AFR LD matrices were identity -> SuSiE fell back to diag(). Fix: new build_ld_rds_1kg_eur snakemake rule consumes the 1000G EUR plink panel already landed in Phase 0; covers 10 EUR autosomal curated regions (HLA_6p21, BMI_Xq24, all AFR still on legacy identity fallback). Narrow validation on SH2B3_12q24 EUR produced 4 purity=1.0 credible sets at canonical published leads (rs3184504/rs10774625/rs7137828/rs4766578) -- rs3184504 at 12:111884608 and rs10774625 at 12:111910219 EXACTLY match Stage 1d trait-pair PP.H4=1.0 coloc positions. Stage 2 commits: a6e3214 (plink_ld_to_rds isSymmetric bug) + 6de9a88 (build_ld_rds_1kg_eur rule) + 7d54183 (LD-rsid override in run_susie_rss.R) + 9102466 (SUSIE_MAX_VARIANTS bump) + 1635d37 (debug session handoff) + 0948a76 (narrow-validation provenance)."
+last_updated: "2026-04-21T23:50:00.000Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 12
@@ -25,18 +25,23 @@ See: .planning/PROJECT.md (updated 2026-04-09)
 
 ## Current Position
 
-Phase: 02 (3-way-qtl-colocalization) — RECOVERY PLAN in place
-Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages, 12-21 hrs)
-Status: recovery_planning -> awaiting user to fire Stage 1 (`/gsd-debug multitrait_coloc_empty`)
+Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
+Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
+Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
 Last activity: 2026-04-21
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
-**Recovery sequence (authored 2026-04-21 by Carter):**
-- **Stage 1 (Z):** `/gsd-debug multitrait_coloc_empty` — diagnose + fix trait-pair coloc gap [2-4 hrs]
-- **Stage 2:** `/gsd-debug susie_credible_set_yield` — raise yield from 12/96 to >= 40/96 [4-8 hrs]
-- **Stage 3 (Y):** `/gsd-plan-phase` new sub-plan `02-07-distal-gene-scope-expansion` [4-6 hrs]
-- **Stage 4:** `/gsd-execute-phase` tail + `/gsd-verify-work` + CP#1-final decision [2-3 hrs]
+**Recovery progress (authored 2026-04-21, updated 2026-04-21 23:50):**
+- ✅ **Stage 1 (Z):** `/gsd-debug multitrait_coloc_empty` — RESOLVED. trait-pair coloc wired; filter_finemap_summary accepts status ∈ {"success","ok"} (commit 604938b).
+- ✅ **Stage 1d:** `/gsd-debug trait_pair_coloc_hard_failures` — RESOLVED. chr:pos/rsid naming drift in coloc.susie (commit 335f514). SH2B3 EUR bmi↔hypertension PP.H4=1.0 and htn↔stroke PP.H4=1.0 at canonical leads.
+- ✅ **Stage 2:** `/gsd-debug susie_credible_set_yield` — NARROW VALIDATION COMPLETE. Identity-LD fallback fixed via 1000G EUR plink panel (5 commits a6e3214 / 6de9a88 / 7d54183 / 9102466 / 1635d37 + provenance 0948a76). SH2B3_12q24 EUR now produces 4 purity=1.0 CS at published leads. **BLOCKED on Carter firing LSF production re-fit** (cmd sequence in .planning/debug/susie_credible_set_yield.md "CHECKPOINT REACHED"). Agent id a4908644fca7f85d9 still live for continuation.
+- ✅ **Stage 3 first-pass (Y):** FTO+IRX3 and SH2B3+ATXN2 distal-gene additions (commit 05c968b, pre-registered in .planning/DECISIONS.md + OSF pending). FTO_16q12 EUR IRX3/Pancreas produced best_qtl_pph4=0.3099 -- below Tier thresholds. BRAP + IRX5 deferred to second-pass pending Stage 2 re-fit results.
+- ⏳ **Stage 4:** `/gsd-execute-phase` tail + `/gsd-verify-work` + CP#1-final decision [2-3 hrs, after LSF fire].
+
+**Post-LSF fire decision matrix (per RECOVERY_PLAN Step 4.3):** Tier A >= 5 -> continue T2 (MR + PGS + Nature Genetics narrative); 3-4 -> continue T2 with pQTL expansion; 1-2 -> targeted investigation (all 49 GTEx tissues + pQTL); 0 -> AJHG fallback (genuine null after fixing all three structural gaps).
+
+**Scope caveat for CP#1-final framing:** Stage 2 fix covers 10 EUR autosomal curated regions. HLA_6p21 + BMI_Xq24 + all AFR regions remain on the legacy identity-LD fallback (the LDSC-landed 1000G panel is EUR-autosomal-only). AFR Tier A candidates are handicapped pending a matched-ancestry LD panel; worth flagging in the CP#1 framing / limitations section.
 
 **T1 spine status:** Phases 0/1/2/5/9 code-complete; Launch15 drained 9/9 (2026-04-19) — pathway branch CLOSED. CP#1-final is blocked on Phase 2 recovery (this plan).
 
