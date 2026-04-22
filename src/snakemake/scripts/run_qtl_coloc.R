@@ -143,16 +143,37 @@ if (is.null(gwas_snps)) {
 # fit has fewer credible sets than L; it is not a real variant).
 gwas_snps <- gwas_snps[gwas_snps != "null"]
 
-# Match via rsid (build-invariant). Fall back to variant_id if rsid is absent
-# or unmatched (e.g. pQTL or future sources that may not carry rsid).
-if ("rsid" %in% names(qtl_df) && any(!is.na(qtl_df$rsid) & qtl_df$rsid != "" & qtl_df$rsid != "NA")) {
-  qtl_snps <- qtl_df$rsid
-  match_key <- "rsid"
-} else {
-  qtl_snps <- qtl_df$variant_id
-  match_key <- "variant_id"
+# Match by best-overlap key across rsid / chr:pos / variant_id. Phase 1
+# SuSiE fits can carry either rsids (bmi.*, asthma.* sumstats) or chr:pos
+# strings (hypertension.*, stroke.*, t2d.* sumstats) on colnames(fit$alpha),
+# depending on the SNP_ID convention of each harmonized sumstats file. The
+# QTL harmonized TSV carries `rsid` and `variant_id` (chr_pos_ref_alt).
+# Derive chr:pos from variant_id so we can match chr:pos-formatted fits that
+# would otherwise silently 0-overlap against rsid-only QTL keys (root cause
+# of the all-zero-overlap SH2B3_12q24 QTL coloc runs surfaced 2026-04-21
+# during Stage 3 Option C; same class as the trait-pair bug fixed in 335f514).
+# variant_id format: "chr12_110962202_G_A" -> chrpos "12:110962202"
+qtl_df$chrpos <- local({
+  parts <- strsplit(as.character(qtl_df$variant_id), "_", fixed = TRUE)
+  chrom <- sub("^chr", "", sapply(parts, `[`, 1))
+  pos   <- sapply(parts, `[`, 2)
+  paste0(chrom, ":", pos)
+})
+
+candidates <- list()
+if ("rsid" %in% names(qtl_df) &&
+    any(!is.na(qtl_df$rsid) & qtl_df$rsid != "" & qtl_df$rsid != "NA")) {
+  candidates[["rsid"]] <- qtl_df$rsid
 }
-overlap_snps <- intersect(gwas_snps, qtl_snps)
+candidates[["chrpos"]]     <- qtl_df$chrpos
+candidates[["variant_id"]] <- qtl_df$variant_id
+
+overlaps <- sapply(candidates, function(v) length(intersect(gwas_snps, v)))
+cat(sprintf("[run_qtl_coloc] candidate overlaps: %s\n",
+            paste(sprintf("%s=%d", names(overlaps), overlaps), collapse = ", ")))
+match_key      <- names(which.max(overlaps))
+qtl_snps       <- candidates[[match_key]]
+overlap_snps   <- intersect(gwas_snps, qtl_snps)
 n_snps_overlap <- length(overlap_snps)
 
 cat(sprintf("[run_qtl_coloc] match_key=%s, GWAS snps: %d, QTL snps: %d, overlap: %d\n",
