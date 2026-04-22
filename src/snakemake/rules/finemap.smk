@@ -74,8 +74,19 @@ rule run_finemap:
         ld_dir=config["finemap"]["ld_reference_dir"],
         region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region],
         credible_set=config["finemap"].get("credible_set", 0.95),
+        # susie_credible_set_yield RECOVERY_PLAN Stage 2 (2026-04-21): raise
+        # the sumstats-side variant cap from the run_susie_rss.R hard default
+        # (6000) to a value that admits all 11 curated EUR autosomal regions
+        # at 1000G HM3 density (max = PYHIN1_1q23 at 15,236 HM3 variants).
+        # Bumping to 16000 keeps the pre-skip path closed for regions where
+        # we now have real LD, and leaves the path open for HLA_6p21 (69k
+        # variants, LD from UKBB-LD tiled panel on a separate branch).
+        susie_max_variants=config.get("finemap", {}).get(
+            "susie_max_variants", 16000
+        ),
     shell:
         r"""
+        export SUSIE_MAX_VARIANTS={params.susie_max_variants}
         Rscript src/legacy/region_analysis/scripts/run_susie_rss.R \
           --sumstats {input.sumstats} \
           --trait {wildcards.trait} \
