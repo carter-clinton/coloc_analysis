@@ -76,9 +76,18 @@ if (anyNA(R)) {
   stop(sprintf("plink LD file %s contains %d NA cells after numeric coercion", opt$ld, n_na))
 }
 
-# plink2 square mode writes the full matrix, but be defensive and enforce
-# symmetry in case a --r-phased build writes upper-triangle only.
-if (!isSymmetric(R, tol = 1e-6)) {
+# susie_credible_set_yield debug (2026-04-21): base R's isSymmetric() checks
+# dimnames as well as numeric symmetry. data.table::fread assigns default
+# colnames V1..VN but leaves rownames NULL, which makes isSymmetric() return
+# FALSE even when the raw matrix is bit-exact symmetric (plink --r square
+# writes a full symmetric matrix). The prior `R + t(R) - diag(diag(R))`
+# compensation then DOUBLED every off-diagonal, producing correlations with
+# |r| > 1 and breaking SuSiE. Fix: strip dimnames before the check, and
+# only apply the upper/lower-triangle symmetrization when the matrix is
+# genuinely non-symmetric (tolerance is on the numeric asymmetry itself).
+dimnames(R) <- NULL
+asym <- max(abs(R - t(R)))
+if (asym > 1e-6) {
   R <- R + t(R) - diag(diag(R))
 }
 
