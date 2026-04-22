@@ -1,0 +1,156 @@
+{
+  "trait": "hypertension",
+  "ancestry": "EUR",
+  "method": "susie",
+  "region_id": "SH2B3_12q24",
+  "chrom": "12",
+  "start": 111400000,
+  "end": 112000000,
+  "sumstats": "data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz",
+  "ld_dir": "data/processed/ld_reference",
+  "ld_matrix": "data/processed/ld_reference/EUR/SH2B3_12q24.rds",
+  "ld_status": "variants_exceed_threshold",
+  "ld_overlap": 0,
+  "ld_overlap_fraction": 0,
+  "status": "ok",
+  "variant_catalog_path": "data/processed/ld_reference/variants/SH2B3_12q24.tsv",
+  "variant_catalog_attempted": true,
+  "variant_catalog_used": false,
+  "variant_catalog_fallback": false,
+  "credible_sets": {
+    "CS1": [
+      {
+        "CHR": "12",
+        "POS": 111865049,
+        "BETA": 0.5044,
+        "SE": 0.0176,
+        "pip": 1
+      }
+    ],
+    "CS2": [
+      {
+        "CHR": "12",
+        "POS": 111973358,
+        "BETA": 0.5062,
+        "SE": 0.0178,
+        "pip": 1
+      }
+    ],
+    "CS3": [
+      {
+        "CHR": "12",
+        "POS": 111833788,
+        "BETA": -0.4937,
+        "SE": 0.0178,
+        "pip": 1
+      }
+    ],
+    "CS4": [
+      {
+        "CHR": "12",
+        "POS": 111932800,
+        "BETA": -0.5027,
+        "SE": 0.0176,
+        "pip": 1
+      }
+    ],
+    "CS5": [
+      {
+        "CHR": "12",
+        "POS": 111884608,
+        "BETA": 0.4999,
+        "SE": 0.0175,
+        "pip": 1
+      }
+    ],
+    "CS6": [
+      {
+        "CHR": "12",
+        "POS": 111904371,
+        "BETA": -0.4989,
+        "SE": 0.0176,
+        "pip": 1
+      }
+    ],
+    "CS7": [
+      {
+        "CHR": "12",
+        "POS": 111708458,
+        "BETA": -0.4129,
+        "SE": 0.018,
+        "pip": 1
+      }
+    ],
+    "CS8": [
+      {
+        "CHR": "12",
+        "POS": 111715197,
+        "BETA": 0.3717,
+        "SE": 0.0185,
+        "pip": 1
+      }
+    ],
+    "CS9": [
+      {
+        "CHR": "12",
+        "POS": 111976776,
+        "BETA": -0.3912,
+        "SE": 0.0202,
+        "pip": 1
+      }
+    ],
+    "CS10": [
+      {
+        "CHR": "12",
+        "POS": 111910219,
+        "BETA": 0.4996,
+        "SE": 0.0176,
+        "pip": 1
+      }
+    ]
+  },
+  "pip": [9.3148e-14, 1, 1, 5.107e-15, 2.1855e-11, 2.2204e-16, 1.1102e-16, 4.2188e-15, 1.6764e-14, 9.1038e-15, 8.8485e-14, 7.9936e-15, 2.579e-13, 3.5416e-14, 7.3275e-15, 9.4147e-14, 1.4211e-14, 1.6764e-14, 1, 3.7526e-14, 4.4409e-15, 1.1102e-15, 3.2196e-15, 1.37e-13, 2.3708e-12, 1.0247e-13, 1.0622e-11, 4.1522e-14, 6.425e-12, 1.0036e-13, 9.2371e-14, 4.774e-14, 4.774e-14, 1.6377e-10, 3.0268e-12, 1, 6.6391e-14, 8.5043e-14, 7.2164e-14, 8.6675e-13, 2.1675e-12, 3.5774e-12, 9.0483e-14, 2.769e-12, 2.276e-14, 1, 1.6744e-12, 5.7188e-13, 1.7764e-14, 3.2752e-12, 1.5099e-14, 5.4956e-14, 7.0499e-14, 2.1531e-12, 1, 1, 2.1531e-12, 2.5462e-12, 9.8255e-14, 2.769e-12, 2.6656e-13, 1.4888e-13, 5.6455e-13, 1.4888e-13, 1.4162e-12, 1, 9.0483e-14, 1.2856e-13, 2.1531e-12, 4.2135e-12, 8.6354e-07, 2.3981e-14, 9.77e-15, 1.5543e-14, 8.693e-14, 9.4369e-14, 4.1522e-14, 1.1102e-15, 6.6613e-16, 1, 1.0247e-13, 7.3719e-14, 3.5194e-14, 1, 1.8017e-06, 6.2172e-15, 6.2172e-15, 3.2196e-15, 4.885e-15, 4.2188e-15, 4.5519e-15, 3.8858e-15, 4.885e-15, 1.2549e-07, 5.3291e-15, 4.885e-15, 5.3291e-15, 4.2188e-15],
+  "min_abs_corr_sweep": [
+    {
+      "min_abs_corr": 0.1,
+      "n_CS": 10,
+      "cs_sizes": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.5,
+      "n_CS": 10,
+      "cs_sizes": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.9,
+      "n_CS": 10,
+      "cs_sizes": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    }
+  ],
+  "L_used": 10,
+  "L_saturated": true,
+  "converged": true,
+  "niter": 3,
+  "elbo_final": -1061421.8893,
+  "convergence_status": "converged_primary",
+  "d1_zscore_sanity": {
+    "ks_pvalue": 2.6115e-127,
+    "max_abs_z": 28.6591,
+    "lambda_gc": 167.5713
+  },
+  "d2_convergence": {
+    "converged": true,
+    "niter": 3,
+    "elbo_final": -1061421.8893,
+    "convergence_status": "converged_primary"
+  },
+  "d3_ld_quality": {
+    "n_outliers": 0,
+    "max_logLR": 0,
+    "lambda": null
+  },
+  "policy_hash": "918b50907327f04a416a7744a3624c72cd0d4dd3"
+}

@@ -1,0 +1,84 @@
+{
+  "trait": "stroke",
+  "ancestry": "EUR",
+  "method": "susie",
+  "region_id": "SH2B3_12q24",
+  "chrom": "12",
+  "start": 111400000,
+  "end": 112000000,
+  "sumstats": "data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz",
+  "ld_dir": "data/processed/ld_reference",
+  "ld_matrix": "data/processed/ld_reference/EUR/SH2B3_12q24.rds",
+  "ld_status": "ld_loaded;overlap_ok;622;0.981",
+  "ld_overlap": 622,
+  "ld_overlap_fraction": 0.9811,
+  "status": "non_converged",
+  "variant_catalog_path": "data/processed/ld_reference/variants/SH2B3_12q24.tsv",
+  "variant_catalog_attempted": true,
+  "variant_catalog_used": true,
+  "variant_catalog_fallback": false,
+  "credible_sets": {
+    "CS1": [
+      {
+        "CHR": "12",
+        "POS": 111910219,
+        "BETA": 0.0546,
+        "SE": 0.0065,
+        "pip": 1
+      }
+    ],
+    "CS2": [
+      {
+        "CHR": "12",
+        "POS": 111904371,
+        "BETA": -0.044,
+        "SE": 0.0065,
+        "pip": 1
+      }
+    ]
+  },
+  "pip": [1, 1],
+  "min_abs_corr_sweep": [
+    {
+      "min_abs_corr": 0.1,
+      "n_CS": 2,
+      "cs_sizes": [1, 1],
+      "cs_pip_sum": [1, 1]
+    },
+    {
+      "min_abs_corr": 0.5,
+      "n_CS": 2,
+      "cs_sizes": [1, 1],
+      "cs_pip_sum": [1, 1]
+    },
+    {
+      "min_abs_corr": 0.9,
+      "n_CS": 2,
+      "cs_sizes": [1, 1],
+      "cs_pip_sum": [1, 1]
+    }
+  ],
+  "L_used": 10,
+  "L_saturated": false,
+  "converged": false,
+  "niter": 100,
+  "elbo_final": -2499.6665,
+  "convergence_status": "non_converged",
+  "d1_zscore_sanity": {
+    "ks_pvalue": 9.7311e-54,
+    "max_abs_z": 8.4,
+    "lambda_gc": 11.1337
+  },
+  "d2_convergence": {
+    "converged": false,
+    "niter": 100,
+    "elbo_final": -2499.6665,
+    "convergence_status": "non_converged"
+  },
+  "d3_ld_quality": {
+    "n_outliers": 0,
+    "max_logLR": 0.5213,
+    "lambda": null
+  },
+  "policy_hash": "918b50907327f04a416a7744a3624c72cd0d4dd3"
+}

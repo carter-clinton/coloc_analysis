@@ -1,0 +1,125 @@
+{
+  "trait": "hypertension",
+  "ancestry": "EUR",
+  "method": "susie",
+  "region_id": "FTO_16q12",
+  "chrom": "16",
+  "start": 53800000,
+  "end": 54400000,
+  "sumstats": "data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz",
+  "ld_dir": "data/processed/ld_reference",
+  "ld_matrix": "data/processed/ld_reference/EUR/FTO_16q12.rds",
+  "ld_status": "ld_loaded;overlap_ok;1833;0.989",
+  "ld_overlap": 1833,
+  "ld_overlap_fraction": 0.9892,
+  "status": "non_converged",
+  "variant_catalog_path": "data/processed/ld_reference/variants/FTO_16q12.tsv",
+  "variant_catalog_attempted": true,
+  "variant_catalog_used": true,
+  "variant_catalog_fallback": false,
+  "credible_sets": {
+    "CS1": [
+      {
+        "CHR": "16",
+        "POS": 53819169,
+        "BETA": 0.0612,
+        "SE": 0.0178,
+        "pip": 1
+      }
+    ],
+    "CS2": [
+      {
+        "CHR": "16",
+        "POS": 53820527,
+        "BETA": -0.0675,
+        "SE": 0.0177,
+        "pip": 1
+      }
+    ],
+    "CS3": [
+      {
+        "CHR": "16",
+        "POS": 53821125,
+        "BETA": 0.0629,
+        "SE": 0.0177,
+        "pip": 1
+      }
+    ],
+    "CS4": [
+      {
+        "CHR": "16",
+        "POS": 53818834,
+        "BETA": 0.062,
+        "SE": 0.0177,
+        "pip": 1
+      },
+      {
+        "CHR": "16",
+        "POS": 53819893,
+        "BETA": 0.0608,
+        "SE": 0.0177,
+        "pip": 0.4473
+      },
+      {
+        "CHR": "16",
+        "POS": 53819937,
+        "BETA": 0.0608,
+        "SE": 0.0177,
+        "pip": 0.4473
+      }
+    ],
+    "CS5": [
+      {
+        "CHR": "16",
+        "POS": 53818834,
+        "BETA": 0.062,
+        "SE": 0.0177,
+        "pip": 1
+      }
+    ]
+  },
+  "pip": [1, 1, 5.9373e-11, 3.1881e-09, 0.0005, 0.4473, 0.4473, 3.6658e-06, 1, 1],
+  "min_abs_corr_sweep": [
+    {
+      "min_abs_corr": 0.1,
+      "n_CS": 5,
+      "cs_sizes": [1, 1, 1, 3, 1],
+      "cs_pip_sum": [1, 1, 1, 1.8947, 1]
+    },
+    {
+      "min_abs_corr": 0.5,
+      "n_CS": 5,
+      "cs_sizes": [1, 1, 1, 3, 1],
+      "cs_pip_sum": [1, 1, 1, 1.8947, 1]
+    },
+    {
+      "min_abs_corr": 0.9,
+      "n_CS": 5,
+      "cs_sizes": [1, 1, 1, 3, 1],
+      "cs_pip_sum": [1, 1, 1, 1.8947, 1]
+    }
+  ],
+  "L_used": 10,
+  "L_saturated": false,
+  "converged": false,
+  "niter": 100,
+  "elbo_final": -1044007.4968,
+  "convergence_status": "non_converged",
+  "d1_zscore_sanity": {
+    "ks_pvalue": 2.2916e-13,
+    "max_abs_z": 4.12,
+    "lambda_gc": 1.8012
+  },
+  "d2_convergence": {
+    "converged": false,
+    "niter": 100,
+    "elbo_final": -1044007.4968,
+    "convergence_status": "non_converged"
+  },
+  "d3_ld_quality": {
+    "n_outliers": 0,
+    "max_logLR": 2.1723e-06,
+    "lambda": null
+  },
+  "policy_hash": "918b50907327f04a416a7744a3624c72cd0d4dd3"
+}
