@@ -426,6 +426,36 @@ repeat {
 if (!is.null(ld_result$subset_idx)) {
   subset <- subset[ld_result$subset_idx]
 }
+
+# susie_credible_set_yield (2026-04-21): prefer the LD-side variant identifier
+# as the canonical SNP name when the LD panel has authoritative rsids
+# (e.g., 1000G EUR Phase 3 plink via build_ld_rds_1kg_eur), but only when
+# the sumstats-side SNP_ID is a non-rsid (e.g., "12:111400006" from the
+# Evangelou 2018 BP sumstats). This ensures annotate_susie names the fit
+# with rsids — the build-invariant cross-source key that run_qtl_coloc.R
+# uses for GWAS↔QTL variant matching. Without this, QTL coloc reports
+# too_few_snps across all SH2B3/APOE/9p21/etc. rows because chr:pos-style
+# SNP_IDs cannot be matched against GRCh38 QTL positions.
+if (!is.null(ld_result$variants) &&
+    "SNP_ID" %in% names(ld_result$variants) &&
+    nrow(ld_result$variants) == nrow(subset)) {
+  ld_ids <- as.character(ld_result$variants$SNP_ID)
+  current_ids <- as.character(subset$SNP_ID)
+  is_rsid_ld      <- grepl("^rs[0-9]+$", ld_ids)
+  is_chrpos_sumst <- grepl("^[0-9XY]+:[0-9]+$", current_ids)
+  # Override only where LD has a clean rsid and sumstats has a chr:pos or blank
+  replace_mask <- is_rsid_ld & (is_chrpos_sumst | is.na(current_ids) | current_ids == "")
+  if (any(replace_mask)) {
+    message(sprintf(
+      "Overriding %d sumstats SNP_IDs with LD-panel rsids (%d already rsid, %d unmatched).",
+      sum(replace_mask),
+      sum(grepl("^rs[0-9]+$", current_ids)),
+      sum(!replace_mask & !grepl("^rs[0-9]+$", current_ids))
+    ))
+    subset[replace_mask, SNP_ID := ld_ids[replace_mask]]
+  }
+}
+
 subset[, z := BETA / SE]
 mean_n <- suppressWarnings(mean(as.numeric(subset$N), na.rm = TRUE))
 if (is.nan(mean_n) || is.infinite(mean_n)) {
