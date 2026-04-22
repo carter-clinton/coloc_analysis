@@ -1,0 +1,198 @@
+{
+  "trait": "bmi",
+  "ancestry": "EUR",
+  "method": "susie",
+  "region_id": "FTO_16q12",
+  "chrom": "16",
+  "start": 53800000,
+  "end": 54400000,
+  "sumstats": "data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz",
+  "ld_dir": "data/processed/ld_reference",
+  "ld_matrix": "data/processed/ld_reference/EUR/FTO_16q12.rds",
+  "ld_status": "variants_exceed_threshold",
+  "ld_overlap": 0,
+  "ld_overlap_fraction": 0,
+  "status": "ok",
+  "variant_catalog_path": "data/processed/ld_reference/variants/FTO_16q12.tsv",
+  "variant_catalog_attempted": true,
+  "variant_catalog_used": false,
+  "variant_catalog_fallback": false,
+  "credible_sets": {
+    "CS1": [
+      {
+        "CHR": "16",
+        "POS": 53813367,
+        "BETA": -0.075,
+        "SE": 0.0016,
+        "pip": 1
+      }
+    ],
+    "CS2": [
+      {
+        "CHR": "16",
+        "POS": 53816275,
+        "BETA": 0.0748,
+        "SE": 0.0016,
+        "pip": 1
+      }
+    ],
+    "CS3": [
+      {
+        "CHR": "16",
+        "POS": 53803574,
+        "BETA": 0.078,
+        "SE": 0.0017,
+        "pip": 1
+      }
+    ],
+    "CS4": [
+      {
+        "CHR": "16",
+        "POS": 53800954,
+        "BETA": -0.0778,
+        "SE": 0.0017,
+        "pip": 1
+      }
+    ],
+    "CS5": [
+      {
+        "CHR": "16",
+        "POS": 53816838,
+        "BETA": 0.0749,
+        "SE": 0.0016,
+        "pip": 1
+      }
+    ],
+    "CS6": [
+      {
+        "CHR": "16",
+        "POS": 53818460,
+        "BETA": 0.0755,
+        "SE": 0.0017,
+        "pip": 1
+      }
+    ],
+    "CS7": [
+      {
+        "CHR": "16",
+        "POS": 53819169,
+        "BETA": -0.0752,
+        "SE": 0.0017,
+        "pip": 1
+      }
+    ],
+    "CS8": [
+      {
+        "CHR": "16",
+        "POS": 53816752,
+        "BETA": -0.0748,
+        "SE": 0.0017,
+        "pip": 0.0708
+      },
+      {
+        "CHR": "16",
+        "POS": 53820527,
+        "BETA": 0.0749,
+        "SE": 0.0017,
+        "pip": 0.9292
+      }
+    ],
+    "CS9": [
+      {
+        "CHR": "16",
+        "POS": 53810686,
+        "BETA": -0.0753,
+        "SE": 0.0017,
+        "pip": 0.5
+      },
+      {
+        "CHR": "16",
+        "POS": 53828066,
+        "BETA": 0.0753,
+        "SE": 0.0017,
+        "pip": 0.5
+      }
+    ],
+    "CS10": [
+      {
+        "CHR": "16",
+        "POS": 53819198,
+        "BETA": 0.0747,
+        "SE": 0.0017,
+        "pip": 0.1932
+      },
+      {
+        "CHR": "16",
+        "POS": 53819877,
+        "BETA": 0.0747,
+        "SE": 0.0017,
+        "pip": 0.1932
+      },
+      {
+        "CHR": "16",
+        "POS": 53819893,
+        "BETA": -0.0747,
+        "SE": 0.0017,
+        "pip": 0.1932
+      },
+      {
+        "CHR": "16",
+        "POS": 53821615,
+        "BETA": -0.0747,
+        "SE": 0.0017,
+        "pip": 0.1932
+      },
+      {
+        "CHR": "16",
+        "POS": 53822651,
+        "BETA": -0.0747,
+        "SE": 0.0017,
+        "pip": 0.1932
+      }
+    ]
+  },
+  "pip": [0.0148, 0.0011, 0.0011, 1, 0.0011, 0.0011, 1, 0.0148, 0.0001, 0.5, 1, 1, 0.0708, 1, 1, 1, 0.1932, 0.1932, 0.1932, 0.9292, 0.1932, 0.1932, 0.5, 2.8499e-13, 1.9429e-14, 4.2135e-12],
+  "min_abs_corr_sweep": [
+    {
+      "min_abs_corr": 0.1,
+      "n_CS": 7,
+      "cs_sizes": [1, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [1, 1, 1, 1, 1, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.5,
+      "n_CS": 7,
+      "cs_sizes": [1, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [1, 1, 1, 1, 1, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.9,
+      "n_CS": 7,
+      "cs_sizes": [1, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [1, 1, 1, 1, 1, 1, 1]
+    }
+  ],
+  "L_used": 10,
+  "L_saturated": false,
+  "converged": true,
+  "niter": 6,
+  "elbo_final": -1019384.5386,
+  "convergence_status": "converged_primary",
+  "d1_zscore_sanity": {
+    "ks_pvalue": 5.4705e-37,
+    "max_abs_z": 46.875,
+    "lambda_gc": 8.4299
+  },
+  "d2_convergence": {
+    "converged": true,
+    "niter": 6,
+    "elbo_final": -1019384.5386,
+    "convergence_status": "converged_primary"
+  },
+  "d3_ld_quality": {
+    "n_outliers": 0,
+    "max_logLR": 0,
+    "lambda": null
+  },
+  "policy_hash": "918b50907327f04a416a7744a3624c72cd0d4dd3"
+}

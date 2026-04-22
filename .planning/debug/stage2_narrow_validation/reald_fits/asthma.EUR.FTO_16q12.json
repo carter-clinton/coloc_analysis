@@ -1,0 +1,134 @@
+{
+  "trait": "asthma",
+  "ancestry": "EUR",
+  "method": "susie",
+  "region_id": "FTO_16q12",
+  "chrom": "16",
+  "start": 53800000,
+  "end": 54400000,
+  "sumstats": "data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz",
+  "ld_dir": "data/processed/ld_reference",
+  "ld_matrix": "data/processed/ld_reference/EUR/FTO_16q12.rds",
+  "ld_status": "ld_loaded;partial_overlap;1803;0.353",
+  "ld_overlap": 1803,
+  "ld_overlap_fraction": 0.3531,
+  "status": "non_converged",
+  "variant_catalog_path": "data/processed/ld_reference/variants/FTO_16q12.tsv",
+  "variant_catalog_attempted": true,
+  "variant_catalog_used": true,
+  "variant_catalog_fallback": false,
+  "credible_sets": {
+    "CS1": [
+      {
+        "CHR": "16",
+        "POS": 53803232,
+        "BETA": 0.0285,
+        "SE": 0.0048,
+        "pip": 0.7708
+      },
+      {
+        "CHR": "16",
+        "POS": 53803430,
+        "BETA": 0.0285,
+        "SE": 0.0048,
+        "pip": 0.9761
+      }
+    ],
+    "CS2": [
+      {
+        "CHR": "16",
+        "POS": 53814649,
+        "BETA": 0.0247,
+        "SE": 0.0051,
+        "pip": 1
+      }
+    ],
+    "CS3": [
+      {
+        "CHR": "16",
+        "POS": 53800851,
+        "BETA": 0.001,
+        "SE": 0.0109,
+        "pip": 1
+      }
+    ],
+    "CS4": [
+      {
+        "CHR": "16",
+        "POS": 53811128,
+        "BETA": 0.0133,
+        "SE": 0.0153,
+        "pip": 0.5456
+      },
+      {
+        "CHR": "16",
+        "POS": 53811517,
+        "BETA": 0.0133,
+        "SE": 0.0153,
+        "pip": 0.454
+      }
+    ],
+    "CS5": [
+      {
+        "CHR": "16",
+        "POS": 53801242,
+        "BETA": -0.0178,
+        "SE": 0.0219,
+        "pip": 1
+      }
+    ],
+    "CS6": [
+      {
+        "CHR": "16",
+        "POS": 53813014,
+        "BETA": -0.0273,
+        "SE": 0.0201,
+        "pip": 1
+      }
+    ]
+  },
+  "pip": [1.1616e-08, 1, 1, 0.7708, 0.9761, 1.1102e-16, 0.0004, 0.5456, 0.454, 1, 1],
+  "min_abs_corr_sweep": [
+    {
+      "min_abs_corr": 0.1,
+      "n_CS": 6,
+      "cs_sizes": [2, 1, 1, 2, 1, 1],
+      "cs_pip_sum": [1.7469, 1, 1, 0.9996, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.5,
+      "n_CS": 6,
+      "cs_sizes": [2, 1, 1, 2, 1, 1],
+      "cs_pip_sum": [1.7469, 1, 1, 0.9996, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.9,
+      "n_CS": 6,
+      "cs_sizes": [2, 1, 1, 2, 1, 1],
+      "cs_pip_sum": [1.7469, 1, 1, 0.9996, 1, 1]
+    }
+  ],
+  "L_used": 10,
+  "L_saturated": false,
+  "converged": false,
+  "niter": 100,
+  "elbo_final": -1844932.5768,
+  "convergence_status": "non_converged",
+  "d1_zscore_sanity": {
+    "ks_pvalue": 2.8211e-08,
+    "max_abs_z": 6.0495,
+    "lambda_gc": 1.3849
+  },
+  "d2_convergence": {
+    "converged": false,
+    "niter": 100,
+    "elbo_final": -1844932.5768,
+    "convergence_status": "non_converged"
+  },
+  "d3_ld_quality": {
+    "n_outliers": 5,
+    "max_logLR": 4.6643,
+    "lambda": null
+  },
+  "policy_hash": "918b50907327f04a416a7744a3624c72cd0d4dd3"
+}

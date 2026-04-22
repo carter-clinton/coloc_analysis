@@ -1,0 +1,136 @@
+{
+  "trait": "t2d",
+  "ancestry": "EUR",
+  "method": "susie",
+  "region_id": "FTO_16q12",
+  "chrom": "16",
+  "start": 53800000,
+  "end": 54400000,
+  "sumstats": "data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz",
+  "ld_dir": "data/processed/ld_reference",
+  "ld_matrix": "data/processed/ld_reference/EUR/FTO_16q12.rds",
+  "ld_status": "ld_loaded;partial_overlap;2372;0.442",
+  "ld_overlap": 2372,
+  "ld_overlap_fraction": 0.4417,
+  "status": "non_converged",
+  "variant_catalog_path": "data/processed/ld_reference/variants/FTO_16q12.tsv",
+  "variant_catalog_attempted": true,
+  "variant_catalog_used": true,
+  "variant_catalog_fallback": false,
+  "credible_sets": {
+    "CS1": [
+      {
+        "CHR": "16",
+        "POS": 53800954,
+        "BETA": 0.1162,
+        "SE": 0.0069,
+        "pip": 0.4906
+      },
+      {
+        "CHR": "16",
+        "POS": 53803574,
+        "BETA": 0.1162,
+        "SE": 0.0069,
+        "pip": 0.4906
+      }
+    ],
+    "CS2": [
+      {
+        "CHR": "16",
+        "POS": 53822502,
+        "BETA": 0.1081,
+        "SE": 0.0116,
+        "pip": 1
+      }
+    ],
+    "CS3": [
+      {
+        "CHR": "16",
+        "POS": 53806453,
+        "BETA": 0.1166,
+        "SE": 0.0069,
+        "pip": 1
+      }
+    ],
+    "CS4": [
+      {
+        "CHR": "16",
+        "POS": 53803156,
+        "BETA": 0.0705,
+        "SE": 0.0064,
+        "pip": 1
+      }
+    ],
+    "CS5": [
+      {
+        "CHR": "16",
+        "POS": 53812614,
+        "BETA": 0.0928,
+        "SE": 0.0066,
+        "pip": 1
+      }
+    ],
+    "CS6": [
+      {
+        "CHR": "16",
+        "POS": 53815161,
+        "BETA": 0.0695,
+        "SE": 0.0064,
+        "pip": 1
+      }
+    ],
+    "CS7": [
+      {
+        "CHR": "16",
+        "POS": 53806996,
+        "BETA": 0.0328,
+        "SE": 0.0448,
+        "pip": 1
+      }
+    ]
+  },
+  "pip": [0.4906, 0.0006, 1, 0.0175, 0.4906, 1.987e-10, 1, 1, 0.0006, 1, 1, 1],
+  "min_abs_corr_sweep": [
+    {
+      "min_abs_corr": 0.1,
+      "n_CS": 7,
+      "cs_sizes": [2, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [0.9813, 1, 1, 1, 1, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.5,
+      "n_CS": 7,
+      "cs_sizes": [2, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [0.9813, 1, 1, 1, 1, 1, 1]
+    },
+    {
+      "min_abs_corr": 0.9,
+      "n_CS": 7,
+      "cs_sizes": [2, 1, 1, 1, 1, 1, 1],
+      "cs_pip_sum": [0.9813, 1, 1, 1, 1, 1, 1]
+    }
+  ],
+  "L_used": 10,
+  "L_saturated": false,
+  "converged": false,
+  "niter": 100,
+  "elbo_final": -1191430.2078,
+  "convergence_status": "non_converged",
+  "d1_zscore_sanity": {
+    "ks_pvalue": 2.3372e-24,
+    "max_abs_z": 16.8986,
+    "lambda_gc": 1.9858
+  },
+  "d2_convergence": {
+    "converged": false,
+    "niter": 100,
+    "elbo_final": -1191430.2078,
+    "convergence_status": "non_converged"
+  },
+  "d3_ld_quality": {
+    "n_outliers": 15,
+    "max_logLR": 7.2181,
+    "lambda": null
+  },
+  "policy_hash": "918b50907327f04a416a7744a3624c72cd0d4dd3"
+}
