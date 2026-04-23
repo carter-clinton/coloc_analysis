@@ -1,10 +1,295 @@
 # Roadmap: coloc_analysis
 
+> **Pivot note** (2026-04-22): This program was reframed from a 50-region
+> candidate-locus study into a two-track original research program covering
+> genome-wide joint-signal discovery across 9 traits × 2 ancestries (Track B,
+> milestones M0–M6) plus a pre-specified short-form methods validation paper
+> leveraging the existing real-LD audit (Track A finalization). Pivot charter:
+> `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
+> The pre-pivot Phase 00–11 content is preserved below under "Pre-pivot
+> spine"; its artifacts are reusable per Amendment §8 and form the Track A
+> data plus the Track B candidate-locus validation subset.
+
 ## Overview
+
+Two-track original research program (adopted 2026-04-22 per Amendment §3).
+
+Track B executes genome-wide joint-signal discovery across 9 traits × up to
+2 ancestries under milestones **M0 → M1 → M2 → M3 → M4 → M5 → M6**. M2
+(LDSC + MTAG + CPASSOC) is gated on (a) M1 harmonization completion and
+(b) OSF amendment posting per Amendment §9. M3 (AoU AFR LD build) is
+partially parallel with M2. M4 (scalable coloc + fine-mapping) is gated on
+M3 LD panels + M2 region list. M5 (variant→gene prioritization + novelty
+cross-reference) is gated on M4 Tier A. M6 (manuscript + replication +
+submission) is gated on M5.
+
+Track A (short-form methods paper on the real-LD audit of 50 curated
+cardiometabolic regions) is scientifically independent of Track B. It ships
+on pre-pivot spine outputs (Phases 0 / 1 / 2 / 5 / 9, reusable per
+Amendment §8) and targets Genome Medicine primary / AJHG short report
+fallback / Bioinformatics Applications Note final fallback in 2026-05 /
+2026-06 per Amendment §11.
+
+## Current milestone sequence (Track B M0–M6)
+
+### M0: Pivot scaffolding
+**Slug**: m0-pivot-scaffolding
+**Goal**: Adopt pivot charter; rewrite .planning/ scaffold per Amendment §12;
+lock 9-trait × 2-ancestry inventory; lock phenotype definitions; author
+TRACK-A-PIVOT.md, SUMSTATS-UPGRADE.tsv/.md, AOU-LD-PIPELINE.md,
+TRACK-A-FROZEN-NUMBERS.md companion docs (Amendment §3 M0).
+**Requirements**: REQ-AMEND-SEC12, REQ-PUBLIC-DATA-ONLY, REQ-SNAKEMAKE-CI
+(carried forward)
+**Dependencies**: None (planning only)
+**Success Criteria**:
+  1. Amendment committed under `.planning/amendments/`
+  2. PROJECT / ROADMAP / REQUIREMENTS / DECISIONS rewritten to M0–M6 framing
+  3. 9-trait × 2-ancestry inventory locked per Amendment §4
+  4. Track A and Track B companion documents committed
+  5. STATE.md refreshed to M0 in-flight position
+**Deliverable Artifacts**:
+  - `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`
+  - Updated `.planning/PROJECT.md` / `ROADMAP.md` / `REQUIREMENTS.md` / `DECISIONS.md`
+  - `TRACK-A-PIVOT.md`, `TRACK-A-FROZEN-NUMBERS.md`, `SUMSTATS-UPGRADE.{md,tsv}`, `AOU-LD-PIPELINE.md`, `SUMSTATS-MANUAL-FETCH.md`
+**Gating condition for M1**: M0 scaffolding commits land (this quick-task
+plan + subsequent STATE.md refresh session).
+**Status**: in flight — amendment + companions complete; doc rewrites are
+this quick-task plan.
+
+### M1: Sumstats upgrade and harmonization
+**Slug**: m1-sumstats-upgrade-and-harmonization
+**Goal**: Download Yengo 2022 (or Loh 2022 — pending source decision per
+PROJECT.md open human-action item b), DIAMANTE 2022, GIGASTROKE 2022, Giri
+2019 MVP, GBMI asthma 2022, Aragam 2022 CAD, GLGC 2021 lipids, CKDGen 2019
+eGFR, MAGIC 2021 HbA1c per `SUMSTATS-UPGRADE.tsv`. Harmonize to GRCh38,
+lift deCODE rsids, filter MAF ≥ 0.005, INFO ≥ 0.8, per-ancestry QC. Build
+LDSC-ready and MTAG-ready formats. Verify ancestries and sample-overlap
+flags per trait (Amendment §3 M1, §4, §5).
+**Requirements**: REQ-TRAIT-INVENTORY, REQ-SNAKEMAKE-CI,
+REQ-PUBLIC-DATA-ONLY, REQ-PATH-PARAMETERIZATION
+**Dependencies**: Download lead times (some DUAs in place; MVP phs001672
+needs verification per PROJECT.md open human-action item c)
+**Success Criteria**:
+  1. Harmonized sumstats parquet per trait × ancestry in `data/processed/sumstats/`
+  2. Per-trait QC report with ancestry and sample-overlap flags locked
+  3. LDSC-munged files for all 9 traits × ancestry strata listed in Amendment §4
+  4. SHA-256 checksums recorded for every source file (frozen for OSF amendment text)
+  5. Trait inventory YAML (`config/trait_inventory.yaml`) enumerates 9 traits
+**Deliverable Artifacts**:
+  - Harmonized sumstats parquet per trait × ancestry
+  - Per-trait QC report (one HTML per trait)
+  - LDSC-munged `.sumstats.gz` per trait × ancestry
+  - `config/trait_inventory.yaml` with locked phenotype definitions
+  - SHA-256 manifest for source sumstats files
+**Gating condition for M2**: M1 harmonization verified (all success criteria)
+AND OSF amendment posted at osf.io/pvb5j per Amendment §9 (Carter web-UI
+action per PROJECT.md open human-action item a). Both conditions must hold.
+**Status**: not planned; `/gsd-plan-phase M1` session queued.
+
+### M2: LDSC + MTAG + CPASSOC discovery
+**Slug**: m2-ldsc-mtag-cpassoc-discovery
+**Goal**: LDSC pairwise rg across all 9 traits × 2 ancestries; MTAG
+(Turley 2018) with `--overlap` LDSC-intercept correction for UKB / MVP
+cohort overlap; CPASSOC (Zhu 2015) orthogonal SHom / SHet joint-signal
+test; `max_FDR` filter on MTAG; PLINK clump (p=5e-8, r²<0.01, 1Mb) per
+trait × ancestry. Union of clumped regions + MTAG-novel + CPASSOC-novel
+= discovery region list (~1,500–3,000 regions). **Novelty deliverable
+Class 1**: joint-signal novel loci where MTAG or CPASSOC reaches
+p < 5e-8 and no contributing single trait does, intersected with GWAS
+Catalog v_lock for prior-art exclusion (Amendment §3 M2, §6, §7.1).
+**Requirements**: REQ-MTAG-OVERLAP, REQ-CPASSOC-ORTHOGONAL,
+REQ-NOVELTY-CLASS-1, REQ-OSF-PREREG, REQ-SNAKEMAKE-CI
+**Dependencies**: M1 complete; OSF amendment posted BEFORE any MTAG /
+CPASSOC run (Amendment §9)
+**Success Criteria**:
+  1. `rg_matrix.tsv` with LDSC pairwise rg + intercept block for all 9 × 2 pairs
+  2. MTAG per-trait outputs with `max_FDR` column per Turley 2018
+  3. CPASSOC per-locus SHom / SHet outputs
+  4. Genome-wide union region BED (~1,500–3,000 regions)
+  5. `joint_signal_novel.tsv` with MTAG ∩ CPASSOC high-confidence subset
+  6. mtCOJO sensitivity table on top-N MTAG-novel loci
+**Deliverable Artifacts**:
+  - `results/ldsc/rg_matrix.tsv`
+  - `results/mtag/` per-trait output tables
+  - `results/cpassoc/` per-locus SHom/SHet tables
+  - `results/regions/union_region_list.bed`
+  - `results/novelty/joint_signal_novel.tsv` (Class 1)
+**Gating condition for M3**: M2 region list frozen; per-region AoU LD
+priority ordering handed to M3 Dataproc pipeline.
+**Status**: not planned; gated on M1 + OSF amendment posting.
+
+### M3: AoU AFR LD panel build
+**Slug**: m3-aou-afr-ld-panel-build
+**Goal**: Inside the All of Us Researcher Workbench (Terra), build
+per-region LD matrices per ancestry from controlled-tier WGS (~60–95k
+AFR post-QC) per `AOU-LD-PIPELINE.md`. Export summary-only (LD matrix +
+allele-frequency metadata) per AoU data-egress policy; verify AoU
+classification of aggregate LD matrices as summary statistics (AoU R1
+risk). Parallel: rebuild EUR LD from 1000G + UKB for parity (Amendment
+§3 M3, §5).
+**Requirements**: REQ-AOU-LD-EGRESS, REQ-AOU-LD-VALIDATION,
+REQ-PUBLIC-DATA-ONLY
+**Dependencies**: Region list from M2; AoU Workbench access
+(controlled-tier confirmed for Carter); prerequisites P1–P7 in
+`AOU-LD-PIPELINE.md` §2
+**Success Criteria**:
+  1. Per-region AoU AFR LD `.rds` files on GPFS under `data/processed/ld_reference/AFR_aou/`
+  2. Per-region EUR LD parity panel rebuilt from 1000G + UKB
+  3. 10-region validation protocol passed per AOU-LD-PIPELINE.md §9 (4 checks)
+  4. AoU data-egress audit log committed
+  5. AoU P&P draft registration filed before scale-up compute
+**Deliverable Artifacts**:
+  - `data/processed/ld_reference/AFR_aou/*.rds` (per-region AFR LD)
+  - `data/processed/ld_reference/EUR_1kg_ukb/*.rds` (per-region EUR parity)
+  - `.planning/phases/m3-aou-afr-ld-panel-build/validation/` (4-check memo)
+  - `.planning/amendments/aou-egress-audit-log.md`
+**Gating condition for M4**: Validation memo approved by Carter; per-region
+LD files on GPFS; EUR parity panel available.
+**Status**: not planned; gated on M2 region list; partially parallel with M2
+once prerequisites P1–P7 land.
+
+### M4: Scalable coloc + fine-mapping
+**Slug**: m4-scalable-coloc-finemapping
+**Goal**: Two-stage coloc — fast ABF-coloc (Giambartolomei 2014;
+Wallace 2020) genome-wide first, then SuSiE-RSS (Zou 2022) only where
+PP.H4 > 0.5 (cuts compute 10–20×). Region-level PP.H4 FDR correction.
+HyPrColoc (Foley 2021) across ≥3 traits simultaneously. PolyFun
+baselineLF2 functional priors (Weissbrod 2020) for rescue of underpowered
+credible sets. AFR fine-mapping with AoU LD; EUR with 1000G + UKB LD.
+**Novelty deliverables Classes 2 + 3**: AFR-specific lead variants and
+secondary independent credible sets at known loci (Amendment §3 M4, §6, §7.1).
+**Requirements**: REQ-TWO-STAGE-COLOC, REQ-HYPRCOLOC-MULTI,
+REQ-POLYFUN-RESCUE, REQ-SUSIE-RSS-POLICY, REQ-NOVELTY-CLASS-2,
+REQ-NOVELTY-CLASS-3, REQ-NEGATIVE-CONTROLS
+**Dependencies**: M3 LD panels; M2 region list
+**Success Criteria**:
+  1. Per-region ABF PP.H4 table genome-wide (discovery region list)
+  2. SuSiE-RSS outputs restricted to PP.H4 > 0.5 regions, with PolyFun-rescue column
+  3. HyPrColoc regional_prob tables for ≥3-trait blocks
+  4. Tier A / B / C classification with re-calibrated cutoffs
+  5. `afr_specific_novel.tsv` (Class 2) + `secondary_signals.tsv` (Class 3)
+  6. Negative-control regions (HLA, pigmentation, blood-group) null per REQ-NEGATIVE-CONTROLS
+**Deliverable Artifacts**:
+  - `results/coloc/abf_pph4_genome_wide.tsv`
+  - `results/coloc/susie_rss_polyfun/` per-region credible-set tables
+  - `results/coloc/hyprcoloc/` per-block regional_prob tables
+  - `results/novelty/afr_specific_novel.tsv` (Class 2)
+  - `results/novelty/secondary_signals.tsv` (Class 3)
+  - Tier A / B / C classification tables per ancestry
+**Gating condition for M5**: Tier A list frozen; cross-panel LD-sensitivity
+parity check on Class 3 secondary signals complete.
+**Status**: not planned; gated on M3 + M2.
+
+### M5: Variant→gene prioritization + novelty cross-reference
+**Slug**: m5-variant-to-gene-prioritization-plus-novelty-cross-reference
+**Goal**: L2G (Open Targets Genetics; Mountjoy 2021) prior; eQTL / pQTL
+coloc refreshed with upgraded sumstats; Borzoi variant-effect scoring
+(Linder 2024) on Tier A credible-set variants; MAGMA gene-set re-run.
+**Novelty deliverables Classes 4 + 5**: cross-reference colocalized loci
+against locked versions of Pickrell 2016, Watanabe 2019 GWAS Atlas, and
+Open Targets L2G to extract pleiotropy-class novel loci (Class 4);
+annotate Tier A credible-set variants with Borzoi/Enformer effect scores
+in tissue-specific tracks against ClinVar v_lock + GWAS Catalog v_lock +
+primary-literature search to extract functional-mechanism novel variants
+(Class 5, supplementary per §7.3). Catalog versions locked at M5
+cross-reference date with SHA-256 checksums (Amendment §3 M5, §6, §7.1,
+§7.2).
+**Requirements**: REQ-L2G-GENE-PRIORITIZATION, REQ-BORZOI-VARIANT-EFFECT,
+REQ-CATALOG-VERSION-LOCK, REQ-NOVELTY-CLASS-4, REQ-NOVELTY-CLASS-5
+**Dependencies**: M4 Tier A list
+**Success Criteria**:
+  1. Per-Tier-A credible-set gene-prioritization table with L2G top-3
+  2. Borzoi per-tissue score column for every Tier A credible-set variant
+  3. `pleiotropy_novel.tsv` (Class 4) + `functional_novel.tsv` (Class 5 supplementary)
+  4. `catalog_lock_manifest.tsv` with SHA-256 + URL per comparator catalog
+  5. Consolidated novelty manifest with per-locus class assignments (one row per locus; multi-class allowed)
+**Deliverable Artifacts**:
+  - `results/gene_prioritization/l2g_table.tsv`
+  - `results/borzoi/variant_effect_scores.tsv`
+  - `results/novelty/pleiotropy_novel.tsv` (Class 4)
+  - `results/novelty/functional_novel.tsv` (Class 5, supplementary)
+  - `data/catalogs/catalog_lock_manifest.tsv` with SHA-256 checksums
+  - Consolidated novelty manifest (5-class table)
+**Gating condition for M6**: M5 deliverables frozen; comparator catalogs locked.
+**Status**: not planned; gated on M4 Tier A.
+
+### M6: Manuscript and replication
+**Slug**: m6-manuscript-and-replication
+**Goal**: Draft Track B manuscript; run hold-out replication on FinnGen
+R13+ / Pan-UKBB / MVP release n+1 where available for Tier A claimed
+loci and novel-variant Classes 1–4; generate figures; OSF deposit of
+all post-registration outputs; submit to Nature Genetics (Amendment §3 M6).
+**Requirements**: REQ-REPLICATION-HOLDOUT, REQ-EQUITY-FRAMING,
+REQ-SNAKEMAKE-CI
+**Dependencies**: M5 complete
+**Success Criteria**:
+  1. Per-class replication table with point estimate, 95% CI, sign agreement, post-hoc power
+  2. Track B manuscript draft + figures under `manuscript/track_b/`
+  3. OSF post-registration data deposit with all artifacts
+  4. Zenodo DOI for reproducible pipeline release
+  5. Nature Genetics submission confirmation + tracking number
+**Deliverable Artifacts**:
+  - `results/replication/per_class_replication_table.tsv`
+  - `manuscript/track_b/` (draft + figures + supplementary)
+  - OSF deposit record
+  - Zenodo DOI for Snakemake pipeline release
+  - Submitted manuscript + tracking number
+**Gating condition**: Track B submission lands; Track A already ships
+independently per Track-A-finalization row below.
+**Status**: not planned; gated on M5.
+
+## Current milestone sequence (Track A short-form)
+
+### Track-A-finalization
+**Slug**: track-a-finalization
+**Goal**: Finalize Track A short-form methods paper framing the real-LD
+audit of 50 curated cardiometabolic regions; submit bioRxiv preprint +
+venue submission (Genome Medicine primary; AJHG short-report / Bioinformatics
+Applications Note fallbacks) per TRACK-A-PIVOT.md and Amendment §8.
+**Requirements**: REQ-PUBLIC-DATA-ONLY, REQ-SNAKEMAKE-CI,
+REQ-SUSIE-RSS-POLICY, REQ-OSF-PREREG, REQ-PP.H4-THRESHOLD-SWEEP,
+REQ-NEGATIVE-CONTROLS, REQ-PATH-PARAMETERIZATION
+**Dependencies**: Pre-pivot spine (Phases 1, 2, 5, 9) outputs; independent
+of Track B milestone sequence
+**Sub-tasks**:
+  - [x] Numeric reconciliation complete (2026-04-23, commit 05a701a):
+    Stage 2 values locked in `TRACK-A-FROZEN-NUMBERS.md` (51/96 CS; 0
+    Tier A; SH2B3 × asthma EUR identity-LD PP.H4=1.0 → real-LD
+    n_cs_a=0; 224 negative-control rows all null)
+  - [ ] Introduction rewrite (TRACK-A-PIVOT.md §4.5): 5-paragraph
+    restructure; strip ML framing; demote evolutionary-medicine to
+    Discussion
+  - [ ] Discussion rewrite (TRACK-A-PIVOT.md §4.17): identity-LD
+    inflation as dominant finding; drug-target-inference caution;
+    Track B forward pointer
+  - [ ] References additions: Wallace 2021, Zou 2022, Weissbrod 2020, Benner 2017
+  - [ ] 3 figures: identity-LD vs real-LD CS yield, SH2B3 locus plot,
+    pathway enrichment reconfiguration (build scripts under `src/R/figures/`)
+  - [ ] bioRxiv preprint submission (Day 1 of draft-complete)
+  - [ ] Genome Medicine Original Research submission (primary target)
+**Success Criteria**:
+  1. bioRxiv DOI minted and logged in `.planning/amendments/`
+  2. Genome Medicine submission confirmation + tracking number
+  3. All abstract numbers cite `TRACK-A-FROZEN-NUMBERS.md` verbatim
+**Status**: numeric reconciliation done; remaining edit passes are Route A
+of the resume plan. Independent of Track B M0–M6 progress.
+
+## Pre-pivot spine (completed 2026-04-14; artifacts reusable per Amendment §8)
+
+The Phase 00–11 content below executed between 2026-02 and 2026-04-14 under
+the original candidate-locus framing. It closed as the pre-specified
+methods-validation subset per Amendment §8. The Phase 0 reference data +
+Phase 1 SuSiE-RSS outputs + Phase 2 Stage 2 real-LD coloc + Phase 5
+partitioned heritability + Phase 9 replication scaffolding are reused as-is
+downstream: they are Track A's primary data and Track B's candidate-locus
+validation subset. Per-phase status markers (`[x]` and `[ ]`) are preserved
+verbatim so per-phase git-history traces stay interpretable.
+
+### Overview
 
 Cross-ancestry colocalization revision from descriptive catalog to mechanistically resolved framework. Tiered execution: T1 spine (Phases 0, 1, 2, 5, 9) ships an honest AJHG submission. T2 (Phases 3, 4, 8) adds MR + matched-N + PRS for Nature Genetics ambition — gated on Checkpoint #1. T3 (Phases 6, 7, 10) adds selection scans + deep learning — gated on Checkpoint #2. Phase 11 (manuscript) runs in parallel from Phase 9 onward.
 
-## Phases
+### Phases
 
 **Phase Numbering:** Preserves Revision_Plan.md numbering. Phases are non-sequential because T2/T3 phases interleave.
 
@@ -23,9 +308,9 @@ Cross-ancestry colocalization revision from descriptive catalog to mechanistical
 - [ ] **Phase 10: Deep-learning variant effect + MPRA overlap** - Enformer/Borzoi/Sei/AlphaMissense [T3, gated on CP#2]
 - [ ] **Phase 11: Manuscript + figures + submission** - Full manuscript assembly and submission [M, parallel from Phase 9]
 
-## Phase Details
+### Phase Details
 
-### Phase 0: Data access + infrastructure
+#### Phase 0: Data access + infrastructure
 **Goal**: Establish all data sources, fix legacy issues, build reproducible Snakemake skeleton with CI smoke test. Two parallel sub-tracks: Track 0a (DUA applications, non-blocking) and Track 0b (infrastructure, blocks Phase 1).
 **Depends on**: Nothing (first phase)
 **Requirements**: REQ-1, REQ-9, REQ-12
@@ -63,7 +348,7 @@ Track 0b detail (infrastructure, blocks Phase 1):
 - Build toy 3-locus CI subset (REQ-9)
 - OSF pre-registration
 
-### Phase 1: coloc.susie fine-mapping spine
+#### Phase 1: coloc.susie fine-mapping spine
 **Goal**: Replace coloc.abf with coloc.susie across the entire pipeline. SuSiE-RSS fine-mapping per trait x ancestry with explicit complex-region policy and sensitivity sweeps.
 **Depends on**: Phase 0 (Track 0b)
 **Requirements**: REQ-2
@@ -86,7 +371,7 @@ Plans:
 
 Seeds: src/legacy/region_analysis/scripts/run_susie_rss.R, src/legacy/genome_wide/scripts/run_coloc_genomewide.R
 
-### Phase 2: 3-way QTL colocalization
+#### Phase 2: 3-way QTL colocalization
 **Goal**: Build the causal gene x tissue x cell-type matrix through eQTL, pQTL, sQTL, and sc-eQTL colocalization with rigorous threshold sweep and negative controls. Highest-leverage T1 phase.
 **Depends on**: Phase 1, Track 0a DUAs (for pQTL)
 **Requirements**: REQ-3, REQ-7
@@ -109,7 +394,7 @@ Plans:
 
 Architecture: harmonize-then-unify. Per-source harmonization produces common intermediate TSV (variant_id, beta, se, maf, position, N, sdY, gene_id, tissue). One unified run_qtl_coloc.R consumes all sources.
 
-### Phase 5: Pathway + partitioned heritability
+#### Phase 5: Pathway + partitioned heritability
 **Goal**: Formal pathway enrichment with proper nulls and partitioned heritability analysis. Replaces the ad-hoc enrichment from the original manuscript.
 **Depends on**: Phase 1
 **Requirements**: REQ-7
@@ -130,7 +415,7 @@ Plans:
 - [x] 05-04-PLAN.md — Wave 4: HESS/rho-HESS local genetic covariance per trait pair x ancestry + HESS negative controls
 - [x] 05-05-PLAN.md — Wave 5: Negative control validation (all 5 methods) + 1000 permutation null gene sets (matched for length, LD, MAF) + cross-method aggregation + methods fragment
 
-### Phase 9: Replication in independent cohorts
+#### Phase 9: Replication in independent cohorts
 **Goal**: Validate T1 findings in independent cohorts to establish reproducibility for the submission.
 **Depends on**: Phases 1, 2; Track 0a DUAs (for FinnGen, MVP, AoU, BBJ)
 **Requirements**: (none directly; supports overall validity)
@@ -148,7 +433,7 @@ Plans:
 - [x] 09-04-PLAN.md — Wave 4: coloc.susie re-estimation with PP.H4 sweep {0.5,0.7,0.8,0.9} + per-cohort Bonferroni effect-size test + same-direction + post-hoc power + IVW meta (metafor)
 - [x] 09-05-PLAN.md — Wave 5: COJO sensitivity (1000G EUR/AFR with N<4000 caveat) + master_table.tsv + cross_ancestry_generalization_tier_ab.tsv (BBJ Tier A+B only, D-05c) + replication_holdout_supplementary.tsv + methods fragment
 
-### Checkpoint #1: End of T1 spine
+#### Checkpoint #1: End of T1 spine
 **Type**: Decision gate (not a phase)
 **Depends on**: Phases 0, 1, 2, 5, 9 all complete
 **Requirements**: REQ-11
@@ -162,7 +447,7 @@ Plans:
 
 **Status 2026-04-15:** Interim CP#1 issued at `.planning/checkpoints/T1_review.md` — code-complete conditional-go. T2 research + planning authorized in parallel with T1 first-production LSF launch. CP#1-final pending on first-production completion.
 
-### Phase 3: Mendelian randomization
+#### Phase 3: Mendelian randomization
 **Goal**: Establish causal direction between all 10 unique trait pairs via bidirectional MR (20 directed tests) with robust weak-instrument mitigation for non-EUR ancestries, plus 3 MVMR mediation triangles.
 **Depends on**: CP#1 (go verdict)
 **Requirements**: REQ-4
@@ -184,7 +469,7 @@ Plans:
 
 Seeds: src/legacy/region_analysis/scripts/create_mr_design.py, src/snakemake/rules/mr.smk
 
-### Phase 4: Matched-N cross-ancestry concordance
+#### Phase 4: Matched-N cross-ancestry concordance
 **Goal**: Replace broken Table 2 with power-corrected cross-ancestry concordance using matched-N bootstrap.
 **Depends on**: CP#1 (go verdict)
 **Requirements**: (none directly; fixes Table 2)
@@ -203,7 +488,7 @@ Plans:
 - [x] 04-04-PLAN.md — LDSC 30-test r_g matrix + Hou-null detection probability
 - [x] 04-05-PLAN.md — Smoke-pilot gate + Table 2 assembly + violin figure + supplementary outputs
 
-### Phase 8: Cross-ancestry PRS
+#### Phase 8: Cross-ancestry PRS
 **Goal**: Build and evaluate cross-ancestry polygenic risk scores with full calibration and clinical utility metrics, quantifying the equity-vs-accuracy trade-off.
 **Depends on**: CP#1 (go verdict)
 **Requirements**: REQ-6, REQ-8
@@ -219,7 +504,7 @@ Plans:
 
 Seeds: src/legacy/region_analysis/scripts/create_pgs_manifest.py, src/legacy/region_analysis/workflow/rules/pgs.smk
 
-### Checkpoint #2: End of T2
+#### Checkpoint #2: End of T2
 **Type**: Decision gate (not a phase)
 **Depends on**: Phases 3, 4, 8 all complete
 **Requirements**: REQ-11
@@ -230,7 +515,7 @@ Seeds: src/legacy/region_analysis/scripts/create_pgs_manifest.py, src/legacy/reg
 
 **No T3 phase is planned until this file exists.**
 
-### Phase 6: Selection scans + polygenic selection
+#### Phase 6: Selection scans + polygenic selection
 **Goal**: Test evolutionary medicine hypotheses with formal selection scans and polygenic selection tests. Pre-specified fallback framing required before execution.
 **Depends on**: CP#2 (go verdict)
 **Requirements**: REQ-5
@@ -242,7 +527,7 @@ Seeds: src/legacy/region_analysis/scripts/create_pgs_manifest.py, src/legacy/reg
   4. Thrifty-gene and antagonistic-pleiotropy hypothesis tests completed
 **Plans**: TBD
 
-### Phase 7: Single-cell + EpiMap + ABC
+#### Phase 7: Single-cell + EpiMap + ABC
 **Goal**: Cell-type-resolved regulatory integration using single-cell eQTL, chromatin state, and enhancer-gene models.
 **Depends on**: CP#2 (go verdict)
 **Requirements**: (none directly; adds mechanistic depth)
@@ -254,7 +539,7 @@ Seeds: src/legacy/region_analysis/scripts/create_pgs_manifest.py, src/legacy/reg
   4. CELLECT/scDRS enrichment computed
 **Plans**: TBD
 
-### Phase 10: Deep-learning variant effect + MPRA overlap
+#### Phase 10: Deep-learning variant effect + MPRA overlap
 **Goal**: Computational variant effect prediction and validation against experimental MPRA data.
 **Depends on**: CP#2 (go verdict)
 **Requirements**: (none directly; adds functional evidence)
@@ -267,7 +552,7 @@ Seeds: src/legacy/region_analysis/scripts/create_pgs_manifest.py, src/legacy/reg
   5. Composite functional-evidence score produced per variant
 **Plans**: TBD
 
-### Phase 11: Manuscript + figures + submission
+#### Phase 11: Manuscript + figures + submission
 **Goal**: Assemble the full manuscript with regenerated figures, methods rewrite, equity framing, cover letters, and submission package.
 **Depends on**: Phase 9 (runs in parallel from Phase 9 onward)
 **Requirements**: REQ-8, REQ-10
@@ -282,7 +567,7 @@ Seeds: src/legacy/region_analysis/scripts/create_pgs_manifest.py, src/legacy/reg
   7. OSF final registration updated
 **Plans**: TBD
 
-## Progress
+### Progress
 
 **Execution Order:**
 T1: 0 → 1 → 2 → 5 → 9 → CP#1
@@ -304,3 +589,16 @@ M: 11 (parallel from Phase 9)
 | 7. Single-cell + EpiMap | - | Gated (T3) | - |
 | 10. DL variant effect | - | Gated (T3) | - |
 | 11. Manuscript | - | Not started | - |
+
+## Progress (current milestone sequence)
+
+| Milestone | Plans Complete | Status | Target end-month |
+|---|---|---|---|
+| M0 pivot scaffolding | 0/1 (this plan) | in flight | 2026-05 |
+| M1 sumstats upgrade + harmonization | not planned | planning queued | 2026-06 / 2026-07 |
+| M2 LDSC + MTAG + CPASSOC | not planned | gated on M1 + OSF amendment | 2026-08 / 2026-09 |
+| M3 AoU AFR LD build | not planned | gated on M2 region list | 2026-09 / 2026-10 |
+| M4 scalable coloc + fine-mapping | not planned | gated on M3 + M2 | 2026-12 / 2027-01 |
+| M5 variant→gene prioritization + novelty | not planned | gated on M4 Tier A | 2027-02 |
+| M6 manuscript + replication + submission | not planned | gated on M5 | 2027-04 / 2027-05 |
+| Track-A-finalization | Route A in flight | in flight (independent of M0–M6) | 2026-05 / 2026-06 |
