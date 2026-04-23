@@ -367,3 +367,209 @@ academic researchers.
 **OSF amendment obligation:** Post this amendment to OSF (osf.io/az52u) before committing tier outputs with IRX3/ATXN2 rows included. Window policy and criterion wording above are the locked language.
 
 **How to apply:** First-pass runs QTL coloc for IRX3 × 49 tissues × {eqtl, sqtl} at FTO_16q12 (196 new rows) + ATXN2 × 49 tissues × {eqtl, sqtl} at SH2B3_12q24 (196 new rows) = 392 new manifest rows. If any of the 3 existing GWAS-pair successes at SH2B3 / the FTO QTL signal flip to Tier A, sign CP#1-final. Else amend criterion for window-extension second pass (IRX5+BRAP + 20 Phase 1 re-fits) and re-OSF-post.
+
+---
+
+## 2026-04-22 — DEC-2026-04-22-01: Candidate-locus design abandoned (Amendment §2)
+
+**Decision:** Abandon the 50-region candidate-locus design as the primary
+discovery vehicle. Adopt genome-wide, hypothesis-agnostic region generation
+(MTAG + CPASSOC + per-trait PLINK clumping union) as the Track B discovery
+mode. The candidate-locus outputs survive as Track A's pre-specified methods
+validation subset per Amendment §8.
+
+**Alternatives considered:** (a) Keep candidate-locus as primary + expand
+region windows; (b) Abandon entirely with no Track A salvage; (c) Pivot to
+Track B + publish Track A as short-form methods paper (adopted).
+
+**Why:** The candidate-locus design is circular by construction — regions
+were chosen from prior literature that already reported cross-trait signal,
+so the test is not discovering pleiotropy but estimating the replication
+rate of prior claims under a new method (Amendment §2.1, §2.3). Stage 2
+real-LD production fire 2026-04-22 made the circularity quantitative: SH2B3
+× asthma EUR collapsed from identity-LD PP.H4 = 1.0 to real-LD n_cs_a = 0
+(TRACK-A-FROZEN-NUMBERS.md §Stage 2 trait-pair coloc.susie), and 0 of 233
+Tier assignments reached Tier A (§Tier assignments). Nature Genetics calibre
+requires (a) genome-wide hypothesis-agnostic region generation, (b)
+joint-signal discovery methods, (c) matched-ancestry real LD, (d)
+multi-method triangulation, (e) non-EUR ancestry at non-footnote power,
+(f) explicit comparator-catalog novelty claims (Amendment §2.1). The
+candidate-locus design fails (a), (b), (e), (f).
+
+**How to apply:** Track B M0–M6 execution follows Amendment §3. Track A
+finalization ships the candidate-locus real-LD audit independently per
+TRACK-A-PIVOT.md. The 205 analysis windows and 96 Stage 2 coloc cells are
+reusable per Amendment §8 as (i) Track A's primary data and (ii) Track B's
+candidate-locus validation appendix.
+
+---
+
+## 2026-04-22 — DEC-2026-04-22-02: 9-trait × up-to-2-ancestry inventory locked (Amendment §4)
+
+**Decision:** Lock Track B trait inventory at 9 traits: BMI, T2D, stroke,
+SBP, asthma, CAD, lipids (LDL primary; HDL/TG/TC secondary), eGFR, HbA1c.
+Ancestry coverage follows Amendment §4 column "Ancestry" (EUR primary for
+all nine; AFR via ancestry-stratified subfiles from DIAMANTE-AFR,
+GIGASTROKE-AA, Giri 2019 MVP-AFR, GBMI-AFR, GLGC-AFR, CKDGen-AFR /
+Morris 2019, MAGIC-AFR, PAGE / Loh 2022 BMI-AFR, Aragam 2022 CAD-AFR where
+released). Phenotype definitions locked per §4 "Phenotype lock" column
+(stroke = all-stroke, not ischemic-only; LDL-C continuous primary; eGFR
+creatinine-based continuous).
+
+**Alternatives considered:** (a) Keep 5 traits (BMI, T2D, SBP, stroke,
+asthma) from pre-pivot; (b) Expand to 12 traits including three additional
+cardiometabolic phenotypes (CRP, fasting glucose, fasting insulin); (c)
+Lock at 9 per Amendment §4 (adopted).
+
+**Why:** 5 traits underpowers MTAG / HyPrColoc joint-signal discovery
+(Turley 2018 reported ~30–80 MTAG-novel loci per 4-trait run; more traits
+in the correlated cardiometabolic block yield higher Class 1 novelty —
+Amendment §7.3). 12 traits adds fasting-glucose / fasting-insulin overlap
+with HbA1c and CAD–CRP correlations that inflate `--overlap` correction
+burden without proportional discovery gain. 9 traits covers the shared
+cardiometabolic architecture span (anthropometry → glycemic → blood
+pressure → lipids → renal → inflammatory-respiratory-diabetes cross-talk
+via asthma) while keeping the LDSC intercept matrix tractable
+(9 × 9 = 81 pairs vs 12 × 12 = 144 pairs).
+
+**Decision pending** (open human-action item in PROJECT.md): BMI EUR
+primary source is Loh 2022 (n ≈ 1.1M, GRCh38, GIANT+23andMe) vs Yengo 2022
+GIANT+UKBB (n ≈ 700k, GRCh37). SUMSTATS-UPGRADE.tsv rows 2–3 list both;
+Amendment §9.3 draft text cites Yengo 2022. To be locked at M1 kickoff
+before LDSC munge.
+
+**How to apply:** M1 sumstats harmonization per SUMSTATS-UPGRADE.tsv;
+`config/trait_inventory.yaml` enumerates 9 traits × ancestry coverage;
+REQUIREMENTS.md REQ-TRAIT-INVENTORY enforces.
+
+---
+
+## 2026-04-22 — DEC-2026-04-22-03: MTAG + CPASSOC joint-signal method stack adopted (Amendment §3 M2)
+
+**Decision:** Adopt MTAG (Turley 2018, *Nature Genetics*) with `--overlap`
+correction using LDSC pairwise intercept matrix as the primary joint-signal
+discovery method. Adopt CPASSOC (Zhu 2015, *AJHG*) SHom / SHet statistics
+as an orthogonal joint-signal test for cross-method corroboration. Retain
+mtCOJO (Zhu 2018) as an overlap-correction sensitivity check for trait
+pairs with extreme cohort overlap (e.g., UKB-heavy triples).
+
+**Alternatives considered:** (a) S-MultiXcan (Barbeira 2019) —
+interpretability constraints with shared eQTL tissues complicate
+cross-ancestry application; (b) GFM / Generalized Factor Model — strong
+parametric assumptions and less tested at genome-wide scale; (c) mtCOJO
+alone as the primary discovery method — mtCOJO is overlap-correction-focused
+rather than joint-signal-discovery focused; (d) MTAG alone — does not
+corroborate under `--overlap` mis-calibration (Amendment §10 risks);
+(e) MTAG + CPASSOC adopted as the joint-signal method stack with mtCOJO as
+sensitivity check.
+
+**Why:** MTAG's constant-covariance assumption is violated when trait-pair
+cohort overlap inflates correlated noise; `--overlap` with LDSC intercept
+matrix is the Turley-2018-recommended correction for UKB / MVP dominance
+across the 9-trait block. CPASSOC's SHom / SHet do not assume constant
+covariance and provide the orthogonal corroboration filter per Amendment
+§7.1 Class 1 high-confidence definition (MTAG ∩ CPASSOC). mtCOJO rounds out
+the robustness story on top-N MTAG-novel loci. S-MultiXcan / GFM are
+rejected on interpretability and overlap-handling grounds (Amendment §6
+method-stack justification).
+
+**How to apply:** M2 (m2-ldsc-mtag-cpassoc-discovery) executes: LDSC
+pairwise rg → MTAG per-trait with `--overlap` → CPASSOC per-locus → PLINK
+clump (p=5e-8, r²<0.01, 1Mb) → union region list. REQUIREMENTS.md
+REQ-MTAG-OVERLAP + REQ-CPASSOC-ORTHOGONAL enforce.
+
+---
+
+## 2026-04-22 — DEC-2026-04-22-04: All-of-Us controlled-tier WGS as AFR LD source with egress-aware summary-only pipeline (Amendment §3 M3; AOU-LD-PIPELINE.md)
+
+**Decision:** Adopt All-of-Us v7 controlled-tier WGS as the Track B AFR LD
+reference panel. Build per-region LD matrices inside the AoU Researcher
+Workbench (Terra) from ~60–95k AFR-ancestry participants (post-QC). Export
+only summary-level artifacts (LD matrix + AF metadata) per AoU data-egress
+policy. 1000G AFR (n = 661) is retained as a validation-only fallback and
+as the comparator for AOU-LD-PIPELINE.md §9 Check 4 (AoU-AFR vs
+identity-placeholder A/B).
+
+**Alternatives considered:** (a) 1000G AFR (n=661) as primary — Amendment
+§2.2 and TRACK-A-FROZEN-NUMBERS.md (AFR regions remained on
+identity-placeholder under Stage 2 for this reason) document that n=661
+produces LD SEs ~1/sqrt(n) ≈ 0.04 per off-diagonal, incompatible with
+SuSiE-RSS fixed-LD assumption; (b) H3Africa (~3,500 continental African
+samples) — same continental-vs-admixed mismatch as 1000G AFR, bigger N but
+wrong population for MVP / AoU / PAGE targets; (c) PAGE (~50k admixed) —
+right population, slower access, smaller than AoU; (d) AoU controlled-tier
+(adopted) — ~150× 1000G AFR N, population-matched to a Track B target
+cohort (AoU itself) and near-match for MVP-AFR / PAGE-AFR.
+
+**Why:** n ≈ 60k AFR WGS collapses LD SE to ~1/sqrt(60,000) ≈ 0.004, three
+orders of magnitude below 1000G AFR and adequate for SuSiE-RSS
+credible-set construction. Population match matters more than panel size
+in admixed populations — 1000G AFR YRI/LWK/ESN/GWD/MSL/ACB/ASW does not
+reflect MVP-AFR / AoU-AFR haplotype structure. AoU summary-only export is
+AoU-data-egress-policy-compliant (AOU-LD-PIPELINE.md §7); the export is
+aggregate summary statistics where every LD cell is computed from all n
+participants (trivially ≥20 per-cell suppression floor). Using AoU WGS for
+AFR LD is a methodological novelty axis in its own right (Amendment §5);
+to our knowledge no published pleiotropy fine-mapping at genome-wide scale
+has used it.
+
+**Risks acknowledged** (AOU-LD-PIPELINE.md §12):
+- R1 AoU export classification must be confirmed in writing before any
+  Dataproc compute (Amendment §10 risk row).
+- R3 compute cost: staged launch (10-region dev → 500-region priority
+  batch → remaining) caps exposure.
+- R10 critical-path risk: 10-region dev pipeline completes BEFORE M2
+  region generation to de-risk M4 start.
+
+**How to apply:** M3 (m3-aou-afr-ld-panel-build) executes per
+AOU-LD-PIPELINE.md §§2–14. REQUIREMENTS.md REQ-AOU-LD-EGRESS +
+REQ-AOU-LD-VALIDATION enforce. AoU P&P registered at draft stage before
+any cluster spend. Local layout per AOU-LD-PIPELINE.md §8.1 under
+`data/processed/ld_reference/AFR_aou/` (gitignored); `.rds` conversion per
+§8.2.
+
+---
+
+## 2026-04-23 — DEC-2026-04-23-01: Two-track publication strategy adopted
+
+**Decision:** Track A (short-form methods paper on real-LD audit of 50
+curated cardiometabolic regions) and Track B (genome-wide 9-trait
+joint-signal discovery + 5 novel-variant classes on upgraded sumstats)
+ship as scientifically independent, co-primary outputs of the
+coloc_analysis program. Track A targets Genome Medicine (primary), AJHG
+short report (fallback 1), Bioinformatics Applications Note (fallback 2).
+Track B targets Nature Genetics. Track A preprint (bioRxiv) establishes
+priority on the real-LD-audit framing independently of the Track B
+discovery timeline.
+
+**Alternatives considered:** (a) Single Nature Genetics manuscript
+combining the candidate-locus audit and the genome-wide discovery —
+rejected because the two aims have incompatible scope claims (Amendment §2
+circularity argument); (b) Track A only (candidate-locus audit as sole
+deliverable) — rejected because it would leave the pipeline investment in
+M1 sumstats and the AoU-AFR LD methodological novelty unpublished;
+(c) Track B only (genome-wide only) — rejected because it discards the
+Stage 2 real-LD identity-LD-inflation finding (SH2B3 × asthma EUR
+PP.H4 = 1.0 → n_cs_a = 0) which is itself a publishable methods
+contribution (TRACK-A-FROZEN-NUMBERS.md §Usage); (d) Two-track (adopted).
+
+**Why:** Track A quantifies how published candidate-locus pleiotropy claims
+survive fully-pre-registered real-LD re-analysis — a forward-looking,
+pre-specified methods validation contribution targeting cardiometabolic
+genetics audiences at Genome Medicine / AJHG. Track B pursues genome-wide
+hypothesis-agnostic joint-signal discovery across 9 traits × 2 ancestries
+with AoU-AFR LD — the Nature Genetics contribution. Scheduling the Track A
+preprint in 2026-05 / 2026-06 (per Amendment §11) ahead of Track B M6
+(2027-04 / 2027-05) establishes priority on the real-LD-audit framing and
+positions Track A as "pre-specified validation ahead of discovery" rather
+than a post-hoc carve-out (Amendment §8).
+
+**How to apply:**
+- Track A finalization proceeds per TRACK-A-PIVOT.md and the ROADMAP
+  "Track-A-finalization" sub-task checklist.
+- Track B proceeds per Amendment §3 M0–M6 with the OSF amendment posted
+  at end of M1 and before any M2 MTAG/CPASSOC run.
+- Each manuscript has its own cover letter under `manuscript/cover_letter/`
+  per REQ-10-equivalent carry-forward.
+- Pre-pivot spine artifacts (Phases 0, 1, 2, 5, 9) serve both tracks per
+  Amendment §8 preservation commitment.
