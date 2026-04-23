@@ -122,7 +122,8 @@ export -f fetch_one
 echo "[$(date +%H:%M:%S)] Firing $(wc -l < "$MANIFEST") downloads at P=5" | tee -a "$LOG"
 
 # shellcheck disable=SC2002
-cat "$MANIFEST" | xargs -P 5 -n 3 -d '\n' bash -c '
+# xargs -n 1 -d '\n': one whole TSV line per bash invocation, split internally
+cat "$MANIFEST" | xargs -P 5 -n 1 -d '\n' bash -c '
   IFS=$'"'"'\t'"'"' read -r url destdir fname <<< "$1"
   fetch_one "$url" "$destdir" "$fname"
 ' _ 2>&1 | tee -a "$LOG"
