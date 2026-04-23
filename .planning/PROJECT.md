@@ -1,9 +1,16 @@
 # PROJECT.md — coloc_analysis
 
-> **North-star documents:** [`Revision_Plan.md`](../Revision_Plan.md) (559-line
-> revision strategy) and [`GSD_BRIEFING.md`](../GSD_BRIEFING.md) (independent
-> evaluation + T1/T2/T3 tiering + 11 gaps). Read both before touching anything
-> else. Everything in this file is a condensed restatement of those two.
+> **Authoritative pivot charter:**
+> [`.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`](amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md)
+> (this is the post-pivot source of truth).
+> **Companion documents:**
+> [`TRACK-A-PIVOT.md`](amendments/TRACK-A-PIVOT.md),
+> [`SUMSTATS-UPGRADE.tsv`](amendments/SUMSTATS-UPGRADE.tsv) /
+> [`SUMSTATS-UPGRADE.md`](amendments/SUMSTATS-UPGRADE.md),
+> [`AOU-LD-PIPELINE.md`](amendments/AOU-LD-PIPELINE.md),
+> [`TRACK-A-FROZEN-NUMBERS.md`](amendments/TRACK-A-FROZEN-NUMBERS.md).
+> **Project-instruction anchor:** [`CLAUDE.md`](../CLAUDE.md).
+> Read the Amendment and this file together before touching anything else.
 
 ## Who
 
@@ -13,16 +20,27 @@ multi-method triangulation, pre-registration (OSF), and hold-out replication.
 
 ## What
 
-Cross-ancestry colocalization analysis of **5 cardiometabolic traits** (BMI,
-type 2 diabetes, hypertension, stroke, asthma) at **~50 pleiotropic loci**. The
-draft manuscript (`ajhg_manu_v10.pdf`) uses coloc.abf with EUR-heavy GWAS and a
-small AFR fragment. A self-review plus independent Claude review both
-concluded the current methods are weak for a high-impact venue. This project
-is the revision.
+Two-track original research program (adopted 2026-04-22 per Amendment §3):
 
-**Target journals (in ranked order):**
-Nature Genetics → American Journal of Human Genetics → Nature Metabolism →
-Cell Genomics → Genome Medicine.
+- **Track A — Real-LD audit of 50 curated cardiometabolic regions.**
+  Forward-looking short-form methods paper that quantifies how published
+  candidate-locus pleiotropy claims survive fully-pre-registered real-LD
+  re-analysis under current-best-practice SuSiE-RSS + coloc.susie with
+  matched-ancestry real LD. Target venue ladder: Genome Medicine (primary)
+  → AJHG short report (fallback 1) → Bioinformatics Applications Note
+  (fallback 2). Track A is scientifically independent of Track B and ships
+  on the pre-pivot spine outputs, which are reusable per Amendment §8 as
+  pre-specified methods validation data.
+
+- **Track B — Genome-wide joint-signal discovery across 9 complex traits.**
+  Hypothesis-driven original research across BMI, T2D, stroke, SBP,
+  asthma, CAD, lipids (LDL primary; HDL/TG/TC secondary), eGFR, and HbA1c
+  in EUR and AFR ancestries, executed under milestones M0–M6 per
+  Amendment §3. Two co-equal pre-registered scientific aims:
+  (i) cross-trait pleiotropy discovery and
+  (ii) novel-variant discovery across five operationally-defined classes
+  (joint-signal, AFR-specific, secondary-independent, pleiotropy-class,
+  functional-mechanism) per Amendment §7. Target venue: Nature Genetics.
 
 ## Where
 
@@ -32,24 +50,36 @@ Cell Genomics → Genome Medicine.
 | `/rs1/researchers/c/ckclinto/coloc_analysis/` | Upstream data root. Symlinked from `data/` and `results/legacy/`. 77 GB historical backup tarball lives here. |
 | `/rs1/researchers/c/ckclinto/miniconda3/` | Miniconda3 install. `gsd-tools` conda env has the GSD plugin. |
 | NCSU HPC (LSF scheduler) | Compute. `bsub` for job submission. |
+| All of Us Researcher Workbench (Terra / Google Cloud) | Track B M3 AFR LD panel build site. Controlled-tier WGS; summary-only export per AoU data-egress policy. |
 | GPFS `/gpfs_common/` | Shared filesystem. **Worktree isolation is known-bad here — use `mode: solo` with `git.isolation: branch` in GSD.** |
 
 ## Why (in one paragraph)
 
-The current manuscript frames the study as a pleiotropy catalog. A competent
-reviewer at Nature Genetics / AJHG will flag: (1) single-causal-variant
-assumption via coloc.abf, (2) ad-hoc pathway enrichment without a formal
-statistical test, (3) cross-ancestry concordance mixing incomparable trait
-pairs at the same locus, (4) corrupted supplementary tables with inconsistent
-signal counts, (5) no replication in independent cohorts, (6) no causal
-direction test (MR), (7) no formal selection-scan test of the evolutionary
-medicine hypothesis, and (8) a hand-weighted ML scorecard with no train/test
-split. The revision converts the paper from a descriptive catalog into a
-**mechanistically resolved cross-ancestry framework** with three integrated
-spines: coloc.susie + 3-way QTL coloc → causal gene + tissue assignment;
-bidirectional MR → causal direction; matched-N cross-ancestry + LDSC
-partitioned heritability + selection scans → rigorous evolutionary / equity
-story.
+The coloc_analysis program is hypothesis-driven original research at two
+scales. At the candidate-locus scale, Track A quantifies — as a pre-specified
+methods-validation contribution per Amendment §8 — how many published
+cross-trait pleiotropy claims at 50 curated cardiometabolic regions survive
+fully-pre-registered real-LD re-analysis. Stage 2 real-LD evidence on
+2026-04-22 (51/96 non-empty credible sets, 4.25× the identity-LD baseline of
+12/96; 0 Tier A; SH2B3 × asthma EUR identity-LD PP.H4 = 1.0 collapses to
+real-LD n_cs_a = 0) shows that identity-LD inflation is a first-order
+methodological issue even at canonical literature loci. This is itself a
+publishable finding; Track A reports it. At the genome-wide scale, Track B
+pursues hypothesis-agnostic joint-signal discovery across 9 complex traits in
+EUR and AFR ancestries using a multi-method stack: MTAG (Turley 2018) with
+`--overlap` LDSC-intercept correction for UKB/MVP cohort overlap, CPASSOC
+(Zhu 2015) as an orthogonal SHom/SHet joint-signal test for cross-method
+corroboration, two-stage scalable coloc (ABF triage followed by SuSiE-RSS
+rescue with PolyFun baselineLF2 priors per Weissbrod 2020), HyPrColoc
+(Foley 2021) for ≥3-trait shared-architecture inference, and All of Us
+controlled-tier WGS (~60–95k AFR post-QC) as the ancestry-matched LD
+reference panel — a ~150× sample-size upgrade over 1000G AFR (n = 661). Five
+novel-variant discovery classes are pre-registered per Amendment §7 with
+locked comparator catalogs (GWAS Catalog, Pickrell 2016, Watanabe 2019,
+Open Targets L2G, ClinVar) and SHA-256 version checksums. The 2026-04-22
+pivot is a forward-looking scope expansion informed by the Stage 2 real-LD
+evidence — Track A inherits the candidate-locus artifacts as its primary
+data, Track B operates at genome-wide scale with ancestry-matched real LD.
 
 ## Constraints
 
@@ -71,65 +101,90 @@ story.
 - **GPFS filesystem.** Do **not** use worktree isolation. GSD mode is
   `solo` with `git.isolation: branch`.
 
-## Goals for this GSD-managed revision
+## Goals for this GSD-managed program
 
-1. Execute all **T1 spine phases** (Phase 0 → 1 → 2 → 5 → 9) to the
-   acceptance bar of AJHG minimum / Nature Genetics ambition.
-2. At **Checkpoint #1** (end of T1), decide whether to proceed with T2
-   (Phases 3, 4, 8) for a Nature Genetics pitch or submit to AJHG with T1.
-3. At **Checkpoint #2** (end of T2), decide whether to add T3 (Phases 6, 7,
-   10) for Nat Genet cover-letter hooks or submit to Nature Metabolism /
-   Cell Metabolism with T1+T2.
-4. Close every one of the 11 gaps in `GSD_BRIEFING.md` §5.2 via the
-   requirements in `REQUIREMENTS.md`.
-5. Deliver a reproducible GitHub release with Zenodo DOI, Snakemake pipeline
-   + pinned conda envs + Docker/Singularity containers, OSF pre-registration,
-   and a hold-out replication table.
+1. Execute Track B milestones **M0 → M1 → M2 → M3 → M4 → M5 → M6** to
+   Nature Genetics acceptance bar per Amendment §3. Each milestone lands
+   via `/gsd-plan-phase` + `/gsd-execute-phase` with atomic commits and a
+   SUMMARY.md audit trail.
+2. Ship **Track A short-form methods paper** at Genome Medicine (primary),
+   independently of Track B progress. Track A preprint (bioRxiv) establishes
+   priority on the real-LD-audit framing in 2026-05 / 2026-06 ahead of
+   Track B M6 submission in 2027-04 / 2027-05 per Amendment §11.
+3. Pre-register all Track B scientific claims on OSF via the amendment flow
+   described in Amendment §9: the amendment posts at the end of M1 (after
+   harmonized sumstats checksums are frozen) and before any M2 MTAG /
+   CPASSOC run. OSF submission is the pre-registration gate for M2
+   execution.
+4. Deliver a reproducible GitHub release with a pinned Snakemake pipeline,
+   conda envs, Singularity containers, Zenodo DOI deposit of the AoU-derived
+   AFR LD panels (summary-only per AoU data-egress policy), and hold-out
+   replication tables on FinnGen / Pan-UKBB / MVP release n+1 (per REQ-1
+   parallel-DUA convention and the Snakemake-CI requirement).
+5. Maintain every component of the pre-pivot spine (Phases 0, 1, 2, 5, 9)
+   as reusable artifacts per Amendment §8: Phase 0 reference data, Phase 1
+   SuSiE-RSS fine-mapping outputs, Phase 2 Stage 2 real-LD coloc, Phase 5
+   LDSC partitioned heritability + HESS + MAGMA + LDSC-SEG, Phase 9
+   replication scaffolding. These are Track A's primary data and Track B's
+   candidate-locus validation subset.
 
 ## Current status
 
-**Phase 0 (Data Access & Infrastructure):** Complete. Snakemake skeleton with
-CI smoke test, data access DUAs (UKB-PPP, FinnGen, deCODE), OSF pre-registration.
+**M0 pivot scaffolding — in flight.** Six amendment artifacts committed
+under `.planning/amendments/` (Amendment, Track A pivot, frozen numbers,
+SUMSTATS upgrade TSV + MD, AoU LD pipeline, sumstats manual-fetch manifest).
+Track A first-pass manuscript draft committed 2026-04-23 (Stage 2 values
+locked in TRACK-A-FROZEN-NUMBERS.md). The PROJECT.md / ROADMAP.md /
+REQUIREMENTS.md / DECISIONS.md rewrites under this quick-task plan are the
+remaining M0 closeout documentation items.
 
-**Phase 1 (SuSiE Fine-Mapping):** Complete. coloc.susie pipeline with EUR
-(UKBB-LD) and AFR (HGDP+1kG) LD panels, 3-step retry ladder, pairwise SuSiE
-coloc, sweep/summary dashboard.
+**Pre-pivot spine (Phases 0 / 1 / 2 / 5 / 9) — complete.** Artifacts are
+reusable per Amendment §8: Phase 1 SuSiE-RSS across 205 windows; Phase 2
+Stage 2 real-LD coloc delivered **51/96 non-empty credible sets (53.1%,
+4.25× the identity-LD baseline of 12/96)**, with 0 Tier A and 9 Tier C
+across the 10 EUR autosomal curated regions on real LD plus AFR / HLA /
+BMI_Xq24 regions on the legacy identity-LD fallback pending M3; Phase 5
+LDSC partitioned heritability + HESS (290 local-h² outputs) + MAGMA 8/8
+traits + LDSC-SEG tissue-specific enrichment; Phase 9 replication
+scaffolding across FinnGen R12 + GBMI + MVP + BBJ with FIQT
+winner's-curse correction and metafor IVW meta. These artifacts flow into
+both Track A (primary data) and Track B (candidate-locus validation
+subset) per Amendment §8.
 
-**Phase 2 (3-way QTL Colocalization):** Complete (2026-04-13). Full QTL coloc
-pipeline: GTEx v8 eQTL (49 tissues) + sQTL + UKB-PPP pQTL + OneK1K sc-eQTL
-(14 immune cell types). Unified run_qtl_coloc.R with manifest-driven dispatch.
-PP.H4 threshold sweep {0.5, 0.7, 0.8, 0.9} (REQ-3). Negative controls — 3
-curated sets + 500 distance-matched nulls (REQ-7). Tier A/B/C confidence
-assignment. Open Targets L2G concordance. Gene x tissue x cell-type matrix.
-136 tests passing. 4 human verification items deferred to real-data execution.
+**Track B M1–M6 — queued for planning.** M1 sumstats upgrade + harmonization
+(`/gsd-plan-phase M1`) per SUMSTATS-UPGRADE.tsv is the next scheduled
+session. M2 is gated on M1 harmonization + OSF amendment posting per
+Amendment §9.
 
-**Phase 5 (Pathway + Partitioned Heritability):** Complete (2026-04-13). Multi-method
-pathway enrichment replacing ad-hoc fold-enrichment: MAGMA gene-based + gene-set
-enrichment, g:Profiler with discoverability-matched 5-trait union background (Reimand
-2019), LDSC partitioned heritability per pathway (baseline v2.2), LDSC-SEG tissue-
-specific enrichment (GTEx 53-tissue + Roadmap chromatin), HESS/rho-HESS local genetic
-covariance with pleiotropic vs background z-test. Negative controls (HLA, cosmetic,
-blood group) validated across all methods (REQ-7). 1000 permutation null gene sets
-matched for size/LD/MAF. Cross-method aggregator with consensus ranking. Methods
-fragment with 6 canonical citations. 100 tests passing. 37 Snakemake rules.
+Last updated: 2026-04-23.
 
-**Phase 9 (Replication in Independent Cohorts):** Complete (2026-04-14) — T1 spine
-closed. Four-cohort replication infrastructure (GBMI + FinnGen R12 + MVP dbGaP
-phs001672 + BBJ hum0197-v3; AoU deferred to Phase 8 T2). Joint effect-size +
-coloc.susie re-estimation criterion with PP.H4 sweep {0.5, 0.7, 0.8, 0.9} per
-D-03; FIQT winner's-curse correction (winnerscurse::FDR_IQT) per D-04a; 4-column
-effect-size reporting (discovery_raw / discovery_FIQT / replication / meta);
-metafor::rma.uni FE IVW meta per D-06b; COJO conditional+joint sensitivity with
-1000G N=503 caveat documented at 3 levels per RESEARCH gotcha #1; asymmetric
-ancestry design (match EUR/AFR; BBJ-EAS = generalization panel for Tier A+B only
-per D-05c). 4 D-07 output tables assembled: master_table, cross_ancestry_
-generalization_tier_ab, cojo_sensitivity, replication_holdout_supplementary.
-77 Phase 9 tests + 217 prior-phase regression tests passing. 25 Snakemake rules
-in replication.smk. Verification=human_needed: 3 items tracked in 09-HUMAN-UAT.md
-for real-data smoke execution (naturally concurrent with DEF-RO7-01/02/03).
+## Open human-action items
 
-**T1 spine complete.** Phases 0, 1, 2, 5, 9 all done (25/25 plans). **Checkpoint
-#1 decision point reached** — AJHG (T1 only) vs. proceed with T2 (Phases 3, 4, 8)
-for Nature Genetics pitch. Awaiting real-data smoke + CP#1 write-up.
+These three items are outside Claude tool scope and require Carter action.
+They are flagged here as the forward-looking gate list for M0 closeout and
+for M1/M2 kickoff.
 
-Last updated: 2026-04-14
+- **(a) OSF amendment submission** — **BLOCKS M2 execution** per Amendment
+  §9. The draft amendment text is in Amendment §9.3. Submission is a manual
+  action through the OSF web UI at
+  [osf.io/pvb5j](https://osf.io/pvb5j) (root pre-registration, DOI
+  [10.17605/OSF.IO/PVB5J](https://doi.org/10.17605/OSF.IO/PVB5J)) and the
+  existing amendment record at [osf.io/az52u](https://osf.io/az52u)
+  (distal-gene expansion, already filed). Confirmation PDF is to be saved
+  under `.planning/amendments/` with filename pattern
+  `osf-amendment-m0-2026-04-XX.pdf` (date finalized on submission).
+  M2 MTAG / CPASSOC discovery runs are blocked until this lands. Claude
+  cannot submit the amendment; Carter web-UI action required.
+
+- **(b) BMI EUR primary-source decision** — The trait inventory lists two
+  candidate sources: Loh 2022 *Nature Communications* (n ≈ 1.1M,
+  GIANT + 23andMe, GRCh38; `SUMSTATS-UPGRADE.tsv` row 3) and Yengo 2022
+  GIANT + UKBB (n ≈ 700k, GRCh37; `SUMSTATS-UPGRADE.tsv` row 2). The
+  Amendment §9.3 draft text cites Yengo 2022 in the declared trait
+  inventory; SUMSTATS-UPGRADE.tsv flags Loh 2022 as the larger-N candidate.
+  To be locked at M1 kickoff before LDSC munge.
+
+- **(c) MVP phs001672 DUA submission status** — Giri 2019 MVP SBP-AFR
+  (`SUMSTATS-UPGRADE.tsv` row 13, status `dua_pending`) requires
+  confirmation of current submission status with the VA Data Access
+  Request System. Gates the SBP-AFR ancestry stratum for M1 harmonization.
