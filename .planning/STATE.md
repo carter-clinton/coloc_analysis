@@ -268,12 +268,12 @@ None yet.
 | 260414-vro | Accept SNP_ID column alias in run_magma.py (closes scout bug #10 surfaced in v8) | 2026-04-14 | 7a3aa5a | _code-only_ |
 | 260414-ww3 | Resume bmi.EUR magma_fdr scout v8 — docs-only; scout v9 already reached 3/3 after vro, producing bmi_EUR_geneset_fdr.tsv (9617 rows; top hit CUSTOM_APPETITE_REGULATION q=7.25e-11). MAGMA branch of Phase 5 proven end-to-end on real data. | 2026-04-15 | _docs_ | [260414-ww3-resume-bmi-eur-magma-fdr-scout-v8-re-lau](./quick/260414-ww3-resume-bmi-eur-magma-fdr-scout-v8-re-lau/) |
 | 260414-wzy | Env yml hardening: dropped `defaults` channel from 6 yamls (python_stats, magma, ldsc_py3, plink, qtl_processing, r_coloc); hess_py27 kept (Py2.7 only on defaults). New `bin/setup-envs.sh` with direct-mamba fallback for libmamba 2.5 interop bug. envs/README.md rewritten with pitfalls section. Closes scout issues #4/#5/#6/#7. | 2026-04-15 | 60d3c2f | [260414-wzy-env-yml-hardening-remove-defaults-channe](./quick/260414-wzy-env-yml-hardening-remove-defaults-channe/) |
-| 260423-nzu | Post-pivot hygiene: commit Stage 2 drivers, refresh STATE.md, archive Phase 03 MR plans | 2026-04-23 | _see-commit_ | [260423-nzu-post-pivot-hygiene-commit-stage-2-driver](./quick/260423-nzu-post-pivot-hygiene-commit-stage-2-driver/) |
+| 260423-nzu | Post-pivot hygiene: commit Stage 2 drivers, refresh STATE.md, archive Phase 03 MR plans | 2026-04-23 | 11b75ad..ca018b4 | [260423-nzu-post-pivot-hygiene-commit-stage-2-driver](./quick/260423-nzu-post-pivot-hygiene-commit-stage-2-driver/) |
 
 ## Session Continuity
 
 Last session: 2026-04-23T21:15:00Z
-Stopped at: Post-pivot hygiene pass (/gsd-quick 260423-nzu) — Stage 2 drivers committed, STATE.md refreshed (this edit pending commit), Phase 03 MR plans archived pending Task 3 commit.
+Stopped at: Post-pivot hygiene pass (/gsd-quick 260423-nzu) complete — Stage 2 drivers committed (11b75ad), STATE.md refreshed (0aa7030), Phase 03 MR plans archived as superseded by M5 (ca018b4). Proceeding to Step 1 (/gsd-plan-phase M1-sumstats-upgrade).
 
 ### This session (2026-04-22 → 2026-04-23) — Pivot adoption + M0 scaffolding + hygiene
 
