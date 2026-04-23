@@ -24,7 +24,8 @@
       "Bash(export PATH=\"/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH\")",
       "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs config-get workflow.discuss_mode)",
       "Skill(gsd-debug)",
-      "Skill(gsd-debug:*)"
+      "Skill(gsd-debug:*)",
+      "Read(//gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/**)"
     ]
   }
 }
