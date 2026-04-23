@@ -1,29 +1,65 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1.2
-milestone_name: milestone
-status: recovery_stage_2_awaiting_fire
-stopped_at: "RECOVERY Stage 2 (susie_credible_set_yield) narrow validation COMPLETE -- fix committed, awaiting user LSF fire of production re-fit. Root cause (deeper than RECOVERY_PLAN framed it): build_ld_rds.py wrote identity-placeholder .rds files for every region with variants > LD_MAX_VARIANTS=6000 -> all 12 EUR + 12 AFR LD matrices were identity -> SuSiE fell back to diag(). Fix: new build_ld_rds_1kg_eur snakemake rule consumes the 1000G EUR plink panel already landed in Phase 0; covers 10 EUR autosomal curated regions (HLA_6p21, BMI_Xq24, all AFR still on legacy identity fallback). Narrow validation on SH2B3_12q24 EUR produced 4 purity=1.0 credible sets at canonical published leads (rs3184504/rs10774625/rs7137828/rs4766578) -- rs3184504 at 12:111884608 and rs10774625 at 12:111910219 EXACTLY match Stage 1d trait-pair PP.H4=1.0 coloc positions. Stage 2 commits: a6e3214 (plink_ld_to_rds isSymmetric bug) + 6de9a88 (build_ld_rds_1kg_eur rule) + 7d54183 (LD-rsid override in run_susie_rss.R) + 9102466 (SUSIE_MAX_VARIANTS bump) + 1635d37 (debug session handoff) + 0948a76 (narrow-validation provenance)."
-last_updated: "2026-04-21T23:50:00.000Z"
-last_activity: 2026-04-21
+milestone: m0
+milestone_name: m0-pivot-scaffolding
+status: post_pivot_m0_in_flight
+stopped_at: "M0 pivot scaffolding in flight: 6 amendment docs committed, sumstats v2 download driver + manifest committed, Track A first-pass draft committed (bde60e2). Stage 2 drivers + STATE.md refresh + Phase 03 archive committed by this hygiene pass. Remaining M0: PROJECT/ROADMAP/REQUIREMENTS/DECISIONS rewrites per Amendment §12 + OSF amendment posted (gates M2 per §9.1). Stage 2 production fire 2026-04-22 AM via bin/fire_phase2_stage2_refit.sh produced 51/96 real-LD credible sets (up from 12/96 identity-LD baseline), 0 Tier A, SH2B3 x asthma EUR identity-LD PP.H4=1.0 collapsed to n_cs_a=0 under real-LD — motivating pivot from candidate-locus design to genome-wide joint-signal discovery across 9 traits x 2 ancestries."
+last_updated: "2026-04-23T21:15:00.000Z"
+last_activity: 2026-04-23
 progress:
-  total_phases: 12
-  completed_phases: 6
-  total_plans: 30
-  completed_plans: 30
-  percent: 100
+  total_milestones: 7
+  completed_milestones: 0
+  current_milestone: m0
+  current_milestone_percent: 70
+  total_phases: 7
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 10
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-09)
+See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewrite during M0 closeout)
 
-**Core value:** Convert the manuscript from a descriptive pleiotropy catalog into a mechanistically resolved cross-ancestry framework with three integrated analytical spines (coloc.susie + QTL coloc, bidirectional MR, matched-N cross-ancestry + selection scans).
-**Current focus:** Phase 02 — 3-way-qtl-colocalization RECOVERY (zero Tier A resolution — 4-stage plan committed 2026-04-21)
+**Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
+
+**Current focus:** M0 — pivot scaffolding (this hygiene pass + remaining PROJECT/ROADMAP/REQUIREMENTS/DECISIONS rewrites + OSF amendment posting) in foreground; Track A manuscript push (Route A) + sumstats v2 downloads (Route C) in parallel.
 
 ## Current Position
+
+**Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
+
+**Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
+
+- 51/96 non-empty real-LD credible sets — 4.25× yield vs 12/96 identity-LD baseline.
+- 0 Tier A signals at genome-wide-significance thresholds.
+- Flagship SH2B3 × asthma EUR coloc: identity-LD PP.H4 = 1.0 → real-LD n_cs_a = 0 (Benner 2017 identity-LD inflation, now demonstrated on a canonical-literature signal).
+- 861 hard failures in the pairwise trait-pair sweep (to be quantified in Track A frozen-numbers pass).
+
+**Two-track split:**
+
+- **Track A** — short-form real-LD audit paper of the candidate-locus design. Venue ladder: *Genome Medicine* → *AJHG* short report → *Bioinformatics* Applications Note. First-pass draft landed 2026-04-23 (commit `bde60e2`) at `docs/manuscript/track_a_pivot.md`. Strategy in `.planning/amendments/TRACK-A-PIVOT.md`.
+- **Track B** — genome-wide 9-trait × 2-ancestry joint-signal discovery with MTAG + CPASSOC + HyPrColoc + PolyFun + All-of-Us controlled-tier AFR WGS LD panel (~100k AFR). Target: *Nature Genetics*. Planning lives under `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md` §§3, 5, 6, 7.
+
+**Four parallel routes** (per `/home/ckclinto/.claude/plans/snappy-humming-pine.md`):
+
+- **Route A** — Track A manuscript push: freeze Tier counts → Section 4.1–4.20 edits → figures → bioRxiv.
+- **Route B** — M0 closeout: PROJECT.md / ROADMAP.md / REQUIREMENTS.md / DECISIONS.md rewrites per Amendment §12, then OSF amendment posted (hard gate on M2 per Amendment §9.1).
+- **Route C** — Track B M1 sumstats upgrade: `bin/download_sumstats_v2.sh` driver already running on URL-fetchable sources (Aragam 2022, CKDGen 2019, GLGC 2021 landed); manual-fetch queue in `.planning/amendments/SUMSTATS-MANUAL-FETCH.md` awaits Carter portal actions.
+- **Route D** — this hygiene pass (Step 0; fills the gap between 2026-04-21 stale state and the pivot-era repo).
+
+**M0 progress: ~70% complete.** Done: this hygiene commit cluster + 6 amendment docs (`PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe`, `TRACK-A-PIVOT`, `SUMSTATS-UPGRADE.md` + `.tsv`, `AOU-LD-PIPELINE`, `SUMSTATS-MANUAL-FETCH`) + sumstats driver + Track A first-pass draft. Outstanding: PROJECT / ROADMAP / REQUIREMENTS / DECISIONS rewrites + OSF amendment PDF posted.
+
+See `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md` §3 for the full M0–M6 milestone sequence.
+
+Progress: █░░░░░░░░░ 10% (M0 ~70% of 1/7 milestones)
+
+### Archived (pre-pivot — T1 spine completed; artifacts reusable per Amendment §8)
+
+The following narrative reflects the project state immediately before the 2026-04-22 reframe. Phases 0/1/2/5/9 outputs are preserved and repurposed as Track A inputs + Track B candidate-locus validation subset per Amendment §8 — not discarded.
 
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
@@ -35,17 +71,17 @@ Last activity: 2026-04-21
 **Recovery progress (authored 2026-04-21, updated 2026-04-21 23:50):**
 - ✅ **Stage 1 (Z):** `/gsd-debug multitrait_coloc_empty` — RESOLVED. trait-pair coloc wired; filter_finemap_summary accepts status ∈ {"success","ok"} (commit 604938b).
 - ✅ **Stage 1d:** `/gsd-debug trait_pair_coloc_hard_failures` — RESOLVED. chr:pos/rsid naming drift in coloc.susie (commit 335f514). SH2B3 EUR bmi↔hypertension PP.H4=1.0 and htn↔stroke PP.H4=1.0 at canonical leads.
-- ✅ **Stage 2:** `/gsd-debug susie_credible_set_yield` — NARROW VALIDATION COMPLETE. Identity-LD fallback fixed via 1000G EUR plink panel (5 commits a6e3214 / 6de9a88 / 7d54183 / 9102466 / 1635d37 + provenance 0948a76). SH2B3_12q24 EUR now produces 4 purity=1.0 CS at published leads. **BLOCKED on Carter firing LSF production re-fit** (cmd sequence in .planning/debug/susie_credible_set_yield.md "CHECKPOINT REACHED"). Agent id a4908644fca7f85d9 still live for continuation.
+- ✅ **Stage 2:** `/gsd-debug susie_credible_set_yield` — NARROW VALIDATION COMPLETE. Identity-LD fallback fixed via 1000G EUR plink panel (5 commits a6e3214 / 6de9a88 / 7d54183 / 9102466 / 1635d37 + provenance 0948a76). SH2B3_12q24 EUR now produces 4 purity=1.0 CS at published leads. **BLOCKED on Carter firing LSF production re-fit** (cmd sequence in .planning/debug/susie_credible_set_yield.md "CHECKPOINT REACHED"). Agent id a4908644fca7f85d9 still live for continuation. (NOTE 2026-04-22: the LSF production re-fit subsequently fired via `bin/fire_phase2_stage2_refit.sh` — returned 51/96 real-LD CS, 0 Tier A, triggering the 2026-04-22 genome-wide reframe. Recovery narrative is now historical.)
 - ✅ **Stage 3 first-pass (Y):** FTO+IRX3 and SH2B3+ATXN2 distal-gene additions (commit 05c968b, pre-registered in .planning/DECISIONS.md + OSF pending). FTO_16q12 EUR IRX3/Pancreas produced best_qtl_pph4=0.3099 -- below Tier thresholds. BRAP + IRX5 deferred to second-pass pending Stage 2 re-fit results.
-- ⏳ **Stage 4:** `/gsd-execute-phase` tail + `/gsd-verify-work` + CP#1-final decision [2-3 hrs, after LSF fire].
+- ⏳ **Stage 4:** `/gsd-execute-phase` tail + `/gsd-verify-work` + CP#1-final decision [2-3 hrs, after LSF fire]. (NOTE 2026-04-22: CP#1-final reframed by pivot; Stage 4 closure subsumed by Track A manuscript push and M0 closeout.)
 
-**Post-LSF fire decision matrix (per RECOVERY_PLAN Step 4.3):** Tier A >= 5 -> continue T2 (MR + PGS + Nature Genetics narrative); 3-4 -> continue T2 with pQTL expansion; 1-2 -> targeted investigation (all 49 GTEx tissues + pQTL); 0 -> AJHG fallback (genuine null after fixing all three structural gaps).
+**Post-LSF fire decision matrix (per RECOVERY_PLAN Step 4.3):** Tier A >= 5 -> continue T2 (MR + PGS + Nature Genetics narrative); 3-4 -> continue T2 with pQTL expansion; 1-2 -> targeted investigation (all 49 GTEx tissues + pQTL); 0 -> AJHG fallback (genuine null after fixing all three structural gaps). (NOTE 2026-04-22: observed 0 Tier A → triggered pivot to Track A real-LD audit (Genome Medicine / AJHG short report / Bioinformatics) + Track B genome-wide discovery (Nature Genetics). See Amendment §2.2.)
 
-**Scope caveat for CP#1-final framing:** Stage 2 fix covers 10 EUR autosomal curated regions. HLA_6p21 + BMI_Xq24 + all AFR regions remain on the legacy identity-LD fallback (the LDSC-landed 1000G panel is EUR-autosomal-only). AFR Tier A candidates are handicapped pending a matched-ancestry LD panel; worth flagging in the CP#1 framing / limitations section.
+**Scope caveat for CP#1-final framing:** Stage 2 fix covers 10 EUR autosomal curated regions. HLA_6p21 + BMI_Xq24 + all AFR regions remain on the legacy identity-LD fallback (the LDSC-landed 1000G panel is EUR-autosomal-only). AFR Tier A candidates are handicapped pending a matched-ancestry LD panel; worth flagging in the CP#1 framing / limitations section. (NOTE 2026-04-22: superseded — AFR LD panel now sourced from All-of-Us controlled-tier WGS (~100k) per Amendment §5; 1000G AFR N=661 deprecated as the AFR default.)
 
-**T1 spine status:** Phases 0/1/2/5/9 code-complete; Launch15 drained 9/9 (2026-04-19) — pathway branch CLOSED. CP#1-final is blocked on Phase 2 recovery (this plan).
+**T1 spine status:** Phases 0/1/2/5/9 code-complete; Launch15 drained 9/9 (2026-04-19) — pathway branch CLOSED. CP#1-final is blocked on Phase 2 recovery (this plan). (NOTE 2026-04-22: T1 spine outputs repurposed as Track A inputs + Track B candidate-locus validation subset per Amendment §8; CP#1-final retired as a gate.)
 
-Progress: ██░░░░░░░░ 17%
+Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 
 ## Performance Metrics
 
@@ -232,11 +268,24 @@ None yet.
 | 260414-vro | Accept SNP_ID column alias in run_magma.py (closes scout bug #10 surfaced in v8) | 2026-04-14 | 7a3aa5a | _code-only_ |
 | 260414-ww3 | Resume bmi.EUR magma_fdr scout v8 — docs-only; scout v9 already reached 3/3 after vro, producing bmi_EUR_geneset_fdr.tsv (9617 rows; top hit CUSTOM_APPETITE_REGULATION q=7.25e-11). MAGMA branch of Phase 5 proven end-to-end on real data. | 2026-04-15 | _docs_ | [260414-ww3-resume-bmi-eur-magma-fdr-scout-v8-re-lau](./quick/260414-ww3-resume-bmi-eur-magma-fdr-scout-v8-re-lau/) |
 | 260414-wzy | Env yml hardening: dropped `defaults` channel from 6 yamls (python_stats, magma, ldsc_py3, plink, qtl_processing, r_coloc); hess_py27 kept (Py2.7 only on defaults). New `bin/setup-envs.sh` with direct-mamba fallback for libmamba 2.5 interop bug. envs/README.md rewritten with pitfalls section. Closes scout issues #4/#5/#6/#7. | 2026-04-15 | 60d3c2f | [260414-wzy-env-yml-hardening-remove-defaults-channe](./quick/260414-wzy-env-yml-hardening-remove-defaults-channe/) |
+| 260423-nzu | Post-pivot hygiene: commit Stage 2 drivers, refresh STATE.md, archive Phase 03 MR plans | 2026-04-23 | _see-commit_ | [260423-nzu-post-pivot-hygiene-commit-stage-2-driver](./quick/260423-nzu-post-pivot-hygiene-commit-stage-2-driver/) |
 
 ## Session Continuity
 
-Last session: 2026-04-20T17:00:00Z
-Stopped at: T1 Phase 2 first-production Stage A + B.5 committed (6 commits ending `07cf83a`); eQTL smoke end-to-end SUCCESS (FTO / Adipose_Subcutaneous / bmi.EUR / 16q12, 2601 variants harmonized) but `run_qtl_coloc.R` returns `status: too_few_snps` — SNP-name format mismatch between harmonized TSV and Phase 1 SuSiE fit. `/gsd-resume-work` plan approved; routing to Option 1 (debug) → Option 2 (multi-source raw-data policy) → Option 3 (CP#1-final signoff).
+Last session: 2026-04-23T21:15:00Z
+Stopped at: Post-pivot hygiene pass (/gsd-quick 260423-nzu) — Stage 2 drivers committed, STATE.md refreshed (this edit pending commit), Phase 03 MR plans archived pending Task 3 commit.
+
+### This session (2026-04-22 → 2026-04-23) — Pivot adoption + M0 scaffolding + hygiene
+
+- **2026-04-22 AM:** Stage 2 production fire via `bin/fire_phase2_stage2_refit.sh` (51/96 real-LD credible sets, 0 Tier A, SH2B3 × asthma EUR identity-LD → real-LD collapse). Aggregator follow-up via `bin/followup_phase2_stage2_aggregators.sh` at 20:02 UTC.
+- **2026-04-22:** Pivot adopted. 6 amendment docs authored under `.planning/amendments/`: `PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`, `TRACK-A-PIVOT.md`, `SUMSTATS-UPGRADE.md` + `.tsv`, `AOU-LD-PIPELINE.md`, `SUMSTATS-MANUAL-FETCH.md`.
+- **2026-04-22 / 2026-04-23:** `bin/download_sumstats_v2.sh` driver + manifest committed (`cb2ed78`, `92a64ce`); Track A first-pass manuscript draft committed (`bde60e2`) at `docs/manuscript/track_a_pivot.md`.
+- **2026-04-23:** Post-pivot hygiene via `/gsd-quick 260423-nzu` (this quick session) — Stage 2 drivers committed (Task 1), STATE.md refreshed (this edit — Task 2), Phase 03 MR plans archived as superseded by M5 (Task 3).
+- **Next:** Route A (Track A manuscript edits + Tier-count freeze) in foreground; Route C (sumstats downloads) ticking in background; Route B (M0 closeout — PROJECT/ROADMAP/REQUIREMENTS/DECISIONS rewrites + OSF amendment) gated on Route A Tier-count freeze.
+
+### Archived sessions (pre-pivot)
+
+All entries below pre-date the 2026-04-22 pivot. Retained for forensic traceability and because some procedural content (Phase 0 idempotency fixes, LDSC custom-LD-score fixes, env yml hardening) is still load-bearing on the T1 spine artifacts that Track A will cite.
 
 ### This session (2026-04-20) — Resume routing + Option 1/2/3 chain
 
@@ -400,7 +449,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
 4. Address open items above as they become blocking
 
-Resume file: .planning/phases/03-mendelian-randomization/03-CONTEXT.md
+Resume file: (retired — 2026-04-22 pivot; see `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md` §3)
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
