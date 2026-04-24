@@ -1,21 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: m0
-milestone_name: m0-pivot-scaffolding
-status: post_pivot_m0_in_flight
-stopped_at: "M0 pivot scaffolding in flight: 6 amendment docs committed, sumstats v2 download driver + manifest committed, Track A first-pass draft committed (bde60e2). Stage 2 drivers + STATE.md refresh + Phase 03 archive committed by this hygiene pass. Remaining M0: PROJECT/ROADMAP/REQUIREMENTS/DECISIONS rewrites per Amendment §12 + OSF amendment posted (gates M2 per §9.1). Stage 2 production fire 2026-04-22 AM via bin/fire_phase2_stage2_refit.sh produced 51/96 real-LD credible sets (up from 12/96 identity-LD baseline), 0 Tier A, SH2B3 x asthma EUR identity-LD PP.H4=1.0 collapsed to n_cs_a=0 under real-LD — motivating pivot from candidate-locus design to genome-wide joint-signal discovery across 9 traits x 2 ancestries."
-last_updated: "2026-04-24T17:48:00.000Z"
-last_activity: 2026-04-24
+milestone: v3.1.2
+milestone_name: milestone
+status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
+stopped_at: Phase M1 context gathered (R4, 18 decisions across 5 groups)
+last_updated: "2026-04-24T19:10:03.440Z"
+last_activity: 2026-04-21
 progress:
-  total_milestones: 7
-  completed_milestones: 0
-  current_milestone: m0
-  current_milestone_percent: 70
-  total_phases: 7
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 10
+  total_phases: 12
+  completed_phases: 6
+  total_plans: 30
+  completed_plans: 30
+  percent: 100
 ---
 
 # Project State
@@ -69,6 +65,7 @@ Last activity: 2026-04-21
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
 **Recovery progress (authored 2026-04-21, updated 2026-04-21 23:50):**
+
 - ✅ **Stage 1 (Z):** `/gsd-debug multitrait_coloc_empty` — RESOLVED. trait-pair coloc wired; filter_finemap_summary accepts status ∈ {"success","ok"} (commit 604938b).
 - ✅ **Stage 1d:** `/gsd-debug trait_pair_coloc_hard_failures` — RESOLVED. chr:pos/rsid naming drift in coloc.susie (commit 335f514). SH2B3 EUR bmi↔hypertension PP.H4=1.0 and htn↔stroke PP.H4=1.0 at canonical leads.
 - ✅ **Stage 2:** `/gsd-debug susie_credible_set_yield` — NARROW VALIDATION COMPLETE. Identity-LD fallback fixed via 1000G EUR plink panel (5 commits a6e3214 / 6de9a88 / 7d54183 / 9102466 / 1635d37 + provenance 0948a76). SH2B3_12q24 EUR now produces 4 purity=1.0 CS at published leads. **BLOCKED on Carter firing LSF production re-fit** (cmd sequence in .planning/debug/susie_credible_set_yield.md "CHECKPOINT REACHED"). Agent id a4908644fca7f85d9 still live for continuation. (NOTE 2026-04-22: the LSF production re-fit subsequently fired via `bin/fire_phase2_stage2_refit.sh` — returned 51/96 real-LD CS, 0 Tier A, triggering the 2026-04-22 genome-wide reframe. Recovery narrative is now historical.)
@@ -277,8 +274,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-24T15:10:00Z
-Stopped at: Route B M0 is now fully shipped on `main` — both the scaffolding rewrite (260423-osk, d9c9905..880fc36) and the M0 follow-through (260424-mxp, 0a1339e..fd1836e) are merged. `data/catalogs/catalog_lock_manifest.tsv` locks ClinVar `2026-04-20_weekly_release` with SHA-256 `3be993...58e`; the remaining 4 comparators (Pickrell 2016 supplement, GWAS Catalog, Open Targets Genetics L2G, Watanabe 2019 GWAS Atlas) are M5-deferred with URL + version anchors. `.planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md` holds the paste-ready OSF body behind `--- PASTE INTO OSF FROM HERE ---` markers with 3 intentional placeholders (M1 completion date, M1 commit hash, M5 lock commit hash). Remaining Route B human-action items: **(1) Route B Step 3.3 — Carter manually paste the amendment into osf.io/az52u at M1 closeout** (now fully unblocked: paste-ready text + ClinVar anchor on main; follow the pre-paste checklist at the top of OSF-AMENDMENT-TEXT-2026-04-22.md), then append DEC entry + STATE.md row + repo tag `M1-OSF-AMENDMENT-POSTED-YYYY-MM-DD`; **(2) M5 catalog lock refresh** — at M5 cross-reference date, populate SHA-256 for the 4 deferred catalogs per `data/catalogs/README.md` handoff. Also still outstanding from snappy-humming-pine: Route A Step 2.2.b/e/f (Introduction + Discussion + References rewrites), 2.3 (3 figure scripts), 2.4 (bioRxiv preprint).
+Last session: 2026-04-24T19:10:03.407Z
+Stopped at: Phase M1 context gathered (R4, 18 decisions across 5 groups)
 
 **2026-04-24 resume (parsed-plotting-lynx.md):** `/gsd-resume-work` executed; status loaded; no `HANDOFF.json` / `.continue-here` / interrupted agents. Carter picked three parallel routes for this session — **R1 (Route A manuscript push)** + **R3 (Route C sumstats manual-fetch status refresh)** + **R4 (M1 planning kickoff via `/gsd-discuss-phase m1-sumstats-upgrade-and-harmonization`)**. R2 (OSF pre-paste) explicitly deferred to M1 closeout per Amendment §9.1. Routing plan at `/home/ckclinto/.claude/plans/parsed-plotting-lynx.md`. Recommended serial order if single-terminal: R3 → R4 → R1; or fire in separate terminals (file sets are disjoint; STATE.md + DECISIONS.md writes must serialize).
 
@@ -461,7 +458,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
 4. Address open items above as they become blocking
 
-Resume file: (retired — 2026-04-22 pivot; see `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md` §3)
+Resume file: .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-CONTEXT.md
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
