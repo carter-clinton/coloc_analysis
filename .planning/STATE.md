@@ -4,8 +4,8 @@ milestone: m0
 milestone_name: m0-pivot-scaffolding
 status: post_pivot_m0_in_flight
 stopped_at: "M0 pivot scaffolding in flight: 6 amendment docs committed, sumstats v2 download driver + manifest committed, Track A first-pass draft committed (bde60e2). Stage 2 drivers + STATE.md refresh + Phase 03 archive committed by this hygiene pass. Remaining M0: PROJECT/ROADMAP/REQUIREMENTS/DECISIONS rewrites per Amendment §12 + OSF amendment posted (gates M2 per §9.1). Stage 2 production fire 2026-04-22 AM via bin/fire_phase2_stage2_refit.sh produced 51/96 real-LD credible sets (up from 12/96 identity-LD baseline), 0 Tier A, SH2B3 x asthma EUR identity-LD PP.H4=1.0 collapsed to n_cs_a=0 under real-LD — motivating pivot from candidate-locus design to genome-wide joint-signal discovery across 9 traits x 2 ancestries."
-last_updated: "2026-04-23T21:15:00.000Z"
-last_activity: 2026-04-23
+last_updated: "2026-04-24T17:48:00.000Z"
+last_activity: 2026-04-24
 progress:
   total_milestones: 7
   completed_milestones: 0
@@ -271,11 +271,14 @@ None yet.
 | 260423-nzu | Post-pivot hygiene: commit Stage 2 drivers, refresh STATE.md, archive Phase 03 MR plans | 2026-04-23 | 11b75ad..ca018b4 | [260423-nzu-post-pivot-hygiene-commit-stage-2-driver](./quick/260423-nzu-post-pivot-hygiene-commit-stage-2-driver/) |
 | 260423-osk | Route B M0 closeout: rewrite PROJECT/ROADMAP/REQUIREMENTS to M0–M6; append 5 DECISION entries | 2026-04-23 | d9c9905..880fc36 | [260423-osk-route-b-m0-closeout-rewrite-project-road](./quick/260423-osk-route-b-m0-closeout-rewrite-project-road/) |
 | 260424-mxp | Route B M0 follow-through: lock ClinVar SHA-256 + scaffold 4 M5-deferred catalog rows in data/catalogs/catalog_lock_manifest.tsv; promote Amendment §9.3 to standalone OSF paste-ready text (posting gated on M1 per §9.1) | 2026-04-24 | 0a1339e..fd1836e | [260424-mxp-draft-osf-amendment-snapshot-novelty-catalog](./quick/260424-mxp-draft-osf-amendment-snapshot-novelty-catalog/) |
+| 260424-j6c | Route C sumstats manual-fetch status refresh: reconcile SUMSTATS-MANUAL-FETCH-STATUS.md against 2026-04-24 disk state; all 23 Track B M1 destinations still absent; 0 new SHA-256 locks; static manifest untouched | 2026-04-24 | 98604aa | [260424-j6c-route-c-sumstats-manual-fetch-status-ref](./quick/260424-j6c-route-c-sumstats-manual-fetch-status-ref/) |
 
 ## Session Continuity
 
 Last session: 2026-04-24T15:10:00Z
 Stopped at: Route B M0 is now fully shipped on `main` — both the scaffolding rewrite (260423-osk, d9c9905..880fc36) and the M0 follow-through (260424-mxp, 0a1339e..fd1836e) are merged. `data/catalogs/catalog_lock_manifest.tsv` locks ClinVar `2026-04-20_weekly_release` with SHA-256 `3be993...58e`; the remaining 4 comparators (Pickrell 2016 supplement, GWAS Catalog, Open Targets Genetics L2G, Watanabe 2019 GWAS Atlas) are M5-deferred with URL + version anchors. `.planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md` holds the paste-ready OSF body behind `--- PASTE INTO OSF FROM HERE ---` markers with 3 intentional placeholders (M1 completion date, M1 commit hash, M5 lock commit hash). Remaining Route B human-action items: **(1) Route B Step 3.3 — Carter manually paste the amendment into osf.io/az52u at M1 closeout** (now fully unblocked: paste-ready text + ClinVar anchor on main; follow the pre-paste checklist at the top of OSF-AMENDMENT-TEXT-2026-04-22.md), then append DEC entry + STATE.md row + repo tag `M1-OSF-AMENDMENT-POSTED-YYYY-MM-DD`; **(2) M5 catalog lock refresh** — at M5 cross-reference date, populate SHA-256 for the 4 deferred catalogs per `data/catalogs/README.md` handoff. Also still outstanding from snappy-humming-pine: Route A Step 2.2.b/e/f (Introduction + Discussion + References rewrites), 2.3 (3 figure scripts), 2.4 (bioRxiv preprint).
+
+**2026-04-24 resume (parsed-plotting-lynx.md):** `/gsd-resume-work` executed; status loaded; no `HANDOFF.json` / `.continue-here` / interrupted agents. Carter picked three parallel routes for this session — **R1 (Route A manuscript push)** + **R3 (Route C sumstats manual-fetch status refresh)** + **R4 (M1 planning kickoff via `/gsd-discuss-phase m1-sumstats-upgrade-and-harmonization`)**. R2 (OSF pre-paste) explicitly deferred to M1 closeout per Amendment §9.1. Routing plan at `/home/ckclinto/.claude/plans/parsed-plotting-lynx.md`. Recommended serial order if single-terminal: R3 → R4 → R1; or fire in separate terminals (file sets are disjoint; STATE.md + DECISIONS.md writes must serialize).
 
 ### This session (2026-04-22 → 2026-04-23) — Pivot adoption + M0 scaffolding + hygiene
 
