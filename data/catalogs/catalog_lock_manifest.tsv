@@ -1,0 +1,6 @@
+name	version	url	sha256	fetched_date	size_bytes	status
+clinvar_variant_summary	2026-04-20_weekly_release	https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz	3be9939676e44a79e906dd167caec45e6e871be55db1a4ddb9269ebf0828e58e	2026-04-24	436222584	M0-locked
+pickrell2016_supplement	pmc_PMC5207801_NIHMS780506-supplement-2	https://pmc.ncbi.nlm.nih.gov/articles/PMC5207801/				M5-deferred
+gwas_catalog_associations	pending_M5_pin	https://www.ebi.ac.uk/gwas/api/search/downloads/alternative				M5-deferred
+opentargets_genetics_l2g	pending_M5_pin	https://ftp.ebi.ac.uk/pub/databases/opentargets/platform/latest/output/etl/parquet/				M5-deferred
+watanabe2019_gwas_atlas	pending_M5_pin	https://atlas.ctglab.nl/about/download				M5-deferred

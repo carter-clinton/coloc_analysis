@@ -65,12 +65,15 @@ tools/
 data/raw/*
 data/processed/*
 data/external/*
+data/catalogs/*
 !data/raw/region_analysis
 !data/processed/region_analysis
 !data/processed/genome_wide
 !data/raw/README.md
 !data/processed/README.md
 !data/external/README.md
+!data/catalogs/catalog_lock_manifest.tsv
+!data/catalogs/README.md
 
 # --- Results / logs: regeneratable, except legacy symlinks ---
 results/*
