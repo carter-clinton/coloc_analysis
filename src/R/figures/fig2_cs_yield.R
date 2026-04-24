@@ -69,7 +69,7 @@ OUT_PNG   <- file.path(OUT_DIR, "fig2_cs_yield.png")
 # --- Input validation + disk-backed derivation -------------------------------
 if (!file.exists(INPUT_TSV)) {
   stop(sprintf(
-    "fig_cs_yield.R: input TSV not found at '%s'. Run from project root (/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis).",
+    "fig2_cs_yield.R: input TSV not found at '%s'. Run from project root (/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis).",
     INPUT_TSV
   ))
 }
@@ -84,7 +84,7 @@ n_real_empty    <- N_TOTAL_FITS - n_real_nonempty
 if (n_real_nonempty != N_REAL_LD_NONEMPTY) {
   stop(sprintf(
     paste0(
-      "fig_cs_yield.R: disk-derived non-empty CS count (%d) does not match locked ",
+      "fig2_cs_yield.R: disk-derived non-empty CS count (%d) does not match locked ",
       "scalar N_REAL_LD_NONEMPTY = %d from TRACK-A-FROZEN-NUMBERS.md. ",
       "If Stage 2 has been re-fired, update TRACK-A-FROZEN-NUMBERS.md and this script ",
       "in the same commit."
@@ -104,7 +104,7 @@ diag <- df |>
     names_prefix = "cs_"
   )
 
-message("=== fig_cs_yield.R diagnostic ===")
+message("=== fig2_cs_yield.R diagnostic ===")
 message(sprintf("Total fits parsed: %d (expected %d)", nrow(df), N_TOTAL_FITS))
 message(sprintf("Non-empty real-LD fits: %d (expected %d)", n_real_nonempty, N_REAL_LD_NONEMPTY))
 message(sprintf("Empty real-LD fits: %d (expected %d)", n_real_empty, N_TOTAL_FITS - N_REAL_LD_NONEMPTY))
@@ -199,7 +199,7 @@ plot <- ggplot(plot_df, aes(x = condition, y = n_nonempty, fill = condition)) +
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 if (!isTRUE(capabilities("cairo"))) {
-  stop("fig_cs_yield.R: R build lacks cairo capability; cairo_pdf unavailable. Aborting rather than falling back to pdf() (font handling differs).")
+  stop("fig2_cs_yield.R: R build lacks cairo capability; cairo_pdf unavailable. Aborting rather than falling back to pdf() (font handling differs).")
 }
 
 message("=== writing outputs ===")
