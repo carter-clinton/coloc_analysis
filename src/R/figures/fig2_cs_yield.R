@@ -1,4 +1,4 @@
-# fig_cs_yield.R — Track A Figure 1 (identity-LD vs real-LD credible-set yield)
+# fig2_cs_yield.R — Track A Figure 2 (identity-LD vs real-LD credible-set yield)
 #
 # Purpose: Build the headline-yield figure for the Track A pivot manuscript —
 #   a two-bar comparison of non-empty SuSiE-RSS credible-set counts under
@@ -22,21 +22,28 @@
 #   /home/ckclinto/.claude/plans/snappy-humming-pine.md §2.3 ("Fig 1 = CS yield")
 #
 # Outputs:
-#   docs/manuscript/figures/fig_cs_yield.pdf   (cairo_pdf, 85 mm x 70 mm)
-#   docs/manuscript/figures/fig_cs_yield.png   (600 dpi, 85 mm x 70 mm)
+#   docs/manuscript/figures/fig2_cs_yield.pdf  (cairo_pdf, 85 mm x 70 mm)
+#   docs/manuscript/figures/fig2_cs_yield.png  (600 dpi, 85 mm x 70 mm)
 #
 # Render env: /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/Rscript
 #   (R 4.4.2, ggplot2 4.0.1, tidyverse 2.0.0, scales 1.4.0; cairo capability verified.)
 #
 # Invocation (from project root):
-#   /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/Rscript src/R/figures/fig_cs_yield.R
+#   /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/Rscript src/R/figures/fig2_cs_yield.R
 #
-# Author: Carter K. Clinton -- 2026-04-24 (quick-260424-lpy)
+# Author: Carter K. Clinton -- 2026-04-24 (built quick-260424-lpy; aligned quick-260424-mqo)
 #
-# Figure-number note: filename stem is neutral ('fig_cs_yield') pending manuscript
-#   caption-alignment pass (R2). snappy-humming-pine.md §2.3 labels this as "Fig 1";
-#   docs/manuscript/track_a_pivot.md L291-L297 currently labels Fig 1 as the
-#   scatter + LocusZoom panels. Integer-rename is an R2 handoff task.
+# Figure-number provenance (R2 alignment pass, quick-260424-mqo, 2026-04-24):
+#   Filename stem is now 'fig2_cs_yield' to align with the canonical 5-figure
+#   manuscript scheme. Authoritative slot owners:
+#     - docs/manuscript/track_a_pivot.md L289-L297 (live manuscript captions)
+#     - .planning/amendments/TRACK-A-PIVOT.md §5 (canonical pivot-plan figure spec)
+#   Both place this credible-set-yield artifact at the Figure 2 slot. The earlier
+#   workspace-plan sketch (snappy-humming-pine.md §2.3) labelled this as "Fig 1"
+#   in a 3-figure scheme; that integer numbering is an early sketch and is
+#   reconciled to the manuscript-canonical scheme by quick-260424-mqo (see the
+#   §2.3 R2-reconciliation annotation in snappy-humming-pine.md). Locked scalars
+#   (12 / 96 / 51 / 4.25x) remain authoritative at TRACK-A-FROZEN-NUMBERS.md.
 
 suppressPackageStartupMessages({
   library(readr)
@@ -56,8 +63,8 @@ FOLD_CHANGE_EXPECTED   <- 4.25   # 51 / 12 = 4.25
 
 INPUT_TSV <- "results/fine_mapping/finemap_summary.tsv"
 OUT_DIR   <- "docs/manuscript/figures"
-OUT_PDF   <- file.path(OUT_DIR, "fig_cs_yield.pdf")
-OUT_PNG   <- file.path(OUT_DIR, "fig_cs_yield.png")
+OUT_PDF   <- file.path(OUT_DIR, "fig2_cs_yield.pdf")
+OUT_PNG   <- file.path(OUT_DIR, "fig2_cs_yield.png")
 
 # --- Input validation + disk-backed derivation -------------------------------
 if (!file.exists(INPUT_TSV)) {
