@@ -25,7 +25,7 @@ must_haves:
   truths:
     - "Quarto per-trait QC HTML rendered for each of 12 trait tokens (bmi, t2d, sbp, stroke, asthma, cad, ldl, hdl, tg, tc, egfr, hba1c)"
     - "Cross-trait QC index.html at data/processed/sumstats_harmonized/qc_log/index.html with LDSC intercept matrix heatmap"
-    - "config/trait_inventory.yaml enumerates all 45 (trait, ancestry) cells with D-16 keys + full schema per REQ-TRAIT-INVENTORY"
+    - "config/trait_inventory.yaml enumerates all N in-scope (trait, ancestry) cells where N = line count of trait_keys.txt (post-DEFERRED; 40 <= N <= 50 per m1_trait_keys defensive bounds), with D-16 keys + full schema per REQ-TRAIT-INVENTORY"
     - "Phase-closeout verification script asserts Dimension-8 a-i acceptance criteria + emits Pass/Fail per dimension"
     - "OSF-AMENDMENT-TEXT-2026-04-22.md placeholder 1 (M1 completion date) + placeholder 2 (M1 commit hash) filled in"
     - "Raw SHA-256 manifest mirror committed to .planning/amendments/sha256_manifest_m1_frozen.tsv (OSF paste target per D-13)"
@@ -64,7 +64,7 @@ Wave 4 closes M1 by producing 4 deliverable categories:
 
 1. **Per-trait + cross-trait Quarto QC HTML reports (D-12)**: one `<trait>.<ancestry>.<consortium>.<year>.qc.html` per harmonized cell AND one `qc_log/index.html` aggregating all per-trait reports + the 45×45 LDSC intercept heatmap + the expected-intercept validation outcomes from Wave 3. Each report surfaces the 9-item checklist from SUMSTATS-UPGRADE §7 (variant count, MAF histogram, build verification, effect allele labeling, LDSC intercept/h2, λ_GC, positive-control loci presence, strand-ambiguous drop rate, per-variant N integrity).
 
-2. **config/trait_inventory.yaml (D-16 + REQ-TRAIT-INVENTORY)**: the M1→M2 schema contract. Enumerates all 45 trait × ancestry cells with keys `<trait>.<ancestry>.<consortium>.<year>` and per-cell fields `{trait, ancestry, consortium, year, source_url, doi, build, phenotype_lock, harmonized_path, parquet_path, munged_path, n_total, n_cases, n_controls, sha256_raw, sha256_harmonized, ldsc_intercept, ldsc_h2, qc_report_path, qc_status, cohort_overlap_cohorts, mtag_overlap_correction_required, dua_required, license}` — RESEARCH Example 4 schema verbatim. Built by `build_trait_inventory.py` from SUMSTATS-UPGRADE.tsv + the per-harmonizer .qc.json sidecars + LDSC h2 intercepts parsed from rg_logs/.
+2. **config/trait_inventory.yaml (D-16 + REQ-TRAIT-INVENTORY)**: the M1→M2 schema contract. Enumerates all N in-scope trait × ancestry cells (N = line count of trait_keys.txt, post-DEFERRED; 40 <= N <= 50 per m1_trait_keys defensive bound) with keys `<trait>.<ancestry>.<consortium>.<year>` and per-cell fields `{trait, ancestry, consortium, year, source_url, doi, build, phenotype_lock, harmonized_path, parquet_path, munged_path, n_total, n_cases, n_controls, sha256_raw, sha256_harmonized, ldsc_intercept, ldsc_h2, qc_report_path, qc_status, cohort_overlap_cohorts, mtag_overlap_correction_required, dua_required, license}` — RESEARCH Example 4 schema verbatim. Built by `build_trait_inventory.py` from SUMSTATS-UPGRADE.tsv + the per-harmonizer .qc.json sidecars + LDSC h2 intercepts parsed from rg_logs/.
 
 3. **OSF paste-prep** (NOT the OSF submission itself — that's a Carter web-UI M2-gate action): pre-fill placeholder 1 (M1 completion date = today's date) + placeholder 2 (M1 commit hash = hash of the phase-closeout commit) in `.planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md`. Copy the primary raw SHA-256 manifest to `.planning/amendments/sha256_manifest_m1_frozen.tsv` as the OSF paste target. Do NOT submit to OSF — this plan's closeout explicitly marks OSF submission as Carter's M2-gate web-UI action.
 
@@ -188,7 +188,7 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
   </read_first>
   <behavior>
     - m1_qc_report.qmd: 9-section template matching SUMSTATS-UPGRADE §7 items 1-9. Params block accepts trait, ancestry, consortium, year, harmonized_tsv, parquet, ldsc_log, sha256. Uses parquet read via arrow for fast MAF hist + variant counts. Uses knitr for R plots (ggplot2 + qqman). Embeds control-locus check table inline with lookup per-trait.
-    - m1_qc_index.qmd: aggregates all per-trait reports + renders the 45x45 LDSC intercept matrix as a heatmap (ggplot2 geom_tile or heatmaply static variant). Lists per-cell status PASS/FAIL from qc.json sidecars.
+    - m1_qc_index.qmd: aggregates all per-trait reports + renders the NxN LDSC intercept matrix as a heatmap (N = line count of trait_keys.txt) (ggplot2 geom_tile or heatmaply static variant). Lists per-cell status PASS/FAIL from qc.json sidecars.
     - build_trait_inventory.py: reads SUMSTATS-UPGRADE.tsv → iterates in-scope rows → for each row: resolves harmonized_path + parquet_path + munged_path per D-16; looks up sha256_raw from data/raw/sumstats_v2/sha256_manifest.tsv; looks up sha256_harmonized from data/processed/sumstats_harmonized/sha256_manifest.tsv; parses ldsc_intercept + ldsc_h2 from rg_logs/focal_*.log via reduce_ldsc_rg_matrix.parse_rg_log; loads qc_status from qc.json sidecar; emits config/trait_inventory.yaml with schema per Example 4.
     - m1_qc.smk: per-trait rule renders m1_qc_report.qmd into HTML; index rule renders m1_qc_index.qmd aggregating; trait_inventory rule runs build_trait_inventory.py.
     - test_build_trait_inventory.py: fixture-driven; creates a mini SUMSTATS-UPGRADE.tsv + 2 qc.json sidecars + 1 rg log → invokes build_trait_inventory → asserts yaml schema per Example 4.
@@ -219,7 +219,7 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
 
     (B) Create src/R/qc/m1_qc_index.qmd — loads all per-trait qc.json sidecars + reads the bivariate_intercept_matrix TSV; renders:
     - Section 1: Cross-trait summary table (one row per D-16 key; columns qc_status, n_rows, lambda_gc, ldsc_intercept)
-    - Section 2: 45x45 intercept heatmap (ggplot2 geom_tile, diverging palette centered at 0)
+    - Section 2: NxN intercept heatmap (ggplot2 geom_tile, diverging palette centered at 0; N = line count of trait_keys.txt)
     - Section 3: Expected-intercept heuristic deviations (Pitfall #8) — loaded from rg_validation_warnings.json
     - Section 4: DEFERRED cells table
 
@@ -451,7 +451,7 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
     ```
   </action>
   <verify>
-    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_build_trait_inventory.py -x --tb=short 2>&amp;1 | tail -3 &amp;&amp; test -f src/R/qc/m1_qc_report.qmd &amp;&amp; test -f src/R/qc/m1_qc_index.qmd &amp;&amp; test -f src/R/qc/control_loci.csv &amp;&amp; test -f src/python/build_trait_inventory.py &amp;&amp; test -f src/snakemake/rules/m1_qc.smk &amp;&amp; grep -q "m1_qc_per_trait" src/snakemake/rules/m1_qc.smk &amp;&amp; grep -q "m1_qc_index" src/snakemake/rules/m1_qc.smk &amp;&amp; grep -q "m1_build_trait_inventory" src/snakemake/rules/m1_qc.smk &amp;&amp; [ $(wc -l &lt; src/R/qc/control_loci.csv) -ge 13 ] &amp;&amp; quarto check src/R/qc/m1_qc_report.qmd 2&gt;&amp;1 | grep -qi "ok\|pass\|version"</automated>
+    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_build_trait_inventory.py -x --tb=short 2>&amp;1 | tail -3 &amp;&amp; test -f src/R/qc/m1_qc_report.qmd &amp;&amp; test -f src/R/qc/m1_qc_index.qmd &amp;&amp; test -f src/R/qc/control_loci.csv &amp;&amp; test -f src/python/build_trait_inventory.py &amp;&amp; test -f src/snakemake/rules/m1_qc.smk &amp;&amp; grep -q "m1_qc_per_trait" src/snakemake/rules/m1_qc.smk &amp;&amp; grep -q "m1_qc_index" src/snakemake/rules/m1_qc.smk &amp;&amp; grep -q "m1_build_trait_inventory" src/snakemake/rules/m1_qc.smk &amp;&amp; [ $(wc -l &lt; src/R/qc/control_loci.csv) -ge 13 ] &amp;&amp; grep -qE "dim-j|trait_keys\.txt - DEFERRED|inventory trait count matches trait_keys" .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-04-qc-reports-inventory-manifest-PLAN.md &amp;&amp; quarto check src/R/qc/m1_qc_report.qmd 2&gt;&amp;1 | grep -qi "ok\|pass\|version"</automated>
   </verify>
   <done>Quarto template + index qmd exist; build_trait_inventory.py passes pytest on 3-row synthetic fixture; m1_qc.smk declares 3 rules (per-trait, index, inventory); control_loci.csv has 12+ rows spanning all D-16 trait tokens.</done>
 </task>
@@ -488,9 +488,10 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
       * (g) Quarto HTMLs all rendered — count per-trait HTML files
       * (h) trait_inventory.yaml all path fields resolve to existing files
       * (i) YAML schema fields all populated per Example 4
+      * (j) W7 fix — inventory trait count matches trait_keys.txt post-DEFERRED adjustment: `len(inv['traits']) == wc -l data/processed/ldsc_overlap/trait_keys.txt - DEFERRED_COUNT`. Logs 'dim-j: inventory trait count matches trait_keys.txt post-DEFERRED adjustment' on PASS for grep-checkability from m1-04-T1 verify automated.
     - Each ROADMAP criterion maps to a Dimension-8 subset.
     - Each REQ maps to a specific verifiable check:
-      * REQ-TRAIT-INVENTORY: trait_inventory.yaml exists + 45 entries
+      * REQ-TRAIT-INVENTORY: trait_inventory.yaml exists + N entries (N = line count of trait_keys.txt - DEFERRED count; 40 <= N <= 50)
       * REQ-SNAKEMAKE-CI: `snakemake --list` parses DAG without error
       * REQ-PUBLIC-DATA-ONLY: every entry has license != private (!= dua_required or dua_required == "academic")
       * REQ-PATH-PARAMETERIZATION: `grep -r "/share/clintonlab\|/rs1/researchers\|/gpfs_common" src/R src/python src/snakemake config` returns 0
@@ -608,6 +609,36 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
             if miss: missing_fields.append(f"{key}: missing {miss}")
         return ("PASS" if not missing_fields else "FAIL"), "; ".join(missing_fields[:5]) or f"all {len(inv['traits'])} entries valid"
 
+    def verify_j(inventory_path: Path,
+                 trait_keys_path: Path = Path("data/processed/ldsc_overlap/trait_keys.txt"),
+                 deferred_count: int | None = None) -> tuple[str, str]:
+        """W7 fix: dim-j — inventory trait count matches trait_keys.txt post-DEFERRED adjustment.
+
+        Asserts len(inv['traits']) == (line count of trait_keys.txt) - DEFERRED_COUNT.
+        DEFERRED_COUNT is computed by counting *.deferred markers under HARM_DIR if not given,
+        ensuring the dynamic-N invariant from m1_trait_keys defensive bound (40 <= N <= 50).
+        Logs 'dim-j: inventory trait count matches trait_keys.txt post-DEFERRED adjustment'
+        on PASS so m1-04-T1 grep-check can confirm the new dimension fired.
+        """
+        if not inventory_path.exists():
+            return "FAIL", f"{inventory_path} missing"
+        if not trait_keys_path.exists():
+            return "FAIL", f"{trait_keys_path} missing"
+        inv = yaml.safe_load(inventory_path.read_text())
+        n_inv = len(inv.get("traits", {}))
+        n_keys = sum(1 for ln in trait_keys_path.read_text().splitlines() if ln.strip())
+        if deferred_count is None:
+            harm_dir = Path("data/processed/sumstats_harmonized")
+            deferred_count = len(list(harm_dir.glob("*.deferred"))) if harm_dir.exists() else 0
+        expected = n_keys - deferred_count
+        if n_inv == expected:
+            print(f"dim-j: inventory trait count matches trait_keys.txt post-DEFERRED adjustment "
+                  f"(inventory={n_inv}, trait_keys={n_keys}, deferred={deferred_count})")
+            return "PASS", (f"dim-j: inventory trait count matches trait_keys.txt post-DEFERRED "
+                            f"adjustment (n_inv={n_inv} == n_keys={n_keys} - deferred={deferred_count})")
+        return "FAIL", (f"dim-j mismatch: inventory={n_inv}, trait_keys={n_keys}, "
+                        f"deferred={deferred_count}, expected={expected}")
+
     def verify_req_public_data_only(inventory_path: Path) -> tuple[str, str]:
         inv = yaml.safe_load(inventory_path.read_text())
         private = [k for k, v in inv["traits"].items()
@@ -632,6 +663,8 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
         ap.add_argument("--harm-manifest", type=Path, default=Path("data/processed/sumstats_harmonized/sha256_manifest.tsv"))
         ap.add_argument("--qc-dir", type=Path, default=Path("data/processed/sumstats_harmonized/qc_log"))
         ap.add_argument("--warnings", type=Path, default=Path("data/processed/ldsc_overlap/rg_validation_warnings.json"))
+        ap.add_argument("--trait-keys", type=Path, default=Path("data/processed/ldsc_overlap/trait_keys.txt"),
+                        help="W7 fix: trait_keys.txt path used by dim-j to assert inventory count == line count - DEFERRED")
         ap.add_argument("--output", type=Path, default=Path(".planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md"))
         args = ap.parse_args()
 
@@ -644,6 +677,8 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
             ("g", "Quarto HTMLs rendered",               verify_g(args.qc_dir)),
             ("h", "Inventory paths resolve",             verify_h(args.inventory)),
             ("i", "Inventory schema valid",              verify_i(args.inventory)),
+            ("j", "Inventory count == trait_keys - DEFERRED",
+                                                          verify_j(args.inventory, args.trait_keys, None)),
         ]
         reqs = [
             ("REQ-TRAIT-INVENTORY", verify_h(args.inventory)),  # proxy; re-use h
@@ -747,9 +782,9 @@ From .planning/amendments/OSF-AMENDMENT-TEXT-2026-04-22.md (placeholders to fill
     ```
   </action>
   <verify>
-    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_verify_m1_artifacts.py -x --tb=short 2>&amp;1 | tail -5 &amp;&amp; test -f src/python/verify_m1_artifacts.py &amp;&amp; test -f config/trait_inventory.yaml &amp;&amp; test -f .planning/amendments/sha256_manifest_m1_frozen.tsv &amp;&amp; test -f .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md &amp;&amp; grep -q "Dimension-8 Acceptance Criteria" .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md &amp;&amp; grep -q "Overall M1 Closeout Verdict" .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md &amp;&amp; /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c "import yaml; d = yaml.safe_load(open('config/trait_inventory.yaml')); assert 'traits' in d and len(d['traits']) &gt;= 30"</automated>
+    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_verify_m1_artifacts.py -x --tb=short 2>&amp;1 | tail -5 &amp;&amp; test -f src/python/verify_m1_artifacts.py &amp;&amp; test -f config/trait_inventory.yaml &amp;&amp; test -f .planning/amendments/sha256_manifest_m1_frozen.tsv &amp;&amp; test -f .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md &amp;&amp; grep -q "Dimension-8 Acceptance Criteria" .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md &amp;&amp; grep -q "Overall M1 Closeout Verdict" .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md &amp;&amp; grep -qE "dim-j|Inventory count == trait_keys - DEFERRED" .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-PHASE-CLOSEOUT.md &amp;&amp; grep -q "verify_j" src/python/verify_m1_artifacts.py &amp;&amp; /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c "import yaml; d = yaml.safe_load(open('config/trait_inventory.yaml')); import pathlib; tk = pathlib.Path('data/processed/ldsc_overlap/trait_keys.txt'); n_keys = sum(1 for l in tk.read_text().splitlines() if l.strip()) if tk.exists() else 0; n_def = len(list(pathlib.Path('data/processed/sumstats_harmonized').glob('*.deferred'))) if pathlib.Path('data/processed/sumstats_harmonized').exists() else 0; assert 'traits' in d and len(d['traits']) &gt;= max(0, n_keys - n_def - 5), f'dim-j sanity: inv={len(d[chr(34)+chr(116)+chr(114)+chr(97)+chr(105)+chr(116)+chr(115)+chr(34)])} keys={n_keys} def={n_def}'"</automated>
   </verify>
-  <done>config/trait_inventory.yaml exists with >=30 trait entries (45 minus DEFERRED); Quarto per-trait HTMLs + index rendered; verify_m1_artifacts.py passes pytest + produces m1-PHASE-CLOSEOUT.md with Dimension-8 table + REQ table + Overall verdict line; sha256_manifest_m1_frozen.tsv mirrored; OSF placeholders 1 + 2 filled in; carter-facing instructions appended to closeout report for manual OSF web-UI submission.</done>
+  <done>config/trait_inventory.yaml exists with >= (N - DEFERRED count) trait entries (N = line count of trait_keys.txt, 40 <= N <= 50); Quarto per-trait HTMLs + index rendered; verify_m1_artifacts.py passes pytest + produces m1-PHASE-CLOSEOUT.md with Dimension-8 table + REQ table + Overall verdict line; sha256_manifest_m1_frozen.tsv mirrored; OSF placeholders 1 + 2 filled in; carter-facing instructions appended to closeout report for manual OSF web-UI submission.</done>
 </task>
 
 <task id="m1-04-T3" type="checkpoint:human-action" gate="blocking">
@@ -839,7 +874,7 @@ security_enforcement disabled. The only sensitivity concern is that the OSF amen
 - src/R/qc/m1_qc_report.qmd + src/R/qc/m1_qc_index.qmd + src/R/qc/control_loci.csv exist
 - src/python/build_trait_inventory.py + src/python/verify_m1_artifacts.py exist and pass pytest
 - src/snakemake/rules/m1_qc.smk declares m1_qc_per_trait + m1_qc_index + m1_build_trait_inventory rules
-- config/trait_inventory.yaml enumerates >= 30 trait cells (45 minus documented DEFERRED)
+- config/trait_inventory.yaml enumerates >= (N - documented DEFERRED count) trait cells, where N = line count of trait_keys.txt (40 <= N <= 50 per m1_trait_keys defensive bound)
 - At least 12 per-trait Quarto HTMLs under data/processed/sumstats_harmonized/qc_log/
 - Cross-trait index.html exists at qc_log/index.html
 - .planning/amendments/sha256_manifest_m1_frozen.tsv mirrors the raw SHA-256 manifest
