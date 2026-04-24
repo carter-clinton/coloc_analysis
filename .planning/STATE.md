@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
 stopped_at: Phase M1 context gathered (R4, 18 decisions across 5 groups)
-last_updated: "2026-04-24T19:10:03.440Z"
-last_activity: 2026-04-21
+last_updated: "2026-04-24T22:00:48.109Z"
+last_activity: 2026-04-24
 progress:
   total_phases: 12
   completed_phases: 6
@@ -60,7 +60,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-04-24 - Completed quick task 260424-mqo: Route A R2 figure-number alignment (reconcile snappy-humming-pine §2.3 ↔ track_a_pivot.md L291–L297)
+Last activity: 2026-04-24
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
