@@ -61,10 +61,15 @@ this quick-task plan.
 **Goal**: Download Yengo 2022 (or Loh 2022 — pending source decision per
 PROJECT.md open human-action item b), DIAMANTE 2022, GIGASTROKE 2022, Giri
 2019 MVP, GBMI asthma 2022, Aragam 2022 CAD, GLGC 2021 lipids, CKDGen 2019
-eGFR, MAGIC 2021 HbA1c per `SUMSTATS-UPGRADE.tsv`. Harmonize to GRCh38,
-lift deCODE rsids, filter MAF ≥ 0.005, INFO ≥ 0.8, per-ancestry QC. Build
-LDSC-ready and MTAG-ready formats. Verify ancestries and sample-overlap
-flags per trait (Amendment §3 M1, §4, §5).
+eGFR, MAGIC 2021 HbA1c per `SUMSTATS-UPGRADE.tsv`. Harmonize to GRCh37 (per
+DEC-2026-04-24-01 override of Amendment §3 M1 GRCh38 wording; two b38-native
+sources — Loh 2022 BMI + GBMI 2022 asthma — lifted via pyliftover), filter
+MAF ≥ 0.005, INFO ≥ 0.8, per-ancestry QC. Build HM3-munged `.sumstats.gz` for
+LDSC/MTAG AND full-coverage `.tsv.bgz + .parquet` dual-emit for coloc /
+fine-mapping / CPASSOC (D-09 / D-15). Build 45×45 LDSC bivariate-intercept
+matrix via 44 star-pattern `ldsc.py --rg` calls + Python reducer (NOT
+`--rg-cross` which does not exist in vendored abdenlab fork). Verify
+ancestries and sample-overlap flags per trait (Amendment §3 M1, §4, §5).
 **Requirements**: REQ-TRAIT-INVENTORY, REQ-SNAKEMAKE-CI,
 REQ-PUBLIC-DATA-ONLY, REQ-PATH-PARAMETERIZATION
 **Dependencies**: Download lead times (some DUAs in place; MVP phs001672
@@ -84,7 +89,17 @@ needs verification per PROJECT.md open human-action item c)
 **Gating condition for M2**: M1 harmonization verified (all success criteria)
 AND OSF amendment posted at osf.io/pvb5j per Amendment §9 (Carter web-UI
 action per PROJECT.md open human-action item a). Both conditions must hold.
-**Status**: not planned; `/gsd-plan-phase M1` session queued.
+**Plans**: 6 plans
+
+Plans:
+- [ ] m1-00-preflight-and-environment-PLAN.md — Wave 0: conda envs + pytest scaffolding + UCSC chain + LDSC LD staging + MAGIC FTP / Giri 2019 / LDSC benchmark probes + D-02/D-03/D-06 disposition + DEC-2026-04-24 decisions entry
+- [ ] m1-01-portal-fetches-and-aragam-route-PLAN.md — Wave 1: extend bin/download_sumstats_v2.sh for 17 portal rows + DIAMANTE cookie handling + Aragam ZIP unpack per D-03 + deterministic raw SHA-256 manifest freeze (OSF paste target)
+- [ ] m1-02a-harmonizers-continuous-traits-PLAN.md — Wave 2: harmonize_yengo + harmonize_glgc + harmonize_wuttke + harmonize_magic (BMI 3 cells + lipids 15 cells + eGFR 3 cells + HbA1c 6 cells) with Loh 2022 b38->b37 liftover and sumstats_utils.build_rsid_to_chrpos helper
+- [ ] m1-02b-harmonizers-case-control-traits-PLAN.md — Wave 2: harmonize_diamante + harmonize_gigastroke + harmonize_aragam + extend harmonize_gbmi with --liftover-chain + verify_evangelou_sbp rename; freeze secondary harmonized SHA-256 manifest
+- [ ] m1-03-munge-and-ldsc-intercept-matrix-PLAN.md — Wave 3: munge 45 files to HM3 .sumstats.gz + 44 star-pattern ldsc.py --rg calls (NOT --rg-cross; RESEARCH Pitfall #1) + reducer -> 45x45 bivariate-intercept matrix at data/processed/ldsc_overlap/bivariate_intercept_matrix_2026-04.tsv
+- [ ] m1-04-qc-reports-inventory-manifest-PLAN.md — Wave 4: Quarto per-trait + cross-trait QC + config/trait_inventory.yaml build + Dimension-8 verify_m1_artifacts + OSF paste-prep + Carter OSF web-UI submission (M2 HARD GATE per Amendment §9.1)
+
+**Status**: planned (2026-04-24); 6 plans committed across 5 waves (Wave 2 split for task budget); execution queued via `/gsd-execute-phase M1`.
 
 ### M2: LDSC + MTAG + CPASSOC discovery
 **Slug**: m2-ldsc-mtag-cpassoc-discovery
@@ -595,7 +610,7 @@ M: 11 (parallel from Phase 9)
 | Milestone | Plans Complete | Status | Target end-month |
 |---|---|---|---|
 | M0 pivot scaffolding | 0/1 (this plan) | in flight | 2026-05 |
-| M1 sumstats upgrade + harmonization | not planned | planning queued | 2026-06 / 2026-07 |
+| M1 sumstats upgrade + harmonization | 0/6 | plans committed 2026-04-24 | 2026-06 / 2026-07 |
 | M2 LDSC + MTAG + CPASSOC | not planned | gated on M1 + OSF amendment | 2026-08 / 2026-09 |
 | M3 AoU AFR LD build | not planned | gated on M2 region list | 2026-09 / 2026-10 |
 | M4 scalable coloc + fine-mapping | not planned | gated on M3 + M2 | 2026-12 / 2027-01 |
