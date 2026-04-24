@@ -36,6 +36,7 @@ must_haves:
     - "Each harmonizer emits BOTH .tsv.bgz + tabix index AND .parquet per D-09"
     - "Palindromic filter uses MAF band [0.48, 0.52] via filter_palindromic_ambiguous (never reimplemented)"
     - "Loh 2022 liftover drop-rate is < 5% (hard-fail ceiling via sumstats_utils.liftover_to_grch37)"
+    - "W8 fix (option A): m1_raw_glob.resolve_raw_for returns DEFERRED_SENTINEL ('__DEFERRED__') when a `.deferred` marker is present in the resolved target_dir; every harmonize rule's shell prelude branches on this sentinel and emits its own `.deferred` output marker. Closes Loh-EUR/AFR (PENDING_D01_ACCESSION from m1-01 N1 fix) AND any future PENDING_* path symmetrically via a single choke-point change."
   artifacts:
     - path: "src/python/harmonize_yengo.py"
       provides: "Yengo 2018 + Loh 2022 (EUR/AFR) harmonizer with opt-in liftover branch"
@@ -333,7 +334,7 @@ python src/python/harmonize_yengo.py \
     - Tests fire each harmonizer on synthetic fixtures; assert dual-emit artifacts + .qc.json fields (input_rows, output_rows, n_palindromic_dropped, n_unmapped_rsid for MAGIC, liftover_drop_rate for Loh path).
   </behavior>
   <action>
-    (A0) Author src/python/m1_raw_glob.py — shared helper that resolves the single expected raw-file path for any (source_tag, ancestry) pair, used by all harmonize Snakemake rules in m1-02a-T2 (GBMI asthma) AND m1-02b-T1 (DIAMANTE/GIGASTROKE/Aragam) per B4 fix. Replaces the `<resolved_raw_glob>` placeholder.
+    (A0) Author src/python/m1_raw_glob.py — shared helper that resolves the single expected raw-file path for any (source_tag, ancestry) pair, used by all harmonize Snakemake rules in m1-02a-T2 (GBMI asthma) AND m1-02b-T1 (DIAMANTE/GIGASTROKE/Aragam) per B4 fix. Replaces the `<resolved_raw_glob>` placeholder. W8 fix (option A — universal .deferred guard): resolve_raw_for returns the module-level constant `DEFERRED_SENTINEL = "__DEFERRED__"` when a `.deferred` marker is present in the resolved target_dir, BEFORE the `assert len(matches) == 1`. Every harmonize rule's shell prelude branches on this sentinel and emits its own `.deferred` output marker without invoking the harmonizer body. This single choke point closes Loh-EUR, Loh-AFR (PENDING_D01_ACCESSION sentinels from m1-01 N1 fix), AND any future PENDING_* deferral path symmetrically. Source-specific ad-hoc `harmonize_deferred_*` rules (e.g. DIAMANTE AFR/HIS, CAD-AFR D-03 branch-b) are RETAINED because they encode trait/source-specific fallback logic independent of the sentinel path.
 
     ```python
     #!/usr/bin/env python3
@@ -355,15 +356,39 @@ python src/python/harmonize_yengo.py \
     UPGRADE_TSV     = Path(".planning/amendments/SUMSTATS-UPGRADE.tsv")
     RAW_ROOT        = Path("data/raw/sumstats_v2")
 
+    # W8 fix (option A): module-level sentinel returned when an upstream `.deferred`
+    # marker is present in the resolved target_dir. Every harmonize rule's shell prelude
+    # MUST guard on `[ "{params.raw}" = "__DEFERRED__" ]` and emit a `.deferred` output
+    # marker without invoking the harmonizer body. This single choke point closes Loh-EUR,
+    # Loh-AFR, AND any future PENDING_* sentinel symmetrically, replacing per-source
+    # ad-hoc `harmonize_deferred_*` rules with a universal guard.
+    DEFERRED_SENTINEL = "__DEFERRED__"
+
     def resolve_raw_for(source_tag: str, ancestry: str) -> str:
         """Return the single expected raw-file path for (source_tag, ancestry).
 
         Resolution order:
+          0) `.deferred` marker present in target_dir -> DEFERRED_SENTINEL (W8 fix)
           1) Portal manifest exact source_tag match (e.g. 'GBMI2022_asthma_EUR')
           2) Portal manifest source_tag derivable from {Consortium}{Year}_{trait}_{ancestry}
           3) SUMSTATS-UPGRADE.tsv expected_filename + directory convention
+        Returns DEFERRED_SENTINEL if any candidate target_dir holds a .deferred marker.
         Raises FileNotFoundError if zero matches; AssertionError if multiple.
         """
+        # W8 fix (option A): early-return DEFERRED_SENTINEL when upstream wrote a
+        # .deferred marker. Universal across PENDING_D01_ACCESSION (Loh) + future
+        # PENDING_* + manual DEFERRED rows. Every harmonize rule's shell prelude
+        # checks for this sentinel and emits its own .deferred output marker.
+        candidate_dirs: list[Path] = []
+        if PORTAL_MANIFEST.exists():
+            _df_check = pd.read_csv(PORTAL_MANIFEST, sep="\t")
+            _row_check = _df_check[_df_check["source_tag"] == source_tag]
+            if len(_row_check) == 1:
+                candidate_dirs.append(Path(_row_check["target_dir"].iloc[0]))
+        for cand_dir in candidate_dirs:
+            if (cand_dir / ".deferred").exists():
+                return DEFERRED_SENTINEL
+
         matches: list[Path] = []
         if PORTAL_MANIFEST.exists():
             df = pd.read_csv(PORTAL_MANIFEST, sep="\t")
@@ -382,6 +407,9 @@ python src/python/harmonize_yengo.py \
                 consortium = r["source_consortium"].split("-")[0]  # GIGASTROKE2022 etc
                 trait = str(r["trait"]).lower()
                 cand_dir = RAW_ROOT / f"{consortium}{r['citation_first_author_year'].split()[-1].rstrip(')')}" / trait / ancestry
+                # W8 fix: also inspect this fallback dir for a .deferred marker
+                if (cand_dir / ".deferred").exists():
+                    return DEFERRED_SENTINEL
                 if cand_dir.exists():
                     matches.extend(p for p in cand_dir.glob(r["expected_filename"]) if p.is_file())
         assert len(matches) == 1, (
@@ -399,7 +427,7 @@ python src/python/harmonize_yengo.py \
         print(resolve_raw_for(args.source_tag, args.ancestry))
     ```
 
-    Author tests/m1/test_m1_raw_glob.py: fixture mini portal manifest + a fake raw tree under tmp_path; assert resolve_raw_for returns single path; assert AssertionError when zero or two files match; assert exact-one match drives the rule body.
+    Author tests/m1/test_m1_raw_glob.py: fixture mini portal manifest + a fake raw tree under tmp_path; assert resolve_raw_for returns single path; assert AssertionError when zero or two files match; assert exact-one match drives the rule body. W8 fix — add a 4th test case: write a `.deferred` marker into the resolved target_dir alongside zero raw files; assert resolve_raw_for returns the DEFERRED_SENTINEL constant ("__DEFERRED__") instead of raising AssertionError. Import the sentinel via `from m1_raw_glob import DEFERRED_SENTINEL`. This locks in the option-A universal-guard contract.
 
     All Snakemake harmonize rules in m1_harmonize.smk that previously used `<resolved_raw_glob>` MUST now declare:
     ```python
@@ -410,10 +438,19 @@ python src/python/harmonize_yengo.py \
             raw = lambda wc: resolve_raw_for(f"<SOURCE_TAG>_<trait>_{wc.ancestry}", wc.ancestry),
         shell:
             r"""
+            # W8 fix (option A): universal .deferred guard. If resolve_raw_for returned
+            # DEFERRED_SENTINEL, emit a .deferred output marker and skip the harmonizer body.
+            # This closes Loh-EUR, Loh-AFR, AND any future PENDING_* sentinel symmetrically.
+            if [ "{params.raw}" = "__DEFERRED__" ]; then
+                mkdir -p $(dirname {output[0]})
+                touch {output[0]}.deferred
+                echo "DEFERRED: upstream marker present for <SOURCE_TAG>/{wildcards.ancestry}"
+                exit 0
+            fi
             python src/python/harmonize_<source>.py --input {params.raw} ...
             """
     ```
-    Apply this pattern in m1-02a-T2 (harmonize_gbmi_asthma rule below) AND in m1-02b-T1 harmonize rules for DIAMANTE / GIGASTROKE / Aragam.
+    Apply this universal-guard pattern to ALL harmonize rules: m1-02a (yengo, glgc, wuttke, magic) AND m1-02b (diamante, gigastroke, aragam, gbmi_asthma). Source-specific ad-hoc `harmonize_deferred_*` rules in m1-02b-T1 step (F) (DIAMANTE AFR/HIS trait-pending; CAD-AFR D-03 branch-b Klarin fallback) are RETAINED — they encode source-specific fallback logic independent of the universal-guard sentinel path.
 
     (A) Create src/python/harmonize_wuttke.py. Column map for Wuttke 2019 TRANS/EUR format:
     ```python
@@ -448,18 +485,28 @@ python src/python/harmonize_yengo.py \
     rule harmonize_yengo:
         input:
             flag = os.path.join(RAW_DIR, ".download_complete.GIANT2018_BMI_EUR"),
-            raw  = os.path.join(RAW_DIR, "GIANT2018/BMI/EUR/Meta-analysis_Locke_et_al+UKBiobank_2018_UPDATED.txt.gz"),
         output:
             tsv_bgz = os.path.join(HARM_DIR, "bmi.EUR.GIANT-UKBB.2018.GRCh37.tsv.bgz"),
             tbi     = os.path.join(HARM_DIR, "bmi.EUR.GIANT-UKBB.2018.GRCh37.tsv.bgz.tbi"),
             parquet = os.path.join(PARQ_DIR, "bmi.EUR.GIANT-UKBB.2018.GRCh37.parquet"),
             qc_json = os.path.join(HARM_DIR, "qc_log/bmi.EUR.GIANT-UKBB.2018.qc.json"),
+        params:
+            # W8 fix: resolve_raw_for returns DEFERRED_SENTINEL ('__DEFERRED__') if a
+            # `.deferred` marker is present in target_dir; shell prelude branches on it.
+            raw = lambda wc: resolve_raw_for("GIANT2018_BMI_EUR", "EUR"),
         conda: "../../envs/m1-harmonize.yml"
         resources: mem_mb=8000, runtime=2880
         shell:
             r"""
+            # W8 fix (option A): universal .deferred guard at shell prelude.
+            if [ "{params.raw}" = "__DEFERRED__" ]; then
+                mkdir -p $(dirname {output.tsv_bgz})
+                touch {output.tsv_bgz}.deferred
+                echo "DEFERRED: upstream marker present for GIANT2018_BMI_EUR"
+                exit 0
+            fi
             python src/python/harmonize_yengo.py \
-                --input {input.raw} \
+                --input {params.raw} \
                 --output {output.tsv_bgz}.tmp.tsv.gz \
                 --parquet {output.parquet} \
                 --qc-json {output.qc_json} \
@@ -474,6 +521,16 @@ python src/python/harmonize_yengo.py \
     # ... 15 rules for harmonize_glgc (parameterized by wildcards {subtype}.{ancestry}) ...
     # ... 3 rules for harmonize_wuttke (wuttke_trans, wuttke_eur, morris_afr) ...
     # ... 6 rules for harmonize_magic (by ancestry) ...
+    # W8 fix: ALL of the above rules MUST follow the harmonize_yengo skeleton:
+    #   (a) declare `params: raw = lambda wc: resolve_raw_for("<SOURCE_TAG>_<trait>_<ancestry>", "<ancestry>")`
+    #   (b) prepend the universal .deferred guard to the shell body:
+    #       `if [ "{params.raw}" = "__DEFERRED__" ]; then mkdir -p $(dirname {output[0]}); touch {output[0]}.deferred && echo 'DEFERRED: upstream marker present' && exit 0; fi`
+    # This closes Loh-EUR, Loh-AFR (PENDING_D01_ACCESSION sentinels), and ANY future
+    # PENDING_* deferral path with a single choke-point change. No source-specific
+    # `harmonize_deferred_loh_{ancestry}` ad-hoc rules are needed (option A supersedes
+    # option B). Existing source-specific ad-hoc deferred rules in m1-02b (DIAMANTE
+    # AFR/HIS trait-pending, CAD-AFR D-03 branch-b Klarin fallback) are independent
+    # and RETAINED — they encode trait/source-specific logic, not sentinel handling.
     ```
 
     Consolidate repetition via a single wildcard rule driven by a side-car manifest or YAML that lists {source_tag, variant, raw_path, output_prefix}; final rule count may be ~6 grouping rules rather than 27 individual rules. Use the harmonize-as-ready policy (D-14) by making the per-tag flag file be the only input dependency beyond the raw file itself.
@@ -495,7 +552,7 @@ python src/python/harmonize_yengo.py \
     Run: `/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_harmonize_wuttke.py tests/m1/test_harmonize_magic.py -x` and also `/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake -s workflow/Snakefile --dry-run --cores 1 harmonize_yengo harmonize_glgc harmonize_wuttke harmonize_magic` (names per rules authored).
   </action>
   <verify>
-    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_harmonize_wuttke.py tests/m1/test_harmonize_magic.py -x --tb=short 2>&amp;1 | tail -5 &amp;&amp; test -f src/snakemake/rules/m1_harmonize.smk &amp;&amp; grep -cE "^rule harmonize_(yengo|glgc|wuttke|magic)" src/snakemake/rules/m1_harmonize.smk | awk '$1 &gt;= 4' &amp;&amp; grep -q "harmonized_sumstats:" config/pipeline.yaml &amp;&amp; grep -q "harmonized_parquet:" config/pipeline.yaml &amp;&amp; ! grep -rE "/rs1/researchers|/gpfs_common|/share/clintonlab" src/python/harmonize_yengo.py src/python/harmonize_glgc.py src/python/harmonize_wuttke.py src/python/harmonize_magic.py src/snakemake/rules/m1_harmonize.smk</automated>
+    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_harmonize_wuttke.py tests/m1/test_harmonize_magic.py tests/m1/test_m1_raw_glob.py -x --tb=short 2>&amp;1 | tail -5 &amp;&amp; test -f src/snakemake/rules/m1_harmonize.smk &amp;&amp; grep -cE "^rule harmonize_(yengo|glgc|wuttke|magic)" src/snakemake/rules/m1_harmonize.smk | awk '$1 &gt;= 4' &amp;&amp; grep -q "harmonized_sumstats:" config/pipeline.yaml &amp;&amp; grep -q "harmonized_parquet:" config/pipeline.yaml &amp;&amp; grep -q "DEFERRED_SENTINEL" src/python/m1_raw_glob.py &amp;&amp; grep -q "__DEFERRED__" src/snakemake/rules/m1_harmonize.smk &amp;&amp; ! grep -rE "/rs1/researchers|/gpfs_common|/share/clintonlab" src/python/harmonize_yengo.py src/python/harmonize_glgc.py src/python/harmonize_wuttke.py src/python/harmonize_magic.py src/snakemake/rules/m1_harmonize.smk</automated>
   </verify>
   <done>harmonize_wuttke.py + harmonize_magic.py importable and passing their pytests; m1_harmonize.smk declares rules for all 4 continuous-trait harmonizers (consolidated or per-source); config/pipeline.yaml has the 7 paths keys; zero hardcoded absolute paths in any of the 4 .py files or the smk file.</done>
 </task>

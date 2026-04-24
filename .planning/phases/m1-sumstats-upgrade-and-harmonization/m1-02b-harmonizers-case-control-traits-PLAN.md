@@ -39,6 +39,7 @@ must_haves:
     - "verify_evangelou_sbp.py asserts b37 chromosome-length invariants before renaming pre-pivot file to D-16 naming"
     - "Secondary harmonized SHA-256 manifest present at data/processed/sumstats_harmonized/sha256_manifest.tsv AND mirrored to .planning/amendments/sha256_manifest_harmonized_m1.tsv"
     - "All 47 in-scope SUMSTATS-UPGRADE.tsv data rows (47 = current freeze; minus any DEFERRED drop) are either harmonized on disk OR explicit .deferred placeholder with stated reason — N is dynamic, not fixed at 45"
+    - "W8 fix (option A): every harmonize rule (DIAMANTE/GIGASTROKE/Aragam/GBMI-asthma) prepends a universal `if [ {params.raw} = __DEFERRED__ ]` shell guard that branches on the DEFERRED_SENTINEL constant returned by m1_raw_glob.resolve_raw_for when a `.deferred` marker is present. Source-specific ad-hoc `harmonize_deferred_*` rules (DIAMANTE AFR/HIS, CAD-AFR D-03 branch-b) are RETAINED — they encode trait/source-specific fallback logic independent of the sentinel-marker path."
   artifacts:
     - path: "src/python/harmonize_diamante.py"
       provides: "DIAMANTE Mahajan 2022 T2D harmonizer (4 released ancestries)"
@@ -285,7 +286,7 @@ Any BP > CHR_MAX_B37[chr] + tolerance (1000) implies file is b38 → abort renam
     - test_harmonize_gigastroke.py: runs with TRANS fixture, asserts schema. Separately tests the D-02 placeholder guard by writing a fixture SUMSTATS-UPGRADE.tsv with placeholder in expected_filename and asserting RuntimeError on module import.
     - test_harmonize_aragam.py: writes a fixture aragam_zip_manifest.txt (a) WITH "AFR" token — assert branch a routes to harmonize; (b) without AFR token — assert NotImplementedError for ancestry=AFR.
 
-    (F) Extend src/snakemake/rules/m1_harmonize.smk with rules for DIAMANTE (TRANS/EUR/EAS/SAS), GIGASTROKE (TRANS/EUR/AFR/EAS per D-02), Aragam (TRANS/EUR/EAS + conditional AFR per D-03 branch). B4 fix: every harmonize rule's input raw-file path is resolved via `params: raw=lambda wc: resolve_raw_for(f"<SOURCE_TAG>_<trait>_{wc.ancestry}", wc.ancestry)` (NOT an ad-hoc lambda; NOT a placeholder). Import at top of m1_harmonize.smk: `from m1_raw_glob import resolve_raw_for`. Source tags: `DIAMANTE2022_T2D_<ancestry>`, `GIGASTROKE2022_stroke_<ancestry>`, `Aragam2022_CAD_<ancestry>` (note Aragam ZIP unpacking yields per-ancestry subset filenames). Shell uses `--input {params.raw}`. DEFERRED rule pattern for DIAMANTE AFR + HIS:
+    (F) Extend src/snakemake/rules/m1_harmonize.smk with rules for DIAMANTE (TRANS/EUR/EAS/SAS), GIGASTROKE (TRANS/EUR/AFR/EAS per D-02), Aragam (TRANS/EUR/EAS + conditional AFR per D-03 branch). B4 fix: every harmonize rule's input raw-file path is resolved via `params: raw=lambda wc: resolve_raw_for(f"<SOURCE_TAG>_<trait>_{wc.ancestry}", wc.ancestry)` (NOT an ad-hoc lambda; NOT a placeholder). Import at top of m1_harmonize.smk: `from m1_raw_glob import resolve_raw_for`. Source tags: `DIAMANTE2022_T2D_<ancestry>`, `GIGASTROKE2022_stroke_<ancestry>`, `Aragam2022_CAD_<ancestry>` (note Aragam ZIP unpacking yields per-ancestry subset filenames). Shell uses `--input {params.raw}`. W8 fix (option A): every shell body MUST start with the universal .deferred guard `if [ "{params.raw}" = "__DEFERRED__" ]; then mkdir -p $(dirname {output[0]}); touch {output[0]}.deferred && echo "DEFERRED: upstream marker present" && exit 0; fi` BEFORE invoking the harmonizer. The source-specific DEFERRED rule pattern below for DIAMANTE AFR + HIS (and conditional CAD-AFR branch-b Klarin) is RETAINED — it encodes source-specific DUA-pending and branch-routing logic, not sentinel handling, and is independent of the universal-guard path:
 
     ```python
     rule harmonize_deferred_diamante_afr:
@@ -476,6 +477,7 @@ Any BP > CHR_MAX_B37[chr] + tolerance (1000) implies file is b38 → abort renam
 
     ```python
     # B4 fix: resolve_raw_for replaces <resolved_raw_glob> placeholder.
+    # W8 fix: universal .deferred guard at shell prelude branches on DEFERRED_SENTINEL.
     # Top of m1_harmonize.smk: `from m1_raw_glob import resolve_raw_for`
     rule harmonize_gbmi_asthma:
         """Per-ancestry GBMI asthma; all three call harmonize_gbmi with --liftover-chain."""
@@ -494,6 +496,14 @@ Any BP > CHR_MAX_B37[chr] + tolerance (1000) implies file is b38 → abort renam
         resources: mem_mb=12000, runtime=2880
         shell:
             r"""
+            # W8 fix (option A): universal .deferred guard. Closes any PENDING_*
+            # sentinel path symmetrically; emits .deferred output marker and exits 0.
+            if [ "{params.raw}" = "__DEFERRED__" ]; then
+                mkdir -p $(dirname {output.tsv_bgz})
+                touch {output.tsv_bgz}.deferred
+                echo "DEFERRED: upstream marker present for GBMI2022_asthma_{wildcards.ancestry}"
+                exit 0
+            fi
             python src/python/harmonize_gbmi.py \
                 --input {params.raw} \
                 --output-prefix {HARM_DIR}/asthma.{wildcards.ancestry}.GBMI.2022.GRCh37.tmp \
@@ -532,7 +542,7 @@ Any BP > CHR_MAX_B37[chr] + tolerance (1000) implies file is b38 → abort renam
             """
     ```
 
-    (F) B4 fix: m1_raw_glob.resolve_raw_for(source_tag, ancestry) is the canonical raw-path resolver, authored as the (A0) sub-task of m1-02a-T2. The harmonize_gbmi_asthma rule above already uses `params.raw = lambda wc: resolve_raw_for(...)`. The harmonize rules for DIAMANTE / GIGASTROKE / Aragam authored in m1-02b-T1 step (F) MUST use the same pattern (NOT a separate ad-hoc helper). Required imports at top of src/snakemake/rules/m1_harmonize.smk: `from m1_raw_glob import resolve_raw_for`.
+    (F) B4 fix: m1_raw_glob.resolve_raw_for(source_tag, ancestry) is the canonical raw-path resolver, authored as the (A0) sub-task of m1-02a-T2. The harmonize_gbmi_asthma rule above already uses `params.raw = lambda wc: resolve_raw_for(...)`. The harmonize rules for DIAMANTE / GIGASTROKE / Aragam authored in m1-02b-T1 step (F) MUST use the same pattern (NOT a separate ad-hoc helper). Required imports at top of src/snakemake/rules/m1_harmonize.smk: `from m1_raw_glob import resolve_raw_for`. W8 fix (option A — universal .deferred guard): every harmonize rule (m1-02a yengo/glgc/wuttke/magic AND m1-02b diamante/gigastroke/aragam/gbmi_asthma) MUST prepend the universal shell prelude `if [ "{params.raw}" = "__DEFERRED__" ]; then mkdir -p $(dirname {output[0]}); touch {output[0]}.deferred && echo "DEFERRED: upstream marker present" && exit 0; fi` to the shell body. resolve_raw_for returns the module-level `DEFERRED_SENTINEL = "__DEFERRED__"` constant when a `.deferred` marker is present in the resolved target_dir (Loh PENDING_D01_ACCESSION from m1-01 N1 fix, OR future PENDING_* sentinels). This single choke-point change closes Loh-EUR, Loh-AFR, AND any future deferred-by-marker path symmetrically; no per-source ad-hoc `harmonize_deferred_loh_{ancestry}` rules are needed. The existing source-specific ad-hoc rules in m1-02b-T1 step (F) — `harmonize_deferred_diamante_afr`, `harmonize_deferred_diamante_his`, and conditional CAD-AFR D-03 branch-b Klarin fallback — are RETAINED because they encode source-specific fallback logic (DUA gating, branch routing) independent of the sentinel-marker path.
 
     Run tests + optional live verify:
     ```bash
@@ -549,7 +559,7 @@ Any BP > CHR_MAX_B37[chr] + tolerance (1000) implies file is b38 → abort renam
     ```
   </action>
   <verify>
-    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_harmonize_gbmi_liftover.py tests/m1/test_verify_evangelou_sbp.py -x --tb=short 2>&amp;1 | tail -5 &amp;&amp; grep -q "liftover-chain" src/python/harmonize_gbmi.py &amp;&amp; grep -q "hg38ToHg19" src/python/harmonize_gbmi.py &amp;&amp; test -f src/python/verify_evangelou_sbp.py &amp;&amp; grep -q "m1_freeze_harmonized_sha256_manifest" src/snakemake/rules/m1_harmonize.smk &amp;&amp; grep -q "verify_evangelou_sbp" src/snakemake/rules/m1_harmonize.smk</automated>
+    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m1/test_harmonize_gbmi_liftover.py tests/m1/test_verify_evangelou_sbp.py -x --tb=short 2>&amp;1 | tail -5 &amp;&amp; grep -q "liftover-chain" src/python/harmonize_gbmi.py &amp;&amp; grep -q "hg38ToHg19" src/python/harmonize_gbmi.py &amp;&amp; test -f src/python/verify_evangelou_sbp.py &amp;&amp; grep -q "m1_freeze_harmonized_sha256_manifest" src/snakemake/rules/m1_harmonize.smk &amp;&amp; grep -q "verify_evangelou_sbp" src/snakemake/rules/m1_harmonize.smk &amp;&amp; grep -q "__DEFERRED__" src/snakemake/rules/m1_harmonize.smk</automated>
   </verify>
   <done>harmonize_gbmi.py accepts --liftover-chain with hg38ToHg19 guard (no regression when flag omitted); verify_evangelou_sbp.py passes pytest on synthetic fixtures (both success + failing-chr1 cases); m1_harmonize.smk declares harmonize_gbmi_asthma + verify_evangelou_sbp + m1_freeze_harmonized_sha256_manifest rules; when executed, the frozen secondary SHA-256 manifest is reproducible and mirrored to .planning/amendments/.</done>
 </task>
