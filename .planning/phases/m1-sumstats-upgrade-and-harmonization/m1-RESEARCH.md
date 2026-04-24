@@ -874,32 +874,38 @@ done
 
 **If this table is empty:** N/A — 9 assumptions logged. Planner should surface A3 and A5 to Carter before Wave 0 fires (A3 is the egress probe; A5 is the wall-time budget on LSF long queue).
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does MAGIC FTP egress work from NCSU HPC compute nodes?**
    - What we know: SUMSTATS-UPGRADE.md Q5 flags this as Wave 0 pre-flight.
    - What's unclear: Real-time probe hasn't been run in this research pass.
    - Recommendation: Wave 0 first task is `curl --connect-timeout 30 --head ftp://web-ftp.ex.ac.uk/docs/downloads/`. If fail, fallback to login-node proxy or EBI mirror per SUMSTATS-UPGRADE §5.
+   - **RESOLVED**: deferred to m1-00-T2 Wave 0 probe; HTTPS EBI mirror fallback pre-authored per SUMSTATS-UPGRADE §5 Tier 1.
 
 2. **Does Aragam ZIP contain an AFR subset file?**
    - What we know: D-03 branches on this.
    - What's unclear: Hasn't been unzipped.
    - Recommendation: Wave 1 first task is `unzip -l Aragam_2022_CARDIoGRAM_CAD_GWAS.zip | tee Aragam2022/manifest.txt`; planner folds the conditional branch into Wave 2's harmonizer routing.
+   - **RESOLVED**: Wave 1 m1-01-T1 unzip -l step; Klarin 2018 fallback pre-authored if AFR absent (D-03).
 
 3. **Which rsid-to-position lookup file should MAGIC use — 1000G Phase 3 EUR.bim, the union of all ancestries, or HRC?**
    - What we know: `munge_sumstats_ldsc.py` uses 1000G EUR.bim by default (line 72).
    - What's unclear: Whether MAGIC rsids have better coverage in the 1KG TRANS union than EUR-only.
    - Recommendation: Use 1KG Phase 3 EUR.bim as default; fall back to HRC rsid-to-position map if >5% MAGIC rsids are missing from 1KG EUR (expect ~2-5% mismatch). QC report surfaces the drop rate per MAGIC-ancestry-file.
+   - **RESOLVED**: default 1KG Phase 3 EUR.bim; fallback HRC sitefile if >5% rsid mismatch rate observed at Wave 0 sanity probe.
 
 4. **LDSC wall-time per focal-star call — what's the real ceiling?**
    - What we know: Single-pair rg is ~5-20 min on one core; 44-pair star is roughly 44×per-pair minus shared startup.
    - What's unclear: Whether the abdenlab fork has the same inner-loop efficiency as Python 2 LDSC.
    - Recommendation: Wave 0 smoke test runs a 2-trait rg and times it. If > 30 min per pair, de-parallelize the star into 44-size chunks; if < 15 min per pair, proceed.
+   - **RESOLVED**: deferred to m1-00-T2 Probe 3 benchmark; m1-03-T2 --jobs value computed dynamically from wave0_probes.log.
 
 5. **Should the 45×45 intercept matrix include p-values and rg alongside gcov_int?**
    - What we know: MTAG `--overlap` only needs `gcov_int`; CPASSOC may want rg for effect-size alignment.
    - What's unclear: M2 decision deferred (D-17).
    - Recommendation: Emit a "fat" format with columns `[trait_a, trait_b, rg, rg_se, gcov_int, gcov_int_se, h2_a, h2_b]` in `rg_matrix_long.tsv`, and also emit the 45×45 wide `gcov_int` matrix at `bivariate_intercept_matrix_2026-04.tsv` (D-11 specified). M2 picks what it needs from the long form.
+   - **RESOLVED**: emit BOTH — wide gcov_int-only 45×45 TSV (primary for MTAG slice) AND fat long-form (trait_i, trait_j, rg, gcov_int, gcov_int_se) for sensitivity.
+
 
 ## Environment Availability
 
