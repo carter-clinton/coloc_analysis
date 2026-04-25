@@ -23,7 +23,7 @@
 **Pre-paste checklist (work top-to-bottom before submitting the OSF form):**
 
 1. Fill the `2026-04-25` placeholder in the Date field with the actual M1 completion date (`YYYY-MM-DD`).
-2. Replace the `<M1 commit hash>` placeholder in the "What is not changing" paragraph with the HEAD commit hash of the M1 closeout.
+2. Replace the `7efffb84ad17039946c3b573de9ee2f6f87776c2` placeholder in the "What is not changing" paragraph with the HEAD commit hash of the M1 closeout.
 3. Replace the `<M5-locked catalog commit hash>` placeholder with the commit hash from the M5 lock-refresh commit (at M5, when the M5-deferred rows in `catalog_lock_manifest.tsv` are populated with SHA-256). If posting at end of M1 before M5 runs, leave as `<M5 lock commit hash TBD>` and add a one-line note at the bottom of the amendment: "Catalog lock commit hash will be added as a follow-up OSF update at M5 cross-reference date; the URL path to the manifest is stable."
 4. Verify the `data/catalogs/catalog_lock_manifest.tsv` reference in Paragraph 5 still has the ClinVar SHA-256 `3be9939676e44a79e906dd167caec45e6e871be55db1a4ddb9269ebf0828e58e` (it will, unless the M0 snapshot has been intentionally rewritten).
 
@@ -102,7 +102,7 @@ Functional-mechanism novelty driven by Borzoi and Enformer top-decile scores cro
 - Hold-out replication commitment: independent cohorts (FinnGen R12, GBMI, MVP dbGaP phs001672, All of Us Controlled Tier, BBJ PheWeb-JP, Pan-UKBB) remain as the replication strata for Tier A signals.
 - CC0 1.0 Universal license on all pre-registration and post-registration artifacts.
 
-**Expected timeline:** This amendment is posted at the end of M1 (sumstats harmonization complete; per-trait SHA-256 checksums frozen at repository commit `<M1 commit hash>`). M2–M6 follow. The full milestone table and per-phase success criteria are available in the companion repository at `.planning/ROADMAP.md`; the amendment design rationale is at `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
+**Expected timeline:** This amendment is posted at the end of M1 (sumstats harmonization complete; per-trait SHA-256 checksums frozen at repository commit `7efffb84ad17039946c3b573de9ee2f6f87776c2`). M2–M6 follow. The full milestone table and per-phase success criteria are available in the companion repository at `.planning/ROADMAP.md`; the amendment design rationale is at `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
 --- PASTE ENDS HERE ---
 
