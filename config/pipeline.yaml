@@ -25,6 +25,14 @@ paths:
   # the upgrade pipeline does not collide with pre-pivot Phase 0 outputs.
   raw_sumstats_v2: "data/raw/sumstats_v2"
   harmonized_sumstats: "data/processed/sumstats_harmonized"
+  # M1 Wave 2a/2b harmonized columnar mirror per D-09 (parquet snappy).
+  harmonized_parquet: "data/processed/sumstats_harmonized_parquet"
+  # M1 Wave 3 — LDSC munge + 45×45 bivariate-intercept matrix outputs.
+  ldsc_munged: "data/processed/ldsc_overlap/munged"
+  ldsc_rg_logs: "data/processed/ldsc_overlap/rg_logs"
+  ldsc_overlap: "data/processed/ldsc_overlap"
+  # M1 Wave 4 — Quarto QC HTML reports + per-trait .qc.json sidecars.
+  qc_log: "data/processed/sumstats_harmonized/qc_log"
   regions_curated: "config/regions_curated.csv"
   regions_tiled: "config/regions_tiled.csv"
   regions_bed: "data/processed/regions/regions.bed"
