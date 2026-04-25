@@ -216,6 +216,15 @@ def harmonize_gigastroke(
     df = _su.filter_palindromic_ambiguous(df)
     n_palindromic_dropped = n_pre_pal - len(df)
 
+    # Tabix requires CHR/BP-sorted input; sort canonical-CHR (1..22) numeric
+    # ascending and BP ascending. GIGASTROKE raw files are NOT chr-sorted
+    # (mid-stream block is chr5 first), so this sort is required for tabix.
+    df = df[CANONICAL_COLS].copy()
+    df["_chr_sort"] = pd.to_numeric(df["CHR"], errors="coerce")
+    df = df.dropna(subset=["_chr_sort"]).sort_values(
+        ["_chr_sort", "BP"]
+    ).drop(columns=["_chr_sort"]).reset_index(drop=True)
+
     _su.validate_canonical_frame(df[CANONICAL_COLS])
     _emit_dual_artifacts(df[CANONICAL_COLS], output_tsvgz, parquet_path)
 
