@@ -141,6 +141,93 @@ M1 wave behavior. Captured during `/gsd-execute-phase m1` Wave 0 Task 2
 - Net progress since prior snapshot: none. Manual-fetch queue remains fully pending across all 8 rows (rows 1–7 portal-navigation + row 8 DUA-gated).
 - Scratch artifact: `/tmp/260424-j6c-manual-fetch-scan.tsv` (not committed).
 
+## Wave 1 fire log (2026-04-25 — `/gsd-execute-phase m1`, plan m1-01)
+
+Manifest source: [config/download_manifest_m1_portal.tsv](../../config/download_manifest_m1_portal.tsv) (22 rows, 10 columns).
+Driver: [bin/download_sumstats_v2.sh](../../bin/download_sumstats_v2.sh) `--manifest` mode (xargs -P 5).
+Frozen artifact: [sha256_manifest_m1_frozen.tsv](./sha256_manifest_m1_frozen.tsv) (45 data rows + header, 48.1 GB total bytes; OSF-paste-ready per D-13).
+
+Two driver passes were required:
+- **Pass 1 (02:17:18):** GIANT, PAGE, GBMI ×3, Klarin URLs returned HTTP 404. Per
+  [feedback_url_rot_workarounds](../../home/ckclinto/.claude/projects/.../feedback_url_rot_workarounds.md)
+  Rule 3, manifest URLs were corrected for GIANT (new `giant-consortium.web.broadinstitute.org` host
+  with hash `c/c8/`) and PAGE (EBI accession `GCST008025/WojcikG_PMID_invn_rbmi_alls.gz`).
+  GBMI, DIAMANTE, and Klarin were converted to `PENDING_*` sentinels (driver writes
+  `.deferred` placeholders for `PENDING_*` URLs without failing the batch).
+- **Pass 2 (02:23:35):** All correctable URLs landed; sentinels emitted markers; deterministic
+  SHA-256 manifest frozen.
+
+### Per-row landing status
+
+| Row | source_tag                    | Status                  | Bytes        | sha256 prefix     | Disposition / next step                                                                                          |
+| --- | ----------------------------- | ----------------------- | ------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 1   | GIANT2018_BMI_EUR             | ✅ LANDED               | 46,754,937   | `0d6ed0ea9787...` | Wave 2a continuous-trait harmonizer ready                                                                        |
+| 2   | Loh2022_BMI_EUR               | 🚫 DEFERRED             | —            | —                 | `.deferred` placeholder; D-01 GWAS-Catalog accession unresolved (`PENDING_D01_ACCESSION`)                        |
+| 3   | Loh2022_BMI_AFR               | 🚫 DEFERRED             | —            | —                 | `.deferred` placeholder; D-01 GWAS-Catalog accession unresolved (`PENDING_D01_ACCESSION`)                        |
+| 4   | PAGE2019_BMI_AFR              | ✅ LANDED               | 1,252,504,421 | `719f474a425f...` | Wave 2a continuous-trait harmonizer ready                                                                        |
+| 5   | DIAMANTE2022_T2D_TRANS        | ⏳ AWAITING_COOKIE      | —            | —                 | Driver emitted "MANUAL ACTION REQUIRED: DIAMANTE_COOKIE unset"; Carter captures cookie + re-fires (cookie-only) |
+| 6   | DIAMANTE2022_T2D_EUR          | ⏳ AWAITING_COOKIE      | —            | —                 | Same as row 5                                                                                                    |
+| 7   | DIAMANTE2022_T2D_EAS          | ⏳ AWAITING_COOKIE      | —            | —                 | Same as row 5                                                                                                    |
+| 8   | DIAMANTE2022_T2D_SAS          | ⏳ AWAITING_COOKIE      | —            | —                 | Same as row 5                                                                                                    |
+| 9   | GIGASTROKE2022_stroke_TRANS   | ✅ LANDED               | 282,368,904  | `936d1d382543...` | Wave 2b case-control harmonizer ready (D-02 integer-locked GCST90104534)                                         |
+| 10  | GIGASTROKE2022_stroke_EUR     | ✅ LANDED               | 283,517,495  | `15384ea2ff7e...` | Wave 2b case-control harmonizer ready (D-02 integer-locked GCST90104539)                                         |
+| 11  | GIGASTROKE2022_stroke_AFR     | ✅ LANDED               | 438,966,654  | `220d26108f96...` | Wave 2b case-control harmonizer ready (D-02 integer-locked GCST90104549)                                         |
+| 12  | GIGASTROKE2022_stroke_EAS     | ✅ LANDED               | 260,117,547  | `d6e079c460f0...` | Wave 2b case-control harmonizer ready (D-02 integer-locked GCST90104544)                                         |
+| 13  | GBMI2022_asthma_MULTI         | 🚫 DEFERRED             | —            | —                 | `.deferred` placeholder (`PENDING_PORTAL_GBMI`); GBMI portal is Wix JS-rendered, no clean direct URL discoverable |
+| 14  | GBMI2022_asthma_EUR           | 🚫 DEFERRED             | —            | —                 | Same as row 13                                                                                                   |
+| 15  | GBMI2022_asthma_AFR           | 🚫 DEFERRED             | —            | —                 | Same as row 13                                                                                                   |
+| 16  | MAGIC2021_HbA1c_TRANS         | ✅ LANDED               | 228,313,231  | `634625a06fed...` | Wave 2a continuous-trait harmonizer ready (Wave 0 Probe 1 FTP-egress PASS confirmed — HTTPS portal also fine)    |
+| 17  | MAGIC2021_HbA1c_EUR           | ✅ LANDED               | 278,311,724  | `2d571567530b...` | Wave 2a continuous-trait harmonizer ready                                                                        |
+| 18  | MAGIC2021_HbA1c_AFR           | ✅ LANDED               | 100,967,097  | `fe03247fc76c...` | Wave 2a continuous-trait harmonizer ready (file uses `_AA` suffix, target dir is `AFR/`)                         |
+| 19  | MAGIC2021_HbA1c_EAS           | ✅ LANDED               | 179,735,042  | `c25a5fea39b6...` | Wave 2a continuous-trait harmonizer ready                                                                        |
+| 20  | MAGIC2021_HbA1c_SAS           | ✅ LANDED               | 278,206,188  | `cb0ed65b6def...` | Wave 2a continuous-trait harmonizer ready                                                                        |
+| 21  | MAGIC2021_HbA1c_HIS           | ✅ LANDED               | 278,435,516  | `eff4812672e2...` | Wave 2a continuous-trait harmonizer ready (file uses `_HISP` suffix, target dir is `HIS/`)                       |
+| 22  | Klarin2018_CAD_AFR            | 🚫 DEFERRED             | —            | —                 | `.deferred` placeholder (`PENDING_D03_FALLBACK_RESOLUTION`); D-03 fallback path needs KP4CD or author-deposit URL resolution |
+
+### Pre-existing (post-Wave-0) inventory included in frozen manifest
+
+- **GLGC2021** (24 files) — lipids LDL/HDL/TC/TG × {TRANS, EUR, AFR, EAS, HIS, SAS}; landed 2026-04-22 → 2026-04-23 via inline 27-row driver.
+- **CKDGen2019** (2 files) — eGFR TRANS + EUR.
+- **Aragam2022/CAD** (4 files: ZIP + 3 unpacked tsv/txt.gz) — Wave 1 unzipped per D-03 audit; AFR file absent (branch (b)); Klarin 2018 fallback row 22 stands as `.deferred`.
+
+### Wave 1 totals
+
+- **LANDED this wave:** 12 rows (1 GIANT + 1 PAGE + 4 GIGASTROKE + 6 MAGIC); 4.42 GB.
+- **LANDED via Aragam unzip:** 3 inflated tsv/gz files; ~6.96 GB.
+- **DEFERRED (`.deferred` markers on disk):** 6 rows (Loh ×2, GBMI ×3, Klarin ×1).
+- **AWAITING_COOKIE (no marker; driver returns 0):** 4 rows (DIAMANTE).
+- **DEFERRED elsewhere (not in this manifest):** Row 13 of SUMSTATS-UPGRADE.tsv (Giri 2019 MVP-AFR-SBP) — DEC-2026-04-24-02 fallback path to AoU AFR-SBP derivation, M1 closeout does not block.
+- **Frozen SHA-256 manifest:** 45 data rows (header excluded), `data/raw/sumstats_v2/sha256_manifest.tsv` and committed copy `.planning/amendments/sha256_manifest_m1_frozen.tsv`. Determinism confirmed: two `--no-mtime` invocations produce byte-identical output.
+
+### Carter resume-action queue (out of band; M1 closeout does not block)
+
+1. **DIAMANTE × 4 cookie capture (~5 min):** Visit `https://diagram-consortium.org/downloads.html`,
+   accept ToS, copy DIAGRAM cookies from DevTools → Application → Cookies into `name1=value1; name2=value2; ...`,
+   then on HPC: `export DIAMANTE_COOKIE="..."` and re-fire
+   `bash bin/download_sumstats_v2.sh --manifest config/download_manifest_m1_portal.tsv`
+   (idempotent; only the 4 DIAMANTE rows will fetch; everything else SKIPs).
+2. **GBMI × 3 portal navigation (~10 min):** Visit `https://www.globalbiobankmeta.org/resources`,
+   click through to phenotype manifest, locate the per-ancestry asthma direct URLs
+   (Wix JS-rendered so curl can't resolve), and either (a) update the manifest TSV with
+   the resolved URLs and re-fire, or (b) drop the files manually into the per-ancestry
+   target dirs and re-run the SHA-256 freeze.
+3. **Loh 2022 × 2 (`PENDING_D01_ACCESSION`):** D-01 GWAS-Catalog accession resolution
+   (which is the canonical Loh 2022 BMI sumstats accession?) blocks both rows. When
+   resolved, edit the manifest URLs and re-fire.
+4. **Klarin 2018 (`PENDING_D03_FALLBACK_RESOLUTION`):** Locate the MVP-AFR-CAD AFR-stratified
+   file (KP4CD database, author Zenodo deposit, or alternate). When found, edit the
+   manifest URL and re-fire.
+5. **Giri 2019 MVP-AFR-SBP:** Initiate AoU Researcher Workbench AFR-SBP derivation per
+   AOU-LD-PIPELINE.md §2 P1–P7 (DEC-2026-04-24-02). LDSC matrix becomes 44×44 until artifact lands.
+
+### Refresh log
+
+#### 2026-04-25 — m1-01 fire (this entry)
+
+- Scope: Wave 1 portal-fetch fire + Aragam D-03 unzip + SHA-256 freeze.
+- 12 new files landed on disk; 6 `.deferred` markers written; 4 DIAMANTE rows
+  await cookie. Frozen manifest 45 data rows, 48.1 GB total, byte-identical reruns.
+
 ## Update protocol
 
 Set the checkbox and the `Fetched on` / `Approved on` date when a row resolves.
