@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: "Completed quick task 260425-1vy: Track A Figures 1A + 3 — 5-figure roster build-complete (commit 105484d). M1 Wave 0 (m1-00 preflight) committed at e2e5672 during this session."
-last_updated: "2026-04-25T06:10:00.000Z"
+stopped_at: "Completed m1-01-portal-fetches-and-aragam-route-PLAN.md (Wave 1: 12 LANDED + 6 DEFERRED + 4 AWAITING_COOKIE; sha256 frozen 45 rows / 48.1 GB)"
+last_updated: "2026-04-25T06:44:03.079Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: m1-sumstats-upgrade-and-harmonization (sumstats-upgrade-and-harmonization) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -135,6 +135,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase 04 P03 | 8min | 2 tasks | 6 files |
 | Phase 04 P05 | 7min | 4 tasks | 9 files |
 | Phase m1-sumstats-upgrade-and-harmonization Pm1-00-preflight-and-environment | 24min | 3 tasks | 23 files |
+| Phase m1-sumstats-upgrade-and-harmonization Pm1-01-portal-fetches-and-aragam-route | 39min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -240,6 +241,11 @@ Recent decisions affecting current work:
 - [Phase m1-sumstats-upgrade-and-harmonization]: DEC-2026-04-24-02: AoU compute scope expansion into M1 (D-06 fallback after GWAS-Catalog Probe 2 returned NO-SUMMARY-FOUND)
 - [Phase m1-sumstats-upgrade-and-harmonization]: GIGASTROKE GCST integer lock per CONTEXT D-02: rows 14/15/16/17 -> 90104534/90104539/90104549/90104544
 - [Phase m1-sumstats-upgrade-and-harmonization]: Aragam ZIP D-03 branch (b): no AFR file in ZIP; row 23 -> Klarin 2018 MVP-AFR-CAD fallback
+- [Phase m1]: GIANT 2018 BMI/EUR URL rot: new host giant-consortium.web.broadinstitute.org/images/c/c8/
+- [Phase m1]: PAGE 2019 BMI/AFR URL resolution: EBI GCST008025/WojcikG_PMID_invn_rbmi_alls.gz
+- [Phase m1]: GBMI 3 rows + Klarin 2018 + Loh 2022 2 rows DEFERRED via PENDING_* sentinel; 4 DIAMANTE rows AWAITING_COOKIE; M1 closeout does NOT block on these
+- [Phase m1]: Aragam D-03 branch (b) confirmed via Wave 1 unzip: 3 inflated files (BBJ, SEX_STRATIFIED, primary_discovery_meta), no AFR file
+- [Phase m1]: SHA-256 manifest frozen at 45 data rows / 48.1 GB; byte-identical reruns verified; OSF-paste copy at .planning/amendments/sha256_manifest_m1_frozen.tsv
 
 ### Pending Todos
 
@@ -293,8 +299,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T05:49:45.879Z
-Stopped at: Completed m1-00-preflight-and-environment-PLAN.md (Wave 0 foundations: envs + tests + reference data + 3 probes + 2 DEC entries)
+Last session: 2026-04-25T06:43:50.202Z
+Stopped at: Completed m1-01-portal-fetches-and-aragam-route-PLAN.md (Wave 1: 12 LANDED + 6 DEFERRED + 4 AWAITING_COOKIE; sha256 frozen 45 rows / 48.1 GB)
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
