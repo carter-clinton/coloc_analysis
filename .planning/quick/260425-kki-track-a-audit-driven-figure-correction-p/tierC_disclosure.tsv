@@ -1,0 +1,10 @@
+region	ancestry	best_qtl_pph4	resolving_gene	resolving_tissue	ld_of_min	ld_of_max	ld_of_median	n_fits	n_with_overlap_zero	ld_status_unique
+APOL1_22q12	AFR	0	NA	NA	0	0	0	3	3	variants_exceed_threshold
+APOL1_22q12	EUR	0.0131	ENSG00000100342	Cells_Cultured_fibroblasts	0.0115	1	0.9975	5	0	ld_loaded;partial_overlap;45;0.012; ld_loaded;overlap_ok;284;1.000; ld_loaded;overlap_ok;776;0.999; ld_loaded;overlap_ok;795;0.997; ld_loaded;partial_overlap;1307;0.428
+CXADR_F2RL1_6p21	EUR	0	NA	NA	0.3543	0.9918	0.9848	5	0	ld_loaded;partial_overlap;4930;0.354; ld_loaded;overlap_ok;1458;0.992; ld_loaded;overlap_ok;4304;0.985; ld_loaded;overlap_ok;4459;0.985; ld_loaded;partial_overlap;6016;0.408
+FTO_16q12	AFR	0	NA	NA	0	0	0	3	3	variants_exceed_threshold
+FTO_16q12	EUR	0.3099	ENSG00000177508 (IRX3)	Pancreas	0	0	0	5	5	variants_exceed_threshold
+MC4R_18q21	AFR	0	NA	NA	0	0	0	3	3	variants_exceed_threshold
+MC4R_18q21	EUR	0	NA	NA	0.0035	0.9944	0.9883	5	0	ld_loaded;partial_overlap;16;0.003; ld_loaded;overlap_ok;529;0.994; ld_loaded;overlap_ok;1751;0.990; ld_loaded;overlap_ok;1774;0.988; ld_loaded;partial_overlap;2211;0.356
+SH2B3_12q24	AFR	0	NA	NA	0	0	0	3	3	variants_exceed_threshold
+SH2B3_12q24	EUR	0.0517	ENSG00000204842 (ATXN2)	Adrenal_Gland	0.0385	0.9884	0.98	5	0	ld_loaded;partial_overlap;147;0.038; ld_loaded;overlap_ok;170;0.988; ld_loaded;overlap_ok;589;0.980; ld_loaded;overlap_ok;622;0.981; ld_loaded;partial_overlap;863;0.258
