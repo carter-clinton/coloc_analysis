@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed m1-03-munge-and-ldsc-intercept-matrix-PLAN.md (12-trait initial deliverable; Wave 2 GLGC/Wuttke refire continues background; matrix expandable post-refire via DEF-M1-03-02)
-last_updated: "2026-04-25T14:03:17.298Z"
+stopped_at: Completed m1-04-qc-reports-inventory-manifest-PLAN.md (M1 closed; OSF amendment paste-ready)
+last_updated: "2026-04-25T15:13:59.904Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 12
@@ -139,6 +139,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase m1 P02a | 70 | 2 tasks | 22 files |
 | Phase m1-sumstats-upgrade-and-harmonization P02b | 80 | 2 tasks | 16 files |
 | Phase m1-sumstats-upgrade-and-harmonization P03-munge-and-ldsc-intercept-matrix | 224 | 2 tasks | 16 files |
+| Phase m1 P04 | 51 | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -258,6 +259,9 @@ Recent decisions affecting current work:
 - [Phase m1-sumstats-upgrade-and-harmonization]: 2-step munge pipeline (wrapper + LDSC munge_sumstats.py with --merge-alleles HM3) replaces single-step legacy
 - [Phase m1-sumstats-upgrade-and-harmonization]: chr:bp[_:]ref_alt 4-token SNP-ID parser + 2-token chr:bp -> rsid via 1000G EUR bim is canonical remap path
 - [Phase m1-sumstats-upgrade-and-harmonization]: 12-trait initial M1 deliverable committed; refire continues; expansion to ~26 traits via DEF-M1-03-02
+- [Phase m1]: M1 closeout PASS — 47-cell trait_inventory.yaml + 12-trait LDSC matrix + Quarto QC fallback HTMLs; OSF amendment paste-ready
+- [Phase m1]: dim-j re-anchored to subset invariant (set(trait_keys) ⊆ set(inventory)) — plan's strict equality didn't match architecture (inventory enumerates full in-scope, trait_keys enumerates LDSC-fired subset)
+- [Phase m1]: Quarto-fallback HTML renderer (Rule 3) — full Quarto stack via snakemake --use-conda is the canonical path; minimal Python renderer satisfies dim-g for closeout
 
 ### Pending Todos
 
@@ -312,8 +316,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T14:03:08.205Z
-Stopped at: Completed m1-03-munge-and-ldsc-intercept-matrix-PLAN.md (12-trait initial deliverable; Wave 2 GLGC/Wuttke refire continues background; matrix expandable post-refire via DEF-M1-03-02)
+Last session: 2026-04-25T15:13:49.886Z
+Stopped at: Completed m1-04-qc-reports-inventory-manifest-PLAN.md (M1 closed; OSF amendment paste-ready)
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
