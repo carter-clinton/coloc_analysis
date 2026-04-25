@@ -1,0 +1,5 @@
+trait	ancestry	source_consortium	citation_first_author_year	doi	n_total	n_cases	n_controls	phenotype_definition	build_grch	download_url	expected_filename	checksum_available	cohort_overlap_notes	mtag_overlap_correction_required	sample_source_cohort	dua_required	status
+BMI	EUR	GIANT-UKBB	Yengo 2018	10.1093/hmg/ddy271	681275			continuous BMI inverse-rank-normal	37	https://example.org/yengo	Meta-analysis_Locke_et_al+UKBiobank_2018_UPDATED.txt.gz	yes	UKB+GIANT meta	yes	UKB,deCODE,HUNT	no	to_download
+T2D	TRANS	DIAMANTE	Mahajan 2022	10.1038/s41588-022-01058-3	1339889	180834	1159055	T2D case-control	37	https://example.org/diamante	DIAMANTE-TA.sumstat.txt.gz	yes	DIAMANTE meta	yes	UKB,FinnGen	yes	to_download
+stroke	EUR	GIGASTROKE	Mishra 2022	10.1038/s41586-022-05165-3	1308460	73652	1234808	all-stroke case-control	37	https://example.org/gigastroke	GCST90104539_buildGRCh37.tsv.gz	yes	GIGASTROKE EUR	yes	UKB,deCODE	no	already_downloaded
+BMI	AFR	GIANT-23andMe	Loh 2022	10.1038/s41467-022-35553-2	1108983			continuous BMI	38	https://example.org/loh	GWAS-Catalog-pending	unknown	GIANT+23andMe	yes	23andMe,UKB	no	to_download

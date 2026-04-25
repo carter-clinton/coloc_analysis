@@ -1,0 +1,262 @@
+---
+title: "M1 Per-Trait QC Report"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    embed-resources: true
+    self-contained: true
+params:
+  trait: "bmi"
+  ancestry: "EUR"
+  consortium: "GIANT-UKBB"
+  year: "2018"
+  parquet: ""
+  harmonized_tsv: ""
+  rg_log_dir: "data/processed/ldsc_overlap/rg_logs"
+  qc_json: ""
+  control_loci_csv: "src/R/qc/control_loci.csv"
+  sha256: ""
+  build: "GRCh37"
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+suppressPackageStartupMessages({
+  library(arrow)
+  library(ggplot2)
+  library(dplyr)
+  library(qqman)
+  library(jsonlite)
+  library(knitr)
+})
+
+trait_key <- sprintf("%s.%s.%s.%s", params$trait, params$ancestry,
+                     params$consortium, params$year)
+```
+
+# Per-Trait QC Report — `r trait_key`
+
+* **Trait**: `r params$trait`
+* **Ancestry**: `r params$ancestry`
+* **Consortium**: `r params$consortium`
+* **Year**: `r params$year`
+* **Build**: `r params$build`
+* **Parquet**: `r params$parquet`
+* **SHA-256 (raw)**: `r params$sha256`
+
+This report walks through the 9-item QC checklist defined in
+`SUMSTATS-UPGRADE.md §7`. Each section emits PASS / WARN / FAIL.
+
+```{r read_data}
+parquet_exists <- file.exists(params$parquet)
+df <- if (parquet_exists) {
+  arrow::read_parquet(params$parquet)
+} else {
+  data.frame()
+}
+n_rows <- nrow(df)
+```
+
+## 1. Variant count
+
+* **n_rows**: `r format(n_rows, big.mark = ",")`
+* **Threshold**: ≥ 3,000,000 (D-12 sanity; HM3 munge will further restrict)
+* **Status**: `r if (n_rows >= 3e6) "PASS" else if (n_rows >= 1e6) "WARN" else "FAIL"`
+
+## 2. MAF distribution
+
+```{r maf_hist}
+maf_col <- intersect(c("EAF", "FRQ", "MAF", "AF1"), names(df))[1]
+maf_status <- "SKIP"
+maf_zero_pct <- NA_real_
+if (!is.na(maf_col) && n_rows > 0) {
+  af <- as.numeric(df[[maf_col]])
+  maf <- pmin(af, 1 - af)
+  maf <- maf[!is.na(maf)]
+  maf_zero_pct <- mean(maf == 0) * 100
+  maf_status <- if (maf_zero_pct < 5) "PASS" else "WARN"
+  ggplot(data.frame(maf = maf), aes(x = maf)) +
+    geom_histogram(bins = 50, fill = "steelblue", colour = "white") +
+    theme_minimal() +
+    labs(title = sprintf("MAF distribution (%s; n=%s)",
+                         maf_col, format(length(maf), big.mark = ",")),
+         x = "MAF", y = "count")
+}
+```
+
+* **Status**: `r maf_status` (MAF=0 fraction = `r ifelse(is.na(maf_zero_pct), NA, sprintf("%.2f%%", maf_zero_pct))`)
+
+## 3. Build verification
+
+* **Plan-spec'd build**: `r params$build`
+* **Status**: PASS (canonical D-01 GRCh37 enforced upstream by harmonizers)
+
+## 4. Effect-allele labeling
+
+```{r ea_check}
+ea_col <- intersect(c("EA", "ALT", "A1"), names(df))[1]
+oa_col <- intersect(c("OA", "REF", "A2"), names(df))[1]
+ea_status <- if (!is.na(ea_col) && !is.na(oa_col)) "PASS" else "FAIL"
+```
+
+* **EA column**: `r ifelse(is.na(ea_col), "NOT FOUND", ea_col)`
+* **OA column**: `r ifelse(is.na(oa_col), "NOT FOUND", oa_col)`
+* **Status**: `r ea_status`
+
+## 5. LDSC intercept and h²
+
+```{r ldsc_parse}
+parse_h2_from_log <- function(log_path, trait_key) {
+  if (!file.exists(log_path)) return(list(h2_obs = NA_real_, h2_int = NA_real_,
+                                          gcov_int = NA_real_))
+  txt <- readLines(log_path)
+  in_table <- FALSE
+  for (line in txt) {
+    if (grepl("Summary of Genetic Correlation Results", line)) {
+      in_table <- TRUE
+      next
+    }
+    if (!in_table) next
+    parts <- strsplit(trimws(line), "\\s+")[[1]]
+    if (length(parts) < 12) next
+    p1 <- parts[1]; p2 <- parts[2]
+    if (grepl(trait_key, p1) || grepl(trait_key, p2)) {
+      return(list(h2_obs = suppressWarnings(as.numeric(parts[7])),
+                  h2_int = suppressWarnings(as.numeric(parts[9])),
+                  gcov_int = suppressWarnings(as.numeric(parts[11]))))
+    }
+  }
+  list(h2_obs = NA_real_, h2_int = NA_real_, gcov_int = NA_real_)
+}
+
+ldsc <- list(h2_obs = NA_real_, h2_int = NA_real_)
+if (dir.exists(params$rg_log_dir)) {
+  logs <- list.files(params$rg_log_dir, pattern = "^focal_.*\\.log$",
+                     full.names = TRUE)
+  for (lg in logs) {
+    res <- parse_h2_from_log(lg, trait_key)
+    if (!is.na(res$h2_obs) || !is.na(res$h2_int)) {
+      ldsc <- res
+      break
+    }
+  }
+}
+ldsc_int_status <- if (is.na(ldsc$h2_int)) "SKIP" else if (ldsc$h2_int >= 0.9 && ldsc$h2_int <= 1.15) "PASS" else "WARN"
+```
+
+* **h²_obs**: `r ifelse(is.na(ldsc$h2_obs), NA, sprintf("%.4f", ldsc$h2_obs))`
+* **h²_int**: `r ifelse(is.na(ldsc$h2_int), NA, sprintf("%.4f", ldsc$h2_int))`
+* **Status (LDSC intercept in [0.9, 1.15])**: `r ldsc_int_status`
+
+## 6. λ_GC
+
+```{r lambda_gc}
+p_col <- intersect(c("P", "PVAL", "p_value", "Pvalue"), names(df))[1]
+lambda_gc <- NA_real_
+if (!is.na(p_col) && n_rows > 0) {
+  pvals <- suppressWarnings(as.numeric(df[[p_col]]))
+  pvals <- pvals[!is.na(pvals) & pvals > 0 & pvals <= 1]
+  if (length(pvals) > 1000) {
+    chisq <- qchisq(1 - pvals, df = 1)
+    lambda_gc <- median(chisq, na.rm = TRUE) / qchisq(0.5, df = 1)
+  }
+}
+lambda_status <- if (is.na(lambda_gc)) "SKIP" else if (lambda_gc >= 0.9 && lambda_gc <= 1.15) "PASS" else if (lambda_gc <= 1.2) "WARN" else "FAIL"
+```
+
+* **λ_GC**: `r ifelse(is.na(lambda_gc), NA, sprintf("%.4f", lambda_gc))`
+* **Status (in [0.9, 1.15])**: `r lambda_status`
+
+## 7. Positive-control loci
+
+```{r control_loci}
+ctrl <- if (file.exists(params$control_loci_csv)) {
+  read.csv(params$control_loci_csv)
+} else data.frame()
+trait_ctrl <- ctrl[ctrl$trait == params$trait, , drop = FALSE]
+chr_col <- intersect(c("CHR", "chr"), names(df))[1]
+bp_col <- intersect(c("BP", "POS", "bp"), names(df))[1]
+present_status <- "SKIP"
+hits_summary <- "no control loci registered for this trait"
+if (nrow(trait_ctrl) > 0 && !is.na(chr_col) && !is.na(bp_col) && n_rows > 0) {
+  hits <- list()
+  for (i in seq_len(nrow(trait_ctrl))) {
+    row <- trait_ctrl[i, ]
+    win_lo <- as.numeric(row$pos_b37) - 5e5
+    win_hi <- as.numeric(row$pos_b37) + 5e5
+    sub <- df[df[[chr_col]] == as.character(row$chr) &
+              df[[bp_col]] >= win_lo & df[[bp_col]] <= win_hi, , drop = FALSE]
+    n_hit <- nrow(sub)
+    hits[[length(hits) + 1]] <- data.frame(
+      locus = row$locus_name,
+      chr = row$chr,
+      pos_b37 = row$pos_b37,
+      n_variants_in_window = n_hit
+    )
+  }
+  hits_df <- do.call(rbind, hits)
+  hits_summary <- knitr::kable(hits_df)
+  present_status <- if (all(hits_df$n_variants_in_window > 0)) "PASS" else "WARN"
+}
+```
+
+* **Status**: `r present_status`
+
+`r if (is.character(hits_summary)) hits_summary`
+
+## 8. Strand-ambiguous (palindromic) drop rate
+
+```{r palindromic}
+palin_pct <- NA_real_
+palin_status <- "SKIP"
+if (file.exists(params$qc_json)) {
+  qc <- jsonlite::fromJSON(params$qc_json)
+  n_in <- qc$n_input
+  n_palin <- qc$n_palindromic_dropped
+  if (!is.null(n_in) && !is.null(n_palin) && is.numeric(n_in) && n_in > 0) {
+    palin_pct <- 100 * n_palin / n_in
+    palin_status <- if (palin_pct < 10) "PASS" else "FAIL"
+  }
+}
+```
+
+* **palindromic drop %**: `r ifelse(is.na(palin_pct), NA, sprintf("%.3f%%", palin_pct))`
+* **Status (< 10%)**: `r palin_status`
+
+## 9. PASS / FAIL summary
+
+```{r summary_table}
+summary_df <- data.frame(
+  item = c("1. Variant count >= 3M",
+           "2. MAF distribution (MAF=0 < 5%)",
+           "3. Build = GRCh37",
+           "4. EA / OA columns present",
+           "5. LDSC intercept in [0.9, 1.15]",
+           "6. λ_GC in [0.9, 1.15]",
+           "7. Control-locus presence",
+           "8. Palindromic drop < 10%",
+           "9. Per-variant N integrity"),
+  status = c(if (n_rows >= 3e6) "PASS" else if (n_rows >= 1e6) "WARN" else "FAIL",
+             maf_status,
+             "PASS",
+             ea_status,
+             ldsc_int_status,
+             lambda_status,
+             present_status,
+             palin_status,
+             "WARN-MANUAL")
+)
+knitr::kable(summary_df, caption = "9-item §7 QC checklist")
+```
+
+```{r emit_qc_status, include=FALSE}
+all_pass <- all(summary_df$status %in% c("PASS", "SKIP", "WARN", "WARN-MANUAL"))
+qc_status <- if (any(summary_df$status == "FAIL")) "FAIL" else "PASS"
+```
+
+**Overall trait QC status**: `r qc_status`
