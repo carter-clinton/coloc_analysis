@@ -90,26 +90,32 @@ def _build_chrpos_to_rsid(bim_prefix: str, chromosomes=None) -> dict:
 
 
 def _snp_is_chrpos(snp_id: str) -> bool:
-    """Check if a SNP ID is in chr:pos[:ref:alt] format.
+    """Check if a SNP ID is in any chr:pos[ delim ref delim alt ] format.
 
-    Accepts 2-token (``1:752566``) or 4-token (``1:729679:G:C``) variants;
-    the 4-token form is GIGASTROKE 2022 + Aragam 2022 synthesis output
-    from the M1 Wave 2b harmonizers (m1-02b).
+    Accepts:
+      - 2-token colon: ``1:752566``
+      - 4-token colon: ``1:729679:G:C`` (GIGASTROKE 2022 / Aragam 2022 synth)
+      - chr:pos_ref_alt: ``1:61743_C_G`` (Aragam 2022 specific synth output)
+
+    All variants reduce to a 2-token ``chr:bp`` key for bim lookup.
     """
     if not snp_id or ":" not in snp_id:
         return False
-    parts = snp_id.split(":")
-    if len(parts) not in (2, 4):
+    # Split on the first ':' to separate chr from the rest, then on '_' or ':'
+    # in the suffix to detect chr:bp_ref_alt vs chr:bp:ref:alt.
+    head, _, tail = snp_id.partition(":")
+    if not head.isdigit():
         return False
-    if not (parts[0].isdigit() and parts[1].isdigit()):
-        return False
-    return True
+    # tail may be: "752566" | "729679:G:C" | "61743_C_G"
+    bp_part = tail.split(":")[0].split("_")[0]
+    return bp_part.isdigit()
 
 
 def _chrpos_key(snp_id: str) -> str:
-    """Reduce a chr:pos[:ref:alt] SNP ID to its 2-token chr:pos key for lookup."""
-    parts = snp_id.split(":")
-    return f"{parts[0]}:{parts[1]}"
+    """Reduce any chr:pos-flavored SNP ID to its 2-token chr:pos key for lookup."""
+    head, _, tail = snp_id.partition(":")
+    bp_part = tail.split(":")[0].split("_")[0]
+    return f"{head}:{bp_part}"
 
 
 def convert_sumstats(
