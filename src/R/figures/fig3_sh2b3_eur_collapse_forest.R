@@ -42,6 +42,22 @@
 #     absent from the manifest, consistent with credible-set collapse. This is
 #     surfaced in the side-annotation panel and the caption.
 #
+# Data-quality disclosure (added quick-260425-kki, 2026-04-25)
+# ------------------------------------------------------------
+#   A third panel below the existing forest+annotation row surfaces three
+#   previously-buried disclosure columns at SH2B3 12q24 EUR per trait per LD
+#   branch:
+#     * ld_overlap_fraction — fraction of fit variants matched to the 1000G
+#       EUR panel (real-LD only; identity-LD is 0 by definition because the
+#       identity matrix carries no real-LD overlap measurement). Even the one
+#       converged real-LD fit (asthma) has ld_overlap_fraction = 0.0385 (3.85%).
+#     * convergence_status (susie_status) — non_converged at three of five
+#       SH2B3 EUR real-LD traits is the structural credible-set composition
+#       collapse signal.
+#     * L_saturated — whether SuSiE-RSS L=10 effects ran out of capacity.
+#   The existing EXPECTED_ID_CS / EXPECTED_REAL_CS / EXPECTED_REAL_STATUS
+#   scalars are unchanged; the disclosure panel is purely additive.
+#
 # Data sources (loaded at runtime; cross-checked vs locked scalars)
 # -----------------------------------------------------------------
 #   results/fine_mapping/finemap_summary.tsv         (Stage 2 real-LD)
@@ -209,6 +225,82 @@ for (trt in TRAITS_EXPECTED) {
                   id_records[[trt]]$n_cs))
 }
 
+# --- Data-quality disclosure columns (added quick-260425-kki) ---------------
+# Surfaces ld_overlap_fraction + convergence_status + L_saturated per trait per
+# LD branch. Identity-LD ld_overlap is 0 by definition (identity matrix has no
+# real-LD overlap measurement). The real-LD branch carries the load-bearing
+# disclosure: even the one "ok" fit (asthma) has ld_overlap_fraction = 0.0385,
+# meaning only 3.85% of variants overlapped the 1000G EUR panel.
+
+extract_disclosure <- function(json_path, branch_label) {
+  if (!file.exists(json_path)) {
+    return(tibble::tibble(
+      trait = NA_character_, branch = branch_label,
+      ld_overlap_fraction = NA_real_,
+      convergence_status = NA_character_,
+      L_saturated = NA, niter = NA_integer_, status = NA_character_
+    ))
+  }
+  j <- jsonlite::fromJSON(json_path, simplifyVector = FALSE)
+  tibble::tibble(
+    trait = j$trait,
+    branch = branch_label,
+    ld_overlap_fraction = if (!is.null(j$ld_overlap_fraction)) j$ld_overlap_fraction else NA_real_,
+    convergence_status = if (!is.null(j$convergence_status)) j$convergence_status else NA_character_,
+    L_saturated = if (!is.null(j$L_saturated)) j$L_saturated else NA,
+    niter = if (!is.null(j$niter)) as.integer(j$niter) else NA_integer_,
+    status = if (!is.null(j$status)) j$status else NA_character_
+  )
+}
+
+disclosure_real <- dplyr::bind_rows(lapply(TRAITS_EXPECTED, function(trt) {
+  extract_disclosure(
+    sprintf("results/fine_mapping/susie/%s.EUR.SH2B3_12q24.json", trt),
+    "real-LD"
+  )
+}))
+disclosure_id <- dplyr::bind_rows(lapply(TRAITS_EXPECTED, function(trt) {
+  extract_disclosure(
+    sprintf("results_identity_ld/fine_mapping/susie/%s.EUR.SH2B3_12q24.json", trt),
+    "identity-LD"
+  )
+}))
+disclosure <- dplyr::bind_rows(disclosure_real, disclosure_id) |>
+  dplyr::mutate(
+    trait = factor(trait, levels = TRAITS_EXPECTED),
+    branch = factor(branch, levels = c("identity-LD", "real-LD"))
+  ) |>
+  dplyr::arrange(trait, branch)
+
+# Cross-check: the existing EXPECTED_REAL_STATUS scalars must align with what
+# the disclosure JSONs report at convergence_status (on the real-LD branch).
+# Lenient compare: only fail if a trait that was expected "ok" shows
+# "non_converged" or vice versa.
+status_real <- disclosure |> dplyr::filter(branch == "real-LD") |>
+  dplyr::select(trait, convergence_status) |> tibble::deframe()
+expected_status_vector <- unlist(EXPECTED_REAL_STATUS)
+for (trt in TRAITS_EXPECTED) {
+  exp_s <- expected_status_vector[[trt]]
+  obs_s <- status_real[[trt]]
+  if (!is.null(obs_s) && !is.na(obs_s)) {
+    if (exp_s == "ok" && grepl("non_converged", obs_s, fixed = TRUE)) {
+      stop(sprintf(
+        "fig3: SH2B3 EUR %s real-LD convergence_status drifted from expected 'ok' to '%s'",
+        trt, obs_s
+      ))
+    }
+    if (exp_s == "non_converged" && !grepl("non_converged", obs_s, fixed = TRUE)) {
+      stop(sprintf(
+        "fig3: SH2B3 EUR %s real-LD convergence_status drifted from expected 'non_converged' to '%s'",
+        trt, obs_s
+      ))
+    }
+  }
+}
+
+message("=== fig3 data-quality disclosure (quick-260425-kki) ===")
+print(as.data.frame(disclosure))
+
 # --- Assemble tidy forest_df ------------------------------------------------
 forest_df <- tibble(
   trait        = factor(TRAITS_EXPECTED, levels = rev(TRAITS_EXPECTED)),
@@ -345,22 +437,84 @@ annotation_panel <- ggplot(narrative_rows) +
     plot.margin   = margin(t = 4, r = 4, b = 4, l = 4)
   )
 
+# --- Sub-table panel: data-quality disclosure (added quick-260425-kki) ------
+disclosure_display <- disclosure |>
+  dplyr::mutate(
+    ld_of_label = ifelse(
+      branch == "identity-LD",
+      "0 (identity)",
+      sprintf("%.4f", ld_overlap_fraction)
+    ),
+    status_label = dplyr::case_when(
+      grepl("non_converged", convergence_status, fixed = TRUE) ~ "non_converged",
+      grepl("converged", convergence_status, fixed = TRUE) ~ "converged",
+      TRUE ~ as.character(convergence_status)
+    ),
+    L_sat_label = ifelse(is.na(L_saturated), "—", as.character(L_saturated)),
+    niter_label = ifelse(is.na(niter), "—", as.character(niter))
+  ) |>
+  dplyr::transmute(
+    trait, branch,
+    ld_overlap_fraction = ld_of_label,
+    susie_status = status_label,
+    L_saturated = L_sat_label,
+    niter = niter_label
+  )
+
+disclosure_long <- disclosure_display |>
+  tidyr::pivot_longer(
+    cols = c(ld_overlap_fraction, susie_status, L_saturated, niter),
+    names_to = "metric", values_to = "value"
+  ) |>
+  dplyr::mutate(
+    metric = factor(metric, levels = c("ld_overlap_fraction", "susie_status",
+                                        "L_saturated", "niter")),
+    row_lab = sprintf("%s (%s)", trait, branch)
+  )
+
+p_disclosure <- ggplot(disclosure_long, aes(x = metric, y = row_lab, label = value)) +
+  geom_text(size = 2.5, family = "sans") +
+  scale_y_discrete(limits = rev) +
+  scale_x_discrete(position = "top") +
+  labs(
+    x = NULL, y = NULL,
+    title = "Per-fit data-quality disclosure (SH2B3 12q24 EUR)",
+    subtitle = "ld_overlap_fraction = fraction of fit variants matched to 1000G EUR panel; susie_status from convergence_status; L_saturated = whether L=10 effects ran out of capacity"
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    plot.title = element_text(size = 9, face = "bold"),
+    plot.subtitle = element_text(size = 7, colour = "grey30", lineheight = 1.05),
+    axis.text.x = element_text(size = 7.5, face = "bold", colour = "grey20"),
+    axis.text.y = element_text(size = 7.5, colour = "grey20"),
+    panel.grid.major.y = element_line(colour = "grey92", linewidth = 0.2),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
 # --- Composite assembly -----------------------------------------------------
-composite <- forest_panel + annotation_panel +
-  plot_layout(widths = c(1.55, 1.45)) +
+composite <- ((forest_panel | annotation_panel) / p_disclosure) +
+  plot_layout(heights = c(2, 1)) +
   plot_annotation(
     caption = paste0(
       "Figure 3. Structural collapse of identity-LD signal at SH2B3 12q24 EUR under real-LD re-analysis.\n",
-      "Left panel: per-trait SuSiE-RSS credible-set yield at SH2B3_12q24 EUR under identity-LD fallback ",
+      "Top-left panel: per-trait SuSiE-RSS credible-set yield at SH2B3_12q24 EUR under identity-LD fallback ",
       "(gray, leftward) vs real 1000G Phase 3 EUR LD (blue, rightward). Asterisks mark traits with ",
       "status=non_converged under real-LD (4 of 5 EUR traits).\n",
-      "Right panel: locked PP.H4 narrative numbers from .planning/amendments/TRACK-A-FROZEN-NUMBERS.md ",
+      "Top-right panel: locked PP.H4 narrative numbers from .planning/amendments/TRACK-A-FROZEN-NUMBERS.md ",
       "(Stage 2 production fire 2026-04-22). PP.H4 95% confidence intervals are not shown - PP.H4 is a ",
       "posterior probability and the production manifest does not store posterior intervals; inventing ",
       "them would be methodologically dishonest. The figure's argument is structural credible-set-yield ",
       "collapse plus non-convergence under real-LD, with PP.H4 endpoints as locked side annotations.\n",
+      "Bottom panel: per-fit data-quality disclosure surfacing ld_overlap_fraction + susie_status + ",
+      "L_saturated for each of the 5 EUR traits x 2 LD branches (10 rows). ld_overlap_fraction = 0 by ",
+      "definition for identity-LD (identity matrix has no real-LD overlap measurement). Real-LD ",
+      "ld_overlap_fraction at the one converged fit (asthma EUR) is only 0.0385 (3.85% of fit variants ",
+      "matched to the 1000G EUR panel); non_converged at three of five real-LD traits at SH2B3 EUR ",
+      "is the structural credible-set composition collapse signal.\n",
       "Sources: results/fine_mapping/finemap_summary.tsv (real-LD); ",
-      "results_identity_ld/fine_mapping/susie/{trait}.EUR.SH2B3_12q24.json (identity-LD; 2026-04-25 k2d re-fire); ",
+      "results/fine_mapping/susie/{trait}.EUR.SH2B3_12q24.json + ",
+      "results_identity_ld/fine_mapping/susie/{trait}.EUR.SH2B3_12q24.json (k2d 2026-04-25 identity-LD); ",
       "results/qtl_coloc/tier_assignments.tsv (PP.H4=0.0517 ATXN2 / Adrenal_Gland)."
     ),
     theme = theme(plot.caption = element_text(size = 6.5, colour = "grey30",
@@ -375,9 +529,9 @@ if (!isTRUE(capabilities("cairo"))) {
   stop("fig3_sh2b3_eur_collapse_forest.R: R build lacks cairo capability.")
 }
 
-ggsave(OUT_PDF, composite, width = 180, height = 110, units = "mm",
+ggsave(OUT_PDF, composite, width = 180, height = 160, units = "mm",
        device = cairo_pdf)
-ggsave(OUT_PNG, composite, width = 180, height = 110, units = "mm",
+ggsave(OUT_PNG, composite, width = 180, height = 160, units = "mm",
        dpi = 600)
 
 # --- Diagnostic stdout (verified by Task 2 verify block) --------------------
