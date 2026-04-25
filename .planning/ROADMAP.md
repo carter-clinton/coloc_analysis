@@ -97,9 +97,9 @@ Plans:
 - [x] m1-02a-harmonizers-continuous-traits-PLAN.md — Wave 2: harmonize_yengo + harmonize_glgc + harmonize_wuttke + harmonize_magic (BMI 4 cells + lipids 15 cells + eGFR 3 cells + HbA1c 6 cells = 28 leaf jobs) with Loh 2022 b38->b37 liftover, sumstats_utils.build_rsid_to_chrpos helper, m1_raw_glob.resolve_raw_for + DEFERRED_SENTINEL universal guard, and Snakemake DAG dry-run loaded clean
 - [x] m1-02b-harmonizers-case-control-traits-PLAN.md — Wave 2: harmonize_diamante + harmonize_gigastroke + harmonize_aragam + extend harmonize_gbmi with --liftover-chain + verify_evangelou_sbp rename; freeze secondary harmonized SHA-256 manifest
 - [x] m1-03-munge-and-ldsc-intercept-matrix-PLAN.md — Wave 3: munge 45 files to HM3 .sumstats.gz + 44 star-pattern ldsc.py --rg calls (NOT --rg-cross; RESEARCH Pitfall #1) + reducer -> 45x45 bivariate-intercept matrix at data/processed/ldsc_overlap/bivariate_intercept_matrix_2026-04.tsv
-- [ ] m1-04-qc-reports-inventory-manifest-PLAN.md — Wave 4: Quarto per-trait + cross-trait QC + config/trait_inventory.yaml build + Dimension-8 verify_m1_artifacts + OSF paste-prep + Carter OSF web-UI submission (M2 HARD GATE per Amendment §9.1)
+- [x] m1-04-qc-reports-inventory-manifest-PLAN.md — Wave 4: Quarto per-trait + cross-trait QC + config/trait_inventory.yaml build + Dimension-8 verify_m1_artifacts + OSF paste-prep + Carter OSF web-UI submission (M2 HARD GATE per Amendment §9.1)
 
-**Status**: planned (2026-04-24); 6 plans committed across 5 waves (Wave 2 split for task budget); execution queued via `/gsd-execute-phase M1`.
+**Status**: M1 closeout COMPLETE 2026-04-25; all 6 plans landed; phase verifier overall verdict PASS; OSF amendment paste-ready (Carter web-UI action remains as M2 hard gate per Amendment §9.1).
 
 ### M2: LDSC + MTAG + CPASSOC discovery
 **Slug**: m2-ldsc-mtag-cpassoc-discovery
@@ -610,7 +610,7 @@ M: 11 (parallel from Phase 9)
 | Milestone | Plans Complete | Status | Target end-month |
 |---|---|---|---|
 | M0 pivot scaffolding | 0/1 (this plan) | in flight | 2026-05 |
-| M1 sumstats upgrade + harmonization | 0/6 | plans committed 2026-04-24 | 2026-06 / 2026-07 |
+| M1 sumstats upgrade + harmonization | 6/6 | closeout PASS 2026-04-25; OSF amendment paste-ready | 2026-06 / 2026-07 |
 | M2 LDSC + MTAG + CPASSOC | not planned | gated on M1 + OSF amendment | 2026-08 / 2026-09 |
 | M3 AoU AFR LD build | not planned | gated on M2 region list | 2026-09 / 2026-10 |
 | M4 scalable coloc + fine-mapping | not planned | gated on M3 + M2 | 2026-12 / 2027-01 |
