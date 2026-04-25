@@ -520,3 +520,276 @@ rule m1_harmonize_continuous_all:
         sentinel=os.path.join(_HARM, ".m1_harmonize_continuous_all.complete"),
     shell:
         "touch {output.sentinel}"
+
+
+# ===========================================================================
+# Wave 2b — case-control harmonizers
+# ===========================================================================
+#
+# Plan reference: m1-02b-harmonizers-case-control-traits-PLAN.md.
+# Each rule prepends the universal `_DEFERRED_GUARD` so when an upstream
+# `.deferred` marker is present in the resolved target_dir, the rule
+# emits its own `.deferred` placeholder + qc_json sentinel and exits 0.
+# ---------------------------------------------------------------------------
+
+# ===========================================================================
+# harmonize_diamante : T2D × {TRANS, EUR, EAS, SAS} ; AFR/HIS DEFERRED
+# ===========================================================================
+
+DIAMANTE_RELEASED_ANCESTRIES = ["TRANS", "EUR", "EAS", "SAS"]
+DIAMANTE_DEFERRED_ANCESTRIES = ["AFR", "HIS"]
+
+
+rule harmonize_diamante_t2d:
+    """Per-ancestry DIAMANTE T2D harmonizer for the released strata."""
+    output:
+        tsv_bgz=os.path.join(
+            _HARM, "t2d.{ancestry}.DIAMANTE.2022.GRCh37.tsv.bgz"
+        ),
+        tbi=os.path.join(
+            _HARM, "t2d.{ancestry}.DIAMANTE.2022.GRCh37.tsv.bgz.tbi"
+        ),
+        parquet=os.path.join(
+            _PARQ, "t2d.{ancestry}.DIAMANTE.2022.GRCh37.parquet"
+        ),
+        qc_json=os.path.join(
+            _QC, "t2d.{ancestry}.DIAMANTE.2022.qc.json"
+        ),
+    wildcard_constraints:
+        ancestry="TRANS|EUR|EAS|SAS",
+    params:
+        raw=lambda wc: resolve_raw_for(
+            f"DIAMANTE2022_T2D_{wc.ancestry}", wc.ancestry
+        ),
+    conda:
+        "../../../envs/m1-harmonize.yml"
+    resources:
+        mem_mb=12000,
+        runtime=2880,
+    shell:
+        _DEFERRED_GUARD + r"""
+        python src/python/harmonize_diamante.py \
+            --input {params.raw} \
+            --output {output.tsv_bgz}.tmp.tsv.gz \
+            --parquet {output.parquet} \
+            --qc-json {output.qc_json} \
+            --trait t2d --ancestry {wildcards.ancestry} \
+            --consortium DIAMANTE --year 2022
+        zcat {output.tsv_bgz}.tmp.tsv.gz | bgzip -c > {output.tsv_bgz}
+        tabix -s 1 -b 2 -e 2 -S 1 -f {output.tsv_bgz}
+        rm -f {output.tsv_bgz}.tmp.tsv.gz
+        """
+
+
+rule harmonize_deferred_diamante_afr:
+    """SUMSTATS-UPGRADE.tsv row 8: DIAMANTE AFR dua_pending."""
+    output:
+        deferred=os.path.join(
+            _HARM, "t2d.AFR.DIAMANTE.2022.GRCh37.tsv.bgz.deferred"
+        ),
+    shell:
+        r"""
+        mkdir -p $(dirname {output.deferred})
+        cat > {output.deferred} <<EOF
+Status: DEFERRED
+Trait: t2d, Ancestry: AFR, Consortium: DIAMANTE, Year: 2022
+Reason: SUMSTATS-UPGRADE.tsv row 8 status=dua_pending; DIAGRAM gate on manuscript acceptance
+Recheck: quarterly per m1-CONTEXT.md Deferred Ideas
+EOF
+        """
+
+
+rule harmonize_deferred_diamante_his:
+    """SUMSTATS-UPGRADE.tsv row 11: DIAMANTE HIS dua_pending."""
+    output:
+        deferred=os.path.join(
+            _HARM, "t2d.HIS.DIAMANTE.2022.GRCh37.tsv.bgz.deferred"
+        ),
+    shell:
+        r"""
+        mkdir -p $(dirname {output.deferred})
+        cat > {output.deferred} <<EOF
+Status: DEFERRED
+Trait: t2d, Ancestry: HIS, Consortium: DIAMANTE, Year: 2022
+Reason: SUMSTATS-UPGRADE.tsv row 11 status=dua_pending; DIAGRAM gate on manuscript acceptance
+Recheck: quarterly per m1-CONTEXT.md Deferred Ideas
+EOF
+        """
+
+
+rule harmonize_diamante_all:
+    input:
+        expand(
+            os.path.join(_HARM, "t2d.{ancestry}.DIAMANTE.2022.GRCh37.tsv.bgz"),
+            ancestry=DIAMANTE_RELEASED_ANCESTRIES,
+        ),
+        expand(
+            os.path.join(
+                _HARM, "t2d.{ancestry}.DIAMANTE.2022.GRCh37.tsv.bgz.deferred"
+            ),
+            ancestry=DIAMANTE_DEFERRED_ANCESTRIES,
+        ),
+
+
+# ===========================================================================
+# harmonize_gigastroke : stroke × {TRANS, EUR, AFR, EAS}  (D-02 lock)
+# ===========================================================================
+
+GIGASTROKE_ANCESTRIES = ["TRANS", "EUR", "AFR", "EAS"]
+
+
+rule harmonize_gigastroke_stroke:
+    """Per-ancestry GIGASTROKE all-stroke harmonizer."""
+    output:
+        tsv_bgz=os.path.join(
+            _HARM, "stroke.{ancestry}.GIGASTROKE.2022.GRCh37.tsv.bgz"
+        ),
+        tbi=os.path.join(
+            _HARM, "stroke.{ancestry}.GIGASTROKE.2022.GRCh37.tsv.bgz.tbi"
+        ),
+        parquet=os.path.join(
+            _PARQ, "stroke.{ancestry}.GIGASTROKE.2022.GRCh37.parquet"
+        ),
+        qc_json=os.path.join(
+            _QC, "stroke.{ancestry}.GIGASTROKE.2022.qc.json"
+        ),
+    wildcard_constraints:
+        ancestry="TRANS|EUR|AFR|EAS",
+    params:
+        raw=lambda wc: resolve_raw_for(
+            f"GIGASTROKE2022_stroke_{wc.ancestry}", wc.ancestry
+        ),
+    conda:
+        "../../../envs/m1-harmonize.yml"
+    resources:
+        mem_mb=12000,
+        runtime=2880,
+    shell:
+        _DEFERRED_GUARD + r"""
+        python src/python/harmonize_gigastroke.py \
+            --input {params.raw} \
+            --output {output.tsv_bgz}.tmp.tsv.gz \
+            --parquet {output.parquet} \
+            --qc-json {output.qc_json} \
+            --trait stroke --ancestry {wildcards.ancestry} \
+            --consortium GIGASTROKE --year 2022
+        zcat {output.tsv_bgz}.tmp.tsv.gz | bgzip -c > {output.tsv_bgz}
+        tabix -s 1 -b 2 -e 2 -S 1 -f {output.tsv_bgz}
+        rm -f {output.tsv_bgz}.tmp.tsv.gz
+        """
+
+
+rule harmonize_gigastroke_all:
+    input:
+        expand(
+            os.path.join(_HARM, "stroke.{ancestry}.GIGASTROKE.2022.GRCh37.tsv.bgz"),
+            ancestry=GIGASTROKE_ANCESTRIES,
+        ),
+
+
+# ===========================================================================
+# harmonize_aragam : CAD × {TRANS, EUR, EAS}  (+ AFR via D-03 branch)
+# ===========================================================================
+#
+# Aragam ZIP unpack (m1-01) yields 3 files:
+#   - CAD_GWAS_primary_discovery_meta.tsv  (TRANS)
+#   - CAD_GWAS_SEX_STRATIFIED.txt.gz       (EUR sex-stratified)
+#   - CAD_GWAS_BBJ_meta.tsv                (EAS)
+# AFR is absent (D-03 branch (b)); the Klarin 2018 fallback row remains
+# DEFERRED (PENDING_D03_FALLBACK_RESOLUTION). When Carter locates the
+# Klarin file, switch the harmonize_aragam_cad_afr rule's input
+# resolution to point at the staged Klarin path and add
+# `--klarin-fallback` to the shell.
+# ---------------------------------------------------------------------------
+
+ARAGAM_RAW_FILES = {
+    "TRANS": "CAD_GWAS_primary_discovery_meta.tsv",
+    "EUR":   "CAD_GWAS_SEX_STRATIFIED.txt.gz",
+    "EAS":   "CAD_GWAS_BBJ_meta.tsv",
+}
+
+
+def _aragam_raw_glob(ancestry: str) -> str:
+    """Resolve the unzipped Aragam ZIP file for the given ancestry."""
+    d = Path(_RAW) / "Aragam2022" / "CAD"
+    if (d / ".deferred").exists():
+        return DEFERRED_SENTINEL
+    fname = ARAGAM_RAW_FILES.get(ancestry)
+    if fname is None:
+        return DEFERRED_SENTINEL
+    target = d / fname
+    if not target.exists():
+        return DEFERRED_SENTINEL
+    return str(target)
+
+
+rule harmonize_aragam_cad:
+    """Per-ancestry Aragam harmonizer (TRANS / EUR / EAS)."""
+    output:
+        tsv_bgz=os.path.join(
+            _HARM, "cad.{ancestry}.Aragam.2022.GRCh37.tsv.bgz"
+        ),
+        tbi=os.path.join(
+            _HARM, "cad.{ancestry}.Aragam.2022.GRCh37.tsv.bgz.tbi"
+        ),
+        parquet=os.path.join(
+            _PARQ, "cad.{ancestry}.Aragam.2022.GRCh37.parquet"
+        ),
+        qc_json=os.path.join(
+            _QC, "cad.{ancestry}.Aragam.2022.qc.json"
+        ),
+    wildcard_constraints:
+        ancestry="TRANS|EUR|EAS",
+    params:
+        raw=lambda wc: _aragam_raw_glob(wc.ancestry),
+    conda:
+        "../../../envs/m1-harmonize.yml"
+    resources:
+        mem_mb=16000,
+        runtime=2880,
+    shell:
+        _DEFERRED_GUARD + r"""
+        python src/python/harmonize_aragam.py \
+            --input {params.raw} \
+            --output {output.tsv_bgz}.tmp.tsv.gz \
+            --parquet {output.parquet} \
+            --qc-json {output.qc_json} \
+            --trait cad --ancestry {wildcards.ancestry} \
+            --consortium CARDIoGRAM-C4D-MVP --year 2022
+        zcat {output.tsv_bgz}.tmp.tsv.gz | bgzip -c > {output.tsv_bgz}
+        tabix -s 1 -b 2 -e 2 -S 1 -f {output.tsv_bgz}
+        rm -f {output.tsv_bgz}.tmp.tsv.gz
+        """
+
+
+rule harmonize_deferred_aragam_cad_afr:
+    """D-03 branch (b): CAD-AFR DEFERRED on Klarin 2018 fallback resolution.
+
+    SUMSTATS-UPGRADE.tsv row 23 → MVP-CHARGE-Klarin (PENDING_D03_FALLBACK_RESOLUTION).
+    When Carter locates the Klarin file (KP4CD / Zenodo / DUA), replace this
+    rule with a harmonize_aragam_cad_afr_klarin rule using
+    harmonize_aragam_klarin2018().
+    """
+    output:
+        deferred=os.path.join(
+            _HARM, "cad.AFR.MVP-Klarin.2018.GRCh37.tsv.bgz.deferred"
+        ),
+    shell:
+        r"""
+        mkdir -p $(dirname {output.deferred})
+        cat > {output.deferred} <<EOF
+Status: DEFERRED
+Trait: cad, Ancestry: AFR, Consortium: MVP-CHARGE-Klarin, Year: 2018
+Reason: D-03 branch (b) — Aragam ZIP lacks AFR file; Klarin 2018 MVP-AFR-CAD fallback PENDING_D03_FALLBACK_RESOLUTION (KP4CD / Zenodo / DUA path unresolved as of m1-01)
+Recheck: when Carter locates the Klarin file, replace this rule with harmonize_aragam_cad_afr_klarin
+EOF
+        """
+
+
+rule harmonize_aragam_all:
+    input:
+        expand(
+            os.path.join(_HARM, "cad.{ancestry}.Aragam.2022.GRCh37.tsv.bgz"),
+            ancestry=["TRANS", "EUR", "EAS"],
+        ),
+        os.path.join(_HARM, "cad.AFR.MVP-Klarin.2018.GRCh37.tsv.bgz.deferred"),
