@@ -1,0 +1,141 @@
+---
+title: "M1 Cross-Trait QC Index"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    embed-resources: true
+    self-contained: true
+params:
+  inventory: "config/trait_inventory.yaml"
+  matrix: "data/processed/ldsc_overlap/bivariate_intercept_matrix_2026-04.tsv"
+  warnings: "data/processed/ldsc_overlap/rg_validation_warnings.json"
+  qc_log_dir: "data/processed/sumstats_harmonized/qc_log"
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(dplyr)
+  library(tidyr)
+  library(yaml)
+  library(jsonlite)
+  library(knitr)
+})
+```
+
+# M1 Cross-Trait QC Index
+
+This index aggregates per-trait QC sidecars (`*.qc.json`) and renders the
+N×N LDSC bivariate-intercept matrix that drives M2 MTAG `--overlap` and
+CPASSOC sensitivity analysis.
+
+## Section 1 — Cross-trait summary
+
+```{r per_trait_summary}
+inv_doc <- if (file.exists(params$inventory)) yaml::read_yaml(params$inventory) else list()
+traits <- inv_doc$traits %||% list()
+
+rows <- list()
+qc_dir <- params$qc_log_dir
+if (is.list(traits) && length(traits) > 0) {
+  for (key in names(traits)) {
+    e <- traits[[key]]
+    qc_path <- file.path(qc_dir, paste0(key, ".qc.json"))
+    qc_status <- if (!is.null(e$qc_status)) e$qc_status else "UNKNOWN"
+    n_rows <- NA_integer_
+    palin_pct <- NA_real_
+    if (file.exists(qc_path)) {
+      qc <- tryCatch(jsonlite::fromJSON(qc_path), error = function(e) list())
+      n_rows <- qc$n_output %||% NA
+      n_in <- qc$n_input %||% NA
+      n_palin <- qc$n_palindromic_dropped %||% NA
+      if (!is.na(n_in) && is.numeric(n_in) && n_in > 0 && !is.na(n_palin)) {
+        palin_pct <- 100 * n_palin / n_in
+      }
+    }
+    rows[[length(rows) + 1]] <- data.frame(
+      key = key,
+      trait = e$trait %||% NA,
+      ancestry = e$ancestry %||% NA,
+      consortium = e$consortium %||% NA,
+      n_rows = n_rows,
+      palin_pct = palin_pct,
+      ldsc_intercept = e$ldsc_intercept %||% NA,
+      ldsc_h2 = e$ldsc_h2 %||% NA,
+      qc_status = qc_status
+    )
+  }
+}
+summary_df <- if (length(rows) > 0) do.call(rbind, rows) else data.frame()
+if (nrow(summary_df) > 0) {
+  knitr::kable(summary_df, digits = 4, caption = "Per-trait QC summary")
+}
+```
+
+## Section 2 — LDSC bivariate-intercept heatmap (N × N)
+
+```{r matrix_heatmap, fig.width=8, fig.height=7}
+mat_status <- "FAIL"
+if (file.exists(params$matrix)) {
+  mat <- read.table(params$matrix, sep = "\t", header = TRUE,
+                    row.names = 1, check.names = FALSE)
+  mat_long <- as.data.frame(as.table(as.matrix(mat)))
+  colnames(mat_long) <- c("trait_a", "trait_b", "intercept")
+  mat_long$intercept <- as.numeric(as.character(mat_long$intercept))
+  ggplot(mat_long, aes(x = trait_a, y = trait_b, fill = intercept)) +
+    geom_tile(colour = "grey90") +
+    scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B",
+                         midpoint = 0, na.value = "grey50",
+                         limits = c(-1, 1), oob = scales::squish) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = sprintf("LDSC bivariate-intercept matrix (%d × %d)",
+                         nrow(mat), ncol(mat)),
+         x = NULL, y = NULL, fill = "intercept")
+  mat_status <- "PASS"
+}
+```
+
+* **Matrix status**: `r mat_status`
+
+## Section 3 — Self-consistency warnings (Pitfall #8)
+
+```{r warnings}
+if (file.exists(params$warnings)) {
+  w <- jsonlite::fromJSON(params$warnings)
+  cat("**n_traits**:", w$n_traits %||% NA, "  \n")
+  cat("**n_pairs_filled**:", w$n_pairs_filled %||% NA, "  \n")
+  cat("**Symmetry warnings**:", length(w$symmetry_warnings %||% list()), "  \n")
+  cat("**Heuristic warnings**:", length(w$heuristic_warnings %||% list()), "  \n")
+  if (length(w$symmetry_warnings %||% list()) > 0) {
+    cat("\n### Symmetry warnings\n")
+    for (msg in w$symmetry_warnings) cat("- ", msg, "\n")
+  }
+  if (length(w$heuristic_warnings %||% list()) > 0) {
+    cat("\n### Heuristic warnings\n")
+    for (msg in w$heuristic_warnings) cat("- ", msg, "\n")
+  }
+} else {
+  cat("warnings JSON missing — gate FAIL")
+}
+```
+
+## Section 4 — Deferred cells
+
+```{r deferred}
+deferred_paths <- list.files("data/raw/sumstats_v2", pattern = "\\.deferred$",
+                             recursive = TRUE, full.names = TRUE)
+if (length(deferred_paths) > 0) {
+  defer_df <- data.frame(deferred_marker = deferred_paths)
+  knitr::kable(defer_df, caption = sprintf("Deferred raw cells (n=%d)",
+                                            length(deferred_paths)))
+} else {
+  cat("(no deferred markers found)\n")
+}
+```
