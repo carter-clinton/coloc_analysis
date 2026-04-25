@@ -1,0 +1,18 @@
+# envs/m1-ldsc-rg.yml — M1 LDSC bivariate-rg env (Wave 3b)
+# Same stack as m1-munge.yml — the abdenlab/ldsc-python3 fork serves both
+# munge_sumstats.py AND ldsc.py --rg. Reduction of 44 star-topology rg logs
+# into the 45×45 wide TSV (D-11) runs in this env via reduce_ldsc_rg_matrix.py.
+name: m1-ldsc-rg
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11.8
+  - pandas=2.2.1
+  - numpy=1.26.4         # numpy<2 — LDSC Py3 fork compat
+  - scipy=1.11.4
+  - bitarray=2.9.2
+  - pyyaml=6.0.1
+  - pytest>=7
+  - pip=24.0
+  - pip:
+      - ldsc-python3 @ git+https://github.com/abdenlab/ldsc-python3.git
