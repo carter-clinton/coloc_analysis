@@ -26,7 +26,11 @@ rejects files missing SNP, P, BETA, or SE with explicit error message.
 import argparse
 import gzip
 import logging
+import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # Import shared effective-N logic (NOT reimplemented locally per D-01b)
@@ -86,11 +90,26 @@ def _build_chrpos_to_rsid(bim_prefix: str, chromosomes=None) -> dict:
 
 
 def _snp_is_chrpos(snp_id: str) -> bool:
-    """Check if a SNP ID is in chr:pos format (e.g. '1:752566')."""
+    """Check if a SNP ID is in chr:pos[:ref:alt] format.
+
+    Accepts 2-token (``1:752566``) or 4-token (``1:729679:G:C``) variants;
+    the 4-token form is GIGASTROKE 2022 + Aragam 2022 synthesis output
+    from the M1 Wave 2b harmonizers (m1-02b).
+    """
     if not snp_id or ":" not in snp_id:
         return False
     parts = snp_id.split(":")
-    return len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit()
+    if len(parts) not in (2, 4):
+        return False
+    if not (parts[0].isdigit() and parts[1].isdigit()):
+        return False
+    return True
+
+
+def _chrpos_key(snp_id: str) -> str:
+    """Reduce a chr:pos[:ref:alt] SNP ID to its 2-token chr:pos key for lookup."""
+    parts = snp_id.split(":")
+    return f"{parts[0]}:{parts[1]}"
 
 
 def convert_sumstats(
@@ -210,16 +229,23 @@ def convert_sumstats(
                     continue
 
                 snp = fields[col_idx["SNP"]]
-                # REF/ALT optional — use dummy alleles when absent (LDSC
-                # merge-alleles reconciles via SNP ID from w_hm3.snplist).
-                # A/G chosen (not A/T) because A/T is strand-ambiguous and
-                # LDSC filter_alleles() drops all strand-ambiguous variants,
-                # which would silently zero out the output. A/G matches the
-                # run_hess.py dummy-allele convention.
-                if "ALT" in col_idx and "REF" in col_idx:
+                # Effect / other allele resolution. M1 D-16 harmonized files
+                # ship EA/OA columns; pre-pivot Phase 09 files used REF/ALT
+                # (where ALT is the effect allele). Prefer EA/OA when present
+                # (m1-03 fix: previous default-A/G fallback silently zeroed
+                # the LDSC output for D-16 inputs).
+                if "EA" in col_idx and "OA" in col_idx:
+                    a1 = fields[col_idx["EA"]]  # Effect allele -> A1
+                    a2 = fields[col_idx["OA"]]  # Other allele -> A2
+                elif "ALT" in col_idx and "REF" in col_idx:
                     a1 = fields[col_idx["ALT"]]  # Effect allele -> A1
                     a2 = fields[col_idx["REF"]]  # Other allele -> A2
                 else:
+                    # Last-resort dummy alleles (legacy Phase 5 behavior).
+                    # A/G chosen (not A/T) because A/T is strand-ambiguous
+                    # and LDSC filter_alleles() drops strand-ambiguous variants,
+                    # which would silently zero out the output. A/G matches the
+                    # run_hess.py dummy-allele convention.
                     a1 = "A"
                     a2 = "G"
                 beta = fields[col_idx["BETA"]]
@@ -249,9 +275,10 @@ def convert_sumstats(
                     n_filtered += 1
                     continue
 
-                # Remap chr:pos → rsID if lookup is available
+                # Remap chr:pos[:ref:alt] → rsID if lookup is available
                 if chrpos_lookup is not None:
-                    rsid = chrpos_lookup.get(snp)
+                    lookup_key = _chrpos_key(snp) if _snp_is_chrpos(snp) else snp
+                    rsid = chrpos_lookup.get(lookup_key)
                     if rsid is None:
                         n_filtered += 1
                         continue
@@ -267,6 +294,123 @@ def convert_sumstats(
         "n_input": n_input, "n_output": n_output,
         "n_filtered": n_filtered, "n_remapped": n_remapped,
     }
+
+
+def run_ldsc_munge_sumstats(
+    pre_input: str,
+    output_path: str,
+    merge_alleles: str,
+    chunksize: int = 500_000,
+    n_override: float = None,
+    n_case: float = None,
+    n_ctrl: float = None,
+    ldsc_python: str = None,
+    munge_script: str = "tools/ldsc/munge_sumstats.py",
+) -> None:
+    """Drive LDSC's vendored ``tools/ldsc/munge_sumstats.py`` on a pre-staged
+    LDSC-format TSV produced by ``convert_sumstats``.
+
+    Output is the canonical LDSC-munged format (SNP A1 A2 N Z) with HM3
+    SNP merging via ``--merge-alleles``.
+
+    Parameters
+    ----------
+    pre_input : str
+        Path to the LDSC pre-input TSV (SNP A1 A2 N P BETA SE) produced
+        by ``convert_sumstats``.
+    output_path : str
+        Final ``.sumstats.gz`` target. munge_sumstats.py emits at
+        ``<prefix>.sumstats.gz``; this function moves the result to
+        ``output_path`` and cleans up the .log / .sumstats.gz at the
+        prefix location.
+    merge_alleles : str
+        Path to ``data/external/ldscore/w_hm3.snplist``.
+    chunksize : int
+        --chunksize for munge_sumstats.py (D-12 spec: 500000).
+    n_override, n_case, n_ctrl : float, optional
+        Optional --N / --N-cas / --N-con overrides for munge_sumstats.py.
+    ldsc_python : str, optional
+        Python interpreter to use for munge_sumstats.py. Defaults to the
+        current ``sys.executable`` if it has bitarray; falls back to
+        ``LDSC_PYTHON`` env var. Must have bitarray + numpy + scipy + pandas
+        (smoke_dev base lacks bitarray; use the auto-resolved
+        snakemake-cached LDSC env when available).
+    munge_script : str
+        Path to ``tools/ldsc/munge_sumstats.py`` (vendored).
+    """
+    # Pick the LDSC-capable Python interpreter.
+    if ldsc_python is None:
+        ldsc_python = os.environ.get("LDSC_PYTHON", sys.executable)
+    # Probe for bitarray availability.
+    probe = subprocess.run(
+        [ldsc_python, "-c", "import bitarray"],
+        capture_output=True, text=True,
+    )
+    if probe.returncode != 0:
+        # Fallback: check for the snakemake-cached LDSC env from m1-00.
+        cached = (
+            ".snakemake/conda/481e5f0b6ac97e63f5201cfab7469335_/bin/python"
+        )
+        if Path(cached).exists():
+            ldsc_python = cached
+        else:
+            raise RuntimeError(
+                f"LDSC munge requires a Python with bitarray; current "
+                f"interpreter ({ldsc_python}) lacks it and the cached "
+                f"snakemake env at {cached} is also absent. Set LDSC_PYTHON."
+            )
+
+    # munge_sumstats.py emits at <prefix>.sumstats.gz; collect prefix.
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if str(out_path).endswith(".sumstats.gz"):
+        prefix = str(out_path)[: -len(".sumstats.gz")]
+    elif str(out_path).endswith(".gz"):
+        prefix = str(out_path)[: -len(".gz")].removesuffix(".sumstats")
+    else:
+        prefix = str(out_path)
+
+    cmd = [
+        ldsc_python, munge_script,
+        "--sumstats", pre_input,
+        "--out", prefix,
+        "--merge-alleles", merge_alleles,
+        "--chunksize", str(int(chunksize)),
+        "--snp", "SNP",
+        "--a1", "A1",
+        "--a2", "A2",
+        "--p", "P",
+        "--signed-sumstats", "BETA,0",
+        "--N-col", "N",
+    ]
+    if n_override is not None:
+        cmd += ["--N", str(int(n_override))]
+    if n_case is not None and n_ctrl is not None:
+        cmd += ["--N-cas", str(int(n_case)), "--N-con", str(int(n_ctrl))]
+
+    logger.info("Running LDSC munge_sumstats: %s", " ".join(cmd))
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    log_path = Path(prefix + ".log")
+    log_path.write_text((res.stdout or "") + "\n--STDERR--\n" + (res.stderr or ""))
+
+    if res.returncode != 0:
+        raise RuntimeError(
+            f"LDSC munge_sumstats.py failed (exit {res.returncode}). "
+            f"See {log_path} for full output. STDERR tail:\n"
+            f"{(res.stderr or '')[-2000:]}"
+        )
+
+    # Locate the produced .sumstats.gz; munge_sumstats.py emits at <prefix>.sumstats.gz.
+    produced = Path(prefix + ".sumstats.gz")
+    if not produced.exists():
+        raise RuntimeError(
+            f"munge_sumstats.py did not emit {produced}. Log at {log_path}."
+        )
+
+    # If output_path differs from prefix.sumstats.gz, move it.
+    if str(produced) != str(out_path):
+        shutil.move(str(produced), str(out_path))
 
 
 def main():
@@ -286,8 +430,12 @@ def main():
     parser.add_argument(
         "--trait",
         default=None,
-        choices=list(TRAIT_TYPE.keys()),
-        help="Trait name for effective-N calculation (binary traits)",
+        # Note: choices restriction removed in m1-03 to support D-16 trait
+        # tokens (cad, ldl, hdl, tg, tc, egfr, hba1c, sbp). The
+        # convert_sumstats helper validates trait against TRAIT_TYPE
+        # internally; unrecognized traits route through the per-row-N path.
+        help=("Trait name for effective-N calculation (binary traits). "
+              "Recognized tokens: " + ",".join(sorted(TRAIT_TYPE.keys()))),
     )
     parser.add_argument(
         "--n-case",
@@ -312,25 +460,86 @@ def main():
         default=None,
         help="1000G bim prefix for chr:pos→rsID remapping (e.g. .../1000G.EUR.QC)",
     )
+    parser.add_argument(
+        "--merge-alleles",
+        default=None,
+        help=("Path to LDSC HM3 SNP list (e.g. data/external/ldscore/w_hm3.snplist). "
+              "When supplied, the wrapper produces the LDSC pre-input TSV in a temp "
+              "file then drives tools/ldsc/munge_sumstats.py to emit the final "
+              "<output>.sumstats.gz. When omitted, only the pre-input format is "
+              "written to --output (legacy Phase 5 behavior)."),
+    )
+    parser.add_argument(
+        "--chunksize",
+        type=int,
+        default=500_000,
+        help="munge_sumstats.py --chunksize (D-12 spec: 500000).",
+    )
+    parser.add_argument(
+        "--ldsc-python",
+        default=None,
+        help=("Python interpreter that has bitarray for tools/ldsc/munge_sumstats.py. "
+              "Defaults to LDSC_PYTHON env or sys.executable; falls back to the "
+              "snakemake-cached LDSC env at m1-00 baseline."),
+    )
     args = parser.parse_args()
 
-    stats = convert_sumstats(
-        input_path=args.input,
-        output_path=args.output,
-        trait=args.trait,
-        n_case=args.n_case,
-        n_ctrl=args.n_ctrl,
-        n_override=args.n_override,
-        bim_prefix=args.bim_prefix,
-    )
+    if args.merge_alleles is None:
+        # Legacy single-step path: wrapper writes the LDSC pre-input format.
+        stats = convert_sumstats(
+            input_path=args.input,
+            output_path=args.output,
+            trait=args.trait,
+            n_case=args.n_case,
+            n_ctrl=args.n_ctrl,
+            n_override=args.n_override,
+            bim_prefix=args.bim_prefix,
+        )
 
-    logger.info(
-        "Converted %d/%d variants (%d filtered) to %s",
-        stats["n_output"],
-        stats["n_input"],
-        stats["n_filtered"],
-        args.output,
-    )
+        logger.info(
+            "Converted %d/%d variants (%d filtered) to %s",
+            stats["n_output"], stats["n_input"], stats["n_filtered"], args.output,
+        )
+        return
+
+    # Two-step path: (1) wrapper -> LDSC pre-input TSV, (2) munge_sumstats.py -> .sumstats.gz.
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        suffix="_ldsc_pre.tsv.gz", delete=False, dir=str(Path(args.output).parent)
+    ) as tmp:
+        pre_input = tmp.name
+
+    try:
+        stats = convert_sumstats(
+            input_path=args.input,
+            output_path=pre_input,
+            trait=args.trait,
+            n_case=args.n_case,
+            n_ctrl=args.n_ctrl,
+            n_override=args.n_override,
+            bim_prefix=args.bim_prefix,
+        )
+        logger.info(
+            "Pre-converted %d/%d variants (%d filtered) to %s",
+            stats["n_output"], stats["n_input"], stats["n_filtered"], pre_input,
+        )
+
+        run_ldsc_munge_sumstats(
+            pre_input=pre_input,
+            output_path=args.output,
+            merge_alleles=args.merge_alleles,
+            chunksize=args.chunksize,
+            n_override=args.n_override,
+            n_case=args.n_case,
+            n_ctrl=args.n_ctrl,
+            ldsc_python=args.ldsc_python,
+        )
+        logger.info("LDSC-munged output: %s", args.output)
+    finally:
+        try:
+            os.unlink(pre_input)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

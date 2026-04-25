@@ -47,15 +47,32 @@ def compute_effective_n(n_case: float, n_ctrl: float) -> float:
     return 4.0 / (1.0 / n_case + 1.0 / n_ctrl)
 
 
-# Per-trait type classification for the 5 cardiometabolic traits.
-# Binary traits require effective-N conversion; quantitative traits use
-# the reported sample size directly.
+# Per-trait type classification.
+# Binary traits require effective-N conversion via get_effective_n;
+# quantitative traits use the reported sample size directly.
+#
+# M1-03 (2026-04-25) extended this from 5 pre-pivot tokens to the 13 D-16
+# tokens (CONTEXT D-16: bmi, t2d, sbp, stroke, asthma, cad, ldl, hdl, tg,
+# tc, egfr, hba1c). The pre-pivot "hypertension" token is preserved for
+# backward compatibility with Phase 09 munged outputs; "sbp" is the
+# post-pivot continuous-mmHg phenotype that replaces it under the new
+# Evangelou D-16 rename (m1-02b verify_evangelou_sbp).
 TRAIT_TYPE = {
+    # Pre-pivot Phase 09 trait tokens.
     "bmi": "quantitative",
     "t2d": "binary",
     "hypertension": "binary",
     "stroke": "binary",
     "asthma": "binary",
+    # M1 D-16 trait tokens (post-2026-04-22 reframe).
+    "sbp": "quantitative",
+    "cad": "binary",
+    "ldl": "quantitative",
+    "hdl": "quantitative",
+    "tg": "quantitative",
+    "tc": "quantitative",
+    "egfr": "quantitative",
+    "hba1c": "quantitative",
 }
 
 
