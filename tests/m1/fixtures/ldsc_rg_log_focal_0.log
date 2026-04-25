@@ -1,0 +1,79 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0 (abdenlab/ldsc-python3 fork)
+* (C) 2014-2026 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Beginning analysis at Sat Apr 25 06:00:00 2026
+Reading summary statistics from data/processed/ldsc_overlap/munged/bmi.EUR.GIANT-UKBB.2018.sumstats.gz ...
+Read summary statistics for 1187056 SNPs.
+Reading reference panel LD Score from data/external/ldscore/eur_w_ld_chr/[1-22] ...
+Read reference panel LD Scores for 1290028 SNPs.
+Reading regression weight LD Score from data/external/ldscore/eur_w_ld_chr/[1-22] ...
+Read regression weight LD Scores for 1290028 SNPs.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.2103 (0.0048)
+Lambda GC: 1.4267
+Mean Chi^2: 1.7821
+Intercept: 1.0314 (0.0102)
+Ratio: 0.0402 (0.0131)
+
+Computing rg for phenotype 2/3
+Reading summary statistics from data/processed/ldsc_overlap/munged/t2d.EUR.DIAMANTE.2022.sumstats.gz ...
+Read summary statistics for 1187056 SNPs.
+
+Heritability of phenotype 2/3
+-----------------------------
+Total Observed scale h2: 0.0892 (0.0028)
+Lambda GC: 1.2418
+Mean Chi^2: 1.3216
+Intercept: 1.0103 (0.0091)
+Ratio: 0.0321 (0.0282)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0291 (0.0021)
+Mean z1*z2: 0.1112
+Intercept: 0.1234 (0.0094)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.2134 (0.0149)
+Z-score: 14.3221
+P: 1.4e-46
+
+Computing rg for phenotype 3/3
+Reading summary statistics from data/processed/ldsc_overlap/munged/sbp.EUR.Evangelou-ICBP-UKBB.2018.sumstats.gz ...
+Read summary statistics for 1187056 SNPs.
+
+Heritability of phenotype 3/3
+-----------------------------
+Total Observed scale h2: 0.1342 (0.0035)
+Lambda GC: 1.3517
+Mean Chi^2: 1.5614
+Intercept: 1.0204 (0.0098)
+Ratio: 0.0363 (0.0175)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0102 (0.0014)
+Mean z1*z2: 0.0398
+Intercept: 0.0412 (0.0079)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.1812 (0.0186)
+Z-score: 9.7421
+P: 2.1e-22
+
+
+Summary of Genetic Correlation Results
+p1                                                                                  p2                                                                                  rg      se      z       p       h2_obs  h2_obs_se  h2_int   h2_int_se  gcov_int  gcov_int_se
+data/processed/ldsc_overlap/munged/bmi.EUR.GIANT-UKBB.2018.sumstats.gz               data/processed/ldsc_overlap/munged/t2d.EUR.DIAMANTE.2022.sumstats.gz                0.2134  0.0149  14.3221 1.4e-46 0.0892  0.0028     1.0103   0.0091     0.1234    0.0094
+data/processed/ldsc_overlap/munged/bmi.EUR.GIANT-UKBB.2018.sumstats.gz               data/processed/ldsc_overlap/munged/sbp.EUR.Evangelou-ICBP-UKBB.2018.sumstats.gz    0.1812  0.0186  9.7421  2.1e-22 0.1342  0.0035     1.0204   0.0098     0.0412    0.0079
+
+Analysis finished at Sat Apr 25 06:02:00 2026
+Total time elapsed: 2.0m:00.0s
