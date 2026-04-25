@@ -77,6 +77,7 @@ data/catalogs/*
 
 # --- Results / logs: regeneratable, except legacy symlinks ---
 results/*
+results_identity_ld/
 logs/
 *.log
 !results/README.md

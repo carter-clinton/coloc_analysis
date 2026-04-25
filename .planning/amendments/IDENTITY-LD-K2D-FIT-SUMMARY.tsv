@@ -1,0 +1,96 @@
+trait	ancestry	region_id	chr	start	end	status	n_CS	cs_sizes	pip_sum_total	ld_overlap	ld_overlap_fraction	sumstats_path
+asthma	AFR	9p21_CDKN2A	9	21000000	23000000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	APOE_19q13	19	44000000	46000000	ok	7	3;3;3;3;3;3;3	10.017500	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	APOL1_22q12	22	36200000	36600000	ok	2	3;3	9.945900	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	BMI_5q13.3	5	72000000	76000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	BMI_Xq24	X	118000000	122000000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	FTO_16q12	16	53800000	54400000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	HLA_6p21	6	25000000	35000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	MC4R_18q21	18	56000000	56600000	ok	2	3;3	9.963200	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	PYHIN1_1q23	1	158000000	162000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	SH2B3_12q24	12	111400000	112000000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	AFR	SLC2A9_urate	4	9000000	11000000	ok	2	3;3	10.014100	0	0.000000	data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+asthma	EUR	9p21_CDKN2A	9	21000000	23000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	APOE_19q13	19	44000000	46000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	APOL1_22q12	22	36200000	36600000	ok	1	3	9.972400	0	0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	BMI_5q13.3	5	72000000	76000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	BMI_Xq24	X	118000000	122000000	no_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	5	3;3;3;3;3	10.219700	0	0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	FTO_16q12	16	53800000	54400000	ok	10	3;3;3;3;3;3;3;3;3;4	9.893700	0	0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	HLA_6p21	6	25000000	35000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	MC4R_18q21	18	56000000	56600000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	PYHIN1_1q23	1	158000000	162000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	SH2B3_12q24	12	111400000	112000000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+asthma	EUR	SLC2A9_urate	4	9000000	11000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+bmi	EUR	9p21_CDKN2A	9	21000000	23000000	ok	2	3;3	9.856100	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	APOL1_22q12	22	36200000	36600000	ok	1	3	9.237400	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	BMI_5q13.3	5	72000000	76000000	ok	10	3;3;3;3;3;3;3;3;3;4	10.000000	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	BMI_Xq24	X	118000000	122000000	no_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	1	3	9.926500	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	FTO_16q12	16	53800000	54400000	ok	10	3;3;3;3;3;3;3;3;3;4	10.000100	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	HLA_6p21	6	25000000	35000000	ok	10	3;3;3;3;3;3;3;3;3;4	9.977303	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	MC4R_18q21	18	56000000	56600000	ok	4	3;3;3;3	9.530900	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	PYHIN1_1q23	1	158000000	162000000	ok	3	3;3;3	9.841100	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	SH2B3_12q24	12	111400000	112000000	ok	3	3;3;3	9.593800	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+bmi	EUR	SLC2A9_urate	4	9000000	11000000	ok	1	3	9.795600	0	0.000000	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+hypertension	EUR	9p21_CDKN2A	9	21000000	23000000	ok	2	3;3	9.735328	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	APOE_19q13	19	44000000	46000000	ok	10	3;3;3;3;3;3;3;3;3;4	9.999392	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	APOL1_22q12	22	36200000	36600000	ok	2	3;3	9.605700	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	BMI_5q13.3	5	72000000	76000000	ok	10	3;3;3;3;3;3;3;3;3;4	9.997934	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	BMI_Xq24	X	118000000	122000000	no_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	1	3	9.544715	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	FTO_16q12	16	53800000	54400000	ok	2	3;3	9.747400	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	HLA_6p21	6	25000000	35000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	MC4R_18q21	18	56000000	56600000	ok	3	3;3;3	9.513500	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	PYHIN1_1q23	1	158000000	162000000	ok	1	3	9.929500	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	SH2B3_12q24	12	111400000	112000000	ok	10	3;3;3;3;3;3;3;3;3;4	10.000003	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+hypertension	EUR	SLC2A9_urate	4	9000000	11000000	ok	1	3	9.977800	0	0.000000	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+stroke	AFR	9p21_CDKN2A	9	21000000	23000000	ok	8	3;3;3;3;3;3;3;3	9.558700	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	APOE_19q13	19	44000000	46000000	ok	5	3;3;3;3;3	9.764100	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	APOL1_22q12	22	36200000	36600000	ok	1	3	9.940200	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	BMI_5q13.3	5	72000000	76000000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	BMI_Xq24	X	118000000	122000000	no_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	FTO_16q12	16	53800000	54400000	ok	1	3	9.945400	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	HLA_6p21	6	25000000	35000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	MC4R_18q21	18	56000000	56600000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	PYHIN1_1q23	1	158000000	162000000	ok	3	3;3;3	9.956500	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	SH2B3_12q24	12	111400000	112000000	ok	1	3	9.956800	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	AFR	SLC2A9_urate	4	9000000	11000000	ok	4	3;3;3;3	9.883800	0	0.000000	data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+stroke	EUR	9p21_CDKN2A	9	21000000	23000000	ok	10	3;3;3;3;3;3;3;3;3;4	9.989741	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	APOE_19q13	19	44000000	46000000	ok	1	3	10.006100	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	APOL1_22q12	22	36200000	36600000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	BMI_5q13.3	5	72000000	76000000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	BMI_Xq24	X	118000000	122000000	no_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	3	3;3;3	5.043700	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	FTO_16q12	16	53800000	54400000	ok	1	3	9.968900	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	HLA_6p21	6	25000000	35000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	MC4R_18q21	18	56000000	56600000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	PYHIN1_1q23	1	158000000	162000000	ok	2	3;3	10.012900	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	SH2B3_12q24	12	111400000	112000000	ok	10	3;3;3;3;3;3;3;3;3;4	9.997114	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+stroke	EUR	SLC2A9_urate	4	9000000	11000000	ok	7	3;3;3;3;3;3;3	9.876700	0	0.000000	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+t2d	AFR	9p21_CDKN2A	9	21000000	23000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	APOE_19q13	19	44000000	46000000	ok	2	3;3	9.896200	0	0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	APOL1_22q12	22	36200000	36600000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	BMI_5q13.3	5	72000000	76000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	BMI_Xq24	X	118000000	122000000	no_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	7	3;3;3;3;3;3;3	9.930000	0	0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	FTO_16q12	16	53800000	54400000	ok	10	3;3;3;3;3;3;3;3;3;4	9.995400	0	0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	HLA_6p21	6	25000000	35000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	MC4R_18q21	18	56000000	56600000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	PYHIN1_1q23	1	158000000	162000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	SH2B3_12q24	12	111400000	112000000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	AFR	SLC2A9_urate	4	9000000	11000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+t2d	EUR	9p21_CDKN2A	9	21000000	23000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	APOE_19q13	19	44000000	46000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	APOL1_22q12	22	36200000	36600000	ok	0		0.000000	0	0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	BMI_5q13.3	5	72000000	76000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	BMI_Xq24	X	118000000	122000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	CXADR_F2RL1_6p21	6	10300000	11800000	ok	6	3;3;3;3;3;3	9.977000	0	0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	FTO_16q12	16	53800000	54400000	ok	10	3;3;3;3;3;3;3;3;3;4	9.999622	0	0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	HLA_6p21	6	25000000	35000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	MC4R_18q21	18	56000000	56600000	ok	6	3;3;3;3;3;3	9.941500	0	0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	PYHIN1_1q23	1	158000000	162000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	SH2B3_12q24	12	111400000	112000000	ok	2	3;3	9.913300	0	0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+t2d	EUR	SLC2A9_urate	4	9000000	11000000	too_many_variants	0		0.000000		0.000000	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
