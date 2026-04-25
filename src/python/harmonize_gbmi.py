@@ -168,12 +168,18 @@ def harmonize_gbmi_sumstats(
     df = _su.filter_palindromic_ambiguous(df)
     n_palindromic_dropped = n_pre_pal - int(len(df))
 
-    # CR-02 placeholder: n_maf_below_threshold is captured here as 0 so
-    # the sidecar schema is stable; CR-03 will populate this with the
-    # real MAF<maf_min drop count when the filter is added in the next
-    # commit. Both fixes touch this function but are committed
-    # separately for review clarity.
-    n_maf_below_threshold = 0
+    # CR-03 fix: apply MAF >= maf_min filter (D-12 floor) for parity with
+    # every other M1 harmonizer (harmonize_yengo / glgc / wuttke / magic /
+    # diamante / gigastroke / aragam). Without this, asthma cells retain
+    # MAF<0.005 variants that downstream LDSC munge would drop anyway,
+    # but the verify_d "MAF=0 fraction <5%" gate is then computed against
+    # a different denominator than peer cells. Order: palindromic first
+    # (matches harmonize_yengo), MAF second.
+    af = pd.to_numeric(df["EAF"], errors="coerce")
+    maf = af.where(af < 0.5, 1 - af)
+    keep_maf = maf >= maf_min
+    n_maf_below_threshold = int((~keep_maf).sum())
+    df = df.loc[keep_maf].reset_index(drop=True)
 
     output_prefix = Path(output_prefix)
     output_prefix.parent.mkdir(parents=True, exist_ok=True)
