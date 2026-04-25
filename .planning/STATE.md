@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed m1-02a-harmonizers-continuous-traits-PLAN.md (4 commits, 14 harmonizer tests pass, 30-job DAG loads)
-last_updated: "2026-04-25T08:15:59.985Z"
+stopped_at: Completed m1-02b-harmonizers-case-control-traits-PLAN.md (6 commits, 24 contract tests pass, 49-job DAG, 6 case-control files harmonized + Evangelou D-16 rename + sha256 manifest frozen)
+last_updated: "2026-04-25T10:03:04.681Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: m1-sumstats-upgrade-and-harmonization (sumstats-upgrade-and-harmonization) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -137,6 +137,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase m1-sumstats-upgrade-and-harmonization Pm1-00-preflight-and-environment | 24min | 3 tasks | 23 files |
 | Phase m1-sumstats-upgrade-and-harmonization Pm1-01-portal-fetches-and-aragam-route | 39min | 2 tasks | 8 files |
 | Phase m1 P02a | 70 | 2 tasks | 22 files |
+| Phase m1-sumstats-upgrade-and-harmonization P02b | 80 | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -249,6 +250,9 @@ Recent decisions affecting current work:
 - [Phase m1]: SHA-256 manifest frozen at 45 data rows / 48.1 GB; byte-identical reruns verified; OSF-paste copy at .planning/amendments/sha256_manifest_m1_frozen.tsv
 - [Phase m1]: MAGIC schema discovery: 1000G release ships explicit chr+bp; rsid crosswalk demoted to fallback path
 - [Phase m1]: DEF-M1-02a-01: MAGIC HbA1c EUR raw file truncated (Wave 1 fetch artifact); harmonizer correctly fails loud
+- [Phase m1-sumstats-upgrade-and-harmonization]: DEF-M1-02b-01 raised: Aragam ZIP CAD_GWAS_SEX_STRATIFIED.txt.gz is per-sex stratified, not pooled-EUR; CAD-EUR cell DEFERRED to M2 (sex-aware harmonizer work item)
+- [Phase m1-sumstats-upgrade-and-harmonization]: GIGASTROKE 2022 raw schema only 11 cols (no variant_id, no n); harmonizer synthesizes SNP=chr:bp:OA:EA + per-ancestry total N from SUMSTATS-UPGRADE.tsv rows 14-17
+- [Phase m1-sumstats-upgrade-and-harmonization]: Tabix-required CHR/BP sort added to all 3 case-control harmonizers; non-autosomal rows dropped (LDSC ignores them anyway)
 
 ### Pending Todos
 
@@ -302,8 +306,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T08:15:59.977Z
-Stopped at: Completed m1-02a-harmonizers-continuous-traits-PLAN.md (4 commits, 14 harmonizer tests pass, 30-job DAG loads)
+Last session: 2026-04-25T10:02:49.258Z
+Stopped at: Completed m1-02b-harmonizers-case-control-traits-PLAN.md (6 commits, 24 contract tests pass, 49-job DAG, 6 case-control files harmonized + Evangelou D-16 rename + sha256 manifest frozen)
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
