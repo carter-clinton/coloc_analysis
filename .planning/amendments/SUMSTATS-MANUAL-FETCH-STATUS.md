@@ -42,6 +42,84 @@ explicitly deferred with rationale).
 - 🚫 deferred (rationale required in Notes)
 - ❌ failed / unavailable (fallback source required)
 
+## Wave 0 pre-flight probes (2026-04-25)
+
+Three probe outcomes from `tests/m1/wave0_probes.sh` that gate downstream
+M1 wave behavior. Captured during `/gsd-execute-phase m1` Wave 0 Task 2
+(plan `m1-00-preflight-and-environment-PLAN.md`).
+
+### Probe 1 — MAGIC FTP port-21 egress
+
+- **Probe URL:** `ftp://ftp.sanger.ac.uk/pub/`
+- **HTTPS control:** `https://magicinvestigators.org/downloads/`
+- **Verdict:** ✅ **PASS** — FTP egress works from current shell context.
+- **Downstream impact:** Wave 1 (m1-01) MAGIC HbA1c row 7 (6 ancestries)
+  may fetch via FTP; the SUMSTATS-UPGRADE §5 Tier-1 fallback (HTTPS
+  portal mirror) is not required.
+- **Caveat:** Probe ran in the executor's shell; final Wave 1 fires via
+  `bsub` on a compute node. If a compute-node-side FTP block is
+  discovered at fire-time, retreat to the HTTPS portal at
+  `magicinvestigators.org/downloads/` per the documented fallback.
+
+### Probe 2 — GWAS-Catalog Giri 2019 summary availability (D-06 primary)
+
+- **Probe URL:** `https://www.ebi.ac.uk/gwas/publications/30578418`
+- **HTML body size:** 63,005 bytes
+- **GCST accession hits:** none (zero matches for `GCST[0-9]{6,}`)
+- **Verdict:** ❌ **NO-SUMMARY-FOUND** — Giri 2019 sumstats are NOT
+  publicly available on GWAS-Catalog as of 2026-04-25.
+- **Downstream impact:** Wave 1 (m1-01) row 13 (MVP-Giri SBP × AFR)
+  triggers the **D-06 fallback path: AoU Researcher Workbench AFR-SBP
+  derivation** per CONTEXT D-07 (M1 scope expansion documented in
+  DEC-2026-04-24-02). Wave 1 marks row 13 status = **DEFERRED** with a
+  `.placeholder` file pointing to the AoU derivation SOP at
+  `AOU-LD-PIPELINE.md` §2 P1–P7. M1 closeout does NOT block on AFR-SBP;
+  the 45×45 LDSC matrix becomes 44×44 until the AoU artifact lands.
+- **Carter action (out of band):** Initiate AoU Workbench AFR-SBP
+  derivation reusing the AOU-LD-PIPELINE §2 P1–P7 scaffolding when
+  bandwidth allows.
+
+### Probe 3 — LDSC 2-trait --rg smoke benchmark
+
+- **Pair tested:** `bmi_EUR.sumstats.gz` ↔ `hypertension_EUR.sumstats.gz`
+  (pre-existing pre-pivot munged files at
+  `results/pathway/ldsc_partitioned/munged/`).
+- **LDSC env:** `.snakemake/conda/481e5f0b6ac97e63f5201cfab7469335_/bin/python`
+  (the snakemake-cached LDSC env with bitarray + numpy=1.26.4 +
+  pandas=2.2.1; smoke_dev base lacks bitarray — Rule 3 auto-fix).
+- **Reference LD:** `data/external/ldscore/eur_w_ld_chr/` (symlinked to
+  Phase 5 staged copy at `data/reference/ldsc/eur_w_ld_chr/`).
+- **Wall time (real):** 13.77 seconds (rounded `PAIR_WALL_SECONDS = 13`)
+- **LDSC log:** 3,661 bytes; "Summary of Genetic Correlation Results"
+  table emitted with all expected columns including `gcov_int`.
+- **Verdict:** ✅ **PASS** — pair wall 13s (≪ 15 min/pair budget).
+- **Downstream impact:** Wave 3 (m1-03) proceeds at full `--jobs`
+  density. The 44 star-topology ldsc.py --rg invocations (one per
+  focal trait against trailing trait list, N-1 pairs each) total
+  ~990 unique pairs at ~14s/pair ≈ 3.9 hours of pure LDSC compute,
+  trivially fits within the long-queue 240 h ceiling. The dynamic
+  `--jobs` computation in `m1-03-T2` may use `PAIR_WALL_SECONDS=13`
+  from `tests/m1/wave0_probes.log`.
+
+### Reference data staged
+
+- `data/external/liftover/hg38ToHg19.over.chain.gz` — 1,246,411 bytes,
+  gzip-valid; SHA-256 `14a712e8e147d9fc8e9d87d51977b46f6f8ddb93efbe5d0843d86b6205f587b1`
+  (UCSC golden-path direct fetch).
+- `data/external/ldscore/eur_w_ld_chr` — symlink to
+  `data/reference/ldsc/eur_w_ld_chr/` (Phase 5 staged copy from 2026-04-14
+  via Zenodo URL-rot workaround per `feedback_url_rot_workarounds.md`).
+  46 files (chr1..22 .l2.ldscore.gz + .l2.M_5_50 + extras).
+- `data/external/ldscore/w_hm3.snplist` — symlink to
+  `data/reference/ldsc/w_hm3.snplist`. Line count: 1,217,312 (~1.2M).
+- **Note on LDSC URL rot:** Direct curl of the 2026-04-22 plan-spec'd
+  Broad URLs (`data.broadinstitute.org/alkesgroup/LDSCORE/eur_w_ld_chr.tar.bz2`
+  and `.../w_hm3.snplist.bz2`) returned HTTP 404. Workaround per
+  `feedback_url_rot_workarounds.md`: reuse the Phase 5 staged copy at
+  `data/reference/ldsc/` (originally fetched from Zenodo 14993076).
+  Symlinks under `data/external/ldscore/` give the M1 pipeline the
+  plan-spec'd path without duplicating ~1 GB of bytes.
+
 ## Refresh log
 
 ### 2026-04-24 — quick/260424-j6c
