@@ -1,0 +1,14 @@
+# envs/m1-download.yml — M1 portal-download driver env (Wave 1)
+# Lightweight: curl + python (yaml + requests) for the bin/download_sumstats_v2.sh
+# extension that handles portal-gated sources per CONTEXT D-14.
+name: m1-download
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - curl
+  - findutils      # provides xargs
+  - pyyaml=6.0.2
+  - requests=2.32.3
+  - pip=24.0

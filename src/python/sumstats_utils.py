@@ -250,3 +250,76 @@ def liftover_to_grch37(
             f"large liftover drops)"
         )
     return out, qc
+
+
+# ==========================================================================
+# M1 — Canonical 10-column schema + contract validation
+# ==========================================================================
+# Added 2026-04-25 for the M1 harmonizer wave (Rule 2 — auto-add critical
+# missing functionality referenced by the M1 plan). Mirrors the same column
+# list each Phase 09 harmonizer hard-codes locally; consolidating here avoids
+# drift across the seven new M1 harmonizers (D-10).
+
+CANONICAL_COLS = ["CHR", "BP", "SNP", "EA", "OA", "BETA", "SE", "P", "EAF", "N"]
+
+
+def validate_canonical_frame(df: pd.DataFrame) -> None:
+    """Validate that ``df`` conforms to the canonical 10-column schema.
+
+    Asserts that every column in :data:`CANONICAL_COLS` is present. Numeric
+    columns (BP, BETA, SE, P, EAF, N) must be numeric dtype. Allele columns
+    (EA, OA) must be string-like. SNP and CHR are coerced/checked but
+    accept either str or int (CHR may legitimately be int 1..22 or str
+    "1".."22"/"X"/"Y"). Raises ``ValueError`` with the missing/typed-wrong
+    columns listed.
+
+    This is the contract that every harmonizer in M1 must satisfy before
+    its output is consumed by munge / coloc / fine-mapping / CPASSOC.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Harmonized sumstats DataFrame.
+
+    Raises
+    ------
+    ValueError
+        If any canonical column is missing OR a numeric column is non-
+        numeric dtype OR an allele column is non-string dtype.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError(
+            f"validate_canonical_frame expected pd.DataFrame, got {type(df)!r}"
+        )
+
+    missing = [c for c in CANONICAL_COLS if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"Canonical-frame validation failed: missing column(s) {missing}. "
+            f"Required: {CANONICAL_COLS}. Found: {sorted(df.columns.tolist())}."
+        )
+
+    # Numeric columns
+    numeric_cols = ["BP", "BETA", "SE", "P", "EAF", "N"]
+    bad_numeric = [
+        c for c in numeric_cols if not pd.api.types.is_numeric_dtype(df[c])
+    ]
+    if bad_numeric:
+        raise ValueError(
+            f"Canonical-frame validation failed: non-numeric dtype for "
+            f"{bad_numeric}. Each numeric column must be numeric dtype "
+            f"(int/float). Found: "
+            f"{ {c: str(df[c].dtype) for c in bad_numeric} }."
+        )
+
+    # Allele columns must be string-like (object dtype with str values).
+    for c in ("EA", "OA"):
+        # Allow object dtype; require non-null sample to be str.
+        if not df[c].empty:
+            sample = df[c].dropna().head(1)
+            if len(sample) > 0 and not isinstance(sample.iloc[0], str):
+                raise ValueError(
+                    f"Canonical-frame validation failed: column {c} must be "
+                    f"string dtype, got first-non-null value "
+                    f"{sample.iloc[0]!r} ({type(sample.iloc[0]).__name__})."
+                )

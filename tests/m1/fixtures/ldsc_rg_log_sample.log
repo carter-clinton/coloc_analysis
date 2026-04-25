@@ -1,0 +1,109 @@
+*********************************************************************
+* LD Score Regression (LDSC)
+* Version 2.0.0 (abdenlab/ldsc-python3 fork)
+* (C) 2014-2026 Brendan Bulik-Sullivan and Hilary Finucane
+* Broad Institute of MIT and Harvard / MIT Department of Mathematics
+* GNU General Public License v3
+*********************************************************************
+Beginning analysis at Sat Apr 25 05:15:32 2026
+Reading summary statistics from results/pathway/ldsc_partitioned/munged/bmi_EUR.sumstats.gz ...
+Read summary statistics for 1187056 SNPs.
+Reading reference panel LD Score from data/external/ldscore/eur_w_ld_chr/[1-22] ...
+Read reference panel LD Scores for 1290028 SNPs.
+Removing partitioned LD Scores with zero variance.
+Reading regression weight LD Score from data/external/ldscore/eur_w_ld_chr/[1-22] ...
+Read regression weight LD Scores for 1290028 SNPs.
+After merging with reference panel LD, 1187012 SNPs remain.
+After merging with regression SNP LD, 1187012 SNPs remain.
+Computing rg for phenotype 2/4
+Reading summary statistics from results/pathway/ldsc_partitioned/munged/t2d_EUR.sumstats.gz ...
+Read summary statistics for 1187056 SNPs.
+After merging with summary statistics, 1187012 SNPs remain. 1187012 SNPs with valid alleles.
+
+Heritability of phenotype 1
+---------------------------
+Total Observed scale h2: 0.2103 (0.0048)
+Lambda GC: 1.4267
+Mean Chi^2: 1.7821
+Intercept: 1.0314 (0.0102)
+Ratio: 0.0402 (0.0131)
+
+Heritability of phenotype 2/4
+-----------------------------
+Total Observed scale h2: 0.0892 (0.0028)
+Lambda GC: 1.2418
+Mean Chi^2: 1.3216
+Intercept: 1.0103 (0.0091)
+Ratio: 0.0321 (0.0282)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0291 (0.0021)
+Mean z1*z2: 0.1112
+Intercept: 0.1234 (0.0094)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.2134 (0.0149)
+Z-score: 14.3221
+P: 1.4e-46
+
+Computing rg for phenotype 3/4
+Reading summary statistics from results/pathway/ldsc_partitioned/munged/hypertension_EUR.sumstats.gz ...
+Read summary statistics for 1187056 SNPs.
+After merging with summary statistics, 1187012 SNPs remain. 1187012 SNPs with valid alleles.
+
+Heritability of phenotype 3/4
+-----------------------------
+Total Observed scale h2: 0.1342 (0.0035)
+Lambda GC: 1.3517
+Mean Chi^2: 1.5614
+Intercept: 1.0204 (0.0098)
+Ratio: 0.0363 (0.0175)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.0102 (0.0014)
+Mean z1*z2: 0.0398
+Intercept: 0.0412 (0.0079)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.1812 (0.0186)
+Z-score: 9.7421
+P: 2.1e-22
+
+Computing rg for phenotype 4/4
+Reading summary statistics from results/pathway/ldsc_partitioned/munged/asthma_EUR.sumstats.gz ...
+Read summary statistics for 1187056 SNPs.
+After merging with summary statistics, 1187012 SNPs remain. 1187012 SNPs with valid alleles.
+
+Heritability of phenotype 4/4
+-----------------------------
+Total Observed scale h2: 0.0512 (0.0019)
+Lambda GC: 1.1812
+Mean Chi^2: 1.2304
+Intercept: 1.0087 (0.0083)
+Ratio: 0.0354 (0.0337)
+
+Genetic Covariance
+------------------
+Total Observed scale gencov: 0.9821 (0.0203)
+Mean z1*z2: 1.4892
+Intercept: 0.9812 (0.0142)
+
+Genetic Correlation
+-------------------
+Genetic Correlation: 0.9512 (0.0210)
+Z-score: 45.3214
+P: 0.0e+00
+
+
+Summary of Genetic Correlation Results
+p1                                                                                  p2                                                                                  rg      se      z       p       h2_obs  h2_obs_se  h2_int   h2_int_se  gcov_int  gcov_int_se
+results/pathway/ldsc_partitioned/munged/bmi_EUR.sumstats.gz                         results/pathway/ldsc_partitioned/munged/t2d_EUR.sumstats.gz                         0.2134  0.0149  14.3221 1.4e-46 0.0892  0.0028     1.0103   0.0091     0.1234    0.0094
+results/pathway/ldsc_partitioned/munged/bmi_EUR.sumstats.gz                         results/pathway/ldsc_partitioned/munged/hypertension_EUR.sumstats.gz                0.1812  0.0186  9.7421  2.1e-22 0.1342  0.0035     1.0204   0.0098     0.0412    0.0079
+results/pathway/ldsc_partitioned/munged/bmi_EUR.sumstats.gz                         results/pathway/ldsc_partitioned/munged/asthma_EUR.sumstats.gz                      0.9512  0.0210  45.3214 0.0e+00 0.0512  0.0019     1.0087   0.0083     0.9812    0.0142
+
+Analysis finished at Sat Apr 25 05:18:42 2026
+Total time elapsed: 3.0m:10.4s

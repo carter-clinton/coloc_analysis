@@ -1,0 +1,24 @@
+# envs/m1-qc.yml — M1 Quarto QC report env (Wave 4)
+# Mixed-engine Quarto (R + Python) per CONTEXT D-12. R stack drives Manhattan
+# / QQ / MAF hist / locuszoom of 7 control loci. Python (pandas) drives
+# variant counts + PASS/FAIL summary table + checksum display. Jupyter is
+# present as the engine=jupyter fallback for Python-only chunks.
+name: m1-qc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - quarto>=1.5
+  - r-base=4.4
+  - r-tidyverse
+  - r-ggplot2
+  - r-qqman
+  - r-locuszoomr
+  - r-rmarkdown
+  - r-knitr
+  - python=3.11
+  - pandas=2.2.3
+  - jupyter
+  - pyyaml=6.0.2
+  - pyarrow=18.1.0
+  - pip=24.0

@@ -1,0 +1,21 @@
+# envs/m1-harmonize.yml — M1 per-source harmonizer env (Wave 2a/2b)
+# Pinned versions match envs/python_stats.yml so harmonizer modules and
+# Snakemake orchestrator share a single Python ABI. Adds pyliftover (default
+# liftover for Loh 2022 BMI + GBMI asthma per DEC-2026-04-24-01) plus
+# CrossMap as a documented fallback per SUMSTATS-UPGRADE §6.
+name: m1-harmonize
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pandas=2.2.3
+  - pyarrow=18.1.0
+  - htslib=1.21          # bgzip + tabix for D-09 .tsv.bgz primary artifact
+  - pyliftover           # primary liftover backend; sumstats_utils.liftover_to_grch37
+  - crossmap             # fallback per SUMSTATS-UPGRADE §6 documented recommendation
+  - pyyaml=6.0.2
+  - requests=2.32.3
+  - numpy=1.26.4
+  - pytest>=7
+  - pip=24.0
