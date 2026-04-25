@@ -1,0 +1,11 @@
+variant	chromosome	base_pair_location	effect_allele	other_allele	log10BF	sample_size	het_p_value
+rs1	1	100000	A	G	0.10	244000	0.81
+rs2	1	200000	T	C	-0.20	244000	0.55
+rs3	1	300000	A	T	0.30	244000	0.21
+rs4	2	400000	G	A	0.50	244000	0.07
+rs5	2	500000	C	T	0.05	244000	0.85
+rs6	3	600000	T	A	-0.40	244000	0.39
+rs7	3	700000	G	A	0.20	244000	0.63
+rs8	4	800000	C	G	-0.05	244000	0.79
+rs9	5	900000	A	C	1.20	244000	0.10
+rs10	6	1000000	T	G	1.80	244000	0.03
