@@ -21,6 +21,9 @@ genome_build: GRCh37  # Per D-01: primary coordinate system
 paths:
   data_root: "data"
   raw_sumstats: "data/raw/sumstats"
+  # M1 Wave 1 (m1-01) raw fetch tree — distinct from legacy raw_sumstats so
+  # the upgrade pipeline does not collide with pre-pivot Phase 0 outputs.
+  raw_sumstats_v2: "data/raw/sumstats_v2"
   harmonized_sumstats: "data/processed/sumstats_harmonized"
   regions_curated: "config/regions_curated.csv"
   regions_tiled: "config/regions_tiled.csv"
