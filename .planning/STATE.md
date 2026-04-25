@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Phase M1 context gathered (R4, 18 decisions across 5 groups)
-last_updated: "2026-04-24T22:00:48.109Z"
-last_activity: 2026-04-24
+status: "m1_planning_complete -> Carter fires /gsd-execute-phase m1"
+stopped_at: M1 planned (6 PLANs / 5 waves verified at a9a9651); k2d identity-LD fire complete (95 JSONs, untracked); ready to execute M1
+last_updated: "2026-04-25T05:11:25.172Z"
+last_activity: 2026-04-25
 progress:
   total_phases: 12
   completed_phases: 6
@@ -22,7 +22,9 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** M0 — pivot scaffolding (this hygiene pass + remaining PROJECT/ROADMAP/REQUIREMENTS/DECISIONS rewrites + OSF amendment posting) in foreground; Track A manuscript push (Route A) + sumstats v2 downloads (Route C) in parallel.
+**Current focus:** M1 — sumstats upgrade & harmonization. Execution queued (6 plans / 5 waves verified at `a9a9651`); Carter to fire `/gsd-execute-phase m1-sumstats-upgrade-and-harmonization` from a fresh session. Track A manuscript close-out (Figures 1A + 3, both unblocked by k2d completion) deferred to a post-M1-kickoff `/gsd-quick`. OSF amendment posting still gated on M1 closeout per Amendment §9.1.
+
+**k2d identity-LD re-fire complete (2026-04-25):** LSF fire (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file gone; 95 JSONs + `finemap_manifest.tsv` landed at `results_identity_ld/fine_mapping/` (currently untracked in git). Empirically unblocks Track A **Figure 1A** (identity-vs-real PP.H4 scatter) and **Figure 3** (survival forest) — the two open figure slots in the 5-figure roster (Figs 1B + 2 + 5 already DONE per p1b / mqo / k2g; Fig 4 demoted to S5 per k2f). `results_identity_ld/` commit + Fig 1A + Fig 3 builders deferred to post-M1-kickoff `/gsd-quick` (file sets disjoint from M1 pipeline; STATE.md writes serialize against M1 progress writes).
 
 ## Current Position
 
@@ -282,6 +284,13 @@ None yet.
 
 ## Session Continuity
 
+Last session: 2026-04-25T05:11:25.172Z
+Stopped at: M1 planned and verified; k2d identity-LD fire complete; ready to /gsd-execute-phase m1
+
+**2026-04-25 resume (ancient-dancing-boole.md):** `/gsd-resume-work` loaded stale STATE.md (frontmatter `stopped_at` said "Phase M1 context gathered (R4, 18 decisions across 5 groups)"). Real status: **M1 planning complete** at commit `a9a9651` ("docs(m1): record planning complete — 6 plans in 5 waves, verification passed"). 6 PLAN.md files exist across 5 waves: m1-00 preflight + envs (Wave 0), m1-01 portal fetches + Aragam route (Wave 1), m1-02a continuous-trait harmonizers + m1-02b case-control harmonizers (Wave 2 split for task budget), m1-03 munge + 45×45 LDSC bivariate-intercept matrix (Wave 3), m1-04 QC reports + trait_inventory.yaml + OSF paste-prep (Wave 4). Zero `*-SUMMARY.md` siblings → execution not started. **k2d LSF identity-LD re-fire** (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file removed; 95 JSONs + `finemap_manifest.tsv` at `results_identity_ld/fine_mapping/`; artifacts untracked in git. Carter chose **"refresh STATE.md then execute M1 full phase"**. Next: `/clear` then `/gsd-execute-phase m1-sumstats-upgrade-and-harmonization`. Track A Figures 1A (identity-vs-real PP.H4 scatter) + Figure 3 (survival forest) builders + `results_identity_ld/` commit deferred to a follow-on `/gsd-quick` after M1 kickoff (disjoint file sets; STATE.md serialization concern only). Routing plan at `/home/ckclinto/.claude/plans/ancient-dancing-boole.md`.
+
+### Prior session (2026-04-24)
+
 Last session: 2026-04-24T19:10:03.407Z
 Stopped at: Phase M1 context gathered (R4, 18 decisions across 5 groups)
 
@@ -466,7 +475,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
 4. Address open items above as they become blocking
 
-Resume file: .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-CONTEXT.md
+Resume file: .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-00-preflight-and-environment-PLAN.md (Wave 0 entry; gsd-executor consumes the full PLAN set m1-00..m1-04)
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
