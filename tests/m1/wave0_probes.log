@@ -1,0 +1,38 @@
+# Wave 0 Pre-flight Probes — 2026-04-25T05:27:10Z
+
+## Probe 1 — MAGIC FTP port-21 egress
+
+- Probe URL (FTP): ftp://ftp.sanger.ac.uk/pub/
+- Probe URL (HTTPS control): https://magicinvestigators.org/downloads/
+- FTP curl exit: 0
+- **Probe 1 verdict: PASS** (FTP egress works; Wave 1 may use FTP for MAGIC)
+
+## Probe 2 — GWAS-Catalog Giri 2019 summary availability (D-06 primary)
+
+- Probe URL: https://www.ebi.ac.uk/gwas/publications/30578418
+- curl exit: 0
+- HTML body size: 63005 bytes
+- GCST accession hits in body:
+  (none)
+- 'summary statistic' / 'sumstats' / 'FTP' substring count: 10
+- **Probe 2 verdict: NO-SUMMARY-FOUND — D-06 fallback (AoU AFR-SBP derivation)**
+
+## Probe 3 — LDSC 2-trait --rg smoke benchmark
+
+- Munged files:
+  - p1: results/pathway/ldsc_partitioned/munged/bmi_EUR.sumstats.gz (OK)
+  - p2: results/pathway/ldsc_partitioned/munged/hypertension_EUR.sumstats.gz (OK)
+  - LDSC ref: data/external/ldscore/eur_w_ld_chr (OK)
+- Invocation: /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.snakemake/conda/481e5f0b6ac97e63f5201cfab7469335_/bin/python tools/ldsc/ldsc.py --rg results/pathway/ldsc_partitioned/munged/bmi_EUR.sumstats.gz,results/pathway/ldsc_partitioned/munged/hypertension_EUR.sumstats.gz --ref-ld-chr data/external/ldscore/eur_w_ld_chr/ --w-ld-chr data/external/ldscore/eur_w_ld_chr/ --out /tmp/ldsc_smoke_1810943
+- LDSC exit: 0
+- Wall time (real): 13.77 seconds
+PAIR_WALL_SECONDS 13
+- **Probe 3 verdict: PASS — pair wall 13s (<15 min/pair); Wave 3 m1-03 proceeds at full --jobs density.**
+- LDSC log size: 3661 bytes
+- LDSC summary table present: YES
+
+## Verdicts
+- Probe 1 (MAGIC FTP egress): PASS
+- Probe 2 (Giri 2019 GWAS-Catalog): NO-SUMMARY-FOUND — body has no GCST + sumstats marker; D-06 fallback to AoU AFR-SBP per CONTEXT D-07. Wave 1 marks row 13 DEFERRED.
+- Probe 3 (LDSC 2-trait --rg): PASS — pair wall 13s (<15 min/pair); Wave 3 m1-03 proceeds at full --jobs density.
+
