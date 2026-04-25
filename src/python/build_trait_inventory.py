@@ -48,6 +48,22 @@ ANCESTRY_MAP = {
     "HIS": "HIS", "TRANS": "TRANS", "MULTI": "MULTI",
 }
 
+# Wave 2b harmonizers emit short author-name consortium tokens (e.g. "Aragam")
+# while .planning/amendments/SUMSTATS-UPGRADE.tsv uses formal consortium
+# strings (e.g. "CARDIoGRAM-C4D-MVP" for the TRANS pooled meta and "BBJ" for
+# the EAS subset). The harmonizer-emitted token is what shows up in
+# trait_keys.txt + on-disk filenames, so the inventory must use the same
+# alias to match dim-j ⊆ invariant.
+#
+# Source: .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-02b-...
+#         -SUMMARY.md "Aragam D-03 branch verdict" + Wave-3 trait_keys.txt.
+CONSORTIUM_ALIAS: dict[tuple[str, str, str], str] = {
+    # (trait_token, ancestry, source_consortium_in_tsv) -> harmonizer-emitted
+    ("cad", "TRANS", "CARDIoGRAM-C4D-MVP"): "Aragam",
+    ("cad", "EAS",   "BBJ"):                "Aragam",
+    ("cad", "EUR",   "CARDIoGRAM-C4D-UKB"): "Aragam",
+}
+
 # Top-level YAML version + build target are constants for M1.
 INVENTORY_VERSION = "2026-04-M1"
 INVENTORY_BUILD_TARGET = "GRCh37"
@@ -74,9 +90,12 @@ def _build_key(row: pd.Series) -> str | None:
     anc = str(row["ancestry"])
     if anc not in ANCESTRY_MAP:
         return None
-    consortium = str(row["source_consortium"])
+    anc_norm = ANCESTRY_MAP[anc]
+    consortium_raw = str(row["source_consortium"])
+    consortium = CONSORTIUM_ALIAS.get((token, anc_norm, consortium_raw),
+                                      consortium_raw)
     year = _year_from_citation(row["citation_first_author_year"])
-    return f"{token}.{ANCESTRY_MAP[anc]}.{consortium}.{year}"
+    return f"{token}.{anc_norm}.{consortium}.{year}"
 
 
 def _read_qc_status(qc_json: Path) -> str:
@@ -182,6 +201,9 @@ def build_inventory(
             continue
         token = TOKEN_MAP[str(row["trait"])]
         anc = ANCESTRY_MAP[str(row["ancestry"])]
+        # The key already has the alias-resolved consortium baked in; pull it
+        # out so the entry's `consortium` field stays consistent with the key.
+        consortium_resolved = key.split(".")[2]
         # File path conventions per D-16.
         harm_path = f"data/processed/sumstats_harmonized/{key}.GRCh37.tsv.bgz"
         parq_path = f"data/processed/sumstats_harmonized_parquet/{key}.GRCh37.parquet"
@@ -198,7 +220,7 @@ def build_inventory(
         entry = {
             "trait": token,
             "ancestry": anc,
-            "consortium": str(row["source_consortium"]),
+            "consortium": consortium_resolved,
             "year": _year_from_citation(row["citation_first_author_year"]),
             "source_url": str(row.get("download_url") or ""),
             "doi": str(row.get("doi") or ""),

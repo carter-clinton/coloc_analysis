@@ -1,0 +1,1386 @@
+version: 2026-04-M1
+build_target: GRCh37
+traits:
+  bmi.EUR.GIANT-UKBB.2018:
+    trait: bmi
+    ancestry: EUR
+    consortium: GIANT-UKBB
+    year: 2018
+    source_url: https://portals.broadinstitute.org/collaboration/giant/index.php/GIANT_consortium_data_files
+    doi: 10.1093/hmg/ddy271
+    build: 37
+    phenotype_lock: continuous BMI inverse-rank-normal
+    harmonized_path: data/processed/sumstats_harmonized/bmi.EUR.GIANT-UKBB.2018.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/bmi.EUR.GIANT-UKBB.2018.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/bmi.EUR.GIANT-UKBB.2018.sumstats.gz
+    n_total: 681275
+    n_cases: null
+    n_controls: null
+    sha256_raw: 0d6ed0ea97870916b830ccae349df94ca6f3cc68c025c79e784729af7f7136a4
+    sha256_harmonized: 0147fbcd0d12cc917f9c2babe8e6a462b3c51ce7ff885999f310c445c32b6587
+    ldsc_intercept: 1.1944
+    ldsc_h2: 0.1904
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/bmi.EUR.GIANT-UKBB.2018.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - deCODE
+    - HUNT
+    - ARIC
+    - FHS
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  bmi.EUR.GIANT-23andMe.2022:
+    trait: bmi
+    ancestry: EUR
+    consortium: GIANT-23andMe
+    year: 2022
+    source_url: https://www.nature.com/articles/s41467-022-35553-2
+    doi: 10.1038/s41467-022-35553-2
+    build: 37
+    phenotype_lock: continuous BMI inverse-rank-normal
+    harmonized_path: data/processed/sumstats_harmonized/bmi.EUR.GIANT-23andMe.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/bmi.EUR.GIANT-23andMe.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/bmi.EUR.GIANT-23andMe.2022.sumstats.gz
+    n_total: 1108983
+    n_cases: null
+    n_controls: null
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/bmi.EUR.GIANT-23andMe.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - GIANT
+    - 23andMe
+    - UKB
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  bmi.AFR.GIANT-23andMe.2022:
+    trait: bmi
+    ancestry: AFR
+    consortium: GIANT-23andMe
+    year: 2022
+    source_url: https://www.nature.com/articles/s41467-022-35553-2
+    doi: 10.1038/s41467-022-35553-2
+    build: 37
+    phenotype_lock: continuous BMI inverse-rank-normal
+    harmonized_path: data/processed/sumstats_harmonized/bmi.AFR.GIANT-23andMe.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/bmi.AFR.GIANT-23andMe.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/bmi.AFR.GIANT-23andMe.2022.sumstats.gz
+    n_total: 100000
+    n_cases: null
+    n_controls: null
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/bmi.AFR.GIANT-23andMe.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - PAGE
+    - MVP-AFR
+    - 23andMe-AFR
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  bmi.AFR.PAGE.2019:
+    trait: bmi
+    ancestry: AFR
+    consortium: PAGE
+    year: 2019
+    source_url: https://www.ebi.ac.uk/gwas/publications/31217584
+    doi: 10.1038/s41586-019-1310-4
+    build: 37
+    phenotype_lock: continuous BMI inverse-rank-normal
+    harmonized_path: data/processed/sumstats_harmonized/bmi.AFR.PAGE.2019.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/bmi.AFR.PAGE.2019.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/bmi.AFR.PAGE.2019.sumstats.gz
+    n_total: 49335
+    n_cases: null
+    n_controls: null
+    sha256_raw: null
+    sha256_harmonized: 5262bd929339715c4571b065c176c86ed4e871054d7727551527db61bac2b1dd
+    ldsc_intercept: 1.1944
+    ldsc_h2: 0.1904
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/bmi.AFR.PAGE.2019.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - PAGE (MEC
+    - WHI
+    - HCHS/SOL
+    - BioMe)
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  t2d.TRANS.DIAMANTE.2022:
+    trait: t2d
+    ancestry: TRANS
+    consortium: DIAMANTE
+    year: 2022
+    source_url: https://diagram-consortium.org/downloads.html
+    doi: 10.1038/s41588-022-01058-3
+    build: 37
+    phenotype_lock: doctor-diagnosed T2D case-control (harmonized across contributing
+      GWAS)
+    harmonized_path: data/processed/sumstats_harmonized/t2d.TRANS.DIAMANTE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/t2d.TRANS.DIAMANTE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/t2d.TRANS.DIAMANTE.2022.sumstats.gz
+    n_total: 1339889
+    n_cases: 180834
+    n_controls: 1159055
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/t2d.TRANS.DIAMANTE.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB
+    - BBJ
+    - MVP
+    - AGEN
+    - SIGMA
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  t2d.EUR.DIAMANTE.2022:
+    trait: t2d
+    ancestry: EUR
+    consortium: DIAMANTE
+    year: 2022
+    source_url: https://diagram-consortium.org/downloads.html
+    doi: 10.1038/s41588-022-01058-3
+    build: 37
+    phenotype_lock: doctor-diagnosed T2D case-control
+    harmonized_path: data/processed/sumstats_harmonized/t2d.EUR.DIAMANTE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/t2d.EUR.DIAMANTE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/t2d.EUR.DIAMANTE.2022.sumstats.gz
+    n_total: 933970
+    n_cases: 80154
+    n_controls: 853816
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/t2d.EUR.DIAMANTE.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB
+    - deCODE
+    - 70K-for-T2D
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  t2d.AFR.DIAMANTE.2022:
+    trait: t2d
+    ancestry: AFR
+    consortium: DIAMANTE
+    year: 2022
+    source_url: https://diagram-consortium.org/downloads.html
+    doi: 10.1038/s41588-022-01058-3
+    build: 37
+    phenotype_lock: doctor-diagnosed T2D case-control
+    harmonized_path: data/processed/sumstats_harmonized/t2d.AFR.DIAMANTE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/t2d.AFR.DIAMANTE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/t2d.AFR.DIAMANTE.2022.sumstats.gz
+    n_total: 50251
+    n_cases: 29014
+    n_controls: 21237
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/t2d.AFR.DIAMANTE.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - MVP-AFR
+    - AADM
+    - PAGE
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: dua_pending
+  t2d.EAS.DIAMANTE.2022:
+    trait: t2d
+    ancestry: EAS
+    consortium: DIAMANTE
+    year: 2022
+    source_url: https://diagram-consortium.org/downloads.html
+    doi: 10.1038/s41588-022-01058-3
+    build: 37
+    phenotype_lock: doctor-diagnosed T2D case-control
+    harmonized_path: data/processed/sumstats_harmonized/t2d.EAS.DIAMANTE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/t2d.EAS.DIAMANTE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/t2d.EAS.DIAMANTE.2022.sumstats.gz
+    n_total: 283423
+    n_cases: 56268
+    n_controls: 227155
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/t2d.EAS.DIAMANTE.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - BBJ
+    - AGEN
+    - KoGES
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  t2d.SAS.DIAMANTE.2022:
+    trait: t2d
+    ancestry: SAS
+    consortium: DIAMANTE
+    year: 2022
+    source_url: https://diagram-consortium.org/downloads.html
+    doi: 10.1038/s41588-022-01058-3
+    build: 37
+    phenotype_lock: doctor-diagnosed T2D case-control
+    harmonized_path: data/processed/sumstats_harmonized/t2d.SAS.DIAMANTE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/t2d.SAS.DIAMANTE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/t2d.SAS.DIAMANTE.2022.sumstats.gz
+    n_total: 40856
+    n_cases: 16540
+    n_controls: 34316
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/t2d.SAS.DIAMANTE.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - SAT2D
+    - LOLIPOP
+    - PROMIS
+    mtag_overlap_correction_required: false
+    dua_required: false
+    license: public_academic
+    status: to_download
+  t2d.HIS.DIAMANTE.2022:
+    trait: t2d
+    ancestry: HIS
+    consortium: DIAMANTE
+    year: 2022
+    source_url: https://diagram-consortium.org/downloads.html
+    doi: 10.1038/s41588-022-01058-3
+    build: 37
+    phenotype_lock: doctor-diagnosed T2D case-control
+    harmonized_path: data/processed/sumstats_harmonized/t2d.HIS.DIAMANTE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/t2d.HIS.DIAMANTE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/t2d.HIS.DIAMANTE.2022.sumstats.gz
+    n_total: 31389
+    n_cases: 8150
+    n_controls: 23239
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/t2d.HIS.DIAMANTE.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - SIGMA
+    - HCHS/SOL
+    - MVP-HIS
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: dua_pending
+  sbp.EUR.Evangelou-ICBP-UKBB.2018:
+    trait: sbp
+    ancestry: EUR
+    consortium: Evangelou-ICBP-UKBB
+    year: 2018
+    source_url: https://www.ebi.ac.uk/gwas/studies/GCST006624
+    doi: 10.1038/s41588-018-0205-x
+    build: 37
+    phenotype_lock: SBP continuous (mmHg), medication-adjusted
+    harmonized_path: data/processed/sumstats_harmonized/sbp.EUR.Evangelou-ICBP-UKBB.2018.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/sbp.EUR.Evangelou-ICBP-UKBB.2018.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/sbp.EUR.Evangelou-ICBP-UKBB.2018.sumstats.gz
+    n_total: 757601
+    n_cases: null
+    n_controls: null
+    sha256_raw: null
+    sha256_harmonized: a740bb261b58cbb9f284139dd0012cb7fc01df24095e9a14833118fac6eba78f
+    ldsc_intercept: 1.153
+    ldsc_h2: 0.1282
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/sbp.EUR.Evangelou-ICBP-UKBB.2018.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - ICBP (many cohorts)
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: already_downloaded
+  sbp.AFR.MVP.2019:
+    trait: sbp
+    ancestry: AFR
+    consortium: MVP
+    year: 2019
+    source_url: https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs001672
+    doi: 10.1038/s41588-018-0303-9
+    build: 37
+    phenotype_lock: SBP continuous (mmHg), medication-adjusted
+    harmonized_path: data/processed/sumstats_harmonized/sbp.AFR.MVP.2019.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/sbp.AFR.MVP.2019.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/sbp.AFR.MVP.2019.sumstats.gz
+    n_total: 318891
+    n_cases: null
+    n_controls: null
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/sbp.AFR.MVP.2019.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - MVP-AFR
+    mtag_overlap_correction_required: true
+    dua_required: true
+    license: academic_dua
+    status: deferred_d06_fallback
+  stroke.TRANS.GIGASTROKE.2022:
+    trait: stroke
+    ancestry: TRANS
+    consortium: GIGASTROKE
+    year: 2022
+    source_url: https://www.ebi.ac.uk/gwas/publications/36180795
+    doi: 10.1038/s41586-022-05165-3
+    build: 37
+    phenotype_lock: all-stroke (AS) case-control, combined ischemic + hemorrhagic
+    harmonized_path: data/processed/sumstats_harmonized/stroke.TRANS.GIGASTROKE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/stroke.TRANS.GIGASTROKE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/stroke.TRANS.GIGASTROKE.2022.sumstats.gz
+    n_total: 1614080
+    n_cases: 110182
+    n_controls: 1503898
+    sha256_raw: 936d1d3825432a3d44aa23c6827122ce6c70e913bbe8d54d48883dfc358488e4
+    sha256_harmonized: fa713761ae69874da77b68cdfb293b895e65acb3597a42a832898305ffb8eac7
+    ldsc_intercept: 1.0772
+    ldsc_h2: 0.0063
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/stroke.TRANS.GIGASTROKE.2022.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - BBJ
+    - FinnGen
+    - MGI
+    - deCODE
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  stroke.EUR.GIGASTROKE.2022:
+    trait: stroke
+    ancestry: EUR
+    consortium: GIGASTROKE
+    year: 2022
+    source_url: https://www.ebi.ac.uk/gwas/publications/36180795
+    doi: 10.1038/s41586-022-05165-3
+    build: 37
+    phenotype_lock: all-stroke EUR-subset case-control
+    harmonized_path: data/processed/sumstats_harmonized/stroke.EUR.GIGASTROKE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/stroke.EUR.GIGASTROKE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/stroke.EUR.GIGASTROKE.2022.sumstats.gz
+    n_total: 1296908
+    n_cases: 73652
+    n_controls: 1223256
+    sha256_raw: 15384ea2ff7e03faaf66a2a0c315fd7d2f71c0d39f76906278131d6db695c624
+    sha256_harmonized: 79a888682faefa6b42ff2940dd934ce319f51ede7fe4e3cf49bde526f782d42e
+    ldsc_intercept: 1.0737
+    ldsc_h2: 0.006
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/stroke.EUR.GIGASTROKE.2022.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - FinnGen
+    - deCODE
+    - MGI
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  stroke.AFR.GIGASTROKE.2022:
+    trait: stroke
+    ancestry: AFR
+    consortium: GIGASTROKE
+    year: 2022
+    source_url: https://www.ebi.ac.uk/gwas/publications/36180795
+    doi: 10.1038/s41586-022-05165-3
+    build: 37
+    phenotype_lock: all-stroke AA-subset case-control
+    harmonized_path: data/processed/sumstats_harmonized/stroke.AFR.GIGASTROKE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/stroke.AFR.GIGASTROKE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/stroke.AFR.GIGASTROKE.2022.sumstats.gz
+    n_total: 23991
+    n_cases: 3961
+    n_controls: 20030
+    sha256_raw: 220d26108f966c9ead6764b9babcac1c6e60196255d22fe6c8e954b71a4b9dd4
+    sha256_harmonized: 3c58b250541ab93ed1546768c3d5b495198e65798619e3f4fc98c9d842130ea8
+    ldsc_intercept: 1.0536
+    ldsc_h2: -0.0005
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/stroke.AFR.GIGASTROKE.2022.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - PAGE-AFR
+    - MVP-AFR
+    - AAASPS
+    - REGARDS
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  stroke.EAS.GIGASTROKE.2022:
+    trait: stroke
+    ancestry: EAS
+    consortium: GIGASTROKE
+    year: 2022
+    source_url: https://www.ebi.ac.uk/gwas/publications/36180795
+    doi: 10.1038/s41586-022-05165-3
+    build: 37
+    phenotype_lock: all-stroke EAS-subset case-control
+    harmonized_path: data/processed/sumstats_harmonized/stroke.EAS.GIGASTROKE.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/stroke.EAS.GIGASTROKE.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/stroke.EAS.GIGASTROKE.2022.sumstats.gz
+    n_total: 400907
+    n_cases: 27413
+    n_controls: 373494
+    sha256_raw: d6e079c460f0a07934a543dd3db1109211dc5e92df7de698e220bdb81b6f27af
+    sha256_harmonized: 7562dfef05d7cb1b826a7974b42aeef4e400b99fe5deefc0aa126cd1d2f7a521
+    ldsc_intercept: 1.0524
+    ldsc_h2: 0.0078
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/stroke.EAS.GIGASTROKE.2022.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - BBJ
+    - CKB
+    - KoGES
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  asthma.MULTI.GBMI.2022:
+    trait: asthma
+    ancestry: MULTI
+    consortium: GBMI
+    year: 2022
+    source_url: https://www.globalbiobankmeta.org/resources
+    doi: 10.1016/j.xgen.2022.100210
+    build: 37
+    phenotype_lock: pooled adult+child asthma case-control (GBMI harmonized PheCode)
+    harmonized_path: data/processed/sumstats_harmonized/asthma.MULTI.GBMI.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/asthma.MULTI.GBMI.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/asthma.MULTI.GBMI.2022.sumstats.gz
+    n_total: 1800785
+    n_cases: 153763
+    n_controls: 1647022
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/asthma.MULTI.GBMI.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB
+    - FinnGen
+    - BBJ
+    - MGI
+    - Estonia
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  asthma.EUR.GBMI.2022:
+    trait: asthma
+    ancestry: EUR
+    consortium: GBMI
+    year: 2022
+    source_url: https://www.globalbiobankmeta.org/resources
+    doi: 10.1016/j.xgen.2022.100210
+    build: 37
+    phenotype_lock: pooled adult+child asthma case-control EUR subset
+    harmonized_path: data/processed/sumstats_harmonized/asthma.EUR.GBMI.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/asthma.EUR.GBMI.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/asthma.EUR.GBMI.2022.sumstats.gz
+    n_total: 995917
+    n_cases: 58559
+    n_controls: 937358
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/asthma.EUR.GBMI.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB
+    - FinnGen
+    - MGI
+    - Estonia
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  asthma.AFR.GBMI.2022:
+    trait: asthma
+    ancestry: AFR
+    consortium: GBMI
+    year: 2022
+    source_url: https://www.globalbiobankmeta.org/resources
+    doi: 10.1016/j.xgen.2022.100210
+    build: 37
+    phenotype_lock: pooled adult+child asthma case-control AFR subset
+    harmonized_path: data/processed/sumstats_harmonized/asthma.AFR.GBMI.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/asthma.AFR.GBMI.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/asthma.AFR.GBMI.2022.sumstats.gz
+    n_total: 29682
+    n_cases: 1978
+    n_controls: 27704
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/asthma.AFR.GBMI.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB-AFR
+    - BioMe-AFR
+    - MGI-AFR
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  cad.TRANS.Aragam.2022:
+    trait: cad
+    ancestry: TRANS
+    consortium: Aragam
+    year: 2022
+    source_url: https://personal.broadinstitute.org/ryank/Aragam_2022_CARDIoGRAM_CAD_GWAS.zip
+    doi: 10.1038/s41588-022-01233-6
+    build: 37
+    phenotype_lock: CAD case-control (broad MI + CAD composite)
+    harmonized_path: data/processed/sumstats_harmonized/cad.TRANS.Aragam.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/cad.TRANS.Aragam.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/cad.TRANS.Aragam.2022.sumstats.gz
+    n_total: 1165690
+    n_cases: 181522
+    n_controls: 984168
+    sha256_raw: null
+    sha256_harmonized: fda1975a25d97b414238d0154bb7178f65304ee0505e0483198b51c142b8c78e
+    ldsc_intercept: 1.0195
+    ldsc_h2: 0.0325
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/cad.TRANS.Aragam.2022.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP
+    - CARDIoGRAM
+    - BBJ
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  cad.EUR.Aragam.2022:
+    trait: cad
+    ancestry: EUR
+    consortium: Aragam
+    year: 2022
+    source_url: https://personal.broadinstitute.org/ryank/Aragam_2022_CARDIoGRAM_CAD_GWAS.zip
+    doi: 10.1038/s41588-022-01233-6
+    build: 37
+    phenotype_lock: CAD case-control EUR subset
+    harmonized_path: data/processed/sumstats_harmonized/cad.EUR.Aragam.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/cad.EUR.Aragam.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/cad.EUR.Aragam.2022.sumstats.gz
+    n_total: 1001226
+    n_cases: 156336
+    n_controls: 844890
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/cad.EUR.Aragam.2022.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB
+    - CARDIoGRAM
+    - MVP-EUR
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  cad.AFR.MVP-CHARGE.2018:
+    trait: cad
+    ancestry: AFR
+    consortium: MVP-CHARGE
+    year: 2018
+    source_url: https://www.ebi.ac.uk/gwas/publications/29892015
+    doi: 10.1038/s41591-018-0090-y
+    build: 37
+    phenotype_lock: CAD case-control AFR subset (Klarin 2018 MVP-AFR fallback)
+    harmonized_path: data/processed/sumstats_harmonized/cad.AFR.MVP-CHARGE.2018.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/cad.AFR.MVP-CHARGE.2018.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/cad.AFR.MVP-CHARGE.2018.sumstats.gz
+    n_total: 8500
+    n_cases: null
+    n_controls: null
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/cad.AFR.MVP-CHARGE.2018.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - MVP-AFR
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  cad.EAS.Aragam.2022:
+    trait: cad
+    ancestry: EAS
+    consortium: Aragam
+    year: 2022
+    source_url: https://personal.broadinstitute.org/ryank/Aragam_2022_CARDIoGRAM_CAD_GWAS.zip
+    doi: 10.1038/s41588-022-01233-6
+    build: 37
+    phenotype_lock: CAD case-control EAS subset
+    harmonized_path: data/processed/sumstats_harmonized/cad.EAS.Aragam.2022.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/cad.EAS.Aragam.2022.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/cad.EAS.Aragam.2022.sumstats.gz
+    n_total: 212453
+    n_cases: 29319
+    n_controls: 183134
+    sha256_raw: null
+    sha256_harmonized: ea3a61afed57ac425607001e39cf493499de2facea4cdb3351da3700f519b011
+    ldsc_intercept: 1.0552
+    ldsc_h2: 0.0321
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/cad.EAS.Aragam.2022.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - BBJ
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  ldl.TRANS.GLGC.2021:
+    trait: ldl
+    ancestry: TRANS
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/trans_ancestry/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: LDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/ldl.TRANS.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/ldl.TRANS.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/ldl.TRANS.GLGC.2021.sumstats.gz
+    n_total: 1320016
+    n_cases: null
+    n_controls: null
+    sha256_raw: 7f3e73ccc3e016b4d5602c8f728e9a3194fe253c8933ddeb06e81281758ab99d
+    sha256_harmonized: 26f31175e9474c557595e338d1df0ef3db4dd8a2b01af516ed26520d290fd0b1
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/ldl.TRANS.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP
+    - BBJ
+    - HCHS/SOL
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  ldl.EUR.GLGC.2021:
+    trait: ldl
+    ancestry: EUR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: LDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/ldl.EUR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/ldl.EUR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/ldl.EUR.GLGC.2021.sumstats.gz
+    n_total: 931721
+    n_cases: null
+    n_controls: null
+    sha256_raw: 36b8d68476a00fcd5a599abe5877bcab3290becd55c3ef64e0dccf9b7c6f65ab
+    sha256_harmonized: e189d9b087518f8dc400a828f4ddb163520d37cfa95beb6c212d4e78d828c00a
+    ldsc_intercept: 1.143
+    ldsc_h2: 0.081
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/ldl.EUR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP-EUR
+    - CARDIoGRAM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  ldl.AFR.GLGC.2021:
+    trait: ldl
+    ancestry: AFR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: LDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/ldl.AFR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/ldl.AFR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/ldl.AFR.GLGC.2021.sumstats.gz
+    n_total: 91016
+    n_cases: null
+    n_controls: null
+    sha256_raw: d3fece0303014c0f2c61968326ee0fdd78297c00ae18597185e52cf8a4dec4c3
+    sha256_harmonized: 779733db05331499e6f721bbbbf1f61c7213bead4bbdc4fea85d0c1835610050
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/ldl.AFR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - PAGE-AFR
+    - MVP-AFR
+    - AADM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  ldl.EAS.GLGC.2021:
+    trait: ldl
+    ancestry: EAS
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: LDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/ldl.EAS.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/ldl.EAS.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/ldl.EAS.GLGC.2021.sumstats.gz
+    n_total: 146492
+    n_cases: null
+    n_controls: null
+    sha256_raw: 74a843265861536911dc8808997ab651e86828522263bad1519c9372394942dc
+    sha256_harmonized: 430eddb51e6da2e9caf1f8d1845c49958caa23b892670ee7865fb82bc8f0d9ff
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/ldl.EAS.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - BBJ
+    - KoGES
+    - CKB
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  ldl.SAS.GLGC.2021:
+    trait: ldl
+    ancestry: SAS
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: LDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/ldl.SAS.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/ldl.SAS.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/ldl.SAS.GLGC.2021.sumstats.gz
+    n_total: 34135
+    n_cases: null
+    n_controls: null
+    sha256_raw: 6e915be3f0f6ec67a80ad8bc4ab55622deee6902465ea93df5478f2404a4de24
+    sha256_harmonized: 563209b7eadcb50f02203fc479395986fba1d4902301ddf35974bde7d8b3e67d
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/ldl.SAS.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - LOLIPOP
+    - PROMIS
+    mtag_overlap_correction_required: false
+    dua_required: false
+    license: public_academic
+    status: to_download
+  ldl.HIS.GLGC.2021:
+    trait: ldl
+    ancestry: HIS
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: LDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/ldl.HIS.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/ldl.HIS.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/ldl.HIS.GLGC.2021.sumstats.gz
+    n_total: 47276
+    n_cases: null
+    n_controls: null
+    sha256_raw: 6b0f899583ac106254cac396b5e483c38043e032e78090848ab7d27bdcb7cc16
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/ldl.HIS.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - HCHS/SOL
+    - MEC-HIS
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hdl.TRANS.GLGC.2021:
+    trait: hdl
+    ancestry: TRANS
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/trans_ancestry/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: HDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/hdl.TRANS.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hdl.TRANS.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hdl.TRANS.GLGC.2021.sumstats.gz
+    n_total: 1320016
+    n_cases: null
+    n_controls: null
+    sha256_raw: dd52afac949a57c3c2c2fd9e829a0ef53c6624d03830f09ed86b63721778725f
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hdl.TRANS.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP
+    - BBJ
+    - HCHS/SOL
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hdl.EUR.GLGC.2021:
+    trait: hdl
+    ancestry: EUR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: HDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/hdl.EUR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hdl.EUR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hdl.EUR.GLGC.2021.sumstats.gz
+    n_total: 931721
+    n_cases: null
+    n_controls: null
+    sha256_raw: 3711b6c62773e9685eb6a9d9b0ba7bb6551a5dcec5721c0718e7661f891d8055
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hdl.EUR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP-EUR
+    - CARDIoGRAM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hdl.AFR.GLGC.2021:
+    trait: hdl
+    ancestry: AFR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: HDL-C inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/hdl.AFR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hdl.AFR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hdl.AFR.GLGC.2021.sumstats.gz
+    n_total: 91016
+    n_cases: null
+    n_controls: null
+    sha256_raw: 9065b2d64165af422ebab4c6efc4375abdc53644ce64787516433ccf5772ba5b
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hdl.AFR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - PAGE-AFR
+    - MVP-AFR
+    - AADM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  tg.TRANS.GLGC.2021:
+    trait: tg
+    ancestry: TRANS
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/trans_ancestry/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: log(TG) inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/tg.TRANS.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/tg.TRANS.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/tg.TRANS.GLGC.2021.sumstats.gz
+    n_total: 1320016
+    n_cases: null
+    n_controls: null
+    sha256_raw: 1acf708ec04c009085e4aa43ca41e6d0a5d753458c394ae2f8c0e84806456d78
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/tg.TRANS.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP
+    - BBJ
+    - HCHS/SOL
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  tg.EUR.GLGC.2021:
+    trait: tg
+    ancestry: EUR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: log(TG) inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/tg.EUR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/tg.EUR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/tg.EUR.GLGC.2021.sumstats.gz
+    n_total: 931721
+    n_cases: null
+    n_controls: null
+    sha256_raw: d21a2822bdb6de5735ca741bd98978bcd91048f68087bf60175c671747557492
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/tg.EUR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP-EUR
+    - CARDIoGRAM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  tg.AFR.GLGC.2021:
+    trait: tg
+    ancestry: AFR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: log(TG) inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/tg.AFR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/tg.AFR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/tg.AFR.GLGC.2021.sumstats.gz
+    n_total: 91016
+    n_cases: null
+    n_controls: null
+    sha256_raw: 4bbae176c6ddc20cf1498b6605b6c9f6d20c7e03c8080a0a92acac8355c7a3d0
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/tg.AFR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - PAGE-AFR
+    - MVP-AFR
+    - AADM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  tc.TRANS.GLGC.2021:
+    trait: tc
+    ancestry: TRANS
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/trans_ancestry/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: TC inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/tc.TRANS.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/tc.TRANS.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/tc.TRANS.GLGC.2021.sumstats.gz
+    n_total: 1320016
+    n_cases: null
+    n_controls: null
+    sha256_raw: 2edce4483bdf2a37afff04537f8d37c90c85d3dcc1b99329429827bdb3960682
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/tc.TRANS.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP
+    - BBJ
+    - HCHS/SOL
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  tc.EUR.GLGC.2021:
+    trait: tc
+    ancestry: EUR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: TC inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/tc.EUR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/tc.EUR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/tc.EUR.GLGC.2021.sumstats.gz
+    n_total: 931721
+    n_cases: null
+    n_controls: null
+    sha256_raw: d88e6b38cd0a72d0af1762f36d5669fd4e322f148eaaa25492c737f36a36dcf9
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/tc.EUR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MVP-EUR
+    - CARDIoGRAM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  tc.AFR.GLGC.2021:
+    trait: tc
+    ancestry: AFR
+    consortium: GLGC
+    year: 2021
+    source_url: https://csg.sph.umich.edu/willer/public/glgc-lipids2021/results/ancestry_specific/
+    doi: 10.1038/s41586-021-04064-3
+    build: 37
+    phenotype_lock: TC inverse-normal transformed
+    harmonized_path: data/processed/sumstats_harmonized/tc.AFR.GLGC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/tc.AFR.GLGC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/tc.AFR.GLGC.2021.sumstats.gz
+    n_total: 91016
+    n_cases: null
+    n_controls: null
+    sha256_raw: 26f7089b90ed95afea7776e99429189560a70bd900b4e5d26db1a34013fd6e43
+    sha256_harmonized: 4af5a487ed6fe659c9129f85d22afdfc92c82f4f05debb9be3de9c8d59a56568
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/tc.AFR.GLGC.2021.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - PAGE-AFR
+    - MVP-AFR
+    - AADM
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  egfr.TRANS.CKDGen.2019:
+    trait: egfr
+    ancestry: TRANS
+    consortium: CKDGen
+    year: 2019
+    source_url: https://ckdgen.imbi.uni-freiburg.de/files/Wuttke2019/20171016_MW_eGFR_overall_ALL_nstud61.dbgap.txt.gz
+    doi: 10.1038/s41588-019-0407-x
+    build: 37
+    phenotype_lock: log(eGFR-creatinine) continuous
+    harmonized_path: data/processed/sumstats_harmonized/egfr.TRANS.CKDGen.2019.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/egfr.TRANS.CKDGen.2019.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/egfr.TRANS.CKDGen.2019.sumstats.gz
+    n_total: 765348
+    n_cases: null
+    n_controls: null
+    sha256_raw: 7c3f49b89599dfe79c299cf2b29996c2448cbb359c7e7c27c389ca4bb85bd060
+    sha256_harmonized: d02ec0284684e265af66b8621378f4dca728ab85e7cac375a92606f89540d3de
+    ldsc_intercept: 1.0454
+    ldsc_h2: 0.0589
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/egfr.TRANS.CKDGen.2019.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MGI
+    - many CKDGen cohorts
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  egfr.EUR.CKDGen.2019:
+    trait: egfr
+    ancestry: EUR
+    consortium: CKDGen
+    year: 2019
+    source_url: https://ckdgen.imbi.uni-freiburg.de/files/Wuttke2019/20171017_MW_eGFR_overall_EA_nstud42.dbgap.txt.gz
+    doi: 10.1038/s41588-019-0407-x
+    build: 37
+    phenotype_lock: log(eGFR-creatinine) continuous
+    harmonized_path: data/processed/sumstats_harmonized/egfr.EUR.CKDGen.2019.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/egfr.EUR.CKDGen.2019.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/egfr.EUR.CKDGen.2019.sumstats.gz
+    n_total: 567460
+    n_cases: null
+    n_controls: null
+    sha256_raw: 1bf4906310e1cf8d74fa0be3b052dc0c5a09bf87a27106fa11184afdad5e155e
+    sha256_harmonized: 36bde1def57cfef33164b370b162521380edebacc9cf0d3040531a7afc4b8cf4
+    ldsc_intercept: 1.0318
+    ldsc_h2: 0.0718
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/egfr.EUR.CKDGen.2019.qc.html
+    qc_status: UNKNOWN
+    cohort_overlap_cohorts:
+    - UKB
+    - MGI
+    - CKDGen-EUR
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  egfr.AFR.CKDGen.2019:
+    trait: egfr
+    ancestry: AFR
+    consortium: CKDGen
+    year: 2019
+    source_url: https://ckdgen.imbi.uni-freiburg.de/datasets/Morris_2019
+    doi: 10.1038/s41467-019-11704-w
+    build: 37
+    phenotype_lock: log(eGFR-creatinine) continuous
+    harmonized_path: data/processed/sumstats_harmonized/egfr.AFR.CKDGen.2019.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/egfr.AFR.CKDGen.2019.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/egfr.AFR.CKDGen.2019.sumstats.gz
+    n_total: 15863
+    n_cases: null
+    n_controls: null
+    sha256_raw: null
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/egfr.AFR.CKDGen.2019.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - COGENT-AFR
+    - MVP-AFR
+    - ARIC-AFR
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hba1c.TRANS.MAGIC.2021:
+    trait: hba1c
+    ancestry: TRANS
+    consortium: MAGIC
+    year: 2021
+    source_url: https://magicinvestigators.org/downloads/
+    doi: 10.1038/s41588-021-00852-9
+    build: 37
+    phenotype_lock: HbA1c continuous (mmol/mol), adjusted for age sex study covariates
+    harmonized_path: data/processed/sumstats_harmonized/hba1c.TRANS.MAGIC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hba1c.TRANS.MAGIC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hba1c.TRANS.MAGIC.2021.sumstats.gz
+    n_total: 281416
+    n_cases: null
+    n_controls: null
+    sha256_raw: 634625a06fed46f6ee8c723cc5fb8df2a05a17e31871c89cd7b416f3358d7382
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hba1c.TRANS.MAGIC.2021.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB
+    - BBJ
+    - HCHS/SOL
+    - CKB
+    - LOLIPOP
+    - many
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hba1c.EUR.MAGIC.2021:
+    trait: hba1c
+    ancestry: EUR
+    consortium: MAGIC
+    year: 2021
+    source_url: https://magicinvestigators.org/downloads/
+    doi: 10.1038/s41588-021-00852-9
+    build: 37
+    phenotype_lock: HbA1c continuous EUR
+    harmonized_path: data/processed/sumstats_harmonized/hba1c.EUR.MAGIC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hba1c.EUR.MAGIC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hba1c.EUR.MAGIC.2021.sumstats.gz
+    n_total: 123665
+    n_cases: null
+    n_controls: null
+    sha256_raw: 2d571567530b4773fbbf83d18b61b7e48b022ba8b62497a7581d2e426dc35aa1
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hba1c.EUR.MAGIC.2021.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - UKB
+    - FHS
+    - ARIC
+    - CHS
+    - MESA-EUR
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hba1c.AFR.MAGIC.2021:
+    trait: hba1c
+    ancestry: AFR
+    consortium: MAGIC
+    year: 2021
+    source_url: https://magicinvestigators.org/downloads/
+    doi: 10.1038/s41588-021-00852-9
+    build: 37
+    phenotype_lock: HbA1c continuous AFR
+    harmonized_path: data/processed/sumstats_harmonized/hba1c.AFR.MAGIC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hba1c.AFR.MAGIC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hba1c.AFR.MAGIC.2021.sumstats.gz
+    n_total: 7564
+    n_cases: null
+    n_controls: null
+    sha256_raw: fe03247fc76cc561ab882aa264e8f4adc67b67e27596c2bebeb0c6ed0bfe9717
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hba1c.AFR.MAGIC.2021.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - HCHS/SOL-AFR
+    - ARIC-AFR
+    - MESA-AFR
+    - JHS
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hba1c.EAS.MAGIC.2021:
+    trait: hba1c
+    ancestry: EAS
+    consortium: MAGIC
+    year: 2021
+    source_url: https://magicinvestigators.org/downloads/
+    doi: 10.1038/s41588-021-00852-9
+    build: 37
+    phenotype_lock: HbA1c continuous EAS
+    harmonized_path: data/processed/sumstats_harmonized/hba1c.EAS.MAGIC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hba1c.EAS.MAGIC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hba1c.EAS.MAGIC.2021.sumstats.gz
+    n_total: 20838
+    n_cases: null
+    n_controls: null
+    sha256_raw: c25a5fea39b6996a5baf801ca1d1579b8f67319436fe493beac78011a5db8490
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hba1c.EAS.MAGIC.2021.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - BBJ
+    - CKB
+    - TWB
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hba1c.SAS.MAGIC.2021:
+    trait: hba1c
+    ancestry: SAS
+    consortium: MAGIC
+    year: 2021
+    source_url: https://magicinvestigators.org/downloads/
+    doi: 10.1038/s41588-021-00852-9
+    build: 37
+    phenotype_lock: HbA1c continuous SAS
+    harmonized_path: data/processed/sumstats_harmonized/hba1c.SAS.MAGIC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hba1c.SAS.MAGIC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hba1c.SAS.MAGIC.2021.sumstats.gz
+    n_total: 8874
+    n_cases: null
+    n_controls: null
+    sha256_raw: cb0ed65b6defedf3df321a731060084ac4bba00052d3bcc59b071e3a303619f0
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hba1c.SAS.MAGIC.2021.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - LOLIPOP
+    - PROMIS
+    mtag_overlap_correction_required: false
+    dua_required: false
+    license: public_academic
+    status: to_download
+  hba1c.HIS.MAGIC.2021:
+    trait: hba1c
+    ancestry: HIS
+    consortium: MAGIC
+    year: 2021
+    source_url: https://magicinvestigators.org/downloads/
+    doi: 10.1038/s41588-021-00852-9
+    build: 37
+    phenotype_lock: HbA1c continuous HIS
+    harmonized_path: data/processed/sumstats_harmonized/hba1c.HIS.MAGIC.2021.GRCh37.tsv.bgz
+    parquet_path: data/processed/sumstats_harmonized_parquet/hba1c.HIS.MAGIC.2021.GRCh37.parquet
+    munged_path: data/processed/ldsc_overlap/munged/hba1c.HIS.MAGIC.2021.sumstats.gz
+    n_total: 20475
+    n_cases: null
+    n_controls: null
+    sha256_raw: eff4812672e285c91330e903306b2c7816bddb7af999c6f2530ed05fb40ac975
+    sha256_harmonized: null
+    ldsc_intercept: null
+    ldsc_h2: null
+    qc_report_path: data/processed/sumstats_harmonized/qc_log/hba1c.HIS.MAGIC.2021.qc.html
+    qc_status: MISSING
+    cohort_overlap_cohorts:
+    - HCHS/SOL
+    - MESA-HIS
+    mtag_overlap_correction_required: true
+    dua_required: false
+    license: public_academic
+    status: to_download

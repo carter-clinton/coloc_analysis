@@ -17,12 +17,12 @@
 | Supersedes-but-incorporates | Phase 1 closeout amendment posted 2026-04-13 at `osf.io/az52u` (distal-gene expansion, PDF only, no local source). Not retracted; this amendment extends it. |
 | Posting gate | M1 sumstats harmonization COMPLETE with per-trait SHA-256 checksums frozen. BEFORE any MTAG or CPASSOC discovery run executes in M2. Per Amendment §9.1 — "Carter confirmed this sequencing." |
 | Catalog lock manifest | [`data/catalogs/catalog_lock_manifest.tsv`](../../data/catalogs/catalog_lock_manifest.tsv) — M0 snapshot commit `0a1339e` (ClinVar locked, 4 catalogs M5-deferred). |
-| Expected posting date | `2026-[M1 completion month]` — fill in before paste. |
+| Expected posting date | `2026-04-25` — fill in before paste. |
 | Attachment | Optional: attach PDF export of [PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md](PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md) as supplementary material if OSF form allows. |
 
 **Pre-paste checklist (work top-to-bottom before submitting the OSF form):**
 
-1. Fill the `2026-[M1 completion month]` placeholder in the Date field with the actual M1 completion date (`YYYY-MM-DD`).
+1. Fill the `2026-04-25` placeholder in the Date field with the actual M1 completion date (`YYYY-MM-DD`).
 2. Replace the `<M1 commit hash>` placeholder in the "What is not changing" paragraph with the HEAD commit hash of the M1 closeout.
 3. Replace the `<M5-locked catalog commit hash>` placeholder with the commit hash from the M5 lock-refresh commit (at M5, when the M5-deferred rows in `catalog_lock_manifest.tsv` are populated with SHA-256). If posting at end of M1 before M5 runs, leave as `<M5 lock commit hash TBD>` and add a one-line note at the bottom of the amendment: "Catalog lock commit hash will be added as a follow-up OSF update at M5 cross-reference date; the URL path to the manifest is stable."
 4. Verify the `data/catalogs/catalog_lock_manifest.tsv` reference in Paragraph 5 still has the ClinVar SHA-256 `3be9939676e44a79e906dd167caec45e6e871be55db1a4ddb9269ebf0828e58e` (it will, unless the M0 snapshot has been intentionally rewritten).
@@ -33,7 +33,7 @@
 
 **Amendment to pre-registration osf.io/pvb5j: genome-wide pleiotropy discovery expansion**
 
-**Date:** 2026-[M1 completion YYYY-MM-DD]
+**Date:** 2026-04-25
 
 **Investigator:** Carter K. Clinton, NCSU ASHES Lab, ORCID 0000-0003-2669-8200.
 
