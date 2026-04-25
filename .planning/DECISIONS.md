@@ -573,3 +573,87 @@ than a post-hoc carve-out (Amendment §8).
   per REQ-10-equivalent carry-forward.
 - Pre-pivot spine artifacts (Phases 0, 1, 2, 5, 9) serve both tracks per
   Amendment §8 preservation commitment.
+
+---
+
+## 2026-04-24 — DEC-2026-04-24-01: GRCh37 canonical target for M1 harmonized sumstats (override of Amendment §3 M1 "GRCh38" wording)
+
+**Decision:** Keep GRCh37 as the canonical analytic plane across all M1
+harmonized sumstats per CONTEXT D-08. Amendment §3 M1 text reading
+"Harmonize to GRCh38" is overridden. Two b38-native sources (Loh 2022 BMI
+rows 3-4 of `SUMSTATS-UPGRADE.tsv`; GBMI asthma rows 18-20) undergo
+b38→b37 liftover at harmonize step using `pyliftover` plus
+`data/external/liftover/hg38ToHg19.over.chain.gz` (UCSC chain staged
+2026-04-25 in Wave 0 Task 2; SHA-256
+`14a712e8e147d9fc8e9d87d51977b46f6f8ddb93efbe5d0843d86b6205f587b1`) with
+a 5% drop-rate hard-fail ceiling per
+`sumstats_utils.liftover_to_grch37`. All other 42 source files are b37
+native.
+
+**Alternatives considered:** (a) GRCh38 per Amendment §3 literal — would
+require lifting 42 sources instead of 2 + forcing LDSC reference LD
+re-keying + breaking Evangelou 2018 T1-spine reuse;
+(b) GRCh37 per D-08 (adopted).
+
+**Why:** 42 of 47 source files (TSV rows 2, 5–13, 14–17, 21–48 minus the
+five b38 rows) are b37 native. 1000G Phase 3 reference LD panels at
+`data/external/ldscore/eur_w_ld_chr/` (Phase 5 staged 2026-04-14 via
+Zenodo URL-rot workaround per `feedback_url_rot_workarounds.md`) are b37.
+Evangelou 2018 SBP-EUR at
+`data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz` (T1 spine
+reuse per Amendment §8) is b37. Flipping canonical to b38 would force 42
+liftovers and a reference-LD rebuild for 0 analytic gain.
+
+**How to apply:** Harmonizer modules for Loh 2022
+(`harmonize_yengo.py` loh-variant path) and GBMI asthma (extended
+`harmonize_gbmi.py` with opt-in liftover flag) call
+`sumstats_utils.liftover_to_grch37(df,
+chain_file="data/external/liftover/hg38ToHg19.over.chain.gz",
+max_drop_rate=0.05)`. Filename convention appends `.GRCh37` token
+unconditionally per CONTEXT D-09. The tests/m1/test_liftover.py
+round-trip test gates the chain file. `OSF-AMENDMENT-TEXT-2026-04-22.md`
+pre-paste check (Wave 0 Task 3) confirmed no lingering "GRCh38"
+assertion in the OSF body — no edit required.
+
+---
+
+## 2026-04-24 — DEC-2026-04-24-02: AoU Researcher Workbench compute scope expansion into M1 (override of DEC-2026-04-22-04 M3-only scope)
+
+**Decision:** Adopt AoU Researcher Workbench AFR-SBP derivation as the M1
+D-06 fallback path. Wave 0 Probe 2 (2026-04-25, GWAS-Catalog Giri 2019
+publication-page check at `ebi.ac.uk/gwas/publications/30578418`)
+returned **NO-SUMMARY-FOUND** (zero GCST accession matches in 63,005-byte
+HTML body); the D-06 primary path (public summary-only download) is
+therefore unavailable as of M1 kickoff. This adds an AoU compute path
+to M1 that DEC-2026-04-22-04 had previously scoped to M3 (LD panel
+build) only. Egress-audit scaffolding from `AOU-LD-PIPELINE.md` §2
+P1–P7 is reusable for AFR-SBP derivation with minimal adaptation. Dual
+egress-audit entries are required (one for M1 AFR-SBP if the derivation
+fires, one for M3 AFR-LD).
+
+**Alternatives considered:** (a) Keep M1 AoU-free by dropping AFR-BP —
+rejected per CONTEXT D-06 ("drop AFR-BP from M1 is off-table";
+Amendment §4 locked inventory holds);
+(b) dbGaP phs001672 DUA submission — rejected per CONTEXT D-06
+(critical-path killer; REQ-PUBLIC-DATA-ONLY path avoids DUA where
+possible);
+(c) Expand scope per CONTEXT D-07 (adopted).
+
+**Why:** Amendment §4 lock on the 45-row trait × ancestry inventory is
+binding. D-06 primary (GWAS-Catalog public summary-only) is the
+preferred path; with that path closed (Probe 2 outcome), D-06 fallback
+(AoU) is the only REQ-PUBLIC-DATA-ONLY-compatible option. dbGaP is
+explicitly off-table. Scope expansion to M1 is a pragmatic acceptance
+of the cost (single AFR-SBP derivation, ~1–2 weeks AoU compute, reuses
+the P1–P7 scaffolding M3 was going to require anyway).
+
+**How to apply:** Wave 1 download rule for `SUMSTATS-UPGRADE.tsv` row 13
+(MVP-Giri SBP × AFR) emits `status=deferred_d06_fallback` with a
+`.placeholder` file pointing to the AoU derivation SOP at
+`AOU-LD-PIPELINE.md` §2 P1–P7. Carter initiates the AoU Workbench
+derivation out of band (this is REQ-AOU-LD-EGRESS-equivalent for M1;
+not an `/gsd-execute-phase` task). M1 closeout does NOT block on
+AFR-SBP; the Wave 3 LDSC bivariate-intercept matrix has at most 44
+keys instead of 45 until the AoU artifact lands. M2 MTAG / CPASSOC may
+proceed on the 44-key matrix; the AFR-SBP row joins post-derivation
+without reorchestrating Waves 1–4.
