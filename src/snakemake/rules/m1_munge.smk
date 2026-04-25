@@ -133,7 +133,9 @@ rule m1_munge_per_trait:
         python src/python/munge_sumstats_ldsc.py \
             --input {input.harmonized} \
             --output {output.munged} \
-            --trait {wildcards.trait}
+            --trait {wildcards.trait} \
+            --merge-alleles {input.w_hm3} \
+            --chunksize 500000
         """
 
 
