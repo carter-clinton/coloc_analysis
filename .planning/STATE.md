@@ -4,7 +4,7 @@ milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
 stopped_at: Completed m1-04-qc-reports-inventory-manifest-PLAN.md (M1 closed; OSF amendment paste-ready)
-last_updated: "2026-04-25T15:13:59.904Z"
+last_updated: "2026-04-25T15:54:12.917Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 12
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 ## Current Position
 
-Phase: m1-sumstats-upgrade-and-harmonization (sumstats-upgrade-and-harmonization) — EXECUTING
-Plan: 6 of 6
+Phase: m1-sumstats-upgrade-and-harmonization
+Plan: Not started
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -88,7 +88,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 
 **Velocity:**
 
-- Total plans completed: 15
+- Total plans completed: 21
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -99,6 +99,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | 02 | 5 | - | - |
 | 05 | 5 | - | - |
 | 09 | 5 | - | - |
+| m1-sumstats-upgrade-and-harmonization | 6 | - | - |
 
 **Recent Trend:**
 
