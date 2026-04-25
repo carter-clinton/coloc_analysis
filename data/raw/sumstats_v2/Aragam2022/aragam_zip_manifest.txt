@@ -1,0 +1,8 @@
+Archive:  data/raw/sumstats_v2/Aragam2022/CAD/Aragam_2022_CARDIoGRAM_CAD_GWAS.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+3064373414  12-05-2022 14:12   CAD_GWAS_BBJ_meta.tsv
+1079683735  09-10-2021 11:01   CAD_GWAS_SEX_STRATIFIED.txt.gz
+3117056837  12-05-2022 14:11   CAD_GWAS_primary_discovery_meta.tsv
+---------                     -------
+7261113986                     3 files
