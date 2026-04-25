@@ -151,12 +151,30 @@ winner's-curse correction and metafor IVW meta. These artifacts flow into
 both Track A (primary data) and Track B (candidate-locus validation
 subset) per Amendment §8.
 
-**Track B M1–M6 — queued for planning.** M1 sumstats upgrade + harmonization
-(`/gsd-plan-phase M1`) per SUMSTATS-UPGRADE.tsv is the next scheduled
-session. M2 is gated on M1 harmonization + OSF amendment posting per
-Amendment §9.
+**M1 sumstats upgrade + harmonization — COMPLETE 2026-04-25.** All 6 plans
+landed (m1-00 through m1-04); verifier independently PASSED 5/5 ROADMAP
+success criteria (harmonized parquet, per-trait QC, LDSC-munged files,
+SHA-256 manifests, trait inventory YAML). Delivered: 26 D-16 harmonized
+`.tsv.bgz`+`.tbi`+`.parquet` triples; 47-cell `config/trait_inventory.yaml`;
+12-trait LDSC bivariate intercept matrix (12×12, symmetric, 64/66 pairs
+filled, diag=1.0) at `data/processed/ldsc_overlap/bivariate_intercept_matrix_2026-04.tsv`;
+two SHA-256 manifests (45-row primary raw + 73-row harmonized) at
+`.planning/amendments/`; OSF amendment paste-ready in
+`OSF-AMENDMENT-TEXT-2026-04-22.md`. Plan was designed to tolerate Wave-1
+deferrals (`m1_raw_glob.py` `.deferred`-marker guard) — 12-trait matrix
+is the M2 MTAG `--overlap` consumer artifact; expansion to ~26 traits
+is queued via Carter resume queue + DEF-M1-03-02. Two new decisions
+recorded: DEC-2026-04-24-01 (GRCh37 canonical override of Amendment §3
+GRCh38 wording) and DEC-2026-04-24-02 (AoU AFR-SBP M2 fallback for
+Giri 2019 D-06).
 
-Last updated: 2026-04-23.
+**Track B M2–M6 — gated on Carter OSF web-UI submission** (Amendment §9.1
+hard gate). M2 LDSC + MTAG + CPASSOC discovery cannot commit until OSF
+amendment posts at osf.io/pvb5j. Carter resume queue (DIAMANTE cookies,
+GBMI portal, Loh D-01, Klarin D-03, MAGIC EUR re-fetch) is independent
+of M2 kickoff.
+
+Last updated: 2026-04-25.
 
 ## Open human-action items
 
