@@ -114,9 +114,7 @@ def test_yengo2018_parquet_mirrors_tsv(tmp_path):
 # ---- loh2022_eur (b38 -> b37 liftover) ----
 
 @pytest.mark.skipif(
-    not (Path("data/external/liftover/hg38ToHg19.over.chain.gz")).is_absolute() or
-    not (Path("/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis") /
-         "data/external/liftover/hg38ToHg19.over.chain.gz").exists(),
+    not (PROJECT_ROOT / "data/external/liftover/hg38ToHg19.over.chain.gz").exists(),
     reason="hg38ToHg19 chain file not staged.",
 )
 def test_loh2022_eur_canonical_schema(tmp_path):
@@ -130,8 +128,7 @@ def test_loh2022_eur_canonical_schema(tmp_path):
 
 
 @pytest.mark.skipif(
-    not (Path("/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis") /
-         "data/external/liftover/hg38ToHg19.over.chain.gz").exists(),
+    not (PROJECT_ROOT / "data/external/liftover/hg38ToHg19.over.chain.gz").exists(),
     reason="hg38ToHg19 chain file not staged.",
 )
 def test_loh2022_eur_liftover_drop_rate_under_5pct(tmp_path):
