@@ -92,7 +92,7 @@ action per PROJECT.md open human-action item a). Both conditions must hold.
 **Plans**: 6 plans
 
 Plans:
-- [ ] m1-00-preflight-and-environment-PLAN.md — Wave 0: conda envs + pytest scaffolding + UCSC chain + LDSC LD staging + MAGIC FTP / Giri 2019 / LDSC benchmark probes + D-02/D-03/D-06 disposition + DEC-2026-04-24 decisions entry
+- [x] m1-00-preflight-and-environment-PLAN.md — Wave 0: conda envs + pytest scaffolding + UCSC chain + LDSC LD staging + MAGIC FTP / Giri 2019 / LDSC benchmark probes + D-02/D-03/D-06 disposition + DEC-2026-04-24 decisions entry
 - [ ] m1-01-portal-fetches-and-aragam-route-PLAN.md — Wave 1: extend bin/download_sumstats_v2.sh for 17 portal rows + DIAMANTE cookie handling + Aragam ZIP unpack per D-03 + deterministic raw SHA-256 manifest freeze (OSF paste target)
 - [ ] m1-02a-harmonizers-continuous-traits-PLAN.md — Wave 2: harmonize_yengo + harmonize_glgc + harmonize_wuttke + harmonize_magic (BMI 3 cells + lipids 15 cells + eGFR 3 cells + HbA1c 6 cells) with Loh 2022 b38->b37 liftover and sumstats_utils.build_rsid_to_chrpos helper
 - [ ] m1-02b-harmonizers-case-control-traits-PLAN.md — Wave 2: harmonize_diamante + harmonize_gigastroke + harmonize_aragam + extend harmonize_gbmi with --liftover-chain + verify_evangelou_sbp rename; freeze secondary harmonized SHA-256 manifest

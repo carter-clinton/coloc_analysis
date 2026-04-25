@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Route A 2.2.f R2 closed (1pm a537dc6) — Benner 43 inlined L36 + body-superscript audit clean (0 orphans); 2.2.b/e/f scope fully resolved; ready to /gsd-execute-phase m1 OR continue Route A figures (1A/3 blocked on k2d completion)
-last_updated: "2026-04-25T05:30:00.000Z"
-last_activity: 2026-04-25 - Completed quick task 260425-1pm: Route A 2.2.f R2 (close kul deferrals)
+stopped_at: "Completed m1-00-preflight-and-environment-PLAN.md (Wave 0 foundations: envs + tests + reference data + 3 probes + 2 DEC entries)"
+last_updated: "2026-04-25T05:49:45.886Z"
+last_activity: 2026-04-25
 progress:
   total_phases: 12
   completed_phases: 6
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: m1-sumstats-upgrade-and-harmonization (sumstats-upgrade-and-harmonization) — EXECUTING
-Plan: 1 of 6
+Plan: 2 of 6
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -134,6 +134,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase 04 P04 | 14min | 4 tasks | 7 files |
 | Phase 04 P03 | 8min | 2 tasks | 6 files |
 | Phase 04 P05 | 7min | 4 tasks | 9 files |
+| Phase m1-sumstats-upgrade-and-harmonization Pm1-00-preflight-and-environment | 24min | 3 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -235,6 +236,10 @@ Recent decisions affecting current work:
 - [Phase 02 first-production, 2026-04-20]: Manifest builder is single source of truth for identifier conventions — `TRAIT_ALIASES` (htn→hypertension) + `GENE_SYMBOL_TO_ENSEMBL` (11 genes) applied at manifest-build time, not at harmonize-time. Downstream scripts stay decoupled.
 - [Phase 02 first-production, 2026-04-20]: pQTL rows keep gene SYMBOL as `gene_id` (UKB-PPP file naming uses symbols); eQTL/sQTL/sc-eQTL emit ENSG. Polymorphic by `qtl_source`. `gene_symbol` column added for traceability (additive, non-breaking).
 - [Phase 02 first-production, 2026-04-20]: NEW `BUG-AUDIT-12` surfaced — sQTL + sc-eQTL downloads expect eQTL-Catalogue QTD IDs; manifest emits tissue/cell-type names. Scoped OUT of Stage B.5. Next manifest-builder campaign.
+- [Phase m1-sumstats-upgrade-and-harmonization]: DEC-2026-04-24-01: GRCh37 canonical for M1 (override Amendment §3 GRCh38); 2 b38 sources liftover via pyliftover
+- [Phase m1-sumstats-upgrade-and-harmonization]: DEC-2026-04-24-02: AoU compute scope expansion into M1 (D-06 fallback after GWAS-Catalog Probe 2 returned NO-SUMMARY-FOUND)
+- [Phase m1-sumstats-upgrade-and-harmonization]: GIGASTROKE GCST integer lock per CONTEXT D-02: rows 14/15/16/17 -> 90104534/90104539/90104549/90104544
+- [Phase m1-sumstats-upgrade-and-harmonization]: Aragam ZIP D-03 branch (b): no AFR file in ZIP; row 23 -> Klarin 2018 MVP-AFR-CAD fallback
 
 ### Pending Todos
 
@@ -287,8 +292,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T05:30:00.000Z
-Stopped at: Route A 2.2.f R2 closed (1pm a537dc6); 2.2.b/e/f fully resolved; M1 planned and verified; k2d identity-LD fire complete; ready to /gsd-execute-phase m1 OR continue Route A figures (1A/3 blocked on k2d artifact commit)
+Last session: 2026-04-25T05:49:45.879Z
+Stopped at: Completed m1-00-preflight-and-environment-PLAN.md (Wave 0 foundations: envs + tests + reference data + 3 probes + 2 DEC entries)
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
@@ -480,7 +485,7 @@ Dry-run inspection of Phase A narrow-scout targets revealed:
 3. Or: full LSF launch of `snakemake all_pathway --cores N` — multi-hour compute, first-production
 4. Address open items above as they become blocking
 
-Resume file: .planning/phases/m1-sumstats-upgrade-and-harmonization/m1-00-preflight-and-environment-PLAN.md (Wave 0 entry; gsd-executor consumes the full PLAN set m1-00..m1-04)
+Resume file: None
 
 ## Phase 0 Closeout Artifacts (2026-04-10)
 
