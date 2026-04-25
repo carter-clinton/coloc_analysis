@@ -3,7 +3,11 @@
 # output file has only the header row. Caused by a race in the prior
 # xargs -P parallel fire on large GLGC TRANS Bayes-factor files; a serial
 # pattern avoids the issue entirely.
-set -euo pipefail
+#
+# v2 (m1-03 2026-04-25 PM): set +e so single-job failures don't kill
+# the entire batch (TRANS BF files with NaN P/BETA route to harmonizer
+# AssertionError; we want those to log + continue, not abort the run).
+set -uo pipefail
 
 SMOKE_PY=/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python
 export PATH=/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin:$PATH
@@ -28,16 +32,37 @@ run_one() {
     fi
 
     local s=$(date +%s)
-    "$SMOKE_PY" "$script" "$@" \
-        --output "$tmpunsorted" \
-        --parquet "$PARQ/${outname}.GRCh37.parquet" \
-        --qc-json "$QC/${outname}.qc.json"
+    echo "[$(date +%H:%M:%S)] START $outname"
+    if ! "$SMOKE_PY" "$script" "$@" \
+            --output "$tmpunsorted" \
+            --parquet "$PARQ/${outname}.GRCh37.parquet" \
+            --qc-json "$QC/${outname}.qc.json"; then
+        echo "FAIL  $outname (harmonizer error)"
+        rm -f "$tmpunsorted"
+        return 1
+    fi
 
-    (zcat "$tmpunsorted" | head -1; zcat "$tmpunsorted" | tail -n +2 | sort -k1,1n -k2,2n) | bgzip -c > "$out"
-    tabix -s 1 -b 2 -e 2 -S 1 -f "$out"
+    if [ ! -s "$tmpunsorted" ]; then
+        echo "FAIL  $outname (harmonizer produced empty file)"
+        rm -f "$tmpunsorted"
+        return 1
+    fi
+
+    if ! (zcat "$tmpunsorted" | head -1; zcat "$tmpunsorted" | tail -n +2 | sort -k1,1n -k2,2n) | bgzip -c > "$out"; then
+        echo "FAIL  $outname (sort+bgzip error)"
+        rm -f "$tmpunsorted"
+        return 1
+    fi
+
+    if ! tabix -s 1 -b 2 -e 2 -S 1 -f "$out"; then
+        echo "FAIL  $outname (tabix error)"
+        return 1
+    fi
+
     rm -f "$tmpunsorted"
     local e=$(date +%s)
-    echo "DONE  $outname  $((e - s))s  $(zcat "$out" | wc -l) rows"
+    local rows=$(zcat "$out" 2>/dev/null | wc -l)
+    echo "DONE  $outname  $((e - s))s  $rows rows"
 }
 
 # PAGE BMI AFR
