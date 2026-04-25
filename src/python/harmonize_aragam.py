@@ -148,7 +148,7 @@ def _filter_emit(
     *,
     maf_min: float = 0.005,
 ) -> dict:
-    """Shared MAF/palindromic filter + dual emit + qc.json."""
+    """Shared MAF/palindromic filter + sort + dual emit + qc.json."""
     df = df[CANONICAL_COLS].copy()
     df["CHR"] = df["CHR"].astype(str)
 
@@ -160,6 +160,14 @@ def _filter_emit(
     n_pre_pal = len(df)
     df = _su.filter_palindromic_ambiguous(df)
     qc["n_palindromic_dropped"] = n_pre_pal - len(df)
+
+    # Tabix requires CHR/BP-sorted input. Aragam RVTESTS meta is naturally
+    # sorted but enforce explicitly to be safe across all sources.
+    df = df[CANONICAL_COLS].copy()
+    df["_chr_sort"] = pd.to_numeric(df["CHR"], errors="coerce")
+    df = df.dropna(subset=["_chr_sort"]).sort_values(
+        ["_chr_sort", "BP"]
+    ).drop(columns=["_chr_sort"]).reset_index(drop=True)
 
     _su.validate_canonical_frame(df[CANONICAL_COLS])
     _emit_dual_artifacts(df[CANONICAL_COLS], output_tsvgz, parquet_path)
