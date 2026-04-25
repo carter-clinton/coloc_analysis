@@ -43,9 +43,13 @@ rule m1_qc_per_trait:
     resources: mem_mb=6000, runtime=2880
     shell:
         r"""
+        # CR-01 fix: render into a per-trait temp dir to avoid races on
+        # the shared {QC_DIR}/m1_qc_report.html name when --cores>1.
+        mkdir -p {QC_DIR}
+        TMPDIR=$(mktemp -d -p {QC_DIR} qc_render.XXXXXX)
         quarto render {input.qmd} \
           --to html \
-          --output-dir {QC_DIR} \
+          --output-dir "$TMPDIR" \
           -P trait:{wildcards.trait} \
           -P ancestry:{wildcards.ancestry} \
           -P consortium:{wildcards.consortium} \
@@ -55,9 +59,8 @@ rule m1_qc_per_trait:
           -P rg_log_dir:{params.rg_log_dir} \
           -P qc_json:{params.qc_json} \
           -P control_loci_csv:{input.loci}
-        if [ -f {QC_DIR}/m1_qc_report.html ]; then
-            mv {QC_DIR}/m1_qc_report.html {output.html}
-        fi
+        mv "$TMPDIR/m1_qc_report.html" {output.html}
+        rm -rf "$TMPDIR"
         """
 
 
@@ -77,16 +80,22 @@ rule m1_qc_index:
     resources: mem_mb=4000, runtime=1440
     shell:
         r"""
+        # CR-01 symmetry fix: render into a temp dir then move.
+        # m1_qc_index is single-output and won't race with itself, but
+        # the same pattern is applied for consistency with m1_qc_per_trait
+        # and to avoid clobbering an in-progress per-trait render that
+        # incidentally landed in {QC_DIR}.
+        mkdir -p {QC_DIR}
+        TMPDIR=$(mktemp -d -p {QC_DIR} qc_index.XXXXXX)
         quarto render {input.qmd} \
           --to html \
-          --output-dir {QC_DIR} \
+          --output-dir "$TMPDIR" \
           -P inventory:{input.inventory} \
           -P matrix:{input.matrix} \
           -P warnings:{input.warnings} \
           -P qc_log_dir:{params.qc_log_dir}
-        if [ -f {QC_DIR}/m1_qc_index.html ]; then
-            mv {QC_DIR}/m1_qc_index.html {output.html}
-        fi
+        mv "$TMPDIR/m1_qc_index.html" {output.html}
+        rm -rf "$TMPDIR"
         """
 
 
