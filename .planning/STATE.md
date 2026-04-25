@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed m1-02b-harmonizers-case-control-traits-PLAN.md (6 commits, 24 contract tests pass, 49-job DAG, 6 case-control files harmonized + Evangelou D-16 rename + sha256 manifest frozen)
-last_updated: "2026-04-25T10:03:04.681Z"
+stopped_at: Completed m1-03-munge-and-ldsc-intercept-matrix-PLAN.md (12-trait initial deliverable; Wave 2 GLGC/Wuttke refire continues background; matrix expandable post-refire via DEF-M1-03-02)
+last_updated: "2026-04-25T14:03:17.298Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: m1-sumstats-upgrade-and-harmonization (sumstats-upgrade-and-harmonization) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -138,6 +138,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase m1-sumstats-upgrade-and-harmonization Pm1-01-portal-fetches-and-aragam-route | 39min | 2 tasks | 8 files |
 | Phase m1 P02a | 70 | 2 tasks | 22 files |
 | Phase m1-sumstats-upgrade-and-harmonization P02b | 80 | 2 tasks | 16 files |
+| Phase m1-sumstats-upgrade-and-harmonization P03-munge-and-ldsc-intercept-matrix | 224 | 2 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -253,6 +254,10 @@ Recent decisions affecting current work:
 - [Phase m1-sumstats-upgrade-and-harmonization]: DEF-M1-02b-01 raised: Aragam ZIP CAD_GWAS_SEX_STRATIFIED.txt.gz is per-sex stratified, not pooled-EUR; CAD-EUR cell DEFERRED to M2 (sex-aware harmonizer work item)
 - [Phase m1-sumstats-upgrade-and-harmonization]: GIGASTROKE 2022 raw schema only 11 cols (no variant_id, no n); harmonizer synthesizes SNP=chr:bp:OA:EA + per-ancestry total N from SUMSTATS-UPGRADE.tsv rows 14-17
 - [Phase m1-sumstats-upgrade-and-harmonization]: Tabix-required CHR/BP sort added to all 3 case-control harmonizers; non-autosomal rows dropped (LDSC ignores them anyway)
+- [Phase m1-sumstats-upgrade-and-harmonization]: Plan-level pivot from 45x45 aspirational to N-actually-available; Wave 1+2 deferrals cap maximum at ~26
+- [Phase m1-sumstats-upgrade-and-harmonization]: 2-step munge pipeline (wrapper + LDSC munge_sumstats.py with --merge-alleles HM3) replaces single-step legacy
+- [Phase m1-sumstats-upgrade-and-harmonization]: chr:bp[_:]ref_alt 4-token SNP-ID parser + 2-token chr:bp -> rsid via 1000G EUR bim is canonical remap path
+- [Phase m1-sumstats-upgrade-and-harmonization]: 12-trait initial M1 deliverable committed; refire continues; expansion to ~26 traits via DEF-M1-03-02
 
 ### Pending Todos
 
@@ -269,6 +274,7 @@ None yet.
 - **BUG-Phase2-too-few-snps (active):** `run_qtl_coloc.R` can't match SNP names between harmonized TSV (`chr16_53766288_C_T`) and Phase 1 SuSiE fit's internal variant roster. 3 hypotheses in `.planning/debug/t1_phase2_first_production.md` (unnamed variants / coloc.susie API drift / variant-ID format). PRIMARY blocker for CP#1-final real numerics.
 - **BUG-AUDIT-12 (active):** Manifest emits tissue/cell-type names where sQTL + sc-eQTL eQTL-Catalogue downloads expect QTD IDs. Requires lookup table. Scoped out of Stage B.5.
 - **BUG-AUDIT-11 (active):** sdy passing path for pQTL — `--sdy 1.0` hardcoded in coloc CLI may override per-variant estimate from harmonize_pqtl.py. Needs investigation post-smoke.
+- DEF-M1-03-02: 12 GLGC + Wuttke harmonized files still in-progress at m1-03 closeout (refire continues background; expand 12->24 matrix in next session)
 
 ### Quick Tasks Completed
 
@@ -306,8 +312,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T10:02:49.258Z
-Stopped at: Completed m1-02b-harmonizers-case-control-traits-PLAN.md (6 commits, 24 contract tests pass, 49-job DAG, 6 case-control files harmonized + Evangelou D-16 rename + sha256 manifest frozen)
+Last session: 2026-04-25T14:03:08.205Z
+Stopped at: Completed m1-03-munge-and-ldsc-intercept-matrix-PLAN.md (12-trait initial deliverable; Wave 2 GLGC/Wuttke refire continues background; matrix expandable post-refire via DEF-M1-03-02)
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
