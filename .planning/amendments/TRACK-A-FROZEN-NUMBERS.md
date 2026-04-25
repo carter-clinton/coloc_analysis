@@ -6,6 +6,26 @@
 
 ---
 
+## Stage 2 fine-mapping yield (post-k2d full-coverage identity-LD comparator, 2026-04-25) — LIVE
+
+| Metric | Value |
+|---|---|
+| Total Stage 2 real-LD fits | 96 |
+| Stage 2 non-empty credible sets | **51 / 96 (53.1%)** |
+| Total k2d full-coverage identity-LD fits | 95 (single missing cell: `bmi.EUR.APOE_19q13`) |
+| k2d identity-LD non-empty credible sets | **48 / 95 (50.5%)** |
+| **Matched-coverage fold change** | **51 / 48 = 1.06× yield increase** |
+| Status distribution (k2d identity-LD) | 65 ok / 24 too_many_variants / 6 no_variants |
+| n_CS distribution (k2d identity-LD) | 47 with 0; 12 with 1; 10 with 2; 5 with 3; 2 with 4; 2 with 5; 2 with 6; 3 with 7; 1 with 8; 11 with 10 |
+
+**Headline framing (manuscript anchor language)**: We tightened the comparator from a partial-coverage Stage 1d narrow-validation baseline (12/96, only 2 of 10 admissible regions had identity-LD fits at the time of freeze) to the k2d full-coverage 2026-04-25 re-fire (48/95, matching the same admissibility set as Stage 2 real-LD). The inflation magnitude shifted from 4.25× to 1.06× under the tightened comparator.
+
+**Sources**: [.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv](./IDENTITY-LD-K2D-FIT-SUMMARY.tsv) (k2d 2026-04-25 fire summary); [results/fine_mapping/finemap_summary.tsv](../../results/fine_mapping/finemap_summary.tsv) (Stage 2 real-LD 2026-04-22 production fire); per-fit JSONs at `results_identity_ld/fine_mapping/susie/*.json` and `results/fine_mapping/susie/*.json`.
+
+**Denominator note**: The k2d identity-LD re-fire enumerated 95 of 96 region × ancestry × trait fits at admissibility. The single missing fit is `bmi.EUR.APOE_19q13` (Stage 2 real-LD status: `non_converged`, n_CS = 6). Headline numerics use 48/95 for identity-LD and 51/96 for real-LD; the fold-change is robust to this 1-cell denominator difference (~1.06× either way).
+
+---
+
 ## Stage 2 fine-mapping yield (Phase 1 SuSiE-RSS with real 1000G EUR LD)
 
 | Metric | Value |
@@ -18,9 +38,11 @@
 | Status=non_converged | 18 |
 | Status=no_variants | 6 |
 
-Identity-LD baseline (pre-Stage-2): **12 / 96 non-empty credible sets (12.5%)** per prior STATE.md session continuity.
+~~Identity-LD baseline (pre-Stage-2): **12 / 96 non-empty credible sets (12.5%)** per prior STATE.md session continuity.~~
 
-**Headline yield delta**: 12/96 → 51/96 = **4.25× fold increase in non-empty CS yield under real 1000G EUR LD vs identity-LD fallback.**
+~~**Headline yield delta**: 12/96 → 51/96 = **4.25× fold increase in non-empty CS yield under real 1000G EUR LD vs identity-LD fallback.**~~
+
+> **SUPERSEDED 2026-04-25** — preserved verbatim for audit traceability. The 12/96 baseline reflected a partial-coverage Stage 1d narrow-validation run (only 2 of 10 admissible regions had identity-LD fits at the time of freeze). The matched-coverage k2d full-coverage 2026-04-25 re-fire produces 48/95 = 50.5% (see top of this document for the live block). The fold-change shifted from 4.25× to ~1.06× under the tightened comparator. Manuscript edits propagated quick-260425-kki.
 
 ### Scope caveat (mandatory disclosure in manuscript)
 
@@ -132,3 +154,4 @@ All abstract, results, and table numbers in [docs/manuscript/track_a_pivot.md](.
 | 2026-04-23 | track_a_pivot.md numeric reconciliation: removed all 1,446 / 861 citations; replaced with disk-verified Stage 2 splits (28 trait-pair coloc.susie / 1,274 QTL-coloc / 32 successes / 1,005 too_few_snps / 224 negative-controls). Abstract, Methods §Data Harmonization, Methods §Harmonization-Pipeline Diagnostics, Methods §Negative-Control Loci, Results §Headline, Results §SH2B3 case study, Results §Pipeline Diagnostics, Results §Negative-Control Performance, Discussion §Overall, Discussion §Strengths (3), Discussion §Limitations (5), Discussion §Conclusions (1), Table 3 SH2B3 rows, Figure 1 caption all updated. | Step 2.2.a–d partial execution |
 | 2026-04-23 | **Open scope gap flagged**: SH2B3 EUR canonical trait-pairs (BMI–hypertension, hypertension–stroke) that reached PP.H4 = 1.00 under Stage 1d identity-LD are **absent from the Stage 2 `coloc.susie` output manifest**. Only `SH2B3_12q24__EUR__asthma_vs_t2d` was run. Manuscript now frames this as "absent from manifest, consistent with credible-set collapse, pre-registered re-fire supplementary analysis." A targeted Stage 2 re-fire on the canonical SH2B3 pairs is required to fully close the flagship claim. Owner: Carter (LSF decision). | Step 2.2.d deviation |
 | 2026-04-23 | **Remaining Track A manuscript edit passes** (not yet executed, per approved plan Step 2.2.b–f): Introduction rewrite (Section 4.5), full Results §Pathway re-compute from `results/pathway/` outputs, References additions (Wallace 2021, Zou 2022, Weissbrod 2020, Benner 2017), 3 figure build scripts under `src/R/figures/`, bioRxiv submission. These will land in subsequent `/gsd-quick` sessions. | Plan-track-A open items |
+| 2026-04-25 | **Comparator tightened**: post-k2d full-coverage identity-LD re-fire produces 48/95 non-empty CS (50.5%) vs 51/96 real-LD (53.1%) = **1.06× matched-coverage fold change**. Live block added at top of file; legacy 12/96 → 4.25× block marked SUPERSEDED but preserved verbatim for audit. Manuscript track_a_pivot.md (L28, L82, L138, L214, L222, L252, L293) reframed under "we tightened the comparator and the inflation magnitude shifted" anchor language. fig2_cs_yield.R now disk-derives the identity-LD baseline from IDENTITY-LD-K2D-FIT-SUMMARY.tsv. The 95-vs-96 denominator note (missing bmi.EUR.APOE_19q13) is recorded in the live block and propagated to manuscript Methods. | quick-260425-kki — Track A audit-driven figure correction pass. The previously cited 4.25× contrast against a 12/96 baseline reflected a Stage 1d narrow-validation freeze; the post-k2d full-coverage baseline is the appropriate matched-coverage comparator. |

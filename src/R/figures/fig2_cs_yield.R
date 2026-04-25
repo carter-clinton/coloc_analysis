@@ -2,20 +2,33 @@
 #
 # Purpose: Build the headline-yield figure for the Track A pivot manuscript —
 #   a two-bar comparison of non-empty SuSiE-RSS credible-set counts under
-#   identity-LD fallback (12 / 96) vs real 1000G Phase 3 EUR LD (51 / 96).
-#   The 4.25x fold increase is the single most load-bearing methodological
-#   claim of the Track A "identity-LD inflation" audit. This figure must make
-#   that delta unmissable at a single-column width.
+#   identity-LD fallback (48 / 95) vs real 1000G Phase 3 EUR LD (51 / 96).
+#   Under the matched-coverage comparator the contrast is ~1.06x fold
+#   increase under matched-coverage comparator. This figure must make
+#   that delta legible at a single-column width.
 #
-# Data source: results/fine_mapping/finemap_summary.tsv
-#   (Stage 2 production fire, 2026-04-22 — 97 lines = 1 header + 96 admissible fits).
-#   The 51 non-empty credible-set count is derived at runtime from disk and
-#   cross-checked against the locked scalar to catch any silent drift.
+# Comparator-tightening note (quick-260425-kki, 2026-04-25):
+#   We tightened the comparator from a partial-coverage Stage 1d narrow-
+#   validation baseline (12/96, 2 of 10 admissible regions had identity-LD
+#   fits) to the k2d full-coverage 2026-04-25 re-fire (48/95, all
+#   admissibility-matched regions); the inflation magnitude shifted from
+#   4.25x to ~1.06x. The 12/96 baseline is preserved verbatim with a
+#   SUPERSEDED 2026-04-25 markup in TRACK-A-FROZEN-NUMBERS.md for audit
+#   traceability.
 #
-# Locked scalars: .planning/amendments/TRACK-A-FROZEN-NUMBERS.md
-#   (canonical source of the 12 identity-LD baseline and 51 real-LD / 96 total /
-#    4.25x fold-change; if Stage 2 numbers ever shift, update that file FIRST
-#    then propagate here in the same commit.)
+# Data sources (loaded at runtime; cross-checked vs disk-truth):
+#   results/fine_mapping/finemap_summary.tsv
+#     (Stage 2 production fire, 2026-04-22 — 97 lines = 1 header + 96 admissible fits.)
+#   .planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv
+#     (k2d full-coverage identity-LD re-fire, 2026-04-25 — 96 lines = 1 header + 95 fits.)
+#   The 51 non-empty real-LD count and 48 non-empty identity-LD count are
+#   each derived at runtime from disk and cross-checked against the
+#   expected scalars to catch any silent drift.
+#
+# Authoritative ledger: .planning/amendments/TRACK-A-FROZEN-NUMBERS.md
+#   (canonical source of the 48 / 95 / 51 / 96 / 1.06x matched-coverage
+#    contrast; if Stage 2 or k2d numbers ever shift, update that file
+#    FIRST then propagate here in the same commit.)
 #
 # Upstream plans:
 #   .planning/amendments/TRACK-A-PIVOT.md §5 (figure spec)
@@ -31,7 +44,8 @@
 # Invocation (from project root):
 #   /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/Rscript src/R/figures/fig2_cs_yield.R
 #
-# Author: Carter K. Clinton -- 2026-04-24 (built quick-260424-lpy; aligned quick-260424-mqo)
+# Author: Carter K. Clinton -- 2026-04-24 (built quick-260424-lpy; aligned quick-260424-mqo;
+#         comparator-tightened quick-260425-kki 2026-04-25)
 #
 # Figure-number provenance (R2 alignment pass, quick-260424-mqo, 2026-04-24):
 #   Filename stem is now 'fig2_cs_yield' to align with the canonical 5-figure
@@ -42,8 +56,9 @@
 #   workspace-plan sketch (snappy-humming-pine.md §2.3) labelled this as "Fig 1"
 #   in a 3-figure scheme; that integer numbering is an early sketch and is
 #   reconciled to the manuscript-canonical scheme by quick-260424-mqo (see the
-#   §2.3 R2-reconciliation annotation in snappy-humming-pine.md). Locked scalars
-#   (12 / 96 / 51 / 4.25x) remain authoritative at TRACK-A-FROZEN-NUMBERS.md.
+#   §2.3 R2-reconciliation annotation in snappy-humming-pine.md). The matched-
+#   coverage scalars (48 / 95 / 51 / 96 / 1.06x) are anchored at
+#   TRACK-A-FROZEN-NUMBERS.md.
 
 suppressPackageStartupMessages({
   library(readr)
@@ -53,13 +68,18 @@ suppressPackageStartupMessages({
   library(scales)
 })
 
-# --- Locked scalars from .planning/amendments/TRACK-A-FROZEN-NUMBERS.md --------
-# If any of these change, update TRACK-A-FROZEN-NUMBERS.md FIRST, then this file
-# in the same commit. The cross-check below will hard-fail otherwise.
-N_TOTAL_FITS           <- 96L    # Stage 2 admissible-fit denominator
-N_IDENTITY_LD_NONEMPTY <- 12L    # pre-Stage-2 identity-LD fallback baseline
-N_REAL_LD_NONEMPTY     <- 51L    # Stage 2 expected; cross-checked against disk below
-FOLD_CHANGE_EXPECTED   <- 4.25   # 51 / 12 = 4.25
+# --- Disk-truth scalars (matched-coverage k2d re-fire 2026-04-25) -------------
+# These are expected values derived from disk; the fits TSVs are read at runtime
+# below and the assertions hard-fail if any value drifts. If k2d or Stage 2 are
+# re-fired, update .planning/amendments/TRACK-A-FROZEN-NUMBERS.md FIRST, then
+# update these scalars in the same commit.
+
+# k2d identity-LD full-coverage re-fire (2026-04-25); disk-truth source.
+IDENTITY_LD_TSV          <- ".planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv"
+N_IDENTITY_LD_TOTAL_EXPECTED <- 95L     # k2d enumerated 95 of 96 fits
+N_IDENTITY_LD_NONEMPTY_EXPECTED <- 48L  # disk-derived assertion
+N_TOTAL_FITS             <- 96L         # Stage 2 real-LD admissible-fit denominator
+N_REAL_LD_NONEMPTY       <- 51L         # Stage 2 real-LD; cross-checked against disk
 
 INPUT_TSV <- "results/fine_mapping/finemap_summary.tsv"
 OUT_DIR   <- "docs/manuscript/figures"
@@ -93,6 +113,31 @@ if (n_real_nonempty != N_REAL_LD_NONEMPTY) {
   ))
 }
 
+# Disk-backed derivation for identity-LD baseline (matched-coverage k2d, 2026-04-25)
+if (!file.exists(IDENTITY_LD_TSV)) {
+  stop(sprintf(
+    "fig2_cs_yield.R: identity-LD source TSV not found at '%s'. Run from project root.",
+    IDENTITY_LD_TSV
+  ))
+}
+df_id <- read_tsv(IDENTITY_LD_TSV, show_col_types = FALSE,
+                  col_types = cols(.default = col_character()))
+df_id$n_CS <- suppressWarnings(as.integer(df_id$n_CS))
+stopifnot(nrow(df_id) == N_IDENTITY_LD_TOTAL_EXPECTED)
+n_id_nonempty <- sum(df_id$n_CS > 0, na.rm = TRUE)
+if (n_id_nonempty != N_IDENTITY_LD_NONEMPTY_EXPECTED) {
+  stop(sprintf(
+    paste0(
+      "fig2_cs_yield.R: disk-derived identity-LD non-empty CS count (%d) does not match ",
+      "expected k2d full-coverage value %d from IDENTITY-LD-K2D-FIT-SUMMARY.tsv. ",
+      "If k2d has been re-fired, update the expected scalar here and TRACK-A-FROZEN-NUMBERS.md ",
+      "in the same commit."
+    ),
+    n_id_nonempty, N_IDENTITY_LD_NONEMPTY_EXPECTED
+  ))
+}
+N_IDENTITY_LD_TOTAL <- nrow(df_id)
+
 # --- Diagnostic: per-ancestry x per-trait CS-yield split ---------------------
 diag <- df |>
   mutate(has_cs = credible_sets > 0) |>
@@ -105,28 +150,33 @@ diag <- df |>
   )
 
 message("=== fig2_cs_yield.R diagnostic ===")
-message(sprintf("Total fits parsed: %d (expected %d)", nrow(df), N_TOTAL_FITS))
-message(sprintf("Non-empty real-LD fits: %d (expected %d)", n_real_nonempty, N_REAL_LD_NONEMPTY))
+message(sprintf("Total real-LD fits parsed: %d (expected %d)", nrow(df), N_TOTAL_FITS))
+message(sprintf("Total identity-LD fits parsed: %d (expected %d)", nrow(df_id), N_IDENTITY_LD_TOTAL_EXPECTED))
+message(sprintf("Identity-LD non-empty fits (k2d full-coverage 2026-04-25): %d / %d",
+                n_id_nonempty, N_IDENTITY_LD_TOTAL))
+message(sprintf("Real-LD non-empty fits (Stage 2 2026-04-22): %d / %d",
+                n_real_nonempty, N_TOTAL_FITS))
 message(sprintf("Empty real-LD fits: %d (expected %d)", n_real_empty, N_TOTAL_FITS - N_REAL_LD_NONEMPTY))
-message(sprintf("Identity-LD fallback baseline: %d (locked from TRACK-A-FROZEN-NUMBERS.md)", N_IDENTITY_LD_NONEMPTY))
-message(sprintf("Fold change: %.2fx", n_real_nonempty / N_IDENTITY_LD_NONEMPTY))
+message(sprintf("Identity-LD baseline (disk-derived from IDENTITY-LD-K2D-FIT-SUMMARY.tsv, k2d full-coverage 2026-04-25): %d", n_id_nonempty))
+message(sprintf("Fold change (matched-coverage): %.3fx (%d / %d)",
+                n_real_nonempty / n_id_nonempty, n_real_nonempty, n_id_nonempty))
 message("=== per-ancestry x per-trait CS-yield split (Stage 2 real-LD) ===")
 print(as.data.frame(diag))
 
 # --- Plot data ---------------------------------------------------------------
-lvl_id   <- "Identity-LD fallback\n(pre-Stage-2)"
-lvl_real <- "Real 1000G Phase 3 EUR LD\n(Stage 2)"
+lvl_id   <- "Identity-LD fallback\n(k2d 2026-04-25)"
+lvl_real <- "Real 1000G Phase 3 EUR LD\n(Stage 2 2026-04-22)"
 
 plot_df <- tibble::tibble(
   condition = factor(
     c(lvl_id, lvl_real),
     levels = c(lvl_id, lvl_real)
   ),
-  n_nonempty = c(N_IDENTITY_LD_NONEMPTY, n_real_nonempty),
+  n_nonempty = c(n_id_nonempty, n_real_nonempty),
   label = c(
     sprintf("%d / %d  (%.1f%%)",
-            N_IDENTITY_LD_NONEMPTY, N_TOTAL_FITS,
-            100 * N_IDENTITY_LD_NONEMPTY / N_TOTAL_FITS),
+            n_id_nonempty, N_IDENTITY_LD_TOTAL,
+            100 * n_id_nonempty / N_IDENTITY_LD_TOTAL),
     sprintf("%d / %d  (%.1f%%)",
             n_real_nonempty, N_TOTAL_FITS,
             100 * n_real_nonempty / N_TOTAL_FITS)
@@ -151,16 +201,10 @@ plot <- ggplot(plot_df, aes(x = condition, y = n_nonempty, fill = condition)) +
     size = 2.6, colour = "grey30"
   ) +
   annotate(
-    "segment",
-    x = 1.1, xend = 1.9, y = 15, yend = 55,
-    arrow = arrow(length = unit(2, "mm")),
-    colour = "grey40", linewidth = 0.3
-  ) +
-  annotate(
     "text",
-    x = 1.5, y = 82,
-    label = sprintf("%.2fx yield\nunder real-LD",
-                    n_real_nonempty / N_IDENTITY_LD_NONEMPTY),
+    x = 1.5, y = 65,
+    label = sprintf("%.2fx yield\n(matched-coverage)",
+                    n_real_nonempty / n_id_nonempty),
     size = 3, fontface = "bold", lineheight = 0.95
   ) +
   scale_y_continuous(
@@ -176,13 +220,14 @@ plot <- ggplot(plot_df, aes(x = condition, y = n_nonempty, fill = condition)) +
   ) +
   coord_cartesian(clip = "off") +
   labs(
-    title    = "SuSiE-RSS credible-set yield across 96 admissible fits",
-    subtitle = "Real 1000G Phase 3 EUR LD vs identity-LD fallback -- 4.25x fold increase",
+    title    = "SuSiE-RSS credible-set yield under matched-coverage comparator",
+    subtitle = "Real 1000G Phase 3 EUR LD vs identity-LD fallback (k2d full-coverage 2026-04-25) -- ~1.06x fold increase under matched-coverage comparator",
     x        = "LD reference panel",
     y        = "Non-empty credible sets (count)",
     caption  = paste0(
-      "Source: results/fine_mapping/finemap_summary.tsv (Stage 2, 2026-04-22 production fire).\n",
-      "Identity-LD scalar baseline from .planning/amendments/TRACK-A-FROZEN-NUMBERS.md (canonical).\n",
+      "Sources: results/fine_mapping/finemap_summary.tsv (Stage 2 real-LD, 2026-04-22) +\n",
+      ".planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv (k2d full-coverage identity-LD, 2026-04-25).\n",
+      "Matched-coverage comparator: 48 of 95 identity-LD fits vs 51 of 96 real-LD fits = ~1.06x yield.\n",
       "EUR + AFR admissible fits pooled for credible-set-yield count."
     )
   ) +
@@ -210,8 +255,9 @@ ggsave(OUT_PDF, plot, width = 85, height = 70, units = "mm", device = cairo_pdf)
 ggsave(OUT_PNG, plot, width = 85, height = 70, units = "mm", dpi = 600)
 
 # --- Post-save verification stdout (asserted by Task 2 verify block) ---------
-message(sprintf("fold-change: %.2fx (51/12 baseline)", n_real_nonempty / N_IDENTITY_LD_NONEMPTY))
-message(sprintf("counts: identity-LD=12, real-LD=%d, empty=%d, total=%d",
-                n_real_nonempty, n_real_empty, N_TOTAL_FITS))
+message(sprintf("fold-change: %.3fx (%d real-LD / %d identity-LD k2d)",
+                n_real_nonempty / n_id_nonempty, n_real_nonempty, n_id_nonempty))
+message(sprintf("counts: identity-LD=%d/%d, real-LD=%d/%d",
+                n_id_nonempty, N_IDENTITY_LD_TOTAL, n_real_nonempty, N_TOTAL_FITS))
 message(sprintf("wrote %s (%d bytes)", OUT_PDF, file.size(OUT_PDF)))
 message(sprintf("wrote %s (%d bytes)", OUT_PNG, file.size(OUT_PNG)))
