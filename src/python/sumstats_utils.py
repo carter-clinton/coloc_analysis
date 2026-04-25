@@ -323,3 +323,70 @@ def validate_canonical_frame(df: pd.DataFrame) -> None:
                     f"string dtype, got first-non-null value "
                     f"{sample.iloc[0]!r} ({type(sample.iloc[0]).__name__})."
                 )
+
+
+# ==========================================================================
+# M1 Wave 2a — rsID -> (chr, bp) forward crosswalk (harmonize_magic.py only)
+# ==========================================================================
+
+# Module-level cache keyed by bim_prefix to avoid re-reading 22 .bim files
+# per harmonizer invocation. Cleared automatically on process exit.
+_rsid_lookup_cache: "dict[str, dict[str, tuple[int, int]]]" = {}
+
+
+def build_rsid_to_chrpos(
+    bim_prefix: str,
+    chromosomes: "list[int] | None" = None,
+) -> "dict[str, tuple[int, int]]":
+    """Build forward rsid -> (chr, bp) lookup from PLINK ``.bim`` files.
+
+    Reads files of form ``{bim_prefix}.{chr}.bim`` (6-column PLINK bim:
+    ``chr rsid cm bp a1 a2``). Used by ``harmonize_magic.py`` for the
+    rare cases where a sumstats file ships rsid-only SNP IDs without
+    explicit CHR/BP columns (RESEARCH pitfall #5).
+
+    Parameters
+    ----------
+    bim_prefix : str
+        Path prefix such that ``{prefix}.{chr}.bim`` exists for each
+        chromosome. Example: ``data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC``
+        with files ``data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC.1.bim``.
+    chromosomes : list[int], optional
+        List of chromosome ints; defaults to ``range(1, 23)``.
+
+    Returns
+    -------
+    dict
+        Map of ``rsid`` (str) → ``(chromosome:int, bp:int)``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If any chromosome bim is missing.
+    """
+    if bim_prefix in _rsid_lookup_cache:
+        return _rsid_lookup_cache[bim_prefix]
+    if chromosomes is None:
+        chromosomes = list(range(1, 23))
+
+    from pathlib import Path
+
+    lookup: "dict[str, tuple[int, int]]" = {}
+    for chrom in chromosomes:
+        bim = Path(f"{bim_prefix}.{chrom}.bim")
+        if not bim.exists():
+            raise FileNotFoundError(f"build_rsid_to_chrpos: {bim} missing")
+        df = pd.read_csv(
+            bim,
+            sep=r"\s+",
+            header=None,
+            names=["chr", "rsid", "cm", "bp", "a1", "a2"],
+            dtype={"chr": int, "bp": int, "rsid": str},
+            engine="python",
+        )
+        # Use vectorized dict construction over .itertuples for speed at scale
+        # (1000G EUR contains ~9.5M SNPs total).
+        for r in df.itertuples(index=False):
+            lookup[r.rsid] = (int(r.chr), int(r.bp))
+    _rsid_lookup_cache[bim_prefix] = lookup
+    return lookup
