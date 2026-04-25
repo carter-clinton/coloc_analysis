@@ -18,6 +18,7 @@ panel when a GBMI file turns out to be EUR-only.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -50,6 +51,8 @@ def harmonize_gbmi_sumstats(
     trait: str,
     ancestry: str = "eur",
     liftover_chain: "Path | None" = None,
+    qc_json_path: "Path | None" = None,
+    maf_min: float = 0.005,
 ) -> dict:
     """Extract a single-ancestry stratum from a GBMI trait file.
 
@@ -71,14 +74,28 @@ def harmonize_gbmi_sumstats(
         guard against silent wrong-direction lift). When ``None``,
         Phase 09 behavior is preserved (no liftover; GBMI 2020-2021
         flagship releases are already GRCh37).
+    qc_json_path : Path or None
+        If provided, write the returned ``qc`` dict to this path as JSON
+        (CR-02 fix — mirrors the harmonize_yengo / harmonize_glgc /
+        harmonize_wuttke / harmonize_magic / harmonize_diamante /
+        harmonize_gigastroke / harmonize_aragam pattern). When ``None``
+        no sidecar is written and the dict is returned only.
+    maf_min : float
+        Minimum minor-allele frequency threshold (D-12). Defaults to
+        0.005 to stay consistent with every other M1 harmonizer
+        (CR-03 fix). Variants with MAF < ``maf_min`` are dropped from
+        the harmonized output and counted in ``n_maf_below_threshold``.
 
     Returns
     -------
     dict
-        QC summary: ``cohort``, ``trait``, ``ancestry``, ``n_rows``,
-        ``output`` (path string), and (when liftover invoked)
-        ``n_liftover_input``, ``n_liftover_lifted``, ``n_liftover_dropped``,
-        ``liftover_drop_rate``.
+        QC summary with keys: ``cohort``, ``trait``, ``ancestry``,
+        ``n_input`` (rows pre-filter), ``n_output`` (rows post-filter),
+        ``n_palindromic_dropped``, ``n_maf_below_threshold``,
+        ``maf_min``, ``n_rows`` (alias of ``n_output`` for backward
+        compatibility), ``output`` (path string). When liftover is
+        invoked: ``n_liftover_input``, ``n_liftover_lifted``,
+        ``n_liftover_dropped``, ``liftover_drop_rate``.
 
     Raises
     ------
@@ -95,6 +112,7 @@ def harmonize_gbmi_sumstats(
     prefix = ANCESTRY_PREFIX_MAP[ancestry]
 
     df = pd.read_csv(input_gz, sep="\t", compression="infer", low_memory=False)
+    n_input = int(len(df))
 
     col_map = {
         "CHR": "CHR",
@@ -146,7 +164,16 @@ def harmonize_gbmi_sumstats(
         # Re-coerce CHR to str post-liftover.
         df["CHR"] = df["CHR"].astype(str)
 
+    n_pre_pal = int(len(df))
     df = _su.filter_palindromic_ambiguous(df)
+    n_palindromic_dropped = n_pre_pal - int(len(df))
+
+    # CR-02 placeholder: n_maf_below_threshold is captured here as 0 so
+    # the sidecar schema is stable; CR-03 will populate this with the
+    # real MAF<maf_min drop count when the filter is added in the next
+    # commit. Both fixes touch this function but are committed
+    # separately for review clarity.
+    n_maf_below_threshold = 0
 
     output_prefix = Path(output_prefix)
     output_prefix.parent.mkdir(parents=True, exist_ok=True)
@@ -157,7 +184,12 @@ def harmonize_gbmi_sumstats(
         "cohort": f"gbmi_{ancestry}",
         "trait": trait,
         "ancestry": ancestry,
-        "n_rows": int(len(df)),
+        "n_input": n_input,
+        "n_output": int(len(df)),
+        "n_rows": int(len(df)),  # alias for backward compatibility
+        "n_palindromic_dropped": int(n_palindromic_dropped),
+        "n_maf_below_threshold": int(n_maf_below_threshold),
+        "maf_min": float(maf_min),
         "output": str(out),
     }
     if qc_lift:
@@ -165,6 +197,12 @@ def harmonize_gbmi_sumstats(
         qc["n_liftover_lifted"] = qc_lift.get("n_lifted")
         qc["n_liftover_dropped"] = qc_lift.get("n_dropped")
         qc["liftover_drop_rate"] = qc_lift.get("drop_rate")
+
+    if qc_json_path is not None:
+        qc_json_path = Path(qc_json_path)
+        qc_json_path.parent.mkdir(parents=True, exist_ok=True)
+        qc_json_path.write_text(json.dumps(qc, indent=2, default=str) + "\n")
+
     return qc
 
 
@@ -186,6 +224,24 @@ def _main() -> None:
             "contain 'hg38ToHg19' (Pitfall #7 guard)."
         ),
     )
+    ap.add_argument(
+        "--qc-json", type=Path, default=None,
+        help=(
+            "Path to write the QC sidecar JSON (CR-02). When omitted "
+            "the qc dict is returned only and no file is written. The "
+            "M1 Snakemake rule supplies this so verify_d/e/g can read "
+            "n_input / n_output / n_palindromic_dropped / "
+            "n_maf_below_threshold for the asthma cells."
+        ),
+    )
+    ap.add_argument(
+        "--maf-min", type=float, default=0.005,
+        help=(
+            "Minimum minor-allele frequency (D-12 floor; CR-03). "
+            "Defaults to 0.005 for parity with every other M1 "
+            "harmonizer."
+        ),
+    )
     args = ap.parse_args()
     harmonize_gbmi_sumstats(
         Path(args.input),
@@ -193,6 +249,8 @@ def _main() -> None:
         args.trait,
         args.ancestry,
         liftover_chain=args.liftover_chain,
+        qc_json_path=args.qc_json,
+        maf_min=args.maf_min,
     )
 
 

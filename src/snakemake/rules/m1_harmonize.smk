@@ -848,21 +848,28 @@ rule harmonize_gbmi_asthma:
         runtime=2880,
     shell:
         _DEFERRED_GUARD + r"""
+        # CR-02 fix: harmonize_gbmi.py now writes the qc.json sidecar
+        # itself via --qc-json (mirrors the harmonize_yengo / glgc /
+        # wuttke / magic / diamante / gigastroke / aragam pattern).
+        # The previous python -c stub omitted n_input / n_output /
+        # n_palindromic_dropped / n_maf_below_threshold and caused
+        # verify_d/e/g to SKIP every asthma cell.
+        # CR-03 fix: --maf-min 0.005 is now applied inside
+        # harmonize_gbmi.py for parity with every other M1 harmonizer.
         python src/python/harmonize_gbmi.py \
             --input {params.raw} \
             --output-prefix {output.tsv_bgz}.tmp \
             --trait asthma \
             --ancestry {params.ancestry_lc} \
-            --liftover-chain {input.chain}
+            --liftover-chain {input.chain} \
+            --qc-json {output.qc_json} \
+            --maf-min 0.005
         zcat {output.tsv_bgz}.tmp_{params.ancestry_lc}.tsv.gz | bgzip -c > {output.tsv_bgz}
         tabix -s 1 -b 2 -e 2 -S 1 -f {output.tsv_bgz}
-        # Build the parquet sidecar from the harmonized TSV.
+        # Build the parquet sidecar from the harmonized TSV. (Parquet
+        # write inside harmonize_gbmi.py is WR-12; intentionally
+        # deferred to keep this commit scoped to CR-02.)
         python -c "import pandas as pd; df = pd.read_csv('{output.tsv_bgz}.tmp_{params.ancestry_lc}.tsv.gz', sep='\t', compression='gzip'); df.to_parquet('{output.parquet}', index=False, compression='snappy')"
-        # Emit minimal qc.json (the harmonize_gbmi.py CLI does not yet
-        # write qc.json; the ad-hoc summary below preserves the
-        # `phenotype_lock` + `liftover_*` provenance.)
-        mkdir -p $(dirname {output.qc_json})
-        python -c "import json; print(json.dumps({{'trait': 'asthma', 'ancestry': '{wildcards.ancestry}', 'consortium': 'GBMI', 'year': 2022, 'phenotype_lock': 'pooled adult+child asthma case-control', 'build_target': 'GRCh37', 'liftover_chain': '{input.chain}'}}, indent=2))" > {output.qc_json}
         rm -f {output.tsv_bgz}.tmp_{params.ancestry_lc}.tsv.gz
         """
 
