@@ -44,12 +44,12 @@ EVANGELOU_SBP_KEY = "sbp.EUR.Evangelou-ICBP-UKBB.2018"
 
 IN_SCOPE_STATUSES = {"to_download", "already_downloaded"}
 
-# Defensive bound on the produced key count. Current SUMSTATS-UPGRADE.tsv freeze
-# has 47 data rows, 35 of which are in-scope per the W2 / m1-01 deferral churn;
-# adding Evangelou + dedup yields ~36-46 keys. Allow a generous 40<=N<=50 band
-# (W5 fix language). On the FULL TSV this bound enforces inventory hygiene; the
-# mini-fixture path in tests catches the AssertionError and accepts it.
-_MIN_KEYS = 40
+# Defensive bound on the produced key count.
+# M1 era: 40<=N<=50 against the pre-pivot 47-row freeze.
+# M2 era (D-M2-01): 20<=N<=50 to accommodate DEF-M1-03-02 closure delivering
+# ~26 active cells (post-m1-03 GLGC + Wuttke landings expand the active set).
+# The mini-fixture path in tests catches the AssertionError and accepts it.
+_MIN_KEYS = 20
 _MAX_KEYS = 50
 
 
@@ -75,7 +75,7 @@ def build_keys(tsv_path: Path) -> list[str]:
       3. Build ``{token}.{ancestry}.{source_consortium}.{year}`` per row.
       4. Append EVANGELOU_SBP_KEY (T1 spine reuse).
       5. Dedupe + sort.
-      6. Defensive bound check: 40 <= N <= 50.
+      6. Defensive bound check: 20 <= N <= 50 (D-M2-01 era).
     """
     df = pd.read_csv(tsv_path, sep="\t")
     in_scope = df[df["status"].isin(IN_SCOPE_STATUSES)].copy()
