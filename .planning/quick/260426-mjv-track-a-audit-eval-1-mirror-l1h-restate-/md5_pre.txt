@@ -1,0 +1,3 @@
+6c7d6eab2120223978df0648c6e0715e  docs/manuscript/track_a_pivot.md
+fed88c67514ac5eb2604340f8dd6cccb  src/R/figures/fig2_cs_yield.R
+b7993ae120cd276e02e1a0ba256d7f68  .planning/amendments/TRACK-A-FROZEN-NUMBERS.md
