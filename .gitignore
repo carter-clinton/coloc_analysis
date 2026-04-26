@@ -58,7 +58,16 @@ miniconda*/
 data/reference/
 # Upstream tool source clones (e.g., tools/hess/ — HESS Python 2.7 source
 # from huwenboshi/hess). Re-cloneable via git clone; not vendored in-repo.
-tools/
+# Use tools/* (not tools/) so per-file re-includes work for audit artifacts.
+tools/*
+# Force-include MTAG vendoring audit artifacts (m2-00 Task 3 per D-M2-10):
+# .git_pinned_commit pins the upstream SHA; .git_clone_log proves the
+# --residcov_path CLI flag exists at vendoring time. These are tiny text
+# files (audit-grade); the bulk MTAG source is re-cloneable via the SHA.
+!tools/mtag/
+tools/mtag/*
+!tools/mtag/.git_pinned_commit
+!tools/mtag/.git_clone_log
 
 # --- Data: never commit actual data files, but track the symlinks that
 # point at /rs1 so a fresh clone on the same HPC inherits the data layout ---
