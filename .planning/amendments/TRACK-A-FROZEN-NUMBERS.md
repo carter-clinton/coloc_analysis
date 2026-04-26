@@ -3,6 +3,7 @@
 **Frozen on**: 2026-04-23
 **Sources**: [results/fine_mapping/finemap_summary.tsv](../../results/fine_mapping/finemap_summary.tsv), [results/multitrait/coloc_summary.tsv](../../results/multitrait/coloc_summary.tsv), [results/qtl_coloc/tier_assignments.tsv](../../results/qtl_coloc/tier_assignments.tsv), [results/qtl_coloc/](../../results/qtl_coloc/) per-ID JSONs
 **Purpose**: single source of truth for the Track A manuscript abstract, results, tables, and the OSF amendment (Route B Step 3.3). Any downstream doc that cites these numbers must cite them verbatim from this file.
+**Audit closure record**: [TRACK-A-AUDIT-RESPONSE-2026-04-26.md](./TRACK-A-AUDIT-RESPONSE-2026-04-26.md) — single-document catalogue of all 27 audit items with status + commit pointers (independent scientific review acted on prior to submission).
 
 ---
 
