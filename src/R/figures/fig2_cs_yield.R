@@ -7,14 +7,14 @@
 #   increase under matched-coverage comparator. This figure must make
 #   that delta legible at a single-column width.
 #
-# Comparator-tightening note (quick-260425-kki, 2026-04-25):
+# Comparator-tightening note (2026-04-25, propagated by quick-260425-kki):
 #   We tightened the comparator from a partial-coverage Stage 1d narrow-
 #   validation baseline (12/96, 2 of 10 admissible regions had identity-LD
-#   fits) to the k2d full-coverage 2026-04-25 re-fire (48/95, all
-#   admissibility-matched regions); the inflation magnitude shifted from
-#   4.25x to ~1.06x. The 12/96 baseline is preserved verbatim with a
-#   SUPERSEDED 2026-04-25 markup in TRACK-A-FROZEN-NUMBERS.md for audit
-#   traceability.
+#   fits) to the matched-coverage k2d full-coverage 2026-04-25 re-fire
+#   (48/95 vs 51/96 = 1.06x yield); the inflation magnitude shifted from
+#   4.25x to ~1.06x. The 12/96 baseline is preserved verbatim under a
+#   SUPERSEDED 2026-04-25 per quick-260425-kki markup in TRACK-A-FROZEN-
+#   NUMBERS.md for audit traceability.
 #
 # Data sources (loaded at runtime; cross-checked vs disk-truth):
 #   results/fine_mapping/finemap_summary.tsv
