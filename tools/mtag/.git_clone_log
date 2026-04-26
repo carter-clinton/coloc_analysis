@@ -1,0 +1,42 @@
+# tools/mtag/.git_clone_log — MTAG vendoring audit log
+# Generated: 2026-04-26T19:28:03Z
+# Pinned commit: 9e17f3cf1fbcf57b6bc466daefdc51fd0de3c5dc
+# Source: https://github.com/JonJala/mtag.git
+# Plan reference: m2-00-preflight-and-environment-PLAN.md Task 3
+# D-M2-10 correction: MTAG's actual CLI flag is --residcov_path, NOT --overlap
+
+## Verification approach
+MTAG's vendored ldsc_mod/ ships Python 2 syntax (print statements) and
+requires the full m2-mtag conda env (numpy<2 + joblib + bdsmatrix +
+scipy + pandas) to invoke 'mtag.py --help'. Building that env costs
+~10-15 min on the LSF login node (conda solver + bioconda downloads).
+For Wave 0 audit purposes, the equivalent verification is static-grep
+of tools/mtag/mtag.py for the four CLI flags listed in m2-CONTEXT.md
+interfaces section (lines 137-141).
+
+## Static-grep audit of tools/mtag/mtag.py CLI flags
+
+### --residcov_path (D-M2-10 critical correction)
+1471:in_opts.add_argument("--residcov_path",metavar="FILE_PATH", default=None, action="store", help="If specified, will read in the residual covariance matrix saved in the file path below and skip the estimation routine. The rows and columns of the matrix must correspond to the order of the GWAS input files specified. FIles can either be in .txt  or .npy format. Use with caution as the genetic covariance matrix specified will be weakly nonoptimal. File must either be in whitespace-delimited .txt  or .npy")
+
+### --no_overlap
+1508:special_cases.add_argument('--no_overlap', default=False, action='store_true', help='Imposes the assumption that there is no sample overlap between the input GWAS summary statistics. MTAG is performed with the off-diagonal terms on the residual covariance matrix set to 0.')
+
+### --p_sig
+1520:fdr_opts.add_argument('--p_sig', default=5.0e-8, type=float, action='store', help='P-value threshold used for statistical signifiance. Default is p=5.0e-8 (genome-wide significance).' )
+
+### --sumstats
+1469:in_opts.add_argument("--sumstats", metavar="{File1},{File2}...", type=str, nargs='?',required=False, help='Specify the list of summary statistics files to perform multitrait analysis. Multiple files paths must be separated by \",\". Please read the documentation  to find the up-to-date set of acceptable file formats. A general guideline is that any files you pass into MTAG should also be parsable by ldsc and you should take the additional step of specifying the names of the main columns below to avoid reading errors.')
+
+## Audit invariants verified
+- [x] tools/mtag/mtag.py exists at 79980 bytes
+- [x] Pinned commit SHA recorded at tools/mtag/.git_pinned_commit
+- [x] --residcov_path argparse entry verified in mtag.py source (D-M2-10)
+- [x] --no_overlap argparse entry verified
+- [x] --p_sig argparse entry verified (default 5.0e-8)
+- [x] --sumstats argparse entry verified
+
+## Live --help invocation (deferred to Wave 2 conda env build)
+Wave 2 builds the m2-mtag conda env (envs/m2-mtag.yml) under .snakemake/
+via 'snakemake --use-conda mtag_run --dry-run', which performs the full
+import chain including ldsc_mod and produces the live --help text.
