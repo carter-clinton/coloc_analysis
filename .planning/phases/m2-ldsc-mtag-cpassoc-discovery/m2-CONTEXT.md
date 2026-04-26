@@ -223,3 +223,67 @@ Run `/gsd-plan-phase m2-ldsc-mtag-cpassoc-discovery` to:
 
 The OSF amendment §9.1 hard gate is RELEASED (commit d55c1d1, 2026-04-25). M2 may now commit.
 </next_step>
+
+<research_surfaced_resolutions>
+## Research-Surfaced Resolutions (added 2026-04-25 post-research)
+
+The gsd-phase-researcher agent (commit `c1a0caa`, output at `m2-RESEARCH.md`) surfaced 1 critical correction + 6 sub-decisions not anticipated in the original 10 D-M2-XX gray areas. All are resolved here.
+
+### CRITICAL — D-M2-10 flag-name correction
+
+**Issue:** D-M2-10 (and the prose throughout this CONTEXT.md) refers to "MTAG `--overlap`" as the cohort-overlap correction flag. **MTAG does NOT have a `--overlap` flag.** The actual MTAG CLI flag is **`--residcov_path`** — a path to a `.npy` or whitespace-delimited `.txt` file containing a bare numeric K×K matrix (no header, no row index).
+
+**Resolution:** All M2 plans MUST use `--residcov_path` as the actual MTAG CLI flag. The colloquial name "--overlap" appearing in CONTEXT.md, REQ-MTAG-OVERLAP, and OSF amendment text is fine for human-language description but the implementation MUST emit:
+- A bare numeric K×K matrix file (slice of the M1 ~26×26 LDSC bivariate-intercept matrix matching the K traits in this stratum's MTAG run) at `data/processed/mtag/{stratum}/residcov.txt`
+- A sidecar `data/processed/mtag/{stratum}/residcov.trait_order.json` recording the trait-order alignment with `--sumstats` (Pitfall 7 in m2-RESEARCH.md — silent mis-alignment if order diverges between `--sumstats` and `--residcov_path`).
+
+A new helper module `src/python/build_mtag_residcov_slice.py` is the M2 plan task that performs this slicing.
+
+### D-M2-Q1 — MTAG max-FDR threshold implementation
+
+**Decision:** Apply `mtag_maxFDR.py` post-hoc filter on each MTAG run output, dropping loci with `max_FDR ≥ 0.05` per Turley 2018 Methods §"maxFDR". This is a SECOND Snakemake rule per stratum (one for the main MTAG run, one for the post-hoc filter). Aligns with research recommendation (a). NOT `--p_sig` interpretation.
+
+**How to apply:** Snakemake DAG: `mtag_run` → emits `mtag_meta_results.txt`; `mtag_maxfdr_filter` → reads MTAG output and `mtag_maxFDR.py`-script output and writes filtered table. Class 1 novelty consumer reads the filtered table.
+
+### D-M2-Q2 — AFR LDSC ld-score reference (Carter answered)
+
+**Decision:** Stay with EUR cross-ancestry approximation (using existing `data/external/ldscore/eur_w_ld_chr/`) for ALL ancestries' h2/rg estimates in M2 — including the AFR-stratum LDSC matrix slice. Matches M1 convention (the M1 12-trait matrix already used EUR ld-scores cross-ancestry). AFR LDSC re-run with proper AFR ld-scores enters the M3-supersede queue when the AoU AFR LD panel lands.
+
+**Rationale:** The OSF amendment §3 (f) commits to AoU AFR WGS LD as the canonical AFR LD reference. M2's AFR LDSC is provisional and gets superseded at M3 anyway; staging 1000G AFR ld-scores at M2 Wave 0 just adds work that gets thrown away.
+
+### D-M2-Q3 — mtCOJO TRANS-stratum LD reference
+
+**Decision:** TRANS-stratum mtCOJO uses 1000G EUR as the primary LD reference, with a 1000G AFR sensitivity check on TRANS-stratum mtCOJO-novel loci. Aligns with research recommendation. EUR-dominant trans-ancestry meta-analyses make EUR the defensible primary; AFR sensitivity catches loci where the EUR LD assumption fails.
+
+**How to apply:** Snakemake `mtcojo_run` rule has wildcard `{stratum}` ∈ {EUR, AFR, TRANS}. For TRANS, the rule fires twice — once with `--ref-ld-chr 1000G_EUR_Phase3_plink/` (primary), once with `--ref-ld-chr 1000G_AFR_Phase3_plink/` (sensitivity, optional). Sensitivity table joins both on locus_id and reports concordance.
+
+### D-M2-Q4 — M2 closeout QC report scope (Carter answered)
+
+**Decision:** Python verifier only (`src/python/verify_m2_artifacts.py`). Quarto HTML deferred to a follow-up phase or rolled into M6 manuscript figures. Matches research recommendation.
+
+**How to apply:** M2 plan adds one closeout task `verify_m2_artifacts` modeled directly on `verify_m1_artifacts.py`. No `m2_qc_report.qmd` task; no `envs/m2-qc.yml`. Saves ~1 day of plan work.
+
+### D-M2-Q5 — mtCOJO target-trait scope per stratum
+
+**Decision:** Run mtCOJO ONLY for target traits where MTAG produced a novel locus AND the bivariate-intercept-matrix gcov_int with any contributing trait exceeds 0.1 (D-M2-08 threshold). MTAG-null target traits do not get mtCOJO confirmation. Aligns with research recommendation.
+
+**How to apply:** Wave 4 task `mtcojo_eligible_targets` reads MTAG-novel hit lists + LDSC intercept matrix, emits a TSV of (target_trait, stratum) tuples that need mtCOJO. The downstream `mtcojo_run` rule iterates only these tuples. Worst case ~3 mtCOJO invocations per stratum × 3 strata = 9 runs total; expected fewer.
+
+### D-M2-Q6 — Per-stratum trait-count floor (Carter answered)
+
+**Decision:** Soft floor of ≥3 traits per stratum. AFR MTAG fires with whatever is available, minimum 3 traits. Aligns with research recommendation. AFR-stratum joint-signal discovery is sparser than EUR; coverage improves at M3 (AoU LD) and M5 (deferred-trait closure).
+
+**How to apply:** `src/python/m2_stratum_keys.py` helper has `_MIN_PER_STRATUM = 3` (not the research's defensive 5). Strata with fewer than 3 traits emit a `skipped_strata.tsv` row with reason and skip the MTAG/CPASSOC run. EUR will always have 9; AFR is expected to have 5–7; TRANS expected 6–8.
+
+### Summary table
+
+| ID | Source | Decision | Status |
+|----|--------|----------|--------|
+| D-M2-10 correction | RESEARCH Pitfall 1 | MTAG flag is `--residcov_path`, not `--overlap`. Implement bare-matrix output + sidecar trait_order.json. | CRITICAL — resolved |
+| D-M2-Q1 | RESEARCH Q1 | `mtag_maxFDR.py` post-hoc filter on each MTAG run | resolved (research recommended) |
+| D-M2-Q2 | RESEARCH Q2 | EUR ld-scores for ALL ancestries (M1 convention); AFR LDSC re-run is M3-supersede | resolved (Carter) |
+| D-M2-Q3 | RESEARCH Q3 | 1000G EUR primary + 1000G AFR sensitivity for TRANS mtCOJO | resolved (research recommended) |
+| D-M2-Q4 | RESEARCH Q4 | Python verifier only; defer Quarto QC | resolved (Carter) |
+| D-M2-Q5 | RESEARCH Q5 | mtCOJO only for MTAG-novel target traits with extreme overlap | resolved (research recommended) |
+| D-M2-Q6 | RESEARCH Q6 | Soft floor `_MIN_PER_STRATUM = 3` | resolved (Carter) |
+</research_surfaced_resolutions>
