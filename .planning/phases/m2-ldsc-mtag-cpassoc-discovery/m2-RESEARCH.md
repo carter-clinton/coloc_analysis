@@ -678,9 +678,9 @@ Wall time estimate: ~3 hours total (plink2 vcf→bed at 504 samples). Run once a
 
 **Warning signs:** AFR-AFR bivariate intercepts in the matrix appear systematically high; flagged by `validate_expected_intercept_heuristics` warning.
 
-## Open Questions for Carter
+## Open Questions for Carter (RESOLVED via CONTEXT.md D-M2-Q1..Q6)
 
-These are sub-decisions the research uncovered that weren't explicitly resolved in CONTEXT.md decisions:
+These six questions are RESOLVED in CONTEXT.md research_surfaced_resolutions section as D-M2-Q1..Q6. The text below records the original sub-decisions that the research uncovered before they were locked; downstream plans should reference the corresponding D-M2-QN in CONTEXT.md as authoritative.
 
 ### 1. MTAG `--max-FDR-threshold 0.05` flag name verification
 
