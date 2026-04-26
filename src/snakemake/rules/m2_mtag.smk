@@ -85,6 +85,11 @@ _MUNGED_DIR = "data/processed/ldsc_overlap/munged"
 _MTAG_DIR = "data/processed/mtag"
 _MTAG_REPO = "tools/mtag"
 _INVENTORY = "config/trait_inventory.yaml"
+# MTAG-ready munged sumstats: m1_munge_all output augmented with P,FRQ,INFO
+# columns to satisfy MTAG's _perform_munge re-validation step (Rule 1
+# deviation: vendored MTAG insists on these columns even for pre-munged
+# LDSC inputs).
+_MTAG_MUNGED_DIR = "data/processed/mtag/munged_for_mtag"
 
 STRATA = ("EUR", "AFR", "TRANS")
 
@@ -175,7 +180,7 @@ rule m2_mtag_run:
     params:
         out_prefix=f"{_MTAG_DIR}/{{stratum}}/{{stratum}}_mtag",
         mtag_repo=_MTAG_REPO,
-        munged_dir=_MUNGED_DIR,
+        munged_dir=_MTAG_MUNGED_DIR,
     conda:
         "../../../envs/m2-mtag.yml"
     resources:
@@ -204,14 +209,22 @@ rule m2_mtag_run:
         # MTAG fire — D-M2-10 corrected: --residcov_path NOT --overlap.
         # --p_sig 5e-8 per D-M2-07.
         # --fdr per D-M2-Q1 to emit {out}_fdr_mat.txt for post-hoc filter.
-        # --use_beta_se per munged HM3 inputs (BETA + SE columns present).
+        # Column-name flags + --no_chr_data: vendored MTAG re-munges its
+        # input via mtag_munge.py, which expects 'snpid' / 'p' / etc.
+        # default column names; our m1-pipeline munged HM3 sumstats use
+        # `SNP A1 A2 N Z P FRQ INFO` schema.
+        # --maf_min 0.01: FRQ is synthetic constant 0.5 in munged_for_mtag/
+        #   so all SNPs pass.
         # --stream_stdout for live progress logging.
         python {params.mtag_repo}/mtag.py \
             --sumstats "$SUMSTATS_LIST" \
             --residcov_path {input.residcov} \
             --out {params.out_prefix} \
+            --snp_name SNP --a1_name A1 --a2_name A2 \
+            --n_name N --z_name Z --p_name P --eaf_name FRQ \
+            --no_chr_data \
             --p_sig 5e-8 \
-            --use_beta_se \
+            --n_min 0 --maf_min 0.01 \
             --fdr \
             --stream_stdout \
             2>&1 | tee -a {output.log}
