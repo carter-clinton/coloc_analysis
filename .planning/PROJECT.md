@@ -60,11 +60,16 @@ scales. At the candidate-locus scale, Track A quantifies — as a pre-specified
 methods-validation contribution per Amendment §8 — how many published
 cross-trait pleiotropy claims at 50 curated cardiometabolic regions survive
 fully-pre-registered real-LD re-analysis. Stage 2 real-LD evidence on
-2026-04-22 (51/96 non-empty credible sets, 4.25× the identity-LD baseline of
-12/96; 0 Tier A; SH2B3 × asthma EUR identity-LD PP.H4 = 1.0 collapses to
-real-LD n_cs_a = 0) shows that identity-LD inflation is a first-order
-methodological issue even at canonical literature loci. This is itself a
-publishable finding; Track A reports it. At the genome-wide scale, Track B
+2026-04-22, refined under the matched-coverage k2d full-coverage 2026-04-25
+re-fire (51/96 non-empty credible sets vs 48/95 under k2d identity-LD =
+1.06× count-level yield contrast; 0 Tier A; SH2B3 × asthma EUR identity-LD
+PP.H4 = 1.0 collapses to real-LD n_cs_a = 0; SUPERSEDED 2026-04-25
+narrow-validation 12/96 / 4.25× baseline preserved in
+`TRACK-A-FROZEN-NUMBERS.md`) shows that identity-LD inflation operates
+primarily at the structural credible-set composition level even at canonical
+literature loci, with modest count-level differential under the matched-
+coverage comparator. This is itself a publishable finding; Track A reports
+it. At the genome-wide scale, Track B
 pursues hypothesis-agnostic joint-signal discovery across 9 complex traits in
 EUR and AFR ancestries using a multi-method stack: MTAG (Turley 2018) with
 `--overlap` LDSC-intercept correction for UKB/MVP cohort overlap, CPASSOC
@@ -140,10 +145,13 @@ remaining M0 closeout documentation items.
 
 **Pre-pivot spine (Phases 0 / 1 / 2 / 5 / 9) — complete.** Artifacts are
 reusable per Amendment §8: Phase 1 SuSiE-RSS across 205 windows; Phase 2
-Stage 2 real-LD coloc delivered **51/96 non-empty credible sets (53.1%,
-4.25× the identity-LD baseline of 12/96)**, with 0 Tier A and 9 Tier C
-across the 10 EUR autosomal curated regions on real LD plus AFR / HLA /
-BMI_Xq24 regions on the legacy identity-LD fallback pending M3; Phase 5
+Stage 2 real-LD coloc delivered **51/96 non-empty credible sets (53.1%) vs
+48/95 (50.5%) under the matched-coverage k2d full-coverage identity-LD
+comparator (2026-04-25 re-fire) = 1.06× yield contrast** (SUPERSEDED
+2026-04-25 narrow-validation 12/96 / 4.25× baseline preserved in
+`TRACK-A-FROZEN-NUMBERS.md`), with 0 Tier A and 9 Tier C across the 10 EUR
+autosomal curated regions on real LD plus AFR / HLA / BMI_Xq24 regions on
+the legacy identity-LD fallback pending M3; Phase 5
 LDSC partitioned heritability + HESS (290 local-h² outputs) + MAGMA 8/8
 traits + LDSC-SEG tissue-specific enrichment; Phase 9 replication
 scaffolding across FinnGen R12 + GBMI + MVP + BBJ with FIQT
