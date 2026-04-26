@@ -4,7 +4,7 @@ milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
 stopped_at: Completed m1-04-qc-reports-inventory-manifest-PLAN.md (M1 closed; OSF amendment paste-ready)
-last_updated: "2026-04-26T04:45:54.545Z"
+last_updated: "2026-04-26T19:05:55.099Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 12
@@ -22,19 +22,19 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** M1 closed (verifier PASS 5/5, OSF amendment posted at [osf.io/az52u/files/k8w7n](https://osf.io/az52u/files/k8w7n)); Amendment §9.1 hard gate RELEASED → ready for `/gsd-discuss-phase m2` (LDSC + MTAG + CPASSOC discovery). Concurrent Track A audit follow-on items remain open per stopped_at.
+**Current focus:** Phase m2-ldsc-mtag-cpassoc — discovery
 
 **k2d identity-LD re-fire complete (2026-04-25):** LSF fire (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file gone; 95 JSONs + `finemap_manifest.tsv` landed at `results_identity_ld/fine_mapping/`. Empirically unblocks Track A **Figure 1A** (identity-vs-real PP.H4 scatter) and **Figure 3** (survival forest) — the two open figure slots in the 5-figure roster (Figs 1B + 2 + 5 already DONE per p1b / mqo / k2g; Fig 4 demoted to S5 per k2f). **Both halves of the post-k2d deferral are now resolved:** Fig 1A + Fig 3 builders landed via quick task `260425-1vy` (commits `105484d`, `f862f55`); `results_identity_ld/` tracking decision is locked at DEC-2026-04-25-01 (don't commit; document via .gitignore + canonical CS-yield summary at `.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv`).
 
 ## Current Position
 
-Phase: m1-sumstats-upgrade-and-harmonization
-Plan: Not started
+Phase: m2-ldsc-mtag-cpassoc (discovery) — EXECUTING
+Plan: 1 of 6
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
 
-- 51/96 non-empty real-LD credible sets — 4.25× yield vs 12/96 identity-LD baseline.
+- 51/96 non-empty real-LD credible sets vs 48/95 under the matched-coverage k2d full-coverage identity-LD comparator (2026-04-25 re-fire) = 1.06× yield contrast (SUPERSEDED 2026-04-25 narrow-validation 12/96 / 4.25× baseline preserved in `.planning/amendments/TRACK-A-FROZEN-NUMBERS.md`).
 - 0 Tier A signals at genome-wide-significance thresholds.
 - Flagship SH2B3 × asthma EUR coloc: identity-LD PP.H4 = 1.0 → real-LD n_cs_a = 0 (Benner 2017 identity-LD inflation, now demonstrated on a canonical-literature signal).
 - 861 hard failures in the pairwise trait-pair sweep (to be quantified in Track A frozen-numbers pass).
