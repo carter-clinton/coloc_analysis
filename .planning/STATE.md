@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: "Quick task 260426-04b closed Track A audit Eval 4a residual + H3 figure-polish in 3 atomic commits (d6cbf53 → 5987ba1 → d6a3647): (1) fig3_sh2b3_eur_collapse_forest.R disk-derives EXPECTED_ID_CS / EXPECTED_REAL_CS / EXPECTED_REAL_STATUS scalars from IDENTITY-LD-K2D-FIT-SUMMARY.tsv + finemap_summary.tsv (mirrors 260425-kki/884eb3d fig2 pattern; self-correction-discipline alignment, NOT numeric correction — hardcodes matched disk verbatim); fig3 PDF re-rendered (PNG byte-identical to prior render → 4 files committed instead of 5, benign deviation confirming the alignment-not-correction framing). (2) TRACK-A-FROZEN-NUMBERS.md gets a NEW H3 LIVE block (sibling to Stage 2 LIVE) freezing the 33/60 + 27/60 + 19/60 + 41/60 + 32/1274 + 0/32 + FTO 0.3099 + SH2B3 0.0385 scalars surfaced by 260425-wa2/1e4b071. (3) docs/manuscript/track_a_pivot.md gets a NEW Figure S7 caption block (after Fig 5 caption at L305) framing the H3 figure as exploratory methodology-validation, NOT discovery; cites the 33/60 scalar + zero-suspect-quadrant finding. Parallel agent C (260426-06n, Eval 3.2 + 3.6) ran disjoint sections of track_a_pivot.md (Methods §QTL Coloc / Discussion §3 / Limitations §6) at L90/L140/L220/L244; my Figure S7 at L305 staged cleanly without rebase. Audit progress: cheap items closed at 260425-t9j (Eval 3.7/3.8/3.9) + 260425-wbf (Eval 3.4 + 2a) + 260426-06n (Eval 3.2 + 3.6) + 260426-04b (Eval 4a residual + H3 figure-polish + caption); H3 figure built at 260425-wa2 (1e4b071). Outstanding: L=20 re-fit + canonical SH2B3 trait-pairs (audit High-Quality #2, Terminal A LSF), Eval 2a non_converged headline disposition, Eval 2c PP.H4 posterior intervals, Eval 3.3 28/28 empties interpretation (entangled with 2a)."
-last_updated: "2026-04-26T04:35:00.000Z"
-last_activity: 2026-04-26 - Completed quick task 260426-04b: H3 figure-polish + audit Eval 4a residual + Figure S7 caption
+stopped_at: Completed m1-04-qc-reports-inventory-manifest-PLAN.md (M1 closed; OSF amendment paste-ready)
+last_updated: "2026-04-26T04:45:54.545Z"
+last_activity: 2026-04-26
 progress:
   total_phases: 12
   completed_phases: 6
@@ -64,7 +64,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-04-25
+Last activity: 2026-04-26
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
