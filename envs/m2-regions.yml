@@ -1,0 +1,18 @@
+# envs/m2-regions.yml — M2 Wave 4 region union BED build env
+#
+# D-M2-09: Strict union of clumped + MTAG-novel + CPASSOC-novel leads,
+# ±1 Mb windows, bedtools default merge. Provenance JSON column preserved.
+#
+# bedtools 2.31+: stable merge semantics for the strict-union policy.
+name: m2-regions
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - bedtools=2.31.1
+  - pybedtools=0.10
+  - pandas=2.2.2
+  - pyarrow=15.0.0
+  - pyyaml
+  - pytest=7.4.4

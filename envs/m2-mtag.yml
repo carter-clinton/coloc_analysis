@@ -1,0 +1,24 @@
+# envs/m2-mtag.yml — M2 Wave 2 MTAG (Turley 2018) joint-signal env
+#
+# Pitfall 6 (m2-RESEARCH.md): MTAG is git-only (NOT on PyPI as `mtag`).
+# Vendored at tools/mtag/ via git clone (Wave 0 Task 3); invoked as
+# `python tools/mtag/mtag.py` from this conda env.
+#
+# Pitfall 6 numpy<2 pin: MTAG's vendored bdsmatrix dependency was authored
+# against numpy 1.x ABI; numpy 2.0 broke .ctypeslib semantics.
+#
+# D-M2-10 + REQ-MTAG-OVERLAP: This env consumes residcov.txt (bare K×K
+# matrix) via --residcov_path. Sidecar trait_order.json carries alignment.
+name: m2-mtag
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - numpy=1.26.4         # numpy<2 — MTAG bdsmatrix ABI compatibility (Pitfall 6)
+  - scipy=1.11.4
+  - pandas=2.2.2
+  - pybedtools=0.10
+  - pyyaml
+  - pytest=7.4.4
+  - pip
