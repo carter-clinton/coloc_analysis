@@ -69,7 +69,7 @@
 
 (g) Locus-to-gene (L2G) scores from Open Targets Genetics (Mountjoy 2021, *Nature Genetics*) and Borzoi (Linder 2024, *Nature Genetics*) deep-learning variant effect predictions for gene-level and variant-level prioritization on Tier A signals.
 
-**Pre-registered novel-variant discovery aim:** In addition to cross-trait pleiotropy claims, this analysis pre-registers four operational definitions of variant-level novelty, each with a locked comparator catalog. Catalog versions, download URLs, SHA-256 checksums, and fetch dates are tracked in the companion repository at `data/catalogs/catalog_lock_manifest.tsv` (M0 snapshot 2026-04-24 locks ClinVar `2026-04-20_weekly_release` with SHA-256 `3be9939676e44a79e906dd167caec45e6e871be55db1a4ddb9269ebf0828e58e`; the Pickrell 2016 supplement, GWAS Catalog, Open Targets Genetics L2G, and Watanabe 2019 GWAS Atlas are pinned by URL + best-known version at M0 and will be fetched and SHA-256-locked at the M5 cross-reference date, commit hash `<M5-locked catalog commit hash>`). The four operational definitions:
+**Pre-registered novel-variant discovery aim:** In addition to cross-trait pleiotropy claims, this analysis pre-registers four operational definitions of variant-level novelty, each with a locked comparator catalog. Catalog versions, download URLs, SHA-256 checksums, and fetch dates are tracked in the companion repository at `data/catalogs/catalog_lock_manifest.tsv` (M0 snapshot 2026-04-24 locks ClinVar `2026-04-20_weekly_release` with SHA-256 `3be9939676e44a79e906dd167caec45e6e871be55db1a4ddb9269ebf0828e58e`; the Pickrell 2016 supplement, GWAS Catalog, Open Targets Genetics L2G, and Watanabe 2019 GWAS Atlas are pinned by URL + best-known version at M0 and will be fetched and SHA-256-locked at the M5 cross-reference date, commit hash `<M5 lock commit hash TBD>`). The four operational definitions:
 
 (i) **Novel joint-signal loci** = (MTAG p < 5 × 10⁻⁸) OR (CPASSOC p < 5 × 10⁻⁸), AND no contributing single-trait association at p < 5 × 10⁻⁸ within ±500 kb per GWAS Catalog v_lock.
 
@@ -103,6 +103,8 @@ Functional-mechanism novelty driven by Borzoi and Enformer top-decile scores cro
 - CC0 1.0 Universal license on all pre-registration and post-registration artifacts.
 
 **Expected timeline:** This amendment is posted at the end of M1 (sumstats harmonization complete; per-trait SHA-256 checksums frozen at repository commit `7efffb84ad17039946c3b573de9ee2f6f87776c2`). M2–M6 follow. The full milestone table and per-phase success criteria are available in the companion repository at `.planning/ROADMAP.md`; the amendment design rationale is at `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
+
+**Note on catalog lock follow-up:** The M5 catalog-lock commit hash referenced above (`<M5 lock commit hash TBD>`) will be added as a follow-up OSF update at the M5 cross-reference date, when the M5-deferred rows in the catalog lock manifest (Pickrell 2016, GWAS Catalog, Open Targets Genetics L2G, Watanabe 2019) are fetched and SHA-256-locked. The URL path to the manifest (`data/catalogs/catalog_lock_manifest.tsv`) is stable.
 
 --- PASTE ENDS HERE ---
 
