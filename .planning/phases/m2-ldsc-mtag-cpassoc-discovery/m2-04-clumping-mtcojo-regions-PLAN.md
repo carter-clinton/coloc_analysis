@@ -506,8 +506,14 @@ bedtools merge -i <sorted input.bed> > <merged.bed>
         raise ValueError(stratum)
 
 
-    rule m2_mtcojo_eligible_targets:
-        """Per-stratum eligibility list (D-M2-Q5) — only MTAG-novel target traits with gcov_int > 0.1."""
+    checkpoint m2_mtcojo_eligible_targets:
+        """Per-stratum eligibility list (D-M2-Q5) — only MTAG-novel target traits with gcov_int > 0.1.
+
+        SNAKEMAKE CHECKPOINT (NOT a plain rule): Snakemake DAG resolution must
+        re-evaluate downstream {trait} wildcards AFTER this rule runs because
+        the eligibility TSV is consumed at runtime to determine which targets
+        fire mtCOJO. See https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution
+        """
         input:
             mtag_filtered=f"{_MTAG_DIR}/{{stratum}}/{{stratum}}_mtag_maxfdr_filtered.txt",
             long_matrix=_LONG_MATRIX,
@@ -578,10 +584,32 @@ bedtools merge -i <sorted input.bed> > <merged.bed>
             """
 
 
+    def _mtcojo_targets_for_stratum(wildcards):
+        """Dynamic input function driven by the m2_mtcojo_eligible_targets checkpoint.
+
+        Snakemake re-evaluates this function AFTER the checkpoint completes,
+        parsing eligible_targets.tsv to expand {trait} wildcards into the per-target
+        cojo file paths the sensitivity-table aggregator depends on.
+        """
+        import pandas as pd
+        elig_path = checkpoints.m2_mtcojo_eligible_targets.get(stratum=wildcards.stratum).output.tsv
+        df = pd.read_csv(elig_path, sep="\t")
+        return [
+            f"{_MTCOJO_DIR}/{wildcards.stratum}/{t}.mtcojo.cojo"
+            for t in df["target_trait"].tolist()
+        ]
+
+
     rule m2_mtcojo_sensitivity_table:
-        """Aggregate per-stratum mtcojo outputs into one mtcojo_sensitivity.tsv per Q8 schema."""
+        """Aggregate per-stratum mtcojo outputs into one mtcojo_sensitivity.tsv per Q8 schema.
+
+        Input is a DYNAMIC function driven by the m2_mtcojo_eligible_targets
+        checkpoint — Snakemake DAG re-resolves {trait} wildcards after the
+        checkpoint emits eligible_targets.tsv (data-dependent conditional execution).
+        """
         input:
             eligible=f"{_MTCOJO_DIR}/{{stratum}}/mtcojo_eligible_targets.tsv",
+            cojo_files=_mtcojo_targets_for_stratum,
         output:
             sensitivity=f"{_MTCOJO_DIR}/{{stratum}}/mtcojo_sensitivity.tsv",
         conda:
@@ -635,7 +663,8 @@ bedtools merge -i <sorted input.bed> > <merged.bed>
     - File `src/python/select_mtcojo_eligible_targets.py` exists ≥60 lines
     - `grep -c "_GCOV_INT_THRESHOLD = 0.1" src/python/select_mtcojo_eligible_targets.py` returns 1 (D-M2-08)
     - File `src/snakemake/rules/m2_mtcojo.smk` exists ≥80 lines
-    - `grep -c "rule m2_mtcojo_eligible_targets:" src/snakemake/rules/m2_mtcojo.smk` returns 1
+    - `grep -c "checkpoint m2_mtcojo_eligible_targets:" src/snakemake/rules/m2_mtcojo.smk` returns 1 (Snakemake checkpoint — data-dependent {trait} wildcard expansion per https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution)
+    - `grep -c "checkpoints.m2_mtcojo_eligible_targets.get" src/snakemake/rules/m2_mtcojo.smk` returns ≥1 (dynamic input function in m2_mtcojo_sensitivity_table consumes the checkpoint output)
     - `grep -c "rule m2_mtcojo_run:" src/snakemake/rules/m2_mtcojo.smk` returns 1
     - `grep -c "rule m2_mtcojo_sensitivity_table:" src/snakemake/rules/m2_mtcojo.smk` returns 1
     - `grep -c "1000G_EUR_Phase3_plink" src/snakemake/rules/m2_mtcojo.smk` returns ≥1 (D-M2-Q3 TRANS uses EUR primary)
