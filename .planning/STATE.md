@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed m1-04-qc-reports-inventory-manifest-PLAN.md (M1 closed; OSF amendment paste-ready)
-last_updated: "2026-04-26T19:05:55.099Z"
+stopped_at: Completed m2-01-ldsc-matrix-refire-PLAN.md
+last_updated: "2026-04-26T21:39:02.086Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: m2-ldsc-mtag-cpassoc (discovery) — EXECUTING
-Plan: 2 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
+Plan: 3 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -64,7 +64,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-04-26 — Completed quick task 260426-mjv: Track A audit Eval-1 — mirrored L1H formal SUPERSEDED+kki audit-trail attribution into the publication trio (track_a_pivot.md L295 Figure 2 caption + fig2_cs_yield.R L10-17 header + TRACK-A-FROZEN-NUMBERS.md L212 reconciliation row). Idempotent shore. 3 atomic prose-only commits (0db50d4, 4d46fbc, 8638b16); 7/7 verification gates PASS. Manuscript abstract/results/headline/discussion (L28/L82/L138/L216) byte-identical (MATCH-PROSE; original-research voice preserved per Carter framing rule). Disk-truth scalar + runtime assertion blocks in fig2_cs_yield.R byte-identical (md5 verified). Audit-trail symmetry now closed across planning ecosystem (post-L1H) and live publication surfaces (post-kki + post-mjv).
+Last activity: 2026-04-26
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
@@ -141,6 +141,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase m1-sumstats-upgrade-and-harmonization P02b | 80 | 2 tasks | 16 files |
 | Phase m1-sumstats-upgrade-and-harmonization P03-munge-and-ldsc-intercept-matrix | 224 | 2 tasks | 16 files |
 | Phase m1 P04 | 51 | 2 tasks | 16 files |
+| Phase m2-ldsc-mtag-cpassoc-discovery P01 | 55 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -267,6 +268,10 @@ Recent decisions affecting current work:
 - [Phase m2-00]: Static-grep verification of MTAG `--residcov_path` argparse entry (in tools/mtag/.git_clone_log) accepted as functionally equivalent to live `mtag.py --help` for Wave 0 audit purposes; live `--help` deferred to Wave 2 conda env build (D-M2-10 satisfied)
 - [Phase m2-00]: GWAS Catalog v_lock_M2 frozen at SHA-256 of `.zip` bytes (not extracted contents) per Pitfall 10 — `652a974d3246748290baa83899d3c8db0027eed76663b767beaee319618961cd`; ETag drift mitigation per T-M2-10
 - [Phase m2-00]: CR-checker WR-5 per-item four-attestation pattern adopted for Wave-0 → Wave-1 gate transitions — Carter explicitly attests (a) AFR PLINK build / (b) GWAS Catalog SHA / (c) RED test count / (d) MTAG vendoring before Wave 1 starts
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: Used local 22-way xargs parallelism via existing bin/fire_m1_03_munge_and_rg.sh driver — full Stage 3 production fire wall = 139 sec, NOT 12 hr long-queue estimate from plan; PAIR_WALL_SECONDS=13 calibration scales to 26-trait scope
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: Materialize-from-parquet helper (src/python/materialize_tsv_from_parquet.py) emits gzip-compatible TSV.bgz (NOT true bgzip); LDSC reads sequentially via gzip.open and does not need .tbi indexability — deliberate Rule 3 simplification
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: Within-GLGC EUR lipid pair intercepts NOT ~1.0 (observed 0.04-0.40 across HDL/LDL/TC/TG x EUR pairs); flagged as M2 finding for SUMMARY but advisory NOT blocking — gcov_int values usable for MTAG --residcov_path consumption
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: M1 12x12 working copy at original path preserved (NOT overwritten by M2 path); the M1-frozen.tsv archive sibling is byte-identical to both M1 working copy AND OSF mirror
 
 ### Pending Todos
 
@@ -332,8 +337,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-25T15:13:49.886Z
-Stopped at: Completed m1-04-qc-reports-inventory-manifest-PLAN.md (M1 closed; OSF amendment paste-ready)
+Last session: 2026-04-26T21:39:02.077Z
+Stopped at: Completed m2-01-ldsc-matrix-refire-PLAN.md
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
