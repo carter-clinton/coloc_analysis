@@ -4,8 +4,8 @@ milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
 stopped_at: "Quick task 260425-t9j closed audit Eval 3.7 + 3.8 + 3.9 — HLA reclassified out of negative-control panel + N restated as 9 distinct loci / 200 rows + DIAMANTE T2D vintage pinned to Mahajan 2018 (N=898,130, doi:10.1038/s41588-018-0241-6); 2 atomic commits 943d8f6/19de334. AUDIT-REVIEW-2026-04-25.md committed at 9801e77. Track A audit follow-on cheap items closed; outstanding: SuSiE non-convergence filter (audit Eval 2a), L=20 re-fit + canonical SH2B3 trait-pairs (audit High-Quality #2, Terminal A LSF), LD-overlap dose-response figure (audit High-Quality #3), 78.9% QTL-coloc failure root-cause (audit Eval 3.2), Fig 3 EXPECTED scalars hardcode (audit Eval 4a residual)."
-last_updated: "2026-04-26T01:30:00.000Z"
-last_activity: 2026-04-26 - Completed quick task 260425-t9j: Track A audit cheap-items pass
+last_updated: "2026-04-25T18:00:00.000Z"
+last_activity: 2026-04-25 - OSF M1 amendment posted at osf.io/az52u/files/k8w7n; Amendment §9.1 hard gate RELEASED; M2 may now commit
 progress:
   total_phases: 12
   completed_phases: 6
@@ -22,7 +22,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** Phase m1-sumstats-upgrade-and-harmonization — sumstats-upgrade-and-harmonization
+**Current focus:** M1 closed (verifier PASS 5/5, OSF amendment posted at [osf.io/az52u/files/k8w7n](https://osf.io/az52u/files/k8w7n)); Amendment §9.1 hard gate RELEASED → ready for `/gsd-discuss-phase m2` (LDSC + MTAG + CPASSOC discovery). Concurrent Track A audit follow-on items remain open per stopped_at.
 
 **k2d identity-LD re-fire complete (2026-04-25):** LSF fire (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file gone; 95 JSONs + `finemap_manifest.tsv` landed at `results_identity_ld/fine_mapping/`. Empirically unblocks Track A **Figure 1A** (identity-vs-real PP.H4 scatter) and **Figure 3** (survival forest) — the two open figure slots in the 5-figure roster (Figs 1B + 2 + 5 already DONE per p1b / mqo / k2g; Fig 4 demoted to S5 per k2f). **Both halves of the post-k2d deferral are now resolved:** Fig 1A + Fig 3 builders landed via quick task `260425-1vy` (commits `105484d`, `f862f55`); `results_identity_ld/` tracking decision is locked at DEC-2026-04-25-01 (don't commit; document via .gitignore + canonical CS-yield summary at `.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv`).
 
