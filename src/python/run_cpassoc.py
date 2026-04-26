@@ -153,7 +153,11 @@ def _intersect_and_align(per_trait: dict[str, pd.DataFrame]) -> pd.DataFrame:
 # R-matrix slicing with Q7 PSD probe.
 # ---------------------------------------------------------------------------
 
-def _slice_R_for_trait_order(matrix_path: Path, trait_order: list[str]) -> np.ndarray:
+def _slice_R_for_trait_order(
+    matrix_path: Path,
+    trait_order: list[str],
+    psd_tolerance: float = -1e-10,
+) -> np.ndarray:
     """Q7 PSD-preserving principal submatrix of the M2 LDSC matrix.
 
     Reads the indexed wide TSV at `matrix_path` (Wave 1 reducer output),
@@ -161,12 +165,49 @@ def _slice_R_for_trait_order(matrix_path: Path, trait_order: list[str]) -> np.nd
     symmetrizes ((R + R.T) / 2), zero-fills any residual NaN cells (per
     Wave 1 SUMMARY policy: per-stratum slices are NaN-free given the M2
     matrix; this is a safety net for future matrix versions), enforces
-    diag = 1.0 (LDSC self-pair convention), and asserts PSD via eigvalsh
-    (min eigenvalue ≥ -1e-10).
+    diag = 1.0 (LDSC self-pair convention), runs the eigvalsh probe, and
+    on PSD violation applies an adaptive ridge so R is PSD before being
+    handed to cpassoc_shom/cpassoc_shet.
 
-    Raises ValueError on:
-      - any trait_order key missing from the matrix index/columns
-      - the eigvalsh PSD probe failing (min eigval < -1e-10)
+    Q7 + D-M2-Q2 reconciliation (Wave 3 Task 3 deviation):
+      The Q7 invariant assumed the M2 LDSC matrix is strictly PSD. In
+      practice, the Wave 1 m2-01 SUMMARY documented that LDSC gcov_int
+      estimates have negative off-diagonal values from real estimation
+      noise (e.g., hdl.EUR x tg.EUR = -0.575; tc.EUR x tg.EUR = 0.402;
+      Pitfall 8 false-alarm). The full 26x26 matrix has 5 negative
+      eigenvalues (min = -0.327); per-stratum slices for EUR (min=-0.070)
+      and TRANS (min=-0.084) are non-PSD, AFR (min=+0.013) is PSD.
+
+      Rather than failing the rule, we apply an adaptive ridge sized to
+      the negative-eigenvalue magnitude so R is just-barely PSD before
+      _safe_inverse is called downstream. This preserves the D-M2-04
+      semantics (LDSC matrix as R) while handling the documented Wave-1
+      reality. The applied ridge is recorded for the audit log.
+
+    Adaptive ridge sizing:
+      lam = max(|min_eig| + epsilon, ridge_floor * trace(R) / K)
+      where epsilon = 1e-3 ensures strict PSD post-ridge.
+
+    Parameters
+    ----------
+    matrix_path : Path
+        Wave 1 LDSC bivariate-intercept matrix TSV.
+    trait_order : list[str]
+        Canonical trait order (from Wave 2 sidecar).
+    psd_tolerance : float
+        Eigenvalue threshold below which adaptive ridge is applied
+        (default -1e-10; Q7 contract).
+
+    Returns
+    -------
+    np.ndarray
+        K x K PSD matrix ready for cpassoc_shom/cpassoc_shet.
+
+    Raises
+    ------
+    ValueError
+        If any trait_order key is missing from the matrix index/columns.
+        (PSD violations no longer raise — they trigger adaptive ridge.)
     """
     M = pd.read_csv(matrix_path, sep="\t", index_col=0)
     keys_in_matrix = [k for k in trait_order if k in M.index and k in M.columns]
@@ -185,15 +226,38 @@ def _slice_R_for_trait_order(matrix_path: Path, trait_order: list[str]) -> np.nd
     # Diagonal MUST be 1.0 (LDSC self-pair convention).
     np.fill_diagonal(R, 1.0)
 
-    # Q7 PSD probe — principal submatrix of a PSD matrix is PSD by linear
-    # algebra; this guard catches numerical drift in upstream matrix
-    # derivation.
+    # Q7 PSD probe — principal submatrix of a true-PSD matrix is PSD; this
+    # guard catches LDSC estimation noise (negative gcov_int) per Wave 1
+    # m2-01 SUMMARY documented findings.
     eigvals = np.linalg.eigvalsh(R)
-    if eigvals.min() < -1e-10:
-        raise ValueError(
-            f"_slice_R_for_trait_order: PSD violation; min eigenvalue = "
-            f"{eigvals.min():.6g} for stratum slice (K={len(trait_order)}). "
-            f"Q7 invariant breached; check upstream matrix at {matrix_path}."
+    min_eig = float(eigvals.min())
+    if min_eig < psd_tolerance:
+        # D-M2-Q2 adaptive ridge: shift R to be PSD before downstream
+        # _safe_inverse. The original _safe_inverse uses a fixed
+        # ridge_floor=1e-4 which is too small for |min_eig| ~= 0.07-0.08.
+        K = R.shape[0]
+        epsilon = 1e-3  # buffer to ensure strict positive-definiteness
+        # Use both an absolute (|min_eig|) and a relative (trace-scaled)
+        # floor; pick the larger so we always achieve PSD.
+        lam_abs = abs(min_eig) + epsilon
+        lam_rel = 1e-4 * float(np.trace(R)) / K
+        lam = max(lam_abs, lam_rel)
+        R = R + lam * np.eye(K)
+        # Verify PSD post-ridge (strict assertion — should always pass).
+        eigvals_post = np.linalg.eigvalsh(R)
+        if eigvals_post.min() < psd_tolerance:
+            raise ValueError(
+                f"_slice_R_for_trait_order: adaptive ridge failed; "
+                f"post-ridge min eigval = {eigvals_post.min():.6g}, "
+                f"applied lam = {lam:.6g}"
+            )
+        print(
+            f"_slice_R_for_trait_order: PSD ridge applied — "
+            f"pre-ridge min_eig = {min_eig:.6g}, applied lam = {lam:.6g}, "
+            f"post-ridge min_eig = {eigvals_post.min():.6g} "
+            f"(K={K}; D-M2-Q2 adaptive fallback per Q7 + Wave 1 "
+            f"non-PSD documentation)",
+            file=sys.stderr,
         )
 
     return R
