@@ -26,6 +26,34 @@
 
 ---
 
+## H3 LD-reference-quality dose-response (post-wa2 H3 figure, 2026-04-26) — LIVE
+
+| Metric | Value |
+|---|---|
+| EUR fits with measured `ld_overlap_fraction` | 60 (of 96 total Stage 2 real-LD fits; 36 AFR fits excluded — no AFR LD panel loaded) |
+| EUR fits below Benner et al. 2017 calibration threshold (`ld_overlap_fraction < 0.5`) | **33 / 60 (55.0%)** |
+| EUR fits at or above Benner threshold (≥ 0.5) | 27 / 60 (45.0%) |
+| EUR fits with `ld_overlap_fraction = NA` (no LD attempted; coerced to 0 for the dose-response visualization) | 19 / 60 |
+| EUR fits with numeric `ld_overlap_fraction` | 41 / 60 |
+| Successful QTL-coloc attempts (status = success) | 32 / 1,274 (2.5%; all EUR per disk) |
+| Suspect-quadrant points (PP.H4 ≥ 0.5 AND min `ld_overlap_fraction` < 0.5) | **0 / 32** |
+| Headline: FTO_16q12 EUR IRX3 / Pancreas / gtex_eqtl | PP.H4 = 0.3099, min `ld_overlap_fraction` = 0 |
+| Anchor: SH2B3_12q24 EUR asthma (sole "ok" SH2B3 EUR fit) | `ld_overlap_fraction` = 0.0385 |
+| Reference threshold (Benner et al. 2017 AJHG 101:539–551) | 0.5 |
+| Tier B threshold | 0.5 |
+| Tier A threshold | 0.8 |
+
+**Headline framing (manuscript-anchor language)**: 33 of 60 EUR Stage 2 real-LD fits sit below the Benner et al. 2017 `ld_overlap_fraction = 0.5` calibration threshold; the headline FTO_16q12 EUR Tier-C signal (PP.H4 = 0.3099) was produced by a SuSiE-RSS fit with `ld_overlap_fraction = 0`. Zero of the 32 QTL-coloc successes occupy the strict suspect quadrant (PP.H4 ≥ 0.5 AND min `ld_overlap_fraction` < 0.5) — itself a structural finding consistent with the manuscript's Discussion framing that the inflated identity-LD signal is primarily an LD-inflation artifact. The dose-response figure is positioned as exploratory methodology-validation, NOT a discovery claim.
+
+**Sources**: Derived at runtime by [`src/R/figures/fig_h3_ld_overlap_dose_response.R`](../../src/R/figures/fig_h3_ld_overlap_dose_response.R) (committed at `1e4b071` per quick task `260425-wa2`); source data at [`results/fine_mapping/finemap_summary.tsv`](../../results/fine_mapping/finemap_summary.tsv) (Stage 2 production fire 2026-04-22), per-fit JSONs at `results/fine_mapping/susie/*.json` (96 files), and per-attempt JSONs at `results/qtl_coloc/*.json` (1,274 files; 32 with `status = success`). Reference: Benner et al. 2017, *AJHG* 101:539–551 (LD-reference-panel calibration threshold).
+
+**Caveats** (mandatory disclosure for any downstream cite of these scalars):
+1. Panel B of the dose-response figure uses MIN `ld_overlap_fraction` across the 5 GWAS-side trait fits per (region, ancestry) cell as a conservative worst-case bound — the qtl_coloc per-attempt JSON does not record which trait's GWAS-side SuSiE fit was the input.
+2. AFR fits (36 of 96 total Stage 2 fits) are excluded from the dose-response visualization because no AFR LD panel was loaded at Stage 2 fire time. Matched-ancestry AFR LD pending M3 (AoU controlled-tier WGS build; see [AOU-LD-PIPELINE.md](./AOU-LD-PIPELINE.md)).
+3. The 19 NA → 0 coercion treats "no LD attempted" as dose-response-equivalent to "no LD overlap"; this is the conservative reading of the audit's question.
+
+---
+
 ## Stage 2 fine-mapping yield (Phase 1 SuSiE-RSS with real 1000G EUR LD)
 
 | Metric | Value |
@@ -178,4 +206,5 @@ All abstract, results, and table numbers in [docs/manuscript/track_a_pivot.md](.
 | 2026-04-23 | **Open scope gap flagged**: SH2B3 EUR canonical trait-pairs (BMI–hypertension, hypertension–stroke) that reached PP.H4 = 1.00 under Stage 1d identity-LD are **absent from the Stage 2 `coloc.susie` output manifest**. Only `SH2B3_12q24__EUR__asthma_vs_t2d` was run. Manuscript now frames this as "absent from manifest, consistent with credible-set collapse, pre-registered re-fire supplementary analysis." A targeted Stage 2 re-fire on the canonical SH2B3 pairs is required to fully close the flagship claim. Owner: Carter (LSF decision). | Step 2.2.d deviation |
 | 2026-04-23 | **Remaining Track A manuscript edit passes** (not yet executed, per approved plan Step 2.2.b–f): Introduction rewrite (Section 4.5), full Results §Pathway re-compute from `results/pathway/` outputs, References additions (Wallace 2021, Zou 2022, Weissbrod 2020, Benner 2017), 3 figure build scripts under `src/R/figures/`, bioRxiv submission. These will land in subsequent `/gsd-quick` sessions. | Plan-track-A open items |
 | 2026-04-25 | **Comparator tightened**: post-k2d full-coverage identity-LD re-fire produces 48/95 non-empty CS (50.5%) vs 51/96 real-LD (53.1%) = **1.06× matched-coverage fold change**. Live block added at top of file; legacy 12/96 → 4.25× block marked SUPERSEDED but preserved verbatim for audit. Manuscript track_a_pivot.md (L28, L82, L138, L214, L222, L252, L293) reframed under "we tightened the comparator and the inflation magnitude shifted" anchor language. fig2_cs_yield.R now disk-derives the identity-LD baseline from IDENTITY-LD-K2D-FIT-SUMMARY.tsv. The 95-vs-96 denominator note (missing bmi.EUR.APOE_19q13) is recorded in the live block and propagated to manuscript Methods. | quick-260425-kki — Track A audit-driven figure correction pass. The previously cited 4.25× contrast against a 12/96 baseline reflected a Stage 1d narrow-validation freeze; the post-k2d full-coverage baseline is the appropriate matched-coverage comparator. |
+| 2026-04-26 | **H3 LD-reference-quality dose-response scalars frozen**: a new sibling LIVE block ("H3 LD-reference-quality dose-response (post-wa2 H3 figure, 2026-04-26) — LIVE") is inserted between the Stage 2 LIVE block and the SUPERSEDED 12/96 block, freezing the 33/60 / 27/60 / 19/60 / 41/60 / 32/1274 / 0/32 / FTO 0.3099 / SH2B3 0.0385 scalars surfaced by the H3 dose-response figure (`src/R/figures/fig_h3_ld_overlap_dose_response.R`, committed at `1e4b071` per quick task `260425-wa2`). Audit-driven companion to AUDIT-REVIEW-2026-04-25.md High-Quality #3. The block frames the figure as exploratory methodology-validation and is referenced by the new Figure S7 caption block in the manuscript supplementary section (companion atomic commit). | quick-260426-04b (brief-slug 260425-h3p) — Track A audit High-Quality #3 dose-response scalar freeze. |
 | 2026-04-26 | **HLA reclassification + negative-control N restatement**: per AUDIT-REVIEW-2026-04-25.md Eval 3.7 + 3.8, the negative-control panel narrative at L28/L102/L138/L188/L240 of `docs/manuscript/track_a_pivot.md` is restated from "224 rows / 3 classes (cosmetic/blood-group/HLA)" to "200 rows across 9 distinct loci / 2 classes (cosmetic/blood-group)". HLA-immune (1 locus, 24 rows) is reframed as an admissibility-based identity-LD-fallback region (manuscript L80/L210/L244 unchanged) rather than a pre-specified negative control. The on-disk `results/qtl_coloc/tier_assignments.tsv` is unchanged (224 rows preserved; total_rows 233 preserved); only the manuscript narrative classification is updated. Live block added to "Negative-control behavior" section; legacy 224/24-HLA-immune block marked SUPERSEDED 2026-04-26 but preserved verbatim. Abstract L28 + Methods L102 + Results L138 + Results L188 + Discussion L240 reframed under "audit Eval 3.7 + 3.8" anchor. Eval 3.9 (DIAMANTE T2D vintage = Mahajan 2018, N=898,130, DOI 10.1038/s41588-018-0241-6) closed in companion atomic commit 943d8f6 (manuscript L54/L56/L327). | quick-260425-t9j — HLA reclassification + negative-control N restatement per audit. The audit-author identified that HLA cannot serve simultaneously as admissibility-rejected fallback (manuscript L80/L210/L244) and pre-specified negative control (L102/L138/L188/L240); we kept the fallback framing because it is methodologically load-bearing (MHC architecture is too complex for the autosomal 1000G EUR panel) and dropped the negative-control framing because HLA's behavior is definitionally null under the negative-control rubric, making the calibration claim near-tautological. Eval 3.8: panel breadth is more accurately stated as "9 distinct loci" than "224 rows". |
