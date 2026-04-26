@@ -100,3 +100,16 @@ Per ROADMAP M2 Success Criteria 1–6 (RM-1..RM-6) and the 6 phase REQ IDs.
 - [ ] `nyquist_compliant: true` set in frontmatter after Wave 0 completes
 
 **Approval:** pending (awaiting Wave 0 fire)
+
+---
+
+## Wave 0 four-item attestation (CR-checker WR-5)
+
+Attested 2026-04-26 by Carter K. Clinton via /gsd-execute-phase orchestrator approval.
+
+| # | Invariant | Verification command | Result |
+|---|-----------|---------------------|--------|
+| (a) | AFR PLINK build sample size | `wc -l data/raw/1kg/AFR.samples` AND `wc -l data/reference/ldsc/1000G_AFR_Phase3_plink/1000G.AFR.QC.22.fam` | 504 == 504 (within [490, 520] floor) |
+| (b) | GWAS Catalog v_lock_M2 SHA-256 | `sha256sum data/catalogs/gwas-catalog-associations-full.zip` vs manifest row | `652a974d3246748290baa83899d3c8db0027eed76663b767beaee319618961cd` byte-identical (Pitfall 10) |
+| (c) | RED tests + pytest collect | `ls tests/m2/test_*.py \| wc -l` AND `pytest tests/m2/ --collect-only` | 13 stub files; 38 tests collected; 0 import errors |
+| (d) | MTAG vendored + `--residcov_path` | `cat tools/mtag/.git_pinned_commit` AND `grep -- "--residcov_path" tools/mtag/.git_clone_log` | Pinned `9e17f3cf1fbcf57b6bc466daefdc51fd0de3c5dc`; flag confirmed (D-M2-10) |
