@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed m2-01-ldsc-matrix-refire-PLAN.md
-last_updated: "2026-04-26T21:39:02.086Z"
+stopped_at: Completed m2-02-mtag-3-strata-PLAN.md
+last_updated: "2026-04-26T23:19:31.587Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: m2-ldsc-mtag-cpassoc (discovery) — EXECUTING
-Plan: 3 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
+Plan: 4 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -142,6 +142,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase m1-sumstats-upgrade-and-harmonization P03-munge-and-ldsc-intercept-matrix | 224 | 2 tasks | 16 files |
 | Phase m1 P04 | 51 | 2 tasks | 16 files |
 | Phase m2-ldsc-mtag-cpassoc-discovery P01 | 55 | 3 tasks | 3 files |
+| Phase m2-ldsc-mtag-cpassoc-discovery P02 | 70 | 4 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -272,6 +273,10 @@ Recent decisions affecting current work:
 - [Phase m2-ldsc-mtag-cpassoc-discovery]: Materialize-from-parquet helper (src/python/materialize_tsv_from_parquet.py) emits gzip-compatible TSV.bgz (NOT true bgzip); LDSC reads sequentially via gzip.open and does not need .tbi indexability — deliberate Rule 3 simplification
 - [Phase m2-ldsc-mtag-cpassoc-discovery]: Within-GLGC EUR lipid pair intercepts NOT ~1.0 (observed 0.04-0.40 across HDL/LDL/TC/TG x EUR pairs); flagged as M2 finding for SUMMARY but advisory NOT blocking — gcov_int values usable for MTAG --residcov_path consumption
 - [Phase m2-ldsc-mtag-cpassoc-discovery]: M1 12x12 working copy at original path preserved (NOT overwritten by M2 path); the M1-frozen.tsv archive sibling is byte-identical to both M1 working copy AND OSF mirror
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: D-M2-10 verified: --residcov_path used in production fire (NOT --overlap); word-anchored grep returns 0 in m2_mtag.smk
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: MTAG-ready augmented sumstats at data/processed/mtag/munged_for_mtag/ (P+FRQ+INFO synthetic columns) per Pattern F input-schema augmentation
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: Vendored MTAG py2->py3 compat patches (14 files, 2to3 + reduce/as_matrix/set_option fixes) per Pattern E; gitignored under tools/mtag/*
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: MTAG --fdr deferred to LSF re-fire (simplex grid intractable for T>=4); placeholder max_FDR=0.0 + audit log per D-M2-Q1 reconciliation
 
 ### Pending Todos
 
@@ -337,8 +342,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-26T21:39:02.077Z
-Stopped at: Completed m2-01-ldsc-matrix-refire-PLAN.md
+Last session: 2026-04-26T23:19:31.577Z
+Stopped at: Completed m2-02-mtag-3-strata-PLAN.md
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
