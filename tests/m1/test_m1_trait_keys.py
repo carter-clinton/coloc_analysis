@@ -7,8 +7,10 @@ Coverage targets per m1-03-PLAN Task 1 step (A0):
   and appends the pre-pivot Evangelou SBP-EUR row.
 - Year parser handles ``Yengo (2018)``, ``Loh 2022 (Nat Commun)``, and
   ``Morris 2019 / Wuttke 2019`` without crashing.
-- Defensive 40<=N<=50 bound (only enforced on the FULL TSV; mini-fixture
-  test uses a smaller bound override or just verifies content).
+- Defensive 20<=N<=50 bound (D-M2-01 era; previously 40<=N<=50 in M1 era;
+  loosened to 20 to accommodate DEF-M1-03-02 closure ~26-trait reality).
+  Only enforced on the FULL TSV; mini-fixture test uses a smaller bound
+  override or just verifies content.
 """
 from __future__ import annotations
 
@@ -80,18 +82,19 @@ def test_build_keys_mini_tsv(tmp_path: Path) -> None:
 
     # Mini fixture has 3 in-scope + 1 Evangelou append = 4 keys; SBP-EUR row 4
     # collides with the appended Evangelou key, so dedupe yields 4 unique keys.
-    # Defensive 40<=N<=50 bound from the production helper does NOT apply here
-    # — we patch the bound by calling build_keys with the small fixture and
-    # asserting on the dedup behavior. Implementation: build_keys raises if
-    # the assertion bound fails, so we expect either (a) the helper exposes
-    # an override or (b) we accept the assertion error path. Approach: catch
-    # AssertionError if the count is below 40 and accept it as pass for
-    # the mini-fixture; the production fixture test below exercises the bound.
+    # Defensive 20<=N<=50 bound from the production helper does NOT apply here
+    # (M2 era loosened from 40 to 20 per D-M2-01) — we patch the bound by
+    # calling build_keys with the small fixture and asserting on the dedup
+    # behavior. Implementation: build_keys raises if the assertion bound fails,
+    # so we expect either (a) the helper exposes an override or (b) we accept
+    # the assertion error path. Approach: catch AssertionError if the count is
+    # below 20 and accept it as pass for the mini-fixture; the production
+    # fixture test below exercises the bound.
     try:
         keys = build_keys(tsv_path)
     except AssertionError as exc:
-        # Expected when count < 40; verify the message is informative.
-        assert "40<=N<=50" in str(exc), f"unexpected assertion: {exc}"
+        # Expected when count < 20; verify the message is informative.
+        assert "20<=N<=50" in str(exc), f"unexpected assertion: {exc}"
         return  # mini-fixture path — bound enforcement asserted, test passes.
 
     # If implementation skipped the bound (e.g. configurable), verify the
@@ -113,8 +116,8 @@ def test_build_keys_production_tsv() -> None:
         pytest.skip(".planning/amendments/SUMSTATS-UPGRADE.tsv not present")
 
     keys = build_keys(tsv)
-    # Defensive bound from the helper.
-    assert 40 <= len(keys) <= 50, f"trait keys count out of range: {len(keys)}"
+    # Defensive bound from the helper (M2 era D-M2-01: 20<=N<=50).
+    assert 20 <= len(keys) <= 50, f"trait keys count out of range: {len(keys)}"
     # Sorted + de-duplicated.
     assert keys == sorted(set(keys)), "keys must be sorted + unique"
     # Evangelou appended.
