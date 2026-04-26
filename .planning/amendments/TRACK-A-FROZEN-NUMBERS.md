@@ -83,7 +83,7 @@ Region × ancestry × trait-pair breakdown (28 rows):
 | Tier A | **0** | — |
 | Tier B | **0** | — |
 | Tier C | **9** | 4 AFR + 5 EUR |
-| negative_control | 224 | 224 EUR (none AFR this run) |
+| negative_control | ~~224~~ **200** | 200 EUR (none AFR this run); 24 HLA-immune rows reclassified to identity-LD-fallback per AUDIT-REVIEW-2026-04-25.md Eval 3.7 (post-t9j 2026-04-26 — see live block + reconciliation log). On-disk `tier_assignments.tsv` unchanged at 224 rows. |
 | **Total rows** | **233** | — |
 
 ### Tier C rows (9 total — all regions)
@@ -104,14 +104,37 @@ Region × ancestry × trait-pair breakdown (28 rows):
 
 ---
 
-## Negative-control behavior
+## Negative-control behavior (post-t9j HLA reclassification 2026-04-26) — LIVE
 
-224 negative-control rows. Category breakdown:
-- cosmetic (MC1R, OCA2/HERC2, IRF4, SLC24A5, TYR): **120**
-- blood_group (ABO, FUT1/FUT2, KEL, RH): **80**
-- hla_immune: **24**
+**Headline numerics:** 9 distinct negative-control loci / 200 rows / 100% Tier-C-or-empty.
 
-All 224 returned empty coloc or Tier C; **no negative-control region reached Tier A or Tier B**. Pre-specified negative-control behavior **matched as predicted**.
+| Metric | Value |
+|---|---|
+| Distinct negative-control loci | **9** (4 blood-group + 5 cosmetic) |
+| Total negative-control rows | **200 / 200 Tier C or empty (100%)** |
+| Blood-group loci | ABO, FUT1/FUT2, KEL, RH (4 loci, 80 rows) |
+| Cosmetic loci | HERC2/OCA2, IRF4, MC1R, SLC24A5, TYR (5 loci, 120 rows) |
+| HLA-immune | **Reclassified out of negative-control panel** — see manuscript §Methods §Admissibility (1 locus, 24 rows on disk; reframed as identity-LD-fallback) |
+| Tier-A signals | 0 |
+| Tier-B signals | 0 |
+| Tier-C-or-empty | 200 / 200 (100%) |
+
+**Headline framing (manuscript-anchor language):** Per AUDIT-REVIEW-2026-04-25.md Eval 3.7, HLA-immune is reframed from pre-specified negative-control to admissibility-based identity-LD-fallback — keeping HLA in only the fallback role (methodologically load-bearing, MHC architecture incompatible with autosomal 1000G EUR panel) and removing it from the negative-control panel where its definitional-null behavior makes the calibration claim near-tautological. Per Eval 3.8, the panel is restated as 9 distinct loci (not 224 rows); 200 rows is reported as a secondary detail. The on-disk `results/qtl_coloc/tier_assignments.tsv` is unchanged (224 negative_control rows preserved; total_rows 233 preserved); only the manuscript narrative classification is updated.
+
+**Sources:** [results/qtl_coloc/tier_assignments.tsv](../../results/qtl_coloc/tier_assignments.tsv) (224 rows on disk, distinct neg-ctrl locus keys: 4 blood-group + 5 cosmetic + 1 HLA = 10 keys; manuscript narrative classifies 9 of these as negative-control, 1 as identity-LD-fallback); [.planning/amendments/AUDIT-REVIEW-2026-04-25.md](./AUDIT-REVIEW-2026-04-25.md) Eval 3.7 + 3.8 + Quick #2.
+
+---
+
+~~## Negative-control behavior~~
+
+~~224 negative-control rows. Category breakdown:~~
+- ~~cosmetic (MC1R, OCA2/HERC2, IRF4, SLC24A5, TYR): **120**~~
+- ~~blood_group (ABO, FUT1/FUT2, KEL, RH): **80**~~
+- ~~hla_immune: **24**~~
+
+~~All 224 returned empty coloc or Tier C; **no negative-control region reached Tier A or Tier B**. Pre-specified negative-control behavior **matched as predicted**.~~
+
+> **SUPERSEDED 2026-04-26** — preserved verbatim for audit traceability. The 24 HLA-immune rows are reclassified out of the negative-control panel per AUDIT-REVIEW-2026-04-25.md Eval 3.7 (independent audit recommended choosing one classification for HLA — fallback or negative-control, not both); the live block above is the load-bearing reference. The on-disk `results/qtl_coloc/tier_assignments.tsv` is unchanged at 224 rows; only the manuscript narrative classification is updated. Manuscript edits propagated by quick-260425-t9j.
 
 ---
 
@@ -155,3 +178,4 @@ All abstract, results, and table numbers in [docs/manuscript/track_a_pivot.md](.
 | 2026-04-23 | **Open scope gap flagged**: SH2B3 EUR canonical trait-pairs (BMI–hypertension, hypertension–stroke) that reached PP.H4 = 1.00 under Stage 1d identity-LD are **absent from the Stage 2 `coloc.susie` output manifest**. Only `SH2B3_12q24__EUR__asthma_vs_t2d` was run. Manuscript now frames this as "absent from manifest, consistent with credible-set collapse, pre-registered re-fire supplementary analysis." A targeted Stage 2 re-fire on the canonical SH2B3 pairs is required to fully close the flagship claim. Owner: Carter (LSF decision). | Step 2.2.d deviation |
 | 2026-04-23 | **Remaining Track A manuscript edit passes** (not yet executed, per approved plan Step 2.2.b–f): Introduction rewrite (Section 4.5), full Results §Pathway re-compute from `results/pathway/` outputs, References additions (Wallace 2021, Zou 2022, Weissbrod 2020, Benner 2017), 3 figure build scripts under `src/R/figures/`, bioRxiv submission. These will land in subsequent `/gsd-quick` sessions. | Plan-track-A open items |
 | 2026-04-25 | **Comparator tightened**: post-k2d full-coverage identity-LD re-fire produces 48/95 non-empty CS (50.5%) vs 51/96 real-LD (53.1%) = **1.06× matched-coverage fold change**. Live block added at top of file; legacy 12/96 → 4.25× block marked SUPERSEDED but preserved verbatim for audit. Manuscript track_a_pivot.md (L28, L82, L138, L214, L222, L252, L293) reframed under "we tightened the comparator and the inflation magnitude shifted" anchor language. fig2_cs_yield.R now disk-derives the identity-LD baseline from IDENTITY-LD-K2D-FIT-SUMMARY.tsv. The 95-vs-96 denominator note (missing bmi.EUR.APOE_19q13) is recorded in the live block and propagated to manuscript Methods. | quick-260425-kki — Track A audit-driven figure correction pass. The previously cited 4.25× contrast against a 12/96 baseline reflected a Stage 1d narrow-validation freeze; the post-k2d full-coverage baseline is the appropriate matched-coverage comparator. |
+| 2026-04-26 | **HLA reclassification + negative-control N restatement**: per AUDIT-REVIEW-2026-04-25.md Eval 3.7 + 3.8, the negative-control panel narrative at L28/L102/L138/L188/L240 of `docs/manuscript/track_a_pivot.md` is restated from "224 rows / 3 classes (cosmetic/blood-group/HLA)" to "200 rows across 9 distinct loci / 2 classes (cosmetic/blood-group)". HLA-immune (1 locus, 24 rows) is reframed as an admissibility-based identity-LD-fallback region (manuscript L80/L210/L244 unchanged) rather than a pre-specified negative control. The on-disk `results/qtl_coloc/tier_assignments.tsv` is unchanged (224 rows preserved; total_rows 233 preserved); only the manuscript narrative classification is updated. Live block added to "Negative-control behavior" section; legacy 224/24-HLA-immune block marked SUPERSEDED 2026-04-26 but preserved verbatim. Abstract L28 + Methods L102 + Results L138 + Results L188 + Discussion L240 reframed under "audit Eval 3.7 + 3.8" anchor. Eval 3.9 (DIAMANTE T2D vintage = Mahajan 2018, N=898,130, DOI 10.1038/s41588-018-0241-6) closed in companion atomic commit 943d8f6 (manuscript L54/L56/L327). | quick-260425-t9j — HLA reclassification + negative-control N restatement per audit. The audit-author identified that HLA cannot serve simultaneously as admissibility-rejected fallback (manuscript L80/L210/L244) and pre-specified negative control (L102/L138/L188/L240); we kept the fallback framing because it is methodologically load-bearing (MHC architecture is too complex for the autosomal 1000G EUR panel) and dropped the negative-control framing because HLA's behavior is definitionally null under the negative-control rubric, making the calibration claim near-tautological. Eval 3.8: panel breadth is more accurately stated as "9 distinct loci" than "224 rows". |
