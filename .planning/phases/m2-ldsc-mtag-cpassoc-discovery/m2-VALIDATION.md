@@ -2,9 +2,10 @@
 phase: m2-ldsc-mtag-cpassoc-discovery
 slug: m2-ldsc-mtag-cpassoc-discovery
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-04-25
+updated: 2026-04-26
 ---
 
 # Phase M2 — Validation Strategy
