@@ -241,7 +241,7 @@ SHA-256 to be computed on the .zip BYTES (NOT the unpacked TSV — Pitfall 10).
   </verify>
   <acceptance_criteria>
     - File `tests/m2/conftest.py` exists and `grep -c '@pytest.fixture' tests/m2/conftest.py` returns ≥3
-    - All 14 `tests/m2/test_*.py` files exist (verify with `ls tests/m2/test_*.py | wc -l` returns 14)
+    - All 13 `tests/m2/test_*.py` files exist (verify with `ls tests/m2/test_*.py | wc -l` returns 13)
     - `pytest tests/m2/ --collect-only` exits 0 with NO `ERROR` lines (skipped tests are OK)
     - `tests/m2/fixtures/.gitkeep` exists
     - `git log -1 --pretty=%B` matches `test(m2-00): scaffold pytest M2 RED phase`
