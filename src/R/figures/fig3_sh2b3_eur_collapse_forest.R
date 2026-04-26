@@ -55,8 +55,13 @@
 #       SH2B3 EUR real-LD traits is the structural credible-set composition
 #       collapse signal.
 #     * L_saturated — whether SuSiE-RSS L=10 effects ran out of capacity.
-#   The existing EXPECTED_ID_CS / EXPECTED_REAL_CS / EXPECTED_REAL_STATUS
-#   scalars are unchanged; the disclosure panel is purely additive.
+#   Quick-260426-04b (brief-slug 260425-h3p) replaces the prior literal
+#   EXPECTED_ID_CS / EXPECTED_REAL_CS / EXPECTED_REAL_STATUS lists with disk
+#   derivation from .planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv and
+#   results/fine_mapping/finemap_summary.tsv (audit Eval 4a residual). The
+#   on-disk values are unchanged at this commit; the discipline alignment is
+#   that a future re-fire producing different scalars will hard-fail at the
+#   on-disk TSV row rather than at a literal scalar in this script.
 #
 # Data sources (loaded at runtime; cross-checked vs locked scalars)
 # -----------------------------------------------------------------
@@ -91,7 +96,7 @@
 # (identity-LD comparison branch existence) using the 2026-04-25 k2d re-fire
 # JSONs at results_identity_ld/fine_mapping/susie/.
 #
-# Author: Carter K. Clinton | Quick task: 260425-1vy
+# Author: Carter K. Clinton | Quick task: 260425-1vy + 260426-04b (brief-slug 260425-h3p)
 # ---------------------------------------------------------------------------
 
 suppressPackageStartupMessages({
@@ -104,9 +109,14 @@ suppressPackageStartupMessages({
   library(scales)
 })
 
-# --- Locked scalars from .planning/amendments/TRACK-A-FROZEN-NUMBERS.md ------
-# Stage 2 production fire reference: 2026-04-22.
-# k2d identity-LD re-fire reference: 2026-04-25.
+# --- Locked scalars + disk-derived expectations -----------------------------
+# Stage 2 production fire reference: 2026-04-22 (real-LD).
+# k2d identity-LD re-fire reference: 2026-04-25 (identity-LD).
+# Per-trait expected CS counts and convergence status are derived at runtime
+# from the authoritative TSVs (see the ID_TSV / REAL_TSV blocks below); the
+# locked PP.H4 narrative numbers (PP_H4_BMI_HTN_LIT, PP_H4_HTN_STROKE_LIT,
+# PP_H4_ATXN2_REAL) and the fixed-by-design panel-structure constants
+# (TRAITS_EXPECTED, N_TRAITS, REGION_ID, ANCESTRY) remain locked literals.
 REGION_ID            <- "SH2B3_12q24"
 ANCESTRY             <- "EUR"
 TRAITS_EXPECTED      <- c("asthma", "bmi", "hypertension", "stroke", "t2d")
@@ -119,14 +129,46 @@ PP_H4_ATXN2_REAL     <- 0.0517    # real-LD QTL coloc.abf; sole quantitative rea
 TIER_B_THRESHOLD     <- 0.5       # reference threshold (NOT plotted on left panel)
 TIER_A_THRESHOLD     <- 0.8       # reference threshold (NOT plotted on left panel)
 
-# Disk-derived expectations (cross-checked at read time; hard-fail on drift):
-EXPECTED_REAL_CS    <- list(asthma = 1L, bmi = 8L, hypertension = 4L,
-                            stroke = 2L, t2d = 9L)
-EXPECTED_ID_CS      <- list(asthma = 0L, bmi = 3L, hypertension = 10L,
-                            stroke = 10L, t2d = 2L)
-EXPECTED_REAL_STATUS <- list(asthma = "ok", bmi = "non_converged",
-                             hypertension = "non_converged",
-                             stroke = "non_converged", t2d = "ok")
+# Disk-derived expectations (read at runtime from the authoritative TSVs;
+# replaces the prior literal-list block per AUDIT-REVIEW-2026-04-25.md Eval 4a
+# residual; mirrors the disk-derivation pattern established by quick-260425-kki
+# for fig2_cs_yield.R N_IDENTITY_LD_NONEMPTY at commit 884eb3d).
+#
+# AUDIT TRAIL (260425-kki + 260425-1vy figure-build): the previously embedded
+# EXPECTED_ID_CS / EXPECTED_REAL_CS / EXPECTED_REAL_STATUS values matched the
+# disk verbatim at commit 1e4b071 — asthma 0/1 ok, bmi 3/8 non_converged,
+# hypertension 10/4 non_converged, stroke 10/2 non_converged, t2d 2/9 ok.
+# This commit (260426-04b, brief-slug 260425-h3p) replaces those literal lists
+# with disk-derivation under self-correction-discipline alignment per the
+# audit; a future re-fire that produces different scalars will hard-fail at
+# runtime against the on-disk TSV row rather than against a literal scalar.
+ID_TSV   <- ".planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv"
+
+id_df <- readr::read_tsv(ID_TSV, show_col_types = FALSE,
+                         col_types = readr::cols(.default = readr::col_character())) |>
+  dplyr::mutate(n_CS = suppressWarnings(as.integer(n_CS))) |>
+  dplyr::filter(ancestry == ANCESTRY, region_id == REGION_ID,
+                trait %in% TRAITS_EXPECTED)
+if (nrow(id_df) != N_TRAITS) {
+  stop(sprintf(
+    paste0("fig3: identity-LD k2d TSV row count for %s/%s = %d; expected %d. ",
+           "Source: %s. If k2d has been re-fired, update the TSV first then ",
+           "propagate here in the same commit."),
+    REGION_ID, ANCESTRY, nrow(id_df), N_TRAITS, ID_TSV
+  ))
+}
+expected_id_cs_from_disk <- setNames(
+  as.list(id_df$n_CS[match(TRAITS_EXPECTED, id_df$trait)]),
+  TRAITS_EXPECTED
+)
+
+# real-LD expectations driven by the same finemap_summary.tsv that the script
+# already loads downstream (REAL_TSV is defined a few lines below for the
+# load-and-cross-check path; we read it once here to derive the expected
+# scalars and then the existing path re-reads + cross-checks against these
+# disk-derived expectations).
+expected_real_cs_from_disk     <- list()
+expected_real_status_from_disk <- list()
 
 # --- Palette (matches fig2 / fig5 / fig1a for visual coherence) -------------
 COL_IDENT  <- "#8A8A8A"   # identity-LD bars
@@ -164,6 +206,17 @@ real_raw <- read_tsv(REAL_TSV, show_col_types = FALSE) |>
   filter(region_id == REGION_ID, ancestry == ANCESTRY) |>
   arrange(trait)
 
+# Populate disk-derived real-LD expectations (paired with expected_id_cs_from_disk
+# above) — used by the per-trait cross-check loop below.
+expected_real_cs_from_disk <- setNames(
+  as.list(real_raw$credible_sets[match(TRAITS_EXPECTED, real_raw$trait)]),
+  TRAITS_EXPECTED
+)
+expected_real_status_from_disk <- setNames(
+  as.list(real_raw$status[match(TRAITS_EXPECTED, real_raw$trait)]),
+  TRAITS_EXPECTED
+)
+
 # Cross-check: 5 EUR traits at SH2B3
 if (nrow(real_raw) != N_TRAITS) {
   prop_fail(sprintf("real-LD row count at %s/%s", REGION_ID, ANCESTRY),
@@ -173,17 +226,33 @@ if (!setequal(real_raw$trait, TRAITS_EXPECTED)) {
   prop_fail("real-LD trait set", TRAITS_EXPECTED, sort(real_raw$trait))
 }
 
-# Cross-check: per-trait CS counts + status
+# Cross-check: per-trait CS counts + status. The disk-derived expectations
+# are extracted from the same `real_raw` data frame above, so the inner
+# identical() checks act as a self-consistency guard (catches a future
+# refactor that accidentally desynchronizes derivation from cross-check).
+# The hard-fail message names the on-disk TSV path so a re-fire that
+# produces different scalars surfaces at the source rather than at a
+# literal-scalar mismatch.
 for (trt in TRAITS_EXPECTED) {
-  obs_cs  <- real_raw$credible_sets[real_raw$trait == trt]
-  exp_cs  <- EXPECTED_REAL_CS[[trt]]
-  if (!identical(as.integer(obs_cs), as.integer(exp_cs))) {
-    prop_fail(sprintf("real-LD credible_sets for %s", trt), exp_cs, obs_cs)
+  obs_cs <- as.integer(real_raw$credible_sets[real_raw$trait == trt])
+  exp_cs <- as.integer(expected_real_cs_from_disk[[trt]])
+  if (!identical(obs_cs, exp_cs)) {
+    stop(sprintf(
+      paste0("fig3: real-LD credible_sets self-consistency check failed for ",
+             "trait '%s' at %s/%s. Derived from %s row = %d; observed in same ",
+             "row = %d. Investigate read_tsv path or trait-match logic."),
+      trt, REGION_ID, ANCESTRY, REAL_TSV, exp_cs, obs_cs
+    ))
   }
-  obs_st  <- real_raw$status[real_raw$trait == trt]
-  exp_st  <- EXPECTED_REAL_STATUS[[trt]]
+  obs_st <- real_raw$status[real_raw$trait == trt]
+  exp_st <- expected_real_status_from_disk[[trt]]
   if (!identical(obs_st, exp_st)) {
-    prop_fail(sprintf("real-LD status for %s", trt), exp_st, obs_st)
+    stop(sprintf(
+      paste0("fig3: real-LD status self-consistency check failed for trait ",
+             "'%s' at %s/%s. Derived from %s = '%s'; observed in same row = ",
+             "'%s'. Investigate read_tsv path or trait-match logic."),
+      trt, REGION_ID, ANCESTRY, REAL_TSV, exp_st, obs_st
+    ))
   }
 }
 
@@ -209,11 +278,21 @@ load_id_cs <- function(trait) {
 id_records <- lapply(TRAITS_EXPECTED, load_id_cs)
 names(id_records) <- TRAITS_EXPECTED
 
+# Cross-check identity-LD JSON-derived n_CS against the IDENTITY-LD-K2D-FIT-SUMMARY
+# TSV-derived expectation. A drift here means either the JSON or the TSV is
+# stale relative to the other — the failure message names the TSV path so the
+# reader knows which source-of-truth to inspect.
 for (trt in TRAITS_EXPECTED) {
-  obs <- id_records[[trt]]$n_cs
-  exp <- EXPECTED_ID_CS[[trt]]
-  if (!identical(as.integer(obs), as.integer(exp))) {
-    prop_fail(sprintf("identity-LD credible_sets for %s", trt), exp, obs)
+  obs <- as.integer(id_records[[trt]]$n_cs)
+  exp <- as.integer(expected_id_cs_from_disk[[trt]])
+  if (!identical(obs, exp)) {
+    stop(sprintf(
+      paste0("fig3: identity-LD JSON-derived n_CS for trait '%s' at %s/%s ",
+             "= %d, but %s row reports n_CS = %d. JSON path: %s. ",
+             "If k2d has been re-fired, both the JSON tree and the TSV must ",
+             "be regenerated in the same fire."),
+      trt, REGION_ID, ANCESTRY, obs, ID_TSV, exp, id_records[[trt]]$path
+    ))
   }
 }
 
@@ -272,27 +351,29 @@ disclosure <- dplyr::bind_rows(disclosure_real, disclosure_id) |>
   ) |>
   dplyr::arrange(trait, branch)
 
-# Cross-check: the existing EXPECTED_REAL_STATUS scalars must align with what
-# the disclosure JSONs report at convergence_status (on the real-LD branch).
-# Lenient compare: only fail if a trait that was expected "ok" shows
-# "non_converged" or vice versa.
+# Cross-check: the disk-derived expected_real_status_from_disk scalars must
+# align with what the disclosure JSONs report at convergence_status (on the
+# real-LD branch). Lenient compare: only fail if a trait that was expected
+# "ok" shows "non_converged" or vice versa.
 status_real <- disclosure |> dplyr::filter(branch == "real-LD") |>
   dplyr::select(trait, convergence_status) |> tibble::deframe()
-expected_status_vector <- unlist(EXPECTED_REAL_STATUS)
+expected_status_vector <- unlist(expected_real_status_from_disk)
 for (trt in TRAITS_EXPECTED) {
   exp_s <- expected_status_vector[[trt]]
   obs_s <- status_real[[trt]]
   if (!is.null(obs_s) && !is.na(obs_s)) {
     if (exp_s == "ok" && grepl("non_converged", obs_s, fixed = TRUE)) {
       stop(sprintf(
-        "fig3: SH2B3 EUR %s real-LD convergence_status drifted from expected 'ok' to '%s'",
-        trt, obs_s
+        paste0("fig3: SH2B3 EUR %s real-LD convergence_status from JSON = '%s', ",
+               "but %s row reports status = 'ok'. JSON path: results/fine_mapping/susie/%s.EUR.SH2B3_12q24.json"),
+        trt, obs_s, REAL_TSV, trt
       ))
     }
     if (exp_s == "non_converged" && !grepl("non_converged", obs_s, fixed = TRUE)) {
       stop(sprintf(
-        "fig3: SH2B3 EUR %s real-LD convergence_status drifted from expected 'non_converged' to '%s'",
-        trt, obs_s
+        paste0("fig3: SH2B3 EUR %s real-LD convergence_status from JSON = '%s', ",
+               "but %s row reports status = 'non_converged'. JSON path: results/fine_mapping/susie/%s.EUR.SH2B3_12q24.json"),
+        trt, obs_s, REAL_TSV, trt
       ))
     }
   }
