@@ -22,14 +22,14 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** Phase m2-ldsc-mtag-cpassoc — discovery
+**Current focus:** Phase m2-ldsc-mtag-cpassoc — discovery (Wave 0 m2-00 COMPLETE 2026-04-26; Wave 1 m2-01-ldsc-matrix-refire cleared to start)
 
 **k2d identity-LD re-fire complete (2026-04-25):** LSF fire (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file gone; 95 JSONs + `finemap_manifest.tsv` landed at `results_identity_ld/fine_mapping/`. Empirically unblocks Track A **Figure 1A** (identity-vs-real PP.H4 scatter) and **Figure 3** (survival forest) — the two open figure slots in the 5-figure roster (Figs 1B + 2 + 5 already DONE per p1b / mqo / k2g; Fig 4 demoted to S5 per k2f). **Both halves of the post-k2d deferral are now resolved:** Fig 1A + Fig 3 builders landed via quick task `260425-1vy` (commits `105484d`, `f862f55`); `results_identity_ld/` tracking decision is locked at DEC-2026-04-25-01 (don't commit; document via .gitignore + canonical CS-yield summary at `.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv`).
 
 ## Current Position
 
 Phase: m2-ldsc-mtag-cpassoc (discovery) — EXECUTING
-Plan: 1 of 6
+Plan: 2 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -263,6 +263,10 @@ Recent decisions affecting current work:
 - [Phase m1]: M1 closeout PASS — 47-cell trait_inventory.yaml + 12-trait LDSC matrix + Quarto QC fallback HTMLs; OSF amendment paste-ready
 - [Phase m1]: dim-j re-anchored to subset invariant (set(trait_keys) ⊆ set(inventory)) — plan's strict equality didn't match architecture (inventory enumerates full in-scope, trait_keys enumerates LDSC-fired subset)
 - [Phase m1]: Quarto-fallback HTML renderer (Rule 3) — full Quarto stack via snakemake --use-conda is the canonical path; minimal Python renderer satisfies dim-g for closeout
+- [Phase m2-00]: Wave 0 test stub count canonical at 13 (not 14) — matches must_haves.truths and m2-VALIDATION.md Wave 0 Requirements; plan-text typo at L244 corrected post-checkpoint via commit 8b27d7f under CR-checker WR-5 + Carter sign-off
+- [Phase m2-00]: Static-grep verification of MTAG `--residcov_path` argparse entry (in tools/mtag/.git_clone_log) accepted as functionally equivalent to live `mtag.py --help` for Wave 0 audit purposes; live `--help` deferred to Wave 2 conda env build (D-M2-10 satisfied)
+- [Phase m2-00]: GWAS Catalog v_lock_M2 frozen at SHA-256 of `.zip` bytes (not extracted contents) per Pitfall 10 — `652a974d3246748290baa83899d3c8db0027eed76663b767beaee319618961cd`; ETag drift mitigation per T-M2-10
+- [Phase m2-00]: CR-checker WR-5 per-item four-attestation pattern adopted for Wave-0 → Wave-1 gate transitions — Carter explicitly attests (a) AFR PLINK build / (b) GWAS Catalog SHA / (c) RED test count / (d) MTAG vendoring before Wave 1 starts
 
 ### Pending Todos
 

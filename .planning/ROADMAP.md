@@ -134,14 +134,14 @@ priority ordering handed to M3 Dataproc pipeline.
 **Plans**: 6 plans
 
 Plans:
-- [ ] m2-00-preflight-and-environment-PLAN.md — Wave 0: 14 pytest stubs + 6 conda envs (m2-mtag/cpassoc/clumping/mtcojo/regions/novelty) + MTAG vendoring at tools/mtag/ + 1000G AFR PLINK bfile build (Pitfall 3 BLOCKING) + GWAS Catalog v_lock_M2 snapshot + cpassoc.py SHom/SHet + m2_stratum_keys.py with _MIN_PER_STRATUM=3 (D-M2-Q6) + Carter sign-off checkpoint
+- [x] m2-00-preflight-and-environment-PLAN.md — Wave 0: 13 pytest stubs + 6 conda envs (m2-mtag/cpassoc/clumping/mtcojo/regions/novelty) + MTAG vendoring at tools/mtag/ + 1000G AFR PLINK bfile build (Pitfall 3 BLOCKING) + GWAS Catalog v_lock_M2 snapshot + cpassoc.py SHom/SHet + m2_stratum_keys.py with _MIN_PER_STRATUM=3 (D-M2-Q6) + Carter sign-off checkpoint **COMPLETE 2026-04-26 (commits 740d8fc..99c7602; SUMMARY 3056622)**
 - [ ] m2-01-ldsc-matrix-refire-PLAN.md — Wave 1: archive M1 12x12 matrix + loosen m1_trait_keys defensive bound to 20-50 + refire m1_munge_all + m1_ldsc_rg_all_stars + m1_ldsc_rg_reduce against expanded ~26-trait inventory (D-M2-01) + OSF mirror (D-M2-Q2 EUR LD-scores cross-ancestry)
 - [ ] m2-02-mtag-3-strata-PLAN.md — Wave 2: build_mtag_residcov_slice.py (D-M2-10 corrected --residcov_path; bare-numeric K×K + sidecar trait_order.json) + m2_mtag.smk (residcov_slice + mtag_run + mtag_maxfdr_filter rules) + 3 strata production fire EUR/AFR/TRANS (D-M2-03) with --p_sig 5e-8 (D-M2-07) + post-hoc max_FDR<0.05 filter (D-M2-Q1)
 - [ ] m2-03-cpassoc-3-strata-PLAN.md — Wave 3: run_cpassoc.py orchestrator (Q7 PSD-preserving R slice via Wave 2 sidecar trait_order; D-M2-04) + m2_cpassoc.smk per-stratum + 3 strata production fire (chi-square p-values via scipy.stats.chi2.sf)
 - [ ] m2-04-clumping-mtcojo-regions-PLAN.md — Wave 4: m2_clumping.smk PLINK 1.9 --clump per (trait × ancestry × chr) at p1=5e-8/r²<0.01/kb=1000 (D-M2-09; Pitfall 5) using 1000G EUR/AFR (D-M2-02) + select_mtcojo_eligible_targets.py (gcov_int>0.1 D-M2-08 + D-M2-Q5) + m2_mtcojo.smk per (stratum, target_trait) (TRANS uses 1000G EUR primary D-M2-Q3) + build_region_union.py strict bedtools default merge (Q6 + Pitfall 9) emitting results/regions/union_region_list.bed with provenance JSON
 - [ ] m2-05-class1-novelty-and-closeout-PLAN.md — Wave 5: call_class1_novelty.py applying OSF §7.1 Class 1 operational definition against v_lock_M2 (REQ-NOVELTY-CLASS-1) → results/novelty/joint_signal_novel.tsv with confidence_tier high/medium + .planning/m2_post_m3_rerun_queue.tsv (D-M2-02 supersede + Pitfall 11) + tests/toy_3locus/m2_smoke_targets.smk (REQ-SNAKEMAKE-CI extension) + verify_m2_artifacts.py Python-only verifier 9 dimensions (D-M2-Q4) + sha256_manifest_m2_frozen.tsv (Pattern E + DEC-2026-04-25-02 OSF follow-up) + Carter sign-off checkpoint advancing STATE.md to M2-complete
 
-**Status**: planned 2026-04-26; 6 plans across 6 waves; ready for /gsd-execute-phase m2-ldsc-mtag-cpassoc-discovery.
+**Status**: m2-00 Wave 0 COMPLETE 2026-04-26 (nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared); 1/6 plans complete; Wave 1 (m2-01-ldsc-matrix-refire) cleared to start.
 
 ### M3: AoU AFR LD panel build
 **Slug**: m3-aou-afr-ld-panel-build
@@ -621,7 +621,7 @@ M: 11 (parallel from Phase 9)
 |---|---|---|---|
 | M0 pivot scaffolding | 0/1 (this plan) | in flight | 2026-05 |
 | M1 sumstats upgrade + harmonization | 6/6 | closeout PASS 2026-04-25; OSF amendment paste-ready | 2026-06 / 2026-07 |
-| M2 LDSC + MTAG + CPASSOC | not planned | gated on M1 + OSF amendment | 2026-08 / 2026-09 |
+| M2 LDSC + MTAG + CPASSOC | 1/6 (m2-00 Wave 0 complete 2026-04-26) | in flight; Wave 1 cleared | 2026-08 / 2026-09 |
 | M3 AoU AFR LD build | not planned | gated on M2 region list | 2026-09 / 2026-10 |
 | M4 scalable coloc + fine-mapping | not planned | gated on M3 + M2 | 2026-12 / 2027-01 |
 | M5 variant→gene prioritization + novelty | not planned | gated on M4 Tier A | 2027-02 |
