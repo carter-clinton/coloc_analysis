@@ -1,0 +1,5 @@
+region	n_attempted_afr_pairs	n_with_valid_pp_h4	tier_c_count	narrative
+APOL1_22q12	3	0	1	AFR APOL1_22q12: 3 trait-pair attempts (all empty PP.H4); 1 AFR Tier C row in tier_assignments.tsv (PP.H4 = 0)
+FTO_16q12	3	0	1	AFR FTO_16q12: 3 trait-pair attempts (all empty PP.H4); 1 AFR Tier C row in tier_assignments.tsv (PP.H4 = 0)
+MC4R_18q21	3	0	1	AFR MC4R_18q21: 3 trait-pair attempts (all empty PP.H4); 1 AFR Tier C row in tier_assignments.tsv (PP.H4 = 0)
+SH2B3_12q24	3	0	1	AFR SH2B3_12q24: 3 trait-pair attempts (all empty PP.H4); 1 AFR Tier C row in tier_assignments.tsv (PP.H4 = 0)
