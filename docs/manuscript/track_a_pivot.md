@@ -385,7 +385,6 @@ No supplementary-only references have been identified at this pass. The Figure S
 1. Venue choice locked — Genome Medicine recommended; AJHG fallback.
 2. Freeze date for `results/qtl_coloc/tier_assignments.tsv` and `results/multitrait/coloc_summary.tsv` — propose 2026-04-26 freeze after one more verification pass on aggregators.
 3. GitHub repo name — keep `colocalization-ml-analysis` vs rename to drop "ml" suffix? Recommend rename given the ML framing is being dropped; redirect the old URL.
-4. **Pre-bioRxiv blocker — `[EXTRACT: …]` placeholders.** The 10 `[EXTRACT: …]` placeholders at L3, L28, L136, L151–154 (×4), L160, L166, L172, L198, L204, L210 must be filled from the authoritative `results/` sources before bioRxiv submission. This requires running the aggregator scripts for `results/pathway/`, `results/multitrait/coloc_summary.tsv`, the per-trait-pair count tables, and the variant-mechanism annotation table; scoped as a separate quick task following this audit-v2 sweep.
-5. Final Table 1 row count (10 or 20) — depends on real-LD survival rate.
-6. OSF amendment text for the pivot — coordinate with Track B amendment posting per PROJECT-AMENDMENT-2026-04-22 (post after M1 harmonization, before M2 discovery).
-7. Figure generation code — Figure 2, Figure 3, Figure S7, and (per audit-v2 §HQ2) Figure S2 are landed; remaining captioned-but-unrendered slots covered by §Supplementary Figures S1, S3–S6.
+4. Final Table 1 row count (10 or 20) — depends on real-LD survival rate. **Resolved 2026-04-27 via quick-260427-e8n:** Table 1 is a disclosure-honest empty-row table (0 surviving rows at PP.H4 ≥ 0.5; cf. L166 + L272 + `results/track_a_aggregations/table1_surviving_rows.tsv`).
+5. OSF amendment text for the pivot — coordinate with Track B amendment posting per PROJECT-AMENDMENT-2026-04-22 (post after M1 harmonization, before M2 discovery).
+6. Figure generation code — Figure 2, Figure 3, Figure S7, and (per audit-v2 §HQ2) Figure S2 are landed; remaining captioned-but-unrendered slots covered by §Supplementary Figures S1, S3–S6.
