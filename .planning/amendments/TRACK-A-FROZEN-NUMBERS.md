@@ -114,6 +114,9 @@
 | Total with valid PP.H4 (PH-10c) | **0** |
 | Total manifest attempts NOT reaching summary row (PH-10c) | **16** (44 manifest − 28 summary; failed before producing even an empty-PP row) |
 | Unique trait-pair groupings in Table 4 body (PH-10c) | **10** (matches per-trait-pair distribution from W2 PH-05) |
+| Real-LD pathway-enrichment Tier A + B genes (PH-01) | **0** (per `results/qtl_coloc/tier_assignments.tsv` md5 `17ff46dbbfe78dd537d6b9bff7f3ae67`; locks Abstract pathway disclosure) |
+| Pathway fold-enrichment delta (real − identity) at threshold (PH-01) | **non-computable** (input gene set empty under real-LD; identity-LD headlines withdrawn) |
+| Pathway databases enumerated (PH-01) | **4** (KEGG, Reactome, GO_BP, gprofiler_combined; per `results/track_a_aggregations/pathway_real_ld_disclosure.tsv`) |
 
 **Headline framing (manuscript-anchor language):** Stage 2 real-LD `coloc.susie` produced 28 attempted trait-pair rows across 10 unique trait-pair combinations, all returning empty PP.H4 / PP.H4.abf columns. The identity-LD `coloc.susie` comparator was not produced (the k2d 2026-04-25 re-fire covered fine-mapping only, not trait-pair `coloc.susie` — per AUDIT-REVIEW-V2-2026-04-26.md §HQ3 Eval 3.3 IN-PROGRESS). The yield-redistribution table is therefore disclosure-honest: **0 surviving / 0 lost / 0 rescued / 28 both-null** at the manuscript's PP.H4 ≥ 0.8 threshold; ΔPP.H4 statistics are non-computable. Of the eight published-literature pleiotropic hubs (KCNJ11/ABCC8, NEGR1, APOE, FTO, MC4R, SH2B3, PPARG, SEC16B), only 3 / 8 (FTO, MC4R, SH2B3) are present in the Stage 2 trait-pair `coloc.susie` manifest at all (with all PP.H4 empty under real-LD); 1 / 8 (APOE) has fine-mapping output but no trait-pair attempt; 4 / 8 are absent from the Stage 2 manifest entirely. This is the disclosure-honest joint reading at the manuscript's confidence threshold; threshold-lowering to 0.3 (which would surface the FTO_16q12 EUR Tier-C 0.3099 signal) is explicitly NOT performed in the placeholder-fill (would reframe the threshold without OSF amendment; manuscript already locked to "Tier B threshold = 0.5" throughout).
 
@@ -127,6 +130,7 @@
 - [results/track_a_aggregations/table1_surviving_rows.tsv](../../results/track_a_aggregations/table1_surviving_rows.tsv) (header + 0 data rows; W3 PH-06)
 - [results/track_a_aggregations/afr_distribution_summary.tsv](../../results/track_a_aggregations/afr_distribution_summary.tsv) (4 AFR regions; W5 PH-10a)
 - [results/track_a_aggregations/table4_coloc_error_breakdown.tsv](../../results/track_a_aggregations/table4_coloc_error_breakdown.tsv) (10 trait-pair rows + 1 TOTAL; W5 PH-10c)
+- [results/track_a_aggregations/pathway_real_ld_disclosure.tsv](../../results/track_a_aggregations/pathway_real_ld_disclosure.tsv) (4 pathway databases; W6 PH-01)
 - Aggregator: [src/R/aggregators/aggregate_table3_admissible_pairs.R](../../src/R/aggregators/aggregate_table3_admissible_pairs.R) (committed quick-260427-e8n W1, extended W5)
 - Aggregator: [src/R/aggregators/aggregate_per_trait_pair_and_hubs.R](../../src/R/aggregators/aggregate_per_trait_pair_and_hubs.R) (committed quick-260427-e8n W2)
 - Aggregator: [src/R/aggregators/aggregate_table1_pleiotropic_loci.R](../../src/R/aggregators/aggregate_table1_pleiotropic_loci.R) (committed quick-260427-e8n W3)
