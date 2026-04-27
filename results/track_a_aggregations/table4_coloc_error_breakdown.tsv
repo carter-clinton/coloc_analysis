@@ -1,0 +1,13 @@
+# COLOC_ERROR codes are not present in coloc_summary.tsv schema; columns n_insufficient_overlap / n_illconditioned_LD / n_SuSiE_nonconvergence are populated as 0 (unattributed; counted under n_other) where the underlying error code cannot be parsed from on-disk artifacts. n_failed = total failures (attempts not reaching valid PP.H4) = n_no_summary_row + n_empty_pp_h4. Source: results/multitrait/coloc_manifest.tsv md5 159cb5ac653ea4186c364d51ff66fdef; results/multitrait/coloc_summary.tsv md5 5fa3c4004970c5da711d05947cb1f7d2.
+Trait Pair	n_attempted	n_failed	n_insufficient_overlap	n_illconditioned_LD	n_SuSiE_nonconvergence	n_other
+asthma–stroke	12	12	0	0	0	12
+asthma–t2d	11	11	0	0	0	11
+stroke–t2d	10	10	0	0	0	10
+asthma–bmi	2	2	0	0	0	2
+hypertension–stroke	2	2	0	0	0	2
+bmi–stroke	2	2	0	0	0	2
+bmi–t2d	2	2	0	0	0	2
+asthma–hypertension	1	1	0	0	0	1
+bmi–hypertension	1	1	0	0	0	1
+hypertension–t2d	1	1	0	0	0	1
+TOTAL	44	44	0	0	0	44
