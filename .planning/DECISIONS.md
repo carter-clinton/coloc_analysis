@@ -690,3 +690,60 @@ without reorchestrating Waves 1–4.
 - Future amendments (M5 catalog-lock follow-up, any post-discovery deviations logged to `.planning/osf_deviations.md`) follow the same pattern: upload to `osf.io/az52u` as supplementary files with descriptive filenames, then record the new file URL in a new DEC-YYYY-MM-DD-NN entry.
 - M5 catalog-lock follow-up is the next anticipated upload: when the M5-deferred catalog rows in `data/catalogs/catalog_lock_manifest.tsv` (Pickrell 2016, GWAS Catalog, Open Targets Genetics L2G, Watanabe 2019) are fetched and SHA-256-locked, append the M5 lock-refresh commit hash to a follow-up text file and upload it to `az52u` per the disclosure paragraph at the bottom of the M1 amendment body (commit `61315de`).
 - DECISIONS.md is the canonical record of OSF posting form choices for the project; do NOT rely solely on commit messages or STATE.md for this decision (those are ephemeral / scrolling artifacts; DECISIONS.md is durable).
+
+---
+
+## 2026-04-27 — DEC-2026-04-27-01: Conclusion-1 method-namespace reframe (audit-V2 sweep HQ3)
+
+**Decision:** Conclusion claim 1 (manuscript L252–254 in `docs/manuscript/track_a_pivot.md`) is reframed from "Identity-LD `coloc.abf` fine-mapping inflates cross-trait PP.H4 ..." to the audit-V2 drop-in paragraph that names the actual method contrast under audit (SuSiE-RSS + `coloc.susie` identity-LD vs SuSiE-RSS + `coloc.susie` real-LD), discloses the structural-shift evidence (PIP redistribution / lead-rank instability via Figure S2, n = 48 paired non-empty fits), names the SH2B3 niter=100 non-convergence and FTO `ld_overlap_fraction = 0` + Benner-threshold structural findings, and explicitly notes that the canonical SH2B3 EUR BMI–HTN / HTN–stroke pairs were not executed under matched-coverage real-LD `coloc.susie` (Stage 2 trait-pair scoping was restricted to `SH2B3_12q24__EUR__asthma_vs_t2d`). Landed via commit `a345f5e` (quick-260427-azv, audit-V2 sweep commit 2 of 12).
+
+**Alternatives considered:**
+- (a) Keep "coloc.abf inflates" as-is — rejected: method-namespace conflation per `AUDIT-REVIEW-V2-2026-04-26.md` §HQ3 (`coloc.abf` is single-causal-variant and does not fine-map; the 1.06× count-level contrast is between SuSiE-RSS + `coloc.susie` under two LD references, not between `coloc.abf` under two LD references).
+- (b) Soften to "inflates cross-trait PP.H4 in some pipelines" — rejected: too vague; reviewers will rightly ask which pipeline.
+- (c) Audit-V2 drop-in paragraph (adopted) — names the actual method contrast and the structural-shift evidence with citation to Figure S2.
+
+**Why:** The published method under audit is `coloc.abf`-on-identity-LD. The comparator implemented in this paper is `SuSiE-RSS + coloc.susie` under two LD references — not `coloc.abf` under two LD references. The strongest defensible Conclusion 1 names the actual method namespace under contrast and explicitly notes that direct re-testing of the published `coloc.abf`-under-identity-LD claims at the canonical SH2B3 EUR pairs requires a pre-registered pairwise re-fire that is correctly scoped as future work (HQ#2(iii), DEFERRED-COMPUTE).
+
+**How to apply:**
+- Future doc updates touching the Conclusion or Abstract pleiotropy claims must use the SuSiE-RSS + `coloc.susie` namespace; the legacy `coloc.abf`-inflation framing is retired from the Track A manuscript.
+- Cross-references to `coloc.abf` claims in the published literature stay in Discussion §Identity-LD Inflation as the comparison target, not as the audited method itself.
+- The 50-curated-locus scope statement ("at these 50 curated loci, no Tier A or Tier B cross-trait colocalization survives under real-LD `coloc.susie`") must remain bounded to 50 curated loci until genome-wide real-LD discovery (Track B M3) lands.
+
+---
+
+## 2026-04-27 — DEC-2026-04-27-02: Paired-fit structural inflation supplementary figure (audit-V2 sweep HQ2)
+
+**Decision:** Build Figure S2 (paired-fit structural inflation: PIP-of-top-variant Δ, lead-variant rank, credible-set-member Jaccard) across all 48 paired non-empty SuSiE-RSS fits, computed entirely from on-disk per-fit JSONs at `results/fine_mapping/susie/*.json` and `results_identity_ld/fine_mapping/susie/*.json` — no LSF, no re-SuSiE fire. Emit locked scalars to `.planning/amendments/TRACK-A-FROZEN-NUMBERS.md` LIVE block. Landed via commits `d87416a` (script), `cc943bd` (render + PROJECT_ROOT fix), `9cb007d` (manuscript caption), `11ef400` (FROZEN-NUMBERS LIVE block).
+
+**Alternatives considered:**
+- (a) Defer to a post-bioRxiv compute slot — rejected: the HQ3 Conclusion-1 reframe (DEC-2026-04-27-01) is load-bearing on a structural-inflation claim that needs to be quantified in the same submission; deferring would require the Conclusion to be load-bearing on an unmeasured assertion.
+- (b) Per-pair paneled small-multiples figure — rejected: 48 panels at single-column width is illegible; summary distributions are submission-grade.
+- (c) Snakemake rule integration — deferred: figure generation is currently run via direct Rscript invocation per `fig2_cs_yield.R` precedent; building a `figures.smk` rule is a separate refactor task that should encompass all figure scripts at once.
+- (d) Direct on-disk JSON computation + 4-panel composite (adopted) — runs in ~5–10 seconds end-to-end, no LSF, fully reproducible from the existing JSONs.
+
+**Why:** HQ3 Conclusion-1 reframe needs a concrete structural-shift figure to back the "PIP redistribution and lead-variant rank instability" claim; this figure provides it within the no-LSF / no-egress / no-OSF-portal-action constraint. The 48-pair population is the audit-V2 invariant, verified at runtime by a hard-fail assertion in the script.
+
+**How to apply:**
+- Future text mentioning "structural posterior shifts" in the Track A manuscript must cite Figure S2 by name. The 48-pair population is the intersection of real-LD non-empty (51) and identity-LD non-empty (48) fits; the identity-LD non-empty subset is fully contained in the real-LD non-empty set.
+- If either tree's non-empty count changes (e.g., HQ#2(i) L = 20 re-fire lands), Figure S2 must be re-rendered and the FROZEN-NUMBERS LIVE block updated atomically.
+- The script's hard-fail assertions (`real_total == 96`, `ident_total == 95`, `real_ne == 51`, `ident_ne == 48`, `n_paired == 48`) protect against silent drift; if any assertion fails on a future re-render, investigate before updating manuscript-cited scalars.
+
+---
+
+## 2026-04-27 — DEC-2026-04-27-03: Audit-driven comparator-tightening narrative location (audit-V2 sweep QI2)
+
+**Decision:** The audit-process narrative ("We tightened the comparator from 12/96 to 48/95 and the inflation magnitude shifted from 4.25× to 1.06×") moves OUT of Methods §Fine-Mapping Integration / §Identity-LD vs Real-LD Comparison (manuscript L82) and INTO a new Discussion subsection §Audit-driven Comparator Tightening, inserted between §Identity-LD Inflation and Its Mechanism and §Reframing of Cardiometabolic Pleiotropy Claims (≈ L222–223 post-edit). Landed via commit `cb5db17` (quick-260427-azv, audit-V2 sweep commit 4 of 12).
+
+**Alternatives considered:**
+- (a) Move to OSF deviation log only — rejected: readers without OSF access wouldn't see the comparator-tightening provenance; the manuscript's argument depends on knowing which baseline the inflation magnitude is computed against.
+- (b) Leave in Methods — rejected: `AUDIT-REVIEW-V2-2026-04-26.md` §QI2 is correct that Methods should describe the analysis as it stands, not as a meta-commentary on what was done in a previous freeze. Methods L82 now reads as a clean per-LD-branch yield description.
+- (c) New Discussion subsection (adopted) — keeps the comparator-tightening provenance discoverable in-manuscript while removing the meta-commentary from Methods.
+- (d) Both Discussion subsection AND OSF deviation pointer — partial adoption: the OSF deviation pointer was already landed at Methods L90 via Eval 3.2(c) commit `06b817b` (quick-260426-06n) and remains in place; the Discussion subsection is additive, not redundant, because it focuses on the comparator-tightening narrative whereas the L90 OSF pointer focuses on the QTL-coloc data-quality caveat.
+
+**Why:** Methods readability + reviewer-friendliness; the comparator-tightening narrative is a Discussion-grade audit-trail observation, not an experimental procedure. The §Audit-driven Comparator Tightening subsection title also makes the comparator-tightening provenance discoverable to reviewers via the table-of-contents / section-heading scan, which a buried Methods parenthetical would not.
+
+**How to apply:**
+- Future Methods edits should describe the analysis as currently configured (k2d full-coverage 48/95 vs Stage 2 real-LD 51/96) without meta-commentary about the previous Stage 1d freeze.
+- The OSF deviation log retains its own pointer (already landed via Eval 3.2(c) commit `06b817b`); future OSF deviation entries continue to log there, with cross-references from Methods L90.
+- If a future closure flips the comparator denominator again (e.g., HQ#2(i) L = 20 re-fire lands and the matched-coverage population changes), update the Discussion §Audit-driven Comparator Tightening subsection in place rather than re-introducing Methods meta-commentary.
+
