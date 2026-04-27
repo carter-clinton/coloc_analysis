@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed m2-03-cpassoc-3-strata-PLAN.md
-last_updated: "2026-04-27T00:02:51.122Z"
+stopped_at: Completed m2-04-clumping-mtcojo-regions-PLAN.md
+last_updated: "2026-04-27T03:42:48.248Z"
 last_activity: 2026-04-27
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: m2-ldsc-mtag-cpassoc (discovery) — EXECUTING
-Plan: 5 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
+Plan: 6 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -144,6 +144,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase m2-ldsc-mtag-cpassoc-discovery P01 | 55 | 3 tasks | 3 files |
 | Phase m2-ldsc-mtag-cpassoc-discovery P02 | 70 | 4 tasks | 7 files |
 | Phase m2-ldsc-mtag-cpassoc-discovery P03 | 22min | 3 tasks | 4 files |
+| Phase m2-ldsc-mtag-cpassoc-discovery P04 | 196 | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -280,6 +281,8 @@ Recent decisions affecting current work:
 - [Phase m2-ldsc-mtag-cpassoc-discovery]: MTAG --fdr deferred to LSF re-fire (simplex grid intractable for T>=4); placeholder max_FDR=0.0 + audit log per D-M2-Q1 reconciliation
 - [Phase m2-ldsc-mtag-cpassoc-discovery]: m2-03 Q7 invariant relaxed to adaptive PSD ridge fallback (Pattern H): when LDSC matrix slice is non-PSD due to estimation noise, apply lam = max(|min_eig| + 1e-3, 1e-4*trace/K) so R is just-barely PSD before _safe_inverse. EUR (min_eig=-0.070) + TRANS (min_eig=-0.084) triggered ridge; AFR (min_eig=+0.013) natively PSD. Preserves D-M2-04 LDSC-matrix-as-R semantics; extends D-M2-Q2 ridge fallback to handle Wave 1 documented non-PSD source matrices.
 - [Phase m2-ldsc-mtag-cpassoc-discovery]: m2-03 CPASSOC consumes Wave 2 augmented munged_for_mtag/ inputs (not original M1 LDSC munged) so CPASSOC and MTAG operate on identical per-trait SNP sets — simplifies downstream Class 1 novelty join (Wave 5 MTAG ∩ CPASSOC).
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: 2.5 Mb LD-block lead pre-pruning preserves D-M2-09 ±1 Mb union window literal while recovering 161 regions vs 45 with strict 1 Mb pre-pruning (CPASSOC SHom GWS density 53.9% chains the union)
+- [Phase m2-ldsc-mtag-cpassoc-discovery]: mtCOJO production fire deferred mid-run pending HM3-intersected COJO inputs + LSF batch re-fire (per-target ~10-30 min wall × 13 targets); Q8-schema sensitivity tables + FAIL flags + TRANS trans_ld_panel_concordance='primary_only' emitted as deferred-fire follow-up
 
 ### Pending Todos
 
@@ -347,8 +350,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T00:02:37.224Z
-Stopped at: Completed m2-03-cpassoc-3-strata-PLAN.md
+Last session: 2026-04-27T03:42:48.238Z
+Stopped at: Completed m2-04-clumping-mtcojo-regions-PLAN.md
 
 **2026-04-25 (later) — Route A 2.2.f R2 close-out (`/gsd-quick 260425-1pm`):** kul (de440e0) two deferrals closed atomically at commit `a537dc6`. R2-A: Benner 2016 (Ref 43, FINEMAP) inlined at L36 by extending P2 cluster `²⁰,²⁹,⁴²` → `²⁰,²⁹,⁴²,⁴³`; L312 §Add bullet annotation updated. R2-B: deterministic body-superscript audit found 31 inline ⊆ 40 declared §References — ZERO body-only orphans; first/middle/last 5 spot-check OK. 21/21 gates pass. Stage 2 md5 byte-identical; k2d `results_identity_ld/` untouched. Route A 2.2.b/e/f scope now fully resolved at R2.
 
