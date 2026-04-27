@@ -55,6 +55,31 @@
 
 ---
 
+## Paired-fit structural inflation (Figure S2, 2026-04-27) — LIVE
+
+| Metric | Value |
+|---|---|
+| Paired non-empty fits | **48** (real-LD non-empty 51 ∩ identity-LD non-empty 48; identity-LD subset is fully contained in the real-LD non-empty set) |
+| Pair-key | `{trait}.{ancestry}.{region_id}` (filename stem; identical across `results/fine_mapping/susie/*.json` and `results_identity_ld/fine_mapping/susie/*.json`) |
+| ΔPIP-of-top-variant median (real − identity) | **0.0000** |
+| ΔPIP-of-top-variant IQR (Q1 / Q3) | **0.0000 / 0.0363** |
+| Lead-variant rank = 1 (identity-LD top variant remains real-LD top variant) | **30 / 48 (62.5%)** |
+| Lead-variant rank ≥ 21 OR identity-LD lead absent from real-LD CSs | **16 / 48 (33.3%)** |
+| Max per-fit credible-set Jaccard ≥ 0.8 | **30 / 48 (62.5%)** |
+| Max per-fit credible-set Jaccard < 0.5 | **16 / 48 (33.3%)** |
+
+**Headline framing (manuscript-anchor language)**: At the 48 paired non-empty SuSiE-RSS fits, ~62% are stable across LD references (same lead variant, high CS-member Jaccard, near-zero ΔPIP-top), but ~33% show substantial structural posterior shifts (lead-variant rank ≥ 21 or absent AND Jaccard < 0.5). The Conclusion-1 reframe's "structural posterior shifts" claim is concentrated in this 1/3 minority of paired fits — the audit-v2 §HQ3 measurement gap is now quantified, not asserted.
+
+**Sources**: Derived at runtime by [`src/R/figures/fig_s2_paired_fit_structural_inflation.R`](../../src/R/figures/fig_s2_paired_fit_structural_inflation.R) (committed via quick task `260427-azv`, audit-v2 sweep); source data at `results/fine_mapping/susie/*.json` (96 files, Stage 2 production fire 2026-04-22) and `results_identity_ld/fine_mapping/susie/*.json` (95 files, k2d full-coverage re-fire 2026-04-25). Figure rendered at `docs/manuscript/figures/fig_s2_paired_fit_structural_inflation.pdf` + `.png` (cairo_pdf, 180 mm × 140 mm, 600 dpi).
+
+**Caveats** (mandatory disclosure for any downstream cite of these scalars):
+
+1. **CS pairing is greedy argmax-overlap** — the max-per-fit Jaccard aggregates over all CS-pair Jaccards within a fit by taking the max; this is a conservative summary that bounds the structural-shift claim. A more elaborate Hungarian-assignment pairing was not implemented because the greedy argmax already achieves the audit-v2 measurement-gap closure.
+2. **Lead-variant rank = ∞** is bucketed into "rank ≥ 21 OR absent" because R's `match()` returns `NA` when the identity-LD top variant is absent from the real-LD CS-member union; we coerce to `Inf` and bin accordingly. The 16 / 48 figure includes both genuine high-rank-and-present cases and absent-from-real-LD cases — the figure's Panel B exposes this composition.
+3. **The 48-pair population is the intersection of non-empty fits**, NOT the full Stage 2 manifest. If either tree's non-empty count changes (e.g., HQ#2(i) L = 20 re-fire lands), the pairing population shifts and the script must be re-run; the LIVE block updates atomically with the next quick-task closure.
+
+---
+
 ## Stage 2 fine-mapping yield (Phase 1 SuSiE-RSS with real 1000G EUR LD)
 
 | Metric | Value |
