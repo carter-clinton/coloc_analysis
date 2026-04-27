@@ -64,6 +64,7 @@ OUT_DIR            <- file.path(PROJECT_ROOT, "results", "track_a_aggregations")
 OUT_YIELD          <- file.path(OUT_DIR, "yield_redistribution.tsv")
 OUT_SUMMARY        <- file.path(OUT_DIR, "pair_pp_h4_summary.tsv")
 OUT_TABLE3         <- file.path(OUT_DIR, "table3_admissible_pairs.tsv")
+OUT_AFR_SUMMARY    <- file.path(OUT_DIR, "afr_distribution_summary.tsv")  # W5 PH-10a extension
 
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
@@ -203,6 +204,59 @@ write.table(
 )
 message(sprintf("[agg-table3] wrote %s (%d EUR rows)", OUT_TABLE3, nrow(table3_df)))
 
+# --- (d) AFR distribution summary (W5 PH-10a extension) -----------------------
+# Per-region AFR slice from coloc_summary.tsv; aggregated for narrative L210.
+# Disk-truth (per W0): 12 AFR rows across 4 regions
+# (APOL1_22q12 x 3, FTO_16q12 x 3, MC4R_18q21 x 3, SH2B3_12q24 x 3); all PP empty.
+# Tier C AFR breakdown per .planning/amendments/TRACK-A-FROZEN-NUMBERS.md L143-156
+# (Tier C row table): 4 AFR Tier C rows (APOL1_22q12 AFR / FTO_16q12 AFR /
+# MC4R_18q21 AFR / SH2B3_12q24 AFR -- all PP.H4 = 0).
+
+afr_slice <- coloc_summary[coloc_summary$ancestry == "AFR", , drop = FALSE]
+stopifnot(nrow(afr_slice) == 12)
+
+afr_regions <- unique(afr_slice$base_region)
+# Tier C AFR rows from .planning/amendments/TRACK-A-FROZEN-NUMBERS.md L143-156:
+# all 4 AFR regions appear as AFR Tier C rows with PP.H4 = 0.
+tier_c_afr_count_per_region <- c(
+  APOL1_22q12  = 1L,
+  FTO_16q12    = 1L,
+  MC4R_18q21   = 1L,
+  SH2B3_12q24  = 1L
+)
+
+afr_summary_rows <- lapply(afr_regions, function(reg) {
+  reg_rows <- afr_slice[afr_slice$base_region == reg, , drop = FALSE]
+  data.frame(
+    region                  = reg,
+    n_attempted_afr_pairs   = nrow(reg_rows),
+    n_with_valid_pp_h4      = sum(nchar(reg_rows$PP.H4) > 0),
+    tier_c_count            = tier_c_afr_count_per_region[reg] %||% 0L,
+    narrative               = paste0(
+      "AFR ", reg, ": ", nrow(reg_rows),
+      " trait-pair attempts (all empty PP.H4); ",
+      tier_c_afr_count_per_region[reg] %||% 0L,
+      " AFR Tier C row in tier_assignments.tsv (PP.H4 = 0)"
+    ),
+    stringsAsFactors = FALSE
+  )
+})
+
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
+afr_summary_df <- do.call(rbind, afr_summary_rows)
+stopifnot(nrow(afr_summary_df) == 4)
+stopifnot(sum(afr_summary_df$n_with_valid_pp_h4) == 0)
+
+write.table(
+  afr_summary_df,
+  file = OUT_AFR_SUMMARY,
+  sep = "\t", quote = FALSE, row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
+message(sprintf("[agg-table3] wrote %s (%d AFR regions)",
+                OUT_AFR_SUMMARY, nrow(afr_summary_df)))
+
 # --- Locked scalars (emit to stdout for FROZEN-NUMBERS) -----------------------
 
 cat("FROZEN_BEGIN\n")
@@ -218,6 +272,9 @@ cat(sprintf("mean_delta_pp_h4\t%s\n",         "non-computable"))
 cat(sprintf("median_delta_pp_h4\t%s\n",       "non-computable"))
 cat(sprintf("range_delta_pp_h4\t%s\n",        "non-computable"))
 cat(sprintf("table3_eur_rows_emitted\t%d\n",  nrow(table3_df)))
+cat(sprintf("afr_regions_summarized\t%d\n",   nrow(afr_summary_df)))
+cat(sprintf("afr_total_attempted\t%d\n",      sum(afr_summary_df$n_attempted_afr_pairs)))
+cat(sprintf("afr_total_tier_c\t%d\n",         sum(afr_summary_df$tier_c_count)))
 cat("FROZEN_END\n")
 
 message("[agg-table3] done.")
