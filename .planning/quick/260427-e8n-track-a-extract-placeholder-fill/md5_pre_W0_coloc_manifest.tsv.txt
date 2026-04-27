@@ -1,0 +1,1 @@
+159cb5ac653ea4186c364d51ff66fdef  results/multitrait/coloc_manifest.tsv

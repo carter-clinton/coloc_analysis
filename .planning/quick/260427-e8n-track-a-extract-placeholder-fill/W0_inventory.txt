@@ -1,0 +1,94 @@
+=== W0 inventory 2026-04-27T14:59:30Z ===
+## results/ subdirs
+results
+results/fine_mapping
+results/fine_mapping/susie
+results/legacy
+results/matched_n
+results/multitrait
+results/multitrait/coloc_susie
+results/negative_controls
+results/negative_controls/negctrl_blood_group_ABO_neg_ctrl_blood_group_FUT1
+results/negative_controls/negctrl_blood_group_FUT1_neg_ctrl_blood_group_FUT1
+results/negative_controls/negctrl_blood_group_FUT2_neg_ctrl_blood_group_FUT1
+results/negative_controls/negctrl_blood_group_KEL_neg_ctrl_blood_group_FUT1
+results/negative_controls/negctrl_blood_group_RH_neg_ctrl_blood_group_FUT1
+results/negative_controls/negctrl_cosmetic_HERC2_neg_ctrl_cosmetic_OCA2
+results/negative_controls/negctrl_cosmetic_IRF4_neg_ctrl_cosmetic_OCA2
+results/negative_controls/negctrl_cosmetic_MC1R_neg_ctrl_cosmetic_OCA2
+results/negative_controls/negctrl_cosmetic_OCA2_neg_ctrl_cosmetic_OCA2
+results/negative_controls/negctrl_cosmetic_SLC24A5_neg_ctrl_cosmetic_OCA2
+results/negative_controls/negctrl_cosmetic_TYR_neg_ctrl_cosmetic_OCA2
+results/negative_controls/null_loci
+results/novelty
+results/pathway
+results/pathway/gprofiler
+results/pathway/hess
+results/pathway/ldsc_partitioned
+results/pathway/ldsc_seg
+results/pathway/magma
+results/qtl_coloc
+results/regions
+results/replication
+results/replication/smoke_logs
+results/track-a-bundles
+
+## results/annotation/ existence check
+CONFIRMED: results/annotation/ does NOT exist -- PH-08/PH-09 stay on disclosure-honest fallback
+
+## results/track_a_aggregations/ existence check (should be absent before this task)
+CONFIRMED: results/track_a_aggregations/ does NOT yet exist (will be created by W1)
+
+## Existing aggregator pattern files
+-rw-r--r--. 1 ckclinto clintonlab 14003 Apr 27 07:29 src/R/figures/fig_s2_paired_fit_structural_inflation.R
+-rw-r--r--. 1 ckclinto clintonlab 11841 Apr 26 16:29 src/R/figures/fig2_cs_yield.R
+-rw-r--r--. 1 ckclinto clintonlab 30062 Apr 26 00:30 src/R/figures/fig3_sh2b3_eur_collapse_forest.R
+
+## EXTRACT placeholder grep (pre-fill state)
+3:> **Status:** First-pass application of `.planning/amendments/TRACK-A-PIVOT.md` to `docs/manuscript/track_a_source.md`. Narrative is complete; numeric placeholders marked `[EXTRACT: …]` must be filled from `results/` before preprint submission.
+28:Cross-trait colocalization analyses using GWAS summary statistics underpin a growing body of pleiotropy and drug-repurposing literature, but the most widely used implementation — `coloc.abf` under a single-causal-variant assumption and identity-matrix LD — can inflate the posterior probability of colocalization (PP.H4) when the true regional LD deviates from identity. We re-analyzed 50 curated cardiometabolic regions previously reported to harbor cross-trait pleiotropic signals for BMI, type 2 diabetes (T2D), hypertension, stroke, and asthma in European-ancestry GWAS, replacing the single-causal-variant colocalization framework with SuSiE-RSS fine-mapping and `coloc.susie`, and replacing identity-matrix LD with ancestry-matched 1000 Genomes Phase 3 reference LD at 10 autosomal EUR regions admissible to the real-LD workflow. Under matched-coverage identity-LD baseline (k2d full-coverage re-fire, 2026-04-25), SuSiE-RSS yielded 48 of 95 (50.5%) non-empty credible sets vs 51 of 96 (53.1%) under real 1000 Genomes Phase 3 EUR LD — a 1.06-fold yield increase. The previously cited 4.25-fold contrast against a 12/96 baseline reflected a partial-coverage Stage 1d narrow-validation run (2 of 10 admissible regions had identity-LD fits at the time of that earlier freeze); the post-k2d full-coverage baseline is the appropriate matched-coverage comparator. The structural credible-set composition difference between identity-LD and real-LD fits (PIP shift, lead-variant rank stability) is reported in a planned supplementary follow-on. Cross-trait `coloc.susie` at these loci reassigned signals: 0 regions reached Tier A high-confidence colocalization, 0 reached Tier B, 9 reached Tier C, and 200 pre-specified negative-control region × source × tissue × trait evaluations across 9 distinct negative-control loci (4 blood-group, 5 cosmetic) produced no Tier A/B signal as predicted; the HLA region was reclassified from negative-control to identity-LD-fallback per Methods §Admissibility to avoid double-classification (cf. AUDIT-REVIEW-2026-04-25.md Eval 3.7). The highest Tier C posterior was PP.H4 = 0.3099 at *FTO* 16q12 EUR for *IRX3*/Pancreas (GTEx eQTL), below the pre-registered Tier B threshold of 0.5 (subject to the QTL-coloc data-quality caveat: 1,005 of 1,274 (78.9%) attempts returned `too_few_snps` from a known harmonized-TSV vs SuSiE-fit variant-ID mismatch — see Discussion §Identity-LD Inflation and Limitations bullet 5; the FTO Tier-C signal additionally carries `ld_overlap_fraction = 0` per the Tier-C disclosure paragraph). A previously reported PP.H4 = 1.00 signal for BMI–hypertension at *SH2B3* (12q24) under identity-LD was not directly contradicted at Stage 2 real-LD because the canonical BMI–hypertension and hypertension–stroke trait-pairs at SH2B3 EUR were **not executed** under Stage 2 `coloc.susie` (Stage 2 scoping was restricted to `SH2B3_12q24__EUR__asthma_vs_t2d`); their absence from the Stage 2 manifest reflects a missing run rather than a documented credible-set collapse (see Results §SH2B3 case study). Across 1,274 region × gene × tissue × trait QTL-coloc attempts on the 10 admissible regions, 32 (2.5%) returned valid credible-set colocalization output; 1,005 (78.9%) failed as `too_few_snps` owing to a harmonized-TSV vs Phase 1 SuSiE-fit variant-ID mismatch that was structurally fixed mid-Stage-2 and may incompletely propagate to all source × tissue × gene combinations. Pathway enrichment re-computed on real-LD–surviving signals [EXTRACT: fold-enrichment deltas from `results/pathway/`] no longer supports appetite-regulation and insulin-signaling as the dominant axes claimed by the prior literature. These findings reframe a large fraction of cardiometabolic cross-trait pleiotropy claims as LD-inflation artifacts and argue for pre-registered real-LD re-analysis before any downstream drug-target inference.
+136:We performed 585 pairwise colocalization tests across 50 genomic regions in European (EUR, N = 441 pairs) and African (AFR, N = 144 pairs) ancestries under the identity-LD baseline-reproduction branch, and 10 × [EXTRACT: N admissible trait-pairs] parallel tests under the primary real-LD branch at admissible regions (Figure 1A, Figure S1).
+151:- Survived (identity ≥ 0.8 AND real ≥ 0.8): [EXTRACT: count from `results/multitrait/coloc_summary.tsv` + identity comparator]
+152:- Lost (identity ≥ 0.8 AND real < 0.8): [EXTRACT]
+153:- Rescued (identity < 0.8 AND real ≥ 0.8): [EXTRACT]
+154:- Both-null: [EXTRACT]
+156:Mean delta PP.H4 (identity − real) across all admissible region × trait-pair combinations: [EXTRACT]; median [EXTRACT]; range [EXTRACT]. The SH2B3 row is highlighted in Figure 1A and Figure 3 forest plot.
+160:Under real-LD the BMI–T2D, hypertension–T2D, asthma–BMI, asthma–T2D, BMI–stroke, hypertension–stroke, and stroke–T2D trait-pair signal distributions are re-computed from `results/multitrait/coloc_susie/*.json`. [EXTRACT: full table of per-trait-pair counts at PP.H4 ≥ 0.8 and PP.H4 ≥ 0.5, with identity-LD comparator]. The previously reported pattern of BMI–T2D dominance (12 identity-LD signals, 43% of the 28 identity-LD total) [EXTRACT: survive vs collapse count].
+166:Table 1 (revised) presents the strongest real-LD–surviving signals. [EXTRACT: 10–20 rows from `results/multitrait/coloc_summary.tsv` filtered to real-LD branch with PP.H4 ≥ 0.5]. Columns: Locus, Trait Pair, PP.H4 (real-LD), PP.H4 (identity-LD), delta, Credible-set size (real-LD), Lead variant (highest PIP), Annotated gene, Pathway tag.
+172:The eight-locus pleiotropy claim from the original identity-LD analysis (KCNJ11/ABCC8 at 11p15, NEGR1 at 1p31.1, APOE at 19q13, FTO at 16q12, MC4R at 18q21, SH2B3 at 12q24, PPARG at 3p25, SEC16B at 1q25.2) is re-evaluated under real-LD (Figure 2B, Table S3). [EXTRACT: which hubs survive vs collapse]. SH2B3 collapses as demonstrated above; the other seven are pending real-LD re-evaluation from the 2026-04-22 fire outputs.
+198:Functional annotation of real-LD–surviving lead variants is reported descriptively. Under real-LD, [EXTRACT: proportion of signals classified as regulatory vs coding vs mixed using `results/coloc_susie/` lead variants × CADD / GTEx / PolyPhen / SIFT]. The original identity-LD–sourced 91% regulatory / 8% coding / 1% mixed distribution is recomputed; if the distribution changes, the descriptive interpretation is updated.
+204:Table 2 (revised) presents the annotation-aggregated candidate-gene scorecard at real-LD–surviving pleiotropic loci only. [EXTRACT: filtered scorecard output]. Columns: Gene, Priority Score, Trait Pairs (PP.H4 real-LD), Variant Mechanism, Drug Target (existing annotated; reference only), Drug/Class, Pathway.
+210:Cross-ancestry results are reported as a descriptive comparison, not as a primary claim. Of 50 curated regions × 2 ancestries = 100 region-ancestry combinations, only 10 autosomal EUR combinations met real-LD admissibility; AFR regions, HLA (6p21), and BMI_Xq24 fall back to identity-LD. Of testable AFR-ancestry pairs under identity-LD fallback, [EXTRACT: observed outcome distribution].
+272:| [EXTRACT: rows sorted by PP.H4_real desc; pull from `results/multitrait/coloc_summary.tsv` filtered to PP.H4_real ≥ 0.5; pair identity comparator from previous fire run] | | | | | | | | | |
+278:| [EXTRACT: filtered scorecard output, real-LD-surviving only] | | | | | | |
+287:| [EXTRACT: all 10 admissible EUR regions × trait pairs] | | | | | | | | |
+293:| [EXTRACT: parse COLOC_ERROR codes from `results/multitrait/coloc_manifest.tsv` and per-job logs] | | | | | | |
+355:[EXTRACT: full numbered reference list 1–43 in venue-specific citation format (Genome Medicine house style primary; AJHG / Bioinformatics fallback formats). Build target: Zotero or EndNote export from the project reference library at `.planning/refs/track_a.bib` or equivalent, during venue-submission package prep per `/home/ckclinto/.claude/plans/snappy-humming-pine.md` §2.5. R1 does NOT populate this list; the inline-superscript ↔ ref-number mapping in the ### Add / ### Promote / ### Retain / ### Demote / ### Drop subsections above is the source of truth until the export lands.]
+362:4. **Pre-bioRxiv blocker — `[EXTRACT: …]` placeholders.** The 10 `[EXTRACT: …]` placeholders at L3, L28, L136, L151–154 (×4), L160, L166, L172, L198, L204, L210 must be filled from the authoritative `results/` sources before bioRxiv submission. This requires running the aggregator scripts for `results/pathway/`, `results/multitrait/coloc_summary.tsv`, the per-trait-pair count tables, and the variant-mechanism annotation table; scoped as a separate quick task following this audit-v2 sweep.
+
+## Stage 2 trait-pair runtime invariant (expect: 28 rows + header; ALL PP columns empty)
+rows=28 nonempty_PP_H4=0 nonempty_PP_H4_abf=0
+
+## Tier counts (expect: 9 Tier C, 224 negative_control, 0 Tier A, 0 Tier B)
+    224 negative_control
+      1 tier
+      9 Tier C
+
+## Source-of-truth md5 invariant verification
+coloc_summary.tsv expected=5fa3c4004970c5da711d05947cb1f7d2 actual=5fa3c4004970c5da711d05947cb1f7d2 PASS
+finemap_summary.tsv expected=8c3e04a202a919d94bd34a3c1d5146a2 actual=8c3e04a202a919d94bd34a3c1d5146a2 PASS
+tier_assignments.tsv expected=17ff46dbbfe78dd537d6b9bff7f3ae67 actual=17ff46dbbfe78dd537d6b9bff7f3ae67 PASS
+
+## EUR-only / AFR count verification (expect 16 EUR + 12 AFR = 28)
+EUR=16 AFR=12
+
+## 8-hub finemap_summary presence check (KCNJ11/ABCC8, NEGR1, APOE, FTO, MC4R, SH2B3, PPARG, SEC16B)
+KCNJ11 : 0 rows in finemap_summary.tsv
+ABCC8 : 0 rows in finemap_summary.tsv
+NEGR1 : 0 rows in finemap_summary.tsv
+APOE : 8 rows in finemap_summary.tsv
+FTO : 8 rows in finemap_summary.tsv
+MC4R : 8 rows in finemap_summary.tsv
+SH2B3 : 8 rows in finemap_summary.tsv
+PPARG : 0 rows in finemap_summary.tsv
+SEC16B : 0 rows in finemap_summary.tsv
