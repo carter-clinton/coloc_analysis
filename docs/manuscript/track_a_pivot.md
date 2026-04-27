@@ -207,7 +207,7 @@ We explicitly do **not** claim drug-target discovery. The scorecard is annotatio
 
 ### Cross-Ancestry Comparison
 
-Cross-ancestry results are reported as a descriptive comparison, not as a primary claim. Of 50 curated regions × 2 ancestries = 100 region-ancestry combinations, only 10 autosomal EUR combinations met real-LD admissibility; AFR regions, HLA (6p21), and BMI_Xq24 fall back to identity-LD. Of testable AFR-ancestry pairs under identity-LD fallback, [EXTRACT: observed outcome distribution].
+Cross-ancestry results are reported as a descriptive comparison, not as a primary claim. Of 50 curated regions × 2 ancestries = 100 region-ancestry combinations, only 10 autosomal EUR combinations met real-LD admissibility; AFR regions, HLA (6p21), and BMI_Xq24 fall back to identity-LD. Of testable AFR-ancestry pairs under identity-LD fallback, the 12 AFR Stage 2 trait-pair `coloc.susie` rows (4 regions × 3 trait-pairs each: APOL1_22q12, FTO_16q12, MC4R_18q21, SH2B3_12q24) all returned empty PP.H4 / PP.H4.abf columns under the matched-coverage k2d 2026-04-25 fine-mapping comparator that did not produce trait-pair output. AFR identity-LD trait-pair `coloc.susie` comparator output is therefore not available for direct survival-analysis comparison. AFR-stratified `tier_assignments.tsv` shows 4 of 9 Tier C rows are AFR (APOL1_22q12 AFR, FTO_16q12 AFR, MC4R_18q21 AFR, SH2B3_12q24 AFR — all PP.H4 = 0; per `.planning/amendments/TRACK-A-FROZEN-NUMBERS.md` §Tier C rows L143-156). **0 of 12 AFR trait-pair attempts and 0 of 4 AFR Tier C rows reach PP.H4 ≥ 0.5**; the AFR arm is, as described in §Cross-Ancestry Validation — An Honest Limitation, an underpowered identity-LD-fallback replication subset, not a primary finding (see `results/track_a_aggregations/afr_distribution_summary.tsv` for the per-region breakdown).
 
 **We explicitly do not interpret concordant null results between ancestries as evidence of shared biology.** Concordant nulls are indistinguishable from both-ancestry statistical underpowering. The appropriate interpretation is that AFR-ancestry validation of the EUR pleiotropy claims is **not achieved** at current AFR GWAS sample sizes and with the 1000G Phase 3 AFR LD panel (n = 661). The MHC AFR-enriched signal is noted as descriptive (it is a pre-registered negative control; see above).
 
@@ -284,13 +284,39 @@ Work currently underway at the ASHES Laboratory is implementing whole-genome-seq
 | SH2B3_12q24 | SH2B3 | BMI–hypertension | 1.00 (Stage 1d) | not executed (Stage 2) | — | — | n/a | **not executed** (pair absent from Stage 2 `coloc.susie` manifest because Stage 2 scoping was restricted to `SH2B3_12q24__EUR__asthma_vs_t2d`; canonical-pair re-fire pre-registered as future work) |
 | SH2B3_12q24 | SH2B3 | hypertension–stroke | 1.00 (Stage 1d) | not executed (Stage 2) | — | — | n/a | **not executed** (pair absent from Stage 2 `coloc.susie` manifest because Stage 2 scoping was restricted to `SH2B3_12q24__EUR__asthma_vs_t2d`; canonical-pair re-fire pre-registered as future work) |
 | SH2B3_12q24 | SH2B3 | asthma–T2D | not tested (Stage 1d) | empty PP columns (Stage 2) | — | — | 0 | both-null |
-| [EXTRACT: all 10 admissible EUR regions × trait pairs] | | | | | | | | |
+| APOL1_22q12 | APOL1 | asthma–stroke | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| APOL1_22q12 | APOL1 | asthma–t2d | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| APOL1_22q12 | APOL1 | stroke–t2d | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| CXADR_F2RL1_6p21 | CXADR/F2RL1 | bmi–stroke | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | asthma–bmi | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | asthma–hypertension | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | asthma–stroke | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | asthma–t2d | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | bmi–hypertension | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | bmi–stroke | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | bmi–t2d | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | hypertension–stroke | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | hypertension–t2d | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| FTO_16q12 | FTO | stroke–t2d | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| MC4R_18q21 | MC4R | asthma–stroke | _empty_ (Stage 2) | _empty_ (Stage 2) | — | n/a | n/a | both-null (real-LD PP.H4 empty; identity-LD trait-pair `coloc.susie` comparator absent) |
+| _Note_ | _15 rows above_ | _SH2B3 EUR asthma–T2D row at L286 above is the 16th admissible EUR Stage 2 trait-pair (preserved verbatim from prior manuscript pass)_ | _empty_ | _empty_ | — | — | — | _Source: `results/track_a_aggregations/table3_admissible_pairs.tsv` (16 EUR rows total); 2 SH2B3 EUR canonical pairs (BMI–HTN, HTN–stroke) at L284-285 are not in `coloc_summary.tsv` and are preserved verbatim from prior audit-v2 closure._ |
 
 ### Table 4 — Harmonization-pipeline diagnostic breakdown (NEW)
 
 | Trait Pair | n_attempted | n_failed | n_insufficient_overlap | n_illconditioned_LD | n_SuSiE_nonconvergence | n_other |
 |---|---|---|---|---|---|---|
-| [EXTRACT: parse COLOC_ERROR codes from `results/multitrait/coloc_manifest.tsv` and per-job logs] | | | | | | |
+| asthma–stroke | 12 | 12 | 0 | 0 | 0 | 12 |
+| asthma–t2d | 11 | 11 | 0 | 0 | 0 | 11 |
+| stroke–t2d | 10 | 10 | 0 | 0 | 0 | 10 |
+| asthma–bmi | 2 | 2 | 0 | 0 | 0 | 2 |
+| hypertension–stroke | 2 | 2 | 0 | 0 | 0 | 2 |
+| bmi–stroke | 2 | 2 | 0 | 0 | 0 | 2 |
+| bmi–t2d | 2 | 2 | 0 | 0 | 0 | 2 |
+| asthma–hypertension | 1 | 1 | 0 | 0 | 0 | 1 |
+| bmi–hypertension | 1 | 1 | 0 | 0 | 0 | 1 |
+| hypertension–t2d | 1 | 1 | 0 | 0 | 0 | 1 |
+| **TOTAL** | **44** | **44** | **0** | **0** | **0** | **44** |
+| _Note_ | — | — | — | — | — | _COLOC_ERROR codes are not recorded in `coloc_summary.tsv` schema; n_insufficient_overlap, n_illconditioned_LD, n_SuSiE_nonconvergence are 0 (unattributed); all 28 attempts producing rows fall under n_other under the disclosure-honest fallback. Of 44 manifest attempts, 28 reached `coloc_summary.tsv` (with empty PP.H4) and 16 did NOT reach summary (failed before producing even an empty-PP row). Source: `results/track_a_aggregations/table4_coloc_error_breakdown.tsv`._ |
 
 ## Figure legends
 
