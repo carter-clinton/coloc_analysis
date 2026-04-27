@@ -163,7 +163,7 @@ We no longer claim that asthma shows "unexpected genetic overlap with metabolic 
 
 ### Top Real-LD–Surviving Colocalization Signals
 
-Table 1 (revised) presents the strongest real-LD–surviving signals. [EXTRACT: 10–20 rows from `results/multitrait/coloc_summary.tsv` filtered to real-LD branch with PP.H4 ≥ 0.5]. Columns: Locus, Trait Pair, PP.H4 (real-LD), PP.H4 (identity-LD), delta, Credible-set size (real-LD), Lead variant (highest PIP), Annotated gene, Pathway tag.
+Table 1 (revised) presents the strongest real-LD–surviving signals. **Zero rows survive** at the manuscript's PP.H4 ≥ 0.5 confidence threshold (0 of 28 attempted Stage 2 real-LD trait-pair `coloc.susie` rows have non-empty PP.H4 columns; source: `results/track_a_aggregations/table1_surviving_rows.tsv`, derived from `results/multitrait/coloc_summary.tsv` md5 `5fa3c4004970c5da711d05947cb1f7d2`). Table 1 is therefore presented as a **disclosure-honest empty-row table** (header preserved for reviewer reference; zero data rows). The columns Locus, Trait Pair, PP.H4 (real-LD), PP.H4 (identity-LD), delta, Credible-set size (real-LD), Lead variant (highest PIP), Annotated gene, Pathway tag are retained as the schema reviewers will expect; the empty body is the figure's argument, consistent with §Pathway Enrichment Analysis (real-LD Tier A+B = 0 genes; non-computable at threshold) and Conclusion-1 ("no cross-trait colocalization signal reaches Tier A or Tier B under real-LD `coloc.susie` at these 50 curated loci"). Threshold-lowering to PP.H4 ≥ 0.3 (which would surface the FTO_16q12 EUR Tier-C 0.3099 signal) is explicitly NOT performed in this Table 1 to avoid threshold reframing without OSF amendment; the FTO 0.3099 callout is preserved in §Headline Result and §Tier-C real-LD data-quality disclosure as an exploratory signal subject to the QTL-coloc data-quality caveat.
 
 We do not retain the original "TCF7L2 complete colocalization PP.H4 = 1.00" headline unless it survives re-compute — this and every high-PP.H4 identity-LD claim is subject to the same real-LD re-evaluation.
 
@@ -269,7 +269,7 @@ Work currently underway at the ASHES Laboratory is implementing whole-genome-seq
 
 | Rank | Locus | Trait Pair | PP.H4 (real-LD) | PP.H4 (identity-LD) | Δ PP.H4 | CS size (real-LD) | Lead variant (PIP) | Gene | Pathway |
 |---|---|---|---|---|---|---|---|---|---|
-| [EXTRACT: rows sorted by PP.H4_real desc; pull from `results/multitrait/coloc_summary.tsv` filtered to PP.H4_real ≥ 0.5; pair identity comparator from previous fire run] | | | | | | | | | |
+| — | _no real-LD–surviving signal at PP.H4 ≥ 0.5_ | _zero rows survive in `results/multitrait/coloc_summary.tsv` filtered to non-empty PP.H4 ≥ 0.5; cf. AUDIT-REVIEW-V2-2026-04-26.md Eval 3.3 IN-PROGRESS for the underlying gating; sourced via `results/track_a_aggregations/table1_surviving_rows.tsv`_ | — | — | — | — | — | — | — |
 
 ### Table 2 — Annotation-aggregated candidate-gene scorecard at real-LD–surviving pleiotropic loci
 
