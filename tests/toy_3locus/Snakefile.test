@@ -113,6 +113,9 @@ if FINEMAP_METHODS:
 # QC rules (Phase 1 Plan 01-05 + 01-06: susie QC dashboard)
 include: "../../src/snakemake/rules/qc.smk"
 
+# M2 smoke targets (Wave 5 m2-05 Task 2; REQ-SNAKEMAKE-CI extension)
+include: "m2_smoke_targets.smk"
+
 # LD reference (conditional)
 ENABLE_LD = config.get("enable_ld_pipeline", False)
 # Only generate LD targets for ancestries with 1000G population mappings
@@ -152,12 +155,18 @@ if FINEMAP_METHODS:
         os.path.join(FINEMAP_DIR, "qc_dashboard.html"),
     ]
 
+M2_SMOKE_TARGETS = [
+    "tests/toy_3locus/m2_smoke_out/EUR/residcov.txt",
+    "tests/toy_3locus/m2_smoke_out/EUR/residcov.trait_order.json",
+]
+
 ALL_TARGETS = (
     HARMONIZED_ALL
     + [config["paths"]["regions_bed"]]
     + LD_TARGETS
     + FINEMAP_OUTPUTS
     + QC_TARGETS
+    + M2_SMOKE_TARGETS
 )
 
 rule all:
