@@ -91,6 +91,8 @@ logs/
 *.log
 !results/README.md
 !results/legacy
+!results/track_a_aggregations
+!results/track_a_aggregations/**
 !envs/.gitkeep
 tests/toy_3locus/results/
 

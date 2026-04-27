@@ -1,0 +1,5 @@
+category	count	threshold	framing
+Survived	0	identity >= 0.8 AND real >= 0.8	real-LD all-empty (28/28 PP.H4 columns empty); identity-LD trait-pair coloc.susie comparator absent (k2d 2026-04-25 re-fire was fine-mapping-only, not trait-pair coloc.susie); see audit-v2 Eval 3.3 IN-PROGRESS
+Lost	0	identity >= 0.8 AND real < 0.8	real-LD all-empty (28/28 PP.H4 columns empty); identity-LD trait-pair coloc.susie comparator absent (k2d 2026-04-25 re-fire was fine-mapping-only, not trait-pair coloc.susie); see audit-v2 Eval 3.3 IN-PROGRESS
+Rescued	0	identity < 0.8 AND real >= 0.8	real-LD all-empty (28/28 PP.H4 columns empty); identity-LD trait-pair coloc.susie comparator absent (k2d 2026-04-25 re-fire was fine-mapping-only, not trait-pair coloc.susie); see audit-v2 Eval 3.3 IN-PROGRESS
+Both-null	28	identity < 0.8 OR both empty	real-LD all-empty (28/28 PP.H4 columns empty); identity-LD trait-pair coloc.susie comparator absent (k2d 2026-04-25 re-fire was fine-mapping-only, not trait-pair coloc.susie); see audit-v2 Eval 3.3 IN-PROGRESS

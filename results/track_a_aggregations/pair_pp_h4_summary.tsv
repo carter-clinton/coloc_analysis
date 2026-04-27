@@ -1,0 +1,2 @@
+n_total_pairs	n_pairs_with_pp_h4	n_admissible_eur_pairs	n_admissible_afr_pairs	mean_delta_pp_h4	median_delta_pp_h4	range_delta_pp_h4	framing
+28	0	16	12	non-computable: 0 real-LD PP.H4 values	non-computable	non-computable	real-LD all-empty (28/28 PP.H4 columns empty); identity-LD trait-pair coloc.susie comparator absent (k2d 2026-04-25 re-fire was fine-mapping-only, not trait-pair coloc.susie); see audit-v2 Eval 3.3 IN-PROGRESS
