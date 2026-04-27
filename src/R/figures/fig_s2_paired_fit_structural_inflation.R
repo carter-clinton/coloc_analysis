@@ -66,12 +66,9 @@ suppressPackageStartupMessages({
 
 # --- Paths --------------------------------------------------------------------
 
-PROJECT_ROOT <- normalizePath(
-  file.path(dirname(sys.frame(1)$ofile %||% "."), "..", "..", ".."),
-  mustWork = FALSE
-)
+PROJECT_ROOT <- normalizePath(getwd(), mustWork = TRUE)
 if (!dir.exists(file.path(PROJECT_ROOT, "results", "fine_mapping", "susie"))) {
-  PROJECT_ROOT <- normalizePath(getwd(), mustWork = TRUE)
+  stop(sprintf("[fig_s2] expected to be run from project root; cwd=%s missing results/fine_mapping/susie", PROJECT_ROOT))
 }
 
 REAL_DIR     <- file.path(PROJECT_ROOT, "results",              "fine_mapping", "susie")
