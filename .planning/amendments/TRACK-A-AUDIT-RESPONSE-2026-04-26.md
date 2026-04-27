@@ -381,3 +381,52 @@ When the next closure-wave quick task lands, the executor MUST:
 ## Framing
 
 This catalogue treats [`AUDIT-REVIEW-2026-04-25.md`](./AUDIT-REVIEW-2026-04-25.md) as independent scientific review acted on prior to submission. The closure work documented here is part of the original-research record — the audit was applied to itself prior to submission, exercising the project's own scientific-integrity discipline. The audit-driven closure is original-research work in service of headline defensibility, not post-submission course correction.
+
+---
+
+## Audit-V2 sweep closure (2026-04-27, quick-260427-azv)
+
+A second-pass independent re-review at [`AUDIT-REVIEW-V2-2026-04-26.md`](./AUDIT-REVIEW-V2-2026-04-26.md) (committed 2026-04-26) found that the prior closure wave shipped 18 of 27 items with disk-verifiable evidence but flagged residual prose drift across Abstract, Discussion opener, Conclusion, Figure 3 caption, and Table 3 (the "five-surface SH2B3 narrative sweep"), plus three quick fixes (citation error, Methods narrative-location cleanup, stale Decision-Pending purge), six newly-surfaced issues (NewIssue1–6), and an Eval 2(a) niter-twist integration into §3.4. The V2 sweep landed under quick-task `260427-azv` as 12 atomic commits over ~6 hours, all on `main` with no LSF, no data egress, and no OSF portal action.
+
+**V2 sweep closure status by audit-v2 item:**
+
+| Audit-V2 item | V2 status | V2 commit(s) | Files touched |
+|---|---|---|---|
+| HQ1 — Five-surface SH2B3 narrative sweep | V2-CLOSED | `81088f0` (HQ1 main + caption fix in `205a1a3`) | `track_a_pivot.md` (Abstract L28, Discussion opener L216, Fig 3 caption L297 panels A+B, Table 3 L280–281) |
+| HQ2 — Quantify structural inflation (paired-fit Figure S2) | V2-CLOSED | `d87416a` (script) + `cc943bd` (render) + `9cb007d` (caption) | `src/R/figures/fig_s2_paired_fit_structural_inflation.R` (NEW), `docs/manuscript/figures/fig_s2_paired_fit_structural_inflation.{pdf,png}` (NEW), `track_a_pivot.md` (S2 caption block) |
+| HQ3 — Conclusion-1 method-namespace reframe | V2-CLOSED | `a345f5e` | `track_a_pivot.md` (L252–254) |
+| QI1 — Citation fix (Wang²⁹ → Zou²⁰) | V2-CLOSED | `00cf5b9` | `track_a_pivot.md` (L148) |
+| QI2 — Move audit-process narrative from Methods L82 to Discussion §Audit-driven Comparator Tightening | V2-CLOSED | `cb5db17` | `track_a_pivot.md` (L82 + new Discussion subsection between §Identity-LD Inflation and §Reframing of Cardiometabolic Pleiotropy Claims) |
+| QI3 — Stale Decision-Pending item 4 deletion + items 5+ flag | V2-CLOSED | `00cf5b9` | `track_a_pivot.md` (Decision-pending L351–360 block) |
+| NewIssue1 — Cite fix (= QI1) | V2-CLOSED | (covered by QI1) | (n/a) |
+| NewIssue2 — Methods cleanup (= QI2) | V2-CLOSED | (covered by QI2) | (n/a) |
+| NewIssue3 — Decision-Pending purge (= QI3) | V2-CLOSED | (covered by QI3) | (n/a) |
+| NewIssue4 — QTL-coloc data-quality caveat in Abstract / FTO callouts | V2-CLOSED | `7ea3f00` | `track_a_pivot.md` (Abstract L28, Tier-C disclosure L140) |
+| NewIssue5 — Fig S7 framing promotion (exploratory → methodology-validation finding) | V2-CLOSED | `7ea3f00` | `track_a_pivot.md` (Figure S7 caption header + §Framing block) |
+| NewIssue6 — Methods L-saturation prose disclosure (11 of 95 fits) | V2-CLOSED | `205a1a3` | `track_a_pivot.md` (Methods §Admissibility) |
+| Eval 2(a) — niter-twist integration into §3.4 (disk-truthful) | V2-CLOSED | `205a1a3` | `track_a_pivot.md` (§3.4 L148 niter-trace clause + Fig 3 caption L_sat attribution fix) |
+| HQ1-followup — L140 residual stale-narrative leak ("four other ... composition collapse") | V2-CLOSED | `00cf5b9` | `track_a_pivot.md` (L140 Tier-C disclosure paragraph) |
+
+**Disk-truth corrections vs. audit-v2 doc:** The V2 sweep integrated **disk-truth** (results/fine_mapping/susie/*.json + results_identity_ld/fine_mapping/susie/*.json) where the audit-v2 doc claims diverged from disk. Specifically:
+
+1. The audit-v2 doc claimed "three identity-LD fits at SH2B3 EUR ran to niter = 100" — disk shows identity-LD niter at SH2B3 EUR = 9 / 3 / 12 (BMI/HTN/stroke; all `convergence_status = converged_primary`). It is the **real-LD** fits that hit niter = 100. The §3.4 niter-twist integration uses disk-truth.
+2. The audit-v2 doc claimed identity-LD BMI at SH2B3 EUR has `L_saturated = TRUE` — disk shows BMI identity-LD has `L_saturated = FALSE` with `n_CS = 3`. The L_saturated = TRUE fit at SH2B3 EUR identity-LD is **hypertension**, not BMI. The Fig 3 caption (commit `205a1a3`) uses disk-truth.
+3. The audit-v2 doc's claim of "11 of 95 identity-LD fits show L = 10 saturation cs_sizes fingerprint" is **confirmed** by disk (11 rows in `IDENTITY-LD-K2D-FIT-SUMMARY.tsv` with `cs_sizes = "3;3;3;3;3;3;3;3;3;4"`); the per-fit JSON L_saturated boolean is stricter and fires only on `hypertension.EUR.SH2B3_12q24` (1 of 95).
+4. The Figure 3 caption "four of five EUR traits at SH2B3 are non_converged" was **stale** — disk shows 3 of 5 (BMI, HTN, stroke; T2D and asthma are `converged_primary`). HQ1 commit `81088f0` reframed.
+
+**V2 sweep deliverables:**
+
+- 12 atomic commits on `main` (`81088f0`, `a345f5e`, `00cf5b9`, `cb5db17`, `7ea3f00`, `205a1a3`, `d87416a`, `cc943bd`, `9cb007d`, plus Wave 3 `<commit10>`, `<commit11>`, `<commit12>` for tracker updates)
+- 1 new R script (`src/R/figures/fig_s2_paired_fit_structural_inflation.R`, 339 lines)
+- 2 new figure renders (`docs/manuscript/figures/fig_s2_paired_fit_structural_inflation.{pdf,png}`)
+- 3 new DEC entries in `.planning/DECISIONS.md` (DEC-2026-04-27-01/02/03)
+- 1 new LIVE block in `.planning/amendments/TRACK-A-FROZEN-NUMBERS.md` (Paired-fit structural inflation, Figure S2)
+- Stage 2 source-of-truth TSV md5 invariant: `finemap_summary.tsv`, `coloc_summary.tsv`, `tier_assignments.tsv` byte-identical pre/post-sweep
+
+**HQ#2 deferred items remain DEFERRED (out of scope for the V2 sweep):**
+
+- HQ#2(i) — SH2B3 EUR L = 20 re-fit (DEFERRED-COMPUTE; needs LSF)
+- HQ#2(ii) — Drop / flag non-converged fits in yield numerator (DEFERRED-DESIGN; Carter call)
+- HQ#2(iii) — Execute canonical BMI–HTN + HTN–stroke `coloc.susie` pairs (DEFERRED-COMPUTE; needs LSF)
+
+**Net delta vs. audit-v2:** All 13 audit-v2 actionable items (HQ1, HQ2, HQ3, QI1, QI2, QI3, NewIssue1–6, Eval 2(a) integration) are V2-CLOSED. The three HQ#2 deferred-compute / deferred-design items remain unchanged from their original disposition, correctly scoped as future work. The manuscript is now bioRxiv-submission-ready except for the 10 `[EXTRACT: …]` placeholders which are flagged as a separate quick-task pre-bioRxiv blocker (see Decision-pending item 4).
