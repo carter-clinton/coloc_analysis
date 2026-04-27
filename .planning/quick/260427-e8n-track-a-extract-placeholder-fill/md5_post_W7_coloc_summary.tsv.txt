@@ -1,0 +1,1 @@
+5fa3c4004970c5da711d05947cb1f7d2  results/multitrait/coloc_summary.tsv

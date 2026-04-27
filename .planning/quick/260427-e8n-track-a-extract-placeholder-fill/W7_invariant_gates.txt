@@ -1,0 +1,56 @@
+=== W7 invariant gates 2026-04-27T17:51:43Z ===
+
+## Source-of-truth md5 invariant (must MATCH pre)
+  PASS: coloc_summary.tsv md5 unchanged (5fa3c4004970c5da711d05947cb1f7d2)
+  PASS: finemap_summary.tsv md5 unchanged (8c3e04a202a919d94bd34a3c1d5146a2)
+  PASS: tier_assignments.tsv md5 unchanged (17ff46dbbfe78dd537d6b9bff7f3ae67)
+  PASS: coloc_manifest.tsv md5 unchanged (159cb5ac653ea4186c364d51ff66fdef)
+
+## Placeholder count gate
+  EXTRACT lines = 2
+  Detail (pre-deviation count):
+    3:> **Status:** First-pass application of `.planning/amendments/TRACK-A-PIVOT.md` to `docs/manuscript/track_a_source.md`. Narrative is complete; numeric placeholders marked `[EXTRACT: …]` must be filled from `results/` before preprint submission.
+    381:[EXTRACT: full numbered reference list 1–43 in venue-specific citation format (Genome Medicine house style primary; AJHG / Bioinformatics fallback formats). Build target: Zotero or EndNote export from the project reference library at `.planning/refs/track_a.bib` or equivalent, during venue-submission package prep per `/home/ckclinto/.claude/plans/snappy-humming-pine.md` §2.5. R1 does NOT populate this list; the inline-superscript ↔ ref-number mapping in the ### Add / ### Promote / ### Retain / ### Demote / ### Drop subsections above is the source of truth until the export lands.]
+
+  Plan success_criteria asks for exactly 1 (L355 References venue-prep) AFTER deletion of L362 self-referential.
+  Plan scope_constraints simultaneously asks 'L3 banner is left UNTOUCHED (manual venue-submission edit deferred per scope)'.
+  Resolution (per Rule 3 / Rule 1 — disclosure-honest): L3 banner contains a literal documentation reference to the [EXTRACT: …] pattern (in backticks describing what was filled). Per scope_constraints, L3 is left untouched.
+  Result: final EXTRACT count = 2 (L3 banner doc-reference + L355 References venue-prep).
+  PASS (expected count under plan-internal-tension resolution = 2; documented in SUMMARY)
+
+## L362-equivalent deletion gate (Pre-bioRxiv blocker self-referential item 4)
+  PASS: self-referential item-4 deleted; renumbered remaining items 5/6/7 -> 4/5/6
+
+## L3 banner preservation gate
+  L3 banner '^> **Status' hits = 1
+  PASS: L3 banner preserved untouched
+
+## LIVE block gate
+  LIVE-block matches = 2
+  PASS
+
+## Aggregator output gate
+  TSV count = 9 (expect >=7)
+  PASS
+    results/track_a_aggregations/afr_distribution_summary.tsv
+    results/track_a_aggregations/eight_hub_fates.tsv
+    results/track_a_aggregations/pair_pp_h4_summary.tsv
+    results/track_a_aggregations/pathway_real_ld_disclosure.tsv
+    results/track_a_aggregations/per_trait_pair_distribution.tsv
+    results/track_a_aggregations/table1_surviving_rows.tsv
+    results/track_a_aggregations/table3_admissible_pairs.tsv
+    results/track_a_aggregations/table4_coloc_error_breakdown.tsv
+    results/track_a_aggregations/yield_redistribution.tsv
+
+## NEW aggregator script gate
+  PASS: src/R/aggregators/aggregate_table1_pleiotropic_loci.R exists
+  PASS: src/R/aggregators/aggregate_table3_admissible_pairs.R exists
+  PASS: src/R/aggregators/aggregate_per_trait_pair_and_hubs.R exists
+  PASS: src/python/aggregate_coloc_manifest_errors.py exists
+
+## Stale-token sweep (final EXTRACT lines)
+    3:> **Status:** First-pass application of `.planning/amendments/TRACK-A-PIVOT.md` to `docs/manuscript/track_a_source.md`. Narrative is complete; numeric placeholders marked `[EXTRACT: …]` must be filled from `results/` before preprint submission.
+    381:[EXTRACT: full numbered reference list 1–43 in venue-specific citation format (Genome Medicine house style primary; AJHG / Bioinformatics fallback formats). Build target: Zotero or EndNote export from the project reference library at `.planning/refs/track_a.bib` or equivalent, during venue-submission package prep per `/home/ckclinto/.claude/plans/snappy-humming-pine.md` §2.5. R1 does NOT populate this list; the inline-superscript ↔ ref-number mapping in the ### Add / ### Promote / ### Retain / ### Demote / ### Drop subsections above is the source of truth until the export lands.]
+
+## All gates: PASS
+## Done.
