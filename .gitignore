@@ -154,3 +154,6 @@ scratch/
 # --- Claude Code local state ---
 .claude/local/
 tools/ldsc/
+
+# M2 toy 3-locus smoke output (REQ-SNAKEMAKE-CI extension; regenerable via snakemake)
+tests/toy_3locus/m2_smoke_out/
