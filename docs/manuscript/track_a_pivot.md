@@ -195,13 +195,13 @@ The "63% of pleiotropic genes converge on metabolic pathways" headline does not 
 
 ### Variant Mechanism Classification
 
-Functional annotation of real-LD–surviving lead variants is reported descriptively. Under real-LD, [EXTRACT: proportion of signals classified as regulatory vs coding vs mixed using `results/coloc_susie/` lead variants × CADD / GTEx / PolyPhen / SIFT]. The original identity-LD–sourced 91% regulatory / 8% coding / 1% mixed distribution is recomputed; if the distribution changes, the descriptive interpretation is updated.
+Functional annotation of real-LD–surviving lead variants is reported descriptively. Under real-LD, **no real-LD–surviving lead variants at the manuscript's PP.H4 ≥ 0.5 threshold** (0 of 28 attempted Stage 2 trait-pair `coloc.susie` rows have non-empty PP.H4 columns; cf. Table 1 disclosure at L166 + L272 and `results/track_a_aggregations/table1_surviving_rows.tsv`). The variant-mechanism classification (regulatory vs coding vs mixed) is therefore non-computable under real-LD at this Stage 2 freeze. The original identity-LD–sourced 91% regulatory / 8% coding / 1% mixed distribution is preserved as a descriptive identity-LD reference observation in §Discussion §Identity-LD Inflation but is not propagated into a real-LD–surviving comparison here; building a CADD / GTEx / PolyPhen / SIFT join aggregator against an empty input set is deferred to future Track B work where genome-wide real-LD signals are expected to populate the surviving-variant set. The descriptive identity-LD–sourced top-coding-variant list (MC4R, PCSK9, SLC39A8, SH2B3 R262W) is retained in the next paragraph as identity-LD provenance only, not as real-LD endorsement.
 
 Top coding variants at real-LD–surviving signals include MC4R (CADD 28.0, V103I/I251L), PCSK9 (CADD 27.0, loss-of-function), SLC39A8 (CADD 25.0, A391T), and SH2B3 (CADD 21.0, R262W) — the last of which is interesting given the SH2B3 colocalization collapse under real-LD (the coding variant is annotated, but the cross-trait colocalization signal supporting its pleiotropic relevance is not). We do not draw therapeutic-strategy conclusions from this descriptive pattern.
 
 ### Candidate-Gene Annotation Scorecard
 
-Table 2 (revised) presents the annotation-aggregated candidate-gene scorecard at real-LD–surviving pleiotropic loci only. [EXTRACT: filtered scorecard output]. Columns: Gene, Priority Score, Trait Pairs (PP.H4 real-LD), Variant Mechanism, Drug Target (existing annotated; reference only), Drug/Class, Pathway.
+Table 2 (revised) presents the annotation-aggregated candidate-gene scorecard at real-LD–surviving pleiotropic loci only. **No real-LD–surviving pleiotropic loci at the manuscript's PP.H4 ≥ 0.5 threshold** (cf. Table 1 disclosure at L166 + L272). The annotation-aggregated candidate-gene scorecard at real-LD–surviving pleiotropic loci is therefore an empty set; Table 2 is presented as a disclosure-honest empty-row table (header preserved for reviewer reference; zero data rows). No new annotation pipeline (CADD / GTEx / PolyPhen / SIFT / OMIM / ChEMBL / DGIdb / gnomAD pLI / STRING) was built for this freeze because (i) `results/annotation/` does not exist on disk (verified at quick-260427-e8n W0 inventory) and (ii) the input gene set at PP.H4 ≥ 0.5 is empty regardless of pipeline build. Columns: Gene, Priority Score, Trait Pairs (PP.H4 real-LD), Variant Mechanism, Drug Target (existing annotated; reference only), Drug/Class, Pathway.
 
 We explicitly do **not** claim drug-target discovery. The scorecard is annotation aggregation, not predictive modeling; drug-target status is labeled as existing annotation, not as output of this study.
 
@@ -275,7 +275,7 @@ Work currently underway at the ASHES Laboratory is implementing whole-genome-seq
 
 | Gene | Priority Score | Trait Pairs (PP.H4 real-LD) | Variant Mechanism | Annotated Drug Target (reference only) | Drug/Class | Pathway |
 |---|---|---|---|---|---|---|
-| [EXTRACT: filtered scorecard output, real-LD-surviving only] | | | | | | |
+| _no real-LD–surviving pleiotropic locus at PP.H4 ≥ 0.5_ | — | — | — | — | — | — |
 
 ### Table 3 — Identity-LD vs Real-LD per-locus comparison (NEW)
 
