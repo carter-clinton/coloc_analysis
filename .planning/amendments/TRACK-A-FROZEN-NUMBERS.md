@@ -101,6 +101,8 @@
 | 8-hub fine-mapping-only (no trait-pair attempt) | **1 / 8** (APOE — `bmi.EUR.APOE_19q13` `non_converged` n_CS = 6 in `finemap_summary.tsv`) |
 | 8-hub absent from Stage 2 manifest entirely | **4 / 8** (KCNJ11/ABCC8 11p15, NEGR1 1p31.1, PPARG 3p25, SEC16B 1q25.2 — neither in `coloc_summary.tsv` nor in `finemap_summary.tsv`) |
 | 8-hub surviving at PP.H4 ≥ 0.5 | **0 / 8** |
+| Table 1 surviving-rows count (PP.H4 ≥ 0.5 filter on `coloc_summary.tsv`) | **0** (`table1_surviving_n = 0`; per `results/track_a_aggregations/table1_surviving_rows.tsv`; aggregator hard-fail assert intact as positive-result safety net) |
+| Table 1 threshold (locked, NOT lowered) | **0.5** (Tier B threshold; threshold-lowering to 0.3 to surface FTO_16q12 EUR Tier-C 0.3099 is OUT of scope per disclosure_decisions PH-06 chosen=a) |
 
 **Headline framing (manuscript-anchor language):** Stage 2 real-LD `coloc.susie` produced 28 attempted trait-pair rows across 10 unique trait-pair combinations, all returning empty PP.H4 / PP.H4.abf columns. The identity-LD `coloc.susie` comparator was not produced (the k2d 2026-04-25 re-fire covered fine-mapping only, not trait-pair `coloc.susie` — per AUDIT-REVIEW-V2-2026-04-26.md §HQ3 Eval 3.3 IN-PROGRESS). The yield-redistribution table is therefore disclosure-honest: **0 surviving / 0 lost / 0 rescued / 28 both-null** at the manuscript's PP.H4 ≥ 0.8 threshold; ΔPP.H4 statistics are non-computable. Of the eight published-literature pleiotropic hubs (KCNJ11/ABCC8, NEGR1, APOE, FTO, MC4R, SH2B3, PPARG, SEC16B), only 3 / 8 (FTO, MC4R, SH2B3) are present in the Stage 2 trait-pair `coloc.susie` manifest at all (with all PP.H4 empty under real-LD); 1 / 8 (APOE) has fine-mapping output but no trait-pair attempt; 4 / 8 are absent from the Stage 2 manifest entirely. This is the disclosure-honest joint reading at the manuscript's confidence threshold; threshold-lowering to 0.3 (which would surface the FTO_16q12 EUR Tier-C 0.3099 signal) is explicitly NOT performed in the placeholder-fill (would reframe the threshold without OSF amendment; manuscript already locked to "Tier B threshold = 0.5" throughout).
 
@@ -111,8 +113,10 @@
 - [results/track_a_aggregations/table3_admissible_pairs.tsv](../../results/track_a_aggregations/table3_admissible_pairs.tsv) (16 EUR rows for Table 3 body, W5b PH-10b)
 - [results/track_a_aggregations/per_trait_pair_distribution.tsv](../../results/track_a_aggregations/per_trait_pair_distribution.tsv) (10 unique trait-pairs; W2 PH-05)
 - [results/track_a_aggregations/eight_hub_fates.tsv](../../results/track_a_aggregations/eight_hub_fates.tsv) (8 hubs; W2 PH-07)
+- [results/track_a_aggregations/table1_surviving_rows.tsv](../../results/track_a_aggregations/table1_surviving_rows.tsv) (header + 0 data rows; W3 PH-06)
 - Aggregator: [src/R/aggregators/aggregate_table3_admissible_pairs.R](../../src/R/aggregators/aggregate_table3_admissible_pairs.R) (committed quick-260427-e8n W1)
 - Aggregator: [src/R/aggregators/aggregate_per_trait_pair_and_hubs.R](../../src/R/aggregators/aggregate_per_trait_pair_and_hubs.R) (committed quick-260427-e8n W2)
+- Aggregator: [src/R/aggregators/aggregate_table1_pleiotropic_loci.R](../../src/R/aggregators/aggregate_table1_pleiotropic_loci.R) (committed quick-260427-e8n W3)
 
 **Caveats** (mandatory disclosure for any downstream cite of these scalars):
 
