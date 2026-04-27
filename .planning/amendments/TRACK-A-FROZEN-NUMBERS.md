@@ -105,6 +105,10 @@
 | Table 1 threshold (locked, NOT lowered) | **0.5** (Tier B threshold; threshold-lowering to 0.3 to surface FTO_16q12 EUR Tier-C 0.3099 is OUT of scope per disclosure_decisions PH-06 chosen=a) |
 | Real-LD–surviving variant-mechanism classifiable signals (PH-08) | **0** (no input rows; classification non-computable; disclosure-honest fallback per disclosure_decisions PH-08 chosen=a) |
 | Real-LD–surviving candidate-gene scorecard rows (PH-09 / Table 2 body) | **0** (`results/annotation/` does not exist on disk per W0 inventory; aggregator build deferred to Track B per disclosure_decisions PH-09 chosen=a) |
+| Table 3 EUR admissible body rows emitted (PH-10b) | **16** (5 base regions × variable trait-pair counts; per `results/track_a_aggregations/table3_admissible_pairs.tsv` — APOL1 3 + CXADR_F2RL1 1 + FTO 10 + MC4R 1 + SH2B3 1) |
+| AFR regions in Stage 2 trait-pair manifest (PH-10a) | **4** (APOL1_22q12, FTO_16q12, MC4R_18q21, SH2B3_12q24) |
+| AFR trait-pair attempts (PH-10a) | **12** (3 per region × 4 regions; all PP.H4 empty) |
+| AFR Tier C rows in `tier_assignments.tsv` (PH-10a) | **4** (one per AFR region; all PP.H4 = 0) |
 
 **Headline framing (manuscript-anchor language):** Stage 2 real-LD `coloc.susie` produced 28 attempted trait-pair rows across 10 unique trait-pair combinations, all returning empty PP.H4 / PP.H4.abf columns. The identity-LD `coloc.susie` comparator was not produced (the k2d 2026-04-25 re-fire covered fine-mapping only, not trait-pair `coloc.susie` — per AUDIT-REVIEW-V2-2026-04-26.md §HQ3 Eval 3.3 IN-PROGRESS). The yield-redistribution table is therefore disclosure-honest: **0 surviving / 0 lost / 0 rescued / 28 both-null** at the manuscript's PP.H4 ≥ 0.8 threshold; ΔPP.H4 statistics are non-computable. Of the eight published-literature pleiotropic hubs (KCNJ11/ABCC8, NEGR1, APOE, FTO, MC4R, SH2B3, PPARG, SEC16B), only 3 / 8 (FTO, MC4R, SH2B3) are present in the Stage 2 trait-pair `coloc.susie` manifest at all (with all PP.H4 empty under real-LD); 1 / 8 (APOE) has fine-mapping output but no trait-pair attempt; 4 / 8 are absent from the Stage 2 manifest entirely. This is the disclosure-honest joint reading at the manuscript's confidence threshold; threshold-lowering to 0.3 (which would surface the FTO_16q12 EUR Tier-C 0.3099 signal) is explicitly NOT performed in the placeholder-fill (would reframe the threshold without OSF amendment; manuscript already locked to "Tier B threshold = 0.5" throughout).
 
@@ -116,6 +120,7 @@
 - [results/track_a_aggregations/per_trait_pair_distribution.tsv](../../results/track_a_aggregations/per_trait_pair_distribution.tsv) (10 unique trait-pairs; W2 PH-05)
 - [results/track_a_aggregations/eight_hub_fates.tsv](../../results/track_a_aggregations/eight_hub_fates.tsv) (8 hubs; W2 PH-07)
 - [results/track_a_aggregations/table1_surviving_rows.tsv](../../results/track_a_aggregations/table1_surviving_rows.tsv) (header + 0 data rows; W3 PH-06)
+- [results/track_a_aggregations/afr_distribution_summary.tsv](../../results/track_a_aggregations/afr_distribution_summary.tsv) (4 AFR regions; W5 PH-10a)
 - Aggregator: [src/R/aggregators/aggregate_table3_admissible_pairs.R](../../src/R/aggregators/aggregate_table3_admissible_pairs.R) (committed quick-260427-e8n W1)
 - Aggregator: [src/R/aggregators/aggregate_per_trait_pair_and_hubs.R](../../src/R/aggregators/aggregate_per_trait_pair_and_hubs.R) (committed quick-260427-e8n W2)
 - Aggregator: [src/R/aggregators/aggregate_table1_pleiotropic_loci.R](../../src/R/aggregators/aggregate_table1_pleiotropic_loci.R) (committed quick-260427-e8n W3)
