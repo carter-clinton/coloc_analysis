@@ -1,0 +1,146 @@
+{
+  "phase": "m2-ldsc-mtag-cpassoc-discovery",
+  "verifier": "verify_m2_artifacts.py",
+  "verifier_model": "python_only_per_d_m2_q4",
+  "verified_at": "2026-04-27T04:26:36.378470Z",
+  "overall": "WARN",
+  "n_pass": 8,
+  "n_warn": 1,
+  "n_fail": 0,
+  "dimensions": [
+    {
+      "dimension": "D1",
+      "name": "ldsc_matrix",
+      "verdict": "PASS",
+      "n_traits": 26,
+      "max_sym_violation": 0.0
+    },
+    {
+      "dimension": "D2",
+      "name": "mtag",
+      "verdict": "PASS",
+      "per_stratum": {
+        "EUR": {
+          "exists": true,
+          "rows": 8012176,
+          "has_max_FDR": true,
+          "has_mtag_pval": true,
+          "has_trait_key": true
+        },
+        "AFR": {
+          "exists": true,
+          "rows": 6801006,
+          "has_max_FDR": true,
+          "has_mtag_pval": true,
+          "has_trait_key": true
+        },
+        "TRANS": {
+          "exists": true,
+          "rows": 8081290,
+          "has_max_FDR": true,
+          "has_mtag_pval": true,
+          "has_trait_key": true
+        }
+      }
+    },
+    {
+      "dimension": "D3",
+      "name": "cpassoc",
+      "verdict": "PASS",
+      "per_stratum": {
+        "EUR": {
+          "exists": true,
+          "rows": 1001522,
+          "has_SHom_p": true,
+          "has_SHet_p": true,
+          "has_chr_pos_rsid": true
+        },
+        "AFR": {
+          "exists": true,
+          "rows": 1133501,
+          "has_SHom_p": true,
+          "has_SHet_p": true,
+          "has_chr_pos_rsid": true
+        },
+        "TRANS": {
+          "exists": true,
+          "rows": 1154470,
+          "has_SHom_p": true,
+          "has_SHet_p": true,
+          "has_chr_pos_rsid": true
+        }
+      }
+    },
+    {
+      "dimension": "D4",
+      "name": "regions",
+      "verdict": "PASS",
+      "regions": 161,
+      "has_provenance_json": true
+    },
+    {
+      "dimension": "D5",
+      "name": "novelty",
+      "verdict": "PASS",
+      "loci": 3017,
+      "n_high": 209,
+      "n_medium": 2808,
+      "per_stratum": {
+        "TRANS": 1653,
+        "EUR": 1252,
+        "AFR": 112
+      }
+    },
+    {
+      "dimension": "D6",
+      "name": "mtcojo",
+      "verdict": "WARN",
+      "per_stratum": {
+        "EUR": {
+          "exists": true,
+          "rows": 4,
+          "has_sensitivity_flag": true,
+          "n_pass": 0,
+          "n_warn": 0,
+          "n_fail": 4
+        },
+        "AFR": {
+          "exists": true,
+          "rows": 4,
+          "has_sensitivity_flag": true,
+          "n_pass": 0,
+          "n_warn": 0,
+          "n_fail": 4
+        },
+        "TRANS": {
+          "exists": true,
+          "rows": 4,
+          "has_sensitivity_flag": true,
+          "n_pass": 0,
+          "n_warn": 0,
+          "n_fail": 4
+        }
+      },
+      "reason": "all sensitivity_flag = FAIL (Wave 4 D4 deferred re-fire pending; M2-POST-M3-08)"
+    },
+    {
+      "dimension": "D7",
+      "name": "catalog_v_lock",
+      "verdict": "PASS",
+      "sha256_prefix": "652a974d32467482"
+    },
+    {
+      "dimension": "D8",
+      "name": "osf_prereg",
+      "verdict": "PASS",
+      "gate_release_landed": true,
+      "note": "OSF amendment posted at osf.io/az52u/files/k8w7n per DEC-2026-04-25-02; M2 hard gate released 2026-04-25"
+    },
+    {
+      "dimension": "D9",
+      "name": "snakemake_ci",
+      "verdict": "PASS",
+      "smoke_target_in_snakefile": true
+    }
+  ]
+}
