@@ -1,0 +1,11 @@
+trait_a	trait_b	n_attempted	n_with_valid_pp_h4	pp_h4_ge_0_5_count	pp_h4_ge_0_8_count	regions_attempted	survive_count	collapse_count
+asthma	bmi	1	0	0	0	FTO_16q12	0	1
+asthma	hypertension	1	0	0	0	FTO_16q12	0	1
+asthma	stroke	7	0	0	0	APOL1_22q12;FTO_16q12;MC4R_18q21;SH2B3_12q24	0	7
+asthma	t2d	7	0	0	0	APOL1_22q12;FTO_16q12;MC4R_18q21;SH2B3_12q24	0	7
+bmi	hypertension	1	0	0	0	FTO_16q12	0	1
+bmi	stroke	2	0	0	0	CXADR_F2RL1_6p21;FTO_16q12	0	2
+bmi	t2d	1	0	0	0	FTO_16q12	0	1
+hypertension	stroke	1	0	0	0	FTO_16q12	0	1
+hypertension	t2d	1	0	0	0	FTO_16q12	0	1
+stroke	t2d	6	0	0	0	APOL1_22q12;FTO_16q12;MC4R_18q21;SH2B3_12q24	0	6

@@ -1,0 +1,9 @@
+hub_name	region_id	manifest_present	fine_mapping_present	n_trait_pair_rows_attempted	n_trait_pair_rows_with_valid_pp_h4	fate
+KCNJ11/ABCC8	NA	FALSE	FALSE	0	0	absent_from_stage2_manifest
+NEGR1	NA	FALSE	FALSE	0	0	absent_from_stage2_manifest
+APOE	APOE_19q13	FALSE	TRUE	0	0	fine_mapping_only_no_trait_pair
+FTO	FTO_16q12	TRUE	TRUE	13	0	trait_pair_attempted_all_empty_pp
+MC4R	MC4R_18q21	TRUE	TRUE	4	0	trait_pair_attempted_all_empty_pp
+SH2B3	SH2B3_12q24	TRUE	TRUE	4	0	trait_pair_attempted_all_empty_pp
+PPARG	NA	FALSE	FALSE	0	0	absent_from_stage2_manifest
+SEC16B	NA	FALSE	FALSE	0	0	absent_from_stage2_manifest
