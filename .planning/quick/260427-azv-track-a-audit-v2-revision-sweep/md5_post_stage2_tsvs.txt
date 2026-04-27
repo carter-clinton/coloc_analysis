@@ -1,0 +1,3 @@
+8c3e04a202a919d94bd34a3c1d5146a2  results/fine_mapping/finemap_summary.tsv
+5fa3c4004970c5da711d05947cb1f7d2  results/multitrait/coloc_summary.tsv
+17ff46dbbfe78dd537d6b9bff7f3ae67  results/qtl_coloc/tier_assignments.tsv
