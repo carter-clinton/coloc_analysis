@@ -627,3 +627,18 @@ M: 11 (parallel from Phase 9)
 | M5 variant→gene prioritization + novelty | not planned | gated on M4 Tier A | 2027-02 |
 | M6 manuscript + replication + submission | not planned | gated on M5 | 2027-04 / 2027-05 |
 | Track-A-finalization | Route A in flight | in flight (independent of M0–M6) | 2026-05 / 2026-06 |
+
+---
+
+## Track A Revisions (independent of M0–M6 milestone sequence)
+
+### track-a-audit-v2-revision-sweep
+
+**Slug**: track-a-audit-v2-revision-sweep
+**Goal**: Implement all 14 residual findings from `.planning/amendments/AUDIT-REVIEW-V2-2026-04-26.md` autonomously. Deliver bioRxiv-submission-ready manuscript.
+**Plans**: 1 (single-wave; see `.planning/phases/track-a-audit-v2-revision-sweep/track-a-audit-v2-PLAN.md`)
+**Requirements**: REQ-TRACK-A-AUDIT-V2-CLOSURE
+**Compute**: no LSF; all data on disk (`results/fine_mapping/susie/*.json` + `results_identity_ld/fine_mapping/susie/*.json`)
+**Status**: planned 2026-04-27; ready for `/gsd-execute-phase track-a-audit-v2-revision-sweep`
+**Out-of-scope**: HQ#2(i) SH2B3 L=20 re-fit, HQ#2(iii) canonical-pair coloc.susie, Eval 2(b) L-saturation re-fire (all DEFERRED-COMPUTE per AUDIT-REVIEW-V2 closure-status conventions); OSF amendment refresh (post-submission v2 follow-on); [EXTRACT: …] table placeholders (separate slug, not gating).
+**Disjoint from**: Terminal A's M2-04 mtcojo + M2-05 closeout (file sets fully disjoint per .planning/phases/track-a-audit-v2-revision-sweep/track-a-audit-v2-PLAN.md frontmatter `files_modified`). STATE.md / DECISIONS.md row appends serialize via lockfile.
