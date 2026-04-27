@@ -1,0 +1,1 @@
+8c3e04a202a919d94bd34a3c1d5146a2  results/fine_mapping/finemap_summary.tsv
