@@ -747,3 +747,25 @@ without reorchestrating Waves 1–4.
 - The OSF deviation log retains its own pointer (already landed via Eval 3.2(c) commit `06b817b`); future OSF deviation entries continue to log there, with cross-references from Methods L90.
 - If a future closure flips the comparator denominator again (e.g., HQ#2(i) L = 20 re-fire lands and the matched-coverage population changes), update the Discussion §Audit-driven Comparator Tightening subsection in place rather than re-introducing Methods meta-commentary.
 
+---
+
+## 2026-04-28 — DEC-2026-04-28-01: M3 Sci Data data-descriptor venue commitment (quick-260428-ppz)
+
+**Decision:** The M3 deliverable — ancestry-matched LD reference panels for AFR (and parallel EUR sensitivity) computed from All of Us controlled-tier whole-genome sequencing — will be submitted as a data descriptor to ***Scientific Data*** (Springer Nature). This commitment supersedes the previously-flagged Sci Data candidacy (raised during the quick-260426-aow AoU workspace registration build, 2026-04-26) and locks the venue.
+
+**Alternatives considered:**
+- (a) ***Scientific Data*** (adopted) — canonical venue for genomic resource data descriptors; pairs natively with a Zenodo deposit; satisfies AoU publication policy egress framing for aggregate-only LD matrices; complementary (not competitive) with the Track B *Nature Genetics* discovery paper.
+- (b) *Genome Research* methods note — rejected: Genome Research's methods format is geared toward novel methodology, not resource deposits; the M3 contribution is primarily a resource (AoU-derived AFR LD panels), not a new method.
+- (c) *Bioinformatics* applications note — rejected: applications-note format is short-form and does not accommodate the per-region resource table, validation memo, and reproducibility code release that a Sci Data data descriptor naturally houses.
+- (d) Zenodo-only deposit (no peer review) — rejected: a peer-reviewed data descriptor is the citable artifact other groups will use to find and trust the panel; Zenodo alone provides DOI but not editorial review.
+- (e) Defer venue lock until Track B M6 — rejected: locking now lets the AoU P&P registration (Block 2 in `AOU-PP-REGISTRATION.md`) name a concrete venue, which is the AoU portal's declared expectation. Re-targeting later is allowed by AoU policy via P&P record update; locking is not irreversible.
+
+**Why:** The M3 panel build is the single largest novel resource produced by this project, and AoU explicitly anticipates resource-deposit publications from controlled-tier WGS users. *Scientific Data*'s editorial scope, peer-review model (focused on completeness and reusability of the data, not novelty of conclusions), and tight Zenodo / FAIR-data alignment match the M3 deliverable directly. Carrying the commitment in DECISIONS.md (rather than only in the Amendment) makes it discoverable to all future GSD orchestration; carrying it in the AoU P&P registration (Block 2) preserves the AoU portal record. Carter accepted this commitment in conversation 2026-04-28 in the same turn as the AoU portal-bundle direction.
+
+**How to apply:**
+- Track B *Nature Genetics* manuscript Methods + Data Availability sections cite the M3 *Scientific Data* deposit as the LD reference source. Cross-link is locked in `AOU-PP-REGISTRATION.md` §1.15 / §2.15.
+- AOU-WORKBENCH-REGISTRATION.md §11 already names *Scientific Data* as the M3 venue (committed at registration-build time, now locked here).
+- Future communications (preprints, abstracts, talks) frame M3 as a "data descriptor" with *Scientific Data* as the named target venue.
+- M3 phase artifacts (planning + execution) should structure the per-region resource table, the validation memo (per AOU-LD-PIPELINE.md §9 Checks 1–4), and the Zenodo-deposit checksum table to match the Sci Data data-descriptor template at submission time.
+- If Sci Data declines the manuscript at submission, fallback considered (a → c → b in Alternatives ordering, with d as the floor-case Zenodo-only deposit). Re-targeting requires a P&P record update per AOU-LD-PIPELINE.md §12 R6.
+
