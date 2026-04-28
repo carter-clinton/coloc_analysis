@@ -1,0 +1,12 @@
+region_safe	region_id	source	notes
+9p21_CDKN2A	m2_region_00159	track_a_eur	chr9 CDKN2A 9p21; mapped by chr+coord overlap to M2 region_00159
+APOE_19q13	m2_region_00083	track_a_eur	chr19 APOE 19q13; confirmed Q11 overlap design (Wave 0 dev region)
+APOL1_22q12	m2_region_00161	track_a_eur	chr22 APOL1 22q12; mapped by chr+coord overlap
+BMI_5q13_3	m2_region_00104	track_a_eur	chr5 BMI 5q13.3; mapped by chr+coord overlap
+CXADR_F2RL1_6p21	m2_region_00143	track_a_eur	chr6 CXADR F2RL1 6p21; HLA classical neighborhood; same M2 region as HLA_6p21
+FTO_16q12	m2_region_00067	track_a_eur	chr16 FTO 16q12; confirmed Q11 overlap design (Wave 0 dev region)
+HLA_6p21	m2_region_00143	track_a_eur	chr6 HLA 6p21 classical; same wide M2 region as CXADR_F2RL1_6p21
+MC4R_18q21	m2_region_00079	track_a_eur	chr18 MC4R 18q21; mapped by chr+coord overlap to M2 region_00079
+PYHIN1_1q23	m2_region_00007	track_a_eur	chr1 PYHIN1 1q23 amylase; mapped to M2 region_00007 (1q21-23 wide span)
+SH2B3_12q24	m2_region_00040	track_a_eur	chr12 SH2B3 12q24; confirmed Q11 overlap design (Wave 0 dev region)
+SLC2A9_urate	m2_region_00094	track_a_eur	chr4 SLC2A9 urate region; mapped by chr+coord overlap to M2 region_00094
