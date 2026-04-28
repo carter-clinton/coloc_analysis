@@ -12,6 +12,15 @@ Authoritative source for Track B scope expansion:
 AoU LD pipeline spec:
 [`.planning/amendments/AOU-LD-PIPELINE.md`](amendments/AOU-LD-PIPELINE.md).
 
+Reconciled to Amendment §12 spec on 2026-04-28 under quick task
+`260428-pj4` (zero substantive drift from the 2026-04-23 post-pivot
+rewrite — current REQ inventory matches §12 row "REQUIREMENTS.md"
+verbatim: 8 preserved pre-pivot REQs + 17 new Track B REQs covering
+genome-wide region generation, AoU AFR LD mandate, two-stage coloc gate,
+HyPrColoc 3+ traits, PolyFun priors, L2G + Borzoi, OSF amendment timing
+constraint, and the five novelty classes from Amendment §7.1
+with Class 5 explicitly scoped as supplementary per §7.3).
+
 **Legend:**
 
 - **[B]** = Track B requirement (Amendment §3 milestone)
