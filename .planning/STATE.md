@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: "m2_closed -> m3_planning"
-stopped_at: "M2 closed (human-verify 2026-04-27); awaiting /gsd-plan-phase m3"
-last_updated: "2026-04-27T08:30:00.000Z"
-last_activity: 2026-04-27
+status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
+stopped_at: Phase m3 context gathered (9 D-M3-XX decisions; CONTEXT + DISCUSSION-LOG committed 349c74a; ready for /gsd-plan-phase m3-aou-afr-ld-panel-build)
+last_updated: "2026-04-28T02:40:10.860Z"
+last_activity: "2026-04-27 - Completed quick task 260427-urj: land Track A L3 banner venue-lock for Genome Medicine"
 progress:
   total_phases: 12
-  completed_phases: 7
-  total_plans: 31
-  completed_plans: 31
+  completed_phases: 6
+  total_plans: 30
+  completed_plans: 30
   percent: 100
 ---
 
@@ -356,9 +356,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T08:30:00.000Z
-Stopped at: M2 closed via human-verify gate (Carter sign-off 2026-04-27); awaiting `/gsd-plan-phase m3-aou-afr-ld-panel-build`
-Resume file: None
+Last session: 2026-04-28T02:40:10.802Z
+Stopped at: Phase m3 context gathered (9 D-M3-XX decisions; CONTEXT + DISCUSSION-LOG committed 349c74a; ready for /gsd-plan-phase m3-aou-afr-ld-panel-build)
+Resume file: .planning/phases/m3-aou-afr-ld-panel-build/m3-CONTEXT.md
 
 **2026-04-27 — M2 phase closeout signed off by Carter (human-verify gate cleared).** Verifier `m2-VERIFY.json` overall=WARN (8 PASS, 1 WARN, 0 FAIL); single WARN at D6 (mtCOJO sensitivity_flag=FAIL across all 12 rows) is the documented Wave-4-D4 deferral pending HM3-intersected COJO inputs + LSF batch re-fire (queued as M2-POST-M3-08, ~6.5 hr long-queue). Per Carter's PASS-or-WARN proviso, M2 closes. Wave 5 commits: `9625bc2` (call_class1_novelty.py + m2_novelty.smk + production fire — 3,017 Class 1 loci with 209 high + 2,808 medium per OSF amendment §7.1) → `3d5c5c8` (M3 supersede queue with 8 obligations + m2-deferred-items.md + REQ-SNAKEMAKE-CI toy 3-locus M2 smoke) → `746848b` (verify_m2_artifacts.py Python-only verifier per D-M2-Q4; emits Dimensions D1-D9 PASS/WARN/FAIL JSON) → `2c65698` (sha256_manifest_m2_frozen.tsv freezing 23 deliverable artifacts for OSF M5 follow-up upload per DEC-2026-04-25-02) → `1e4b464` (gitignore tests/toy_3locus/m2_smoke_out/ — REQ-SNAKEMAKE-CI smoke regenerable). Closeout commits: `m2-PHASE-CLOSEOUT.md` (10 sections per M1 template; verifier verdict + per-stratum K + lead counts + novelty + region union + mtCOJO sensitivity + Waves-0-5 deviations log = 17 auto-fixed + M3 hand-off + SHA-256 manifest + OSF M5 follow-up instructions) + this SUMMARY (`m2-05-class1-novelty-and-closeout-SUMMARY.md`) + STATE.md frontmatter refresh. **Two load-bearing LSF re-fires immediately queued** (do NOT block M2→M3): **M2-POST-M3-07** (Wave-2-D6 MTAG `--fdr` re-fire, ~24 hr/stratum × 3 = ~72 hr long-queue, replaces placeholder max_FDR=0.0 with actual Turley scalars) + **M2-POST-M3-08** (Wave-4-D4 mtCOJO production sensitivity for 13 eligible targets, ~6.5 hr long-queue on HM3-intersected COJO inputs). **M5 OSF supplementary upload** is a manual web-UI action deferred per DEC-2026-04-25-02 — visit osf.io/az52u, attach `sha256_manifest_m2_frozen.tsv` + `bivariate_intercept_matrix_m2_2026-04.tsv` to existing M2 amendment record posted 2026-04-25. **Next:** `/clear` then `/gsd-plan-phase m3-aou-afr-ld-panel-build` (consumes M2 hand-off artifacts: 161-region union BED + 13 eligible mtCOJO targets + 3,017-locus Class 1 novelty deliverable + 8 M2-POST-M3-* obligations; lands AoU AFR LD panel build per AOU-LD-PIPELINE.md and AoU Workbench registration in flight per quick-260426-aow).
 
