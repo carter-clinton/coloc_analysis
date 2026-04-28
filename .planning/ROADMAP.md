@@ -170,8 +170,17 @@ REQ-PUBLIC-DATA-ONLY
   - `.planning/amendments/aou-egress-audit-log.md`
 **Gating condition for M4**: Validation memo approved by Carter; per-region
 LD files on GPFS; EUR parity panel available.
-**Status**: not planned; gated on M2 region list; partially parallel with M2
-once prerequisites P1–P7 land.
+**Plans**: 6 plans (m3-00 through m3-05; 6 waves)
+
+**Plan list**:
+- [ ] m3-00-W0-foundations-PLAN.md — Wave 0: Region manifest reformatter (322 rows; per-region radius per RESEARCH Q2 structural finding) + dev-subset selector (D-M3-04 + Q11 overlap design) + ld_panel: resolver helper + config block (Q7) + envs/m3-aou-dev.yml + envs/m3-r-ld.yml + Hail driver with corrected ordering (split_multi_hts BEFORE variant_qc) + synthetic MT fixture (Q6) + 4 pytest scaffolds + egress audit log seed (Q12) + ROADMAP wording fix (D-M3-01) + .gitignore + Carter ruling on Open Issue O1 logged as D-M3-09
+- [ ] m3-01-W1-aou-cohort-and-hard-gates-PLAN.md — Wave 1: Carter 6-gate AoU portal action stack (P1 workspace + P2 DUS + P3 RPS + P4 billing + P6 P&P draft + R1 egress classification ruling — HARD GATE) + AUX path live verification + AOU-1 cohort definition notebook emitting 3 checkpointed MTs (mt_afr_qc.mt + mt_afr_pca_selfid.mt + mt_eur_qc.mt per D-M3-07 + D-M3-01)
+- [ ] m3-02-W2-dev-fire-and-validation-PLAN.md — Wave 2: AOU-2 dev fire on 10-region subset + 13 .npz egress + AOU-4 4-check validation harness (Checks 1+2+3+4 per RESEARCH Validation Architecture) + 5 pytest scaffolds + Carter signoff on m3-VALIDATION-MEMO.md + touch m3_dev_complete.flag (D-M3-03 dev to production gate)
+- [ ] m3-03-W3-ncsu-ingest-and-resolver-PLAN.md — Wave 3: src/scripts/ld_npz_to_rds.R (chr-prefix fix + GRCh38 to GRCh37 variant ID liftover per DEC-2026-04-24-01 + provenance JSON) + src/python/bm_to_npz.py (Path A.3 helper) + m3_ingest_aou_ld.smk + m3_convert_npz_rds.smk + finemap.smk resolver wiring (RESEARCH Q7) + converter pytest
+- [ ] m3-04-W4-production-and-egress-PLAN.md — Wave 4: validate_bundle_sizes.py (50 GB cap per RESEARCH Q4) + m3_validation.smk (production-scale 30-region Check 4 sample gated on m3_dev_complete.flag) + AOU-2 production fire 322 cells (160-260 cluster-hours) + 44 per-chromosome egress requests + 322 .rds files land + 44 audit-log rows + 44 SHA-256 sub-manifests
+- [ ] m3-05-W5-closeout-and-osf-PLAN.md — Wave 5: validation memo Wave 4 production addendum + PDF generation + 322-row monolith SHA-256 freeze + audit log close-out summary + toy 3-locus AFR identity-placeholder fixtures (REQ-SNAKEMAKE-CI) + m2_post_m3_rerun_queue status update (no closures per D-M3-05) + ROADMAP M2-supplementary phase entry (slug m2-supp-aou-afr-rerun) + STATE.md update + m3-PHASE-CLOSEOUT.md + OSF posting of validation memo PDF to osf.io/az52u (D-M3-08)
+
+**Status**: planning complete 2026-04-28 (6 plans, 6 waves; nyquist_compliant=true on all plans; threat_models referenced; 5/5 REQ-IDs covered; 9/9 D-M3-XX decisions referenced); ready for `/gsd-execute-phase m3-aou-afr-ld-panel-build`. Wave 0 (NCSU-local foundations) executes autonomously; Waves 1+ block on Carter 6-gate AoU portal action stack.
 
 ### M4: Scalable coloc + fine-mapping
 **Slug**: m4-scalable-coloc-finemapping
