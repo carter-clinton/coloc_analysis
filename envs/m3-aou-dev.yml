@@ -1,0 +1,35 @@
+# envs/m3-aou-dev.yml -- M3 AoU LD-panel local dev mirror (D-M3-06; AOU-LD-PIPELINE.md §2 P5)
+#
+# Purpose: develop and unit-test src/python/aou_ld_panel.py against the
+# synthetic MatrixTable fixture (tests/m3/fixtures/synthetic_mt/) BEFORE
+# any AoU Workbench / Dataproc spend. Hail v0.2.130 chosen to match the
+# AoU Researcher Workbench standard image (verified via AoUPRS GitHub
+# library 2026-04-27); python=3.11 mandated by CLAUDE.md (Snakemake 7.32.4
+# Python pin) and by Hail's own 3.9-3.11 supported range.
+#
+# Channels mirror envs/ld_build.yml convention. Pip block carries Hail
+# (not on conda-forge) and pyliftover (used by build_ld_region_manifest.py
+# at the same NCSU side; reuses this env for code-path uniformity).
+#
+# Provenance: RESEARCH.md Hail v0.2.x API verification + Q9 env-var
+# verification (WORKSPACE_BUCKET, GOOGLE_PROJECT, WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH).
+
+name: m3-aou-dev
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - openjdk=11           # Hail/PySpark requires JVM 11
+  - pip
+  - numpy>=1.26
+  - scipy>=1.11
+  - pandas>=2.2
+  - pyspark=3.5.*        # Hail 0.2.130 pairs with Spark 3.5
+  - google-cloud-storage
+  - pyarrow
+  - pyyaml
+  - pytest=8.*
+  - pip:
+      - hail==0.2.130
+      - pyliftover
