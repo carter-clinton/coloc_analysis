@@ -22,6 +22,12 @@ import pytest
 # Project root (tests/m3/conftest.py -> tests/m3 -> tests -> ROOT)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
+# Make src/python importable for `from ld_panel import ...` and friends
+# (matches existing tests/m1/conftest.py pattern).
+_SRC_PYTHON = PROJECT_ROOT / "src" / "python"
+if str(_SRC_PYTHON) not in sys.path:
+    sys.path.insert(0, str(_SRC_PYTHON))
+
 
 @pytest.fixture(scope="session")
 def project_root() -> Path:

@@ -185,6 +185,35 @@ finemap:
 
 enable_ld_pipeline: true
 
+# M3 ld_panel: per-ancestry resolver block (RESEARCH Q7; D-M3-05).
+# Consumed by src/python/ld_panel.py::resolve_ld_path() and wired into
+# src/snakemake/rules/finemap.smk during Wave 3. Each chain entry is an
+# ordered fallback list; resolver returns the first path that exists.
+# {region_id} and {region_safe} placeholders are both substituted to the
+# resolver's region argument (config/region_id_mapping.tsv translates
+# between the two naming conventions when needed).
+ld_panel:
+  EUR:
+    - {source: "EUR_aou",   path: "data/processed/ld_reference/EUR_aou/{region_id}.rds"}
+    - {source: "EUR_ukbb",  path: "data/processed/ld_reference/EUR_ukbb_ld/{region_safe}.rds"}
+    - {source: "EUR_1kg",   path: "data/processed/ld_reference/EUR/{region_safe}.rds"}
+  AFR:
+    - {source: "AFR_aou",   path: "data/processed/ld_reference/AFR_aou/{region_id}.rds"}
+    - {source: "AFR_hgdp",  path: "data/processed/ld_reference/AFR_hgdp_1kg/{region_safe}.rds"}
+    - {source: "AFR_1kg",   path: "data/processed/ld_reference/AFR/{region_safe}.rds"}
+  TRANS:
+    - {source: "TRANS_aou_eur", path: "data/processed/ld_reference/EUR_aou/{region_id}.rds"}
+    - {source: "EUR_1kg",       path: "data/processed/ld_reference/EUR/{region_safe}.rds"}
+  # Strict mode: if true, any missing AoU-source entry raises FileNotFoundError
+  # rather than walking the fallback chain. Used at manuscript-freeze time.
+  strict_aou_only: false
+  # Optional pin override: pin a specific source for one ancestry to force the
+  # resolver to that entry only (e.g., "EUR_1kg" to keep Track A real-LD comparator).
+  pin:
+    EUR: null
+    AFR: null
+    TRANS: null
+
 multitrait:
   methods: [mashr, susie]
   window_kb: 500
