@@ -1,0 +1,34 @@
+# envs/m3-r-ld.yml -- M3 .npz -> .rds R env (Wave 3 src/scripts/ld_npz_to_rds.R)
+#
+# Purpose: back the NCSU-side R script that converts AoU-exported .npz LD
+# matrices into .rds files consumed by SuSiE-RSS in M4. Uses reticulate to
+# load numpy archives (matches existing envs/r_coloc.yml + AOU-LD-PIPELINE.md
+# §8.2 pattern). pyliftover is included for any Wave 3 variant-ID liftover
+# the R conversion script may need (DEC-2026-04-24-01: AoU emits GRCh38;
+# project canonical analytic plane is GRCh37).
+#
+# Conventions:
+# - python=3.11 pin (CLAUDE.md Snakemake-compat) on the reticulate side.
+# - r-base=4.4 pin matches Track A's existing R 4.4 substrate.
+# - testthat for the .npz <-> .rds round-trip + symmetry recovery + dimnames
+#   preservation test in Wave 3 (test_ld_npz_to_rds.R, not landed at Wave 0).
+#
+# Channels: conda-forge / bioconda only (matches envs/r_coloc.yml convention;
+# avoids r-channel which has a separate package-naming idiom).
+
+name: m3-r-ld
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - r-base=4.4.*
+  - r-reticulate
+  - r-matrix
+  - r-testthat
+  - r-jsonlite
+  - r-data.table
+  - numpy>=1.26
+  - pip
+  - pip:
+      - pyliftover
