@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Phase m3 context gathered (9 D-M3-XX decisions; CONTEXT + DISCUSSION-LOG committed 349c74a; ready for /gsd-plan-phase m3-aou-afr-ld-panel-build)
-last_updated: "2026-04-28T03:05:00.000Z"
-last_activity: "2026-04-28 - Completed quick task 260428-ppz: AoU P&P registration paste-ready Markdown + RPS+P&P portal zip + DEC-2026-04-28-01 Sci Data venue commitment"
+stopped_at: Phase m3 plans created (6 plans, 6 waves; m3-00 Wave 0 in progress); ready to fire /gsd-execute-phase m3-aou-afr-ld-panel-build
+last_updated: "2026-04-28T22:05:41.248Z"
+last_activity: 2026-04-28 — Phase m3 plan-phase complete (6 plan files committed under .planning/phases/m3-aou-afr-ld-panel-build/); Wave 0 foundations executing.
 progress:
   total_phases: 12
   completed_phases: 6
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** Phase m2-ldsc-mtag-cpassoc — discovery (Wave 0 m2-00 COMPLETE 2026-04-26; Wave 1 m2-01-ldsc-matrix-refire cleared to start)
+**Current focus:** Phase m3-aou-afr-ld-panel-build — AoU AFR LD panel build
 
 **k2d identity-LD re-fire complete (2026-04-25):** LSF fire (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file gone; 95 JSONs + `finemap_manifest.tsv` landed at `results_identity_ld/fine_mapping/`. Empirically unblocks Track A **Figure 1A** (identity-vs-real PP.H4 scatter) and **Figure 3** (survival forest) — the two open figure slots in the 5-figure roster (Figs 1B + 2 + 5 already DONE per p1b / mqo / k2g; Fig 4 demoted to S5 per k2f). **Both halves of the post-k2d deferral are now resolved:** Fig 1A + Fig 3 builders landed via quick task `260425-1vy` (commits `105484d`, `f862f55`); `results_identity_ld/` tracking decision is locked at DEC-2026-04-25-01 (don't commit; document via .gitignore + canonical CS-yield summary at `.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv`).
 
 ## Current Position
 
-Phase: m2-ldsc-mtag-cpassoc (discovery) — EXECUTING
-Plan: 6 of 6 (m2-00 Wave 0 COMPLETE 2026-04-26 — nyquist_compliant: true; CR-checker WR-5 four-item attestation cleared; commits 740d8fc..99c7602 + SUMMARY 3056622)
+Phase: m3-aou-afr-ld-panel-build (AoU AFR LD panel build) — EXECUTING
+Plan: 1 of 6
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -64,7 +64,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-04-28 - Completed quick task 260427-vbq: assemble Track A Genome Medicine submission bundle (4.19 MB zip + deterministic builder)
+Last activity: 2026-04-28
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
