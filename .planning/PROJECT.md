@@ -139,9 +139,12 @@ data, Track B operates at genome-wide scale with ancestry-matched real LD.
 under `.planning/amendments/` (Amendment, Track A pivot, frozen numbers,
 SUMSTATS upgrade TSV + MD, AoU LD pipeline, sumstats manual-fetch manifest).
 Track A first-pass manuscript draft committed 2026-04-23 (Stage 2 values
-locked in TRACK-A-FROZEN-NUMBERS.md). The PROJECT.md / ROADMAP.md /
-REQUIREMENTS.md / DECISIONS.md rewrites under this quick-task plan are the
-remaining M0 closeout documentation items.
+locked in TRACK-A-FROZEN-NUMBERS.md). PROJECT.md + REQUIREMENTS.md
+reconciled to Amendment §12 spec on 2026-04-28 under quick task
+`260428-pj4` (zero substantive drift from the 2026-04-23 post-pivot
+rewrite — current files already satisfy §12); ROADMAP.md / DECISIONS.md
+M0 closeout rewrites are the remaining documentation items, owned by
+Terminal A in parallel.
 
 **Pre-pivot spine (Phases 0 / 1 / 2 / 5 / 9) — complete.** Artifacts are
 reusable per Amendment §8: Phase 1 SuSiE-RSS across 205 windows; Phase 2
@@ -182,7 +185,7 @@ amendment posts at osf.io/pvb5j. Carter resume queue (DIAMANTE cookies,
 GBMI portal, Loh D-01, Klarin D-03, MAGIC EUR re-fetch) is independent
 of M2 kickoff.
 
-Last updated: 2026-04-25.
+Last updated: 2026-04-28.
 
 ## Open human-action items
 
