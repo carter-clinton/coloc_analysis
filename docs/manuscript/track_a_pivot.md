@@ -1,6 +1,6 @@
 # Track A — First-pass pivot draft
 
-> **Status:** First-pass application of `.planning/amendments/TRACK-A-PIVOT.md` to `docs/manuscript/track_a_source.md`. Narrative is complete; numeric placeholders marked `[EXTRACT: …]` must be filled from `results/` before preprint submission.
+> **Status:** Research article ready for *Genome Medicine* submission (original research article format; 5-figure main roster + Figs S1–S7 supplementary; supplementary data at `results/track_a_aggregations/`). Numeric placeholders filled from `results/` per quick-260427-e8n; remaining `[EXTRACT: …]` at L355 (References) is venue-format-deferred. bioRxiv preprint Day 1 regardless.
 >
 > **Pivot direction (2026-04-22):** FROM "identified 28 pleiotropic signals" TO "quantify which published cross-trait pleiotropy claims survive real-LD re-analysis".
 >
