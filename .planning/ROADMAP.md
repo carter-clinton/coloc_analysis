@@ -150,22 +150,25 @@ per-region LD matrices per ancestry from controlled-tier WGS (~60–95k
 AFR post-QC) per `AOU-LD-PIPELINE.md`. Export summary-only (LD matrix +
 allele-frequency metadata) per AoU data-egress policy; verify AoU
 classification of aggregate LD matrices as summary statistics (AoU R1
-risk). Parallel: rebuild EUR LD from 1000G + UKB for parity (Amendment
-§3 M3, §5).
+risk). Parallel: build EUR LD parity panel inside the AoU Workbench
+against ancestry_pred=='eur' (D-M3-01); 1000G EUR Phase 3 plinkfiles
+serve as the Check 2 entry-wise correlation comparator only. UKB EUR
+augmentation deferred per D-M3-01.1 — UKB DUA timing not on the M3 to
+M4 critical path.
 **Requirements**: REQ-AOU-LD-EGRESS, REQ-AOU-LD-VALIDATION,
-REQ-PUBLIC-DATA-ONLY
+REQ-PUBLIC-DATA-ONLY, REQ-SNAKEMAKE-CI, REQ-PATH-PARAMETERIZATION
 **Dependencies**: Region list from M2; AoU Workbench access
 (controlled-tier confirmed for Carter); prerequisites P1–P7 in
 `AOU-LD-PIPELINE.md` §2
 **Success Criteria**:
   1. Per-region AoU AFR LD `.rds` files on GPFS under `data/processed/ld_reference/AFR_aou/`
-  2. Per-region EUR LD parity panel rebuilt from 1000G + UKB
+  2. Per-region EUR LD parity panel built inside AoU against ancestry_pred=='eur' (D-M3-01)
   3. 10-region validation protocol passed per AOU-LD-PIPELINE.md §9 (4 checks)
   4. AoU data-egress audit log committed
   5. AoU P&P draft registration filed before scale-up compute
 **Deliverable Artifacts**:
   - `data/processed/ld_reference/AFR_aou/*.rds` (per-region AFR LD)
-  - `data/processed/ld_reference/EUR_1kg_ukb/*.rds` (per-region EUR parity)
+  - `data/processed/ld_reference/EUR_aou/*.rds` (per-region EUR parity panel built inside AoU)
   - `.planning/phases/m3-aou-afr-ld-panel-build/validation/` (4-check memo)
   - `.planning/amendments/aou-egress-audit-log.md`
 **Gating condition for M4**: Validation memo approved by Carter; per-region
@@ -180,7 +183,7 @@ LD files on GPFS; EUR parity panel available.
 - [ ] m3-04-W4-production-and-egress-PLAN.md — Wave 4: validate_bundle_sizes.py (50 GB cap per RESEARCH Q4) + m3_validation.smk (production-scale 30-region Check 4 sample gated on m3_dev_complete.flag) + AOU-2 production fire 322 cells (160-260 cluster-hours) + 44 per-chromosome egress requests + 322 .rds files land + 44 audit-log rows + 44 SHA-256 sub-manifests
 - [ ] m3-05-W5-closeout-and-osf-PLAN.md — Wave 5: validation memo Wave 4 production addendum + PDF generation + 322-row monolith SHA-256 freeze + audit log close-out summary + toy 3-locus AFR identity-placeholder fixtures (REQ-SNAKEMAKE-CI) + m2_post_m3_rerun_queue status update (no closures per D-M3-05) + ROADMAP M2-supplementary phase entry (slug m2-supp-aou-afr-rerun) + STATE.md update + m3-PHASE-CLOSEOUT.md + OSF posting of validation memo PDF to osf.io/az52u (D-M3-08)
 
-**Status**: planning complete 2026-04-28 (6 plans, 6 waves; nyquist_compliant=true on all plans; threat_models referenced; 5/5 REQ-IDs covered; 9/9 D-M3-XX decisions referenced); ready for `/gsd-execute-phase m3-aou-afr-ld-panel-build`. Wave 0 (NCSU-local foundations) executes autonomously; Waves 1+ block on Carter 6-gate AoU portal action stack.
+**Status**: planning complete 2026-04-28 (6 plans, 6 waves; nyquist_compliant=true on all plans; threat_models referenced; 5/5 REQ-IDs covered; 9/9 D-M3-XX decisions referenced); Wave 0 foundations + Wave 1+ Carter hard-gate stack pending fire. Wave 0 (NCSU-local foundations) executes autonomously; Waves 1+ block on Carter 6-gate AoU portal action stack.
 
 ### M4: Scalable coloc + fine-mapping
 **Slug**: m4-scalable-coloc-finemapping
