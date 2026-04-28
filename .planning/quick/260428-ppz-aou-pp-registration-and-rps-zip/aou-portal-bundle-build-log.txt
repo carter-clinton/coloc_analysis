@@ -1,0 +1,73 @@
++++ dirname bin/build_aou_portal_bundle.sh
+++ cd bin/..
+++ pwd
++ REPO_ROOT=/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
++ cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
++ RPS_SRC=.planning/quick/260426-aow-aou-workbench-registration-track-b-m3/AOU-WORKBENCH-REGISTRATION.md
++ PP_SRC=.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/AOU-PP-REGISTRATION.md
++ OUT_DIR=.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip
++ OUT_ZIP=.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ BUILD_LOG=.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-portal-bundle-build-log.txt
++ [[ -f .planning/quick/260426-aow-aou-workbench-registration-track-b-m3/AOU-WORKBENCH-REGISTRATION.md ]]
++ [[ -f .planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/AOU-PP-REGISTRATION.md ]]
++ mkdir -p .planning/quick/260428-ppz-aou-pp-registration-and-rps-zip
+++ mktemp -d
++ STAGE=/share/clintonlab/ckclinto/tmp/tmp.EY6cca7Vkz
++ trap 'rm -rf "$STAGE"' EXIT
++ BUNDLE=/share/clintonlab/ckclinto/tmp/tmp.EY6cca7Vkz/aou_portal_bundle
++ mkdir -p /share/clintonlab/ckclinto/tmp/tmp.EY6cca7Vkz/aou_portal_bundle
++ cp .planning/quick/260426-aow-aou-workbench-registration-track-b-m3/AOU-WORKBENCH-REGISTRATION.md /share/clintonlab/ckclinto/tmp/tmp.EY6cca7Vkz/aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md
++ cp .planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/AOU-PP-REGISTRATION.md /share/clintonlab/ckclinto/tmp/tmp.EY6cca7Vkz/aou_portal_bundle/AOU-PP-REGISTRATION.md
+++ git -C /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis rev-parse HEAD
++ SOURCE_COMMIT=55af8fa83f2159b075d62540d68490b73d224c8f
+++ date -u +%Y-%m-%dT%H:%M:%SZ
++ BUILD_DATE=2026-04-28T03:58:45Z
++ cat
++ ZIP_ABS=/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ rm -f /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ cd /share/clintonlab/ckclinto/tmp/tmp.EY6cca7Vkz
++ zip -r /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip aou_portal_bundle -X
+  adding: aou_portal_bundle/ (stored 0%)
+  adding: aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md (deflated 64%)
+  adding: aou_portal_bundle/AOU-PP-REGISTRATION.md (deflated 66%)
+  adding: aou_portal_bundle/README.md (deflated 49%)
+++ unzip -l /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
+++ awk '/^[ ]*[0-9]+/ {print $NF}'
+++ grep -E '\.(md)$'
+++ wc -l
++ ZIP_ENTRIES_FILE_COUNT=3
+++ unzip -l /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
+++ wc -l
++ ZIP_TOTAL_LINES=9
++ echo '[VERIFY] zip path: /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip'
+[VERIFY] zip path: /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ echo '[VERIFY] zip .md entries: 3 (expected 3)'
+[VERIFY] zip .md entries: 3 (expected 3)
++ [[ 3 -eq 3 ]]
++ unzip -t /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ echo '[VERIFY] unzip -t integrity check: OK'
+[VERIFY] unzip -t integrity check: OK
++ echo '[VERIFY] zip size:'
+[VERIFY] zip size:
++ ls -lh /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
+-rw-r--r--. 1 ckclinto clintonlab 23K Apr 27 23:58 /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ for entry in "aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md" "aou_portal_bundle/AOU-PP-REGISTRATION.md" "aou_portal_bundle/README.md"
++ unzip -l /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ grep -q aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md
++ echo '[VERIFY] present: aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md'
+[VERIFY] present: aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md
++ for entry in "aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md" "aou_portal_bundle/AOU-PP-REGISTRATION.md" "aou_portal_bundle/README.md"
++ unzip -l /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ grep -q aou_portal_bundle/AOU-PP-REGISTRATION.md
++ echo '[VERIFY] present: aou_portal_bundle/AOU-PP-REGISTRATION.md'
+[VERIFY] present: aou_portal_bundle/AOU-PP-REGISTRATION.md
++ for entry in "aou_portal_bundle/AOU-WORKBENCH-REGISTRATION.md" "aou_portal_bundle/AOU-PP-REGISTRATION.md" "aou_portal_bundle/README.md"
++ unzip -l /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip
++ grep -q aou_portal_bundle/README.md
++ echo '[VERIFY] present: aou_portal_bundle/README.md'
+[VERIFY] present: aou_portal_bundle/README.md
++ echo '[INFO] AoU portal bundle assembled successfully.'
+[INFO] AoU portal bundle assembled successfully.
++ echo EXIT_CODE=0
+EXIT_CODE=0
++ rm -rf /share/clintonlab/ckclinto/tmp/tmp.EY6cca7Vkz
