@@ -303,6 +303,7 @@ The 4-check validation memo (§9.4 Check 4: AoU-AFR vs identity-placeholder A/B)
 6. **The 4-check validation gate is the canonical promotion gate.** Per AOU-LD-PIPELINE.md §9: pass-before-scale-up; Carter signoff on the validation memo before any production fire. No "we'll fix it in production" override.
 7. **Single-fire production after dev gate is acceptable risk.** D-M3-03 — given our 161-region count is small relative to the spec's 3000-region target, single-fire is the simplest plan; the 4-check dev gate de-risks systemic-bug surprises.
 8. **PCA-primary ancestry (D-M3-07) is defensible to reviewers.** §10 of registration document positions this explicitly with admixed-population community-considerations framing; sensitivity-check protocol provides audit trail.
+9. **M2 region union remains the canonical fine-mapping unit across milestones.** D-M3-09 — Resolution 1 ruled at Wave 0 close (2026-04-28; quick task 260428-stv): the 36 large + xlarge regions fire as Path A.3 BlockMatrix streaming-writes rather than being re-tiled to ≤ 10 Mb. Methodological consistency M2 → M3 → M4 → M5 preserved; novelty calls (REQ-NOVELTY-CLASS-2) remain region-anchored; no tile ↔ region translation table needed at any cross-milestone reasoning step. Cost: 558.5 cluster-h per ancestry (~1,117 ch AFR + EUR; 5–7 wall days at AoU's 8–12 concurrent Dataproc quota) — accepted under Carter's rigor-over-time-saving preference (CLAUDE.md "Timeline is not a binding constraint" + memory `feedback_rigor_over_speed.md`).
 </assumptions>
 
 <open_questions>
