@@ -1,8 +1,10 @@
 # AoU Egress Audit Log
 
-**Status:** seeded 2026-04-28 by m3-00 Wave 0; HARD GATE row currently
-PENDING — populated at Wave 1 once Carter receives written egress
-classification ruling from AoU support (AOU-LD-PIPELINE.md §12 R1).
+**Status:** HARD GATE PASS as of 2026-04-28 (NCSU faculty controlled-tier
+AoU Researcher Workbench access; institutional DUS/RPS/P&P coverage; LD R
+matrices governed by standard AoU egress review — automated + manual
+reviewer pipeline — at egress-request time). Carter PI confirmation
+2026-04-28 via quick task 260428-vt2.
 
 This file is **append-only**. Each entry documents one AoU export request
 crossing the AoU Researcher Workbench egress boundary onto NCSU GPFS.
@@ -16,22 +18,62 @@ derivation (DEC-2026-04-24-02) appends to this log under its own section.
 
 ---
 
-## Egress Classification Ruling (HARD GATE)
+## Egress Classification Ruling (HARD GATE) — RULED PASS 2026-04-28
 
-**Per AOU-LD-PIPELINE.md §12 Risk R1:** before any Dataproc compute fires,
-Carter must obtain a written ruling from AoU support classifying
-variant×variant LD matrices computed from n ≥ 60k AFR participants as
-"aggregate summary statistics" (exportable by default), not "derived
-individual-level data" (requires additional review). All 44 production
-egress requests inherit this classification.
+**Per AOU-LD-PIPELINE.md §12 Risk R1 (original framing):** the M3 plan
+seeded this gate expecting a written per-data-class ruling letter from
+AoU support classifying variant×variant LD matrices computed from
+n ≥ 60k AFR participants as "aggregate summary statistics" (exportable
+by default), not "derived individual-level data" (requires additional
+review). On 2026-04-28 Carter PI established that no such custom ruling
+letter is required: variant×variant LD R matrices are aggregate /
+derived statistics carrying no individual-level information and pass
+through standard AoU egress review (automated + manual reviewer
+pipeline) at egress-request time, governed by Carter's institutional
+NCSU faculty controlled-tier access — not by per-data-class custom
+rulings. All 44 production egress requests inherit this classification
+under standard egress review.
 
 | Date | Request type | Classifier (AoU support email/case ID) | Ruling | Document |
 |------|--------------|----------------------------------------|--------|----------|
-| TBD-Wave-1 | Variant×variant LD matrix from n≥60k AFR (also EUR ~130k) | TBD (AoU support case # ____) | PENDING | TBD (link to AoU email or PDF capture) |
+| 2026-04-28 | Variant×variant LD matrix from n≥60k AFR (also EUR ~130k) | NCSU faculty controlled-tier AoU access; institutional DUS/RPS/P&P coverage; standard AoU egress review applies (no per-data-class custom letter required) | **PASS** | This audit log row + ruling block below; Carter PI confirmation 2026-04-28; quick task 260428-vt2 commit (m3-W1-portal-cleared) |
 
-**Note:** This row stays as PENDING until Carter completes the Wave 1
-human-action gate. It is intentionally left visible so all downstream
-egress entries reference the classification ruling that authorizes them.
+### Ruling block — 2026-04-28
+
+* **Status:** **PASS**
+* **Date:** 2026-04-28
+* **Basis:** NCSU faculty controlled-tier AoU Researcher Workbench
+  access; institutional Data Use Statement / Research Purpose Statement /
+  Privacy & Permissions registrations covered at faculty access tier;
+  billing profile attached with initial credits active. Variant×variant
+  LD R matrices are aggregate / derived statistics (no individual-level
+  information) governed by **standard AoU egress review** (automated +
+  manual reviewer pipeline) at egress-request time, NOT by
+  per-data-class custom ruling letters. Carter PI confirmation
+  2026-04-28.
+* **Provenance:** AoU Researcher Workbench account, NC State University
+  faculty appointment (ASHES Laboratory, Department of Biological
+  Sciences). Workspace creation + billing verification + DUS/RPS/P&P
+  acceptance all flowed through the standard NCSU-faculty controlled-tier
+  pathway (no individualized AoU support case opened).
+* **Re-open conditions:** if standard AoU egress review at any future
+  egress-request time flags a specific variant×variant LD matrix file
+  for additional review, document the per-file event in this audit log
+  with the AoU reviewer's specific concern + resolution. Do **NOT**
+  pre-emptively re-open this HARD GATE absent a triggering event;
+  per-file egress-review events are routine and append under
+  `## Per-Bundle Audit Entries` below, not under this ruling block.
+* **Cross-reference:** OSF pre-registration `osf.io/pvb5j`
+  (DOI 10.17605/OSF.IO/PVB5J); closeout amendment `osf.io/az52u`;
+  `.planning/STATE.md` Wave 1 Readiness Checklist row;
+  `.planning/phases/m3-aou-afr-ld-panel-build/m3-W1-AUX-PATH-VERIFICATION.md`
+  (the only remaining Wave 1 pre-condition: per-region-LD AUX path
+  verification, gated on Carter Workbench session).
+
+**Note:** All 44 M3 production egress bundles + any M1-supplementary
+AFR-SBP egress bundles inherit this PASS ruling under standard AoU
+egress review. Per-bundle entries below populate at Wave 4 production
+fire (per D-M3-03 dev-to-production gate).
 
 ---
 
@@ -91,4 +133,6 @@ above (one written ruling, multiple inheriting derivations).
 * **OSF posting.** This file is included in the Wave 5 OSF supplementary
   upload to osf.io/az52u alongside `m3-VALIDATION.md` (per D-M3-08).
 
-**Last updated:** 2026-04-28 (Wave 0 seed; HARD GATE PENDING)
+**Last updated:** 2026-04-28 (HARD GATE ruled **PASS** under NCSU faculty
+controlled-tier basis; standard AoU egress review applies at
+egress-request time; quick task 260428-vt2 commit `(m3-W1-portal-cleared)`)
