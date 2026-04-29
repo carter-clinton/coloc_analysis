@@ -5,6 +5,44 @@ names the alternatives considered, and states the **why** — so that future-
 Carter and future-Claude can re-derive or override the choice with
 context.
 
+**2026-04-29 reconciliation note (quick task `260429-l1e`):** This file
+was reconciled to Amendment §12 spec on 2026-04-29 against the
+authoritative source at
+`.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
+**Zero substantive drift** identified from the post-pivot ADR landings.
+The four §12 ADR entries land as standalone DEC entries in this file; the
+fifth (ADR-2026-04-22-05) is captured implicitly via REQUIREMENTS.md and
+flagged for Carter's review rather than promoted unilaterally.
+
+| §12 ADR | Status | Landing |
+|---------|--------|---------|
+| ADR-2026-04-22-01 "Genome-wide reframe" | Standalone DEC | DEC-2026-04-22-01 (this file, line 373) |
+| ADR-2026-04-22-02 "AoU AFR LD default" | Standalone DEC | DEC-2026-04-22-04 (this file, line 483) |
+| ADR-2026-04-22-03 "Track A as validation subset" | Standalone DEC | DEC-2026-04-23-01 (this file, line 533) |
+| ADR-2026-04-22-04 "MTAG --overlap non-negotiable" | Standalone DEC | DEC-2026-04-22-03 (this file, line 447) |
+| ADR-2026-04-22-05 "Novel-variant discovery as co-equal aim w/ locked comparator catalogs" | **Implicit (Decision pending)** | REQUIREMENTS.md REQ-NOVELTY-CLASS-1 through -5 + REQ-CATALOG-VERSION-LOCK + Amendment §7 OSF pre-registration anchor |
+
+ADR-2026-04-22-05 has not been promoted to a standalone DEC-* entry. Its
+substantive commitments live across REQUIREMENTS.md REQ-NOVELTY-CLASS-1
+through -5, REQ-CATALOG-VERSION-LOCK, and Amendment §7 (the OSF
+pre-registration anchor for the five discovery classes with locked
+comparator catalogs: GWAS Catalog, Pickrell 2016, Watanabe 2019, Open
+Targets Genetics L2G, ClinVar). **Flagged for Carter's review** — do not
+promote unilaterally; if Carter wants a standalone DEC-2026-04-22-05
+entry to mirror the four above, that is a separate quick task with
+explicit approval.
+
+Pre-pivot decisions (e.g., the 2026-04-09 "Scope tier: T1 spine in full
++ T1→T2 checkpoint" entry below at line 32; the 2026-04-21 Phase 2
+Recovery entry; etc.) are **preserved verbatim** per Carter's standing
+"preserve all decisions from pre-pivot" directive — these reflect
+decisions made under the pre-pivot frame, are dated, and remain
+immutable historical record. Pair this reconciliation with the
+2026-04-28 `260428-pj4` pass on PROJECT.md + REQUIREMENTS.md (commits
+`70db503`, `56fd413`, `927b5eb`); together these close the M0
+documentation alignment for all four `.planning/` files Amendment §12
+names.
+
 ---
 
 ## 2026-04-09 — Repo scope: canonical here, data symlinked
