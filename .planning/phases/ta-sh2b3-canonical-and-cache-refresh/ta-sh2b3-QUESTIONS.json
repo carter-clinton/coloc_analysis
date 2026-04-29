@@ -4,9 +4,9 @@
   "generated_at": "2026-04-28T22:23:38-04:00",
   "stats": {
     "total": 13,
-    "answered": 0,
-    "chat_more": 0,
-    "remaining": 13
+    "answered": 13,
+    "chat_more": 13,
+    "remaining": 0
   },
   "sections": [
     {
@@ -40,9 +40,9 @@
               "description": "Any other absolute path, e.g., a user-home checkout. Provide the exact path in the chat_more textarea."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         }
       ]
     },
@@ -77,9 +77,9 @@
               "description": "E.g., L=20 single-shot now + L-sweep deferred to a separate Phase if needed; or L=30 single-shot to skip the sweep."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "b",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         },
         {
           "id": "Q-03",
@@ -107,9 +107,9 @@
               "description": "E.g., dual reporting: keep 51/96 as 'all-attempts' headline + add 33/96 as 'converged-only' Supplementary Methods column."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         }
       ]
     },
@@ -144,9 +144,9 @@
               "description": "E.g., MINIMUM at Wave 2 + 9-pair fill in a follow-on Phase; or 9 SH2B3 + ONLY FTO_16q12 EUR for cross-region check."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "b",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         },
         {
           "id": "Q-05",
@@ -174,9 +174,9 @@
               "description": "E.g., a 5-tier gate; or branch on the magnitude of PP.H4 drop relative to identity-LD's 1.00."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         }
       ]
     },
@@ -211,9 +211,9 @@
               "description": "E.g., re-fire QTL-coloc + a sample of 10 SuSiE-RSS fits in parallel as a Wave-4 verification sample."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         }
       ]
     },
@@ -248,9 +248,9 @@
               "description": "E.g., split: verify L-sweep wording in OSF deposit (likely covered) + post amendment for canonical-pair scope only."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         },
         {
           "id": "Q-08",
@@ -278,9 +278,9 @@
               "description": "E.g., deviation-log entry now + a single combined 'R2 amendment' covering all three D-TA-02/03/04 decisions in one OSF post."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         }
       ]
     },
@@ -310,9 +310,9 @@
               "description": "E.g., docs/manuscript/track_a_id_vs_ref_LD.md (preserves Track A prefix), or docs/manuscript/manuscript.md (drop the id-vs-ref-LD branding entirely from the path)."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         },
         {
           "id": "Q-10",
@@ -335,9 +335,9 @@
               "description": "E.g., ID-VS-REF-LD-PUBLICATION-STRATEGY.md, TRACK-A-STRATEGY.md, or split into two docs (event-pivot kept; publication-strategy separated)."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         },
         {
           "id": "Q-11",
@@ -360,9 +360,9 @@
               "description": "E.g., FROZEN-NUMBERS-2026-04-22.md (date-anchored) or PHASE-2-FROZEN-NUMBERS.md."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         },
         {
           "id": "Q-12",
@@ -390,9 +390,9 @@
               "description": "E.g., bin/build_track_a_submission.sh (drop bundle), bin/build_idref_submission_bundle.sh (compress nickname)."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         },
         {
           "id": "Q-13",
@@ -420,9 +420,9 @@
               "description": "E.g., split: Wave 0.5 for non-manuscript paths (.planning/amendments/, bin/) + Wave 6 for manuscript path bundled with narrative."
             }
           ],
-          "answer": null,
-          "chat_more": "",
-          "status": "unanswered"
+          "answer": "a",
+          "chat_more": "Locked via accept-all-recommendations 2026-04-28; see ta-sh2b3-DISCUSSION-LOG.md for option-by-option rationale.",
+          "status": "answered"
         }
       ]
     }
@@ -451,8 +451,13 @@
     "manuscript": "docs/manuscript/track_a_pivot.md (current pre-rename path)",
     "submission_bundle_builder": "bin/build_track_a_submission_bundle.sh (current pre-rename path)",
     "submission_bundle_commit": "cacdbfe (frozen checkpoint)",
-    "code_fixes_already_committed": ["069b34f run_qtl_coloc.R chr:pos tolerance", "7d54183 run_susie_rss.R LD-panel-rsid override"],
+    "code_fixes_already_committed": [
+      "069b34f run_qtl_coloc.R chr:pos tolerance",
+      "7d54183 run_susie_rss.R LD-panel-rsid override"
+    ],
     "memory_project_track_a_handle": "/home/ckclinto/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/memory/project_track_a_handle.md",
     "memory_honest_framing": "/home/ckclinto/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/memory/feedback_original_research_framing.md"
-  }
+  },
+  "finalized_at": "2026-04-28T22:42:00-04:00",
+  "finalize_mode": "accept-all-recommendations (Carter, interactive chat)"
 }
