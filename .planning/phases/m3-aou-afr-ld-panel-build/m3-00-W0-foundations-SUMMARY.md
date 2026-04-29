@@ -115,7 +115,7 @@ ruling (Task 5 — region-width acceptance ⇒ Path A.3 vs re-tile to ≤
 | 2    | ld_panel resolver helper + pipeline.yaml block + resolver pytest                 | 26557aa | src/python/ld_panel.py, config/pipeline.yaml, tests/m3/test_ld_panel_resolver.py                                                                                                                                                            |
 | 3    | Conda envs + Hail driver + synthetic MT fixture + driver pytest + .gitignore     | 40f7fac | envs/m3-aou-dev.yml, envs/m3-r-ld.yml, src/python/aou_ld_panel.py, tests/m3/fixtures/build_synthetic_mt.py, tests/m3/test_aou_ld_panel_local.py, .gitignore                                                                                  |
 | 4    | Egress audit log seed + ROADMAP D-M3-01 wording fix + STATE.md note              | b6e44ed | .planning/amendments/aou-egress-audit-log.md, .planning/ROADMAP.md, .planning/STATE.md                                                                                                                                                       |
-| 5    | Carter human-action gate: rule on Open Issue O1 (region-width acceptance)        | PENDING | .planning/phases/m3-aou-afr-ld-panel-build/m3-CONTEXT.md (Carter to append D-M3-09)                                                                                                                                                          |
+| 5    | Carter human-action gate: rule on Open Issue O1 (region-width acceptance)        | b7beef8 | .planning/phases/m3-aou-afr-ld-panel-build/m3-CONTEXT.md (D-M3-09 appended; Resolution 1 ruled by Carter 2026-04-28 at quick task 260428-stv)                                                                                                |
 
 ## Region-Class Distribution (Path-A Cost Projection)
 
@@ -153,7 +153,7 @@ Per `<verification>` block of the plan:
 | 3   | `wc -l config/ld_regions.tsv` returns 323 (1 header + 322 rows)                                             | 323                                                               |
 | 4   | `wc -l config/ld_regions_dev.tsv` returns 11 (1 header + 10 rows)                                           | 11                                                                |
 | 5   | `grep -c "split_multi_hts" src/python/aou_ld_panel.py` ≥ 1 AND `grep -c "RELATED_SAMPLES_HT_PATH"` == 0     | split=4, RELATED_SAMPLES_HT_PATH=0 (Q9 correction verified)       |
-| 6   | `grep -c "D-M3-09" m3-CONTEXT.md` ≥ 2                                                                       | **PENDING — Carter Task 5 gate**                                  |
+| 6   | `grep -c "D-M3-09" m3-CONTEXT.md` ≥ 2                                                                       | 2 (D-M3-09 ruled Resolution 1 + assumption echo at line 307; commit b7beef8 + quick task 260428-stv) |
 | 7   | `grep -c "EUR_1kg_ukb" .planning/ROADMAP.md` == 0                                                           | 0 (D-M3-01 wording removed)                                       |
 | 8   | `grep -c "data/interim/aou_ld_exports" .gitignore` == 1                                                     | 1                                                                 |
 
