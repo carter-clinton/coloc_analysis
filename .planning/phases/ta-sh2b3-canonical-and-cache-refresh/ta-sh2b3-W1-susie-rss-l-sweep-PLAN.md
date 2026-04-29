@@ -30,6 +30,7 @@ must_haves:
     - "Convergence verification per fit: n_CS < L_used AND L_saturated == FALSE AND convergence_status matches ^converged_"
     - "Primary-result L is the lowest L value where ALL 3 SH2B3 EUR traits converge with n_CS < L (most likely L=20; recorded as PRIMARY_L in CONTEXT.md addendum for Wave 2 to consume)"
     - "Headline-numerator decision (D-TA-Wave1-headline) DEFERRED — Wave 1 only reports per-trait convergence outcomes; does NOT update 51/96 headline (per CONTEXT.md invariant 2)"
+    - "LSF dispatch uses serial queue with -W set to queue max via bsub_wrapper.sh (5760 min = 96 hr; per memory feedback_lsf_queues.md + checker iter 1 NIT 2)"
   artifacts:
     - path: "results_lsweep_L15/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json"
       provides: "SuSiE-RSS BMI fit at L=15 (D-TA-02 sweep point 1)"
@@ -52,6 +53,10 @@ must_haves:
       to: "Wave 2 canonical-pair coloc.susie input"
       via: "PRIMARY_L env var consumption"
       pattern: "PRIMARY_L=20"
+    - from: "config/bsub_wrapper.sh"
+      to: "bsub -W queue-max (serial=5760 min)"
+      via: "wrapper sets -W based on QUEUE arg"
+      pattern: "bsub_wrapper.*serial.*5760"
 ---
 
 <objective>
@@ -99,13 +104,19 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
 <!-- Compute envelope (per AUDIT-RESPONSE 2026-04-26 line 260) -->
 - ~2-4 hr per fit on serial queue with la_multitrait_r env
 - 9 fits aggregate ~12-15 hr; parallelizable across 50 LSF slots → wall ~4 hr
+
+<!-- LSF wall-time configuration (per checker iter 1 NIT 2) -->
+- bsub_wrapper.sh sets -W based on QUEUE arg: serial=5760 min (96 hr), long=14400 min (240 hr), standard=2880 min (48 hr)
+- Wave 1 uses serial queue (1-slot, no time cap when -W=5760 is set; per memory feedback_lsf_queues.md)
+- The wrapper enforces this; per-driver scripts do NOT need explicit -W stanzas (the wrapper adds it)
+- Acceptance check verifies the wrapper config: `grep -qE "serial.*5760|QUEUE.*serial.*5760" config/bsub_wrapper.sh`
 </interfaces>
 </context>
 
 <tasks>
 
 <task type="auto" tdd="false">
-  <name>Task 1: Fire L-sweep — 3 traits × 3 L values = 9 SuSiE-RSS fits on LSF</name>
+  <name>Task 1: Fire L-sweep — 3 traits × 3 L values = 9 SuSiE-RSS fits on LSF (serial queue with -W=5760 min via bsub_wrapper.sh)</name>
   <files>
     results_lsweep_L15/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json
     results_lsweep_L15/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.json
@@ -121,6 +132,7 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
   <read_first>
     - bin/fire_susie_lsweep.sh (Wave 0 Task 5 produced; verify executable)
     - config/pipeline_lsweep_L20_overlay.yaml (verify it points to config/susie_policy_L20.yaml)
+    - config/bsub_wrapper.sh (verify -W=5760 for serial queue per checker iter 1 NIT 2)
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md §"D-TA-OSF-COVERAGE" (must show CLEARED before firing)
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-RESEARCH.md §"Code Examples → Wave 1: SuSiE-RSS L-sweep dispatch"
   </read_first>
@@ -134,6 +146,12 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
          .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md || \
          { echo "ABORT: Pitfall 2 not verified."; exit 1; }
        [ -x bin/fire_susie_lsweep.sh ] || { echo "ABORT: driver not executable"; exit 1; }
+
+       # LSF wall-time configuration check (per checker iter 1 NIT 2):
+       # bsub_wrapper.sh must set -W to queue max (5760 min for serial). The wrapper enforces this for ALL bsub calls.
+       grep -qE "serial.*5760|QUEUE.*serial.*5760" config/bsub_wrapper.sh || \
+         { echo "ABORT: bsub_wrapper.sh does not enforce -W=5760 for serial queue (per checker iter 1 NIT 2)"; exit 1; }
+       echo "PASS: bsub_wrapper.sh enforces -W=5760 (96 hr) for serial queue"
        ```
 
     2. Fire the L-sweep driver (runs on /rs1/.../coloc_analysis per D-TA-01):
@@ -142,7 +160,7 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
        cd /rs1/researchers/c/ckclinto/coloc_analysis  # D-TA-01 canonical
        bash bin/fire_susie_lsweep.sh
        ```
-       The driver dispatches 3 LSF jobs per L (one per trait); 9 jobs total. Each job uses `serial` queue + `la_multitrait_r` env (per memory feedback_lsf_queues.md + AUDIT-RESPONSE line 260). Compute envelope ~2-4 hr per fit; aggregate ~12-15 hr but parallelizable across LSF slots → wall ~4 hr.
+       The driver dispatches 3 LSF jobs per L (one per trait); 9 jobs total. Each job uses `serial` queue + `la_multitrait_r` env (per memory feedback_lsf_queues.md + AUDIT-RESPONSE line 260). The bsub_wrapper.sh transparently sets -W=5760 (96-hr cap, well above the ~2-4 hr per-fit envelope). Compute envelope ~2-4 hr per fit; aggregate ~12-15 hr but parallelizable across LSF slots → wall ~4 hr.
 
     3. Monitor LSF jobs to completion:
        ```bash
@@ -190,14 +208,15 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
     - Each per-fit JSON's `L_used` field equals the swept L: `jq '.L_used' results_lsweep_L20/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json` returns 20 (and 15/30 for the L=15/L=30 namespaces).
     - All LSF jobs completed with exit code 0: `bhist -a -J 'ta_sh2b3_W1_*' 2>&1 | grep -c "Done successfully"` ≥ 9 (or equivalent via grep on the LSF logs).
     - Driver log file exists: `ls logs/wave1_susie_lsweep_*.log | wc -l` ≥ 1.
+    - **LSF wall-time configuration verified (per checker iter 1 NIT 2):** `grep -qE "serial.*5760|QUEUE.*serial.*5760" config/bsub_wrapper.sh` returns 0 (the wrapper enforces -W=5760 for serial queue).
     - Atomic commit landed; git log shows `feat(ta-sh2b3, W1): fire L-sweep SuSiE-RSS — 3 traits × 3 L values (D-TA-02)`.
     - No file contention: `git status` shows clean tree (or only the wave-2 expected artifacts not yet committed).
   </acceptance_criteria>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && for L in 15 20 30; do for T in bmi hypertension stroke; do f="results_lsweep_L${L}/fine_mapping/susie/${T}.EUR.SH2B3_12q24.json"; [ -f "$f" ] || { echo "MISSING $f"; exit 1; }; got_L=$(jq -r '.L_used' "$f" 2>/dev/null); [ "$got_L" = "$L" ] || { echo "L_used mismatch in $f: got $got_L expected $L"; exit 1; }; done; done && echo PASS</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && grep -qE "serial.*5760|QUEUE.*serial.*5760" config/bsub_wrapper.sh && for L in 15 20 30; do for T in bmi hypertension stroke; do f="results_lsweep_L${L}/fine_mapping/susie/${T}.EUR.SH2B3_12q24.json"; [ -f "$f" ] || { echo "MISSING $f"; exit 1; }; got_L=$(jq -r '.L_used' "$f" 2>/dev/null); [ "$got_L" = "$L" ] || { echo "L_used mismatch in $f: got $got_L expected $L"; exit 1; }; done; done && echo PASS</automated>
   </verify>
   <done>
-    All 9 SuSiE-RSS L-sweep fits complete on disk with `L_used` matching swept L; driver log committed. The `results_lsweep_L20/` namespace is now Wave 2's substrate. Verifies REQ-SUSIE-RSS-POLICY (D-TA-02 sweep delivered).
+    All 9 SuSiE-RSS L-sweep fits complete on disk with `L_used` matching swept L; driver log committed; bsub_wrapper.sh confirmed to enforce -W=5760 for serial queue (per checker iter 1 NIT 2). The `results_lsweep_L20/` namespace is now Wave 2's substrate. Verifies REQ-SUSIE-RSS-POLICY (D-TA-02 sweep delivered).
   </done>
 </task>
 
@@ -332,6 +351,7 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
 | LSF dispatch ↔ /rs1 working tree | D-TA-01 enforces canonical path; mismatched cwd = wrong-tree dispatch |
 | Per-L policy YAML ↔ run_susie_rss.R --policy reading | Pitfall 2 was mitigated in W0; Wave 1 verifies via L_used==L per fit |
 | Pre-Wave-1 frozen 51/96 headline ↔ Wave 1 convergence report | Wave 1 reports outcomes only; D-TA-Wave1-headline DEFERRED to Wave 6 (invariant 2) |
+| LSF wall-time enforcement ↔ bsub_wrapper.sh | Per checker iter 1 NIT 2: wrapper sets -W=5760 for serial queue (96-hr cap, well above ~2-4 hr per-fit envelope) |
 
 ## STRIDE Threat Register
 
@@ -340,6 +360,7 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
 | T-PROCESS-01 | T (Tampering) | Fits land in `results_lsweep_L*/` parallel namespace, not `results/fine_mapping/susie/` | mitigate | Per-L overlay yamls rebase results_root explicitly; Stage 2 frozen `results/fine_mapping/susie/` UNTOUCHED — verifiable via md5sum manifest in Wave 7 |
 | T-PROCESS-04 | T (Tampering) | TRACK-A-FROZEN-NUMBERS.md 51/96 headline | mitigate | Wave 1 only records D-TA-Wave1-headline DEFERRED; HEADLINE_VALUE=UNCHANGED; md5sum check in acceptance criteria |
 | T-PROCESS-02 | I (Information disclosure) | Implicit `git add .` could stage `results_identity_ld/` (DEC-2026-04-25-01) or unintended files | mitigate | Every commit task uses explicit file paths |
+| T-PROCESS-06 | D (Denial of service) | LSF jobs could be killed by 30-min queue default RUNLIMIT if -W not set | mitigate | bsub_wrapper.sh enforces -W=5760 for serial queue (per checker iter 1 NIT 2); Task 1 step 1 acceptance check verifies wrapper config |
 </threat_model>
 
 <verification>
@@ -348,6 +369,7 @@ Output: 9 per-fit JSONs + 9 .fit.rds binaries in parallel-output namespaces `res
 - PRIMARY_L identified and recorded (Task 2 acceptance)
 - C5 from `bin/verify_ta_sh2b3_phase.sh --wave 1` emits PASS
 - TRACK-A-FROZEN-NUMBERS.md unchanged (md5sum baseline preservation)
+- bsub_wrapper.sh enforces -W=5760 for serial queue (per checker iter 1 NIT 2)
 - 2 atomic commits landed (Task 1 + Task 2)
 </verification>
 
@@ -363,13 +385,14 @@ This plan covers the following C-rows from VALIDATION.md:
 - Convergence report TSV produced as Wave 6 narrative input
 - C5 emits PASS from verification harness
 - TRACK-A-FROZEN-NUMBERS.md md5sum unchanged
+- bsub_wrapper.sh enforces -W=5760 for serial queue (per checker iter 1 NIT 2)
 - All commits via explicit paths
 </success_criteria>
 
 <output>
 After completion, create `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md` with:
 - Per-fit convergence outcomes (D1-D7 dimensions: D1 dispatch success, D2 L_used field correctness, D3 convergence per Zou 2022, D4 L-saturation absence, D5 PRIMARY_L identification, D6 D-TA-Wave1-headline DEFERRED status, D7 frozen-numbers preservation)
-- LSF wall-time observed vs projected (~4 hr wall expected)
+- LSF wall-time observed vs projected (~4 hr wall expected; -W=5760 cap applied)
 - PRIMARY_L value (drives Wave 2 dispatch)
 - Wave-6-narrative branch (RECOMPUTE vs DISCLOSE-AS-COLUMN) the headline outcome implies
 - Wave 2 GO/NO-GO status (must be GO with PRIMARY_L != NONE_CONVERGED for Wave 2)

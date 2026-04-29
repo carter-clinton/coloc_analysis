@@ -23,7 +23,7 @@ must_haves:
     - ".planning/amendments/osf_deviations.md exists with cache-invalidation entry per D-TA-Cache-OSF (file did NOT exist pre-Wave-7)"
     - "New submission bundle built via bin/build_id_vs_ref_ld_submission_bundle.sh (renamed builder); ZIP integrity clean"
     - "SHA-256 manifest updated with bundle hash"
-    - "Stage 2 md5 invariant verified: only intentionally-rewritten files in curated whitelist have changed md5"
+    - "Stage 2 md5 invariant verified: only intentionally-rewritten files in curated whitelist have changed md5; per checker iter 1 WARNING 4 the unwhitelisted-files check is now a HARD FAIL (exit 1) and uses NARROW regex globs (not broad directory prefix matches)"
     - "C12 (Stage 2 md5 invariant) + C14 (bundle integrity) + C15 (deviation log) all emit PASS from verification harness"
     - "results_identity_ld/ NOT staged in any phase commit (DEC-2026-04-25-01 invariant)"
     - "Carter optionally appends the cache-invalidation deviation entry to osf.io/az52u closeout PDF (web-UI; in-tree entry is canonical source)"
@@ -47,10 +47,14 @@ must_haves:
       to: ".planning/amendments/osf_deviations.md"
       via: "deviation-log entry creation"
       pattern: "Cache invalidation"
+    - from: "Pre-phase frozen state (commit cacdbfe) ↔ Post-phase HEAD"
+      to: "Stage 2 md5 invariant whitelist + HARD FAIL on unwhitelisted file changes"
+      via: "git diff --name-only cacdbfe..HEAD + comm -23 against narrow regex globs"
+      pattern: "unwhitelisted_changes.txt"
 ---
 
 <objective>
-Wave 7 — Phase closeout. Build new submission bundle via the renamed `bin/build_id_vs_ref_ld_submission_bundle.sh` against post-Wave-5 frozen numbers + post-Wave-6 manuscript narrative. Append cache-invalidation deviation entry to `.planning/amendments/osf_deviations.md` (NEW file; per D-TA-Cache-OSF). Verify Stage 2 md5 byte-identical preservation rule across the curated whitelist. Update SHA-256 manifest. Run final phase-wide verification dimension D1–D7 PASS/WARN/FAIL JSON sweep. Carter optionally posts deviation entry to OSF portal.
+Wave 7 — Phase closeout. Build new submission bundle via the renamed `bin/build_id_vs_ref_ld_submission_bundle.sh` against post-Wave-5 frozen numbers + post-Wave-6 manuscript narrative. Append cache-invalidation deviation entry to `.planning/amendments/osf_deviations.md` (NEW file; per D-TA-Cache-OSF). Verify Stage 2 md5 byte-identical preservation rule across the curated whitelist (HARD FAIL on unwhitelisted file changes per checker iter 1 WARNING 4; replaces WARN-only semantics; uses NARROW regex globs anchored to specific files this phase rewrites, not broad directory prefix matches). Update SHA-256 manifest. Run final phase-wide verification dimension D1–D7 PASS/WARN/FAIL JSON sweep. Carter optionally posts deviation entry to OSF portal.
 
 Purpose: Phase gating-out artifact. Carter takes the new submission bundle to *Genome Medicine* journal portal for resubmission. The deviation-log entry closes audit-V2 §Eval 3.2 + D-TA-Cache-OSF (cache hygiene fix is methodologically a deviation, NOT a new analysis; pre-reg amendment is NOT required per Carter's command-args). The Stage 2 md5 invariant verification ensures no files outside the curated rewrite-whitelist were inadvertently mutated by this phase.
 
@@ -78,7 +82,7 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
 - .planning/amendments/ID-VS-REF-LD-STRATEGY.md — renamed strategy doc
 - .planning/amendments/TRACK-A-FROZEN-NUMBERS.md — Wave-5 LIVE blocks updated
 - D-TA-Wave6-pivot-free-audit recorded
-- All 4 honest-framing-lock anchors content-preserved
+- All 4 honest-framing-lock content anchors content-preserved (per checker iter 1 WARNING 3)
 
 <!-- Pre-existing files Wave 7 reads -->
 - bin/build_track_a_submission_bundle.sh (pre-rename) — referenced for compute envelope (488 lines per RESEARCH.md)
@@ -105,6 +109,25 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
 - All config/ files (except 7 added in W0; existing files untouched)
 - src/snakemake/scripts/run_qtl_coloc.R (069b34f committed; not modified in this phase)
 - src/legacy/region_analysis/scripts/run_susie_rss.R (7d54183 committed; not modified in this phase)
+
+<!-- Stage 2 md5 invariant — checker iter 1 WARNING 4 fixes -->
+- Original draft used `WARN` semantics (informational only) for unwhitelisted file changes — fixed to HARD FAIL (exit 1) per checker iter 1 WARNING 4.
+- Original draft used broad directory-prefix exclusions (e.g., `grep -v "^results_lsweep_"` excludes ALL files under that namespace including unintended rewrites of pre-existing files). Replaced with NARROW regex globs anchored to the specific files this phase generates:
+  - Wave 1 L-sweep outputs: `^results_lsweep_L(15|20|30)/fine_mapping/susie/(SH2B3_12q24__EUR__(bmi|hypertension|stroke)\.(json|fit\.rds|log))$`
+  - Wave 2 R2 coloc outputs: `^results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__[a-z]+_vs_[a-z]+\.json$`
+  - Wave 4 cache backups: `^results/qtl_coloc\.preFix\.bak\.[0-9_]+/`
+  - Wave 4 refreshed cache: `^results/qtl_coloc/[A-Za-z0-9_.]+\.json$`
+  - SuSiE-RSS conditional backups: `^results/fine_mapping/susie\.preFix\.bak\.[0-9_]+/`
+  - Wave 4 refreshed susie layer: `^results/fine_mapping/susie/[A-Za-z0-9_.]+\.(json|fit\.rds|log)$`
+  - Phase-generated logs: `^logs/(lsf/[A-Za-z0-9_.]+|wave[0-9]+_[A-Za-z0-9_]+_[0-9]+\.log)$`
+  - Wave 5 aggregator outputs: `^results/track_a_aggregations/[a-z_]+\.tsv$`
+  - Wave 5 figures: `^figures/fig_h3_ld_overlap_dose_response\.(png|pdf)$`
+  - Wave 7 bundle outputs: `^bundles/(track_a_genome_medicine_submission_R2\.zip|bundle_manifest\.tsv)$`
+  - Phase-internal scaffold: `^bin/(fire_susie_lsweep|fire_canonical_susie_pairs|fire_qtl_coloc_cache_refresh|verify_ta_sh2b3_phase)\.sh$`
+  - Phase config overlays: `^config/(susie_policy_L(15|20|30)|pipeline_lsweep_L(15|20|30)_overlay|pipeline_canonical_r2_overlay)\.yaml$`
+  - Phase python builder: `^src/python/build_coloc_manifest_r2\.py$`
+  - Phase planning subdir: `^\.planning/phases/ta-sh2b3-canonical-and-cache-refresh/`
+- Each exclusion is documented with its rationale next to the grep call (see Task 2 step 5).
 </interfaces>
 </context>
 
@@ -203,7 +226,7 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
 </task>
 
 <task type="auto" tdd="false">
-  <name>Task 2: Build new submission bundle (R2) via renamed builder + verify integrity + update SHA-256 manifest</name>
+  <name>Task 2: Build new submission bundle (R2) via renamed builder + verify integrity + update SHA-256 manifest + Stage 2 md5 invariant HARD FAIL (per checker iter 1 WARNING 4)</name>
   <files>
     bundles/track_a_genome_medicine_submission_R2.zip
     bundles/bundle_manifest.tsv
@@ -283,7 +306,10 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
        cat "$MANIFEST"
        ```
 
-    5. **Build the Stage 2 md5 invariant whitelist + verify (C12):**
+    5. **Build the Stage 2 md5 invariant whitelist + verify (C12) — HARD FAIL on unwhitelisted file changes (per checker iter 1 WARNING 4):**
+
+       The original draft used `WARN`-only semantics with broad `grep -v "^results_lsweep_"`-style directory prefix exclusions; both replaced with HARD FAIL + NARROW regex globs anchored to specific files this phase generates. Each exclusion is documented with its rationale.
+
        ```bash
        MD5_BASE=.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv
        echo -e "file_path\twave_modified\trationale" > "$MD5_BASE"
@@ -317,24 +343,67 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
        cat "$MD5_BASE"
        ```
 
-       Verify the whitelist is complete (no unintended file modifications outside whitelist):
+       Verify the whitelist is complete (HARD FAIL on unwhitelisted file modifications outside whitelist):
+
        ```bash
        # Compute md5 diff between phase start (commit cacdbfe) and HEAD for tracked files
-       FIRST_COMMIT=$(git log --oneline | grep -E "ta-sh2b3" | tail -1 | awk '{print $1}')
-       FROZEN_COMMIT=cacdbfe  # frozen submission bundle reference
+       FROZEN_COMMIT=cacdbfe  # frozen submission bundle reference (per CONTEXT.md D-TA-cacdbfe)
        git diff --name-only "$FROZEN_COMMIT"..HEAD | sort > /tmp/changed_files_post_phase.txt
        awk -F'\t' 'NR>1 {print $1}' "$MD5_BASE" | sort > /tmp/whitelist.txt
 
-       # Files changed but not in whitelist
-       UNWHITELISTED=$(comm -23 /tmp/changed_files_post_phase.txt /tmp/whitelist.txt | grep -v "^results_lsweep_" | grep -v "^logs/" | grep -v "^results/qtl_coloc/" | grep -v "^results/fine_mapping/susie" | grep -v "^results/multitrait/coloc_susie_R2/" | grep -v "^results/multitrait/coloc_manifest_R2.tsv" | grep -v "^results/multitrait/coloc_manifest_merged.tsv" | grep -v "^results/track_a_aggregations/" | grep -v "^figures/" | grep -v "^bundles/" | grep -v "^bin/fire_susie_lsweep.sh" | grep -v "^bin/fire_canonical_susie_pairs.sh" | grep -v "^bin/fire_qtl_coloc_cache_refresh.sh" | grep -v "^bin/verify_ta_sh2b3_phase.sh" | grep -v "^src/python/build_coloc_manifest_r2.py" | grep -v "^config/susie_policy_L" | grep -v "^config/pipeline_lsweep_L" | grep -v "^config/pipeline_canonical_r2_overlay" | grep -v "^.planning/phases/ta-sh2b3-")
-       if [ -n "$UNWHITELISTED" ]; then
-         echo "WARN: files changed outside whitelist:"
-         echo "$UNWHITELISTED"
-         # Carter judgment call: are these legitimate? document in SUMMARY.
-       else
-         echo "PASS: Stage 2 md5 invariant respected (only whitelisted files changed)"
+       # Unwhitelisted files = changed files NOT in whitelist AND NOT matching narrow phase-generated regex globs
+       # Each grep -vE below is a NARROW regex anchored to specific files this phase generates (per checker iter 1 WARNING 4 fix);
+       # documented with its rationale next to the call.
+
+       comm -23 /tmp/changed_files_post_phase.txt /tmp/whitelist.txt | \
+         # (1) Wave 1 L-sweep outputs: 3 traits × 3 L-values = 9 JSON + 9 fit.rds + 9 log = 27 paths max under results_lsweep_L{15,20,30}/fine_mapping/susie/
+         grep -vE "^results_lsweep_L(15|20|30)/fine_mapping/susie/SH2B3_12q24__EUR__(bmi|hypertension|stroke)\.(json|fit\.rds|log)$" | \
+         # (2) Wave 2 R2 coloc outputs: 9 SH2B3 EUR pair JSONs (e.g., bmi_vs_hypertension.json)
+         grep -vE "^results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__[a-z]+_vs_[a-z]+\.json$" | \
+         # (3) Wave 4 cache backup directories (timestamped — Pitfall 5)
+         grep -vE "^results/qtl_coloc\.preFix\.bak\.[0-9_]+/" | \
+         # (4) Wave 4 refreshed QTL-coloc cache (per-attempt JSONs, ~1,274 paths)
+         grep -vE "^results/qtl_coloc/[A-Za-z0-9_.]+\.json$" | \
+         # (5) Wave 4 conditional SuSiE-RSS layer backup directories
+         grep -vE "^results/fine_mapping/susie\.preFix\.bak\.[0-9_]+/" | \
+         # (6) Wave 4 conditionally refreshed SuSiE-RSS layer (per-attempt artifacts)
+         grep -vE "^results/fine_mapping/susie/[A-Za-z0-9_.]+\.(json|fit\.rds|log)$" | \
+         # (7) Phase-generated logs: LSF stdout/stderr + per-wave driver logs
+         grep -vE "^logs/(lsf/[A-Za-z0-9_.]+|wave[0-9]+_[A-Za-z0-9_]+_[0-9]+\.log)$" | \
+         # (8) Wave 5 aggregator outputs: TSVs in results/track_a_aggregations/
+         grep -vE "^results/track_a_aggregations/[a-z_]+\.tsv$" | \
+         # (9) Wave 5 figures: Fig S7 dose-response (PNG + PDF)
+         grep -vE "^figures/fig_h3_ld_overlap_dose_response\.(png|pdf)$" | \
+         # (10) Wave 7 bundle outputs: ZIP + manifest
+         grep -vE "^bundles/(track_a_genome_medicine_submission_R2\.zip|bundle_manifest\.tsv)$" | \
+         # (11) Phase-internal scaffold: Wave 0 driver scripts + Wave 0 verification harness
+         grep -vE "^bin/(fire_susie_lsweep|fire_canonical_susie_pairs|fire_qtl_coloc_cache_refresh|verify_ta_sh2b3_phase)\.sh$" | \
+         # (12) Phase config overlays: per-L SuSiE policy + per-L pipeline + R2 canonical overlay
+         grep -vE "^config/(susie_policy_L(15|20|30)|pipeline_lsweep_L(15|20|30)_overlay|pipeline_canonical_r2_overlay)\.yaml$" | \
+         # (13) Phase python builder: Wave 2 R2 manifest builder
+         grep -vE "^src/python/build_coloc_manifest_r2\.py$" | \
+         # (14) Phase planning subdir: PLANs + SUMMARYs + tracker files for this phase
+         grep -vE "^\.planning/phases/ta-sh2b3-canonical-and-cache-refresh/" | \
+         # (15) Wave 2 R2 manifest TSV
+         grep -vE "^results/multitrait/coloc_manifest(_R2|_merged)?\.tsv$" \
+         > /tmp/unwhitelisted_changes.txt
+
+       if [ -s /tmp/unwhitelisted_changes.txt ]; then
+         echo "BLOCKER: Stage 2 md5 invariant violated — unwhitelisted file changes (per checker iter 1 WARNING 4 — HARD FAIL):"
+         echo "==============================="
+         cat /tmp/unwhitelisted_changes.txt
+         echo "==============================="
+         echo ""
+         echo "Triage steps:"
+         echo "  - If a file is legitimate phase output, add it to md5_baseline.tsv whitelist."
+         echo "  - If a file is unintended phase mutation, revert via 'git checkout cacdbfe -- <path>'."
+         echo "  - Do NOT silently exclude via broader regex; narrow regex globs are intentional."
+         exit 1
        fi
+       echo "PASS: Stage 2 md5 invariant respected (only whitelisted files + narrow phase-generated globs changed)"
        ```
+
+       NOTE: The `unwhitelisted_changes.txt` file may legitimately have entries during phase iteration; the HARD FAIL forces explicit triage (either widen the regex globs in this Action step's grep chain, or add the file to md5_baseline.tsv whitelist with rationale, or revert via `git checkout`). Each grep -vE pattern is a 1-line documented exclusion; if a future phase generates a NEW namespace (e.g., a Wave 8 introduces `results/multitrait/coloc_susie_R3/`), the regex chain must be extended at that time and the change documented.
 
     6. **Verify results_identity_ld/ NOT staged anywhere in this phase (DEC-2026-04-25-01 invariant):**
        ```bash
@@ -357,7 +426,7 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
                bundles/bundle_manifest.tsv \
                .planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv \
                logs/wave7_bundle_build_*.log
-       git commit -m "feat(ta-sh2b3, W7): build R2 submission bundle + SHA-256 manifest + md5 whitelist"
+       git commit -m "feat(ta-sh2b3, W7): build R2 submission bundle + SHA-256 manifest + md5 whitelist (HARD FAIL on unwhitelisted changes per checker iter 1 WARNING 4)"
        ```
   </action>
   <acceptance_criteria>
@@ -369,14 +438,15 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
     - `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv` exists with ≥ 25 whitelist rows.
     - `git diff --cached --name-only` shows zero `results_identity_ld/` paths.
     - `git log --since=2026-04-28 --oneline --diff-filter=A --name-only | grep -c "^results_identity_ld"` returns 0.
+    - **Stage 2 md5 invariant HARD FAIL on unwhitelisted file changes (per checker iter 1 WARNING 4):** `[ ! -s /tmp/unwhitelisted_changes.txt ]` returns 0 (file is empty or non-existent). The grep chain in Action step 5 uses NARROW regex globs anchored to specific files this phase generates; broad directory-prefix exclusions are forbidden.
     - C12 + C14 + C15 from `bin/verify_ta_sh2b3_phase.sh --wave 7` all emit PASS.
     - Atomic commit landed.
   </acceptance_criteria>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && [ -f bundles/track_a_genome_medicine_submission_R2.zip ] && unzip -t bundles/track_a_genome_medicine_submission_R2.zip > /dev/null 2>&1 && [ "$(unzip -l bundles/track_a_genome_medicine_submission_R2.zip | grep -cE 'track_a_pivot|build_track_a_submission_bundle')" -eq 0 ] && [ "$(unzip -l bundles/track_a_genome_medicine_submission_R2.zip | grep -c 'id-vs-ref-LD')" -ge 1 ] && [ -f bundles/bundle_manifest.tsv ] && [ -f .planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv ] && [ "$(git diff --cached --name-only 2>/dev/null | grep -c '^results_identity_ld')" -eq 0 ] && bin/verify_ta_sh2b3_phase.sh --wave 7 2>/dev/null | jq -e 'select(.check=="C14" and .status=="PASS")' > /dev/null && echo PASS</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && [ -f bundles/track_a_genome_medicine_submission_R2.zip ] && unzip -t bundles/track_a_genome_medicine_submission_R2.zip > /dev/null 2>&1 && [ "$(unzip -l bundles/track_a_genome_medicine_submission_R2.zip | grep -cE 'track_a_pivot|build_track_a_submission_bundle')" -eq 0 ] && [ "$(unzip -l bundles/track_a_genome_medicine_submission_R2.zip | grep -c 'id-vs-ref-LD')" -ge 1 ] && [ -f bundles/bundle_manifest.tsv ] && [ -f .planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv ] && [ "$(git diff --cached --name-only 2>/dev/null | grep -c '^results_identity_ld')" -eq 0 ] && [ ! -s /tmp/unwhitelisted_changes.txt ] && bin/verify_ta_sh2b3_phase.sh --wave 7 2>/dev/null | jq -e 'select(.check=="C14" and .status=="PASS")' > /dev/null && echo PASS</automated>
   </verify>
   <done>
-    New submission bundle built via renamed builder + integrity verified; SHA-256 manifest updated; Stage 2 md5 invariant whitelist captured; results_identity_ld/ confirmed NOT staged anywhere (DEC-2026-04-25-01 preserved); C12 + C14 + C15 all PASS. Atomic commit landed. Phase ready for Carter to take bundle to Genome Medicine portal for resubmission.
+    New submission bundle built via renamed builder + integrity verified; SHA-256 manifest updated; Stage 2 md5 invariant whitelist captured; unwhitelisted file changes HARD FAIL exit 1 (per checker iter 1 WARNING 4 — replaces WARN-only semantics; narrow regex globs replace broad directory prefix exclusions); results_identity_ld/ confirmed NOT staged anywhere (DEC-2026-04-25-01 preserved); C12 + C14 + C15 all PASS. Atomic commit landed. Phase ready for Carter to take bundle to Genome Medicine portal for resubmission.
   </done>
 </task>
 
@@ -459,7 +529,7 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
     - .planning/ROADMAP.md §"### Track-A-R2-sh2b3-canonical-and-cache-refresh" (status field update)
   </read_first>
   <action>
-    1. **Full phase-wide C1-C15 sweep:**
+    1. **Full phase-wide C1-C15 sweep** (per checker iter 1 NIT 1: removed dead `FIRST_COMMIT` variable that was never referenced):
        ```bash
        cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
        bin/verify_ta_sh2b3_phase.sh > .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-final-verification.jsonl 2> .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-final-verification.stderr
@@ -528,7 +598,7 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && [ -f .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-final-verification.json ] && [ "$(jq '[.[] | select(.status == "FAIL")] | length' .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-final-verification.json)" -eq 0 ] && [ "$(jq '[.[] | select(.status == "PASS")] | length' .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-final-verification.json)" -ge 13 ] && grep -q "D-TA-Wave7-phase-closure:" .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md && grep -qE "Status.*COMPLETE" .planning/ROADMAP.md && echo PASS</automated>
   </verify>
   <done>
-    Final phase-wide C1-C15 sweep complete with 13+ PASS / 0 FAIL; ROADMAP.md + STATE.md updated to reflect phase closure; D-TA-Wave7-phase-closure recorded in CONTEXT.md. Atomic commit landed. Phase ta-sh2b3-canonical-and-cache-refresh formally closed.
+    Final phase-wide C1-C15 sweep complete with 13+ PASS / 0 FAIL; ROADMAP.md + STATE.md updated to reflect phase closure; D-TA-Wave7-phase-closure recorded in CONTEXT.md. Atomic commit landed. Phase ta-sh2b3-canonical-and-cache-refresh formally closed. (Per checker iter 1 NIT 1: removed dead `FIRST_COMMIT` shell variable from Action step 1; the `FROZEN_COMMIT=cacdbfe` variable in Task 2 step 5 is the canonical reference for "Stage 2 frozen state".)
   </done>
 </task>
 
@@ -539,7 +609,7 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
 
 | Boundary | Description |
 |----------|-------------|
-| Pre-phase frozen state (commit cacdbfe) ↔ Post-phase HEAD | Stage 2 md5 invariant: only whitelisted files differ |
+| Pre-phase frozen state (commit cacdbfe) ↔ Post-phase HEAD | Stage 2 md5 invariant: only whitelisted files differ; HARD FAIL on unwhitelisted file changes per checker iter 1 WARNING 4 |
 | In-tree osf_deviations.md ↔ OSF portal closeout PDF | In-tree entry is canonical; OSF portal post is optional courtesy |
 | Bundle ZIP ↔ post-rename file paths | Pitfall 6 mitigation propagates: bundle contents must be post-rename only |
 
@@ -547,7 +617,7 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
 
 | Threat ID | Category | Component | Disposition | Mitigation Plan |
 |-----------|----------|-----------|-------------|-----------------|
-| T-PROCESS-04 | T (Tampering) | Stage 2 md5 invariant on non-target files | mitigate | Wave 7 Task 2 builds curated whitelist + diffs against frozen commit cacdbfe; out-of-whitelist file changes flagged for Carter |
+| T-PROCESS-04 | T (Tampering) | Stage 2 md5 invariant on non-target files | mitigate | Wave 7 Task 2 builds curated whitelist + diffs against frozen commit cacdbfe; HARD FAIL (exit 1) on unwhitelisted file changes (per checker iter 1 WARNING 4 — replaces WARN-only semantics); NARROW regex globs anchored to specific files this phase generates (per checker iter 1 WARNING 4 — replaces broad directory-prefix exclusions) |
 | T-PROCESS-02 | I (Information disclosure) | results_identity_ld/ accidentally staged | mitigate | Wave 7 Task 2 explicit checks: `git diff --cached --name-only \| grep -c '^results_identity_ld'` returns 0; `git log --since=2026-04-28 --diff-filter=A --name-only \| grep -c '^results_identity_ld'` returns 0 |
 | T-PROCESS-01 | T (Tampering) | Bundle ZIP contains stale rename tokens (Pitfall 6 propagation) | mitigate | Wave 7 Task 2 explicit `unzip -l \| grep -cE 'track_a_pivot|build_track_a_submission_bundle'` returns 0 |
 | T-PROCESS-04 | I (Information disclosure) | Bundle SHA-256 not recorded | mitigate | Wave 7 Task 2 updates bundles/bundle_manifest.tsv with sha256sum; Wave 7 final verification (C14) checks |
@@ -558,17 +628,18 @@ Output: New bundle ZIP at `bundles/track_a_genome_medicine_submission_R2.zip` + 
 - Submission bundle R2 built + integrity clean + post-rename branding only (Task 2)
 - SHA-256 manifest updated (Task 2)
 - Stage 2 md5 invariant whitelist captured (Task 2)
+- Stage 2 md5 invariant HARD FAIL on unwhitelisted file changes (per checker iter 1 WARNING 4)
 - results_identity_ld/ NOT staged or committed (Task 2; DEC-2026-04-25-01 invariant)
 - C12 + C14 + C15 all PASS (Task 2)
 - Carter optionally posted to osf.io/az52u (Task 3)
 - Final phase-wide D1-D7 sweep: 13+ PASS / 0 FAIL (Task 4)
-- ROADMAP + STATE updated to reflect closure (Task 4)
+- ROADMAP + STATE updated to reflect closure (Task 4; per checker iter 1 NIT 1 the dead FIRST_COMMIT variable removed)
 - 4 atomic commits landed
 </verification>
 
 <verification_criteria>
 This plan covers the following C-rows from VALIDATION.md:
-- **C12** Stage 2 md5 invariant preserved on non-target files — Task 2
+- **C12** Stage 2 md5 invariant preserved on non-target files (HARD FAIL per checker iter 1 WARNING 4) — Task 2
 - **C14** Bundle is reproducible and clean — Task 2
 - **C15** OSF deviation log entry added — Task 1
 - Plus phase-wide C1-C15 final sweep — Task 4
@@ -579,7 +650,7 @@ This plan covers the following C-rows from VALIDATION.md:
 - New submission bundle at bundles/track_a_genome_medicine_submission_R2.zip with integrity clean
 - Bundle ZIP contents post-rename branding only (Pitfall 6 propagation verified)
 - SHA-256 manifest updated
-- Stage 2 md5 invariant whitelist captured + non-target files preserved
+- Stage 2 md5 invariant whitelist captured + non-target files preserved (HARD FAIL on unwhitelisted changes per checker iter 1 WARNING 4)
 - results_identity_ld/ NOT staged or committed (DEC-2026-04-25-01)
 - Carter optional OSF closeout PDF post status recorded
 - Final phase-wide C1-C15 sweep: 13+ PASS / 0 FAIL
@@ -592,10 +663,11 @@ After completion, create `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/
 - D1 osf_deviations.md created with all required tokens (PASS/WARN/FAIL)
 - D2 submission bundle integrity (PASS/WARN/FAIL via unzip -t + post-rename branding check)
 - D3 SHA-256 manifest updated (PASS/WARN/FAIL)
-- D4 Stage 2 md5 invariant respected (PASS/WARN/FAIL based on whitelist diff)
+- D4 Stage 2 md5 invariant respected (PASS/WARN/FAIL based on whitelist diff; HARD FAIL on unwhitelisted changes per checker iter 1 WARNING 4)
 - D5 results_identity_ld/ NOT staged (PASS/WARN/FAIL; DEC-2026-04-25-01)
 - D6 C1-C15 final sweep status (count of PASS/WARN/FAIL)
 - D7 ROADMAP + STATE updated (PASS/WARN/FAIL)
+- Cross-reference to checker iter 1 WARNING 4 + NIT 1 mitigations
 
 Plus a phase-of-summaries integration: aggregate per-wave SUMMARYs into a single phase narrative for Carter's hand-off to Genome Medicine resubmission. Reference each wave SUMMARY by path. List the new bundle path + SHA-256 prominently.
 </output>
