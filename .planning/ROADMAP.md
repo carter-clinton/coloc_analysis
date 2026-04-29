@@ -9,6 +9,30 @@
 > The pre-pivot Phase 00–11 content is preserved below under "Pre-pivot
 > spine"; its artifacts are reusable per Amendment §8 and form the Track A
 > data plus the Track B candidate-locus validation subset.
+>
+> **2026-04-29 reconciliation note** (quick task `260429-l1e`): This file
+> was reconciled to Amendment §12 spec on 2026-04-29 against the
+> authoritative source at
+> `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`,
+> with **zero substantive drift** identified from the post-pivot rewrite.
+> All three §12 ROADMAP requirements satisfied: (1) **T1 retirement
+> language** lives in the "Pre-pivot spine" appendix header at line 470
+> (Phases 0–11 framed as the pre-pivot spine, with the post-2026-04-22
+> active program living in the M0–M6 sections above); (2) **full M0–M6
+> milestone table** inserted per Amendment §3 at lines 33-276 (M0 pivot
+> scaffolding through M6 manuscript + replication + submission);
+> (3) **phase-history appendix preserved verbatim** per the
+> "interpretable git-history" rationale stated at lines 478-479 — this is
+> why the pre-pivot `[T1]`/`[T2]`/`[T3]` tier markers stay verbatim, as
+> historical record rather than active scope. Beyond the §12 minimum, this
+> file additionally documents the **Track A short-form sequence**
+> (`Track-A-finalization` at lines 280-380, current short-form draft path;
+> `Track-A-R2-SH2B3` at lines ~381-468, R2 SH2B3 reanalysis being planned
+> in `.planning/phases/ta-sh2b3-*`). Pair this reconciliation with the
+> 2026-04-28 `260428-pj4` pass on PROJECT.md + REQUIREMENTS.md (commits
+> `70db503`, `56fd413`, `927b5eb`); together these close the M0
+> documentation alignment for all four `.planning/` files Amendment §12
+> names.
 
 ## Overview
 
