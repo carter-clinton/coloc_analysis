@@ -4,9 +4,34 @@ description: m3-W1-portal-gate-clear-and-aux-spec — record M3 Wave 1 portal pr
 date: 2026-04-29
 status: complete
 ruling_token: m3-W1-portal-cleared
-commit: __SAME_COMMIT_AS_THIS_FILE__
+deliverable_commit: ffbc7a6
+followon_grep_commit: __FILLED_BY_FOLLOWON_COMMIT__
 related_phase: m3-aou-afr-ld-panel-build
 related_plan: m3-01-W1-aou-cohort-and-hard-gates (pre-fire pre-conditions)
+attribution_note: |
+  Race-condition attribution: the 5 deliverable files (.planning/STATE.md,
+  .planning/amendments/aou-egress-audit-log.md,
+  .planning/phases/m3-aou-afr-ld-panel-build/m3-W1-AUX-PATH-VERIFICATION.md,
+  this SUMMARY.md, and sibling PLAN.md) were committed in ffbc7a6 under
+  Terminal C's commit subject "docs(ta-sh2b3, ta-W0-discuss): finalize phase
+  context with all 13 recommendations accepted" rather than the intended
+  "docs(m3-W1-portal-cleared): ...". Terminal A (this quick task) had staged
+  the 5 files at ~23:05:30 EDT; Terminal C ran their `git commit` at
+  23:05:44 EDT for ta-sh2b3 files BEFORE Terminal A's commit fired,
+  consuming the entire staged index (which contained only Terminal A's 5
+  files at that moment — Terminal C's ta-sh2b3 files had been
+  inadvertently unstaged ~10 sec earlier when Terminal A ran
+  `git reset HEAD .planning/phases/ta-sh2b3-canonical-and-cache-refresh/`
+  to keep its commit scope clean). Net effect: ffbc7a6 contains EXACTLY
+  Terminal A's 5-file deliverable content but is labelled with Terminal
+  C's intended ta-sh2b3 commit message. Terminal C's ta-sh2b3-CONTEXT.md
+  + ta-sh2b3-DISCUSSION-LOG.md + ta-sh2b3-QUESTIONS.json remained
+  uncommitted in the working tree post-ffbc7a6 (Terminal C will commit
+  them separately on their own next attempt). To preserve
+  grep-discoverability of the m3-W1-portal-cleared work, the follow-on
+  commit references this SUMMARY (which documents the race) and carries
+  the `(m3-W1-portal-cleared)` token in its subject so that
+  `git log --all --grep "(m3-W1-portal-cleared)"` returns a hit.
 ---
 
 # Quick Task 260428-vt2: M3 Wave 1 Portal-Gate Clear + AUX Spec — SUMMARY
