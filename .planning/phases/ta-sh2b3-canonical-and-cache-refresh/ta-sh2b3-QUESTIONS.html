@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phase ta-sh2b3-canonical-and-cache-refresh — Discussion Questions</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --fg: #18181b;
+    --muted: #71717a;
+    --border: #e4e4e7;
+    --card-bg: #ffffff;
+    --answered-bg: #f0fdf4;
+    --answered-border: #22c55e;
+    --chat-border: #f97316;
+    --section-bg: #f1f5f9;
+    --accent: #0ea5e9;
+    --pill-bg: #e0f2fe;
+    --pill-fg: #075985;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  header {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  h1 {
+    margin: 0 0 4px 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--section-bg);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat strong { font-size: 15px; }
+  .progress {
+    flex: 1;
+    min-width: 200px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 320px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--answered-border);
+    transition: width 0.3s ease;
+  }
+  .save-button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .save-button:hover { background: #0284c7; }
+  .save-button.success { background: var(--answered-border); }
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 32px;
+  }
+  .invariants {
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+  .invariants summary {
+    font-weight: 600;
+    cursor: pointer;
+    color: #78350f;
+  }
+  .invariants ul { margin: 8px 0 0 0; padding-left: 20px; }
+  .invariants li { margin-bottom: 4px; }
+  .section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .section-header {
+    background: var(--section-bg);
+    padding: 14px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+  .section-title {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .section-counter {
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .section-description {
+    padding: 0 20px 14px 20px;
+    background: var(--section-bg);
+    color: var(--muted);
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .questions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+  .question-card {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 14px;
+    transition: all 0.2s ease;
+  }
+  .question-card.answered {
+    border: 2px solid var(--answered-border);
+    background: var(--answered-bg);
+  }
+  .question-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .question-id {
+    background: var(--pill-bg);
+    color: var(--pill-fg);
+    font-weight: 600;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .question-card.answered .question-id {
+    background: var(--answered-border);
+    color: white;
+  }
+  .question-title {
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1;
+  }
+  .question-context {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .options { margin-bottom: 10px; }
+  .option {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 6px 0;
+    cursor: pointer;
+  }
+  .option:hover { background: rgba(14, 165, 233, 0.04); }
+  .option input[type="radio"] {
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+  .option-body { flex: 1; }
+  .option-label {
+    font-weight: 500;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  .option-description {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .question-card.answered .option:has(input:checked) .option-label {
+    color: #15803d;
+  }
+  .chat-more-wrapper {
+    margin-top: 10px;
+  }
+  .chat-more-label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  textarea {
+    width: 100%;
+    min-height: 56px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    resize: vertical;
+    transition: border 0.2s;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  textarea.has-content {
+    border: 2px solid var(--chat-border);
+    background: #fff7ed;
+  }
+  .footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 0;
+    gap: 16px;
+  }
+  .footer-text {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .pre-rename-banner {
+    background: #ede9fe;
+    border: 1px solid #c4b5fd;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #4c1d95;
+  }
+  .pre-rename-banner strong { color: #2e1065; }
+  code {
+    background: var(--section-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+  .download-link {
+    display: inline-block;
+    margin-left: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .download-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Phase ta-sh2b3-canonical-and-cache-refresh — Discussion Questions</h1>
+  <div class="subtitle">Track A R2 (id-vs-ref-LD): SH2B3 canonical-pair coverage + variant-ID matcher cache refresh — generated 2026-04-28</div>
+  <div class="stats-row">
+    <div class="stat">Total <strong id="stat-total">13</strong></div>
+    <div class="stat">Answered <strong id="stat-answered">0</strong></div>
+    <div class="stat">Chat-more <strong id="stat-chat">0</strong></div>
+    <div class="stat">Remaining <strong id="stat-remaining">13</strong></div>
+    <div class="progress"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <button class="save-button" id="save-btn" onclick="saveAnswers()">Save answers</button>
+  </div>
+</header>
+
+<main>
+  <div class="invariants">
+    <details>
+      <summary>Non-negotiable invariants (re-stated for context — these are NOT questions)</summary>
+      <ul>
+        <li>NO <code>/gsd-quick</code> shortcuts. Atomic commits per task. SUMMARY.md per plan. Verification dimensions D1–DN with PASS/WARN/FAIL evidence.</li>
+        <li>Manuscript narrative writes happen ONLY at Wave 6, AFTER disk numbers are frozen. NEVER pre-write narrative against anticipated outcomes. Wave-3 <code>checkpoint:human-verify</code> gate is mandatory.</li>
+        <li>Honest-framing-lock chain preserved at all anchor points (L148 + L295 + L220 + L90 + R-script header + locked-scalar block + plot_annotation + Track-A SUMMARY).</li>
+        <li>DEC-2026-04-25-01: <code>results_identity_ld/</code> stays gitignored; canonical CS-yield summary at <code>.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv</code> only.</li>
+        <li>Stage 2 md5 byte-identical preservation for files not intentionally rewritten by this phase.</li>
+        <li>Pre-registration discipline: any L value, threshold, or scope choice not pre-registered enters via OSF amendment posted BEFORE Wave 1 fires.</li>
+        <li>id-vs-ref-LD nickname is for FUTURE artifacts only; do NOT rewrite git history.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="pre-rename-banner">
+    <strong>Project naming rule (load before answering Q-09 through Q-13):</strong>
+    Track A is nicknamed <code>id-vs-ref-LD</code> (locked 2026-04-28). The publication is original hypothesis-driven research on identity-LD vs reference-LD colocalization at curated cardiometabolic pleiotropy loci. Existing in-tree paths still contain pre-rename tokens (<code>docs/manuscript/track_a_pivot.md</code>; <code>.planning/amendments/TRACK-A-PIVOT.md</code>; <code>bin/build_track_a_submission_bundle.sh</code>). NEVER frame Track A as a "pivot", "revision", "audit", "salvage", "cleanup", "fix-up" — original research framing only.
+  </div>
+
+  <div id="sections-container"></div>
+
+  <div class="footer-actions">
+    <div class="footer-text">
+      After answering, click <strong>Save answers</strong> — the browser will write back to the JSON file via File System Access API (Chrome/Edge) or download a JSON for you to drop in over the original.
+      Then return to Claude and say <code>refresh</code> (process answers, update stats) or <code>finalize</code> (generate CONTEXT.md).
+    </div>
+    <button class="save-button" onclick="saveAnswers()">Save answers</button>
+  </div>
+</main>
+
+<script>
+const QUESTIONS_JSON_PATH = "ta-sh2b3-QUESTIONS.json";
+let state = null;
+let fileHandle = null;
+
+async function loadState() {
+  // Try fetch first (works when served via http://); fall back to embedded data
+  try {
+    const resp = await fetch(QUESTIONS_JSON_PATH);
+    if (resp.ok) {
+      state = await resp.json();
+      render();
+      return;
+    }
+  } catch (e) {}
+  // Fall back to embedded JSON (last-resort for file:// without server)
+  state = EMBEDDED_STATE;
+  render();
+}
+
+function recalcStats() {
+  let total = 0, answered = 0, chat = 0;
+  for (const sec of state.sections) {
+    for (const q of sec.questions) {
+      total++;
+      if (q.answer && q.answer !== "") answered++;
+      if (q.chat_more && q.chat_more !== "") chat++;
+    }
+  }
+  state.stats.total = total;
+  state.stats.answered = answered;
+  state.stats.chat_more = chat;
+  state.stats.remaining = total - answered;
+}
+
+function render() {
+  recalcStats();
+  document.getElementById("stat-total").textContent = state.stats.total;
+  document.getElementById("stat-answered").textContent = state.stats.answered;
+  document.getElementById("stat-chat").textContent = state.stats.chat_more;
+  document.getElementById("stat-remaining").textContent = state.stats.remaining;
+  const pct = state.stats.total === 0 ? 0 : Math.round(100 * state.stats.answered / state.stats.total);
+  document.getElementById("progress-fill").style.width = pct + "%";
+
+  const container = document.getElementById("sections-container");
+  container.innerHTML = "";
+  for (const sec of state.sections) {
+    const answeredInSec = sec.questions.filter(q => q.answer && q.answer !== "").length;
+    const sectionEl = document.createElement("div");
+    sectionEl.className = "section";
+    sectionEl.innerHTML = `
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-title">${escapeHtml(sec.title)}</div>
+        <div class="section-counter">${answeredInSec} / ${sec.questions.length} answered</div>
+      </div>
+      <div class="section-description">${escapeHtml(sec.description)}</div>
+      <div class="questions-grid"></div>
+    `;
+    const grid = sectionEl.querySelector(".questions-grid");
+    for (const q of sec.questions) {
+      grid.appendChild(renderQuestion(q));
+    }
+    container.appendChild(sectionEl);
+  }
+}
+
+function renderQuestion(q) {
+  const card = document.createElement("div");
+  const isAnswered = q.answer && q.answer !== "";
+  card.className = "question-card" + (isAnswered ? " answered" : "");
+  card.dataset.qid = q.id;
+  let optionsHtml = "";
+  for (const opt of q.options) {
+    const checked = q.answer === opt.id ? "checked" : "";
+    optionsHtml += `
+      <label class="option">
+        <input type="radio" name="${q.id}" value="${opt.id}" ${checked} onchange="setAnswer('${q.id}', '${opt.id}')">
+        <div class="option-body">
+          <div class="option-label">${escapeHtml(opt.label)}</div>
+          <div class="option-description">${escapeHtml(opt.description || "")}</div>
+        </div>
+      </label>
+    `;
+  }
+  const hasChatMore = q.chat_more && q.chat_more !== "";
+  card.innerHTML = `
+    <div class="question-header">
+      <span class="question-id">${q.id}</span>
+      <span class="question-title">${escapeHtml(q.title)}</span>
+    </div>
+    <div class="question-context">${escapeHtml(q.context)}</div>
+    <div class="options">${optionsHtml}</div>
+    <div class="chat-more-wrapper">
+      <label class="chat-more-label">Chat more (optional context, nuance, or free-form answer)</label>
+      <textarea class="${hasChatMore ? 'has-content' : ''}" oninput="setChatMore('${q.id}', this.value, this)">${escapeHtml(q.chat_more || "")}</textarea>
+    </div>
+  `;
+  return card;
+}
+
+function setAnswer(qid, optId) {
+  for (const sec of state.sections) {
+    for (const q of sec.questions) {
+      if (q.id === qid) {
+        q.answer = optId;
+        q.status = "answered";
+      }
+    }
+  }
+  render();
+}
+
+function setChatMore(qid, value, el) {
+  for (const sec of state.sections) {
+    for (const q of sec.questions) {
+      if (q.id === qid) {
+        q.chat_more = value;
+        if (value && (!q.answer || q.answer === "")) {
+          q.status = "chat-more";
+        }
+      }
+    }
+  }
+  // Toggle visual without full re-render
+  if (value && value !== "") {
+    el.classList.add("has-content");
+  } else {
+    el.classList.remove("has-content");
+  }
+  recalcStats();
+  document.getElementById("stat-chat").textContent = state.stats.chat_more;
+}
+
+function toggleSection(headerEl) {
+  const desc = headerEl.nextElementSibling;
+  const grid = desc.nextElementSibling;
+  const collapsed = desc.style.display === "none";
+  desc.style.display = collapsed ? "" : "none";
+  grid.style.display = collapsed ? "" : "none";
+}
+
+function escapeHtml(s) {
+  if (typeof s !== "string") return "";
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function saveAnswers() {
+  recalcStats();
+  const json = JSON.stringify(state, null, 2);
+  const btn = document.getElementById("save-btn");
+
+  // Try File System Access API first (Chrome/Edge)
+  if (window.showSaveFilePicker) {
+    try {
+      if (!fileHandle) {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: QUESTIONS_JSON_PATH,
+          types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
+        });
+      }
+      const writable = await fileHandle.createWritable();
+      await writable.write(json);
+      await writable.close();
+      btn.textContent = "Saved ✓";
+      btn.classList.add("success");
+      setTimeout(() => { btn.textContent = "Save answers"; btn.classList.remove("success"); }, 2000);
+      return;
+    } catch (e) {
+      console.warn("FSA save failed, falling back to download", e);
+    }
+  }
+  // Fallback: download as a file the user replaces manually
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = QUESTIONS_JSON_PATH;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  btn.textContent = "Downloaded — drop into the phase dir";
+  btn.classList.add("success");
+  setTimeout(() => { btn.textContent = "Save answers"; btn.classList.remove("success"); }, 4000);
+}
+
+// Embedded fallback (in case fetch() doesn't work over file://)
+const EMBEDDED_STATE = null; // populated at first fetch attempt
+loadState();
+</script>
+</body>
+</html>
