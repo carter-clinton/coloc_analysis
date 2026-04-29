@@ -26,6 +26,8 @@ must_haves:
     - "Snakemake re-fire of all_qtl_coloc target completes via /rs1/.../coloc_analysis with --use-conda -j 50 on long queue (~10 hr; +5 hr if SuSiE-RSS layer in scope)"
     - "Post-refresh too_few_snps count drops materially from 1,005 baseline: PASS ≤ 200 → continue to Wave 5; FAIL ~1,000 → halt + Wave 4.5 SuSiE-RSS layer fallback fires"
     - "PASS/FAIL outcome recorded in CONTEXT.md as D-TA-WAVE4-OUTCOME-{PASS|FAIL_TO_W4.5}"
+    - "LSF dispatch uses long queue with -W=14400 min (240 hr) via bsub_wrapper.sh (per memory feedback_lsf_queues.md + checker iter 1 NIT 3)"
+    - "Wave 4.5 fallback is a MANUAL ESCALATION — Carter must re-execute bin/fire_qtl_coloc_cache_refresh.sh with SUSIE_LAYER_SCOPE=yes after seeing the FAIL_TO_W4.5 outcome; the directive in CONTEXT.md is ADVISORY, NOT automated (per checker iter 1 NIT 4)"
   artifacts:
     - path: "results/qtl_coloc.preFix.bak.${TS}/"
       provides: "Timestamped backup of pre-fix cache (rollback path; never deleted in this phase)"
@@ -46,6 +48,10 @@ must_haves:
       to: "SuSiE-RSS layer in/out scope decision"
       via: "SUSIE_LAYER_SCOPE env var"
       pattern: "SUSIE_LAYER_SCOPE=(yes|no)"
+    - from: "config/bsub_wrapper.sh"
+      to: "bsub -W=14400 (long queue 240-hr cap)"
+      via: "wrapper sets -W based on QUEUE arg"
+      pattern: "long.*14400|QUEUE.*long.*14400"
 ---
 
 <objective>
@@ -55,6 +61,8 @@ Wave 4 — Variant-ID cache invalidation + Snakemake re-fire. Issue 2 closure. T
 - MIXED → CONSERVATIVE-BOTH (same as CHRPOS; ~15 hr)
 
 Wave 4 PASS criterion: post-refresh `too_few_snps` count ≤ 200 (target; baseline 1,005). FAIL: stays ~1,000 → SuSiE-RSS layer was the actual problem; trigger Wave 4.5 SuSiE-RSS fallback re-fire (only if SUSIE_LAYER_SCOPE was `no` originally); halt before Wave 5.
+
+**Wave 4.5 fallback is a MANUAL ESCALATION (per checker iter 1 NIT 4):** Carter must explicitly re-execute `bin/fire_qtl_coloc_cache_refresh.sh` with `SUSIE_LAYER_SCOPE=yes` after seeing the FAIL_TO_W4.5 outcome. The directive recorded in CONTEXT.md (Task 2 step 4) is ADVISORY guidance for Carter, NOT automated — the executor agent does NOT auto-trigger Wave 4.5. Carter must read the CONTEXT.md addendum, decide whether to proceed, and manually re-fire the driver. After Wave 4.5 completes, Carter re-runs Task 2's PASS/FAIL evaluation against the post-Wave-4.5 disk and records D-TA-WAVE4.5-OUTCOME (analogous to D-TA-WAVE4-OUTCOME).
 
 Purpose: Close audit-V2 §Eval 3.2 (78.9 % QTL-coloc failure currently disclosed in manuscript Methods L90 + Discussion L220 + Limitations bullet 5 as a "known cache-staleness issue"). The re-fire produces the analysis the pre-registration already covers — methodologically a cache hygiene fix, NOT a new analysis (D-TA-Cache-OSF: deviation-log only, NOT pre-reg amendment).
 
@@ -91,6 +99,12 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
 - +~5 hr for SuSiE-RSS re-fits if SUSIE_LAYER_SCOPE=yes (total ~15 hr)
 - long queue, -W 14400 (240 hr cap), 32 GB mem (per memory feedback_lsf_queues.md)
 
+<!-- LSF wall-time configuration (per checker iter 1 NIT 3) -->
+- bsub_wrapper.sh sets -W based on QUEUE arg: long=14400 min (240 hr)
+- Wave 4 uses long queue (per memory feedback_lsf_queues.md)
+- The wrapper enforces this; per-driver scripts do NOT need explicit -W stanzas
+- Acceptance check verifies the wrapper config: `grep -qE "long.*14400|QUEUE.*long.*14400" config/bsub_wrapper.sh`
+
 <!-- Pitfall 5 (RESEARCH.md) -->
 - Cache backup uses TIMESTAMPED naming: `results/qtl_coloc.preFix.bak.${TS}` (not bare .preFix.bak; idempotent across phase fires)
 - Verify pre-existing backup directories before mv: `ls -d results/qtl_coloc.preFix.bak* 2>/dev/null`
@@ -99,13 +113,20 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
 - PASS: too_few_snps ≤ 200 → Wave 5 cleared
 - FAIL: too_few_snps ~1,000 (≥800) → halt; Wave 4.5 SuSiE-RSS fallback fires (only if SUSIE_LAYER_SCOPE was 'no'); do NOT proceed to Wave 5/6
 - INTERMEDIATE: 200-800 → WARN; investigate; Carter decides
+
+<!-- Wave 4.5 fallback (per checker iter 1 NIT 4) -->
+- Wave 4.5 is a MANUAL ESCALATION, NOT an automated continuation.
+- The CONTEXT.md addendum (D-TA-WAVE4.5-DIRECTIVE in Task 2 step 4) is ADVISORY guidance for Carter.
+- Carter sees the FAIL_TO_W4.5 outcome → reads the directive → manually re-executes `bin/fire_qtl_coloc_cache_refresh.sh` with `SUSIE_LAYER_SCOPE=yes`.
+- After Wave 4.5 completes, Carter re-runs Task 2's evaluation against post-Wave-4.5 disk, records D-TA-WAVE4.5-OUTCOME, and decides Wave 5 GO/NO-GO.
+- The executor agent does NOT auto-trigger Wave 4.5 from within the Wave 4 task; the directive is human-actionable.
 </interfaces>
 </context>
 
 <tasks>
 
 <task type="auto" tdd="false">
-  <name>Task 1: Capture baseline + fire Wave 4 cache invalidation + Snakemake re-fire</name>
+  <name>Task 1: Capture baseline + fire Wave 4 cache invalidation + Snakemake re-fire (long queue with -W=14400 min via bsub_wrapper.sh)</name>
   <files>
     .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv
     results/qtl_coloc/  # rebuilt
@@ -116,6 +137,7 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
   </files>
   <read_first>
     - bin/fire_qtl_coloc_cache_refresh.sh (Wave 0 Task 5)
+    - config/bsub_wrapper.sh (verify -W=14400 for long queue per checker iter 1 NIT 3)
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md §"D-TA-04-DIAGNOSTIC" (drives SUSIE_LAYER_SCOPE env var)
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-RESEARCH.md §"Pitfall 5: Wave 4 cache invalidation backs up to wrong path" + §"Code Examples → Wave 4: QTL-coloc cache re-fire"
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-VALIDATION.md C9 row
@@ -129,6 +151,12 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
        grep -qE "D-TA-04 cache-scope decision:.*(QTL_COLOC_ONLY|BOTH_LAYERS|CONSERVATIVE_BOTH)" \
          .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md || \
          { echo "ABORT: D-TA-04-DIAGNOSTIC not recorded"; exit 1; }
+
+       # LSF wall-time configuration check (per checker iter 1 NIT 3):
+       # bsub_wrapper.sh must set -W=14400 for long queue (the wave's compute envelope is ~10-15 hr; 240-hr cap is well above)
+       grep -qE "long.*14400|QUEUE.*long.*14400" config/bsub_wrapper.sh || \
+         { echo "ABORT: bsub_wrapper.sh does not enforce -W=14400 for long queue (per checker iter 1 NIT 3)"; exit 1; }
+       echo "PASS: bsub_wrapper.sh enforces -W=14400 (240 hr) for long queue"
 
        # Extract SUSIE_LAYER_SCOPE from D-TA-04 outcome
        SCOPE_TOKEN=$(grep -oE "D-TA-04 cache-scope decision:.*\`(QTL_COLOC_ONLY|BOTH_LAYERS|CONSERVATIVE_BOTH)\`" \
@@ -176,6 +204,7 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
        - Backs up `results/qtl_coloc/` → `results/qtl_coloc.preFix.bak.$(date +%Y%m%d_%H%M%S)` (Pitfall 5: timestamped uniqueness)
        - Conditionally backs up `results/fine_mapping/susie/` if SUSIE_LAYER_SCOPE=yes
        - Fires Snakemake re-fire: `--profile config/cluster_lsf -j 50 --use-conda --rerun-incomplete --conda-prefix .snakemake/conda --latency-wait 120 -s Snakefile all_qtl_coloc`
+       - Each Snakemake-dispatched LSF job picks up the long queue per cluster_config.yaml (run_qtl_coloc rule); bsub_wrapper.sh transparently sets -W=14400.
 
     4. **Monitor LSF jobs to completion (~10 hr expected; up to ~15 hr if SuSiE-RSS layer):**
        ```bash
@@ -211,18 +240,19 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
     - `results/qtl_coloc/` exists post-refresh with 1,000+ JSONs.
     - All LSF jobs completed exit 0: `bhist -a 2>&1 | grep -c "Done successfully"` reflects the wave's job count or equivalent.
     - Driver log file exists: `ls logs/wave4_qtl_coloc_refresh_*.log | wc -l` ≥ 1.
+    - **LSF wall-time configuration verified (per checker iter 1 NIT 3):** `grep -qE "long.*14400|QUEUE.*long.*14400" config/bsub_wrapper.sh` returns 0.
     - Atomic commit landed.
   </acceptance_criteria>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && [ -f .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv ] && [ "$(wc -l < .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv)" -ge 5 ] && [ "$(ls -d results/qtl_coloc.preFix.bak.* 2>/dev/null | wc -l)" -ge 1 ] && [ "$(ls results/qtl_coloc/*.json 2>/dev/null | wc -l)" -ge 1000 ] && echo PASS</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && grep -qE "long.*14400|QUEUE.*long.*14400" config/bsub_wrapper.sh && [ -f .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv ] && [ "$(wc -l < .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv)" -ge 5 ] && [ "$(ls -d results/qtl_coloc.preFix.bak.* 2>/dev/null | wc -l)" -ge 1 ] && [ "$(ls results/qtl_coloc/*.json 2>/dev/null | wc -l)" -ge 1000 ] && echo PASS</automated>
   </verify>
   <done>
-    Pre-Wave-4 baseline recorded in TSV. `results/qtl_coloc/` invalidated via timestamped `mv` to backup (Pitfall 5 mitigated). Conditional SuSiE-RSS layer backup landed if SUSIE_LAYER_SCOPE=yes. Snakemake re-fire complete with new per-attempt JSONs in place. Atomic commit landed. Wave 4 PASS/FAIL evaluation (Task 2) can now run.
+    Pre-Wave-4 baseline recorded in TSV. `results/qtl_coloc/` invalidated via timestamped `mv` to backup (Pitfall 5 mitigated). Conditional SuSiE-RSS layer backup landed if SUSIE_LAYER_SCOPE=yes. Snakemake re-fire complete with new per-attempt JSONs in place. bsub_wrapper.sh confirmed to enforce -W=14400 for long queue (per checker iter 1 NIT 3). Atomic commit landed. Wave 4 PASS/FAIL evaluation (Task 2) can now run.
   </done>
 </task>
 
 <task type="auto" tdd="false">
-  <name>Task 2: Wave 4 PASS/FAIL evaluation + record D-TA-WAVE4-OUTCOME (gates Wave 5)</name>
+  <name>Task 2: Wave 4 PASS/FAIL evaluation + record D-TA-WAVE4-OUTCOME (gates Wave 5); Wave 4.5 fallback is MANUAL ESCALATION (per checker iter 1 NIT 4)</name>
   <files>
     .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_post_refresh.tsv
     .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md
@@ -305,11 +335,23 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
 
        **Branch implications:**
        - PASS → Wave 5 fires (downstream aggregator + figure refresh against post-refresh disk)
-       - FAIL_TO_W4.5 → Wave 4.5 SuSiE-RSS fallback fires (ONLY if D-TA-04 was QTL_COLOC_ONLY originally; if BOTH_LAYERS already in scope, root-cause investigation needed instead)
+       - FAIL_TO_W4.5 → Wave 4.5 SuSiE-RSS fallback fires (ONLY if D-TA-04 was QTL_COLOC_ONLY originally; if BOTH_LAYERS already in scope, root-cause investigation needed instead). **NOTE: Wave 4.5 is a MANUAL ESCALATION, NOT automated — Carter must read this directive, decide, and re-execute the driver explicitly (per checker iter 1 NIT 4).**
        - WARN_INTERMEDIATE → Carter inspects WAR sub-classifications (which regions still failing? sparse-QTL coverage vs cache staleness?) before deciding Wave 5 vs Wave 4.5
        ```
 
-    4. **Conditional Wave 4.5 fallback dispatch (only if OUTCOME == FAIL_TO_W4.5 AND original SUSIE_LAYER_SCOPE was 'no'):**
+    4. **Conditional Wave 4.5 fallback DIRECTIVE recording (only if OUTCOME == FAIL_TO_W4.5 AND original SUSIE_LAYER_SCOPE was 'no'):**
+
+       **CRITICAL: This step ONLY records an ADVISORY directive in CONTEXT.md (per checker iter 1 NIT 4). The executor agent does NOT auto-fire `bin/fire_qtl_coloc_cache_refresh.sh` with `SUSIE_LAYER_SCOPE=yes`.** Wave 4.5 requires:
+       1. Carter sees the FAIL_TO_W4.5 outcome (after Task 2 commits)
+       2. Carter reads the D-TA-WAVE4.5-DIRECTIVE addendum
+       3. Carter manually re-executes `bin/fire_qtl_coloc_cache_refresh.sh` with `SUSIE_LAYER_SCOPE=yes` (the original Wave 4 driver, re-fired with widened scope)
+       4. The driver backs up `results/fine_mapping/susie/` to a NEW timestamped backup AND backs up the (already-refreshed) `results/qtl_coloc/` to ANOTHER timestamped backup
+       5. After Wave 4.5 completes (~15 hr), Carter re-runs the post-refresh capture + PASS/FAIL evaluation (Task 2 steps 1-2 of THIS plan; informally, since the Wave 4.5 task isn't a separate plan)
+       6. Carter records D-TA-WAVE4.5-OUTCOME in CONTEXT.md (analogous to D-TA-WAVE4-OUTCOME)
+       7. Wave 5 gate CLEARED only if D-TA-WAVE4.5-OUTCOME = PASS
+
+       The executor agent's responsibility ends at recording the directive; Carter's responsibility begins.
+
        ```bash
        if [ "$OUTCOME" = "FAIL_TO_W4.5" ]; then
          # Check whether original D-TA-04 was QTL_COLOC_ONLY (i.e., we DIDN'T already invalidate SuSiE-RSS layer)
@@ -317,29 +359,43 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
                       .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md | \
                       grep -oE "(QTL_COLOC_ONLY|BOTH_LAYERS|CONSERVATIVE_BOTH)" | head -1)
          if [ "$SCOPE_USED" = "QTL_COLOC_ONLY" ]; then
-           echo "FAIL: too_few_snps stays high. Triggering Wave 4.5 SuSiE-RSS fallback fire."
+           echo "FAIL: too_few_snps stays high. Recording Wave 4.5 SuSiE-RSS fallback DIRECTIVE (manual escalation per checker iter 1 NIT 4)."
            # Append a Wave 4.5 directive to CONTEXT.md (does NOT auto-execute; Carter triggers separately)
            cat >> .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md <<EOF
 
-       ### D-TA-WAVE4.5-DIRECTIVE: SuSiE-RSS layer fallback re-fire (post-W4 FAIL)
+       ### D-TA-WAVE4.5-DIRECTIVE: SuSiE-RSS layer fallback re-fire (post-W4 FAIL) — MANUAL ESCALATION
 
        **Recorded:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
 
        **Trigger:** Wave 4 outcome = FAIL_TO_W4.5; original D-TA-04 was QTL_COLOC_ONLY.
 
-       **Action:** Re-fire bin/fire_qtl_coloc_cache_refresh.sh with SUSIE_LAYER_SCOPE=yes. The driver will back up results/fine_mapping/susie/ to a NEW timestamped directory (the QTL-coloc backup from Task 1 is preserved separately) and Snakemake re-fires both layers.
+       **STATUS: ADVISORY DIRECTIVE — NOT AUTOMATED (per checker iter 1 NIT 4).**
 
-       **Wave 5 gate:** BLOCKED until Wave 4.5 re-runs Task 2 acceptance + outcome shows too_few_snps ≤ 200.
+       **Required action (Carter — manual, NOT automated by the executor agent):**
+       1. Re-fire \`bin/fire_qtl_coloc_cache_refresh.sh\` with \`SUSIE_LAYER_SCOPE=yes\` (override the ENV var that was 'no' on Wave 4):
+          \`\`\`bash
+          export SUSIE_LAYER_SCOPE=yes
+          bash bin/fire_qtl_coloc_cache_refresh.sh
+          \`\`\`
+       2. The driver will back up results/fine_mapping/susie/ to a NEW timestamped directory (the QTL-coloc backup from Wave 4 is preserved separately). It will also re-back-up the already-refreshed QTL-coloc cache because the Snakemake re-fire is "both layers" scope.
+       3. Monitor LSF jobs (~15 hr wall on long queue with -W=14400).
+       4. Re-run the post-refresh capture + PASS/FAIL evaluation (analogous to Task 2 steps 1-2 of Wave 4 plan).
+       5. Record D-TA-WAVE4.5-OUTCOME in CONTEXT.md (analogous to D-TA-WAVE4-OUTCOME).
+       6. Wave 5 gate CLEARED only if D-TA-WAVE4.5-OUTCOME = PASS.
+
+       **Wave 5 gate:** BLOCKED until Wave 4.5 completes AND post-Wave-4.5 too_few_snps ≤ 200.
        EOF
          else
            echo "FAIL: too_few_snps stays high even though SuSiE-RSS layer was already in scope. ROOT-CAUSE INVESTIGATION needed before Wave 5."
            cat >> .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md <<EOF
 
-       ### D-TA-WAVE4-ROOTCAUSE: Both layers refreshed but too_few_snps stays high
+       ### D-TA-WAVE4-ROOTCAUSE: Both layers refreshed but too_few_snps stays high — MANUAL TRIAGE
 
        **Recorded:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-       **Action:** Halt phase. Root-cause investigation needed (ld panel/coverage? manifest definition? per-region SNP density?). Carter to triage.
+       **STATUS: ADVISORY DIRECTIVE — NOT AUTOMATED (per checker iter 1 NIT 4).**
+
+       **Required action (Carter — manual triage):** Halt phase. Root-cause investigation needed (ld panel/coverage? manifest definition? per-region SNP density?). Carter to triage. The executor agent does NOT auto-investigate; Carter inspects the cache directly + Snakemake DAG + per-region log files.
 
        **Wave 5 gate:** BLOCKED.
        EOF
@@ -366,7 +422,7 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
     - `grep -E "D-TA-WAVE4-OUTCOME-(PASS|FAIL_TO_W4.5|WARN_INTERMEDIATE):" .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md` returns ≥ 1 hit.
     - The recorded sub-section includes both pre and post status distributions.
     - The recorded sub-section includes the explicit Wave 5 gate disposition (CLEARED / BLOCKED / CARTER_DECIDES).
-    - If OUTCOME == FAIL_TO_W4.5: a `D-TA-WAVE4.5-DIRECTIVE` or `D-TA-WAVE4-ROOTCAUSE` sub-section is appended to CONTEXT.md.
+    - If OUTCOME == FAIL_TO_W4.5: a `D-TA-WAVE4.5-DIRECTIVE` or `D-TA-WAVE4-ROOTCAUSE` sub-section is appended to CONTEXT.md, AND it MUST contain the phrase "MANUAL ESCALATION" or "ADVISORY DIRECTIVE — NOT AUTOMATED" (per checker iter 1 NIT 4): `grep -E "(MANUAL ESCALATION|ADVISORY DIRECTIVE.*NOT AUTOMATED)" .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md` returns ≥ 1 hit when FAIL_TO_W4.5.
     - C9 from `bin/verify_ta_sh2b3_phase.sh --wave 4` emits PASS, WARN, or FAIL consistent with the recorded outcome.
     - Atomic commit landed.
   </acceptance_criteria>
@@ -374,7 +430,7 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && [ -f .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_post_refresh.tsv ] && grep -qE "D-TA-WAVE4-OUTCOME-(PASS|FAIL_TO_W4\.5|WARN_INTERMEDIATE)" .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md && grep -qE "Wave 5 gate:.*(CLEARED|BLOCKED|CARTER_DECIDES)" .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md && echo PASS</automated>
   </verify>
   <done>
-    Post-Wave-4 status distribution captured and recorded; D-TA-WAVE4-OUTCOME-{PASS|FAIL_TO_W4.5|WARN_INTERMEDIATE} recorded in CONTEXT.md addendum with full pre vs post status comparison + Wave 5 gate disposition. If FAIL: Wave 4.5 fallback directive recorded. C9 emits the corresponding harness status. Atomic commit landed. Verifies C9 in VALIDATION.md.
+    Post-Wave-4 status distribution captured and recorded; D-TA-WAVE4-OUTCOME-{PASS|FAIL_TO_W4.5|WARN_INTERMEDIATE} recorded in CONTEXT.md addendum with full pre vs post status comparison + Wave 5 gate disposition. If FAIL: Wave 4.5 fallback directive recorded with explicit "MANUAL ESCALATION" labeling (per checker iter 1 NIT 4 — clarifies the directive is advisory, NOT automated). C9 emits the corresponding harness status. Atomic commit landed. Verifies C9 in VALIDATION.md.
   </done>
 </task>
 
@@ -388,6 +444,8 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
 | Pre-fix `results/qtl_coloc/` cache ↔ Post-fix Snakemake re-fire | Wave 4 invalidation crosses this; mv (not rm) preserves rollback |
 | D-TA-04-DIAGNOSTIC outcome ↔ SUSIE_LAYER_SCOPE env var | Wrong env var = under-invalidation (potentially still stale results) or over-invalidation (extra ~5 hr) |
 | Snakemake re-fire ↔ canonical Snakefile + HEAD code | All_qtl_coloc target dispatches against HEAD's 069b34f + 7d54183 fixed code |
+| Wave 4.5 directive recording ↔ Wave 4.5 manual execution | Per checker iter 1 NIT 4: the directive is ADVISORY; Carter must manually re-execute the driver after seeing FAIL_TO_W4.5 |
+| LSF wall-time enforcement ↔ bsub_wrapper.sh | Per checker iter 1 NIT 3: wrapper sets -W=14400 for long queue (240-hr cap, well above ~10-15 hr per-fire envelope) |
 
 ## STRIDE Threat Register
 
@@ -396,15 +454,18 @@ Output: Refreshed `results/qtl_coloc/` cache (1,274 per-attempt JSONs) under pos
 | T-PROCESS-01 | T (Tampering) | results/qtl_coloc/ pre-fix cache | mitigate | Timestamped `mv` to .preFix.bak.${TS} (Pitfall 5 mitigation); never `rm`; rollback path preserved |
 | T-PROCESS-02 | I (Information disclosure) | Implicit `git add .` could stage results/qtl_coloc/*.json (large; may be gitignored intentionally) | mitigate | Wave 4 commits use explicit paths: baseline.tsv + post_refresh.tsv + CONTEXT.md + log only; per-attempt JSONs left to .gitignore policy |
 | T-PROCESS-04 | T (Tampering) | results/multitrait/coloc_summary.tsv md5 invariant | mitigate | Wave 4 does NOT touch coloc_summary.tsv; only QTL-coloc layer (and conditionally SuSiE-RSS layer) is in scope |
+| T-PROCESS-07 | E (Elevation of privilege) | Wave 4.5 fallback misinterpreted as automated continuation | mitigate | Per checker iter 1 NIT 4: directive labeled "MANUAL ESCALATION" / "ADVISORY DIRECTIVE — NOT AUTOMATED" in CONTEXT.md; acceptance criterion grep verifies the labeling; must_haves.truths explicit |
+| T-PROCESS-06 | D (Denial of service) | LSF jobs killed by 30-min queue default RUNLIMIT | mitigate | bsub_wrapper.sh enforces -W=14400 for long queue (per checker iter 1 NIT 3); Task 1 step 1 acceptance check verifies wrapper config |
 </threat_model>
 
 <verification>
 - Pre-Wave-4 baseline status distribution captured in wave4_baseline.tsv (Task 1)
 - Cache backup with timestamped suffix exists (Task 1)
 - Snakemake re-fire complete (Task 1)
+- bsub_wrapper.sh enforces -W=14400 for long queue (per checker iter 1 NIT 3)
 - Post-Wave-4 status distribution captured in wave4_post_refresh.tsv (Task 2)
 - D-TA-WAVE4-OUTCOME recorded with PASS/FAIL/WARN evaluation (Task 2)
-- Wave 4.5 fallback directive (if FAIL) appended to CONTEXT.md (Task 2)
+- Wave 4.5 fallback directive (if FAIL) appended to CONTEXT.md with MANUAL ESCALATION labeling (Task 2; per checker iter 1 NIT 4)
 - C9 emits PASS/WARN/FAIL from verification harness consistent with outcome
 - 2 atomic commits landed
 </verification>
@@ -420,8 +481,9 @@ This plan covers the following C-rows from VALIDATION.md:
 - Timestamped backup of pre-fix cache preserved (rollback path)
 - D-TA-WAVE4-OUTCOME-{PASS|FAIL_TO_W4.5|WARN_INTERMEDIATE} recorded in CONTEXT.md
 - Wave 5 gate disposition explicit (CLEARED / BLOCKED / CARTER_DECIDES)
-- Wave 4.5 fallback directive appended if FAIL
+- Wave 4.5 fallback directive (if applicable) appended with MANUAL ESCALATION labeling (per checker iter 1 NIT 4)
 - C9 emits PASS for too_few_snps ≤ 200
+- bsub_wrapper.sh enforces -W=14400 for long queue (per checker iter 1 NIT 3)
 </success_criteria>
 
 <output>
@@ -435,6 +497,7 @@ After completion, create `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/
 - D3 Snakemake re-fire used HEAD code (069b34f + 7d54183 ancestors)
 - D4 too_few_snps drop magnitude
 - D5 PASS/FAIL/WARN classification
-- D6 Wave 4.5 fallback triggered or not
+- D6 Wave 4.5 fallback DIRECTIVE recorded (or not); explicitly note that the directive is MANUAL ESCALATION per checker iter 1 NIT 4
 - D7 commit hygiene (explicit paths)
+- Cross-reference to checker iter 1 NIT 3 + NIT 4 mitigations
 </output>
