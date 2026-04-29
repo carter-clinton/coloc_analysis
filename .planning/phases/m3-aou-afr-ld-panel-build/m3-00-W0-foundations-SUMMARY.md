@@ -2,8 +2,8 @@
 phase: m3-aou-afr-ld-panel-build
 plan: m3-00-W0-foundations
 subsystem: m3-foundations
-status: partial
-blocking_gate: O1-region-width-acceptance
+status: complete
+blocking_gate: none (D-M3-09 ruled Resolution 1 on 2026-04-28; quick task 260428-stv)
 tags: [aou, ld-panel, hail, foundations, wave-0, dev-mirror, threat_model_referenced, nyquist_compliant]
 dependency_graph:
   requires:

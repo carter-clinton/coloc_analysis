@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Phase m3 plans created (6 plans, 6 waves; m3-00 Wave 0 in progress); ready to fire /gsd-execute-phase m3-aou-afr-ld-panel-build
+stopped_at: M3 Wave 0 closed; Wave 1 portal pre-conditions outstanding
 last_updated: "2026-04-28T22:05:41.248Z"
 last_activity: 2026-04-28 — Phase m3 plan-phase complete (6 plan files committed under .planning/phases/m3-aou-afr-ld-panel-build/); Wave 0 foundations executing.
 progress:
