@@ -453,19 +453,19 @@ R-script header + locked-scalar block + plot_annotation + 1vy SUMMARY
   7. New submission bundle built via
      `bin/build_track_a_submission_bundle.sh` + SHA-256 manifest update
      + OSF deviation log entry at `osf.io/az52u`
-**Plans**: 0 plans (run `/gsd-discuss-phase ta-sh2b3-canonical-and-cache-refresh`
-then `/gsd-plan-phase ta-sh2b3-canonical-and-cache-refresh`)
+**Plans**: 8 plans (Wave 0 through Wave 7; one PLAN.md per wave)
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase ta-sh2b3-canonical-and-cache-refresh to break down)
+- [ ] ta-sh2b3-W0-foundations-and-osf-gate-PLAN.md — Wave 0: source-repo path + code-fix ancestry + variant-ID format diagnostic + OSF pre-reg gate + per-L policy YAML + dispatch drivers + verification harness scaffolding
+- [ ] ta-sh2b3-W1-susie-rss-l-sweep-PLAN.md — Wave 1: SH2B3 EUR L-sweep SuSiE-RSS re-fits at L ∈ {15, 20, 30} for BMI + hypertension + stroke; convergence verification per Zou 2022
+- [ ] ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md — Wave 2: 9 SH2B3 EUR canonical-pair coloc.susie production fire against Wave-1 PRIMARY_L fits (parallel namespace coloc_susie_R2/)
+- [ ] ta-sh2b3-W3-checkpoint-human-verify-PLAN.md — Wave 3: checkpoint:human-verify outcome-branch gate; Carter records D-TA-WAVE3-OUTCOME-{A_COLLAPSE|B_PARTIAL|C_SURVIVE} from Wave 2 disk numbers
+- [ ] ta-sh2b3-W4-cache-invalidation-and-refire-PLAN.md — Wave 4: variant-ID cache invalidation + Snakemake re-fire with --use-conda -j 50; PASS = too_few_snps ≤ 200; FAIL = trigger Wave 4.5 SuSiE-RSS fallback
+- [ ] ta-sh2b3-W5-aggregator-and-figure-refresh-PLAN.md — Wave 5: downstream aggregator refresh + R2-canonical merge into coloc_summary.tsv (Pitfall 3 exemption) + TRACK-A-FROZEN-NUMBERS LIVE blocks updated + Fig S7 regenerated
+- [ ] ta-sh2b3-W6-rename-and-narrative-PLAN.md — Wave 6: id-vs-ref-LD nickname rename (3 git mv + 17 reference fix-ups; ~50 historical quick files preserved) + manuscript narrative atomic updates per Wave-3 branch + Wave-5 frozen numbers
+- [ ] ta-sh2b3-W7-closeout-bundle-and-osf-deviation-PLAN.md — Wave 7: phase closeout — new submission bundle via renamed builder + SHA-256 manifest + Stage 2 md5 invariant whitelist + osf_deviations.md created + final C1-C15 sweep
 
-**Status**: not planned; routed next to `/gsd-discuss-phase
-ta-sh2b3-canonical-and-cache-refresh`. Independent of Track B M0–M6
-progress (Track A short-form sequence). Concurrency note: stale
-`.claude/scheduled_tasks.lock` (Apr 22) confirmed dead at this entry's
-commit time (`ps -p 3995760` empty); no live concurrent ROADMAP writer.
-If Terminal A reactivates before `/gsd-plan-phase` fires, stagger
-writes.
+**Status**: planned 2026-04-29 (8-wave structure mirrors CONTEXT.md `<wave_structure>` and RESEARCH.md wave-by-wave breakdown). Routed next to `/gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh` starting at Wave 0. Independent of Track B M0–M6 progress (Track A short-form sequence). Concurrency note: stale `.claude/scheduled_tasks.lock` (Apr 22) confirmed dead at this entry's commit time; no live concurrent ROADMAP writer. If Terminal A reactivates before phase execute fires, stagger writes.
 
 ## Pre-pivot spine (completed 2026-04-14; artifacts reusable per Amendment §8)
 
