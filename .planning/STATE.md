@@ -148,6 +148,10 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase **ta-sh2b3-canonical-and-cache-refresh** added 2026-04-28: Track A R2 phase to close two open Genome Medicine manuscript issues — (1) SH2B3 canonical-pair reference-LD coverage gap (re-fit non-converged SH2B3 EUR per-trait SuSiE-RSS at expanded L; run coloc.susie on canonical SH2B3 EUR pairs against converged fits; honest 3-branch outcome gate at human-verify checkpoint); (2) variant-ID matcher fix (commits `069b34f` + `7d54183`) cache propagation refresh (1,005/1,274 = 78.9 % `too_few_snps` QTL-coloc failures owing to stale pre-fix caches; QTL-coloc layer always re-fired, SuSiE-RSS layer conditional on Wave-0 cache-layer diagnostic; downstream aggregator + Fig S7 + Table 1 + Tier assignments + Pathway disclosure refresh; manuscript narrative atomic updates against post-refresh disk numbers). Independent of Track B M0–M6 progress (Track A short-form sequence). Routed next to `/gsd-discuss-phase ta-sh2b3-canonical-and-cache-refresh`. Honest-framing-lock chain at `docs/manuscript/track_a_pivot.md` must be preserved verbatim per `.planning/feedback_original_research_framing.md` memory; no `/gsd-quick` shortcuts; manuscript narrative writes ONLY in Wave 6 AFTER disk numbers are frozen.
+
 ### Decisions
 
 Decisions are logged in .planning/DECISIONS.md (8 decisions as of 2026-04-09).

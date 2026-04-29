@@ -311,6 +311,162 @@ of Track B milestone sequence
 **Status**: numeric reconciliation done; remaining edit passes are Route A
 of the resume plan. Independent of Track B M0–M6 progress.
 
+### Track-A-R2-sh2b3-canonical-and-cache-refresh
+**Slug**: ta-sh2b3-canonical-and-cache-refresh
+**Goal**: Track A R2 phase closing two open Genome Medicine manuscript issues.
+Issue 1 — SH2B3 canonical-pair reference-LD coverage gap: 3 of 5 SH2B3 EUR
+per-trait SuSiE-RSS fits (BMI, hypertension, stroke) are non-converged at
+L=10 / niter=100 (the SuSiE iteration-cap regime per Wang et al. 2020
+§Discussion); identity-LD hypertension carries `L_saturated=TRUE` in the
+per-fit JSON. Re-fit at expanded L (L=20 vs pre-registered L-sweep
+{15, 20, 30}; choice gated on OSF check), verify `n_CS << L` per Zou et al.
+2022 §Discussion, then run coloc.susie on the canonical SH2B3 EUR
+trait-pairs (minimum BMI–HTN + HTN–stroke; recommended 9 new pairs to
+symmetrize Table 3 with the FTO_16q12 row). The manuscript's canonical
+claims (`PP.H4 = 1.00` at rs3184504, rs10774625, rs7137828, rs4766578 for
+BMI–hypertension and hypertension–stroke) have never been tested under
+reference-LD; Table 3 currently shows those rows as "not executed". Issue
+2 — variant-ID matcher fix cache propagation refresh: code fixes ALREADY
+committed in current branch (`069b34f` extended `run_qtl_coloc.R` to
+tolerate chr:pos-formatted variant IDs; `7d54183` added LD-panel-rsid
+override to `run_susie_rss.R`), but intermediate caches were generated
+BEFORE those commits landed and weren't invalidated. 1,005 / 1,274
+(78.9 %) QTL-coloc attempts returned `too_few_snps` owing to harmonized-TSV
+vs SuSiE-fit variant-ID format mismatch (chr:pos vs rsid). Re-fire the
+QTL-coloc layer (and conditionally the SuSiE-RSS layer per Wave-0
+cache-layer diagnostic) and refresh all downstream aggregators + Fig S7 +
+Table 1 + Tier assignments + Pathway disclosure + manuscript narrative
+against post-refresh disk numbers.
+**Requirements**: REQ-PUBLIC-DATA-ONLY, REQ-SUSIE-RSS-POLICY,
+REQ-PP.H4-THRESHOLD-SWEEP, REQ-OSF-PREREG, REQ-SNAKEMAKE-CI,
+REQ-PATH-PARAMETERIZATION
+**Dependencies**: Submission bundle commit `cacdbfe` (`quick-260427-vbq`)
+frozen checkpoint; Phase 1 SuSiE-RSS outputs (re-fits at expanded L);
+Phase 2 Stage 2 real-LD coloc.susie outputs; Phase 2 QTL-coloc cache
+(intermediate, slated for invalidation); honest-framing-lock chain at
+`docs/manuscript/track_a_pivot.md` (L148 + L295 + L220 + L90) +
+R-script header + locked-scalar block + plot_annotation + 1vy SUMMARY
+(must be preserved verbatim per `.planning/feedback_original_research_framing.md`)
+**Open scope-decisions (Wave 0 — locked by `/gsd-discuss-phase` + Carter):**
+  - **L value** for SH2B3 EUR per-trait SuSiE-RSS re-fits — L=20 vs
+    pre-registered L-sweep {15, 20, 30} (check OSF pre-reg `osf.io/pvb5j`
+    first; convergence verification per Zou 2022 §Discussion `n_CS << L`)
+  - **Canonical-pair scope** — minimum BMI–HTN + HTN–stroke vs all 9 new
+    SH2B3 EUR trait-pair combinations (`asthma–bmi`, `asthma–hypertension`,
+    `asthma–stroke`, `bmi–hypertension`, `bmi–stroke`, `bmi–t2d`,
+    `hypertension–stroke`, `hypertension–t2d`, `stroke–t2d`) to symmetrize
+    Table 3 with the FTO_16q12 row
+  - **Cache-layer scope** — QTL-coloc only (fast path) vs both
+    SuSiE-RSS + QTL-coloc (conservative path); decided by Wave-0
+    SuSiE-RSS variant-ID format diagnostic on
+    `results/fine_mapping/susie/*.json` (chr:pos → both layers stale;
+    rsid → QTL-coloc only)
+  - **OSF amendment posting** before Wave 1 fires (`osf.io/pvb5j` or
+    `osf.io/az52u`) for any L value, threshold (`PP.H4 ≥ 0.5` vs `≥ 0.8`),
+    or scope choice not already pre-registered
+**Suggested wave structure (final wave count + scope decided by
+`/gsd-plan-phase`, NOT pre-locked here):**
+  - **Wave 0**: source-repo path discovery on `login02.hpc.ncsu.edu` +
+    verification that `069b34f` + `7d54183` reachable from HEAD
+    (`git merge-base --is-ancestor`; cherry-pick if absent) + SuSiE-RSS
+    cache-layer diagnostic + scope-decision questions to Carter
+  - **Wave 1**: expanded-L SuSiE-RSS re-fits for SH2B3 EUR per-trait
+    BMI + hypertension + stroke; convergence verification (`n_CS << L`
+    per Zou 2022 §Discussion)
+  - **Wave 2**: coloc.susie production fire on canonical SH2B3 EUR pairs
+    (LSF; minimum BMI–HTN + HTN–stroke; recommended 9 pairs)
+  - **Wave 3**: `checkpoint:human-verify` — Carter selects SH2B3 outcome
+    branch from observed disk numbers BEFORE narrative writes:
+      (a) BMI–HTN reference-LD `PP.H4 < 0.5` → identity-LD canonical
+          claim does NOT survive matched-LD; flagship demonstrated
+          collapse; strongest finding
+      (b) `PP.H4 ∈ [0.5, 0.8)` → partial survival; calibration finding;
+          manuscript pivots to "magnitude of inflation, not categorical"
+      (c) `PP.H4 ≥ 0.8` → canonical claim holds up under matched-LD;
+          SH2B3 anchor flips from "collapse" to "validated"; manuscript
+          headline narrows but Fig S2 structural-inflation finding +
+          FTO Tier-C disclosure still load-bearing
+    Decision recorded as `D-TA-XX` in CONTEXT.md. Plan must NOT
+    pre-commit to a branch.
+  - **Wave 4**: variant-ID cache invalidation
+    (`mv results/qtl_coloc results/qtl_coloc.preFix.bak`; SuSiE-RSS layer
+    conditional on Wave-0 diagnostic) + Snakemake re-fire
+    `--use-conda -j 50`. LSF compute envelope: ~1,274 QTL-coloc × ~30 sec
+    ≈ ~10 hr at 50 cores; SuSiE-RSS re-fits if needed add ~5 hr
+  - **Wave 5**: downstream aggregator refresh —
+    `scripts/python/aggregate_qtl_coloc.py` + `scripts/R/aggregators/` +
+    `fig_h3_ld_overlap_dose_response.R` (Fig S7 dose-response) + Table 1
+    builder + Tier-assignment script + Pathway-disclosure aggregator.
+    **PASS criterion**: `too_few_snps` count drops materially from 1,005
+    (target ≤200; `success` + `no_qtl_cs` counts rise correspondingly).
+    **FAIL criterion**: stays ~1,000 → SuSiE-RSS layer was the actual
+    problem; root-cause investigation triggered, do NOT proceed to Wave 6
+  - **Wave 6**: manuscript narrative atomic updates per Wave-3 branch +
+    Wave-5 refreshed numbers — Methods §Harmonization-Pipeline
+    Diagnostics, Limitations bullet 5, Discussion §Identity-LD Inflation,
+    Discussion §SH2B3 anchor, Results §SH2B3 case study, Fig 3 caption,
+    Fig S7 caption, Conclusion-1, Abstract, Table 3 SH2B3 rows, Table 4
+    (`n_attempted` / `n_failed` columns), plus SH2B3-specific paragraphs
+    in `docs/manuscript/track_a_pivot.md`
+  - **Wave 7**: phase closeout — SUMMARY.md per plan with deviations log
+    + verification dimensions D1–DN PASS/WARN/FAIL JSON + new submission
+    bundle build via `bin/build_track_a_submission_bundle.sh` + SHA-256
+    manifest update + OSF deviation log entry at `osf.io/az52u`
+**Invariants the plan MUST honor (non-negotiable):**
+  - NO `/gsd-quick` shortcuts. Atomic commits per task. SUMMARY.md per
+    plan. Verification dimensions D1–DN with PASS/WARN/FAIL evidence.
+  - Manuscript narrative writes ONLY in Wave 6 AFTER disk numbers are
+    frozen at Wave 5. Never pre-write narrative against anticipated
+    outcomes.
+  - Honest-framing-lock chain preserved at every anchor point
+    (`docs/manuscript/track_a_pivot.md` L148 + L295 + L220 + L90 +
+    R-script header + locked-scalar block + plot_annotation + 1vy
+    SUMMARY). Original hypothesis-driven research framing only — never
+    "revision" / "correction" / "cleanup" / "fix" (per
+    `.planning/feedback_original_research_framing.md` memory).
+  - DEC-2026-04-25-01 preserved: `results_identity_ld/` NOT committed;
+    `.gitignore` + canonical CS-yield summary at
+    `.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv` only.
+  - Stage 2 md5 byte-identical preservation rule for files not
+    intentionally rewritten by this phase (verify md5sum pre-vs-post
+    each commit).
+  - Pre-registration discipline: any L value, threshold, or scope choice
+    not already pre-registered enters via OSF amendment posted BEFORE
+    Wave 1 fires — not silent change.
+**Success Criteria** (preliminary; `/gsd-plan-phase` will refine):
+  1. SH2B3 EUR per-trait SuSiE-RSS fits converged at chosen L
+     (`n_CS << L` verified) for BMI + hypertension + stroke
+  2. coloc.susie executed on at minimum BMI–HTN + HTN–stroke canonical
+     pairs against converged fits (preferably 9 new pairs to symmetrize
+     Table 3 with FTO_16q12)
+  3. Carter outcome-branch decision (a / b / c) recorded as `D-TA-XX`
+     in CONTEXT.md before any narrative writes
+  4. QTL-coloc cache invalidation + Snakemake re-fire complete;
+     `too_few_snps` drops materially from 1,005 baseline (PASS ≤ 200;
+     FAIL ≈ 1,000 → SuSiE-RSS layer root-cause investigation triggered)
+  5. Downstream aggregators (Fig S7, Table 1, Tier assignments, Pathway
+     disclosure, Table 4) refreshed against post-refresh disk numbers
+  6. Manuscript narrative atomically updated per Wave-3 branch + Wave-5
+     refreshed numbers (Methods, Results, Discussion, Limitations,
+     Abstract, Conclusion-1, captions, tables) with honest-framing-lock
+     chain preserved verbatim
+  7. New submission bundle built via
+     `bin/build_track_a_submission_bundle.sh` + SHA-256 manifest update
+     + OSF deviation log entry at `osf.io/az52u`
+**Plans**: 0 plans (run `/gsd-discuss-phase ta-sh2b3-canonical-and-cache-refresh`
+then `/gsd-plan-phase ta-sh2b3-canonical-and-cache-refresh`)
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase ta-sh2b3-canonical-and-cache-refresh to break down)
+
+**Status**: not planned; routed next to `/gsd-discuss-phase
+ta-sh2b3-canonical-and-cache-refresh`. Independent of Track B M0–M6
+progress (Track A short-form sequence). Concurrency note: stale
+`.claude/scheduled_tasks.lock` (Apr 22) confirmed dead at this entry's
+commit time (`ps -p 3995760` empty); no live concurrent ROADMAP writer.
+If Terminal A reactivates before `/gsd-plan-phase` fires, stagger
+writes.
+
 ## Pre-pivot spine (completed 2026-04-14; artifacts reusable per Amendment §8)
 
 The Phase 00–11 content below executed between 2026-02 and 2026-04-14 under
@@ -639,3 +795,4 @@ M: 11 (parallel from Phase 9)
 | M5 variant→gene prioritization + novelty | not planned | gated on M4 Tier A | 2027-02 |
 | M6 manuscript + replication + submission | not planned | gated on M5 | 2027-04 / 2027-05 |
 | Track-A-finalization | Route A in flight; audit-V2 sweep landed 2026-04-27 (`260427-azv` — 12 atomic commits, 15 V2-CLOSED tracker rows, Fig S2 + frozen scalars + 3 DEC entries) | in flight (independent of M0–M6) | 2026-05 / 2026-06 |
+| Track-A-R2-sh2b3-canonical-and-cache-refresh | 0/0 (not planned) | new phase seeded 2026-04-28; routing to `/gsd-discuss-phase ta-sh2b3-canonical-and-cache-refresh` next; closes SH2B3 reference-LD coverage gap (Issue 1) + variant-ID matcher cache propagation (Issue 2) ahead of Genome Medicine R2 submission | 2026-05 / 2026-06 |
