@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: M3 Wave 0 closed; Wave 1 portal pre-conditions all PASS; AUX path verification awaits Carter Workbench session
-last_updated: "2026-04-29T19:30:00.000Z"
-last_activity: 2026-04-29 — Completed quick task 260429-l1e (reconcile ROADMAP.md + DECISIONS.md to Amendment §12 — closes M0 documentation alignment for all four .planning/ files Amendment §12 names; pairs with 2026-04-28 quick-260428-pj4 commits 70db503/56fd413/927b5eb that closed PROJECT.md + REQUIREMENTS.md half). Both files were already structurally post-pivot; reconciliation took the form of dated audit-trail header notes recording §12 alignment + zero-substantive-drift outcome (ROADMAP commit b1887f6; DECISIONS commit cabd433). Carter decision pending: ADR-2026-04-22-05 ("Novel-variant discovery as co-equal aim w/ locked comparator catalogs") promotion to standalone DEC entry — currently captured implicitly via REQUIREMENTS.md REQ-NOVELTY-CLASS-1..5 + REQ-CATALOG-VERSION-LOCK + Amendment §7 OSF anchor. Prior M3 Wave 1 portal pre-conditions cleared 2026-04-29 02:54Z under quick task 260428-vt2 (P1+P2+P3+P4+P6 PASS; R1 HARD GATE PASS) — single Wave 1 pre-condition remaining is AUX path verification per .planning/phases/m3-aou-afr-ld-panel-build/m3-W1-AUX-PATH-VERIFICATION.md.
+stopped_at: Closed quick task 260428-ppz (AoU P&P registration paste-ready Markdown + RPS+P&P portal zip + DEC-2026-04-28-01 Sci Data venue commitment); zip deliverable at `.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip` (23 KB, 3 .md files, unzip -t clean). Terminal A advanced m3 to RESEARCH + VALIDATION (commits 4195ca0, 27b0267) during this task; m3 is now further along and ready for `/gsd-plan-phase m3-aou-afr-ld-panel-build`.
+last_updated: "2026-04-29T19:32:03.896Z"
+last_activity: 2026-04-29
 progress:
   total_phases: 12
   completed_phases: 6
@@ -64,7 +64,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-04-28
+Last activity: 2026-04-29
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
