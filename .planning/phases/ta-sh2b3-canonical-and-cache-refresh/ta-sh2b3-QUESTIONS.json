@@ -1,0 +1,458 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "phase_title": "Track A R2 — id-vs-ref-LD: SH2B3 canonical-pair coverage + variant-ID matcher cache refresh",
+  "generated_at": "2026-04-28T22:23:38-04:00",
+  "stats": {
+    "total": 13,
+    "answered": 0,
+    "chat_more": 0,
+    "remaining": 13
+  },
+  "sections": [
+    {
+      "id": "foundations",
+      "title": "Foundations (Wave 0) — D-TA-01",
+      "description": "Source-repo absolute path on the NCSU HPC cluster. The submission-bundle build_log cites Build host: login02.hpc.ncsu.edu (one of several login nodes; login03 was used for prior Stage 1d narrow-validation tests per .planning/debug/stage2_narrow_validation/SH2B3_12q24_test.log). The actual repo path used by every prior LSF fire (Phase 0 smoke_dev, deCODE pQTL ingest, k2d 2026-04-24 identity-LD re-fire, Stage 2 2026-04-22 production fire, submission bundle 2026-04-28) appears to be /rs1/researchers/c/ckclinto/coloc_analysis/ — consistent across STATE.md L175 + STATE.md L588 + the bundle build script's hard-coded conda-pandoc path /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc.",
+      "questions": [
+        {
+          "id": "Q-01",
+          "title": "Source repo absolute path on cluster",
+          "context": "GPFS mount /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/ is one path; /rs1/researchers/c/ckclinto/coloc_analysis/ (the cross-mount used by all prior LSF fires) is the other. Drives every Issue-1 + Issue-2 LSF compute path. Wave 0 cannot fire without it.",
+          "options": [
+            {
+              "id": "a",
+              "label": "/rs1/researchers/c/ckclinto/coloc_analysis/ (recommended; consistent with all prior LSF fires)",
+              "description": "Phase 0 (smoke_dev), deCODE pQTL ingest, k2d 2026-04-24, Stage 2 2026-04-22, and submission bundle 2026-04-28 all use this path. Same physical filesystem as the GPFS mount, but this is the canonical path the cluster sees. RECOMMENDED — already validated by 4+ prior fires."
+            },
+            {
+              "id": "b",
+              "label": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/ (the GPFS mount path)",
+              "description": "The path the user uses interactively from this shell. Same filesystem; functionally equivalent. Pick this only if there's a reason to prefer it (e.g., LSF working-directory convention)."
+            },
+            {
+              "id": "c",
+              "label": "/share/clintonlab/ckclinto/coloc_analysis/ (if a /share/ mirror exists)",
+              "description": "Used by some Codex-tmp redirects (memory entry system_codex_tmp_redirect.md). Pick only if Carter knows this is the canonical login02 path."
+            },
+            {
+              "id": "d",
+              "label": "Custom path (specify in chat_more)",
+              "description": "Any other absolute path, e.g., a user-home checkout. Provide the exact path in the chat_more textarea."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        }
+      ]
+    },
+    {
+      "id": "issue-1-susie",
+      "title": "Issue 1 — SH2B3 EUR SuSiE-RSS re-fits (D-TA-02 + HQ#2(ii) headline)",
+      "description": "Three of five SH2B3 EUR per-trait SuSiE-RSS fits are non-converged at L=10 / niter=100 (the SuSiE iteration-cap regime per Wang et al. 2020 §Discussion); identity-LD hypertension carries L_saturated=TRUE in the per-fit JSON. Audit-V2 §HQ#2(i) marked this DEFERRED-COMPUTE pending an LSF slot — this phase fires it. Audit-V2 §HQ#2(ii) marked the headline-numerator question DEFERRED-DESIGN: when L=20 lands, do we recompute the 51/96 numerator (drop 18 non-converged → 33/96) or keep 51/96 with caveat? Plan must NOT pre-commit to a branch.",
+      "questions": [
+        {
+          "id": "Q-02",
+          "title": "L value for SH2B3 EUR per-trait re-fits (D-TA-02)",
+          "context": "Zou et al. 2022 §Discussion recommend setting L generously above the expected number of effects, then verifying n_CS << L. Compute envelope per audit-response: ~2–4 hours wall time on serial queue with la_multitrait_r env at L=20 (3-trait sweep). L-sweep {15, 20, 30} = ~9× compute over L=10 baseline.",
+          "options": [
+            {
+              "id": "a",
+              "label": "L=20 single-shot (Zou 2022 default; ~3× compute over L=10)",
+              "description": "Simplest: re-fit BMI/HTN/stroke at L=20 once, verify n_CS << L (e.g., n_CS ≤ 10). If any fit returns n_CS = 20 (saturation), Wave 1 escalates to L=30 within the same wave. Risk: if L=20 saturates, an extra LSF round-trip is needed."
+            },
+            {
+              "id": "b",
+              "label": "L-sweep {15, 20, 30} pre-registered supplementary (recommended; ~9× compute)",
+              "description": "Already pre-registered as a follow-on supplementary analysis. Three-point sensitivity sweep produces explicit evidence that n_CS plateaus and is robust to L choice. Generates a Supplementary Methods table the way Zou 2022 recommends. Burns ~12-15 hr LSF total but eliminates ambiguity. RECOMMENDED if OSF pre-reg already covers (verify D-TA-05)."
+            },
+            {
+              "id": "c",
+              "label": "L=20 with conditional-extension to L=30 if n_CS == L (saturation indicator)",
+              "description": "Hybrid: start at L=20; if any of BMI/HTN/stroke returns n_CS = 20, fire that trait at L=30 in the same wave. Compute scales with saturation rate (~3× to ~6× compute). Rigorous AND adaptive."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., L=20 single-shot now + L-sweep deferred to a separate Phase if needed; or L=30 single-shot to skip the sweep."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        },
+        {
+          "id": "Q-03",
+          "title": "Headline numerator decision when L=20 lands (HQ#2(ii) DEFERRED-DESIGN)",
+          "context": "Currently the manuscript's 51/96 yield headline pools the 18 non-converged fits with the 33 converged ones. Audit-V2 Eval 2(a) flagged this as 'non-convergence treated as data'. If L=20 converges some/all of the 18 non-converged, the numerator changes; if it doesn't, the question is whether to drop them from the headline. Materially shifts Abstract / Results §Headline / Fig 2 / TRACK-A-FROZEN-NUMBERS.md LIVE block.",
+          "options": [
+            {
+              "id": "a",
+              "label": "Decide post-Wave-1 from observed convergence outcome (recommended)",
+              "description": "Don't pre-commit. After Wave 1 produces the L=20 (or L-sweep) results, the empirical convergence rate dictates: if all 3 SH2B3 EUR traits converge, recompute 51/96 → (51+converged)/96; if some still don't converge, surface as a separate disclosure column. RECOMMENDED — outcome-driven, matches the honest-framing-lock principle of disk-then-narrative."
+            },
+            {
+              "id": "b",
+              "label": "Keep 51/96 with caveat in place (don't recompute regardless of L=20 outcome)",
+              "description": "Conservative: preserve byte-identical 51/96 throughout. Add a Limitations bullet stating 'the 51/96 yield includes 18 non-converged fits (3 of 5 at SH2B3 EUR); under L=20 these {converge / remain non-converged}'. Lowest manuscript-edit footprint; least responsive to new evidence."
+            },
+            {
+              "id": "c",
+              "label": "Drop non-converged fits from numerator regardless (prefer the stricter denominator)",
+              "description": "Most rigorous: numerator = converged-fits-with-non-empty-CS (e.g., 33/96 baseline; updated to (33 + Wave-1 converged)/96 post-fire). Stricter, smaller number, more defensible at peer review. But requires updating Abstract + Headline + Fig 2 caption + TRACK-A-FROZEN-NUMBERS.md LIVE block in Wave 6."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., dual reporting: keep 51/96 as 'all-attempts' headline + add 33/96 as 'converged-only' Supplementary Methods column."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        }
+      ]
+    },
+    {
+      "id": "issue-1-canonical-pairs",
+      "title": "Issue 1 — Canonical-pair coloc.susie scope (D-TA-03 + Wave 3 gate)",
+      "description": "The manuscript's canonical claims (PP.H4 = 1.00 at rs3184504, rs10774625, rs7137828, rs4766578 for BMI–hypertension and hypertension–stroke under Stage 1d identity-LD) have never been tested under reference-LD. Table 3 currently shows those rows as 'not executed'. Wave 2 fires coloc.susie on the chosen pairs against the Wave-1 converged fits; Wave 3 is the human-verify gate where Carter selects an honest 3-branch outcome (collapse / partial / survive).",
+      "questions": [
+        {
+          "id": "Q-04",
+          "title": "Canonical-pair coloc.susie scope (D-TA-03)",
+          "context": "Already on disk: SH2B3_12q24__EUR__asthma_vs_t2d (1 pair). Full SH2B3 EUR trait-pair lattice = 10 pairs (5 traits choose 2). FTO_16q12 EUR has all 10 pairs in the Stage 2 manifest — that's the symmetry target.",
+          "options": [
+            {
+              "id": "a",
+              "label": "MINIMUM — BMI–HTN + HTN–stroke (2 new pairs; tests just the canonical literature claims)",
+              "description": "Smallest scope; directly tests the rs3184504/rs10774625/rs7137828/rs4766578 PP.H4=1.00 claims; ~2× the LSF compute of Wave 2. Disadvantage: Table 3 SH2B3 row remains asymmetric vs FTO_16q12 (3/10 pairs filled vs 10/10). Reviewer may ask 'why only these two?'"
+            },
+            {
+              "id": "b",
+              "label": "RECOMMENDED — 9 new pairs (full SH2B3 EUR trait-pair lattice minus already-on-disk asthma-t2d)",
+              "description": "asthma–bmi, asthma–hypertension, asthma–stroke, bmi–hypertension, bmi–stroke, bmi–t2d, hypertension–stroke, hypertension–t2d, stroke–t2d. Symmetrizes Table 3 SH2B3 row with FTO_16q12. ~9× the LSF compute of Wave 2 single pair. Gives a complete pleiotropy lattice for the flagship locus. RECOMMENDED."
+            },
+            {
+              "id": "c",
+              "label": "MAXIMUM — 9 SH2B3 EUR + replicate 3-4 other regions against post-L=20 fits (cross-region consistency)",
+              "description": "Adds FTO_16q12 EUR + MC4R_18q21 EUR + APOE_19q13 + CXADR_F2RL1_6p21 cross-region replication if their per-trait fits also benefit from L=20. Over-scopes the manuscript ask; pushes total compute to ~25× single-pair. Probably out of phase scope (would itself become a separate Phase)."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., MINIMUM at Wave 2 + 9-pair fill in a follow-on Phase; or 9 SH2B3 + ONLY FTO_16q12 EUR for cross-region check."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        },
+        {
+          "id": "Q-05",
+          "title": "PP.H4 outcome-branch threshold for Wave 3 human-verify gate",
+          "context": "Wave 3 is checkpoint:human-verify — Carter picks the SH2B3 outcome branch from observed disk numbers BEFORE narrative writes. The manuscript currently uses Tier B = 0.5 and Tier A = 0.8 throughout (per AUDIT-RESPONSE TRACK-A-FROZEN-NUMBERS L143 'Threshold preservation'). Lowering thresholds to surface the FTO Tier-C 0.3099 signal was rejected as out of scope during quick-260427-e8n. Wave 3 thresholds should match.",
+          "options": [
+            {
+              "id": "a",
+              "label": "Standard manuscript thresholds (recommended): collapse <0.5 / partial 0.5–0.8 / survive ≥0.8",
+              "description": "Preserves the manuscript's existing Tier B = 0.5 / Tier A = 0.8 thresholds verbatim. No OSF amendment needed. RECOMMENDED for consistency with the rest of the paper."
+            },
+            {
+              "id": "b",
+              "label": "Lower bar — collapse <0.3 / partial 0.3–0.7 / survive ≥0.7",
+              "description": "More permissive 'survive' gate. Surfaces sub-Tier-A signals as 'survives' (e.g., FTO_16q12 EUR at 0.3099 would count as 'partial'). Requires OSF amendment because thresholds shift. Disadvantage: changes the manuscript's threshold framing globally."
+            },
+            {
+              "id": "c",
+              "label": "Higher bar — collapse <0.5 / partial 0.5–0.95 / survive ≥0.95",
+              "description": "Stricter 'survive' gate matching the original PP.H4 = 1.00 identity-LD claim. Tests whether the canonical claim REALLY holds at near-perfect colocalization under matched-LD. Strongest finding under (a) collapse and (c) survive branches."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., a 5-tier gate; or branch on the magnitude of PP.H4 drop relative to identity-LD's 1.00."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        }
+      ]
+    },
+    {
+      "id": "issue-2-cache",
+      "title": "Issue 2 — Variant-ID cache propagation refresh (D-TA-04)",
+      "description": "Code fixes 069b34f (run_qtl_coloc.R chr:pos tolerance) + 7d54183 (run_susie_rss.R LD-panel-rsid override) are committed in current branch but intermediate caches were generated before the commits and weren't invalidated. 1,005 / 1,274 (78.9 %) QTL-coloc attempts returned too_few_snps. Wave-0 diagnostic: read 3 SuSiE-RSS fit JSONs at results/fine_mapping/susie/*.json — chr:pos format → both layers stale; rsid format → QTL-coloc only.",
+      "questions": [
+        {
+          "id": "Q-06",
+          "title": "Cache-layer scope for Issue 2 re-fire (D-TA-04)",
+          "context": "QTL-coloc compute envelope: ~1,274 attempts × ~30 sec ≈ ~10 hr at 50 cores LSF. SuSiE-RSS layer adds ~5 hr if needed. PASS criterion: too_few_snps drops materially from 1,005 (target ≤200; success + no_qtl_cs counts rise). FAIL criterion: too_few_snps stays ~1,000 → SuSiE-RSS layer was the actual problem; root-cause investigation triggered, do NOT proceed to Wave 6.",
+          "options": [
+            {
+              "id": "a",
+              "label": "DIAGNOSTIC-DRIVEN (recommended) — Wave 0 picks; Wave 4 scope decided by SuSiE-RSS variant-ID format check",
+              "description": "Wave 0 reads 3 SuSiE-RSS JSONs to determine variant-ID format. If rsid: QTL-coloc only re-fire (~10 hr). If chr:pos: both layers re-fire (~15 hr total). Most efficient — only does work that's needed. RECOMMENDED. Plan PLAN.md must include both code paths and an explicit Wave-0 diagnostic gate."
+            },
+            {
+              "id": "b",
+              "label": "CONSERVATIVE-BOTH — re-fire both layers regardless to eliminate cache-staleness as a confounder (~15 hr total)",
+              "description": "Most defensible at peer review: 'we invalidated all caches between code-commits and re-fired everything'. Costs ~5 hr extra LSF. Eliminates any latent staleness in any cache. Lower risk of needing a Wave 4.5 fallback. Recommend if SuSiE-RSS Wave 0 diagnostic is ambiguous (e.g., mixed-format JSONs)."
+            },
+            {
+              "id": "c",
+              "label": "FAST-QTL-ONLY — re-fire only QTL-coloc; if Wave 4 verification fails, fall back to a Wave 4.5 SuSiE-RSS re-fire",
+              "description": "Smallest critical-path commitment (~10 hr at 50 cores). Acceptable if Wave-0 diagnostic clearly shows rsid-format SuSiE-RSS JSONs (post-7d54183). Disadvantage: Wave 4 PASS criterion failure (~1,000 too_few_snps) triggers root-cause + Wave 4.5 re-fire (effectively conservative-both with extra round-trip)."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., re-fire QTL-coloc + a sample of 10 SuSiE-RSS fits in parallel as a Wave-4 verification sample."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        }
+      ]
+    },
+    {
+      "id": "osf-pre-reg",
+      "title": "OSF pre-registration coverage (D-TA-05)",
+      "description": "Verify against osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J) + closeout PDF at osf.io/az52u that the chosen D-TA-02 (L value) + D-TA-03 (canonical-pair scope) + D-TA-04 (cache scope) are pre-registered or covered by an existing amendment. The audit-response says the canonical-pair re-fire is 'pre-registered in TRACK-A-FROZEN-NUMBERS.md' — but verify that text is in OSF-deposited Methods, not only in the in-tree submission-bundle draft.",
+      "questions": [
+        {
+          "id": "Q-07",
+          "title": "OSF coverage for D-TA-02 (L value) + D-TA-03 (canonical-pair scope)",
+          "context": "Methods §Fine-Mapping Configuration in track_a_pivot.md states 'an L-sweep re-fit at L ∈ {15, 20, 30} is pre-registered as a follow-on supplementary analysis'. AUDIT-RESPONSE 2026-04-26 line 269 says HQ#2(iii) is 'pre-registered in TRACK-A-FROZEN-NUMBERS.md'. Both need OSF-portal verification (the in-tree draft is not the same as the OSF-deposited record).",
+          "options": [
+            {
+              "id": "a",
+              "label": "Wave 0 verifies, then proceeds (recommended if pre-reg already covers)",
+              "description": "Wave 0 task: ssh login02 (or equivalent); review osf.io/pvb5j Methods text + osf.io/az52u closeout PDF; confirm L-sweep wording + canonical-pair scope are present. If covered: proceed to Wave 1. If not covered: pause and Carter posts amendment. RECOMMENDED — saves a round-trip if pre-reg is sufficient."
+            },
+            {
+              "id": "b",
+              "label": "Post OSF amendment NOW before any Wave 1 fire (Carter on OSF portal, ~30 min)",
+              "description": "Defensive: post a pre-emptive amendment covering L value choice (whichever is selected in Q-02) + canonical-pair scope (whichever in Q-04) + cache invalidation (Q-08) BEFORE Wave 1 fires. ~30 min Carter web-UI action; rides on the existing osf.io/az52u closeout PDF as an addendum. Eliminates pre-reg risk entirely."
+            },
+            {
+              "id": "c",
+              "label": "Defer the OSF check entirely until Wave 1 has produced results",
+              "description": "Risky: if pre-reg doesn't cover and Wave 1 already fired, the amendment becomes retroactive. Not recommended. Pick only if Carter is confident pre-reg already fully covers all three sub-decisions."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., split: verify L-sweep wording in OSF deposit (likely covered) + post amendment for canonical-pair scope only."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        },
+        {
+          "id": "Q-08",
+          "title": "OSF treatment of cache invalidation re-fire (D-TA-04)",
+          "context": "Cache invalidation re-fires with the SAME code (069b34f + 7d54183) + SAME data + SAME params — only the cache state changes. This is methodologically a 'cache hygiene fix', not a new analysis. Per Carter's command-args, this 'should be a deviation-log entry, NOT a pre-reg amendment'.",
+          "options": [
+            {
+              "id": "a",
+              "label": "Deviation-log entry only (recommended; appended to .planning/amendments/osf_deviations.md or osf.io/az52u closeout addendum)",
+              "description": "Methodologically correct: this is not a new analysis, it's a cache hygiene fix that produces the analysis the pre-reg already covers. Document the discovery + invalidation rationale + before/after numerics in the deviation log. RECOMMENDED."
+            },
+            {
+              "id": "b",
+              "label": "Pre-reg amendment via osf.io/pvb5j (treat as new analysis)",
+              "description": "Conservative: amend the pre-registration to explicitly cover the cache-invalidation re-fire. ~30 min Carter web-UI. Over-rigorous; cache hygiene fixes don't typically require pre-reg amendments. Pick only if Carter wants belt-and-suspenders."
+            },
+            {
+              "id": "c",
+              "label": "Both — deviation-log entry + brief pre-reg amendment note",
+              "description": "Maximum traceability. Costs an OSF round-trip but produces the most defensible audit trail."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., deviation-log entry now + a single combined 'R2 amendment' covering all three D-TA-02/03/04 decisions in one OSF post."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        }
+      ]
+    },
+    {
+      "id": "rename-paths",
+      "title": "Track A nickname rename — id-vs-ref-LD (D-TA-06)",
+      "description": "Track A's canonical nickname is now id-vs-ref-LD (locked 2026-04-28; memory project_track_a_handle.md). Existing in-tree paths still contain pre-rename tokens. The honest-framing-lock chain (currently anchored at L148 + L295 + L220 + L90 + R-script header + locked-scalar block + plot_annotation + Track-A SUMMARY.md) must survive the rename byte-identical at new line numbers. The rename is for FUTURE artifacts only; do NOT rewrite git history.",
+      "questions": [
+        {
+          "id": "Q-09",
+          "title": "Rename docs/manuscript/track_a_pivot.md → docs/manuscript/id-vs-ref-LD.md?",
+          "context": "Affects ~12+ in-tree references: every R figure-builder script (scripts/R/figures/*.R), every aggregator (scripts/R/aggregators/*.R), the submission-bundle build script, the locked-scalar block headers, and any test fixtures. The rename + reference-fix-up is non-trivial (~30-60 min Wave 6 task with grep+sed+verify md5 round-trip).",
+          "options": [
+            {
+              "id": "a",
+              "label": "YES — rename to docs/manuscript/id-vs-ref-LD.md (recommended)",
+              "description": "Aligns the file path with the locked manuscript title 'Identity-LD versus reference-LD colocalization at curated cardiometabolic pleiotropy loci' and the project_track_a_handle.md memory. RECOMMENDED — establishes the canonical name for future readers."
+            },
+            {
+              "id": "b",
+              "label": "NO — keep docs/manuscript/track_a_pivot.md (path is internal; only the prose framing matters)",
+              "description": "Argues 'the manuscript title and prose are public-facing; the file path is internal git history; no public artifact (Genome Medicine PDF, OSF deposit) ever cites the path verbatim'. Saves the rename round-trip; keeps git history simpler. Memory project_track_a_handle.md still applies but only at the prose level."
+            },
+            {
+              "id": "c",
+              "label": "YES with a different target name (specify in chat_more)",
+              "description": "E.g., docs/manuscript/track_a_id_vs_ref_LD.md (preserves Track A prefix), or docs/manuscript/manuscript.md (drop the id-vs-ref-LD branding entirely from the path)."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        },
+        {
+          "id": "Q-10",
+          "title": "Rename .planning/amendments/TRACK-A-PIVOT.md → ID-VS-REF-LD-STRATEGY.md?",
+          "context": ".planning/ is internal-only (gitignored from public release scope per memory). The 'pivot' wording in the filename refers to the 2026-04-22 strategic event itself (project-strategy pivot from candidate-locus to genome-wide design), not to Track A as a publication. Memory project_track_a_handle.md said internal planning docs may keep 'pivot' for the event — but if Carter prefers consistency, rename.",
+          "options": [
+            {
+              "id": "a",
+              "label": "YES — rename to ID-VS-REF-LD-STRATEGY.md (recommended; matches the Track A nickname)",
+              "description": "Cleaner separation between the 2026-04-22 strategic-pivot event documents (PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md keeps its name) and the Track-A-the-publication strategy doc (this one). RECOMMENDED."
+            },
+            {
+              "id": "b",
+              "label": "NO — keep TRACK-A-PIVOT.md (internal-only; ‘pivot’ in name = strategic event, not publication framing)",
+              "description": "Memory rule allows 'pivot' for the 2026-04-22 event; this doc covers strategy-around-the-event. No external visibility. Saves the rename + reference-fix round-trip."
+            },
+            {
+              "id": "c",
+              "label": "YES with a different target name (specify in chat_more)",
+              "description": "E.g., ID-VS-REF-LD-PUBLICATION-STRATEGY.md, TRACK-A-STRATEGY.md, or split into two docs (event-pivot kept; publication-strategy separated)."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        },
+        {
+          "id": "Q-11",
+          "title": "Rename .planning/amendments/TRACK-A-FROZEN-NUMBERS.md?",
+          "context": "Carter's command-args explicitly flagged this as 'optional rename (Carter's call; TRACK-A- prefix may stay)'. The file is the canonical numerics source-of-truth referenced in 4+ places (manuscript locked-scalar block, R-script headers, OSF amendment, Track A SUMMARY).",
+          "options": [
+            {
+              "id": "a",
+              "label": "NO — keep TRACK-A-FROZEN-NUMBERS.md (recommended; ‘TRACK-A-’ prefix is Carter-specified; widely cross-referenced)",
+              "description": "Saves an extra reference-fix-up round-trip across manuscript + R scripts + OSF amendment + Track A SUMMARY. The file's role (numerics source-of-truth) is independent of the publication's nickname. RECOMMENDED for stability."
+            },
+            {
+              "id": "b",
+              "label": "YES — rename to ID-VS-REF-LD-FROZEN-NUMBERS.md",
+              "description": "Maximum consistency with the id-vs-ref-LD nickname. Forces a careful reference-fix-up across all 4+ citation sites. More edits in Wave 6."
+            },
+            {
+              "id": "c",
+              "label": "YES with a different target name (specify in chat_more)",
+              "description": "E.g., FROZEN-NUMBERS-2026-04-22.md (date-anchored) or PHASE-2-FROZEN-NUMBERS.md."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        },
+        {
+          "id": "Q-12",
+          "title": "Rename bin/build_track_a_submission_bundle.sh → bin/build_id_vs_ref_LD_submission_bundle.sh?",
+          "context": "488-line bash builder; built the current frozen submission-bundle commit cacdbfe. Mixed-case in shell scripts is unusual; snake_case is conventional. Per Carter's command-args: 'snake_case for shell' suggests build_id_vs_ref_ld_submission_bundle.sh (all lowercase).",
+          "options": [
+            {
+              "id": "a",
+              "label": "YES — rename to bin/build_id_vs_ref_ld_submission_bundle.sh (snake_case, all lowercase; recommended)",
+              "description": "Conventional shell-script naming; matches the rest of the bin/ directory (every other script uses lowercase snake_case). RECOMMENDED — shell convention."
+            },
+            {
+              "id": "b",
+              "label": "YES — rename to bin/build_id_vs_ref_LD_submission_bundle.sh (mixed case to match the LD acronym)",
+              "description": "Preserves the LD acronym capitalization. Less conventional for shell but matches the nickname id-vs-ref-LD verbatim."
+            },
+            {
+              "id": "c",
+              "label": "NO — keep bin/build_track_a_submission_bundle.sh",
+              "description": "The script is a build tool, not a publication artifact. No public visibility. Saves the rename + the references-to-it fix-up (in-script comments, README, GSD docs)."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., bin/build_track_a_submission.sh (drop bundle), bin/build_idref_submission_bundle.sh (compress nickname)."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        },
+        {
+          "id": "Q-13",
+          "title": "Rename timing — when does the rename + reference-fix-up wave fire?",
+          "context": "Wave 6 already touches every file in scope (Methods + Results + Discussion + Limitations + Abstract + Conclusion-1 + captions + tables + R-script headers + locked-scalar blocks). Bundling the rename costs zero extra waves. Alternatives split the rename out to a dedicated wave for clean commit boundaries.",
+          "options": [
+            {
+              "id": "a",
+              "label": "Wave 6 — bundle rename with manuscript narrative updates (recommended; zero extra waves)",
+              "description": "git mv per file + reference fix-ups in the same Wave 6 commit series (one commit per renamed file + one per affected R script). Wave 6 already touches every file in scope. Simplest mental model. RECOMMENDED."
+            },
+            {
+              "id": "b",
+              "label": "Wave 0.5 — dedicated rename wave inserted before Wave 1",
+              "description": "Cleanest context: rest of phase operates against new paths from the start. Costs one extra wave + a question on whether to touch git history. Recommended only if the rename is structurally important (e.g., if downstream Wave-1 LSF scripts already need to reference the new path)."
+            },
+            {
+              "id": "c",
+              "label": "Wave 6.5 — dedicated post-narrative wave, rename + reference fix-ups separated from Wave 6 prose",
+              "description": "Cleanest commit boundaries: Wave 6 lands all narrative updates against OLD paths; Wave 6.5 does rename + reference fix-ups as a single mechanical commit series. Costs one extra wave + Wave-6 prose written against soon-to-be-stale paths (then mechanically updated)."
+            },
+            {
+              "id": "d",
+              "label": "Other (specify in chat_more)",
+              "description": "E.g., split: Wave 0.5 for non-manuscript paths (.planning/amendments/, bin/) + Wave 6 for manuscript path bundled with narrative."
+            }
+          ],
+          "answer": null,
+          "chat_more": "",
+          "status": "unanswered"
+        }
+      ]
+    }
+  ],
+  "invariants_recorded": [
+    "NO /gsd-quick shortcuts. Atomic commits per task. SUMMARY.md per plan. Verification dimensions D1-DN with PASS/WARN/FAIL evidence.",
+    "Manuscript narrative writes happen ONLY at Wave 6, AFTER disk numbers are frozen. NEVER pre-write narrative against anticipated outcomes. Wave-3 checkpoint:human-verify gate is mandatory before Wave 6.",
+    "Honest-framing lock chain preserved at all anchor points (L148 + L295 + L220 + L90 + R-script header + locked-scalar block + plot_annotation + Track-A SUMMARY).",
+    "DEC-2026-04-25-01: results_identity_ld/ stays gitignored; canonical CS-yield summary at .planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv only.",
+    "Stage 2 md5 byte-identical preservation for files not intentionally rewritten by this phase.",
+    "Pre-registration discipline: any L value, threshold, or scope choice not pre-registered enters via OSF amendment posted BEFORE Wave 1 fires.",
+    "id-vs-ref-LD nickname is for FUTURE artifacts only; do NOT rewrite git history."
+  ],
+  "deferred_for_other_phases": [
+    "MAXIMUM cross-region replication (FTO_16q12 EUR + MC4R_18q21 EUR + APOE_19q13 + CXADR_F2RL1_6p21 against post-L=20 fits) — if needed, would be its own phase.",
+    "Threshold-lowering to 0.3 to surface FTO Tier-C 0.3099 (rejected during quick-260427-e8n; would require OSF amendment).",
+    "M2-POST-M3-08 mtCOJO re-fire (~6.5 hr long-queue) — Terminal A capacity, file-disjoint from this phase.",
+    "Sumstats Route C manual-fetch refresh — Terminal A capacity, file-disjoint."
+  ],
+  "context_pointers": {
+    "roadmap_entry": ".planning/ROADMAP.md#L314 (Track-A-R2-sh2b3-canonical-and-cache-refresh)",
+    "audit_response": ".planning/amendments/TRACK-A-AUDIT-RESPONSE-2026-04-26.md (HQ#2(i) + HQ#2(ii) + HQ#2(iii) + Eval 3.2)",
+    "audit_review_v2": ".planning/amendments/AUDIT-REVIEW-V2-2026-04-26.md",
+    "frozen_numbers": ".planning/amendments/TRACK-A-FROZEN-NUMBERS.md (numerics source-of-truth)",
+    "k2d_fit_summary": ".planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv (canonical CS-yield summary; do not rewrite)",
+    "manuscript": "docs/manuscript/track_a_pivot.md (current pre-rename path)",
+    "submission_bundle_builder": "bin/build_track_a_submission_bundle.sh (current pre-rename path)",
+    "submission_bundle_commit": "cacdbfe (frozen checkpoint)",
+    "code_fixes_already_committed": ["069b34f run_qtl_coloc.R chr:pos tolerance", "7d54183 run_susie_rss.R LD-panel-rsid override"],
+    "memory_project_track_a_handle": "/home/ckclinto/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/memory/project_track_a_handle.md",
+    "memory_honest_framing": "/home/ckclinto/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/memory/feedback_original_research_framing.md"
+  }
+}
