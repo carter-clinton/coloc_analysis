@@ -1,0 +1,234 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W4-cache-invalidation-and-refire",
+  "version": "v3_OPTION_A_HALTED_BSUB_TOO_FEW_TASKS",
+  "supersedes": "wave4_dispatch_tracker_v2.json (HALTED V2 DAG no-fan-out)",
+  "status": "HALTED_BSUB_TOO_FEW_TASKS_LONG_QUEUE_MIN_2_VS_THREADS_1",
+  "outcome": "DAG_FAN_OUT_CORRECT_BUT_ALL_50_INFLIGHT_RUN_FINEMAP_BSUBS_REJECTED_BY_LSF_LONG_QUEUE",
+  "summary_one_liner": "V3 dispatch (Option A: cp -R restore from .preFix.bak.20260430_081210/ baselines + driver --forcerun run_finemap run_qtl_coloc patch) successfully fanned out the DAG to 105 planned jobs (96 run_finemap + 9 aggregator/manifest/summary), confirming Option A's --forcerun premise. However, EVERY in-flight bsub for run_finemap (50 of 50 in the first --jobs 50 batch) was rejected by LSF with `Too few tasks requested. Job not submitted.` Root cause: the long queue's policy (per config/cluster_lsf/cluster_config.yaml header L8: `long: min 2 slots, 10d max`) requires -n >= 2, but run_finemap's cluster_config.yaml entry specifies threads: 1, and bsub_wrapper.sh has no flooring logic to bump -n when queue=long. Commit 2dcb518 (the W4 V2 fix that routed run_finemap from inherited-serial -> long for 240-hr wallclock) introduced this regression: V1 dispatch worked because run_finemap routed to serial (1 slot OK); V3 dispatch fails because long queue rejects threads=1. Driver killed via SIGKILL on PID 2188662 after 50 consecutive bsub failures consumed the --jobs 50 in-flight slots; PID 830751 (other-terminal results_identity_ld snakemake) preserved untouched per feedback_multi_terminal_staging.md.",
+
+  "carter_decision_inputs": {
+    "decision_recorded": "D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME = Option A (CONTEXT.md commit e4152f8)",
+    "feedback_anchors": [
+      "feedback_rigor_over_speed.md (rigor-maximizing minimal-change path)",
+      "feedback_lsf_queues.md (long queue / -W=14400)",
+      "feedback_multi_terminal_staging.md (explicit git add per path; protect other-terminal PID 830751)",
+      "project_python_311_pin.md (snakemake from /rs1/.../smoke_dev/bin/snakemake)"
+    ],
+    "instructions_followed_verbatim": [
+      "Step 1: Record D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME in CONTEXT.md decisions section (commit e4152f8)",
+      "Step 2: cp -R restore live qtl_coloc/ + susie/ from .preFix.bak.20260430_081210/; verify 1274 JSONs + 87 fit.rds + invariant md5s (PASS)",
+      "Step 3: Single-line driver patch adding --forcerun run_finemap run_qtl_coloc (commit 7442cc5)",
+      "Step 4: SUSIE_LAYER_SCOPE=yes bash bin/fire_qtl_coloc_cache_refresh.sh (DISPATCHED at 20260430_095814; FAILED at LSF submission gate)",
+      "Step 5: Write wave4_dispatch_tracker_v3.json (this file)"
+    ]
+  },
+
+  "step_chronology": {
+    "step_1_context_md_decision_record": {
+      "commit": "e4152f8",
+      "ts": "2026-04-30T09:53:00Z (approx)",
+      "file": ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md",
+      "section_added": "D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME = Option A (restore + --forcerun)",
+      "stat": "+19 lines",
+      "atomic_staging": "git add <single-path> per feedback_multi_terminal_staging.md"
+    },
+    "step_2_restore_from_backup": {
+      "ts": "2026-04-30T09:55:00Z (approx, between e4152f8 and 7442cc5)",
+      "ops": [
+        "rm -rf results/qtl_coloc/  # had 6 aggregator-only TSVs from V2 attempt 2",
+        "cp -R results/qtl_coloc.preFix.bak.20260430_081210/ results/qtl_coloc/",
+        "cp -R results/fine_mapping/susie.preFix.bak.20260430_081210/ results/fine_mapping/susie/"
+      ],
+      "verification": {
+        "qtl_json_count_post_restore": 1274,
+        "susie_fit_rds_count_post_restore": 87,
+        "track_a_frozen_md5": "9d0405a4db95655b1be7401883d22165 (CONFIRMED unchanged)",
+        "coloc_summary_tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (CONFIRMED unchanged)",
+        "identity_ld_k2d_md5": "8ef28cf6b3e067da0ee263f29e03b001 (CONFIRMED unchanged)",
+        "sh2b3_3_pinned_anchors": {
+          "bmi_EUR_SH2B3_12q24_fit_rds": "053444fe1560b3c27c80ab4e10ca8fb8 (CONFIRMED matches tracker)",
+          "hypertension_EUR_SH2B3_12q24_fit_rds": "3d4b62cfe076f1b7b3a743e99d933701 (CONFIRMED matches tracker)",
+          "stroke_EUR_SH2B3_12q24_fit_rds": "494ea177bbad4c6e452dfb97b94fadd8 (CONFIRMED matches tracker)"
+        }
+      },
+      "git_commit_required": false,
+      "notes": "Data restoration only — no tracked file mutations; no commit per feedback_multi_terminal_staging.md (no `git add .`)"
+    },
+    "step_3_driver_forcerun_patch": {
+      "commit": "7442cc5",
+      "ts": "2026-04-30T09:57:00Z (approx)",
+      "file": "bin/fire_qtl_coloc_cache_refresh.sh",
+      "diff": "+  --forcerun run_finemap run_qtl_coloc \\",
+      "stat": "+1 line (single-line diff per Carter instruction)",
+      "atomic_staging": "git add bin/fire_qtl_coloc_cache_refresh.sh per feedback_multi_terminal_staging.md"
+    },
+    "step_4_v3_dispatch": {
+      "dispatch_ts": "20260430_095814",
+      "dispatch_iso": "2026-04-30T09:58:14-04:00",
+      "supervisor_pid_killed": 2188662,
+      "snakemake_pid": 2188662,
+      "log": "logs/wave4_qtl_coloc_refresh_v3_OPTION_A_20260430_095814.log",
+      "snakemake_internal_log": "logs/wave4_qtl_coloc_refresh_20260430_095819.log",
+      "outcome": "DAG_FAN_OUT_CORRECT__BSUB_REJECTED_ALL_INFLIGHT_RUN_FINEMAP",
+      "elapsed_to_halt_sec": "~120 (from 09:58:14 dispatch to driver-kill at ~10:00)",
+      "driver_made_fresh_backup": {
+        "qtl_coloc": "results/qtl_coloc.preFix.bak.20260430_095819/ (1274 JSONs from the cp -R restored set; preserves the 081210 baseline + 003141 V1 baseline + 085556 V2 third backup)",
+        "susie": "results/fine_mapping/susie.preFix.bak.20260430_095819/ (87 fit.rds from the cp -R restored set; preserves the 081210 baseline)"
+      },
+      "dag_plan": {
+        "total_jobs_planned": 105,
+        "run_finemap": 96,
+        "run_qtl_coloc": 0,
+        "aggregate_qtl_coloc": 1,
+        "build_qtl_coloc_manifest": 1,
+        "build_coloc_manifest": 1,
+        "build_gene_tissue_matrix": 1,
+        "assign_tiers": 1,
+        "summarize_coloc_results": 1,
+        "summarize_finemap_results": 1,
+        "filter_finemap_summary": 1,
+        "all_qtl_coloc": 1,
+        "interpretation": "run_qtl_coloc count = 0 because per-region run_qtl_coloc instances depend on run_finemap .fit.rds outputs being present (manifest-driven enumeration); with susie/ empty post-mv, no per-region run_qtl_coloc are reachable until run_finemap completes. --forcerun run_qtl_coloc was thus a no-op in this dispatch (snakemake forces only what is in the reachable DAG); --forcerun run_finemap fully fanned out as expected."
+      },
+      "lsf_dispatch_outcome": {
+        "in_flight_bsubs_attempted": 50,
+        "successful_bsubs": 0,
+        "failed_bsubs": 50,
+        "all_failures_identical": "Error submitting jobscript (exit code 255): Too few tasks requested. Job not submitted.",
+        "all_failed_rules_were": "run_finemap (50 of 50)",
+        "lsf_jobs_in_queue_at_halt": 0
+      },
+      "post_halt_disk_state": {
+        "results_qtl_coloc": "EMPTY (driver mv'd live -> .preFix.bak.20260430_095819/)",
+        "results_fine_mapping_susie": "EMPTY (driver mv'd live -> .preFix.bak.20260430_095819/)",
+        "snakemake_locks": "2 stale locks at .snakemake/locks/0.input.lock (43KB) + 0.output.lock (11KB) — NOT cleared because PID 830751 (other-terminal results_identity_ld snakemake) shares the .snakemake/ dir; --unlock would risk other-terminal corruption per feedback_multi_terminal_staging.md",
+        "bjobs": "clean (No unfinished job found) — confirms 0 successful submissions",
+        "track_a_frozen_md5": "9d0405a4db95655b1be7401883d22165 (UNCHANGED throughout V3 sequence)",
+        "coloc_summary_tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (UNCHANGED throughout V3 sequence)",
+        "identity_ld_k2d_md5": "8ef28cf6b3e067da0ee263f29e03b001 (UNCHANGED throughout V3 sequence)"
+      },
+      "other_terminal_protection": {
+        "pid_830751_command": "snakemake --configfile config/pipeline.yaml --configfile config/pipeline_identity_overlay.yaml --cluster config/bsub_wrapper.sh --jobs 50 --keep-going --rerun-incomplete --use-conda --conda-prefix .snakemake/conda --latency-wait 120 -s Snakefile results_identity_ld/multitrait/coloc_manifest.tsv",
+        "pid_830751_cwd": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis (same project root as W4)",
+        "pid_830751_started": "2026-04-29 20:26 (last evening)",
+        "preservation_action": "Used kill -KILL 2188662 (single PID) — earlier broad pkill -f snakemake intentionally avoided after seeing it would hit 830751; PID 830751 confirmed alive post-kill",
+        "context": "Per project_paused_2026-04-30.md memory: both terminals paused 2026-04-30 for weekly-budget; this snakemake instance is from Terminal B's results_identity_ld run (likely Track A id-vs-ref-LD canonical work) and is running independently of W4"
+      }
+    }
+  },
+
+  "preserved_backups": {
+    "results/qtl_coloc.preFix.bak.20260430_003141": "1274 JSONs — pre-W4-V1-abort baseline (forensic record)",
+    "results/qtl_coloc.preFix.bak.20260430_081210": "1274 JSONs — pre-V2-Step-3 baseline (THE LOAD-BEARING RESTORE SOURCE; do not touch)",
+    "results/qtl_coloc.preFix.bak.20260430_085556": "1274 JSONs — V2 driver-made third backup (cp -R copy of .081210)",
+    "results/qtl_coloc.preFix.bak.20260430_095819": "1274 JSONs — V3 driver-made fourth backup (mv from cp -R restored .081210)",
+    "results/fine_mapping/susie.preFix.bak.20260430_081210": "87 fit.rds + 87 json — V2 SuSiE-RSS baseline (load-bearing; includes 74 V1-abort partial overwrites + Apr-22 originals; SH2B3 3 pinned anchors verified pre-restore)",
+    "results/fine_mapping/susie.preFix.bak.20260430_095819": "87 fit.rds + 87 json — V3 driver-made backup (mv from cp -R restored .081210)"
+  },
+
+  "root_cause_analysis": {
+    "diagnostic_question": "Why did 50 of 50 in-flight bsubs fail with `Too few tasks requested`?",
+    "answer": "config/cluster_lsf/cluster_config.yaml L7-L11 header documents NCSU HPC LSF queue policy: serial=1 slot only, standard=min 8 slots 48h max, long=min 2 slots 10d max. Commit 2dcb518 (W4 V2 cluster_config fix) added explicit `queue: long` to the run_finemap rule (was inheriting __default__ serial) to obtain 240-hr wallclock for the SuSiE-RSS layer rebuild under D-TA-04-OVERRIDE-V2 = CONSERVATIVE_BOTH. However, run_finemap retained `threads: 1` from its original spec. config/bsub_wrapper.sh handles -q (queue), -R rusage[mem] (memory in GB conversion), and -W (wall time, set by queue), but does NOT inject or floor -n based on queue policy. Snakemake passes -n {threads} (=1) to bsub. LSF rejects every long-queue submission with -n 1 because long requires -n >= 2.",
+    "v1_dispatch_did_not_hit_this": "V1 abort fired 96 run_finemap bsubs successfully into serial queue (1-slot OK) before being killed mid-flight; the long-queue regression was introduced after V1 abort, in commit 2dcb518.",
+    "config_evidence_path": "config/cluster_lsf/cluster_config.yaml line 8 (`#   long:     min 2 slots, 10d max — for heavy compute`); rule prepare_ld_plink at line 23 already follows this pattern (`queue: long, threads: 4`) and would not hit this error. run_finemap with threads: 1 violates the queue policy."
+  },
+
+  "carter_decision_required": {
+    "halt_reason": "100% bsub rejection rate at LSF submission gate; 0 LSF jobs land in queue; cannot make progress on run_finemap rebuild without queue-policy fix",
+    "blocking_artifacts": [
+      "config/cluster_lsf/cluster_config.yaml (run_finemap.threads: 1 incompatible with run_finemap.queue: long)",
+      "config/bsub_wrapper.sh (no -n flooring logic for queue policy)"
+    ],
+    "options": {
+      "option_E_bump_run_finemap_threads_to_2": {
+        "description": "Edit config/cluster_lsf/cluster_config.yaml: set run_finemap.threads from 1 to 2. Matches the existing prepare_ld_plink pattern (long queue + threads: 4). Snakemake passes -n 2 to bsub; long queue accepts. SuSiE-RSS R code is single-threaded so the 2nd slot is wasted compute (no parallelism inside R), but the slot is allocated and dispatch unblocks.",
+        "pro": "Smallest possible change (1 line YAML); preserves long queue routing intent (240-hr wallclock); follows existing prepare_ld_plink pattern; no driver/wrapper edits",
+        "con": "Allocates 2 slots per run_finemap job for a single-threaded workload — double the slot footprint; 96 jobs * 2 slots = 192 slots peak vs current 96 with threads=1; may slow throughput at queue level if cluster is busy",
+        "atomic_diff_size": "1-line YAML edit",
+        "rigor_assessment": "matches prepare_ld_plink pattern; well-precedented; minimal footprint",
+        "wall_estimate_post_fix": "~10-15 hr (CONSERVATIVE_BOTH envelope unchanged from D-TA-04-OVERRIDE-V2 plan)"
+      },
+      "option_F_floor_n_in_bsub_wrapper": {
+        "description": "Edit config/bsub_wrapper.sh: when QUEUE=long, floor -n to 2 (and to 8 when QUEUE=standard, matching the cluster_config header policy). Adds queue-aware -n flooring logic across ALL rules, not just run_finemap.",
+        "pro": "Centralized fix — any future rule routed to long automatically gets -n>=2 without per-rule YAML edits; makes bsub_wrapper.sh queue-policy-aware (defensible)",
+        "con": "More invasive bsub_wrapper.sh change; touches a shared infrastructure file; risk of regression on other-terminal workflows that share .snakemake (but the wrapper is per-invocation, so other-terminal would not be affected unless restarted); harder to roll back surgically",
+        "atomic_diff_size": "~10-15 line bash edit (case statement + min logic)",
+        "rigor_assessment": "more defensible long-term but higher blast radius; touches a config file used by every snakemake job in the project",
+        "wall_estimate_post_fix": "Same as option E"
+      },
+      "option_G_revert_2dcb518_run_finemap_to_serial": {
+        "description": "Revert commit 2dcb518's queue: long fix; put run_finemap back on inherited serial queue (1 slot OK; no submission rejection). However, serial queue's wall-time cap is 5760 min (96 hr / 4 days) per bsub_wrapper.sh L52 — sufficient for V1's niter=100 dispatch but POSSIBLY INSUFFICIENT for honest niter=1000 SuSiE-RSS fits at 32GB RAM (some loci took >2 hr at niter=100 per W3 prod logs; niter=1000 = 10x — could exceed 4 days for the worst loci on cold cache).",
+        "pro": "Single-line YAML revert; restores V1 working state",
+        "con": "Loses the 240-hr wallclock margin Carter explicitly chose for CONSERVATIVE_BOTH (commit 2dcb518 rationale); risks TERM_RUNLIMIT failures on heavy loci at niter=1000; would force later re-litigation if any locus hits the 96-hr cap mid-run",
+        "atomic_diff_size": "1-line YAML revert",
+        "rigor_assessment": "REJECTS Carter's explicit 240-hr-margin intent from D-TA-04-OVERRIDE-V2 commit 2dcb518 + memory feedback_lsf_queues.md; per feedback_rigor_over_speed.md should NOT be selected",
+        "wall_estimate_post_fix": "Same as option E IF no locus exceeds 96-hr; FAIL escalation if any locus hits the cap"
+      },
+      "option_H_route_to_standard_queue": {
+        "description": "Set run_finemap.queue: standard (48-hr cap, 8-slot min per cluster_config header). Bumps run_finemap.threads: 8 to satisfy standard's slot minimum.",
+        "pro": "Wall-time cap (48-hr / 2 days) more comfortable than serial's 96-hr cap... wait, that's BACKWARDS — standard's 2880 min = 48 hr is SHORTER than serial's 5760 min = 96 hr; this is WORSE on wall, but better on slot economics if 8-thread MKL/BLAS would help SuSiE; in practice R/SuSiE doesn't multi-thread so 7 of 8 slots are wasted",
+        "pro_revised": "(none — strictly dominated by option E for SuSiE workload)",
+        "con": "Tighter wall (48 hr); 8-slot allocation for single-threaded R code; even higher slot waste than option E (96 jobs * 8 slots = 768 slots peak)",
+        "atomic_diff_size": "1-line YAML edit (queue + threads)",
+        "rigor_assessment": "strictly dominated by option E",
+        "wall_estimate_post_fix": "Risk of 48-hr cap on heavy niter=1000 loci"
+      }
+    },
+    "executor_recommendation": "Option E (bump run_finemap.threads from 1 to 2). Smallest possible change matching the cluster_config header documentation + existing prepare_ld_plink precedent + Carter's CONSERVATIVE_BOTH 240-hr wallclock intent. 2-slot allocation for single-threaded R is a documented cost (96 jobs * 2 slots = 192 slots peak); cluster has been throughput-positive for W3 prod jobs at similar footprints. Per feedback_rigor_over_speed.md: option G (revert to serial) is rigor-degrading (loses wall margin); option F (wrapper edit) is more invasive than needed; option H is strictly dominated. Option E is the rigor-maximizing minimal-change path.",
+    "executor_recommendation_caveat": "All four options leave the V1+V2+V3 backup chain intact (4 qtl_coloc + 2 susie baselines preserved as forensic record). The cp -R restore step from .preFix.bak.20260430_081210/ would need to be repeated before any V4 re-fire because V3 driver mv'd the live dirs to .095819 backups. Recovery procedure for V4 is identical to V3 except prefixed with the option-E YAML edit + commit (or whichever option Carter selects)."
+  },
+
+  "resume_path": {
+    "blocking_issue": "carter_decision_required.halt_reason",
+    "resume_command": "After Carter records D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME decision in CONTEXT.md + selects option E/F/G/H + applies option-specific fix: re-run cp -R restore from .preFix.bak.20260430_081210/ baselines, then /gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh",
+    "do_not_resume_until": [
+      "Carter selects + records the option in CONTEXT.md as D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME",
+      "Option-specific config/cluster_lsf/cluster_config.yaml or config/bsub_wrapper.sh edit is committed",
+      "cp -R restore from .preFix.bak.20260430_081210/ baselines is re-executed (live qtl_coloc/ + susie/ are EMPTY post-V3-mv)",
+      ".snakemake/locks/ stale locks cleared ONLY if PID 830751 has exited (currently alive — DO NOT --unlock; use targeted lock file removal after verifying PID 830751 state)",
+      "bjobs clean of W4-related work (already clean)"
+    ],
+    "files_for_resumer": [
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker_v3.json (this file)",
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker_v2.json (V2 HALT tracker)",
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker.json (V1 abort tracker)",
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md (D-TA-04-OVERRIDE-V2 + D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME decisions)",
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv",
+      "config/cluster_lsf/cluster_config.yaml (run_finemap entry — load-bearing for option E)",
+      "config/bsub_wrapper.sh (load-bearing for option F)",
+      "logs/wave4_qtl_coloc_refresh_v3_OPTION_A_20260430_095814.log (V3 driver log; 50 bsub failures captured)",
+      "logs/wave4_qtl_coloc_refresh_20260430_095819.log (V3 snakemake-internal log)"
+    ]
+  },
+
+  "invariants_preserved_at_halt": {
+    "TRACK-A-FROZEN-NUMBERS.md_md5": "9d0405a4db95655b1be7401883d22165 (CONFIRMED unchanged pre + post V3)",
+    "coloc_summary.tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (CONFIRMED unchanged pre + post V3)",
+    "IDENTITY-LD-K2D-FIT-SUMMARY.tsv_md5": "8ef28cf6b3e067da0ee263f29e03b001 (CONFIRMED unchanged pre + post V3)",
+    "9_W2_R2_outputs_at_results_multitrait_coloc_susie_R2": "Untouched throughout V3 sequence (only qtl_coloc/ and fine_mapping/susie/ were mutated by driver mv)",
+    "results_identity_ld_dir": "NOT committed (DEC-2026-04-25-01); confirmed not in git index"
+  },
+
+  "commits_landed_this_session": [
+    "e4152f8 — docs(ta-sh2b3, W4): D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME = Option A (restore + --forcerun)",
+    "7442cc5 — fix(ta-sh2b3, W4): driver --forcerun for V2 CONSERVATIVE_BOTH DAG fanout"
+  ],
+
+  "no_per_region_compute_consumed": "ZERO LSF compute used for QTL-coloc or SuSiE-RSS rules; 50 bsub submissions were rejected at the queue gate before any LSF jobid was issued",
+
+  "checker_iter1_nit3_nit4_status": {
+    "nit3_long_queue": "config/cluster_lsf/cluster_config.yaml run_finemap.queue = long (commit 2dcb518) — operationally CONFIRMED via bsub command line evidence (LSF cited the long-queue policy in its rejection message); routing reaches the long queue but the queue rejects threads=1; nit3 is partially-resolved (routing OK) and partially-blocking (slot policy mismatch)",
+    "nit4_manual_escalation": "ESCALATION ACTIVE — V3 dispatch HALT requires Carter to select option E/F/G/H per carter_decision_required block; PASS/FAIL evaluation impossible from this dispatch (zero per-region work fired)"
+  },
+
+  "carter_signals_that_inform_next_decision": {
+    "from_user_session_instruction_block": [
+      "Long queue, -W=14400 (per memory feedback_lsf_queues.md)",
+      "atomic commits, explicit `git add <path>` per feedback_multi_terminal_staging.md",
+      "Pre-existing dirty files NOT to be staged"
+    ],
+    "from_memory_feedback_rigor_over_speed_md": "in any gray-area trade-off, recommend and proceed with the more rigorous / reviewer-defensible option; timeline is not a binding constraint",
+    "from_W4_PLAN_PASS_gate": "FAIL → halt + Carter escalation per W4 PLAN — this is FAIL by infrastructure, not by science"
+  }
+}
