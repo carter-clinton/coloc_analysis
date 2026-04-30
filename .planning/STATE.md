@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: "Wave 1 V2 (W1-susie-rss-l-sweep, niter=500/1000 re-fire after Carter option-a) COMPLETE — PRIMARY_L (V2) = NONE_CONVERGED unchanged outcome name BUT materially stronger evidence: 9/9 fits at niter=1000 (full retry-ladder exhausted: primary 500 → retry 1000 → regularized retry 1000) STILL non_converged with L_saturated=FALSE and n_CS<L_used. v1's niter-not-reached hypothesis FALSIFIED. V2 substantive interpretation: LD-mismatch instability (susieR diagnostic + non-PSD R warnings cited). V2 surfaced + auto-fixed pre-existing run_susie_rss.R argument-naming bug (max_iterations -> max_iter; commit 02c4404) — silent niter=100 cap regardless of policy YAML; affects all SuSiE-RSS fits in project history. v1 niter=100 was bug-default not honest; Methods §Fine-Mapping prose updates required at Wave 6. CONTEXT.md V2 sub-sections (D-TA-Wave1-PRIMARY-L-V2 + D-TA-Wave1-headline-V2) appended after v1 sub-sections (preserved). Wave 6 narrative branch DISCLOSE-AS-COLUMN now LOCKED (was provisional). Wave 2 STILL NO-GO — Carter option-a EXHAUSTED; remaining options (b) relax criterion / (c) DISCLOSE-AS-COLUMN at lowest-L / new (d) investigate LD-mismatch (most rigorous; would be new wave). TRACK-A-FROZEN-NUMBERS.md md5=9d0405a4db95655b1be7401883d22165 byte-identical pre/post both fires (invariant 2 preserved). V2 commits: 9c87157 (YAML niter raise) + 02c4404 (bug fix) + c428d2c (CONTEXT+V2 TSV+v1 TSV preserve) + 96babb0 (SUMMARY V2 section). v1 commits unchanged: c542d72 + 214e04f. OSF deviations log (Wave 7): 2 entries (niter raise + bug fix)."
-last_updated: "2026-04-30T01:14:39.663Z"
+stopped_at: Completed ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md (4/8 plans done); 9 R2 PP.H4 outputs at results/multitrait/coloc_susie_R2/; W1.5 LD-audit landed; Pitfall 3 + Invariant 2 preserved; next plan = ta-sh2b3-W3-checkpoint-human-verify-PLAN.md (Carter selects D-TA-WAVE3-OUTCOME branch)
+last_updated: "2026-04-30T03:57:35.569Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: ta-sh2b3-canonical-and-cache-refresh (ta-sh2b3-canonical-and-cache-refresh) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -64,7 +64,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-04-30 - Completed quick task 260429-w2a: M2-POST-M3-07 CLOSED (3 LSF jobs DONE in 80-192s; 22.9M rows rewritten with real Turley scalars; obligation status=completed)
+Last activity: 2026-04-30
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
@@ -146,6 +146,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase m2-ldsc-mtag-cpassoc-discovery P03 | 22min | 3 tasks | 4 files |
 | Phase m2-ldsc-mtag-cpassoc-discovery P04 | 196 | 3 tasks | 11 files |
 | Phase ta-sh2b3-canonical-and-cache-refresh PW1-susie-rss-l-sweep | 19min | 2 tasks | 12 files |
+| Phase ta-sh2b3-canonical-and-cache-refresh PW2-canonical-pair-coloc-susie | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -290,6 +291,10 @@ Recent decisions affecting current work:
 - [Phase m2-ldsc-mtag-cpassoc-discovery]: mtCOJO production fire deferred mid-run pending HM3-intersected COJO inputs + LSF batch re-fire (per-target ~10-30 min wall × 13 targets); Q8-schema sensitivity tables + FAIL flags + TRANS trans_ld_panel_concordance='primary_only' emitted as deferred-fire follow-up
 - [Phase ta-sh2b3-canonical-and-cache-refresh]: D-TA-Wave1-PRIMARY-L: PRIMARY_L=NONE_CONVERGED — all 9 SuSiE-RSS L-sweep fits report convergence_status=non_converged at niter=100 (niter-not-reached, NOT L-saturation; n_CS<L_used + L_saturated=FALSE for every fit). Wave 2 BLOCKED on Carter resolution: (a) re-fire raised niter [RECOMMENDED], (b) relax convergence_status criterion, or (c) proceed with disclosure.
 - [Phase ta-sh2b3-canonical-and-cache-refresh]: D-TA-Wave1-headline: HEADLINE_VALUE=UNCHANGED preserved (invariant 2). Wave 6 narrative branch provisionally DISCLOSE-AS-COLUMN — keeps 51/96 headline + adds non-convergence disclosure column to Fig 3. Branch flips to RECOMPUTE only if Carter elects option (a) re-fire-with-raised-niter and the re-fire produces converged fits.
+- [Phase ta-sh2b3-canonical-and-cache-refresh]: [Wave 2]: Strategy 3 (direct Rscript bsub) chosen over Snakemake-orchestrated dispatch — bypass DAG re-evaluation cascade triggered by W1 V2 fit mtimes; plan-anticipated in pipeline_canonical_r2_overlay.yaml NOTE option a
+- [Phase ta-sh2b3-canonical-and-cache-refresh]: [Wave 2]: 3+2 fit-source split — BMI/HTN/stroke from W1 V2 L=15 fits; asthma + T2D from canonical Stage 2 (out of W1 V2 scope) — Wave 6 Methods discloses
+- [Phase ta-sh2b3-canonical-and-cache-refresh]: [Wave 2]: 3 of 5 parseable canonical pairs SURVIVE_GE_0.8 (BMI-HTN, HTN-stroke, HTN-T2D = PP.H4 1.0); 2 COLLAPSE_BELOW_0.5 (BMI-T2D 4.3e-27, stroke-T2D 0); Wave 3 recommended branch = BRANCH_C_SURVIVE for BMI-HTN canonical pair
+- [Phase ta-sh2b3-canonical-and-cache-refresh]: [Wave 1.5]: SH2B3_12q24 EUR 1000G LD reference is weakly NOT PSD — 210 negative eigenvalues (23.46%); 50.4% effective rank; min ev=-1.26e-05; 6.7% variant coverage; substantive cause of W1 V2 non-convergence — DISCLOSE-AS-COLUMN locked on panel-pathology evidence
 
 ### Pending Todos
 
@@ -375,8 +380,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-30T01:14:33.598Z
-Stopped at: Wave 1 (W1-susie-rss-l-sweep) COMPLETE — TSV report (10 lines) + D-TA-Wave1-PRIMARY-L=NONE_CONVERGED + D-TA-Wave1-headline DEFERRED (HEADLINE_VALUE=UNCHANGED) recorded in CONTEXT.md; SUMMARY.md authored (D1-D7 dimensions, observed ~8min wall vs 6-12hr envelope, Wave 6 branch provisionally DISCLOSE-AS-COLUMN); 9/9 fits niter-not-reached at default niter=100 (NOT L-saturation; n_CS<L_used and L_saturated=FALSE for every fit); TRACK-A-FROZEN-NUMBERS.md md5=9d0405a4db95655b1be7401883d22165 unchanged (invariant 2 preserved). Wave 2 NO-GO — Carter must resolve D-TA-Wave1-PRIMARY-L Wave 2 directive (3 options, recommend (a) re-fire raised niter per rigor-over-speed memory) before bin/fire_canonical_susie_pairs.sh dispatches. Commits: c542d72 (CONTEXT+TSV) + 214e04f (SUMMARY).
+Last session: 2026-04-30T03:57:35.556Z
+Stopped at: Completed ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md (4/8 plans done); 9 R2 PP.H4 outputs at results/multitrait/coloc_susie_R2/; W1.5 LD-audit landed; Pitfall 3 + Invariant 2 preserved; next plan = ta-sh2b3-W3-checkpoint-human-verify-PLAN.md (Carter selects D-TA-WAVE3-OUTCOME branch)
 Resume file: None
 
 ### Prior session (2026-04-28 evening — m3-W1 portal cleared + AUX spec staged, quick-260428-vt2)
