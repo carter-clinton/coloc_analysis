@@ -555,6 +555,30 @@ Detailed numerics: `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2
 
 **DISCLOSE-AS-COLUMN context for downstream:** All 9 PP.H4 outputs are computed against W1 V2 fits with `convergence_status=non_converged` for the BMI/HTN/stroke side (3 of the 5 traits). Wave 6 Methods + Limitations + Fig 3 must surface this per-locus convergence status as a disclosure column. The asthma-vs-X `no_signal` outcomes (3 pairs) reflect the canonical Stage 2 asthma fit's own CS-purity behavior under coloc.susie — independent of the W1 V2 LD-mismatch finding.
 
+### D-TA-WAVE3-OUTCOME-BRANCH_C_SURVIVE: SH2B3 BMI–HTN outcome branch (Wave 3)
+
+**Recorded:** 2026-04-30
+
+**Selected by Carter:** branch (c) BRANCH_C_SURVIVE
+
+**Evidence:** BMI–HTN PP.H4 = 1.0 (canonical-pair coloc.susie at PRIMARY_L=15 under DISCLOSE-AS-COLUMN; hit=rs3184504, nsnps=168). Range across 9 SH2B3 EUR pairs: 0 (stroke_vs_t2d, COLLAPSE) to 1.0 (3 SURVIVE pairs). PP.H4 = 1.0 ≫ 0.8 threshold → unambiguous BRANCH_C.
+
+**Other canonical pair:** HTN–stroke PP.H4 = 1.0 (Threshold_class = SURVIVE_GE_0.8). Both canonical literature claims survive.
+
+**Substantive interpretation:** The canonical SH2B3 BMI–HTN colocalization is ROBUST to reference-LD pathology. Even with the W1.5-audit-documented panel deficiencies (PSD verdict: weakly NOT PSD, 23.46% negative eigenvalues; effective rank 50.4%; variant coverage 6.7%) AND non-converged SuSiE-RSS Δ-ELBO (post-bug-fix at honest niter=1000), the BMI–HTN canonical claim still produces PP.H4 = 1.0 at rs3184504. This is a positive result for the canonical literature claim and a strong test for reference-LD-induced inflation: the SH2B3 anchor flips from "collapse" (the original Stage 2 expectation per AUDIT-RESPONSE) to "validated" (BRANCH_C).
+
+**Wave 6 narrative directive (per W3 PLAN branch C template):**
+- Manuscript narrative anchor: "SH2B3 anchor flips from collapse to validated"
+- Manuscript headline NARROWS — the original "canonical claim collapses under matched-LD" framing must be replaced with "canonical SH2B3 BMI–HTN colocalization is robust to reference-LD pathology"
+- Fig S2 (paired-fit structural inflation) and FTO Tier-C disclosure remain load-bearing for the broader id-vs-ref-LD inflation narrative
+- Manuscript paragraphs to update at Wave 6: §Headline (Abstract + first-paragraph), §Results-flagship (SH2B3 case-study), §Discussion-Identity-LD-Inflation, §Limitations (add the W1.5 panel-pathology caveat as DISCLOSE-AS-COLUMN evidence — "non-convergence is panel-pathology-driven, not algorithm-limitation"), Fig 3 (panel + caption + disclosure-column for convergence_status), Conclusion-1
+- §Methods §Fine-Mapping carries the niter audit narrative (per OSF deviation log #2): "argument naming was audited and corrected during the canonical-and-cache-refresh phase; convergence behavior is consistent across niter=100 and niter=1000 (n_CS byte-identical), confirming the non-convergence is LD-mismatch instability, not iteration-count"
+- Headline narrative framing (deferred to Wave 6 — Carter's "lead with what" preference still open from `/gsd-execute-phase` checkpoint dialog): default suggestion is option 3 (pair both — survival result + W1.5 panel-pathology audit, in §Headline + §Methods + Fig 3 disclosure-column)
+
+**Carter's note:** Disk numbers unambiguous — PP.H4 = 1.0 for BMI–HTN, PP.H4 = 1.0 for HTN–stroke. Both canonical claims survive at SURVIVE_GE_0.8 under reference-LD with DISCLOSE-AS-COLUMN inputs. Branch (c) recorded via `/gsd-execute-phase` resume signal "c".
+
+**No narrative writes in Wave 3** (per W3 PLAN invariant — gate is decision-only; Wave 6 owns prose writes after Wave 5 disk freeze).
+
 </decisions>
 
 <canonical_refs>
