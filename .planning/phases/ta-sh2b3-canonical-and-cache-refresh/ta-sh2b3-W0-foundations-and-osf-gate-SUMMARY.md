@@ -61,33 +61,34 @@ patterns-established:
   - "Snakemake config-merge mitigation: read static rule inputs via config.get(...) when overlays must propagate"
   - "Verification harness emits JSON-line per dimension; exit code = number of FAILs; WARN does not fail"
 
-requirements-completed: []  # Wave 0 partial; OSF gate (Task 7) blocks REQ-OSF-PREREG completion
+requirements-completed: []  # Phase-level requirements (REQ-OSF-PREREG, REQ-PATH-PARAMETERIZATION, REQ-SNAKEMAKE-CI, REQ-SUSIE-RSS-POLICY) finalize at phase verification, not at plan close
 
 # Metrics
-duration: 17min (Tasks 1-6 only; Task 7 blocked on Carter web-UI)
+duration: 17min (Tasks 1-6 execution) + Task 7 OSF gate cleared 2026-04-29 by Carter web-UI
 started: 2026-04-30T00:15:30Z
-completed: 2026-04-30T00:33:07Z (Tasks 1-6 commit landed)
-status: PARTIAL
-status-detail: "PARTIAL — awaiting human-verify on OSF gate (Task 7, D-TA-OSF-COVERAGE per D-TA-05). Wave 1 HARD GATE blocks until Carter records D-TA-OSF-COVERAGE = COVERED or AMENDMENT_POSTED in CONTEXT.md addendum."
+completed: 2026-04-29 (Task 7 OSF gate cleared; D-TA-OSF-COVERAGE = COVERED recorded)
+updated: 2026-04-29
+status: COMPLETE
+status-detail: "COMPLETE — all 7 tasks landed atomically. OSF gate cleared 2026-04-29 (D-TA-OSF-COVERAGE = COVERED, recorded in CONTEXT.md addendum, commit ade9425). Wave 1 HARD GATE CLEARED — bin/fire_susie_lsweep.sh ready to dispatch (modulo D-TA-Wave-0-foundations RS1 path investigation; driver fallback handles either resolution path)."
 ---
 
 # Phase ta-sh2b3 Plan W0: Foundations + OSF gate Summary
 
 **Wave 0 foundation scaffolding for SH2B3 EUR canonical-pair coloc.susie + variant-ID cache refresh: 7 config YAMLs + 4 dispatch scripts + C1-C15 verification harness + Pitfall 2 mitigation (finemap.smk policy is now config-aware) + Pitfall 1 diagnostic (D-TA-01 namespace collision flagged for Carter resolution before Wave 1).**
 
-## Status: PARTIAL — Awaiting Human-Verify on OSF Gate
+## Status: COMPLETE — OSF Gate Cleared 2026-04-29
 
-Tasks 1–6 complete (atomic commits per task). Task 7 is a `checkpoint:human-verify` with `gate="blocking"`: Carter must verify OSF pre-registration coverage at `osf.io/pvb5j` Methods + `osf.io/az52u` closeout PDF for D-TA-02 (L-sweep wording) + D-TA-03 (canonical-pair scope) and record `D-TA-OSF-COVERAGE` outcome in CONTEXT.md addendum. **Wave 1 HARD-GATED on this verification per D-TA-05 + REQ-OSF-PREREG.**
+All 7 tasks complete with atomic commits. Task 7 (`checkpoint:human-verify`, gate=blocking) cleared 2026-04-29: Carter verified OSF pre-registration coverage at `osf.io/pvb5j` Methods + `osf.io/az52u` closeout PDF for D-TA-02 (L-sweep wording) + D-TA-03 (canonical-pair scope) and confirmed all 6 canonical phrases pre-registered. `D-TA-OSF-COVERAGE = COVERED` recorded in CONTEXT.md addendum. **Wave 1 HARD GATE CLEARED per D-TA-05 + REQ-OSF-PREREG.**
 
 ## Performance
 
-- **Duration:** 17 min (Tasks 1–6 only; Task 7 blocks on Carter web-UI)
+- **Duration:** 17 min (Tasks 1–6 execution) + Task 7 OSF gate cleared 2026-04-29 by Carter web-UI
 - **Started:** 2026-04-30T00:15:30Z
 - **Tasks 1–6 completed:** 2026-04-30T00:33:07Z
-- **Tasks 7 status:** awaiting human-verify (OSF coverage)
-- **Tasks committed:** 6 of 7 (atomic commits per task; 7 total commits including the Pitfall 2 patch separated from its CONTEXT addendum)
+- **Task 7 cleared:** 2026-04-29 (D-TA-OSF-COVERAGE = COVERED)
+- **Tasks committed:** 7 of 7 (atomic commits per task; 8 total commits including the Pitfall 2 patch separated from its CONTEXT addendum)
 - **Files created:** 12
-- **Files modified:** 4
+- **Files modified:** 4 (5 counting the D-TA-OSF-COVERAGE addendum to CONTEXT.md)
 
 ## Accomplishments
 
@@ -114,8 +115,10 @@ Each task committed atomically (one task → one commit; Task 4 produced 2 commi
 5. **Task 4b: Record Pitfall 2 outcome in CONTEXT** — `ef81efb` (docs)
 6. **Task 5: Wave 1/2/4 dispatch drivers + R2 manifest builder** — `dbeccdc` (feat)
 7. **Task 6: C1-C15 verification harness** — `1c23441` (feat)
+8. **PARTIAL SUMMARY (interim, pre-OSF-gate):** `cb40dc4` (docs) + `fbbd821` (docs, STATE.md PARTIAL posture)
+9. **Task 7: D-TA-OSF-COVERAGE = COVERED recorded in CONTEXT** — `ade9425` (docs)
 
-Plus a final metadata commit (this SUMMARY.md + STATE.md update) at plan close — pending Task 7 resume to land.
+Plus a final metadata commit (this SUMMARY.md → COMPLETE + STATE.md / ROADMAP.md advance) lands immediately after this edit.
 
 ## Files Created/Modified
 
@@ -202,16 +205,16 @@ Plus a final metadata commit (this SUMMARY.md + STATE.md update) at plan close �
 | **D4** Config scaffolding | 7 config YAMLs land + L overrides correct + parallel results_root rebased | `[ -f config/susie_policy_L{15,20,30}.yaml ]`; `grep "L: 20" config/susie_policy_L20.yaml`; `grep "results_lsweep_L20" config/pipeline_lsweep_L20_overlay.yaml` | **PASS** |
 | **D5** Dispatch drivers | 3 LSF drivers + manifest builder land + executable + RS1/GPFS fallback inlined | `[ -x bin/fire_susie_lsweep.sh ]` etc.; `grep "L_VALUES=(15 20 30)"`; `grep "preFix.bak"`; `grep "SUSIE_LAYER_SCOPE"`; `python3 -c "import ast; ast.parse(...)"` | **PASS** |
 | **D6** Verification harness | `bin/verify_ta_sh2b3_phase.sh` lands + 15 check functions + `--wave N` filter | `[ -x bin/verify_ta_sh2b3_phase.sh ]`; `grep -c '^check_C' = 15`; `bin/verify_ta_sh2b3_phase.sh --wave 0` emits 4 JSON-lines | **PASS** |
-| **D7** OSF gate | D-TA-OSF-COVERAGE recorded in CONTEXT addendum | (Task 7 awaiting Carter web-UI) | **PENDING** (HARD GATE) |
+| **D7** OSF gate | D-TA-OSF-COVERAGE recorded in CONTEXT addendum | Carter web-UI verified osf.io/pvb5j Methods + osf.io/az52u closeout PDF on 2026-04-29; outcome COVERED recorded; commit `ade9425` | **PASS** (HARD GATE CLEARED) |
 
-`bin/verify_ta_sh2b3_phase.sh --wave 0` output (Tasks 1–6 complete state):
+`bin/verify_ta_sh2b3_phase.sh --wave 0` output (Wave 0 complete state, post-Task-7 OSF gate):
 ```json
 {"check":"C1","wave":0,"status":"WARN","msg":"/rs1/.../coloc_analysis/.git not present on this node — see D-TA-Wave-0-foundations"}
 {"check":"C2","wave":0,"status":"PASS","msg":"069b34f + 7d54183 both HEAD ancestors"}
 {"check":"C3","wave":0,"status":"PASS","msg":"D-TA-04-DIAGNOSTIC sub-section present in CONTEXT"}
-{"check":"C4","wave":0,"status":"FAIL","msg":"D-TA-OSF-COVERAGE not yet recorded (Task 7 human-verify gate)"}
+{"check":"C4","wave":0,"status":"PASS","msg":"D-TA-OSF-COVERAGE outcome recorded"}
 ```
-Exit code = 1 (C4 = the expected Task 7 dependency).
+Exit code = 0 (zero FAILs; C1 WARN remains as the documented D-TA-Wave-0-foundations RS1-path escalation, deliberately non-blocking per the harness contract).
 
 ## Snakefile Rule-Name Surface (Wave 4 dispatch validation)
 
@@ -238,9 +241,9 @@ LSF queue caps per memory `feedback_lsf_queues.md`: serial -W 5760, long -W 1440
 
 ## Wave 1 GO/NO-GO Status
 
-**STATUS: BLOCKED** on Task 7 (`checkpoint:human-verify`, gate=blocking).
+**STATUS: CLEARED** — Task 7 (`checkpoint:human-verify`, gate=blocking) cleared 2026-04-29.
 
-**Pre-requisites already cleared:**
+**All pre-requisites cleared:**
 - [x] D-TA-01 path investigation outcome recorded (Carter escalation noted; driver-script fallback inlined as mitigation)
 - [x] Code-fix ancestry verified (069b34f + 7d54183 are HEAD ancestors)
 - [x] D-TA-04 cache-scope decision = QTL_COLOC_ONLY (Wave 4 driver default `SUSIE_LAYER_SCOPE=no`)
@@ -248,11 +251,9 @@ LSF queue caps per memory `feedback_lsf_queues.md`: serial -W 5760, long -W 1440
 - [x] Pitfall 2 mitigated (finemap.smk policy is config-aware)
 - [x] LSF dispatch drivers + R2 manifest builder scaffolded
 - [x] C1-C15 verification harness scaffolded
+- [x] **D-TA-OSF-COVERAGE = COVERED** (recorded 2026-04-29 in CONTEXT.md addendum at commit `ade9425`; D-TA-05 + REQ-OSF-PREREG hard gate cleared per Carter web-UI verification of osf.io/pvb5j Methods + osf.io/az52u closeout PDF)
 
-**Blocker remaining:**
-- [ ] **D-TA-OSF-COVERAGE**: Carter must verify OSF pre-reg coverage at `osf.io/pvb5j` Methods + `osf.io/az52u` closeout PDF for L-sweep wording (D-TA-02) + canonical-pair scope (D-TA-03), and record outcome (`COVERED` or `AMENDMENT_POSTED`) in CONTEXT.md addendum (D-TA-05 + REQ-OSF-PREREG hard gate).
-
-**Task 7 instructions:** see `<how-to-verify>` block in `ta-sh2b3-W0-foundations-and-osf-gate-PLAN.md` lines 1067–1102. Resume signals: `OSF_COVERED`, `OSF_AMENDED`, or `OSF_BLOCKED`.
+**Wave 1 readiness:** `bin/fire_susie_lsweep.sh` ready to dispatch (subject to D-TA-Wave-0-foundations RS1 path investigation; the orchestrator may decide to address that before firing — driver fallback handles either resolution path).
 
 ## Next Phase Readiness
 
@@ -262,7 +263,7 @@ LSF queue caps per memory `feedback_lsf_queues.md`: serial -W 5760, long -W 1440
 - Pitfall 2 mitigation patch is the load-bearing change for Wave 1: without it, all 9 L-sweep fits would silently produce L_used=10 outputs and the L-sweep would not deliver D-TA-02's pre-registered sensitivity sweep.
 - Verification harness `bin/verify_ta_sh2b3_phase.sh` is the phase-wide PASS/WARN/FAIL rail; can be run after every wave commit (`--wave N`) or at phase close (`all`).
 
-## Self-Check: PASSED (Tasks 1–6)
+## Self-Check: PASSED (all 7 tasks)
 
 **Files (all 12 present on disk):**
 - FOUND: `config/susie_policy_L15.yaml`
@@ -278,7 +279,7 @@ LSF queue caps per memory `feedback_lsf_queues.md`: serial -W 5760, long -W 1440
 - FOUND: `bin/verify_ta_sh2b3_phase.sh`
 - FOUND: `src/python/build_coloc_manifest_r2.py`
 
-**Commits (all 7 reachable from HEAD):**
+**Commits (all 8 reachable from HEAD; 7 tasks + 1 PARTIAL→COMPLETE bridge):**
 - FOUND: `e4ac4a3` — Task 1: D-TA-01 path + code-fix ancestry + Snakefile rule names
 - FOUND: `2995ca7` — Task 2: D-TA-04-DIAGNOSTIC variant-ID format outcome
 - FOUND: `9a83588` — Task 3: per-L policy YAMLs + pipeline overlays
@@ -286,11 +287,24 @@ LSF queue caps per memory `feedback_lsf_queues.md`: serial -W 5760, long -W 1440
 - FOUND: `ef81efb` — Task 4b: Pitfall 2 outcome in CONTEXT
 - FOUND: `dbeccdc` — Task 5: W1/W2/W4 dispatch drivers + R2 manifest builder
 - FOUND: `1c23441` — Task 6: C1-C15 verification harness
+- FOUND: `cb40dc4` — PARTIAL SUMMARY (interim, pre-OSF-gate)
+- FOUND: `fbbd821` — STATE.md PARTIAL posture (interim, pre-OSF-gate)
+- FOUND: `ade9425` — Task 7: D-TA-OSF-COVERAGE = COVERED recorded in CONTEXT
 
-**Pending:** Task 7 (`checkpoint:human-verify`, gate=blocking) — Carter web-UI OSF coverage check. Final SUMMARY metadata commit (this file + STATE.md update) will land after Task 7 resumes.
+**Verification harness (post-Task-7):** `bin/verify_ta_sh2b3_phase.sh --wave 0` → C2/C3/C4 = PASS; C1 = WARN (documented D-TA-Wave-0-foundations RS1-path escalation; non-blocking by harness contract). Exit code = 0.
+
+**Success criteria (7 of 7 PASS):**
+- [x] All 7 tasks executed with atomic commits (Tasks 1–6 + Task 7 OSF gate)
+- [x] D-TA-01 path investigation outcome recorded (D-TA-Wave-0-foundations)
+- [x] Code-fix ancestry verified (069b34f + 7d54183 HEAD-ancestors)
+- [x] D-TA-04 cache-scope decision = QTL_COLOC_ONLY recorded
+- [x] Pitfall 2 mitigated + verified by dry-run before/after diff
+- [x] All scaffolded files (12) present + executable as appropriate
+- [x] D-TA-OSF-COVERAGE = COVERED recorded; Wave 1 hard gate cleared
 
 ---
 *Phase: ta-sh2b3-canonical-and-cache-refresh*
 *Plan: W0-foundations-and-osf-gate*
-*Status: PARTIAL — awaiting OSF coverage human-verify (Task 7)*
-*Tasks 1–6 completed: 2026-04-30T00:33:07Z*
+*Status: COMPLETE — all 7 tasks landed; OSF gate cleared 2026-04-29*
+*Tasks 1–6 execution: 2026-04-30T00:15:30Z → 2026-04-30T00:33:07Z*
+*Task 7 OSF gate cleared: 2026-04-29 (D-TA-OSF-COVERAGE = COVERED, commit ade9425)*
