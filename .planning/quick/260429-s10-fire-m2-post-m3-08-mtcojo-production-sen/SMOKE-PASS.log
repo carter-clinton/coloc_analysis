@@ -1,0 +1,106 @@
+*******************************************************************
+* Genome-wide Complex Trait Analysis (GCTA)
+* version v1.94.1 Linux
+* Built at Nov 15 2022 21:14:25, by GCC 8.5
+* (C) 2010-present, Yang Lab, Westlake University
+* Please report bugs to Jian Yang <jian.yang@westlake.edu.cn>
+*******************************************************************
+Analysis started at 20:54:18 EDT on Wed Apr 29 2026.
+Hostname: login02.hpc.ncsu.edu
+
+Accepted options:
+--mtcojo-file /share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/cojo_inputs/bmi.EUR.GIANT-UKBB.2018.mtcojo.list
+--mbfile /share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/.mbfile
+--w-ld-chr /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/external/ldscore/eur_w_ld_chr/
+--ref-ld-chr /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/external/ldscore/eur_w_ld_chr/
+--out /share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/bmi.EUR.GIANT-UKBB.2018.mtcojo
+
+
+There are 22 PLINK genotype files specified in [/share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/.mbfile].
+
+Reading the PLINK FAM files ....
+489 individuals have been included from the PLINK FAM files.
+Reading the PLINK BIM files ...
+9997231 SNPs to be included from PLINK BIM files.
+
+Reading GWAS summary data from [/share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/cojo_inputs/bmi.EUR.GIANT-UKBB.2018.mtcojo.list] ...
+1019874 SNPs in common between the target trait and the covariate trait(s).
+Filtering out SNPs with multiple alleles or missing value ...
+15 SNPs have missing value or mismatched alleles. These SNPs have been saved in [/share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/bmi.EUR.GIANT-UKBB.2018.mtcojo.badsnps].
+1019859 SNPs are retained after filtering.
+There are 37103 genome-wide significant SNPs with p < 5.0e-08.
+
+Reading PLINK BED files ...
+Genotype data for 489 individuals and 37103 SNPs have been included.
+Calculating allele frequencies ...
+Checking the difference in allele frequency between the GWAS summary datasets and the LD reference sample...
+6 SNP(s) have large difference of allele frequency between the GWAS summary data and the reference sample. These SNPs have been saved in [/share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/bmi.EUR.GIANT-UKBB.2018.mtcojo.freq.badsnps].
+Warning: There are 9 SNPs with MAF < 0.01 in the reference sample.
+
+Univariate LD score regression analysis to estimate SNP-based heritability ...
+bmi.EUR.GIANT-UKBB.2018: 1.182655 0.193987
+egfr.EUR.CKDGen.2019: 1.029411 0.070470
+hdl.EUR.GLGC.2021: 1.185136 0.162894
+ldl.EUR.GLGC.2021: 1.128901 0.117500
+tc.EUR.GLGC.2021: 1.183964 0.112839
+tg.EUR.GLGC.2021: 1.159078 0.117534
+Bivariate LD score regression analysis to estimate genetic correlation between each pair of traits ...
+Intercept:
+1.18266 0.000686514 -0.120424 -0.00155653 -0.0244553 0.140517 
+0.000686514 1.02941 0.00601302 -0.00499907 -0.0243498 -0.0397927 
+-0.120424 0.00601302 1.18514 -0.363867 0.0573869 -0.589064 
+-0.00155653 -0.00499907 -0.363867 1.1289 1.85958 0.120774 
+-0.0244553 -0.0243498 0.0573869 1.85958 1.18396 0.264718 
+0.140517 -0.0397927 -0.589064 0.120774 0.264718 1.15908 
+rg:
+0.193987 -0.0544304 -0.356741 0.0392135 -0.0110827 0.31325 
+-0.0544304 0.0704701 0.0433122 -0.00952608 -0.00342558 -0.066146 
+-0.356741 0.0433122 0.162894 0.0960103 0.234329 -0.550478 
+0.0392135 -0.00952608 0.0960103 0.1175 0.414091 0.337271 
+-0.0110827 -0.00342558 0.234329 0.414091 0.112839 0.388357 
+0.31325 -0.066146 -0.550478 0.337271 0.388357 0.117534 
+The LD score regression analyses completed.
+
+GSMR analysis for covariate #1 (egfr.EUR.CKDGen.2019) ...
+265 index SNPs are obtained from the clumping analysis with p < 5.0e-08 and LD r2 < 0.05.
+60 pleiotropic SNPs are filtered by HEIDI-outlier analysis.
+205 index SNPs are retained after HEIDI-outlier analysis.
+bxy -0.133889 0.043990
+GSMR analysis for covariate #1 (egfr.EUR.CKDGen.2019) completed.
+
+GSMR analysis for covariate #2 (hdl.EUR.GLGC.2021) ...
+1149 index SNPs are obtained from the clumping analysis with p < 5.0e-08 and LD r2 < 0.05.
+356 pleiotropic SNPs are filtered by HEIDI-outlier analysis.
+793 index SNPs are retained after HEIDI-outlier analysis.
+bxy -0.030440 0.003415
+GSMR analysis for covariate #2 (hdl.EUR.GLGC.2021) completed.
+
+GSMR analysis for covariate #3 (ldl.EUR.GLGC.2021) ...
+858 index SNPs are obtained from the clumping analysis with p < 5.0e-08 and LD r2 < 0.05.
+183 pleiotropic SNPs are filtered by HEIDI-outlier analysis.
+675 index SNPs are retained after HEIDI-outlier analysis.
+bxy -0.022411 0.003532
+GSMR analysis for covariate #3 (ldl.EUR.GLGC.2021) completed.
+
+GSMR analysis for covariate #4 (tc.EUR.GLGC.2021) ...
+1048 index SNPs are obtained from the clumping analysis with p < 5.0e-08 and LD r2 < 0.05.
+203 pleiotropic SNPs are filtered by HEIDI-outlier analysis.
+845 index SNPs are retained after HEIDI-outlier analysis.
+bxy -0.036941 0.003686
+GSMR analysis for covariate #4 (tc.EUR.GLGC.2021) completed.
+
+GSMR analysis for covariate #5 (tg.EUR.GLGC.2021) ...
+963 index SNPs are obtained from the clumping analysis with p < 5.0e-08 and LD r2 < 0.05.
+304 pleiotropic SNPs are filtered by HEIDI-outlier analysis.
+659 index SNPs are retained after HEIDI-outlier analysis.
+bxy -0.013993 0.004722
+GSMR analysis for covariate #5 (tg.EUR.GLGC.2021) completed.
+The pleiotropic SNPs filtered by HEIDI-outlier analysis have been saved in [/share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/bmi.EUR.GIANT-UKBB.2018.mtcojo.pleio_snps].
+
+mtCOJO analysis ...
+There are 1019733 SNPs in common between the target trait and all the covariate trait(s).
+Saving the mtCOJO analysis results of 1019733 remaining SNPs to [/share/clintonlab/ckclinto/tmp/m2p3_08_smoke_v2_zBKFeM/bmi.EUR.GIANT-UKBB.2018.mtcojo.mtcojo.cma] ...
+mtCOJO analysis completed.
+
+Analysis finished at 20:56:53 EDT on Wed Apr 29 2026
+Overall computational time: 2 minutes 34 sec.

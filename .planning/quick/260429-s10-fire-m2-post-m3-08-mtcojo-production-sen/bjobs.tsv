@@ -1,0 +1,14 @@
+submit_ts	job_id	stratum	target_trait	ld_ref	jobscript
+2026-04-29T20:59:43-04:00	67672	EUR	bmi.EUR.GIANT-UKBB.2018	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_EUR_bmi.sh
+2026-04-29T20:59:43-04:00	67673	EUR	hdl.EUR.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_EUR_hdl.sh
+2026-04-29T20:59:43-04:00	67674	EUR	ldl.EUR.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_EUR_ldl.sh
+2026-04-29T20:59:44-04:00	67675	EUR	tc.EUR.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_EUR_tc.sh
+2026-04-29T20:59:44-04:00	67676	EUR	tg.EUR.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_EUR_tg.sh
+2026-04-29T20:59:44-04:00	67677	AFR	hdl.AFR.GLGC.2021	data/reference/ldsc/1000G_AFR_Phase3_plink/1000G.AFR.QC	logs/lsf/m2p3_08_AFR_hdl.sh
+2026-04-29T20:59:45-04:00	67678	AFR	ldl.AFR.GLGC.2021	data/reference/ldsc/1000G_AFR_Phase3_plink/1000G.AFR.QC	logs/lsf/m2p3_08_AFR_ldl.sh
+2026-04-29T20:59:45-04:00	67679	AFR	tc.AFR.GLGC.2021	data/reference/ldsc/1000G_AFR_Phase3_plink/1000G.AFR.QC	logs/lsf/m2p3_08_AFR_tc.sh
+2026-04-29T20:59:45-04:00	67680	AFR	tg.AFR.GLGC.2021	data/reference/ldsc/1000G_AFR_Phase3_plink/1000G.AFR.QC	logs/lsf/m2p3_08_AFR_tg.sh
+2026-04-29T20:59:46-04:00	67681	TRANS	hdl.TRANS.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_TRANS_hdl.sh
+2026-04-29T20:59:46-04:00	67682	TRANS	ldl.TRANS.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_TRANS_ldl.sh
+2026-04-29T20:59:46-04:00	67683	TRANS	tc.TRANS.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_TRANS_tc.sh
+2026-04-29T20:59:47-04:00	67684	TRANS	tg.TRANS.GLGC.2021	data/reference/ldsc/1000G_EUR_Phase3_plink/1000G.EUR.QC	logs/lsf/m2p3_08_TRANS_tg.sh
