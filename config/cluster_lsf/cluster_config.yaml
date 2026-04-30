@@ -33,6 +33,7 @@ prepare_ld_plink:
   threads: 4
 
 run_finemap:
+  queue: "long"        # FIX 2026-04-30 (W4 V2): was inheriting __default__ serial; bsub_wrapper.sh maps long -> -W 14400 min (240 hr); SuSiE-RSS layer rebuild needs long-queue routing for the W4 V2 CONSERVATIVE_BOTH re-fire
   mem_mb: 32000
   threads: 1
 
