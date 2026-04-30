@@ -389,6 +389,16 @@ Baseline (no overlay) re-verified: dry-run with `forceall` shows `--policy confi
 
 **Wave 1 status:** Pitfall 2 is mitigated; Wave 1 dispatch is safe.
 
+### D-TA-OSF-COVERAGE: OSF pre-registration coverage outcome (D-TA-05)
+
+**Recorded:** 2026-04-29
+
+**Outcome:** COVERED
+
+**Evidence:** Carter verified osf.io/pvb5j Methods + osf.io/az52u closeout PDF in browser; confirmed all 6 canonical phrases (L-sweep, {15, 20, 30}, L = 20, canonical pair, BMI-HTN, HTN-stroke) are pre-registered at one of the two OSF deposits. Confirmation delivered via `/gsd-execute-phase` checkpoint resume signal "covered".
+
+**Wave 1 status:** CLEARED to fire.
+
 </decisions>
 
 <canonical_refs>
