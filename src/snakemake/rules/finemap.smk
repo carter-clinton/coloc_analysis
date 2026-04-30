@@ -59,7 +59,14 @@ rule run_finemap:
             f"{wildcards.region}.rds",
         ),
         manifest=FINEMAP_MANIFEST,
-        policy="config/susie_policy.yaml",
+        # ta-sh2b3 W0 Pitfall 2 mitigation (RESEARCH.md L351 + Wave 0 Task 4):
+        # Read policy from config so per-L overlays (config/pipeline_lsweep_L{15,20,30}_overlay.yaml)
+        # propagate into the rule's static input declaration. Default
+        # preserves existing behavior (config/susie_policy.yaml = L=10 baseline).
+        # Without this, --configfile config/pipeline_lsweep_L20_overlay.yaml
+        # would set config["finemap"]["policy"] but the rule input would
+        # still be the hardcoded path, leading to L_used=10 in JSON output.
+        policy=config.get("finemap", {}).get("policy", "config/susie_policy.yaml"),
         script_dep="src/legacy/region_analysis/scripts/run_susie_rss.R",
     output:
         json=finemap_output("{method}", "{trait}", "{ancestry}", "{region}"),
