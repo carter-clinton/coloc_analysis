@@ -1,28 +1,21 @@
-# config/susie_policy_L15.yaml — Wave 1 L-sweep override (D-TA-02)
+# config/susie_policy_L20.yaml — Wave 1 L-sweep override (D-TA-02)
 # Phase: ta-sh2b3-canonical-and-cache-refresh
 #
-# Copy of config/susie_policy.yaml with susie.L: 15.
+# Copy of config/susie_policy.yaml with susie.L: 20 (primary candidate per D-TA-02).
 # Used by Wave 1 driver via:
 #   snakemake --configfile config/pipeline.yaml \
-#             --configfile config/pipeline_lsweep_L15_overlay.yaml ...
+#             --configfile config/pipeline_lsweep_L20_overlay.yaml ...
 # Overlay rebases finemap.policy to point here; finemap.smk:62 hardcodes
 # the policy input — Wave 0 Task 4 (Pitfall 2 mitigation) verifies that
 # config-merge propagates this override into the rule input declaration.
 #
 # Schema: identical to config/susie_policy.yaml; only susie.L differs.
-#
-# Re-fire (2026-04-29): max_iter raised from 100/200 -> 500/1000 after
-# Wave 1 v1 outcome PRIMARY_L=NONE_CONVERGED (all 9 fits hit the niter cap).
-# Carter selected option (a) from the W1 GO/NO-GO checkpoint per
-# feedback_rigor_over_speed.md. Original 100/200 values preserved in the
-# .preNiter500 backup at config/susie_policy_L15.preNiter500.bak.20260429_213644.yaml.
-# OSF deviation logged at Wave 7 closeout (osf_deviations.md entry).
 
 susie:
-  L: 15
+  L: 20
   coverage: 0.95
-  max_iter_primary: 500
-  max_iter_retry: 1000
+  max_iter_primary: 100
+  max_iter_retry: 200
   ld_regularization_eps: 1.0e-4
   min_abs_corr_default: 0.5
   min_abs_corr_sweep: [0.1, 0.5, 0.9]
@@ -31,7 +24,7 @@ susie:
   min_ld_min_use: 10
   l_saturation:
     action: flag
-    supplementary_rerun_L: 20
+    supplementary_rerun_L: 30
   convergence_failure:
     action: retry_ladder
     ladder:
