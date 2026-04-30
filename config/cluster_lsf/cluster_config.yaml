@@ -35,7 +35,7 @@ prepare_ld_plink:
 run_finemap:
   queue: "long"        # FIX 2026-04-30 (W4 V2): was inheriting __default__ serial; bsub_wrapper.sh maps long -> -W 14400 min (240 hr); SuSiE-RSS layer rebuild needs long-queue routing for the W4 V2 CONSERVATIVE_BOTH re-fire
   mem_mb: 32000
-  threads: 1
+  threads: 2           # FIX 2026-04-30 (W4 V3 -> V4): D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME = Option E. long queue requires min 2 slots (header L8); threads=1 caused 50/50 bsub rejections "Too few tasks requested" in V3 dispatch. SuSiE-RSS R code is single-threaded so 1 of 2 slots is allocated-but-unused — accepted cost for queue-policy compliance without overthreading.
 
 validate_sumstats:
   mem_mb: 4000
