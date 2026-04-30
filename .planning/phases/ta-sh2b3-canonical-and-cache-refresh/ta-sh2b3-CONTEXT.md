@@ -399,6 +399,51 @@ Baseline (no overlay) re-verified: dry-run with `forceall` shows `--policy confi
 
 **Wave 1 status:** CLEARED to fire.
 
+### D-TA-Wave1-PRIMARY-L: SuSiE-RSS L-sweep convergence outcome (Wave 1)
+
+**Recorded:** 2026-04-29
+
+**Per-trait per-L convergence (n_CS < L_used AND L_saturated=FALSE AND convergence_status matches ^converged_):**
+
+| trait        | L=15 | L=20 | L=30 |
+|--------------|------|------|------|
+| bmi          | FAIL | FAIL | FAIL |
+| hypertension | FAIL | FAIL | FAIL |
+| stroke       | FAIL | FAIL | FAIL |
+
+Detailed numerics: see `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-convergence-report.tsv`.
+
+All 9 fits report `convergence_status="non_converged"` with `niter=100` (the SuSiE-RSS default iteration cap), `L_saturated=FALSE`, and `n_CS < L_used` (BMI: 13/14/14 across L=15/20/30; hypertension: 5/4/4; stroke: 3/4/4). The `^converged` regex therefore fails for every fit. Substantively this is the **niter-not-reached** condition — the variational ELBO did not stabilise within 100 iterations — rather than the literal **L-saturation** condition (`n_CS == L_used`). Per Zou et al. 2022 §Discussion the two failure modes have different remedies: L-saturation calls for raising L; niter-not-reached calls for raising the iteration cap.
+
+**PRIMARY_L:** **NONE_CONVERGED**
+
+**Wave 2 directive:** **Wave 2 BLOCKED** — no L value satisfies `converged_ok=TRUE` across all 3 traits. Carter must decide between three options before Wave 2 fires:
+
+1. **(a) Re-fire with raised niter** — re-run the L-sweep at niter=500 or niter=1000 (rather than the SuSiE-RSS default 100). Most rigorous; preserves the strict `^converged_` gate; adds ~8 min × ~5-10× wall = ~1 hr LSF compute. Recommended option per the rigor-over-speed memory rule and per Zou 2022's "raise niter when ELBO has not stabilised".
+2. **(b) Relax the convergence-status criterion** to accept `L_saturated=FALSE AND n_CS < L_used` as a convergence proxy (drop the `convergence_status` regex check). Justification: the run_susie_rss.R wrapper's `convergence_status="non_converged"` token is set when `converged=FALSE` from SuSiE-RSS internals (i.e., when `niter` reached the cap). The downstream Wave 2 coloc.susie analysis depends on the credible-set structure (`n_CS`, purity, leading PIPs), not on the ELBO-converged flag per se — and `n_CS < L_used` already establishes that the model did not saturate the prior. This option is faster (no re-fire), but weakens the methodology and requires explicit OSF-deviation disclosure if adopted.
+3. **(c) Proceed to Wave 2 with the lowest-L fits regardless and DISCLOSE convergence outcomes downstream** — pick L=15 (lowest L; fewest spurious credible sets) and fire Wave 2 against those non-converged fits, then disclose the niter-cap outcome in Methods §Fine-Mapping Configuration + a Limitations bullet, plus a per-fit non-convergence column on the Fig 3 disclosure sub-table. Effectively the **DISCLOSE-AS-COLUMN** Wave 6 narrative branch propagated upstream.
+
+**Recommendation:** Option **(a) re-fire with raised niter**. Per `feedback_rigor_over_speed.md` ("in any gray-area trade-off, recommend and proceed with the more rigorous / reviewer-defensible option") and the AUDIT-RESPONSE 2026-04-26 line 280 framing of D-TA-Wave1-headline as "a framing choice that materially shifts the Abstract / Headline Result / Fig 2", a peer-reviewer of *Genome Medicine* will read "all 9 fits non-converged at niter=100" as a methodological gap. Raising niter and re-firing — especially given the observed ~1 min/fit wall on this single-region scope — is the cleanest defensible outcome. Wave 2 is HARD-BLOCKED on Carter's decision.
+
+### D-TA-Wave1-headline: Headline-numerator decision (DEFERRED to Wave 6 per CONTEXT.md invariant 2)
+
+**Per-trait convergence outcome at PRIMARY_L:** PRIMARY_L is `NONE_CONVERGED` — no L value cleared the strict gate. Restated against the original L=10 baseline (where the same 3 traits were also non-converged):
+
+- bmi: non-converged (was non-converged at L=10; remains non-converged at L=15/20/30 with `n_CS=13/14/14`, `L_saturated=FALSE`, `niter=100`)
+- hypertension: non-converged (was non-converged at L=10; remains non-converged at L=15/20/30 with `n_CS=5/4/4`)
+- stroke: non-converged (was non-converged at L=10; remains non-converged at L=15/20/30 with `n_CS=3/4/4`)
+
+**Newly converged count (was non-converged at L=10, now converged at PRIMARY_L):** **0** (zero of three traits flipped to a converged state under the strict `^converged_` gate at any swept L).
+
+**Wave 6 narrative branch:**
+
+- If all 3 newly converge → Wave 6 RECOMPUTES headline numerator from `(51 + 3 - X)/96` where X = number of newly empty CS sets. Updates Abstract + §Headline + Fig 2 caption + TRACK-A-FROZEN-NUMBERS.md L10 LIVE block + Conclusion-1.
+- If some still don't converge → Wave 6 keeps 51/96 as headline + ADDS non-convergence disclosure column to Fig 3 (analogous to existing disclosure sub-table). Updates Limitations bullet + Methods §Fine-Mapping Configuration; does NOT touch the 51/96 headline.
+
+**Selected branch given Wave 1 outcome:** **DISCLOSE-AS-COLUMN** (no traits converged at any swept L → Wave 6 keeps 51/96 with explicit non-convergence disclosure rather than recomputing the headline numerator). This selection is provisional pending Carter's resolution of the **D-TA-Wave1-PRIMARY-L Wave 2 directive** above — if Carter elects option (a) re-fire with raised niter and the niter=500/1000 sweep produces converged fits, the branch flips to **RECOMPUTE** and this entry is updated post-re-fire. If Carter elects option (b) or (c), the branch stays **DISCLOSE-AS-COLUMN**.
+
+**HEADLINE_VALUE:** UNCHANGED (Wave 1 does not modify the 51/96 headline; Wave 6 does, conditional on this outcome.)
+
 </decisions>
 
 <canonical_refs>
