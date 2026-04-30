@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: "Wave 4 V2 CONSERVATIVE_BOTH dispatch HALTED — DAG no-fan-out (5-job no-op completed in 5 minutes); supervisor PID 3911840 exited cleanly; ZERO per-region run_qtl_coloc + ZERO run_finemap jobs dispatched; root cause = snakemake --touch (V2 Step 2) stabilized mtimes such that aggregate_qtl_coloc rule's glob over results/qtl_coloc/*.json enumerated 0 files (we mv'd dir in V2 Step 3); script-newer-than-outputs cascade trigger that fired V1 abort's 96 run_finemap fan-out is no longer active. ALL INVARIANTS PRESERVED: TRACK-A-FROZEN-NUMBERS md5=9d0405a4 (UNCHANGED), coloc_summary.tsv md5=5fa3c400 (UNCHANGED), W2 R2 BMI-HTN md5=b74e36e2 (UNCHANGED). Three qtl_coloc backups (.preFix.bak.{20260430_003141, 20260430_081210, 20260430_085556}) + one susie/ backup (.preFix.bak.20260430_081210) preserved. CONTEXT D-TA-04-OVERRIDE-V2 commit (44c4dab) + cluster_config queue fix (2dcb518) + V2 tracker (3d7f1f9) all landed. Carter decision required — V2 tracker carter_decision_required.options A/B/C/D enumerates 4 forward paths; executor recommends Option A: restore live qtl_coloc/ + susie/ from .preFix.bak.20260430_081210/ via cp -R, then patch driver to add --forcerun run_finemap run_qtl_coloc to the snakemake invocation, then re-fire (estimated wall ~10-15 hr CONSERVATIVE_BOTH envelope on long queue). Resume /gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh after Carter records D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME selection in CONTEXT.md and applies recovery. Tracker at .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker_v2.json"
-last_updated: "2026-04-30T09:05:00.000Z"
+stopped_at: Completed ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md (4/8 plans done); 9 R2 PP.H4 outputs at results/multitrait/coloc_susie_R2/; W1.5 LD-audit landed; Pitfall 3 + Invariant 2 preserved; next plan = ta-sh2b3-W3-checkpoint-human-verify-PLAN.md (Carter selects D-TA-WAVE3-OUTCOME branch)
+last_updated: "2026-04-30T16:15:13.448Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 12
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** Phase ta-sh2b3-canonical-and-cache-refresh — ta-sh2b3-canonical-and-cache-refresh
+**Current focus:** Phase m3-aou-afr-ld-panel — m3-aou-afr-ld-panel-build
 
 **k2d identity-LD re-fire complete (2026-04-25):** LSF fire (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file gone; 95 JSONs + `finemap_manifest.tsv` landed at `results_identity_ld/fine_mapping/`. Empirically unblocks Track A **Figure 1A** (identity-vs-real PP.H4 scatter) and **Figure 3** (survival forest) — the two open figure slots in the 5-figure roster (Figs 1B + 2 + 5 already DONE per p1b / mqo / k2g; Fig 4 demoted to S5 per k2f). **Both halves of the post-k2d deferral are now resolved:** Fig 1A + Fig 3 builders landed via quick task `260425-1vy` (commits `105484d`, `f862f55`); `results_identity_ld/` tracking decision is locked at DEC-2026-04-25-01 (don't commit; document via .gitignore + canonical CS-yield summary at `.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv`).
 
 ## Current Position
 
-Phase: ta-sh2b3-canonical-and-cache-refresh (ta-sh2b3-canonical-and-cache-refresh) — EXECUTING
-Plan: 5 of 8
+Phase: m3-aou-afr-ld-panel (m3-aou-afr-ld-panel-build) — EXECUTING
+Plan: 1 of 6
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
