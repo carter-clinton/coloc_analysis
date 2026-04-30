@@ -113,9 +113,13 @@ OUT_PREFIX="\$OUTDIR/\${TARGET}.mtcojo"
     --out "\$OUT_PREFIX" \\
     > "\$OUT_PREFIX.fire.log" 2>&1
 
-# Step 4: canonicalize output path (GCTA may write .mtcojo.cma.cojo)
+# Step 4: canonicalize output path. Witnessed during M2-POST-M3-08 smoke
+# (Task 3): GCTA mtCOJO writes results to <out>.mtcojo.cma (TSV with cols
+# SNP A1 A2 freq b se p N bC bC_se bC_pval), where <out> is the value
+# passed to --out. Since we pass --out=<target>.mtcojo, the actual output
+# is <target>.mtcojo.mtcojo.cma. Try observed + legacy extensions.
 if [ ! -f "\$OUT_PREFIX.cojo" ]; then
-    for ext in .mtcojo.cma.cojo .cma.cojo .cma _cojo; do
+    for ext in .mtcojo.cma .mtcojo.cma.cojo .cma.cojo .cma _cojo; do
         cand="\${OUT_PREFIX}\${ext}"
         if [ -f "\$cand" ]; then cp "\$cand" "\$OUT_PREFIX.cojo"; break; fi
     done
