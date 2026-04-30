@@ -611,6 +611,25 @@ Detailed numerics: `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2
 - PASS: too_few_snps count drops to ≤ 200 in `results/qtl_coloc/` AND SuSiE-RSS layer fits land at niter=1000 with `.fit.rds` mtime > Wave 4 V2 dispatch timestamp → Wave 5 unblocked
 - FAIL: too_few_snps remains ~1,000 OR SuSiE-RSS layer rebuild fails → halt + Carter escalation
 
+### D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME: V2 dispatch DAG no-fan-out → Option A recovery
+
+**Recorded:** 2026-04-30
+
+**Decision:** Option A — restore live dirs from `.preFix.bak.20260430_081210/` baselines via `cp -R`, then patch driver to add `--forcerun run_finemap run_qtl_coloc` to the snakemake invocation, then re-fire.
+
+**Why:** V2 dispatch attempt 2 (commits `2dcb518` + `2891d5e`) completed Snakemake's `all_qtl_coloc` target as a 5-job no-op DAG with **zero per-region work** (`run_qtl_coloc` = 0, `run_finemap` = 0). Root cause per `wave4_dispatch_tracker_v2.json`: V2 Step 1's `snakemake --touch` stabilized aggregator-rule mtimes such that the script-newer-than-outputs cascade trigger that had forced the V1-abort fan-out is no longer active; combined with V2 Step 3's `mv results/qtl_coloc → bak`, the `aggregate_qtl_coloc` rule's dynamic glob over `results/qtl_coloc/*.json` enumerated 0 files and the DAG planned no per-region work. Per `feedback_rigor_over_speed.md` (rigor over time-saving), Option A is the rigor-maximizing minimal-change path matching D-TA-04-OVERRIDE-V2 = CONSERVATIVE_BOTH intent: rebuilds full SuSiE-RSS + QTL-coloc layers under post-`02c4404` honest niter=1000 code while preserving V1+V2 backup chain (`results/qtl_coloc.preFix.bak.20260430_003141/`, `.20260430_081210/`, `.20260430_085556/`, `results/fine_mapping/susie.preFix.bak.20260430_081210/`) untouched as forensic record. Options B (explicit per-region target list), C (`--forceall` widens to upstream sumstats harmonization), D (revert to V1-abort partial state) were all evaluated in the tracker's `carter_decision_required` block and rejected as either more-invasive or higher-risk.
+
+**How to apply:** Wave 4 resumer executes the option-A steps in order:
+1. (this entry) Record decision in CONTEXT.md
+2. Restore: `cp -R results/qtl_coloc.preFix.bak.20260430_081210/ results/qtl_coloc/` AND `cp -R results/fine_mapping/susie.preFix.bak.20260430_081210/ results/fine_mapping/susie/`; verify 1274 JSONs + ≥87 `.fit.rds` + invariant md5s preserved
+3. Patch `bin/fire_qtl_coloc_cache_refresh.sh` (single-line diff): add `--forcerun run_finemap run_qtl_coloc` to the snakemake invocation; commit `(ta-sh2b3, W4): fix: driver --forcerun for V2 CONSERVATIVE_BOTH DAG fanout`
+4. Re-fire: `SUSIE_LAYER_SCOPE=yes bash bin/fire_qtl_coloc_cache_refresh.sh`; long queue, `-W=14400` (per `feedback_lsf_queues.md`); snakemake from `/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake` (Python 3.11 pin per `project_python_311_pin.md`)
+5. Write `wave4_dispatch_tracker_v3.json` with `status=DISPATCHED_OPTION_A`; supersedes V2
+
+**OSF deviation entry (W7 closeout consumes; entry #6):** D-TA-04-OVERRIDE-V2 cache scope re-execution under Option A driver `--forcerun` patch (recovers from V2 DAG no-fan-out artifact); preserves V1+V2 forensic backup chain; rationale = `feedback_rigor_over_speed.md` minimal-change rigor-maximizing path that matches Carter's CONSERVATIVE_BOTH intent and post-`02c4404` Stage 2 SuSiE-RSS layer consistency at honest niter=1000.
+
+**PASS/FAIL gate (unchanged from D-TA-04-OVERRIDE-V2):** too_few_snps count ≤ 200 in `results/qtl_coloc/*.json` AND `results/fine_mapping/susie/*.fit.rds` mtime > V3 dispatch ts → Wave 5 unblocked. FAIL → halt + Carter escalation per W4 PLAN.
+
 </decisions>
 
 <canonical_refs>
