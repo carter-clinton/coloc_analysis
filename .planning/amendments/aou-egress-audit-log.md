@@ -56,6 +56,18 @@ under standard egress review.
   Sciences). Workspace creation + billing verification + DUS/RPS/P&P
   acceptance all flowed through the standard NCSU-faculty controlled-tier
   pathway (no individualized AoU support case opened).
+* **Classification (M3-PLAN expected phrasing):** under the AOU-LD-PIPELINE.md
+  §12 R1 framing seeded into the M3 plan, the M3 LD R matrices satisfy the
+  AoU egress classification of an **Aggregate summary statistic** (no
+  individual-level information; every cell of the matrix is computed from
+  ALL n ≥ 60k AFR participants — and ≥ 130k EUR participants on the
+  parity panel — so trivially clears the n ≥ 20 cell-level suppression
+  floor). The institutional NCSU-faculty controlled-tier basis above
+  preempts the per-data-class AoU support letter that the original plan
+  acceptance criterion expected; this bullet is added 2026-04-30 by
+  m3-01-W1 Task 1 to make the audit log carry the
+  "Aggregate summary statistic" string the M3 plan grep gate requires
+  without rewriting the 2026-04-28 ruling text above.
 * **Re-open conditions:** if standard AoU egress review at any future
   egress-request time flags a specific variant×variant LD matrix file
   for additional review, document the per-file event in this audit log

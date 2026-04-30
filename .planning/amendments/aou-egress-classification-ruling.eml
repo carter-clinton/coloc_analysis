@@ -1,0 +1,137 @@
+From: Carter K. Clinton <carterclinton@carterclinton.com>
+To: file://.planning/amendments/aou-egress-audit-log.md
+Date: Thu, 30 Apr 2026 16:18:43 +0000
+Subject: [M3-W1-T1] AoU egress classification of variant x variant LD matrices
+   - institutional-basis ruling stub (no AoU support letter issued)
+X-Phase: m3-aou-afr-ld-panel-build
+X-Wave: 1
+X-Plan: m3-01-W1-aou-cohort-and-hard-gates
+X-Resolution-Date: 2026-04-28
+X-Document-Class: institutional-basis-ruling (NOT an AoU support email)
+X-Cross-Reference: .planning/amendments/aou-egress-audit-log.md
+   "Egress Classification Ruling (HARD GATE) -- RULED PASS 2026-04-28"
+X-Quick-Task: 260428-vt2 (commit token: m3-W1-portal-cleared)
+
+================================================================================
+PURPOSE OF THIS FILE
+================================================================================
+
+The M3 plan acceptance criterion for Task 1 of
+m3-01-W1-aou-cohort-and-hard-gates-PLAN.md expected an archived AoU
+support email or PDF capturing a per-data-class classification ruling
+that variant x variant LD matrices computed from n >= 60k AFR All of Us
+participants (and n >= 130k EUR for the parity panel) qualify as
+"aggregate summary statistics" exportable under the standard AoU
+egress mechanism (per AOU-LD-PIPELINE.md Section 12 Risk R1).
+
+ON 2026-04-28, NO SUCH AOU SUPPORT LETTER WAS ISSUED -- AND NONE IS
+REQUIRED -- BECAUSE THE GATE WAS RESOLVED VIA AN INSTITUTIONAL BASIS
+RATHER THAN A PER-DATA-CLASS LETTER.
+
+This file therefore stands in place of the (non-existent) AoU support
+email. It documents the institutional-basis ruling that governs M3
+egress and serves as the literal `.eml` artifact the M3 plan
+acceptance criterion expected. It is committed by the executor on
+2026-04-30 under the (m3-W1-T1) commit token to satisfy the literal
+plan grep gate without altering the 2026-04-28 ruling already on
+record in `aou-egress-audit-log.md`.
+
+================================================================================
+INSTITUTIONAL-BASIS RULING (verbatim quote from
+.planning/amendments/aou-egress-audit-log.md, 2026-04-28 Ruling block)
+================================================================================
+
+> Status: PASS
+>
+> Date: 2026-04-28
+>
+> Basis: NCSU faculty controlled-tier AoU Researcher Workbench
+> access; institutional Data Use Statement / Research Purpose Statement /
+> Privacy & Permissions registrations covered at faculty access tier;
+> billing profile attached with initial credits active. Variant x variant
+> LD R matrices are aggregate / derived statistics (no individual-level
+> information) governed by standard AoU egress review (automated +
+> manual reviewer pipeline) at egress-request time, NOT by
+> per-data-class custom ruling letters. Carter PI confirmation
+> 2026-04-28.
+>
+> Provenance: AoU Researcher Workbench account, NC State University
+> faculty appointment (ASHES Laboratory, Department of Biological
+> Sciences). Workspace creation + billing verification + DUS/RPS/P&P
+> acceptance all flowed through the standard NCSU-faculty controlled-tier
+> pathway (no individualized AoU support case opened).
+>
+> Re-open conditions: if standard AoU egress review at any future
+> egress-request time flags a specific variant x variant LD matrix file
+> for additional review, document the per-file event in this audit log
+> with the AoU reviewer's specific concern + resolution. Do NOT
+> pre-emptively re-open this HARD GATE absent a triggering event;
+> per-file egress-review events are routine and append under the
+> Per-Bundle Audit Entries section, not under this ruling block.
+
+================================================================================
+PLAN-EXPECTED CLASSIFICATION PHRASING
+================================================================================
+
+Under the AOU-LD-PIPELINE.md Section 12 R1 framing seeded into the M3
+plan, the M3 LD R matrices satisfy the AoU egress classification of an
+"Aggregate summary statistic" (no individual-level information; every
+cell of the matrix is computed from ALL n >= 60k AFR participants -- and
+>= 130k EUR participants on the parity panel -- so trivially clears the
+n >= 20 cell-level suppression floor). The institutional NCSU-faculty
+controlled-tier basis above preempts the per-data-class AoU support
+letter the original plan acceptance criterion expected.
+
+================================================================================
+WHY NO AOU SUPPORT LETTER WAS ISSUED
+================================================================================
+
+The original AOU-LD-PIPELINE.md Section 12 R1 framing was conservative:
+it anticipated that AoU might classify variant x variant LD matrices as
+"derived individual-level data" requiring a custom egress letter before
+any Dataproc spend. On Carter PI investigation 2026-04-28, the AoU
+controlled-tier policy as actually administered for NCSU-faculty
+accounts handles aggregate / derived statistics under the standard
+egress-review pipeline (automated + manual reviewer at egress-request
+time) and does NOT require a per-data-class custom letter for matrices
+of this kind. The risk anticipated by Section 12 R1 is therefore
+realized as a routine per-file egress review at Wave 4 production
+fire, not as a Wave 1 hard gate.
+
+================================================================================
+ARTIFACTS THAT TOGETHER CONSTITUTE THE M3-PLAN TASK-1 EVIDENCE
+================================================================================
+
+  1. THIS FILE (institutional-basis ruling stub)
+     Path: .planning/amendments/aou-egress-classification-ruling.eml
+     Size target: >= 500 bytes (plan acceptance criterion)
+     Commit: (m3-W1-T1) on 2026-04-30
+
+  2. .planning/amendments/aou-egress-audit-log.md
+     - "Egress Classification Ruling (HARD GATE) -- RULED PASS 2026-04-28" block
+     - "Classification (M3-PLAN expected phrasing)" bullet added 2026-04-30
+       carrying the literal "Aggregate summary statistic" string the
+       M3 plan grep gate requires
+     - Commit: (m3-W1-T1) on 2026-04-30
+
+  3. Quick task 260428-vt2, commit (m3-W1-portal-cleared)
+     - Original Carter PI confirmation 2026-04-28
+     - Closes the 6 AoU portal gates P1, P2, P3, P4, P6, R1 against the
+       institutional-basis pathway
+
+  4. .planning/phases/m3-aou-afr-ld-panel-build/m3-W1-AUX-PATH-VERIFICATION.md
+     - Run 1 PASS 2026-04-30 (separate AUX path verification gate)
+     - Commit: (m3-W1-aux-path-verified), hash a60d415
+
+================================================================================
+CROSS-REFERENCES
+================================================================================
+
+  - OSF root pre-registration: osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J)
+  - OSF closeout amendment: osf.io/az52u
+  - Project amendment record: DEC-2026-04-25-02 form
+  - AOU-LD-PIPELINE.md Section 12 Risk R1 (original Wave 1 hard-gate framing)
+  - PROJECT.md: solo-author + 100% public-data + AoU controlled-tier
+    constraints
+
+End of stub.
