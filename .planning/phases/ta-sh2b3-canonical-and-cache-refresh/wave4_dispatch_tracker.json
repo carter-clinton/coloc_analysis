@@ -1,0 +1,166 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W4-cache-invalidation-and-refire",
+  "status": "HALTED_SCOPE_BREACH",
+  "outcome": "DISPATCH_ABORTED_PRE_QTL_COLOC",
+  "summary_one_liner": "Driver fired with SUSIE_LAYER_SCOPE=no per D-TA-04=RSID, but Snakemake all_qtl_coloc DAG transitively re-fired run_finemap (SuSiE-RSS layer) due to mtime trigger on src/legacy/region_analysis/scripts/run_susie_rss.R; supervisor killed at +03:30 of 50/50 jobs queued; 74 SuSiE-RSS files overwritten before bkill landed; ZERO QTL-coloc rule attempts ran; cache restored from backup.",
+
+  "dispatch_timestamp": "2026-04-30T00:31:41-04:00",
+  "halt_timestamp": "2026-04-30T00:35:11-04:00",
+  "elapsed_seconds_at_halt": 210,
+  "supervisor_pid": 3123090,
+  "supervisor_pid_died_naturally": false,
+  "supervisor_log": "logs/wave4_qtl_coloc_refresh_dispatch_20260430_003141.log",
+  "supervisor_pid_file": "logs/wave4_qtl_coloc_refresh_dispatch_20260430_003141.pid",
+  "snakemake_internal_log": "logs/wave4_qtl_coloc_refresh_20260430_003141.log",
+
+  "scope_intent": {
+    "d_ta_04_diagnostic": "RSID",
+    "cache_scope": "QTL_COLOC_ONLY",
+    "susie_layer_scope_env": "no",
+    "expected_invalidation": "results/qtl_coloc/ ONLY",
+    "expected_invariants_preserved": [
+      "results/fine_mapping/susie/ — UNTOUCHED",
+      "results/multitrait/coloc_summary.tsv md5 = 5fa3c4004970c5da711d05947cb1f7d2",
+      ".planning/amendments/TRACK-A-FROZEN-NUMBERS.md md5 = 9d0405a4db95655b1be7401883d22165"
+    ]
+  },
+
+  "scope_breach_observed": {
+    "rule_dispatched_unexpectedly": "run_finemap (SuSiE-RSS) — 96 jobs in DAG plan; 50 dispatched; 38 finished + 6 killed-mid-flight + 6 still pending at bkill",
+    "trigger": "Snakemake DAG mtime check: src/legacy/region_analysis/scripts/run_susie_rss.R was last modified by commit 02c4404 (W1 Rule 1 max_iterations -> max_iter fix), making it newer than the existing results/fine_mapping/susie/*.fit.rds outputs from Apr 22; Snakemake therefore re-fired run_finemap rule transitively",
+    "files_overwritten_count": 74,
+    "files_overwritten_breakdown": {
+      "json_files": 33,
+      "fit_rds_files": 41
+    },
+    "canonical_w2_anchors_intact": [
+      "results/fine_mapping/susie/bmi.EUR.SH2B3_12q24.fit.rds (Apr 22 10:50; PRESERVED)",
+      "results/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json (Apr 22 10:50; PRESERVED)",
+      "results/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.fit.rds (Apr 21 23:44; PRESERVED)",
+      "results/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.json (Apr 21 23:44; PRESERVED)",
+      "results/fine_mapping/susie/stroke.EUR.SH2B3_12q24.fit.rds (Apr 22 10:46; PRESERVED)",
+      "results/fine_mapping/susie/stroke.EUR.SH2B3_12q24.json (Apr 22 10:46; PRESERVED)"
+    ],
+    "canonical_w0_diagnostic_anchors_intact": [
+      "results/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json (D-TA-04 sample 1; PRESERVED)",
+      "results/fine_mapping/susie/bmi.EUR.FTO_16q12.json (D-TA-04 sample 2; PRESERVED)",
+      "results/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.json (D-TA-04 sample 3; PRESERVED)"
+    ],
+    "files_overwritten_by_category": {
+      "SH2B3_region_peripheral_traits": ["asthma.AFR.SH2B3_12q24", "asthma.EUR.SH2B3_12q24", "t2d.EUR.SH2B3_12q24"],
+      "FTO_16q12_peripheral": ["asthma.AFR.FTO_16q12"],
+      "other_peripheral_count": 66,
+      "other_peripheral_sample": ["asthma.AFR.PYHIN1_1q23", "t2d.AFR.PYHIN1_1q23", "asthma.EUR.APOE_19q13", "asthma.AFR.HLA_6p21", "asthma.AFR.BMI_5q13_3", "t2d.EUR.HLA_6p21", "stroke.EUR.BMI_5q13_3"]
+    },
+    "overwritten_files_provenance": "Re-built under post-7d54183 + post-02c4404 (HEAD) code — semantically same code-version as Wave 1's L=15 fits in the canonical anchor files; numerically not bit-identical because run_susie_rss.R inputs include LD panels and trait sumstats which are deterministic, but L-policy / max_iter / random seed handling may produce slightly different draws",
+    "overwritten_files_list_path": "/tmp/w4_susie_overwritten.txt (74 entries; ephemeral)"
+  },
+
+  "lsf_jobs_at_dispatch": {
+    "total_dispatched": 50,
+    "queue_used": "serial",
+    "queue_intended_per_plan": "long",
+    "queue_walltime_cap_min_serial": 5760,
+    "queue_walltime_cap_min_long": 14400,
+    "queue_walltime_observation": "bsub_wrapper.sh maps queue=serial -> -W 5760, queue=long -> -W 14400 (line 49-53 verified). Snakemake's per-rule cluster_config.yaml requested queue=serial for run_finemap; the long-queue routing the W4 plan asserts is therefore not enforced by the per-rule config — that is a separate plan-vs-config drift to surface to Carter.",
+    "lsf_job_ids_first_10": [69704, 69705, 69706, 69707, 69708, 69709, 69710, 69711, 69712, 69713],
+    "lsf_job_ids_all": "see logs/wave4_qtl_coloc_refresh_dispatch_20260430_003141.log — 50 IDs from 69704 to 69753",
+    "qtl_coloc_jobs_dispatched": 0,
+    "rules_observed_in_dag_plan": {
+      "aggregate_qtl_coloc": 1,
+      "all_qtl_coloc": 1,
+      "assign_tiers": 1,
+      "build_coloc_manifest": 1,
+      "build_gene_tissue_matrix": 1,
+      "build_ld_rds_1kg_eur": 1,
+      "build_qtl_coloc_manifest": 1,
+      "filter_finemap_summary": 1,
+      "run_finemap": 96,
+      "summarize_coloc_results": 1,
+      "summarize_finemap_results": 1
+    },
+    "missing_from_dag_plan": "run_qtl_coloc rule does NOT appear in the 'Job stats' summary at DAG-resolution time — Snakemake apparently planned to run the 96 SuSiE-RSS rebuilds FIRST (as upstream inputs), THEN materialize run_qtl_coloc dispatches in a second wave once the SuSiE-RSS jobs completed. The wave was killed before the SuSiE-RSS layer finished, so run_qtl_coloc never began."
+  },
+
+  "pre_w4_baseline": {
+    "total_attempts": 1274,
+    "too_few_snps": 1005,
+    "no_qtl_cs": 235,
+    "success": 32,
+    "qtl_susie_failed": 2,
+    "captured_in": ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv"
+  },
+
+  "post_dispatch_disk_state": {
+    "results_qtl_coloc_dir": "RESTORED FROM BACKUP — 1,274 JSONs, identical baseline status distribution (cp -R from results/qtl_coloc.preFix.bak.20260430_003141)",
+    "results_qtl_coloc_preFix_bak_TS": "results/qtl_coloc.preFix.bak.20260430_003141 (PRESERVED — pre-W4 rollback record; bit-identical contents to live results/qtl_coloc/)",
+    "results_fine_mapping_susie_dir": "PARTIALLY OVERWRITTEN — 74 of ~192 files newer than dispatch time; W2/W3 canonical anchors intact",
+    "snakemake_locks": "CLEARED — .snakemake/locks/0.input.lock + 0.output.lock removed",
+    "snakemake_tmp_uzosuzwj": ".snakemake/tmp.uzosuzwj/ retained as forensic record (.jobfailed + .jobfinished markers from 50 dispatched jobs)",
+    "track_a_frozen_numbers_md5": "9d0405a4db95655b1be7401883d22165 (UNCHANGED — invariant preserved)",
+    "coloc_summary_tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (UNCHANGED — invariant preserved)"
+  },
+
+  "executor_decision_rationale": {
+    "rule_invoked": "Rule 4 (architectural change required)",
+    "why_rule_4_not_rules_1_to_3": "The scope breach is NOT a bug in Wave 4's code (Rule 1) — the driver script behaved as designed (SUSIE_LAYER_SCOPE=no => no mv of SuSiE-RSS dir). The breach is a planning-level drift between Wave 4's stated invariant ('SuSiE-RSS layer NOT touched under RSID scope') and the Snakemake DAG's transitive-rebuild semantics. Three forward paths exist (restore vs accept vs widen-scope), each with different epistemic/manuscript implications. The executor agent does NOT have authority to choose between them.",
+    "why_halt_now_vs_continue": "Continuing the dispatch would cascade: the remaining 96-50=46 SuSiE-RSS jobs would queue when bjobs cleared, then ~1,274 run_qtl_coloc jobs would queue against a SuSiE-RSS layer that's a hybrid of Apr-22 Wave-1 outputs + Apr-30 W4-incidental rebuilds — non-reproducible, not what D-TA-04=RSID specified.",
+    "why_executor_did_NOT_auto_widen_to_BOTH_LAYERS": "D-TA-04 explicitly considered + rejected BOTH_LAYERS / CONSERVATIVE_BOTH alternatives (CONTEXT.md line 344-345). Auto-widening would override Carter's recorded scope decision."
+  },
+
+  "carter_decision_required": {
+    "halt_reason": "Wave 4 DAG widens SuSiE-RSS scope beyond D-TA-04=RSID intent",
+    "options": {
+      "option_A_restore": {
+        "description": "Restore the 74 overwritten SuSiE-RSS files from a prior backup (e.g., the Wave 1 launch backup or git LFS / external snapshot if one exists). Then add a `--ignore-changes` or 'touch existing outputs to mtime newer-than-script' workaround to the W4 driver before re-firing.",
+        "pro": "Strict adherence to D-TA-04=RSID scope; full reproducibility against Wave 1 anchor outputs",
+        "con": "Requires a prior backup of results/fine_mapping/susie/ (none confirmed extant); may need manual reconstruction"
+      },
+      "option_B_accept": {
+        "description": "Accept the 74 partial overwrites as a documented deviation. Argument: the new outputs are under the SAME post-7d54183 + post-02c4404 code as the canonical anchors. Re-fire the W4 driver with a Snakemake flag like `--allowed-rules run_qtl_coloc aggregate_qtl_coloc all_qtl_coloc` or `--touch` to skip the SuSiE-RSS rebuild trigger.",
+        "pro": "Fastest path to W4 completion; canonical W2/W3 anchors verifiably untouched (PP.H4=1.0 evidence preserved)",
+        "con": "Mixed-vintage SuSiE-RSS layer (some files Apr 22, some Apr 30); may need to backfill the remaining ~118 unaffected files to a uniform vintage for clean reproducibility narrative; deviation must be logged in CONTEXT.md + manuscript Methods"
+      },
+      "option_C_widen_to_BOTH_LAYERS": {
+        "description": "Re-classify D-TA-04 as 'CONSERVATIVE_BOTH' (override the original RSID outcome). Re-fire the W4 driver with SUSIE_LAYER_SCOPE=yes — backs up the partially-overwritten SuSiE-RSS dir, rebuilds ALL 192 SuSiE-RSS outputs from clean state, then runs ~1,274 run_qtl_coloc against a fully self-consistent uniform-vintage SuSiE-RSS layer. Compute envelope: ~15 hr wall.",
+        "pro": "Cleanest end-state (uniform Apr 30 SuSiE-RSS layer); full reproducibility; no mixed-vintage issue",
+        "con": "Requires Carter to override D-TA-04=RSID decision in CONTEXT.md (planning-amendment moment); +5 hr compute; manuscript Methods needs note explaining D-TA-04 revision; THIS REBUILDS the canonical W2 anchor SuSiE-RSS files (bmi.EUR.SH2B3, hypertension.EUR.SH2B3, stroke.EUR.SH2B3) — the W2 PP.H4=1.0 evidence will be re-derived under post-02c4404 code, NOT the Apr 22 Wave-1 code. If max_iter behavior or convergence is materially different, BMI-HTN PP.H4 could shift; D-TA-WAVE3-OUTCOME-BRANCH_C_SURVIVE may need re-evaluation.",
+        "manuscript_risk": "HIGHEST — touches the Track A canonical anchor numerics that quick-260427-e8n + ROADMAP/DECISIONS Amendment §12 froze"
+      },
+      "option_D_w4_rule_isolation": {
+        "description": "Rewrite the W4 driver to run ONLY the run_qtl_coloc rule (not all_qtl_coloc), via `--allowed-rules run_qtl_coloc` + `--touch` for SuSiE-RSS outputs to mark them up-to-date. This bypasses the DAG's transitive rebuild logic without modifying the script timestamps.",
+        "pro": "Surgical scope-preservation; no SuSiE-RSS rebuilds; honors D-TA-04=RSID exactly",
+        "con": "May break Snakemake invariants (run_qtl_coloc may still need fresh SuSiE-RSS posteriors as inputs to coloc.susie); needs a careful per-rule trace of input dependencies; Wave 0 Task 1 Snakefile rule-name surface didn't enumerate the run_qtl_coloc input chain"
+      }
+    },
+    "executor_recommendation": "Option D (rule isolation) if technically feasible after a Snakefile rule-name surface re-audit; else Option B (accept-and-document) as the next-most-rigorous path. Option C is the most reviewer-defensible BUT carries highest manuscript risk (re-derives W2 canonical numerics). Option A is purest but requires a SuSiE-RSS backup that may not exist.",
+    "executor_recommendation_caveat": "Per CLAUDE.md feedback_rigor_over_speed.md, the truly rigor-maximizing path is Option C — but D-TA-04 explicitly chose RSID, and re-running the W2 anchor regions risks PP.H4 numeric drift that would force a Wave 3 re-evaluation. Carter must weigh: 'commitment to D-TA-04=RSID purity (Option B/D)' vs. 'uniform-vintage layer purity (Option C, with potential W3 re-eval)'."
+  },
+
+  "resume_path": {
+    "blocking_issue": "carter_decision_required.halt_reason",
+    "resume_command": "After Carter records D-TA-WAVE4-SCOPE-DRIFT decision in CONTEXT.md + selects option A/B/C/D + applies option-specific recovery: /gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh",
+    "do_not_resume_until": "1) Carter selects + records the option in CONTEXT.md as D-TA-WAVE4-SCOPE-DRIFT-OUTCOME; 2) any option-specific recovery (file restoration / driver rewrite / D-TA-04 amendment) is committed; 3) .snakemake/locks/ confirmed clean; 4) bjobs clean of W4-related work",
+    "files_for_resumer": [
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker.json (this file)",
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv",
+      "logs/wave4_qtl_coloc_refresh_20260430_003141.log",
+      "results/qtl_coloc.preFix.bak.20260430_003141/ (1,274-JSON pre-W4 rollback record)",
+      "/tmp/w4_susie_overwritten.txt (ephemeral; capture before TS rotation)"
+    ]
+  },
+
+  "checker_iter1_nit3_status": {
+    "claim": "bsub_wrapper.sh enforces -W=14400 for long queue",
+    "verified_in_wrapper": true,
+    "verified_in_actual_dispatch": false,
+    "explanation": "config/bsub_wrapper.sh line 50 maps queue=long -> -W 14400 (verified). However, Snakemake's per-rule cluster_config.yaml routed run_finemap to queue=serial (not long), so the actual W4 dispatch did NOT exercise the -W=14400 path. The plan acceptance criterion grep on the wrapper file passes ('long.*14400' is in the script), but the operational reality is that run_finemap (and presumably run_qtl_coloc) runs on queue=serial with -W=5760 (4 days) — well above the ~10 hr envelope, so no RUNLIMIT risk, but the W4 plan's stated 'long queue' invariant is not what runs in practice. Surface to Carter as a separate planning drift."
+  },
+
+  "checker_iter1_nit4_status": {
+    "claim": "Wave 4.5 fallback is MANUAL ESCALATION",
+    "currently_relevant": false,
+    "explanation": "NIT 4 governs FAIL_TO_W4.5 outcome (post-refresh too_few_snps still ~1,000). This dispatch never ran QTL-coloc, so PASS/FAIL evaluation is N/A. NIT 4 will re-engage if/when Wave 4 resumes and produces a refreshed cache; until then, the FAIL_TO_W4.5 directive recording flow is moot."
+  }
+}

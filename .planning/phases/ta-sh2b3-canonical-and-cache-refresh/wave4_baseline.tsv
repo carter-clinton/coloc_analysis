@@ -1,0 +1,6 @@
+metric	count
+total_attempts	1274
+no_qtl_cs	235
+qtl_susie_failed	2
+success	32
+too_few_snps	1005
