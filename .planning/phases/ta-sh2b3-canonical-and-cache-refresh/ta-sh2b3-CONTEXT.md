@@ -685,6 +685,43 @@ Detailed numerics: `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2
 - PASS: `results/qtl_coloc/*.json` count >= 1000 AND too_few_snps count <= 200 AND aggregator outputs (qtl_coloc_summary.tsv, tier_assignments.tsv, gene_tissue_matrix.tsv, etc.) have mtimes > W4.5-a dispatch ts → Wave 5 unblocked with full CONSERVATIVE_BOTH delivery
 - FAIL: per-id JSONs not produced OR too_few_snps remains ~baseline (~1,000) OR new bsub-policy regression → halt + Carter escalation
 
+### D-TA-WAVE4-5-A-SCOPE-CORRECTION: pipeline.yaml phase2_enabled_sources filter (T1 production lock)
+
+**Recorded:** 2026-04-30
+
+**Decision:** Add top-level `phase2_enabled_sources: [gtex_eqtl, gtex_sqtl]` config key to `config/pipeline.yaml` (commit `986af29`) to restrict the W4.5-a DAG to T1 first-production scope per memory `project_t1_production_status.md`.
+
+**Why:** Initial W4.5-a dispatch (commit b368e0e launcher; fired 16:24:32) revealed scope creep — DAG planned 1,692 total jobs:
+- 1469 `run_qtl_coloc` (across gtex_eqtl, gtex_sqtl, ukbppp_pqtl, onek1k_sceqtl)
+- 14 `download_onek1k_cell_type` (sc-eQTL prerequisite chain — T2-deferred)
+- 13 `download_ukbppp_protein` (pQTL prerequisite chain — T2-deferred)
+- 182 `harmonize_onek1k_region` (sc-eQTL — T2-deferred)
+- 13 `harmonize_pqtl_region` (pQTL — T2-deferred)
+- 1 `all_qtl_coloc`
+
+V4's `build_qtl_coloc_manifest` produced a 1,469-row manifest expanding to ALL qtl_source values (no scope filter applied at parse time because `phase2_enabled_sources` was absent from `config/pipeline.yaml`). The pQTL chain requires Synapse auth (UKB-PPP); the sc-eQTL chain requires OneK1K QTD-map data. Both are T2-deferred per CP#1-final scope decision 2026-04-20. Without the filter, those prerequisite rules would fail on auth/data, leaving `all_qtl_coloc` with ~195 missing inputs and a polluted PARTIAL_FAILED outcome.
+
+Per `feedback_rigor_over_speed.md`: scope correction is rigor-maximizing — the alternative (let pQTL/sc-eQTL fail on prereqs) would produce a polluted result set with reviewer-defensibility risk.
+
+**State at scope-correction time:**
+- Initial W4.5-a snakemake (PID 2640572) killed; 104 run_qtl_coloc submitted (all gtex per log inspection)
+- All 46 in-flight LSF jobs bkill'd via `bkill 0` to clean slate
+- bjobs queue empty
+- All invariant md5s preserved
+- 96/96 .fit.rds in live susie/ unchanged (V4 rebuild intact)
+- live `results/qtl_coloc/` may have <49 partial JSON outputs from in-flight jobs that landed before bkill — these will be overwritten by re-fire's `--forcerun run_qtl_coloc`
+
+**How to apply:**
+1. (this entry) Record scope-correction decision in CONTEXT.md
+2. (already committed) `config/pipeline.yaml` phase2_enabled_sources addition (commit `986af29`)
+3. Re-fire `bash bin/fire_w4_5_qtl_coloc_only.sh` — same launcher, same `--forcerun run_qtl_coloc` flag, but now snakemake DAG planning will read `phase2_enabled_sources` and filter the 1,469-row manifest down to ~1,274 gtex-only rows (V1 production scope baseline)
+4. Expected DAG plan: ~1,274 run_qtl_coloc + aggregator chain (no download/harmonize for pQTL/sc-eQTL)
+5. Write `wave4_dispatch_tracker_v6.json` with status=DISPATCHED_W4_5_A_SCOPE_CORRECTED or PASSED/FAILED based on outcome
+
+**OSF deviation entry (W7 closeout consumes; entry #10):** W4.5-a scope correction mid-flight after initial dispatch revealed missing scope filter; T1 production scope `[gtex_eqtl, gtex_sqtl]` re-locked via `config/pipeline.yaml::phase2_enabled_sources`; pQTL + sc-eQTL T2 deferral preserved.
+
+**PASS/FAIL gate (unchanged from D-TA-WAVE4-5-A-OUTCOME):** results/qtl_coloc/*.json count >= 1000 AND too_few_snps count <= 200 AND aggregator outputs mtimes > W4.5-a re-fire dispatch ts → Wave 5 unblocked. FAIL → halt + Carter escalation.
+
 </decisions>
 
 <canonical_refs>
