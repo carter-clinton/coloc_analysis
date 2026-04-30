@@ -1,0 +1,41 @@
+# config/pipeline_lsweep_L15_overlay.yaml — Wave 1 L-sweep parallel-output overlay (D-TA-02)
+# Phase: ta-sh2b3-canonical-and-cache-refresh
+#
+# Loaded AFTER config/pipeline.yaml:
+#   snakemake --configfile config/pipeline.yaml \
+#             --configfile config/pipeline_lsweep_L15_overlay.yaml ...
+# Snakemake merges the second --configfile over the first, so every key
+# below replaces the parent value. All other pipeline.yaml fields (traits,
+# ancestries, onekg, resources, multitrait, ld_panel, etc.) stay as parent.
+#
+# Purpose: isolate Wave 1 L=15 SuSiE-RSS re-fits from the canonical
+# results/fine_mapping/susie/ namespace so Stage 2 fits remain byte-identical.
+# Output JSONs land under results_lsweep_L15/fine_mapping/susie/.
+#
+# References:
+# - Pattern: config/pipeline_identity_overlay.yaml (L18-34) — same overlay shape
+# - Pitfall 2 (RESEARCH.md L351): finemap.smk:62 hardcodes policy input;
+#   Wave 0 Task 4 dry-run verifies finemap.policy override propagates.
+
+paths:
+  # All results land under this namespace instead of results/.
+  # MULTITRAIT_DIR (multitrait.smk:24) and COLOC_SUSIE_DIR (coloc.smk:19)
+  # also derive from RESULTS_ROOT, but Wave 1 only fires SuSiE-RSS — coloc
+  # outputs would not be written under this namespace anyway.
+  results_root: "results_lsweep_L15"
+
+finemap:
+  # FINEMAP_DIR (Snakefile:75-78) derives from finemap.output_dir; the
+  # overlay rebases it to the parallel namespace. JSONs land under
+  # results_lsweep_L15/fine_mapping/susie/{trait}.{ancestry}.{region_safe}.json
+  output_dir: "results_lsweep_L15/fine_mapping"
+
+  # finemap.smk:62 declares policy="config/susie_policy.yaml" as a static
+  # rule input. Wave 0 Task 4 verifies that config-merge propagates this
+  # override into the rule's input.policy declaration; if not, finemap.smk
+  # is patched to read config.get("finemap", {}).get("policy", default).
+  policy: "config/susie_policy_L15.yaml"
+
+  # Re-state ld_reference_dir from parent for explicit clarity (Wave 1
+  # uses canonical EUR 1000G LD reference; not the identity-LD overlay).
+  ld_reference_dir: "data/processed/ld_reference"

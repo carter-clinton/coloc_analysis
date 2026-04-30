@@ -1,0 +1,40 @@
+# config/pipeline_canonical_r2_overlay.yaml — Wave 2 canonical-pair R2 parallel-output overlay (D-TA-03)
+# Phase: ta-sh2b3-canonical-and-cache-refresh
+#
+# Wave 2 fires coloc.susie on 9 new SH2B3 EUR canonical trait-pairs against
+# Wave-1 converged fits at the primary-result-L (default L=20). Pitfall 3
+# requires writing per-pair JSONs to a parallel namespace
+# (results/multitrait/coloc_susie_R2/) so the existing Stage 2 summary at
+# results/multitrait/coloc_summary.tsv (md5 5fa3c4004970c5da711d05947cb1f7d2)
+# remains byte-identical until the Wave 5 explicit re-render.
+#
+# Schema NOTE: the existing Snakemake convention derives MULTITRAIT_DIR =
+# os.path.join(RESULTS_ROOT, "multitrait") (multitrait.smk:24) and
+# COLOC_SUSIE_DIR = os.path.join(MULTITRAIT_DIR, "coloc_susie") (coloc.smk:19),
+# both hard-coded relative to results_root. Wave 2 driver
+# bin/fire_canonical_susie_pairs.sh therefore EITHER:
+#   (a) bypasses Snakemake and calls Rscript directly per-pair (preferred —
+#       no code change to coloc.smk required; Pitfall 3 mitigation is purely
+#       an output-path convention enforced by the driver), OR
+#   (b) is wrapped in a future Wave-1.5 patch to coloc.smk:19 to read
+#       config.get("multitrait", {}).get("coloc_susie_subdir", "coloc_susie").
+# This overlay declares the INTENT and the post-fire convention; the
+# enforcement happens in the Wave 2 driver script.
+#
+# References:
+# - Pitfall 3 (RESEARCH.md L363): summarize_coloc_results rebuilds coloc_summary
+#   from manifest+per-pair JSONs; isolating R2 JSONs to a parallel subdir
+#   prevents accidental aggregator mutation of Stage 2 md5 invariant.
+# - Wave 5 explicit re-render is the gate where coloc_summary.tsv is allowed
+#   to update (documented exemption in Wave 5 SUMMARY).
+
+multitrait:
+  # The Wave 2 driver writes per-pair JSONs to:
+  #   results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__{pair}.json
+  # This subdir name overrides the default coloc_susie/ to prevent collision
+  # with the existing Stage 2 outputs.
+  coloc_susie_subdir: "coloc_susie_R2"
+  output_dir: "results/multitrait/coloc_susie_R2"
+  # Wave 2 manifest filename (parallel to the Stage 2 coloc_manifest.tsv).
+  # Built by src/python/build_coloc_manifest_r2.py (Wave 0 Task 5).
+  manifest_r2: "results/multitrait/coloc_manifest_R2.tsv"

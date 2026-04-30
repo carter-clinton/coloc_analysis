@@ -1,0 +1,65 @@
+# config/susie_policy_L20.yaml — Wave 1 L-sweep override (D-TA-02)
+# Phase: ta-sh2b3-canonical-and-cache-refresh
+#
+# Copy of config/susie_policy.yaml with susie.L: 20 (primary candidate per D-TA-02).
+# Used by Wave 1 driver via:
+#   snakemake --configfile config/pipeline.yaml \
+#             --configfile config/pipeline_lsweep_L20_overlay.yaml ...
+# Overlay rebases finemap.policy to point here; finemap.smk:62 hardcodes
+# the policy input — Wave 0 Task 4 (Pitfall 2 mitigation) verifies that
+# config-merge propagates this override into the rule input declaration.
+#
+# Schema: identical to config/susie_policy.yaml; only susie.L differs.
+
+susie:
+  L: 20
+  coverage: 0.95
+  max_iter_primary: 100
+  max_iter_retry: 200
+  ld_regularization_eps: 1.0e-4
+  min_abs_corr_default: 0.5
+  min_abs_corr_sweep: [0.1, 0.5, 0.9]
+  min_ld_overlap: 50
+  min_ld_coverage: 0.5
+  min_ld_min_use: 10
+  l_saturation:
+    action: flag
+    supplementary_rerun_L: 30
+  convergence_failure:
+    action: retry_ladder
+    ladder:
+      - increase_max_iter
+      - regularize_ld
+      - flag_and_exclude_tier1
+
+complex_regions:
+  pre_specified:
+    - region_id: 9p21_CDKN2A
+      chr: 9
+      start: 21000000
+      end: 23000000
+      rationale: CDKN2A/CDKN2B/ANRIL dense signal
+    - region_id: APOE_19q13
+      chr: 19
+      start: 44000000
+      end: 46000000
+      rationale: APOE/TOMM40/APOC1 complex signal
+    - region_id: HLA_6p21
+      chr: 6
+      start: 25000000
+      end: 35000000
+      rationale: MHC; extreme long-range LD; UKBB-LD tiled uses block-diagonal approximation
+    - region_id: SLC2A9_urate
+      chr: 4
+      start: 9000000
+      end: 11000000
+      rationale: Large urate effect (indirect BP via urate)
+    - region_id: LPA_KIV2_6q25
+      chr: 6
+      start: 160500000
+      end: 161700000
+      rationale: "LPA/KIV-2 copy number variation (2-40+ copies) creates non-standard LD; Phase 1 BMI-T2D anchor PP.H4=0.990. Use HGDP+1kG AFR LD panel."
+  data_flagged:
+    triggers:
+      - l_saturated
+      - n_cs_ge: 3
