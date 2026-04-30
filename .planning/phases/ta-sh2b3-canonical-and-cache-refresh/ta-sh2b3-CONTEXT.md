@@ -523,6 +523,38 @@ A new option (d) emerges from the V2 substantive interpretation: **(d) Investiga
 2. `max_iterations` → `max_iter` argument-naming bug fix in `run_susie_rss.R` (commit `02c4404`) — pre-existing bug affecting all SuSiE-RSS fits in the project's history; transparency-required disclosure; Wave 6 Methods §Fine-Mapping references this with "argument naming was audited and corrected during the canonical-and-cache-refresh phase; convergence behavior is consistent across niter=100 and niter=1000 (n_CS byte-identical), confirming the non-convergence is LD-mismatch instability, not iteration-count"
 3. PRIMARY_L=15 selection under DISCLOSE-AS-COLUMN (this decision; documented in this sub-section)
 
+### D-TA-Wave2-outcomes: Canonical-pair coloc.susie PP.H4 outcomes (Wave 2)
+
+**Recorded:** 2026-04-29
+
+**Per-pair PP.H4 outcomes (9 SH2B3 EUR new pairs at PRIMARY_L=15 + DISCLOSE-AS-COLUMN; LSF dispatch TS=20260429_234353; jobs 69666-69674):**
+
+| pair_id | PP.H4 | Threshold class | Notes |
+|---------|-------|------------------|-------|
+| asthma_vs_bmi | NA | MISSING | status=no_signal; n_cs_a=0 (asthma fit Stage 2 niter=100 had n_CS=1 but coloc.susie internal CS-purity filter dropped it) |
+| asthma_vs_hypertension | NA | MISSING | status=no_signal; n_cs_a=0 (same asthma-side cause) |
+| asthma_vs_stroke | NA | MISSING | status=no_signal; n_cs_a=0 (same asthma-side cause) |
+| bmi_vs_hypertension (CANONICAL) | **1** | **SURVIVE_GE_0.8** | hit=rs3184504; nsnps=168; Reproduces canonical literature claim |
+| bmi_vs_stroke | NA | MISSING | status=no_posterior; 39 susie_pairs computed but no posterior summary |
+| bmi_vs_t2d | 4.3081e-27 | COLLAPSE_BELOW_0.5 | PP.H3=1 (separate causal variants); strong rejection |
+| hypertension_vs_stroke (CANONICAL) | **1** | **SURVIVE_GE_0.8** | Reproduces canonical literature claim |
+| hypertension_vs_t2d | **1** | **SURVIVE_GE_0.8** | nsnps=20; PP.H1=6.3e-196; PP.H3=8.8e-12 |
+| stroke_vs_t2d | 0 | COLLAPSE_BELOW_0.5 | PP.H3=0.9976; PP.H1=0.0024; strong rejection |
+
+Detailed numerics: `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W2-pp-h4-report.tsv`.
+
+**Wave 3 gate input:** BMI–HTN PP.H4 = 1; HTN–stroke PP.H4 = 1. Both canonical literature claims survive at the SURVIVE_GE_0.8 threshold under reference-LD coloc.susie (DISCLOSE-AS-COLUMN context).
+
+**Wave 2 does NOT pre-commit to a branch** (per D-TA-Wave3-thresholds + invariant 2). Wave 3 (human-verify) records the branch.
+
+**Pitfall 3 invariant:** PRESERVED — `results/multitrait/coloc_summary.tsv` md5 unchanged at `5fa3c4004970c5da711d05947cb1f7d2` pre/post Wave 2.
+
+**Invariant 2:** PRESERVED — `TRACK-A-FROZEN-NUMBERS.md` md5 unchanged at `9d0405a4db95655b1be7401883d22165` pre/post Wave 2.
+
+**Stage 2 namespace integrity:** BMI/HTN/stroke .fit.rds + .json files in `results/fine_mapping/susie/` were temporarily swapped with byte-identical copies of the W1 V2 L=15 fits during the W2 dispatch window, then restored from `*.preL15.bak.20260429_232709` backups. Post-restore md5 is byte-identical to pre-swap canonical baseline (BMI 053444fe, HTN 3d4b62cf, stroke 494ea177); asthma + T2D unchanged throughout.
+
+**DISCLOSE-AS-COLUMN context for downstream:** All 9 PP.H4 outputs are computed against W1 V2 fits with `convergence_status=non_converged` for the BMI/HTN/stroke side (3 of the 5 traits). Wave 6 Methods + Limitations + Fig 3 must surface this per-locus convergence status as a disclosure column. The asthma-vs-X `no_signal` outcomes (3 pairs) reflect the canonical Stage 2 asthma fit's own CS-purity behavior under coloc.susie — independent of the W1 V2 LD-mismatch finding.
+
 </decisions>
 
 <canonical_refs>
