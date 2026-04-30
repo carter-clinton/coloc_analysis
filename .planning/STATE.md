@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md (4/8 plans done); 9 R2 PP.H4 outputs at results/multitrait/coloc_susie_R2/; W1.5 LD-audit landed; Pitfall 3 + Invariant 2 preserved; next plan = ta-sh2b3-W3-checkpoint-human-verify-PLAN.md (Carter selects D-TA-WAVE3-OUTCOME branch)
-last_updated: "2026-04-30T03:57:35.569Z"
+stopped_at: Completed ta-sh2b3-W3-checkpoint-human-verify-PLAN.md (5/8 plans done); D-TA-WAVE3-OUTCOME=BRANCH_C_SURVIVE recorded (BMI-HTN PP.H4=1.0 + HTN-stroke PP.H4=1.0; canonical SH2B3 colocalization SURVIVES under reference-LD pathology); W6 narrative anchor "SH2B3 anchor flips from collapse to validated"; next plan = ta-sh2b3-W4-cache-invalidation-and-refire-PLAN.md (Snakemake all_qtl_coloc re-fire under D-TA-04-DIAGNOSTIC=RSID, QTL_COLOC_ONLY scope, ~10 hr long-queue projected)
+last_updated: "2026-04-30T04:26:42.697Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 12
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 ## Current Position
 
 Phase: ta-sh2b3-canonical-and-cache-refresh (ta-sh2b3-canonical-and-cache-refresh) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**

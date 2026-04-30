@@ -483,7 +483,7 @@ Plans:
 - [x] ta-sh2b3-W0-foundations-and-osf-gate-PLAN.md — Wave 0: source-repo path + code-fix ancestry + variant-ID format diagnostic + OSF pre-reg gate + per-L policy YAML + dispatch drivers + verification harness scaffolding
 - [x] ta-sh2b3-W1-susie-rss-l-sweep-PLAN.md — Wave 1: SH2B3 EUR L-sweep SuSiE-RSS re-fits at L ∈ {15, 20, 30} for BMI + hypertension + stroke; convergence verification per Zou 2022
 - [x] ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md — Wave 2: 9 SH2B3 EUR canonical-pair coloc.susie production fire against Wave-1 PRIMARY_L fits (parallel namespace coloc_susie_R2/)
-- [ ] ta-sh2b3-W3-checkpoint-human-verify-PLAN.md — Wave 3: checkpoint:human-verify outcome-branch gate; Carter records D-TA-WAVE3-OUTCOME-{A_COLLAPSE|B_PARTIAL|C_SURVIVE} from Wave 2 disk numbers
+- [x] ta-sh2b3-W3-checkpoint-human-verify-PLAN.md — Wave 3: checkpoint:human-verify outcome-branch gate; Carter records D-TA-WAVE3-OUTCOME-{A_COLLAPSE|B_PARTIAL|C_SURVIVE} from Wave 2 disk numbers
 - [ ] ta-sh2b3-W4-cache-invalidation-and-refire-PLAN.md — Wave 4: variant-ID cache invalidation + Snakemake re-fire with --use-conda -j 50; PASS = too_few_snps ≤ 200; FAIL = trigger Wave 4.5 SuSiE-RSS fallback
 - [ ] ta-sh2b3-W5-aggregator-and-figure-refresh-PLAN.md — Wave 5: downstream aggregator refresh + R2-canonical merge into coloc_summary.tsv (Pitfall 3 exemption) + TRACK-A-FROZEN-NUMBERS LIVE blocks updated + Fig S7 regenerated
 - [ ] ta-sh2b3-W6-rename-and-narrative-PLAN.md — Wave 6: id-vs-ref-LD nickname rename (3 git mv + 17 reference fix-ups; ~50 historical quick files preserved) + manuscript narrative atomic updates per Wave-3 branch + Wave-5 frozen numbers
