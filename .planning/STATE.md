@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed ta-sh2b3-W3-checkpoint-human-verify-PLAN.md (5/8 plans done); D-TA-WAVE3-OUTCOME=BRANCH_C_SURVIVE recorded (BMI-HTN PP.H4=1.0 + HTN-stroke PP.H4=1.0; canonical SH2B3 colocalization SURVIVES under reference-LD pathology); W6 narrative anchor "SH2B3 anchor flips from collapse to validated"; next plan = ta-sh2b3-W4-cache-invalidation-and-refire-PLAN.md (Snakemake all_qtl_coloc re-fire under D-TA-04-DIAGNOSTIC=RSID, QTL_COLOC_ONLY scope, ~10 hr long-queue projected)
-last_updated: "2026-04-30T04:26:42.697Z"
+stopped_at: Completed ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md (4/8 plans done); 9 R2 PP.H4 outputs at results/multitrait/coloc_susie_R2/; W1.5 LD-audit landed; Pitfall 3 + Invariant 2 preserved; next plan = ta-sh2b3-W3-checkpoint-human-verify-PLAN.md (Carter selects D-TA-WAVE3-OUTCOME branch)
+last_updated: "2026-04-30T04:48:09.370Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 12
@@ -314,6 +314,7 @@ None yet.
 - DEF-M1-03-02: 12 GLGC + Wuttke harmonized files still in-progress at m1-03 closeout (refire continues background; expand 12->24 matrix in next session)
 - ta-sh2b3-W0 PARTIAL: Task 7 D-TA-OSF-COVERAGE human-verify gate awaiting Carter web-UI; Wave 1 HARD-GATED until D-TA-OSF-COVERAGE = COVERED or AMENDMENT_POSTED recorded in CONTEXT.md addendum.
 - Wave 2 NO-GO — Carter must resolve D-TA-Wave1-PRIMARY-L Wave 2 directive before bin/fire_canonical_susie_pairs.sh dispatches: (a) re-fire L-sweep at raised niter [RECOMMENDED], (b) relax convergence_status criterion to !L_saturated AND n_CS<L_used as proxy, or (c) proceed with L=15 fits and DISCLOSE downstream. See .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md §D-TA-Wave1-PRIMARY-L for the three options + recommendation rationale.
+- ta-sh2b3 W4 dispatch HALTED 2026-04-30T00:35Z — Snakemake all_qtl_coloc DAG widened scope beyond D-TA-04=RSID intent (transitively re-fired 96 run_finemap SuSiE-RSS jobs because src/legacy/region_analysis/scripts/run_susie_rss.R was touched by W1 commit 02c4404 max_iter fix). 50 dispatched + bkill'd before completion; 74 SuSiE-RSS files (33 .json, 41 .fit.rds) overwritten under post-7d54183 + post-02c4404 HEAD code; 0 run_qtl_coloc rule attempts ran. Cache restored from results/qtl_coloc.preFix.bak.20260430_003141 (1,274 JSONs intact). Track A canonical W2/W3 anchors INTACT (bmi.EUR.SH2B3 + hypertension.EUR.SH2B3 + stroke.EUR.SH2B3 unaffected; PP.H4=1.0 evidence preserved). Both invariant md5s preserved. Carter must select recovery Option A/B/C/D from .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker.json carter_decision_required block; record selection as D-TA-WAVE4-SCOPE-DRIFT-OUTCOME in CONTEXT.md before resume. Plan counter NOT advanced — stays at 5/8.
 
 ### Quick Tasks Completed
 
