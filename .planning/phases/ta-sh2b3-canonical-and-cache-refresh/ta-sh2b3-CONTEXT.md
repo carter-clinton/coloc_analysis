@@ -657,6 +657,34 @@ Detailed numerics: `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2
 
 **PASS/FAIL gate (unchanged):** too_few_snps count ≤ 200 in `results/qtl_coloc/*.json` AND `results/fine_mapping/susie/*.fit.rds` mtime > V4 dispatch ts → Wave 5 unblocked. FAIL → halt + Carter escalation per W4 PLAN.
 
+### D-TA-WAVE4-5-A-OUTCOME: Option W4.5-a (2nd snakemake invocation; qtl_coloc layer rebuild)
+
+**Recorded:** 2026-04-30
+
+**Decision:** Option W4.5-a — fire a 2nd snakemake invocation with `--forcerun run_qtl_coloc` to rebuild the qtl_coloc layer using the V4-built manifest (1,469 rows at `results/qtl_coloc/qtl_coloc_manifest.tsv`) as the DAG wildcard source. Bypass the existing driver (`bin/fire_qtl_coloc_cache_refresh.sh`) because it mv's `results/qtl_coloc/` → backup unconditionally, which would mv the V4-built manifest → backup and break the 2-pass design. Use a minimal new launcher `bin/fire_w4_5_qtl_coloc_only.sh` that calls snakemake directly without any pre-fire mv.
+
+**Why:** V4 dispatch (commit c8ee71a) delivered SuSiE-RSS layer rebuild (96 .fit.rds at honest niter=1000; 3 SH2B3 anchor md5s changed) but not qtl_coloc layer. Tracker v5 documented the gap. Per `feedback_rigor_over_speed.md`, options W4.5-b (Snakefile refactor; days of churn) and W4.5-d (accept partial pass; rigor-degrading) were rejected. Option W4.5-a is the minimal-change path. **Crucial insight discovered during pre-flight:** `src/snakemake/rules/qtl_coloc.smk` lines 56-60 docstring confirms the smk module is **explicitly designed as a 2-pass system**: pass 1 builds the manifest (`build_qtl_coloc_manifest` rule); pass 2 reads the manifest at parse time (`_qtl_coloc_per_id_jsons()`) and expands per-id targets. Tracker v5 had hypothesized the wildcards came from a glob over `*.json` files; actually they come from the manifest TSV. V4's first invocation completed pass 1 (1,469-row manifest written); W4.5-a's second invocation completes pass 2.
+
+**Pre-flight verifications (all PASS):**
+- `src/legacy/region_analysis/scripts/run_susie_rss.R` mtime (2026-04-29 21:52) is OLDER than oldest live `.fit.rds` (2026-04-30 10:24) → SuSiE cascade will NOT re-trigger; the V4-rebuilt SuSiE layer is safe
+- `results/qtl_coloc/qtl_coloc_manifest.tsv` exists at 1469 rows (built by V4 at 12:43 EDT)
+- 96/96 `.fit.rds` files in live `results/fine_mapping/susie/` (V4 rebuild complete)
+- `run_qtl_coloc` rule inherits `__default__: serial` queue (1 slot, no time cap) — no LSF queue-policy conflict (serial accepts threads=1; the V3 long-queue/threads=1 bug does not apply)
+- All 4 invariant md5s preserved as of W4.5-a kickoff: TRACK-A `9d0405a4...`, coloc_summary `5fa3c4...`, IDENTITY-LD-K2D `8ef28cf...`, W2_R2 `b74e36e2...`
+
+**How to apply:**
+1. (this entry) Record decision in CONTEXT.md
+2. Write `bin/fire_w4_5_qtl_coloc_only.sh` — minimal launcher; NO mv steps; calls snakemake with `--forcerun run_qtl_coloc` only (NOT `--forcerun run_finemap`) so SuSiE layer is preserved; commit with token `feat(ta-sh2b3, W4.5): launcher for qtl_coloc layer rebuild (2-pass design pass 2)`
+3. Fire: `bash bin/fire_w4_5_qtl_coloc_only.sh`
+4. Monitor: dispatch should plan ~1469 `run_qtl_coloc` jobs + downstream aggregator chain. Expected wall ~1-3 hr (run_qtl_coloc instances are fast; serial queue throughput-positive)
+5. Write `wave4_dispatch_tracker_v6.json` with status=DISPATCHED_W4_5_A_QTL_COLOC_REBUILD or PASSED/FAILED based on outcome
+
+**OSF deviation entry (W7 closeout consumes; entry #9):** Option W4.5-a executed via 2nd snakemake invocation per `qtl_coloc.smk` 2-pass design; preserves V4-rebuilt SuSiE-RSS layer at honest niter=1000 (3 SH2B3 anchors confirmed-changed); bypasses existing driver because driver's pre-fire mv would defeat the 2-pass manifest preservation; rationale = `feedback_rigor_over_speed.md` minimal-change rigor-maximizing path.
+
+**PASS/FAIL gate (W4.5-a-specific):**
+- PASS: `results/qtl_coloc/*.json` count >= 1000 AND too_few_snps count <= 200 AND aggregator outputs (qtl_coloc_summary.tsv, tier_assignments.tsv, gene_tissue_matrix.tsv, etc.) have mtimes > W4.5-a dispatch ts → Wave 5 unblocked with full CONSERVATIVE_BOTH delivery
+- FAIL: per-id JSONs not produced OR too_few_snps remains ~baseline (~1,000) OR new bsub-policy regression → halt + Carter escalation
+
 </decisions>
 
 <canonical_refs>
