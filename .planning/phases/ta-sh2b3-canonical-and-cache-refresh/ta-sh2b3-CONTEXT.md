@@ -630,6 +630,33 @@ Detailed numerics: `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2
 
 **PASS/FAIL gate (unchanged from D-TA-04-OVERRIDE-V2):** too_few_snps count ≤ 200 in `results/qtl_coloc/*.json` AND `results/fine_mapping/susie/*.fit.rds` mtime > V3 dispatch ts → Wave 5 unblocked. FAIL → halt + Carter escalation per W4 PLAN.
 
+### D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME: Option E + cluster-wide max-cores audit policy
+
+**Recorded:** 2026-04-30
+
+**Decision:** Option E — bump `run_finemap.threads: 1 → 2` in `config/cluster_lsf/cluster_config.yaml`. **Cluster-wide policy clarification (Carter direct):** *"Request maximum cores for all jobs (without overthreading)."* Means: every rule must satisfy its queue's slot-policy floor (serial=1, long≥2, standard≥8) AND must NOT claim more slots than the workload can actually use (no overthreading single-threaded R/Python code into 8-slot allocations).
+
+**Why:** V3 dispatch (commit 7676529 tracker) HALTED with 50/50 in-flight `run_finemap` bsubs rejected by LSF: `Too few tasks requested. Job not submitted.` Root cause: `cluster_config.yaml` header L8 documents `long: min 2 slots`; commit `2dcb518` routed `run_finemap` to long for 240-hr wallclock but retained `threads: 1`; `bsub_wrapper.sh` has no `-n` flooring logic; LSF rejects every long-queue submission with `-n 1`. Per `feedback_rigor_over_speed.md`, options G (revert to serial — loses 240-hr margin; risks TERM_RUNLIMIT on niter=1000 heavy loci at 96-hr cap) and H (route to standard + threads=8 — strictly dominated; 7 of 8 slots wasted on single-threaded R) were rejected. Option F (centralize `-n` flooring in `bsub_wrapper.sh`) was deferred as more invasive than needed for the immediate blocker. Option E is the rigor-maximizing minimal-change path that matches the existing `prepare_ld_plink` pattern (long queue + threads=4 with PLINK's honest 4-way parallelism) AND Carter's direct cluster-wide policy clarification.
+
+**Audit performed at decision time** (every rule in `cluster_config.yaml`):
+- Serial-queue rules (default + download_sumstats, harmonize_sumstats, make_regions_from_loci, validate_sumstats, liftover_sumstats, magma_gene_analysis, ldsc_compute_custom_ld_scores): threads=1, queue cap=1 → ✓ compliant + workload-honest
+- `prepare_ld_plink` (long, threads=4): PLINK uses `--threads 4` internally → ✓ compliant + workload-honest (no overthreading)
+- `run_finemap` (long, threads=1): R/SuSiE is mostly single-threaded; queue minimum=2 → **bump threads: 1 → 2**. Cost = 1 slot per job allocated-but-unused (96 jobs × 2 slots = 192 peak slot allocation vs current 96); accepted as the smallest queue-policy-compliant footprint that does NOT inflate beyond workload parallelism.
+
+**How to apply:**
+1. (this entry) Record decision in CONTEXT.md
+2. Edit `config/cluster_lsf/cluster_config.yaml`: `run_finemap.threads: 1 → 2`; preserve queue=long + mem_mb=32000; add FIX comment citing this decision
+3. Commit `(ta-sh2b3, W4): fix: cluster_config.yaml run_finemap threads 1->2 (long queue n>=2 enforcement)`
+4. Re-restore live `results/qtl_coloc/` + `results/fine_mapping/susie/` from `.preFix.bak.20260430_081210/` baselines via `cp -R` (V3 driver mv'd them empty)
+5. Re-fire driver: `SUSIE_LAYER_SCOPE=yes bash bin/fire_qtl_coloc_cache_refresh.sh` (V4 dispatch)
+6. Write `wave4_dispatch_tracker_v4.json` with `status=DISPATCHED_OPTION_E`; supersedes V3
+
+**Cluster-wide policy invariant (W7 enforcement gate):** Every future rule added to `cluster_config.yaml` must satisfy its queue's slot-policy floor AND must not claim more slots than the workload can use. New rules on `long` need `threads: ≥2`; new rules on `standard` need `threads: ≥8`. Rules whose workload is single-threaded should default to serial queue unless wall-time considerations force a longer queue, in which case threads should equal the queue minimum (not higher). Future audits MUST repeat this check.
+
+**OSF deviation entry (W7 closeout consumes; entry #7):** D-TA-04-OVERRIDE-V2 run_finemap.threads bumped 1 → 2 to satisfy NCSU HPC long queue policy (min 2 slots); slot allocation footprint is 192 peak (96 jobs × 2 slots) vs 96 with serial routing; rationale = preserve 240-hr CONSERVATIVE_BOTH wallclock margin without TERM_RUNLIMIT risk on niter=1000 heavy loci.
+
+**PASS/FAIL gate (unchanged):** too_few_snps count ≤ 200 in `results/qtl_coloc/*.json` AND `results/fine_mapping/susie/*.fit.rds` mtime > V4 dispatch ts → Wave 5 unblocked. FAIL → halt + Carter escalation per W4 PLAN.
+
 </decisions>
 
 <canonical_refs>
