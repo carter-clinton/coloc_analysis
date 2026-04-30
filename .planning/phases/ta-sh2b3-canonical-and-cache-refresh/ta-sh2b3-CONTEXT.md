@@ -502,6 +502,27 @@ A new option (d) emerges from the V2 substantive interpretation: **(d) Investiga
 
 **HEADLINE_VALUE:** UNCHANGED (Wave 1 V2 still does not modify the 51/96 headline; Wave 6 acts on this V2 outcome.) TRACK-A-FROZEN-NUMBERS.md md5 = `9d0405a4db95655b1be7401883d22165` baseline preserved invariant (verified pre/post the V2 re-fire).
 
+### D-TA-Wave1-Resolution-V2: W1 GO/NO-GO V2 outcome — Carter selected option (d') hybrid
+
+**Recorded:** 2026-04-29
+
+**Decision:** Hybrid path (d') — DISCLOSE-AS-COLUMN proceed for Wave 2 + W1.5 LD-mismatch investigation.
+
+**V2 falsification:** Even at honest niter=500/1000 (post-bug-fix), all 9 SH2B3 EUR fits at L ∈ {15, 20, 30} reported `convergence_status='non_converged'` with `L_saturated=FALSE` and `n_CS<L_used`. The retry ladder is fully exhausted. The n_CS values at niter=1000 are byte-identical (or ±1) to the v1 niter=100 outcome (BMI L=20 differs: 14→15; BMI L=30: 14→15; remaining 7 cells identical). This **falsifies the niter remedy** and points to LD-mismatch instability as the substantive cause (susieR worker stderr: "WARNING: matrix R is not positive semidefinite" + canonical "check consistency between summary statistics and LD matrix").
+
+**PRIMARY_L (final, locked):** **15** — proceed-with-disclosure under DISCLOSE-AS-COLUMN. Rationale: lowest L value tested; minimizes overfit risk; preserves Δ-ELBO behavior across L sweep for Wave 6 disclosure column; n_CS=13/5/3 (BMI/HTN/stroke) are stable across niter and L treatments.
+
+**Wave 2 directive (final):** Use `results_lsweep_L15/fine_mapping/susie/*.fit.rds` for the 3 swept traits (BMI + hypertension + stroke). For asthma + T2D (out of W1 V2 scope, since W1 only re-fit the 3 audit-flagged traits), use the existing Stage 2 namespace `results/fine_mapping/susie/{trait}.EUR.SH2B3_12q24.fit.rds` (buggy-niter=100 fits; this is the SAME state under which the canonical Stage 2 fits + 51/96 yield were computed, so cross-trait coloc.susie remains internally consistent with the rest of the manuscript). Wave 6 Methods §Fine-Mapping must disclose this 3+2 split.
+
+**Wave 6 narrative branch:** **DISCLOSE-AS-COLUMN — LOCKED** (was provisional in v1; V2 bug-fix + n_CS-stability + LD-mismatch evidence locks this branch).
+
+**W1.5 LD-mismatch investigation:** Spawned in parallel with Wave 2 LSF as a sub-wave (in-place, no new wave directory). Produces `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1.5-ld-audit.md` with PSD diagnostics + alternative-LD comparison + frame-as-finding rationale.
+
+**OSF deviations (recorded for Wave 7 closeout):**
+1. niter raise 100/200 → 500/1000 (commit `9c87157`) — tuning parameter; pre-registered "SuSiE-RSS" wording preserves the algorithm
+2. `max_iterations` → `max_iter` argument-naming bug fix in `run_susie_rss.R` (commit `02c4404`) — pre-existing bug affecting all SuSiE-RSS fits in the project's history; transparency-required disclosure; Wave 6 Methods §Fine-Mapping references this with "argument naming was audited and corrected during the canonical-and-cache-refresh phase; convergence behavior is consistent across niter=100 and niter=1000 (n_CS byte-identical), confirming the non-convergence is LD-mismatch instability, not iteration-count"
+3. PRIMARY_L=15 selection under DISCLOSE-AS-COLUMN (this decision; documented in this sub-section)
+
 </decisions>
 
 <canonical_refs>
