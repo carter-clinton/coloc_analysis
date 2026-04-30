@@ -69,6 +69,7 @@ echo "[$(date +%H:%M:%S)] Snakemake all_qtl_coloc re-fire starting" | tee -a "$L
   --profile config/cluster_lsf \
   --jobs 50 --keep-going --rerun-incomplete --use-conda \
   --conda-prefix .snakemake/conda --latency-wait 120 \
+  --forcerun run_finemap run_qtl_coloc \
   -s Snakefile \
   all_qtl_coloc \
   2>&1 | tee -a "$LOG"
