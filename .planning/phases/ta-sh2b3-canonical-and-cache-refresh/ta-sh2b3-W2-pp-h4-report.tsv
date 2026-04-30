@@ -1,0 +1,10 @@
+pair_id	PP.H0.abf	PP.H1.abf	PP.H2.abf	PP.H3.abf	PP.H4.abf	Threshold_class
+SH2B3_12q24__EUR__asthma_vs_bmi	NA	NA	NA	NA	NA	MISSING
+SH2B3_12q24__EUR__asthma_vs_hypertension	NA	NA	NA	NA	NA	MISSING
+SH2B3_12q24__EUR__asthma_vs_stroke	NA	NA	NA	NA	NA	MISSING
+SH2B3_12q24__EUR__bmi_vs_hypertension	0	0	9.0664e-210	0	1	SURVIVE_GE_0.8
+SH2B3_12q24__EUR__bmi_vs_stroke	0	NA	NA	NA	NA	MISSING
+SH2B3_12q24__EUR__bmi_vs_t2d	9.1649e-298	2.8114e-81	3.2599e-217	1	4.3081e-27	COLLAPSE_BELOW_0.5
+SH2B3_12q24__EUR__hypertension_vs_stroke	0	0	0	0	1	SURVIVE_GE_0.8
+SH2B3_12q24__EUR__hypertension_vs_t2d	0	6.3048e-196	0	8.7894e-12	1	SURVIVE_GE_0.8
+SH2B3_12q24__EUR__stroke_vs_t2d	0	0.0024	0	0.9976	0	COLLAPSE_BELOW_0.5
