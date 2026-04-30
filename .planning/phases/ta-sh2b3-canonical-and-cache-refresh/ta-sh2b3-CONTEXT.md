@@ -322,6 +322,30 @@ Plus all intra-doc references in: R figure-builder scripts (`source()` / `fs::pa
 **Wave 1 SuSiE rule:** `run_finemap` (finemap.smk L45). Wave 1 dispatch targets the per-trait JSON outputs of this rule under the per-L overlay's `finemap.output_dir`.
 **Wave 2 coloc.susie rule:** `run_coloc_susie` (coloc.smk L88). Wave 2 dispatch targets `{MULTITRAIT_DIR}/coloc_susie/{pair_id}.json` per the multitrait.smk convention; Pitfall 3 mitigation requires writing to a parallel `coloc_susie_R2/` namespace via overlay.
 
+### D-TA-04-DIAGNOSTIC: Variant-ID format outcome (Wave 0)
+
+**Recorded:** 2026-04-30T00:15:30Z (Wave 0 Task 2)
+
+**Method:** Per RESEARCH.md Pitfall 4, the `.fit.rds` files were inspected via `colnames(fit$alpha)` (NOT jq on JSON, which has no `variant_ids` key). 3 sample fits sampled across regions for cross-locus consistency.
+
+**Diagnostic outcome (per .fit.rds inspection of 3 sample fits):**
+- `bmi.EUR.SH2B3_12q24`: **RSID** (sample IDs: `rs7961935,rs7978821,rs7956942`)
+- `bmi.EUR.FTO_16q12`: **RSID** (sample IDs: `rs12446228,rs9939973,rs9940646`)
+- `hypertension.EUR.SH2B3_12q24`: **RSID** (sample IDs: `rs7961935,rs7978821,rs7956942`)
+
+**Aggregate:** **RSID**
+
+**D-TA-04 cache-scope decision:** `QTL_COLOC_ONLY` (drives Wave 4 SuSiE-RSS layer in/out).
+
+**Interpretation:** All 3 sampled SuSiE-RSS fits use rsid-format variant IDs in their .fit.rds payloads, indicating the SuSiE-RSS layer is post-`7d54183` (the LD-panel-rsid override commit). The pre-fix variant-ID staleness symptoms (1,005 `too_few_snps` out of 1,274 attempts in `results/qtl_coloc/`) are therefore confined to the QTL-coloc cache layer, not the SuSiE-RSS layer.
+
+**Wave 4 plan:**
+- **QTL_COLOC_ONLY** (this branch): Wave 4 backs up only `results/qtl_coloc/` → `results/qtl_coloc.preFix.bak.{ts}`; SuSiE-RSS layer untouched. Compute envelope: ~10 hr at 50 LSF cores.
+- BOTH_LAYERS (alternative): not selected.
+- CONSERVATIVE_BOTH (alternative): not selected.
+
+**Wave 4 driver `bin/fire_qtl_coloc_cache_refresh.sh` runs with `SUSIE_LAYER_SCOPE=no` (default).** Wave 4.5 fallback only fires if Wave 4 PASS criterion (`too_few_snps ≤ 200`) fails — at which point the diagnostic conclusion would be revised and SuSiE-RSS layer also refired.
+
 </decisions>
 
 <canonical_refs>
