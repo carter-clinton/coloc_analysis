@@ -1,0 +1,3 @@
+ts_iso	driver_alive	bjobs_pend	bjobs_run	bjobs_done	bjobs_exit	submitted	finished	fit_rds_count	errors_total	invariants_ok
+2026-04-30T10:36:23-04:00	Y	49	1	0	0	56	6	6	0	Y
+2026-04-30T16:07:58-04:00	N	0	0	0	0	104	105	96	0	Y
