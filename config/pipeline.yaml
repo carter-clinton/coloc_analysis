@@ -183,6 +183,18 @@ finemap:
   credible_set: 0.95
   ld_reference_dir: "data/processed/ld_reference"
 
+# Phase 2 QTL-coloc scope filter (qtl_coloc.smk lines 62-68 / _qtl_coloc_per_id_jsons).
+# Restricts the per-id JSON target set to manifest rows whose qtl_source matches.
+# T1 first-production scope locked 2026-04-20 (project_t1_production_status.md):
+# gtex_eqtl + gtex_sqtl only. pQTL (UKB-PPP; Synapse-auth prerequisite) and
+# sc-eQTL (OneK1K; QTD-map prerequisite) are T2-deferred. Without this filter,
+# the V4-built manifest's 1469 rows would expand to 1469 run_qtl_coloc + 195
+# pqtl/sc-eQTL prerequisite chain (which would fail on auth/data prereqs).
+# Added 2026-04-30 mid-W4.5-a after partial dispatch revealed scope creep.
+phase2_enabled_sources:
+  - gtex_eqtl
+  - gtex_sqtl
+
 enable_ld_pipeline: true
 
 # M3 ld_panel: per-ancestry resolver block (RESEARCH Q7; D-M3-05).
