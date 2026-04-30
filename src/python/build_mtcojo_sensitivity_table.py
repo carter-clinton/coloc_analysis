@@ -93,7 +93,7 @@ def build_sensitivity_table(
         if merged.empty:
             continue
         for _, c in merged.iterrows():
-            p_cojo = c.get("p_cojo", c.get("pC", None))
+            p_cojo = c.get("bC_pval", c.get("p_cojo", c.get("pC", None)))
             row = {
                 "locus_id": c.get("SNP", ""),
                 "trait": target,
