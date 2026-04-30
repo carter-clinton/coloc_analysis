@@ -1,0 +1,55 @@
+[smoke] start: 2026-04-29T22:42:37-04:00
+[smoke] argv: --skip_mtag --fdr --intervals 2 --fit_ss --cores 4 (n_approx default ON)
+[smoke] env: /rs1/researchers/c/ckclinto/conda_envs/m2-mtag (Python 3.10, numpy 1.26.4)
+[smoke] AFR T=6, simplex --fit_ss + --intervals 2
+[smoke] wall cap: 1800 s (30 min)
+[smoke] tmp prefix: /share/clintonlab/ckclinto/tmp/m2p3_07_afr_smoke_BKFwbV/AFR_mtag
+---
+Beginning maxFDR calculations. Depending on the number of grid points specified, this might take some time...
+T=6
+Optimization terminated successfully.
+         Current function value: -4792360.092238
+         Iterations: 104
+         Function evaluations: 236
+Optimization terminated successfully.
+         Current function value: -4782455.727444
+         Iterations: 100
+         Function evaluations: 225
+Optimization terminated successfully.
+         Current function value: -4782321.695838
+         Iterations: 106
+         Function evaluations: 240
+Completed estimation of spike-slab parameters resulting in the following causal probabilities
+Trait 0: 	 0.361
+Trait 1: 	 0.058
+Trait 2: 	 0.041
+Trait 3: 	 1.000
+Trait 4: 	 0.063
+Trait 5: 	 0.119
+2 probabilities remain after restricting to the grid points with causal probabilities less than one unit (i.e. 1/intervals) from the Spike-Slab fitted causal probabilities.
+Number of gridpoints to search: 2
+Performing grid search using 4 cores.
+Grid search: 10.0 percent finished for . Time: 	0.003 min
+Grid search: 20.0 percent finished for . Time: 	0.006 min
+Grid search: 30.0 percent finished for . Time: 	0.009 min
+Grid search: 40.0 percent finished for . Time: 	0.012 min
+Grid search: 50.0 percent finished for . Time: 	0.015 min
+Grid search: 60.0 percent finished for . Time: 	0.018 min
+Grid search: 70.0 percent finished for . Time: 	0.020 min
+Grid search: 80.0 percent finished for . Time: 	0.023 min
+Grid search: 90.0 percent finished for . Time: 	0.026 min
+Grid search: 100.0 percent finished for . Time: 	0.029 min
+Saved calculations of fdr over grid points in /share/clintonlab/ckclinto/tmp/m2p3_07_afr_smoke_BKFwbV/AFR_mtag_fdr_mat.txt
+<><><<>><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+grid point indices for max FDR for each trait: [0 0 0 1 0 0]
+FDR with the Spike-Slab parameters
+FDR of Trait 1: 0.00970590589390107 at probs = [0.  0.  0.  0.  0.5 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.5]
+FDR of Trait 2: 0.003316170693667885 at probs = [0.  0.  0.  0.  0.5 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.5]
+FDR of Trait 3: 4.08283132227812e-06 at probs = [0.  0.  0.  0.  0.5 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.5]
+FDR of Trait 4: 0.11541401327515466 at probs = [0.5 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.5]
+FDR of Trait 5: 8.642644223250632e-09 at probs = [0.  0.  0.  0.  0.5 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.5]
+FDR of Trait 6: 0.0017651764636435043 at probs = [0.  0.  0.  0.  0.5 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.5]
+<><><<>><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+Completed FDR calculations.
+---
+[smoke] end: 2026-04-29T22:43:29-04:00  rc=0  wall=52s
