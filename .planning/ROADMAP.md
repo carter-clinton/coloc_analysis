@@ -482,7 +482,7 @@ R-script header + locked-scalar block + plot_annotation + 1vy SUMMARY
 Plans:
 - [x] ta-sh2b3-W0-foundations-and-osf-gate-PLAN.md — Wave 0: source-repo path + code-fix ancestry + variant-ID format diagnostic + OSF pre-reg gate + per-L policy YAML + dispatch drivers + verification harness scaffolding
 - [x] ta-sh2b3-W1-susie-rss-l-sweep-PLAN.md — Wave 1: SH2B3 EUR L-sweep SuSiE-RSS re-fits at L ∈ {15, 20, 30} for BMI + hypertension + stroke; convergence verification per Zou 2022
-- [ ] ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md — Wave 2: 9 SH2B3 EUR canonical-pair coloc.susie production fire against Wave-1 PRIMARY_L fits (parallel namespace coloc_susie_R2/)
+- [x] ta-sh2b3-W2-canonical-pair-coloc-susie-PLAN.md — Wave 2: 9 SH2B3 EUR canonical-pair coloc.susie production fire against Wave-1 PRIMARY_L fits (parallel namespace coloc_susie_R2/)
 - [ ] ta-sh2b3-W3-checkpoint-human-verify-PLAN.md — Wave 3: checkpoint:human-verify outcome-branch gate; Carter records D-TA-WAVE3-OUTCOME-{A_COLLAPSE|B_PARTIAL|C_SURVIVE} from Wave 2 disk numbers
 - [ ] ta-sh2b3-W4-cache-invalidation-and-refire-PLAN.md — Wave 4: variant-ID cache invalidation + Snakemake re-fire with --use-conda -j 50; PASS = too_few_snps ≤ 200; FAIL = trigger Wave 4.5 SuSiE-RSS fallback
 - [ ] ta-sh2b3-W5-aggregator-and-figure-refresh-PLAN.md — Wave 5: downstream aggregator refresh + R2-canonical merge into coloc_summary.tsv (Pitfall 3 exemption) + TRACK-A-FROZEN-NUMBERS LIVE blocks updated + Fig S7 regenerated
@@ -819,4 +819,4 @@ M: 11 (parallel from Phase 9)
 | M5 variant→gene prioritization + novelty | not planned | gated on M4 Tier A | 2027-02 |
 | M6 manuscript + replication + submission | not planned | gated on M5 | 2027-04 / 2027-05 |
 | Track-A-finalization | Route A in flight; audit-V2 sweep landed 2026-04-27 (`260427-azv` — 12 atomic commits, 15 V2-CLOSED tracker rows, Fig S2 + frozen scalars + 3 DEC entries) | in flight (independent of M0–M6) | 2026-05 / 2026-06 |
-| Track-A-R2-sh2b3-canonical-and-cache-refresh | 0/0 (not planned) | new phase seeded 2026-04-28; routing to `/gsd-discuss-phase ta-sh2b3-canonical-and-cache-refresh` next; closes SH2B3 reference-LD coverage gap (Issue 1) + variant-ID matcher cache propagation (Issue 2) ahead of Genome Medicine R2 submission | 2026-05 / 2026-06 |
+| Track-A-R2-sh2b3-canonical-and-cache-refresh | 3/8 (W0 + W1 + W2 complete; W1.5 LD-audit landed 2026-04-29 alongside W2; W3 next = checkpoint:human-verify) | in flight; W2 SUMMARY 2026-04-29 (3 SURVIVE_GE_0.8 + 2 COLLAPSE_BELOW_0.5; PP.H4 BMI-HTN=1.0); W1.5 LD-audit demonstrates panel pathology (50.4% rank deficiency; 23.46% negative eigenvalues) substantively justifying DISCLOSE-AS-COLUMN; Pitfall 3 + Invariant 2 preserved; closes SH2B3 reference-LD coverage gap (Issue 1) + variant-ID matcher cache propagation (Issue 2) ahead of Genome Medicine R2 submission | 2026-05 / 2026-06 |
