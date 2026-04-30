@@ -1,0 +1,172 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W4-cache-invalidation-and-refire",
+  "version": "v4_OPTION_E_DISPATCHED",
+  "supersedes": "wave4_dispatch_tracker_v3.json (HALTED V3 bsub Too few tasks)",
+  "status": "DISPATCHED_OPTION_E_50_OF_96_RUN_FINEMAP_INFLIGHT_ON_LONG_QUEUE",
+  "outcome": "DISPATCH_HEALTHY_AT_TRACKER_WRITE_TIME — 50/50 submitted, 0 rejections, 50 PEND on long",
+  "summary_one_liner": "V4 dispatch (Option E: cluster_config.yaml run_finemap.threads 1->2 satisfying long queue n>=2 minimum) successfully fanned out the DAG to 105 planned jobs (96 run_finemap + 9 aggregator) and submitted the first --jobs 50 batch to the LSF long queue with ZERO rejections. JOBID range 71928-71977 (48 contiguous, 2 gaps from snakemake batch ordering); all PEND. Driver alive at tracker write time (PID 2224479 = snakemake; PID 2224456 = driver shell; PID 2224382 = wrapper). Remaining 46 of 96 run_finemap will dispatch as PEND -> RUN -> DONE cycle frees slots within the --jobs 50 cap. PASS/FAIL evaluation deferred to post-completion verification (bin/verify_ta_sh2b3_phase.sh --wave 4). PID 830751 (other-terminal results_identity_ld snakemake) preserved untouched throughout V3 -> V4 transition per feedback_multi_terminal_staging.md.",
+
+  "carter_decision_inputs": {
+    "decision_recorded": "D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME = Option E (CONTEXT.md commit ed8dc51)",
+    "carter_clarification": "Request maximum cores for all jobs (without overthreading) — cluster-wide policy invariant",
+    "audit_outcome": "Only run_finemap was non-compliant with queue-policy floor; all other rules already at workload-honest threads (serial=1; prepare_ld_plink=4 with PLINK's 4-way parallelism); fix is rule-targeted, not cluster-wide YAML rewrite",
+    "feedback_anchors": [
+      "feedback_rigor_over_speed.md (rigor-maximizing minimal-change path; option G rejected for losing 240-hr margin)",
+      "feedback_lsf_queues.md (long queue / -W=14400)",
+      "feedback_multi_terminal_staging.md (explicit git add per path; protect other-terminal PID 830751)",
+      "project_python_311_pin.md (snakemake from /rs1/.../smoke_dev/bin/snakemake)"
+    ],
+    "instructions_followed_verbatim": [
+      "Step E1: Record D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME in CONTEXT.md decisions section (commit ed8dc51) + cluster-wide max-cores audit policy",
+      "Step E2: Single-line YAML edit to cluster_config.yaml: run_finemap.threads 1 -> 2 (commit dbededf)",
+      "Step E3: cp -R restore live qtl_coloc/ + susie/ from .preFix.bak.20260430_081210/; verify 1274 JSONs + 87 fit.rds + invariant md5s (PASS)",
+      "Step E4: SUSIE_LAYER_SCOPE=yes bash bin/fire_qtl_coloc_cache_refresh.sh (DISPATCHED at 20260430_102040; HEALTHY at +30s with 50 PEND)",
+      "Step E5: Write wave4_dispatch_tracker_v4.json (this file)"
+    ]
+  },
+
+  "step_chronology": {
+    "step_E1_context_md_decision_record": {
+      "commit": "ed8dc51",
+      "ts": "2026-04-30T10:15:00Z (approx)",
+      "file": ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md",
+      "section_added": "D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME = Option E + cluster-wide max-cores audit policy",
+      "stat": "+27 lines",
+      "atomic_staging": "git add <single-path> per feedback_multi_terminal_staging.md"
+    },
+    "step_E2_cluster_config_yaml_fix": {
+      "commit": "dbededf",
+      "ts": "2026-04-30T10:18:00Z (approx)",
+      "file": "config/cluster_lsf/cluster_config.yaml",
+      "diff": "run_finemap.threads: 1 -> 2 (single-line YAML edit; preserves queue=long + mem_mb=32000)",
+      "stat": "+1 -1 line",
+      "atomic_staging": "git add config/cluster_lsf/cluster_config.yaml per feedback_multi_terminal_staging.md"
+    },
+    "step_E3_re_restore_from_baseline": {
+      "ts": "2026-04-30T10:20:00Z (approx)",
+      "ops": [
+        "cp -R results/qtl_coloc.preFix.bak.20260430_081210/ results/qtl_coloc/  # idempotent — live had 1274 from V3 cp -R",
+        "cp -R results/fine_mapping/susie.preFix.bak.20260430_081210/ results/fine_mapping/susie/  # idempotent"
+      ],
+      "verification": {
+        "qtl_json_count_post_restore": 1274,
+        "susie_fit_rds_count_post_restore": 87,
+        "track_a_frozen_md5": "9d0405a4db95655b1be7401883d22165 (CONFIRMED unchanged)",
+        "coloc_summary_tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (CONFIRMED unchanged)",
+        "sh2b3_3_pinned_anchors": {
+          "bmi_EUR_SH2B3_12q24_fit_rds": "053444fe1560b3c27c80ab4e10ca8fb8 (CONFIRMED matches tracker)",
+          "hypertension_EUR_SH2B3_12q24_fit_rds": "3d4b62cfe076f1b7b3a743e99d933701 (CONFIRMED matches tracker)",
+          "stroke_EUR_SH2B3_12q24_fit_rds": "494ea177bbad4c6e452dfb97b94fadd8 (CONFIRMED matches tracker)"
+        }
+      },
+      "post_v3_state_observation": "When E3 cp -R was attempted, live qtl_coloc/ already had 1274 JSONs and live susie/ already had fit.rds files — V3 driver mv may not have completed before the SIGKILL on PID 2188662. Either way, cp -R from .081210 baseline was idempotent and the post-state is byte-identical to baseline (md5s confirm). All 4 invariant md5s preserved.",
+      "git_commit_required": false,
+      "notes": "Data restoration only — no tracked file mutations"
+    },
+    "step_E4_v4_dispatch": {
+      "dispatch_ts": "20260430_102040",
+      "dispatch_iso": "2026-04-30T10:20:40-04:00",
+      "supervisor_pids": {
+        "wrapper_shell": 2224382,
+        "driver_shell": 2224456,
+        "snakemake": 2224479
+      },
+      "log": "logs/wave4_qtl_coloc_refresh_v4_OPTION_E_20260430_102040.log",
+      "outcome_at_tracker_write_time": "DISPATCH_HEALTHY — 50 jobs submitted, 0 rejections, 50 PEND on long queue",
+      "elapsed_to_first_submission_sec": 22,
+      "driver_made_fresh_backups": {
+        "qtl_coloc": "results/qtl_coloc.preFix.bak.20260430_102053/ (1274 JSONs from cp -R restored set)",
+        "susie": "results/fine_mapping/susie.preFix.bak.20260430_102053/ (87 fit.rds + 87 json from cp -R restored set)"
+      },
+      "dag_plan": {
+        "total_jobs_planned": 105,
+        "run_finemap": 96,
+        "run_qtl_coloc": 0,
+        "aggregate_qtl_coloc": 1,
+        "build_qtl_coloc_manifest": 1,
+        "build_coloc_manifest": 1,
+        "build_gene_tissue_matrix": 1,
+        "assign_tiers": 1,
+        "summarize_coloc_results": 1,
+        "summarize_finemap_results": 1,
+        "filter_finemap_summary": 1,
+        "all_qtl_coloc": 1,
+        "interpretation": "Same as V3 — run_qtl_coloc count = 0 because per-region run_qtl_coloc instances depend on run_finemap .fit.rds outputs being present (manifest-driven enumeration); --forcerun run_qtl_coloc remains a no-op until run_finemap completes; --forcerun run_finemap fully fanned out as expected. Once run_finemap completes for any region, downstream run_qtl_coloc will be re-evaluated and dispatched per the manifest."
+      },
+      "lsf_dispatch_state_at_tracker_write_time": {
+        "in_flight_bsubs_attempted": 50,
+        "successful_submissions": 50,
+        "rejected_submissions": 0,
+        "all_submitted_rules_were": "run_finemap (50 of 50)",
+        "lsf_jobid_range": "71928-71977 (48 contiguous + 2 gaps from snakemake batch ordering)",
+        "first_submission": "Submitted job 96 with external jobid 'Job <71928> is submitted to queue <long>.'",
+        "last_submission_at_snapshot": "Submitted job 145 with external jobid 'Job <71977> is submitted to queue <long>.'",
+        "lsf_jobs_in_queue_status": {
+          "PEND": 50,
+          "RUN": 0,
+          "DONE": 0
+        },
+        "lsf_queue_distribution": "long: 50",
+        "remaining_run_finemap_to_dispatch": 46,
+        "expected_total_lsf_jobs": "96 run_finemap + 9 aggregator dependents = 105 (some aggregator rules will run as local snakemake jobs, not on LSF)"
+      },
+      "live_disk_state_at_tracker_write_time": {
+        "results_qtl_coloc": "EMPTY (driver mv'd live -> .preFix.bak.20260430_102053/)",
+        "results_fine_mapping_susie": "EMPTY (driver mv'd live -> .preFix.bak.20260430_102053/)",
+        "snakemake_locks": "Active (driver is running; locks owned by PID 2224479)",
+        "track_a_frozen_md5": "9d0405a4db95655b1be7401883d22165 (UNCHANGED throughout V4 sequence)",
+        "coloc_summary_tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (UNCHANGED throughout V4 sequence)"
+      },
+      "other_terminal_protection": {
+        "pid_830751_status": "Alive throughout V3 -> V4 transition; no kill signals reached it; preserved per feedback_multi_terminal_staging.md"
+      }
+    }
+  },
+
+  "preserved_backups": {
+    "results/qtl_coloc.preFix.bak.20260430_003141": "1274 JSONs — pre-W4-V1-abort baseline (forensic record)",
+    "results/qtl_coloc.preFix.bak.20260430_081210": "1274 JSONs — pre-V2-Step-3 baseline (LOAD-BEARING SOURCE for V3+V4 cp -R restores; do not touch)",
+    "results/qtl_coloc.preFix.bak.20260430_085556": "1274 JSONs — V2 driver-made third backup",
+    "results/qtl_coloc.preFix.bak.20260430_095819": "1274 JSONs — V3 driver-made fourth backup",
+    "results/qtl_coloc.preFix.bak.20260430_102053": "1274 JSONs — V4 driver-made fifth backup (mv from cp -R restored .081210)",
+    "results/fine_mapping/susie.preFix.bak.20260430_081210": "87 fit.rds + 87 json — V2 SuSiE-RSS baseline (LOAD-BEARING; SH2B3 3 pinned anchors verified)",
+    "results/fine_mapping/susie.preFix.bak.20260430_095819": "87 fit.rds + 87 json — V3 driver-made backup",
+    "results/fine_mapping/susie.preFix.bak.20260430_102053": "87 fit.rds + 87 json — V4 driver-made backup"
+  },
+
+  "monitoring_directives": {
+    "pass_fail_evaluation": "DEFERRED to post-completion via bin/verify_ta_sh2b3_phase.sh --wave 4 (per W4 PLAN PASS gate)",
+    "pass_criteria": "too_few_snps count <= 200 in results/qtl_coloc/*.json AND results/fine_mapping/susie/*.fit.rds mtime > V4 dispatch ts (20260430_102040)",
+    "fail_criteria": "too_few_snps remains ~1,000 OR SuSiE-RSS layer rebuild fails -> halt + Carter escalation per W4 PLAN",
+    "wall_estimate": "~10-15 hr per D-TA-04-OVERRIDE-V2 CONSERVATIVE_BOTH envelope; PEND time depends on cluster backlog + 192-slot peak allocation footprint",
+    "next_actions_when_dispatch_completes": [
+      "Run bin/verify_ta_sh2b3_phase.sh --wave 4 to evaluate PASS/FAIL gate",
+      "If PASS: write tracker v5 with status=PASSED; advance to Wave 5",
+      "If FAIL: write tracker v5 with status=FAILED + halt + Carter escalation",
+      "Either way: capture final too_few_snps count + SuSiE-RSS rebuild summary in tracker v5",
+      "Post-rebuild SuSiE-RSS .fit.rds md5s WILL change (post-02c4404 honest niter=1000 != pre-02c4404 niter=100); the 3 SH2B3 pinned anchors will need new md5 capture as part of W7 closeout OSF deviation entry #6"
+    ]
+  },
+
+  "invariants_preserved_at_dispatch_time": {
+    "TRACK-A-FROZEN-NUMBERS.md_md5": "9d0405a4db95655b1be7401883d22165 (CONFIRMED unchanged through V3 -> V4)",
+    "coloc_summary.tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (CONFIRMED unchanged through V3 -> V4)",
+    "9_W2_R2_outputs_at_results_multitrait_coloc_susie_R2": "Untouched throughout V4 sequence (only qtl_coloc/ and fine_mapping/susie/ are mutated by driver mv + downstream snakemake writes)",
+    "results_identity_ld_dir": "NOT committed (DEC-2026-04-25-01); confirmed not in git index",
+    "TRACK-A-FROZEN-NUMBERS.md_will_change_post_rebuild": "Wave 5 may need to UPDATE the 51/96 headline numerator (TRACK-A-FROZEN-NUMBERS.md L10 LIVE-block) after measuring post-rebuild SuSiE-RSS yield at honest niter=1000; direction-of-change is empirical (likely >= 51/96 since niter=1000 should converge more fits than buggy niter=100)"
+  },
+
+  "commits_landed_this_session": [
+    "e4152f8 — docs(ta-sh2b3, W4): D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME = Option A (restore + --forcerun)",
+    "7442cc5 — fix(ta-sh2b3, W4): driver --forcerun for V2 CONSERVATIVE_BOTH DAG fanout",
+    "7676529 — ops(ta-sh2b3, W4): V3 dispatch HALT — bsub Too few tasks (long queue n=2 vs threads=1)",
+    "ed8dc51 — docs(ta-sh2b3, W4): D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME = Option E + max-cores audit",
+    "dbededf — fix(ta-sh2b3, W4): cluster_config.yaml run_finemap threads 1->2 (long queue n>=2 enforcement)"
+  ],
+
+  "checker_iter1_nit3_nit4_status": {
+    "nit3_long_queue": "OPERATIONALLY VERIFIED — config/cluster_lsf/cluster_config.yaml run_finemap.queue=long + threads=2; LSF accepted 50/50 submissions to long queue; bsub_wrapper.sh -W mapping confirmed (queue=long -> -W=14400)",
+    "nit4_manual_escalation": "STILL PENDING evaluation — PASS/FAIL determination requires post-completion bin/verify_ta_sh2b3_phase.sh --wave 4 run; tracker v5 will record outcome"
+  }
+}
