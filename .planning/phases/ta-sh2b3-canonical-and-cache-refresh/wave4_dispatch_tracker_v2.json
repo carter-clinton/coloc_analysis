@@ -1,0 +1,176 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W4-cache-invalidation-and-refire",
+  "version": "v2_CONSERVATIVE_BOTH_HALTED_DAG_NO_FANOUT",
+  "supersedes": "wave4_dispatch_tracker.json (HALTED V1)",
+  "status": "HALTED_DAG_DID_NOT_FAN_OUT",
+  "outcome": "DISPATCH_COMPLETED_5_JOBS_NO_PER_REGION_WORK",
+  "summary_one_liner": "V2 dispatch completed Snakemake `all_qtl_coloc` target in 5 minutes / 5 jobs (build_qtl_coloc_manifest -> aggregate_qtl_coloc -> assign_tiers + build_gene_tissue_matrix -> all_qtl_coloc) with ZERO per-region run_qtl_coloc + ZERO run_finemap jobs dispatched. Root cause: snakemake --touch (Step 2) stabilized mtimes such that the script-newer-than-outputs cascade trigger (which forced fan-out in V1 abort) is no longer active. Aggregate_qtl_coloc rule's glob_wildcards over results/qtl_coloc/*.json enumerated 0 files (we mv'd the directory before dispatch), so DAG planned no per-region work. Live results/qtl_coloc/ now contains 6 aggregator files + 0 per-region JSONs.",
+
+  "step_chronology": {
+    "step_0_pre_fire_invariant_baselines": {
+      "ts": "20260430_081210",
+      "track_a_frozen_md5": "9d0405a4db95655b1be7401883d22165 (CONFIRMED)",
+      "coloc_summary_tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (CONFIRMED)",
+      "w2_r2_bmi_htn_md5": "b74e36e2940d18542836942666a89d50 (CONFIRMED)",
+      "canonical_anchors_md5": {
+        "bmi_EUR_SH2B3_12q24_fit_rds": "053444fe1560b3c27c80ab4e10ca8fb8 (CONFIRMED)",
+        "hypertension_EUR_SH2B3_12q24_fit_rds": "3d4b62cfe076f1b7b3a743e99d933701 (CONFIRMED)",
+        "stroke_EUR_SH2B3_12q24_fit_rds": "494ea177bbad4c6e452dfb97b94fadd8 (CONFIRMED)"
+      }
+    },
+    "step_1_snakemake_touch": {
+      "executed_at": "2026-04-30T08:12:24Z",
+      "log": "logs/wave4_touch_20260430_081210.log",
+      "outcome": "1323 of 1323 steps marked up-to-date (100%); log = 196 KB",
+      "side_effect_observation": "summarize_coloc_results was invoked during --touch (rule fired but only updated mtime, NOT content); coloc_summary.tsv md5 confirmed unchanged post-touch"
+    },
+    "step_2_d_ta_04_override_commit": {
+      "commit": "44c4dab",
+      "files": [".planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md"],
+      "section_added": "D-TA-04-OVERRIDE-V2"
+    },
+    "step_3_backups": {
+      "ts": "20260430_081210",
+      "qtl_coloc_backup": "results/qtl_coloc.preFix.bak.20260430_081210/ (1274 JSONs)",
+      "susie_backup": "results/fine_mapping/susie.preFix.bak.20260430_081210/ (87 fit.rds + 87 json)",
+      "pre_existing_backup_preserved": "results/qtl_coloc.preFix.bak.20260430_003141/ (1274 JSONs)"
+    },
+    "step_4_cluster_config_fix_commit": {
+      "commit": "2dcb518",
+      "file": "config/cluster_lsf/cluster_config.yaml",
+      "fix": "run_finemap: added explicit queue: long (was inheriting __default__ serial)"
+    },
+    "step_5_dispatch_attempt_1": {
+      "dispatch_ts": "20260430_085317",
+      "supervisor_pid": 3909848,
+      "outcome": "DIED at +0s",
+      "cause": "Driver script's `if [ ! -d results/qtl_coloc ]` hard-fail because we already mv'd the dir in Step 3; driver expected to do its own mv",
+      "log": "logs/wave4_qtl_coloc_refresh_v2_CONSERVATIVE_BOTH_20260430_085317.log",
+      "recovery": "Restored live results/qtl_coloc/ from results/qtl_coloc.preFix.bak.20260430_081210/ via cp -R; backup preserved"
+    },
+    "step_6_dispatch_attempt_2": {
+      "dispatch_ts": "20260430_085556",
+      "supervisor_pid": 3911840,
+      "outcome": "COMPLETED 5-job DAG with ZERO per-region work",
+      "log": "logs/wave4_qtl_coloc_refresh_v2_CONSERVATIVE_BOTH_20260430_085556.log",
+      "snakemake_internal_log": "logs/wave4_qtl_coloc_refresh_20260430_085556.log",
+      "elapsed_sec_to_completion": 285,
+      "lsf_jobs_dispatched": [69957, 69960, 69962, 69963],
+      "lsf_queue_used": "serial",
+      "rules_executed": ["build_qtl_coloc_manifest", "aggregate_qtl_coloc", "build_gene_tissue_matrix", "assign_tiers", "all_qtl_coloc"],
+      "run_finemap_jobs_dispatched": 0,
+      "run_qtl_coloc_jobs_dispatched": 0,
+      "driver_made_third_backup": "results/qtl_coloc.preFix.bak.20260430_085556/ (1274 JSONs from the cp -R restored set)"
+    }
+  },
+
+  "post_v2_disk_state": {
+    "results_qtl_coloc_dir": "EXISTS — 6 aggregator/manifest TSVs only; ZERO per-region JSONs (the aggregator wrote a skeleton summary off an empty glob)",
+    "results_qtl_coloc_files": [
+      "qtl_coloc_manifest.tsv",
+      "qtl_coloc_summary.tsv",
+      "tier_assignments.tsv",
+      "pph4_threshold_sweep.tsv",
+      "gene_tissue_matrix.tsv",
+      "gene_tissue_long.tsv"
+    ],
+    "results_fine_mapping_susie_dir": "DOES NOT EXIST (driver did not mv it because we already mv'd it in Step 3; driver's `if [ -d ]` skipped silently)",
+    "snakemake_locks_clean": true,
+    "bjobs_clean": true,
+    "track_a_frozen_numbers_md5": "9d0405a4db95655b1be7401883d22165 (UNCHANGED)",
+    "coloc_summary_tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (UNCHANGED)",
+    "w2_r2_bmi_htn_md5": "b74e36e2940d18542836942666a89d50 (UNCHANGED)"
+  },
+
+  "preserved_backups": {
+    "results/qtl_coloc.preFix.bak.20260430_003141": "1274 JSONs — pre-W4-V1-abort baseline (forensic record)",
+    "results/qtl_coloc.preFix.bak.20260430_081210": "1274 JSONs — pre-V2-Step-3 baseline (this session's pre-fire snapshot)",
+    "results/qtl_coloc.preFix.bak.20260430_085556": "1274 JSONs — driver-made third backup (cp -R restored copy from .081210)",
+    "results/fine_mapping/susie.preFix.bak.20260430_081210": "87 fit.rds + 87 json — includes the 74 V1-abort partial overwrites + Apr-22 originals (forensic record)"
+  },
+
+  "root_cause_analysis": {
+    "diagnostic_question": "Why did V1 abort dispatch fan out to 96 run_finemap jobs but V2 dispatch fan out to 0?",
+    "v1_pre_fire_state": "results/qtl_coloc/ had 1,274 STALE JSONs (mtime older than run_susie_rss.R script at commit 02c4404); results/fine_mapping/susie/ had ~192 .fit.rds + .json files",
+    "v2_pre_fire_state": "results/qtl_coloc/ EMPTY (mv'd in Step 3); results/fine_mapping/susie/ EMPTY (mv'd in Step 3); ALL upstream outputs touched in Step 1 to mtime newer than scripts",
+    "snakemake_dag_logic": "all_qtl_coloc input chain: aggregate_qtl_coloc consumes a dynamic-glob over results/qtl_coloc/*.json. Empty glob => 0 inputs => skeleton summary => no per-region work scheduled. The 96 run_finemap fanout in V1 was triggered by the script-newer-than-outputs cascade through the SuSiE-RSS layer's mtime check, which then forced 1,274 run_qtl_coloc reruns. After Step 1's --touch, that cascade is neutered (script == outputs mtime relationship).",
+    "why_run_finemap_did_not_fire_via_missing_susie_outputs": "DAG enumeration of run_finemap is driven by the all_qtl_coloc target's dependency chain. With NO per-region run_qtl_coloc jobs scheduled, NO run_finemap jobs are scheduled. The dependency only flows DOWN from per-region run_qtl_coloc, not UP from missing susie outputs alone."
+  },
+
+  "carter_decision_required": {
+    "halt_reason": "V2 dispatch's `all_qtl_coloc` target plans 0 per-region work after the touch+mv pre-state",
+    "options": {
+      "option_A_restore_and_force_rerun": {
+        "description": "Restore live results/qtl_coloc/ from .preFix.bak.20260430_081210/ via cp -R AND restore results/fine_mapping/susie/ from .preFix.bak.20260430_081210/ via cp -R. Then patch the driver to add `--forcerun run_finemap run_qtl_coloc` flags to the snakemake invocation. Re-fire. The aggregator glob will enumerate 1,274 files; --forcerun forces both rules to re-execute regardless of mtime; downstream cascade rebuilds everything.",
+        "pro": "Preserves V1+V2 backups untouched; uses the existing driver with minimal flag patch; achieves Carter's stated CONSERVATIVE_BOTH intent (rebuild full SuSiE-RSS + QTL-coloc layers under post-02c4404 code at honest niter=1000)",
+        "con": "Need to patch the driver to add --forcerun flags; one more commit and config moment",
+        "wall_estimate": "~10-15 hr (matches plan's CONSERVATIVE_BOTH envelope)"
+      },
+      "option_B_explicit_per_region_target": {
+        "description": "Identify the actual per-region targets in Snakefile (e.g., results/qtl_coloc/{wildcards}.json) and dispatch with explicit target list rather than the all_qtl_coloc aggregator. Likely needs a manifest-driven snakemake invocation.",
+        "pro": "Most explicit; bypasses any aggregator glob shenanigans",
+        "con": "Requires Snakefile rule-name + wildcard-pattern audit (Wave 0 Task 1 surface; may need re-enumeration); higher risk of typos / mis-targeting; more invasive driver change",
+        "wall_estimate": "Same as option A once dispatched"
+      },
+      "option_C_skip_touch_widen_to_forceall": {
+        "description": "Roll back our --touch step entirely (it can't be reverted, but its effect can be overridden) by restoring qtl_coloc/ and susie/ from backups, then re-firing with `--forceall all_qtl_coloc`. Forceall ignores all mtime checks across the entire DAG.",
+        "pro": "Closest to a from-clean-slate execution; closely matches the V1 abort's intent",
+        "con": "Forceall re-runs LITERALLY every reachable rule including upstream sumstats harmonization (potentially harmonize_sumstats, validate_sumstats, etc.) — those depend on raw bgz data that should still be on disk but adds compute and risks side effects on the upstream layer; may modify coloc_summary.tsv mtime even if content unchanged",
+        "wall_estimate": "+2-4 hr above option A for upstream re-runs; risk multiplier"
+      },
+      "option_D_revert_v2_dispatch_keep_v1_state": {
+        "description": "Roll the live results/qtl_coloc/ + results/fine_mapping/susie/ back to the V1-abort post-state (74 partial overwrites + Apr-22 originals). Then re-fire the driver WITHOUT first running --touch — relies on the original script-mtime cascade trigger (which fired in V1) to do the fan-out.",
+        "pro": "Simplest restoration of the DAG state that did fire correctly in V1",
+        "con": "Re-introduces the original D-TA-04-OVERRIDE-V2 scope-breach problem (run_finemap fans out without explicit Carter authorization) — but Carter explicitly chose CONSERVATIVE_BOTH, so this is now allowed; HOWEVER, the V1 abort happened BEFORE all 96 run_finemap finished AND before run_qtl_coloc started — so the fan-out worked but never completed; un-clear if a clean fan-out from this state will work or whether Snakemake will see the V1-abort partial state as already-up-to-date",
+        "wall_estimate": "Same ~10-15 hr if it works; risk of further partial-state issues"
+      }
+    },
+    "executor_recommendation": "Option A (restore + --forcerun patch). Cleanest minimal-change path that matches Carter's CONSERVATIVE_BOTH intent. The driver patch is one line (add `--forcerun run_finemap run_qtl_coloc` to the snakemake invocation). Backups are all preserved as forensic record. Step 1's --touch was not wasted — it stabilized aggregator-rule mtimes and confirmed DAG resolution works end-to-end (we have a clean known-good 5-job DAG result to compare against).",
+    "executor_recommendation_caveat": "Per CLAUDE.md feedback_rigor_over_speed.md: option A is rigor-maximizing AND minimal-change. Option B is more 'surgical' but adds Snakefile auditing burden. Option C is most aggressive but risks upstream side effects. Option D is most fragile (depends on V1-abort partial state being cleanly recoverable into a fan-out trigger)."
+  },
+
+  "resume_path": {
+    "blocking_issue": "carter_decision_required.halt_reason",
+    "resume_command": "After Carter records D-TA-WAVE4-V2-DAG-FANOUT decision in CONTEXT.md + selects option A/B/C/D + applies option-specific recovery: /gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh",
+    "do_not_resume_until": [
+      "Carter selects + records the option in CONTEXT.md as D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME",
+      "Any option-specific driver patch is committed",
+      "Any results/* directory restoration is complete",
+      ".snakemake/locks/ confirmed clean (already clean)",
+      "bjobs clean of W4-related work (already clean)"
+    ],
+    "files_for_resumer": [
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker_v2.json (this file)",
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker.json (V1 abort tracker)",
+      ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_baseline.tsv",
+      "logs/wave4_touch_20260430_081210.log (V2 Step 1 touch log)",
+      "logs/wave4_qtl_coloc_refresh_v2_CONSERVATIVE_BOTH_20260430_085317.log (V2 attempt 1 — died at +0s)",
+      "logs/wave4_qtl_coloc_refresh_v2_CONSERVATIVE_BOTH_20260430_085556.log (V2 attempt 2 — completed 5-job no-op DAG)",
+      "logs/wave4_qtl_coloc_refresh_20260430_085556.log (V2 attempt 2 snakemake-internal log)",
+      "results/qtl_coloc.preFix.bak.20260430_003141/ (V1 baseline; 1274 JSONs)",
+      "results/qtl_coloc.preFix.bak.20260430_081210/ (V2 baseline; 1274 JSONs)",
+      "results/qtl_coloc.preFix.bak.20260430_085556/ (V2 driver-made third backup; 1274 JSONs)",
+      "results/fine_mapping/susie.preFix.bak.20260430_081210/ (V2 SuSiE-RSS baseline; 87 fit.rds; includes 74 V1-abort partial overwrites)"
+    ]
+  },
+
+  "invariants_preserved_at_halt": {
+    "TRACK-A-FROZEN-NUMBERS.md_md5": "9d0405a4db95655b1be7401883d22165 (CONFIRMED unchanged)",
+    "coloc_summary.tsv_md5": "5fa3c4004970c5da711d05947cb1f7d2 (CONFIRMED unchanged)",
+    "W2_R2_bmi_vs_hypertension_md5": "b74e36e2940d18542836942666a89d50 (CONFIRMED unchanged)",
+    "9_W2_R2_outputs_at_results_multitrait_coloc_susie_R2": "Untouched throughout V2 dispatch sequence"
+  },
+
+  "commits_landed_this_session": [
+    "44c4dab — docs(ta-sh2b3, W4): D-TA-04-OVERRIDE-V2 — RSID -> CONSERVATIVE_BOTH (Carter hybrid recovery)",
+    "2dcb518 — fix(ta-sh2b3, W4): cluster_config.yaml run_finemap queue inherited-serial -> long (-W=14400 enforcement)"
+  ],
+
+  "no_per_region_compute_consumed": "ZERO LSF compute used for QTL-coloc or SuSiE-RSS rules; only 4 light aggregator/manifest jobs (~5 minutes total wall) on the serial queue",
+
+  "checker_iter1_nit3_nit4_status": {
+    "nit3_long_queue": "config/cluster_lsf/cluster_config.yaml run_finemap = long now (commit 2dcb518); however, run_finemap was not actually exercised in V2 dispatch so the routing is verified by config-only, not by operational run",
+    "nit4_manual_escalation": "N/A — no PASS/FAIL evaluation possible from this dispatch"
+  }
+}
