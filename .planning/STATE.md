@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: "Wave 1 SuSiE-RSS L-sweep LSF dispatched 2026-04-30T00:51:54Z (supervisor PID 2496902 nohup'd; commit e2f1085); 9 fits queued (L=15/20/30 × bmi/hypertension/stroke on SH2B3 EUR); L=15 jobs 67651/67652/67653 immediate RUN on serial queue at 90s checkpoint; L=20+L=30 dispatch sequentially. Resume `/gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh` after `ps -p 2496902` dead AND 9 expected JSONs land on disk. Tracker: .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave1_dispatch_tracker.json. W1 SUMMARY.md intentionally absent — gates resume for Task 2 (convergence verify + PRIMARY_L)."
-last_updated: "2026-04-30T00:54:00.000Z"
+stopped_at: "Wave 1 SuSiE-RSS L-sweep COMPLETED IN-SESSION (supervisor PID 2496902 dispatched 00:51:54Z, exited cleanly 00:59:44Z; ~8 min wall, vastly under 6-12 hr envelope due to single-region scope); ALL 9 JSONs on disk + L_used=swept-L verified 9/9 (Pitfall 2 live confirmation); ALL 9 fits report convergence_status='non_converged' with L_saturated=false and n_CS<L_used (likely niter-not-reached, NOT saturation; resumer must interpret via run_susie_rss.R convergence-status logic). RESUME NOW REQUIRED — `/gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh` to fire W1 Task 2 (convergence verify TSV + PRIMARY_L decision + D-TA-Wave1-headline outcome + W1 SUMMARY.md). PRIMARY_L may resolve to NONE_CONVERGED → routes Wave 6 to DISCLOSE-AS-COLUMN. Tracker: .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave1_dispatch_tracker.json (with actual_completion + per-fit quick-scan recorded for resumer)."
+last_updated: "2026-04-30T01:01:00.000Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 12

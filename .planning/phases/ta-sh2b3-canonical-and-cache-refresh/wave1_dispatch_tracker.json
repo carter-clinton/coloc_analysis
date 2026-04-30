@@ -53,6 +53,33 @@
   "ready_to_resume_command_block": "ps -p 2496902 2>&1 | grep -q 'No such process' && for f in results_lsweep_L{15,20,30}/fine_mapping/susie/{bmi,hypertension,stroke}.EUR.SH2B3_12q24.json; do [ -f \"$f\" ] || { echo \"MISSING $f\"; exit 1; }; done && echo 'READY_TO_RESUME'",
   "resume_command": "/gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh",
   "resume_picks_up_at": "Wave 1 verification (Task 2: convergence verification + PRIMARY_L recording + W1 SUMMARY.md). The absence of W1 SUMMARY.md is intentional and gates the resume path.",
+  "actual_completion": {
+    "supervisor_exit_observed_at": "2026-04-30T00:59:44Z (within this dispatch agent session)",
+    "elapsed_wall_clock": "~8 minutes (20:51:54 -> 20:59:44 local)",
+    "elapsed_vs_envelope": "VASTLY UNDER projection — single-region SH2B3_12q24 EUR with small variant set fit in ~2 min/fit, not 2-4 hr/fit. Plan envelope was sized for full-region production fires.",
+    "all_9_jsons_landed": true,
+    "L_used_pitfall2_live_verification": "PASS (9/9) — config-merge propagation works in production; mitigation in finemap.smk:62 confirmed live",
+    "convergence_quick_scan": {
+      "note": "Recorded by dispatch agent for resumer Task 2 input. RESUMER must perform full convergence interpretation (this is NOT the dispatch agent's call).",
+      "L15_bmi": {"L_used": 15, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 13},
+      "L15_hypertension": {"L_used": 15, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 5},
+      "L15_stroke": {"L_used": 15, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 3},
+      "L20_bmi": {"L_used": 20, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 14},
+      "L20_hypertension": {"L_used": 20, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 4},
+      "L20_stroke": {"L_used": 20, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 4},
+      "L30_bmi": {"L_used": 30, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 14},
+      "L30_hypertension": {"L_used": 30, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 4},
+      "L30_stroke": {"L_used": 30, "convergence_status": "non_converged", "L_saturated": false, "n_CS": 4}
+    },
+    "preliminary_observations_for_resumer": [
+      "All 9 fits report convergence_status='non_converged' but L_saturated=false and n_CS < L_used — suggests SuSiE-RSS niter-not-reached condition rather than literal saturation. Resumer Task 2 must inspect run_susie_rss.R convergence-status logic to interpret correctly.",
+      "n_CS values are STABLE across L for hypertension and stroke (5/4/4 and 3/4/4) — suggests true credible-set count near 4 regardless of L.",
+      "BMI n_CS scales with L (13/14/14) — may indicate over-extraction; resumer should examine purity + per-CS LBF.",
+      "PRIMARY_L decision is NOT obvious — resumer Task 2 must apply the plan's converged_ok = (converged_* AND !L_saturated AND n_CS < L) gate. With 0/9 starting with 'converged_*', PRIMARY_L may resolve to NONE_CONVERGED — which routes Wave 6 to DISCLOSE-AS-COLUMN, not RECOMPUTE.",
+      "Resumer MUST consult D-TA-Wave1-headline branching logic in CONTEXT.md before recording outcome."
+    ],
+    "resume_now_required": true
+  },
   "compute_envelope_estimate": {
     "per_fit_wall_hours": "2-4",
     "fits_total": 9,
