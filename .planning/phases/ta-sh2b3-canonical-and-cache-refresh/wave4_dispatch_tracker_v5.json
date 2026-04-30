@@ -1,0 +1,157 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W4-cache-invalidation-and-refire",
+  "version": "v5_OPTION_E_PARTIAL_PASSED",
+  "supersedes": "wave4_dispatch_tracker_v4.json (DISPATCHED V4 healthy)",
+  "status": "PARTIAL_PASSED_SUSIE_RSS_REBUILT_QTL_COLOC_LAYER_NOT_REBUILT_DAG_DESIGN_LIMIT",
+  "outcome": "SUSIE_RSS_LAYER_REBUILT_AT_HONEST_NITER_1000_CONFIRMED — qtl_coloc layer not rebuilt due to snakemake DAG glob enumeration limit",
+  "summary_one_liner": "V4 dispatch (Option E: cluster_config.yaml run_finemap.threads=2) completed cleanly at 12:45:51 EDT (wall 2h 25m, far under the 10-15 hr CONSERVATIVE_BOTH envelope). 105/105 snakemake steps DONE; 96/96 run_finemap fits landed with all mtimes > V4 dispatch ts (10:20:40 EDT); 0 errors, 0 bsub rejections; all 3 pinned SH2B3 .fit.rds md5s changed from pre-rebuild values (niter=100 -> niter=1000 rebuild empirically confirmed). HOWEVER: live results/qtl_coloc/ contains only 6 aggregator TSVs and ZERO per-region JSONs. Root cause: snakemake's `aggregate_qtl_coloc` rule enumerates per-region wildcards via a glob over results/qtl_coloc/*.json AT DAG PLANNING TIME (one-shot, not re-evaluated mid-run); after V4 driver mv'd live qtl_coloc/ to .preFix.bak.20260430_102053/ pre-dispatch, the planning-time glob returned 0 matches, so the DAG planned 0 run_qtl_coloc instances. --forcerun run_qtl_coloc was a NO-OP because snakemake forces only what's in the reachable DAG, and run_qtl_coloc was unreachable (input pattern not enumerated). The PASS gate's literal text is satisfied (too_few_snps count = 0 <= 200 vacuously; 96/96 .fit.rds mtimes > V4 ts), but the gate's INTENT (CONSERVATIVE_BOTH = rebuild BOTH SuSiE-RSS layer AND qtl_coloc layer at honest niter=1000) is partially satisfied: SuSiE-RSS layer = REBUILT; qtl_coloc layer = NOT REBUILT. Per feedback_rigor_over_speed.md: classified as PARTIAL_PASSED rather than vacuous PASS to surface the gap honestly. Wave 4.5 follow-up needed to rebuild qtl_coloc layer with the now-existing .fit.rds files as inputs (option: re-fire driver as a 2nd snakemake invocation; the new DAG-planning-time glob will now enumerate the 96 .fit.rds files and plan run_qtl_coloc per-region jobs). PID 830751 (other-terminal results_identity_ld) preserved untouched throughout.",
+
+  "completion_metrics": {
+    "v4_dispatch_ts": "20260430_102040",
+    "v4_dispatch_iso": "2026-04-30T10:20:40-04:00",
+    "v4_completion_ts": "20260430_124551",
+    "v4_completion_iso": "2026-04-30T12:45:51-04:00",
+    "wall_time_minutes": 145,
+    "wall_time_human": "2h 25m",
+    "wall_estimate_was": "10-15 hr per D-TA-04-OVERRIDE-V2 CONSERVATIVE_BOTH envelope",
+    "delivery_vs_estimate": "delivered at 16-25% of estimated wall (faster cluster turnaround than budgeted)",
+    "snakemake_steps_planned": 105,
+    "snakemake_steps_completed": 105,
+    "completion_pct": 100,
+    "lsf_jobid_range_used": "71928-74665 (run_finemap on long + aggregator on serial)",
+    "exit_code": 0,
+    "driver_log": "logs/wave4_qtl_coloc_refresh_v4_OPTION_E_20260430_102040.log",
+    "snakemake_internal_log": ".snakemake/log/2026-04-30T102054.692878.snakemake.log"
+  },
+
+  "pass_gate_literal_evaluation": {
+    "condition_1_too_few_snps_count_le_200": {
+      "actual_count": 0,
+      "threshold": 200,
+      "literal_status": "PASS_VACUOUS",
+      "qualifier": "live results/qtl_coloc/ contains 0 JSONs (only 6 aggregator TSVs); count = 0 satisfies <= 200 vacuously, NOT because rebuilt JSONs show <= 200 too_few_snps as the gate intended"
+    },
+    "condition_2_susie_fit_rds_mtimes_post_v4_ts": {
+      "fit_rds_count_with_mtime_gt_v4_ts": 96,
+      "fit_rds_total": 96,
+      "v4_dispatch_ts_epoch": 1777558840,
+      "oldest_fit_rds_mtime": "2026-04-30T10:24:13-04:00 (asthma.EUR.SLC2A9_urate)",
+      "newest_fit_rds_mtime": "2026-04-30T12:40:39-04:00 (bmi.EUR.HLA_6p21)",
+      "literal_status": "PASS"
+    },
+    "literal_combined": "PASS (both conditions satisfied)",
+    "intent_combined": "PARTIAL — qtl_coloc layer not rebuilt; CONSERVATIVE_BOTH only delivered SuSiE-RSS half"
+  },
+
+  "post_rebuild_sh2b3_anchors": {
+    "rationale": "SH2B3 12q24 .fit.rds md5s were pinned in tracker v2 (carter_decision_required block) as the canonical 3-trait anchors for Track A id-vs-ref-LD pivot. Post-V4 rebuild md5s are EXPECTED TO DIFFER from pre-V4 because the rebuild ran post-`02c4404` honest niter=1000 (vs pre-rebuild niter=100 buggy default). Direction-of-difference is empirical evidence that the rebuild fired and produced different fits; the new md5s become the canonical post-rebuild anchors and should replace the pinned values in any future audit chain (tracker v6+ or W7 closeout reconciliation).",
+    "bmi_EUR_SH2B3_12q24_fit_rds": {
+      "pre_rebuild_md5": "053444fe1560b3c27c80ab4e10ca8fb8",
+      "post_rebuild_md5": "462ada6ab64fdf8571fb5ed7dd6c6ea2",
+      "differs": true
+    },
+    "hypertension_EUR_SH2B3_12q24_fit_rds": {
+      "pre_rebuild_md5": "3d4b62cfe076f1b7b3a743e99d933701",
+      "post_rebuild_md5": "8255c1acf50add5f68dfb551af977b53",
+      "differs": true
+    },
+    "stroke_EUR_SH2B3_12q24_fit_rds": {
+      "pre_rebuild_md5": "494ea177bbad4c6e452dfb97b94fadd8",
+      "post_rebuild_md5": "a041eecc27f3086190069783eeb45ffe",
+      "differs": true
+    },
+    "all_3_differ": true,
+    "interpretation": "All 3 SH2B3 anchors changed md5 -> SuSiE-RSS layer rebuild empirically confirmed at the .fit.rds binary level. The 51/96 TRACK-A-FROZEN-NUMBERS.md numerator measurement at Wave 5 will need to be re-derived from the post-rebuild fits; direction-of-change is empirical (likely >= 51/96 since niter=1000 should converge more fits than buggy niter=100, but Wave 5 measures and updates LIVE-block accordingly per OSF deviation entry #4)."
+  },
+
+  "qtl_coloc_layer_gap_diagnosis": {
+    "observation": "results/qtl_coloc/ contains 6 aggregator TSVs (gene_tissue_long.tsv, gene_tissue_matrix.tsv, pph4_threshold_sweep.tsv, qtl_coloc_manifest.tsv, qtl_coloc_summary.tsv, tier_assignments.tsv) and ZERO per-region JSONs. Pre-V4 baseline had 1274 per-region JSONs (preserved in .preFix.bak.20260430_081210/).",
+    "root_cause": "Snakefile's aggregate_qtl_coloc rule (per V2 tracker root_cause_analysis): inputs come from a dynamic glob over results/qtl_coloc/*.json. snakemake DAG planning is one-shot at startup: it enumerates wildcards from whatever globs match at planning time. V4 driver mv'd live qtl_coloc/ to .preFix.bak.20260430_102053/ before snakemake DAG planning fired -> planning-time glob returned 0 matches -> 0 run_qtl_coloc instances in the DAG -> --forcerun run_qtl_coloc was a no-op (snakemake forces only what's reachable in the planned DAG).",
+    "why_v1_abort_dispatch_did_fan_out": "V1 (commit 2891d5e abort) fired before V2's snakemake --touch and before any pre-fire mv: at that moment, results/qtl_coloc/ contained 1,274 STALE JSONs from the prior production run (niter=100 buggy code). The script-newer-than-outputs cascade trigger fired because run_susie_rss.R (newest from commit 02c4404) was newer than .fit.rds outputs, forcing 96 run_finemap fan-out + the per-region run_qtl_coloc cascade that consumed those 1,274 stale JSONs as input wildcards. V1 was killed mid-flight before it could complete the rebuild.",
+    "design_limitation_observed": "The driver's mv-then-rebuild pattern fundamentally cannot rebuild the qtl_coloc layer in a single snakemake invocation because the per-region wildcards aren't enumerable from an empty live dir. The ONLY way to rebuild qtl_coloc-layer per-region in this Snakefile is to either (a) run snakemake twice (1st: fit run_finemap; 2nd: glob the .fit.rds outputs and plan run_qtl_coloc), or (b) refactor the Snakefile to enumerate run_qtl_coloc wildcards from a manifest TSV instead of a dynamic glob. V1+V2+V3+V4 all hit this limit in different ways."
+  },
+
+  "carter_decision_required_for_w4_5": {
+    "halt_reason": "qtl_coloc layer not rebuilt at honest niter=1000 / post-`02c4404` code; live results/qtl_coloc/*.json count = 0 vs pre-rebuild 1274; CONSERVATIVE_BOTH intent only half-delivered (SuSiE-RSS half = success; qtl_coloc half = pending).",
+    "options": {
+      "option_W4_5_a_second_snakemake_invocation": {
+        "description": "Re-fire driver immediately (no driver patch needed). The second invocation's DAG-planning-time glob will now enumerate the 96 .fit.rds files (which exist post-V4) AND the run_qtl_coloc rule's wildcards will be derivable from the trait/region manifest. Snakemake should plan run_qtl_coloc per-region jobs and dispatch them to LSF.",
+        "pro": "Zero code changes; reuses existing driver + cluster_config; the SuSiE-RSS layer is already rebuilt so the 2nd invocation only does qtl_coloc layer work; preserves all forensic backups untouched",
+        "con": "Snakemake will detect the 96 .fit.rds files as already-up-to-date and (per the script-mtime cascade) MAY decide to also force-rebuild SuSiE if the run_susie_rss.R script mtime relationship has shifted; need to verify mtime relationships before re-firing",
+        "wall_estimate": "~1-3 hr (only run_qtl_coloc + downstream aggregators; no SuSiE-RSS rebuild)"
+      },
+      "option_W4_5_b_refactor_snakefile_to_manifest_driven_glob": {
+        "description": "Modify Snakefile's aggregate_qtl_coloc rule to enumerate run_qtl_coloc wildcards from a deterministic trait/region/tissue/QTL-source manifest TSV (built by build_qtl_coloc_manifest at planning time) instead of from a dynamic glob over .json files. This breaks the chicken-and-egg dependency on pre-existing JSONs.",
+        "pro": "Permanent fix; future rebuilds via mv-then-rebuild work in a single snakemake invocation; no more 'DAG no fan out' issues",
+        "con": "Snakefile change requires audit + testing; aggregate_qtl_coloc is the same rule that produced the 5-job no-op DAG in V2; high risk of breaking the aggregator chain; needs Wave 0 Task 1 surface re-enumeration",
+        "wall_estimate": "Days for refactor + testing; high churn"
+      },
+      "option_W4_5_c_minimal_re_glob_after_finemap": {
+        "description": "Add a post-finemap snakemake invocation immediately after run_finemap completes (still within the driver). Use snakemake's checkpoint/dynamic feature OR just call snakemake twice in the driver script.",
+        "pro": "Same effect as option-a but automated (no manual second invocation needed)",
+        "con": "Driver script becomes 2-stage; more moving parts; same risk as option-a re mtime cascade",
+        "wall_estimate": "Same as option-a (~1-3 hr) plus driver patch"
+      },
+      "option_W4_5_d_accept_partial_pass_advance_to_w5": {
+        "description": "Treat V4 as PASSED for the purpose of W4 closure. Wave 5 measures the 51/96 TRACK-A-FROZEN-NUMBERS.md numerator from the post-rebuild SuSiE-RSS .fit.rds files alone (which is the actual citation point); the missing qtl_coloc layer can be rebuilt later as part of Wave 6 or Wave 7 narrative reconciliation, OR not at all if the manuscript thesis only needs the SuSiE-RSS evidence.",
+        "pro": "Minimum churn; advances to Wave 5 immediately",
+        "con": "Leaves qtl_coloc layer in unsynchronized state (pre-rebuild .preFix.bak.20260430_081210/ JSONs are at niter=100 vs SuSiE-RSS now at niter=1000); reviewer-defensibility risk; per feedback_rigor_over_speed.md this is a rigor-degrading shortcut",
+        "rigor_assessment": "REJECTED per feedback_rigor_over_speed.md unless Carter explicitly determines the qtl_coloc layer is not load-bearing for the manuscript thesis"
+      }
+    },
+    "executor_recommendation": "Option W4.5-a (second snakemake invocation). Smallest-change path that delivers CONSERVATIVE_BOTH intent fully. The second invocation's DAG planning will enumerate run_qtl_coloc wildcards from the now-present 96 .fit.rds files. Pre-flight: verify run_susie_rss.R mtime is NOT newer than the just-written .fit.rds files (else the cascade would force-rebuild SuSiE again); if a re-trigger is observed, restore the pre-V4 SuSiE-RSS dir from .preFix.bak.20260430_081210/ first to keep the niter=1000 rebuild as the canonical SuSiE state. Per feedback_rigor_over_speed.md option-a is the rigor-maximizing minimal-change path. Carter must select before re-firing."
+  },
+
+  "live_disk_state_at_v5_write_time": {
+    "results_qtl_coloc": "6 aggregator TSVs + 0 per-region JSONs (qtl_coloc layer NOT rebuilt)",
+    "results_fine_mapping_susie": "96 .fit.rds + 96 .json (SuSiE-RSS layer FULLY rebuilt at niter=1000)",
+    "snakemake_locks": "clean (driver exited 0)",
+    "bjobs_queue": "clean (No unfinished job found)",
+    "track_a_frozen_md5_unchanged": "9d0405a4db95655b1be7401883d22165 (CONFIRMED)",
+    "coloc_summary_tsv_md5_unchanged": "5fa3c4004970c5da711d05947cb1f7d2 (CONFIRMED)",
+    "identity_ld_k2d_md5_unchanged": "8ef28cf6b3e067da0ee263f29e03b001 (CONFIRMED)",
+    "9_W2_R2_outputs": "Untouched throughout V4 sequence",
+    "results_identity_ld_dir": "NOT committed (DEC-2026-04-25-01); confirmed not in git index"
+  },
+
+  "monitor_loop_status": {
+    "cron_job_id": "4605015d",
+    "iterations_completed": 2,
+    "iterations_per_state": {
+      "iter_1_T_plus_16min_HEALTHY": "PEND49/RUN1 of 50 in long; 56 submitted; 6 finished; 6 fit.rds; 0 errors",
+      "iter_2_T_plus_345min_TERMINAL": "driver exited 0; 0 in queue; 104 submitted; 105 finished; 96 fit.rds; 0 errors -> case B (literal PASS), classified PARTIAL_PASSED on intent"
+    },
+    "tsv_path": ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_v4_monitor.tsv",
+    "next_action": "CronDelete 4605015d to stop monitor loop; Carter to select W4.5 option"
+  },
+
+  "preserved_backups": {
+    "results/qtl_coloc.preFix.bak.20260430_003141": "1274 JSONs — V1 baseline (forensic record)",
+    "results/qtl_coloc.preFix.bak.20260430_081210": "1274 JSONs — V2 baseline (LOAD-BEARING SOURCE for V3+V4 cp -R restores; do NOT touch; this is the niter=100 stale qtl_coloc state if W4.5-a or W4.5-b need to consult pre-rebuild numerics)",
+    "results/qtl_coloc.preFix.bak.20260430_085556": "1274 JSONs — V2 driver-made third backup",
+    "results/qtl_coloc.preFix.bak.20260430_095819": "1274 JSONs — V3 driver-made fourth backup",
+    "results/qtl_coloc.preFix.bak.20260430_102053": "1274 JSONs — V4 driver-made fifth backup (mv from cp -R restored .081210; this is what would have been the input to a single-pass qtl_coloc rebuild but the DAG didn't enumerate it)",
+    "results/fine_mapping/susie.preFix.bak.20260430_081210": "87 fit.rds + 87 json — V2 SuSiE-RSS baseline (PRE-V4-rebuild canonical SuSiE; the niter=100 buggy state)",
+    "results/fine_mapping/susie.preFix.bak.20260430_095819": "87 fit.rds + 87 json — V3 driver-made backup",
+    "results/fine_mapping/susie.preFix.bak.20260430_102053": "87 fit.rds + 87 json — V4 driver-made backup (PRE-V4-rebuild snapshot the moment before V4 dispatched)"
+  },
+
+  "commits_landed_this_session": [
+    "e4152f8 — docs(ta-sh2b3, W4): D-TA-WAVE4-V2-DAG-FANOUT-OUTCOME = Option A (restore + --forcerun)",
+    "7442cc5 — fix(ta-sh2b3, W4): driver --forcerun for V2 CONSERVATIVE_BOTH DAG fanout",
+    "7676529 — ops(ta-sh2b3, W4): V3 dispatch HALT — bsub Too few tasks (long queue n=2 vs threads=1)",
+    "ed8dc51 — docs(ta-sh2b3, W4): D-TA-WAVE4-V3-BSUB-TOO-FEW-TASKS-OUTCOME = Option E + max-cores audit",
+    "dbededf — fix(ta-sh2b3, W4): cluster_config.yaml run_finemap threads 1->2 (long queue n>=2 enforcement)",
+    "b3395d9 — ops(ta-sh2b3, W4): V4 dispatch HEALTHY — Option E 50/50 PEND on long, 0 rejections"
+  ],
+
+  "checker_iter1_nit3_nit4_status": {
+    "nit3_long_queue": "OPERATIONALLY VERIFIED — 96 run_finemap jobs landed on long queue with -W=14400 enforcement; 0 bsub rejections",
+    "nit4_manual_escalation": "PARTIAL — verify_ta_sh2b3_phase.sh --wave 4 ran but C9 check has integer-comparison bug (line 162/168/170: `[: 0\\n0: integer expression expected`); script reported C9=WARN due to bug not actual numerics. Manual computation: too_few_snps=0 (because no JSONs), gate vacuously satisfied; .fit.rds mtimes 96/96 > V4 ts; classified PARTIAL_PASSED on INTENT not literal text. Recommend filing a bug-fix patch to verify_ta_sh2b3_phase.sh check_C9 (use $(...| tr -d '\\n') or wc -l alone for $n)."
+  },
+
+  "osf_deviation_entry_8_for_w7_closeout": {
+    "entry_8": "V4 dispatch delivered SuSiE-RSS layer rebuild at honest niter=1000 (96 .fit.rds, 3 SH2B3 anchors confirmed-changed) but did NOT deliver qtl_coloc layer rebuild due to snakemake aggregate_qtl_coloc dynamic-glob DAG-planning-time enumeration limit. Wave 4 closure thus has TWO sub-states: (a) SuSiE-RSS canonical rebuild = COMPLETE; (b) QTL-coloc canonical rebuild = PENDING (Wave 4.5 follow-up). OSF preregistration footnote needed at W7 to disclose: 'D-TA-04-OVERRIDE-V2 = CONSERVATIVE_BOTH executed in two phases; SuSiE-RSS rebuild confirmed by 3 SH2B3 anchor md5 changes (462ada6a / 8255c1ac / a041eecc) and 96/96 .fit.rds mtime > V4 dispatch ts; QTL-coloc rebuild deferred to Wave 4.5 per W4 PLAN halt + Carter escalation; rationale = snakemake DAG enumeration limitation (aggregate_qtl_coloc rule's input glob over results/qtl_coloc/*.json returns 0 matches when live dir is mv'd pre-dispatch).'"
+  }
+}
