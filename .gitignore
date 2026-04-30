@@ -87,6 +87,10 @@ data/catalogs/*
 # --- Results / logs: regeneratable, except legacy symlinks ---
 results/*
 results_identity_ld/
+# ta-sh2b3 W0: per-L parallel namespaces for Wave 1 L-sweep (D-TA-02)
+results_lsweep_L15/
+results_lsweep_L20/
+results_lsweep_L30/
 logs/
 *.log
 !results/README.md

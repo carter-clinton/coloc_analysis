@@ -299,4 +299,39 @@ properties:
         - ukbppp_pqtl
         - onek1k_sceqtl
 
+  # M3 ld_panel: per-ancestry LD-source resolver chain (RESEARCH Q7; D-M3-05).
+  # Consumed by src/python/ld_panel.py::resolve_ld_path() and wired into
+  # src/snakemake/rules/finemap.smk during M3 Wave 3.
+  #
+  # Wave 0 ta-sh2b3 plan-execute (2026-04-30) added this schema entry to
+  # close pre-existing schema-vs-config drift: pipeline.yaml has carried
+  # the `ld_panel` block since M3 (commit predates ta-sh2b3-W0), but the
+  # schema's top-level `additionalProperties: false` was rejecting it,
+  # blocking every Snakemake invocation. Added under Rule 3 (blocking
+  # issue) deviation: cannot verify Pitfall 2 (config-merge propagation)
+  # without a working Snakemake parse.
+  ld_panel:
+    type: object
+    description: "Per-ancestry LD-source resolver chain"
+    patternProperties:
+      "^(EUR|AFR|EAS|HIS|SAS|AMR|TRANS)$":
+        type: array
+        items:
+          type: object
+          properties:
+            source:
+              type: string
+            path:
+              type: string
+    properties:
+      strict_aou_only:
+        type: boolean
+        description: "If true, missing AoU-source entries raise rather than walk fallback chain"
+      pin:
+        type: object
+        description: "Optional pin override per ancestry (force resolver to one entry)"
+        patternProperties:
+          "^(EUR|AFR|EAS|HIS|SAS|AMR|TRANS)$":
+            type: ["string", "null"]
+
 additionalProperties: false
