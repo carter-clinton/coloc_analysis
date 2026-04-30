@@ -165,7 +165,11 @@ tools/ldsc/
 tests/toy_3locus/m2_smoke_out/
 
 # M3 AoU LD panel build (per AOU-LD-PIPELINE.md §10.2)
-data/interim/aou_ld_exports/
+# Bulk .npz content is gitignored; the per-ancestry landing dirs themselves are
+# tracked via .touch_dev10 / .gitkeep sentinels so Wave 3 ingest rules can
+# resolve dir-existence (per m3-W2-T1 acceptance criteria).
+data/interim/aou_ld_exports/**/*.npz
+data/interim/aou_ld_exports/**/bm/
 data/processed/ld_reference/AFR_aou/
 data/processed/ld_reference/EUR_aou/
 tests/m3/fixtures/synthetic_mt/
