@@ -37,7 +37,15 @@ suppressPackageStartupMessages({
   library(susieR)
   library(jsonlite)
   library(data.table)
-  library(R.utils)
+  # R.utils is declared in envs/r_coloc.yml but unused in this script body.
+  # Make optional so direct invocation under la_multitrait_r (Wave 2 W2 R2 fire,
+  # bypassing Snakemake --use-conda per pipeline_canonical_r2_overlay.yaml NOTE
+  # option a) does not fail when R.utils is absent. Rule 1 auto-fix
+  # (ta-sh2b3 W2 dispatch); revert by reinstating `library(R.utils)` if a
+  # downstream code path adds genuine R.utils calls.
+  if (requireNamespace("R.utils", quietly = TRUE)) {
+    library(R.utils)
+  }
 })
 
 `%||%` <- function(x, y) if (!is.null(x)) x else y
