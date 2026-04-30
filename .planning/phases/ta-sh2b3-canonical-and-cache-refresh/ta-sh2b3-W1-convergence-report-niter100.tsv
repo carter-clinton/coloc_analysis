@@ -1,0 +1,10 @@
+trait	L_swept	L_used	n_CS	L_saturated	convergence_status	n_CS_LT_L	converged_ok
+bmi	15	15	13	FALSE	non_converged	TRUE	FALSE
+hypertension	15	15	5	FALSE	non_converged	TRUE	FALSE
+stroke	15	15	3	FALSE	non_converged	TRUE	FALSE
+bmi	20	20	14	FALSE	non_converged	TRUE	FALSE
+hypertension	20	20	4	FALSE	non_converged	TRUE	FALSE
+stroke	20	20	4	FALSE	non_converged	TRUE	FALSE
+bmi	30	30	14	FALSE	non_converged	TRUE	FALSE
+hypertension	30	30	4	FALSE	non_converged	TRUE	FALSE
+stroke	30	30	4	FALSE	non_converged	TRUE	FALSE

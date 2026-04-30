@@ -444,6 +444,64 @@ All 9 fits report `convergence_status="non_converged"` with `niter=100` (the SuS
 
 **HEADLINE_VALUE:** UNCHANGED (Wave 1 does not modify the 51/96 headline; Wave 6 does, conditional on this outcome.)
 
+### D-TA-Wave1-PRIMARY-L-V2: Re-fire outcome at niter=500/1000 (Carter option-a)
+
+**Recorded:** 2026-04-29
+
+**Re-fire rationale:** v1 outcome `PRIMARY_L=NONE_CONVERGED` was attributed to SuSiE-RSS hitting `max_iter_primary=100 + max_iter_retry=200` cap on all 9 fits without satisfying the Δ-ELBO convergence criterion. Carter selected option (a) from the W1 GO/NO-GO checkpoint (per `D-TA-Wave1-PRIMARY-L` Wave 2 directive) and authorized `max_iter_primary=500 + max_iter_retry=1000` per `feedback_rigor_over_speed.md` (rigor over speed; preserves strict `^converged_` gate from Zou 2022 §Discussion).
+
+**Pre-existing-bug discovery (Rule 1 auto-fix during re-fire):** During the first niter=500 re-fire attempt (supervisor PID 2631034, dispatch TS=20260429_213824), the patched policy YAMLs failed to lift the cap — all 9 re-fired fits returned `niter=100` and `n_CS` values byte-identical to v1 (13/5/3/14/4/4/14/4/4). Root cause: the retry-ladder helper `run_susie_with_ladder()` in `src/legacy/region_analysis/scripts/run_susie_rss.R:38` was passing `max_iterations = max_it` to `susieR::susie_rss()`, but `susie_rss` has no `max_iterations` formal — it forwards `...` to `susie_suff_stat()` whose iteration cap is named `max_iter` (default 100). The mis-named argument was silently swallowed; every fit since the helper was written has run with `susie_suff_stat`'s default `max_iter=100` regardless of policy.max_iter_primary or policy.max_iter_retry. Fixed in commit `02c4404` (`max_iterations` → `max_iter`); verified against susieR 0.14.2 formals. **The buggy niter=100-attempted-as-500 re-fire outputs were preserved at `results_lsweep_L{15,20,30}.preFix.bak.20260429_215312/`** for audit traceability. The bug-fix commit + 2nd re-fire (supervisor PID 2747125, dispatch TS=20260429_215321 → wall complete 23:01:39) produced the V2 numerics below.
+
+**Re-fire wall:** ~35 min wall (2nd re-fire 22:26:04 → 23:01:39, 9 fits sequential L-loop with 3 parallel traits per L). Compared to v1 ~8 min wall at the false niter=100 cap, the niter=1000 retry-ladder exhaustion took ~4× longer — consistent with iterations actually being run.
+
+**Per-trait per-L convergence at niter=500/1000 (n_CS < L_used AND L_saturated=FALSE AND convergence_status matches `^converged_`):**
+
+| trait | L=15 | L=20 | L=30 |
+|-------|------|------|------|
+| bmi | FAIL | FAIL | FAIL |
+| hypertension | FAIL | FAIL | FAIL |
+| stroke | FAIL | FAIL | FAIL |
+
+Detailed numerics: see `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-convergence-report.tsv` (V2; niter=500/1000 ladder); v1 niter=100 preserved at `ta-sh2b3-W1-convergence-report-niter100.tsv`.
+
+**Per-fit niter (V2):** all 9 fits report `niter=1000` — the retry ladder exhausted (max_iter_primary=500 → max_iter_retry=1000 → regularized retry at 1000); `convergence_status="non_converged"` is genuine ELBO-instability, not the false niter=100 cap from v1.
+
+**Per-fit n_CS (V2 vs v1):**
+- bmi: L=15 13 (v1: 13, unchanged), L=20 **15** (v1: 14, +1 CS at higher iter), L=30 **15** (v1: 14, +1 CS)
+- hypertension: 5/4/4 (v1: 5/4/4, byte-identical)
+- stroke: 3/4/4 (v1: 3/4/4, byte-identical)
+- L_saturated=FALSE for all 9 (v1: also FALSE)
+
+**PRIMARY_L (V2):** **NONE_CONVERGED**
+
+**Substantive interpretation (V2 supersedes v1):** v1 hypothesized "niter-not-reached at 100, raise niter to remedy" per Zou 2022 §Discussion. V2 falsifies that hypothesis: even at niter=1000 with regularized LD (the full retry-ladder exhausted), SuSiE-RSS does not converge for any of the 9 fits. n_CS/L_saturated/convergence_status are stable across the niter sweep, ruling out niter-not-reached as the dominant cause. The most likely remaining explanation is **LD-mismatch instability** at SH2B3_12q24 — the susieR diagnostic message `IBSS algorithm did not converge in N iterations! Please check consistency between summary statistics and LD matrix` (cited in worker stderr) and `WARNING: The matrix R is not positive semidefinite. Negative eigenvalues are set to zero` together suggest the 1000G EUR LD reference does not match the harmonized sumstats LD structure cleanly enough for ELBO stability. SH2B3_12q24 is in a Stage 2 admissible (non-fallback) region but the per-fit `ld_overlap_fraction` numerics (cited at TRACK-A-FROZEN-NUMBERS.md L46) show the panel-side overlap is variable.
+
+**Wave 2 directive (V2):** **STILL NO-GO**. The strict `^converged_` gate path remains closed; Carter's option (a) is now exhausted (the rigorous rigor-over-speed remedy did not flip the outcome). Two options remain:
+- (b) Relax convergence_status criterion (accept `L_saturated=FALSE AND n_CS < L_used` as a convergence proxy; explicit OSF-deviation disclosure required).
+- (c) Proceed with lowest-L fits + DISCLOSE downstream (DISCLOSE-AS-COLUMN propagated upstream into Wave 2 dispatch).
+
+A new option (d) emerges from the V2 substantive interpretation: **(d) Investigate LD-mismatch as the substantive cause** — re-load the 1000G EUR LD via the full per-region pipeline (verify panel build + harmonization), or test SH2B3_12q24 with an alternative LD reference (UKBB-LD tiled if available). This is the most rigorous reading per `feedback_rigor_over_speed.md` but requires Wave 0-level infrastructure work (out of W1 scope; would be a NEW wave).
+
+**OSF deviation:** Recorded for Wave 7 closeout (`osf_deviations.md`). Two deviations chained:
+1. niter raise 100/200 → 500/1000 (tuning-parameter change; pre-registered "SuSiE-RSS" wording preserves the algorithm).
+2. Pre-existing `max_iterations`/`max_iter` argument-naming bug in `run_susie_rss.R:38` — code-level fix that revealed v1 niter=100 was effectively the *bug-default*, not an honest niter=100 outcome. This affects how Methods §Fine-Mapping describes the iteration policy (formerly "niter=100 default" was a false claim because the bug capped at susie_suff_stat's default regardless of policy YAML).
+
+### D-TA-Wave1-headline-V2: Headline-numerator decision (DEFERRED to Wave 6 per CONTEXT.md invariant 2; V2 outcome)
+
+**Per-trait convergence outcome at PRIMARY_L=V2:** PRIMARY_L (V2) is `NONE_CONVERGED`. Restated against the original L=10 baseline:
+
+- bmi: non-converged (was non-converged at L=10/niter=100; remains non-converged at L=15/20/30 with niter=1000; n_CS=13/15/15)
+- hypertension: non-converged (was non-converged at L=10/niter=100; remains non-converged at L=15/20/30 with niter=1000; n_CS=5/4/4)
+- stroke: non-converged (was non-converged at L=10/niter=100; remains non-converged at L=15/20/30 with niter=1000; n_CS=3/4/4)
+
+**Newly converged count (was non-converged at L=10/niter=100, now converged at PRIMARY_L=V2/niter=1000):** **0** (zero of three traits flipped under the strict `^converged_` gate at any swept L; same 0/3 count as v1 but with stronger evidence — the niter ladder is now fully exhausted).
+
+**Wave 6 narrative branch (V2):** **DISCLOSE-AS-COLUMN** (locked, not provisional). v1's DISCLOSE-AS-COLUMN selection was provisional pending Carter's option-(a) re-fire result; the V2 outcome resolves the provisional → locked. Wave 6 keeps 51/96 as the headline + adds non-convergence disclosure column to Fig 3; Methods §Fine-Mapping Configuration documents the niter=500/1000 retry-ladder exhaustion + the LD-mismatch interpretation; Limitations gains a bullet flagging SuSiE-RSS ELBO-instability at SH2B3_12q24 EUR under the 1000G EUR LD reference.
+
+**Bug-fix substrate update for Methods § Fine-Mapping Configuration:** the V2 outcome supersedes v1's "niter=100 default; raise to 500 to test convergence" framing. Methods now reads: "the retry-ladder helper carried a pre-existing argument-naming bug that silently capped iterations at susie_suff_stat's default of 100 regardless of policy YAML; this was discovered and fixed during the W1 V2 re-fire (commit 02c4404). At the post-fix retry-ladder budget (max_iter_primary=500 + max_iter_retry=1000 + regularized retry at 1000), all 9 fits remained non-converged with n_CS and L_saturated stable across the niter sweep, indicating the cause is not niter-not-reached but ELBO-instability — most likely LD-mismatch between the 1000G EUR panel and the harmonized sumstats."
+
+**HEADLINE_VALUE:** UNCHANGED (Wave 1 V2 still does not modify the 51/96 headline; Wave 6 acts on this V2 outcome.) TRACK-A-FROZEN-NUMBERS.md md5 = `9d0405a4db95655b1be7401883d22165` baseline preserved invariant (verified pre/post the V2 re-fire).
+
 </decisions>
 
 <canonical_refs>
