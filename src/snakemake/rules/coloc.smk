@@ -16,7 +16,11 @@ import sys
 import pandas as pd
 
 PYTHON_BIN = sys.executable
-COLOC_SUSIE_DIR = os.path.join(MULTITRAIT_DIR, "coloc_susie")
+# Honor multitrait.coloc_susie_subdir overlay (config/pipeline_canonical_r2_overlay.yaml)
+# so Wave 2 R2 fire writes to coloc_susie_R2/ — Pitfall 3 mitigation, output namespace
+# decoupled from canonical coloc_susie/. Default preserves Stage 2 behavior.
+COLOC_SUSIE_SUBDIR = config.get("multitrait", {}).get("coloc_susie_subdir", "coloc_susie")
+COLOC_SUSIE_DIR = os.path.join(MULTITRAIT_DIR, COLOC_SUSIE_SUBDIR)
 
 
 # Region-safe pair_id constraint: alphanumeric + underscore + dot + hyphen.
@@ -33,17 +37,30 @@ def _coloc_manifest_row(pair_id):
     Row schema includes: pair_id, trait_a, trait_b, ancestry, region.
     Returns a dict, or None if the manifest does not exist or the pair_id
     is not found (Snakemake will retry once the manifest exists).
+
+    When multitrait.manifest_r2 is configured (Wave 2 R2 fire), the R2
+    manifest is consulted FIRST so the 9 R2-only pair_ids resolve without
+    requiring any modification to the canonical coloc_manifest.tsv. The
+    canonical manifest is unchanged (Pitfall 3 mitigation: coloc_summary.tsv
+    md5 invariant remains preserved through Wave 2 fire).
     """
-    manifest_path = os.path.join(MULTITRAIT_DIR, "coloc_manifest.tsv")
-    if not os.path.exists(manifest_path):
-        return None
-    df = pd.read_csv(manifest_path, sep="\t", dtype=str)
-    if "pair_id" not in df.columns:
-        return None
-    row = df[df["pair_id"] == pair_id]
-    if len(row) != 1:
-        return None
-    return row.iloc[0].to_dict()
+    candidate_paths = []
+    r2_manifest_rel = config.get("multitrait", {}).get("manifest_r2")
+    if r2_manifest_rel:
+        # manifest_r2 in overlay is repo-relative
+        candidate_paths.append(r2_manifest_rel)
+    candidate_paths.append(os.path.join(MULTITRAIT_DIR, "coloc_manifest.tsv"))
+
+    for manifest_path in candidate_paths:
+        if not os.path.exists(manifest_path):
+            continue
+        df = pd.read_csv(manifest_path, sep="\t", dtype=str)
+        if "pair_id" not in df.columns:
+            continue
+        row = df[df["pair_id"] == pair_id]
+        if len(row) == 1:
+            return row.iloc[0].to_dict()
+    return None
 
 
 def _fit_rds_for(trait, ancestry, region_safe):
