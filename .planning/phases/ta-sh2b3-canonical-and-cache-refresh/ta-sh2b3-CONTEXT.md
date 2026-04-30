@@ -290,6 +290,38 @@ Plus all intra-doc references in: R figure-builder scripts (`source()` / `fs::pa
 - Wave 6 PLAN.md structure: ordered task list with rename + reference-fix-up tasks first (mechanical, zero-narrative), then narrative atomic-update tasks (per-file commit). Each task has its own atomic commit.
 - Per-task commit-message convention: `docs(ta-sh2b3, W6-rename): git mv docs/manuscript/track_a_pivot.md → docs/manuscript/id-vs-ref-LD.md + 14 reference fix-ups` (rename tasks); `docs(ta-sh2b3, W6-narrative): update Methods §Harmonization-Pipeline Diagnostics for post-Wave-5 numbers` (narrative tasks).
 
+### D-TA-Wave-0-foundations: Path + ancestry + rule-name verification (Wave 0 outcome)
+
+**Recorded:** 2026-04-30T00:15:30Z (Wave 0 Task 1)
+
+**D-TA-01 path:** **INVESTIGATE** — `/rs1/researchers/c/ckclinto/coloc_analysis/` exists on this GPFS node but is **NOT a git repo** (no `.git` subdirectory). The directory contains historical artifacts:
+  - `coloc_analysis_reproducibility_pkg.zip` (252 KB; Feb 2026)
+  - `coloc-attempt1-backup.tar.gz` (77 GB; Feb 2026 historical backup)
+  - `create_reproducibility_package.sh` (Feb 2026)
+  - Subdirectories: `data/`, `genome_wide/`, `ml/`, `region_analysis/` (the pre-pivot region_analysis tree, Feb 2026)
+
+  This is the Pitfall 1 finding pre-flagged in RESEARCH.md L349 ("VERIFIED finding 2026-04-29: /rs1/researchers/c/ckclinto/coloc_analysis/.git was not found on the current GPFS node"). The path is a NAMESPACE COLLISION with historical pre-pivot artifacts; cloning the GPFS git repo to that path would either (a) overwrite the 77 GB backup tar.gz, or (b) require a sub-path like `/rs1/researchers/c/ckclinto/coloc_analysis_git/`. **Carter-mediated escalation required** before Wave 1/2/4 LSF dispatches that depend on D-TA-01 canonical `/rs1/...` cwd. Mitigation paths (in priority order):
+  1. **Redirect Wave 1/2/4 LSF jobs to GPFS path** (`/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis`) — same physical filesystem per D-TA-01 §"Why" L121; only the dispatch convention changes. RECOMMENDED for this phase to unblock Wave 1.
+  2. **Clone the repo to a sibling path** like `/rs1/researchers/c/ckclinto/coloc_analysis_git/` — preserves D-TA-01 LSF dispatch path semantics but creates a new convention for downstream phases.
+  3. **Carter manually relocates the historical artifacts** off `/rs1/.../coloc_analysis/` (e.g., to `/rs1/.../coloc_analysis_legacy/`) and clones the current GPFS repo to the freed path — most rigorous but requires manual file ops on a 77 GB tar.gz.
+
+  **Wave 1 driver (`bin/fire_susie_lsweep.sh`) defaults to `cd /rs1/researchers/c/ckclinto/coloc_analysis` per the plan task spec.** If at Wave 1 fire time the path is still not a git repo, the driver will exit on `set -euo pipefail` at the `cd` (path exists, but Snakemake will fail). Carter MUST resolve this before Wave 1 (post-OSF gate) — the driver scripts can be patched to point at GPFS path 1.0× line of code.
+
+  GPFS HEAD = `3adde9ecefbcddc60ef7d164f8d8841b253d08c2` (current HEAD, captured at Wave 0 Task 1 time).
+
+**Code-fix ancestry (C2):** `069b34f` = ancestor (PASS); `7d54183` = ancestor (PASS). Both code fixes (run_qtl_coloc.R chr:pos tolerance + run_susie_rss.R LD-rsid override) are reachable from HEAD on the current branch — no cherry-pick required.
+
+**Snakefile rule-name surface** (drives Wave 4 dispatch + Wave 1/2 target convention):
+- **Top-level (`Snakefile`):** `rule all` (L196), `rule all_qtl_coloc` (L209) — Wave 4 dispatch target
+- **`src/snakemake/rules/finemap.smk`:** `rule build_finemap_manifest` (L21), `rule run_finemap` (L45 — SuSiE-RSS rule; `policy="config/susie_policy.yaml"` hardcoded at L62), `rule summarize_finemap_results` (L105), `rule filter_finemap_summary` (L119)
+- **`src/snakemake/rules/qtl_coloc.smk`:** `rule build_qtl_coloc_manifest` (L241), `rule run_qtl_coloc` (L282), `rule aggregate_qtl_coloc` (L329), `rule assign_tiers` (L380), `rule build_gene_tissue_matrix` (L465)
+- **`src/snakemake/rules/coloc.smk`:** `rule run_coloc_susie` (L88) — Wave 2 canonical-pair fire rule
+- **`src/snakemake/rules/multitrait.smk`:** `rule build_multitrait_manifest` (L56), `rule build_coloc_manifest` (L76), `rule run_multitrait_placeholder` (L98), `rule stroke_afr_coloc_sweep` (L135), `rule summarize_coloc_results` (L151 — Pitfall 3 mitigation target; rebuilds `coloc_summary.tsv` from per-pair JSONs), `rule build_hyprcoloc_manifest` (L170), `rule run_hyprcoloc_group` (L192), `rule summarize_hyprcoloc` (L211), `rule augment_coloc_summary` (L234), `rule build_coloc_clean_sets` (L256), `rule build_coloc_top_hits_table` (L300)
+
+**Wave 4 dispatch target:** `all_qtl_coloc` (top-level Snakefile L209). Confirmed.
+**Wave 1 SuSiE rule:** `run_finemap` (finemap.smk L45). Wave 1 dispatch targets the per-trait JSON outputs of this rule under the per-L overlay's `finemap.output_dir`.
+**Wave 2 coloc.susie rule:** `run_coloc_susie` (coloc.smk L88). Wave 2 dispatch targets `{MULTITRAIT_DIR}/coloc_susie/{pair_id}.json` per the multitrait.smk convention; Pitfall 3 mitigation requires writing to a parallel `coloc_susie_R2/` namespace via overlay.
+
 </decisions>
 
 <canonical_refs>
