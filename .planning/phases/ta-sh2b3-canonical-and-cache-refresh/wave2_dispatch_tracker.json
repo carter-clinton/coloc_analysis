@@ -1,0 +1,77 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "wave": 2,
+  "plan": "ta-sh2b3-W2-canonical-pair-coloc-susie",
+  "decision_chain": [
+    "D-TA-Wave1-Resolution-V2 (Carter option d', recorded 2026-04-29)"
+  ],
+  "primary_l": 15,
+  "narrative_branch": "DISCLOSE-AS-COLUMN (locked)",
+  "dispatch": {
+    "ts": "20260429_233637",
+    "host": "login02.hpc.ncsu.edu",
+    "queue": "serial",
+    "wall_max_minutes": 5760,
+    "mem_per_job_gb": 8,
+    "supervisor_pid": 2981646,
+    "supervisor_log": "logs/wave2_canonical_susie_20260429_233637.log",
+    "dispatch_strategy": "Strategy 3 (per-pair direct Rscript bsub; bypasses Snakemake DAG)",
+    "dispatch_strategy_rationale": "config/pipeline_canonical_r2_overlay.yaml NOTE block (option a) anticipated this. Snakemake DAG re-evaluation triggered 93 unrelated run_finemap re-fires due to L=15-fit mtimes; direct bsub of run_coloc_susie.R per pair preserves Pitfall 3 invariant + scopes work to exactly 9 targets.",
+    "input_path_strategy": "Strategy 1 + Strategy 2 hybrid",
+    "input_path_strategy_detail": {
+      "strategy_1_inputs": {
+        "description": "Stage 2 namespace BMI/HTN/stroke .fit.rds + .json swapped in-place with byte-identical copies of L=15 fits; pre-swap backups at *.preL15.bak.20260429_232709",
+        "swapped_traits": ["bmi", "hypertension", "stroke"],
+        "L15_source": "results_lsweep_L15/fine_mapping/susie/{trait}.EUR.SH2B3_12q24.fit.rds",
+        "stage2_target": "results/fine_mapping/susie/{trait}.EUR.SH2B3_12q24.fit.rds",
+        "post_swap_md5": {
+          "bmi.fit.rds": "903782e2b066fd310b432c846c31c1b8",
+          "hypertension.fit.rds": "3dc6fe83f76125774feb13379c7ce482",
+          "stroke.fit.rds": "4c539b5ac4af86fd55e44840d71f47b3"
+        },
+        "preL15_backup_md5": {
+          "bmi.fit.rds": "053444fe1560b3c27c80ab4e10ca8fb8",
+          "hypertension.fit.rds": "3d4b62cfe076f1b7b3a743e99d933701",
+          "stroke.fit.rds": "494ea177bbad4c6e452dfb97b94fadd8"
+        },
+        "asthma_t2d_unchanged": {
+          "asthma.fit.rds": "64094b63403812828d6219b3574d2df1",
+          "t2d.fit.rds": "147f8ea441ed4e488dc749b8336f67a4"
+        },
+        "rationale": "BMI/HTN/stroke W1 V2 L=15 fits used; asthma + T2D out-of-W1-V2-scope so canonical Stage 2 fits (under which 51/96 was computed) are used → 3+2 split documented in CONTEXT.md D-TA-Wave1-Resolution-V2"
+      },
+      "strategy_2_outputs": {
+        "description": "Patched src/snakemake/rules/coloc.smk:19 to honor multitrait.coloc_susie_subdir overlay key (defaults to coloc_susie/; R2 overlay sets coloc_susie_R2/) AND _coloc_manifest_row() to consult multitrait.manifest_r2 first when configured",
+        "patch_commit": "TBD (committed with this tracker)",
+        "default_preserves_canonical": true
+      }
+    }
+  },
+  "lsf_jobs": [
+    {"job_id": 69655, "pair_id": "SH2B3_12q24__EUR__asthma_vs_bmi"},
+    {"job_id": 69656, "pair_id": "SH2B3_12q24__EUR__asthma_vs_hypertension"},
+    {"job_id": 69657, "pair_id": "SH2B3_12q24__EUR__asthma_vs_stroke"},
+    {"job_id": 69658, "pair_id": "SH2B3_12q24__EUR__bmi_vs_hypertension"},
+    {"job_id": 69659, "pair_id": "SH2B3_12q24__EUR__bmi_vs_stroke"},
+    {"job_id": 69660, "pair_id": "SH2B3_12q24__EUR__bmi_vs_t2d"},
+    {"job_id": 69661, "pair_id": "SH2B3_12q24__EUR__hypertension_vs_stroke"},
+    {"job_id": 69662, "pair_id": "SH2B3_12q24__EUR__hypertension_vs_t2d"},
+    {"job_id": 69663, "pair_id": "SH2B3_12q24__EUR__stroke_vs_t2d"}
+  ],
+  "expected_outputs": [
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__asthma_vs_bmi.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__asthma_vs_hypertension.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__asthma_vs_stroke.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__bmi_vs_hypertension.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__bmi_vs_stroke.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__bmi_vs_t2d.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__hypertension_vs_stroke.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__hypertension_vs_t2d.json",
+    "results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__stroke_vs_t2d.json"
+  ],
+  "invariants_baseline": {
+    "TRACK_A_FROZEN_NUMBERS_md5_pre_w2": "9d0405a4db95655b1be7401883d22165",
+    "coloc_summary_tsv_md5_pre_w2": "5fa3c4004970c5da711d05947cb1f7d2"
+  },
+  "post_dispatch_action_required": "After all 9 jobs exit, restore Stage 2 namespace BMI/HTN/stroke .fit.rds + .json from *.preL15.bak.20260429_232709 backups (recorded in this tracker). Verify md5 byte-identity vs pre-swap baselines."
+}
