@@ -141,13 +141,45 @@ def build_inputs(
 
     # Materialize each trait's COJO file (cached: skip if already present + non-empty)
     cojo_paths: dict[str, Path] = {}
+    cojo_rows: dict[str, int] = {}
     for trait in trait_order:
         cojo_path = out_dir / f"{trait}.cojo"
         if not cojo_path.exists() or cojo_path.stat().st_size == 0:
             harm = _harmonized_path(harmonized_dir, trait)
             n = materialize_cojo(harm, cojo_path, hm3_snps=hm3_snps)
             print(f"  cojo: {trait} → {n} SNPs")
+            cojo_rows[trait] = n
+        else:
+            # Cached file — count rows minus header
+            with open(cojo_path) as fh:
+                cojo_rows[trait] = max(0, sum(1 for _ in fh) - 1)
         cojo_paths[trait] = cojo_path
+
+    # When HM3 intersection is active, auto-prune covariates whose HM3-restricted
+    # cojo file is empty. Such covariates cannot participate in GCTA mtCOJO's
+    # internal LDSC bivariate-intercept step (the target ∩ covariate ∩ ld-score
+    # SNP intersection is empty for that pair, triggering "no SNP in common
+    # between the summary data and the LD score files"). Witnessed during
+    # M2-POST-M3-08 smoke (sbp.EUR / stroke.EUR harmonize to chr:pos and
+    # chr:pos:A1:A2 IDs respectively, neither of which intersects the rsID-keyed
+    # HM3 namespace). The target itself MUST remain — if it is empty, raise.
+    if hm3_snps is not None:
+        if cojo_rows.get(target, 0) == 0:
+            raise ValueError(
+                f"target {target} has 0 HM3-intersected SNPs; cannot run mtCOJO. "
+                f"Likely cause: harmonized sumstats for {target} use non-rsID "
+                f"namespace (e.g., chr:pos identifiers). Re-harmonize with rsIDs."
+            )
+        empty_covars = [
+            t for t in trait_order
+            if t != target and cojo_rows.get(t, 0) == 0
+        ]
+        if empty_covars:
+            print(
+                f"  hm3: pruning {len(empty_covars)} empty covariate(s) from "
+                f"mtcojo list (HM3 intersection yielded 0 SNPs): {empty_covars}"
+            )
+            trait_order = [t for t in trait_order if t not in empty_covars]
 
     # Write mtcojo list: target FIRST, then covariates in trait_order
     others = [t for t in trait_order if t != target]

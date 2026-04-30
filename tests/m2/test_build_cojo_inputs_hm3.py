@@ -262,3 +262,90 @@ def test_cli_accepts_hm3_snplist_flag(tmp_path: Path):
     assert list_path.exists()
     lines = list_path.read_text().strip().split("\n")
     assert lines[0].split("\t")[0] == "target_trait"
+
+
+def test_build_inputs_with_hm3_prunes_empty_covariates(tmp_path: Path):
+    """Test 6 — when HM3 intersection yields an empty covariate cojo, that
+    covariate is auto-pruned from the mtcojo list. Required for correctness:
+    GCTA mtCOJO's LDSC step fails per-pair if a covariate has 0 ld-score-overlapping
+    SNPs (witness: sbp.EUR + stroke.EUR harmonize to chr:pos identifiers, not
+    rsIDs, so HM3 ∩ sbp = ∅ and HM3 ∩ stroke = ∅; including these covariates
+    triggers GCTA error 'no SNP in common between the summary data and the LD
+    score files').
+    """
+    sidecar = tmp_path / "residcov.trait_order.json"
+    sidecar.write_text(
+        json.dumps({"trait_order": ["target_trait", "chrpos_trait", "rsid_trait"]})
+    )
+
+    harm_dir = tmp_path / "harmonized"
+    target_snps = [f"rs{1000 + i}" for i in range(20)]
+    rsid_cov_snps = [f"rs{1000 + i}" for i in range(15, 25)]
+    chrpos_cov_snps = [f"1:{752000 + i}" for i in range(20)]  # not rsIDs
+    _write_harmonized_tsvbgz(harm_dir / "target_trait.GRCh37.tsv.bgz", target_snps)
+    _write_harmonized_tsvbgz(harm_dir / "rsid_trait.GRCh37.tsv.bgz", rsid_cov_snps)
+    _write_harmonized_tsvbgz(harm_dir / "chrpos_trait.GRCh37.tsv.bgz", chrpos_cov_snps)
+
+    # HM3 set covers some target SNPs + the rsid covariate, but NONE of chrpos
+    hm3_path = tmp_path / "hm3_mini.snplist"
+    hm3_set = [f"rs{1000 + i}" for i in range(15, 25)]
+    _write_hm3_snplist(hm3_path, hm3_set)
+
+    out_dir = tmp_path / "out"
+
+    list_path = build_cojo_inputs.build_inputs(
+        target="target_trait",
+        stratum="EUR",
+        sidecar=sidecar,
+        harmonized_dir=harm_dir,
+        out_dir=out_dir,
+        hm3_snplist=hm3_path,
+    )
+
+    # chrpos_trait.cojo MUST exist on disk (materializer always writes), but
+    # MUST be empty (header only) and MUST NOT appear in the mtcojo list.
+    chrpos_cojo = out_dir / "chrpos_trait.cojo"
+    assert chrpos_cojo.exists()
+    chrpos_df = pd.read_csv(chrpos_cojo, sep="\t")
+    assert len(chrpos_df) == 0, "chrpos covariate must materialize empty after HM3 intersection"
+
+    # mtcojo list must contain target + rsid_trait, but NOT chrpos_trait
+    list_lines = list_path.read_text().strip().split("\n")
+    list_traits = [line.split("\t")[0] for line in list_lines]
+    assert list_traits[0] == "target_trait", "target must be FIRST"
+    assert "rsid_trait" in list_traits
+    assert "chrpos_trait" not in list_traits, (
+        f"empty covariate must be pruned, got list: {list_traits}"
+    )
+
+
+def test_build_inputs_with_hm3_raises_when_target_empty(tmp_path: Path):
+    """Test 7 — if HM3 intersection leaves the target with 0 SNPs, raise
+    (cannot proceed). This guards against silent no-ops on mis-harmonized
+    target traits."""
+    sidecar = tmp_path / "residcov.trait_order.json"
+    sidecar.write_text(
+        json.dumps({"trait_order": ["target_trait", "covariate_trait"]})
+    )
+
+    harm_dir = tmp_path / "harmonized"
+    # Target has chr:pos IDs — not in HM3
+    target_snps = [f"1:{752000 + i}" for i in range(20)]
+    cov_snps = [f"rs{1000 + i}" for i in range(20)]
+    _write_harmonized_tsvbgz(harm_dir / "target_trait.GRCh37.tsv.bgz", target_snps)
+    _write_harmonized_tsvbgz(harm_dir / "covariate_trait.GRCh37.tsv.bgz", cov_snps)
+
+    hm3_path = tmp_path / "hm3_mini.snplist"
+    _write_hm3_snplist(hm3_path, [f"rs{1000 + i}" for i in range(20)])
+
+    out_dir = tmp_path / "out"
+
+    with pytest.raises(ValueError, match="0 HM3-intersected SNPs"):
+        build_cojo_inputs.build_inputs(
+            target="target_trait",
+            stratum="EUR",
+            sidecar=sidecar,
+            harmonized_dir=harm_dir,
+            out_dir=out_dir,
+            hm3_snplist=hm3_path,
+        )
