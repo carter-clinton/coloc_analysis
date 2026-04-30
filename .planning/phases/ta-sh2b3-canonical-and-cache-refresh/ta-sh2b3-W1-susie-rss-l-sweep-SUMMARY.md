@@ -11,13 +11,15 @@ requires:
     plan: 0
     provides: "Per-L SuSiE policy YAMLs + per-L pipeline overlays + bin/fire_susie_lsweep.sh dispatch driver + Pitfall 2 mitigation in finemap.smk + bin/verify_ta_sh2b3_phase.sh C5 check + D-TA-OSF-COVERAGE=COVERED gate cleared"
 provides:
-  - "9 SuSiE-RSS fits (3 traits × L ∈ {15,20,30}) at results_lsweep_L{15,20,30}/fine_mapping/susie/{bmi,hypertension,stroke}.EUR.SH2B3_12q24.{json,fit.rds}"
-  - "Per-fit convergence report TSV (ta-sh2b3-W1-convergence-report.tsv; header + 9 data rows)"
-  - "D-TA-Wave1-PRIMARY-L = NONE_CONVERGED recorded in CONTEXT.md addendum"
-  - "D-TA-Wave1-headline DEFERRED to Wave 6 with HEADLINE_VALUE=UNCHANGED (invariant 2 preserved)"
-  - "Pitfall 2 live verification 9/9 (L_used == L_swept across all fits; config-merge propagation confirmed in production)"
-  - "Wave 6 narrative branch provisionally selected: DISCLOSE-AS-COLUMN"
-  - "Wave 2 GO/NO-GO outcome: NO-GO pending Carter decision on D-TA-Wave1-PRIMARY-L Wave 2 directive (3 options)"
+  - "9 SuSiE-RSS fits (3 traits × L ∈ {15,20,30}) at results_lsweep_L{15,20,30}/fine_mapping/susie/{bmi,hypertension,stroke}.EUR.SH2B3_12q24.{json,fit.rds} (V2 niter=1000; v1 niter=100 preserved at .preNiter500.bak.20260429_213644 + buggy-attempt-v2-pre-fix preserved at .preFix.bak.20260429_215312)"
+  - "Per-fit convergence report TSV V2 (ta-sh2b3-W1-convergence-report.tsv; header + 9 data rows; niter=1000 column added); v1 preserved at ta-sh2b3-W1-convergence-report-niter100.tsv"
+  - "D-TA-Wave1-PRIMARY-L = NONE_CONVERGED recorded in CONTEXT.md addendum (v1); D-TA-Wave1-PRIMARY-L-V2 also = NONE_CONVERGED recorded after option-a re-fire"
+  - "D-TA-Wave1-headline DEFERRED to Wave 6 with HEADLINE_VALUE=UNCHANGED (invariant 2 preserved across BOTH fires)"
+  - "D-TA-Wave1-headline-V2 records V2 outcome locking DISCLOSE-AS-COLUMN narrative branch (was provisional in v1)"
+  - "Pre-existing run_susie_rss.R argument-naming bug discovered + fixed mid-task (commit 02c4404); affects all SuSiE-RSS fits in the project's history (silent niter=100 cap regardless of policy YAML)"
+  - "Pitfall 2 live verification 9/9 (L_used == L_swept across all fits; config-merge propagation confirmed in production for both v1 and V2)"
+  - "Wave 6 narrative branch LOCKED: DISCLOSE-AS-COLUMN (V2 outcome resolves v1 provisional)"
+  - "Wave 2 GO/NO-GO outcome: STILL NO-GO after V2; Carter option-a exhausted; pending escalation to option (b)/(c)/(d)"
 affects: [ta-sh2b3-W2, ta-sh2b3-W6]
 
 # Tech tracking
@@ -40,11 +42,15 @@ key-files:
     - ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md (D-TA-Wave1-PRIMARY-L + D-TA-Wave1-headline sub-sections appended)"
 
 key-decisions:
-  - "PRIMARY_L = NONE_CONVERGED — no L value in {15,20,30} satisfies the strict converged_ok gate across all 3 traits; all 9 fits report convergence_status=non_converged at niter=100"
-  - "Substantive interpretation: niter-not-reached (not L-saturation) — L_saturated=FALSE and n_CS<L_used for every fit; per Zou 2022 the remedy is raising niter, not raising L"
-  - "Wave 6 narrative branch: DISCLOSE-AS-COLUMN (provisional) — keeps 51/96 headline + adds non-convergence disclosure column to Fig 3"
-  - "D-TA-Wave1-headline HEADLINE_VALUE=UNCHANGED (invariant 2 preserved; TRACK-A-FROZEN-NUMBERS.md md5 = 9d0405a4db95655b1be7401883d22165 unchanged pre/post)"
-  - "Wave 2 BLOCKED — Carter must resolve D-TA-Wave1-PRIMARY-L Wave 2 directive before Wave 2 dispatches; recommended option (a) re-fire with raised niter per rigor-over-speed memory"
+  - "v1 (niter=100): PRIMARY_L = NONE_CONVERGED — no L value satisfies the strict converged_ok gate; v1 attributed this to niter-not-reached at niter=100 cap"
+  - "v1 (niter=100) substantive interpretation: niter-not-reached (not L-saturation) — L_saturated=FALSE and n_CS<L_used for every fit; per Zou 2022 the remedy is raising niter, not raising L"
+  - "v1 Wave 6 narrative branch: DISCLOSE-AS-COLUMN (provisional, pending Carter option-a outcome)"
+  - "V2 (niter=500/1000, post-bug-fix): PRIMARY_L = NONE_CONVERGED unchanged — but 9/9 fits at niter=1000 still non-converged, falsifying v1 niter-not-reached hypothesis"
+  - "V2 substantive interpretation: LD-mismatch instability (NOT niter-not-reached) — full retry-ladder exhausted at niter=1000 with regularized LD; n_CS stable across niter sweep; susieR diagnostic warns 'check consistency between summary statistics and LD matrix'"
+  - "V2 pre-existing bug discovered + fixed: run_susie_rss.R:38 was passing max_iterations to susie_rss (which has no such formal); susie_suff_stat default max_iter=100 was silently used regardless of policy YAML; commit 02c4404 corrects to max_iter=max_it"
+  - "V2 Wave 6 narrative branch: DISCLOSE-AS-COLUMN LOCKED (was provisional in v1; V2 falsification of niter remedy locks the disclosure path)"
+  - "V2 Wave 2 BLOCKED — Carter option-a exhausted; remaining options (b) relax criterion, (c) DISCLOSE-AS-COLUMN at lowest-L, or new (d) investigate LD-mismatch"
+  - "D-TA-Wave1-headline HEADLINE_VALUE=UNCHANGED (invariant 2 preserved across BOTH fires; TRACK-A-FROZEN-NUMBERS.md md5 = 9d0405a4db95655b1be7401883d22165 unchanged)"
 
 patterns-established:
   - "Convergence verification pipeline: jsonlite::fromJSON of 9 per-fit JSONs → TSV report → R-side strict-gate evaluation → CONTEXT.md decision sub-section"
@@ -54,12 +60,12 @@ patterns-established:
 requirements-completed: []  # Phase-level requirements (REQ-OSF-PREREG, REQ-PATH-PARAMETERIZATION, REQ-SNAKEMAKE-CI, REQ-SUSIE-RSS-POLICY) finalize at phase verification, not at plan close
 
 # Metrics
-duration: ~8min observed wall (LSF supervisor dispatch 2026-04-30T00:51:54Z → exit 2026-04-30T00:59:44Z); +Task 2 verification authoring ~10 min
+duration: ~8min observed wall v1 (LSF supervisor dispatch 2026-04-30T00:51:54Z → exit 2026-04-30T00:59:44Z); +Task 2 verification authoring ~10 min; +V2 re-fire ~35min wall (2026-04-30T02:26:04Z dispatch → 2026-04-30T03:01:39Z exit) + bug-discovery + bug-fix + V2 verification authoring ~30 min
 started: 2026-04-30T00:51:54Z
-completed: 2026-04-30T01:11:13Z
-updated: 2026-04-30
-status: COMPLETE-WITH-WAVE-2-NO-GO
-status-detail: "Wave 1 outcomes recorded as planned (Tasks 1+2 closed); Wave 2 BLOCKED on Carter resolution of D-TA-Wave1-PRIMARY-L Wave 2 directive (3 options, recommend (a) re-fire raised niter). Plan tasks complete; downstream gate is intentionally pending."
+completed: 2026-04-30T01:11:13Z (v1); 2026-04-30T03:01:39Z (V2 re-fire complete)
+updated: 2026-04-29
+status: COMPLETE-WITH-WAVE-2-NO-GO-V2
+status-detail: "v1 outcomes recorded as planned (Tasks 1+2 closed; commits c542d72+214e04f). V2 re-fire (Carter option-a) executed 2026-04-29: max_iter raised 100/200->500/1000 (commit 9c87157); pre-existing run_susie_rss.R argument-naming bug surfaced + auto-fixed (commit 02c4404); 9/9 fits re-fired at niter=1000 (full retry ladder exhausted) STILL non-converged, falsifying v1 niter-not-reached hypothesis. PRIMARY_L (V2)=NONE_CONVERGED. Wave 6 narrative branch DISCLOSE-AS-COLUMN now LOCKED (was provisional). Wave 2 BLOCKED on Carter escalation to option (b)/(c) or new option (d) LD-mismatch investigation. TRACK-A-FROZEN-NUMBERS.md md5=9d0405a4db95655b1be7401883d22165 invariant preserved across both fires."
 ---
 
 # Phase ta-sh2b3 Plan W1: SH2B3 EUR SuSiE-RSS L-Sweep Re-Fits Summary
@@ -199,3 +205,102 @@ None encountered. All compute is on local LSF + GPFS; no API keys or external se
 - [x] `c542d72` (CONTEXT.md + TSV atomic commit) — FOUND in `git log --oneline -5`
 
 ## Self-Check: PASSED
+
+---
+
+## Re-fire (niter=500/1000) outcome — Carter option-a — V2
+
+**Re-fire fired:** 2026-04-29 by `bin/fire_susie_lsweep.sh` after Carter selected option (a) from the W1 GO/NO-GO checkpoint per `feedback_rigor_over_speed.md`. Re-fire is in-place on the original Wave 1 plan (Plan counter unchanged at 1/8); represents a tuning-parameter + bug-fix iteration on the same plan, not a new plan.
+
+**Wall sequence (V2):**
+- 21:37:24 — config/susie_policy_L{15,20,30}.yaml patched (max_iter_primary 100→500, max_iter_retry 200→1000); commit `9c87157`
+- 21:38:24 → 21:45:21 — first re-fire attempt (supervisor PID 2631034, dispatch TS=20260429_213824, ~7 min wall) PRODUCED BUGGY OUTPUT (all niter=100 with n_CS values byte-identical to v1)
+- 21:48:00 — argument-naming bug isolated; root-cause analysis identified `max_iterations` mis-named (susieR::susie_rss has no `max_iterations` formal — forwards `...` to susie_suff_stat whose iteration cap is `max_iter` default 100)
+- 21:51:00 — Rule 1 auto-fix applied to `src/legacy/region_analysis/scripts/run_susie_rss.R:38`; commit `02c4404`
+- 21:53:12 — buggy V2 attempt outputs preserved at `results_lsweep_L*.preFix.bak.20260429_215312/`
+- 21:53:21 → 21:58 — second re-fire attempt (supervisor PID 2678661, dispatch TS=20260429_215321) — supervisor hung at 3/4 of L=15 wave because LSF transient infrastructure failure (job 67759 EXIT: "Cannot open your job file: /home/ckclinto/.lsbatch/1777514043.67759 — Exited.") + snakemake stalled waiting on a job LSF had killed (Rule 3 auto-fix scope: hung supervisor blocks task)
+- 22:24:34 — hung supervisor + snakemake child SIGKILL'd; .snakemake/locks/ unlocked via `snakemake --unlock`
+- 22:26:04 → 23:01:39 — third re-fire attempt (supervisor PID 2747125, dispatch TS=20260429_215321 — re-using the same dispatch TS), idempotent rerun via Snakemake's `--rerun-incomplete` covered remaining 7 fits (1 L=15 stroke + 3 L=20 + 3 L=30); ~35 min wall
+- 23:04 — V2 convergence verification authored; CONTEXT.md V2 sub-sections appended; commit `c428d2c`
+
+**Pre-fire Pitfall 2 dry-run (V2):** PASS — Snakemake dry-run confirmed `config/susie_policy_L15.yaml` (the patched niter=500/1000 file) is named as the policy input for `run_finemap`. Config-merge propagation works at production scale.
+
+**Per-fit niter=500/1000 outcomes (V2 TSV, niter=1000 across all 9 fits — full retry-ladder exhausted):**
+
+| trait | L=15 n_CS | L=20 n_CS | L=30 n_CS | converged_ok | L_saturated |
+|-------|-----------|-----------|-----------|--------------|-------------|
+| bmi | 13 (=v1) | **15** (v1: 14, +1 CS) | **15** (v1: 14, +1 CS) | FALSE 9/9 | FALSE 9/9 |
+| hypertension | 5 (=v1) | 4 (=v1) | 4 (=v1) | FALSE 9/9 | FALSE 9/9 |
+| stroke | 3 (=v1) | 4 (=v1) | 4 (=v1) | FALSE 9/9 | FALSE 9/9 |
+
+**PRIMARY_L (V2):** **NONE_CONVERGED** — same outcome as v1 by name, but materially stronger in evidence (niter ladder genuinely exhausted, not falsely capped at 100).
+
+**D1–D7 dimensions (V2 — only D3, D5, D6 and ladder-budget descriptors flip; D1, D2, D4, D7 unchanged):**
+
+- **D1 LSF Dispatch Success (V2):** PASS — 9 LSF jobs dispatched + completed across 3 fire attempts (1 transient LSF infrastructure failure at L=15 stroke jobid 67759 recovered idempotently via `--rerun-incomplete`); 9 JSON outputs landed on disk
+- **D2 L_used Field Correctness (V2):** PASS 9/9 — Pitfall 2 propagation verified again at niter=1000 production scale
+- **D3 Convergence per Zou 2022 (V2):** FAIL 0/9 — but the V2 failure mode is materially different from v1: the IBSS algorithm now genuinely runs to niter=1000 with regularized LD before failing, rather than being capped at 100 by the silent argument-naming bug. The susieR runtime warnings explicitly cite "IBSS algorithm did not converge in 1000 iterations!" + "WARNING: matrix R is not positive semidefinite" — diagnostic of LD-mismatch, NOT niter-not-reached
+- **D4 L-Saturation Absence (V2):** PASS 9/9 — `L_saturated=FALSE` and `n_CS < L_used` for every fit (BMI's 13/15/15 still well below 15/20/30 ceilings; hypertension 5/4/4 stable; stroke 3/4/4 stable)
+- **D5 PRIMARY_L Identification (V2):** PRIMARY_L=NONE_CONVERGED — recorded in CONTEXT.md as `D-TA-Wave1-PRIMARY-L-V2`
+- **D6 D-TA-Wave1-headline DEFERRED Status (V2):** PASS — `D-TA-Wave1-headline-V2` recorded with HEADLINE_VALUE=UNCHANGED (invariant 2 preserved); Wave 6 narrative branch DISCLOSE-AS-COLUMN now LOCKED (was provisional in v1)
+- **D7 TRACK-A-FROZEN-NUMBERS.md md5 Preservation (V2):** PASS — pre-V2-re-fire md5 `9d0405a4db95655b1be7401883d22165` byte-identical post-V2-final-commit (verified via `diff /tmp/track_a_frozen_md5_pre_v2.txt /tmp/track_a_frozen_md5_post_v2.txt` empty)
+
+**Substantive interpretation (V2 supersedes v1):** v1 hypothesized SuSiE-RSS was hitting the niter=100 cap and the remedy was raising niter; V2 falsifies this. Even at niter=1000 with the regularized-LD retry, ELBO does not stabilize. n_CS and L_saturated stay nearly invariant across the niter sweep (BMI L=20/30 picks up +1 CS at L=20 and L=30 respectively; the rest are byte-identical). The most likely remaining explanation is **LD-mismatch instability** between the 1000G EUR LD reference and the harmonized sumstats at SH2B3_12q24, surfaced both in the susieR diagnostic message and in the per-fit `WARNING: matrix R is not positive semidefinite` runtime stderr. SH2B3_12q24 is in a Stage 2 admissible (non-fallback) region, but ELBO-instability is a known LD-reference-quality signature per Benner et al. 2017 AJHG 101:539–551 (the H3 dose-response figure block in `TRACK-A-FROZEN-NUMBERS.md` already records that 33/60 = 55% of EUR Stage 2 fits sit below the Benner `ld_overlap_fraction = 0.5` threshold).
+
+**Wave 6 narrative branch (V2):** **DISCLOSE-AS-COLUMN — LOCKED.**
+
+Wave 6 keeps 51/96 as the headline. Methods §Fine-Mapping Configuration gains a sub-section documenting the V2 retry-ladder exhaustion + the pre-existing argument-naming bug + the LD-mismatch interpretation. Limitations gains a bullet flagging SuSiE-RSS ELBO-instability at SH2B3_12q24 EUR under the 1000G EUR LD reference. Fig 3 disclosure column documents the per-trait non-convergence at the V2 niter=1000 budget. The (51 + 3 - X)/96 RECOMPUTE arithmetic is moot under V2 (X=0 newly converged → numerator unchanged at 51); the substantive change is disclosure-side, not numerator-side.
+
+**Wave 2 GO/NO-GO (V2):** **STILL NO-GO.**
+
+The strict `^converged_` gate path remains closed; Carter's option (a) is now exhausted (the rigorous rigor-over-speed remedy did not flip the outcome — it ruled out niter-not-reached as the cause). Three paths forward remain (recorded in `D-TA-Wave1-PRIMARY-L-V2`):
+- (b) Relax convergence_status criterion (accept `L_saturated=FALSE AND n_CS < L_used` as a convergence proxy; explicit OSF-deviation disclosure).
+- (c) Proceed with lowest-L fits + DISCLOSE downstream (DISCLOSE-AS-COLUMN propagated upstream into Wave 2 dispatch).
+- (d) NEW — Investigate LD-mismatch as the substantive cause; re-build / re-load 1000G EUR LD via the full per-region pipeline, OR test SH2B3_12q24 with an alternative LD reference. Most rigorous reading per `feedback_rigor_over_speed.md` but requires Wave 0-level infrastructure work (out of W1 scope; would be a NEW wave in a follow-up plan).
+
+## Deviations from Plan (V2 re-fire)
+
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] Pre-existing argument-naming bug in run_susie_rss.R retry-ladder helper**
+- **Found during:** V2 re-fire Step 7 (post-fire `niter` field inspection on the buggy first attempt revealed niter=100 in all 9 fits despite the patched policy YAMLs setting max_iter_primary=500/max_iter_retry=1000)
+- **Issue:** `run_susie_with_ladder()` at `src/legacy/region_analysis/scripts/run_susie_rss.R:38` was passing `max_iterations = max_it` to `susieR::susie_rss()`. susieR 0.14.2's `susie_rss` has no `max_iterations` formal — it forwards `...` to `susie_suff_stat()`, whose iteration cap is named `max_iter` (default 100). The mis-named argument was silently swallowed by `...` and ignored; every SuSiE-RSS fit in the project's history has been running with susie_suff_stat's default max_iter=100 regardless of any policy YAML setting. This pre-dates the ta-sh2b3 phase by an unknown amount.
+- **Fix:** Renamed the argument: `max_iterations = max_it` → `max_iter = max_it`. Added an in-line comment block explaining the formal-name mismatch + the discovery context. Verified against `susieR::susie_rss` and `susieR::susie_suff_stat` formals in la_multitrait_r conda env.
+- **Files modified:** `src/legacy/region_analysis/scripts/run_susie_rss.R` (1 line + 7-line explanatory comment block)
+- **Commit:** `02c4404` (fix(ta-sh2b3, W1): max_iterations -> max_iter in susie_rss call)
+- **Scope justification:** Directly blocks the current task — Carter's option-a re-fire was meaningless without the cap actually being lifted. The bug surfaced because we were the first task to depend on the cap value. Methods §Fine-Mapping Configuration prose must update for Wave 6 to reflect that "niter=100 default" was the *bug-default*, not an honest niter=100 outcome.
+
+**2. [Rule 3 - Blocking] Hung supervisor after transient LSF infrastructure failure**
+- **Found during:** V2 re-fire Step 6 (post-fix re-fire monitoring; supervisor PID 2678661 stalled at "3 of 4 steps (75%) done" indefinitely after L=15 stroke jobid 67759 hit `Cannot open your job file: /home/ckclinto/.lsbatch/1777514043.67759 — Exited.`)
+- **Issue:** LSF infrastructure-level transient failure on a single job; Snakemake's cluster_lsf profile polls for `*.jobfinished` / `*.jobfailed` flag files and did not reliably detect the LSF EXIT, leaving the supervisor stuck waiting indefinitely
+- **Fix:** SIGKILL'd the hung supervisor + snakemake child; `snakemake --unlock` cleared stale `.snakemake/locks/` files; re-fired via the same `bin/fire_susie_lsweep.sh` (Snakemake's `--rerun-incomplete` covered the remaining 7 fits idempotently; supervisor PID 2747125 ran to clean exit at 23:01:39)
+- **Files modified:** none (transient infra issue; runtime workaround)
+- **Commits:** none (no code change)
+- **Scope justification:** Directly blocks the current task; the LSF failure is a known transient (`/home/ckclinto/.lsbatch/` NFS hiccup, consistent with `system_codex_tmp_redirect.md` memory which already documents `/home/ckclinto` quota/access fragility on this cluster)
+
+### OSF deviations log entries (Wave 7 closeout consumes these)
+
+1. **niter raise 100/200 → 500/1000** (tuning-parameter change; pre-registered "SuSiE-RSS" wording preserves the algorithm; commit `9c87157`)
+2. **Pre-existing argument-naming bug fix in run_susie_rss.R** (code-level fix; reveals v1 niter=100 was bug-default not honest; affects how Methods §Fine-Mapping Configuration describes the iteration policy; commit `02c4404`)
+
+## V2 Self-Check
+
+- [x] Three per-L policy YAMLs patched: max_iter_primary 100→500, max_iter_retry 200→1000 — verified `grep -E "max_iter_primary|max_iter_retry" config/susie_policy_L{15,20,30}.yaml` shows 500/1000 across all 3
+- [x] Three .preNiter500.bak.20260429_213644.yaml backup files preserve niter=100 originals — verified `ls -la config/susie_policy_L*.preNiter500.bak.20260429_213644.yaml` shows 3 files
+- [x] Niter-100 fit outputs preserved at `results_lsweep_L*.preNiter500.bak.20260429_213644/` — verified `ls -d results_lsweep_L*.preNiter500.bak.20260429_213644/` shows 3 dirs
+- [x] Bug-revealing buggy-V2-pre-fix outputs preserved at `results_lsweep_L*.preFix.bak.20260429_215312/` (audit traceability) — verified `ls -d results_lsweep_L*.preFix.bak.20260429_215312/` shows 3 dirs
+- [x] YAML patch atomic commit landed — `9c87157` (verified via `git log --oneline | head`)
+- [x] Bug-fix atomic commit landed — `02c4404`
+- [x] Pitfall 2 dry-run confirmed config-merge propagation at production scale (V2)
+- [x] Re-fire fired via nohup; supervisor PID 2747125 exited cleanly at 23:01:39
+- [x] All 9 expected JSONs present on disk — verified `ls results_lsweep_L{15,20,30}/fine_mapping/susie/*.json | wc -l = 9`
+- [x] All 9 .fit.rds siblings present — verified `ls results_lsweep_L{15,20,30}/fine_mapping/susie/*.fit.rds | wc -l = 9`
+- [x] All 9 fits report `niter=1000` (full retry-ladder exhausted; not the v1 false niter=100)
+- [x] V1 TSV preserved at `ta-sh2b3-W1-convergence-report-niter100.tsv`; new V2 TSV at canonical name `ta-sh2b3-W1-convergence-report.tsv`
+- [x] D-TA-Wave1-PRIMARY-L-V2 + D-TA-Wave1-headline-V2 sub-sections appended to CONTEXT.md (NOT modifying v1 sub-sections; preserved historical record)
+- [x] CONTEXT + V2 TSV + preserved-v1 TSV atomic commit landed — `c428d2c`
+- [x] SUMMARY.md updated in-place with new "Re-fire (niter=500/1000) outcome" section (NOT modifying v1 sections)
+- [x] TRACK-A-FROZEN-NUMBERS.md md5 invariant preserved across V2 re-fire — `9d0405a4db95655b1be7401883d22165` byte-identical pre/post (will be re-verified in Step 13)
+- [x] C5 verification harness output captured: PRIMARY_L=NONE_CONVERGED → FAIL (documented escalation path); PRIMARY_L=15 → FAIL detail per-trait (`/tmp/wave1_verify_v2_*.json`)
+
+## V2 Self-Check: PASSED
