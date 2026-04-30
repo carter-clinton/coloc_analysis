@@ -1,0 +1,156 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W4.5-a-qtl-coloc-layer-rebuild",
+  "version": "v6_W4_5_A_SCOPE_CORRECTED_DISPATCHED",
+  "supersedes": "wave4_dispatch_tracker_v5.json (PARTIAL_PASSED V4 awaiting W4.5-a)",
+  "status": "DISPATCHED_W4_5_A_SCOPE_CORRECTED_50_OF_1274_RUN_QTL_COLOC_INFLIGHT_ON_SERIAL",
+  "outcome_at_tracker_write_time": "Re-fire dispatch HEALTHY — 50/50 submitted, 50 PEND/RUN on serial queue, 0 rejections, 0 errors. Scope filter (phase2_enabled_sources: [gtex_eqtl, gtex_sqtl]) confirmed active in DAG plan: 1275 total jobs (1274 run_qtl_coloc + 1 all_qtl_coloc). Eliminates the 1692-job scope-creep DAG seen in initial dispatch.",
+  "summary_one_liner": "W4.5-a launched 16:24:32 EDT (initial dispatch; 1692-job DAG scope creep; HALT at 16:35-ish; bkill 46 in-flight). Scope filter added to pipeline.yaml (commit 986af29) + recorded in CONTEXT.md (commit e40f058). Stale W4.5-a-only locks cleared (.snakemake/locks/0.{input,output}.lock; confirmed 0 results_identity_ld entries). Re-fire 16:53:15 EDT with phase2_enabled_sources=[gtex_eqtl, gtex_sqtl] active. DAG planned 1275 jobs (1274 run_qtl_coloc + 1 all_qtl_coloc) — matches T1 production scope per project_t1_production_status.md. 50 jobs submitted to serial queue at tracker write time (16:53-ish); all PEND/RUN, 0 errors, 0 'Too few tasks' rejections (run_qtl_coloc inherits __default__ serial 1-slot policy; no V3-style queue/threads conflict). PID 830751 (other-terminal results_identity_ld) preserved untouched throughout. KNOWN ANOMALY: aggregator rules (aggregate_qtl_coloc, summarize_coloc_results, assign_tiers, build_gene_tissue_matrix, build_qtl_coloc_manifest) are NOT in the W4.5-a re-fire DAG plan — snakemake's planner sees their existing outputs from V4 as up-to-date at startup. This means a 3rd-pass snakemake invocation (without --forcerun) will likely be needed AFTER run_qtl_coloc completes to refresh aggregators via natural mtime cascade. Tracker v7 will record the 3rd-pass outcome.",
+
+  "dispatch_chronology": {
+    "v4_dispatch_completed": {
+      "ts": "20260430_124551 EDT",
+      "outcome": "PARTIAL_PASSED — SuSiE-RSS rebuilt (96 .fit.rds at niter=1000); qtl_coloc layer NOT rebuilt (DAG enumerated 0 run_qtl_coloc; commit c8ee71a tracker v5)"
+    },
+    "w4_5_a_decision_recorded": {
+      "ts": "2026-04-30T~16:15 EDT",
+      "commit": "33f61be",
+      "decision": "D-TA-WAVE4-5-A-OUTCOME = Option W4.5-a (2nd snakemake invocation; qtl_coloc layer rebuild)"
+    },
+    "w4_5_a_launcher_committed": {
+      "ts": "2026-04-30T~16:23 EDT",
+      "commit": "b368e0e",
+      "launcher": "bin/fire_w4_5_qtl_coloc_only.sh — minimal (no mv) snakemake direct call with --forcerun run_qtl_coloc"
+    },
+    "w4_5_a_initial_dispatch_HALTED": {
+      "ts": "2026-04-30T16:24:32 EDT",
+      "log": "logs/wave4_5_qtl_coloc_only_20260430_162432.log",
+      "supervisor_pid_killed": 2640572,
+      "halt_reason": "DAG plan revealed scope creep — 1692 jobs (1469 run_qtl_coloc + 14 download_onek1k_cell_type + 13 download_ukbppp_protein + 182 harmonize_onek1k_region + 13 harmonize_pqtl_region + 1 all_qtl_coloc). pipeline.yaml missing phase2_enabled_sources scope filter; manifest expanded to all qtl_source values (T2-deferred pqtl + sc-eQTL chains would fail on auth/data prereqs).",
+      "submitted_before_halt": 104,
+      "in_flight_at_halt": 46,
+      "in_flight_bkilled": 46,
+      "bkill_command": "bkill 0 (kills all of ckclinto's LSF jobs; only W4.5-a was firing; PID 830751 has no LSF jobs of its own at this moment)"
+    },
+    "scope_filter_added": {
+      "ts": "2026-04-30T~16:48 EDT",
+      "commit": "986af29",
+      "edit": "config/pipeline.yaml — added top-level phase2_enabled_sources: [gtex_eqtl, gtex_sqtl] (12-line block with rationale comment)"
+    },
+    "scope_correction_decision_recorded": {
+      "ts": "2026-04-30T~16:50 EDT",
+      "commit": "e40f058",
+      "decision": "D-TA-WAVE4-5-A-SCOPE-CORRECTION (T1 production lock recovery)"
+    },
+    "stale_locks_cleared": {
+      "ts": "2026-04-30T~16:52 EDT",
+      "ops": "rm -f .snakemake/locks/0.input.lock .snakemake/locks/0.output.lock — confirmed 0 results_identity_ld entries (4610 qtl_coloc/finemap entries vs 0 identity_ld); safe to remove without affecting other-terminal PID 830751"
+    },
+    "w4_5_a_refire": {
+      "dispatch_ts": "20260430_165315",
+      "dispatch_iso": "2026-04-30T16:53:15-04:00",
+      "supervisor_pid": 2670648,
+      "log": "logs/wave4_5_qtl_coloc_only_20260430_165315.log",
+      "outcome_at_tracker_write_time": "DISPATCH_HEALTHY"
+    }
+  },
+
+  "scope_correction_diagnostic": {
+    "issue": "Initial W4.5-a DAG planned 1692 total jobs; expected ~1275 (T1 production scope per project_t1_production_status.md)",
+    "root_cause": "config/pipeline.yaml did not have a top-level phase2_enabled_sources key. _qtl_coloc_per_id_jsons() in src/snakemake/rules/qtl_coloc.smk lines 62-68 reads config.get('phase2_enabled_sources') as the qtl_source filter; absent → no filter → manifest's full 1469 rows expand to per-id targets including pQTL + sc-eQTL.",
+    "fix": "Add `phase2_enabled_sources: [gtex_eqtl, gtex_sqtl]` to pipeline.yaml top-level (commit 986af29). Confirmed effective: re-fire DAG plan = 1275 jobs (1274 run_qtl_coloc + 1 all_qtl_coloc); pQTL + sc-eQTL chain rules dropped.",
+    "scope_pinned": "[gtex_eqtl, gtex_sqtl] = T1 first-production scope locked 2026-04-20 (CP#1-final). pQTL (UKB-PPP; Synapse-auth prerequisite) and sc-eQTL (OneK1K; QTD-map prerequisite) remain T2-deferred."
+  },
+
+  "refire_state_at_tracker_write_time": {
+    "dag_plan": {
+      "total_jobs_planned": 1275,
+      "run_qtl_coloc": 1274,
+      "all_qtl_coloc": 1,
+      "aggregate_qtl_coloc": 0,
+      "summarize_coloc_results": 0,
+      "assign_tiers": 0,
+      "build_gene_tissue_matrix": 0,
+      "build_qtl_coloc_manifest": 0,
+      "interpretation": "Aggregator rules NOT in W4.5-a DAG plan because snakemake planner sees their V4-produced outputs (results/qtl_coloc/qtl_coloc_summary.tsv, tier_assignments.tsv, gene_tissue_matrix.tsv, gene_tissue_long.tsv, pph4_threshold_sweep.tsv) as up-to-date at startup. This may require a 3rd-pass snakemake invocation (without --forcerun) AFTER run_qtl_coloc completes to refresh aggregators via mtime cascade. Tracker v7 records 3rd-pass outcome."
+    },
+    "lsf_dispatch": {
+      "in_flight_bsubs_attempted": 50,
+      "successful_submissions": 50,
+      "rejected_submissions": 0,
+      "all_submitted_rules_were": "run_qtl_coloc (50 of 50)",
+      "lsf_jobs_in_queue_status": {
+        "PEND": 41,
+        "RUN": 9
+      },
+      "lsf_queue_distribution": "serial: 50",
+      "remaining_run_qtl_coloc_to_dispatch": 1224,
+      "expected_total_lsf_jobs": "1274 run_qtl_coloc (no LSF jobs for aggregators in this dispatch)"
+    },
+    "live_disk_state": {
+      "results_qtl_coloc_json_count_at_refire_start": 94,
+      "interpretation_qtl_coloc_94": "94 partial JSONs from initial-dispatch's gtex jobs that landed before the 16:35-ish bkill. With --forcerun in launcher, these will be overwritten by re-fire. After re-fire completes, count should be 1274 (matches DAG plan).",
+      "results_fine_mapping_susie_fit_rds_count": 96,
+      "live_susie_unchanged": "V4-rebuilt at niter=1000 (3 SH2B3 anchor md5s changed: 462ada6a / 8255c1ac / a041eecc); preserved by --forcerun run_qtl_coloc only (NOT --forcerun run_finemap)",
+      "snakemake_locks": "owned by PID 2670648 (W4.5-a re-fire active)",
+      "v4_aggregator_outputs_present": "results/qtl_coloc/qtl_coloc_manifest.tsv (1469 rows), qtl_coloc_summary.tsv, tier_assignments.tsv, gene_tissue_matrix.tsv, gene_tissue_long.tsv, pph4_threshold_sweep.tsv — all from V4 (mtime ~12:40-12:45 EDT); will be refreshed by 3rd-pass invocation after run_qtl_coloc completes",
+      "track_a_frozen_md5_unchanged": "9d0405a4db95655b1be7401883d22165",
+      "coloc_summary_tsv_md5_unchanged": "5fa3c4004970c5da711d05947cb1f7d2",
+      "v4_sh2b3_post_rebuild_md5s_intact": {
+        "bmi": "462ada6ab64fdf8571fb5ed7dd6c6ea2",
+        "hypertension": "8255c1acf50add5f68dfb551af977b53",
+        "stroke": "a041eecc27f3086190069783eeb45ffe"
+      }
+    },
+    "other_terminal_protection": {
+      "pid_830751_status": "Alive throughout V3 -> V4 -> W4.5-a-initial -> W4.5-a-refire transitions; no kill signals reached it",
+      "command": "results_identity_ld/multitrait/coloc_manifest.tsv target (different from W4.5-a's all_qtl_coloc target)"
+    }
+  },
+
+  "monitoring_directives": {
+    "wall_estimate_w4_5_a_refire": "1-2 hr (1274 run_qtl_coloc on serial queue at --jobs 50 = ~25 batches; per-job wall typically 1-3 min for run_qtl_coloc.R)",
+    "expected_completion_iso": "2026-04-30T18:00 EDT to 19:00 EDT (~1-2 hr from 16:53 dispatch)",
+    "post_completion_3rd_pass_needed": "YES — fire snakemake again (no --forcerun) so the natural mtime cascade triggers aggregator rebuild. Without 3rd pass, qtl_coloc/qtl_coloc_summary.tsv + tier_assignments.tsv + gene_tissue_matrix.tsv + gene_tissue_long.tsv + pph4_threshold_sweep.tsv remain stale at V4 timestamps despite 1274 fresh per-id JSONs.",
+    "pass_criteria_w4_5_a_specific": "results/qtl_coloc/*.json count >= 1274 (gtex-only after scope filter) AND too_few_snps count <= 200 AND aggregator outputs (after 3rd-pass) have mtimes > W4.5-a-refire dispatch ts (20260430_165315)",
+    "next_actions_when_run_qtl_coloc_completes": [
+      "Verify 1274 JSONs in live results/qtl_coloc/ with mtimes > 20260430_165315",
+      "Run 3rd-pass snakemake (no --forcerun) to refresh aggregators",
+      "Compute too_few_snps count from new JSONs (PASS gate)",
+      "Run bin/verify_ta_sh2b3_phase.sh --wave 4 (note: C9 has integer-comparison bug; manual computation needed)",
+      "Write tracker v7 with status=PASSED/FAILED/PARTIAL_PASSED based on outcome",
+      "Append final TSV row to .planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave4_v4_monitor.tsv (or new monitor TSV)"
+    ]
+  },
+
+  "preserved_backups_at_w4_5_a_refire_kickoff": {
+    "results/qtl_coloc.preFix.bak.20260430_003141": "1274 JSONs — V1 baseline (forensic record)",
+    "results/qtl_coloc.preFix.bak.20260430_081210": "1274 JSONs — V2 baseline (LOAD-BEARING for V3+V4 cp -R restores)",
+    "results/qtl_coloc.preFix.bak.20260430_085556": "1274 JSONs — V2 driver-made third backup",
+    "results/qtl_coloc.preFix.bak.20260430_095819": "1274 JSONs — V3 driver-made fourth backup",
+    "results/qtl_coloc.preFix.bak.20260430_102053": "1274 JSONs — V4 driver-made fifth backup",
+    "results/fine_mapping/susie.preFix.bak.20260430_081210": "87 fit.rds + 87 json — V2 SuSiE-RSS baseline (pre-V4-rebuild canonical)",
+    "results/fine_mapping/susie.preFix.bak.20260430_095819": "87 fit.rds + 87 json — V3 driver-made backup",
+    "results/fine_mapping/susie.preFix.bak.20260430_102053": "87 fit.rds + 87 json — V4 driver-made backup (pre-rebuild snapshot)",
+    "no_w4_5_a_backups": "W4.5-a launcher does NOT mv (driver bypass); existing backups remain forensic-only"
+  },
+
+  "commits_landed_w4_5_a_session": [
+    "33f61be — docs(ta-sh2b3, W4.5): D-TA-WAVE4-5-A-OUTCOME = Option W4.5-a (2-pass qtl_coloc rebuild)",
+    "b368e0e — feat(ta-sh2b3, W4.5): launcher for qtl_coloc layer rebuild (2-pass design pass 2)",
+    "986af29 — fix(ta-sh2b3, W4.5): pipeline.yaml phase2_enabled_sources scope filter (T1 production lock)",
+    "e40f058 — docs(ta-sh2b3, W4.5): D-TA-WAVE4-5-A-SCOPE-CORRECTION (T1 production lock recovery)"
+  ],
+
+  "checker_iter1_nit3_nit4_status": {
+    "nit3_long_queue": "N/A — W4.5-a uses serial queue (run_qtl_coloc inherits __default__); no long-queue policy interaction",
+    "nit4_manual_escalation": "STILL PENDING evaluation — tracker v7 will record final PASS/FAIL determination after W4.5-a + 3rd pass complete; bin/verify_ta_sh2b3_phase.sh has C9 integer-comparison bug requiring manual gate computation"
+  },
+
+  "osf_deviation_entries_w7_pipeline": {
+    "entry_8": "(from tracker v5) D-TA-04-OVERRIDE-V2 = CONSERVATIVE_BOTH executed in two phases; SuSiE-RSS rebuild confirmed by 3 SH2B3 anchor md5 changes; QTL-coloc rebuild deferred to Wave 4.5",
+    "entry_9": "(from D-TA-WAVE4-5-A-OUTCOME) W4.5-a executed via 2nd snakemake invocation per qtl_coloc.smk 2-pass design; bypasses driver",
+    "entry_10": "(from D-TA-WAVE4-5-A-SCOPE-CORRECTION) W4.5-a scope correction mid-flight; T1 production scope `[gtex_eqtl, gtex_sqtl]` re-locked via pipeline.yaml::phase2_enabled_sources",
+    "entry_11_pending": "W4.5-a re-fire outcome (PASSED/FAILED) + 3rd-pass aggregator refresh — tracker v7 will record"
+  }
+}
