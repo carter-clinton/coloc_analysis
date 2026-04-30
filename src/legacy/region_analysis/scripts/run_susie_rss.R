@@ -35,7 +35,14 @@ run_susie_with_ladder <- function(z, R, policy, n) {
   eps  <- policy$ld_regularization_eps
 
   susie_call <- function(R_use, max_it) {
-    args <- list(z = z, R = R_use, L = L_, coverage = cov_, max_iterations = max_it)
+    # NOTE 2026-04-29: susieR::susie_rss has no `max_iterations` formal — it forwards
+    # `...` to susie_suff_stat (sufficient-statistics path) whose iteration cap is
+    # `max_iter` (default 100). The previous `max_iterations = max_it` argument name
+    # was silently swallowed and ignored, causing every fit to run with the default
+    # max_iter=100 regardless of policy. Use `max_iter = max_it` so it propagates.
+    # Bug surfaced 2026-04-29 during niter=500 re-fire (W1 Carter option-a) when the
+    # patched policy YAMLs failed to lift the cap; verified against susieR 0.14.2.
+    args <- list(z = z, R = R_use, L = L_, coverage = cov_, max_iter = max_it)
     if (!is.null(n) && !is.na(n) && is.finite(n)) args$n <- n
     do.call(susieR::susie_rss, args)
   }
