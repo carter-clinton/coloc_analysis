@@ -1,7 +1,9 @@
 # M3 Wave 1 — AUX Path Verification Spec
 
-**Status:** PRE-STAGED 2026-04-28 (quick task 260428-vt2). Awaits Carter
-Workbench session to execute and capture run log.
+**Status:** VERIFIED 2026-04-30 (Carter Workbench session — Run 1 below).
+All three checklist boxes PASS; no path-fix-up commit needed (inferred
+filename `ancestry_preds.tsv` matches the on-bucket filename byte-for-byte).
+AUX gate cleared. Wave 1 unblocked.
 
 **Why this spec exists:** Of the 7 Wave 1 readiness items in
 [m3-00-W0-foundations-SUMMARY.md](./m3-00-W0-foundations-SUMMARY.md)
@@ -236,31 +238,117 @@ has landed, this AUX gate clears and Wave 1 is unblocked.
 Carter pastes the verbatim output of Steps 1 + 2 + 4 below, then
 commits this file with the verification result.
 
-### Run 1 — TEMPLATE (replace with actual run output)
+### Run 1 — Carter Workbench session 2026-04-30
 
-* **Date / time (Workbench session):** YYYY-MM-DD HH:MM (Workbench timezone)
-* **Workbench session:** notebook name / kernel / Workbench release
-* **Workspace:** workspace title from AoU portal
+* **Date / time (Workbench session):** 2026-04-30 (Workbench shell;
+  Jupyter container hostname `1ca6f2e2aaed`)
+* **Workbench session:** Carter's first AoU Researcher Workbench
+  Jupyter terminal session post-billing-profile activation (billing
+  linked ~2026-04-28 per `project_aou_billing_pending.md`; processed
+  by 2026-04-30)
+* **Workspace:** controlled-tier workspace under NCSU faculty AoU access
+  (workspace bucket UUID + namespace below)
 
 ```
-$ echo "$WORKSPACE_BUCKET" "$WORKSPACE_NAMESPACE" "$GOOGLE_PROJECT"
-<paste actual values here, redacting any sensitive workspace UUIDs only if needed>
+$ echo "$WORKSPACE_BUCKET"
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a
+
+$ echo "$WORKSPACE_NAMESPACE"
+aou-rw-476cdac2
+
+$ echo "$GOOGLE_PROJECT"
+terra-vpc-sc-fe7a5641
 
 $ gsutil ls gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/
-<paste actual listing here>
+BadRequestException: 400 Bucket is a requester pays bucket but no user project provided.
 
-$ gsutil stat gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv
-<paste actual stat output here>
+$ gsutil -u "$GOOGLE_PROJECT" ls gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/
+gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv
+gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/merged_sites_only_intersection.vcf.bgz
+gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/merged_sites_only_intersection.vcf.bgz.tbi
+gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/preds_oth.html
+gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/loadings.ht/
+
+$ gsutil -u "$GOOGLE_PROJECT" stat gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv
+gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv:
+    Creation time:          Thu, 06 Apr 2023 16:14:27 GMT
+    Update time:            Thu, 06 Apr 2023 16:14:27 GMT
+    Storage class:          STANDARD
+    Content-Length:         101406670
+    Content-Type:           text/tab-separated-values
+    Hash (crc32c):          qH1M/Q==
+    Hash (md5):             s3egJnawX2pGSgbrxw++7g==
+    ETag:                   CNyTrJ/Tlf4CEAE=
+    Generation:             1680797667625436
+    Metageneration:         1
+
+$ echo "AUX_BASE='$AUX_BASE'"; gsutil ls "$WORKSPACE_BUCKET/" 2>&1 | head -5
+AUX_BASE=''
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/
 ```
 
 * **Verification result:**
-  * Checklist (a): PASS / FAIL
-  * Checklist (b): PASS / FAIL — observed filename: `<filename>`
-  * Checklist (c): PASS / FAIL — `ANCESTRY_PREDS_PATH` value:
-    `<resolved path>` (matches observed filename: yes / no)
-* **Path-fix-up commit (if any):** `<commit hash>` token
-  `(m3-W1-aux-path-fix)`
-* **Closing notes:** any anomalies, unexpected files in listing, etc.
+  * Checklist (a): **PASS** — `aux/ancestry/` listing returns 5 entries
+    (1 file `ancestry_preds.tsv` + sites-only VCF pair + diagnostic HTML +
+    `loadings.ht/` Hail Table directory). No `AccessDeniedException`;
+    bucket reachable from controlled-tier workspace.
+  * Checklist (b): **PASS** — observed filename `ancestry_preds.tsv`
+    appears in the listing; size 101,406,670 bytes (~101 MB);
+    Content-MD5 `s3egJnawX2pGSgbrxw++7g==`; updated 2023-04-06
+    (CDR v7 release vintage).
+  * Checklist (c): **PASS** — `ANCESTRY_PREDS_PATH` in
+    `src/python/aou_ld_panel.py:61` resolves to
+    `gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv`
+    which matches the observed filename byte-for-byte. No
+    path-fix-up commit needed.
+* **Path-fix-up commit (if any):** N/A — inferred filename was
+  correct; no edit to `src/python/aou_ld_panel.py:61` required.
+  This commit (`docs(m3-W1-aux-path-verified)`) only updates the
+  Run Log + Status line + drops the `# INFERRED (Q9 / O3)` annotation
+  in `aou_ld_panel.py:61` to `# VERIFIED 2026-04-30 via AoU Workbench`
+  per spec Failure Mode (ii) step 3 wording (housekeeping; not a
+  semantic change).
+* **Closing notes:**
+  1. **Requester-pays operational note** — the AoU controlled-tier
+     AUX bucket (`gs://fc-aou-datasets-controlled/`) is configured
+     as **requester-pays**. Shell-level `gsutil` operations require
+     `-u "$GOOGLE_PROJECT"` (or `-u <billing-project>`); the first
+     unflagged `gsutil ls` returned `BadRequestException: 400 Bucket
+     is a requester pays bucket but no user project provided.` This
+     does NOT affect the Hail-side path consumption in
+     `aou_ld_panel.py:152` (`hl.import_table(anc_path, ...)`) because
+     Hail's GCS connector takes the billing project from the Spark
+     conf set in `init_hail()` / Dataproc cluster config. AoU's
+     standard Dataproc Hail setup has this wired automatically. Worth
+     flagging in Wave 1 AOU-1 notebook documentation so any
+     interactive `gsutil` commands Carter runs on the side
+     consistently use the `-u "$GOOGLE_PROJECT"` flag.
+  2. **`AUX_BASE` env var is empty (expected)** — Step 3's diagnostic
+     `echo "AUX_BASE='$AUX_BASE'"` returned `AUX_BASE=''`, confirming
+     this is NOT an AoU-set env var. The Step 2 literal-path command
+     was the load-bearing one (as the spec anticipated). The
+     Python-side `AUX_BASE` constant in `aou_ld_panel.py:58` is the
+     authoritative source of the path prefix; no Workbench env var
+     bridging is needed.
+  3. **Workspace bucket reachable** — `gsutil ls $WORKSPACE_BUCKET/`
+     returned `gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/`,
+     confirming the workspace egress staging bucket is provisioned
+     and writable. This is the bucket
+     `aou_ld_panel.py:217` will checkpoint MTs into during Wave 1
+     (`mt_afr_qc.mt`, `mt_afr_pca_selfid.mt`, `mt_eur_qc.mt`).
+  4. **Unexpected directory entries** — the listing also includes
+     `merged_sites_only_intersection.vcf.bgz` (+ `.tbi`),
+     `preds_oth.html` (the diagnostic page for the AoU "oth" /
+     undetermined-ancestry assignments), and `loadings.ht/` (Hail
+     Table with PCA loadings). These are NOT consumed by
+     `aou_ld_panel.py` (which reads only `ancestry_preds.tsv`) so
+     their presence is informational. If Wave 1 sensitivity analyses
+     ever need PCA loadings (RESEARCH O5 deferred), `loadings.ht/`
+     is the path.
+  5. **CDR-version pin still v7** — `CDR_VERSION = "v7"` in
+     `aou_ld_panel.py:57` matches the verified bucket layout. O2
+     re-pin trigger ("if v8 lands during Wave 1-3") not yet active;
+     re-verify at submission time per spec.
 
 ---
 

@@ -67,8 +67,11 @@ under standard egress review.
   (DOI 10.17605/OSF.IO/PVB5J); closeout amendment `osf.io/az52u`;
   `.planning/STATE.md` Wave 1 Readiness Checklist row;
   `.planning/phases/m3-aou-afr-ld-panel-build/m3-W1-AUX-PATH-VERIFICATION.md`
-  (the only remaining Wave 1 pre-condition: per-region-LD AUX path
-  verification, gated on Carter Workbench session).
+  (AUX path verification CLEARED 2026-04-30 via Carter Workbench
+  session — Run 1 in Run Log; `ancestry_preds.tsv` matches inferred
+  path byte-for-byte; no path-fix-up commit required; AoU billing
+  profile attached + processed by 2026-04-30 enabling controlled-tier
+  bucket access). All Wave 1 pre-conditions are now PASS.
 
 **Note:** All 44 M3 production egress bundles + any M1-supplementary
 AFR-SBP egress bundles inherit this PASS ruling under standard AoU

@@ -25,7 +25,14 @@ Verified env vars (RESEARCH Q9):
 Hardcoded auxiliary paths (NOT env vars; pin to CDR version):
     gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/
         relatedness/relatedness_flagged_samples.tsv
-        ancestry/ancestry_preds.tsv (INFERRED; Wave 1 first-fire verifies)
+        ancestry/ancestry_preds.tsv (VERIFIED 2026-04-30 via AoU
+            Workbench AUX path check; see m3-W1-AUX-PATH-VERIFICATION.md)
+
+Bucket access note:
+    The AoU controlled-tier AUX bucket is requester-pays. Hail's GCS
+    connector handles this transparently via Spark conf (Dataproc-set
+    on AoU). For interactive shell `gsutil` commands inside the
+    Workbench, use `gsutil -u "$GOOGLE_PROJECT" ...`.
 
 Per-region branching (RESEARCH Q5):
     region_class == 'small'   -> Path A.1: to_numpy + savez_compressed
@@ -58,7 +65,7 @@ CDR_VERSION = "v7"
 AUX_BASE = f"gs://fc-aou-datasets-controlled/{CDR_VERSION}/wgs/short_read/snpindel/aux"
 RELATED_SAMPLES_PATH = f"{AUX_BASE}/relatedness/relatedness_flagged_samples.tsv"
 RELATEDNESS_FULL_PATH = f"{AUX_BASE}/relatedness/relatedness.tsv"
-ANCESTRY_PREDS_PATH = f"{AUX_BASE}/ancestry/ancestry_preds.tsv"  # INFERRED (Q9 / O3)
+ANCESTRY_PREDS_PATH = f"{AUX_BASE}/ancestry/ancestry_preds.tsv"  # VERIFIED 2026-04-30 via AoU Workbench AUX path check
 
 # Sample QC thresholds (AOU-LD-PIPELINE.md §3.1)
 MIN_CALL_RATE_SAMPLE = 0.98
