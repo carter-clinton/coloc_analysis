@@ -12,12 +12,19 @@
 # Schema: identical to config/susie_policy.yaml; only susie.L differs.
 # At L=30 there is no l_saturation supplementary_rerun fallback above —
 # saturation here is the explicit upper-bound disclosure for Methods §Fine-Mapping.
+#
+# Re-fire (2026-04-29): max_iter raised from 100/200 -> 500/1000 after
+# Wave 1 v1 outcome PRIMARY_L=NONE_CONVERGED (all 9 fits hit the niter cap).
+# Carter selected option (a) from the W1 GO/NO-GO checkpoint per
+# feedback_rigor_over_speed.md. Original 100/200 values preserved in the
+# .preNiter500 backup at config/susie_policy_L30.preNiter500.bak.20260429_213644.yaml.
+# OSF deviation logged at Wave 7 closeout (osf_deviations.md entry).
 
 susie:
   L: 30
   coverage: 0.95
-  max_iter_primary: 100
-  max_iter_retry: 200
+  max_iter_primary: 500
+  max_iter_retry: 1000
   ld_regularization_eps: 1.0e-4
   min_abs_corr_default: 0.5
   min_abs_corr_sweep: [0.1, 0.5, 0.9]
