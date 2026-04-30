@@ -1,0 +1,25 @@
+# config/pipeline_lsweep_L20_overlay.yaml — Wave 1 L-sweep parallel-output overlay (D-TA-02)
+# Phase: ta-sh2b3-canonical-and-cache-refresh
+#
+# Loaded AFTER config/pipeline.yaml:
+#   snakemake --configfile config/pipeline.yaml \
+#             --configfile config/pipeline_lsweep_L20_overlay.yaml ...
+# Snakemake merges the second --configfile over the first, so every key
+# below replaces the parent value. All other pipeline.yaml fields (traits,
+# ancestries, onekg, resources, multitrait, ld_panel, etc.) stay as parent.
+#
+# L=20 is the primary candidate L per D-TA-02 (Wave 0 Task 4 dry-run target).
+# Output JSONs land under results_lsweep_L20/fine_mapping/susie/.
+#
+# References:
+# - Pattern: config/pipeline_identity_overlay.yaml (L18-34) — same overlay shape
+# - Pitfall 2 (RESEARCH.md L351): finemap.smk:62 hardcodes policy input;
+#   Wave 0 Task 4 dry-run verifies finemap.policy override propagates.
+
+paths:
+  results_root: "results_lsweep_L20"
+
+finemap:
+  output_dir: "results_lsweep_L20/fine_mapping"
+  policy: "config/susie_policy_L20.yaml"
+  ld_reference_dir: "data/processed/ld_reference"
