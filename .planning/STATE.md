@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Closed quick task 260428-ppz (AoU P&P registration paste-ready Markdown + RPS+P&P portal zip + DEC-2026-04-28-01 Sci Data venue commitment); zip deliverable at `.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip` (23 KB, 3 .md files, unzip -t clean). Terminal A advanced m3 to RESEARCH + VALIDATION (commits 4195ca0, 27b0267) during this task; m3 is now further along and ready for `/gsd-plan-phase m3-aou-afr-ld-panel-build`.
-last_updated: "2026-04-30T00:11:06.842Z"
+stopped_at: "ta-sh2b3-W0 Tasks 1-6 complete (7 atomic commits e4ac4a3 → 1c23441 → cb40dc4); Task 7 checkpoint:human-verify (D-TA-OSF-COVERAGE per D-TA-05) awaiting Carter web-UI on osf.io/pvb5j Methods + osf.io/az52u closeout PDF; Wave 1 HARD-GATED"
+last_updated: "2026-04-30T00:38:04.845Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 12
@@ -304,6 +304,7 @@ None yet.
 - **BUG-AUDIT-12 (active):** Manifest emits tissue/cell-type names where sQTL + sc-eQTL eQTL-Catalogue downloads expect QTD IDs. Requires lookup table. Scoped out of Stage B.5.
 - **BUG-AUDIT-11 (active):** sdy passing path for pQTL — `--sdy 1.0` hardcoded in coloc CLI may override per-variant estimate from harmonize_pqtl.py. Needs investigation post-smoke.
 - DEF-M1-03-02: 12 GLGC + Wuttke harmonized files still in-progress at m1-03 closeout (refire continues background; expand 12->24 matrix in next session)
+- ta-sh2b3-W0 PARTIAL: Task 7 D-TA-OSF-COVERAGE human-verify gate awaiting Carter web-UI; Wave 1 HARD-GATED until D-TA-OSF-COVERAGE = COVERED or AMENDMENT_POSTED recorded in CONTEXT.md addendum.
 
 ### Quick Tasks Completed
 
@@ -366,9 +367,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-28T03:05:00.000Z
-Stopped at: Closed quick task 260428-ppz (AoU P&P registration paste-ready Markdown + RPS+P&P portal zip + DEC-2026-04-28-01 Sci Data venue commitment); zip deliverable at `.planning/quick/260428-ppz-aou-pp-registration-and-rps-zip/aou-rps-and-pp-registration.zip` (23 KB, 3 .md files, unzip -t clean). Terminal A advanced m3 to RESEARCH + VALIDATION (commits 4195ca0, 27b0267) during this task; m3 is now further along and ready for `/gsd-plan-phase m3-aou-afr-ld-panel-build`.
-Resume file: .planning/phases/m3-aou-afr-ld-panel-build/m3-CONTEXT.md (with sibling RESEARCH + VALIDATION docs)
+Last session: 2026-04-30T00:38:04.834Z
+Stopped at: ta-sh2b3-W0 Tasks 1-6 complete (7 atomic commits e4ac4a3 → 1c23441 → cb40dc4); Task 7 checkpoint:human-verify (D-TA-OSF-COVERAGE per D-TA-05) awaiting Carter web-UI on osf.io/pvb5j Methods + osf.io/az52u closeout PDF; Wave 1 HARD-GATED
+Resume file: None
 
 ### Prior session (2026-04-28 evening — m3-W1 portal cleared + AUX spec staged, quick-260428-vt2)
 
