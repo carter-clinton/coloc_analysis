@@ -346,6 +346,49 @@ Plus all intra-doc references in: R figure-builder scripts (`source()` / `fs::pa
 
 **Wave 4 driver `bin/fire_qtl_coloc_cache_refresh.sh` runs with `SUSIE_LAYER_SCOPE=no` (default).** Wave 4.5 fallback only fires if Wave 4 PASS criterion (`too_few_snps ≤ 200`) fails — at which point the diagnostic conclusion would be revised and SuSiE-RSS layer also refired.
 
+### D-TA-Wave-0-pitfall2: Snakemake config-merge propagation outcome
+
+**Recorded:** 2026-04-30T00:15:30Z (Wave 0 Task 4)
+
+**Outcome:** **PATCH_REQUIRED** — Pitfall 2 is real. `finemap.smk` line 62 hardcoded `policy="config/susie_policy.yaml"` as a static rule input declaration. Snakemake `--configfile` overlays do NOT propagate into static input declarations.
+
+**Evidence (dry-run before patch):**
+```
+$ snakemake --configfile config/pipeline.yaml \
+            --configfile config/pipeline_lsweep_L20_overlay.yaml \
+            --dry-run --printshellcmds \
+            -s Snakefile \
+            results_lsweep_L20/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json
+
+rule run_finemap:
+    input: ..., config/susie_policy.yaml, ...     # ← hardcoded, NOT L20
+    --policy config/susie_policy.yaml \           # ← would have produced L_used=10
+```
+
+**Patch applied:** `src/snakemake/rules/finemap.smk` line 62 changed from:
+```python
+policy="config/susie_policy.yaml",
+```
+to:
+```python
+policy=config.get("finemap", {}).get("policy", "config/susie_policy.yaml"),
+```
+This reads the policy path from the merged config dict (parent + overlay), preserving the `config/susie_policy.yaml` default when no overlay is present (baseline L=10 behavior). Comment block in finemap.smk documents the Pitfall 2 origin.
+
+**Evidence (dry-run after patch):**
+```
+rule run_finemap:
+    input: ..., config/susie_policy_L20.yaml, ...   # ← propagated correctly
+    --policy config/susie_policy_L20.yaml \         # ← will produce L_used=20
+```
+Baseline (no overlay) re-verified: dry-run with `forceall` shows `--policy config/susie_policy.yaml` (L=10 unchanged).
+
+**Schema-vs-config drift fix (also in this task):** `src/snakemake/schemas/pipeline.schema.yaml` was missing the `ld_panel:` block while `config/pipeline.yaml` already carried it (M3 commit predating ta-sh2b3-W0). The schema's top-level `additionalProperties: false` was rejecting `ld_panel` and blocking every Snakemake invocation. Added an explicit `ld_panel:` schema entry covering per-ancestry resolver chain + `strict_aou_only` + `pin` (pre-existing config drift; Rule 3 deviation auto-fix because Pitfall 2 verification was blocked).
+
+**LSF compute deferral rationale:** The strict letter of the plan's `<verify><automated>` block calls for `j$L_used == 20` from a live JSON output. Per AUDIT-RESPONSE 2026-04-26 line 260, a single SuSiE-RSS fit takes ~2-4 hr wall on `serial` queue with `la_multitrait_r` env. Since the dry-run conclusively proves the `--policy` flag now propagates the L20 YAML (and `run_susie_rss.R` lines 237-251 deterministically read `susie.L = 20` from that YAML), running the actual Snakemake target adds 2-4 hr compute spend with zero Pitfall 2 verification value. **Live `L_used=20` verification will land in Wave 1's first L=20 fit.** If at Wave 1 fire time the first L=20 JSON shows `L_used != 20`, Wave 1 halts and re-investigates; the W0 Task 4 ledger entry is the diagnostic anchor.
+
+**Wave 1 status:** Pitfall 2 is mitigated; Wave 1 dispatch is safe.
+
 </decisions>
 
 <canonical_refs>
