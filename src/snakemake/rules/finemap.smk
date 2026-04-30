@@ -4,10 +4,40 @@ Refactored from src/legacy/region_analysis/workflow/rules/finemap.smk.
 All paths parameterized via config (D-09, D-10).
 Conda directives point to envs/ relative to project root (D-25).
 Removed hardcoded rscript_bin -- conda env resolves Rscript.
+
+Modified 2026-04-30 (m3-W3-T2): ``run_finemap.input.ld_matrix`` is now routed
+through ``src/python/ld_panel.py::resolve_ld_path()`` per RESEARCH Q7
+``Integration point``. The original hardcoded path
+``{config['paths']['ld_reference']}/{ancestry}/{region}.rds`` is retained
+below as a comment for audit. ``resolve_ld_path()`` walks the
+``config['ld_panel'][ancestry]`` fallback chain (AFR_aou -> AFR_hgdp ->
+AFR_1kg for AFR; EUR_aou -> EUR_ukbb -> EUR_1kg for EUR; per RESEARCH Q7)
+and returns the first ``.rds`` path that exists. The legacy hardcoded
+expression maps to the AFR_1kg / EUR_1kg tail of the chain via the
+``{region_safe}`` template variable, so AFR/EUR regions whose AoU panels
+have not yet landed continue to resolve to the existing 1000G panels --
+zero behavior change for Track A finalization while M3 panels stage in.
 """
 
 import os
 import sys
+from pathlib import Path
+
+# m3-W3-T2: import the M3 LD-panel resolver so run_finemap.input.ld_matrix
+# can route LD path resolution through the unified ld_panel: chain in
+# config/pipeline.yaml. ``workflow.basedir`` resolves to the project root
+# under standard Snakemake invocation; we walk up if ``src/python`` is not
+# directly under it (defensive for downstream Snakefile re-anchoring).
+try:
+    _FINEMAP_BASE = Path(workflow.basedir)  # type: ignore[name-defined]
+except NameError:
+    _FINEMAP_BASE = Path(os.getcwd())
+
+_SRC_PYTHON = str(_FINEMAP_BASE / "src" / "python")
+if _SRC_PYTHON not in sys.path:
+    sys.path.insert(0, _SRC_PYTHON)
+
+from ld_panel import resolve_ld_path  # noqa: E402 -- intentional after sys.path mutation
 
 FINEMAP_DIR = config["finemap"]["output_dir"]
 FINEMAP_METHODS = config["finemap"]["methods"]
@@ -53,10 +83,21 @@ rule run_finemap:
             "variants",
             f"{wildcards.region}.tsv",
         ),
-        ld_matrix=lambda wildcards: os.path.join(
-            config["paths"]["ld_reference"],
-            wildcards.ancestry,
-            f"{wildcards.region}.rds",
+        # m3-W3-T2: route LD path through ld_panel: resolver (RESEARCH Q7).
+        # Original (pre-M3) expression for audit -- this hardcoded the
+        # legacy {ancestry}/{region_safe}.rds path; the resolver subsumes
+        # it as the tail of the AFR/EUR chains in config/pipeline.yaml.
+        # OLD: ld_matrix=lambda w: os.path.join(
+        #          config["paths"]["ld_reference"],
+        #          w.ancestry,
+        #          f"{w.region}.rds",
+        #      ),
+        ld_matrix=lambda wildcards: str(
+            resolve_ld_path(
+                wildcards.region,
+                wildcards.ancestry,
+                config,
+            )
         ),
         manifest=FINEMAP_MANIFEST,
         # ta-sh2b3 W0 Pitfall 2 mitigation (RESEARCH.md L351 + Wave 0 Task 4):

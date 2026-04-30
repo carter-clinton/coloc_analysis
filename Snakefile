@@ -115,6 +115,12 @@ if FINEMAP_METHODS:
     # .fit.rds outputs from run_finemap (Phase 1 Wave 4, REQ-2 #4).
     include: "src/snakemake/rules/coloc.smk"
 
+# M3 Wave 3: AoU LD ingest + .npz -> .rds conversion. Included unconditionally
+# (after finemap.smk so the AoU-panel build_ld_rds_aou_{afr,eur} rules supply
+# the head of the ld_panel: chain consumed by run_finemap's resolver).
+include: "src/snakemake/rules/m3_ingest_aou_ld.smk"
+include: "src/snakemake/rules/m3_convert_npz_rds.smk"
+
 # Phase 2 QTL coloc rules. qtl_download.smk defines QTL_RAW_DIR and
 # QTL_HARMONIZED_DIR; qtl_coloc.smk uses those plus finemap_output() from
 # finemap.smk. Order: download -> coloc (coloc uses _qtl_manifest_field
