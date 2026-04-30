@@ -1,0 +1,79 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W1-susie-rss-l-sweep",
+  "dispatch_timestamp": "2026-04-30T00:51:54Z",
+  "dispatch_local_tag": "20260429_205154",
+  "supervisor_pid": 2496902,
+  "supervisor_log": "logs/wave1_dispatch_main_20260429_205154.log",
+  "supervisor_pid_file": "logs/wave1_dispatch_main_20260429_205154.pid",
+  "supervisor_inner_log": "logs/wave1_susie_lsweep_20260429_205154.log",
+  "driver_path": "bin/fire_susie_lsweep.sh",
+  "working_directory_resolved": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis",
+  "working_directory_resolved_reason": "D-TA-Wave-0-foundations: /rs1/.../coloc_analysis is not a git repo on this node; driver auto-fell-back to GPFS path",
+  "lsf_queue": "serial",
+  "lsf_wall_time_minutes": 5760,
+  "lsf_wall_time_minutes_source": "config/bsub_wrapper.sh case 'serial' default",
+  "snakemake_binary": "/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake",
+  "lsf_job_ids_at_dispatch": {
+    "L15": {
+      "build_finemap_manifest": 67650,
+      "run_finemap_hypertension": 67651,
+      "run_finemap_stroke": 67652,
+      "run_finemap_bmi": 67653
+    },
+    "L20": "pending — driver dispatches sequentially after L=15 completes",
+    "L30": "pending — driver dispatches sequentially after L=20 completes"
+  },
+  "dispatch_pattern": "sequential L-loop — driver fires L=15 (4 jobs) → waits for completion → fires L=20 → waits → fires L=30; per-L parallel across 3 traits",
+  "expected_output_paths": [
+    "results_lsweep_L15/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json",
+    "results_lsweep_L15/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.json",
+    "results_lsweep_L15/fine_mapping/susie/stroke.EUR.SH2B3_12q24.json",
+    "results_lsweep_L20/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json",
+    "results_lsweep_L20/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.json",
+    "results_lsweep_L20/fine_mapping/susie/stroke.EUR.SH2B3_12q24.json",
+    "results_lsweep_L30/fine_mapping/susie/bmi.EUR.SH2B3_12q24.json",
+    "results_lsweep_L30/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.json",
+    "results_lsweep_L30/fine_mapping/susie/stroke.EUR.SH2B3_12q24.json"
+  ],
+  "expected_fit_rds_siblings": [
+    "results_lsweep_L15/fine_mapping/susie/bmi.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L15/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L15/fine_mapping/susie/stroke.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L20/fine_mapping/susie/bmi.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L20/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L20/fine_mapping/susie/stroke.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L30/fine_mapping/susie/bmi.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L30/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.fit.rds",
+    "results_lsweep_L30/fine_mapping/susie/stroke.EUR.SH2B3_12q24.fit.rds"
+  ],
+  "convergence_check_command": "for f in results_lsweep_L*/fine_mapping/susie/*.SH2B3_12q24.json; do jq -r '[input_filename, .L_used, .convergence_status, .L_saturated, (.credible_sets | length)] | @tsv' \"$f\"; done",
+  "l_used_check_command": "for L in 15 20 30; do for T in bmi hypertension stroke; do f=\"results_lsweep_L${L}/fine_mapping/susie/${T}.EUR.SH2B3_12q24.json\"; [ -f \"$f\" ] && got=$(jq -r '.L_used' \"$f\") && echo \"L_used=$got expected=$L file=$f\"; done; done",
+  "ready_to_resume_when": "ps -p 2496902 returns 'No such process' AND all 9 expected_output_paths exist on disk AND `bjobs -w` clean of run_finemap jobs",
+  "ready_to_resume_command_block": "ps -p 2496902 2>&1 | grep -q 'No such process' && for f in results_lsweep_L{15,20,30}/fine_mapping/susie/{bmi,hypertension,stroke}.EUR.SH2B3_12q24.json; do [ -f \"$f\" ] || { echo \"MISSING $f\"; exit 1; }; done && echo 'READY_TO_RESUME'",
+  "resume_command": "/gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh",
+  "resume_picks_up_at": "Wave 1 verification (Task 2: convergence verification + PRIMARY_L recording + W1 SUMMARY.md). The absence of W1 SUMMARY.md is intentional and gates the resume path.",
+  "compute_envelope_estimate": {
+    "per_fit_wall_hours": "2-4",
+    "fits_total": 9,
+    "aggregate_wall_hours_estimate": "6-12 (sequential L loop, 3 parallel traits per L)",
+    "lsf_queue_load_at_dispatch": "serial 1079 PEND / 893 RUN; long 1884 PEND / 1378 RUN — expect minimal PEND wait per L=15 immediate RUN observation"
+  },
+  "pre_fire_verification": {
+    "wave0_verify_C2": "PASS — 069b34f + 7d54183 both HEAD ancestors",
+    "wave0_verify_C3": "PASS — D-TA-04-DIAGNOSTIC sub-section present",
+    "wave0_verify_C4": "PASS — D-TA-OSF-COVERAGE outcome recorded (COVERED at commit ade9425)",
+    "wave0_verify_C1": "WARN — /rs1/.../coloc_analysis/.git not present on this node (documented in D-TA-Wave-0-foundations; driver fallback handles it)",
+    "bsub_wrapper_W_5760_check": "PASS — config/bsub_wrapper.sh case default sets -W 5760 for serial queue",
+    "driver_executable": "PASS — bin/fire_susie_lsweep.sh -rwxr-xr-x",
+    "no_lsf_conflicts_at_dispatch": "PASS — no in-flight Wave 1 jobs prior to fire",
+    "no_preexisting_outputs": "PASS — results_lsweep_L{15,20,30}/ did not exist on disk before fire",
+    "supervisor_alive_after_90s": "PASS — etime 01:38 at 90s checkpoint",
+    "first_lsf_jobs_observed": "PASS — jobs 67651/67652/67653 in RUN status on serial queue at 90s checkpoint"
+  },
+  "monitoring_during_run": {
+    "tail_supervisor_log": "tail -f logs/wave1_dispatch_main_20260429_205154.log",
+    "watch_lsf_jobs": "watch -n 60 'bjobs -w | grep run_finemap'",
+    "count_outputs_landed": "find results_lsweep_L{15,20,30}/fine_mapping/susie/ -name '*.SH2B3_12q24.json' 2>/dev/null | wc -l"
+  }
+}
