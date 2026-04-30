@@ -579,6 +579,38 @@ Detailed numerics: `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2
 
 **No narrative writes in Wave 3** (per W3 PLAN invariant — gate is decision-only; Wave 6 owns prose writes after Wave 5 disk freeze).
 
+### D-TA-04-OVERRIDE-V2: D-TA-04 cache scope override (Wave 4 hybrid recovery)
+
+**Recorded:** 2026-04-30
+
+**Original D-TA-04-DIAGNOSTIC:** RSID (recorded W0 Task 2; cache scope = QTL_COLOC_ONLY)
+
+**Override:** D-TA-04-DIAGNOSTIC RSID → **CONSERVATIVE_BOTH** (cache scope = QTL_COLOC + SUSIE_RSS_LAYER)
+
+**Trigger:** Prior W4 dispatch attempt (commit `2891d5e`) HALTED at +90s when Snakemake's mtime trigger on `src/legacy/region_analysis/scripts/run_susie_rss.R` (last touched by W1 V2 commit `02c4404`, the max_iter bug fix) made the script newer than existing SuSiE-RSS `.fit.rds` outputs. The DAG decided to rebuild the entire SuSiE-RSS layer as upstream prerequisites for `run_qtl_coloc`. 74 peripheral SuSiE-RSS files were partially overwritten before the agent killed the dispatch (full list at `wave4_susie_overwritten.txt`).
+
+**Carter selected the hybrid touch + CONSERVATIVE_BOTH path** from the W4 HALT checkpoint via `/gsd-execute-phase` resume signal: "Pre-mark all current SuSiE-RSS outputs as up-to-date then C — Widen to BOTH_LAYERS". Per `feedback_rigor_over_speed.md`, this is the rigor-maximizing recovery: makes the post-rebuild state fully consistent at honest niter=1000 (post-`02c4404` code) across the entire Stage 2 SuSiE-RSS layer, eliminating the niter=100/niter=1000 mixed state.
+
+**Implications acknowledged at decision time:**
+- Wave 5 may need to UPDATE the 51/96 headline numerator at Wave 5 (TRACK-A-FROZEN-NUMBERS.md L10 LIVE-block update). Most likely direction: post-rebuild yield ≥ 51/96 (honest niter=1000 should converge more fits than the buggy niter=100 default). Direction-of-change is empirical — Wave 5 measures.
+- Temporal mismatch between the 9 frozen W2 R2 PP.H4 JSONs (which reference niter=100 asthma + T2D fits at the time of W2 dispatch) and the post-rebuild current-disk state. Wave 6 §Methods §Fine-Mapping must disclose this with the niter audit narrative (per OSF deviation log #2 + this entry #4).
+
+**Recovery procedure (this dispatch):**
+1. `snakemake --touch all_qtl_coloc` (Step 2 above) — stabilize DAG state
+2. Backup `results/fine_mapping/susie/` to `results/fine_mapping/susie.preFix.bak.${TS}/` — preserves the partial-overwrite state from the prior abort as forensic record
+3. Backup `results/qtl_coloc/` to `results/qtl_coloc.preFix.bak.${TS}/` (re-backup; the prior `.preFix.bak.20260430_003141/` backup is also preserved)
+4. Fix `config/cluster_lsf/cluster_config.yaml` run_finemap queue routing drift (currently inherits __default__ → serial; should route to long for -W=14400 enforcement when SuSiE-RSS rebuild fires)
+5. Fire `SUSIE_LAYER_SCOPE=yes bash bin/fire_qtl_coloc_cache_refresh.sh` (CONSERVATIVE_BOTH path)
+6. LSF long queue dispatch; estimated wall ~tens of hours (subject to PEND backlog)
+
+**OSF deviation entries (W7 closeout consumes; entries #4 + #5):**
+- Entry #4: D-TA-04 cache scope widened RSID → CONSERVATIVE_BOTH at Wave 4 dispatch attempt 2; rationale = post-`02c4404` Stage 2 SuSiE-RSS layer consistency at honest niter=1000
+- Entry #5: cluster_config.yaml queue routing drift fix (run_finemap inherited serial → explicit long); operational invariant alignment
+
+**PASS/FAIL gate (post-rebuild):**
+- PASS: too_few_snps count drops to ≤ 200 in `results/qtl_coloc/` AND SuSiE-RSS layer fits land at niter=1000 with `.fit.rds` mtime > Wave 4 V2 dispatch timestamp → Wave 5 unblocked
+- FAIL: too_few_snps remains ~1,000 OR SuSiE-RSS layer rebuild fails → halt + Carter escalation
+
 </decisions>
 
 <canonical_refs>
