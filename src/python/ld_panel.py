@@ -20,15 +20,27 @@ from pathlib import Path
 __all__ = ["resolve_ld_path"]
 
 
-def resolve_ld_path(region_id: str, ancestry: str, config: dict) -> Path:
+def resolve_ld_path(
+    region_id: str,
+    ancestry: str,
+    config: dict,
+    region_safe: str | None = None,
+) -> Path:
     """Walk the ``config['ld_panel'][ancestry]`` fallback chain.
 
     Substitutes ``{region_id}`` and ``{region_safe}`` placeholders in each
-    chain entry's path template. The legacy Track A naming convention used
-    ``region_safe`` slugs (e.g., ``FTO_16q12``) while M2 uses sequential
-    ``region_id`` (e.g., ``m2_region_00067``); both are substituted to the
-    same value here, with the upstream caller responsible for translating
-    between the two via ``config/region_id_mapping.tsv`` (RESEARCH O6).
+    chain entry's path template **independently**. The legacy Track A naming
+    convention uses ``region_safe`` slugs (e.g., ``FTO_16q12``) for the
+    1kg/HGDP/UKBB tails of the chain; M2 uses sequential ``region_id``
+    (e.g., ``m2_region_00067``) for the AoU panel head. The two are
+    different naming conventions for the same physical region — the
+    upstream caller must supply both so each chain entry resolves to the
+    correct on-disk path.
+
+    Precedence: ``pin`` > ``strict_aou_only`` > fallback walk. When ``pin``
+    is set, only the pinned chain entry is considered; ``strict_aou_only``
+    fires only when the (un-pinned) walk encounters a missing ``_aou``
+    entry.
 
     Returns the first existing path. Raises:
 
@@ -40,10 +52,18 @@ def resolve_ld_path(region_id: str, ancestry: str, config: dict) -> Path:
       in the chain resolves to an existing path (and strict mode is off).
 
     Args:
-        region_id: M2 manifest ID (e.g., ``m2_region_00067``).
+        region_id: M2 manifest ID (e.g., ``m2_region_00067``); substituted
+            into ``{region_id}`` placeholders (AoU chain heads).
         ancestry: One of ``AFR``, ``EUR``, ``TRANS`` (per the Q7 chain).
         config: Loaded ``config/pipeline.yaml`` dict; must contain
             ``ld_panel`` block.
+        region_safe: Filesystem-safe Track A slug (e.g., ``FTO_16q12``);
+            substituted into ``{region_safe}`` placeholders (1kg/HGDP/UKBB
+            tails). When ``None`` (back-compat default), falls back to
+            ``region_id`` so callers that pre-date the m3-W3 split keep
+            working — but this case is only correct when both placeholders
+            should resolve to the same value (which is **not** the case
+            for the AoU chain head; see CR-001 in the m3 review).
 
     Returns:
         Resolved ``Path`` (the first existing entry).
@@ -52,6 +72,8 @@ def resolve_ld_path(region_id: str, ancestry: str, config: dict) -> Path:
         ``config/pipeline.yaml`` ``ld_panel:`` block; D-M3-05 supersede
         rationale.
     """
+    if region_safe is None:
+        region_safe = region_id
     panel_cfg = config["ld_panel"]
     pin = panel_cfg.get("pin", {}).get(ancestry)
     chain = panel_cfg[ancestry]
@@ -60,7 +82,7 @@ def resolve_ld_path(region_id: str, ancestry: str, config: dict) -> Path:
         if not chain:
             raise ValueError(f"pin {pin!r} not in {ancestry} chain")
     for entry in chain:
-        path_str = entry["path"].format(region_id=region_id, region_safe=region_id)
+        path_str = entry["path"].format(region_id=region_id, region_safe=region_safe)
         path = Path(path_str)
         if path.exists():
             return path
