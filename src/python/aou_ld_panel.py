@@ -55,7 +55,14 @@ if TYPE_CHECKING:  # avoid hail import at module load time (graceful local impor
 
 # Verified against AoU C2025Q1 CDRv7 docs (2026-04-27); reverify at submission
 ANCESTRY_FIELD = "ancestry_pred"
+# Documented AoU ancestry_pred label space (CDRv7 docs reference; for column
+# annotation only). The M3 manifest only emits AFR/EUR rows per D-M3-02.
 ANCESTRY_VALUES = {"afr", "amr", "eas", "eur", "sas", "mid", "oth"}
+# WR-007 (2026-05-01): runtime-supported ancestries for the LD-panel build.
+# Tightened from ANCESTRY_VALUES to match the M2 manifest scope (D-M3-02);
+# any other label (mid/oth/etc.) would run a no-op QC chain and waste
+# cluster-hours producing a checkpoint nobody can use downstream.
+SUPPORTED_ANCESTRIES = {"afr", "eur"}
 
 # KING third-degree-or-closer threshold (D-M3-07 conservative pin)
 KING_KINSHIP_THRESHOLD = 0.0442
@@ -154,8 +161,13 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     """
     import hail as hl
 
-    if ancestry not in ANCESTRY_VALUES:
-        raise ValueError(f"ancestry={ancestry!r} not in {ANCESTRY_VALUES}")
+    if ancestry not in SUPPORTED_ANCESTRIES:
+        raise ValueError(
+            f"ancestry={ancestry!r} not supported in M3; the manifest "
+            f"emits {sorted(SUPPORTED_ANCESTRIES)}. Documented AoU pred "
+            f"labels are {sorted(ANCESTRY_VALUES)} but routing here only "
+            f"covers AFR/EUR (D-M3-02)."
+        )
     anc_path = ancestry_table_path or ANCESTRY_PREDS_PATH
     rel_path = relateds_table_path or RELATED_SAMPLES_PATH
 
