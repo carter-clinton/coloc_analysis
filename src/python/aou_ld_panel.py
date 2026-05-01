@@ -326,21 +326,81 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     else:
         path_a = "A.3"
         # Never densify on driver for large/xlarge regions.
+        # CR-003 fix (2026-05-01): emit variant_ids.tsv + rsids.tsv sidecars
+        # alongside the BlockMatrix write so bm_to_npz.py (Wave 3 NCSU-side
+        # converter) can ingest the BlockMatrix directory. Without these
+        # sidecars, conversion fails with "sidecar TSV missing" — blocking
+        # the dev-fire HLA + 8p23 stress regions and Wave 4 production for
+        # the 36 large/xlarge regions.
         if out_bucket is None:
             # Local-test path: write to a temp local dir
             local_path = (out_local_dir or Path("/tmp")) / "bm" / f"{rid}.bm"
             local_path.parent.mkdir(parents=True, exist_ok=True)
             ld_bm.write(str(local_path), overwrite=True)
+            # Sidecars beside the .bm directory (matches bm_to_npz.py CLI)
+            sidecar_dir = local_path.parent
+            np.savetxt(
+                str(sidecar_dir / f"{rid}.variant_ids.tsv"),
+                np.array(variant_ids, dtype=object),
+                fmt="%s",
+            )
+            np.savetxt(
+                str(sidecar_dir / f"{rid}.rsids.tsv"),
+                np.array(rsids, dtype=object),
+                fmt="%s",
+            )
             out_uri = str(local_path)
         else:
             bm_uri = f"{out_bucket}/bm/{rid}.bm"
             ld_bm.write(bm_uri, overwrite=True)
+            # Upload sidecar TSVs to the same gs://.../bm/ prefix so the
+            # NCSU-side gsutil cp -r picks them up alongside the .bm dir.
+            for sidecar_name, payload in (
+                (f"{rid}.variant_ids.tsv", variant_ids),
+                (f"{rid}.rsids.tsv", rsids),
+            ):
+                local_tmp = Path("/tmp") / sidecar_name
+                np.savetxt(str(local_tmp), np.array(payload, dtype=object), fmt="%s")
+                _upload_to_gcs(
+                    local_path=local_tmp,
+                    out_bucket=out_bucket,
+                    blob_subpath=f"bm/{sidecar_name}",
+                )
             out_uri = bm_uri
 
     return {
         "region_id": rid, "status": "ok", "n_var": n_var,
         "path_a": path_a, "out": out_uri,
     }
+
+
+def _upload_to_gcs(local_path: Path, out_bucket: str, blob_subpath: str) -> str | None:
+    """Upload a local file to ``{out_bucket}/{blob_subpath}``.
+
+    out_bucket is "gs://bucket/prefix"; blob_subpath is appended after the
+    optional prefix (e.g., "bm/m2_region_00120.variant_ids.tsv"). Returns
+    the gs:// URI on success; None on failure (warning printed to stderr).
+
+    Centralises the GCS upload code shared between Path A.1/A.2 (.npz) and
+    Path A.3 (BlockMatrix sidecar TSVs) per CR-003 refactor.
+    """
+    try:
+        from google.cloud import storage  # noqa: WPS433 -- lazy import (test envs lack google-cloud-storage)
+
+        assert out_bucket.startswith("gs://")
+        stripped = out_bucket[len("gs://"):]
+        bucket_name, _, prefix = stripped.partition("/")
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        blob_path = f"{prefix}/{blob_subpath}" if prefix else blob_subpath
+        bucket.blob(blob_path).upload_from_filename(str(local_path))
+        return f"{out_bucket}/{blob_subpath}"
+    except Exception as e:
+        print(
+            f"WARN: GCS upload failed ({out_bucket}/{blob_subpath}): {e}",
+            file=sys.stderr,
+        )
+        return None
 
 
 def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
@@ -360,20 +420,13 @@ def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
         lower_triangular=np.array([lower_triangular]),
     )
     if out_bucket is not None:
-        # Upload via google-cloud-storage. out_bucket is "gs://bucket/prefix".
-        try:
-            from google.cloud import storage  # noqa: WPS433
-
-            assert out_bucket.startswith("gs://")
-            stripped = out_bucket[len("gs://"):]
-            bucket_name, _, prefix = stripped.partition("/")
-            client = storage.Client()
-            bucket = client.bucket(bucket_name)
-            blob_path = f"{prefix}/{region_id}.npz" if prefix else f"{region_id}.npz"
-            bucket.blob(blob_path).upload_from_filename(str(local_path))
-            return f"{out_bucket}/{region_id}.npz"
-        except Exception as e:
-            print(f"WARN: GCS upload failed ({out_bucket}): {e}", file=sys.stderr)
+        uri = _upload_to_gcs(
+            local_path=local_path,
+            out_bucket=out_bucket,
+            blob_subpath=f"{region_id}.npz",
+        )
+        if uri is not None:
+            return uri
     return str(local_path)
 
 
