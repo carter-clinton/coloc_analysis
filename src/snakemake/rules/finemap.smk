@@ -92,11 +92,19 @@ rule run_finemap:
         #          w.ancestry,
         #          f"{w.region}.rds",
         #      ),
+        # m3-W3-T2 + CR-001 fix (2026-05-01): wildcards.region is the
+        # filesystem-safe slug (e.g., FTO_16q12), but the AoU chain head in
+        # config/pipeline.yaml uses {region_id} (e.g., m2_region_00067).
+        # Translate via REGION_SAFE_TO_ID and pass BOTH placeholders so the
+        # resolver substitutes them independently. Without this, the AoU
+        # panel path (which uses {region_id}) silently falls through to the
+        # 1kg/HGDP/UKBB fallback (which use {region_safe}).
         ld_matrix=lambda wildcards: str(
             resolve_ld_path(
-                wildcards.region,
-                wildcards.ancestry,
-                config,
+                region_id=REGION_SAFE_TO_ID[wildcards.region],
+                ancestry=wildcards.ancestry,
+                config=config,
+                region_safe=wildcards.region,
             )
         ),
         manifest=FINEMAP_MANIFEST,
