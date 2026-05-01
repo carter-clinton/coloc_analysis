@@ -248,10 +248,36 @@ def _load_region_to_chr_index() -> None:
         return
 
 
-def _region_chr(region_id: str) -> str | None:
-    """Return chromosome string for a region_id, or None if not in manifest."""
+def _region_chr(region_id: str) -> str:
+    """Return chromosome string for a region_id.
+
+    WR-004 fix (2026-05-01): raise WorkflowError at DAG-construction time
+    when the manifest is missing or the region is not in it, rather than
+    silently returning None and letting the downstream input lambda
+    produce a phantom "...UNKNOWN" path that surfaces as an opaque
+    MissingInputException at apply time. The diagnostic now points
+    operators directly at "run M3 Wave 0 first" instead of at a missing
+    flag file.
+    """
+    from snakemake.exceptions import WorkflowError  # type: ignore[import-not-found]
+
     _load_region_to_chr_index()
-    return _REGION_TO_CHR.get(region_id)
+    if not _REGION_TO_CHR:
+        raise WorkflowError(
+            f"M3 region manifest is empty or missing at {LD_REGIONS_MANIFEST}; "
+            f"run M3 Wave 0 (`python src/python/build_ld_region_manifest.py "
+            f"--bed results/regions/union_region_list.bed "
+            f"--chain data/external/liftover/hg19ToHg38.over.chain.gz "
+            f"--out-manifest config/ld_regions.tsv ...`) first."
+        )
+    chrom = _REGION_TO_CHR.get(region_id)
+    if chrom is None:
+        raise WorkflowError(
+            f"region_id {region_id!r} not in M3 manifest at "
+            f"{LD_REGIONS_MANIFEST}; manifest carries "
+            f"{len(_REGION_TO_CHR)} regions"
+        )
+    return chrom
 
 
 # ---------------------------------------------------------------------------
@@ -278,12 +304,16 @@ rule m3_aou_npz_arrives:
     file-producer.
     """
     input:
+        # WR-004 fix (2026-05-01): _region_chr now raises WorkflowError at
+        # DAG-construction time when the manifest is missing or the region
+        # is not in it, so the legacy ``or "UNKNOWN"`` fallback (which
+        # produced a phantom flag path) is no longer reachable.
         flag=lambda wildcards: os.path.join(
             LD_INTERIM,
             ".aou_export_complete.{ancestry}.{chr}",
         ).format(
             ancestry=wildcards.ancestry,
-            chr=_region_chr(wildcards.region_id) or "UNKNOWN",
+            chr=_region_chr(wildcards.region_id),
         ),
     output:
         npz=os.path.join(LD_INTERIM, "{ancestry}_aou", "{region_id}.npz"),
