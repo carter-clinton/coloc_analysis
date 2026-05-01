@@ -271,17 +271,45 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
         mt_r.locus,
         radius=radius_bp,
     )
-    # Collect aligned variant IDs (synthetic chr:pos:ref:alt + rsid where present)
-    variant_ids = mt_r.aggregate_rows(
-        hl.agg.collect(
-            hl.str(mt_r.locus) + ":" + mt_r.alleles[0] + ":" + mt_r.alleles[1]
+    # CR-002 fix (2026-05-01): collect variant_ids and rsids in a SINGLE
+    # aggregate_rows traversal to guarantee row-order alignment between the
+    # two sidecar vectors. Both come from the same MT row pass; row order
+    # within an aggregate_rows call is implicitly the MT key (locus,
+    # alleles), which matches hl.ld_matrix's row indexing (also keyed by
+    # locus). Two separate aggregate_rows calls are deterministic in
+    # current Hail but the contract is "no row order guarantee" — coupling
+    # them in one struct collect closes the silent-misalignment hole.
+    has_rsid = "rsid" in mt_r.row
+    if has_rsid:
+        aligned = mt_r.aggregate_rows(
+            hl.agg.collect(
+                hl.struct(
+                    vid=hl.str(mt_r.locus) + ":" + mt_r.alleles[0] + ":" + mt_r.alleles[1],
+                    rsid=hl.coalesce(mt_r.rsid, hl.str("")),
+                )
+            )
         )
+    else:
+        aligned = mt_r.aggregate_rows(
+            hl.agg.collect(
+                hl.struct(
+                    vid=hl.str(mt_r.locus) + ":" + mt_r.alleles[0] + ":" + mt_r.alleles[1],
+                    rsid=hl.str(""),
+                )
+            )
+        )
+    variant_ids = [a.vid for a in aligned]
+    rsids = [a.rsid if a.rsid is not None else "" for a in aligned]
+    # IR-003 defensive assertion: variant_ids/rsids row count must equal n_var
+    # (the BlockMatrix row count). A divergence here means hl.ld_matrix and
+    # aggregate_rows traversed mt_r with inconsistent row sets — should not
+    # happen, but the .npz consumers assume strict 1:1 alignment.
+    assert len(variant_ids) == n_var, (
+        f"variant_ids count {len(variant_ids)} != n_var {n_var} for region {rid}"
     )
-    rsids_raw = mt_r.aggregate_rows(
-        hl.agg.collect(hl.coalesce(mt_r.rsid, hl.missing(hl.tstr)))
-        if "rsid" in mt_r.row else hl.agg.collect(hl.missing(hl.tstr))
+    assert len(rsids) == n_var, (
+        f"rsids count {len(rsids)} != n_var {n_var} for region {rid}"
     )
-    rsids = [r if r is not None else "" for r in rsids_raw]
 
     span_mb = (end_b38 - start_b38) / 1_000_000
     if region_class == "small" or span_mb <= PATH_A1_MAX_MB:
