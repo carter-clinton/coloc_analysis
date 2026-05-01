@@ -118,7 +118,12 @@ rule m3_ingest_aou_export_arrives:
         manifest=LD_REGIONS_MANIFEST,
     wildcard_constraints:
         ancestry=r"AFR|EUR",
-        chr=r"[0-9]+|X",
+        # CR-004 fix (2026-05-01): drop X from the constraint to match the
+        # M2 union scope (autosomes only per D-M2-09). The aggregate target
+        # m3_ingest_aou_export_arrives_all already iterates only chrs 1..22;
+        # admitting X here was a scope mismatch that produced confusing
+        # "manifest has no rows" errors when hand-fired.
+        chr=r"[0-9]+",
     # NOTE: Snakemake disallows `conda:` with `run:` directives. The
     # inventory check uses pandas which must be available in the parent
     # Snakemake env (smoke_dev: Snakemake 7.32.4 + Python 3.11 already
@@ -145,20 +150,24 @@ rule m3_ingest_aou_export_arrives:
             )
 
         manifest = pd.read_csv(manifest_path, sep="\t")
-        chr_int = (
-            int(wildcards.chr)
-            if wildcards.chr.isdigit()
-            else wildcards.chr
-        )
+        # CR-004 fix (2026-05-01): coerce chr to string on BOTH sides so
+        # pandas' inferred dtype (int when all autosomes) doesn't silently
+        # drop rows when wildcards.chr is a string. After the wildcard
+        # constraint drop above, chr is always digit-only, but the explicit
+        # str() coercion is the defensive form.
+        manifest["chr"] = manifest["chr"].astype(str)
         sub = manifest[
-            (manifest["chr"] == chr_int)
+            (manifest["chr"] == str(wildcards.chr))
             & (manifest["ancestry"] == wildcards.ancestry)
         ]
         expected_regions = set(sub["region_id"].tolist())
         if not expected_regions:
             raise ValueError(
                 f"manifest has no rows for {wildcards.ancestry} chr "
-                f"{wildcards.chr}; expected at least one region"
+                f"{wildcards.chr}; manifest covers chrs "
+                f"{sorted(manifest['chr'].unique().tolist())}; verify the "
+                f"chromosome is within the M2 union scope (autosomes only "
+                f"per D-M2-09)"
             )
 
         present = {p.stem for p in npz_dir.glob("*.npz")}
