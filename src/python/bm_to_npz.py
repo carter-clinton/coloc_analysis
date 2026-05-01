@@ -42,10 +42,18 @@ import numpy as np
 
 
 def _load_sidecar(path: Path) -> np.ndarray:
-    """Load a one-column TSV/text file as a 1-D string array (no header)."""
+    """Load a one-column TSV/text file as a 1-D string array (no header).
+
+    WR-002 fix (2026-05-01): ``ndmin=1`` forces a 1-D array even when the
+    TSV has exactly one row. Without it, np.loadtxt returns a 0-D scalar
+    array for single-row files, which raises ``IndexError`` on the
+    downstream ``shape[0]`` access. MIN_VARIANTS_PER_REGION=10 means Path
+    A.3 should never produce a 1-variant region in production, but this
+    helper is also reusable for non-region debugging paths.
+    """
     if not path.is_file():
         raise FileNotFoundError(f"sidecar TSV missing: {path}")
-    return np.loadtxt(str(path), dtype=str, delimiter="\t")
+    return np.loadtxt(str(path), dtype=str, delimiter="\t", ndmin=1)
 
 
 def bm_to_npz(
