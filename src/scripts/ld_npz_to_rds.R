@@ -72,8 +72,17 @@ if (!is.matrix(tri)) stop("unexpected ld shape in ", npz_path)
 
 # ---------------------------------------------------------------------------
 # 2. Symmetry recovery (lower-triangular -> full symmetric)
+#
+# WR-003 fix (2026-05-01): the AoU side casts to float32 in _save_npz +
+# bm_to_npz, and `tri + t(tri) - diag(diag(tri))` over float32 introduces
+# ~1e-6 ulp drift on the off-diagonal that depends on float ordering. This
+# can leave isSymmetric(tri) FALSE for huge regions (HLA, 8p23) even after
+# the recovery step. Force exact symmetry via the (M + t(M))/2 idempotent
+# projection so the downstream Cholesky path in coloc/SuSiE never trips
+# on near-symmetric numerical noise.
 # ---------------------------------------------------------------------------
 if (!isSymmetric(tri)) tri <- tri + t(tri) - diag(diag(tri))
+tri <- (tri + t(tri)) / 2
 
 # ---------------------------------------------------------------------------
 # 3. Recover SNP IDs: prefer rsid; fall back to chr:pos:ref:alt synthetic IDs
