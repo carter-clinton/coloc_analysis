@@ -4,7 +4,7 @@
 > [`.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`](amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md)
 > (this is the post-pivot source of truth).
 > **Companion documents:**
-> [`TRACK-A-PIVOT.md`](amendments/TRACK-A-PIVOT.md),
+> [`ID-VS-REF-LD-STRATEGY.md`](amendments/ID-VS-REF-LD-STRATEGY.md),
 > [`SUMSTATS-UPGRADE.tsv`](amendments/SUMSTATS-UPGRADE.tsv) /
 > [`SUMSTATS-UPGRADE.md`](amendments/SUMSTATS-UPGRADE.md),
 > [`AOU-LD-PIPELINE.md`](amendments/AOU-LD-PIPELINE.md),
