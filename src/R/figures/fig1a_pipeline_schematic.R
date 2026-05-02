@@ -56,8 +56,8 @@
 #     src/R/figures/fig1a_pipeline_schematic.R
 #
 # Figure-number provenance: Track A canonical 5-figure roster per
-# .planning/amendments/TRACK-A-PIVOT.md §5; manuscript caption block at
-# docs/manuscript/track_a_pivot.md L289-L297. Figure 1 Panel A is the
+# .planning/amendments/ID-VS-REF-LD-STRATEGY.md §5; manuscript caption block at
+# docs/manuscript/id-vs-ref-LD.md L289-L297. Figure 1 Panel A is the
 # methods-overview companion to Figure 1B (regional anchor-locus composite).
 #
 # Author: Carter K. Clinton | Quick task: 260425-1vy

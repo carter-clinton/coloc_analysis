@@ -90,8 +90,8 @@
 #     src/R/figures/fig3_sh2b3_eur_collapse_forest.R
 #
 # Figure-number provenance: Track A canonical 5-figure roster per
-# .planning/amendments/TRACK-A-PIVOT.md §5; manuscript caption block at
-# docs/manuscript/track_a_pivot.md L289-L297. Figure 3 = the "survival forest"
+# .planning/amendments/ID-VS-REF-LD-STRATEGY.md §5; manuscript caption block at
+# docs/manuscript/id-vs-ref-LD.md L289-L297. Figure 3 = the "survival forest"
 # slot per L289-L297. This build resolves §6 item 2 "Decision pending"
 # (identity-LD comparison branch existence) using the 2026-04-25 k2d re-fire
 # JSONs at results_identity_ld/fine_mapping/susie/.
