@@ -27,6 +27,36 @@
 
 ---
 
+## Layer-2 colocalization-feasibility yield (post-W4.5-A continuation, 2026-05-01) — LIVE
+
+Per [DEC-2026-05-01-02](../DECISIONS.md) (load-bearing decision anchor) and [W4-DISPOSITION-REVISED.md](../phases/ta-sh2b3-canonical-and-cache-refresh/W4-DISPOSITION-REVISED.md) (active narrative), Track A's pipeline now has three documented layers of yield, each with its own structural attrition. The cache-staleness hypothesis embedded in tracker v6 was tested by the W4.5-A continuation (drain final 4 + aggregator 3rd-pass) and refuted (Δ = 0; pre-3rd-pass too_few_snps unchanged from V4-era count). The 78.9% Layer-2 too_few_snps rate is **structural** (LD-panel coverage + region-window choices), not artifactual.
+
+| Layer | Process | Numerator | Denominator | Yield | Attrition framing |
+|---|---|---|---|---|---|
+| **Layer 1 — SuSiE-RSS fine-mapping** | Per-trait, per-region GWAS fine-mapping at L=10 (with sweep at L∈{15,20,30} for the SH2B3 anchor) | 51 | 96 | **53.1%** | Per-trait fits with valid converged credible sets; the 45/96 attrition is dominated by non-convergence under the strict-gate definition. See [Stage 2 fine-mapping yield (top of file) — LIVE](#stage-2-fine-mapping-yield-post-k2d-full-coverage-identity-ld-comparator-2026-04-25--live) and [`ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md`](../phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md). |
+| **Layer 2 — qtl_coloc structural feasibility** | Per-region, per-(trait, QTL-source, tissue) colocalization eligibility based on GWAS×QTL SNP intersection | 269 (= success + no_qtl_cs + qtl_susie_failed; the not-too_few_snps complement) | 1274 | **21.1%** | Per-(region × trait × QTL × tissue) tuples with sufficient SNP overlap to attempt coloc. The 1005/1274 = 78.9% attrition is structural, driven by LD-panel coverage + region-window choices. **This is the canonical Layer-2 finding** (DEC-2026-05-01-02). |
+| **Layer 3 — substantive coloc hits** | Per-tuple PP.H4 evidence above tier thresholds | 32 | 1274 | **2.5%** | Per-tuple substantive colocalizations with tier-A confidence; the 1242/1274 attrition is the union of Layer-2 structural attrition (1005) + Layer-2-feasible-but-no-credible-set (235) + qtl_susie_failed (2). Within the 32 successes, Tier C dominates (highest = FTO_16q12 EUR / IRX3 / Pancreas / gtex_eqtl PP.H4 = 0.3099, below Tier B threshold 0.5). |
+
+**Reviewer-defensibility framing (manuscript-anchor language):** Track A's reviewer-defensibility hinges on transparently disclosing all three layers rather than pooling them into a single yield number. The historical pattern in the literature is to report only Layer 3 (the headline "32 hits" or "2.5% colocalization rate") and treat Layer 1 and Layer 2 attritions as silent — which both undersells the methodological rigor (Layer 1's strict-gate non-convergence treatment per audit-v2 §HQ3 framing) and obscures the ceiling on what coloc can recover at current public-data LD coverage (Layer 2's 78.9% structural attrition). The 3-layer contrast is the canonical reviewer-defensibility framing; all manuscript Methods + Results + Limitations + Discussion language must cite these three numbers verbatim from this block.
+
+**W4.5-B SuSiE-RSS rebuild explicitly skipped** (per DEC-2026-05-01-02 rationale, captured by `feedback_rigor_over_speed.md`): too_few_snps is a SNP-intersection problem, not a fine-mapping convergence problem. Adding more iterations to the GWAS-side fine-mapping cannot create SNPs that don't exist in the QTL panel. Switching to a denser LD panel (e.g., AoU-AFR-LD work-in-progress per M3) is the path forward for cross-ancestry expansion; for Track A, the 78.9% is reported as-is.
+
+**Sources:**
+- Status distribution: [`results/qtl_coloc/qtl_coloc_summary.tsv`](../../results/qtl_coloc/qtl_coloc_summary.tsv) (1274 rows; canonical post-W4.5-A continuation, 2026-05-01)
+- Per-id JSON tally: [`results/qtl_coloc/*.json`](../../results/qtl_coloc/) (1274 per-attempt JSONs; status counts: too_few_snps=1005, no_qtl_cs=235, success=32, qtl_susie_failed=2)
+- Tracker: [`wave4_dispatch_tracker_v7.json`](../phases/ta-sh2b3-canonical-and-cache-refresh/wave4_dispatch_tracker_v7.json) (status=FAILED on mechanical PASS/FAIL gate; outcome_disposition=HONEST_FINDING)
+- Active narrative: [`W4-DISPOSITION-REVISED.md`](../phases/ta-sh2b3-canonical-and-cache-refresh/W4-DISPOSITION-REVISED.md) (refuted-hypothesis reasoning + 3-layer architecture)
+- Decision anchor: [`DECISIONS.md::DEC-2026-05-01-02`](../DECISIONS.md)
+
+**Caveats** (mandatory disclosure for any downstream cite of these scalars):
+
+1. **Layer 2 numerator definition.** "Sufficient SNP overlap to attempt coloc" = `status != too_few_snps`, which includes 32 success + 235 no_qtl_cs + 2 qtl_susie_failed = 269 of 1274 = 21.1%. The complement (78.9%) is the structural attrition.
+2. **Layer 3 numerator definition.** "Tier-A confidence" in the table is loose — within the 32 status=success rows, all tier assignments are Tier C (highest PP.H4 = 0.3099). The reviewer-defensibility framing is "any substantive coloc, regardless of tier"; the actual Tier-A threshold (PP.H4 ≥ 0.8) yields 0/1274.
+3. **Layer 1 vs Layer 2 partial correlation.** A region with a non-converged Layer-1 fit can still produce too_few_snps at Layer 2; conversely, a region with a converged Layer-1 fit can still produce too_few_snps if the QTL panel for that tissue is sparse. The two attritions are partially correlated but distinct (per W4-DISPOSITION-REVISED §2.2).
+4. **Pipeline stage scope.** Layer-2 1274 denominator reflects the post-W4.5-A scope-corrected manifest (`phase2_enabled_sources: [gtex_eqtl, gtex_sqtl]`). pQTL + sc-eQTL are deferred to Phase 2; pre-scope-correction 1469 is the unfiltered manifest count.
+
+---
+
 ## H3 LD-reference-quality dose-response (post-wa2 H3 figure, 2026-04-26) — LIVE
 
 | Metric | Value |
