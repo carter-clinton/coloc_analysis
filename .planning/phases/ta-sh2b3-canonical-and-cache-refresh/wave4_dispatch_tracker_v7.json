@@ -1,0 +1,111 @@
+{
+  "phase": "ta-sh2b3-canonical-and-cache-refresh",
+  "plan": "W4.5-A-CONTINUATION-drain-final-5-and-aggregator-3rd-pass",
+  "version": "v7_W4_5_A_CONTINUATION_FAILED",
+  "supersedes": "wave4_dispatch_tracker_v6.json (DISPATCHED, supervisor PID 2670648 died at 99.6%)",
+  "status": "FAILED",
+  "recorded": "2026-05-02T00:10:00Z",
+  "summary_one_liner": "W4.5-A continuation drain + aggregator-refresh succeeded MECHANICALLY (1270 to 1274 JSONs; 5 of 6 aggregator outputs refreshed via targeted snakemake invocation), but W4 PASS gate FAILED on substance: too_few_snps = 1005 / 1274 (78.9%) which is >= 800 cutoff. This is W4.5 SuSiE-RSS-layer fallback territory per the W4 plan PASS/FAIL taxonomy and the W4.5-A-continuation quick-task scope; remediation is OUT OF SCOPE here.",
+  "outcome_summary": {
+    "drain_pass": {
+      "missing_count_observed": 4,
+      "missing_count_planned_in_v6": 5,
+      "delta_explanation": "v6 reported 1270 JSONs vs 1275 DAG steps = 5 missing run_qtl_coloc; the 5th step is the localrule all_qtl_coloc target itself (per snakemake DAG output 'job count: run_qtl_coloc=4 + all_qtl_coloc=1 = 5'). Actual missing run_qtl_coloc target count = 1274 (planned) - 1270 (on-disk) = 4. Plan anticipated this with a WARN note.",
+      "missing_4_qtl_coloc_ids": [
+        "CXADR_F2RL1_6p21_ENSG00000154639_gtex_sqtl_Heart_Atrial_Appendage",
+        "FTO_16q12_ENSG00000140718_gtex_eqtl_Brain_Nucleus_accumbens_basal_ganglia",
+        "MC4R_18q21_ENSG00000166603_gtex_eqtl_Brain_Spinal_cord_cervical_c-1",
+        "SH2B3_12q24_ENSG00000111252_gtex_eqtl_Skin_Sun_Exposed_Lower_leg"
+      ],
+      "pre_drain_json_count": 1270,
+      "post_drain_json_count": 1274,
+      "drain_dispatch_ts_iso": "2026-05-01T19:45:14-04:00",
+      "drain_lsf_jobids": [82066, 82067, 82068, 82069],
+      "drain_lsf_jobs_finished_cleanly": 4,
+      "drain_log": "logs/wave4_5_drain_final5_20260501_194043.log",
+      "drain_launcher": "bin/fire_w4_5_drain_final5.sh",
+      "drain_launcher_uses_forcerun": false,
+      "drain_wall_minutes_approx": 4
+    },
+    "aggregator_3rd_pass": {
+      "log": "logs/wave4_5_aggregator_3rd_pass_20260501_200603.log",
+      "aggregator_fresh_downstream": true,
+      "aggregator_fresh_manifest": false,
+      "aggregator_fresh_overall_note": "5 of 6 aggregator outputs FRESH (qtl_coloc_summary.tsv, tier_assignments.tsv, gene_tissue_matrix.tsv, gene_tissue_long.tsv, pph4_threshold_sweep.tsv); qtl_coloc_manifest.tsv remains at V4 mtime because it is built from upstream config inputs (regions_curated.csv) by build_qtl_coloc_manifest, NOT downstream from per-id JSONs. Manifest invariance is correct architectural behavior and matches plan's acceptable-downgrade footnote.",
+      "aggregator_mtimes": {
+        "qtl_coloc_summary.tsv": 1777680429,
+        "tier_assignments.tsv": 1777680509,
+        "gene_tissue_matrix.tsv": 1777680479,
+        "gene_tissue_long.tsv": 1777680479,
+        "pph4_threshold_sweep.tsv": 1777680509,
+        "qtl_coloc_manifest.tsv": 1777564356
+      },
+      "w4_5_a_dispatch_unix_baseline": 1777589595,
+      "third_pass_dispatch_ts_iso": "2026-05-01T20:06:03-04:00",
+      "third_pass_lsf_jobids": [82091, 82095, 82096],
+      "third_pass_jobs_finished_cleanly": 3,
+      "third_pass_wall_minutes_approx": 3,
+      "deviation_from_plan": "Plan said 'no --forcerun anywhere; mtime cascade naturally rebuilds aggregators.' Initial 3rd-pass v1 (snakemake all_qtl_coloc) reported 'Nothing to be done' because (a) per qtl_coloc.smk lines 336-348 docstring, aggregate_qtl_coloc DOES NOT declare per-id JSONs as inputs (intentional Phase-5 compat decision); and (b) qtl_coloc_summary.tsv mtime > qtl_coloc_manifest.tsv mtime so snakemake's planner saw it as up-to-date. v2 attempt with '--forcerun aggregate_qtl_coloc all_qtl_coloc' caused scope creep (snakemake parsed both as forcerun rules, defaulted to rule all, planned 19 jobs including unrelated rules). v2 supervisor SIGKILLed and 9 LSF jobs explicitly bkilled by jobid (NEVER bkill 0; 82073-82081 all confirmed ours from the bkilled v2 dispatch). Locks re-cleared with timestamped backups (0 identity_ld entries; safe full removal). v3 (this final version) targeted aggregator output paths directly: 'snakemake results/qtl_coloc/qtl_coloc_summary.tsv tier_assignments.tsv pph4_threshold_sweep.tsv gene_tissue_matrix.tsv gene_tissue_long.tsv' — qtl_coloc_summary.tsv was now MISSING (bkilled mid-write), so snakemake correctly rebuilt it, then mtime-cascaded into assign_tiers + build_gene_tissue_matrix. 3 of 3 steps clean in ~3 min."
+    },
+    "status_distribution_from_1274_perid_jsons": {
+      "too_few_snps":      1005,
+      "no_qtl_cs":          235,
+      "success":             32,
+      "qtl_susie_failed":     2,
+      "other_unparsed":       0,
+      "total":             1274
+    },
+    "w4_pass_gate": {
+      "criterion_pass":            "too_few_snps <= 200",
+      "criterion_partial":         "200 < too_few_snps < 800 (CARTER_DECIDES)",
+      "criterion_fail":            "too_few_snps >= 800",
+      "observed_too_few_snps":     1005,
+      "fraction_too_few":          0.7889,
+      "outcome":                   "FAILED",
+      "w5_gate":                   "BLOCKED"
+    },
+    "preserved_invariants": {
+      "susie_fit_count": 96,
+      "anchor_md5_bmi":          "462ada6ab64fdf8571fb5ed7dd6c6ea2",
+      "anchor_md5_hypertension": "8255c1acf50add5f68dfb551af977b53",
+      "anchor_md5_stroke":       "a041eecc27f3086190069783eeb45ffe",
+      "track_a_frozen_md5":      "9d0405a4db95655b1be7401883d22165",
+      "anchor_path_corrections_from_plan_globs": "Plan globs '*sh2b3*bmi*' / '*sh2b3*stroke*' did not match actual file naming. Correct paths: results/fine_mapping/susie/bmi.EUR.SH2B3_12q24.fit.rds, results/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.fit.rds, results/fine_mapping/susie/stroke.EUR.SH2B3_12q24.fit.rds. TRACK-A-FROZEN-NUMBERS.md is at .planning/amendments/, not data/processed/region_analysis/SH2B3_12q24/. All 4 invariant md5s match v6 pinned values exactly post-wave."
+    },
+    "other_terminal_protection": {
+      "pid_830751_status": "alive throughout (results_identity_ld pipeline; lock-file edits surgical with 0 identity_ld lines to preserve; bkill 0 NEVER used; explicit jobid bkill on 9 v2-aggregator jobs only)"
+    }
+  },
+  "deviations_applied": [
+    {
+      "rule": "Rule 1 (auto-fix bug)",
+      "issue": "Plan glob '*sh2b3*bmi*' for anchor md5 lookup did not match actual file naming (bmi.EUR.SH2B3_12q24.fit.rds, etc.). Plan path 'data/processed/region_analysis/SH2B3_12q24/TRACK-A-FROZEN-NUMBERS.md' does not exist; the actual TRACK-A-FROZEN file is at .planning/amendments/TRACK-A-FROZEN-NUMBERS.md.",
+      "fix": "Used correct paths throughout. All 4 invariant md5s verified pre-drain and post-drain match v6 pinned values exactly."
+    },
+    {
+      "rule": "Rule 3 (auto-fix blocking issue)",
+      "issue": "Plan assumption 'no --forcerun anywhere; the 5 newly-landed JSONs are now newer than the V4 aggregator outputs, so mtime cascade naturally rebuilds qtl_coloc_summary.tsv' is architecturally incorrect. Per qtl_coloc.smk lines 336-348 (intentional design comment in aggregate_qtl_coloc rule), per-id JSONs are NOT declared as inputs of aggregate_qtl_coloc — only the manifest is. Therefore the JSON mtime cascade does NOT propagate to aggregator outputs. Initial v1 invocation 'snakemake all_qtl_coloc' returned 'Nothing to be done.'",
+      "fix": "Targeted aggregator-pass v3: explicit aggregator output paths as snakemake targets ('snakemake results/qtl_coloc/qtl_coloc_summary.tsv tier_assignments.tsv pph4_threshold_sweep.tsv gene_tissue_matrix.tsv gene_tissue_long.tsv'). qtl_coloc_summary.tsv was missing (bkilled mid-write from failed v2 attempt) so snakemake rebuilt it, then natural mtime cascade triggered assign_tiers + build_gene_tissue_matrix. 3/3 steps clean in ~3 min."
+    },
+    {
+      "rule": "Rule 1 (auto-fix bug — v2 scope creep)",
+      "issue": "Aggregator-pass v2 invocation 'snakemake --forcerun aggregate_qtl_coloc all_qtl_coloc' was misparsed by snakemake CLI: --forcerun consumed both 'aggregate_qtl_coloc' AND 'all_qtl_coloc' as rule names (lifelong --forcerun list semantics), with no positional target left, so snakemake defaulted to rule all and planned 19 jobs including unrelated targets (summarize_harmonized_sumstats, build_pgs_manifest, build_mr_manifest, etc.).",
+      "fix": "SIGINT then SIGKILL on supervisor PID 416173 (local snakemake driver). Explicit bkill of 9 LSF jobs (82073-82081, all from this v2 dispatch by JOBID range — NO bkill 0 used; PID 830751 LSF jobs untouched). Locks re-cleared with timestamped backups (0 identity_ld entries; safe full removal). v3 (targeted) launched and completed cleanly."
+    }
+  ],
+  "next_actions": [
+    "OUTCOME=FAILED on W4 PASS gate (too_few_snps=1005 >= 800). W5 gate BLOCKED.",
+    "Per the W4 plan PASS/FAIL/WARN gate taxonomy, the next remediation step is W4.5 SuSiE-RSS-layer fallback (e.g., relax susie n_snps_min, expand region windows, switch to SuSiE-RSS with realistic LD, or accept 32-success outcome and move to manuscript framing as 'mechanistic hits at 32 / 1274 = 2.5% with tier-A confidence; 78.9% too_few_snps reflects current LD-panel + region-window choices').",
+    "W4.5 SuSiE-RSS fallback is OUT OF SCOPE for quick task 260501-r1q. Carter must inspect the 1005 too_few_snps cases and decide:",
+    "  (A) Accept 32 successes as the final wave-4 outcome and proceed with manuscript framing (Track A id-vs-ref-LD).",
+    "  (B) Open a new wave (W5 SuSiE-RSS-relaxed) with relaxed susie n_snps_min and/or wider region windows.",
+    "  (C) Investigate whether the 1005 too_few_snps are concentrated in specific tissue/region classes (e.g., sQTL × small-N tissues × narrow regions) and target the next wave at those specifically.",
+    "Cross-ref: tracker v6 next_actions_when_run_qtl_coloc_completes already specified 'Write tracker v7 with status=PASSED/FAILED/PARTIAL_PASSED based on outcome' — done here."
+  ],
+  "predecessor_cross_reference": {
+    "v6_supersedes_pointer": "v6.next_actions_when_run_qtl_coloc_completes => this v7 records the 3rd-pass outcome explicitly (was 'KNOWN ANOMALY: aggregator rules are NOT in the W4.5-a re-fire DAG plan — 3rd-pass invocation will likely be needed AFTER run_qtl_coloc completes')",
+    "v6_dispatch_baseline": "20260430_165315 EDT = unix 1777589595 (used as fresh-vs-stale cutoff for aggregator mtimes)",
+    "v6_status_at_handoff": "DISPATCHED_W4_5_A_SCOPE_CORRECTED_50_OF_1274_RUN_QTL_COLOC_INFLIGHT_ON_SERIAL — supervisor PID 2670648 then exited cleanly at 99.6% (1270/1275 DAG steps; last log activity 2026-04-30T18:04:50 EDT)",
+    "w4_plan_pass_gate_definition_path": ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W4-cache-invalidation-and-refire-PLAN.md (PASS gate: too_few_snps <= 200; FAIL gate: too_few_snps >= 800)"
+  }
+}
