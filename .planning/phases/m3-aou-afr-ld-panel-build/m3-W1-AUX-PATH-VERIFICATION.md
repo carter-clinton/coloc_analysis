@@ -1,9 +1,14 @@
 # M3 Wave 1 — AUX Path Verification Spec
 
-**Status:** VERIFIED 2026-04-30 (Carter Workbench session — Run 1 below).
-All three checklist boxes PASS; no path-fix-up commit needed (inferred
-filename `ancestry_preds.tsv` matches the on-bucket filename byte-for-byte).
-AUX gate cleared. Wave 1 unblocked.
+**Status:** VERIFIED 2026-05-01 against **CDR v8** (Carter Workbench session — Run 2 below).
+All three checklist boxes PASS at v8; v8 AUX layout parallels v7 with `ancestry_preds.tsv`,
+`relatedness_flagged_samples.tsv`, and `relatedness.tsv` at the analogous v8 paths. Initial
+2026-04-30 v7 verification (Run 1 below) is preserved for forensic completeness but
+**superseded by v8 adoption** per [DEC-2026-05-01-01](../../DECISIONS.md#2026-05-01--dec-2026-05-01-01-m3-cdr-v7v8-adoption-o2-trigger-fired).
+The O2 re-pin trigger documented in `aou_ld_panel.py:70` (now removed) fired because the
+Workbench bound `WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH` to v8 by default once attached to a
+v8-bound workspace, creating a v8 WGS / v7 ancestry mismatch hazard. AUX gate cleared at v8;
+Wave 1 unblocked.
 
 **Why this spec exists:** Of the 7 Wave 1 readiness items in
 [m3-00-W0-foundations-SUMMARY.md](./m3-00-W0-foundations-SUMMARY.md)
@@ -349,6 +354,97 @@ gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/
      `aou_ld_panel.py:57` matches the verified bucket layout. O2
      re-pin trigger ("if v8 lands during Wave 1-3") not yet active;
      re-verify at submission time per spec.
+
+---
+
+### Run 2 — Carter Workbench session 2026-05-01 (CDR v8 adoption)
+
+* **Date / time (Workbench session):** 2026-05-01 (Workbench shell;
+  same Jupyter container hostname `1ca6f2e2aaed` as Run 1)
+* **Workbench session:** Same workspace as Run 1; CDR v8 binding
+  surfaced via `WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH` defaulting to a
+  v8 path on this fresh post-clone import sanity check.
+* **Trigger:** Mid-flight O2 trigger ("if v8 lands during Wave 1-3")
+  fired when AOU-1 Cell 1 import sanity check revealed the workspace
+  WGS path is v8 (`gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt`)
+  while `ANCESTRY_PREDS_PATH` was still pinned to v7. Mixed v8 WGS +
+  v7 ancestry preds risked silent cohort under-counting if AoU
+  re-derived ancestry inference for v8.
+
+```
+$ gsutil -u "$GOOGLE_PROJECT" ls gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/eigenvalues.txt
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/merged_sites_only_intersection.vcf.bgz
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/merged_sites_only_intersection.vcf.bgz.tbi
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/preds_oth.html
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/rf_classifier.pkl
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/training_pca.tsv
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/loadings.ht/
+
+$ gsutil -u "$GOOGLE_PROJECT" stat gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv
+[Created/updated 2025-01-20; 171,388,042 bytes (~163 MiB);
+ MD5 xfx08/nBfrkxJ+J2j8aL0A==; CRC32C B3HktA==]
+
+$ gsutil -u "$GOOGLE_PROJECT" ls gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/relatedness/
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/relatedness/relatedness.tsv
+gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/relatedness/relatedness_flagged_samples.tsv
+
+$ gsutil -u "$GOOGLE_PROJECT" stat gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv
+[v7 still resolves; original 2023-04-06 timestamp; both versions coexist]
+```
+
+* **Verification result:**
+  * Checklist (a): **PASS at v8** — `aux/ancestry/` listing returns 8 entries
+    (v7's 5 + new v8 additions: `eigenvalues.txt`, `rf_classifier.pkl`,
+    `training_pca.tsv` for the v8 ancestry inference pipeline). No
+    `AccessDeniedException`; bucket reachable from controlled-tier workspace.
+  * Checklist (b): **PASS at v8** — observed filename `ancestry_preds.tsv`
+    appears in the v8 listing; size 171,388,042 bytes (~163 MiB; **~+69 %**
+    over v7's 101 MiB consistent with v8's larger participant roster);
+    Content-MD5 `xfx08/nBfrkxJ+J2j8aL0A==`; updated 2025-01-20 (CDR v8
+    release vintage). `relatedness_flagged_samples.tsv` and
+    `relatedness.tsv` also confirmed at parallel v8 paths.
+  * Checklist (c): **PASS at v8 after CDR_VERSION bump** —
+    `ANCESTRY_PREDS_PATH` in `src/python/aou_ld_panel.py:75` now resolves
+    to `gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv`
+    after the `CDR_VERSION = "v7" → "v8"` edit. Matches the observed v8
+    filename byte-for-byte.
+* **Path-fix-up commit (yes):** `feat(m3-aou-afr-ld-panel): bump CDR_VERSION
+  v7→v8 (O2 trigger; v8 AUX paths verified)`. Edits CDR_VERSION pin,
+  refreshes inline VERIFIED comments, retires the O2 re-pin trigger comment
+  (now resolved), and updates the docstring path example. RELATED_SAMPLES_PATH
+  + RELATEDNESS_FULL_PATH automatically re-derive via `f"{AUX_BASE}/..."`
+  string interpolation; no per-constant edits needed beyond CDR_VERSION.
+* **Closing notes:**
+  1. **v8 has 3 new sibling files** vs v7 — `eigenvalues.txt`,
+     `rf_classifier.pkl`, `training_pca.tsv`. These are the AoU v8
+     ancestry inference pipeline artifacts (eigenvalues for the v8 PCA,
+     scikit-learn pickled RF classifier, and the training PCA TSV used
+     to fit the classifier). NOT consumed by `aou_ld_panel.py` (which
+     reads only `ancestry_preds.tsv`). Worth flagging as candidate
+     data for a future RESEARCH O5 sensitivity analysis where the
+     ancestry inference reproducibility could be evaluated against
+     the AoU classifier directly. Documented here for discoverability.
+  2. **Sample roster delta** — v8 ancestry_preds.tsv ~163 MiB vs v7
+     ~97 MiB ≈ +69 %, suggesting v8 has roughly +60-80 k participants
+     over v7 (rough estimate from per-row byte size; exact count
+     surfaces during AOU-1 Cell 2 `count_cols()`). This affects every
+     planning-time sample-N estimate in m3-RESEARCH.md and m3-CONTEXT.md
+     (D-M3-DEFAULT v7 pin); per DEC-2026-05-01-01, those numbers
+     re-baseline at AOU-1 fire time and are not retroactively rewritten
+     in the planning artifacts (per `feedback_original_research_framing.md`).
+  3. **v7 still resolves** — `gsutil stat` on the v7 path returned its
+     original 2023-04-06 metadata. v7 → v8 is **not a forced migration**;
+     both versions coexist in the controlled-tier bucket. The v8 adoption
+     is driven by Workbench default behavior + larger participant set,
+     not by v7 deprecation.
+  4. **Requester-pays model unchanged at v8** — same `-u "$GOOGLE_PROJECT"`
+     flag pattern as v7. Hail's GCS connector handles this transparently.
+  5. **CDR-version pin now v8** — `CDR_VERSION = "v8"` in
+     `aou_ld_panel.py:74` matches the verified bucket layout. O2 trigger
+     RESOLVED — comment retired in this commit. Next reverify trigger:
+     CDR v9 if it lands during Wave 4-5; lock at submission.
 
 ---
 
