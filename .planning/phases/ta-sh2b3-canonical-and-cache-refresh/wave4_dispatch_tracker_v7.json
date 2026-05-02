@@ -4,8 +4,19 @@
   "version": "v7_W4_5_A_CONTINUATION_FAILED",
   "supersedes": "wave4_dispatch_tracker_v6.json (DISPATCHED, supervisor PID 2670648 died at 99.6%)",
   "status": "FAILED",
+  "outcome_disposition": "HONEST_FINDING",
+  "historical_outcome": {
+    "mechanical_label": "FAILED",
+    "mechanical_label_basis": "W4 PLAN PASS/FAIL gate (too_few_snps >= 800 -> FAILED). Preserved as the immutable forensic record of the gate's mechanical evaluation; do not overwrite or rewrite the `status` field.",
+    "strategic_disposition": "HONEST_FINDING",
+    "strategic_disposition_basis": "Cache-staleness hypothesis (tracker v6 monitoring_directives.post_completion_3rd_pass_needed) refuted by the W4.5-A continuation: drain + aggregator 3rd-pass produced too_few_snps = 1005 -> 1005 (delta=0). The 78.9% is structural (LD-panel coverage + region-window choices), not artifactual. Adopted as canonical Layer-2 finding parallel to the Layer-1 51/96 = 53.1% SuSiE-RSS strict-gate convergence rate.",
+    "decision_anchor": ".planning/DECISIONS.md::DEC-2026-05-01-02",
+    "active_narrative_document": ".planning/phases/ta-sh2b3-canonical-and-cache-refresh/W4-DISPOSITION-REVISED.md",
+    "transition_recorded": "2026-05-01",
+    "skipped_followup_track": "W4.5-B SuSiE-RSS rebuild (rejected: data identifies LD coverage not iteration budget as constraint; rebuild would risk TRACK-A-FROZEN md5 invariant break with low expected payoff)"
+  },
   "recorded": "2026-05-02T00:10:00Z",
-  "summary_one_liner": "W4.5-A continuation drain + aggregator-refresh succeeded MECHANICALLY (1270 to 1274 JSONs; 5 of 6 aggregator outputs refreshed via targeted snakemake invocation), but W4 PASS gate FAILED on substance: too_few_snps = 1005 / 1274 (78.9%) which is >= 800 cutoff. This is W4.5 SuSiE-RSS-layer fallback territory per the W4 plan PASS/FAIL taxonomy and the W4.5-A-continuation quick-task scope; remediation is OUT OF SCOPE here.",
+  "summary_one_liner": "W4.5-A continuation drain + aggregator-refresh succeeded MECHANICALLY (1270 to 1274 JSONs; 5 of 6 aggregator outputs refreshed via targeted snakemake invocation). W4 PASS gate FAILED on mechanical evaluation: too_few_snps = 1005 / 1274 (78.9%) >= 800 cutoff. RE-DISPOSITIONED 2026-05-01 (DEC-2026-05-01-02): cache-staleness hypothesis refuted (post-3rd-pass too_few_snps unchanged from V4-era count); 78.9% adopted as canonical Layer-2 finding parallel to Layer-1 53.1% SuSiE convergence rate; W4.5-B SuSiE-RSS rebuild explicitly skipped (LD coverage is the constraint, not iteration budget; rebuild risks TRACK-A-FROZEN md5 break). FAILED preserved as historical_outcome.mechanical_label for forensic traceability; HONEST_FINDING is the active strategic disposition. See W4-DISPOSITION-REVISED.md for the 3-layer contrast architecture and refuted-hypothesis reasoning.",
   "outcome_summary": {
     "drain_pass": {
       "missing_count_observed": 4,
