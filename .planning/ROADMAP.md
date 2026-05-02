@@ -60,7 +60,7 @@ fallback / Bioinformatics Applications Note final fallback in 2026-05 /
 **Slug**: m0-pivot-scaffolding
 **Goal**: Adopt pivot charter; rewrite .planning/ scaffold per Amendment §12;
 lock 9-trait × 2-ancestry inventory; lock phenotype definitions; author
-TRACK-A-PIVOT.md, SUMSTATS-UPGRADE.tsv/.md, AOU-LD-PIPELINE.md,
+ID-VS-REF-LD-STRATEGY.md, SUMSTATS-UPGRADE.tsv/.md, AOU-LD-PIPELINE.md,
 TRACK-A-FROZEN-NUMBERS.md companion docs (Amendment §3 M0).
 **Requirements**: REQ-AMEND-SEC12, REQ-PUBLIC-DATA-ONLY, REQ-SNAKEMAKE-CI
 (carried forward)
@@ -74,7 +74,7 @@ TRACK-A-FROZEN-NUMBERS.md companion docs (Amendment §3 M0).
 **Deliverable Artifacts**:
   - `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`
   - Updated `.planning/PROJECT.md` / `ROADMAP.md` / `REQUIREMENTS.md` / `DECISIONS.md`
-  - `TRACK-A-PIVOT.md`, `TRACK-A-FROZEN-NUMBERS.md`, `SUMSTATS-UPGRADE.{md,tsv}`, `AOU-LD-PIPELINE.md`, `SUMSTATS-MANUAL-FETCH.md`
+  - `ID-VS-REF-LD-STRATEGY.md`, `TRACK-A-FROZEN-NUMBERS.md`, `SUMSTATS-UPGRADE.{md,tsv}`, `AOU-LD-PIPELINE.md`, `SUMSTATS-MANUAL-FETCH.md`
 **Gating condition for M1**: M0 scaffolding commits land (this quick-task
 plan + subsequent STATE.md refresh session).
 **Status**: in flight — amendment + companions complete; doc rewrites are
@@ -306,7 +306,7 @@ independently per Track-A-finalization row below.
 **Goal**: Finalize Track A short-form methods paper framing the real-LD
 audit of 50 curated cardiometabolic regions; submit bioRxiv preprint +
 venue submission (Genome Medicine primary; AJHG short-report / Bioinformatics
-Applications Note fallbacks) per TRACK-A-PIVOT.md and Amendment §8.
+Applications Note fallbacks) per ID-VS-REF-LD-STRATEGY.md and Amendment §8.
 **Requirements**: REQ-PUBLIC-DATA-ONLY, REQ-SNAKEMAKE-CI,
 REQ-SUSIE-RSS-POLICY, REQ-OSF-PREREG, REQ-PP.H4-THRESHOLD-SWEEP,
 REQ-NEGATIVE-CONTROLS, REQ-PATH-PARAMETERIZATION
@@ -317,10 +317,10 @@ of Track B milestone sequence
     Stage 2 values locked in `TRACK-A-FROZEN-NUMBERS.md` (51/96 CS; 0
     Tier A; SH2B3 × asthma EUR identity-LD PP.H4=1.0 → real-LD
     n_cs_a=0; 224 negative-control rows all null)
-  - [ ] Introduction rewrite (TRACK-A-PIVOT.md §4.5): 5-paragraph
+  - [ ] Introduction rewrite (ID-VS-REF-LD-STRATEGY.md §4.5): 5-paragraph
     restructure; strip ML framing; demote evolutionary-medicine to
     Discussion
-  - [ ] Discussion rewrite (TRACK-A-PIVOT.md §4.17): identity-LD
+  - [ ] Discussion rewrite (ID-VS-REF-LD-STRATEGY.md §4.17): identity-LD
     inflation as dominant finding; drug-target-inference caution;
     Track B forward pointer
   - [ ] References additions: Wallace 2021, Zou 2022, Weissbrod 2020, Benner 2017
@@ -368,7 +368,7 @@ REQ-PATH-PARAMETERIZATION
 frozen checkpoint; Phase 1 SuSiE-RSS outputs (re-fits at expanded L);
 Phase 2 Stage 2 real-LD coloc.susie outputs; Phase 2 QTL-coloc cache
 (intermediate, slated for invalidation); honest-framing-lock chain at
-`docs/manuscript/track_a_pivot.md` (L148 + L295 + L220 + L90) +
+`docs/manuscript/id-vs-ref-LD.md` (L148 + L295 + L220 + L90) +
 R-script header + locked-scalar block + plot_annotation + 1vy SUMMARY
 (must be preserved verbatim per `.planning/feedback_original_research_framing.md`)
 **Open scope-decisions (Wave 0 — locked by `/gsd-discuss-phase` + Carter):**
@@ -431,10 +431,10 @@ R-script header + locked-scalar block + plot_annotation + 1vy SUMMARY
     Discussion §SH2B3 anchor, Results §SH2B3 case study, Fig 3 caption,
     Fig S7 caption, Conclusion-1, Abstract, Table 3 SH2B3 rows, Table 4
     (`n_attempted` / `n_failed` columns), plus SH2B3-specific paragraphs
-    in `docs/manuscript/track_a_pivot.md`
+    in `docs/manuscript/id-vs-ref-LD.md`
   - **Wave 7**: phase closeout — SUMMARY.md per plan with deviations log
     + verification dimensions D1–DN PASS/WARN/FAIL JSON + new submission
-    bundle build via `bin/build_track_a_submission_bundle.sh` + SHA-256
+    bundle build via `bin/build_id_vs_ref_ld_submission_bundle.sh` + SHA-256
     manifest update + OSF deviation log entry at `osf.io/az52u`
 **Invariants the plan MUST honor (non-negotiable):**
   - NO `/gsd-quick` shortcuts. Atomic commits per task. SUMMARY.md per
@@ -443,7 +443,7 @@ R-script header + locked-scalar block + plot_annotation + 1vy SUMMARY
     frozen at Wave 5. Never pre-write narrative against anticipated
     outcomes.
   - Honest-framing-lock chain preserved at every anchor point
-    (`docs/manuscript/track_a_pivot.md` L148 + L295 + L220 + L90 +
+    (`docs/manuscript/id-vs-ref-LD.md` L148 + L295 + L220 + L90 +
     R-script header + locked-scalar block + plot_annotation + 1vy
     SUMMARY). Original hypothesis-driven research framing only — never
     "revision" / "correction" / "cleanup" / "fix" (per
@@ -475,7 +475,7 @@ R-script header + locked-scalar block + plot_annotation + 1vy SUMMARY
      Abstract, Conclusion-1, captions, tables) with honest-framing-lock
      chain preserved verbatim
   7. New submission bundle built via
-     `bin/build_track_a_submission_bundle.sh` + SHA-256 manifest update
+     `bin/build_id_vs_ref_ld_submission_bundle.sh` + SHA-256 manifest update
      + OSF deviation log entry at `osf.io/az52u`
 **Plans**: 8 plans (Wave 0 through Wave 7; one PLAN.md per wave)
 

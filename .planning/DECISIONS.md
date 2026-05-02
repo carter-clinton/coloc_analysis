@@ -436,7 +436,7 @@ candidate-locus design fails (a), (b), (e), (f).
 
 **How to apply:** Track B M0–M6 execution follows Amendment §3. Track A
 finalization ships the candidate-locus real-LD audit independently per
-TRACK-A-PIVOT.md. The 205 analysis windows and 96 Stage 2 coloc cells are
+ID-VS-REF-LD-STRATEGY.md. The 205 analysis windows and 96 Stage 2 coloc cells are
 reusable per Amendment §8 as (i) Track A's primary data and (ii) Track B's
 candidate-locus validation appendix.
 
@@ -603,7 +603,7 @@ positions Track A as "pre-specified validation ahead of discovery" rather
 than a post-hoc carve-out (Amendment §8).
 
 **How to apply:**
-- Track A finalization proceeds per TRACK-A-PIVOT.md and the ROADMAP
+- Track A finalization proceeds per ID-VS-REF-LD-STRATEGY.md and the ROADMAP
   "Track-A-finalization" sub-task checklist.
 - Track B proceeds per Amendment §3 M0–M6 with the OSF amendment posted
   at end of M1 and before any M2 MTAG/CPASSOC run.
@@ -733,7 +733,7 @@ without reorchestrating Waves 1–4.
 
 ## 2026-04-27 — DEC-2026-04-27-01: Conclusion-1 method-namespace reframe (audit-V2 sweep HQ3)
 
-**Decision:** Conclusion claim 1 (manuscript L252–254 in `docs/manuscript/track_a_pivot.md`) is reframed from "Identity-LD `coloc.abf` fine-mapping inflates cross-trait PP.H4 ..." to the audit-V2 drop-in paragraph that names the actual method contrast under audit (SuSiE-RSS + `coloc.susie` identity-LD vs SuSiE-RSS + `coloc.susie` real-LD), discloses the structural-shift evidence (PIP redistribution / lead-rank instability via Figure S2, n = 48 paired non-empty fits), names the SH2B3 niter=100 non-convergence and FTO `ld_overlap_fraction = 0` + Benner-threshold structural findings, and explicitly notes that the canonical SH2B3 EUR BMI–HTN / HTN–stroke pairs were not executed under matched-coverage real-LD `coloc.susie` (Stage 2 trait-pair scoping was restricted to `SH2B3_12q24__EUR__asthma_vs_t2d`). Landed via commit `a345f5e` (quick-260427-azv, audit-V2 sweep commit 2 of 12).
+**Decision:** Conclusion claim 1 (manuscript L252–254 in `docs/manuscript/id-vs-ref-LD.md`) is reframed from "Identity-LD `coloc.abf` fine-mapping inflates cross-trait PP.H4 ..." to the audit-V2 drop-in paragraph that names the actual method contrast under audit (SuSiE-RSS + `coloc.susie` identity-LD vs SuSiE-RSS + `coloc.susie` real-LD), discloses the structural-shift evidence (PIP redistribution / lead-rank instability via Figure S2, n = 48 paired non-empty fits), names the SH2B3 niter=100 non-convergence and FTO `ld_overlap_fraction = 0` + Benner-threshold structural findings, and explicitly notes that the canonical SH2B3 EUR BMI–HTN / HTN–stroke pairs were not executed under matched-coverage real-LD `coloc.susie` (Stage 2 trait-pair scoping was restricted to `SH2B3_12q24__EUR__asthma_vs_t2d`). Landed via commit `a345f5e` (quick-260427-azv, audit-V2 sweep commit 2 of 12).
 
 **Alternatives considered:**
 - (a) Keep "coloc.abf inflates" as-is — rejected: method-namespace conflation per `AUDIT-REVIEW-V2-2026-04-26.md` §HQ3 (`coloc.abf` is single-causal-variant and does not fine-map; the 1.06× count-level contrast is between SuSiE-RSS + `coloc.susie` under two LD references, not between `coloc.abf` under two LD references).
