@@ -1,0 +1,1 @@
+22f412f603d1d73e5a314358ec9d29d1  docs/manuscript/track_a_pivot.md
