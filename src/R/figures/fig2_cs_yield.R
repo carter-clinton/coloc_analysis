@@ -31,7 +31,7 @@
 #    FIRST then propagate here in the same commit.)
 #
 # Upstream plans:
-#   .planning/amendments/TRACK-A-PIVOT.md §5 (figure spec)
+#   .planning/amendments/ID-VS-REF-LD-STRATEGY.md §5 (figure spec)
 #   /home/ckclinto/.claude/plans/snappy-humming-pine.md §2.3 ("Fig 1 = CS yield")
 #
 # Outputs:
@@ -50,8 +50,8 @@
 # Figure-number provenance (R2 alignment pass, quick-260424-mqo, 2026-04-24):
 #   Filename stem is now 'fig2_cs_yield' to align with the canonical 5-figure
 #   manuscript scheme. Authoritative slot owners:
-#     - docs/manuscript/track_a_pivot.md L289-L297 (live manuscript captions)
-#     - .planning/amendments/TRACK-A-PIVOT.md §5 (canonical pivot-plan figure spec)
+#     - docs/manuscript/id-vs-ref-LD.md L289-L297 (live manuscript captions)
+#     - .planning/amendments/ID-VS-REF-LD-STRATEGY.md §5 (canonical id-vs-ref-LD strategy figure spec)
 #   Both place this credible-set-yield artifact at the Figure 2 slot. The earlier
 #   workspace-plan sketch (snappy-humming-pine.md §2.3) labelled this as "Fig 1"
 #   in a 3-figure scheme; that integer numbering is an early sketch and is

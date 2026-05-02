@@ -67,7 +67,7 @@
 #     src/R/figures/fig1b_locus_panels.R
 #
 # Figure-number provenance: Track A canonical 5-figure roster per
-# .planning/amendments/TRACK-A-PIVOT.md §5. Figure 1 Panel B is the anchor-locus
+# .planning/amendments/ID-VS-REF-LD-STRATEGY.md §5. Figure 1 Panel B is the anchor-locus
 # companion to Figure 1 Panel A (identity-vs-real PP.H4 scatter, deferred to
 # post-k2d pass).
 #

@@ -17,7 +17,7 @@
 # redistribution table is therefore disclosure-honest "all real-LD empty +
 # identity-LD trait-pair comparator absent = both-null = 28 of 28".
 #
-# Closes Decision-pending item 4 of docs/manuscript/track_a_pivot.md L362
+# Closes Decision-pending item 4 of docs/manuscript/id-vs-ref-LD.md L362
 # (pre-bioRxiv blocker; deferred-items #5 of quick-260427-azv SUMMARY).
 #
 # Authoritative ledger: .planning/amendments/TRACK-A-FROZEN-NUMBERS.md

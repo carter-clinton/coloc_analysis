@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 # fig5_variant_mech_scorecard.R — Track A Figure 5 (variant mechanism + Tier C scorecard)
 #
-# Purpose: Build the two-panel composite figure per TRACK-A-PIVOT.md §5 Figure 5 spec
-# and track_a_pivot.md L295 legend.
+# Purpose: Build the two-panel composite figure per ID-VS-REF-LD-STRATEGY.md §5 Figure 5 spec
+# and id-vs-ref-LD.md L295 legend.
 #
 #   Panel A — Variant mechanism donut at real-LD-surviving lead variants (n = 51
 #             non-empty credible sets from results/fine_mapping/susie/*.json).
@@ -23,7 +23,7 @@
 #             threshold) and 0.8 (Tier A threshold) visualise the gap to the
 #             manuscript's confidence thresholds.
 #
-# Manuscript anchor: docs/manuscript/track_a_pivot.md L295 Figure 5 legend
+# Manuscript anchor: docs/manuscript/id-vs-ref-LD.md L295 Figure 5 legend
 # ("partial, descriptive only"; panel B explicitly NOT predictive discovery;
 # drug-target status labelled as reference annotation only).
 #
