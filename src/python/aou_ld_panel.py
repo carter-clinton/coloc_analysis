@@ -23,10 +23,16 @@ Verified env vars (RESEARCH Q9):
     WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH - AoU-provided ACAF MT path (AoU-set)
 
 Hardcoded auxiliary paths (NOT env vars; pin to CDR version):
-    gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/aux/
+    gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/
         relatedness/relatedness_flagged_samples.tsv
-        ancestry/ancestry_preds.tsv (VERIFIED 2026-04-30 via AoU
-            Workbench AUX path check; see m3-W1-AUX-PATH-VERIFICATION.md)
+        ancestry/ancestry_preds.tsv (VERIFIED 2026-05-01 against CDR v8
+            via AoU Workbench AUX path check; see Run 2 in
+            m3-W1-AUX-PATH-VERIFICATION.md. Initial v7 verification
+            2026-04-30 superseded by v8 adoption — O2 trigger fired
+            because workspace WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH
+            defaulted to v8 once Workbench bound to v8 dataset.
+            v7 paths still resolve but v8 is canonical going forward
+            per DEC-2026-05-01-01.)
 
 Bucket access note:
     The AoU controlled-tier AUX bucket is requester-pays. Hail's GCS
@@ -53,7 +59,10 @@ if TYPE_CHECKING:  # avoid hail import at module load time (graceful local impor
     import hail as hl
     import numpy as np
 
-# Verified against AoU C2025Q1 CDRv7 docs (2026-04-27); reverify at submission
+# Verified against AoU CDR v8 docs (2026-05-01; per DEC-2026-05-01-01 v7→v8
+# adoption). ANCESTRY_FIELD column name preserved between v7 and v8 per the
+# v8 ancestry_preds.tsv header inspection (Run 2 in
+# m3-W1-AUX-PATH-VERIFICATION.md). Reverify at submission.
 ANCESTRY_FIELD = "ancestry_pred"
 # Documented AoU ancestry_pred label space (CDRv7 docs reference; for column
 # annotation only). The M3 manifest only emits AFR/EUR rows per D-M3-02.
@@ -67,12 +76,15 @@ SUPPORTED_ANCESTRIES = {"afr", "eur"}
 # KING third-degree-or-closer threshold (D-M3-07 conservative pin)
 KING_KINSHIP_THRESHOLD = 0.0442
 
-# AoU CDR version pin (O2: re-pin if v8 lands during Wave 1-3)
-CDR_VERSION = "v7"
+# AoU CDR version pin (DEC-2026-05-01-01: v7→v8 adoption; O2 trigger fired
+# 2026-05-01 because Workbench bound WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH to v8
+# by default and v8 ancestry_preds.tsv has ~+69% participants over v7).
+# v7 paths still resolve but v8 is canonical going forward.
+CDR_VERSION = "v8"
 AUX_BASE = f"gs://fc-aou-datasets-controlled/{CDR_VERSION}/wgs/short_read/snpindel/aux"
 RELATED_SAMPLES_PATH = f"{AUX_BASE}/relatedness/relatedness_flagged_samples.tsv"
 RELATEDNESS_FULL_PATH = f"{AUX_BASE}/relatedness/relatedness.tsv"
-ANCESTRY_PREDS_PATH = f"{AUX_BASE}/ancestry/ancestry_preds.tsv"  # VERIFIED 2026-04-30 via AoU Workbench AUX path check
+ANCESTRY_PREDS_PATH = f"{AUX_BASE}/ancestry/ancestry_preds.tsv"  # VERIFIED 2026-05-01 via AoU Workbench v8 AUX path check (Run 2)
 
 # Sample QC thresholds (AOU-LD-PIPELINE.md §3.1)
 MIN_CALL_RATE_SAMPLE = 0.98
