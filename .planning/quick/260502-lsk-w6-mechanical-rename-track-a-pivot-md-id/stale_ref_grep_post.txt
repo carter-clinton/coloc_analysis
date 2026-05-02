@@ -1,0 +1,22 @@
+=== IN-SCOPE FILES (expect counts = 0) ===
+(if no output above this line: in-scope ref count = 0 OK)
+
+=== STATE.md mechanical-substitution gate (Carter Option B): canonical 3-token forms ===
+track_a_pivot.md remaining: 0
+TRACK-A-PIVOT.md remaining: 0
+build_track_a_submission_bundle.sh remaining: 0
+
+STATE.md residual non-mechanical-target tokens (NOT substituted per orchestrator strict rule):
+  - bare 'TRACK-A-PIVOT' (no .md): 1 (line 54 — historical narrative; not in orchestrator's mechanical-substitution token list)
+  - bare 'track_a_pivot' (no .md or .html): 1 (line 365 — historical Quick-Tasks audit-trail row)
+  - 'track_a_pivot.html': 1 (line 370 — historical bundle-build narrative; per parent W6 PLAN bullet 4 historical-record rule)
+  - 'track_a_genome_medicine_submission.zip': 1 (line 370 — historical artifact name)
+
+=== TRACK-A-AUDIT-RESPONSE: L5 forward link UPDATED ===
+**Manuscript:** [docs/manuscript/id-vs-ref-LD.md](../../docs/manuscript/id-vs-ref-LD.md)
+
+=== HISTORICAL FILES (counts PRESERVED at pre-task values) ===
+TRACK-A-AUDIT-RESPONSE total ref count (expect 53; was 54 pre-task; only L5 changed):
+53
+bin/build_aou_portal_bundle.sh (expect 1; L12 historical comment preserved):
+12:# Modeled on bin/build_track_a_submission_bundle.sh (quick-260427-vbq):
