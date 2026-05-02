@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# build_track_a_submission_bundle.sh
+# build_id_vs_ref_ld_submission_bundle.sh
 #
-# Deterministic builder for the Track A *Genome Medicine* submission bundle.
+# Deterministic builder for the id-vs-ref-LD *Genome Medicine* submission bundle.
 # Produces a single self-contained zip at
 #   .planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/
-#     track_a_genome_medicine_submission.zip
+#     id_vs_ref_ld_genome_medicine_submission.zip
 #
-# Scope: Track A only. Track B legacy code (src/legacy/, m2_*, m3_*,
+# Scope: id-vs-ref-LD (Track A) only. Track B legacy code (src/legacy/, m2_*, m3_*,
 # aggregate_genomewide_results.py) is intentionally excluded.
 #
 # Created by quick-260427-vbq.
@@ -25,12 +25,12 @@ fi
 cd "$ABS_REPO_ROOT"
 
 # Sanity-check we are in coloc_analysis (look for a Track A canary file).
-if [[ ! -f "$ABS_REPO_ROOT/docs/manuscript/track_a_pivot.md" ]]; then
-    echo "[FATAL] docs/manuscript/track_a_pivot.md not found — wrong repo?" >&2
+if [[ ! -f "$ABS_REPO_ROOT/docs/manuscript/id-vs-ref-LD.md" ]]; then
+    echo "[FATAL] docs/manuscript/id-vs-ref-LD.md not found — wrong repo?" >&2
     exit 1
 fi
 
-BUNDLE_NAME="track_a_genome_medicine_submission"
+BUNDLE_NAME="id_vs_ref_ld_genome_medicine_submission"
 OUT_DIR=".planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss"
 ABS_OUT_DIR="$ABS_REPO_ROOT/$OUT_DIR"
 
@@ -50,7 +50,7 @@ echo "[INFO] Using pandoc: $PANDOC"
 "$PANDOC" --version | head -1
 
 # ---- Stage directory ---------------------------------------------------------
-STAGING="$(mktemp -d -t track_a_bundle.XXXXXX)"
+STAGING="$(mktemp -d -t id_vs_ref_ld_bundle.XXXXXX)"
 cleanup() { rm -rf "$STAGING"; }
 trap cleanup EXIT
 
@@ -66,7 +66,7 @@ mkdir -p \
 
 # ---- Step 2: Render manuscript -----------------------------------------------
 # Always copy the .md source.
-cp "docs/manuscript/track_a_pivot.md" "$ROOT/manuscript/track_a_pivot.md"
+cp "docs/manuscript/id-vs-ref-LD.md" "$ROOT/manuscript/id-vs-ref-LD.md"
 
 RENDER_PATH=""
 PDF_ENGINE_TRIED=()
@@ -75,8 +75,8 @@ try_pdf_engine() {
     local engine="$1"
     if command -v "$engine" >/dev/null 2>&1; then
         echo "[INFO] Trying pandoc PDF engine: $engine"
-        if "$PANDOC" "docs/manuscript/track_a_pivot.md" \
-            -o "$ROOT/manuscript/track_a_pivot.pdf" \
+        if "$PANDOC" "docs/manuscript/id-vs-ref-LD.md" \
+            -o "$ROOT/manuscript/id-vs-ref-LD.pdf" \
             --standalone --toc \
             --pdf-engine="$engine"; then
             RENDER_PATH="pdf:$engine"
@@ -134,8 +134,8 @@ blockquote { color: #555; border-left: 3px solid #ccc; margin: 1em 0; padding: 0
 nav#TOC { font-size: 0.95em; background: #f7f7f7; padding: 0.5em 1em; border-radius: 4px; }
 CSS_EOF
 
-    if "$PANDOC" "docs/manuscript/track_a_pivot.md" \
-        -o "$ROOT/manuscript/track_a_pivot.html" \
+    if "$PANDOC" "docs/manuscript/id-vs-ref-LD.md" \
+        -o "$ROOT/manuscript/id-vs-ref-LD.html" \
         --standalone --toc \
         --metadata title="Real-LD Re-Analysis of Curated Cardiometabolic Pleiotropy Loci" \
         --css=minimal.css; then
@@ -224,14 +224,14 @@ BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 BUILD_HOST="$(hostname)"
 
 # Derive the manuscript filename for the README listing.
-if [[ -f "$ROOT/manuscript/track_a_pivot.pdf" ]]; then
-    MANUSCRIPT_RENDERED="track_a_pivot.pdf"
+if [[ -f "$ROOT/manuscript/id-vs-ref-LD.pdf" ]]; then
+    MANUSCRIPT_RENDERED="id-vs-ref-LD.pdf"
 else
-    MANUSCRIPT_RENDERED="track_a_pivot.html (+ minimal.css)"
+    MANUSCRIPT_RENDERED="id-vs-ref-LD.html (+ minimal.css)"
 fi
 
 cat > "$ROOT/README.md" <<README_EOF
-# Track A Genome Medicine Submission Bundle
+# id-vs-ref-LD Genome Medicine Submission Bundle
 
 This bundle accompanies the manuscript *Real-LD Re-Analysis of Curated
 Cardiometabolic Pleiotropy Loci: Identity-LD Fine-Mapping Systematically
@@ -241,13 +241,13 @@ by Carter K. Clinton (NCSU ASHES Lab).
 ## Contents
 
 \`\`\`
-track_a_genome_medicine_submission/
+id_vs_ref_ld_genome_medicine_submission/
 ├── README.md                                   # this file
 ├── LICENSE-CODE                                # MIT (covers scripts/)
 ├── LICENSE-MANUSCRIPT-AND-DATA                 # CC-BY-4.0 (manuscript+data)
 ├── CITATION.cff
 ├── manuscript/
-│   ├── track_a_pivot.md                        # source
+│   ├── id-vs-ref-LD.md                          # source
 │   └── ${MANUSCRIPT_RENDERED}     # rendered
 ├── figures/                                    # 14 files (7 builders × {pdf,png})
 │   ├── fig1a_pipeline_schematic.{pdf,png}
@@ -305,17 +305,17 @@ needed to reproduce the manuscript figures and tables.
 
 ## Reproducibility
 
-The script \`bin/build_track_a_submission_bundle.sh\` in the source repository
+The script \`bin/build_id_vs_ref_ld_submission_bundle.sh\` in the source repository
 regenerates this exact bundle from a clean checkout. To rebuild:
 
 \`\`\`bash
 git clone https://github.com/carter-clinton/coloc_analysis.git
 cd coloc_analysis
-bin/build_track_a_submission_bundle.sh
+bin/build_id_vs_ref_ld_submission_bundle.sh
 \`\`\`
 
 The output zip will appear at
-\`.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/track_a_genome_medicine_submission.zip\`.
+\`.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip\`.
 
 ## Author
 
@@ -472,9 +472,9 @@ for f in README.md LICENSE-CODE LICENSE-MANUSCRIPT-AND-DATA CITATION.cff; do
 done
 
 # Manuscript: .md always; .pdf OR .html.
-echo "$ZIP_LISTING" | grep -qE "manuscript/track_a_pivot\.md$" \
-    || { echo "[FAIL] missing manuscript/track_a_pivot.md" >&2; exit 1; }
-echo "$ZIP_LISTING" | grep -qE "manuscript/track_a_pivot\.(pdf|html)$" \
+echo "$ZIP_LISTING" | grep -qE "manuscript/id-vs-ref-LD\.md$" \
+    || { echo "[FAIL] missing manuscript/id-vs-ref-LD.md" >&2; exit 1; }
+echo "$ZIP_LISTING" | grep -qE "manuscript/id-vs-ref-LD\.(pdf|html)$" \
     || { echo "[FAIL] missing rendered manuscript (pdf or html)" >&2; exit 1; }
 
 ZIP_SIZE_BYTES="$(stat -c%s "$ZIP_PATH")"
