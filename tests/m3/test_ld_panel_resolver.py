@@ -14,6 +14,7 @@ Covers the 6 behaviors from the m3-00 plan task 2:
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -176,3 +177,141 @@ def test_production_pipeline_yaml_loads(tmp_path):
     assert panel["AFR"][0]["source"] == "AFR_aou"
     # EUR_aou is the head of the EUR chain per D-M3-01
     assert panel["EUR"][0]["source"] == "EUR_aou"
+
+
+# ---------------------------------------------------------------------
+# CR-001 regression tests (added 260501-v9q).
+#
+# Background: pre-fix `resolve_ld_path` substituted both `{region_id}`
+# and `{region_safe}` placeholders with the SAME value (the single
+# `region_id` arg). This made AoU paths resolve correctly by accident
+# when callers happened to pass an `m2_region_NNNNN` id, but the 1kg
+# fallback NEVER resolved when the legacy bucket only had
+# `{region_safe}`-named files. CR-001 fix (commit 6d2e753) made
+# `region_safe` an independent kwarg.
+#
+# The pre-existing `test_resolver_region_id_vs_region_safe_substitution`
+# test only covers the back-compat single-arg call (where both
+# placeholders SHOULD resolve to the same value). The tests below cover
+# the bug CR-001 actually fixed: DISTINCT region_id and region_safe
+# values, and the static call-site contract in finemap.smk.
+# ---------------------------------------------------------------------
+
+
+def test_resolver_distinct_region_id_and_region_safe_aou_head(tmp_path):
+    """AoU head: DISTINCT region_id vs region_safe; only AoU file exists.
+
+    Pre-CR-001: resolver would have looked for `FTO_16q12.rds` in the
+    AoU bucket (since both placeholders got the same value) and missed
+    it, walking to hgdp/1kg fallback. Post-CR-001: returns the AoU path.
+    """
+    cfg = _build_config(tmp_path)
+    base = tmp_path / "data" / "processed" / "ld_reference"
+
+    rid = "m2_region_00067"   # AoU naming
+    safe = "FTO_16q12"        # Track A naming — DISTINCT from rid
+
+    # Only the AoU bucket has the file (named by region_id).
+    aou_path = _touch(base / "AFR_aou" / f"{rid}.rds")
+
+    # No FTO_16q12.rds anywhere — guard against accidental cross-bucket hits.
+    assert not (base / "AFR_aou" / f"{safe}.rds").exists()
+    assert not (base / "AFR_hgdp_1kg" / f"{safe}.rds").exists()
+    assert not (base / "AFR" / f"{safe}.rds").exists()
+
+    got = resolve_ld_path(
+        region_id=rid,
+        ancestry="AFR",
+        config=cfg,
+        region_safe=safe,
+    )
+    assert got == aou_path
+    assert got.name == f"{rid}.rds", (
+        f"AoU resolution must use region_id naming; got {got.name!r}"
+    )
+    # Belt-and-suspenders: ensure the resolver did NOT substitute the
+    # safe slug into the AoU path template.
+    assert safe not in str(got), (
+        f"region_safe leaked into AoU path: {got}"
+    )
+
+
+def test_resolver_distinct_region_id_and_region_safe_1kg_fallback(tmp_path):
+    """1kg fallback: DISTINCT region_id vs region_safe; only 1kg file exists.
+
+    AoU bucket empty + only `{region_safe}.rds` in the legacy 1kg
+    bucket. Pre-CR-001: resolver would have looked for
+    `m2_region_00067.rds` in the 1kg bucket and missed (cascading
+    FileNotFoundError). Post-CR-001: substitutes `{region_safe}` with
+    `FTO_16q12` and finds the legacy file.
+    """
+    cfg = _build_config(tmp_path)
+    base = tmp_path / "data" / "processed" / "ld_reference"
+
+    rid = "m2_region_00067"
+    safe = "FTO_16q12"
+
+    # AoU bucket: empty.
+    # hgdp bucket: empty.
+    # 1kg bucket: ONLY the region_safe-named file (legacy convention).
+    onekg_path = _touch(base / "AFR" / f"{safe}.rds")
+
+    # Confirm no region_id-named files anywhere — pre-fix code would
+    # have looked for these and missed.
+    assert not (base / "AFR_aou" / f"{rid}.rds").exists()
+    assert not (base / "AFR_hgdp_1kg" / f"{rid}.rds").exists()
+    assert not (base / "AFR" / f"{rid}.rds").exists()
+
+    got = resolve_ld_path(
+        region_id=rid,
+        ancestry="AFR",
+        config=cfg,
+        region_safe=safe,
+    )
+    assert got == onekg_path
+    assert got.name == f"{safe}.rds", (
+        f"1kg fallback must use region_safe naming; got {got.name!r}"
+    )
+    # Belt-and-suspenders: ensure the resolver did NOT substitute the
+    # region_id into the 1kg path template.
+    assert rid not in str(got), (
+        f"region_id leaked into 1kg path: {got}"
+    )
+
+
+def test_finemap_smk_calls_resolver_with_both_kwargs():
+    """Static contract: finemap.smk must pass region_id= AND region_safe=.
+
+    Locks the production call-site contract from m3-W3-T2 (commit caf57ef
+    + CR-001 fix in commit 6d2e753). A future refactor that drops one
+    kwarg and falls back to single-positional region passing (which would
+    silently re-introduce the same-value substitution bug per the
+    back-compat default in resolve_ld_path) is caught here, before any
+    pipeline run.
+    """
+    project_root = Path(__file__).resolve().parents[2]
+    smk_path = project_root / "src" / "snakemake" / "rules" / "finemap.smk"
+    assert smk_path.exists(), f"finemap.smk not at {smk_path}"
+    text = smk_path.read_text()
+
+    # Sanity: the resolver is referenced.
+    assert re.search(r"resolve_ld_path\s*\(", text), (
+        "finemap.smk no longer calls resolve_ld_path()"
+    )
+
+    # Both kwargs must appear in the resolve_ld_path(...) call. We use
+    # `[^)]*` because the call's argument list contains no nested parens
+    # in the current production code; if that ever changes, broaden to
+    # a non-greedy `[\s\S]*?` with explicit closing-paren anchoring.
+    assert re.search(
+        r"resolve_ld_path\s*\([^)]*region_id\s*=", text, re.DOTALL
+    ), "finemap.smk's resolve_ld_path call is missing region_id= kwarg"
+
+    assert re.search(
+        r"resolve_ld_path\s*\([^)]*region_safe\s*=", text, re.DOTALL
+    ), (
+        "finemap.smk's resolve_ld_path call is missing region_safe= "
+        "kwarg — CR-001 regression risk: without region_safe=, the "
+        "resolver's back-compat default re-introduces the same-value "
+        "substitution bug for the 1kg/HGDP/UKBB tails of the chain."
+    )
