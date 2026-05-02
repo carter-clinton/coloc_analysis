@@ -2,7 +2,7 @@
 
 **Audit source:** [AUDIT-REVIEW-2026-04-25.md](./AUDIT-REVIEW-2026-04-25.md) (commit `9801e77`, 2026-04-25)
 **Response date:** 2026-04-26
-**Manuscript:** [docs/manuscript/track_a_pivot.md](../../docs/manuscript/track_a_pivot.md)
+**Manuscript:** [docs/manuscript/id-vs-ref-LD.md](../../docs/manuscript/id-vs-ref-LD.md)
 **Frozen numbers:** [TRACK-A-FROZEN-NUMBERS.md](./TRACK-A-FROZEN-NUMBERS.md)
 **Closure status (summary):** 18 closed / 1 in-progress / 3 deferred-compute / 1 deferred-design / 3 no-action-needed / 1 superseded (out of 27)
 

@@ -3,7 +3,7 @@
 **Subject:** updated archive `coloc_analysis_track_a_b3ee506_2026-04-26.tar.gz`
 **Reviewed:** 2026-04-26
 **Prior review:** `AUDIT-REVIEW-2026-04-25.md` (commit `9801e77` per `TRACK-A-AUDIT-RESPONSE-2026-04-26.md`)
-**Scope:** manuscript (`docs/manuscript/track_a_pivot.md`), planning artifacts (`TRACK-A-AUDIT-RESPONSE-2026-04-26.md`, `TRACK-A-FROZEN-NUMBERS.md`, `IDENTITY-LD-K2D-FIT-SUMMARY.tsv`), and rendered figures (Fig 1A, 1B, 2, 3, 5, S7).
+**Scope:** manuscript (`docs/manuscript/id-vs-ref-LD.md`), planning artifacts (`TRACK-A-AUDIT-RESPONSE-2026-04-26.md`, `TRACK-A-FROZEN-NUMBERS.md`, `IDENTITY-LD-K2D-FIT-SUMMARY.tsv`), and rendered figures (Fig 1A, 1B, 2, 3, 5, S7).
 
 ---
 
@@ -61,7 +61,7 @@ Three identity-LD fits at SH2B3 EUR ran to `niter = 100` (the iteration cap) —
 | 3.7 | HLA double-class | CLOSED | A — HLA reframed to identity-LD-fallback only, removed from negative-control panel |
 | 3.8 | "224 negative-control rows" → 9 distinct loci | CLOSED | A — restated as 9 loci / 200 rows (4 blood-group + 5 cosmetic) |
 | 3.9 | DIAMANTE T2D vintage | CLOSED | A — pinned to Mahajan 2018, N=898,130, DOI 10.1038/s41588-018-0241-6 |
-| 3.10 | 1,446 / 861 ghost numerics | CLOSED | A — `grep -c "1,446\|1446\|861" .planning/amendments/TRACK-A-PIVOT.md` returns 0 |
+| 3.10 | 1,446 / 861 ghost numerics | CLOSED | A — `grep -c "1,446\|1446\|861" .planning/amendments/ID-VS-REF-LD-STRATEGY.md` returns 0 |
 
 **New issue surfaced by the closure work — ABSTRACT/DISCUSSION/CAPTION DRIFT.** The Results §3.4 closure landed correctly, but four downstream surfaces still carry the *pre-closure* narrative:
 
