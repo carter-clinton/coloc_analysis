@@ -2,7 +2,7 @@
 
 > **This file is the pre-pivot source text, preserved verbatim from `ajhg_manu_v10.pdf`.**
 > Editing this file directly is Track A's reframe. Do NOT delete content without
-> promoting the replacement to `track_a_pivot.md` first.
+> promoting the replacement to `id-vs-ref-LD.md` first.
 >
 > **Pivot direction (2026-04-22):**
 > FROM: "We identified 28 pleiotropic signals at 50 cardiometabolic loci"
@@ -10,7 +10,7 @@
 >        are systematically inflated by identity-LD fine-mapping; we quantify
 >        which survive rigorous real-LD re-analysis"
 >
-> See `.planning/TRACK-A-PIVOT.md` for the section-by-section editing plan.
+> See `.planning/amendments/ID-VS-REF-LD-STRATEGY.md` for the section-by-section editing plan.
 
 ---
 

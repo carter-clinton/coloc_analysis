@@ -2,7 +2,7 @@
 
 **Subject:** `track_a_2026-04-25` snapshot from `coloc_analysis @ ec86832`
 **Reviewed:** 2026-04-25
-**Scope:** manuscript (`manuscript/track_a_pivot.md`), planning artifacts (`TRACK-A-FROZEN-NUMBERS.md`, `TRACK-A-PIVOT.md`, `DEC-2026-04-25-01`), reproducibility files (`IDENTITY-LD-K2D-FIT-SUMMARY.tsv`, all 5 figure-builder R scripts, `fire_identity_ld_rerun.sh`), and rendered figures (Fig 1A, 1B, 2, 3, 5).
+**Scope:** manuscript (`manuscript/id-vs-ref-LD.md`), planning artifacts (`TRACK-A-FROZEN-NUMBERS.md`, `ID-VS-REF-LD-STRATEGY.md`, `DEC-2026-04-25-01`), reproducibility files (`IDENTITY-LD-K2D-FIT-SUMMARY.tsv`, all 5 figure-builder R scripts, `fire_identity_ld_rerun.sh`), and rendered figures (Fig 1A, 1B, 2, 3, 5).
 
 ---
 
@@ -22,7 +22,7 @@ What the artifacts show:
 
 | Source | Identity-LD non-empty CS | Real-LD non-empty CS |
 |---|---|---|
-| Manuscript headline (`track_a_pivot.md` L28, L82, L138) | **12 / 96** | 51 / 96 |
+| Manuscript headline (`id-vs-ref-LD.md` L28, L82, L138) | **12 / 96** | 51 / 96 |
 | `TRACK-A-FROZEN-NUMBERS.md` L21 (provenance) | "12 / 96 … per **prior STATE.md session continuity**" | 51/96 (Stage 2 fire 2026-04-22) |
 | **`IDENTITY-LD-K2D-FIT-SUMMARY.tsv`** (the actual pipeline-matched k2d re-fire, 2026-04-24) | **48 / 95 (50.5 %)** | (n/a — different file) |
 | `fig2_cs_yield.R` | 12 hard-coded as `N_IDENTITY_LD_NONEMPTY <- 12L` | 51 derived from disk + asserted equal to 51 |
@@ -53,7 +53,7 @@ A non-exhaustive list of what doesn't add up between the prose and the data:
 
 1. **`ld_overlap_fraction = 0` for the headline real-LD result.** `fig1b_locus_panels.R` lines 33–38 disclose: *"Real-LD overlap at FTO_16q12 EUR Stage 2 fit: ld_overlap_fraction = 0 (ld_status = 'variants_exceed_threshold'). SuSiE effectively fell back toward an identity-like internal structure at this region."* This fit produces the **only quantitative "real-LD" PP.H4 reported in the manuscript** (FTO/IRX3 = 0.3099, abstract L28, headline result). The real-LD branding for that number is materially incorrect.
 
-2. **78.9 % QTL-coloc failure attributed to an unfixed bug.** 1,005 / 1,274 attempts return `too_few_snps`, traced to a "harmonized-TSV vs Phase 1 SuSiE-fit variant-ID format mismatch (chr:pos vs rsid)" with the candid disclosure that "the fix may incompletely propagate to all source × tissue × gene combinations" (`track_a_pivot.md` L60, L180). This is not a Limitations-section caveat — it means **the analysis was published with the knowledge that the data on the y-axis is of unverified quality**.
+2. **78.9 % QTL-coloc failure attributed to an unfixed bug.** 1,005 / 1,274 attempts return `too_few_snps`, traced to a "harmonized-TSV vs Phase 1 SuSiE-fit variant-ID format mismatch (chr:pos vs rsid)" with the candid disclosure that "the fix may incompletely propagate to all source × tissue × gene combinations" (`id-vs-ref-LD.md` L60, L180). This is not a Limitations-section caveat — it means **the analysis was published with the knowledge that the data on the y-axis is of unverified quality**.
 
 3. **28/28 empty `coloc.susie` outputs.** All 28 trait-pair attempts returned empty `PP.H3 / PP.H4 / n_snps`. This is interpreted as "consistent with credible-set collapse." But variant-ID format mismatch (item 2) and SuSiE non-convergence (Eval 2) both produce the *same* empty-output signature, so the interpretation is unidentifiable from the data.
 
@@ -63,13 +63,13 @@ A non-exhaustive list of what doesn't add up between the prose and the data:
 
 6. **`ld_overlap = 0` on every row of the identity-LD TSV.** Expected for identity-LD (no LD reference is loaded), but the column being present and zero-filled with a `ld_overlap_fraction` column that's also zero means the schema is shared with the real-LD output — verify the schema confusion isn't masking a parse bug.
 
-7. **HLA double-classified.** `track_a_pivot.md` L80 lists HLA_6p21 in the **identity-LD fallback** scope (a region where the paper would still draw conclusions); L102 lists HLA in the **pre-specified negative-control set** ("HLA-immune"). HLA cannot be simultaneously a fallback test region and a definitionally-null control. The "224 negative-control rows resolved to Tier C or empty" claim (L102, L186) becomes near-tautological if a region is classified negative *a priori*.
+7. **HLA double-classified.** `id-vs-ref-LD.md` L80 lists HLA_6p21 in the **identity-LD fallback** scope (a region where the paper would still draw conclusions); L102 lists HLA in the **pre-specified negative-control set** ("HLA-immune"). HLA cannot be simultaneously a fallback test region and a definitionally-null control. The "224 negative-control rows resolved to Tier C or empty" claim (L102, L186) becomes near-tautological if a region is classified negative *a priori*.
 
 8. **"Negative-control rows" is region × gene × tissue × trait, not "regions."** 224 rows = 120 cosmetic + 80 blood group + 24 HLA, but the unique locus count is ~5 cosmetic + 4 blood group + 1 HLA = 10 distinct loci. Calling 224 "region-pair evaluations" (TRACK-A-FROZEN, manuscript L102) overstates the breadth of the negative-control panel.
 
 9. **GWAS-vintage / sample-size table inconsistencies.** Manuscript L54: "T2D from DIAMANTE (N ≈ 900,000)." DIAMANTE 2020 (Vujkovic) effective N is ~228k cases / ~1.3M total (mixed-ancestry); the EUR-only subset Mahajan 2018 is N ≈ 898,130. The number is plausible but not unambiguous; verify the citation matches the exact sumstats file used (the harmonized-sumstats path `data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz` doesn't disclose vintage in its filename).
 
-10. **`1,446 attempted tests / 861 failures` ghost numbers.** `TRACK-A-FROZEN-NUMBERS.md` L53 explicitly flags these as not matching disk; `TRACK-A-PIVOT.md` (the abstract draft, L37) still uses them. Confirm they are fully purged before submission — a single relict appearance would be a credibility catastrophe.
+10. **`1,446 attempted tests / 861 failures` ghost numbers.** `TRACK-A-FROZEN-NUMBERS.md` L53 explicitly flags these as not matching disk; `ID-VS-REF-LD-STRATEGY.md` (the abstract draft, L37) still uses them. Confirm they are fully purged before submission — a single relict appearance would be a credibility catastrophe.
 
 ---
 
@@ -114,7 +114,7 @@ What's left is a methodological observation that *real-LD pipelines fail in diff
 
 ## Quick improvements (3)
 
-1. **Purge the ghost numbers and reconcile denominators.** Search-and-destroy any remaining `1,446` / `861` references (the `TRACK-A-PIVOT.md` abstract draft still has them); reconcile `95` (TSV rows) vs `96` (headline denominator) with one paragraph in the Methods naming the missing fit and why; remove the `12 / 96 (12.5 %)` from `fig2_cs_yield.R` line 60 and replace with the disk-derived count. ~30 minutes of work that fixes three reviewer blocking issues.
+1. **Purge the ghost numbers and reconcile denominators.** Search-and-destroy any remaining `1,446` / `861` references (the `ID-VS-REF-LD-STRATEGY.md` abstract draft still has them); reconcile `95` (TSV rows) vs `96` (headline denominator) with one paragraph in the Methods naming the missing fit and why; remove the `12 / 96 (12.5 %)` from `fig2_cs_yield.R` line 60 and replace with the disk-derived count. ~30 minutes of work that fixes three reviewer blocking issues.
 
 2. **Move HLA out of the negative-control set, or out of the fallback set — pick one.** The double classification (manuscript L80 vs L102) is internally inconsistent and mathematically deflates the negative-control test. Keep HLA as identity-LD-fallback and remove it from "negative controls"; or keep it as a pre-specified ancestry-stratification control and exclude it from any inference about real-LD performance. Then restate the negative-control N as **distinct loci** (≈10), not rows (224). ~15 minutes.
 
