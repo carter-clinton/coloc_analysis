@@ -367,3 +367,32 @@ Per [W3 PLAN line 70 thresholds](../phases/ta-sh2b3-canonical-and-cache-refresh/
 2. **W4.5-B SuSiE-RSS rebuild explicitly skipped.** Per [DEC-2026-05-01-02](../DECISIONS.md) the LD-panel coverage is the binding Layer-2 constraint, not iteration budget on the GWAS fine-mapping side; the BRANCH_C Tier-A pass at niter = 1000 demonstrates that even under-converged posteriors at this locus produce a posterior probability of shared causal variant indistinguishable from 1.0 at the canonical lead under matched-LD; the rebuild branch was not necessary for the BRANCH_C decision.
 3. **Trait-pair Tier-A gene set has cardinality 1.** All 3 Tier-A trait-pair signals concentrate at a single locus (SH2B3_12q24 EUR, annotated gene *SH2B3*); pathway-scale enrichment tests are non-informative at n = 1; the Tier-A pass is reported substantively in manuscript Results §SH2B3 case study + §Pleiotropic Loci, not as a pathway-scale claim.
 4. **R2 scope is canonical-and-lattice at SH2B3 only.** The 9 R2 pairs cover all SH2B3 EUR trait-pair combinations involving any 2 of {asthma, bmi, hypertension, stroke, t2d}; canonical-pair R2 re-fires at the other 7 pleiotropy hubs (KCNJ11/ABCC8, NEGR1, APOE, FTO, MC4R, PPARG, SEC16B) have NOT been executed at this freeze and remain DEFERRED-COMPUTE per [AUDIT-REVIEW-V2-2026-04-26.md §HQ#2(i)+(iii)](AUDIT-REVIEW-V2-2026-04-26.md).
+
+## Wave-1 L-sweep convergence outcomes (PRESERVE-WITH-DISCLOSURE, 2026-05-03) — LIVE
+
+**Decision token:** `D-TA-Wave1-headline = PRESERVE-WITH-DISCLOSURE` per [Wave-1 SUMMARY V2 conclusion](../phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md) (PRIMARY_L = NONE_CONVERGED at niter = 1000; HEADLINE_VALUE = UNCHANGED; Wave 6 narrative branch DISCLOSE-AS-COLUMN LOCKED).
+
+**Headline framing.** SuSiE-RSS L-sweep at SH2B3 12q24 EUR for the 3 cardinal traits (BMI, hypertension, stroke) at L ∈ {15, 20, 30} (3 traits × 3 L = 9 fits) at V4 niter = 1000 (post-bug-fix `02c4404`) returned `convergence_status = non_converged` for ALL 9 fits per the strict gate. The 51/96 = 53.1% headline numerator (Layer-1 fine-mapping yield) is preserved with an L-sweep disclosure column at manuscript Methods §Fine-Mapping Integration + Supplementary Methods Table SX, NOT recomputed. No alternative numerator (e.g., 51 + N_newly_converged − N_newly_empty) is computed because no L value satisfies the strict-gate convergence criterion that would replace the L = 10 result.
+
+**Per-trait per-L convergence outcomes (V4 niter = 1000):**
+
+| Trait | L = 15 (n_CS) | L = 20 (n_CS) | L = 30 (n_CS) | strict-gate `^converged_` | L_saturated | n_CS_LT_L |
+|---|---|---|---|---|---|---|
+| BMI | 13 | 15 | 15 | non_converged 3/3 | FALSE 3/3 | TRUE 3/3 |
+| hypertension | 5 | 4 | 4 | non_converged 3/3 | FALSE 3/3 | TRUE 3/3 |
+| stroke | 3 | 4 | 4 | non_converged 3/3 | FALSE 3/3 | TRUE 3/3 |
+
+**Sources:**
+- Wave-1 dispatch + V2 re-fire: `bin/fire_susie_lsweep.sh` + commits `9c87157` (niter raise 100/200 → 500/1000) + `02c4404` (`run_susie_rss.R:38` argument-naming bug-fix `max_iterations` → `max_iter`)
+- V2 canonical convergence TSV: [`ta-sh2b3-W1-convergence-report.tsv`](../phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-convergence-report.tsv) (header + 9 data rows; niter=1000 column)
+- V1 niter=100 convergence TSV (preserved for traceability): [`ta-sh2b3-W1-convergence-report-niter100.tsv`](../phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-convergence-report-niter100.tsv)
+- V2 fit outputs on disk: `results_lsweep_L{15,20,30}/fine_mapping/susie/{bmi,hypertension,stroke}.EUR.SH2B3_12q24.{json,fit.rds}` (9 fits)
+- V1 niter=100 outputs preserved at `results_lsweep_L*.preNiter500.bak.20260429_213644/`; V2-pre-fix buggy outputs preserved at `results_lsweep_L*.preFix.bak.20260429_215312/`
+- Wave-1 SUMMARY: [`ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md`](../phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md)
+
+**Caveats** (mandatory disclosure for any downstream cite of these scalars):
+
+1. **Strict-gate `convergence_status = non_converged` 9/9.** All 9 fits fail the strict gate (`n_CS < L_used` AND `L_saturated = FALSE` AND `convergence_status` matching `^converged_`). Per Zou et al. 2022²⁰ §Discussion, n_CS strictly below L_used at all 9 fits indicates non-saturation (the L budget is not exhausted); the residual non-convergence at niter = 1000 with regularized LD reflects LD-mismatch instability per the susieR runtime warnings (`IBSS algorithm did not converge in 1000 iterations` + `WARNING: matrix R is not positive semidefinite`), consistent with Benner et al. 2017 AJHG 101:539–551 LD-reference-quality diagnostics.
+2. **51/96 = 53.1% headline preserved.** No alternative numerator (e.g., 51 + N_newly_converged − N_newly_empty) is computed because no L value satisfies the strict-gate convergence criterion. Manuscript Methods §Fine-Mapping Integration adds an L-sweep disclosure paragraph + Supplementary Methods Table SX; Results §Headline Result preserves 51/96 with an explicit cross-reference to the L-sweep disclosure.
+3. **Wave 2 R2 BRANCH_C SURVIVE Tier-A pass holds robustly under the strict-gate non-convergence flag.** The 3 SH2B3 EUR per-trait fits backing the canonical SH2B3 BMI–hypertension trait-pair `coloc.susie` Tier-A pass at PP.H4 = 1.0 (Wave 2 R2 re-fire, Wave 3 outcome `D-TA-WAVE3-OUTCOME-BRANCH_C_SURVIVE`) all carry `convergence_status = non_converged` at niter = 1000 — the dual-robustness finding (PP.H4 = 1.0 robust under both LD-panel pathology AND SuSiE-RSS strict-gate non-convergence at the L = 10 fits AND the L ∈ {15, 20, 30} sweep) is documented at manuscript Discussion §Identity-LD Inflation + §SH2B3 case study + Conclusion-1.
+4. **Wave 2 escalation paths (b)/(c)/(d) for the strict-gate fail are recorded but not exercised at this freeze.** Carter's option (a) re-fire-with-raised-niter was exhausted by the V2 retry-ladder (niter = 1000 with regularized LD); options (b) relax convergence_status criterion, (c) DISCLOSE-AS-COLUMN at lowest-L Wave 2 dispatch, and (d) LD-mismatch investigation are documented in [`ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md`](../phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md) §Wave 2 GO/NO-GO (V2). The PRESERVE-WITH-DISCLOSURE branch effectively realizes option (c) at the manuscript narrative layer without firing Wave 2 against non-converged fits.
