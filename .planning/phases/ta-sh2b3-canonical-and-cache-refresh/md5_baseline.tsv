@@ -1,0 +1,30 @@
+path	md5	rationale	commit_introducing
+results/multitrait/coloc_summary.tsv	558fca45ac37d901028c64429cdecc12	W5 explicit re-render (Pitfall 3 exemption)	UNTRACKED
+results/multitrait/coloc_manifest_R2.tsv	866a874c97700b8e2f3383b7e8c029c6	Wave 2 R2 manifest builder output	UNTRACKED
+.planning/amendments/TRACK-A-FROZEN-NUMBERS.md	eee9b4666b35e2099425ab9867e11199	W5+W6 LIVE block updates (L30/L83/L338-369/L370-398)	b46ab5e
+docs/manuscript/id-vs-ref-LD.md	63fd81385590ffc8d23d45a0f0598959	W6 rename target + W6-260502-1c1 + W6-260502-tjn + W6-260503-1e1 narrative atomic updates	eac93ba
+.planning/amendments/ID-VS-REF-LD-STRATEGY.md	be9c02511caf840027f7396bde23e376	W6-260502-lsk rename target (was TRACK-A-PIVOT.md)	f7fc966
+bin/build_id_vs_ref_ld_submission_bundle.sh	0b533a1b0ec7db8dd37c54f765f8366b	W6-260502-lsk rename target + heredoc sed (Pitfall 6); W7 invocation does NOT mutate	7997daa
+src/R/figures/fig1a_pipeline_schematic.R	a6bd3d7a61bf4bd830c7d853c493afe4	W6-260502-lsk comment-header reference fix-up	2a23d3a
+src/R/figures/fig1b_locus_panels.R	b3fa4be594d36c608fcf809e102419d4	W6-260502-lsk comment-header reference fix-up	2a23d3a
+src/R/figures/fig2_cs_yield.R	bffe9e7ea9fea3685f8161031b39ffba	W6-260502-lsk comment-header reference fix-up	2a23d3a
+src/R/figures/fig3_sh2b3_eur_collapse_forest.R	65f707a82986148b7ee088a0da5a5faa	W6-260502-lsk comment-header reference fix-up	2a23d3a
+src/R/figures/fig5_variant_mech_scorecard.R	ccddbc1ffec47cf9afe48e6f66b968e4	W6-260502-lsk comment-header reference fix-up	2a23d3a
+src/R/figures/fig_h3_ld_overlap_dose_response.R	c02fa7e932f523e645a203bc0cee97f9	W6-260502-lsk comment-header reference fix-up	1e4b071
+src/R/figures/fig_s2_paired_fit_structural_inflation.R	0cb3b7d7684251c01aa992e96ca0a7b6	W6-260502-lsk comment-header reference fix-up	cc943bd
+src/R/aggregators/aggregate_per_trait_pair_and_hubs.R	679b972f14254fb034b2ed268a41e15e	W6-260502-lsk comment-header reference fix-up	a5f1f33
+src/R/aggregators/aggregate_table1_pleiotropic_loci.R	eabc07fface5724b88f857ce70e02d9d	W6-260502-lsk comment-header reference fix-up	0a6d596
+src/R/aggregators/aggregate_table3_admissible_pairs.R	3a1c79226033b3f5e51683489068297d	W6-260502-lsk comment-header reference fix-up	2a23d3a
+.planning/STATE.md	f47074205c71c3a17ec7e922669866c8	W6+W7 forward-facing reference fix-up + Last-activity body line 67 (Track-B-encoded fields preserved)	c211824
+.planning/DECISIONS.md	9cea981d1d850feaf76c488cecde0c7e	DEC-2026-05-01-01 + DEC-2026-05-01-02 entries (W4 disposition revision; CDR v7→v8)	bffa7f4
+.planning/PROJECT.md	67dc6ce9768593d35449d2c090c50250	W6-260502-lsk forward-facing reference fix-up	bffa7f4
+.planning/ROADMAP.md	4c1aeaa91243ef5a265314259134116b	W6-260502-lsk forward-facing reference fix-up (phase-status COMPLETE update DEFERRED to separate task)	bffa7f4
+.planning/amendments/TRACK-A-AUDIT-RESPONSE-2026-04-26.md	7307e234b2f2aea49be8fcd5e4076fed	W6-260502-lsk cross-ref update (filename preserved)	f5b213d
+.planning/amendments/AUDIT-REVIEW-2026-04-25.md	1e90e15bb6a65e466710623fe5509147	W6-260502-lsk cross-ref update	f5b213d
+.planning/amendments/AUDIT-REVIEW-V2-2026-04-26.md	58b3bfbeac1cb9a8ded235c10039a3e3	W6-260502-lsk cross-ref update	f5b213d
+.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md	b4f2e440c9f6a5d7f6aec30655c17353	W6-260502-lsk cross-ref update	f5b213d
+docs/manuscript/track_a_source.md	8f51d3853c6b3aa34dfc6717884d1a6c	W6 cascade source-doc cross-ref update (filename retains track_a per Rule-1 factual-filename exemption)	f5b213d
+.planning/amendments/osf_deviations.md	c194c5ca4a8d0e0053198b663ad8fbb7	W7-260503-kfq NEW file (consolidated 10-entry deviation log)	79488bb
+.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md	62b77ee068aa05f893e8fdaefd800337	W0-W6 addendum sub-sections (D-TA-04-DIAGNOSTIC, D-TA-OSF-COVERAGE, D-TA-Wave1-PRIMARY-L, D-TA-Wave2-outcomes, D-TA-WAVE3-OUTCOME, D-TA-WAVE4-OUTCOME, D-TA-Wave6-pivot-free-audit, D-TA-Wave1-headline)	e40f058
+.claude/settings.json	d6e9d6d3f26a671e543831d9abe973a6	pre-existing dirty (NOT phase-generated; carried in working tree at phase start)	11b75ad
+.planning/config.json	57b376c7cfbe7240a6355e06df947021	pre-existing dirty (NOT phase-generated; carried in working tree at phase start)	66d3f59
