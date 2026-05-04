@@ -856,3 +856,118 @@ Once cache-staleness is refuted, the rigor-correct disposition (per `feedback_ri
 - Per `feedback_original_research_framing.md`, all public artifacts (manuscript, OSF deviation log, Zenodo metadata, Sci Data data descriptor) frame the 78.9% as a structural property of the input data + analysis design, not as a "failure" or "limitation" or "issue". The phrase "structural Layer-2 attrition driven by LD-panel coverage" is the canonical reviewer-facing framing.
 - The 4 newly-landed JSONs from the drain pass (`CXADR_F2RL1_6p21_*`, `FTO_16q12_*`, `MC4R_18q21_*`, `SH2B3_12q24_*` — see tracker v7 `outcome_summary.drain_pass.missing_4_qtl_coloc_ids`) are not separately analyzed in isolation; they are absorbed into the 1274-JSON canonical set per the disposition.
 
+---
+
+## 2026-05-03 — DEC-2026-05-03-vcl-Item1: Track A venue locked at *Genome Medicine*
+
+**Decision:** Lock the Track A primary submission venue at ***Genome Medicine*** (BMC, IF ≈ 13). Fallback ladder: *AJHG* short report → *Bioinformatics* applications note. bioRxiv preprint Day 1 regardless of venue selection. Quick task `260503-vcl` Pass 2 atomic commit consolidates this lock as the editorial trail closes the prior open-decision-pending posture in the manuscript body.
+
+**Alternatives considered:**
+- (a) **Genome Medicine (adopted)** — original-research article format aligns with the 5-figure roster + Figs S1–S7 supplementary scope; BMC house style accepts the disclosure-honest empty-row Table 1 framing; impact factor matches the audit's contribution profile (post-pivot real-LD audit of curated cardiometabolic pleiotropy claims at scale, with Wave 2 R2 SH2B3 BRANCH_C SURVIVE counter-example).
+- (b) ***AJHG* short report (fallback)** — short-form format would compress the §SH2B3 case study + §Identity-LD Inflation mechanism prose; preserved as the second-rung fallback if Genome Medicine declines.
+- (c) ***Bioinformatics* applications note (floor fallback)** — applications-note format is geared toward novel software methodology, not audit-of-published-claims; preserved as the floor fallback.
+- (d) bioRxiv-only (no peer-review submission) — rejected: the Track A pivot's contribution is reviewer-defensibility of the candidate-locus design's real-LD survival rate, which requires peer-review imprimatur to land in the cardiometabolic pleiotropy literature ecosystem.
+
+**Why:** Per `feedback_original_research_framing.md`, Track A is hypothesis-driven original research (real-LD audit of curated cardiometabolic pleiotropy claims), not a methods paper or a re-analysis-only commentary; *Genome Medicine* is the appropriate venue for the contribution profile. Locking the venue now closes the manuscript body's standing open-decision item and unblocks the Pass-6 bundle regeneration.
+
+**How to apply:**
+- Manuscript Methods §Software and Data Availability (L128) cites the canonical GitHub URL `https://github.com/carter-clinton/coloc_analysis` (aligned in Pass 1 of `260503-vcl`); the bundle build target `bin/build_id_vs_ref_ld_submission_bundle.sh` renders the manuscript per *Genome Medicine* house style.
+- The fallback ladder is preserved in `.planning/amendments/ID-VS-REF-LD-STRATEGY.md`; revisit only if Genome Medicine declines at submission.
+- Cross-reference: `.planning/amendments/track_a_decision_items_resolution_log.md` Item 1 (editorial trail).
+
+---
+
+## 2026-05-03 — DEC-2026-05-03-vcl-Item2: Aggregator freeze locked at Wave 5 R2-merge state (md5 558fca45…)
+
+**Decision:** Lock the aggregator freeze for `results/qtl_coloc/tier_assignments.tsv` and `results/multitrait/coloc_summary.tsv` at the **Wave 5 R2-merge state** landed via quick task `260501-wdn`. The proposed 2026-04-26 freeze date (in the original manuscript decision-pending item 2) was advanced to capture the Wave 2 R2 SH2B3 EUR canonical-pair `coloc.susie` re-fire merge (3 substantive Tier-A signals at PP.H4 = 1.0 at rs3184504); the Wave 5 freeze is the canonical post-R2-merge state. `coloc_summary.tsv` md5 = `558fca45…` (37 rows total: 28 R1 canonical-locus + 9 R2 SH2B3 EUR canonical-and-lattice).
+
+**Alternatives considered:**
+- (a) **Wave 5 R2-merge freeze (adopted)** — captures the Wave 2 R2 substantive Tier-A pass at SH2B3 EUR (BRANCH_C SURVIVE per Wave 3 outcome decision token `D-TA-WAVE3-OUTCOME-BRANCH_C_SURVIVE`); aligns with the Stage 2 SH2B3 anchor `.fit.rds` md5 invariants (bmi.EUR=`462ada6a…`, hypertension.EUR=`8255c1ac…`, stroke.EUR=`a041eecc…`); zero TRACK-A-FROZEN risk.
+- (b) Pre-R2-merge 2026-04-26 freeze (the original proposal) — rejected: would lock the manuscript body to the all-empty-PP.H4 R1 slice without the substantive 3-Tier-A SH2B3 R2 re-fire results, materially weakening the audit's reviewer-defensibility (the SH2B3 BRANCH_C SURVIVE is the load-bearing counter-example to a uniform-inflation reading).
+- (c) Defer freeze until Track B M2 discovery returns — rejected: Track B M2 is many waves out (currently at m3-W2 in the m3-aou-afr-ld-panel-build phase per STATE.md); deferring freeze blocks Track A submission indefinitely; per `feedback_rigor_over_speed.md`, gray-area trade-offs go to the more rigorous + nearer-term path.
+
+**Why:** The Wave 5 freeze is the canonical post-R2-merge state and matches the Stage 2 anchor md5 invariants exactly; per `feedback_state_md_keep_current.md`, locking aggregator state atomically with the relevant work prevents disconnect-resilient resume from drifting.
+
+**How to apply:**
+- Manuscript Table 1 row count derives from the Wave 5 freeze (3 SH2B3 EUR R2 Tier-A rows + R1 slice empty-body footer; see manuscript L168 + L276-279).
+- `bin/build_id_vs_ref_ld_submission_bundle.sh` Pass-6 regeneration in `260503-vcl` packages the Wave 5 freeze state inside the submission zip.
+- `.planning/amendments/TRACK-A-FROZEN-NUMBERS.md` §Pre-bioRxiv placeholder-fill (2026-04-27) — LIVE captures the per-cell scalars consistent with the Wave 5 freeze.
+- Cross-reference: `.planning/amendments/track_a_decision_items_resolution_log.md` Item 2 (editorial trail).
+
+---
+
+## 2026-05-03 — DEC-2026-05-03-vcl-Item3: GitHub repository name locked at carter-clinton/coloc_analysis
+
+**Decision:** Lock the canonical Track A GitHub repository at `https://github.com/carter-clinton/coloc_analysis`. The legacy `The-ASHES-Laboratory` organization slug (referenced verbatim in earlier manuscript drafts) is superseded; no public-facing redirect is required because the legacy slug never went live as the canonical repo (the rename pre-dated the manuscript draft). Manuscript L128 was aligned to the canonical URL in Pass 1 of `260503-vcl` (T1 commit `a9d72eb`).
+
+**Alternatives considered:**
+- (a) **carter-clinton/coloc_analysis (adopted)** — already STATE.md L23 canonical (`**GitHub remote:** https://github.com/carter-clinton/coloc_analysis`); already AoU Workbench `git clone` target for Wave 2 of m3 phase per STATE.md; matches the post-pivot honest-framing convention per `feedback_original_research_framing.md` (the original-research framing precludes legacy-suffix references in public-facing artifacts).
+- (b) Keep the legacy slug carrying the historical org/suffix nomenclature — rejected: would propagate the legacy nomenclature into manuscript prose at L128 and into the bundle manifest, breaking the honest-framing-lock chain on the public submission package.
+- (c) Add a public redirect from the legacy slug to the canonical slug — rejected as unnecessary: the legacy slug never went live, so there is no broken-link surface to redirect from.
+
+**Why:** Per `feedback_original_research_framing.md`, the canonical URL in the public submission package must not carry the legacy nomenclature; the alignment is mechanical (one URL replacement at manuscript L128) and was completed atomically in Pass 1 of `260503-vcl`.
+
+**How to apply:**
+- Manuscript L128 is the canonical insertion point; aligned in Pass 1 commit `a9d72eb`.
+- All future references to the analysis-code source point at `https://github.com/carter-clinton/coloc_analysis`.
+- Cross-reference: `.planning/amendments/track_a_decision_items_resolution_log.md` Item 3 (editorial trail).
+
+---
+
+## 2026-05-03 — DEC-2026-05-03-vcl-Item4: Table 1 row count locked at 3 Tier-A SH2B3 EUR R2 rows + R1 slice empty-body footer
+
+**Decision:** Lock Table 1 at **3 substantive Tier-A rows** (Wave 2 R2 SH2B3 EUR canonical-and-lattice pairs, all at PP.H4 = 1.0 at lead rs3184504, nsnps = 168: BMI–hypertension, hypertension–stroke, hypertension–T2D) plus the **R1 slice empty-body footer** (28 canonical-locus trait-pair rows under disclosure-honest empty-PP.H4 framing). Final row count = 3 substantive rows + 1 disclosure-honest summary row footer. Closes the original manuscript decision-pending item 4 (which was already partially resolved on 2026-04-27 via quick task `260427-e8n` for the R1 slice; the R2 re-fire results landed subsequently and complete the resolution).
+
+**Alternatives considered:**
+- (a) **3 Tier-A R2 rows + R1 empty-body footer (adopted)** — substantively reflects the disk-authoritative Wave 2 R2 outcome (3 of 9 canonical-and-lattice pairs SURVIVE at the pre-registered Tier-A threshold per Wave 3 outcome `D-TA-WAVE3-OUTCOME-BRANCH_C_SURVIVE`); preserves the disclosure-honest empty-row framing for the R1 slice that has no non-empty PP.H4 columns; matches manuscript L168 narrative + L276-279 rendered table + L262 Conclusion §1 SURVIVE callout.
+- (b) Original 10–20 row target (the manuscript decision-pending item 4 phrasing) — rejected: presupposes a non-zero base survival rate at PP.H4 ≥ 0.8 across the 28 R1 canonical-locus rows (which all returned empty PP.H4 columns); fabricating rows would violate `feedback_original_research_framing.md` rigor.
+- (c) Empty-only Table 1 (suppress the 3 SH2B3 R2 Tier-A rows) — rejected: the SH2B3 BRANCH_C SURVIVE is the substantive Tier-A pass that anchors the §SH2B3 case study and the §Reframing of Cardiometabolic Pleiotropy Claims dual-evidence narrative; suppressing it would understate the audit's positive findings.
+
+**Why:** The disclosure-honest framing is reviewer-defensible per `feedback_original_research_framing.md`; the 3 SH2B3 R2 Tier-A rows are substantive findings that survive matched-coverage real-LD `coloc.susie`; both row classes are reported transparently. The combined framing makes Table 1 informative on both axes (positive findings + structural attrition disclosure).
+
+**How to apply:**
+- Manuscript Table 1 (L274-279): 3 substantive rows (rendered) + 1 footer row (R1 slice empty-body summary referring to `results/track_a_aggregations/table1_surviving_rows.tsv`).
+- Source TSV: `results/track_a_aggregations/table1_surviving_rows.tsv`.
+- Wave 2 R2 commit: `b3395d9` (Snakemake target `bin/fire_canonical_susie_pairs.sh`).
+- Wave 3 outcome decision token: `D-TA-WAVE3-OUTCOME-BRANCH_C_SURVIVE` (`.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-CONTEXT.md` `<decisions>` block).
+- Quick task R1 slice resolution: `260427-e8n`.
+- Cross-reference: `.planning/amendments/track_a_decision_items_resolution_log.md` Item 4 (editorial trail).
+
+---
+
+## 2026-05-03 — DEC-2026-05-03-vcl-Item5: OSF amendment posted at osf.io/az52u + 10-entry consolidated deviation log
+
+**Decision:** Lock the OSF amendment posting at `osf.io/az52u` (DOI `10.17605/OSF.IO/PVB5J`), originally landed via `/gsd-quick 260424-mxp` on 2026-04-24, and consolidated into a 10-entry deviation log via quick task `260503-kfq` (Wave 7 closeout) at `.planning/amendments/osf_deviations.md` (entries 8–17 covering the Track B m3 + m2-post-m3 + earlier quick-task cascade). Closes the original manuscript decision-pending item 5; coordination with Track B amendment posting is preserved as a Track B M2-discovery-time gate per `PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md` §9.1.
+
+**Alternatives considered:**
+- (a) **Maintain consolidated 10-entry log at .planning/amendments/osf_deviations.md (adopted)** — single source of truth for OSF deviations; entries 1–7 cover pre-Wave-7 history; entries 8–17 cover Wave 4 + Wave 4.5 + m3 + m2-post-m3 + W7 closeout; matches the manuscript L128 cross-reference path (post-Pass-1 alignment).
+- (b) Per-wave deviation logs (one log file per wave) — rejected: fragments the audit trail across 17+ files, breaks single-source-of-truth reviewer-discoverability.
+- (c) Pre-register only the original 2026-04-24 amendment text and skip the W7 consolidation — rejected: the 10-entry consolidation captures Wave 4 cache-staleness refutation + Wave 1 SuSiE-RSS L-sweep PRESERVE-WITH-DISCLOSURE + m3 CDR v7→v8 adoption, all of which are substantive deviations from the original Project Plan that must appear in the OSF log for reviewer-defensibility.
+
+**Why:** The OSF amendment + consolidated deviation log are the public pre-registration anchor for Track A's submission. Per `feedback_original_research_framing.md`, deviation transparency is a correctness requirement, not an optional feature; the W7 consolidation locks the Track A deviation surface ahead of *Genome Medicine* submission.
+
+**How to apply:**
+- Manuscript L128 (post-Pass-1 alignment) cross-references `.planning/amendments/osf_deviations.md` as the canonical deviation log path.
+- Future Track A deviations append to `.planning/amendments/osf_deviations.md` as entries 18+ (preserve append-only convention).
+- Track B M2-discovery-time OSF amendment is a separate gate per `PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md` §9.1.
+- Cross-reference: `.planning/amendments/track_a_decision_items_resolution_log.md` Item 5 (editorial trail).
+
+---
+
+## 2026-05-03 — DEC-2026-05-03-vcl-Item6: Figure roster locked at 5 main + 7 supplementary (S2 + S7 landed; S1, S3–S6 caption-only)
+
+**Decision:** Lock the Track A figure roster at **5 main-text figures** (Figure 1A + 1B, Figure 2, Figure 3, Figure 4 demoted to Figure S5, Figure 5) plus **7 supplementary figures** (Figure S1, S2, S3, S4, S5, S6, S7). Substantively rendered: Figs 1A, 1B, 2, 3, S2, S7. Caption-only at this freeze: Figs S1, S3, S4, S5, S6. Figure 4 was demoted to Figure S5 because the pathway-enrichment input set is empty at the manuscript's PP.H4 ≥ 0.5 confidence threshold (see Results §Pathway Enrichment Analysis). Figure 5 is partial-descriptive-only by design (Tier A+B = 0; only Tier C descriptors).
+
+**Alternatives considered:**
+- (a) **5 main + 7 supplementary (adopted)** — matches the disk-authoritative figure landing cascade documented in `track_a_decision_items_resolution_log.md` Item 6 per-figure provenance table; matches the manuscript Figure legends section L342-L356; preserves the audit-driven additions Figure S2 (paired-fit structural inflation, audit-v2 §HQ2) and Figure S7 (LD-reference-quality dose-response, audit-v2 HQ#3).
+- (b) Render all S1, S3–S6 placeholders before submission — rejected for this freeze: the captioned-but-unrendered slots are non-load-bearing for the audit's primary claims (per-region pairwise test counts at S1 is metadata; NEGR1/TMEM18 detail at S3/S4 is contingent on hub survival which did not occur at this freeze; S5/S6 are identity-LD comparison + negative-control behavior which are described in main-text Results); future Track B work covers these slots when the genome-wide signal set populates.
+- (c) Drop Figure 5 entirely (since Tier A+B = 0) — rejected: the partial-descriptive Figure 5 with explicit "Tier A+B = 0; only Tier C descriptors" panel labeling is itself the figure's argument (the visible emptiness at the Tier A+B level is consistent with the §Discussion "primarily an LD-inflation artifact" framing per the Figure 5 caption at L350).
+
+**Why:** The 5-main + 7-supplementary roster is the disk-authoritative figure landing state per the Wave 5 closeout (quick task `260501-wdn`). All audit-author High-Quality recommendations (HQ#2 Figure S2, HQ#3 Figure S7) are addressed with rendered outputs. The caption-only supplementary placeholders are reviewer-discoverable but do not block submission; future Track B work (the genome-wide MTAG/CPASSOC/HyPrColoc + AoU-AFR-LD discovery program) is the appropriate setting for populating S1/S3/S4/S5/S6 slots when the discovery signal set is non-empty.
+
+**How to apply:**
+- Manuscript Figure legends section (L342-L356) renders the 5-main + 7-supplementary captions; the rendered outputs at `docs/manuscript/figures/*.pdf` + `*.png` are the disk-authoritative artifacts.
+- Pass-6 bundle regeneration (`bin/build_id_vs_ref_ld_submission_bundle.sh`) packages the rendered figures inside the *Genome Medicine* submission zip.
+- Future caption-only S1, S3–S6 rendering tracked under Track B M2-discovery-time work, not Track A submission.
+- Cross-reference: `.planning/amendments/track_a_decision_items_resolution_log.md` Item 6 (editorial trail).
+
