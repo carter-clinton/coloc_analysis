@@ -4,7 +4,7 @@ milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
 stopped_at: Completed m3-aou-afr-ld-panel-build / m3-01-W1-aou-cohort-and-hard-gates plan; Wave 1 cleared (6 portal gates + AUX path verified + AOU-1 notebook template); Wave 2 ready (Carter mirrors notebook into AoU and fires AOU-1 dev cohort)
-last_updated: "2026-05-03T19:05:00.000Z"
+last_updated: "2026-05-03T22:00:00.000Z"
 last_activity: 2026-05-03
 progress:
   total_phases: 12
