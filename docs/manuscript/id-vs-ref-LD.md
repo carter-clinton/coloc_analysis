@@ -1,6 +1,6 @@
 # Track A — First-pass pivot draft
 
-> **Status:** Research article ready for *Genome Medicine* submission (original research article format; 5-figure main roster + Figs S1–S7 supplementary; supplementary data at `results/track_a_aggregations/`). Numeric placeholders filled from `results/` per quick-260427-e8n; remaining `[EXTRACT: …]` at L355 (References) is venue-format-deferred. bioRxiv preprint Day 1 regardless.
+> **Status:** Research article ready for *Genome Medicine* submission (original research article format; 5-figure main roster + Figs S1–S7 supplementary; supplementary data at `results/track_a_aggregations/`). Numeric placeholders filled from `results/` per quick-260427-e8n; full numbered bibliography compiled per quick-260503-vcl (32 cited references, Vancouver style; standalone copy at `docs/manuscript/refs/track_a_bibliography.md`). bioRxiv preprint Day 1 regardless.
 >
 > **Pivot direction (2026-04-22):** FROM "identified 28 pleiotropic signals" TO "quantify which published cross-trait pleiotropy claims survive real-LD re-analysis".
 >
