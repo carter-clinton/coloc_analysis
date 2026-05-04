@@ -1,0 +1,1030 @@
+++ git rev-parse --show-toplevel
++ ABS_REPO_ROOT=/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
++ [[ -z /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis ]]
++ [[ ! -d /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.git ]]
++ cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
++ [[ ! -f /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/docs/manuscript/id-vs-ref-LD.md ]]
++ BUNDLE_NAME=id_vs_ref_ld_genome_medicine_submission
++ OUT_DIR=.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss
++ ABS_OUT_DIR=/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss
++ mkdir -p /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss
++ PANDOC_HARDCODED=/rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc
++ [[ -x /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc ]]
++ PANDOC=/rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc
++ echo '[INFO] Using pandoc: /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc'
+[INFO] Using pandoc: /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc
++ /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc --version
++ head -1
+pandoc 3.8.3
+++ mktemp -d -t id_vs_ref_ld_bundle.XXXXXX
++ STAGING=/share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa
++ trap cleanup EXIT
++ ROOT=/share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission
++ mkdir -p /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/manuscript /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/python
++ cp docs/manuscript/id-vs-ref-LD.md /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
++ RENDER_PATH=
++ PDF_ENGINE_TRIED=()
++ try_pdf_engine xelatex
++ local engine=xelatex
++ command -v xelatex
++ PDF_ENGINE_TRIED+=("$engine:not-installed")
++ return 1
++ try_pdf_engine lualatex
++ local engine=lualatex
++ command -v lualatex
++ PDF_ENGINE_TRIED+=("$engine:not-installed")
++ return 1
++ try_pdf_engine pdflatex
++ local engine=pdflatex
++ command -v pdflatex
++ PDF_ENGINE_TRIED+=("$engine:not-installed")
++ return 1
++ try_pdf_engine tectonic
++ local engine=tectonic
++ command -v tectonic
++ PDF_ENGINE_TRIED+=("$engine:not-installed")
++ return 1
++ try_pdf_engine weasyprint
++ local engine=weasyprint
++ command -v weasyprint
++ PDF_ENGINE_TRIED+=("$engine:not-installed")
++ return 1
++ echo '[INFO] No PDF engine available; rendering HTML fallback.'
+[INFO] No PDF engine available; rendering HTML fallback.
++ echo '[INFO] PDF engines tried: xelatex:not-installed lualatex:not-installed pdflatex:not-installed tectonic:not-installed weasyprint:not-installed'
+[INFO] PDF engines tried: xelatex:not-installed lualatex:not-installed pdflatex:not-installed tectonic:not-installed weasyprint:not-installed
++ cat
++ /rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/pandoc docs/manuscript/id-vs-ref-LD.md -o /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html --standalone --toc --metadata 'title=Real-LD Re-Analysis of Curated Cardiometabolic Pleiotropy Loci' --css=minimal.css
++ RENDER_PATH=html:pandoc-fallback
++ echo '[INFO] Manuscript render path: html:pandoc-fallback'
+[INFO] Manuscript render path: html:pandoc-fallback
++ FIGURES=(fig1a_pipeline_schematic.pdf fig1a_pipeline_schematic.png fig1b_locus_panels.pdf fig1b_locus_panels.png fig2_cs_yield.pdf fig2_cs_yield.png fig3_sh2b3_eur_collapse_forest.pdf fig3_sh2b3_eur_collapse_forest.png fig5_variant_mech_scorecard.pdf fig5_variant_mech_scorecard.png fig_h3_ld_overlap_dose_response.pdf fig_h3_ld_overlap_dose_response.png fig_s2_paired_fit_structural_inflation.pdf fig_s2_paired_fit_structural_inflation.png)
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig1a_pipeline_schematic.pdf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig1a_pipeline_schematic.png /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig1b_locus_panels.pdf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig1b_locus_panels.png /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig2_cs_yield.pdf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig2_cs_yield.png /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig3_sh2b3_eur_collapse_forest.pdf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig3_sh2b3_eur_collapse_forest.png /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig5_variant_mech_scorecard.pdf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig5_variant_mech_scorecard.png /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig_h3_ld_overlap_dose_response.pdf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig_h3_ld_overlap_dose_response.png /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig_s2_paired_fit_structural_inflation.pdf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
++ for f in "${FIGURES[@]}"
++ cp docs/manuscript/figures/fig_s2_paired_fit_structural_inflation.png /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
++ SUPP_TSVS=(yield_redistribution.tsv pair_pp_h4_summary.tsv table3_admissible_pairs.tsv per_trait_pair_distribution.tsv eight_hub_fates.tsv table1_surviving_rows.tsv afr_distribution_summary.tsv table4_coloc_error_breakdown.tsv pathway_real_ld_disclosure.tsv)
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/yield_redistribution.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/pair_pp_h4_summary.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/table3_admissible_pairs.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/per_trait_pair_distribution.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/eight_hub_fates.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/table1_surviving_rows.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/afr_distribution_summary.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/table4_coloc_error_breakdown.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
++ for t in "${SUPP_TSVS[@]}"
++ cp results/track_a_aggregations/pathway_real_ld_disclosure.tsv /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
++ cp .planning/amendments/TRACK-A-FROZEN-NUMBERS.md /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
++ R_AGG=(aggregate_table3_admissible_pairs.R aggregate_per_trait_pair_and_hubs.R aggregate_table1_pleiotropic_loci.R)
++ for s in "${R_AGG[@]}"
++ cp src/R/aggregators/aggregate_table3_admissible_pairs.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
++ for s in "${R_AGG[@]}"
++ cp src/R/aggregators/aggregate_per_trait_pair_and_hubs.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
++ for s in "${R_AGG[@]}"
++ cp src/R/aggregators/aggregate_table1_pleiotropic_loci.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
++ R_FIGS=(fig1a_pipeline_schematic.R fig1b_locus_panels.R fig2_cs_yield.R fig3_sh2b3_eur_collapse_forest.R fig5_variant_mech_scorecard.R fig_h3_ld_overlap_dose_response.R fig_s2_paired_fit_structural_inflation.R)
++ for s in "${R_FIGS[@]}"
++ cp src/R/figures/fig1a_pipeline_schematic.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
++ for s in "${R_FIGS[@]}"
++ cp src/R/figures/fig1b_locus_panels.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
++ for s in "${R_FIGS[@]}"
++ cp src/R/figures/fig2_cs_yield.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
++ for s in "${R_FIGS[@]}"
++ cp src/R/figures/fig3_sh2b3_eur_collapse_forest.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
++ for s in "${R_FIGS[@]}"
++ cp src/R/figures/fig5_variant_mech_scorecard.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
++ for s in "${R_FIGS[@]}"
++ cp src/R/figures/fig_h3_ld_overlap_dose_response.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
++ for s in "${R_FIGS[@]}"
++ cp src/R/figures/fig_s2_paired_fit_structural_inflation.R /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
++ PY_SCRIPTS=(aggregate_coloc_manifest_errors.py aggregate_pathway_results.py aggregate_qtl_coloc.py)
++ for s in "${PY_SCRIPTS[@]}"
++ cp src/python/aggregate_coloc_manifest_errors.py /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
++ for s in "${PY_SCRIPTS[@]}"
++ cp src/python/aggregate_pathway_results.py /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
++ for s in "${PY_SCRIPTS[@]}"
++ cp src/python/aggregate_qtl_coloc.py /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+++ git rev-parse HEAD
++ BUILD_SHA=fa03ad0f18f16bf55e67d60b92980456ac5b1e63
+++ date -u +%Y-%m-%dT%H:%M:%SZ
++ BUILD_DATE=2026-05-04T03:41:45Z
+++ hostname
++ BUILD_HOST=login03.hpc.ncsu.edu
++ [[ -f /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa/id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.pdf ]]
++ MANUSCRIPT_RENDERED='id-vs-ref-LD.html (+ minimal.css)'
++ cat
++ cat
++ cat
++ cat
++ ZIP_PATH=/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
++ rm -f /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
++ cd /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa
++ zip -r -q /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip id_vs_ref_ld_genome_medicine_submission
++ echo '[INFO] Verifying zip contents at /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip'
+[INFO] Verifying zip contents at /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+++ unzip -l /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
++ ZIP_LISTING='Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
+Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files
+++ count_pattern '/figures/[^/]+\.(pdf|png)$'
+++ local 'pat=/figures/[^/]+\.(pdf|png)$'
+++ grep -cE '/figures/[^/]+\.(pdf|png)$'
+++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ N_FIGURES=14
+++ count_pattern '/supplementary/[^/]+$'
+++ local 'pat=/supplementary/[^/]+$'
+++ grep -cE '/supplementary/[^/]+$'
+++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ N_SUPP=10
+++ count_pattern '/scripts/R/aggregators/[^/]+$'
+++ local 'pat=/scripts/R/aggregators/[^/]+$'
+++ grep -cE '/scripts/R/aggregators/[^/]+$'
+++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ N_SCRIPTS_R_AGG=3
+++ count_pattern '/scripts/R/figures/[^/]+$'
+++ local 'pat=/scripts/R/figures/[^/]+$'
+++ grep -cE '/scripts/R/figures/[^/]+$'
+++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ N_SCRIPTS_R_FIG=7
+++ count_pattern '/scripts/python/[^/]+$'
+++ local 'pat=/scripts/python/[^/]+$'
+++ grep -cE '/scripts/python/[^/]+$'
+++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ N_SCRIPTS_PY=3
++ N_SCRIPTS_TOTAL=13
++ echo '[VERIFY] figures=14 (expect 14)'
+[VERIFY] figures=14 (expect 14)
++ echo '[VERIFY] supplementary=10 (expect 10)'
+[VERIFY] supplementary=10 (expect 10)
++ echo '[VERIFY] scripts total=13 (expect 13: 3 R-agg + 7 R-fig + 3 py)'
+[VERIFY] scripts total=13 (expect 13: 3 R-agg + 7 R-fig + 3 py)
++ echo '[VERIFY]   scripts/R/aggregators=3 (expect 3)'
+[VERIFY]   scripts/R/aggregators=3 (expect 3)
++ echo '[VERIFY]   scripts/R/figures=7 (expect 7)'
+[VERIFY]   scripts/R/figures=7 (expect 7)
++ echo '[VERIFY]   scripts/python=3 (expect 3)'
+[VERIFY]   scripts/python=3 (expect 3)
++ [[ 14 -eq 14 ]]
++ [[ 10 -eq 10 ]]
++ [[ 3 -eq 3 ]]
++ [[ 7 -eq 7 ]]
++ [[ 3 -eq 3 ]]
++ for f in README.md LICENSE-CODE LICENSE-MANUSCRIPT-AND-DATA CITATION.cff
++ grep -qE 'id_vs_ref_ld_genome_medicine_submission/README.md$'
++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ for f in README.md LICENSE-CODE LICENSE-MANUSCRIPT-AND-DATA CITATION.cff
++ grep -qE 'id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE$'
++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ for f in README.md LICENSE-CODE LICENSE-MANUSCRIPT-AND-DATA CITATION.cff
++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
++ grep -qE 'id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA$'
+  6051171                     53 files'
++ for f in README.md LICENSE-CODE LICENSE-MANUSCRIPT-AND-DATA CITATION.cff
++ grep -qE 'id_vs_ref_ld_genome_medicine_submission/CITATION.cff$'
++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ grep -qE 'manuscript/id-vs-ref-LD\.md$'
++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
++ grep -qE 'manuscript/id-vs-ref-LD\.(pdf|html)$'
++ echo 'Archive:  /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/
+      581  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/afr_distribution_summary.tsv
+   858526  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pathway_real_ld_disclosure.tsv
+     2741  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table3_admissible_pairs.tsv
+     1037  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/yield_redistribution.tsv
+      614  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/per_trait_pair_distribution.tsv
+    51826  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/TRACK-A-FROZEN-NUMBERS.md
+      618  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table1_surviving_rows.tsv
+      431  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/pair_pp_h4_summary.tsv
+      601  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/eight_hub_fates.tsv
+      946  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/supplementary/table4_coloc_error_breakdown.tsv
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/
+   113842  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.md
+   135781  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/id-vs-ref-LD.html
+     1164  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/manuscript/minimal.css
+     1720  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-MANUSCRIPT-AND-DATA
+      599  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/CITATION.cff
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/
+   227876  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.png
+   319140  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.png
+   474043  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.png
+   722541  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.png
+    24277  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig2_cs_yield.pdf
+    38185  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig5_variant_mech_scorecard.pdf
+    30801  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_s2_paired_fit_structural_inflation.pdf
+   691676  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.png
+    38583  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.pdf
+    44748  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig_h3_ld_overlap_dose_response.pdf
+  1505687  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.png
+   221064  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1b_locus_panels.pdf
+   315548  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig1a_pipeline_schematic.png
+    40664  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/figures/fig3_sh2b3_eur_collapse_forest.pdf
+     1074  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/LICENSE-CODE
+     4193  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/README.md
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/
+    14003  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_s2_paired_fit_structural_inflation.R
+    21666  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig_h3_ld_overlap_dose_response.R
+    14814  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1a_pipeline_schematic.R
+    13157  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig5_variant_mech_scorecard.R
+    11867  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig2_cs_yield.R
+    16225  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig1b_locus_panels.R
+    30069  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/figures/fig3_sh2b3_eur_collapse_forest.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/
+     8550  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_per_trait_pair_and_hubs.R
+    11425  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table3_admissible_pairs.R
+     5518  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/R/aggregators/aggregate_table1_pleiotropic_loci.R
+        0  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/
+     8094  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_coloc_manifest_errors.py
+    19714  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_pathway_results.py
+     4942  05-03-2026 23:41   id_vs_ref_ld_genome_medicine_submission/scripts/python/aggregate_qtl_coloc.py
+---------                     -------
+  6051171                     53 files'
+++ stat -c%s /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
++ ZIP_SIZE_BYTES=4630426
+++ awk 'BEGIN { printf "%.2f", 4630426 / 1048576 }'
++ ZIP_SIZE_MB=4.42
++ echo '[VERIFY] zip size = 4630426 bytes (~4.42 MB)'
+[VERIFY] zip size = 4630426 bytes (~4.42 MB)
++ [[ 4630426 -gt 52428800 ]]
++ echo '[DONE] Bundle written to: /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip'
+[DONE] Bundle written to: /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip
++ echo '[DONE] Manuscript render path: html:pandoc-fallback'
+[DONE] Manuscript render path: html:pandoc-fallback
++ cleanup
++ rm -rf /share/clintonlab/ckclinto/tmp/id_vs_ref_ld_bundle.vArHLa
