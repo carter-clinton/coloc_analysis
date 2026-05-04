@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed m3-aou-afr-ld-panel-build / m3-01-W1-aou-cohort-and-hard-gates plan; Wave 1 cleared (6 portal gates + AUX path verified + AOU-1 notebook template); Wave 2 ready (Carter mirrors notebook into AoU and fires AOU-1 dev cohort)
-last_updated: "2026-05-03T22:00:00.000Z"
-last_activity: 2026-05-03
+stopped_at: Completed quick task 260503-vcl: ta-submission-readiness-bibliography-and-decision-items-resolution (T1-T6 across two sessions; bundle regen sha256=a93d8f4952d1...; SH2B3 md5 3/3 preserved; ready for Carter scp + Genome Medicine portal upload)
+last_updated: "2026-05-03T23:42:00.000Z"
+last_activity: 2026-05-03 — Completed quick task 260503-vcl: ta-submission-readiness-bibliography-and-decision-items-resolution
 progress:
   total_phases: 12
   completed_phases: 6
