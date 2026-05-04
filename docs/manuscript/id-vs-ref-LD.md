@@ -125,7 +125,7 @@ Colocalization tests required a minimum of 50 overlapping variants between datas
 
 ### Software and Data Availability
 
-Analyses were performed using R v4.4 with coloc v5.2.3 and susieR v0.14.2. LD matrices were computed from 1000 Genomes Phase 3 reference panels (EUR and AFR subsets). Python 3.11 with scikit-learn, pandas, and NumPy was used for annotation aggregation and diagnostic summaries. The pipeline is Snakemake-pinned (v7.32.4) with conda-environment specifications (`envs/smoke_dev`) for full reproducibility. Analysis code is available at https://github.com/The-ASHES-Laboratory/colocalization-ml-analysis. Summary statistics are stored as tabix-indexed bgzip-compressed files for efficient regional queries. Pre-registration: OSF project osf.io/az52u (DOI 10.17605/OSF.IO/PVB5J); deviations logged in `.planning/osf_deviations.md`.
+Analyses were performed using R v4.4 with coloc v5.2.3 and susieR v0.14.2. LD matrices were computed from 1000 Genomes Phase 3 reference panels (EUR and AFR subsets). Python 3.11 with scikit-learn, pandas, and NumPy was used for annotation aggregation and diagnostic summaries. The pipeline is Snakemake-pinned (v7.32.4) with conda-environment specifications (`envs/smoke_dev`) for full reproducibility. Analysis code is available at https://github.com/carter-clinton/coloc_analysis. Summary statistics are stored as tabix-indexed bgzip-compressed files for efficient regional queries. Pre-registration: OSF project osf.io/az52u (DOI 10.17605/OSF.IO/PVB5J); deviations logged in `.planning/amendments/osf_deviations.md`.
 
 ### Ethics Statement
 
