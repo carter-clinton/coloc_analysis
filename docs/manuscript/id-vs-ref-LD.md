@@ -357,45 +357,9 @@ Per-trait per-L SuSiE-RSS convergence outcomes at niter = 1000 (V4 retry-ladder;
 
 ---
 
-## References — revised citation list
+## References
 
-The pivot preserves the existing ref 1–41 numbering from the v10 source draft (unmodified where possible), adds 2 new references at slots 42–43 for the identity-LD inflation / LD-mismatch literature, demotes refs 4–5 to a single Discussion paragraph on evolutionary medicine (per Amendment §4.17 P5), and defers the full numbered bibliography to the venue-submission package prep pass using a Zotero/EndNote export of the project reference library (per `/home/ckclinto/.claude/plans/snappy-humming-pine.md` §2.5). The inline-superscript ↔ ref-number mapping below is the R1 source of truth; no full numbered list is populated at this pass.
-
-### Add
-
-- **Ref 42 NEW — Weissbrod O, Hormozdiari F, Benner C, et al. (2020).** "Functionally informed fine-mapping and polygenic localization of complex trait heritability." *Nat Genet* 52:1355–1363. Functionally-informed fine-mapping and treatment of LD mismatch between fine-mapping panel and discovery GWAS. Inline slot: L36 Introduction P2 (third element of the three-inflation-settings citation cluster ²⁰,²⁹,⁴²).
-- **Ref 43 NEW — Benner C, Spencer CCA, Havulinna AS, et al. (2016).** "FINEMAP: efficient variable selection using summary data from genome-wide association studies." *Bioinformatics* 32:1493–1501. Alternative fine-mapping referent; early formulation of LD-mismatch vulnerability under the single-causal-variant model. Inline slot: L36 Introduction P2 (extends three-inflation-settings citation cluster ²⁰,²⁹,⁴² to ²⁰,²⁹,⁴²,⁴³). Resolved at 2.2.f R2 (commit pending).
-
-### Promote (already in source draft; reframed as primary-method citation in the pivot)
-
-- **Ref 20 — Zou Y, Carbonetto P, Wang G, Stephens M (2022).** "Fine-mapping from summary data with the 'Sum of Single Effects' model." *PLoS Genet* 18:e1010299. SuSiE-RSS methodology. Promoted to primary method citation at L36 (new), L38, L72, and throughout Methods §Fine-Mapping Integration.
-- **Ref 29 — Wallace C (2021).** "A more accurate method for colocalisation analysis allowing for multiple causal variants." *PLoS Genet* 17:e1009440. `coloc.susie` methodology; colocalization accuracy under LD mismatch and multi-causal-variant architecture. Promoted to primary method citation at L36 (new), L38, L72.
-
-### Retain (unchanged from source draft)
-
-- **Ref 10 — Giambartolomei C, Vukcevic D, Schadt EE, et al. (2014).** "Bayesian test for colocalisation between pairs of genetic association studies using summary statistics." *PLoS Genet* 10:e1004383. Original `coloc.abf` methodology. Framed in the pivot as the method under audit (not endorsed). Retained at L36, L70.
-- **Refs 1–3** — original cardiometabolic epidemiology citations (T2D–hypertension ~50% comorbidity; obesity as shared risk factor). Retained at L34 (¹⁻³).
-- **Refs 6–9** — GIANT / DIAMANTE / ICBP / GIGASTROKE GWAS-source citations at L54 (⁶⁻⁹). Provenance of the claims under audit.
-  - **Ref 7 specification:** Mahajan A, Taliun D, Thurner M, et al. (2018) "Fine-mapping type 2 diabetes loci to single-variant resolution using high-density imputation and islet-specific epigenome maps." *Nat Genet* 50:1505–1513. DOI 10.1038/s41588-018-0241-6. (DIAMANTE EUR T2D, N = 898,130; the vintage matched to Track A's harmonized sumstats at `data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz`.)
-- **Refs 11–12** — GWAS-ancestry-demographics citations at L40 (¹¹⁻¹²).
-- **Ref 13** — Martin AR et al. polygenic-risk-score transportability. Still relevant for the Cross-Ancestry limitation.
-- **Refs 17–19** — curated-candidate-locus prior-literature citations at L64 (¹⁷⁻¹⁹).
-- **Refs 21–41** — annotation-aggregation sources: GTEx v8, Open Targets, NHGRI-EBI GWAS Catalog, Roadmap Epigenomics, ENCODE, CADD, PolyPhen-2, SIFT, KEGG, Reactome, GO, OMIM, ClinVar, gnomAD pLI, STRING, DGIdb, ChEMBL. Exact slot-to-source assignments within the 21–41 range are deferred to the Zotero/EndNote export at venue-submission prep; R1 preserves the inline superscripts at their existing positions.
-- **Ref 27** — cardiometabolic disease burden in African-descended populations, L40.
-
-### Demote (retained but confined to one Discussion paragraph)
-
-- **Refs 4, 5 — Neel JV (1962)** "Diabetes mellitus: a 'thrifty' genotype rendered detrimental by 'progress'?" *Am J Hum Genet* 14:353–362; and **Williams GC (1957)** "Pleiotropy, natural selection, and the evolution of senescence." *Evolution* 11:398–411. Thrifty-gene and antagonistic-pleiotropy hypotheses. Retained as citations but confined to a single Discussion paragraph (§Evolutionary Medicine Perspective, L228–230), reduced from three paragraphs in the v10 source to one speculative paragraph ≤ 120 words per Amendment §4.17 P5. Inline superscripts ⁴⁻⁵ preserved verbatim at L230.
-
-### Drop (removed from the pivot)
-
-- References formerly supporting "ML-based" framing claims (gene-prioritization ML classifiers, variant-effect-prediction ML scoring, cross-ancestry-ML-validation claims) that are not preserved in the pivoted manuscript. Specific ref-number-to-source mapping is deferred to 2.2.f R2 / venue-submission prep once the Zotero library export is available — dropping inline superscripts without the source-to-number mapping risks orphaning a retained reference. The pivot-as-a-whole drops ML-framing claims in §Discussion and §Variant Mechanisms per Amendment §4.17; the inline-superscript cleanup is the last step before the Zotero export consolidates the numbered list.
-
-### Supplementary references
-
-No supplementary-only references have been identified at this pass. The Figure S1–S6 captions (L297) and Table S1–S7 captions throughout the manuscript all cite main-text references; no supplementary-unique bibliography entries are required. This subsection is retained as a placeholder in case 2.3 figure-script development (Route A Step 2.3) introduces a supplementary-caption-only citation — in that case it would be appended here with a slot ⁴⁴+ assignment.
-
-### Full numbered bibliography
+The 32 cited references span colocalization methodology (refs 6–10, 20, 29), LD-reference theory and fine-mapping under LD mismatch (refs 20, 42–43), evolutionary medicine framing (refs 4–5), GWAS ancestry demographics (refs 11–12), curated-candidate-locus pleiotropy precedent at the cardiometabolic trait set (refs 17–19), cardiometabolic comorbidity epidemiology (refs 1–3) and disease burden in African-descended populations (ref 27), and annotation databases supporting the multi-feature scorecard (refs 21–23, 34–41). Numbering is preserved from inline superscript clusters in the manuscript prose; gaps at refs 13–16, 24–26, 28, 30–33, and 44 are intentional reservation slots maintained for future supplementary additions and do not represent missing citations. The editorial provenance of each ref's disposition (added, promoted to primary-method citation, retained from the source draft, or confined to a single Discussion paragraph) is preserved at [`.planning/amendments/track_a_references_r1_editorial_trail.md`](../../.planning/amendments/track_a_references_r1_editorial_trail.md) for audit reference.
 
 1. Long AN, Dagogo-Jack S. Comorbidities of diabetes and hypertension: mechanisms and approach to target organ protection. J Clin Hypertens (Greenwich). 2011;13:244–251. doi:10.1111/j.1751-7176.2011.00434.x
 
