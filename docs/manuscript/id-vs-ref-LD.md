@@ -399,11 +399,3 @@ No supplementary-only references have been identified at this pass. The Figure S
 
 [EXTRACT: full numbered reference list 1–43 in venue-specific citation format (Genome Medicine house style primary; AJHG / Bioinformatics fallback formats). Build target: Zotero or EndNote export from the project reference library at `.planning/refs/track_a.bib` or equivalent, during venue-submission package prep per `/home/ckclinto/.claude/plans/snappy-humming-pine.md` §2.5. R1 does NOT populate this list; the inline-superscript ↔ ref-number mapping in the ### Add / ### Promote / ### Retain / ### Demote / ### Drop subsections above is the source of truth until the export lands.]
 
-## Decision-pending items (MUST resolve before submission)
-
-1. Venue choice locked — Genome Medicine recommended; AJHG fallback.
-2. Freeze date for `results/qtl_coloc/tier_assignments.tsv` and `results/multitrait/coloc_summary.tsv` — propose 2026-04-26 freeze after one more verification pass on aggregators.
-3. GitHub repo name — keep `colocalization-ml-analysis` vs rename to drop "ml" suffix? Recommend rename given the ML framing is being dropped; redirect the old URL.
-4. Final Table 1 row count (10 or 20) — depends on real-LD survival rate. **Resolved 2026-04-27 via quick-260427-e8n:** Table 1 is a disclosure-honest empty-row table (0 surviving rows at PP.H4 ≥ 0.5; cf. L166 + L272 + `results/track_a_aggregations/table1_surviving_rows.tsv`).
-5. OSF amendment text for the pivot — coordinate with Track B amendment posting per PROJECT-AMENDMENT-2026-04-22 (post after M1 harmonization, before M2 discovery).
-6. Figure generation code — Figure 2, Figure 3, Figure S7, and (per audit-v2 §HQ2) Figure S2 are landed; remaining captioned-but-unrendered slots covered by §Supplementary Figures S1, S3–S6.
