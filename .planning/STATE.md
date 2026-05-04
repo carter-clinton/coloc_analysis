@@ -20,6 +20,8 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewrite during M0 closeout)
 
+**GitHub remote:** https://github.com/carter-clinton/coloc_analysis (`origin`; AoU Workbench `git clone` target for Wave 2)
+
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
 **Current focus:** Phase m3-aou-afr-ld-panel — m3-aou-afr-ld-panel-build

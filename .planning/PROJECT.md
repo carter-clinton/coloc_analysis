@@ -47,6 +47,7 @@ Two-track original research program (adopted 2026-04-22 per Amendment §3):
 | Path | Role |
 |---|---|
 | `/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/` | **Canonical repo** (this directory). Git root. GSD state lives under `.planning/`. |
+| `https://github.com/carter-clinton/coloc_analysis` | **GitHub remote** (`origin`). Canonical public mirror; bundle for AoU Workbench `git clone` lives here. |
 | `/rs1/researchers/c/ckclinto/coloc_analysis/` | Upstream data root. Symlinked from `data/` and `results/legacy/`. 77 GB historical backup tarball lives here. |
 | `/rs1/researchers/c/ckclinto/miniconda3/` | Miniconda3 install. `gsd-tools` conda env has the GSD plugin. |
 | NCSU HPC (LSF scheduler) | Compute. `bsub` for job submission. |
