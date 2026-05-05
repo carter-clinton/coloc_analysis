@@ -971,3 +971,20 @@ Once cache-staleness is refuted, the rigor-correct disposition (per `feedback_ri
 - Future caption-only S1, S3–S6 rendering tracked under Track B M2-discovery-time work, not Track A submission.
 - Cross-reference: `.planning/amendments/track_a_decision_items_resolution_log.md` Item 6 (editorial trail).
 
+## 2026-05-05 — DEC-2026-05-05-osf-r3-defer: OSF amendment posting deferred for TA-R3 audit-v2-driven phase; operator override; W5 closeout follow-up
+
+**Decision:** Bypass the pre-execute hard gate `D-TA-R3-OSF-COVERAGE: COVERED` in the `ta-r3-audit-v2-driven-psd-and-r1-refire` phase by setting the token to `OVERRIDDEN at 2026-05-05T13:49:10Z` in `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md`. The amendment text at `.planning/amendments/osf-amendment-r3-2026-05-04.md` (drafted 2026-05-04) is committed locally; the OSF web-UI posting to `osf.io/az52u` is deferred. W5 closeout brief flags this deviation to Cowork-side for v5 disclosure decision. This permits W1 LSF dispatch (15 PSD-regularized SuSiE-RSS fits) to fire on 2026-05-05 without serializing on the OSF posting workflow.
+
+**Alternatives considered:**
+- (a) **Override + defer to W5 disclosure decision (adopted)** — keeps HPC compute moving on 2026-05-05; preserves the option for Cowork-side to decide retroactive posting vs. cover-letter disclosure at v5 ship time; honors the project's "rigor over speed" principle (`feedback_rigor_over_speed.md`) by surfacing the deviation in the disk-authoritative deviation log + DECISIONS.md row + W5 closeout brief — i.e., the rigor concern (pre-registration timing) is addressed via *transparent disclosure*, not by *not running the analysis*.
+- (b) Block W1 dispatch until OSF posting clears — rejected: serializes ~15 min of HPC parallelizable wall on a manual web-UI workflow; the analysis content is fully specified and locked on disk; the cost of posting *first* vs. *with disclosure* is asymmetric (the analysis itself does not change).
+- (c) Skip the amendment entirely — rejected: this would violate `feedback_original_research_framing.md` (deviations from pre-registration must be transparently disclosed); the override is a *timing* deviation, not a *disclosure* deviation.
+
+**Why:** The audit-v2 finding HQ#2(i) on the SH2B3 12q24 EUR LD matrix (23.46% negative eigenvalues / 50.4% effective rank / 6.7% variant coverage with all 3 backing per-trait SuSiE fits flagged `convergence_status = non_converged`) is the primary substrate driving the v5 manuscript revision; the W1 PSD-regularized re-fit is the analytical response. The decision matrix (FIRM / PARTIAL / COLLAPSE / NON_CONVERGE) is pre-specified in the on-disk amendment text and not Claude-selectable. Deferring the posting trades a small registration-timing concession for ~15 min of immediate HPC progress, with full transparency preserved via the deviation log + DECISIONS.md row + W5 closeout brief. Per `feedback_rigor_over_speed.md`, rigor is preserved through transparent disclosure rather than through speed-blocking the analysis.
+
+**How to apply:**
+- W1-W5 LSF dispatch under `ta-r3-audit-v2-driven-psd-and-r1-refire` proceeds without waiting on OSF posting.
+- W5 closeout brief surfaces `DEC-2026-05-05-osf-r3-defer` and `D-TA-R3-OSF-COVERAGE: OVERRIDDEN` explicitly in the Cowork-side handoff package.
+- Cowork-side decides at v5 ship time: (i) retroactive OSF posting + post-hoc deviation note, or (ii) v5 cover-letter disclosure as pre-registration limitation. Both are acceptable.
+- Cross-references: `.planning/osf_deviations.md` (under "Deviations (OSF amendment required)"); `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md` D-TA-R3-OSF-COVERAGE token; `.planning/amendments/osf-amendment-r3-2026-05-04.md` amendment text.
+

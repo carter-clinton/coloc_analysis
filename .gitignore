@@ -97,6 +97,12 @@ logs/
 !results/legacy
 !results/track_a_aggregations
 !results/track_a_aggregations/**
+# ta-r3 W1: PSD-regularized SuSiE-RSS re-fit namespace; small/stable; commit-tracked
+!results/fine_mapping_psd_regularized
+!results/fine_mapping_psd_regularized/**
+# ta-r3 W1: dispatch log allowlisted (logs/ blanket-ignored above)
+!logs/sh2b3_psd_refit
+!logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log
 !envs/.gitkeep
 tests/toy_3locus/results/
 

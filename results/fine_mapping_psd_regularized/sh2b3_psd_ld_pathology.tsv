@@ -1,0 +1,7 @@
+metric	value	audit_v2_target	delta_abs
+n_variants	895	NA	NA
+negative_eig_pct	23.4637	23.46	0.0037
+effective_rank_pct	61.6760	50.4	11.2760
+min_eigenvalue	-1.256602e-05	NA	NA
+max_eigenvalue	1.842654e+02	NA	NA
+condition_number	1.634951e+20	NA	NA

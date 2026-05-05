@@ -36,4 +36,25 @@ reintroduction of the broken citation.
 
 ## Deviations (OSF amendment required)
 
-*None yet.*
+### TA-R3 audit-v2-driven phase fired without OSF amendment posting (operator override 2026-05-05)
+
+**Date:** 2026-05-05
+
+**Affected:** D-TA-R3-OSF-COVERAGE (set to `OVERRIDDEN at 2026-05-05T13:49:10Z` instead of `COVERED`); all W1/W2/W3/W4/W5 LSF dispatch under the `ta-r3-audit-v2-driven-psd-and-r1-refire` phase.
+
+**Issue:** The OSF amendment text for the audit-v2-driven re-analysis (PSD-regularized SH2B3 12q24 EUR re-fit + R1 trait-pair coloc.susie cache-invalidated re-fire + R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR + HLA reconcile) was authored and committed locally on 2026-05-04 at `.planning/amendments/osf-amendment-r3-2026-05-04.md`. The corresponding OSF web-UI posting to `osf.io/az52u` was deferred (operator decision 2026-05-05). The TA-R3 W1 plan literal required `D-TA-R3-OSF-COVERAGE: COVERED at <timestamp>` to be present in `ta-r3-CONTEXT.md` before any LSF dispatch fired (pre-execute hard gate).
+
+**Resolution:** The hard gate is bypassed under operator override. The CONTEXT.md token reads `OVERRIDDEN at 2026-05-05T13:49:10Z` (NOT `COVERED`). Amendment text is locally committed and reviewable. W5 closeout brief will flag this deviation explicitly to Cowork-side for v5 disclosure decision: either (a) post the amendment retroactively to `osf.io/az52u` before manuscript submission, or (b) fold the disclosure into the v5 *Genome Medicine* cover letter as a pre-registration limitation.
+
+**Why override (not block):** Carter elected to keep HPC compute moving on 2026-05-05 (15 LSF jobs at ~30 min each, parallelizable across 15 slots → ~30 min wall) rather than serialize on the OSF web-UI posting workflow. The amendment text is unambiguous on disk; the only deferred step is the public posting. No analytical decision rules differ between the OVERRIDDEN and COVERED states — the same lambda sweep, same outcome-branch decision matrix, same convergence criteria apply. The deviation is in *registration timing*, not in *analysis content*.
+
+**Files affected:**
+- `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md` (D-TA-R3-OSF-COVERAGE token records `OVERRIDDEN` + override rationale)
+- `.planning/DECISIONS.md` (DEC-2026-05-05-XX entry for the override decision)
+- `.planning/amendments/osf-amendment-r3-2026-05-04.md` (amendment text; locally committed; OSF posting deferred)
+- W5 closeout brief (will surface this deviation in the Cowork-side handoff package)
+
+**Verification at override time:**
+- `git log --oneline | grep -E '069b34f|7d54183|02c4404' | wc -l` returns 3 (commit ancestors preserved)
+- Amendment text on disk at `.planning/amendments/osf-amendment-r3-2026-05-04.md` (committed locally)
+- DECISIONS.md row landed for `DEC-2026-05-05-osf-r3-defer`
