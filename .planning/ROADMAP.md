@@ -491,6 +491,103 @@ Plans:
 
 **Status**: planned 2026-04-29 (8-wave structure mirrors CONTEXT.md `<wave_structure>` and RESEARCH.md wave-by-wave breakdown). Routed next to `/gsd-execute-phase ta-sh2b3-canonical-and-cache-refresh` starting at Wave 0. Independent of Track B M0–M6 progress (Track A short-form sequence). Concurrency note: stale `.claude/scheduled_tasks.lock` (Apr 22) confirmed dead at this entry's commit time; no live concurrent ROADMAP writer. If Terminal A reactivates before phase execute fires, stagger writes.
 
+### Track-A-R3-audit-v2-driven-psd-and-r1-refire
+**Slug**: ta-r3-audit-v2-driven-psd-and-r1-refire
+**Goal**: Track A R3 phase to address v2 audit findings A1–A9 documented in
+`HPC_HANDOFF_v5_2026-05-04.md` (Cowork-side authoritative scope source). HPC
+lane (this phase) covers compute-side audit items: (a) SH2B3 12q24 EUR
+PSD-regularized SuSiE re-fit + canonical-pair coloc.susie under λ ∈
+{0.001, 0.01, 0.1} ridge sweep with eigenvalue-clip alternative
+(W1; outcome branches BRANCH_PSD_{FIRM, PARTIAL, COLLAPSE, NON_CONVERGE});
+(b) R1 trait-pair coloc.susie cache-invalidated re-fire post commits
+`069b34f` + `7d54183` + `02c4404` (W2; outcome branches
+BRANCH_R1_{BUG, STRUCTURAL}); (c) optional R2 canonical-pair parity re-fire
+at FTO_16q12 / MC4R_18q21 / APOL1_22q12 / CXADR_F2RL1_6p21 EUR (W3); (d)
+optional HLA_6p21 reclassification on `tier_assignments.tsv` (W4;
+200-vs-224 reconciliation). Cowork-side scope (A1 / A2 / A3 / A6-stats /
+A7 / A8 / A9 manuscript edits + v5 bundle ship) executes after HPC
+artifacts land — explicitly OUT OF this phase's scope.
+**Requirements**: REQ-PUBLIC-DATA-ONLY, REQ-SUSIE-RSS-POLICY,
+REQ-PP.H4-THRESHOLD-SWEEP, REQ-OSF-PREREG, REQ-SNAKEMAKE-CI,
+REQ-PATH-PARAMETERIZATION
+**Dependencies**: Track-A-R2-sh2b3-canonical-and-cache-refresh closeout
+(`/gsd-quick 260503-kfq` W7 + `/gsd-quick 260503-vcl` submission-readiness
+wrap; bundle sha256 `a93d8f4952d1...` at
+`.planning/quick/260427-vbq-assemble-track-a-genome-medicine-submiss/id_vs_ref_ld_genome_medicine_submission.zip`);
+commits `069b34f` (variant-ID matcher in `run_qtl_coloc.R`), `7d54183`
+(LD-panel-rsid override in `run_susie_rss.R`), `02c4404` (referenced in
+HPC_HANDOFF_v5_2026-05-04.md); honest-framing-lock chain at
+`docs/manuscript/id-vs-ref-LD.md` (must be preserved verbatim per
+`.planning/feedback_original_research_framing.md` memory — frame as
+"audit-driven re-analysis," NOT "fix" / "revision" / "cleanup");
+HPC_HANDOFF_v5_2026-05-04.md (Cowork-side; canonical A1–A9 audit-finding
+spec + λ ridge values + outcome-branch decision tables).
+**Suggested wave structure (final wave count + per-wave PLAN.md decided
+by `/gsd-plan-phase`, NOT pre-locked here):**
+  - **W1** — SH2B3 12q24 EUR PSD-regularized SuSiE re-fit + canonical-pair
+    coloc.susie under λ ∈ {0.001, 0.01, 0.1} ridge sweep (with
+    eigenvalue-clip alternative if ridge fails to converge). Outcome
+    branches recorded as `D-TA-R3-W1-BRANCH_PSD_{FIRM | PARTIAL | COLLAPSE
+    | NON_CONVERGE}` per HPC_HANDOFF_v5 decision matrix.
+  - **W2** — R1 trait-pair coloc.susie cache-invalidated re-fire against
+    commits `069b34f` + `7d54183` + `02c4404` baseline. Outcome branches
+    `D-TA-R3-W2-BRANCH_R1_{BUG | STRUCTURAL}` (BUG = cache invalidation
+    cleared the failure mode; STRUCTURAL = remaining failures are real
+    and demand methods-section disclosure).
+  - **W3 (optional, gated on W1/W2 outcomes)** — R2 canonical-pair parity
+    re-fire at FTO_16q12 / MC4R_18q21 / APOL1_22q12 / CXADR_F2RL1_6p21
+    EUR to symmetrize Table 3 with the W1 SH2B3 PSD update.
+  - **W4 (optional, gated on Cowork-side audit decision)** — HLA_6p21
+    reclassification on `tier_assignments.tsv` (200-vs-224 row count
+    reconciliation).
+  - **W5 (closeout — implicit)** — atomic commits for downstream
+    aggregator refresh + new freeze of `TRACK-A-FROZEN-NUMBERS.md`
+    (md5 invariant WILL shift owing to PSD/R1 cache changes; new md5
+    baseline locked here) + SUMMARY.md per wave + VERIFICATION.md
+    dimensions D1–DN PASS / WARN / FAIL JSON. Cowork side then ships
+    the v5 bundle outside this phase.
+**Invariants the plan MUST honor (non-negotiable):**
+  - Atomic commits per wave. SUMMARY.md per plan. Verification dimensions
+    D1–DN with PASS / WARN / FAIL evidence.
+  - Honest-original-research-framing lock preserved verbatim at every
+    `docs/manuscript/id-vs-ref-LD.md` anchor (per
+    `.planning/feedback_original_research_framing.md`). Frame this phase
+    as "audit-driven re-analysis," NOT "fix" / "revision" / "cleanup" /
+    "correction."
+  - Stage 2 md5 invariant: `TRACK-A-FROZEN-NUMBERS.md` md5 WILL shift
+    (PSD/R1 cache regeneration is the explicit driver). New md5 freeze
+    locked in W5 closeout — must be added to the
+    `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv`
+    whitelist as a successor row, NOT silently overwritten.
+  - DEC-2026-04-25-01 preserved: `results_identity_ld/` NOT committed.
+  - Pre-registration discipline: λ ridge sweep + eigenvalue-clip
+    alternative + outcome-branch decision tables enter via OSF amendment
+    posted BEFORE W1 fires (osf.io/pvb5j or osf.io/az52u). No silent
+    parameter changes.
+  - Cowork-side scope (A1 / A2 / A3 / A6-stats / A7 / A8 / A9 manuscript
+    edits + v5 bundle ship) MUST NOT be executed in this phase. HPC-side
+    artifacts hand off to Cowork side via STATE.md + a quick-task
+    handoff brief at `/gsd-quick 260504-XXX-ta-r3-cowork-handoff` (or
+    equivalent) once W5 closes.
+  - Multi-terminal staging: explicit `git add <path>` only; never
+    `git add .` / `-A` per `.planning/feedback_multi_terminal_staging`.
+**Plans**: 0 plans (W1–W5 PLAN.md files produced by `/gsd-plan-phase`)
+
+Plans:
+- [ ] TBD (run `/gsd-plan-phase ta-r3-audit-v2-driven-psd-and-r1-refire`
+  to break down W1–W5 into atomic PLAN.md files)
+
+**Status**: scaffolded 2026-05-04 with v2-audit-driven scope baked in.
+Independent of Track B m3 progress (Terminal A scope; Track A short-form
+sequence). Routed next to `/gsd-plan-phase
+ta-r3-audit-v2-driven-psd-and-r1-refire`. Cowork side ships v5 bundle
+AFTER this phase's HPC artifacts (W1 PSD outcome + W2 R1 cache-invalidate
+outcome + W3/W4 optional) land — explicitly OUT OF this phase's scope.
+HPC_HANDOFF_v5_2026-05-04.md is the canonical A1–A9 spec; consult it
+during `/gsd-plan-phase` to lock per-wave PLAN.md content. Honest-original-
+research-framing lock at `docs/manuscript/id-vs-ref-LD.md` MUST be
+preserved verbatim per `.planning/feedback_original_research_framing.md`.
+
 ## Pre-pivot spine (completed 2026-04-14; artifacts reusable per Amendment §8)
 
 The Phase 00–11 content below executed between 2026-02 and 2026-04-14 under
