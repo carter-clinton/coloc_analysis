@@ -1,8 +1,9 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "9 of 15 LSF jobs in ta-r3 W1 PSD-regularized SuSiE-RSS dispatch failed identically with `Error: length(overlap) > 0 is not TRUE` at src/R/regularization/refit_sh2b3_psd_regularized.R:123"
 created: 2026-05-06T04:18:18Z
-updated: 2026-05-06T04:50:00Z
+updated: 2026-05-06T04:55:00Z
+resolved: 2026-05-06T04:55:00Z
 ---
 
 ## Current Focus
