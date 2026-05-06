@@ -2,25 +2,28 @@
 phase: ta-r3-audit-v2-driven-psd-and-r1-refire
 plan: 1
 slug: W1-sh2b3-psd-regularized-refit
-status: LSF_DISPATCHED_AWAITING_HARVEST
+status: DONE
 subsystem: track-a-audit-driven-re-analysis
-tags: [audit-v2-driven, psd-regularization, susie-rss, sh2b3-12q24, eur, fire-and-forget, partial]
+tags: [audit-v2-driven, psd-regularization, susie-rss, sh2b3-12q24, eur, branch-psd-firm, w3-fires, closeout]
 requires:
   - data/processed/ld_reference/EUR/SH2B3_12q24.rds
   - data/processed/sumstats_harmonized/{asthma,bmi,hypertension,stroke,t2d}.EUR.tsv.bgz
   - .planning/amendments/osf-amendment-r3-2026-05-04.md
   - .planning/amendments/AUDIT-REVIEW-V2-2026-04-26.md
 provides:
-  - .planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md (D-TA-R3-OSF-COVERAGE OVERRIDDEN; W1/W2/W3/W4 outcome-branch placeholders)
+  - .planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md (D-TA-R3-OSF-COVERAGE OVERRIDDEN; D-TA-R3-W1-BRANCH_PSD_FIRM; D-TA-R3-W3-GATE FIRES)
   - src/R/regularization/refit_sh2b3_psd_regularized.R (Wen 2017 ridge + Hutchinson 2020 eigclip; SuSiE-RSS substrate)
+  - src/R/regularization/snp_id_bridge.R (chr:pos<->rsid bridge utility; reusable across PSD-regularized fitters)
   - results/fine_mapping_psd_regularized/sh2b3_psd_ld_pathology.tsv (LD pathology baseline; verified vs v2-audit on negative_eig_pct)
-  - logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log (15 LSF job IDs; harvest deferred)
-  - 15 PSD-regularized SuSiE-RSS fits (DEFERRED — currently PEND/RUN under serial queue; harvest on /gsd-resume-work)
+  - results/fine_mapping_psd_regularized/sh2b3_psd_pph4_summary.tsv (9-row pair × lambda × PP table; Wave 1 harvest substrate)
+  - results/fine_mapping_psd_regularized/{asthma,bmi,hypertension,stroke,t2d}.EUR.SH2B3_12q24.lambda{0.001,0.01,0.1}.fit.rds (15 PSD-regularized SuSiE-RSS fits under bridged code path)
+  - logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log (15 LSF job IDs original + 12 redispatched after variant-ID-bridge fix)
+  - tests/testthat-phase1/test_refit_sh2b3_psd_snp_id_bridge.R (failing-test-first regression for variant-ID bridge)
 affects:
-  - downstream W2 (R1 trait-pair coloc.susie cache-invalidated re-fire) — SUBSTRATE-INDEPENDENT; can fire in parallel with W1 harvest
-  - downstream W3 (R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR) — GATE blocked until D-TA-R3-W1-BRANCH_PSD_* resolved (resume-work harvest)
+  - downstream W2 (R1 trait-pair coloc.susie cache-invalidated re-fire) — SUBSTRATE-INDEPENDENT; can fire in parallel
+  - downstream W3 (R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR) — GATE FIRES (driven by W1 = BRANCH_PSD_FIRM); proceeds at next plan
   - downstream W4 (HLA reconcile + tier reassignment) — INDEPENDENT
-  - downstream W5 (closeout brief + Cowork handoff) — must surface OSF override deviation
+  - downstream W5 (closeout brief + Cowork handoff) — must surface OSF override deviation + W1 FIRM outcome for v5 manuscript narrative branch
 tech-stack:
   added: []
   patterns:
@@ -28,35 +31,46 @@ tech-stack:
     - PSD regularization (Hutchinson 2020 eigenvalue clip at lambda_floor=1e-6; companion method, not fired in this dispatch)
     - SuSiE-RSS with estimate_residual_variance=FALSE + check_R=FALSE under regularized R
     - LSF fire-and-forget dispatch + deferred harvest
+    - chr:pos<->rsid variant-ID bridging (reusable; same class as commits 069b34f / 7d54183)
+    - coloc.susie max-PP.H4-across-CS-pairs aggregation (one-row-per-pair-lambda summary)
 key-files:
   created:
     - .planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md
     - src/R/regularization/refit_sh2b3_psd_regularized.R
+    - src/R/regularization/snp_id_bridge.R
+    - tests/testthat-phase1/test_refit_sh2b3_psd_snp_id_bridge.R
     - results/fine_mapping_psd_regularized/sh2b3_psd_ld_pathology.tsv
+    - results/fine_mapping_psd_regularized/sh2b3_psd_pph4_summary.tsv
+    - results/fine_mapping_psd_regularized/{asthma,bmi,hypertension,stroke,t2d}.EUR.SH2B3_12q24.lambda{0.001,0.01,0.1}.fit.rds (15 fits)
     - logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log
-    - .planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-W1-sh2b3-psd-regularized-refit-SUMMARY.md (this file; partial)
+    - .planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-W1-sh2b3-psd-regularized-refit-SUMMARY.md (this file; closeout)
   modified:
     - .planning/osf_deviations.md (TA-R3 override deviation entry under "Deviations (OSF amendment required)")
     - .planning/DECISIONS.md (DEC-2026-05-05-osf-r3-defer)
     - .gitignore (allowlist results/fine_mapping_psd_regularized/ + logs/sh2b3_psd_refit/)
+    - .planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md (D-TA-R3-W1-BRANCH_PSD_FIRM resolved; D-TA-R3-W3-GATE = FIRES resolved)
+    - .planning/STATE.md (stopped_at refresh per feedback_state_md_keep_current.md)
 key-decisions:
   - D-TA-R3-OSF-COVERAGE: OVERRIDDEN at 2026-05-05T13:49:10Z (operator override; OSF posting deferred to W5 closeout disclosure decision)
   - MANUSCRIPT-MD5-AT-ENTRY = 2a57c1a061f0c66988a55d1d6600efdf (replaces stale plan-mode literal 63fd8138...)
+  - MANUSCRIPT-MD5-AT-EXIT = 2a57c1a061f0c66988a55d1d6600efdf (UNCHANGED — honest-framing-lock invariant preserved through Wave 1 closeout)
   - LD pathology negative_eig_pct = 23.4637 matches v2-audit baseline 23.46% within 0.0037pp (load-bearing PSD-pathology metric verified)
-  - LSF dispatch fire-and-forget (15 jobs queued; harvest deferred to /gsd-resume-work)
+  - D-TA-R3-W1-BRANCH_PSD_FIRM at primary lambda = 0.01; per-pair PP.H4 = (1.000000, 1.000000, 1.000000) for (BMI-HTN, HTN-stroke, HTN-T2D)
+  - D-TA-R3-W3-GATE = FIRES (driven by W1 = BRANCH_PSD_FIRM; R2 parity at FTO/MC4R/APOL1/CXADR EUR proceeds)
+  - Cowork-side narrative branch implication (informational; OUT of phase scope): FIRM → manuscript reports lambda + PSD diagnostic + converged-status disclosure (SH2B3 anchor empirically supported under regularized LD)
 requirements-completed:
-  - REQ-SUSIE-RSS-POLICY (partial — fitter substrate landed; convergence outcomes pending harvest)
+  - REQ-SUSIE-RSS-POLICY (DONE — fitter substrate landed; 5/5 traits converged at primary lambda=0.01)
   - REQ-OSF-PREREG (deviation recorded; amendment text on disk; OSF posting deferred under override)
   - REQ-PUBLIC-DATA-ONLY (verified — 1000G EUR LD ref + harmonized sumstats; all public)
-duration: 86 min
-completed: 2026-05-05 (DISPATCHED — harvest pending)
+duration: 86 min (dispatch) + ~30 min (variant-ID-bridge debug) + ~10 min (Task 3 harvest)
+completed: 2026-05-06
 ---
 
-# Phase ta-r3 Plan W1: SH2B3 12q24 EUR PSD-regularized SuSiE-RSS Audit-Driven Re-fit Summary (PARTIAL — LSF Dispatched)
+# Phase ta-r3 Plan W1: SH2B3 12q24 EUR PSD-regularized SuSiE-RSS Audit-Driven Re-fit Summary (Wave 1 closeout — D-TA-R3-W1-BRANCH_PSD_FIRM)
 
-**Status:** `LSF_DISPATCHED_AWAITING_HARVEST` — 15 LSF jobs (5 EUR traits × 3 lambda values; ridge / Wen 2017) submitted to `serial` queue at 2026-05-05T15:15:41Z. Harvest of LSF outputs (coloc.susie at canonical pairs + branch classification + final SUMMARY) is **deferred to `/gsd-resume-work`** per the 2026-05-05 fire-and-forget operator directive.
+**Status:** `DONE` — Wave 1 closes with `BRANCH_PSD_FIRM` at primary lambda=0.01. All 3 canonical-pair PP.H4 = 1.000000 (BMI-HTN, HTN-stroke, HTN-T2D); all 5 EUR traits converged at primary lambda; SH2B3 12q24 EUR Tier-A anchor empirically supported under PSD-regularized LD per OSF amendment 2026-05-04 paragraph (c). W3 R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR (EUR) gate FIRES.
 
-**One-liner:** Dispatched 15 PSD-regularized (Wen 2017 ridge) SuSiE-RSS audit-driven re-fits at SH2B3 12q24 EUR across {asthma, bmi, hypertension, stroke, t2d} × {0.001, 0.01, 0.1} via LSF; OSF amendment posting OVERRIDDEN per operator decision; harvest + outcome-branch classification deferred to resume-work.
+**One-liner:** SH2B3 12q24 EUR Tier-A anchor survives PSD-regularized LD audit-driven re-analysis: 15 PSD-regularized (Wen 2017 ridge) SuSiE-RSS fits across {asthma, bmi, hypertension, stroke, t2d} × {0.001, 0.01, 0.1} converge at primary lambda=0.01, and `coloc.susie` on the 3 canonical trait-pairs returns PP.H4 = 1.000000 across the board → BRANCH_PSD_FIRM, W3 gate FIRES.
 
 **Why partial:** The full plan as written includes Tasks 1, 2, and 3. This dispatch pass executed:
 - **Task 1: COMPLETE** — CONTEXT.md scaffold + Phase A (osf_deviations.md + DECISIONS.md row) + fitter R script + LD pathology TSV + atomic commit (`bccd0d6`).
@@ -79,14 +93,14 @@ completed: 2026-05-05 (DISPATCHED — harvest pending)
 | D2  | src/R/regularization/ + refit_sh2b3_psd_regularized.R landed (Wen 2017 ridge + Hutchinson 2020 eigclip) | **PASS** (smoke-tested: bmi/lambda=0.01 ran in 3.6s, converged=TRUE, n_CS=10) |
 | D3  | LD pathology numbers within 1.0pp of v2-audit baseline | **WARN** (negative_eig_pct=23.4637 matches 23.46% within 0.0037pp PASS; effective_rank_pct=61.68 diverges 11.28pp — definitional artifact at threshold; load-bearing metric matches) |
 | D4  | OSF coverage gate cleared before LSF dispatch | **OVERRIDDEN** (per operator decision 2026-05-05; D-TA-R3-OSF-COVERAGE = OVERRIDDEN; deviation recorded in `.planning/osf_deviations.md` + DEC-2026-05-05-osf-r3-defer) |
-| D5  | 15 fits land on disk | **DEFERRED** — 15 LSF jobs submitted, currently PEND/RUN; harvest on `/gsd-resume-work` |
-| D6  | Pair × lambda × PP table built | **DEFERRED** — Task 3 substrate not yet on disk |
-| D7  | W1 outcome branch classified (FIRM/PARTIAL/COLLAPSE/NON_CONVERGE) | **DEFERRED** — Task 3 deferred |
-| D8  | LSF wall-time observed vs projected (~30 min) | **DEFERRED** — observed value populates on harvest; smoke-test wall = 3.6s suggests actual envelope ≪ 30 min/fit |
-| D9  | Manuscript md5 invariant | **PASS** (md5 = 2a57c1a061f0c66988a55d1d6600efdf at entry AND exit; lock-at-entry semantics preserved) |
+| D5  | 15 fits land on disk | **PASS** — 15/15 .fit.rds present at `results/fine_mapping_psd_regularized/` under bridged code path (3 asthma + 3 bmi from original dispatch + 3 asthma re-fit + 9 hypertension/stroke/t2d from variant-ID-bridge redispatch) |
+| D6  | Pair × lambda × PP table built | **PASS** — `results/fine_mapping_psd_regularized/sh2b3_psd_pph4_summary.tsv` written with header + 9 data rows; schema = `pair\tlambda\tPP.H0\tPP.H1\tPP.H2\tPP.H3\tPP.H4\tn_snps\tboth_traits_converged` |
+| D7  | W1 outcome branch classified (FIRM/PARTIAL/COLLAPSE/NON_CONVERGE) | **PASS** — `BRANCH_PSD_FIRM` at primary lambda=0.01; all 3 canonical-pair PP.H4 = 1.000000 ≥ 0.8 |
+| D8  | LSF wall-time observed vs projected (~30 min) | **PASS** — observed envelope ≪ 30 min/fit; original dispatch jobs 115619-115643 cleared serial queue same-day; redispatch jobs 119067-119078 cleared overnight |
+| D9  | Manuscript md5 invariant | **PASS** (md5 = 2a57c1a061f0c66988a55d1d6600efdf at entry AND exit; lock-at-entry semantics preserved through Wave 1 closeout) |
 | D10 | W2 GO/NO-GO status | **GO** — W2 is substrate-independent (reads R1 trait-pair coloc.susie cache; not blocked on W1) |
-| D11 | W3 gate disposition | **DEFERRED** — D-TA-R3-W3-GATE remains PENDING; resolves on W1 harvest |
-| D12 | Honest-framing-lock invariant preservation | **PASS** (md5 unchanged; no manuscript edits; framing language used: "audit-driven re-analysis") |
+| D11 | W3 gate disposition | **FIRES** — D-TA-R3-W3-GATE = FIRES (driven by W1 = BRANCH_PSD_FIRM); R2 canonical-pair parity at FTO_16q12, MC4R_18q21, APOL1_22q12, CXADR_F2RL1_6p21 (EUR) proceeds at the next plan |
+| D12 | Honest-framing-lock invariant preservation | **PASS** (md5 unchanged through 2 dispatch passes + harvest pass; no manuscript edits; framing language used: "audit-driven re-analysis") |
 
 ## LSF Dispatch Manifest (15 fits)
 
@@ -210,24 +224,25 @@ Once `bjobs -J 'ta_r3_W1_*'` returns no PEND/RUN jobs:
 
 None — all operations were on-cluster compute against locally-committed substrate.
 
-## Self-Check: PARTIAL
+## Self-Check: PASSED
 
 - [x] `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md` exists
 - [x] `grep "D-TA-R3-OSF-COVERAGE: OVERRIDDEN" ta-r3-CONTEXT.md` returns the line
 - [x] `grep "MANUSCRIPT-MD5-AT-ENTRY: 2a57c1a061f0c66988a55d1d6600efdf" ta-r3-CONTEXT.md` returns the line
 - [x] `md5sum docs/manuscript/id-vs-ref-LD.md` = `2a57c1a061f0c66988a55d1d6600efdf` at exit (unchanged)
 - [x] `src/R/regularization/refit_sh2b3_psd_regularized.R` exists + executable
-- [x] `wc -l logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log` >= 15 (24 total; 15 job-ID rows)
+- [x] `wc -l logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log` >= 15 (original 15-row block + 12-row redispatch addendum)
 - [x] All 15 LSF job IDs recorded with trait + lambda annotations (115619, 115621, 115622, 115624, 115626, 115627, 115629, 115631, 115632, 115634, 115636, 115637, 115639, 115641, 115643)
 - [x] Task 1 atomic commit `bccd0d6` at HEAD before this SUMMARY commit
 - [x] DEC-2026-05-05-osf-r3-defer present in `.planning/DECISIONS.md`
 - [x] osf_deviations.md TA-R3 override entry under "Deviations (OSF amendment required)"
-- [ ] 15 fits land on disk (DEFERRED to harvest)
-- [ ] Pair × lambda × PP table built (DEFERRED to harvest)
-- [ ] D-TA-R3-W1-BRANCH_PSD_* resolved (DEFERRED to harvest)
-- [ ] D-TA-R3-W3-GATE resolved (DEFERRED to harvest)
+- [x] 15 fits land on disk (verified `ls results/fine_mapping_psd_regularized/*.fit.rds | wc -l` = 15)
+- [x] Pair × lambda × PP table built (`results/fine_mapping_psd_regularized/sh2b3_psd_pph4_summary.tsv` header + 9 rows)
+- [x] D-TA-R3-W1-BRANCH_PSD_FIRM resolved at primary lambda=0.01
+- [x] D-TA-R3-W3-GATE = FIRES resolved (driven by W1 = BRANCH_PSD_FIRM)
+- [x] Atomic commit landed at `3886d14` (Task 3 core: TSV + CONTEXT.md edit)
 
-**Self-Check verdict:** PASS for the dispatch portion of W1 (Task 1 + Task 2 dispatch step). Harvest-deferred items will be checked in the resume-work SUMMARY promotion.
+**Self-Check verdict:** PASS for the full W1 plan (Tasks 1 + 2 + 3 + variant-ID-bridge bug-fix addendum). Wave 1 closeout complete; W3 gate FIRES.
 
 ---
 
@@ -308,3 +323,88 @@ bsub flags identical to original dispatch: `queue=serial -W 5760 -n 1 -R "rusage
 **OSF amendment lock:** `docs/manuscript/id-vs-ref-LD.md` md5 unchanged. The bug-fix is upstream of all four pre-registered branches in the OSF amendment; no amendment text update needed. The amendment's Branch-A/B/C/D outcomes are defined on the post-fit numerics, which now have a chance to materialize for hypertension/stroke/t2d.
 
 **Knowledge-base classification:** Same class as `qtl_coloc_snp_name_mismatch` (2026-04-20). Knowledge-base entry will be appended after harvest confirms the fix lands all 12 redispatched fits and downstream W1 Task 3 produces the canonical-pair coloc.susie matrix per the OSF branch decision tree.
+
+---
+
+## Wave 1 Harvest Results — Task 3 (2026-05-06)
+
+**Trigger:** All 12 redispatched LSF jobs (119067-119078) drained at 2026-05-06; 15/15 .fit.rds verified on disk under bridged code path; commit chain `728d760` → `ad19818` → `12274a2` → `ce4e074` → `6a221fa` confirms variant-ID bridge fix is HEAD ancestor.
+
+**Substrate:** Read each of the 15 `{trait}.EUR.SH2B3_12q24.lambda{lambda}.fit.rds` from disk. Ran `coloc::coloc.susie(fit1$susie_fit, fit2$susie_fit)` on the 3 canonical pairs (BMI–HTN, HTN–stroke, HTN–T2D) at each lambda where both per-trait fits converged. For each pair × lambda cell, took `which.max(res$summary$PP.H4.abf)` (max PP.H4 across CS-pairs); rows with a non-converged side emit NA per the locked schema.
+
+### Per-trait convergence at primary lambda=0.01
+
+| trait        | converged | n_CS | niter | n_snps |
+| ------------ | --------- | ---- | ----- | ------ |
+| asthma       | TRUE      | 0    | 2     | 701    |
+| bmi          | TRUE      | 10   | 221   | 170    |
+| hypertension | TRUE      | 7    | 715   | 589    |
+| stroke       | TRUE      | 6    | 264   | 622    |
+| t2d          | TRUE      | 5    | 30    | 863    |
+
+**Primary-lambda determination:** lambda=0.001 had bmi=FALSE + hypertension=FALSE (only stroke converged); lambda=0.01 had bmi+hypertension+stroke ALL converged (the gate the OSF amendment paragraph (b) defines); lambda=0.1 also had all three converged. Primary lambda = **0.01** (smallest where the 3-trait gate clears). Asthma + t2d also converged at primary lambda — full 5/5 convergence is a stronger result than the OSF amendment's 3-trait gate requires.
+
+**Asthma n_CS=0 / niter=2 note:** Asthma converged after 2 SuSiE-RSS iterations with zero credible sets above the 0.95 coverage threshold. This is a "no signal" outcome at the SH2B3 12q24 region for asthma in EUR — consistent with asthma not being a canonical SH2B3 trait per the OSF amendment paragraph (a) (canonical traits are BMI, hypertension, stroke, T2D; asthma is included for completeness as a 5th trait but does not enter the 3 canonical pairs).
+
+### Canonical-pair coloc.susie PP.H4 at primary lambda=0.01
+
+| pair                   | PP.H4    | Threshold class    |
+| ---------------------- | -------- | ------------------ |
+| bmi_vs_hypertension    | 1.000000 | SURVIVE_GE_0.8     |
+| hypertension_vs_stroke | 1.000000 | SURVIVE_GE_0.8     |
+| hypertension_vs_t2d    | 1.000000 | SURVIVE_GE_0.8     |
+
+All 3 PP.H4 ≥ 0.8 → `BRANCH_PSD_FIRM` per OSF amendment 2026-05-04 paragraph (c) decision matrix. The hypertension_vs_t2d cell at lambda=0.1 is 0.999947 (a hair below 1.0 to printf precision); at the primary lambda=0.01 it is 1.000000. The Branch decision is robust across both converged lambdas (0.01 and 0.1) — at lambda=0.1 the same 3-pair set returns (1.000000, 1.000000, 0.999947), all still ≥ 0.8.
+
+### Branch decision rationale (per OSF amendment paragraph (b)/(c))
+
+> "lambda exists where all three SuSiE-RSS fits converge AND PP.H4 ≥ 0.8 across all three canonical pairs."
+
+Primary lambda 0.01 satisfies both clauses:
+- **Convergence:** all 3 of (bmi, hypertension, stroke) per-trait fits converge at lambda=0.01 (additionally asthma + t2d also converge — 5/5 convergence at primary lambda).
+- **PP.H4 threshold:** (bmi_vs_hypertension, hypertension_vs_stroke, hypertension_vs_t2d) PP.H4 = (1.000000, 1.000000, 1.000000), all ≥ 0.8.
+
+→ `D-TA-R3-W1-BRANCH_PSD_FIRM`.
+
+**What this means in the OSF amendment narrative space:** the SH2B3 12q24 EUR Tier-A pass at PP.H4 ≈ 1.0 across the 3 canonical pairs survives PSD-regularized LD (Wen 2017 ridge at lambda=0.01) with 5/5 per-trait convergence. The original v2-audit concern (HQ#2(i) — PP.H4 = 1.0 from non-PSD LD + non-converged fits being a recognized false-positive mode per Zou 2022 / Wallace 2021 / Wen 2017 / Benner 2017) is empirically refuted at SH2B3 specifically: under regularized LD with all per-trait fits converged, PP.H4 still lands at 1.0 across the canonical pairs. The Tier-A SH2B3 anchor is empirically supported under the audit-driven re-analysis substrate.
+
+### W3 gate implication
+
+`D-TA-R3-W3-GATE = FIRES` — per OSF amendment paragraph (f), W3 R2 canonical-pair parity at FTO_16q12, MC4R_18q21, APOL1_22q12, and CXADR_F2RL1_6p21 (EUR) is informative if and only if SH2B3 itself qualifies as a comparator anchor. W1 BRANCH_PSD_FIRM clears that gate. W3 proceeds at the next plan in this phase (per `.planning/ROADMAP.md` Track-A-R3 entry).
+
+### Cowork-side narrative branch implication (informational; manuscript edits OUT of phase scope)
+
+Per OSF amendment paragraph (c), the manuscript v5 narrative branches as follows (with **FIRM** being this realized outcome):
+
+- **FIRM (this outcome) → manuscript reports the lambda value (0.01), PSD diagnostic table (negative_eig_pct = 23.4637 of EUR SH2B3 12q24 LD ref), and converged-status disclosure (5/5 per-trait fits converged at primary lambda; n_snps ranges 170-863 across traits; 3 of 3 canonical pair PP.H4 = 1.000000). The Track A SH2B3 12q24 EUR Tier-A anchor is empirically supported under regularized LD; no Tier reframe needed.**
+- PARTIAL → reframe SH2B3 from Tier-A to Tier-B; revise abstract + discussion (NOT this outcome)
+- COLLAPSE → SH2B3 no longer Tier-A; report prior-literature PP=1.0 anchor as not surviving matched-LD (NOT this outcome)
+- NON_CONVERGE → defer to Track B (in-sample LD via UKB/AoU EUR) (NOT this outcome)
+
+Manuscript edits to incorporate this outcome are OUT of this phase's scope and execute in a separate Cowork-side session after W5 closeout per OSF amendment "What is not changing" paragraph.
+
+### Honest-framing-lock invariant verification
+
+| anchor                      | md5                                  |
+| --------------------------- | ------------------------------------ |
+| MANUSCRIPT-MD5-AT-ENTRY     | `2a57c1a061f0c66988a55d1d6600efdf`   |
+| MANUSCRIPT-MD5-AT-EXIT      | `2a57c1a061f0c66988a55d1d6600efdf`   |
+| Drift                       | NONE — lock holds for full Wave 1     |
+
+The PLAN's Task 3 acceptance-criteria literal (`md5 == 63fd81385590ffc8d23d45a0f0598959`) is a stale-plan-mode reference superseded by the lock-at-entry value captured in CONTEXT.md (Rule 1 deviation already documented in this SUMMARY's earlier `MANUSCRIPT-MD5-AT-ENTRY drifted from plan-mode literal` block). The substantive intent — "manuscript unchanged through this phase" — is preserved.
+
+### Atomic commit (Task 3 core)
+
+| commit    | scope                                                                                                     |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| `3886d14` | docs(ta-r3, W1): record D-TA-R3-W1-BRANCH_PSD_FIRM + W3 gate FIRES (audit-driven re-analysis; primary lambda=0.01; canonical-pair PP.H4 table) |
+
+### W1 plan execution closeout
+
+| Task   | Status   | Substrate                                                                |
+| ------ | -------- | ------------------------------------------------------------------------ |
+| Task 1 | DONE     | CONTEXT.md scaffold + fitter R + LD pathology TSV; commit `bccd0d6`      |
+| Task 2 | DONE     | 15 LSF jobs dispatched + 12 redispatched after variant-ID-bridge fix; commits `bccd0d6` (orig dispatch), `728d760` (failing test), `ad19818` (bridge utility + wire-in), `12274a2` (redispatch + addendum), `ce4e074` (drain confirmation), `6a221fa` (debug archive) |
+| Task 3 | DONE     | Pair × lambda × PP table + branch classification + CONTEXT.md token resolution; commit `3886d14`; SUMMARY finalize commit (this) |
+
+W1 closes with `BRANCH_PSD_FIRM` + W3 gate FIRES + 5/5 per-trait convergence + 3/3 canonical-pair PP.H4 = 1.000000 + manuscript md5 unchanged. The substrate handed off to W3 (R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR EUR) is the entire `results/fine_mapping_psd_regularized/` namespace plus the resolved branch tokens in CONTEXT.md.
