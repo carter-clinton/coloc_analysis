@@ -32,6 +32,25 @@ suppressPackageStartupMessages({
 # null-coalesce helper (avoid rlang dependency; %||% not in base R)
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0L) b else a
 
+# -------------------------------------------------------------------------
+# chr:pos <-> rsid bridge for variant-ID convention drift between harmonized
+# sumstats and per-region 1KG-EUR LD reference panels (introduced by
+# ta-r3 W1 2026-05-06; same class of bug previously fixed in commits
+# 069b34f + 7d54183 for the run_qtl_coloc.R / run_susie_rss.R paths).
+# Locates the utility relative to this script so the fitter is invocable from
+# any cwd (LSF jobs run with cwd=project root, but unit tests source from a
+# different cwd).
+.bridge_path <- file.path(dirname(sub("^--file=", "",
+  grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)[1])),
+  "snp_id_bridge.R")
+if (!file.exists(.bridge_path)) {
+  # Fallback to project-relative path when sourced via R -e.
+  .bridge_path <- "src/R/regularization/snp_id_bridge.R"
+}
+stopifnot(file.exists(.bridge_path))
+source(.bridge_path)
+stopifnot(exists("bridge_snp_id_to_ld_ref", mode = "function"))
+
 opt <- OptionParser(option_list = list(
   make_option("--trait", type = "character", help = "asthma|bmi|hypertension|stroke|t2d"),
   make_option("--lambda", type = "numeric", help = "ridge lambda or eigclip floor"),
@@ -119,6 +138,23 @@ sub[, z := get(betacol) / get(secol)]   # mirror src/legacy/region_analysis/scri
 # the LD variants$SNP_ID is the canonical join key.
 snpcol <- intersect(c("SNP_ID", "SNP", "MarkerName", "rsid", "ID"), names(sub))[1]
 stopifnot(!is.na(snpcol))
+
+# Bridge chr:pos<->rsid convention drift: harmonized sumstats use rsid for
+# asthma/bmi but chr:pos for hypertension/stroke/t2d, while ld$variants$SNP_ID
+# is 100% rsid. Without this bridge, intersect() returns 0 for chr:pos sumstats
+# and stopifnot below fires. See .planning/debug/ta_r3_w1_snp_id_overlap_zero.md
+# and tests/testthat-phase1/test_refit_sh2b3_psd_snp_id_bridge.R.
+sub <- bridge_snp_id_to_ld_ref(
+  sumstats      = sub,
+  ld_variants   = ld_variants,
+  chr_col       = chrcol,
+  pos_col       = poscol,
+  snp_id_col    = snpcol,
+  ld_chr_col    = "CHR",
+  ld_pos_col    = "POS",
+  ld_snp_id_col = "SNP_ID"
+)
+
 overlap <- intersect(rownames(R), sub[[snpcol]])
 stopifnot(length(overlap) > 0)
 n_dropped <- nrow(sub) - length(overlap)
