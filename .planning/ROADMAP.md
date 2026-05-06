@@ -571,11 +571,33 @@ by `/gsd-plan-phase`, NOT pre-locked here):**
     equivalent) once W5 closes.
   - Multi-terminal staging: explicit `git add <path>` only; never
     `git add .` / `-A` per `.planning/feedback_multi_terminal_staging`.
-**Plans**: 0 plans (W1–W5 PLAN.md files produced by `/gsd-plan-phase`)
+**Plans**: 5 planned (W1 + W2 + W3 + W4 + W5; produced by `/gsd-plan-phase`
+2026-05-04). 3 of 5 complete; 2 pending.
 
 Plans:
-- [ ] TBD (run `/gsd-plan-phase ta-r3-audit-v2-driven-psd-and-r1-refire`
-  to break down W1–W5 into atomic PLAN.md files)
+- [x] ta-r3-W1-sh2b3-psd-regularized-refit-PLAN.md — Wave 1: SH2B3 12q24 EUR
+  PSD-regularized SuSiE-RSS re-fit (Wen 2017 ridge + Hutchinson 2020 eigclip)
+  across λ ∈ {0.001, 0.01, 0.1}; outcome `D-TA-R3-W1-BRANCH_PSD_FIRM` at
+  primary λ=0.01 (5/5 per-trait fits converged; 3/3 canonical-pair PP.H4 =
+  1.000000 — SH2B3 12q24 EUR Tier-A anchor empirically supported under
+  PSD-regularized LD). W3 gate FIRES.
+- [x] ta-r3-W2-r1-trait-pair-coloc-refire-PLAN.md — Wave 2: R1 trait-pair
+  coloc.susie cache-invalidated re-fire against HEAD ancestors `069b34f` +
+  `7d54183` + `02c4404`; outcome `D-TA-R3-W2-BRANCH_R1_STRUCTURAL` (R1
+  non-empty PP.H4 = 0/28 post-refire — Δ=0 vs pre-W2 baseline; Layer-2-
+  attrition framing empirically supported; cache-staleness alternative
+  refuted).
+- [x] ta-r3-W3-r2-canonical-pair-parity-PLAN.md — Wave 3: R2 canonical-pair
+  parity re-fire at FTO_16q12 / MC4R_18q21 / APOL1_22q12 / CXADR_F2RL1_6p21
+  EUR (gated on W1=BRANCH_PSD_FIRM); outcome `D-TA-R3-W3-OUTCOME` = 0 of 6
+  W3 canonical pairs surviving PP.H4 ≥ 0.8 under matched-LD (Layer-2
+  attrition consistent with W2 BRANCH_R1_STRUCTURAL — extends to canonical
+  pairs at non-Tier-A regions; SH2B3 12q24 EUR remains the only surviving
+  Tier-A signal across the 5 admissible regions × canonical-pair set).
+- [ ] ta-r3-W4-* (HLA_6p21 reclassification or footnote; default
+  `D-TA-R3-W4-DEFERRED_TO_FOOTNOTE` per CONTEXT.md PENDING block).
+- [ ] ta-r3-W5-* (closeout brief + Cowork handoff; appends md5 successor
+  rows to `md5_baseline.tsv` for post-W2 + post-W3 shifts).
 
 **Status**: scaffolded 2026-05-04 with v2-audit-driven scope baked in.
 Independent of Track B m3 progress (Terminal A scope; Track A short-form
