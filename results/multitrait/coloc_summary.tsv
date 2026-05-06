@@ -1,0 +1,38 @@
+pair_id	PP.H0.abf	PP.H1.abf	PP.H2.abf	PP.H3.abf	PP.H4.abf
+APOL1_22q12__AFR__asthma_vs_stroke					
+APOL1_22q12__AFR__asthma_vs_t2d					
+APOL1_22q12__AFR__stroke_vs_t2d					
+APOL1_22q12__EUR__asthma_vs_stroke					
+APOL1_22q12__EUR__asthma_vs_t2d					
+APOL1_22q12__EUR__stroke_vs_t2d					
+CXADR_F2RL1_6p21__EUR__bmi_vs_stroke					
+FTO_16q12__AFR__asthma_vs_stroke					
+FTO_16q12__AFR__asthma_vs_t2d					
+FTO_16q12__AFR__stroke_vs_t2d					
+FTO_16q12__EUR__asthma_vs_bmi	-2.2204e-16				
+FTO_16q12__EUR__asthma_vs_hypertension					
+FTO_16q12__EUR__asthma_vs_stroke					
+FTO_16q12__EUR__asthma_vs_t2d	-2.2204e-16				
+FTO_16q12__EUR__bmi_vs_hypertension					
+FTO_16q12__EUR__bmi_vs_stroke					
+FTO_16q12__EUR__bmi_vs_t2d	0				
+FTO_16q12__EUR__hypertension_vs_stroke					
+FTO_16q12__EUR__hypertension_vs_t2d					
+FTO_16q12__EUR__stroke_vs_t2d					
+MC4R_18q21__AFR__asthma_vs_stroke					
+MC4R_18q21__AFR__asthma_vs_t2d					
+MC4R_18q21__AFR__stroke_vs_t2d					
+MC4R_18q21__EUR__asthma_vs_stroke					
+SH2B3_12q24__AFR__asthma_vs_stroke					
+SH2B3_12q24__AFR__asthma_vs_t2d					
+SH2B3_12q24__AFR__stroke_vs_t2d					
+SH2B3_12q24__EUR__asthma_vs_t2d					
+SH2B3_12q24__EUR__asthma_vs_bmi					
+SH2B3_12q24__EUR__asthma_vs_hypertension					
+SH2B3_12q24__EUR__asthma_vs_stroke					
+SH2B3_12q24__EUR__bmi_vs_hypertension	0	0	9.0664e-210	0	1
+SH2B3_12q24__EUR__bmi_vs_stroke	0				
+SH2B3_12q24__EUR__bmi_vs_t2d	9.1649e-298	2.8114e-81	3.2599e-217	1	4.3081e-27
+SH2B3_12q24__EUR__hypertension_vs_stroke	0	0	0	0	1
+SH2B3_12q24__EUR__hypertension_vs_t2d	0	6.3048e-196	0	8.7894e-12	1
+SH2B3_12q24__EUR__stroke_vs_t2d	0	0.0024	0	0.9976	0
