@@ -245,3 +245,31 @@ None of (1)-(4) require on-disk reclassification; all four fit cleanly in a Cowo
 - [config/bsub_wrapper.sh](../../../config/bsub_wrapper.sh) — sets -W per queue (serial=5760 min via `*` default case); W1+W2+W3 use it via the same pattern as ta-sh2b3-W1-PLAN.md
 - [.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv](../ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv) — W5 appends successor rows (NOT overwrite)
 - Commits in HEAD: `069b34f` (variant-ID matcher in run_qtl_coloc.R), `7d54183` (LD-panel-rsid override in run_susie_rss.R), `02c4404` (max_iterations -> max_iter)
+
+---
+
+### D-TA-R3-W5-PHASE-CLOSURE: phase closed 2026-05-06
+
+**Final wave outcomes:**
+- W1: `BRANCH_PSD_FIRM` (primary lambda=0.01; 5/5 EUR per-trait fits converged at SH2B3 12q24; 3/3 canonical pair PP.H4 = 1.000000 — SH2B3 anchor empirically supported under PSD-regularized LD)
+- W2: `BRANCH_R1_STRUCTURAL` (R1_non_empty_PP.H4 = 0/28 post cache-invalidated re-fire under HEAD ancestors 069b34f + 7d54183 + 02c4404; cache-staleness alternative refuted; Layer-2 attrition framing empirically supported)
+- W3: `OUTCOME = 0 of 6 surviving` PP.H4 ≥ 0.8 at FTO_16q12 + MC4R_18q21 + APOL1_22q12 + CXADR_F2RL1_6p21 EUR (Layer-2 attrition extends to canonical non-SH2B3 pairs; SH2B3 is the only surviving Tier-A signal across the 5 admissible regions × canonical-pair set)
+- W4: `DEFERRED_TO_FOOTNOTE` (HLA reconcile via Cowork-side A9 footnote; on-disk tier_assignments.tsv UNTOUCHED; A9 footnote prose recorded verbatim above)
+
+**Phase headline finding:** The audit-V2 §HQ#2(i)/(ii)/(iii)/(g) reviewer concerns are all addressed empirically. SH2B3 12q24 EUR Tier-A anchor SURVIVES under PSD-regularized LD (W1 FIRM), the SH2B3-only outcome is REPRODUCIBLE under symmetric pipeline application (W3 0/6 elsewhere), and the empty-PP layer is STRUCTURAL not cache-staleness (W2 28/28 still empty). The Track A id-vs-ref-LD manuscript narrative survives unchanged.
+
+**Verification:** [ta-r3-VERIFICATION.md](ta-r3-VERIFICATION.md) — D1-D13 PASS/WARN/FAIL JSON evidence (12/13 PASS + 1/13 WARN at D9 OSF override).
+
+**Cowork-side handoff:** [.planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md](../../quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md) — phase summary + decision tokens + commit hashes + LSF job IDs + md5 invariants + Cowork-side A1-A9 TODO list + OSF posting (a)/(b) decision paths.
+
+**OSF outcome-branch follow-up:** queued for Cowork-side posting to osf.io/az52u parent record per OSF amendment "Note on outcome-branch verification follow-up" paragraph. The realized W1/W2/W3/W4 outcomes (above) + lambda=0.01 + LSF job ID range (115619-115643 + 119067-119078) + post-W5 md5 invariants (8 ta-r3 successor rows in `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv`) + v5 submission bundle SHA-256 (TBD; deferred) are the substrate for the follow-up update.
+
+**md5 invariants:** 8 ta-r3 successor rows appended to `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv` at commit `eebdc2f` (W7 baseline preserved verbatim per Pitfall 5; never overwritten). 30 → 38 lines; 0 duplicates. tier_assignments.tsv md5 UNCHANGED (W4 DEFERRED — no successor row needed).
+
+**Honest-framing-lock:** `docs/manuscript/id-vs-ref-LD.md` md5 = `2a57c1a061f0c66988a55d1d6600efdf` (UNCHANGED through all 5 waves; phase entry md5 = phase exit md5 byte-identical). Replaces stale plan-mode literal `63fd81385590ffc8d23d45a0f0598959` per CLAUDE.md critical_constraints rule 1.
+
+**HEAD ancestor invariants:** `069b34f` + `7d54183` + `02c4404` — all 3 verified at every wave gate (W1 dispatch, W2 re-fire, W3 R2-parity, W5 closeout); `git log --oneline | grep -cE '069b34f|7d54183|02c4404'` returns 3.
+
+**STATE.md write status:** WRITTEN — Terminal A NOT active on m3 path at W5 Task 3 commit time (no `.claude/m3-*.lock` files; no `.planning/quick/*m3*/IN_PROGRESS` markers; no live `.claude/scheduled_tasks.lock`). STATE.md frontmatter `status` field updated to record phase closure with all 5 wave outcome tokens summarized; `last_activity` set to "2026-05-06 — ta-r3 phase complete; W5 closeout + Cowork handoff brief landed".
+
+**Routing next:** Cowork-side session executes A1-A9 manuscript edits + v5 *Genome Medicine* submission bundle ship + OSF outcome-branch follow-up update + (per Disclosure section in HPC_DELIVERABLE_2026-05-06.md) decide between (a) retroactive OSF amendment posting + cover-letter timing footnote OR (b) v5 cover-letter pre-registration-timing limitation. Either path is rigor-defensible. This HPC phase is closed.

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: "Completed ta-r3 Wave 4 (W4-tier-assignments-hla-reconcile-PLAN.md): D-TA-R3-W4-DEFERRED_TO_FOOTNOTE per OSF amendment paragraph (g) option (i); investigation TSV written; tier_assignments.tsv UNTOUCHED; manuscript md5 invariant preserved; commit 4ab6a51 + SUMMARY closeout commit follow-up"
-last_updated: "2026-05-06T15:33:33.299Z"
-last_activity: 2026-05-06
+stopped_at: "ta-r3-audit-v2-driven-psd-and-r1-refire phase CLOSED 2026-05-06; final wave outcomes — W1=BRANCH_PSD_FIRM (primary lambda=0.01; 5/5 EUR traits converged; 3/3 canonical PP.H4=1.0), W2=BRANCH_R1_STRUCTURAL (0/28 R1 still empty; cache-staleness refuted), W3=OUTCOME 0/6 surviving at FTO/MC4R/APOL1/CXADR EUR (Layer-2 attrition), W4=DEFERRED_TO_FOOTNOTE (HLA reconcile via Cowork-side A9 footnote; tier_assignments.tsv UNTOUCHED), W5=PHASE-CLOSURE (8 ta-r3 successor md5 rows appended; W7 baseline preserved per Pitfall 5; manuscript md5 2a57c1a061f0c66988a55d1d6600efdf UNCHANGED through all 5 waves); D9 WARN dimension surfaces D-TA-R3-OSF-COVERAGE OVERRIDDEN for Cowork-side disclosure routing; Cowork-side handoff at .planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md; routing next to Cowork session for v5 manuscript revision (A1-A9 edits + bundle ship + OSF outcome-branch follow-up)"
+last_updated: "2026-05-06T16:30:00.000Z"
+last_activity: "2026-05-06 — ta-r3 phase complete; W5 closeout + Cowork handoff brief landed (audit-driven re-analysis)"
 progress:
   total_phases: 12
   completed_phases: 6
