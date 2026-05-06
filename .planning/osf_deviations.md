@@ -58,3 +58,36 @@ reintroduction of the broken citation.
 - `git log --oneline | grep -E '069b34f|7d54183|02c4404' | wc -l` returns 3 (commit ancestors preserved)
 - Amendment text on disk at `.planning/amendments/osf-amendment-r3-2026-05-04.md` (committed locally)
 - DECISIONS.md row landed for `DEC-2026-05-05-osf-r3-defer`
+
+### TA-R3 W5 closeout — OSF override consolidated for Cowork-side disclosure decision (2026-05-06)
+
+**Date:** 2026-05-06
+
+**Affected:** TA-R3 phase closeout (`ta-r3-audit-v2-driven-psd-and-r1-refire`); D-TA-R3-OSF-COVERAGE override posture surfaced at W5 closeout.
+
+**Issue:** Per the 2026-05-05 override entry above, the OSF amendment text at `.planning/amendments/osf-amendment-r3-2026-05-04.md` was authored and committed locally before any W1 LSF dispatch fired, but the OSF web-UI posting to `osf.io/az52u` was deferred under operator decision. The W5 closeout brief at `.planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md` consolidates this for Cowork-side v5 disclosure routing per the OSF amendment "Note on outcome-branch verification follow-up" paragraph.
+
+**Resolution at W5 closeout:** Two rigor-defensible paths surfaced for Cowork-side editorial decision:
+
+- **(a) Retroactive OSF posting:** Post the amendment text + the realized W1/W2/W3/W4 outcome-branch follow-up update to osf.io/az52u BEFORE submitting the v5 *Genome Medicine* bundle. The OSF timestamp will postdate W1 LSF dispatch (2026-05-05T13:49:10Z), but the amendment text on disk predates dispatch. Disclose the timing in a v5 cover-letter footnote: "The amendment was authored 2026-05-04, applied to disk before any W1 compute fired, and retroactively posted to OSF on YYYY-MM-DD." This is the stricter route.
+
+- **(b) v5 cover-letter pre-registration-timing limitation:** Skip retroactive OSF posting; disclose the OSF posting override in the v5 cover letter as a pre-registration-timing limitation, citing the in-tree audit trail (this file + DECISIONS.md `DEC-2026-05-05-osf-r3-defer` + `.planning/amendments/osf-amendment-r3-2026-05-04.md` + `ta-r3-VERIFICATION.md` D9 WARN dimension) as authoritative.
+
+The decision is a Cowork-side editorial decision, not an HPC-side compute decision; the HPC-side W5 closeout job is to surface the override and provide the substrate for either path. Both paths preserve the audit-driven re-analysis framing intact.
+
+**Realized W1/W2/W3/W4 outcome-branch realizations (per OSF amendment "Note on outcome-branch verification follow-up"; will be appended to whichever follow-up update fires):**
+
+- W1: `BRANCH_PSD_FIRM` at primary lambda=0.01 (5/5 EUR traits converged; 3/3 canonical pair PP.H4 = 1.000000)
+- W2: `BRANCH_R1_STRUCTURAL` (R1_non_empty_PP.H4 = 0 of 28; cache-staleness refuted)
+- W3: `OUTCOME` fired (gated FIRES on W1=BRANCH_PSD_FIRM); 0 of 6 W3 canonical pairs surviving (Layer-2 attrition consistent with W2)
+- W4: `DEFERRED_TO_FOOTNOTE` (option (i) of OSF amendment paragraph (g); on-disk tier_assignments.tsv UNTOUCHED)
+
+**Files affected by W5 closeout consolidation:**
+- `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-VERIFICATION.md` (D9 WARN dimension records the override; D1-D13 PASS/WARN/FAIL evidence overall)
+- `.planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md` ("Disclosure" section enumerates the (a)/(b) decision paths for Cowork side)
+- `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv` (8 ta-r3 successor rows appended at commit `eebdc2f`; W7 baseline preserved per Pitfall 5)
+- `.planning/STATE.md` (W5 phase closure recorded)
+- `.planning/ROADMAP.md` (Track-A-R3 entry status updated to COMPLETE)
+- `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md` (D-TA-R3-W5-PHASE-CLOSURE recorded)
+
+**Honest-framing-lock invariant verified at W5 closeout:** `docs/manuscript/id-vs-ref-LD.md` md5 = `2a57c1a061f0c66988a55d1d6600efdf` at phase entry AND exit (byte-identical through all 5 waves; lock holds end-to-end).
