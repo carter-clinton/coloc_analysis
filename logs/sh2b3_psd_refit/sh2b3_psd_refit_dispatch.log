@@ -1,0 +1,72 @@
+# ta-r3 W1 PSD-regularized SuSiE-RSS dispatch log
+# dispatched_at: 2026-05-05T15:15:41Z
+# trait x lambda x job_id (15 fits = 5 EUR traits x 3 lambda values; ridge / Wen 2017)
+# queue=serial  -W=5760 (96 hr; overrides default 30-min RUNLIMIT)  mem=32 GB  -n 1
+
+asthma	0.001	115619	ta_r3_W1_asthma_l0.001	results/fine_mapping_psd_regularized/asthma.EUR.SH2B3_12q24.lambda0.001.fit.rds
+asthma	0.01	115621	ta_r3_W1_asthma_l0.01	results/fine_mapping_psd_regularized/asthma.EUR.SH2B3_12q24.lambda0.01.fit.rds
+asthma	0.1	115622	ta_r3_W1_asthma_l0.1	results/fine_mapping_psd_regularized/asthma.EUR.SH2B3_12q24.lambda0.1.fit.rds
+bmi	0.001	115624	ta_r3_W1_bmi_l0.001	results/fine_mapping_psd_regularized/bmi.EUR.SH2B3_12q24.lambda0.001.fit.rds
+bmi	0.01	115626	ta_r3_W1_bmi_l0.01	results/fine_mapping_psd_regularized/bmi.EUR.SH2B3_12q24.lambda0.01.fit.rds
+bmi	0.1	115627	ta_r3_W1_bmi_l0.1	results/fine_mapping_psd_regularized/bmi.EUR.SH2B3_12q24.lambda0.1.fit.rds
+hypertension	0.001	115629	ta_r3_W1_hypertension_l0.001	results/fine_mapping_psd_regularized/hypertension.EUR.SH2B3_12q24.lambda0.001.fit.rds
+hypertension	0.01	115631	ta_r3_W1_hypertension_l0.01	results/fine_mapping_psd_regularized/hypertension.EUR.SH2B3_12q24.lambda0.01.fit.rds
+hypertension	0.1	115632	ta_r3_W1_hypertension_l0.1	results/fine_mapping_psd_regularized/hypertension.EUR.SH2B3_12q24.lambda0.1.fit.rds
+stroke	0.001	115634	ta_r3_W1_stroke_l0.001	results/fine_mapping_psd_regularized/stroke.EUR.SH2B3_12q24.lambda0.001.fit.rds
+stroke	0.01	115636	ta_r3_W1_stroke_l0.01	results/fine_mapping_psd_regularized/stroke.EUR.SH2B3_12q24.lambda0.01.fit.rds
+stroke	0.1	115637	ta_r3_W1_stroke_l0.1	results/fine_mapping_psd_regularized/stroke.EUR.SH2B3_12q24.lambda0.1.fit.rds
+t2d	0.001	115639	ta_r3_W1_t2d_l0.001	results/fine_mapping_psd_regularized/t2d.EUR.SH2B3_12q24.lambda0.001.fit.rds
+t2d	0.01	115641	ta_r3_W1_t2d_l0.01	results/fine_mapping_psd_regularized/t2d.EUR.SH2B3_12q24.lambda0.01.fit.rds
+t2d	0.1	115643	ta_r3_W1_t2d_l0.1	results/fine_mapping_psd_regularized/t2d.EUR.SH2B3_12q24.lambda0.1.fit.rds
+
+# all 15 jobs submitted at 2026-05-05T15:15:46Z
+# poll: bjobs -J 'ta_r3_W1_*'
+# harvest: deferred to /gsd-resume-work after bjobs clears (fire-and-forget pattern)
+
+
+# =============================================================================
+# REDISPATCH ADDENDUM — 2026-05-06T04:45:15Z
+# =============================================================================
+# 9 of 15 original jobs (115629, 115631, 115632, 115634, 115636, 115637,
+# 115639, 115641, 115643 — hypertension/stroke/t2d × 3 lambdas) failed
+# identically with `Error: length(overlap) > 0 is not TRUE` at
+# src/R/regularization/refit_sh2b3_psd_regularized.R:123.
+#
+# Root cause: variant-ID convention drift between harmonized sumstats
+# (chr:pos for hypertension/stroke/t2d, rsid for asthma/bmi) and the 1KG-EUR
+# LD reference (100% rsid). Same class of bug as commits 069b34f + 7d54183.
+# Debug session: .planning/debug/ta_r3_w1_snp_id_overlap_zero.md
+# Fix commits:
+#   - 728d760 test(ta-r3, W1): failing-test-first regression for variant-ID bridge
+#   - ad19818 feat(ta-r3, W1): chr:pos<->rsid bridge utility + wire into PSD-regularized SuSiE-RSS fitter
+#
+# Redispatch scope: 12 jobs (asthma + hypertension + stroke + t2d × 3 lambdas).
+# bmi × 3 SKIPPED because bridged re-fit was binary-identical to landed
+# fits (n_snps=170, n_CS=10, converged=FALSE; bridge n=616 already_rsid=616
+# bridged=0). asthma × 3 INCLUDED because the bridge rescued one previously
+# non-rsid asthma sumstats row (n_snps drifted 700 -> 701 at lambda=0.001);
+# rigorous re-fit ensures all 15 W1 fits are produced under the bridged
+# code path.
+#
+# bsub flags identical to original dispatch:
+#   queue=serial  -W=5760  -n 1  -R "rusage[mem=32]"
+
+asthma	0.001	119067	ta_r3_W1_asthma_l0.001	results/fine_mapping_psd_regularized/asthma.EUR.SH2B3_12q24.lambda0.001.fit.rds
+asthma	0.01	119068	ta_r3_W1_asthma_l0.01	results/fine_mapping_psd_regularized/asthma.EUR.SH2B3_12q24.lambda0.01.fit.rds
+asthma	0.1	119069	ta_r3_W1_asthma_l0.1	results/fine_mapping_psd_regularized/asthma.EUR.SH2B3_12q24.lambda0.1.fit.rds
+hypertension	0.001	119070	ta_r3_W1_hypertension_l0.001	results/fine_mapping_psd_regularized/hypertension.EUR.SH2B3_12q24.lambda0.001.fit.rds
+hypertension	0.01	119071	ta_r3_W1_hypertension_l0.01	results/fine_mapping_psd_regularized/hypertension.EUR.SH2B3_12q24.lambda0.01.fit.rds
+hypertension	0.1	119072	ta_r3_W1_hypertension_l0.1	results/fine_mapping_psd_regularized/hypertension.EUR.SH2B3_12q24.lambda0.1.fit.rds
+stroke	0.001	119073	ta_r3_W1_stroke_l0.001	results/fine_mapping_psd_regularized/stroke.EUR.SH2B3_12q24.lambda0.001.fit.rds
+stroke	0.01	119074	ta_r3_W1_stroke_l0.01	results/fine_mapping_psd_regularized/stroke.EUR.SH2B3_12q24.lambda0.01.fit.rds
+stroke	0.1	119075	ta_r3_W1_stroke_l0.1	results/fine_mapping_psd_regularized/stroke.EUR.SH2B3_12q24.lambda0.1.fit.rds
+t2d	0.001	119076	ta_r3_W1_t2d_l0.001	results/fine_mapping_psd_regularized/t2d.EUR.SH2B3_12q24.lambda0.001.fit.rds
+t2d	0.01	119077	ta_r3_W1_t2d_l0.01	results/fine_mapping_psd_regularized/t2d.EUR.SH2B3_12q24.lambda0.01.fit.rds
+t2d	0.1	119078	ta_r3_W1_t2d_l0.1	results/fine_mapping_psd_regularized/t2d.EUR.SH2B3_12q24.lambda0.1.fit.rds
+
+# all 12 redispatched jobs submitted at 2026-05-06T04:45:15Z
+# poll: bjobs -J 'ta_r3_W1_*'
+# expected wall: ~1-50s per fit (asthma fast, others slower at low lambda)
+# harvest: deferred to /gsd-resume-work after bjobs clears (fire-and-forget pattern)
+# bmi × 3 (115624, 115626, 115627) NOT redispatched — bridged re-fit binary-identical
+# to landed fits; preserves originals at results/fine_mapping_psd_regularized/bmi.EUR.SH2B3_12q24.lambda*.fit.rds
