@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: ta-r3 Wave 1 closeout — D-TA-R3-W1-BRANCH_PSD_FIRM at primary lambda=0.01; W3 gate FIRES; canonical-pair PP.H4 (bmi_vs_hypertension, hypertension_vs_stroke, hypertension_vs_t2d) = (1.000000, 1.000000, 1.000000); 5/5 EUR traits converged at primary lambda (asthma n_CS=0/niter=2, bmi n_CS=10/niter=221, hypertension n_CS=7/niter=715, stroke n_CS=6/niter=264, t2d n_CS=5/niter=30); 15/15 .fit.rds on disk under variant-ID-bridged code path; pair × lambda × PP table at results/fine_mapping_psd_regularized/sh2b3_psd_pph4_summary.tsv (9 data rows); SH2B3 12q24 EUR Tier-A anchor empirically supported under PSD-regularized LD per OSF amendment 2026-05-04 paragraph (c) FIRM branch — refutes v2-audit HQ#2(i) "PP.H4≈1.0 from non-PSD LD + non-converged fits" false-positive concern at SH2B3 specifically. Manuscript md5 unchanged (2a57c1a061f0c66988a55d1d6600efdf at entry == at exit). Atomic commits this pass: 3886d14 (Task 3 core: TSV + CONTEXT.md edit), plus this SUMMARY-finalize + STATE-refresh commit. W1 plan DONE; W3 (R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR EUR) is the next plan in the ta-r3 phase.
-last_updated: "2026-05-06T05:30:00.000Z"
-last_activity: 2026-05-06 — ta-r3 Wave 1 closeout; D-TA-R3-W1-BRANCH_PSD_FIRM at primary lambda=0.01; W3 gate FIRES
+stopped_at: Completed ta-r3-audit-v2-driven-psd-and-r1-refire / ta-r3-W2-r1-trait-pair-coloc-refire plan; Wave 2 cleared with D-TA-R3-W2-BRANCH_R1_STRUCTURAL (R1 non-empty PP.H4 = 0/28 post-refire under HEAD with 069b34f+7d54183+02c4404 ancestors; falsification of cache-staleness alternative did not falsify; Layer-2-attrition framing empirically supported); SH2B3 R2 floor preserved 9/9; coloc_summary.tsv md5 SHIFTED 558fca45ac37d901028c64429cdecc12 -> 85ab5aa2ca4b54e0edf2a48dc4c61258 (W5 closeout will append successor row to md5_baseline.tsv); manuscript md5 unchanged at 2a57c1a061f0c66988a55d1d6600efdf; W3 gate already FIRES (W1-driven); next plan W3 R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR EUR
+last_updated: "2026-05-06T14:42:00.000Z"
+last_activity: 2026-05-06
 progress:
   total_phases: 12
   completed_phases: 6
@@ -24,14 +24,14 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** Phase m3-aou-afr-ld-panel — m3-aou-afr-ld-panel-build
+**Current focus:** Phase ta-r3-audit-v2-driven-psd-and-r1-refire — Track A R3 audit-v2-driven re-analysis
 
 **k2d identity-LD re-fire complete (2026-04-25):** LSF fire (PID 830748, fired 2026-04-24 per `260424-k2d`) finished — `bjobs` clean; PID file gone; 95 JSONs + `finemap_manifest.tsv` landed at `results_identity_ld/fine_mapping/`. Empirically unblocks Track A **Figure 1A** (identity-vs-real PP.H4 scatter) and **Figure 3** (survival forest) — the two open figure slots in the 5-figure roster (Figs 1B + 2 + 5 already DONE per p1b / mqo / k2g; Fig 4 demoted to S5 per k2f). **Both halves of the post-k2d deferral are now resolved:** Fig 1A + Fig 3 builders landed via quick task `260425-1vy` (commits `105484d`, `f862f55`); `results_identity_ld/` tracking decision is locked at DEC-2026-04-25-01 (don't commit; document via .gitignore + canonical CS-yield summary at `.planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv`).
 
 ## Current Position
 
-Phase: m3-aou-afr-ld-panel (m3-aou-afr-ld-panel-build) — EXECUTING
-Plan: 2 of 6
+Phase: ta-r3-audit-v2-driven-psd-and-r1-refire (Track A R3 audit-v2-driven re-analysis) — EXECUTING
+Plan: 1 of 5
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
@@ -66,7 +66,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-05-03 - Completed quick task 260503-kfq: W7 phase closeout (osf_deviations.md 10-entry consolidated log entries 8-17 created at .planning/amendments/; id-vs-ref-LD Genome Medicine bundle regenerated via renamed builder script — sha256=10bd7bc9537a… in bundle_manifest.tsv at .planning/quick/260427-vbq-...; HTML render path used by design — all 5 PDF engines absent, RENDER_PATH=html:pandoc-fallback; md5_baseline.tsv extended whitelist 29 rows at .planning/phases/ta-sh2b3-canonical-and-cache-refresh/; Stage 2 md5 invariant HARD FAIL semantics per checker iter 1 WARNING 4 — narrow regex globs PASS via Triage option c extension for parallel namespaces; results_identity_ld/ NOT staged DEC-2026-04-25-01; ROADMAP UNTOUCHED phase-COMPLETE update deferred; 3 SH2B3 anchor .fit.rds md5s preserved 462ada6a/8255c1ac/a041eecc; 4 atomic commits; no push; STATE.md frontmatter Track-B-encoded fields preserved exactly)
+Last activity: 2026-05-06
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
