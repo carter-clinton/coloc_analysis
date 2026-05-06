@@ -76,11 +76,50 @@
 
 ---
 
-### D-TA-R3-W2-BRANCH_R1_*: PENDING (Wave 2 outcome)
+### D-TA-R3-W2-BRANCH_R1_STRUCTURAL: BRANCH_R1_STRUCTURAL (Wave 2 outcome)
 
-**Status:** PENDING — Wave 2 Task 3 classifies into exactly one of:
-- `BRANCH_R1_BUG` — post-refire produces non-empty PP rows in previously-empty 28
-- `BRANCH_R1_STRUCTURAL` — post-refire holds at 28/28 empty (or near-empty)
+**Recorded:** 2026-05-06T14:25:00Z
+
+**HEAD ancestors verified:** 069b34f + 7d54183 + 02c4404 (3/3 in `git log` at W2 dispatch time; verified at re-fire start AND post-fire commit time)
+
+**Pre-refire baseline:**
+
+| metric | count |
+|---|---|
+| total_pair_rows | 37 |
+| non_empty_PP.H4_rows (pre-W2, all) | 5 |
+| R1_non_empty_PP.H4_rows (pre-W2; the 28 R1 trait-pairs) | 0 / 28 (matches audit-V2 §HQ#2(iii) "28/28 empty" claim) |
+| SH2B3_R2_non_empty_PP.H4_rows (pre-W2; the 9 R2 trait-pairs) | 5 / 9 (BMI–HTN, HTN–stroke, HTN–T2D, stroke–T2D, BMI–T2D non-empty; 4 R2 rows structurally collapsed at niter=1000) |
+| coloc_summary.tsv md5 (pre-W2) | `558fca45ac37d901028c64429cdecc12` (matches W7 baseline at `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv` L2) |
+
+**Post-refire status:**
+
+| metric | count |
+|---|---|
+| total_pair_rows | 37 (unchanged) |
+| non_empty_PP.H4_rows (post-W2, all) | 5 (Δ=0 vs pre-W2) |
+| R1_non_empty_PP.H4_rows (post-W2) | **0 / 28 (Δ=0; UNCHANGED from pre-W2 baseline)** |
+| SH2B3_R2_non_empty_PP.H4_rows (post-W2; risk register row 4 preservation check) | 5 / 9 (Δ=0; ≥9 floor satisfied at row level — all 9 R2 rows still present in summary) |
+| coloc_summary.tsv md5 (post-W2) | `85ab5aa2ca4b54e0edf2a48dc4c61258` (md5 SHIFTED; W5 closeout will append successor row to `md5_baseline.tsv`) |
+
+**Detailed numerics:** [.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-W2-post_refire_outcome.tsv](ta-r3-W2-post_refire_outcome.tsv)
+
+**Per-JSON failure-mode characterization:** All 28 R1 JSONs produced under HEAD code (with the variant-ID-format-fix commits 069b34f + 7d54183 + 02c4404 as ancestors) return `status = "no_signal"` with `n_cs_a = 0` or `n_cs_b = 0` (or both). The variant-ID matcher works correctly — coloc.susie reads pre-fitted SuSiE-RSS objects from `results/fine_mapping/susie/{trait}.{ancestry}.{region}.fit.rds` and returns no_signal because the upstream Layer-1 fits resolve no credible set on at least one trait at that region × ancestry. Layer-2 attrition is therefore upstream of the variant-ID matcher; the falsification test on the cache-staleness alternative does NOT falsify (re-running under HEAD code with all 3 fix commits as ancestors produces 28/28 empty PP, identical to pre-W2 disk state). FTO_16q12 AFR asthma_vs_t2d is a representative case: trait_b (T2D) has n_cs_b=4 credible sets, but trait_a (asthma) has n_cs_a=0 — coloc.susie has no credible-set pair to test even though one side resolves a non-empty CS.
+
+**Cowork-side narrative branch (informational; manuscript edits OUT of phase scope):** Per OSF amendment paragraph (e), the manuscript v5 narrative branches:
+
+- BRANCH_R1_BUG → Layer-2-attrition-under-matched-LD framing empirically refuted; new PP rows reported in manuscript Table 3 with variant-ID-format-fix commit hashes cited as the propagation gap (NOT this outcome)
+- **BRANCH_R1_STRUCTURAL (this outcome) → Layer-2-attrition framing empirically supported; the variant-ID-format-fix commits 069b34f + 7d54183 + 02c4404 cited as a falsification test that did not falsify; manuscript Table 3 + Discussion §"Layer-2 colocalization-feasibility yield" + Discussion §"Identity-LD Inflation" framing survives the reviewer-defensible re-application of the fix commits to the full 28-pair set; the "fixes applied to SH2B3 only" reviewer objection is closed (the fixes were re-applied under HEAD code; the empty-PP rows are structural, not propagation gaps).**
+
+**W3 gate implication:** Already resolved by W1 outcome at the upstream gate (`D-TA-R3-W3-GATE = FIRES`, driven by `D-TA-R3-W1-BRANCH_PSD_FIRM`; W3 gate is W1-driven, NOT W2-driven). W2 outcome flows to manuscript narrative ONLY; does NOT change W3 gate disposition. R2 canonical-pair parity at FTO_16q12, MC4R_18q21, APOL1_22q12, CXADR_F2RL1_6p21 (EUR) proceeds at the next plan independent of W2 result.
+
+**Honest-framing-lock invariant verification:**
+
+| anchor | md5 |
+|---|---|
+| MANUSCRIPT-MD5-AT-ENTRY (W2) | `2a57c1a061f0c66988a55d1d6600efdf` |
+| MANUSCRIPT-MD5-AT-EXIT (W2) | `2a57c1a061f0c66988a55d1d6600efdf` |
+| Drift | NONE — lock holds for full Wave 2 (3 atomic commits + .gitignore allowlist edit; manuscript untouched) |
 
 ---
 
