@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: "ta-r3-audit-v2-driven-psd-and-r1-refire phase CLOSED 2026-05-06; final wave outcomes — W1=BRANCH_PSD_FIRM (primary lambda=0.01; 5/5 EUR traits converged; 3/3 canonical PP.H4=1.0), W2=BRANCH_R1_STRUCTURAL (0/28 R1 still empty; cache-staleness refuted), W3=OUTCOME 0/6 surviving at FTO/MC4R/APOL1/CXADR EUR (Layer-2 attrition), W4=DEFERRED_TO_FOOTNOTE (HLA reconcile via Cowork-side A9 footnote; tier_assignments.tsv UNTOUCHED), W5=PHASE-CLOSURE (8 ta-r3 successor md5 rows appended; W7 baseline preserved per Pitfall 5; manuscript md5 2a57c1a061f0c66988a55d1d6600efdf UNCHANGED through all 5 waves); D9 WARN dimension surfaces D-TA-R3-OSF-COVERAGE OVERRIDDEN for Cowork-side disclosure routing; Cowork-side handoff at .planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md; routing next to Cowork session for v5 manuscript revision (A1-A9 edits + bundle ship + OSF outcome-branch follow-up)"
-last_updated: "2026-05-06T16:30:00.000Z"
-last_activity: "2026-05-06 — ta-r3 phase complete; W5 closeout + Cowork handoff brief landed (audit-driven re-analysis)"
+stopped_at: Completed ta-r3-W5-closeout-and-handoff-PLAN.md (phase-final)
+last_updated: "2026-05-06T16:06:49.946Z"
+last_activity: 2026-05-06
 progress:
   total_phases: 12
   completed_phases: 6
@@ -150,6 +150,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase ta-sh2b3-canonical-and-cache-refresh PW1-susie-rss-l-sweep | 19min | 2 tasks | 12 files |
 | Phase ta-sh2b3-canonical-and-cache-refresh PW2-canonical-pair-coloc-susie | 25min | 2 tasks | 6 files |
 | Phase m3-aou-afr-ld-panel-build P01 | 4min | 3 tasks | 3 files |
+| Phase ta-r3-audit-v2-driven-psd-and-r1-refire Pta-r3-W5-closeout-and-handoff | 25m | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -303,6 +304,7 @@ Recent decisions affecting current work:
 - [Phase m3-aou-afr-ld-panel-build]: M3-W1-T1: institutional-basis ruling .eml stub stands in place of (non-existent) AoU support letter; preserves audit-log append-only discipline
 - [Phase m3-aou-afr-ld-panel-build]: M3-W1-T2: AUX-path housekeeping bundled into commit a60d415 under (m3-W1-aux-path-verified) token; no new (m3-W1-T2) commit; verbal approved + Run 1 PASS evidence sufficient per plan how-to-resolve step 4
 - [Phase m3-aou-afr-ld-panel-build]: M3-W1-T3: AOU-1 notebook template authored as nbformat 4 JSON; JSON-escape forces inner quotes to \"; semantic intent verified via Python notebook parser (8 cells, 2x ancestry='afr', 1x ancestry='eur', 1x sensitivity=True)
+- [Phase ta-r3-audit-v2-driven-psd-and-r1-refire]: ta-r3 phase CLOSED 2026-05-06: W1=BRANCH_PSD_FIRM, W2=BRANCH_R1_STRUCTURAL, W3=0/6 surviving, W4=DEFERRED_TO_FOOTNOTE; manuscript md5 invariant preserved; D9 WARN surfaces OSF override for Cowork-side disclosure routing
 
 ### Pending Todos
 
@@ -399,8 +401,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-06T15:33:33.282Z
-Stopped at: Completed ta-r3 Wave 4 (W4-tier-assignments-hla-reconcile-PLAN.md): D-TA-R3-W4-DEFERRED_TO_FOOTNOTE per OSF amendment paragraph (g) option (i); investigation TSV written; tier_assignments.tsv UNTOUCHED; manuscript md5 invariant preserved; commit 4ab6a51 + SUMMARY closeout commit follow-up
+Last session: 2026-05-06T16:06:49.929Z
+Stopped at: Completed ta-r3-W5-closeout-and-handoff-PLAN.md (phase-final)
 Resume file: None
 
 ### Prior session (2026-04-28 evening — m3-W1 portal cleared + AUX spec staged, quick-260428-vt2)
