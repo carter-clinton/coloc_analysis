@@ -1,0 +1,21 @@
+{
+  "pair_id": "FTO_16q12__EUR__bmi_vs_hypertension",
+  "status": "no_signal",
+  "trait_a": "bmi",
+  "trait_b": "hypertension",
+  "ancestry": "EUR",
+  "region": null,
+  "base_region": null,
+  "n_cs_a": 7,
+  "n_cs_b": 0,
+  "summary": {
+    "nsnps": null,
+    "PP.H0.abf": null,
+    "PP.H1.abf": null,
+    "PP.H2.abf": null,
+    "PP.H3.abf": null,
+    "PP.H4.abf": null
+  },
+  "susie_pairs": [],
+  "n_pairs_total": 0
+}

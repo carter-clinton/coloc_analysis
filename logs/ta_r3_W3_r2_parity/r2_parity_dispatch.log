@@ -1,0 +1,143 @@
+[10:59:17] Building W3-extended R2 manifest...
+Pre-W3 R2 manifest rows: 9
+  [add] FTO_16q12__EUR__bmi_vs_hypertension
+  [add] FTO_16q12__EUR__bmi_vs_t2d
+  [add] FTO_16q12__EUR__hypertension_vs_t2d
+  [add] MC4R_18q21__EUR__bmi_vs_t2d
+  [add] APOL1_22q12__EUR__hypertension_vs_stroke
+  [add] CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension
+Wrote extended R2 manifest with 15 rows (6 new W3 + 9 pre-existing SH2B3)
+[10:59:51] R2 manifest extension complete
+---
+Extended R2 manifest:
+base_region	ancestry	trait_a	trait_b	path_a	path_b	chr	start	end	pair_id
+APOL1_22q12__EUR__hypertension_vs_stroke
+CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension
+FTO_16q12__EUR__bmi_vs_hypertension
+FTO_16q12__EUR__bmi_vs_t2d
+FTO_16q12__EUR__hypertension_vs_t2d
+MC4R_18q21__EUR__bmi_vs_t2d
+SH2B3_12q24__EUR__asthma_vs_bmi
+SH2B3_12q24__EUR__asthma_vs_hypertension
+SH2B3_12q24__EUR__asthma_vs_stroke
+SH2B3_12q24__EUR__bmi_vs_hypertension
+SH2B3_12q24__EUR__bmi_vs_stroke
+SH2B3_12q24__EUR__bmi_vs_t2d
+SH2B3_12q24__EUR__hypertension_vs_stroke
+SH2B3_12q24__EUR__hypertension_vs_t2d
+SH2B3_12q24__EUR__stroke_vs_t2d
+Total rows: 15
+[11:00:11] Starting W3 R2 fire (6 canonical pairs across 4 regions; synchronous per-pair Rscript)
+
+[11:00:11] Firing FTO_16q12__EUR__bmi_vs_hypertension
+  fit_a=results/fine_mapping/susie/bmi.EUR.FTO_16q12.fit.rds
+  fit_b=results/fine_mapping/susie/hypertension.EUR.FTO_16q12.fit.rds
+  out_region=results/multitrait/coloc_susie_R2_FTO/FTO_16q12__EUR__bmi_vs_hypertension.json
+  out_canonical=results/multitrait/coloc_susie_R2/FTO_16q12__EUR__bmi_vs_hypertension.json
+Warning messages:
+1: package ‘optparse’ was built under R version 4.4.3 
+2: package ‘coloc’ was built under R version 4.4.3 
+3: package ‘susieR’ was built under R version 4.4.3 
+4: package ‘jsonlite’ was built under R version 4.4.3 
+5: package ‘data.table’ was built under R version 4.4.3 
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+[run_coloc_susie] FTO_16q12__EUR__bmi_vs_hypertension: skipping chr:pos rewrite (sc_a=TRUE, sc_b=TRUE, ss_a=FALSE, ss_b=FALSE)
+[run_coloc_susie] no signal for FTO_16q12__EUR__bmi_vs_hypertension (n_cs_a= 7 n_cs_b= 0 ) -- wrote empty JSON
+  PASS: FTO_16q12__EUR__bmi_vs_hypertension (417 bytes; copied to canonical R2)
+
+[11:00:34] Firing FTO_16q12__EUR__bmi_vs_t2d
+  fit_a=results/fine_mapping/susie/bmi.EUR.FTO_16q12.fit.rds
+  fit_b=results/fine_mapping/susie/t2d.EUR.FTO_16q12.fit.rds
+  out_region=results/multitrait/coloc_susie_R2_FTO/FTO_16q12__EUR__bmi_vs_t2d.json
+  out_canonical=results/multitrait/coloc_susie_R2/FTO_16q12__EUR__bmi_vs_t2d.json
+Warning messages:
+1: package ‘optparse’ was built under R version 4.4.3 
+2: package ‘coloc’ was built under R version 4.4.3 
+3: package ‘susieR’ was built under R version 4.4.3 
+4: package ‘jsonlite’ was built under R version 4.4.3 
+5: package ‘data.table’ was built under R version 4.4.3 
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+[run_coloc_susie] FTO_16q12__EUR__bmi_vs_t2d: skipping chr:pos rewrite (sc_a=TRUE, sc_b=TRUE, ss_a=FALSE, ss_b=FALSE)
+[run_coloc_susie] coloc.susie errored: Check that is.data.table(DT) == TRUE. Otherwise, :=, `:=`(...) and let(...) are defined for use in j, once only and in particular ways. Note that namespace-qualification like data.table::`:=`(...) is not supported. See help(":="). 
+[run_coloc_susie] wrote error JSON for FTO_16q12__EUR__bmi_vs_t2d 
+  PASS: FTO_16q12__EUR__bmi_vs_t2d (455 bytes; copied to canonical R2)
+
+[11:00:35] Firing FTO_16q12__EUR__hypertension_vs_t2d
+  fit_a=results/fine_mapping/susie/hypertension.EUR.FTO_16q12.fit.rds
+  fit_b=results/fine_mapping/susie/t2d.EUR.FTO_16q12.fit.rds
+  out_region=results/multitrait/coloc_susie_R2_FTO/FTO_16q12__EUR__hypertension_vs_t2d.json
+  out_canonical=results/multitrait/coloc_susie_R2/FTO_16q12__EUR__hypertension_vs_t2d.json
+Warning messages:
+1: package ‘optparse’ was built under R version 4.4.3 
+2: package ‘coloc’ was built under R version 4.4.3 
+3: package ‘susieR’ was built under R version 4.4.3 
+4: package ‘jsonlite’ was built under R version 4.4.3 
+5: package ‘data.table’ was built under R version 4.4.3 
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+[run_coloc_susie] FTO_16q12__EUR__hypertension_vs_t2d: skipping chr:pos rewrite (sc_a=TRUE, sc_b=TRUE, ss_a=FALSE, ss_b=FALSE)
+[run_coloc_susie] no signal for FTO_16q12__EUR__hypertension_vs_t2d (n_cs_a= 0 n_cs_b= 2 ) -- wrote empty JSON
+  PASS: FTO_16q12__EUR__hypertension_vs_t2d (417 bytes; copied to canonical R2)
+
+[11:00:37] Firing MC4R_18q21__EUR__bmi_vs_t2d
+  fit_a=results/fine_mapping/susie/bmi.EUR.MC4R_18q21.fit.rds
+  fit_b=results/fine_mapping/susie/t2d.EUR.MC4R_18q21.fit.rds
+  out_region=results/multitrait/coloc_susie_R2_MC4R/MC4R_18q21__EUR__bmi_vs_t2d.json
+  out_canonical=results/multitrait/coloc_susie_R2/MC4R_18q21__EUR__bmi_vs_t2d.json
+Warning messages:
+1: package ‘optparse’ was built under R version 4.4.3 
+2: package ‘coloc’ was built under R version 4.4.3 
+3: package ‘susieR’ was built under R version 4.4.3 
+4: package ‘jsonlite’ was built under R version 4.4.3 
+5: package ‘data.table’ was built under R version 4.4.3 
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+[run_coloc_susie] MC4R_18q21__EUR__bmi_vs_t2d: skipping chr:pos rewrite (sc_a=TRUE, sc_b=TRUE, ss_a=FALSE, ss_b=FALSE)
+[run_coloc_susie] no signal for MC4R_18q21__EUR__bmi_vs_t2d (n_cs_a= 6 n_cs_b= 0 ) -- wrote empty JSON
+  PASS: MC4R_18q21__EUR__bmi_vs_t2d (400 bytes; copied to canonical R2)
+
+[11:00:39] Firing APOL1_22q12__EUR__hypertension_vs_stroke
+  fit_a=results/fine_mapping/susie/hypertension.EUR.APOL1_22q12.fit.rds
+  fit_b=results/fine_mapping/susie/stroke.EUR.APOL1_22q12.fit.rds
+  out_region=results/multitrait/coloc_susie_R2_APOL1/APOL1_22q12__EUR__hypertension_vs_stroke.json
+  out_canonical=results/multitrait/coloc_susie_R2/APOL1_22q12__EUR__hypertension_vs_stroke.json
+Warning messages:
+1: package ‘optparse’ was built under R version 4.4.3 
+2: package ‘coloc’ was built under R version 4.4.3 
+3: package ‘susieR’ was built under R version 4.4.3 
+4: package ‘jsonlite’ was built under R version 4.4.3 
+5: package ‘data.table’ was built under R version 4.4.3 
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+[run_coloc_susie] APOL1_22q12__EUR__hypertension_vs_stroke: skipping chr:pos rewrite (sc_a=TRUE, sc_b=TRUE, ss_a=FALSE, ss_b=FALSE)
+[run_coloc_susie] no signal for APOL1_22q12__EUR__hypertension_vs_stroke (n_cs_a= 2 n_cs_b= 0 ) -- wrote empty JSON
+  PASS: APOL1_22q12__EUR__hypertension_vs_stroke (425 bytes; copied to canonical R2)
+
+[11:00:41] Firing CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension
+  fit_a=results/fine_mapping/susie/bmi.EUR.CXADR_F2RL1_6p21.fit.rds
+  fit_b=results/fine_mapping/susie/hypertension.EUR.CXADR_F2RL1_6p21.fit.rds
+  out_region=results/multitrait/coloc_susie_R2_CXADR/CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension.json
+  out_canonical=results/multitrait/coloc_susie_R2/CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension.json
+Warning messages:
+1: package ‘optparse’ was built under R version 4.4.3 
+2: package ‘coloc’ was built under R version 4.4.3 
+3: package ‘susieR’ was built under R version 4.4.3 
+4: package ‘jsonlite’ was built under R version 4.4.3 
+5: package ‘data.table’ was built under R version 4.4.3 
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+fread failed: To read gz files directly, fread() requires 'R.utils' package which cannot be found. Please install 'R.utils' using 'install.packages('R.utils')'.
+[run_coloc_susie] CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension: skipping chr:pos rewrite (sc_a=TRUE, sc_b=TRUE, ss_a=FALSE, ss_b=FALSE)
+[run_coloc_susie] no signal for CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension (n_cs_a= 0 n_cs_b= 3 ) -- wrote empty JSON
+  PASS: CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension (424 bytes; copied to canonical R2)
+
+[11:00:43] W3 R2 fire complete
+exit code: 0
+Warning messages:
+1: package ‘jsonlite’ was built under R version 4.4.3 
+2: package ‘data.table’ was built under R version 4.4.3 
+Collected 15 unique R2 pair_id rows from 5 directories
+Existing coloc_summary.tsv: 37 rows + header
+Merge: kept 25 existing + replaced 12 + appended 3 new = 40 total rows
+WROTE results/multitrait/coloc_summary.tsv
