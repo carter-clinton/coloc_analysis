@@ -37,17 +37,42 @@
 
 ---
 
-### D-TA-R3-W1-BRANCH_PSD_*: PENDING (Wave 1 outcome)
+### D-TA-R3-W1-BRANCH_PSD_FIRM: BRANCH_PSD_FIRM (Wave 1 outcome)
 
-**Status:** PENDING — Wave 1 Task 3 classifies into exactly one of:
-- `BRANCH_PSD_FIRM` — lambda exists where all 3 SuSiE-RSS fits converge AND PP.H4 >= 0.8 across all 3 canonical pairs
-- `BRANCH_PSD_PARTIAL` — lambda exists with convergence but PP.H4 in [0.5, 0.8) for at least one canonical pair
-- `BRANCH_PSD_COLLAPSE` — PP.H4 < 0.5 at all converged lambda values
-- `BRANCH_PSD_NON_CONVERGE` — even with regularization across all lambda values, per-trait fits remain non-converged
+**Recorded:** 2026-05-06T (Wave 1 Task 3 harvest pass)
 
-Wave 3 gate consumes this: FIRM/PARTIAL -> W3 fires; COLLAPSE -> W3 skipped (anchor itself fails; parity moot); NON_CONVERGE -> W3 deferred to Track B.
+**Primary lambda:** 0.01 (smallest lambda where all 3 of bmi, hypertension, stroke per-trait fits converged).
 
-**Operator-instructed deferral:** Per the 2026-05-05 fire-and-forget operator directive, the harvest of LSF outputs (coloc.susie at canonical pairs + branch classification) is OUT OF SCOPE for this execute pass. After `bjobs` clears, `/gsd-resume-work` will run the harvest tasks and write the resolved `D-TA-R3-W1-BRANCH_PSD_*` value here.
+**Per-trait convergence at primary lambda:**
+
+| trait | converged | n_CS | niter |
+|---|---|---|---|
+| bmi | TRUE | 10 | 221 |
+| hypertension | TRUE | 7 | 715 |
+| stroke | TRUE | 6 | 264 |
+| asthma | TRUE | 0 | 2 |
+| t2d | TRUE | 5 | 30 |
+
+**Canonical-pair coloc.susie PP.H4 at primary lambda:**
+
+| pair | PP.H4 | Threshold class |
+|---|---|---|
+| bmi_vs_hypertension | 1.000000 | SURVIVE_GE_0.8 |
+| hypertension_vs_stroke | 1.000000 | SURVIVE_GE_0.8 |
+| hypertension_vs_t2d | 1.000000 | SURVIVE_GE_0.8 |
+
+**Detailed numerics:** [results/fine_mapping_psd_regularized/sh2b3_psd_pph4_summary.tsv](../../../results/fine_mapping_psd_regularized/sh2b3_psd_pph4_summary.tsv)
+
+**W3 gate implication:** `D-TA-R3-W3-GATE = FIRES`
+- FIRM or PARTIAL → W3 fires (R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR)
+- COLLAPSE → W3 SKIPPED (anchor itself fails; parity moot; record `D-TA-R3-W3-DEFERRED-ON-W1-OUTCOME`)
+- NON_CONVERGE → W3 DEFERRED_TO_TRACK_B (deeper LD-panel-vs-GWAS-cohort mismatch)
+
+**Cowork-side branch (informational; manuscript edits OUT of phase scope):** Per OSF amendment paragraph (c), the manuscript v5 narrative branches:
+- **FIRM (this outcome) → SH2B3 anchor empirically supported under regularized LD; report lambda + PSD diagnostic + converged-status disclosure**
+- PARTIAL → reframe SH2B3 from Tier-A to Tier-B; revise abstract + discussion
+- COLLAPSE → SH2B3 no longer Tier-A; report prior-literature PP=1.0 anchor as not surviving matched-LD with PSD regularization
+- NON_CONVERGE → disclose deeper LD-panel-vs-GWAS-cohort mismatch; defer to Track B (in-sample LD via UKB/AoU EUR)
 
 ---
 
@@ -59,9 +84,11 @@ Wave 3 gate consumes this: FIRM/PARTIAL -> W3 fires; COLLAPSE -> W3 skipped (anc
 
 ---
 
-### D-TA-R3-W3-GATE: PENDING (computed from W1 outcome at W3 entry)
+### D-TA-R3-W3-GATE: FIRES (driven by W1 = BRANCH_PSD_FIRM)
 
-**Status:** PENDING — gate fires only if W1 returns FIRM or PARTIAL; SKIPPED if COLLAPSE; DEFERRED_TO_TRACK_B if NON_CONVERGE. Resolved on `/gsd-resume-work` after W1 harvest classifies the branch.
+**Resolved:** 2026-05-06 (Wave 1 Task 3 harvest pass)
+
+**Disposition:** FIRES — W1 returned `BRANCH_PSD_FIRM` at primary lambda=0.01 with all 3 canonical-pair PP.H4 = 1.000000. SH2B3 12q24 EUR qualifies as a comparator anchor under PSD-regularized LD; W3 R2 canonical-pair parity at FTO_16q12, MC4R_18q21, APOL1_22q12, CXADR_F2RL1_6p21 (EUR) is informative and proceeds per OSF amendment paragraph (f).
 
 ---
 

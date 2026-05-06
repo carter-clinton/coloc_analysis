@@ -1,0 +1,10 @@
+pair	lambda	PP.H0	PP.H1	PP.H2	PP.H3	PP.H4	n_snps	both_traits_converged
+bmi_vs_hypertension	0.001	NA	NA	NA	NA	NA	170	FALSE
+hypertension_vs_stroke	0.001	NA	NA	NA	NA	NA	589	FALSE
+hypertension_vs_t2d	0.001	NA	NA	NA	NA	NA	589	FALSE
+bmi_vs_hypertension	0.01	0	0	1.92706e-42	0	1	170	TRUE
+hypertension_vs_stroke	0.01	0	0	0	0	1	589	TRUE
+hypertension_vs_t2d	0.01	0	1.06251e-160	0	2.56172e-10	1	589	TRUE
+bmi_vs_hypertension	0.1	0	0	2.32417e-61	0	1	170	TRUE
+hypertension_vs_stroke	0.1	0	0	0	0	1	589	TRUE
+hypertension_vs_t2d	0.1	0	6.36656e-52	0	5.34305e-05	0.999947	589	TRUE
