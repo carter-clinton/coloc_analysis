@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed ta-r3-W5-closeout-and-handoff-PLAN.md (phase-final)
+stopped_at: ta-r3-audit-v2-driven-psd-and-r1-refire COMPLETE (HPC-side; W1=BRANCH_PSD_FIRM at λ=0.01 / 5/5 EUR converged / 3/3 canonical PP.H4=1.0; W2=BRANCH_R1_STRUCTURAL 28/28 still empty post cache-invalidated re-fire; W3=0/6 surviving at FTO/MC4R/APOL1/CXADR EUR; W4=DEFERRED_TO_FOOTNOTE; W5=PHASE-CLOSURE with 8 md5 successor rows + VERIFICATION.md D1-D13 12 PASS+1 WARN). Cowork handoff bundle landed at .planning/quick/260506-epz-ta-r3-cowork-handoff/ta-r3-cowork-handoff-2026-05-06.zip (2.3 MB; 159 files; sha256 2da0882c69a934ae2406cc381c84d127fe4c4875dc2f9391c0a3044e132b8b84). Manuscript md5 byte-identical at phase entry==exit==2a57c1a061f0c66988a55d1d6600efdf. 23 atomic commits this session; 27 LSF jobs fired; manuscript narrative survives unchanged. Cowork-side A1-A9 manuscript edits + v5 bundle ship + OSF posting decision queued (OUT of HPC scope).
 last_updated: "2026-05-06T16:16:07.306Z"
 last_activity: 2026-05-06
 progress:
@@ -30,8 +30,32 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 ## Current Position
 
-Phase: ta-r3-audit-v2-driven-psd-and-r1-refire
-Plan: Not started
+Phase: ta-r3-audit-v2-driven-psd-and-r1-refire — **COMPLETE 2026-05-06** (HPC-side closed; Cowork-side handoff bundle landed)
+Plan: 5 of 5 (W1+W2+W3+W4+W5 all DONE; SUMMARY.md status=DONE for each; phase verifier PASSED 33/34 must-haves; 1 expected WARN at D-TA-R3-OSF-COVERAGE OVERRIDDEN — Cowork-side editorial decision queued)
+
+### Phase ta-r3 closeout summary (2026-05-06)
+
+**Headline finding:** Audit-V2 §HQ#2(i)/(ii)/(iii)/(g) reviewer concerns addressed empirically. Track A id-vs-ref-LD manuscript narrative survives unchanged (manuscript md5 byte-identical at phase entry == exit == `2a57c1a061f0c66988a55d1d6600efdf`).
+
+**Wave outcomes (decision tokens in [.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md](phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md)):**
+
+- **W1** `BRANCH_PSD_FIRM` (primary λ=0.01; 5/5 EUR converged at SH2B3 12q24; 3/3 canonical pairs PP.H4=1.000; SH2B3 anchor empirically supported under PSD-regularized LD; HQ#2(i) refuted at SH2B3) — variant-ID-bridge utility landed at [src/R/regularization/snp_id_bridge.R](../src/R/regularization/snp_id_bridge.R) with TDD failing-test-first regression at [tests/testthat-phase1/test_refit_sh2b3_psd_snp_id_bridge.R](../tests/testthat-phase1/test_refit_sh2b3_psd_snp_id_bridge.R) (chr:pos↔rsid bridge; reusable across regularized fitter family — closes the Stage-1d drift recurrence in commits `069b34f`+`7d54183`).
+- **W2** `BRANCH_R1_STRUCTURAL` (28/28 R1 trait-pairs remain empty post cache-invalidated re-fire under HEAD with `069b34f`+`7d54183`+`02c4404` ancestors; Layer-2 attrition is structural at GWAS×LD-panel intersection, NOT cache-staleness; cache-staleness alternative refuted; manuscript "fixes applied to SH2B3 only" reviewer concern closed).
+- **W3** `D-TA-R3-W3-OUTCOME 0/6 surviving` at FTO_16q12 (0/3) + MC4R_18q21 (0/1) + APOL1_22q12 (0/1) + CXADR_F2RL1_6p21 (0/1) EUR (selective-firing reviewer concern closed; SH2B3 is the only Tier-A survivor under matched-LD across the 5 admissible regions; W3 gate FIRES driven by W1=FIRM).
+- **W4** `D-TA-R3-W4-DEFERRED_TO_FOOTNOTE` (HLA exclusion encoded via `neg_ctrl_set=="hla_immune"` flag — 24 rows; HLA_6p21 in regions_curated.csv with empty `canonical_pairs`; v5 narrative "224-24=200" arithmetic was anchored to pre-W3 baseline; post-W3 substrate is 233 rows = 224 neg_ctrl + 9 Tier C; A9 footnote handles; tier_assignments.tsv md5 untouched).
+- **W5** `D-TA-R3-W5-PHASE-CLOSURE` (8 ta-r3 successor md5 rows appended to [.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv](phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv); W7 baseline preserved verbatim per Pitfall 5; VERIFICATION.md D1-D13 12 PASS + 1 WARN; Cowork handoff brief at [.planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md](quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md); osf_deviations.md W5 entry).
+
+**Cowork handoff bundle (2.3 MB compressed; 159 files):**
+[.planning/quick/260506-epz-ta-r3-cowork-handoff/ta-r3-cowork-handoff-2026-05-06.zip](quick/260506-epz-ta-r3-cowork-handoff/ta-r3-cowork-handoff-2026-05-06.zip) — sha256 `2da0882c69a934ae2406cc381c84d127fe4c4875dc2f9391c0a3044e132b8b84`. Pointer at [BUNDLE.md](quick/260506-epz-ta-r3-cowork-handoff/BUNDLE.md). Contents: phase artifacts (5 PLAN + 5 SUMMARY + CONTEXT + 2 VERIFICATION + W2/W4 forensics + md5_baseline) + compute (15 W1 fits + 28 W2 R1 JSONs + 15 W3 R2 JSONs + coloc_summary.tsv + tier_assignments.tsv) + code (W1 fitter + bridge utility + W3 driver + aggregator + regions config + regression test) + osf (amendment + deviations + audit-V2 review) + logs (W1/W2/W3/W4 LSF audit trail) + manuscript (id-vs-ref-LD.md locked).
+
+**Open items (Cowork-side; OUT of HPC scope per OSF amendment "What is not changing"):** A1/A2/A3/A6-stats/A7/A8/A9 manuscript edits + v5 *Genome Medicine* bundle ship + OSF amendment posting decision (D9 WARN follow-up; option (a) retroactive OSF post + cover-letter timing footnote OR option (b) v5 cover-letter pre-registration-timing limitation; either rigor-defensible, option (a) stricter).
+
+**Atomic commits this session:** 23 (commit chain `728d760` failing-test-first → `3564ad2` phase-complete CLI; full chain visible via `git log --oneline 728d760^..HEAD`). 1 debug session archived ([.planning/debug/resolved/ta_r3_w1_snp_id_overlap_zero.md](debug/resolved/ta_r3_w1_snp_id_overlap_zero.md)). 27 LSF jobs fired (115619-115643 W1 original + 119067-119078 W1 redispatch after variant-ID-bridge fix; W3 ran synchronous Rscript per overlay yaml NOTE option (a)).
+
+---
+
+### Pre-2026-05-06 narrative (preserved for context)
+
 **Pivot adopted 2026-04-22.** Project reframed from candidate-locus design (50 hand-curated regions, circular by construction per Amendment §2.3) to **genome-wide joint-signal discovery across 9 traits × 2 ancestries** (Amendment §§2, 4). Milestone sequence M0–M6 replaces the prior T1/T2/T3 tier structure.
 
 **Stage 2 fire numerics (2026-04-22 AM, `bin/fire_phase2_stage2_refit.sh`):**
