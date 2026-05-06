@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed ta-r3-audit-v2-driven-psd-and-r1-refire / ta-r3-W3-r2-canonical-pair-parity plan; Wave 3 cleared with D-TA-R3-W3-OUTCOME (0 of 6 W3 canonical pairs at FTO/MC4R/APOL1/CXADR EUR survive PP.H4 ≥ 0.8 under matched-LD; Layer-2-attrition framing empirically supported at non-Tier-A regions; SH2B3 anchor remains the only surviving Tier-A signal across the 5 admissible regions × canonical-pair set); bin/fire_canonical_susie_pairs.sh parameterized additively (--region + --ancestry; default SH2B3 EUR backwards-compatible); merge_r2_into_summary.R aggregator landed; coloc_summary.tsv md5 SHIFTED 85ab5aa2ca4b54e0edf2a48dc4c61258 -> 073f8c0577c366647ea7952b7c39a152 (W5 closeout will append successor row to md5_baseline.tsv); SH2B3 R2 floor preserved 10 rows (≥9; 5 non-empty PP.H4); manuscript md5 unchanged at 2a57c1a061f0c66988a55d1d6600efdf; W3 gate FIRES → resolved; next plan W4 (HLA reconcile; default DEFERRED_TO_FOOTNOTE) or W5 closeout
-last_updated: "2026-05-06T15:05:00.000Z"
+stopped_at: "Completed ta-r3 Wave 4 (W4-tier-assignments-hla-reconcile-PLAN.md): D-TA-R3-W4-DEFERRED_TO_FOOTNOTE per OSF amendment paragraph (g) option (i); investigation TSV written; tier_assignments.tsv UNTOUCHED; manuscript md5 invariant preserved; commit 4ab6a51 + SUMMARY closeout commit follow-up"
+last_updated: "2026-05-06T15:33:33.299Z"
 last_activity: 2026-05-06
 progress:
   total_phases: 12
@@ -399,8 +399,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-30T16:25:08.044Z
-Stopped at: Completed m3-aou-afr-ld-panel-build / m3-01-W1-aou-cohort-and-hard-gates plan; Wave 1 cleared (6 portal gates + AUX path verified + AOU-1 notebook template); Wave 2 ready (Carter mirrors notebook into AoU and fires AOU-1 dev cohort)
+Last session: 2026-05-06T15:33:33.282Z
+Stopped at: Completed ta-r3 Wave 4 (W4-tier-assignments-hla-reconcile-PLAN.md): D-TA-R3-W4-DEFERRED_TO_FOOTNOTE per OSF amendment paragraph (g) option (i); investigation TSV written; tier_assignments.tsv UNTOUCHED; manuscript md5 invariant preserved; commit 4ab6a51 + SUMMARY closeout commit follow-up
 Resume file: None
 
 ### Prior session (2026-04-28 evening — m3-W1 portal cleared + AUX spec staged, quick-260428-vt2)

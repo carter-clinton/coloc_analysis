@@ -572,7 +572,7 @@ by `/gsd-plan-phase`, NOT pre-locked here):**
   - Multi-terminal staging: explicit `git add <path>` only; never
     `git add .` / `-A` per `.planning/feedback_multi_terminal_staging`.
 **Plans**: 5 planned (W1 + W2 + W3 + W4 + W5; produced by `/gsd-plan-phase`
-2026-05-04). 3 of 5 complete; 2 pending.
+2026-05-04). 4 of 5 complete; 1 pending.
 
 Plans:
 - [x] ta-r3-W1-sh2b3-psd-regularized-refit-PLAN.md — Wave 1: SH2B3 12q24 EUR
@@ -594,8 +594,16 @@ Plans:
   attrition consistent with W2 BRANCH_R1_STRUCTURAL — extends to canonical
   pairs at non-Tier-A regions; SH2B3 12q24 EUR remains the only surviving
   Tier-A signal across the 5 admissible regions × canonical-pair set).
-- [ ] ta-r3-W4-* (HLA_6p21 reclassification or footnote; default
-  `D-TA-R3-W4-DEFERRED_TO_FOOTNOTE` per CONTEXT.md PENDING block).
+- [x] ta-r3-W4-tier-assignments-hla-reconcile-PLAN.md — Wave 4: tier_assignments.tsv
+  HLA_6p21 row-count reconciliation; outcome `D-TA-R3-W4-DEFERRED_TO_FOOTNOTE`
+  per OSF amendment paragraph (g) option (i) (default path). Investigation TSV
+  confirms HLA encoding is via `neg_ctrl_set == "hla_immune"` column flag (24
+  rows; matches v5 narrative referent EXACTLY); HLA_6p21 region itself has
+  empty `canonical_pairs` in `config/regions_curated.csv` so upstream pipeline
+  correctly fires no positional rows. v5 narrative "224 - 24 = 200" was
+  pre-W3-baseline-anchored; post-W3 audit-driven substrate is 233 rows
+  (224 negative_control + 9 Tier C; 233 - 24 = 209 non-HLA). Cowork-side
+  A9 footnote handles the reconciliation; on-disk file UNTOUCHED.
 - [ ] ta-r3-W5-* (closeout brief + Cowork handoff; appends md5 successor
   rows to `md5_baseline.tsv` for post-W2 + post-W3 shifts).
 
