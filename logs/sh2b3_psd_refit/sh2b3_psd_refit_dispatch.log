@@ -70,3 +70,15 @@ t2d	0.1	119078	ta_r3_W1_t2d_l0.1	results/fine_mapping_psd_regularized/t2d.EUR.SH
 # harvest: deferred to /gsd-resume-work after bjobs clears (fire-and-forget pattern)
 # bmi × 3 (115624, 115626, 115627) NOT redispatched — bridged re-fit binary-identical
 # to landed fits; preserves originals at results/fine_mapping_psd_regularized/bmi.EUR.SH2B3_12q24.lambda*.fit.rds
+
+# drain status at 2026-05-06T04:50:00Z (~5 min post-dispatch):
+#   bjobs -J 'ta_r3_W1_*' → "Job is not found"  (all 12 jobs DRAINED)
+#   results/fine_mapping_psd_regularized/ → all 15 .fit.rds present (12 NEW + 3 bmi preserved)
+# fit-grid summary (for forensic record; final harvest + branch classification
+# remain the next /gsd-resume-work's scope per W1 PLAN Task 3):
+#   trait        lambda=0.001                lambda=0.01                 lambda=0.1
+#   asthma       n=701 nCS=0  it=2     conv  n=701 nCS=0  it=2     conv  n=701 nCS=0  it=2     conv
+#   bmi          n=170 nCS=10 it=1000 !conv  n=170 nCS=10 it=221    conv  n=170 nCS=10 it=57    conv
+#   hypertension n=589 nCS=4  it=1000 !conv  n=589 nCS=7  it=715    conv  n=589 nCS=7  it=45    conv
+#   stroke       n=622 nCS=4  it=859   conv  n=622 nCS=6  it=264    conv  n=622 nCS=7  it=46    conv
+#   t2d          n=863 nCS=5  it=33    conv  n=863 nCS=5  it=30     conv  n=863 nCS=5  it=29    conv
