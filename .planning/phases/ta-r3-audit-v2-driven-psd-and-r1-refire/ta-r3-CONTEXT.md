@@ -182,9 +182,60 @@
 
 ---
 
-### D-TA-R3-W4-GATE: PENDING (default DEFERRED_TO_FOOTNOTE; only fires if Cowork-side decides cheap A9 footnote insufficient)
+### D-TA-R3-W4-GATE: SKIPPED (default per OSF amendment paragraph (g) option (i))
 
-**Status:** PENDING — default disposition is `DEFERRED_TO_FOOTNOTE`.
+**Status:** SKIPPED — Cowork-side A9 manuscript footnote handles the 200-vs-224 row count narrative-vs-data discrepancy without on-disk modification. Default path per OSF amendment paragraph (g) option (i) confirmed by W4 investigation.
+
+---
+
+### D-TA-R3-W4-DEFERRED_TO_FOOTNOTE: 2026-05-06T11:25:00Z
+
+**Disposition:** Per OSF amendment paragraph (g) option (i): the 200-vs-224 row count narrative-vs-data discrepancy in `results/qtl_coloc/tier_assignments.tsv` is reconciled via Cowork-side manuscript footnote (A9 short version). On-disk file remains UNTOUCHED. Reclassification deferred unless Cowork-side audit later escalates.
+
+**Investigation findings:** See [ta-r3-W4-row-investigation.tsv](ta-r3-W4-row-investigation.tsv). Key facts:
+
+| metric | value |
+|---|---|
+| tier_assignments.tsv data rows (current disk) | 233 |
+| tier_assignments.tsv md5 (W4 entry; unchanged at exit) | `17ff46dbbfe78dd537d6b9bff7f3ae67` |
+| `grep HLA_6p21` count | 0 (HLA encoded via `neg_ctrl_set == "hla_immune"`, NOT region_id substring) |
+| `grep HLA-DRB1` count | 0 |
+| `grep MHC` count | 0 |
+| Rows where `neg_ctrl_set == "hla_immune"` (canonical HLA encoding) | 24 (matches v5 narrative "minus 24 HLA" referent EXACTLY) |
+| Rows where `tier == "negative_control"` | 224 (cosmetic 120 + blood_group 80 + hla_immune 24) |
+| Rows where `tier == "Tier C"` | 9 (curated Track A regions × ancestry) |
+| Sanity check | 224 + 9 = 233 ✓ |
+| v5 narrative claim | 224 - 24 = 200 (correct against pre-W3 baseline) |
+| Post-W3 substrate referent | 233 - 24 = 209 non-HLA (post-audit-driven re-analysis) |
+| 9-row drift attribution | W3 R2 canonical-pair parity fire (legitimate audit-driven substrate growth) |
+| HLA_6p21 in `config/regions_curated.csv` | YES (line 12) — but with empty `canonical_pairs` list, so upstream pipeline correctly fires no positional coloc rows for HLA_6p21 |
+| Reconciliation interpretation | `footnote_suffices` |
+| Escalation required | NO |
+
+**Reconciliation interpretation (rigor-preserving narrative):** The discrepancy decomposes into four independently-verifiable factual statements:
+
+1. **The "minus 24 HLA" arithmetic is internally consistent at any aggregator-state baseline.** The 24 `hla_immune` negative-control rows are stable across W2 and W3 fires (they are not Layer-2 coloc outputs but pre-defined negative-control inclusions); the v5 narrative's "minus 24 HLA" mechanic is correct.
+2. **The v5 narrative's "224 total" was a pre-W3 aggregator baseline.** The post-W3 audit-driven re-analysis substrate has 233 rows because the W3 R2 canonical-pair parity fire (per OSF amendment paragraph (f)) appended new R2-region rows. This is legitimate substrate growth; the 9-row drift is fully explained by W3.
+3. **`grep HLA_6p21` returns 0 because HLA encoding is via the `neg_ctrl_set` column, not via `region_id` substring.** The HLA_6p21 region IS curated in `config/regions_curated.csv` (line 12: `HLA_6p21,EUR,6,25000000,35000000,...HLA,asthma,G3_complex,""`), but with an EMPTY `canonical_pairs` list, so the upstream pipeline correctly fires no positional coloc rows for HLA_6p21. HLA exclusion is implemented at the `canonical_pairs` config level — not as a downstream row-removal step.
+4. **The data-integrity invariant holds at file level.** 233 data rows decompose cleanly as 224 negative-control + 9 Tier C; the 24 `hla_immune` rows are a deterministic subset of the 224 negative-control rows; no rows are missing or corrupted.
+
+None of (1)-(4) require on-disk reclassification; all four fit cleanly in a Cowork-side A9 manuscript footnote.
+
+**Cowork-side A9 footnote prose recommendation (handoff text):**
+
+> The supplementary tier_assignments.tsv table encodes HLA exclusion via the `neg_ctrl_set == "hla_immune"` flag (24 rows; canonical mechanism). The HLA_6p21 region is curated in `config/regions_curated.csv` with an empty `canonical_pairs` list, so the upstream pipeline correctly fires no positional coloc rows for HLA_6p21 itself. The manuscript narrative's "224 disk rows minus 24 HLA = 200 non-HLA" arithmetic was anchored to the pre-W3 aggregator baseline; the post-W3 audit-driven re-analysis substrate has 233 disk rows (224 negative-control + 9 Tier C), and the 200 non-HLA referent is updated to 209 non-HLA in the audit-driven re-analysis. The data-integrity invariant (HLA-class exclusion via the per-region `canonical_pairs` policy at `config/regions_curated.csv`) holds at file level; no on-disk reclassification is performed in this audit-driven re-analysis pass.
+
+**On-disk file state:** UNTOUCHED. tier_assignments.tsv md5 = `17ff46dbbfe78dd537d6b9bff7f3ae67` at both W4 entry and exit. No successor row appended to `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/md5_baseline.tsv` (file unchanged in this wave).
+
+**Wave 5 implication:** No md5 successor row needed for tier_assignments.tsv (file unchanged in this wave). W5 closeout brief should reference this DEFERRED_TO_FOOTNOTE decision and the Cowork-side A9 footnote prose recommendation above.
+
+**Honest-framing-lock invariant verification:**
+
+| anchor | md5 |
+|---|---|
+| MANUSCRIPT-MD5-AT-ENTRY (W4) | `2a57c1a061f0c66988a55d1d6600efdf` |
+| MANUSCRIPT-MD5-AT-EXIT (W4) | `2a57c1a061f0c66988a55d1d6600efdf` |
+| Drift | NONE — lock holds for full Wave 4 (manuscript untouched; framing language used: "audit-driven re-analysis") |
 
 ---
 

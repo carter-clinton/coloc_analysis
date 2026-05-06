@@ -1,0 +1,35 @@
+metric	value	note
+total_lines_with_header	234	includes header line
+data_rows	233	excludes header
+v5_narrative_claim	200	from HPC_HANDOFF_v5_2026-05-04.md (224 disk rows minus 24 HLA = 200)
+v5_arithmetic_check	200	224 - 24 = 200 (v5 narrative arithmetic is internally consistent)
+v5_baseline_total_rows	224	pre-W3 aggregator state implied by v5 narrative
+disk_total_minus_v5_baseline	9	current 233 minus v5-implied 224 = 9-row drift attributable to W3 R2 fire (audit-driven re-analysis substrate growth)
+hla_neg_ctrl_set_rows	24	rows where neg_ctrl_set == "hla_immune" (THIS is the canonical "24 HLA" referent in the v5 narrative)
+disk_total_minus_hla	209	233 - 24 = 209 non-HLA rows in current disk state (would be 200 if disk were still at v5 baseline of 224)
+grep_HLA_6p21_count	0	HLA_6p21 region_id has 0 rows; HLA_6p21 IS a curated region in config/regions_curated.csv but with empty canonical_pairs list (upstream pipeline correctly fires no coloc at HLA_6p21)
+grep_HLA_DRB1_count	0	no HLA-DRB1 / HLA_DRB1 substring in tier_assignments.tsv (HLA encoding is via neg_ctrl_set column, not region_id substring)
+grep_MHC_count	0	no MHC substring in tier_assignments.tsv
+rows_matching_6p21_or_chr6_HLA_range_in_region_id	1	1 row whose region_id matches /6p21|chr6:(28|29|30|31|32|33)/ — that row is CXADR_F2RL1_6p21 (a curated Track A region at chr6:10.3-11.8Mb; NOT in the HLA range of chr6:25-35Mb; coincidental 6p21 cytogenetic band naming)
+hla_encoding_actual	neg_ctrl_set==hla_immune	canonical HLA encoding in tier_assignments.tsv: neg_ctrl_set column == "hla_immune" (NOT region_id substring "HLA_6p21" / "MHC" / "HLA-*")
+unique_region_ids	15	distinct values in column 1
+neg_ctrl_set_distribution_cosmetic	120	rows where neg_ctrl_set == "cosmetic" (5 cosmetic neg_ctrls × 24 rows each)
+neg_ctrl_set_distribution_blood_group	80	rows where neg_ctrl_set == "blood_group" (4 blood-group neg_ctrls × 20 rows each)
+neg_ctrl_set_distribution_hla_immune	24	rows where neg_ctrl_set == "hla_immune"
+neg_ctrl_set_distribution_empty	9	rows with empty neg_ctrl_set (9 Tier C rows: APOL1×2, MC4R×2, FTO×2, SH2B3×2, CXADR×1)
+tier_distribution_negative_control	224	rows where tier == "negative_control" (cosmetic 120 + blood_group 80 + hla_immune 24)
+tier_distribution_Tier_C	9	rows where tier == "Tier C" (the 9 curated Track A regions × ancestry combinations)
+arithmetic_consistency_check	PASS	224 negative-control rows + 9 Tier C rows = 233 total data rows (matches disk wc -l minus header)
+v5_narrative_referent_clarification	200_at_pre_W3_baseline	v5 narrative "200 non-HLA" claim was anchored to pre-W3-fire baseline of 224 rows minus 24 HLA = 200; post-W3 fire substrate has grown to 233 rows minus 24 HLA = 209 non-HLA
+post_W3_substrate_referent	209_non_HLA	if v5 narrative is updated to reflect post-W3 audit-driven substrate, the "200 non-HLA" claim should read "209 non-HLA"
+HLA_6p21_in_regions_curated	YES	config/regions_curated.csv line 12: HLA_6p21,EUR,6,25000000,35000000,NA,HLA,asthma,G3_complex,"" (curated region; canonical_pairs list is empty so upstream pipeline correctly fires no coloc rows for this region)
+upstream_HLA_exclusion_policy	canonical_pairs_empty	HLA exclusion is enforced upstream at the canonical_pairs config level (HLA_6p21 has empty pair list → no pair-level coloc rows reach the tier aggregator)
+downstream_aggregator_consumers_R	src/R/aggregators/aggregate_table3_admissible_pairs.R	primary downstream R aggregator consuming tier_assignments.tsv (per `grep -lE "tier_assignments" src/R/aggregators/*.R`)
+downstream_aggregator_consumers_snakemake	src/snakemake/scripts/compute_jaccard.R;src/snakemake/scripts/compute_tier_a_retention.R	additional consumers in snakemake scripts (per `find src -name "*.R" -exec grep -l "tier_assignments"`)
+downstream_figure_consumers	src/R/figures/fig5_variant_mech_scorecard.R;src/R/figures/fig1b_locus_panels.R;src/R/figures/fig3_sh2b3_eur_collapse_forest.R	figure scripts that read tier_assignments.tsv
+md5_at_W4_entry	17ff46dbbfe78dd537d6b9bff7f3ae67	tier_assignments.tsv md5 at W4 entry (preserved through DEFERRED path; no md5 successor row needed)
+manuscript_md5_at_W4_entry	2a57c1a061f0c66988a55d1d6600efdf	docs/manuscript/id-vs-ref-LD.md md5 at W4 entry (honest-framing-lock invariant; matches CONTEXT.md MANUSCRIPT-MD5-AT-ENTRY)
+reconciliation_interpretation	footnote_suffices	The discrepancy is reducible to: (a) the "minus 24 HLA" arithmetic is internally consistent at any aggregator-state baseline (24 hla_immune neg_ctrl rows are stable across W2/W3 fires); (b) the v5 narrative's "224 total" was a pre-W3 baseline; the post-W3 audit-driven re-analysis substrate has 233 rows; (c) HLA_6p21 returns 0 grep matches because HLA encoding is via the neg_ctrl_set column not region_id substring; (d) HLA_6p21 region IS curated in config/regions_curated.csv but with empty canonical_pairs so no positional rows reach the tier table. None of (a)-(d) require on-disk reclassification; all four are factual statements that fit cleanly in a Cowork-side A9 manuscript footnote.
+recommendation	D-TA-R3-W4-DEFERRED_TO_FOOTNOTE	the OSF amendment paragraph (g) option (i) cheap-footnote path is sufficient and rigor-preserving; option (ii) reclassification is not warranted because the on-disk encoding is correct and the only discrepancy is narrative arithmetic anchored to a pre-W3 aggregator baseline that has since grown by 9 rows due to legitimate audit-driven re-analysis additions
+cowork_footnote_prose_recommendation	A9_footnote_text	The A9 footnote should disclose: (1) tier_assignments.tsv encodes HLA exclusion via the neg_ctrl_set == "hla_immune" flag (24 rows; canonical mechanism); (2) the HLA_6p21 region is curated in config/regions_curated.csv with an empty canonical_pairs list so the upstream pipeline correctly fires no positional coloc rows for HLA_6p21; (3) the v5 manuscript narrative's "224 disk rows minus 24 HLA = 200" arithmetic was correct against the pre-W3 aggregator baseline; the post-W3 audit-driven re-analysis substrate has 233 disk rows (24 hla_immune neg_ctrl + 209 non-HLA = 233) due to legitimate W3 R2 canonical-pair parity additions; (4) the data-integrity invariant (HLA-class rows handled per the per-region exclusion table at config/regions_curated.csv) holds at file level; no on-disk reclassification is performed in this audit-driven re-analysis pass.
+escalation_required	NO	footnote path is sufficient; no schema corruption, no downstream aggregator dependency that breaks under footnote-only narrative, no factual inconsistency that the footnote cannot resolve
