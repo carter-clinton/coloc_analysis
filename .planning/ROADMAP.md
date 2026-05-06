@@ -604,19 +604,32 @@ Plans:
   pre-W3-baseline-anchored; post-W3 audit-driven substrate is 233 rows
   (224 negative_control + 9 Tier C; 233 - 24 = 209 non-HLA). Cowork-side
   A9 footnote handles the reconciliation; on-disk file UNTOUCHED.
-- [ ] ta-r3-W5-* (closeout brief + Cowork handoff; appends md5 successor
-  rows to `md5_baseline.tsv` for post-W2 + post-W3 shifts).
+- [x] ta-r3-W5-closeout-and-handoff-PLAN.md — Wave 5: phase closeout +
+  Cowork-side handoff brief. Appended 8 successor md5 rows to
+  `md5_baseline.tsv` for W1-W3 file shifts (W7 baseline preserved per
+  Pitfall 5; manuscript md5 UNCHANGED at `2a57c1a061f0c66988a55d1d6600efdf`
+  through all 5 waves). VERIFICATION.md D1-D13 PASS/WARN/FAIL JSON evidence
+  written (12/13 PASS + 1/13 WARN at D9 — OSF posting OVERRIDDEN per
+  operator decision 2026-05-05; surfaced for Cowork-side disclosure
+  routing). Cowork handoff brief at
+  `.planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md`
+  enumerates wave outcomes + commit range (`bccd0d6..<W5 final>`) + LSF job
+  IDs + md5 invariants + artifact paths + Cowork-side A1-A9 TODO list.
 
-**Status**: scaffolded 2026-05-04 with v2-audit-driven scope baked in.
-Independent of Track B m3 progress (Terminal A scope; Track A short-form
-sequence). Routed next to `/gsd-plan-phase
-ta-r3-audit-v2-driven-psd-and-r1-refire`. Cowork side ships v5 bundle
-AFTER this phase's HPC artifacts (W1 PSD outcome + W2 R1 cache-invalidate
-outcome + W3/W4 optional) land — explicitly OUT OF this phase's scope.
-HPC_HANDOFF_v5_2026-05-04.md is the canonical A1–A9 spec; consult it
-during `/gsd-plan-phase` to lock per-wave PLAN.md content. Honest-original-
-research-framing lock at `docs/manuscript/id-vs-ref-LD.md` MUST be
-preserved verbatim per `.planning/feedback_original_research_framing.md`.
+**Status**: COMPLETE — closed 2026-05-06; Wave outcomes: W1=BRANCH_PSD_FIRM,
+W2=BRANCH_R1_STRUCTURAL, W3=OUTCOME 0/6 surviving, W4=DEFERRED_TO_FOOTNOTE;
+Cowork-side handoff at `.planning/quick/260506-epz-ta-r3-cowork-handoff/HPC_DELIVERABLE_2026-05-06.md`;
+OSF amendment at `.planning/amendments/osf-amendment-r3-2026-05-04.md`
+(committed locally; OSF web-UI posting OVERRIDDEN per operator decision
+2026-05-05 — surfaced as D9 WARN dimension in `ta-r3-VERIFICATION.md` for
+Cowork-side disclosure routing decision); honest-framing-lock manuscript
+md5 (`2a57c1a061f0c66988a55d1d6600efdf`) unchanged through all 5 waves;
+phase headline finding — the audit-V2 §HQ#2(i)/(ii)/(iii)/(g) reviewer
+concerns are all addressed empirically and the Track A id-vs-ref-LD
+manuscript narrative survives unchanged. Cowork-side scope (A1 / A2 / A3
+/ A6-stats / A7 / A8 / A9 manuscript edits + v5 bundle ship + OSF
+outcome-branch follow-up update) remains explicitly OUT OF this phase's
+scope per the OSF amendment "What is not changing" paragraph.
 
 ## Pre-pivot spine (completed 2026-04-14; artifacts reusable per Amendment §8)
 
