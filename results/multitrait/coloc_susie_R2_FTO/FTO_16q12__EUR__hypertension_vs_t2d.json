@@ -1,0 +1,21 @@
+{
+  "pair_id": "FTO_16q12__EUR__hypertension_vs_t2d",
+  "status": "no_signal",
+  "trait_a": "hypertension",
+  "trait_b": "t2d",
+  "ancestry": "EUR",
+  "region": null,
+  "base_region": null,
+  "n_cs_a": 0,
+  "n_cs_b": 2,
+  "summary": {
+    "nsnps": null,
+    "PP.H0.abf": null,
+    "PP.H1.abf": null,
+    "PP.H2.abf": null,
+    "PP.H3.abf": null,
+    "PP.H4.abf": null
+  },
+  "susie_pairs": [],
+  "n_pairs_total": 0
+}

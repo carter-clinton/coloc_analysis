@@ -1,0 +1,16 @@
+base_region	ancestry	trait_a	trait_b	path_a	path_b	chr	start	end	pair_id
+APOL1_22q12	EUR	hypertension	stroke	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz	22	36200000	36600000	APOL1_22q12__EUR__hypertension_vs_stroke
+CXADR_F2RL1_6p21	EUR	bmi	hypertension	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	6	10300000	11800000	CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension
+FTO_16q12	EUR	bmi	hypertension	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	16	53800000	54400000	FTO_16q12__EUR__bmi_vs_hypertension
+FTO_16q12	EUR	bmi	t2d	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz	16	53800000	54400000	FTO_16q12__EUR__bmi_vs_t2d
+FTO_16q12	EUR	hypertension	t2d	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz	16	53800000	54400000	FTO_16q12__EUR__hypertension_vs_t2d
+MC4R_18q21	EUR	bmi	t2d	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz	18	56000000	56600000	MC4R_18q21__EUR__bmi_vs_t2d
+SH2B3_12q24	EUR	asthma	bmi	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__asthma_vs_bmi
+SH2B3_12q24	EUR	asthma	hypertension	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__asthma_vs_hypertension
+SH2B3_12q24	EUR	asthma	stroke	data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__asthma_vs_stroke
+SH2B3_12q24	EUR	bmi	hypertension	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__bmi_vs_hypertension
+SH2B3_12q24	EUR	bmi	stroke	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__bmi_vs_stroke
+SH2B3_12q24	EUR	bmi	t2d	data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__bmi_vs_t2d
+SH2B3_12q24	EUR	hypertension	stroke	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__hypertension_vs_stroke
+SH2B3_12q24	EUR	hypertension	t2d	data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__hypertension_vs_t2d
+SH2B3_12q24	EUR	stroke	t2d	data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz	data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz	12	111400000	112000000	SH2B3_12q24__EUR__stroke_vs_t2d

@@ -114,6 +114,23 @@ results/multitrait/*
 !logs/ta_r3_W2_r1_refire
 logs/ta_r3_W2_r1_refire/*
 !logs/ta_r3_W2_r1_refire/r1_refire_dispatch.log
+# ta-r3 W3: R2 canonical-pair parity at FTO/MC4R/APOL1/CXADR EUR — commit
+# the merged summary + manifest_R2 + per-pair JSONs (small / stable; 6 pairs
+# total; parity with W2 + W1 commit-tracking convention) + dispatch log.
+!results/multitrait/coloc_manifest_R2.tsv
+!results/multitrait/coloc_susie_R2
+!results/multitrait/coloc_susie_R2/**
+!results/multitrait/coloc_susie_R2_FTO
+!results/multitrait/coloc_susie_R2_FTO/**
+!results/multitrait/coloc_susie_R2_MC4R
+!results/multitrait/coloc_susie_R2_MC4R/**
+!results/multitrait/coloc_susie_R2_APOL1
+!results/multitrait/coloc_susie_R2_APOL1/**
+!results/multitrait/coloc_susie_R2_CXADR
+!results/multitrait/coloc_susie_R2_CXADR/**
+!logs/ta_r3_W3_r2_parity
+logs/ta_r3_W3_r2_parity/*
+!logs/ta_r3_W3_r2_parity/r2_parity_dispatch.log
 !envs/.gitkeep
 tests/toy_3locus/results/
 

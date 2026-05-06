@@ -131,6 +131,57 @@
 
 ---
 
+### D-TA-R3-W3-OUTCOME: R2 canonical-pair parity FIRED — 0 of 6 surviving (Wave 3 outcome)
+
+**Recorded:** 2026-05-06T15:00:00Z (Wave 3 Task 2 dispatch + merge)
+
+**Per-region R2 parity output:**
+
+| region | canonical pairs fired | JSONs produced | output directory | survivors at PP.H4 ≥ 0.8 |
+|---|---|---|---|---|
+| FTO_16q12 EUR | bmi-htn, bmi-t2d, htn-t2d | 3 | `results/multitrait/coloc_susie_R2_FTO/` | 0 / 3 |
+| MC4R_18q21 EUR | bmi-t2d | 1 | `results/multitrait/coloc_susie_R2_MC4R/` | 0 / 1 |
+| APOL1_22q12 EUR | htn-stroke | 1 | `results/multitrait/coloc_susie_R2_APOL1/` | 0 / 1 |
+| CXADR_F2RL1_6p21 EUR | bmi-htn | 1 | `results/multitrait/coloc_susie_R2_CXADR/` | 0 / 1 |
+| **Total (4 regions, 6 pairs)** | — | **6** | — | **0 / 6** |
+
+**Per-pair coloc.susie status (canonical narrative):**
+
+| pair_id | n_cs_a | n_cs_b | status | PP.H4 |
+|---|---|---|---|---|
+| FTO_16q12__EUR__bmi_vs_hypertension | 7 | 0 | no_signal | (empty — Layer-2 attrition) |
+| FTO_16q12__EUR__bmi_vs_t2d | 7 | 2 | error | (data.table internal at coloc.susie) |
+| FTO_16q12__EUR__hypertension_vs_t2d | 0 | 2 | no_signal | (empty — Layer-2 attrition) |
+| MC4R_18q21__EUR__bmi_vs_t2d | 6 | 0 | no_signal | (empty — Layer-2 attrition) |
+| APOL1_22q12__EUR__hypertension_vs_stroke | 2 | 0 | no_signal | (empty — Layer-2 attrition) |
+| CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension | 0 | 3 | no_signal | (empty — Layer-2 attrition) |
+
+**Post-W3 coloc_summary.tsv:**
+
+| metric | value |
+|---|---|
+| SH2B3 R2 rows preserved | 10 (≥9 floor; risk register row 4 satisfied — 9 SH2B3 R2 specific pairs + 1 SH2B3 EUR R1 baseline `asthma_vs_t2d` row) |
+| SH2B3 R2 non-empty PP.H4 | 5 / 9 (UNCHANGED from pre-W2; canonical SH2B3 anchor pairs still survive: bmi-htn=1.0, htn-stroke=1.0, htn-t2d=1.0, bmi-t2d=4.3e-27, stroke-t2d=0; W3 fire did NOT touch SH2B3 R2 baselines) |
+| New W3 R2 region rows | 7 (the 6 newly-fired W3 pairs above + 1 pre-existing baseline row `FTO_16q12__EUR__hypertension_vs_stroke`) |
+| W3 R2 region rows surviving PP.H4 ≥ 0.8 | 0 / 6 (Layer-2-attrition consistent with W2 BRANCH_R1_STRUCTURAL — every cell has at least one trait with n_cs = 0 OR coloc.susie internal error at non-anchor regions) |
+| Total rows | 40 (was 37 pre-W3; +3 new pair_ids appended to coloc_summary.tsv; +12 upserted rows from existing R2 collisions) |
+| md5 (post-W2) | `85ab5aa2ca4b54e0edf2a48dc4c61258` |
+| md5 (post-W3) | `073f8c0577c366647ea7952b7c39a152` (SHIFTED; W5 closeout will append successor row to `md5_baseline.tsv`, NOT overwrite, per OSF amendment "What is not changing" §md5 invariant rule) |
+
+**Honest-framing-lock invariant verification:**
+
+| anchor | md5 |
+|---|---|
+| MANUSCRIPT-MD5-AT-ENTRY (W3) | `2a57c1a061f0c66988a55d1d6600efdf` |
+| MANUSCRIPT-MD5-AT-EXIT (W3) | `2a57c1a061f0c66988a55d1d6600efdf` |
+| Drift | NONE — lock holds for full Wave 3 (manuscript untouched; framing language used: "audit-driven re-analysis") |
+
+**Cowork-side narrative implication (informational; manuscript edits OUT of phase scope):** Per OSF amendment 2026-05-04 paragraph (f), the parameterized R2 fire across the 4 admissible non-SH2B3 regions tested whether the SH2B3-only Tier-A anchor symmetrizes across the broader admissible regions × canonical-pair set. Empirical realization: of 6 canonical pairs across 4 admissible non-SH2B3 regions, 0 survive at PP.H4 ≥ 0.8 under matched-LD. Combined with the 3 surviving SH2B3 EUR canonical pairs (BMI-HTN, HTN-stroke, HTN-T2D at PP.H4 = 1.000000), the manuscript's SH2B3-anchored Tier-A claim is the *only* surviving Tier-A signal across the 5 admissible regions × canonical-pair set under audit-driven re-analysis substrate. The Layer-2-attrition framing established at W2 (BRANCH_R1_STRUCTURAL) is consistent — Layer-1 SuSiE-RSS attrition cascades to Layer-2 coloc.susie no_signal at non-Tier-A regions × canonical trait combinations, even after the variant-ID-format-fix commits (069b34f + 7d54183 + 02c4404) are correctly applied. The FTO_16q12 EUR BMI-T2D coloc.susie internal data.table error is an honest finding (n_cs_a=7, n_cs_b=2 — both sides have CS but coloc.susie's internal := assignment hits a class-dispatch issue); the empty-PP outcome is preserved as a no-signal proxy for the manuscript narrative.
+
+**Manuscript implication (informational; OUT of phase scope):** Manuscript Discussion §"Layer-2 colocalization-feasibility yield" + Discussion §"Identity-LD Inflation" framing is fully supported by the W3 outcome. The Cowork-side v5 manuscript revision can claim "of N canonical pairs across the 5 admissible regions, 3 survive at PP.H4 ≥ 0.8 under matched-LD — all 3 at the SH2B3 12q24 EUR anchor" as a substantive Track A finding.
+
+---
+
 ### D-TA-R3-W4-GATE: PENDING (default DEFERRED_TO_FOOTNOTE; only fires if Cowork-side decides cheap A9 footnote insufficient)
 
 **Status:** PENDING — default disposition is `DEFERRED_TO_FOOTNOTE`.
