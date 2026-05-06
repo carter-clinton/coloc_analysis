@@ -90,7 +90,14 @@ verification:
   - fitter end-to-end smoke (post-fix, hypertension/lambda=0.001): WROTE /tmp/hypertension_smoke.fit.rds; n_snps=589 (matches commit 7d54183 prior-fix expected count exactly), n_CS=4, niter=1000, converged=FALSE, wall=47.8s. converged=FALSE at lambda=0.001 is expected lambda-sweep pathology per W1 PLAN Branch-A/B classification.
   - asthma re-run vs landed: bmi binary-identical (n_snps=170, n_CS=10); asthma drifts +1 SNP (700->701) due to bridge rescuing one previously-non-rsid asthma row. NOT a regression — strict superset. Per `feedback_rigor_over_speed` memory, asthma × 3 redispatched alongside the 9 chr:pos failures so all 15 fits use the same bridged code path; bmi × 3 skipped (binary-identical).
   - 12 LSF jobs redispatched 2026-05-06T04:45:15Z under serial queue, IDs 119067-119078 (asthma+hypertension+stroke+t2d × 3 lambdas each); bsub flags identical to original dispatch (queue=serial -W 5760 -n 1 -R "rusage[mem=32]"). bjobs confirms RUN/PEND state.
-  - HUMAN-VERIFY step (not yet completed): 12 redispatched jobs drain successfully + 12 .fit.rds files land at results/fine_mapping_psd_regularized/ + W1 Task 3 (coloc.susie at canonical pairs + branch classification + W1 SUMMARY finalization) executes cleanly at the next /gsd-resume-work.
+  - HUMAN-VERIFY step (PARTIALLY SATISFIED — programmatic): all 12 redispatched jobs drained ~2026-05-06T04:50:00Z (~5 min post-dispatch). bjobs -J 'ta_r3_W1_*' returns "Job is not found". All 15 .fit.rds present at results/fine_mapping_psd_regularized/. Per-trait grid (n_snps stable across lambdas):
+      asthma:       n=701  nCS=0   it=2     converged=T  (all 3 lambdas; no signal expected)
+      bmi:          n=170  nCS=10  it={1000,221,57}  converged={F,T,T}
+      hypertension: n=589  nCS={4,7,7}  it={1000,715,45}  converged={F,T,T}
+      stroke:       n=622  nCS={4,6,7}  it={859,264,46}  converged={T,T,T}
+      t2d:          n=863  nCS=5   it={33,30,29}  converged=T  (all 3 lambdas)
+    These convergence patterns are exactly what the W1 PLAN Branch-A/B/C/D decision matrix is designed to discriminate over; the bug-fix is structural (variant-ID bridging), not numerical, and the lambda-sweep behavior is the legitimate science-grade signal the OSF amendment was pre-registered to characterize.
+  - HUMAN-VERIFY step (REMAINING — workflow): user confirms via the next /gsd-resume-work that W1 Task 3 (coloc.susie at canonical pairs + Branch-A/B/C/D classification + W1 SUMMARY finalization) executes cleanly off the bridged fits. That harvest is OUT OF SCOPE for this debug session per Carter's directive; control returns to the orchestrator.
 
 files_changed:
   - tests/testthat-phase1/test_refit_sh2b3_psd_snp_id_bridge.R  (NEW; commit 728d760; failing-test-first regression)
