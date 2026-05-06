@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
 status: "recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)"
-stopped_at: Completed quick task 260505-1mq: refresh-m2-derived-consumers-after-mtag-fdr-real-scalars (4 derived consumers refreshed via direct Python driver invocation; 3 of 4 byte-identical at M2 — joint_signal_novel.tsv, all 3 mtcojo_eligible_targets.tsv, all 3 mtcojo_sensitivity.tsv; only union_region_list.bed sha changed 161→168 regions; AFR-stroke max_FDR=0.1154 honest-finding sidecar landed; M2-POST-M3-09 queued for AoU-AFR-LD re-evaluation; 7 atomic commits; 63/63 tests/m2/ PASS)
-last_updated: "2026-05-05T05:30:00.000Z"
-last_activity: 2026-05-05 — Completed quick task 260505-1mq: refresh-m2-derived-consumers-after-mtag-fdr-real-scalars
+stopped_at: ta-r3 W1 debug session ta_r3_w1_snp_id_overlap_zero RESOLVED — 9 of 15 LSF jobs failed identically with `Error: length(overlap) > 0 is not TRUE` because hypertension/stroke/t2d harmonized sumstats use chr:pos SNP_IDs while SH2B3_12q24 LD-ref carries 100% rsids. Same class as 069b34f+7d54183 (run_qtl_coloc.R + run_susie_rss.R prior fixes). Bridge utility extracted as src/R/regularization/snp_id_bridge.R; wired into src/R/regularization/refit_sh2b3_psd_regularized.R. Failing-test-first regression at tests/testthat-phase1/test_refit_sh2b3_psd_snp_id_bridge.R passes on all 5 EUR traits (hypertension 0→589, stroke 0→622, t2d 0→863, asthma 700→701, bmi 170→170). Inline smoke on hypertension/lambda=0.001 landed (n_snps=589, n_CS=4, converged=FALSE@1000iter — expected lambda-sweep pathology). 12 LSF jobs redispatched 2026-05-06T04:45:15Z (asthma+hypertension+stroke+t2d × 3 lambdas; bmi unchanged & skipped) at IDs 119067-119078. bjobs RUN/PEND. Awaiting drain → next /gsd-resume-work for W1 Task 3 (coloc.susie + canonical-pair branch classification + W1 SUMMARY finalization). 3 atomic commits (728d760 test, ad19818 feat, plus bug-fix addendum to dispatch log + STATE.md refresh in this commit).
+last_updated: "2026-05-06T04:50:00.000Z"
+last_activity: 2026-05-06 — ta-r3 W1 variant-ID bridge fix; 12 LSF jobs redispatched (IDs 119067-119078)
 progress:
   total_phases: 12
   completed_phases: 6

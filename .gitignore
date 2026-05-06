@@ -91,7 +91,7 @@ results_identity_ld/
 results_lsweep_L15/
 results_lsweep_L20/
 results_lsweep_L30/
-logs/
+logs/*
 *.log
 !results/README.md
 !results/legacy
@@ -100,8 +100,11 @@ logs/
 # ta-r3 W1: PSD-regularized SuSiE-RSS re-fit namespace; small/stable; commit-tracked
 !results/fine_mapping_psd_regularized
 !results/fine_mapping_psd_regularized/**
-# ta-r3 W1: dispatch log allowlisted (logs/ blanket-ignored above)
+# ta-r3 W1: dispatch log allowlisted. Note: parent rule above is `logs/*`
+# (not `logs/`) because git cannot re-include a path inside a directory
+# whose own entry is ignored — the directory must be enumerable first.
 !logs/sh2b3_psd_refit
+logs/sh2b3_psd_refit/*
 !logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log
 !envs/.gitkeep
 tests/toy_3locus/results/
