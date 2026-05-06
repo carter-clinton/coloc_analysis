@@ -1,0 +1,422 @@
+Dispatching 28 Snakemake R1 targets via /rs1/.../smoke_dev/snakemake (Python 3.11)
+Snakemake binary: /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake
+Conda env path: smoke_dev (Snakemake 7.32.4)
+TS: 2026-05-06T14:12:02Z
+
+Snakemake invocation: /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake --profile config/cluster_lsf --use-conda --conda-prefix .snakemake/conda --jobs 50 --keep-going --rerun-incomplete --latency-wait 120 --forcerun run_coloc_susie --until run_coloc_susie [28 targets]
+
+Using profile config/cluster_lsf for setting default command line arguments.
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cluster nodes: 50
+Job stats:
+job                count
+---------------  -------
+run_coloc_susie       28
+total                 28
+
+Select jobs to execute...
+
+[Wed May  6 10:14:27 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/bmi.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/t2d.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__bmi_vs_t2d.json
+    jobid: 200
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__bmi_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 200 with external jobid 'Job <119258> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:28 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.MC4R_18q21.fit.rds, results/fine_mapping/susie/t2d.AFR.MC4R_18q21.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/MC4R_18q21__AFR__asthma_vs_t2d.json
+    jobid: 194
+    reason: Forced execution
+    wildcards: pair_id=MC4R_18q21__AFR__asthma_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 194 with external jobid 'Job <119259> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:28 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/bmi.EUR.CXADR_F2RL1_6p21.fit.rds, results/fine_mapping/susie/stroke.EUR.CXADR_F2RL1_6p21.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/CXADR_F2RL1_6p21__EUR__bmi_vs_stroke.json
+    jobid: 187
+    reason: Forced execution
+    wildcards: pair_id=CXADR_F2RL1_6p21__EUR__bmi_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 187 with external jobid 'Job <119260> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:28 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/bmi.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/hypertension.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__bmi_vs_hypertension.json
+    jobid: 181
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__bmi_vs_hypertension
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 181 with external jobid 'Job <119261> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:29 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/t2d.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__asthma_vs_t2d.json
+    jobid: 201
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__asthma_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 201 with external jobid 'Job <119262> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:29 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/stroke.AFR.FTO_16q12.fit.rds, results/fine_mapping/susie/t2d.AFR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__AFR__stroke_vs_t2d.json
+    jobid: 195
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__AFR__stroke_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 195 with external jobid 'Job <119263> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:30 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.MC4R_18q21.fit.rds, results/fine_mapping/susie/stroke.EUR.MC4R_18q21.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/MC4R_18q21__EUR__asthma_vs_stroke.json
+    jobid: 189
+    reason: Forced execution
+    wildcards: pair_id=MC4R_18q21__EUR__asthma_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 189 with external jobid 'Job <119264> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:30 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.SH2B3_12q24.fit.rds, results/fine_mapping/susie/t2d.EUR.SH2B3_12q24.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/SH2B3_12q24__EUR__asthma_vs_t2d.json
+    jobid: 182
+    reason: Forced execution
+    wildcards: pair_id=SH2B3_12q24__EUR__asthma_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 182 with external jobid 'Job <119265> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:30 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.APOL1_22q12.fit.rds, results/fine_mapping/susie/stroke.AFR.APOL1_22q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/APOL1_22q12__AFR__asthma_vs_stroke.json
+    jobid: 206
+    reason: Forced execution
+    wildcards: pair_id=APOL1_22q12__AFR__asthma_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 206 with external jobid 'Job <119266> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:31 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.APOL1_22q12.fit.rds, results/fine_mapping/susie/t2d.AFR.APOL1_22q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/APOL1_22q12__AFR__asthma_vs_t2d.json
+    jobid: 196
+    reason: Forced execution
+    wildcards: pair_id=APOL1_22q12__AFR__asthma_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 196 with external jobid 'Job <119267> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:31 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/stroke.AFR.SH2B3_12q24.fit.rds, results/fine_mapping/susie/t2d.AFR.SH2B3_12q24.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/SH2B3_12q24__AFR__stroke_vs_t2d.json
+    jobid: 190
+    reason: Forced execution
+    wildcards: pair_id=SH2B3_12q24__AFR__stroke_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 190 with external jobid 'Job <119268> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:32 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/hypertension.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/t2d.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__hypertension_vs_t2d.json
+    jobid: 188
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__hypertension_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 188 with external jobid 'Job <119269> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:32 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.APOL1_22q12.fit.rds, results/fine_mapping/susie/t2d.EUR.APOL1_22q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/APOL1_22q12__EUR__asthma_vs_t2d.json
+    jobid: 207
+    reason: Forced execution
+    wildcards: pair_id=APOL1_22q12__EUR__asthma_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 207 with external jobid 'Job <119270> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:33 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.MC4R_18q21.fit.rds, results/fine_mapping/susie/stroke.AFR.MC4R_18q21.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/MC4R_18q21__AFR__asthma_vs_stroke.json
+    jobid: 202
+    reason: Forced execution
+    wildcards: pair_id=MC4R_18q21__AFR__asthma_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 202 with external jobid 'Job <119271> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:33 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/hypertension.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__asthma_vs_hypertension.json
+    jobid: 197
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__asthma_vs_hypertension
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 197 with external jobid 'Job <119272> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:33 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/hypertension.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/stroke.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__hypertension_vs_stroke.json
+    jobid: 191
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__hypertension_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 191 with external jobid 'Job <119273> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:34 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.APOL1_22q12.fit.rds, results/fine_mapping/susie/stroke.EUR.APOL1_22q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/APOL1_22q12__EUR__asthma_vs_stroke.json
+    jobid: 183
+    reason: Forced execution
+    wildcards: pair_id=APOL1_22q12__EUR__asthma_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 183 with external jobid 'Job <119274> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:34 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.SH2B3_12q24.fit.rds, results/fine_mapping/susie/stroke.AFR.SH2B3_12q24.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/SH2B3_12q24__AFR__asthma_vs_stroke.json
+    jobid: 203
+    reason: Forced execution
+    wildcards: pair_id=SH2B3_12q24__AFR__asthma_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 203 with external jobid 'Job <119275> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:35 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/bmi.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/stroke.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__bmi_vs_stroke.json
+    jobid: 192
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__bmi_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 192 with external jobid 'Job <119276> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:35 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.FTO_16q12.fit.rds, results/fine_mapping/susie/stroke.AFR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__AFR__asthma_vs_stroke.json
+    jobid: 184
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__AFR__asthma_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 184 with external jobid 'Job <119277> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:35 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/stroke.AFR.MC4R_18q21.fit.rds, results/fine_mapping/susie/t2d.AFR.MC4R_18q21.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/MC4R_18q21__AFR__stroke_vs_t2d.json
+    jobid: 204
+    reason: Forced execution
+    wildcards: pair_id=MC4R_18q21__AFR__stroke_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 204 with external jobid 'Job <119278> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:36 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/stroke.AFR.APOL1_22q12.fit.rds, results/fine_mapping/susie/t2d.AFR.APOL1_22q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/APOL1_22q12__AFR__stroke_vs_t2d.json
+    jobid: 198
+    reason: Forced execution
+    wildcards: pair_id=APOL1_22q12__AFR__stroke_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 198 with external jobid 'Job <119279> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:36 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/stroke.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/t2d.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__stroke_vs_t2d.json
+    jobid: 185
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__stroke_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 185 with external jobid 'Job <119280> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:37 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/bmi.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__asthma_vs_bmi.json
+    jobid: 205
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__asthma_vs_bmi
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 205 with external jobid 'Job <119281> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:37 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.FTO_16q12.fit.rds, results/fine_mapping/susie/t2d.AFR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__AFR__asthma_vs_t2d.json
+    jobid: 199
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__AFR__asthma_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 199 with external jobid 'Job <119282> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:37 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/stroke.EUR.APOL1_22q12.fit.rds, results/fine_mapping/susie/t2d.EUR.APOL1_22q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/APOL1_22q12__EUR__stroke_vs_t2d.json
+    jobid: 193
+    reason: Forced execution
+    wildcards: pair_id=APOL1_22q12__EUR__stroke_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 193 with external jobid 'Job <119283> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:38 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.AFR.SH2B3_12q24.fit.rds, results/fine_mapping/susie/t2d.AFR.SH2B3_12q24.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/SH2B3_12q24__AFR__asthma_vs_t2d.json
+    jobid: 186
+    reason: Forced execution
+    wildcards: pair_id=SH2B3_12q24__AFR__asthma_vs_t2d
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 186 with external jobid 'Job <119284> is submitted to queue <serial>.'.
+
+[Wed May  6 10:14:38 2026]
+rule run_coloc_susie:
+    input: results/multitrait/coloc_manifest.tsv, config/susie_policy.yaml, results/fine_mapping/susie/asthma.EUR.FTO_16q12.fit.rds, results/fine_mapping/susie/stroke.EUR.FTO_16q12.fit.rds, src/snakemake/scripts/run_coloc_susie.R
+    output: results/multitrait/coloc_susie/FTO_16q12__EUR__asthma_vs_stroke.json
+    jobid: 180
+    reason: Forced execution
+    wildcards: pair_id=FTO_16q12__EUR__asthma_vs_stroke
+    resources: mem_mb=8000, mem_mib=7630, disk_mb=1000, disk_mib=954, tmpdir=<TBD>
+
+Submitted job 180 with external jobid 'Job <119285> is submitted to queue <serial>.'.
+[Wed May  6 10:18:01 2026]
+Finished job 187.
+1 of 42 steps (2%) done
+[Wed May  6 10:18:14 2026]
+Finished job 196.
+2 of 42 steps (5%) done
+[Wed May  6 10:18:15 2026]
+Finished job 203.
+3 of 42 steps (7%) done
+[Wed May  6 10:18:50 2026]
+Finished job 206.
+4 of 42 steps (10%) done
+[Wed May  6 10:19:14 2026]
+Finished job 190.
+5 of 42 steps (12%) done
+[Wed May  6 10:19:14 2026]
+Finished job 183.
+6 of 42 steps (14%) done
+[Wed May  6 10:19:25 2026]
+Finished job 199.
+7 of 42 steps (17%) done
+[Wed May  6 10:19:26 2026]
+Finished job 189.
+8 of 42 steps (19%) done
+[Wed May  6 10:19:26 2026]
+Finished job 188.
+9 of 42 steps (21%) done
+[Wed May  6 10:19:26 2026]
+Finished job 192.
+10 of 42 steps (24%) done
+[Wed May  6 10:19:37 2026]
+Finished job 200.
+11 of 42 steps (26%) done
+[Wed May  6 10:19:37 2026]
+Finished job 181.
+12 of 42 steps (29%) done
+[Wed May  6 10:19:48 2026]
+Finished job 201.
+13 of 42 steps (31%) done
+[Wed May  6 10:19:49 2026]
+Finished job 197.
+14 of 42 steps (33%) done
+[Wed May  6 10:19:59 2026]
+Finished job 182.
+15 of 42 steps (36%) done
+[Wed May  6 10:20:10 2026]
+Finished job 205.
+16 of 42 steps (38%) done
+[Wed May  6 10:20:10 2026]
+Finished job 180.
+17 of 42 steps (40%) done
+[Wed May  6 10:20:10 2026]
+Finished job 194.
+18 of 42 steps (43%) done
+[Wed May  6 10:20:10 2026]
+Finished job 195.
+19 of 42 steps (45%) done
+[Wed May  6 10:20:21 2026]
+Finished job 184.
+20 of 42 steps (48%) done
+[Wed May  6 10:20:31 2026]
+Finished job 191.
+21 of 42 steps (50%) done
+[Wed May  6 10:20:41 2026]
+Finished job 202.
+22 of 42 steps (52%) done
+[Wed May  6 10:20:51 2026]
+Finished job 207.
+23 of 42 steps (55%) done
+[Wed May  6 10:20:51 2026]
+Finished job 198.
+24 of 42 steps (57%) done
+[Wed May  6 10:20:52 2026]
+Finished job 185.
+25 of 42 steps (60%) done
+[Wed May  6 10:21:02 2026]
+Finished job 193.
+26 of 42 steps (62%) done
+[Wed May  6 10:21:12 2026]
+Finished job 204.
+27 of 42 steps (64%) done
+[Wed May  6 10:22:02 2026]
+Finished job 186.
+28 of 42 steps (67%) done
+Complete log: .snakemake/log/2026-05-06T101213.949692.snakemake.log
+
+Snakemake exit code: 0 (--keep-going may exit non-zero on per-job failures; intentional)
+TS_END: 2026-05-06T14:22:17Z
+
+=== Rebuilding coloc_summary.tsv (W5-style merge: R1 + R2 dirs) ===
+TS_REBUILD: 2026-05-06T14:33:38Z
+Read 28 JSONs from results/multitrait/coloc_susie (label=R1)
+Read 9 JSONs from results/multitrait/coloc_susie_R2 (label=R2)
+Wrote 37 rows to results/multitrait/coloc_summary.tsv
+
+TS_REBUILD_END: 2026-05-06T14:33:39Z

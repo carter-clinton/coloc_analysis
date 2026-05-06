@@ -106,6 +106,14 @@ logs/*
 !logs/sh2b3_psd_refit
 logs/sh2b3_psd_refit/*
 !logs/sh2b3_psd_refit/sh2b3_psd_refit_dispatch.log
+# ta-r3 W2: R1 cache-invalidated re-fire — commit only the rebuilt summary +
+# dispatch log (per-pair JSONs stay gitignored; regenerable from manifest + HEAD)
+!results/multitrait
+results/multitrait/*
+!results/multitrait/coloc_summary.tsv
+!logs/ta_r3_W2_r1_refire
+logs/ta_r3_W2_r1_refire/*
+!logs/ta_r3_W2_r1_refire/r1_refire_dispatch.log
 !envs/.gitkeep
 tests/toy_3locus/results/
 
