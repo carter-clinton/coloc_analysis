@@ -214,6 +214,13 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     if sensitivity and "self_report" in mt.col:
         mt = mt.filter_cols(mt.self_report.contains("Black or African American"))
 
+    # m3-W2 OOM remediation (DEC-2026-05-04-01): naive_coalesce post-ancestry.
+    # Reduces row-partition count (~290,384 v8 partitions -> 2048) before the
+    # three downstream materialization stages (split_multi_hts, sample_qc,
+    # aggregate_cols for het_stats) so Hail RegionPool memory pressure stays
+    # within executor headroom. Receipt: m3-W2-forensics/2026-05-04-stage8-regionpool-oom/.
+    mt = mt.naive_coalesce(2048)
+
     # Step 4: split_multi_hts BEFORE variant_qc (canonical ordering).
     mt = hl.split_multi_hts(mt)
 

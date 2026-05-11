@@ -1,0 +1,34 @@
+commit ac261f2192f31fcfbf487ff11f2759e303c44f95
+Author: Carter K. Clinton <carterclinton@ncsu.edu>
+Date:   Fri May 1 21:15:11 2026 -0400
+
+    feat(m3-aou-afr-ld-panel): bump CDR_VERSION v7→v8 (O2 trigger; v8 AUX paths verified)
+    
+    Workspace WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH defaulted to v8 once Workbench bound to
+    v8 dataset, creating mixed-CDR hazard against v7-pinned ANCESTRY_PREDS_PATH. Carter
+    verified v8 has parallel AUX layout (ancestry_preds.tsv + relatedness pair) at the
+    analogous v8 paths plus 3 new ancestry-inference siblings (eigenvalues.txt,
+    rf_classifier.pkl, training_pca.tsv). v8 ancestry_preds is ~+69% larger than v7
+    consistent with v8's expanded participant roster. v7 still resolves so this is a
+    soft default change, not a forced migration; rigor-correct path is full v8 alignment.
+    
+    - src/python/aou_ld_panel.py: CDR_VERSION "v7"→"v8"; refresh inline VERIFIED comments
+      (now 2026-05-01 v8); retire O2 re-pin trigger comment (resolved); update docstring
+      path example.
+    - .planning/phases/m3-aou-afr-ld-panel-build/m3-W1-AUX-PATH-VERIFICATION.md: append
+      Run 2 capturing v8 verification (gsutil ls + stat + relatedness + v7 coexist
+      check) + closing notes; supersede status header from v7 → v8.
+    - .planning/DECISIONS.md: DEC-2026-05-01-01 record (Decision / Alternatives / Why /
+      How to apply) — load-bearing CDR migration; manuscript Methods + Data Availability
+      must cite "All of Us Controlled Tier CDR v8" at submission.
+    
+    All four AUX-derived path constants re-derive automatically via f"{AUX_BASE}/..."
+    interpolation; no callsite refactor needed in select_ld_regions_dev.py,
+    build_ld_region_manifest.py, or ld_panel.py.
+    
+    Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+
+ .planning/DECISIONS.md                             |  22 +++++
+ .../m3-W1-AUX-PATH-VERIFICATION.md                 | 104 ++++++++++++++++++++-
+ src/python/aou_ld_panel.py                         |  26 ++++--
+ 3 files changed, 141 insertions(+), 11 deletions(-)
