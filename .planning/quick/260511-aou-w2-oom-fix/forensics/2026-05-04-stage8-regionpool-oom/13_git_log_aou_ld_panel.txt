@@ -1,0 +1,6 @@
+ac261f2 feat(m3-aou-afr-ld-panel): bump CDR_VERSION v7→v8 (O2 trigger; v8 AUX paths verified)
+3f56280 fix(m3-aou-afr-ld-panel): WR-007 tighten load_qc_cohort to SUPPORTED_ANCESTRIES (AFR,EUR only)
+c127a8d fix(m3-aou-afr-ld-panel): CR-003 emit variant_ids+rsids sidecar TSVs in Path A.3
+1c713f9 fix(m3-aou-afr-ld-panel): CR-002 collect variant_ids+rsids in single aggregate_rows pass
+a60d415 docs(m3-W1-aux-path-verified): AUX gate cleared 2026-04-30
+40f7fac feat(m3-00): add conda envs + Hail driver (canonical ordering) + synthetic MT fixture + driver pytest + .gitignore

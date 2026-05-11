@@ -1,0 +1,69 @@
+State  Recv-Q Send-Q       Local Address:Port  Peer Address:PortProcess                             
+LISTEN 0      128                0.0.0.0:8000       0.0.0.0:*    users:(("python3",pid=105,fd=6))   
+LISTEN 0      100              127.0.0.1:58393      0.0.0.0:*    users:(("python3",pid=30585,fd=11))
+LISTEN 0      4096         127.0.0.53%lo:53         0.0.0.0:*                                       
+LISTEN 0      100              127.0.0.1:60399      0.0.0.0:*    users:(("python3",pid=128,fd=11))  
+LISTEN 0      4096               0.0.0.0:5355       0.0.0.0:*                                       
+LISTEN 0      4096               0.0.0.0:111        0.0.0.0:*                                       
+LISTEN 0      128                0.0.0.0:22         0.0.0.0:*                                       
+LISTEN 0      100              127.0.0.1:52415      0.0.0.0:*    users:(("python3",pid=30585,fd=9)) 
+LISTEN 0      100              127.0.0.1:53031      0.0.0.0:*    users:(("python3",pid=30585,fd=13))
+LISTEN 0      100              127.0.0.1:54125      0.0.0.0:*    users:(("python3",pid=128,fd=22))  
+LISTEN 0      100              127.0.0.1:55043      0.0.0.0:*    users:(("python3",pid=30585,fd=22))
+LISTEN 0      100              127.0.0.1:42707      0.0.0.0:*    users:(("python3",pid=128,fd=9))   
+LISTEN 0      100              127.0.0.1:43453      0.0.0.0:*    users:(("python3",pid=128,fd=13))  
+LISTEN 0      100              127.0.0.1:43775      0.0.0.0:*    users:(("python3",pid=128,fd=27))  
+LISTEN 0      128                0.0.0.0:20202      0.0.0.0:*                                       
+LISTEN 0      5                127.0.0.1:46179      0.0.0.0:*    users:(("python3",pid=30585,fd=58))
+LISTEN 0      100              127.0.0.1:49061      0.0.0.0:*    users:(("python3",pid=30585,fd=35))
+LISTEN 0      4096            127.0.0.54:53         0.0.0.0:*                                       
+LISTEN 0      100              127.0.0.1:35817      0.0.0.0:*    users:(("python3",pid=128,fd=35))  
+LISTEN 0      100              127.0.0.1:39137      0.0.0.0:*    users:(("python3",pid=30585,fd=27))
+LISTEN 0      5                127.0.0.1:12888      0.0.0.0:*    users:(("python3",pid=30585,fd=60))
+LISTEN 0      20               127.0.0.1:25         0.0.0.0:*                                       
+LISTEN 0      128                      *:8188             *:*                                       
+LISTEN 0      128                      *:8088             *:*                                       
+LISTEN 0      50                       *:8080             *:*                                       
+LISTEN 0      256                      *:8030             *:*                                       
+LISTEN 0      256                      *:8031             *:*                                       
+LISTEN 0      256                      *:8032             *:*                                       
+LISTEN 0      256                      *:8033             *:*                                       
+LISTEN 0      4096                  [::]:5355          [::]:*                                       
+LISTEN 0      151                      *:3306             *:*                                       
+LISTEN 0      511                      *:443              *:*                                       
+LISTEN 0      511                      *:80               *:*                                       
+LISTEN 0      4096                  [::]:111           [::]:*                                       
+LISTEN 0      128                   [::]:22            [::]:*                                       
+LISTEN 0      4096   [::ffff:10.128.0.5]:37165            *:*    users:(("java",pid=30644,fd=446))  
+LISTEN 0      50                       *:9083             *:*                                       
+LISTEN 0      50                       *:8791             *:*                                       
+LISTEN 0      50                       *:8554             *:*                                       
+LISTEN 0      50                       *:8552             *:*                                       
+LISTEN 0      50                       *:8551             *:*                                       
+LISTEN 0      256                      *:10200            *:*                                       
+LISTEN 0      50                       *:10002            *:*                                       
+LISTEN 0      50                       *:10000            *:*                                       
+LISTEN 0      4096                     *:10001            *:*                                       
+LISTEN 0      256                      *:10033            *:*                                       
+LISTEN 0      128                      *:9870             *:*                                       
+LISTEN 0      128                      *:9868             *:*                                       
+LISTEN 0      4096   [::ffff:10.128.0.5]:40625            *:*    users:(("java",pid=30644,fd=357))  
+LISTEN 0      4096                     *:20201            *:*                                       
+LISTEN 0      2                        *:18080            *:*                                       
+LISTEN 0      50      [::ffff:127.0.0.1]:33065            *:*    users:(("java",pid=30644,fd=303))  
+LISTEN 0      256    [::ffff:10.128.0.5]:10020            *:*                                       
+LISTEN 0      4096                     *:40129            *:*                                       
+LISTEN 0      50                       *:40107            *:*                                       
+LISTEN 0      50                       *:33767            *:*                                       
+LISTEN 0      50                       *:33591            *:*                                       
+LISTEN 0      50                       *:33389            *:*                                       
+LISTEN 0      70                       *:33060            *:*                                       
+LISTEN 0      4096                     *:45933            *:*                                       
+LISTEN 0      10                       *:45279            *:*    users:(("java",pid=30644,fd=475))  
+LISTEN 0      2                        *:44859            *:*    users:(("java",pid=30644,fd=358))  
+LISTEN 0      256    [::ffff:10.128.0.5]:8020             *:*                                       
+LISTEN 0      256    [::ffff:10.128.0.5]:8051             *:*                                       
+LISTEN 0      256    [::ffff:10.128.0.5]:8050             *:*                                       
+LISTEN 0      50      [::ffff:127.0.0.1]:8443             *:*                                       
+LISTEN 0      20                   [::1]:25            [::]:*                                       
+LISTEN 0      128    [::ffff:10.128.0.5]:19888            *:*                                       

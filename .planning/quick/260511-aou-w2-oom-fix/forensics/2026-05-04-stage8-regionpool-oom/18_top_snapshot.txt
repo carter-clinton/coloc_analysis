@@ -1,0 +1,22 @@
+top - 05:09:19 up 1 day,  3:08,  0 users,  load average: 1.13, 0.91, 0.85
+Tasks:  15 total,   1 running,  11 sleeping,   0 stopped,   3 zombie
+%Cpu(s): 18.4 us,  1.2 sy,  0.0 ni, 78.8 id,  0.0 wa,  0.0 hi,  1.6 si,  0.0 st
+MiB Mem : 104631.2 total,  58096.8 free,  43559.7 used,   2974.7 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.  60125.5 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+  30644 jupyter   20   0   96.0g  21.0g  24032 S 306.7  20.5 287:06.16 java
+      1 jupyter   20   0    5808   1088    996 S   0.0   0.0   0:03.98 tail
+     97 jupyter   20   0    7376   3452   3180 S   0.0   0.0   0:00.03 bash
+    103 jupyter   20   0    7376    272      0 S   0.0   0.0   0:00.00 bash
+    104 jupyter   20   0    7376   3500   3224 S   0.0   0.0   0:00.00 bash
+    105 jupyter   20   0  350328 114764  22584 S   0.0   0.1   1:38.62 python3
+    125 jupyter   20   0    7640   4096   3544 S   0.0   0.0   0:01.03 bash
+    128 jupyter   20   0 1635212 226152  70380 S   0.0   0.2   0:12.93 python3
+    168 jupyter   20   0    8268   4884   3632 S   0.0   0.0   0:01.56 bash
+    612 jupyter   20   0       0      0      0 Z   0.0   0.0   0:18.04 python3
+    667 jupyter   20   0       0      0      0 Z   0.0   0.0  24:16.81 java
+   5421 jupyter   20   0       0      0      0 Z   0.0   0.0 455:53.59 java
+  30585 jupyter   20   0 2588008 372688  88756 S   0.0   0.3   0:37.60 python3
+  42581 jupyter   20   0    7380   3628   3312 S   0.0   0.0   0:00.01 bash
+  42608 jupyter   20   0   10352   3368   3004 R   0.0   0.0   0:00.00 top

@@ -1,0 +1,1 @@
+gcs_requester_pays/[33mproject[0m=[35mterra[0m-vpc-sc-fe7a5641

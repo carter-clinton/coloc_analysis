@@ -1,0 +1,18 @@
+{
+  "id" : "application_1777860102738_0003",
+  "name" : "Hail",
+  "attempts" : [ {
+    "startTime" : "2026-05-04T19:19:11.072GMT",
+    "endTime" : "1969-12-31T23:59:59.999GMT",
+    "lastUpdated" : "2026-05-04T19:19:11.072GMT",
+    "duration" : 35408057,
+    "sparkUser" : "jupyter",
+    "completed" : false,
+    "appSparkVersion" : "3.5.3",
+    "logPath" : "",
+    "startTimeEpoch" : 1777922351072,
+    "endTimeEpoch" : -1,
+    "lastUpdatedEpoch" : 1777922351072
+  } ],
+  "driverHost" : ""
+}

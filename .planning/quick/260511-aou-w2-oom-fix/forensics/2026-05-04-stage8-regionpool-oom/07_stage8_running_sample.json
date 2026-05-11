@@ -1,0 +1,381 @@
+[ {
+  "taskId" : 3528,
+  "index" : 15,
+  "attempt" : 55,
+  "partitionId" : 15,
+  "launchTime" : "2026-05-05T05:02:46.331GMT",
+  "duration" : 392896,
+  "executorId" : "1762",
+  "host" : "all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001764/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001764/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3529,
+  "index" : 14,
+  "attempt" : 55,
+  "partitionId" : 14,
+  "launchTime" : "2026-05-05T05:02:46.950GMT",
+  "duration" : 392277,
+  "executorId" : "1762",
+  "host" : "all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001764/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001764/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3530,
+  "index" : 10,
+  "attempt" : 55,
+  "partitionId" : 10,
+  "launchTime" : "2026-05-05T05:02:49.539GMT",
+  "duration" : 389688,
+  "executorId" : "1763",
+  "host" : "all-of-us-22518-w-13.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-13.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001765/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-13.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001765/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3531,
+  "index" : 11,
+  "attempt" : 55,
+  "partitionId" : 11,
+  "launchTime" : "2026-05-05T05:02:50.090GMT",
+  "duration" : 389137,
+  "executorId" : "1763",
+  "host" : "all-of-us-22518-w-13.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-13.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001765/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-13.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001765/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3532,
+  "index" : 0,
+  "attempt" : 55,
+  "partitionId" : 0,
+  "launchTime" : "2026-05-05T05:02:51.101GMT",
+  "duration" : 388126,
+  "executorId" : "1765",
+  "host" : "all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001767/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001767/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3533,
+  "index" : 1,
+  "attempt" : 55,
+  "partitionId" : 1,
+  "launchTime" : "2026-05-05T05:02:51.613GMT",
+  "duration" : 387614,
+  "executorId" : "1765",
+  "host" : "all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001767/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-5.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001767/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3534,
+  "index" : 34,
+  "attempt" : 55,
+  "partitionId" : 34,
+  "launchTime" : "2026-05-05T05:02:52.970GMT",
+  "duration" : 386257,
+  "executorId" : "1764",
+  "host" : "all-of-us-22518-w-3.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-3.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001766/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-3.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001766/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3535,
+  "index" : 35,
+  "attempt" : 55,
+  "partitionId" : 35,
+  "launchTime" : "2026-05-05T05:02:53.533GMT",
+  "duration" : 385694,
+  "executorId" : "1764",
+  "host" : "all-of-us-22518-w-3.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-3.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001766/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-3.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001766/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3536,
+  "index" : 12,
+  "attempt" : 55,
+  "partitionId" : 12,
+  "launchTime" : "2026-05-05T05:03:20.488GMT",
+  "duration" : 358739,
+  "executorId" : "1766",
+  "host" : "all-of-us-22518-w-14.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-14.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001768/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-14.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001768/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3537,
+  "index" : 13,
+  "attempt" : 55,
+  "partitionId" : 13,
+  "launchTime" : "2026-05-05T05:03:21.049GMT",
+  "duration" : 358178,
+  "executorId" : "1766",
+  "host" : "all-of-us-22518-w-14.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-14.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001768/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-14.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001768/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3538,
+  "index" : 61,
+  "attempt" : 55,
+  "partitionId" : 61,
+  "launchTime" : "2026-05-05T05:03:25.278GMT",
+  "duration" : 353949,
+  "executorId" : "1767",
+  "host" : "all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001769/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001769/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3539,
+  "index" : 60,
+  "attempt" : 55,
+  "partitionId" : 60,
+  "launchTime" : "2026-05-05T05:03:25.807GMT",
+  "duration" : 353420,
+  "executorId" : "1767",
+  "host" : "all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001769/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001769/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3540,
+  "index" : 37,
+  "attempt" : 55,
+  "partitionId" : 37,
+  "launchTime" : "2026-05-05T05:03:36.828GMT",
+  "duration" : 342399,
+  "executorId" : "1768",
+  "host" : "all-of-us-22518-w-4.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-4.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001770/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-4.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001770/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3541,
+  "index" : 36,
+  "attempt" : 55,
+  "partitionId" : 36,
+  "launchTime" : "2026-05-05T05:03:37.391GMT",
+  "duration" : 341836,
+  "executorId" : "1768",
+  "host" : "all-of-us-22518-w-4.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-4.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001770/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-4.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001770/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3542,
+  "index" : 32,
+  "attempt" : 55,
+  "partitionId" : 32,
+  "launchTime" : "2026-05-05T05:03:41.329GMT",
+  "duration" : 337898,
+  "executorId" : "1769",
+  "host" : "all-of-us-22518-w-10.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-10.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001771/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-10.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001771/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3543,
+  "index" : 33,
+  "attempt" : 55,
+  "partitionId" : 33,
+  "launchTime" : "2026-05-05T05:03:41.893GMT",
+  "duration" : 337334,
+  "executorId" : "1769",
+  "host" : "all-of-us-22518-w-10.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-10.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001771/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-10.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001771/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3544,
+  "index" : 3,
+  "attempt" : 55,
+  "partitionId" : 3,
+  "launchTime" : "2026-05-05T05:03:44.148GMT",
+  "duration" : 335079,
+  "executorId" : "1770",
+  "host" : "all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001772/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001772/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3545,
+  "index" : 2,
+  "attempt" : 55,
+  "partitionId" : 2,
+  "launchTime" : "2026-05-05T05:03:45.118GMT",
+  "duration" : 334109,
+  "executorId" : "1770",
+  "host" : "all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001772/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-6.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001772/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3546,
+  "index" : 8,
+  "attempt" : 55,
+  "partitionId" : 8,
+  "launchTime" : "2026-05-05T05:03:50.853GMT",
+  "duration" : 328374,
+  "executorId" : "1771",
+  "host" : "all-of-us-22518-w-1.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-1.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001773/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-1.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001773/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+}, {
+  "taskId" : 3547,
+  "index" : 9,
+  "attempt" : 55,
+  "partitionId" : 9,
+  "launchTime" : "2026-05-05T05:03:51.388GMT",
+  "duration" : 327839,
+  "executorId" : "1771",
+  "host" : "all-of-us-22518-w-1.us-central1-c.c.terra-vpc-sc-fe7a5641.internal",
+  "status" : "RUNNING",
+  "taskLocality" : "PROCESS_LOCAL",
+  "speculative" : false,
+  "accumulatorUpdates" : [ ],
+  "executorLogs" : {
+    "stdout" : "http://all-of-us-22518-w-1.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001773/jupyter/stdout?start=-4096",
+    "stderr" : "http://all-of-us-22518-w-1.us-central1-c.c.terra-vpc-sc-fe7a5641.internal:8042/node/containerlogs/container_1777860102738_0003_01_001773/jupyter/stderr?start=-4096"
+  },
+  "schedulerDelay" : 0,
+  "gettingResultTime" : 0
+} ]
