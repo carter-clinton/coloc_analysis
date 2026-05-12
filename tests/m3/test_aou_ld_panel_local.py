@@ -86,6 +86,50 @@ def test_gitignore_has_explicit_aou_entries():
     assert "tests/m3/fixtures/synthetic_mt" in g
 
 
+# ----- Checkpoint-URI tests (m3-W1-checkpoint-suffix regression guards) -----
+
+def test_qc_checkpoint_uri_primary_afr():
+    """sensitivity=False AFR -> mt_afr_qc.mt (current behavior preserved)."""
+    from aou_ld_panel import _qc_checkpoint_uri
+    assert _qc_checkpoint_uri("test-bucket", "afr", False) == \
+        "gs://test-bucket/ld/mt_afr_qc.mt"
+
+
+def test_qc_checkpoint_uri_sensitivity_afr():
+    """sensitivity=True AFR -> mt_afr_pca_selfid_qc.mt (D-M3-07 distinct path).
+
+    Three downstream notebooks (AOU-1 cohort_summary table at Cell 7,
+    AOU-2_per_region_ld.ipynb, AOU-4_validation.ipynb) already consume
+    this exact path; the producer load_qc_cohort was the drift point
+    surfaced 2026-05-12.
+    """
+    from aou_ld_panel import _qc_checkpoint_uri
+    assert _qc_checkpoint_uri("test-bucket", "afr", True) == \
+        "gs://test-bucket/ld/mt_afr_pca_selfid_qc.mt"
+
+
+def test_qc_checkpoint_uri_eur_primary():
+    """EUR is always sensitivity=False -> mt_eur_qc.mt (D-M3-01 parity)."""
+    from aou_ld_panel import _qc_checkpoint_uri
+    assert _qc_checkpoint_uri("test-bucket", "eur", False) == \
+        "gs://test-bucket/ld/mt_eur_qc.mt"
+
+
+def test_qc_checkpoint_uri_distinct_paths_regression():
+    """REGRESSION GUARD (m3-W1-checkpoint-suffix, 2026-05-12): AFR primary
+    and sensitivity cohorts MUST write to distinct checkpoint URIs.
+    Prevents the silent overwrite where Cell 4 (sensitivity=True) would
+    trash Cell 3's (sensitivity=False) checkpoint at the shared mt_afr_qc.mt
+    path. Three downstream notebooks consume both paths independently."""
+    from aou_ld_panel import _qc_checkpoint_uri
+    primary = _qc_checkpoint_uri("test-bucket", "afr", False)
+    sensitivity = _qc_checkpoint_uri("test-bucket", "afr", True)
+    assert primary != sensitivity, (
+        f"AFR primary and sensitivity cohorts must write to distinct "
+        f"checkpoints; both got {primary}"
+    )
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 

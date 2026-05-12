@@ -14,7 +14,8 @@ AOU-LD-PIPELINE.md §5.1 spec inversion):
     5. mt = hl.sample_qc(mt, name='sqc'); call_rate >= 0.98
     6. mt = hl.variant_qc(mt, name='vqc'); MAF/HWE/call_rate
     7. mt = filter_rows hl.len(mt.filters) == 0  (drop AoU-flagged variants)
-    8. mt = mt.checkpoint("gs://${WORKSPACE_BUCKET}/ld/mt_{ancestry}_qc.mt")
+    8. mt = mt.checkpoint(_qc_checkpoint_uri(bucket, ancestry, sensitivity))
+       # path: gs://${WORKSPACE_BUCKET}/ld/mt_{ancestry}[_pca_selfid]_qc.mt
     9. for region: hl.ld_matrix(..., radius=region.radius_bp)
 
 Verified env vars (RESEARCH Q9):
@@ -143,6 +144,22 @@ def init_hail(default_reference: str = "GRCh38",
     hl.init(**init_kwargs)
 
 
+def _qc_checkpoint_uri(bucket: str, ancestry: str, sensitivity: bool) -> str:
+    """Construct the QC-cohort checkpoint URI.
+
+    Per W1 must_have (D-M3-07 sensitivity branch), sensitivity=True AFR
+    cohorts MUST write to a distinct path from the primary AFR cohort --
+    otherwise the sensitivity fire silently overwrites the primary
+    checkpoint at the shared mt_afr_qc.mt URI. Three downstream notebooks
+    (AOU-1 cohort_summary table, AOU-2 per-region LD, AOU-4 validation)
+    already expect the mt_afr_pca_selfid_qc.mt path; this helper closes
+    the consumer/producer drift surfaced 2026-05-12 during the AOU-1
+    notebook fire.
+    """
+    suffix = "_pca_selfid_qc" if sensitivity else "_qc"
+    return f"gs://{bucket}/ld/mt_{ancestry}{suffix}.mt"
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
@@ -255,7 +272,7 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         bucket = workspace_bucket or os.environ.get("WORKSPACE_BUCKET")
         if not bucket:
             raise RuntimeError("WORKSPACE_BUCKET not set; cannot checkpoint")
-        ckpt = f"gs://{bucket}/ld/mt_{ancestry}_qc.mt"
+        ckpt = _qc_checkpoint_uri(bucket, ancestry, sensitivity)
         mt = mt.checkpoint(ckpt, overwrite=True)
     return mt
 
