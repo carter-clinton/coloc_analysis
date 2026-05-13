@@ -440,6 +440,104 @@ Follow-on template-sync note (2026-05-12T~19:30Z): Quick task 260512-ldj landed 
 
 Mid-flight audit-trail note (2026-05-12T~21:00Z): Quick task 260512-864 landed as a rigor-defensible audit-driven re-analysis follow-on to 260512-jd9. Single Explore-class subagent audited `.planning/notebooks/AOU-1_template.ipynb` (Cells 1-9 post the 260512-ldj Cell 1a+1b split), `src/python/aou_ld_panel.py` (~520 lines), `.planning/notebooks/AOU-2_per_region_ld.ipynb`, and `.planning/notebooks/AOU-4_validation.ipynb` for additional producer/consumer drifts of the silent-overwrite class that 260512-jd9 surfaced (URI/path/key construction ignoring a parameter downstream consumers branch on). Drift inventory came back EMPTY. Six producer/consumer pairs verified consistent and enumerated with line-level evidence in `.planning/quick/260512-864-aou1-producer-consumer-drift-audit/260512-864-SUMMARY.md`: (1) `_qc_checkpoint_uri(bucket, ancestry, sensitivity)` at `aou_ld_panel.py:147-160` gates `_pca_selfid_qc` suffix on BOTH parameters, three distinct checkpoint URIs verified live, AOU-2 + AOU-4 readers reference matching paths; (2) `main()` at `aou_ld_panel.py:513` output-bucket construction intentionally omits sensitivity (sensitivity comparison reads from distinct INPUT checkpoints, not output-suffix differentiation — AOU-2 Cell 3 confirms); (3) BlockMatrix sidecar paths at `aou_ld_panel.py:402-417`; (4) region-class Path-A branching at `aou_ld_panel.py:363-374` (A.1/A.2/A.3 by `region_class` AND `span_mb`); (5) variant-list cohort identifiers at `aou_ld_panel.py:330-360` (CR-002 defensive pairing); (6) AOU-1 Cells 3/4/5 cohort calls → three distinct checkpoint URIs (silent-overwrite class ruled out). Recommendation: proceed with Wave 2 dev fire; no source-code, test, or notebook edits required because no drifts were found — not because the audit was skipped or shallow. Single atomic commit `(m3-W1-aou1-drift-audit-260512-864)` covers PLAN + SUMMARY + this STATE.md refresh, staged via explicit `git add <path>` per [[feedback_multi_terminal_staging]], pushed to `origin/main`. Audit-driven re-analysis framing per [[feedback_original_research_framing]]; zero forbidden tokens (no cleanup/revision/salvage tokens in framing-sensitive sections). NOT blocker-clearing — Cells 4-8 were already runnable post 260512-jd9 + 260512-ldj; this audit is reproducibility / reviewer audit trail for the m3-W1 audit log. Carter's AoU-side Cell 3 (primary AFR sensitivity=False, fired 17:21:28Z) continues; Cells 4-8 unblocked.
 
+End-of-day pause (2026-05-13T~02:00Z UTC ≈ 2026-05-12 22:00 EDT): Carter ending workstation session; save STATE+memory+commit for resume. Where we left off: Track B m3-W1 mid-flight diagnostic in AoU Workbench. Diagnostic notebook `Untitled2.ipynb` ran two validator cells: (Cell In[3]) D0+D1+D2 — Python 3.10.16, Hail 0.2.134-952ae203dbbe importable pre-init, WGS path verdict=v8, all 3 checkpoint `_SUCCESS` markers ABSENT (`mt_afr_qc.mt`, `mt_afr_pca_selfid_qc.mt`, `mt_eur_qc.mt`), `ld/` top-level listing empty; (Cell In[4]) D3+D4 recursive scan — fully clean state, no orphan `_temporary/` or `part-*` files anywhere under `{ws_bucket}/ld/`, all three expected MT prefixes empty. **Decision-tree branch matched: v8 + checkpoint absent → proceed directly to AOU-1 Cell 1a → Cell 1b → Cell 2 → Cells 3-8 individually; no `gsutil -m rm -r` needed.** Cell 3's stuck "Kernel starting" kernel never produced any GCS objects; clean slate.
+
+Pause point: workspace-root `AOU-1_cohort_definition.ipynb` (Last Modified May 5, 2026) confirmed STALE — predates the 260512-ldj Cell 1a+1b split. B-refresh routing required before Kernel Restart + Cell 1a fire. Resume by re-pasting the subprocess pre-pull snippet (literal code in this entry below) into `Untitled2.ipynb` and Shift+Enter. AoU Workbench `/terminals` tab was uncooperative (UI flake; iframe wouldn't load past blank canvas); subprocess-from-Untitled2 was the chosen workaround — functionally identical (same node, same FS, same git clone, same Python 3.10.16 kernel as the diagnostic).
+
+Resume action chain (on next session start):
+
+```
+1. Open AoU Workbench → Analysis → Untitled2.ipynb (still alive in workspace bucket)
+2. Paste the pre-pull subprocess snippet (literal Python below) into a fresh cell, Shift+Enter
+3. Inspect output for: branch=main; git status --short empty (clean tree);
+   post-pull HEAD includes c2f29df / e7063f5 / 5389a88 / 36e8062;
+   template structure check = 9 cells (cell 0=markdown title+sync-note,
+   cell 1=code starting with os.environ['PYSPARK_SUBMIT_ARGS'],
+   cell 2=code starting with hl.init or import hail);
+   workspace-root AOU-1 location resolved (e.g., /home/jupyter/AOU-1_cohort_definition.ipynb).
+4. If all 4 verifications PASS → next message: paste back to me + I send the diff + cp snippet
+   to overwrite workspace-root with the post-260512-ldj template.
+5. Then: reload AOU-1_cohort_definition.ipynb in the Analysis panel,
+   Kernel → Restart, visually verify 9-cell structure (halt if 8),
+   fire Cell 1a (paste output) → Cell 1b (paste output, check cores=='1' assert PASS)
+   → Cell 2 (paste output) → Cell 3 (primary AFR, ~45-90 min envelope, paste when done)
+   → Cells 4-8 individually.
+6. Halt-and-surface on any cell error / warn / run-time > 2× expected envelope.
+```
+
+Pre-pull subprocess snippet (literal Python; paste into Untitled2 fresh cell):
+
+```python
+import subprocess
+
+script = r"""
+set -e
+
+cd ~/coloc_analysis 2>/dev/null \
+  || cd ~/repos/coloc_analysis 2>/dev/null \
+  || cd /home/jupyter/coloc_analysis 2>/dev/null \
+  || { echo "ERROR: clone not found in standard locations"; exit 2; }
+echo "--- clone path ---"
+pwd
+
+echo ""
+echo "--- pre-pull branch + status ---"
+echo "branch: $(git branch --show-current)"
+echo "status (empty = clean):"
+git status --short || true
+
+echo ""
+echo "--- pre-pull HEAD ---"
+git log --oneline -3
+
+echo ""
+echo "--- git pull origin main ---"
+git pull origin main
+
+echo ""
+echo "--- post-pull HEAD (expect c2f29df / e7063f5 / 5389a88 / 36e8062 visible) ---"
+git log --oneline -5
+
+echo ""
+echo "--- template structure check ---"
+python3 << 'PYEOF'
+import json
+n = json.load(open('.planning/notebooks/AOU-1_template.ipynb'))
+print(f'total cells: {len(n["cells"])}')
+for i, c in enumerate(n['cells']):
+    src = c['source']
+    head = (src[0] if isinstance(src, list) and src else str(src))[:75].replace('\n', ' ')
+    print(f'  cell {i}: type={c["cell_type"]:8s} head={head!r}')
+PYEOF
+
+echo ""
+echo "--- workspace-root AOU-1 location ---"
+ls -la /home/jupyter/AOU-1_cohort_definition.ipynb 2>/dev/null \
+  || find /home/jupyter -maxdepth 3 -name 'AOU-1_cohort_definition.ipynb' 2>/dev/null \
+  || echo "(workspace-root file not found in /home/jupyter; will write fresh)"
+"""
+
+result = subprocess.run(['bash'], input=script, capture_output=True, text=True)
+print(result.stdout)
+if result.stderr:
+    print("--- stderr ---")
+    print(result.stderr)
+print(f"--- exit code: {result.returncode} ---")
+```
+
+Pause context — what we did NOT yet do (deferred for resume):
+- Did NOT fire the pre-pull snippet (subprocess never executed; Carter pasted the literal back into chat then session ended).
+- Did NOT execute `git pull origin main` from inside the AoU clone.
+- Did NOT `cp` the post-260512-ldj template over `~/AOU-1_cohort_definition.ipynb`.
+- Did NOT Kernel→Restart AOU-1 (the stuck "Kernel starting" kernel is still occupying the AOU-1 notebook slot per Carter's report).
+- Did NOT fire Cell 1a (PYSPARK_SUBMIT_ARGS injection) on AOU-1.
+
+Markdown-rendering hazard (baked to memory this session — see [[feedback_code_paste_fences]]): the original validator paste in narrative prose had `*` and `_` stripped by chat-renderer italics (`print("=" * 70)` → `print("="  70)`; `filt, _ = sh(...)` → `filt,  = sh(...)`; `mt_afr_qc.mt` → `mtafr_qc.mt`; `{ws_bucket}` → `{wsbucket}`). Subsequent pastes used triple-backtick fences and survived intact. On resume, always wrap every code paste in fenced blocks even for one-liners — never bare code in prose.
+
+Two-notebook arrangement at pause time: Untitled2.ipynb (diagnostic, alive, In[4] last cell) + AOU-1_cohort_definition.ipynb (workspace-root May 5 stale copy, kernel slot occupied by stuck "Kernel starting" run). Resume from Untitled2 → run pre-pull → diff/cp → switch to AOU-1.
+
+Single atomic commit `(m3-W1-pause-2026-05-13)` covers this STATE.md refresh. Pushed to `origin/main` so Carter's AoU clone `git pull` on next session start picks it up. No source-code, test, or notebook edits.
+
 ### Prior session (2026-05-06 — ta-r3 phase closeout + Cowork handoff bundle ship)
 
 Last session: 2026-05-06T16:06:49.929Z
