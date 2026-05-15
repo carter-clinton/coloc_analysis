@@ -144,6 +144,37 @@ def init_hail(default_reference: str = "GRCh38",
     hl.init(**init_kwargs)
 
 
+def _normalize_bucket(bucket: str) -> str:
+    """Normalize a bucket reference to bare-name form.
+
+    AoU's ``$WORKSPACE_BUCKET`` env var includes the ``gs://`` protocol prefix
+    (e.g. ``gs://fc-secure-XXX``); local tests, CLI flag inputs, and other
+    call sites historically pass bare bucket names. URI builders in this
+    module assume bare form so they can unambiguously prepend the protocol.
+    This helper makes callers tolerant of either input form: strips an
+    optional ``gs://`` prefix and any leading/trailing slashes. Pure function;
+    no validation (callers handle empty-input cases on their own).
+
+    Closes the producer/consumer drift at the helper boundary surfaced
+    2026-05-14 during AOU-1 Wave 1 fire on AoU Workbench (quick task
+    260514-m3-W1-bucket-prefix-defensive), where the AOU-1 notebook caller
+    pattern ``_qc_checkpoint_uri(os.environ['WORKSPACE_BUCKET'], ...)``
+    produced malformed ``gs://gs://fc-secure-.../ld/mt_*.mt`` URIs under the
+    prior bare-only contract.
+
+    Examples:
+        >>> _normalize_bucket("gs://fc-secure-XXX")
+        'fc-secure-XXX'
+        >>> _normalize_bucket("fc-secure-XXX")
+        'fc-secure-XXX'
+        >>> _normalize_bucket("gs://fc-secure-XXX/")
+        'fc-secure-XXX'
+        >>> _normalize_bucket(_normalize_bucket("gs://x"))
+        'x'
+    """
+    return bucket.removeprefix("gs://").strip("/")
+
+
 def _qc_checkpoint_uri(bucket: str, ancestry: str, sensitivity: bool) -> str:
     """Construct the QC-cohort checkpoint URI.
 
@@ -155,9 +186,16 @@ def _qc_checkpoint_uri(bucket: str, ancestry: str, sensitivity: bool) -> str:
     already expect the mt_afr_pca_selfid_qc.mt path; this helper closes
     the consumer/producer drift surfaced 2026-05-12 during the AOU-1
     notebook fire.
+
+    Accepts ``bucket`` in either bare-name form (``"fc-secure-XXX"``) or
+    already-prefixed URI form (``"gs://fc-secure-XXX"``). Normalizes via
+    :func:`_normalize_bucket` before construction (defensive boundary
+    closure added 2026-05-14 by quick 260514-m3-W1-bucket-prefix-defensive
+    after the prior bare-only contract produced ``gs://gs://...`` malformed
+    URIs from the AoU notebook caller).
     """
     suffix = "_pca_selfid_qc" if sensitivity else "_qc"
-    return f"gs://{bucket}/ld/mt_{ancestry}{suffix}.mt"
+    return f"gs://{_normalize_bucket(bucket)}/ld/mt_{ancestry}{suffix}.mt"
 
 
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
@@ -508,7 +546,11 @@ def main(argv: list[str] | None = None) -> int:
     mt_path = args.mt_path or _require_env("WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH")
     out_bucket = args.out_bucket
     if out_bucket is None and not args.skip_checkpoint:
-        ws = _require_env("WORKSPACE_BUCKET")
+        # Defensive: AoU's $WORKSPACE_BUCKET is prefixed (gs://fc-secure-...);
+        # some local CLI uses pass bare. Normalize before prepending protocol
+        # (closes the gs://gs:// double-prefix bug pattern surfaced 2026-05-14;
+        # see _normalize_bucket docstring + quick 260514-m3-W1-bucket-prefix-defensive).
+        ws = _normalize_bucket(_require_env("WORKSPACE_BUCKET"))
         anc_upper = args.ancestry.upper()
         out_bucket = f"gs://{ws}/ld/{anc_upper}_aou"
 

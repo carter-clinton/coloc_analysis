@@ -130,6 +130,78 @@ def test_qc_checkpoint_uri_distinct_paths_regression():
     )
 
 
+# ----- _normalize_bucket + prefixed-bucket contract tests
+# ----- (m3-W1-bucket-prefix-defensive, 2026-05-14 regression guards) -----
+
+
+def test_normalize_bucket_strips_prefix():
+    """Bare requirement: _normalize_bucket strips the gs:// protocol prefix."""
+    from aou_ld_panel import _normalize_bucket
+    assert _normalize_bucket("gs://fc-secure-XXX") == "fc-secure-XXX"
+
+
+def test_normalize_bucket_keeps_bare():
+    """Back-compat: bare bucket names pass through unchanged."""
+    from aou_ld_panel import _normalize_bucket
+    assert _normalize_bucket("fc-secure-XXX") == "fc-secure-XXX"
+
+
+def test_normalize_bucket_strips_trailing_slash():
+    """Defensive: trailing slash on bucket path normalized away (otherwise
+    f-string construction yields "gs://bucket//ld/..." double-slash)."""
+    from aou_ld_panel import _normalize_bucket
+    assert _normalize_bucket("fc-secure-XXX/") == "fc-secure-XXX"
+    assert _normalize_bucket("gs://fc-secure-XXX/") == "fc-secure-XXX"
+
+
+def test_normalize_bucket_idempotent():
+    """Property: applying _normalize_bucket twice yields same as once.
+    Guards against accidental future regressions where re-normalization could
+    over-strip (e.g. removing characters from a bare name that happens to
+    start with 'gs:')."""
+    from aou_ld_panel import _normalize_bucket
+    for raw in [
+        "fc-secure-XXX",
+        "gs://fc-secure-XXX",
+        "gs://fc-secure-XXX/",
+        "test-bucket",
+    ]:
+        once = _normalize_bucket(raw)
+        twice = _normalize_bucket(once)
+        assert once == twice, f"non-idempotent: f({raw!r})={once!r}, f(f({raw!r}))={twice!r}"
+
+
+def test_normalize_bucket_handles_malformed_extra_slash():
+    """Defensive: malformed gs:///bucket (3 slashes) still normalizes cleanly.
+    Belt-and-suspenders against AoU env-var edge cases."""
+    from aou_ld_panel import _normalize_bucket
+    assert _normalize_bucket("gs:///fc-secure-XXX") == "fc-secure-XXX"
+
+
+def test_qc_checkpoint_uri_accepts_prefixed_bucket():
+    """REGRESSION GUARD (m3-W1-bucket-prefix-defensive, 2026-05-14):
+    _qc_checkpoint_uri must accept both bare ('fc-secure-XXX') and
+    already-prefixed ('gs://fc-secure-XXX') bucket inputs and produce the
+    SAME canonical single-gs:// URI either way.
+
+    Bug surfaced 2026-05-14 during AOU-1 Wave 1 fire on AoU Workbench: the
+    notebook caller passed os.environ['WORKSPACE_BUCKET'] (which AoU ships as
+    'gs://fc-secure-...') into the prior bare-only contract, yielding
+    'gs://gs://fc-secure-.../ld/mt_afr_qc.mt' -- a malformed double-protocol
+    URI that would have failed at GCS-write boundary during Cell 3's
+    load_qc_cohort. Defensive normalization in the helper closes the
+    integration gap between the helper's bare-only test contract and the
+    notebook's prefixed env-var convention.
+    """
+    from aou_ld_panel import _qc_checkpoint_uri
+    bare = _qc_checkpoint_uri("test-bucket", "afr", False)
+    prefixed = _qc_checkpoint_uri("gs://test-bucket", "afr", False)
+    assert bare == prefixed == "gs://test-bucket/ld/mt_afr_qc.mt", (
+        f"bare vs prefixed inputs must produce identical canonical URI; "
+        f"got bare={bare!r}, prefixed={prefixed!r}"
+    )
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 
