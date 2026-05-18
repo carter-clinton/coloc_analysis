@@ -233,6 +233,12 @@ def test_intermediate_checkpoint_uri_accepts_prefixed_bucket():
     assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_post_split.mt"
 
 
+def test_sidecar_uri_format():
+    from aou_ld_panel import _sidecar_uri
+    checkpoint_uri = "gs://bkt/ld/intermediate/mt_afr_post_split.mt"
+    assert _sidecar_uri(checkpoint_uri) == "gs://bkt/ld/intermediate/mt_afr_post_split.mt.meta.json"
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 
