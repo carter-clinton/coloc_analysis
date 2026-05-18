@@ -481,3 +481,53 @@ def test_compute_region_ld_skipped_few_variants(synthetic_mt_path: Path,
     res = compute_region_ld(region, mt, out_bucket=None, out_local_dir=tmp_path)
     assert res["status"] == "skipped_few_variants"
     assert res["n_var"] < 10
+
+
+@pytest.fixture
+def synthetic_bucket(tmp_path):
+    """File:// URI emulating a workspace bucket for live-Hail tests."""
+    bucket_dir = tmp_path / "bucket"
+    bucket_dir.mkdir()
+    return f"file://{bucket_dir}"
+
+
+def test_load_qc_cohort_auto_resume_from_post_split(
+    synthetic_mt_path: Path, synthetic_bucket: str, tmp_path, capsys
+):
+    """Fire once (writes intermediate 1+2+final); delete intermediate 2; fire
+    again -> expect resume from intermediate 1 (Phase 1 skipped, Phase 2 + 3
+    re-run). Per DESIGN §5.1 test 7 + Issue #6 fix (shutil.rmtree pattern)."""
+    import shutil
+    hl = _require_hail()
+    from aou_ld_panel import load_qc_cohort
+
+    # First fire: FRESH state, writes all 3 checkpoints
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        force_fresh=True,  # ensure fresh start for this test
+    )
+    captured = capsys.readouterr()
+    assert "state=FRESH" in captured.out
+
+    # Delete intermediate 2 (post_sample_qc) — leave intermediate 1 + sidecar intact
+    bucket_path = Path(synthetic_bucket.removeprefix("file://"))
+    int2_dir = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt"
+    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt.meta.json"
+    assert int2_dir.exists(), "first fire should have written intermediate 2"
+    shutil.rmtree(int2_dir)
+    int2_sidecar.unlink()
+
+    # Second fire: should resume from intermediate 1
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        # force_fresh defaults to False — auto-resume active
+    )
+    captured = capsys.readouterr()
+    assert "state=RESUME_FROM_POST_SPLIT" in captured.out
+    assert "resumed from intermediate 1" in captured.out
