@@ -470,7 +470,11 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
                    workspace_bucket: str | None = None,
-                   skip_checkpoint: bool = False) -> "hl.MatrixTable":
+                   skip_checkpoint: bool = False,
+                   *,
+                   force_fresh: bool = False,
+                   interval_filter: str | None = None,
+                   ) -> "hl.MatrixTable":
     """Load + cohort-define + QC-filter the AoU AFR/EUR cohort.
 
     Implements the canonical ordering per RESEARCH.md (split_multi_hts BEFORE
@@ -490,6 +494,14 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             skip_checkpoint, reads from env.
         skip_checkpoint: Skip the gs:// checkpoint write (used by tests
             against synthetic MT — no real bucket available).
+        force_fresh: When True, bypass auto-resume checks; overwrite any
+            existing intermediates. Default False (auto-resume active).
+            Per DESIGN §3.5 + §4.
+        interval_filter: When set (e.g., "chr22"), filter source MT to
+            this interval right after read_matrix_table. Used by smoke
+            tests for path-isolated execution; produces URI-suffixed
+            intermediates. Default None (no filter; production fire).
+            Per DESIGN §3.5.
 
     Returns:
         QC-filtered ``hl.MatrixTable`` ready for per-region LD computation.
