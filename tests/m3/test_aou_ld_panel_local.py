@@ -239,6 +239,39 @@ def test_sidecar_uri_format():
     assert _sidecar_uri(checkpoint_uri) == "gs://bkt/ld/intermediate/mt_afr_post_split.mt.meta.json"
 
 
+def test_collect_provenance_includes_required_fields():
+    from aou_ld_panel import _collect_provenance
+    prov = _collect_provenance(
+        ancestry="afr",
+        sensitivity=False,
+        source_mt_path="gs://src/path.mt",
+        interval_filter=None,
+    )
+    # Top-level fields (phase intentionally absent — added by _write_sidecar)
+    assert prov["ancestry"] == "afr"
+    assert prov["sensitivity"] is False
+    assert prov["source_mt_path"] == "gs://src/path.mt"
+    assert prov["interval_filter"] is None
+    assert "phase" not in prov  # phase added at write time
+    assert prov["schema_version"] == 1
+    # Nested params dict has all 7 thresholds from DESIGN §3.4
+    assert prov["params"]["MIN_CALL_RATE_SAMPLE"] == 0.98
+    assert prov["params"]["MIN_MAF_INTERNAL"] == 0.005
+    assert prov["params"]["MAX_MAF"] == 0.995
+    assert prov["params"]["MIN_CALL_RATE_VARIANT"] == 0.95
+    assert prov["params"]["MIN_HWE_PVALUE"] == 1e-06
+    assert prov["params"]["HET_HOM_SD_BAND"] == 3.0
+    assert prov["params"]["KING_KINSHIP_THRESHOLD"] == 0.0442
+    # CDR metadata
+    assert prov["cdr_version"] == "v8"
+    assert prov["ancestry_preds_path"].endswith("ancestry_preds.tsv")
+    assert prov["relateds_path"].endswith("relatedness_flagged_samples.tsv")
+    # Git + timestamp + hail_version present (don't assert exact values)
+    assert "git_commit_sha" in prov
+    assert "timestamp_utc" in prov
+    assert "hail_version" in prov
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 

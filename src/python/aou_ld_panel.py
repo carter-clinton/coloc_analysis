@@ -240,6 +240,67 @@ def _sidecar_uri(checkpoint_uri: str) -> str:
     return checkpoint_uri + ".meta.json"
 
 
+def _collect_provenance(ancestry: str, sensitivity: bool,
+                         source_mt_path: str,
+                         interval_filter: str | None = None) -> dict:
+    """Collect provenance metadata for sidecar write.
+
+    Builds the JSON-serializable dict that becomes the sidecar contents.
+    DOES NOT include 'phase' field — that is added by _write_sidecar at
+    write time so the same provenance dict can be written to both
+    post_split and post_sample_qc sidecars.
+
+    Per DESIGN §3.4: conservative semantics — all QC parameters are
+    captured regardless of which phase consumes them. Any parameter
+    change invalidates ALL intermediates for the same (ancestry,
+    sensitivity, interval_filter) tuple.
+    """
+    import datetime
+    import subprocess
+
+    # Best-effort: capture git SHA. Falls back to "unknown" if not a git
+    # checkout (e.g., tests in tmp_path that don't preserve git context).
+    try:
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(Path(__file__).parent.parent.parent),
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        sha = "unknown"
+
+    # Best-effort: capture hail version. Falls back if hail not importable.
+    try:
+        import hail as hl
+        hv = hl.__version__
+    except ImportError:
+        hv = "unknown"
+
+    return {
+        "ancestry": ancestry,
+        "sensitivity": sensitivity,
+        "interval_filter": interval_filter,
+        "source_mt_path": source_mt_path,
+        "params": {
+            "MIN_CALL_RATE_SAMPLE": MIN_CALL_RATE_SAMPLE,
+            "MIN_MAF_INTERNAL": MIN_MAF_INTERNAL,
+            "MAX_MAF": MAX_MAF,
+            "MIN_CALL_RATE_VARIANT": MIN_CALL_RATE_VARIANT,
+            "MIN_HWE_PVALUE": MIN_HWE_PVALUE,
+            "HET_HOM_SD_BAND": HET_HOM_SD_BAND,
+            "KING_KINSHIP_THRESHOLD": KING_KINSHIP_THRESHOLD,
+        },
+        "ancestry_preds_path": ANCESTRY_PREDS_PATH,
+        "relateds_path": RELATED_SAMPLES_PATH,
+        "cdr_version": CDR_VERSION,
+        "git_commit_sha": sha,
+        "hail_version": hv,
+        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "schema_version": 1,
+    }
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
