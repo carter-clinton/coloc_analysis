@@ -633,3 +633,49 @@ def test_load_qc_cohort_raises_on_sidecar_mismatch(
             sensitivity=False,
             workspace_bucket=synthetic_bucket.removeprefix("file://"),
         )
+
+
+def test_load_qc_cohort_auto_recovers_from_orphan_mt(
+    synthetic_mt_path: Path, synthetic_bucket: str, capsys
+):
+    """Sidecar-absent-but-MT-exists is an orphan from a prior crash window
+    between checkpoint write and sidecar write. Auto-recovery: print WARN,
+    treat as FRESH, overwrite the orphan. Per DESIGN §4 atomicity policy."""
+    hl = _require_hail()
+    from aou_ld_panel import load_qc_cohort
+
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        force_fresh=True,
+    )
+    capsys.readouterr()  # clear
+
+    # Delete intermediate-1 sidecar but leave MT directory (orphan state)
+    bucket_path = Path(synthetic_bucket.removeprefix("file://"))
+    int1_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_split.mt.meta.json"
+    int1_mt = bucket_path / "ld" / "intermediate" / "mt_afr_post_split.mt"
+    assert int1_sidecar.exists() and int1_mt.exists(), "setup precondition"
+    int1_sidecar.unlink()
+    assert int1_mt.exists(), "MT directory should still exist after sidecar removal"
+
+    # Also need to delete intermediate-2 (else auto-resume picks deepest valid)
+    int2_mt = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt"
+    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt.meta.json"
+    import shutil
+    shutil.rmtree(int2_mt)
+    int2_sidecar.unlink()
+
+    # Second fire: should detect orphan intermediate 1, WARN, auto-force-fresh
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+    )
+    captured = capsys.readouterr()
+    assert "WARN" in captured.out
+    assert "orphan MT" in captured.out
+    assert "state=FRESH" in captured.out
