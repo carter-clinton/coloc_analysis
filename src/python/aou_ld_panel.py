@@ -229,6 +229,17 @@ def _intermediate_checkpoint_uri(bucket: str, ancestry: str, phase: str,
     )
 
 
+def _sidecar_uri(checkpoint_uri: str) -> str:
+    """Sidecar JSON path is the checkpoint URI + '.meta.json'.
+
+    Hail MT checkpoints are directories (containing _SUCCESS + parquet
+    parts); the sidecar lives as a sibling JSON file at the same parent
+    level. The '.meta.json' extension is chosen to avoid colliding with
+    any Hail/Spark-managed files inside the MT directory tree.
+    """
+    return checkpoint_uri + ".meta.json"
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
