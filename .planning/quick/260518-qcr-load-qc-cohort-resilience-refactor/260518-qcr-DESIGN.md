@@ -354,6 +354,7 @@ return mt
 | `force_fresh=True` | Bypass all auto-resume checks; `overwrite=True` on all intermediate writes | N/A — explicit user override |
 | `skip_checkpoint=True` (test path) | Skip ALL checkpoints (intermediate + final); function returns lazy MT for in-memory test assertions | Existing test pattern preserved; no resume logic exercised |
 | `interval_filter` set with default `workspace_bucket` (would point at production `/ld/`) | No automatic refusal — but URI-suffix isolation (`_chr22`) means smoke intermediates land at distinct paths from production. Sidecar `interval_filter` field ensures mismatch detection. | Recommended: callers passing `interval_filter` SHOULD also pass an explicit smoke `workspace_bucket` (e.g., `${WORKSPACE_BUCKET}/ld_smoke`); the URI suffix + sidecar field provide defense in depth even when this convention is forgotten. |
+| `interval_filter` is malformed (e.g., `"chrXX"`, `"chr22:abc-def"`, unparseable contig name) | Passed straight to `hl.parse_locus_interval(interval_filter, reference_genome="GRCh38")`; Hail's native parse error propagates (e.g., `HailException` or `FatalError` with parser diagnostic) | Caller fixes the malformed string. Fail-loud is intentional — no silent fallback to "treat as no filter." |
 
 The mismatch diagnostic format is engineered to surface the relevant parameter immediately:
 
@@ -449,7 +450,7 @@ print(f"Expect 3 outputs at /ld_smoke/ : intermediate 1, intermediate 2, final")
 ### 5.3 Validation gate before re-firing Wave-1 cohort definition
 
 The refactor is ready for Cells 3-5 re-fire only when ALL of:
-- ✅ All 26 unit tests pass on HPC (`pytest tests/m3/test_aou_ld_panel_local.py`)
+- ✅ All 27 unit tests pass on HPC (`pytest tests/m3/test_aou_ld_panel_local.py`)
 - ✅ chr22 smoke fresh fire produces all 3 outputs + correct sidecars
 - ✅ chr22 smoke resume fire completes in <5 min from intermediate 2
 - ✅ Spec doc reviewed (this design) and Carter-approved
@@ -525,7 +526,14 @@ The refactor is successful when:
 
 ## 9. CHANGELOG
 
-### v2 (this version) — 2026-05-18
+### v2.1 (this version) — 2026-05-18 (post spec-review cycle 2)
+
+Spec review cycle 2 verdict: APPROVED. Two LOW notes addressed as micro-amendments:
+
+- §5.3 count typo: "26 unit tests pass" → "27 unit tests pass" (canonical count is 16 existing + 11 new = 27). ✓
+- §4 error-handling table: added explicit row for malformed `interval_filter` documenting that Hail's native parse error propagates (fail-loud is intentional). ✓
+
+### v2 — 2026-05-18 (post spec-review cycle 1)
 
 Addresses spec review v1 cycle feedback:
 
