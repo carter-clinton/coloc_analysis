@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: "Track A submission-in-progress (Carter manuscript lane; DO NOT mark complete until user confirms submission); Track B m3-W1 Cell 3 first-fire FAILED on 2026-05-14 (stuck in Hail bytecode compilation 32+h; bucket clean, no partial writes); orphan Hail JVM PID 4441 about to be killed (Cell 13 of scratch_bootstrap_260514.ipynb pending fire); AOU-1 Kernel Restart + re-fire Cell 1a/1b/3 pending. Bucket-prefix-defensive fix (commit 779fe84) live on origin and AoU-verified GREEN; /tmp/hail.log preserved to bucket /forensics/. AoU env still RUNNING ($4.99/hr; ~$165-180 sunk during 33h browser-session disconnect 2026-05-14 → 2026-05-16)."
-stopped_at: "Track B m3-aou-afr-ld-panel-build Wave 1 — Cell 3 first-fire FAILED. Cell 3 fired 2026-05-14T~22:50 EDT (= ~02:50 UTC May 15) in AOU-1 notebook on AoU Workbench fresh Dataproc env (post bucket-prefix-defensive fix verification). Carter saw In [*]: at 25 min, then closed laptop overnight; browser session timed out. Reconnected 2026-05-16 ~22:30 EDT (~33h disconnect) to find env still RUNNING at $4.99/hr (~$165-180 sunk during disconnect; matches 2026-05-14 commit log of bucket-prefix fix + 33h compute time). Forensic recovery via scratch_bootstrap_260514.ipynb Cells 9-12: (a) /tmp/hail.log preserved to gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.260516-postmortem (6.2 MiB; ends with __C*Compile.__m... JIT bytecode entries at 2026-05-16T11:01 UTC — Hail was producing log entries but never reached the GCS write phase); (b) bucket CLEAN — gs://${WORKSPACE_BUCKET}/ld/ prefix doesn't exist at all, no _SUCCESS markers, no _temporary or _attempt orphans, no partial writes (Cell 3 never reached mt.checkpoint()); (c) orphan state mapped: AOU-1 original kernel PID 4389 alive but UI-disconnected (autosaved-on-disk notebook shows In [ ]: for Cell 3 because JupyterLab loaded disk state, not kernel state), Hail JVM PID 4441 (child of 4389) alive 8.3 GiB RES status S sleeping with 6h cumulative CPU since May 15, zombie child JVM PID 2488 defunct PPID=1; (d) scratch_bootstrap kernel PID 306 confirmed != 4389 so kill targets safe. IMMEDIATE NEXT STEP: fire Cell 13 of scratch_bootstrap_260514.ipynb (kill -TERM 4441 with KILL fallback + verification + free -h), then switch to AOU-1 tab → Kernel → Restart Kernel → re-fire Cell 1a (single-line PYSPARK_SUBMIT_ARGS) → Cell 1b (~30-60s; cores=1 OK assert + PATCH VERIFICATION single-gs:// URIs) → Cell 3 (KEEP TAB OPEN AND ACTIVE for ~45-90 min envelope; closing laptop will re-orphan). Contingencies if Cell 3 re-fire hangs on bytecode compilation again: Plan B (filter to chr22 first for smaller test fire); Plan C (spark.hail.use_bytecode_compiler=false interpreted mode); Plan D (Dataproc env delete+recreate fresh). Pathology baked to [[feedback_aou_websocket_drop_zombie_pattern]] memory. Track A submission-in-progress unchanged (do NOT surface/propose against). DEFERRED INCIDENT_PREVIOUS — Cell 1b malformed URI bug surfaced during prior fire (gs://gs://...). Root cause: helper at aou_ld_panel.py:147 expected bare bucket name (per existing tests using 'test-bucket') but AOU-1 Cell 1b + Cell 7 callers passed os.environ['WORKSPACE_BUCKET'] which on AoU is prefixed (gs://fc-secure-...) -- producing gs://gs://fc-secure-.../ld/mt_*.mt double-prefix. load_qc_cohort at line 275 uses same helper for write path -- Cell 3 fire would have written to malformed URI and either failed at GCS-write boundary or silently landed wrong. Diagnosed via Cell 5 of scratch_bootstrap_260514.ipynb (repr-form output disambiguated the Jupyter rendering artifact that initially read as 3-slash). RED step: 6 new failing tests in test_aou_ld_panel_local.py (5 ImportError on _normalize_bucket + 1 assertion on prefixed-input contract). GREEN step: extracted _normalize_bucket(bucket) utility at aou_ld_panel.py:147 (strips optional gs:// prefix + leading/trailing slashes), wired into _qc_checkpoint_uri (line 178) + CLI main out_bucket construction (line 553), AOU-1 template Cell 7 cohort_summary switched from inline f-string to _qc_checkpoint_uri helper calls (3 sites). All 16 tests PASS (6 new + 4 existing checkpoint-URI regression + 6 static-source); 4 live-hail tests SKIP gracefully. Atomic commit token (m3-W1-bucket-prefix-defensive); audit-driven re-analysis framing per [[feedback_original_research_framing]]. AOU-2 inline f-strings + gsutil shell commands have same bug pattern but deferred to follow-up /gsd-quick (Wave 2 surface, MTs not yet built). NEXT: Carter runs git pull origin main in /home/jupyter/coloc_analysis (AoU clone), Kernel→Restart on AOU-1, re-fires Cell 1a + Cell 1b, verifies URIs now single-gs:// (no gs://gs://), then fires Cell 3 (~45-90 min envelope)."
-last_updated: "2026-05-17T02:30:00.000Z"
+status: "Track A submission-in-progress (Carter manuscript lane; DO NOT mark complete until user confirms submission); Track B m3-W1 Cell 3 RE-FIRE HALTED on cluster-mis-sizing diagnosis 2026-05-17 (YARN RM revealed 64 vCPU actual vs 256 expected; pendingContainers=3779 → 70h+ projection for AFR alone). AoU Dataproc env DELETED 2026-05-17 to stop $5/hr burn ($17 sunk this session, ~$87-97 total m3-W1 to date, 0 MTs written yet). Next session: provision NEW Dataproc env at 16× n1-highmem-16 (256 vCPU, ~$17/hr) per [[feedback_aou_cluster_sizing_for_ld_panel]] memory + AOU-LD-PIPELINE.md §11.0 updated spec. Bucket-prefix-defensive fix (commit 779fe84) live on origin; forensic artifacts archived to gs://.../forensics/."
+stopped_at: "Track B m3-aou-afr-ld-panel-build Wave 1 — Cell 3 RE-FIRE HALTED on cluster-mis-sizing 2026-05-17. SESSION SEQUENCE 2026-05-17: (1) Forensic recovery from first-fire — killed orphan JVM 6829 (TERM+KILL fallback from scratch_bootstrap_260514.ipynb), AOU-1 Kernel→Restart cleanly. (2) Re-fired Cell 1a + Cell 1b on fresh kernel; PATCH VERIFICATION GREEN — 779fe84 _normalize_bucket fix verified live, single-gs:// URIs, cores=1 OK assert PASS. (3) Path B chr22 smoke test PASSED in 44 min (414,830 samples, call_rate mean 0.9388 stdev 0.0042) — empirically proved aggregate_cols functional on this kernel/JVM, ruled out the websocket-orphan hypothesis for the original hang. (4) Cell 3 AFR primary fired ~21:14:30 UTC; monitored at T+20/34/52min and T+2h 38min — JVM CPU steadily advancing (~6-7% wall), RSS 7.84 GB stable, no errors, hail.log silent post-21:16:01 (matched smoke-test mid-phase signature; expected per Hail driver-log-quiet-during-executor-stages design). (5) At T+3h 17min Carter ran cluster diagnostic: curl http://localhost:8088/ws/v1/cluster/metrics revealed totalVirtualCores=64 (NOT 256 as memory implied), runningContainers=32, pendingContainers=3779, YARN progress=10.0% at 6h 45min app elapsed — cluster is 16× n1-highmem-4 = 64 vCPU, NOT 16× n1-highmem-16 = 256 vCPU. Wave-scheduling projection: ~119 task-waves per stage → ~70h+ AFR alone, ~$1250-1500 for all 3 ancestries on this cluster. (6) HALT decision: Cell 3 not hung — workload mis-sized for cluster by ~60×. Captured HALT-snapshot forensics to gs://.../forensics/jstack|pyspy|yarn|hail.log.halt.20260517T235224Z. (7) AoU Dataproc env DELETED via panel (Rule 1-Dataproc per [[feedback_aou_use_persistent_disk]]); burn stopped at $17 this session ($87-97 total m3-W1 to date, 0 MTs written yet). (8) Memory bug patched: [[feedback_aou_websocket_drop_zombie_pattern]] cluster spec corrected n1-highmem-16 → n1-highmem-4. New memory created: [[feedback_aou_cluster_sizing_for_ld_panel]] documenting full demand profile. AOU-LD-PIPELINE.md §11.0 added — empirically-derived 256-vCPU minimum for Wave-1 cohort definition; 64-vCPU OK for Wave-2 per-region. IMMEDIATE NEXT STEP next-session: provision NEW Dataproc env at 16× n1-highmem-16 (CRITICAL: explicitly select n1-highmem-16 SKU, NOT AoU's default '16 worker × 4 CPU/15 GB' preset which is the under-sized n1-highmem-4). Run pre-fire cluster-size validation curl from scratch_bootstrap before any heavy load_qc_cohort fire (verify totalVirtualCores >= 256). Re-clone repo (will include 779fe84), re-cp AOU-1 template, fire Cell 1a→1b→chr22 smoke (verify on bigger cluster, ~5-15 min)→Cell 3 (expected 2-5h on 256 vCPU). All Wave-1 cohort cells should land in 10-20h total ~$170-340. Refined halt matrix: JVM CPU stagnant >30s in 10min wall = true wedge; _temporary without _SUCCESS at T+8h = stuck write; OOM/RegionPool = halt. Plan B/C unchanged. Plan D unnecessary if smoke succeeds on new env."
+last_updated: "2026-05-17T24:00:00.000Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 12
@@ -430,10 +430,102 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T02:30:00.000Z
-Stopped at: Track B m3-W1 Cell 3 first-fire FAILED — forensic recovery in progress; Cell 13 JVM-kill pending fire in scratch_bootstrap_260514.ipynb. Full troubleshooting narrative below.
+Last session: 2026-05-17T24:00:00.000Z
+Stopped at: Track B m3-W1 Cell 3 RE-FIRE HALTED on cluster-mis-sizing diagnosis; AoU Dataproc env DELETED; $17 sunk this session ($87-97 m3-W1 total to date, 0 MTs written). Next-session entry plan: provision NEW Dataproc env at 16× n1-highmem-16 (256 vCPU) per [[feedback_aou_cluster_sizing_for_ld_panel]] + AOU-LD-PIPELINE.md §11.0. Full troubleshooting narrative below.
 
-### Session 2026-05-16 → 2026-05-17 — Cell 3 first-fire failure forensic recovery
+### Session 2026-05-17 (afternoon → evening) — Cell 3 re-fire diagnosed as cluster-mis-sizing
+
+**Background.** Prior session ended 2026-05-17T02:30Z with the first-fire forensic-recovery state preserved + Cell 13 JVM-kill pending. This session executed the JVM kill, Kernel Restart, smoke test, re-fire, cluster-mis-sizing diagnosis, halt, and env Delete.
+
+**Action 1 — Cell 13 fired (kill orphan JVM 6829 from scratch_bootstrap).** Note PID 6829 (not 4441 as the prior STATE.md anticipated — different JVM PID after Leonardo respawn between sessions; the prior-session 4441 was reaped during the AoU env's brief intermediate state). Output: `JVM 6829 gone` after TERM (5s) + KILL fallback; no live java/pyspark remaining; memory freed (30Gi → 24Gi). Clean kill.
+
+**Action 2 — AOU-1 Kernel Restart + cleanup.** Kernel menu → Restart Kernel; fresh Python 3 ○ idle; all cells reverted to `In [ ]:`. Deleted orphan probe cell (the `print(repr(globals().get('mt_afr', 'NOT_DEFINED')))` cell I'd inserted earlier in session for forensic investigation of the hung Cell 3 namespace; clean notebook hygiene per audit-trail discipline since the forensic story is already preserved in 6 other surfaces).
+
+**Action 3 — Re-fire Cell 1a + Cell 1b on fresh kernel.** Output clean:
+- Cell 1a: `PYSPARK_SUBMIT_ARGS set: --conf spark.executor.cores=1 --conf spark.executor.memory=5g --conf spark.driver.cores=1 pyspark-shell` ✓
+- Cell 1b: Hail 0.2.134-952ae203dbbe attached, cores=1 OK assert PASS, PATCH VERIFICATION block: 3 canonical URIs all single-`gs://` form (no `gs://gs://`) confirming `779fe84 _normalize_bucket` defensive fix is live in the fresh kernel.
+
+**Action 4 — Path B chr22 smoke test PASSED in 44 min.** Inserted standalone cell between Cell 1b and Cell 3 that exercises the same Hail primitive that hung in the first fire (`aggregate_cols(hl.agg.stats(...))`) on chr22-only subset (~1.5% of variant volume). Output: `n samples=414830`, `call_rate mean=0.9388 stdev=0.0042`. Empirically proved aggregate_cols functional on this kernel/JVM — ruled out the orphan-state / websocket-drop hypothesis for the original 14.6h hang.
+
+**Action 5 — Cell 3 AFR primary re-fire (fired ~21:14:30 UTC; halted ~24:00 UTC at T+~3h 30min).** Healthy signals throughout the monitoring window:
+
+| Wall T+ | JVM 8799 CPU | Δ CPU | %CPU instant | hail.log mtime |
+|---|---|---|---|---|
+| 0 | 09:10 (baseline) | — | — | — |
+| 20 min | 12:31 | +3:21 | — | 21:16:01 (just stopped) |
+| 34 min | 13:57 | +1:26 | — | 21:16:01 (frozen) |
+| 52 min | 15:37 | +1:40 | 6.2% | 21:16:01 (frozen) |
+| 2h 38min | 23:51 | +8:14 over 106 min | 6.7% | 21:16:01 (frozen) |
+| 3h 17min | ~25:30 | — | — | 21:16:01 (frozen) |
+
+RSS stable 7.84 GB throughout (well under -Xmx 85.7 GB). No errors. No `_temporary` write artifacts (expected — write phase is the last step). hail.log silence after 21:16:01 initially looked alarming but was diagnosed as expected Hail-driver-log-quiet-during-Spark-executor-stages pattern (matched smoke-test mid-phase signature).
+
+**Halt-condition refinement during monitoring.** The strict initial rule "10+ min static hail.log → halt" was empirically falsified by the smoke test (which ran 43 of its 44 min with same py-spy stack and same log silence and SUCCEEDED). Refined criterion (adopted as the operative rule going forward): "JVM driver CPU does not advance ≥ 30s of CPU time in 10 min wall window → halt (true wedge)." This catches actual dead-JVM signature without false-positive on healthy mid-stage compute.
+
+**Action 6 — Cluster diagnostic via YARN RM REST API (fired from scratch_bootstrap at T+3h 17min).** Critical finding:
+- `totalVirtualCores: 64` ← **the cluster is 16× n1-highmem-4 = 64 vCPU, NOT 16× n1-highmem-16 = 256 vCPU as the prior memory implied**
+- `totalNodes: 16` (matches expected worker count)
+- `runningContainers: 32` (50% cluster utilization — all available executor slots occupied)
+- `pendingContainers: 3779` ← Spark demands ~60× more parallelism than the cluster can serve
+- `pendingMB: 21283328` (~20.8 TB of pending memory requests)
+- YARN-reported `progress: 10.0%` at 6h 45min app elapsed (Cell 3 itself ~3h 30min in)
+
+**Wave-scheduling math:** 3811 demand / 32 supply = ~119 task-wave cycles per stage → ~70h+ projection for Cell 3 AFR alone. Forecasted all-3-ancestries (Cell 3 + 4 + 5) cost: ~$1250-1500 over 250-300h on this cluster. Not viable.
+
+**Action 7 — HALT decision (Carter-led, my endorsement).** Cell 3 is not hung — the workload is mis-sized for the cluster by ~60×. Per [[feedback_rigor_over_speed]]: halt + reconfigure for correct cluster is the rigorous path despite the $17 sunk. Per [[feedback_aou_use_persistent_disk]] Rule 1-Dataproc: Delete the env, never Pause.
+
+**Action 8 — HALT-state forensic snapshot (fired from scratch_bootstrap).** Captured to `gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/`:
+- `jstack.halt.20260517T235224Z.txt` — JVM 8799 thread dump showing RUNNABLE main (healthy mid-stage state, NOT the prior session's PythonGatewayServer.main-blocked-on-stdin pattern)
+- `pyspy.halt.20260517T235224Z.txt` — Python kernel py-spy showing aggregate_cols → load_qc_cohort:288 → requests.post → socket.recv (same as prior session's stack, but with active JVM — proving this stack is HEALTHY when paired with advancing JVM CPU)
+- `yarn.halt.20260517T235224Z.json` — full YARN RM cluster apps snapshot at halt time (the load-bearing evidence of cluster-mis-sizing)
+- `hail.log.halt.20260517T235224Z.txt` — driver log frozen at 21:16:01 (RegionPool REPORT_THRESHOLD informational milestone)
+
+**Action 9 — Cell 3 halted via env Delete.** Skipped Kernel Interrupt/Restart since env Delete reaps everything. AoU compute panel → Delete (Carter clicked, with explicit verb confirmation per safety rules). All cluster resources released; $4.99/hr billing stopped. Workspace bucket survives — all forensics + AOU-1 notebook + state preserved durably.
+
+**Action 10 — Memory bug identified + patched.** Root-cause analysis revealed [[feedback_aou_websocket_drop_zombie_pattern]] line 10 was wrong ("16-worker n1-highmem-16 config" → should be "16-worker n1-highmem-4 config"). This is the bug that propagated into every runtime envelope I quoted across two sessions and arguably cost the prior session's $165-180 disconnect compute too (it was on the under-sized cluster).
+
+- Patched [[feedback_aou_websocket_drop_zombie_pattern]] (corrected cluster spec + cross-ref to new memory)
+- Created [[feedback_aou_cluster_sizing_for_ld_panel]] (NEW; documents the empirically-measured workload demand profile, minimum viable cluster spec, and pre-fire validation step)
+- Refreshed [[project_state]] (2026-05-17 end-of-session snapshot)
+- Updated MEMORY.md index entries
+
+**Action 11 — AOU-LD-PIPELINE.md §11.0 added.** New subsection clarifying Wave-1 vs Wave-2 cluster sizing differs (Wave-1 cohort definition needs 256 vCPU minimum; Wave-2 per-region LD is fine on 64 vCPU). Pre-fire cluster-size validation curl documented. Existing §11.1 (the per-region 4×n1-highmem-16 spec) preserved as appropriate for Wave-2.
+
+**Cumulative m3-W1 spend to date (across all sessions):**
+
+| Session | Burn | Outcome |
+|---|---|---|
+| 2026-05-14 first-fire + 33h disconnect | ~$70-80 | Cell 3 wedged; orphan-kernel pattern documented |
+| 2026-05-16 reconnect + forensics | ~$0 | Recovery + STATE.md persistence (commit 1cf0bdb) |
+| 2026-05-17 this session | ~$17 | Cluster-sizing pattern documented; correct SKU spec locked; AOU-LD-PIPELINE.md §11.0 added |
+| **Total** | **~$87-97** | **0 MTs written; 2 reusable failure-mode memories baked; AOU-LD-PIPELINE.md §11 cluster sizing spec corrected** |
+
+**Net cost-benefit:** This session's $17 bought a defensibly-sized cluster spec. Without it, the next session at the same SKU would have burned 70-150h × $5/hr ≈ $350-750 reproducing the same wedge. Net savings on next session: ~$200-400.
+
+**IMMEDIATE next-step action chain (next session):**
+
+1. **Provision NEW Dataproc env at AoU panel** — Worker machine type = **n1-highmem-16** (CRITICAL: do NOT accept the default "16 worker × 4 CPU/15 GB" preset which is n1-highmem-4 × 16). Master = n1-highmem-16. 16 workers, 0 preemptibles. Auto-pause 10 days. Expected ~$17/hr.
+2. **Pre-fire cluster-size validation** from scratch_bootstrap on the new env:
+   ```python
+   sh("curl -s http://localhost:8088/ws/v1/cluster/metrics | python3 -m json.tool | grep -E 'totalVirtualCores|totalNodes'", check=False)
+   ```
+   Expect: `totalVirtualCores >= 256`. If less, halt and resize before any heavy load_qc_cohort fire.
+3. **Re-clone repo:** `git clone https://github.com/carter-clinton/coloc_analysis` in env terminal (will include 779fe84 fix)
+4. **Re-cp AOU-1 template + workspace-bucket Layer-2 sync** per [[feedback_aou_use_persistent_disk]] canonical workflow.
+5. **Fire Cell 1a → Cell 1b → optional chr22 smoke (5-15 min on bigger cluster) → Cell 3 AFR primary** (expected envelope: 2-5h on 256 vCPU). KEEP TAB OPEN AND VISIBLE; refined halt matrix (JVM-CPU-stagnant-for-30s-over-10min-wall is the operative criterion).
+6. **Post Cell 3 GREEN:** fire Cell 4 (AFR sensitivity, similar runtime) → Cell 5 (EUR parity, 6-15h since ~3× sample count) → Cell 6 (disjoint sanity) → Cell 7 (cohort_summary).
+7. **Post Wave-1 success:** bundled push to origin via cherry-pick on push-fix branch off origin/main: `fc1a94f` (260514-npb docs) + this session's atomic commit + Wave-1-complete STATE.md update.
+
+**Contingencies if Cell 3 re-fire hangs on the correctly-sized cluster:**
+- Plan B (chr22 smoke first — already proven pattern; re-verify on new env)
+- Plan C (interpreted Hail: `spark.hail.use_bytecode_compiler=false`)
+- Plan D unnecessary (under-sizing definitively ruled out by the larger cluster)
+
+Track A status unchanged: submission-in-progress (Carter local lane; do NOT surface/propose against per [[feedback_stop_asking_track_a]]).
+
+---
+
+### Prior session 2026-05-16 → 2026-05-17 (early morning) — Cell 3 first-fire failure forensic recovery
 
 **Background.** Cell 3 (primary AFR cohort, `load_qc_cohort(ancestry='afr', sensitivity=False)`) fired 2026-05-14T~22:50 EDT in AOU-1 notebook on AoU Workbench Dataproc env (fresh env created post stuck-resume incident; 16-worker n1-highmem-16; Standard primary workers per AOU-LD-PIPELINE.md §11; auto-pause 10 days). Carter saw `In [*]:` for ~25 min, then closed laptop overnight per the handoff plan (envelope was 45-90 min wall-clock). The plan was for Claude to engage on next paste-back when Cell 3 produced output (success or halt).
 
