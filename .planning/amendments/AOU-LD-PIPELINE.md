@@ -459,11 +459,37 @@ data/processed/ld_reference/EUR_aou/
 
 Ballpark only. AoU credit pricing and GCP Dataproc rates change — refer to current AoU billing docs at fire time.
 
+### 11.0 — Cluster sizing differs between Wave-1 cohort definition and Wave-2 per-region LD
+
+**Empirically derived 2026-05-17 (m3-W1 Cell 3 cluster-mis-sizing incident, $87-97 sunk discovering this):**
+
+The Wave-1 cohort definition workload (`aou_ld_panel.load_qc_cohort`: full-genome `sample_qc` + `aggregate_cols(hl.agg.stats(r_het_hom_var))` + `variant_qc` + checkpoint write across ~50K AFR samples × ~1.2B variants) demands ~3800 task containers. **This workload requires a substantially larger cluster than the per-region LD computation workload** (§5.1) which processes one ~2 Mb region at a time.
+
+**Wave-1 cohort definition cluster (minimum viable; needs ~256 vCPU):**
+- 1 master: `n1-highmem-16` (16 CPU / 104 GB)
+- 16 workers: `n1-highmem-16` (16 CPU / 104 GB / 150 GB Standard disk each, no preemptible)
+- Total: 256 vCPU, ~1.6 TB worker RAM
+- Hourly cost: ~$17/hr (GCP list pricing, AoU credits differ)
+- Expected runtime: AFR cohort 2-5h; all 3 ancestries (AFR primary + AFR sensitivity + EUR parity) 10-20h total
+- **DO NOT use the AoU "16 worker × 4 CPU/15 GB" preset for Wave-1** — that's n1-highmem-4 × 16 = 64 vCPU, results in 3779 pending containers vs ~32 running, projecting ~70h+ per ancestry → $1250-1500 for Wave-1 vs $300-400 on correctly-sized cluster.
+
+**Pre-fire validation (run from scratch_bootstrap before any Wave-1 cell):**
+```python
+sh("curl -s http://localhost:8088/ws/v1/cluster/metrics | python3 -m json.tool | grep -E 'totalVirtualCores|totalNodes'", check=False)
+```
+Expect `totalVirtualCores >= 256`. If less, halt and resize cluster before any heavy `load_qc_cohort` fire.
+
+After Wave-1 cohort MTs land in `gs://.../ld/mt_*.mt`, **the cohort cluster can be DELETED** (per [[feedback_aou_use_persistent_disk]] Rule 1-Dataproc) and replaced with the smaller per-region cluster below for Wave-2.
+
+### 11.1 — Per-region LD computation cluster (Wave-2)
+
 **Per-cluster config (recommended starting point)**:
 - 1 master: `n1-standard-8`
 - 4 workers: `n1-highmem-16` (highmem because LD dense matrices are RAM-bound, not CPU-bound)
 - 500 GB SSD per worker
 - Preemptible workers disabled for the main pipeline (LD computation is not checkpoint-friendly)
+
+This 4×n1-highmem-16 = 64 vCPU cluster is appropriate for the per-region workload because each region is independent and small enough to fit in one cluster's worth of RAM; parallelism across regions comes from running multiple Dataproc clusters concurrently, not from within one cluster.
 
 **Per-region timing** (empirical from analogous Hail LD workloads; **needs verification on AoU**):
 - Small/sparse region (2 Mb, ~8k variants): 8–12 min
