@@ -518,6 +518,67 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     anc_path = ancestry_table_path or ANCESTRY_PREDS_PATH
     rel_path = relateds_table_path or RELATED_SAMPLES_PATH
 
+    # Resilience refactor: compute intermediate-checkpoint URIs + auto-resume
+    # state machine (DESIGN §3.5).
+    state = "FRESH"
+    auto_fresh = False
+    ckpt_post_split = None
+    ckpt_post_sqc = None
+    provenance = None
+    if not skip_checkpoint:
+        bucket = workspace_bucket or os.environ.get("WORKSPACE_BUCKET")
+        if not bucket:
+            raise RuntimeError("WORKSPACE_BUCKET not set; cannot checkpoint")
+        ckpt_post_split = _intermediate_checkpoint_uri(
+            bucket, ancestry, "post_split", sensitivity, interval_filter)
+        ckpt_post_sqc = _intermediate_checkpoint_uri(
+            bucket, ancestry, "post_sample_qc", sensitivity, interval_filter)
+        provenance = _collect_provenance(
+            ancestry, sensitivity, mt_path, interval_filter)
+
+        if not force_fresh:
+            # Check deepest intermediate first (post_sample_qc) — if it's
+            # present with valid sidecar, we skip both Phase 1 and Phase 2.
+            if _has_checkpoint(ckpt_post_sqc):
+                sidecar = _read_sidecar(_sidecar_uri(ckpt_post_sqc))
+                if sidecar is None:
+                    # Orphan: MT present but sidecar absent (crash window between
+                    # the two writes in a prior fire). Auto-recover.
+                    print(f"[load_qc_cohort] WARN: orphan MT at {ckpt_post_sqc} "
+                          f"(sidecar absent); auto-force-fresh recovery")
+                    auto_fresh = True
+                else:
+                    matches, diag = _validate_sidecar(sidecar, provenance)
+                    if matches:
+                        state = "RESUME_FROM_POST_SAMPLE_QC"
+                    else:
+                        raise RuntimeError(
+                            f"Stale intermediate at {ckpt_post_sqc}: {diag}\n"
+                            f"Use force_fresh=True to overwrite, or fix the "
+                            f"parameter mismatch."
+                        )
+            elif _has_checkpoint(ckpt_post_split):
+                sidecar = _read_sidecar(_sidecar_uri(ckpt_post_split))
+                if sidecar is None:
+                    print(f"[load_qc_cohort] WARN: orphan MT at {ckpt_post_split} "
+                          f"(sidecar absent); auto-force-fresh recovery")
+                    auto_fresh = True
+                else:
+                    matches, diag = _validate_sidecar(sidecar, provenance)
+                    if matches:
+                        state = "RESUME_FROM_POST_SPLIT"
+                    else:
+                        raise RuntimeError(
+                            f"Stale intermediate at {ckpt_post_split}: {diag}\n"
+                            f"Use force_fresh=True to overwrite, or fix the "
+                            f"parameter mismatch."
+                        )
+
+    # Effective overwrite flag for intermediate writes
+    overwrite_flag = force_fresh or auto_fresh
+    print(f"[load_qc_cohort] state={state} ancestry={ancestry} "
+          f"sensitivity={sensitivity} interval_filter={interval_filter}")
+
     # Step 1: load the AoU MT (or local synthetic MT)
     mt = hl.read_matrix_table(mt_path)
 
