@@ -376,6 +376,64 @@ def _read_sidecar(uri: str) -> dict | None:
     return parsed
 
 
+# Fields that legitimately differ between sidecar and current call.
+# Excluded from _validate_sidecar comparison.
+_SIDECAR_COMPARE_EXCLUDE_FIELDS = frozenset({
+    "phase",            # phase is per-sidecar; not a fire-level parameter
+    "timestamp_utc",    # write time; drifts across runs of same params
+    "git_commit_sha",   # audit metadata; non-breaking code changes ok
+    "hail_version",     # build-environment; ok to drift across runs
+})
+
+
+def _validate_sidecar(sidecar: dict, provenance: dict) -> tuple[bool, str]:
+    """Compare sidecar against current provenance dict.
+
+    Returns:
+        (True, "") if all relevant fields match.
+        (False, diagnostic_str) if any relevant field differs. The
+        diagnostic enumerates the mismatched field names + values for
+        each side (sidecar vs current).
+
+    Comparison rules per DESIGN §3.4 + v2 CHANGELOG:
+        - All top-level fields are compared EXCEPT those in
+          _SIDECAR_COMPARE_EXCLUDE_FIELDS (phase, timestamp_utc,
+          git_commit_sha, hail_version).
+        - 'params' dict is compared element-by-element. Any threshold
+          difference is a mismatch.
+
+    Conservative semantics: ANY divergence outside the excluded set
+    invalidates the intermediate. Caller passes force_fresh=True to
+    override.
+    """
+    mismatches = []
+    # Top-level fields
+    sidecar_keys = set(sidecar.keys()) - _SIDECAR_COMPARE_EXCLUDE_FIELDS
+    provenance_keys = set(provenance.keys()) - _SIDECAR_COMPARE_EXCLUDE_FIELDS
+    for k in sorted(sidecar_keys | provenance_keys):
+        if k == "params":
+            continue  # handled separately below
+        sv = sidecar.get(k, "<absent>")
+        pv = provenance.get(k, "<absent>")
+        if sv != pv:
+            mismatches.append(f"  {k}: sidecar={sv!r} current={pv!r}")
+    # Params dict
+    sidecar_params = sidecar.get("params", {})
+    provenance_params = provenance.get("params", {})
+    for k in sorted(set(sidecar_params.keys()) | set(provenance_params.keys())):
+        sv = sidecar_params.get(k, "<absent>")
+        pv = provenance_params.get(k, "<absent>")
+        if sv != pv:
+            mismatches.append(f"  params.{k}: sidecar={sv!r} current={pv!r}")
+    if not mismatches:
+        return True, ""
+    diag = (
+        f"mismatch on {len(mismatches)} field(s):\n"
+        + "\n".join(mismatches)
+    )
+    return False, diag
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,

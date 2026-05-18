@@ -302,6 +302,59 @@ def test_read_sidecar_rejects_unknown_schema_version(tmp_path):
         _read_sidecar(f"file://{sidecar_path}")
 
 
+def test_validate_sidecar_accepts_matching():
+    from aou_ld_panel import _validate_sidecar, _collect_provenance
+    prov = _collect_provenance("afr", False, "gs://src/path.mt")
+    sidecar = {**prov, "phase": "post_split"}  # simulates what _write_sidecar produces
+    matches, diag = _validate_sidecar(sidecar, prov)
+    assert matches is True
+    assert diag == ""
+
+
+def test_validate_sidecar_rejects_mismatched_ancestry():
+    from aou_ld_panel import _validate_sidecar, _collect_provenance
+    prov_afr = _collect_provenance("afr", False, "gs://src/path.mt")
+    prov_eur = _collect_provenance("eur", False, "gs://src/path.mt")
+    sidecar = {**prov_afr, "phase": "post_split"}
+    matches, diag = _validate_sidecar(sidecar, prov_eur)
+    assert matches is False
+    assert "ancestry" in diag.lower()
+
+
+def test_validate_sidecar_rejects_mismatched_thresholds(monkeypatch):
+    from aou_ld_panel import _validate_sidecar, _collect_provenance
+    import aou_ld_panel
+    prov_a = _collect_provenance("afr", False, "gs://src/path.mt")
+    sidecar = {**prov_a, "phase": "post_split"}
+    monkeypatch.setattr(aou_ld_panel, "MIN_CALL_RATE_SAMPLE", 0.95)
+    prov_b = _collect_provenance("afr", False, "gs://src/path.mt")
+    matches, diag = _validate_sidecar(sidecar, prov_b)
+    assert matches is False
+    assert "MIN_CALL_RATE_SAMPLE" in diag
+
+
+def test_validate_sidecar_ignores_phase_field():
+    """phase legitimately differs between post_split + post_sample_qc sidecars for
+    the same fire — _validate_sidecar must ignore it during comparison."""
+    from aou_ld_panel import _validate_sidecar, _collect_provenance
+    prov = _collect_provenance("afr", False, "gs://src/path.mt")
+    sidecar_a = {**prov, "phase": "post_split"}
+    sidecar_b = {**prov, "phase": "post_sample_qc"}
+    assert _validate_sidecar(sidecar_a, prov)[0] is True
+    assert _validate_sidecar(sidecar_b, prov)[0] is True
+
+
+def test_validate_sidecar_ignores_timestamp_and_git_sha():
+    """timestamp_utc and git_commit_sha legitimately drift across runs of the
+    same parameters — they're audit metadata, not invalidation triggers."""
+    from aou_ld_panel import _validate_sidecar, _collect_provenance
+    prov = _collect_provenance("afr", False, "gs://src/path.mt")
+    sidecar = {**prov, "phase": "post_split",
+               "timestamp_utc": "1970-01-01T00:00:00.000Z",
+               "git_commit_sha": "deadbeef"}
+    assert _validate_sidecar(sidecar, prov)[0] is True
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 
