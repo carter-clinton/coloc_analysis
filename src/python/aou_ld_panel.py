@@ -198,6 +198,37 @@ def _qc_checkpoint_uri(bucket: str, ancestry: str, sensitivity: bool) -> str:
     return f"gs://{_normalize_bucket(bucket)}/ld/mt_{ancestry}{suffix}.mt"
 
 
+def _intermediate_checkpoint_uri(bucket: str, ancestry: str, phase: str,
+                                  sensitivity: bool,
+                                  interval_filter: str | None = None) -> str:
+    """Construct an intermediate-checkpoint URI inside /ld/intermediate/.
+
+    Args:
+        bucket: Workspace bucket (bare-name or gs://-prefixed; normalized
+            via :func:`_normalize_bucket`).
+        ancestry: "afr" or "eur".
+        phase: "post_split" or "post_sample_qc".
+        sensitivity: When True, appends "_pca_selfid" before phase suffix
+            (matches the existing _qc_checkpoint_uri convention).
+        interval_filter: When set (e.g., "chr22" for smoke), appends
+            "_{interval}" to the URI for path-level isolation between
+            smoke and production paths. Defense in depth alongside
+            sidecar-level mismatch detection. Per DESIGN §3.3.
+
+    Examples:
+        >>> _intermediate_checkpoint_uri("bkt", "afr", "post_split", False)
+        'gs://bkt/ld/intermediate/mt_afr_post_split.mt'
+        >>> _intermediate_checkpoint_uri("bkt", "afr", "post_split", True, "chr22")
+        'gs://bkt/ld/intermediate/mt_afr_pca_selfid_post_split_chr22.mt'
+    """
+    sens_suffix = "_pca_selfid" if sensitivity else ""
+    interval_suffix = f"_{interval_filter}" if interval_filter else ""
+    return (
+        f"gs://{_normalize_bucket(bucket)}/ld/intermediate/"
+        f"mt_{ancestry}{sens_suffix}_{phase}{interval_suffix}.mt"
+    )
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,

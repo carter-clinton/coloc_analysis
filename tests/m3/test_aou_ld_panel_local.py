@@ -202,6 +202,37 @@ def test_qc_checkpoint_uri_accepts_prefixed_bucket():
     )
 
 
+def test_intermediate_checkpoint_uri_post_split_afr_primary():
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri("fc-secure-XXX", "afr", "post_split", False)
+    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_post_split.mt"
+
+
+def test_intermediate_checkpoint_uri_post_sample_qc_afr_sensitivity():
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri("fc-secure-XXX", "afr", "post_sample_qc", True)
+    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_pca_selfid_post_sample_qc.mt"
+
+
+def test_intermediate_checkpoint_uri_eur_no_sensitivity():
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri("fc-secure-XXX", "eur", "post_split", False)
+    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_eur_post_split.mt"
+
+
+def test_intermediate_checkpoint_uri_with_interval_filter_chr22():
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri("fc-secure-XXX", "afr", "post_split", False, "chr22")
+    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_post_split_chr22.mt"
+
+
+def test_intermediate_checkpoint_uri_accepts_prefixed_bucket():
+    """Defensive: bucket may arrive as 'gs://...' (per _normalize_bucket contract)."""
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri("gs://fc-secure-XXX", "afr", "post_split", False)
+    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_post_split.mt"
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 
