@@ -531,3 +531,31 @@ def test_load_qc_cohort_auto_resume_from_post_split(
     captured = capsys.readouterr()
     assert "state=RESUME_FROM_POST_SPLIT" in captured.out
     assert "resumed from intermediate 1" in captured.out
+
+
+def test_load_qc_cohort_auto_resume_from_post_sample_qc(
+    synthetic_mt_path: Path, synthetic_bucket: str, capsys
+):
+    """Fire once; fire again unchanged -> expect resume from intermediate 2
+    (deepest available; Phase 1 + Phase 2 skipped, only Phase 3 re-runs)."""
+    hl = _require_hail()
+    from aou_ld_panel import load_qc_cohort
+
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        force_fresh=True,
+    )
+    capsys.readouterr()  # clear
+
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+    )
+    captured = capsys.readouterr()
+    assert "state=RESUME_FROM_POST_SAMPLE_QC" in captured.out
+    assert "resumed from intermediate 2" in captured.out
