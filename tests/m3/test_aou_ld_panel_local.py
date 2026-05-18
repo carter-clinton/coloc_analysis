@@ -599,3 +599,37 @@ def test_load_qc_cohort_force_fresh_bypasses_auto_resume(
         f"force_fresh should overwrite intermediate 1 (old mtime={initial_mtime}, "
         f"new mtime={new_mtime})"
     )
+
+
+def test_load_qc_cohort_raises_on_sidecar_mismatch(
+    synthetic_mt_path: Path, synthetic_bucket: str
+):
+    """Sidecar parameter mismatch -> RuntimeError with informative diagnostic.
+    Verifies the safety guard against silently using stale-parameter intermediates."""
+    import json
+    hl = _require_hail()
+    from aou_ld_panel import load_qc_cohort
+
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        force_fresh=True,
+    )
+
+    # Manually edit the intermediate-2 sidecar to flip ancestry to "eur"
+    bucket_path = Path(synthetic_bucket.removeprefix("file://"))
+    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt.meta.json"
+    sc = json.loads(int2_sidecar.read_text())
+    sc["ancestry"] = "eur"  # mismatch with the next call's ancestry="afr"
+    int2_sidecar.write_text(json.dumps(sc, indent=2, sort_keys=True))
+
+    # Second fire — auto-resume should detect mismatch and raise
+    with pytest.raises(RuntimeError, match=r"(?i)ancestry"):
+        load_qc_cohort(
+            mt_path=str(synthetic_mt_path),
+            ancestry="afr",
+            sensitivity=False,
+            workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        )
