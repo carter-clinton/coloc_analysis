@@ -579,60 +579,84 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     print(f"[load_qc_cohort] state={state} ancestry={ancestry} "
           f"sensitivity={sensitivity} interval_filter={interval_filter}")
 
-    # Step 1: load the AoU MT (or local synthetic MT)
-    mt = hl.read_matrix_table(mt_path)
+    # Phase 1: read + filter + split (former steps 1-6)
+    if state == "FRESH":
+        # Step 1: load the AoU MT (or local synthetic MT)
+        mt = hl.read_matrix_table(mt_path)
 
-    # Step 2: cohort filter on ancestry_pred. The AoU ancestry predictions
-    # arrive as a TSV (not a Hail Table); use hl.import_table with the
-    # research_id key. For local synthetic MT testing, the ancestry field
-    # may already be annotated on cols — detect and short-circuit.
-    if ANCESTRY_FIELD in mt.col:
-        # synthetic / pre-annotated path
-        mt = mt.filter_cols(mt[ANCESTRY_FIELD] == ancestry)
-    else:
-        anc_ht = hl.import_table(anc_path, key="research_id",
-                                 types={"research_id": hl.tstr})
-        mt = mt.annotate_cols(**{ANCESTRY_FIELD: anc_ht[mt.s][ANCESTRY_FIELD]})
-        mt = mt.filter_cols(mt[ANCESTRY_FIELD] == ancestry)
+        # Apply interval filter for smoke tests (no-op for production fires)
+        if interval_filter is not None:
+            mt = hl.filter_intervals(
+                mt,
+                [hl.parse_locus_interval(interval_filter, reference_genome="GRCh38")],
+            )
 
-    # Step 3: anti-join against AoU's flagged-relateds TSV (KING >= 0.0442
-    # third-degree pruning). For tests, the rel_path may be missing or
-    # synthetic; tolerate that.
-    try:
-        rel_ht = hl.import_table(rel_path, key="sample_id",
-                                 types={"sample_id": hl.tstr})
-        mt = mt.anti_join_cols(rel_ht)
-    except Exception as e:
-        print(f"WARN: relateds table unavailable ({rel_path}): {e}; "
-              f"skipping anti_join", file=sys.stderr)
+        # Step 2: cohort filter on ancestry_pred
+        if ANCESTRY_FIELD in mt.col:
+            mt = mt.filter_cols(mt[ANCESTRY_FIELD] == ancestry)
+        else:
+            anc_ht = hl.import_table(anc_path, key="research_id",
+                                     types={"research_id": hl.tstr})
+            mt = mt.annotate_cols(**{ANCESTRY_FIELD: anc_ht[mt.s][ANCESTRY_FIELD]})
+            mt = mt.filter_cols(mt[ANCESTRY_FIELD] == ancestry)
 
-    # Optional sensitivity: self-reported Black or African American.
-    if sensitivity and "self_report" in mt.col:
-        mt = mt.filter_cols(mt.self_report.contains("Black or African American"))
+        # Step 3: anti-join against flagged-relateds
+        try:
+            rel_ht = hl.import_table(rel_path, key="sample_id",
+                                     types={"sample_id": hl.tstr})
+            mt = mt.anti_join_cols(rel_ht)
+        except Exception as e:
+            print(f"WARN: relateds table unavailable ({rel_path}): {e}; "
+                  f"skipping anti_join", file=sys.stderr)
 
-    # m3-W2 OOM remediation (DEC-2026-05-04-01): naive_coalesce post-ancestry.
-    # Reduces row-partition count (~290,384 v8 partitions -> 2048) before the
-    # three downstream materialization stages (split_multi_hts, sample_qc,
-    # aggregate_cols for het_stats) so Hail RegionPool memory pressure stays
-    # within executor headroom. Receipt: m3-W2-forensics/2026-05-04-stage8-regionpool-oom/.
-    mt = mt.naive_coalesce(2048)
+        # Step 4: optional sensitivity filter
+        if sensitivity and "self_report" in mt.col:
+            mt = mt.filter_cols(mt.self_report.contains("Black or African American"))
 
-    # Step 4: split_multi_hts BEFORE variant_qc (canonical ordering).
-    mt = hl.split_multi_hts(mt)
+        # Step 5: naive_coalesce (cheap upstream coalesce; DEC-2026-05-04-01)
+        mt = mt.naive_coalesce(2048)
 
-    # Step 5: sample_qc + call_rate >= 0.98
-    mt = hl.sample_qc(mt, name="sqc")
-    mt = mt.filter_cols(mt.sqc.call_rate >= MIN_CALL_RATE_SAMPLE)
+        # Step 6: split_multi_hts BEFORE variant_qc (canonical ordering)
+        mt = hl.split_multi_hts(mt)
 
-    # Step 6: heterozygosity ±3 SD (computed within the ancestry-filtered cohort)
-    het_stats = mt.aggregate_cols(hl.agg.stats(mt.sqc.r_het_hom_var))
-    if het_stats.stdev is not None and het_stats.stdev > 0:
-        lo = het_stats.mean - HET_HOM_SD_BAND * het_stats.stdev
-        hi = het_stats.mean + HET_HOM_SD_BAND * het_stats.stdev
-        mt = mt.filter_cols((mt.sqc.r_het_hom_var >= lo) &
-                            (mt.sqc.r_het_hom_var <= hi))
+        # Q3 hybrid: repartition for balanced QC phase before writing intermediate 1.
+        # The shuffle cost amortizes into the GCS write that was already required.
+        mt = mt.repartition(2048)
 
-    # Step 7: variant_qc + MAF/HWE/call_rate
+        # Intermediate 1 checkpoint + sidecar (DESIGN §3.5 atomicity policy:
+        # checkpoint write FIRST, then sidecar write).
+        if not skip_checkpoint:
+            mt = mt.checkpoint(ckpt_post_split, overwrite=overwrite_flag)
+            _write_sidecar(_sidecar_uri(ckpt_post_split), provenance, phase="post_split")
+            print(f"[load_qc_cohort] wrote intermediate 1: {ckpt_post_split}")
+    elif state == "RESUME_FROM_POST_SPLIT":
+        mt = hl.read_matrix_table(ckpt_post_split)
+        print(f"[load_qc_cohort] resumed from intermediate 1: {ckpt_post_split}")
+    elif state == "RESUME_FROM_POST_SAMPLE_QC":
+        mt = hl.read_matrix_table(ckpt_post_sqc)
+        print(f"[load_qc_cohort] resumed from intermediate 2: {ckpt_post_sqc}")
+
+    # Phase 2: sample QC + het filter (former steps 7-9)
+    if state in ("FRESH", "RESUME_FROM_POST_SPLIT"):
+        # Step 7: sample_qc + call_rate >= 0.98
+        mt = hl.sample_qc(mt, name="sqc")
+        mt = mt.filter_cols(mt.sqc.call_rate >= MIN_CALL_RATE_SAMPLE)
+
+        # Step 8: heterozygosity ±3 SD (within ancestry-filtered cohort)
+        het_stats = mt.aggregate_cols(hl.agg.stats(mt.sqc.r_het_hom_var))
+        if het_stats.stdev is not None and het_stats.stdev > 0:
+            lo = het_stats.mean - HET_HOM_SD_BAND * het_stats.stdev
+            hi = het_stats.mean + HET_HOM_SD_BAND * het_stats.stdev
+            mt = mt.filter_cols((mt.sqc.r_het_hom_var >= lo) &
+                                (mt.sqc.r_het_hom_var <= hi))
+
+        # Intermediate 2 checkpoint + sidecar
+        if not skip_checkpoint:
+            mt = mt.checkpoint(ckpt_post_sqc, overwrite=overwrite_flag)
+            _write_sidecar(_sidecar_uri(ckpt_post_sqc), provenance, phase="post_sample_qc")
+            print(f"[load_qc_cohort] wrote intermediate 2: {ckpt_post_sqc}")
+
+    # Phase 3: variant_qc + filters + final checkpoint (former steps 10-12)
     mt = hl.variant_qc(mt, name="vqc")
     mt = mt.filter_rows(
         (mt.vqc.AF[1] >= MIN_MAF_INTERNAL) &
@@ -641,18 +665,16 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         (mt.vqc.p_value_hwe >= MIN_HWE_PVALUE)
     )
 
-    # Step 8: drop AoU-flagged variants (filters non-empty)
+    # Drop AoU-flagged variants (filters non-empty)
     if "filters" in mt.row:
         mt = mt.filter_rows(hl.len(mt.filters) == 0)
 
-    # Step 9: checkpoint to workspace bucket so per-region loops don't
-    # recompute the QC chain. Skip for synthetic-MT tests.
+    # Final checkpoint to workspace bucket
     if not skip_checkpoint:
-        bucket = workspace_bucket or os.environ.get("WORKSPACE_BUCKET")
-        if not bucket:
-            raise RuntimeError("WORKSPACE_BUCKET not set; cannot checkpoint")
         ckpt = _qc_checkpoint_uri(bucket, ancestry, sensitivity)
         mt = mt.checkpoint(ckpt, overwrite=True)
+        print(f"[load_qc_cohort] wrote final: {ckpt}")
+
     return mt
 
 
