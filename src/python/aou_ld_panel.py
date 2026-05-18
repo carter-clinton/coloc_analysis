@@ -301,6 +301,81 @@ def _collect_provenance(ancestry: str, sensitivity: bool,
     }
 
 
+def _open_sidecar(uri: str, mode: str):
+    """Open a sidecar URI, dispatching by scheme.
+
+    - 'file://' URIs use plain Python open() so local-FS tests don't
+      require Hail to be importable.
+    - All other URIs (gs://, s3://, etc.) defer to hl.hadoop_open for
+      unified distributed-FS handling in production AoU Dataproc.
+
+    Returns the open file handle (caller must close it via context
+    manager).
+    """
+    if uri.startswith("file://"):
+        local_path = uri[len("file://"):]
+        return open(local_path, mode)
+    import hail as hl
+    return hl.hadoop_open(uri, mode)
+
+
+def _write_sidecar(uri: str, provenance: dict, phase: str) -> None:
+    """Write provenance JSON sidecar at uri.
+
+    Adds 'phase' field to a copy of provenance before serialization so
+    the input dict is not mutated (caller may reuse it for the next
+    phase's sidecar in the same load_qc_cohort fire).
+
+    Order matters: callers MUST invoke this AFTER the matching
+    mt.checkpoint() returns successfully. Per DESIGN §4 atomicity policy:
+    a crash window between checkpoint write and sidecar write leaves an
+    orphan MT; next fire detects sidecar absence and auto-force-fresh's.
+
+    Args:
+        uri: Sidecar URI. Local-FS tests pass "file:///path/to/sidecar.meta.json";
+            production AoU passes "gs://bucket/ld/intermediate/mt_*.mt.meta.json".
+        provenance: Output of _collect_provenance (does NOT include 'phase').
+        phase: One of {"post_split", "post_sample_qc"}.
+    """
+    payload = {**provenance, "phase": phase}
+    with _open_sidecar(uri, "w") as f:
+        json.dump(payload, f, indent=2, sort_keys=True)
+
+
+def _read_sidecar(uri: str) -> dict | None:
+    """Read provenance JSON sidecar at uri.
+
+    Returns:
+        Parsed dict on success, None if the sidecar file does not exist.
+
+    Raises:
+        RuntimeError: if the sidecar exists but has malformed JSON or
+            an unknown schema_version. Loud failure is intentional —
+            silently treating bad sidecars as schema_version=1 risks
+            using stale-format metadata.
+    """
+    try:
+        with _open_sidecar(uri, "r") as f:
+            content = f.read()
+    except (FileNotFoundError, OSError):
+        return None
+    # hail.hadoop_open also raises generic exceptions on missing GCS objects;
+    # broad-catch path-existence failures and return None.
+    if not content:
+        return None
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Sidecar at {uri} is malformed JSON: {e}")
+    sv = parsed.get("schema_version")
+    if sv != 1:
+        raise RuntimeError(
+            f"Sidecar at {uri} has unknown schema_version={sv!r}; "
+            f"expected 1. Refusing to interpret as known schema."
+        )
+    return parsed
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
