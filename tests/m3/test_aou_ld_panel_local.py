@@ -559,3 +559,43 @@ def test_load_qc_cohort_auto_resume_from_post_sample_qc(
     captured = capsys.readouterr()
     assert "state=RESUME_FROM_POST_SAMPLE_QC" in captured.out
     assert "resumed from intermediate 2" in captured.out
+
+
+def test_load_qc_cohort_force_fresh_bypasses_auto_resume(
+    synthetic_mt_path: Path, synthetic_bucket: str, capsys
+):
+    """force_fresh=True must bypass the auto-resume detection even when valid
+    intermediates exist. Verifies the user-override semantic in DESIGN §4."""
+    import time
+    hl = _require_hail()
+    from aou_ld_panel import load_qc_cohort
+
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        force_fresh=True,
+    )
+    bucket_path = Path(synthetic_bucket.removeprefix("file://"))
+    int1_mt = bucket_path / "ld" / "intermediate" / "mt_afr_post_split.mt"
+    initial_mtime = int1_mt.stat().st_mtime
+    time.sleep(1.1)  # ensure st_mtime difference detectable on coarse FS
+    capsys.readouterr()  # clear
+
+    # Second fire with force_fresh=True — should NOT resume; should overwrite
+    load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        sensitivity=False,
+        workspace_bucket=synthetic_bucket.removeprefix("file://"),
+        force_fresh=True,
+    )
+    captured = capsys.readouterr()
+    assert "state=FRESH" in captured.out
+    # Intermediate 1 was overwritten (mtime advanced)
+    new_mtime = int1_mt.stat().st_mtime
+    assert new_mtime > initial_mtime, (
+        f"force_fresh should overwrite intermediate 1 (old mtime={initial_mtime}, "
+        f"new mtime={new_mtime})"
+    )
