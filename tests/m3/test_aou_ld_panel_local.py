@@ -272,6 +272,36 @@ def test_collect_provenance_includes_required_fields():
     assert "hail_version" in prov
 
 
+def test_write_read_sidecar_round_trip(tmp_path):
+    from aou_ld_panel import _write_sidecar, _read_sidecar, _collect_provenance
+    prov = _collect_provenance("afr", False, "gs://src/path.mt")
+    sidecar_path = tmp_path / "test_sidecar.meta.json"
+    _write_sidecar(f"file://{sidecar_path}", prov, phase="post_split")
+    read_back = _read_sidecar(f"file://{sidecar_path}")
+    assert read_back is not None
+    # Phase added at write time
+    assert read_back["phase"] == "post_split"
+    # Other fields preserved
+    assert read_back["ancestry"] == "afr"
+    assert read_back["sensitivity"] is False
+    assert read_back["params"]["MIN_CALL_RATE_SAMPLE"] == 0.98
+
+
+def test_read_sidecar_returns_none_when_absent(tmp_path):
+    from aou_ld_panel import _read_sidecar
+    nonexistent = tmp_path / "nope.meta.json"
+    assert _read_sidecar(f"file://{nonexistent}") is None
+
+
+def test_read_sidecar_rejects_unknown_schema_version(tmp_path):
+    from aou_ld_panel import _read_sidecar
+    import json
+    sidecar_path = tmp_path / "bad_schema.meta.json"
+    sidecar_path.write_text(json.dumps({"schema_version": 999, "ancestry": "afr"}))
+    with pytest.raises(RuntimeError, match="schema_version"):
+        _read_sidecar(f"file://{sidecar_path}")
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 
