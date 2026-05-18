@@ -434,6 +434,38 @@ def _validate_sidecar(sidecar: dict, provenance: dict) -> tuple[bool, str]:
     return False, diag
 
 
+def _has_checkpoint(uri: str) -> bool:
+    """Check for {uri}/_SUCCESS marker (definitive completion signal).
+
+    Hail's mt.checkpoint() writes parquet files into the MT directory
+    and finalizes with an atomic _SUCCESS marker. Existence of the
+    _SUCCESS marker is the definitive "this checkpoint was written
+    successfully" signal — partial writes (interrupted, crashed) leave
+    parquet shards but no _SUCCESS.
+
+    GCS object existence is strongly consistent (Google's 2020
+    consistency model upgrade — read-after-write on individual objects).
+    False-negative due to list-operation eventual-consistency edge cases
+    would result in redundant work (re-firing a completed phase), not
+    corruption.
+
+    Scheme dispatch: 'file://' uses pathlib for local-FS tests without
+    a Hail dependency; all other schemes defer to hl.hadoop_is_file.
+    """
+    success_marker_uri = f"{uri}/_SUCCESS"
+    if uri.startswith("file://"):
+        local_path = Path(success_marker_uri[len("file://"):])
+        return local_path.is_file()
+    try:
+        import hail as hl
+        return hl.hadoop_is_file(success_marker_uri)
+    except Exception:
+        # Defensive: any filesystem error during the existence check
+        # is treated as "checkpoint not present" — safer to redo work
+        # than to assume a checkpoint that may not actually exist.
+        return False
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,

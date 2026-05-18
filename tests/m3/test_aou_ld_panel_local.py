@@ -355,6 +355,32 @@ def test_validate_sidecar_ignores_timestamp_and_git_sha():
     assert _validate_sidecar(sidecar, prov)[0] is True
 
 
+def test_has_checkpoint_returns_false_when_absent(tmp_path):
+    from aou_ld_panel import _has_checkpoint
+    nonexistent = tmp_path / "nope.mt"
+    assert _has_checkpoint(f"file://{nonexistent}") is False
+
+
+def test_has_checkpoint_returns_true_when_success_marker_present(tmp_path):
+    from aou_ld_panel import _has_checkpoint
+    mt_dir = tmp_path / "fake.mt"
+    mt_dir.mkdir()
+    (mt_dir / "_SUCCESS").write_text("")
+    assert _has_checkpoint(f"file://{mt_dir}") is True
+
+
+def test_has_checkpoint_returns_false_when_mt_dir_exists_but_no_success(tmp_path):
+    """An MT directory with parquet files but no _SUCCESS marker is an
+    incomplete write (e.g., previous run was interrupted). _has_checkpoint
+    must distinguish this from a complete checkpoint."""
+    from aou_ld_panel import _has_checkpoint
+    mt_dir = tmp_path / "partial.mt"
+    mt_dir.mkdir()
+    (mt_dir / "part-00000.parquet").write_text("fake parquet")
+    # no _SUCCESS file
+    assert _has_checkpoint(f"file://{mt_dir}") is False
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 
