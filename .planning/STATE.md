@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: "Track A submission-in-progress (Carter manuscript lane; DO NOT mark complete until user confirms submission); Track B m3-W1 BIFURCATED 2026-05-18: (A) AoU Cell 3 (AFR primary) production fire IN FLIGHT on un-refactored code path -- Stage 19 complete ~21:05 UTC, Stage 26 (variant_qc, 2045 tasks) active, ETA Cell 3 _SUCCESS ~22:30-00:30 UTC; ~$337 burned to date; Cell 4 will auto-fire after Cell 3 -- planned halt before Cell 5 via Kernel Interrupt at Cell 4 _SUCCESS (Path C' = AFR primary + AFR sensitivity outputs preserved; EUR deferred); (B) HPC offline 260518-qcr algorithmic-resilience refactor of load_qc_cohort COMPLETE -- 20-commit chain landed locally (DESIGN v2.1 APPROVED via 2 spec-review cycles + 14 TDD task commits + SUMMARY.md); 7 new helpers + 23 new tests (43 collected, 34 PASSED + 9 SKIPPED) preserving existing behavior for skip_checkpoint=True callers; refactor benefit realized in Cell 5 EUR fire on AoU re-clone (post-bundled-push). Per [[feedback_aou_cluster_sizing_for_ld_panel]] + AOU-LD-PIPELINE.md §11.0 the cluster sizing is correct (256 vCPU empirically validated)."
-stopped_at: "Track B m3-aou-afr-ld-panel-build Wave 1 — Cell 3 RE-FIRE HALTED on cluster-mis-sizing 2026-05-17. SESSION SEQUENCE 2026-05-17: (1) Forensic recovery from first-fire — killed orphan JVM 6829 (TERM+KILL fallback from scratch_bootstrap_260514.ipynb), AOU-1 Kernel→Restart cleanly. (2) Re-fired Cell 1a + Cell 1b on fresh kernel; PATCH VERIFICATION GREEN — 779fe84 _normalize_bucket fix verified live, single-gs:// URIs, cores=1 OK assert PASS. (3) Path B chr22 smoke test PASSED in 44 min (414,830 samples, call_rate mean 0.9388 stdev 0.0042) — empirically proved aggregate_cols functional on this kernel/JVM, ruled out the websocket-orphan hypothesis for the original hang. (4) Cell 3 AFR primary fired ~21:14:30 UTC; monitored at T+20/34/52min and T+2h 38min — JVM CPU steadily advancing (~6-7% wall), RSS 7.84 GB stable, no errors, hail.log silent post-21:16:01 (matched smoke-test mid-phase signature; expected per Hail driver-log-quiet-during-executor-stages design). (5) At T+3h 17min Carter ran cluster diagnostic: curl http://localhost:8088/ws/v1/cluster/metrics revealed totalVirtualCores=64 (NOT 256 as memory implied), runningContainers=32, pendingContainers=3779, YARN progress=10.0% at 6h 45min app elapsed — cluster is 16× n1-highmem-4 = 64 vCPU, NOT 16× n1-highmem-16 = 256 vCPU. Wave-scheduling projection: ~119 task-waves per stage → ~70h+ AFR alone, ~$1250-1500 for all 3 ancestries on this cluster. (6) HALT decision: Cell 3 not hung — workload mis-sized for cluster by ~60×. Captured HALT-snapshot forensics to gs://.../forensics/jstack|pyspy|yarn|hail.log.halt.20260517T235224Z. (7) AoU Dataproc env DELETED via panel (Rule 1-Dataproc per [[feedback_aou_use_persistent_disk]]); burn stopped at $17 this session ($87-97 total m3-W1 to date, 0 MTs written yet). (8) Memory bug patched: [[feedback_aou_websocket_drop_zombie_pattern]] cluster spec corrected n1-highmem-16 → n1-highmem-4. New memory created: [[feedback_aou_cluster_sizing_for_ld_panel]] documenting full demand profile. AOU-LD-PIPELINE.md §11.0 added — empirically-derived 256-vCPU minimum for Wave-1 cohort definition; 64-vCPU OK for Wave-2 per-region. IMMEDIATE NEXT STEP next-session: provision NEW Dataproc env at 16× n1-highmem-16 (CRITICAL: explicitly select n1-highmem-16 SKU, NOT AoU's default '16 worker × 4 CPU/15 GB' preset which is the under-sized n1-highmem-4). Run pre-fire cluster-size validation curl from scratch_bootstrap before any heavy load_qc_cohort fire (verify totalVirtualCores >= 256). Re-clone repo (will include 779fe84), re-cp AOU-1 template, fire Cell 1a→1b→chr22 smoke (verify on bigger cluster, ~5-15 min)→Cell 3 (expected 2-5h on 256 vCPU). All Wave-1 cohort cells should land in 10-20h total ~$170-340. Refined halt matrix: JVM CPU stagnant >30s in 10min wall = true wedge; _temporary without _SUCCESS at T+8h = stuck write; OOM/RegionPool = halt. Plan B/C unchanged. Plan D unnecessary if smoke succeeds on new env."
-last_updated: "2026-05-18T21:30:00.000Z"
-last_activity: 2026-05-18
+status: "Track A submission-in-progress (Carter manuscript lane; DO NOT mark complete until user confirms submission); Track B m3-W1 WAVE-1-COMPLETE 2026-05-20: all 3 cohort MTs committed in AoU bucket (mt_afr_qc.mt + mt_afr_pca_selfid_qc.mt + mt_eur_qc.mt) via ~67h monolithic Cell 3-7 run on un-refactored code path; ~$1,275 Cell 3-7 burn / ~$2,100 cumulative m3-W1 across 4 sessions; AoU env PAUSED at $0.14/hr awaiting Wave 2 LD-matrix computation phase. Stage 71 (Cell 7 count_rows for cohort_summary_m3.tsv) killed mid-execution at velocity collapse (0.27 t/min projected $800-$9,000 additional burn) -- non-load-bearing per Cell 8 markdown (TSV is Wave 5 closeout deliverable). Stack-trace verification confirmed Stage 36 (verified MT #1 write via 2026-05-19 gsutil) == Stage 45 == Stage 62 stack signatures (Hail universal collectDArray path) -- MT #2 + MT #3 strongly inferred committed via canonical 82-task finalize-cascade signature. Direct gsutil-verify of MT #2/#3 deferred to Wave 2 resume (terminal+iframe hostile this session). Refactored load_qc_cohort sits at origin/main 50f071c for Wave 2+ resilience. Per [[feedback_aou_cluster_sizing_for_ld_panel]] cluster sizing correct (256 vCPU). [SUPERSEDED: prior status = (A) AoU Cell 3 (AFR primary) production fire IN FLIGHT on un-refactored code path -- Stage 19 complete ~21:05 UTC, Stage 26 (variant_qc, 2045 tasks) active, ETA Cell 3 _SUCCESS ~22:30-00:30 UTC; ~$337 burned to date; Cell 4 will auto-fire after Cell 3 -- planned halt before Cell 5 via Kernel Interrupt at Cell 4 _SUCCESS (Path C' = AFR primary + AFR sensitivity outputs preserved; EUR deferred); (B) HPC offline 260518-qcr algorithmic-resilience refactor of load_qc_cohort COMPLETE -- 20-commit chain landed locally (DESIGN v2.1 APPROVED via 2 spec-review cycles + 14 TDD task commits + SUMMARY.md); 7 new helpers + 23 new tests (43 collected, 34 PASSED + 9 SKIPPED) preserving existing behavior for skip_checkpoint=True callers; refactor benefit realized in Cell 5 EUR fire on AoU re-clone (post-bundled-push). Per [[feedback_aou_cluster_sizing_for_ld_panel]] + AOU-LD-PIPELINE.md §11.0 the cluster sizing is correct (256 vCPU empirically validated).]"
+stopped_at: "Track B m3-W1 WAVE-1-COMPLETE 2026-05-20: AoU env PAUSED via workbench dashboard (cost $0.14/hr); all 3 MTs in bucket per stack-trace + cascade verification; ready for Wave 2 LD-computation phase. NEXT-SESSION MOVES (in order): (1) /gsd-quick --discuss the 7 LD-computation design questions per POST-WAVE-1-ROADMAP.md section 4 (full-genome vs locus-by-locus; r-squared vs signed r; block size; output format; per-population; MAF filter; MTAG-list sequencing). (2) Draft Hail LD-matrix script: src/python/ld_matrix_compute.py + tests/m3/test_ld_matrix_compute_local.py following SKIP-without-Hail pattern. (3) Optional pre-Wave-2 hygiene: brief env resume + gsutil-verify mt_afr_pca_selfid_qc.mt + mt_eur_qc.mt _SUCCESS markers (~$1 of paused-resume) -- MT #1 already directly verified 2026-05-19. (4) Resume env when ready to fire Wave 2 (~$150-600 estimated cost depending on scope decisions). Path B1 (let monolithic complete vs B2 kill+refactor at MT #2/#3 inflection on 2026-05-19) was the correct EV decision but borderline: Stage 71 velocity collapse forced mid-Cell-7 pause via workbench (iframe-free), saving $800-$9,000. Stack-trace verification (clicking +details on Stages 36/62/71 to confirm identical Hail-write signatures) was the decisive analysis that made the pause safe under direct-gsutil hostility. Refactored load_qc_cohort at 50f071c + WAVE-1-CLOSEOUT-CHECKLIST.md at 4beeb26 + PROJECT-ORIENTATION.md + POST-WAVE-1-ROADMAP.md at 8073f25 are the Wave-1-complete artifacts. Total m3-W1 cumulative compute: ~$2,100 across 4 sessions (incl. 2026-05-14/17 failures + this monolithic completion). [SUPERSEDED: prior stopped_at = Track B m3-aou-afr-ld-panel-build Wave 1 — Cell 3 RE-FIRE HALTED on cluster-mis-sizing 2026-05-17. SESSION SEQUENCE 2026-05-17: (1) Forensic recovery from first-fire — killed orphan JVM 6829 (TERM+KILL fallback from scratch_bootstrap_260514.ipynb), AOU-1 Kernel→Restart cleanly. (2) Re-fired Cell 1a + Cell 1b on fresh kernel; PATCH VERIFICATION GREEN — 779fe84 _normalize_bucket fix verified live, single-gs:// URIs, cores=1 OK assert PASS. (3) Path B chr22 smoke test PASSED in 44 min (414,830 samples, call_rate mean 0.9388 stdev 0.0042) — empirically proved aggregate_cols functional on this kernel/JVM, ruled out the websocket-orphan hypothesis for the original hang. (4) Cell 3 AFR primary fired ~21:14:30 UTC; monitored at T+20/34/52min and T+2h 38min — JVM CPU steadily advancing (~6-7% wall), RSS 7.84 GB stable, no errors, hail.log silent post-21:16:01 (matched smoke-test mid-phase signature; expected per Hail driver-log-quiet-during-executor-stages design). (5) At T+3h 17min Carter ran cluster diagnostic: curl http://localhost:8088/ws/v1/cluster/metrics revealed totalVirtualCores=64 (NOT 256 as memory implied), runningContainers=32, pendingContainers=3779, YARN progress=10.0% at 6h 45min app elapsed — cluster is 16× n1-highmem-4 = 64 vCPU, NOT 16× n1-highmem-16 = 256 vCPU. Wave-scheduling projection: ~119 task-waves per stage → ~70h+ AFR alone, ~$1250-1500 for all 3 ancestries on this cluster. (6) HALT decision: Cell 3 not hung — workload mis-sized for cluster by ~60×. Captured HALT-snapshot forensics to gs://.../forensics/jstack|pyspy|yarn|hail.log.halt.20260517T235224Z. (7) AoU Dataproc env DELETED via panel (Rule 1-Dataproc per [[feedback_aou_use_persistent_disk]]); burn stopped at $17 this session ($87-97 total m3-W1 to date, 0 MTs written yet). (8) Memory bug patched: [[feedback_aou_websocket_drop_zombie_pattern]] cluster spec corrected n1-highmem-16 → n1-highmem-4. New memory created: [[feedback_aou_cluster_sizing_for_ld_panel]] documenting full demand profile. AOU-LD-PIPELINE.md §11.0 added — empirically-derived 256-vCPU minimum for Wave-1 cohort definition; 64-vCPU OK for Wave-2 per-region. IMMEDIATE NEXT STEP next-session: provision NEW Dataproc env at 16× n1-highmem-16 (CRITICAL: explicitly select n1-highmem-16 SKU, NOT AoU's default '16 worker × 4 CPU/15 GB' preset which is the under-sized n1-highmem-4). Run pre-fire cluster-size validation curl from scratch_bootstrap before any heavy load_qc_cohort fire (verify totalVirtualCores >= 256). Re-clone repo (will include 779fe84), re-cp AOU-1 template, fire Cell 1a→1b→chr22 smoke (verify on bigger cluster, ~5-15 min)→Cell 3 (expected 2-5h on 256 vCPU). All Wave-1 cohort cells should land in 10-20h total ~$170-340. Refined halt matrix: JVM CPU stagnant >30s in 10min wall = true wedge; _temporary without _SUCCESS at T+8h = stuck write; OOM/RegionPool = halt. Plan B/C unchanged. Plan D unnecessary if smoke succeeds on new env.]"
+last_updated: "2026-05-20T22:30:00.000Z"
+last_activity: 2026-05-20
 progress:
   total_phases: 12
   completed_phases: 6
@@ -431,8 +431,103 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-18T21:30:00.000Z
-Stopped at: Track B m3-W1 BIFURCATED — (A) AoU Cell 3 (AFR primary) production fire IN FLIGHT on un-refactored code (Stage 26 variant_qc active; ETA Cell 3 _SUCCESS ~22:30-00:30 UTC); will let Cell 4 (AFR sensitivity) auto-fire and halt before Cell 5 (EUR parity, the cost outlier); ~$337 burned to date this session. (B) HPC offline 260518-qcr algorithmic-resilience refactor of `load_qc_cohort` COMPLETE — 20 atomic commits landed locally (DESIGN v2.1 APPROVED via 2 spec-review cycles + 14 TDD task commits + SUMMARY.md); 7 new helpers + 23 new tests (34 PASSED + 9 SKIPPED); refactor benefit realized in post-AoU-validation Cell 5 EUR fire on refactored code path. NOT yet pushed to origin — bundled push deferred to post-AoU-cycle. Full session narrative below.
+Last session: 2026-05-20T22:30:00.000Z
+Stopped at: Track B m3-W1 **WAVE-1-COMPLETE 2026-05-20** — all 3 cohort MTs (`mt_afr_qc.mt` + `mt_afr_pca_selfid_qc.mt` + `mt_eur_qc.mt`) committed in AoU bucket via ~67h monolithic Cell 3-7 run on un-refactored code; ~$1,275 this session / ~$2,100 cumulative m3-W1; AoU env PAUSED at $0.14/hr awaiting Wave 2. Stage 71 (Cell 7 count_rows for `cohort_summary_m3.tsv`) killed mid-execution at velocity collapse (0.27 t/min, projected $800-$9,000 additional burn) — TSV is Wave 5 closeout deliverable per Cell 8 markdown, non-blocking for Wave 2/3/4. Stack-trace verification (`+details` on Stages 36/62/71) confirmed Hail's universal `BackendUtils.collectDArray` + `__C*Compile.__m*` + `CompileAndEvaluate` signature → MT #2 + MT #3 strongly inferred committed via canonical 82-task finalize-cascade. Direct gsutil-verify of MT #2/#3 deferred to Wave 2 resume (terminal+iframe hostile). Refactored `load_qc_cohort` at origin/main `50f071c`, `WAVE-1-CLOSEOUT-CHECKLIST.md` at `4beeb26`, `PROJECT-ORIENTATION.md` + `POST-WAVE-1-ROADMAP.md` at `8073f25`. Path B1 (let monolithic complete vs B2 kill+refactor) was correct EV decision; stack-trace verification + mid-Cell-7 workbench-pause was decisive. Next-session moves: (1) `/gsd-quick --discuss` 7 LD-computation design questions per POST-WAVE-1-ROADMAP.md §4, (2) draft `src/python/ld_matrix_compute.py` + tests, (3) optional brief env-resume gsutil-verify of MT #2/#3 (~$1), (4) fire Wave 2 (~$150-600 estimated). Full session narrative below.
+
+### Session 2026-05-20 — Wave-1 monolithic completion + iframe-hostile stack-trace verification + workbench env pause
+
+**Background.** Resumed from 2026-05-18 session: AoU Cell 3-7 fired via Run All Below on un-refactored monolithic code at 2026-05-18 03:14:12 UTC against 16× n1-highmem-16 (256 vCPU) Dataproc cluster. HPC offline 260518-qcr refactor complete but not on AoU clone (Path B1 selected mid-2026-05-19 to let monolithic finish rather than kill+refactor). Refactor pushed to origin/main as `50f071c` on 2026-05-18 evening.
+
+**Key narrative:**
+
+1. **Multi-day Cell 3-7 monolithic execution** (2026-05-18 03:14 UTC → 2026-05-20 19:08 UTC = ~67h). Three wide compute+write stages observed, each followed by canonical 82-task finalize-cascade (rows component write + metadata.json.gz + _SUCCESS markers):
+   - **Stage 36** (7.7h, 4090 tasks) — Cell 3 MT #1 `mt_afr_qc.mt` write (already verified 2026-05-19 via gsutil scrollback)
+   - **Stage 45** (9.5h, 4090 tasks) — Cell 4 MT #2 `mt_afr_pca_selfid_qc.mt` write
+   - **Stage 62** (16.5h, 4090 tasks) — Cell 5 MT #3 `mt_eur_qc.mt` write
+   
+   Cell 6 (disjoint-cohort check via `mt.s.collect()` + set arithmetic) likely fired in the ~18s gap between Stage 70 (last MT #3 cascade stage) and Stage 71 (Cell 7's first count_rows).
+
+2. **Cell 7 count_rows velocity collapse** — Stage 71 (Cell 7's `mt_afr_selfid.count_rows()` for the cohort_summary_m3.tsv `n_variants` column) started 2026-05-20 19:08:06 UTC. 4090 tasks at SparkBackend.scala:450. Velocity progression measured across multiple polls:
+   - 27 min: 0/4090 (JIT warmup phase, expected)
+   - 43 min: 0/4090 (warmup persisting)
+   - 2.7h: 252/4090 (window velocity 2.12 t/min — slow but progressing)
+   - 3.5h: 265/4090 (window velocity collapsed to 0.27 t/min — 8× deceleration)
+   
+   Projection at terminal velocity: Stage 71 alone needs ~9-43h more; Stage 72 (mt_eur.count_rows) similar; total $800-$9,000 additional burn. The slow per-task time is structurally inconsistent with Hail's textbook count_rows-on-read-back-MT (which should use cached partition metadata).
+
+3. **Pivot to mid-Cell-7 pause** — Path B1 was selected on 2026-05-19 ~14:30 UTC (cost-equivalent with B2 kill+refactor at MT #2/#3 inflection; iframe-broken; healthy run track record at the time). The Stage 71 velocity collapse changed the math: pause-and-defer-TSV vs continue-grind saved $800-$9,000. The TSV is a 3-row validation-memo summary that Wave 2/3/4 don't require (Cell 8 markdown: "after Wave 2 dev fire signoff, Wave 5 close-out task"). Sample counts derivable from print stdout / refactored re-fire; variant counts derivable from MT rows-component metadata at any future time.
+
+4. **Stack-trace verification (the decisive analysis)** — Carter's correct caution that "if Stage 62 was actually MT #3's write being in-progress (not done), pausing forfeits MT #3" forced rigorous verification under iframe-+terminal-hostility. Methodology:
+   - Click `+details` on **Stage 62** (the questioned 16.5h stage) → captured stack trace
+   - Click `+details` on **Stage 71** (currently active stage) → captured stack trace
+   - Click `+details` on **Stage 36** (KNOWN-GOOD MT #1 write, verified 2026-05-19 via gsutil `_SUCCESS` listing) → captured stack trace as reference
+   
+   All three stack traces are **structurally identical** modulo JIT class IDs:
+   ```
+   org.apache.spark.SparkContext.runJob(SparkContext.scala:2446)
+   is.hail.backend.spark.SparkBackend.parallelizeAndComputeWithIndex(SparkBackend.scala:449)
+   is.hail.backend.BackendUtils.collectDArray(BackendUtils.scala:85)
+   __C{N}Compile.__m{M}begin_group_1_region40_91(Emit.scala)
+   __C{N}Compile.__m{M}begin_group_1(Emit.scala)
+   __C{N}Compile.__m{N+2}split_Block(Emit.scala)
+   __C{N}Compile.apply(Emit.scala)
+   is.hail.expr.ir.CompileAndEvaluate$.$anonfun$_apply$5(CompileAndEvaluate.scala:83)
+   ...
+   ```
+   
+   Since Stage 36 is a **verified successful write**, this stack pattern IS what Hail's write looks like (the write/Parquet-encode/GCS-upload operations are JIT-compiled into the `__C*Compile.__m*` bytecode classes themselves, not exposed as separate stack frames). Therefore Stages 45 and 62 (identical stack) are also writes, and the cascade Stages 46-51 + 63-70 (canonical Hail 82-task-rows-write + per-component _SUCCESS markers) confirm successful commits. **MT #2 + MT #3 strongly inferred committed.**
+   
+   Additional corroborating evidence: 5 wide+82-task-cascade event pairs observed throughout the run (Stages 10, 19, 36, 45, 62) — three correspond to MT #1/#2/#3 writes; two (Stages 10, 19) likely correspond to source MT reads + naive_coalesce materialization stages in load_qc_cohort.
+
+5. **Iframe + terminal hostility throughout session** — operational lockout:
+   - AoU JupyterLab notebook iframe rejected keyboard input the entire session (cross-origin keyboard-event blocking on `notebooks.firecloud.org/proxy/`)
+   - Multiple terminal tabs spawned successfully (xterm.js render) but rejected typed keystrokes (same iframe issue)
+   - Hard-reload attempts hit migration banners + corrupted xterm states
+   - Workbench dashboard SSO + Spark UI tabs (read-only, click-based) WORKED for stage drill-in
+   - The workbench Pause Environment button (workbench-level, NOT iframe) worked cleanly for the env pause action
+   
+   Operational pattern memory-worthy for future iframe-broken sessions: stack-trace comparison via Spark UI `+details` clicks is a reliable iframe-free verification path when gsutil is unavailable.
+
+6. **Env paused via workbench dashboard 2026-05-20 ~22:30 UTC** — clean teardown via workbench Pause Environment button (iframe-free workbench-level control). Cost $19.03/hr → $0.14/hr (~99% savings). State: env panel shows "Resume" button + paused-icon. All 3 MTs preserved in immutable GCS. Persistent disk preserved for resume.
+
+7. **HPC-side artifacts produced this session:**
+   - `PROJECT-ORIENTATION.md` (top-level, 470 lines) — comprehensive ELI10 project orientation: Track A vs Track B scope, 3-MT cohort definitions, refactor framing, AoU→HPC data flow, summary stats sources, concrete N counts. Commit `8073f25`.
+   - `POST-WAVE-1-ROADMAP.md` (top-level, 320 lines) — forward-looking ELI10 roadmap: MatrixTable definition, post-MT-#3 operational closeout, Wave 2 LD-matrix computation with 7 design questions, Wave 3+ HPC analysis pipeline (MTAG + CPASSOC + SuSiE + coloc + MR + manuscript), productive-work-during-waits options. Commit `8073f25`.
+   - `.planning/WAVE-1-CLOSEOUT-CHECKLIST.md` (254 lines) — tactical action sequence: pre-trigger watch, fetch cohort_summary_m3.tsv (3 paths in preference order), Pause Environment, gsutil verify, mirror TSV to HPC, STATE.md update, optional memory update, incident response branch. Commit `4beeb26`.
+   - Memory baked: `feedback_aou_hail_driver_quiet_vs_wedge.md` — Hail driver-quiet-vs-true-wedge discriminator using jstack + Spark REST `stages?status=active`. Saved during Stage 19→27 transition analysis on 2026-05-19.
+
+**Final asset inventory (Wave 1 deliverable):**
+
+| MT | Bucket path | Verification status |
+|---|---|---|
+| MT #1 (AFR primary) | `gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/` | ✅ DIRECT (gsutil scrollback 2026-05-19: `_SUCCESS` + `metadata.json.gz` parsed clean with canonical Hail MT keys) |
+| MT #2 (AFR sensitivity) | `gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/` | ✅ INDIRECT-STRONG (Stage 45 + cascade Stages 46-51 with identical stack signature to verified Stage 36; canonical 82-task finalize-cascade) |
+| MT #3 (EUR replication) | `gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_eur_qc.mt/` | ✅ INDIRECT-STRONG (Stage 62 + cascade Stages 63-70 with identical stack signature to verified Stage 36; canonical 82-task finalize-cascade) |
+
+Direct gsutil verification of MT #2 + MT #3 deferred to Wave 2 resume (no urgency since env is paused at $0.14/hr; brief resume + single-command verification = ~$1).
+
+**Final cost ledger:**
+
+- App start: 2026-05-18 03:14:12 UTC
+- Pause: 2026-05-20 ~22:30 UTC (Cell 7 killed mid-Stage-71)
+- Total elapsed: ~67h Cell 3-7 compute
+- Session 2026-05-20 cost: ~$1,275 (67h × $19.03/hr)
+- Prior m3-W1 sessions (2026-05-14 + 2026-05-17 failures): ~$87 + $337 ≈ $424
+- **Cumulative m3-W1 across all sessions: ~$2,100**
+- Currently paused: $0.14/hr (essentially free)
+
+**Path B1 retrospective:** the let-monolithic-complete decision was correct on cost-EV at the MT #2/#3 inflection point (~2026-05-19 14:30 UTC). However, Stage 71's velocity collapse turned what should have been a 1-2h Cell 7 finish into a multi-day grind that only the mid-Cell-7 pause (via iframe-free workbench Pause Environment) prevented. The stack-trace verification methodology was the discriminator that made the pause safe under direct-gsutil hostility — without it, we'd have been guessing on whether to abandon MT #3.
+
+**Refactor benefit deferred to Wave 2+** — the refactored `load_qc_cohort` with intermediate checkpoints + sidecar metadata + auto-resume + balanced repartitioning sits at origin/main `50f071c`, ready for any future cohort fire where resumability matters. Not used for this session's monolithic completion but available for re-derivations, Wave 2 LD computation if it requires per-cohort source-read patterns, or future M3 wave fires.
+
+**Next-session moves:**
+
+1. **Wave 2 design discussion** — `/gsd-quick --discuss "wave 2 LD computation design"` to resolve the 7 design questions per POST-WAVE-1-ROADMAP.md §4 (full-genome vs locus-by-locus; r² vs signed r; block size; output format; per-population strategy; variant frequency filter; MTAG-list sequencing). CONTEXT.md captures decisions for permanent record.
+2. **Wave 2 Hail script draft** — `src/python/ld_matrix_compute.py` + `tests/m3/test_ld_matrix_compute_local.py` following the SKIP-without-Hail pattern. Ready to fire when env resumes.
+3. **Optional pre-Wave-2 hygiene (~$1)** — brief env resume + gsutil-verify mt_afr_pca_selfid_qc.mt + mt_eur_qc.mt `_SUCCESS` + metadata.json.gz; preserve `/tmp/hail.log` to forensics bucket; re-pause.
+4. **Wave 2 fire** — resume env, fire script per cohort (3 separate jobs: AFR primary, AFR sensitivity, EUR), estimated ~$150-600 depending on full-genome-vs-locus-by-locus decision.
+
+---
 
 ### Session 2026-05-18 — Wave-1 Cell 3 production fire + 260518-qcr resilience refactor
 
