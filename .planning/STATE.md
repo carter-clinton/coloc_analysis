@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.1.2
 milestone_name: milestone
-status: "Track A submission-in-progress (Carter manuscript lane; DO NOT mark complete until user confirms submission); Track B m3-W1 WAVE-1-COMPLETE 2026-05-20: all 3 cohort MTs committed in AoU bucket (mt_afr_qc.mt + mt_afr_pca_selfid_qc.mt + mt_eur_qc.mt) via ~67h monolithic Cell 3-7 run on un-refactored code path; ~$1,275 Cell 3-7 burn / ~$2,100 cumulative m3-W1 across 4 sessions; AoU env PAUSED at $0.14/hr awaiting Wave 2 LD-matrix computation phase. Stage 71 (Cell 7 count_rows for cohort_summary_m3.tsv) killed mid-execution at velocity collapse (0.27 t/min projected $800-$9,000 additional burn) -- non-load-bearing per Cell 8 markdown (TSV is Wave 5 closeout deliverable). Stack-trace verification confirmed Stage 36 (verified MT #1 write via 2026-05-19 gsutil) == Stage 45 == Stage 62 stack signatures (Hail universal collectDArray path) -- MT #2 + MT #3 strongly inferred committed via canonical 82-task finalize-cascade signature. Direct gsutil-verify of MT #2/#3 deferred to Wave 2 resume (terminal+iframe hostile this session). Refactored load_qc_cohort sits at origin/main 50f071c for Wave 2+ resilience. Per [[feedback_aou_cluster_sizing_for_ld_panel]] cluster sizing correct (256 vCPU). [SUPERSEDED: prior status = (A) AoU Cell 3 (AFR primary) production fire IN FLIGHT on un-refactored code path -- Stage 19 complete ~21:05 UTC, Stage 26 (variant_qc, 2045 tasks) active, ETA Cell 3 _SUCCESS ~22:30-00:30 UTC; ~$337 burned to date; Cell 4 will auto-fire after Cell 3 -- planned halt before Cell 5 via Kernel Interrupt at Cell 4 _SUCCESS (Path C' = AFR primary + AFR sensitivity outputs preserved; EUR deferred); (B) HPC offline 260518-qcr algorithmic-resilience refactor of load_qc_cohort COMPLETE -- 20-commit chain landed locally (DESIGN v2.1 APPROVED via 2 spec-review cycles + 14 TDD task commits + SUMMARY.md); 7 new helpers + 23 new tests (43 collected, 34 PASSED + 9 SKIPPED) preserving existing behavior for skip_checkpoint=True callers; refactor benefit realized in Cell 5 EUR fire on AoU re-clone (post-bundled-push). Per [[feedback_aou_cluster_sizing_for_ld_panel]] + AOU-LD-PIPELINE.md §11.0 the cluster sizing is correct (256 vCPU empirically validated).]"
-stopped_at: "Track B m3-W1 WAVE-1-COMPLETE 2026-05-20: AoU env PAUSED via workbench dashboard (cost $0.14/hr); all 3 MTs in bucket per stack-trace + cascade verification; ready for Wave 2 LD-computation phase. NEXT-SESSION MOVES (in order): (1) /gsd-quick --discuss the 7 LD-computation design questions per POST-WAVE-1-ROADMAP.md section 4 (full-genome vs locus-by-locus; r-squared vs signed r; block size; output format; per-population; MAF filter; MTAG-list sequencing). (2) Draft Hail LD-matrix script: src/python/ld_matrix_compute.py + tests/m3/test_ld_matrix_compute_local.py following SKIP-without-Hail pattern. (3) Optional pre-Wave-2 hygiene: brief env resume + gsutil-verify mt_afr_pca_selfid_qc.mt + mt_eur_qc.mt _SUCCESS markers (~$1 of paused-resume) -- MT #1 already directly verified 2026-05-19. (4) Resume env when ready to fire Wave 2 (~$150-600 estimated cost depending on scope decisions). Path B1 (let monolithic complete vs B2 kill+refactor at MT #2/#3 inflection on 2026-05-19) was the correct EV decision but borderline: Stage 71 velocity collapse forced mid-Cell-7 pause via workbench (iframe-free), saving $800-$9,000. Stack-trace verification (clicking +details on Stages 36/62/71 to confirm identical Hail-write signatures) was the decisive analysis that made the pause safe under direct-gsutil hostility. Refactored load_qc_cohort at 50f071c + WAVE-1-CLOSEOUT-CHECKLIST.md at 4beeb26 + PROJECT-ORIENTATION.md + POST-WAVE-1-ROADMAP.md at 8073f25 are the Wave-1-complete artifacts. Total m3-W1 cumulative compute: ~$2,100 across 4 sessions (incl. 2026-05-14/17 failures + this monolithic completion). [SUPERSEDED: prior stopped_at = Track B m3-aou-afr-ld-panel-build Wave 1 — Cell 3 RE-FIRE HALTED on cluster-mis-sizing 2026-05-17. SESSION SEQUENCE 2026-05-17: (1) Forensic recovery from first-fire — killed orphan JVM 6829 (TERM+KILL fallback from scratch_bootstrap_260514.ipynb), AOU-1 Kernel→Restart cleanly. (2) Re-fired Cell 1a + Cell 1b on fresh kernel; PATCH VERIFICATION GREEN — 779fe84 _normalize_bucket fix verified live, single-gs:// URIs, cores=1 OK assert PASS. (3) Path B chr22 smoke test PASSED in 44 min (414,830 samples, call_rate mean 0.9388 stdev 0.0042) — empirically proved aggregate_cols functional on this kernel/JVM, ruled out the websocket-orphan hypothesis for the original hang. (4) Cell 3 AFR primary fired ~21:14:30 UTC; monitored at T+20/34/52min and T+2h 38min — JVM CPU steadily advancing (~6-7% wall), RSS 7.84 GB stable, no errors, hail.log silent post-21:16:01 (matched smoke-test mid-phase signature; expected per Hail driver-log-quiet-during-executor-stages design). (5) At T+3h 17min Carter ran cluster diagnostic: curl http://localhost:8088/ws/v1/cluster/metrics revealed totalVirtualCores=64 (NOT 256 as memory implied), runningContainers=32, pendingContainers=3779, YARN progress=10.0% at 6h 45min app elapsed — cluster is 16× n1-highmem-4 = 64 vCPU, NOT 16× n1-highmem-16 = 256 vCPU. Wave-scheduling projection: ~119 task-waves per stage → ~70h+ AFR alone, ~$1250-1500 for all 3 ancestries on this cluster. (6) HALT decision: Cell 3 not hung — workload mis-sized for cluster by ~60×. Captured HALT-snapshot forensics to gs://.../forensics/jstack|pyspy|yarn|hail.log.halt.20260517T235224Z. (7) AoU Dataproc env DELETED via panel (Rule 1-Dataproc per [[feedback_aou_use_persistent_disk]]); burn stopped at $17 this session ($87-97 total m3-W1 to date, 0 MTs written yet). (8) Memory bug patched: [[feedback_aou_websocket_drop_zombie_pattern]] cluster spec corrected n1-highmem-16 → n1-highmem-4. New memory created: [[feedback_aou_cluster_sizing_for_ld_panel]] documenting full demand profile. AOU-LD-PIPELINE.md §11.0 added — empirically-derived 256-vCPU minimum for Wave-1 cohort definition; 64-vCPU OK for Wave-2 per-region. IMMEDIATE NEXT STEP next-session: provision NEW Dataproc env at 16× n1-highmem-16 (CRITICAL: explicitly select n1-highmem-16 SKU, NOT AoU's default '16 worker × 4 CPU/15 GB' preset which is the under-sized n1-highmem-4). Run pre-fire cluster-size validation curl from scratch_bootstrap before any heavy load_qc_cohort fire (verify totalVirtualCores >= 256). Re-clone repo (will include 779fe84), re-cp AOU-1 template, fire Cell 1a→1b→chr22 smoke (verify on bigger cluster, ~5-15 min)→Cell 3 (expected 2-5h on 256 vCPU). All Wave-1 cohort cells should land in 10-20h total ~$170-340. Refined halt matrix: JVM CPU stagnant >30s in 10min wall = true wedge; _temporary without _SUCCESS at T+8h = stuck write; OOM/RegionPool = halt. Plan B/C unchanged. Plan D unnecessary if smoke succeeds on new env.]"
-last_updated: "2026-05-20T22:30:00.000Z"
-last_activity: 2026-05-20
+status: "m3-W2 partial — Tasks 1+2 done atomically (notebooks + tests landed); Task 3 awaiting Carter AoU fire + validation memo signoff + flag touch"
+stopped_at: "Track B m3-W2 **PARTIAL 2026-05-21** — design-delta cells injected into AOU-2 (e3c29e7; 8→12 cells with W1-G1..G4 + Q6 MAF_THRESHOLD_EXPORT) + AOU-4 Q2 signed-r contract added (6962607 RED + 001d8b1 GREEN; 23/23 pytest pass). Task 3 (validation memo + m3_dev_complete.flag touch) IS A BLOCKING HUMAN GATE — Carter must: (1) confirm AoU PD Reattachable, (2) select 8×n1-highmem-16 cluster preset (~$9.50/hr), (3) resume AoU env (paused $0.14/hr), (4) mirror+fire AOU-2 (~1-2 cluster-hours, ~$10-20), (5) file 1-2 egress requests + download .npz to data/interim/aou_ld_exports/, (6) bootstrap .npz→.rds via Wave 3 converter, (7) fire AOU-4 (4-check outputs + sensitivity + maf_drop), (8) write m3-VALIDATION-MEMO.md (9-section ≥100-line structure), (9) touch m3_dev_complete.flag, (10) commit with (m3-W2-T3) token, (11) respond 'approved'. ALL Task 1+2 acceptance criteria pass (see SUMMARY). Wave 4 production fire (322 cells) is unblocked the moment the flag exists. Pre-W2 m3-W1 context preserved: 3 cohort MTs already in workspace bucket from 67h monolithic Cell 3-7 run; ~$2,100 cumulative m3-W1; AoU env still PAUSED at $0.14/hr. Branch divergence (855/846) is informational; both chains converge on identical on-disk artifacts."
+last_updated: "2026-05-21T15:30:00Z"
+last_activity: 2026-05-21
 progress:
   total_phases: 12
   completed_phases: 6
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 **Core value (post-2026-04-22 reframe):** Dual-aim genome-wide study across 9 complex traits × 2 ancestries: (i) cross-trait pleiotropy discovery via MTAG + CPASSOC + HyPrColoc joint-signal inference with ancestry-matched real LD; (ii) novel-variant discovery across 5 pre-registered novelty classes (joint-signal, ancestry-specific, secondary-signal, pleiotropy-class, functional-mechanism). Authoritative scope: `.planning/amendments/PROJECT-AMENDMENT-2026-04-22-genome-wide-reframe.md`.
 
-**Current focus:** Track B — Phase `m3-aou-afr-ld-panel-build` Wave 1 (AOU-1 cohort definition fire in AoU Workbench notebook against v8 controlled-tier dataset). Pre-fire halt-and-surface 2026-05-12: notebook Cell 1 header documents `v7` but workspace banner reports v8; running env+checkpoint validator cell before firing Cell 2 (init_hail) to (a) verify `WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH` resolves to a v8 path and (b) check `{WORKSPACE_BUCKET}/ld/mt_afr_qc.mt` checkpoint freshness against DEC-2026-05-04-01 (spark.executor.cores=1 patch). Carter owns Track A manuscript submission lane locally — package downloaded 2026-05-12 — and explicitly directed: **do NOT mark Track A complete until Carter confirms submission**. Stop surfacing Track A artifacts/decisions for now; treat Track A on-disk artifacts (targeted_rerun_*, manuscript md5) as Carter's local manuscript lane state and do not propose commits, ingestion, or cleanup against them without explicit user request.
+**Current focus:** Phase m3-aou-afr-ld-panel-build — build
 
 **Track A status (2026-05-12 lock):** Submission-in-progress (Carter local lane). HPC-side ta-r3 phase remains code-complete (manuscript md5 byte-identical at phase entry==exit, Cowork bundle shipped sha256 `2da0882c…`), but project-level Track A is NOT complete pending Carter's submission confirmation. See [[track_a_submission_in_progress]] memory.
 
@@ -32,8 +32,8 @@ See: .planning/PROJECT.md (updated 2026-04-09; scheduled for Amendment §12 rewr
 
 ## Current Position
 
-Phase: ta-r3-audit-v2-driven-psd-and-r1-refire — **COMPLETE 2026-05-06** (HPC-side closed; Cowork-side handoff bundle landed)
-Plan: 5 of 5 (W1+W2+W3+W4+W5 all DONE; SUMMARY.md status=DONE for each; phase verifier PASSED 33/34 must-haves; 1 expected WARN at D-TA-R3-OSF-COVERAGE OVERRIDDEN — Cowork-side editorial decision queued)
+Phase: m3-aou-afr-ld-panel-build (build) — EXECUTING (m3-W2 partial; Task 3 human-gate awaiting Carter)
+Plan: 3 of 6 (m3-02-W2-dev-fire-and-validation partial — Tasks 1+2 done, Task 3 awaiting Carter signoff; m3-00 + m3-01 + m3-03 complete)
 
 ### Phase ta-r3 closeout summary (2026-05-06)
 
@@ -92,7 +92,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-05-21 - Completed quick task 260520-s2s: wave 2 LD computation design
+Last activity: 2026-05-21
 
 **Recovery trigger (2026-04-20):** Phase 2 first-production returned 0 Tier A / 0 Tier B / 0 Tier C from 1,010 colocalizations. Root causes (structural, not biological): (1) trait-pair coloc never fired — `coloc_summary.tsv` = 1 byte; (2) only 12/96 Phase 1 SuSiE fits have credible sets; (3) gene-scope mismatch — manifest maps one gene per region, causal gene is often distal (FTO->IRX3/IRX5). Signing CP#1-final on this state would declare a biological null on an input artifact. See `.planning/session_summaries/2026-04-20_phase2_first_production.md`.
 
@@ -178,6 +178,7 @@ Legacy progress: ██░░░░░░░░ 17% (pre-pivot T1 frame)
 | Phase ta-sh2b3-canonical-and-cache-refresh PW2-canonical-pair-coloc-susie | 25min | 2 tasks | 6 files |
 | Phase m3-aou-afr-ld-panel-build P01 | 4min | 3 tasks | 3 files |
 | Phase ta-r3-audit-v2-driven-psd-and-r1-refire Pta-r3-W5-closeout-and-handoff | 25m | 3 tasks | 9 files |
+| Phase m3-aou-afr-ld-panel-build P02 (Tasks 1+2; Task 3 human-gate) | ~40min | 2 of 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -597,11 +598,13 @@ a0c31bd  test(m3-W1-qc-cohort-resilience): force_fresh_bypasses_auto_resume
 7. **Final STATE.md Wave-1-complete update** after all 3 cohort MTs land.
 
 **Contingencies if Cell 3 / Cell 4 fail before completing:**
+
 - Cell 3 hard fail: re-fire Cell 3 on refactored code (commit `bd144a6` is the production-ready function); no work lost since bucket is currently empty.
 - Cell 4 hard fail with Cell 3 already landed: re-fire Cell 4 on refactored code (resumes from no intermediates initially; would benefit from `repartition` balanced layout).
 - Both fail: pivot to refactored-code path for all 3 ancestries.
 
 **Future quick-task spec candidates flagged this session:**
+
 - `260518-???-pre-sensitivity-intermediate-sharing`: add pre-sensitivity intermediate at step 3/4 boundary to let Cell 4 (sensitivity=True) auto-resume from Cell 3's (sensitivity=False) work. Estimated savings: ~3-5h per AFR-side re-derive. Deferred until reviewer-iteration scenarios warrant.
 - AOU-2 template `gs://gs://` bug pattern follow-up: same defensive-normalization treatment as 260514-npb for read/write paths.
 - Sidecar utility extraction to `src/python/_checkpoint_sidecar.py`: defer to second M3 consumer (AOU-2 or AOU-4) per [[feedback_extract_reusable_utilities]].
@@ -619,6 +622,7 @@ Track A status unchanged: submission-in-progress (Carter local lane; do NOT surf
 **Action 2 — AOU-1 Kernel Restart + cleanup.** Kernel menu → Restart Kernel; fresh Python 3 ○ idle; all cells reverted to `In [ ]:`. Deleted orphan probe cell (the `print(repr(globals().get('mt_afr', 'NOT_DEFINED')))` cell I'd inserted earlier in session for forensic investigation of the hung Cell 3 namespace; clean notebook hygiene per audit-trail discipline since the forensic story is already preserved in 6 other surfaces).
 
 **Action 3 — Re-fire Cell 1a + Cell 1b on fresh kernel.** Output clean:
+
 - Cell 1a: `PYSPARK_SUBMIT_ARGS set: --conf spark.executor.cores=1 --conf spark.executor.memory=5g --conf spark.driver.cores=1 pyspark-shell` ✓
 - Cell 1b: Hail 0.2.134-952ae203dbbe attached, cores=1 OK assert PASS, PATCH VERIFICATION block: 3 canonical URIs all single-`gs://` form (no `gs://gs://`) confirming `779fe84 _normalize_bucket` defensive fix is live in the fresh kernel.
 
@@ -640,6 +644,7 @@ RSS stable 7.84 GB throughout (well under -Xmx 85.7 GB). No errors. No `_tempora
 **Halt-condition refinement during monitoring.** The strict initial rule "10+ min static hail.log → halt" was empirically falsified by the smoke test (which ran 43 of its 44 min with same py-spy stack and same log silence and SUCCEEDED). Refined criterion (adopted as the operative rule going forward): "JVM driver CPU does not advance ≥ 30s of CPU time in 10 min wall window → halt (true wedge)." This catches actual dead-JVM signature without false-positive on healthy mid-stage compute.
 
 **Action 6 — Cluster diagnostic via YARN RM REST API (fired from scratch_bootstrap at T+3h 17min).** Critical finding:
+
 - `totalVirtualCores: 64` ← **the cluster is 16× n1-highmem-4 = 64 vCPU, NOT 16× n1-highmem-16 = 256 vCPU as the prior memory implied**
 - `totalNodes: 16` (matches expected worker count)
 - `runningContainers: 32` (50% cluster utilization — all available executor slots occupied)
@@ -652,6 +657,7 @@ RSS stable 7.84 GB throughout (well under -Xmx 85.7 GB). No errors. No `_tempora
 **Action 7 — HALT decision (Carter-led, my endorsement).** Cell 3 is not hung — the workload is mis-sized for the cluster by ~60×. Per [[feedback_rigor_over_speed]]: halt + reconfigure for correct cluster is the rigorous path despite the $17 sunk. Per [[feedback_aou_use_persistent_disk]] Rule 1-Dataproc: Delete the env, never Pause.
 
 **Action 8 — HALT-state forensic snapshot (fired from scratch_bootstrap).** Captured to `gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/`:
+
 - `jstack.halt.20260517T235224Z.txt` — JVM 8799 thread dump showing RUNNABLE main (healthy mid-stage state, NOT the prior session's PythonGatewayServer.main-blocked-on-stdin pattern)
 - `pyspy.halt.20260517T235224Z.txt` — Python kernel py-spy showing aggregate_cols → load_qc_cohort:288 → requests.post → socket.recv (same as prior session's stack, but with active JVM — proving this stack is HEALTHY when paired with advancing JVM CPU)
 - `yarn.halt.20260517T235224Z.json` — full YARN RM cluster apps snapshot at halt time (the load-bearing evidence of cluster-mis-sizing)
@@ -687,6 +693,7 @@ RSS stable 7.84 GB throughout (well under -Xmx 85.7 GB). No errors. No `_tempora
    sh("curl -s http://localhost:8088/ws/v1/cluster/metrics | python3 -m json.tool | grep -E 'totalVirtualCores|totalNodes'", check=False)
    ```
    Expect: `totalVirtualCores >= 256`. If less, halt and resize before any heavy load_qc_cohort fire.
+
 3. **Re-clone repo:** `git clone https://github.com/carter-clinton/coloc_analysis` in env terminal (will include 779fe84 fix)
 4. **Re-cp AOU-1 template + workspace-bucket Layer-2 sync** per [[feedback_aou_use_persistent_disk]] canonical workflow.
 5. **Fire Cell 1a → Cell 1b → optional chr22 smoke (5-15 min on bigger cluster) → Cell 3 AFR primary** (expected envelope: 2-5h on 256 vCPU). KEEP TAB OPEN AND VISIBLE; refined halt matrix (JVM-CPU-stagnant-for-30s-over-10min-wall is the operative criterion).
@@ -694,6 +701,7 @@ RSS stable 7.84 GB throughout (well under -Xmx 85.7 GB). No errors. No `_tempora
 7. **Post Wave-1 success:** bundled push to origin via cherry-pick on push-fix branch off origin/main: `fc1a94f` (260514-npb docs) + this session's atomic commit + Wave-1-complete STATE.md update.
 
 **Contingencies if Cell 3 re-fire hangs on the correctly-sized cluster:**
+
 - Plan B (chr22 smoke first — already proven pattern; re-verify on new env)
 - Plan C (interpreted Hail: `spark.hail.use_bytecode_compiler=false`)
 - Plan D unnecessary (under-sizing definitively ruled out by the larger cluster)
@@ -719,12 +727,14 @@ Track A status unchanged: submission-in-progress (Carter local lane; do NOT surf
 **Cell 9 first attempt** — IndentationError from Jupyter classic NB 6 paste corruption. Root cause: `def sh(cmd):` block in the pasted Python triggered the editor's auto-indent + bracket-pair behavior, mangling subsequent lines (`if r.stdout: print(...)` got double-indented; stray `)")")")` appended to `print("=" * 70)` from bracket auto-pairing). No execution; safe error. Cell 9 In [ ] auto-replaced with new empty cell.
 
 **Cell 9 retry — paste-friendly fix.** Removed `def sh(cmd):` block (sh() already in kernel namespace from cell 1 Reconnect preservation). Used flat single-line `sh()` calls with no `def`, no `:` at end-of-line (no auto-indent trigger), single-quoted Python outside / double-quoted shell vars inside. Paste clean. Fired. Lines 1-2 succeeded:
+
 - `/tmp/hail.log` exists: `-rw-rw-r-- 1 jupyter users 6548495 May 16 11:01 /tmp/hail.log` (6.5 MB, last-modified 2026-05-16T11:01 UTC = ~15h before reconnect)
 - `tail -100 /tmp/hail.log`: many `2026-05-16 11:01:41.036 : INFO: instruction count: N: __C5273Compile.__m...` lines — Hail JIT bytecode compilation entries, NO `Wrote MatrixTable` or `write succeeded` line, NO error/exception traceback
 
 **Cell 9 halt at line 3** — `gsutil ls -l "$WORKSPACE_BUCKET/ld/mt_afr_qc.mt/_SUCCESS"` returned `CommandException: One or more URLs matched no objects.` → exit 1 → sh() raised RuntimeError (default `check=True`) → halt. Lines 4-9 didn't run. **Key forensic finding: mt_afr_qc.mt/_SUCCESS ABSENT** — Cell 3 did NOT complete its GCS checkpoint write.
 
 **Cell 10 (Cell 11 after auto-insert empty)** — repeat with `check=False` guards. All 9 lines completed:
+
 - `date -u`: `Sun May 17 02:21:45 AM UTC 2026` (15h after last hail.log entry)
 - `ps -ef | grep hail|pyspark|spark-submit`: ONE process — `jupyter 4441 4389 12 May15 ?  06:03:52 java -cp .../hail-all-spark.jar:... -Xmx85708m ... org.apache.spark.deploy.SparkSubmit --conf spark.executor.memory=5g --conf spark.driver.cores=1 --conf spark.executor.cores=1 ... pyspark-shell`. Hail/Spark JVM PID 4441, parent PID 4389, 8.3 GiB RES, 6h 04m cumulative CPU, started May 15.
 - `top -bn1 | head -20`: system up 2d 4h, load 0.37, 1 ZOMBIE process (PID 2488, defunct, java child). PID 4441 sleeping S, 6.2% CPU, 96 GiB VIRT / 8.3 GiB RES. PID 4389 parent python3 (Jupyter kernel) 395 MiB RES, 56s cumulative CPU.
@@ -751,21 +761,25 @@ sh("free -h")
 ```
 
 **After Cell 13 confirms JVM gone — action sequence on AOU-1 tab:**
+
 1. Kernel → Restart Kernel (confirm dialog; reaps orphan PID 4389, spawns fresh AOU-1 kernel)
 2. Cell 1a → Shift+Enter → expect single-line `PYSPARK_SUBMIT_ARGS set: --conf spark.executor.cores=1 --conf spark.executor.memory=5g --conf spark.driver.cores=1 pyspark-shell`
 3. Cell 1b → Shift+Enter (~30-60s Spark attach to fresh JVM) → expect cores=1 OK assert PASS + PATCH VERIFICATION block emitting single-`gs://` URIs (NOT `gs://gs://`; verifies bucket-prefix-defensive fix `779fe84` is still live in clone)
 4. Cell 3 → Shift+Enter → primary AFR cohort fire (~45-90 min envelope on 16-worker Dataproc). **KEEP AOU-1 TAB OPEN AND ACTIVE FOR FULL DURATION** — closing laptop / losing websocket again will re-orphan the kernel and re-burn billing during disconnect.
 
 **Contingencies if Cell 3 re-fire hangs on bytecode compilation AGAIN** (same `__C*Compile.__m...` signature in /tmp/hail.log past 30 min without stage advancement):
+
 - Plan B (smallest-chromosome test fire): modify Cell 3 to add `mt = mt.filter_rows(mt.locus.contig == 'chr22')` before cohort filter — proves pipeline end-to-end on chr22 (~50 MB variants) before scaling up to full genome
 - Plan C (interpreted Hail): add `"spark.hail.use_bytecode_compiler": "false"` to spark_conf dict in Cell 1b — bypasses JIT compilation; slower runtime but no compilation hang
 - Plan D (Dataproc env delete + recreate fresh): full reset; eliminates env-state as confound; per Rule 1-Dataproc + [[feedback_aou_use_persistent_disk]]; trade-off is 5-8 min provisioning time + re-bootstrap (re-clone, re-cp template, etc.)
 
 **Memory baked this session:**
+
 - [[feedback_aou_websocket_drop_zombie_pattern]] (NEW) — AoU browser session timeout pathology: orphan Python kernel + Hail JVM children stay alive consuming compute; detection via ps; preservation of /tmp/hail.log to bucket; kill orphan JVM before re-fire; tab-must-stay-active operational rule for long fires
 - [[project_state]] (UPDATED to 2026-05-17 state) — full current narrative + immediate next-step action chain + contingencies + forensic artifacts in bucket /forensics/
 
 **Forensic artifacts now in workspace bucket /forensics/** (durable across env Delete per Rule 1-Dataproc; AoU Dataproc envs use Standard disk):
+
 - `AOU-1_cohort_definition.ipynb.pre-260512-ldj-cp.bak.20260513T165127Z` (May-12 10-cell prototype)
 - `AOU-1_cohort_definition.ipynb.pre-260514-bootstrap.bak.20260514T224146Z` (May-14 autosaved-with-malformed-output state — reviewer-verifiable bucket-prefix bug evidence)
 - `AOU-1_cohort_definition.ipynb.pre-bucket-prefix-fix.bak.20260515T012956Z` (post-fix workspace AOU-1 with Cell 1a/1b output)
@@ -773,6 +787,7 @@ sh("free -h")
 - `hail.log.260516-postmortem` (6.2 MiB; full Hail driver log of the failed Cell 3 first-fire ending in bytecode compilation hang) ← THIS session
 
 **Audit trail commit chain reference:**
+
 - `36e8062` (260512-jd9) — `_qc_checkpoint_uri` helper
 - `5389a88` + `e7063f5` (260512-ldj) — AOU-1 Cell 1a/1b init pattern
 - `c2f29df` (260512-864) — AOU-1 drift audit
@@ -780,6 +795,7 @@ sh("free -h")
 - `fc1a94f` (HPC; NOT YET pushed to origin) — docs(quick-260514-npb) PLAN + SUMMARY
 
 **Pending git work** (defer until Cell 3-7 re-fire success):
+
 - Cherry-pick `fc1a94f` onto a branch off origin/main → push to origin/main (clean fast-forward; same procedure as `779fe84` push). Will bundle with a post-Cell-3-success STATE.md update commit.
 
 **Pending decision** (after Cell 13 fires + Cell 3 re-fire outcome): whether to keep env running or Delete+Recreate per Rule 1-Dataproc. If Cell 3-7 all succeed, the env can be deleted (Wave 1 cohort definition complete; next compute decision is for Wave 2 which is a different scope). If Cell 3 re-fire requires contingency (Plan B/C/D), env state determines path.
@@ -811,6 +827,7 @@ Pause point: workspace-root `AOU-1_cohort_definition.ipynb` (Last Modified May 5
 Resume action chain (on next session start):
 
 ```
+
 1. Open AoU Workbench → Analysis → Untitled2.ipynb (still alive in workspace bucket)
 2. Paste the pre-pull subprocess snippet (literal Python below) into a fresh cell, Shift+Enter
 3. Inspect output for: branch=main; git status --short empty (clean tree);
@@ -819,14 +836,18 @@ Resume action chain (on next session start):
    cell 1=code starting with os.environ['PYSPARK_SUBMIT_ARGS'],
    cell 2=code starting with hl.init or import hail);
    workspace-root AOU-1 location resolved (e.g., /home/jupyter/AOU-1_cohort_definition.ipynb).
+
 4. If all 4 verifications PASS → next message: paste back to me + I send the diff + cp snippet
    to overwrite workspace-root with the post-260512-ldj template.
+
 5. Then: reload AOU-1_cohort_definition.ipynb in the Analysis panel,
    Kernel → Restart, visually verify 9-cell structure (halt if 8),
    fire Cell 1a (paste output) → Cell 1b (paste output, check cores=='1' assert PASS)
    → Cell 2 (paste output) → Cell 3 (primary AFR, ~45-90 min envelope, paste when done)
    → Cells 4-8 individually.
+
 6. Halt-and-surface on any cell error / warn / run-time > 2× expected envelope.
+
 ```
 
 Pre-pull subprocess snippet (literal Python; paste into Untitled2 fresh cell):
@@ -890,6 +911,7 @@ print(f"--- exit code: {result.returncode} ---")
 ```
 
 Pause context — what we did NOT yet do (deferred for resume):
+
 - Did NOT fire the pre-pull snippet (subprocess never executed; Carter pasted the literal back into chat then session ended).
 - Did NOT execute `git pull origin main` from inside the AoU clone.
 - Did NOT `cp` the post-260512-ldj template over `~/AOU-1_cohort_definition.ipynb`.
@@ -917,6 +939,7 @@ Pause point: Carter's AoU JupyterLab tab is on Untitled2.ipynb (the scratch / di
 Then Cell 1b (~30-60s Spark start) → expect Hail version + 4 Spark conf prints (cores=1, memory=5g, driver.cores=1, spark.master) + ENV vars (WORKSPACE_BUCKET, GOOGLE_PROJECT, WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH) + 3 checkpoint URIs (AFR primary, AFR sensitivity, EUR parity — confirms `_qc_checkpoint_uri` helper from commit 36e8062 is live in clone). Halt-and-surface if `assert cores == '1'` fires (PYSPARK_SUBMIT_ARGS lever broken; AoU YARN config drift — needs re-diagnosis, NOT auto-retry). Then Cell 3 (primary AFR sensitivity=False, ~45-90 min envelope on AoU Dataproc, writes mt_afr_qc.mt). Then Cell 4 (sensitivity=True writes distinct mt_afr_pca_selfid_qc.mt per jd9 helper). Then Cell 5 (EUR parity → mt_eur_qc.mt). Then Cells 6-7 (disjoint sanity check + cohort_summary table).
 
 Deferred follow-ups (roll into post-Cell-7 STATE.md refresh; NOT blocker-clearing for this fire):
+
 - **Option 3 hardening** — fold the .bak's Pre-fire validator (or its v8-assert + AFR-QC _SUCCESS stale-detection guards) into the canonical 9-cell template as a new pre-Cell-1a cell, so the data-state failure modes are covered alongside the Spark-conf binding failure mode (canonical Cell 1b's `cores == '1'` assert only catches the latter). Reviewer-defensibility argument for the hardening: the canonical template should be reusable for future m3-W1 re-fires without requiring an out-of-band validator step. Implementation: `/gsd-quick` patch to `.planning/notebooks/AOU-1_template.ipynb` adding cell 1 (pre-flight validator) + shifting Cell 1a/1b to positions 2/3 (10-cell structure mirroring the .bak prototype but with the canonical superset).
 - **AOU-2 + AOU-4 dirty tree on AoU clone** — `.planning/notebooks/AOU-2_per_region_ld.ipynb` + `.planning/notebooks/AOU-4_validation.ipynb` carry Jupyter execution-output diffs vs HEAD. Likely benign (output cells from 260512-864 drift audit cross-reads) but worth confirming with `git diff --stat` against HEAD before next pull. If output-only: `git checkout -- <path>` is safe; if any source-cell edits sneak in: triage before clobbering.
 
