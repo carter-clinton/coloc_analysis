@@ -679,3 +679,131 @@ def test_load_qc_cohort_auto_recovers_from_orphan_mt(
     assert "WARN" in captured.out
     assert "orphan MT" in captured.out
     assert "state=FRESH" in captured.out
+
+
+# ----- 260520-s2s Wave-2 design-delta regression tests -----
+# Q6 (MAF export threshold), Q2/Q4 (float32 .npz), W1-G1 (idempotent resume).
+# See .planning/quick/260520-s2s-wave-2-ld-computation-design/260520-s2s-CONTEXT.md
+
+
+def test_maf_export_threshold_constant_is_0_005():
+    """Q6 (260520-s2s-CONTEXT.md): export MAF floor is 0.005, NOT spec §7.2 default of 0.01.
+
+    Rationale lock: M2-novel AFR variants concentrate in the 0.005-0.01 band
+    (m3-RESEARCH.md Q10); dropping them at export forfeits the AFR-specific
+    signal the project exists to capture. feedback_rigor_over_speed.md.
+    """
+    from aou_ld_panel import MAF_THRESHOLD_EXPORT
+    assert MAF_THRESHOLD_EXPORT == 0.005, (
+        f"Q6 lock requires MAF_THRESHOLD_EXPORT == 0.005 (overriding "
+        f"AOU-LD-PIPELINE.md §7.2 default of 0.01); got {MAF_THRESHOLD_EXPORT}"
+    )
+    # Internal MAF floor and export floor are equal under the Q6 override
+    # (no separate internal-stricter band). This may decouple later if
+    # cohort/variant pathology surfaces in dev-10; for now they're pinned together.
+    from aou_ld_panel import MIN_MAF_INTERNAL
+    assert MAF_THRESHOLD_EXPORT == MIN_MAF_INTERNAL, (
+        f"Q6 lock pins MAF_THRESHOLD_EXPORT ({MAF_THRESHOLD_EXPORT}) == "
+        f"MIN_MAF_INTERNAL ({MIN_MAF_INTERNAL}) for Wave 2 dev fire"
+    )
+
+
+def test_compute_region_ld_writes_float32_npz(synthetic_mt_path: Path,
+                                              mock_aou_env, tmp_path):
+    """Q2/Q4 (260520-s2s-CONTEXT.md): exported .npz LD arrays MUST be float32.
+
+    float64 would silently double per-region storage + egress (~16 GB → ~32 GB
+    across 322 production cells); float16 would lose SuSiE-RSS-relevant
+    precision in the signed-r band. Defensive regression on _save_npz's
+    dtype contract.
+    """
+    _require_hail()
+    import numpy as np
+
+    from aou_ld_panel import compute_region_ld, load_qc_cohort
+
+    mt = load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        skip_checkpoint=True,
+    )
+    region = {
+        "region_id": "synth_region_chr16_small_dtype",
+        "chr": "16",
+        "start_grch38": 50_100_000,
+        "end_grch38": 51_900_000,
+        "radius_bp": 2_400_000,
+        "region_class": "small",
+    }
+    res = compute_region_ld(region, mt, out_bucket=None, out_local_dir=tmp_path)
+    assert res["status"] == "ok", f"expected ok, got {res}"
+    with np.load(res["out"]) as npz:
+        assert npz["ld"].dtype == np.float32, (
+            f"Q2/Q4 lock requires float32 .npz storage; got dtype={npz['ld'].dtype}. "
+            f"float64 would silently double egress cost across 322 production cells."
+        )
+
+
+def test_compute_region_ld_idempotent_skip(synthetic_mt_path: Path,
+                                           mock_aou_env, tmp_path, monkeypatch):
+    """W1-G1 (260520-s2s-CONTEXT.md): re-fire of an already-written {region_id}.npz
+    must return status='skipped_idempotent' WITHOUT re-running hl.ld_matrix.
+
+    Critical for websocket-drop resume protocol — a 30h Wave 4 production fire
+    cannot tolerate a single browser timeout forfeiting all completed regions.
+    force_recompute=True bypasses the guard and re-runs.
+    """
+    _require_hail()
+    from aou_ld_panel import compute_region_ld, load_qc_cohort
+
+    mt = load_qc_cohort(
+        mt_path=str(synthetic_mt_path),
+        ancestry="afr",
+        skip_checkpoint=True,
+    )
+    region = {
+        "region_id": "synth_region_chr16_small_idem",
+        "chr": "16",
+        "start_grch38": 50_100_000,
+        "end_grch38": 51_900_000,
+        "radius_bp": 2_400_000,
+        "region_class": "small",
+    }
+
+    # First fire: writes .npz
+    res1 = compute_region_ld(region, mt, out_bucket=None, out_local_dir=tmp_path)
+    assert res1["status"] == "ok", f"expected ok on first fire, got {res1}"
+    assert res1["out"] is not None
+
+    # Second fire: must short-circuit without invoking hl.ld_matrix
+    import hail as hl
+    call_log = []
+    orig_ld_matrix = hl.ld_matrix
+
+    def _spy_ld_matrix(*a, **k):
+        call_log.append("invoked")
+        return orig_ld_matrix(*a, **k)
+
+    monkeypatch.setattr(hl, "ld_matrix", _spy_ld_matrix)
+    res2 = compute_region_ld(region, mt, out_bucket=None, out_local_dir=tmp_path)
+    assert res2["status"] == "skipped_idempotent", (
+        f"W1-G1 idempotency: re-fire must skip without re-running hl.ld_matrix; "
+        f"got status={res2['status']!r}"
+    )
+    assert call_log == [], f"hl.ld_matrix invoked on idempotent re-fire: {call_log}"
+    assert res2["out"] == res1["out"], (
+        f"skipped_idempotent return must point at the existing .npz; "
+        f"got {res2['out']!r} != {res1['out']!r}"
+    )
+
+    # Third fire: force_recompute=True must bypass guard
+    res3 = compute_region_ld(region, mt, out_bucket=None, out_local_dir=tmp_path,
+                             force_recompute=True)
+    assert res3["status"] == "ok", (
+        f"force_recompute=True must bypass the idempotency guard; "
+        f"got status={res3['status']!r}"
+    )
+    assert call_log == ["invoked"], (
+        f"force_recompute=True must re-invoke hl.ld_matrix exactly once; "
+        f"got call_log={call_log}"
+    )
