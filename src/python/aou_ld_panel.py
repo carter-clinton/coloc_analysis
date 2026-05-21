@@ -97,6 +97,18 @@ MAX_MAF = 0.995  # 1 - MIN_MAF_INTERNAL
 MIN_CALL_RATE_VARIANT = 0.95
 MIN_HWE_PVALUE = 1e-6
 
+# Export MAF floor (Q6 lock, 260520-s2s-CONTEXT.md): 0.005 overrides
+# AOU-LD-PIPELINE.md §7.2 default of 0.01. Rationale: M2-novel AFR variants
+# concentrate in the 0.005-0.01 band (m3-RESEARCH.md Q10); dropping them at
+# export forfeits the AFR-specific signal the project exists to capture.
+# feedback_rigor_over_speed.md.
+#
+# Pinned equal to MIN_MAF_INTERNAL for the Wave 2 dev fire; may decouple later
+# if cohort/variant pathology surfaces in dev-10 (RESEARCH Q10 halt check
+# applies: if a dev-10 region shows > 50% variant-drop at 0.005 vs 0.01,
+# halt at Carter checkpoint).
+MAF_THRESHOLD_EXPORT = 0.005
+
 # Region-class -> Path-A branch thresholds (RESEARCH Q5)
 PATH_A1_MAX_MB = 5     # to_numpy direct
 PATH_A2_MAX_MB = 10    # sparsify_triangle + to_numpy
@@ -678,9 +690,58 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     return mt
 
 
+def _existing_region_npz(region_id: str, out_bucket: str | None,
+                         out_local_dir: Path | None) -> str | None:
+    """Return path/URI to an existing ``{region_id}.npz``, or None.
+
+    Used by :func:`compute_region_ld`'s W1-G1 idempotency guard
+    (260520-s2s-CONTEXT.md). Critical for websocket-drop resume protocol —
+    a 30h Wave 4 production fire cannot tolerate a single browser timeout
+    forfeiting all completed regions.
+
+    Checks in priority order:
+
+      1. ``{out_bucket}/{region_id}.npz`` (production GCS write target).
+         Uses ``hl.hadoop_is_file`` for ``gs://`` URIs; falls back to local
+         path check for ``file://`` or bare-path buckets.
+      2. ``{out_local_dir or /tmp}/{region_id}.npz`` (local-test write target).
+
+    For Path A.3 (BlockMatrix .bm directory), idempotency would require
+    checking ``{out_bucket}/bm/{region_id}.bm/_SUCCESS`` — DEFERRED to a
+    follow-up quick task; dev-10 has only 2 Path A.3 regions and Wave 2
+    manual re-fire skipping is acceptable for those (re-firing a completed
+    .bm write is wasteful but not incorrect since BlockMatrix.write accepts
+    overwrite=True).
+    """
+    # GCS / Hadoop-style bucket check
+    if out_bucket is not None:
+        candidate = f"{out_bucket}/{region_id}.npz"
+        if candidate.startswith("gs://"):
+            try:
+                import hail as hl
+                if hl.hadoop_is_file(candidate):
+                    return candidate
+            except Exception:
+                # Defensive: any filesystem/Hail error treated as "not present"
+                # — safer to redo work than to assume a checkpoint that may
+                # not actually exist.
+                pass
+        elif candidate.startswith("file://"):
+            local_candidate = Path(candidate[len("file://"):])
+            if local_candidate.is_file():
+                return candidate
+    # Local-dir fallback (matches _save_npz's local_path convention)
+    local = (out_local_dir or Path("/tmp")) / f"{region_id}.npz"
+    if local.is_file():
+        return str(local)
+    return None
+
+
 def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
                       out_bucket: str | None = None,
-                      out_local_dir: Path | None = None) -> dict:
+                      out_local_dir: Path | None = None,
+                      *,
+                      force_recompute: bool = False) -> dict:
     """Compute per-region LD matrix.
 
     Path-A branching per region_class (RESEARCH Q5):
@@ -692,11 +753,40 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
 
     Skip threshold: regions with n_var < MIN_VARIANTS_PER_REGION return
     status='skipped_few_variants' (matches AOU-LD-PIPELINE.md §5.1 line 187).
+
+    Idempotency (W1-G1, 260520-s2s-CONTEXT.md):
+        If ``{region_id}.npz`` already exists at the target location
+        (out_bucket or out_local_dir) and ``force_recompute`` is False
+        (default), short-circuit and return ``status='skipped_idempotent'``
+        without invoking ``hl.ld_matrix``. Critical for websocket-drop
+        resume protocol on the 322-cell Wave 4 production fire. Pass
+        ``force_recompute=True`` to bypass the guard for a single region.
+
+    Export MAF (Q6, 260520-s2s-CONTEXT.md):
+        Variant pre-filter at ``load_qc_cohort`` enforces MAF ≥ MIN_MAF_INTERNAL
+        (= MAF_THRESHOLD_EXPORT = 0.005); exported .npz preserves this band
+        rather than tightening to spec §7.2's 0.01 default. See
+        :data:`MAF_THRESHOLD_EXPORT`.
     """
     import hail as hl
     import numpy as np
 
     rid = region_row["region_id"]
+
+    # W1-G1 idempotency guard (260520-s2s-CONTEXT.md): if {region_id}.npz
+    # already exists at the target location and force_recompute is False,
+    # short-circuit without invoking hl.ld_matrix.
+    if not force_recompute:
+        existing_npz = _existing_region_npz(rid, out_bucket, out_local_dir)
+        if existing_npz is not None:
+            return {
+                "region_id": rid,
+                "status": "skipped_idempotent",
+                "n_var": None,
+                "path_a": None,
+                "out": existing_npz,
+            }
+
     chrom = str(region_row["chr"])
     if not chrom.startswith("chr"):
         chrom = f"chr{chrom}"
@@ -855,8 +945,22 @@ def _upload_to_gcs(local_path: Path, out_bucket: str, blob_subpath: str) -> str 
 def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
               rsids: list, out_bucket: str | None, out_local_dir: Path | None,
               lower_triangular: bool = False) -> str:
-    """Save dense LD as .npz (locally + optionally upload to GCS bucket)."""
+    """Save dense LD as .npz (locally + optionally upload to GCS bucket).
+
+    Q2/Q4 lock (260520-s2s-CONTEXT.md): asserts ld_np is float32 — float64
+    would silently double per-region storage + egress (~16 GB → ~32 GB
+    across 322 production cells); float16 would lose SuSiE-RSS-relevant
+    precision in the signed-r band. Path A.1/A.2 callers already cast via
+    ``.astype("float32")`` (defensive assertion traps a future regression
+    where the cast is dropped).
+    """
     import numpy as np
+
+    assert ld_np.dtype == np.float32, (
+        f"Q2/Q4 lock (260520-s2s): LD array must be float32 before .npz write; "
+        f"got dtype={ld_np.dtype} for region_id={region_id!r}. "
+        f"float64 doubles egress; float16 loses SuSiE-RSS precision."
+    )
 
     out_local_dir = out_local_dir or Path("/tmp")
     out_local_dir.mkdir(parents=True, exist_ok=True)
