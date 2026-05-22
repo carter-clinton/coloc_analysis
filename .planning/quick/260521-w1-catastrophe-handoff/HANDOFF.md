@@ -1,8 +1,77 @@
 # m3-W1 Empty-MT Catastrophe — Next-Session Handoff
 
 **Created:** 2026-05-21 end-of-session
+**Last updated:** 2026-05-22 end-of-Session-2 (Carter ending session pre-holiday weekend)
 **Status:** Active — read this FIRST when resuming work on coloc_analysis m3
-**Branch at handoff:** main (= origin/m3-W2-aou-deltas) HEAD `822d47d`
+**Branch at handoff:** main (= origin/m3-W2-aou-deltas) HEAD = latest commit on m3-W2-aou-deltas (check `git log --oneline -1`)
+
+---
+
+## SESSION 2 ADDENDUM (2026-05-22) — read this section BEFORE the older TL;DR below
+
+Three things changed in Session 2 that update the path forward:
+
+### 1. Track 1 (AoU credit recovery) — ticket in active exchange
+
+- Initial Zendesk ticket filed 2026-05-22 morning
+- **First reply was tier-1 boilerplate** (canned "$300 initial credits + GCP billing" response that didn't engage with the technical issue) — Carter sent a firm-but-polite clarification redirecting to the platform bug
+- **Abby Doyle (AoU triage)** responded ~3 hours later asking for more detail
+- **Carter sent the substantive forensic reply** with bucket paths, cluster config, Hail/Spark version mismatch, two hypotheses, and four specific asks for the Hail/Dataproc tooling team
+- **AWAITING:** AoU engineering team response. Holiday weekend started 2026-05-22 evening; realistic ETA for next reply is 2026-05-26 to 2026-05-29
+- Sent email body preserved at [`AOU-SUPPORT-FOLLOWUP-DRAFT.md`](AOU-SUPPORT-FOLLOWUP-DRAFT.md) — when checking on next session, refer to that file for what Abby's team is responding to
+
+### 2. Track 3 (NCSU v7→v8 forensic investigation) — COMPLETE; findings shift the picture
+
+Key findings from reading `.planning/quick/260511-aou-w2-oom-fix/forensics/2026-05-04-stage8-regionpool-oom/`:
+
+- **The v7→v8 commit (`ac261f2`) changed ONLY a constant string** — `CDR_VERSION "v7" → "v8"` plus inline doc comment refreshes. No filter logic, no schema assumptions, no column names changed. The schema-mismatch hypothesis is REFUTED.
+- **Both forensic logs (prior + current) read v8 paths**, not v7. The postmortem README's claim "Prior 'successful' run reference of 1h57m was on v7 data" is unsupported by the actual log content — both runs were on v8.
+- **The prior_run.log (`12_hail_prior_run.log`) shows a DIFFERENT failure mode from the OOM:** after 13h17m of v8 compute (`[collectDArray|table_aggregate]: executed 290384 tasks`), Hail logged `ERROR: error while applying lowering 'LowerOrInterpretNonCompilable'` and `ERROR: error while applying lowering 'EvalRelationalLets'` — Hail IR optimizer fallback failures. This is NOT the same as the Stage 8 RegionPool OOM from `11_hail_current_run.log`.
+- **Hail JAR was compiled for Spark 3.5.0, running on Spark 3.5.3** — Hail's own explicit warning at init: "Compatibility is not guaranteed." AoU's Hail/Spark version pairing is on a non-supported combination.
+- **Implication:** The empty-MT failure is NOT a cheap code-side fix. The OOM remediation (`naive_coalesce(2048)` + `cores=1/mem=5g`) IS in current code at `aou_ld_panel.py:629` + AOU-1 Cell 1a/1b. It prevented the Stage 8 OOM. But a SECOND failure mode (either silent executor-side write truncation OR Hail IR-lowering issue) still produced empty MTs on the May 19-20 67h fire. Code patches alone (Track 4) can't resolve the root cause — they only catch the failure post-hoc.
+
+### 3. LD panel decision — DEFERRED, not pivoted
+
+Carter's strong preference: **stay with AoU AFR LD (~91k samples)** for the 138× power gain over 1000G AFR (N=661). The 1000G pivot is the SAFETY NET, not the primary path.
+
+Decision tree (pending Abby's team response):
+
+| Abby's team response | What we do |
+|---|---|
+| Identifies failure mode + recommends memory profile fix | chr22 smoke (~$30-75) with recommended config → if non-empty entries, full AFR fire on tier-up cluster (~$400-800) |
+| Acknowledges but doesn't have a fix | chr22 smoke with our own best-guess (likely n1-highmem-32 worker shape, larger executor memory) → if works proceed, if not pivot to 1000G |
+| Credits come through but no engineering help | Same as above — credits give us budget to do the diagnostic |
+| No credits and no engineering engagement (after ~7 business days of silence) | 1000G AFR pivot for Wave 2; defer AoU AFR LD to grant-funded follow-on |
+| chr22 smoke fails under ANY config | Conclude AoU/v8/Hail combo is structurally broken for this workload; 1000G AFR pivot for Wave 2 |
+
+**DO NOT** commit to AoU re-fire today. **DO NOT** abandon AoU LD today. The 1000G AFR `.rds` files already on disk at `data/processed/ld_reference/AFR/` (11 files, 128 KB-896 KB each, candidate-locus regions) are the safety net — they'll still be there next week.
+
+### Track 4 status — STILL PENDING (highest-leverage move when work resumes)
+
+The `_validate_checkpoint_populated()` helper + post-write `count_rows() > 0` assertions + 3 regression tests are still un-landed. Free, NCSU-only, ~30-45 min via gsd-executor agent. **Apply REGARDLESS of which LD panel path we end up taking** — they're defensive code that prevents any future fire (yours OR another researcher using this codebase) from hitting the same silent-empty-MT pattern.
+
+### Recommended starting move for next session (REVISED 2026-05-22)
+
+1. **Check email/Zendesk for Abby's reply.** Search inbox for "Re: Hail mt.checkpoint() empty-MT failure" or sender `support@researchallofus.org`. The reply may be from Abby directly or from a different engineer she's CC'd in.
+2. **If reply received:** read it, then in Claude paste: *"Read .planning/quick/260521-w1-catastrophe-handoff/HANDOFF.md and the latest AoU reply [paste content]. Recommend the next move."*
+3. **If no reply after 5-7 business days:** consider polite Zendesk follow-up in the same ticket thread. Don't open a new ticket.
+4. **Regardless of #1-3:** Track 4 patches can land in parallel any time. They're independent of the AoU response. Just say: *"Land Track 4 code patches via gsd-executor agent."*
+
+### What did NOT change in Session 2
+
+- AoU env still deleted ($0/hr meter)
+- Track A submission lane untouched (per [[track_a_submission_in_progress]])
+- No new commits to source code (only docs + memory updates)
+- 1000G AFR files still on disk at `data/processed/ld_reference/AFR/` (confirmed via `ls -la` today)
+- Forensic dump at `.planning/quick/260511-aou-w2-oom-fix/forensics/` intact
+
+### Carter's title (correction landed 2026-05-22)
+
+Carter is **Assistant Professor and Director of the ASHES Laboratory at North Carolina State University**. NOT a PhD candidate, postdoc, or graduate student. Use the corrected signature in any future correspondence. See updated [[user_profile]] memory.
+
+---
+
+## Original handoff content (2026-05-21) — preserved below for reference
 
 ---
 
