@@ -59,6 +59,10 @@ Bucket-wide total: ~71 MiB. Cannot contain populated WGS MTs of any kind.
 - The 2026-05-21 Hail read-probe full output (also captured in debug session file)
 - Cost ledger: $10 + $10 + $17 + $1,275 + $30 = ~$2,142
 
+**STATUS (2026-05-22):** Initial Zendesk ticket FILED. Awaiting AoU Research Support reply to `carterclinton@ncsu.edu`. Full follow-up email draft saved at [`AOU-SUPPORT-FOLLOWUP-DRAFT.md`](AOU-SUPPORT-FOLLOWUP-DRAFT.md) for when AoU asks for forensic detail.
+
+**IMPORTANT email constraint (per [[feedback_aou_researcher_email_auth_only]]):** Carter's AoU researcher account `cclinton@researchallofus.org` is AUTH-ONLY — Gmail is disabled at the researchallofus.org org admin level. ALL email correspondence MUST go to `carterclinton@ncsu.edu`. Reference the researcher account inline in ticket bodies for account correlation, but NEVER CC it or set it as reply-to.
+
 **Start command:** "draft AoU credit claim" — Claude writes the formal text, Carter submits via AoU support form.
 
 ### Track 2 — Pivot Wave 2 to 1000G LD substrate (FREE, unblocks immediately)

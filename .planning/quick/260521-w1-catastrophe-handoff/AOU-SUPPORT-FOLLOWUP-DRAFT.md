@@ -4,7 +4,8 @@
 
 **Initial filing** (already sent 2026-05-22):
 - Workspace: coloc_analysis
-- Email: carterclinton@ncsu.edu (AoU researcher account: cclinto@researchallofus.org)
+- Correspondence email: carterclinton@ncsu.edu (deliverable; use this for ALL reply traffic)
+- AoU researcher account identifier: cclinton@researchallofus.org (AUTH-ONLY — not a deliverable mailbox; Workspace Admin has Gmail disabled for the researchallofus.org domain. Reference this in the ticket body for account correlation but do NOT CC it on emails or expect replies to land there.)
 - Request type: Technical issue or bug
 - Description: "Hail mt.checkpoint() wrote _SUCCESS markers on empty (0×0) MatrixTables across 5 Dataproc sessions (~$2,140 lost May 4-21, 2026). Requesting credit recovery; full forensic evidence available in follow-up."
 
@@ -54,14 +55,15 @@ I can also share my full forensic root-cause analysis (40 KB markdown) and the c
 | **Total** | | **~$1,342 to ~$2,142 depending on prior session attribution** |
 
 Workspace: **coloc_analysis**
-Researcher account: cclinto@researchallofus.org
-NCSU email: carterclinton@ncsu.edu
+AoU researcher account (auth-only identifier; not a deliverable mailbox): cclinton@researchallofus.org
+Correspondence email: **carterclinton@ncsu.edu** (please direct all replies here; the researchallofus.org account has Gmail disabled at the workspace level)
 
 Thanks again for taking a look. Happy to provide any additional forensic detail your team needs, and to coordinate with the Hail/Dataproc tooling team if helpful.
 
 Best regards,
 Carter K. Clinton
 PhD Candidate, NCSU ASHES Lab
+carterclinton@ncsu.edu
 
 ---
 
@@ -77,4 +79,4 @@ PhD Candidate, NCSU ASHES Lab
 - [ ] Verify the cost ledger against AoU billing console (your numbers may differ slightly)
 - [ ] Adjust the "happy to be wrong" framing if you want a firmer technical stance
 - [ ] Attach forensic files if Zendesk supports it
-- [ ] CC `cclinto@researchallofus.org` so the ticket auto-correlates to your AoU researcher account
+- [ ] DO NOT CC `cclinton@researchallofus.org` — that account has Gmail disabled (AUTH-ONLY identifier). Reference it inline for account correlation but keep all delivery to `carterclinton@ncsu.edu`.
