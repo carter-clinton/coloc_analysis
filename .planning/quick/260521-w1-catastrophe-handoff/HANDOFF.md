@@ -177,3 +177,7 @@ Claude has full context via:
 Discouraged. Lost ~$2,100. Cannot afford another $2,000 rebuild. Going home for the day. Tracks 1+2 are the most important psychologically — Track 1 might recover the money, Track 2 unblocks the science without spending more.
 
 Lead with empathy. The work is recoverable. The science isn't dead. We have a clear path forward that doesn't require Carter to come up with another $2k.
+
+## Carter's title (corrected 2026-05-22)
+
+Carter is **Assistant Professor and Director of the ASHES Laboratory at North Carolina State University**. Do NOT refer to him as PhD candidate, postdoc, or graduate student in any email signature, correspondence, or attribution. See [[feedback_user_profile_correction_2026-05-22]] / updated [[user_profile]] memory.

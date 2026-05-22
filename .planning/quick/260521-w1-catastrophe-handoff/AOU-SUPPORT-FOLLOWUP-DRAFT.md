@@ -61,8 +61,9 @@ Correspondence email: **carterclinton@ncsu.edu** (please direct all replies here
 Thanks again for taking a look. Happy to provide any additional forensic detail your team needs, and to coordinate with the Hail/Dataproc tooling team if helpful.
 
 Best regards,
-Carter K. Clinton
-PhD Candidate, NCSU ASHES Lab
+Carter K. Clinton, PhD
+Assistant Professor & Director, ASHES Laboratory
+North Carolina State University
 carterclinton@ncsu.edu
 
 ---
