@@ -92,30 +92,78 @@ If Path 1A and 1B both fail (iframe still broken):
 
 These can run from any machine with `gsutil` + workspace bucket access (HPC if you have AoU bucket access there, or AoU env post-resume):
 
+> **CRITICAL — m3-W1 catastrophe lesson (2026-05-21):** `_SUCCESS` marker existence is **NOT sufficient** evidence of populated data. Hail's `mt.checkpoint()` writes `_SUCCESS` based on driver-side tasks-reported-complete accounting WITHOUT validating output contents. Under `spark.executor.cores=1/mem=5g`, executor tasks can silently truncate after writing 35-byte Parquet column-metadata footer stubs — producing an MT directory with `_SUCCESS` + rows-stubs + ABSENT `entries/entries/parts/`. The 2026-05-21 bucket inspection found this exact pattern on `mt_afr_qc.mt` and `mt_afr_pca_selfid_qc.mt` after ~$2,100 of compute had appeared to succeed.
+>
+> STEP 3 MUST therefore verify `entries/entries/parts/` size, not just `_SUCCESS`. See `.planning/debug/m3-W1-empty-mt-catastrophe.md` + memories `[[feedback_aou_success_marker_not_evidence_of_data]]` + `[[feedback_hail_checkpoint_contract_violation]]`.
+
 ```bash
-# Verify all 3 MTs have _SUCCESS + parseable metadata
+# Verify all 3 MTs have _SUCCESS + parseable metadata + POPULATED entries
+BUCKET="gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a"
+MIN_ENTRIES_BYTES=$((1024 * 1024 * 1024))  # 1 GB floor for production fires
 for mt in mt_afr_qc.mt mt_afr_pca_selfid_qc.mt mt_eur_qc.mt; do
   echo "=== $mt ==="
-  gsutil ls "gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/$mt/_SUCCESS" && echo "  _SUCCESS: OK"
-  gsutil ls "gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/$mt/metadata.json.gz" && echo "  metadata: OK"
-  gsutil cat "gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/$mt/metadata.json.gz" \
+  # _SUCCESS marker (necessary but NOT sufficient — see W1 catastrophe)
+  gsutil ls "${BUCKET}/ld/$mt/_SUCCESS" && echo "  _SUCCESS: OK"
+  # metadata.json.gz parseable
+  gsutil ls "${BUCKET}/ld/$mt/metadata.json.gz" && echo "  metadata: OK"
+  gsutil cat "${BUCKET}/ld/$mt/metadata.json.gz" \
     | gunzip \
     | python3 -c "import json,sys; m=json.load(sys.stdin); print(f'  keys: {list(m.keys())}')"
+  # entries/entries/parts/ MUST exist and have GB-scale payload — this is
+  # the discriminator that would have caught the W1 catastrophe 36h earlier.
+  ENTRIES_SIZE=$(gsutil du -s "${BUCKET}/ld/$mt/entries/entries/parts/" 2>/dev/null | awk '{print $1}')
+  if [[ -z "$ENTRIES_SIZE" ]]; then
+    echo "  entries/entries/parts/: ABSENT — m3-W1 catastrophe pattern. STOP."
+    echo "  (MT directory exists with _SUCCESS but no entries payload.)"
+    continue
+  fi
+  if (( ENTRIES_SIZE > MIN_ENTRIES_BYTES )); then
+    printf "  entries/: OK (%.2f GB)\n" "$(echo "scale=2; $ENTRIES_SIZE / 10^9" | bc)"
+  else
+    printf "  entries/: TOO SMALL (%d bytes < %d GB floor) — m3-W1 catastrophe pattern. STOP.\n" \
+      "$ENTRIES_SIZE" "$((MIN_ENTRIES_BYTES / 10**9))"
+  fi
 done
 
 # Verify cohort_summary_m3.tsv made it to bucket (if Path 1A or 1B ran)
-gsutil ls "gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/exports/cohort_summary_m3.tsv"
-gsutil cat "gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/exports/cohort_summary_m3.tsv"
+gsutil ls "${BUCKET}/exports/cohort_summary_m3.tsv"
+gsutil cat "${BUCKET}/exports/cohort_summary_m3.tsv"
 ```
 
-**Pass criteria:**
-- Each MT prints `_SUCCESS: OK` + `metadata: OK` + canonical Hail keys
+**Pass criteria (ALL must pass per MT):**
+- `_SUCCESS: OK`
+- `metadata: OK` + canonical Hail keys printed
+- `entries/: OK (X.YZ GB)` with X.YZ > 1.0 GB
 - cohort_summary_m3.tsv listing returns the path + contents look like a 3-row TSV with cohort names
 
-**If anything fails:**
-- _SUCCESS missing → MT didn't fully commit. Resume env, re-fire that specific cell on refactored code with `force_fresh=True`
-- metadata.json.gz parse fails → MT corrupted. Same recovery (re-fire on refactored code)
+**If anything fails (per-MT):**
+- `_SUCCESS` missing → MT didn't fully commit. Resume env, re-fire that specific cell on refactored code with `force_fresh=True`.
+- `metadata.json.gz` parse fails → MT corrupted. Same recovery (re-fire on refactored code).
+- `entries/entries/parts/` ABSENT or below the 1 GB floor → **m3-W1 empty-MT catastrophe pattern.** Do NOT mark Wave 1 complete; do NOT resume from this checkpoint; treat this as a HONEST_FINDING disposition per `[[feedback_failed_to_honest_finding]]`. Investigation entry point: `.planning/debug/m3-W1-empty-mt-catastrophe.md`. Recovery requires the Track 4 defensive-code patches landed AND a fresh fire on refactored code (the catastrophe-pattern resume-gate guard will auto-force-fresh on this stub MT; do not paper over it).
 - TSV not in bucket → Cell 7 may have hit Path 1C (deferred fetch). Plan to fetch on Wave 2 resume.
+
+**Belt-and-suspenders cross-check** — also run a Hail-side read-probe from a fresh Python subprocess (NOT the same kernel that did the write):
+
+```python
+import hail as hl
+hl.init(default_reference="GRCh38", log="/tmp/hail.log", quiet=True)
+for mt_uri in [
+    "gs://${WORKSPACE_BUCKET}/ld/mt_afr_qc.mt",
+    "gs://${WORKSPACE_BUCKET}/ld/mt_afr_pca_selfid_qc.mt",
+    "gs://${WORKSPACE_BUCKET}/ld/mt_eur_qc.mt",
+]:
+    mt = hl.read_matrix_table(mt_uri)
+    n_cols = mt.count_cols()
+    n_rows = mt.count_rows()
+    assert n_cols > 0 and n_rows > 0, (
+        f"empty MT at {mt_uri}: {n_cols} cols x {n_rows} rows — "
+        f"m3-W1 catastrophe pattern; see "
+        f".planning/debug/m3-W1-empty-mt-catastrophe.md"
+    )
+    print(f"OK: {mt_uri} = {n_cols} samples x {n_rows} variants")
+```
+
+The fresh-subprocess constraint matters: the original Cell 7 read could be satisfied from JVM-side cached IR without re-reading the bucket, which masked the catastrophe. Spawning a clean Python process forces a true bucket read.
 
 ---
 
