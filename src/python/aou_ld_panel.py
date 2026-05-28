@@ -572,6 +572,56 @@ def _validate_checkpoint_populated(uri: str, *,
         return False
 
 
+def _assert_checkpoint_nonempty(mt: "hl.MatrixTable", uri: str,
+                                 *, phase: str) -> None:
+    """Raise loudly if a just-checkpointed MT is empty.
+
+    Post-write contents validation — defense against the m3-W1 empty-MT
+    catastrophe (2026-05-21). Hail's ``mt.checkpoint()`` writes the
+    ``_SUCCESS`` marker on driver-side tasks-reported-complete accounting
+    WITHOUT validating output contents. Under
+    ``spark.executor.cores=1/mem=5g``, executor tasks can silently
+    truncate after writing Parquet schema footers, leaving an MT
+    skeleton that returns ``count_rows()=0 + count_cols()=0`` on read-back.
+
+    Cell 7 of the W1 monolithic run would have caught this 36h earlier
+    via ``mt_afr_selfid.count_rows()`` — this assertion builds that check
+    INSIDE :func:`load_qc_cohort` so EVERY MT write self-validates,
+    not just the final one that Cell 7 happens to query.
+
+    Calls ``mt.count_rows()`` + ``mt.count_cols()`` (eager Hail actions —
+    each forces a Spark job, so cost is ~10-30 sec on the populated path
+    and the entire pipeline cost on the empty path which fails fast).
+    On AoU production fires this adds ~3 Spark jobs per cohort = ~1-2
+    min total overhead — trivial against the 60+ h monolithic-run cost,
+    and exactly what would have caught the 2026-05-21 catastrophe
+    BEFORE Cell 4 fired the next ancestry on top of an empty MT.
+
+    Raises:
+        RuntimeError: if ``count_rows() == 0`` or ``count_cols() == 0``,
+            with the phase name, URI, and a pointer to the catastrophe
+            debug document. Caller (``load_qc_cohort``) propagates the
+            error up so the notebook cell halts before any downstream
+            cohort defines on top of empty cohort.
+
+    Cross-references:
+      - .planning/debug/m3-W1-empty-mt-catastrophe.md
+      - [[feedback_hail_checkpoint_contract_violation]]
+      - [[feedback_aou_success_marker_not_evidence_of_data]]
+    """
+    n_rows = mt.count_rows()
+    n_cols = mt.count_cols()
+    if n_rows == 0 or n_cols == 0:
+        raise RuntimeError(
+            f"checkpoint at {uri} (phase={phase}) returned empty MT: "
+            f"{n_rows} rows x {n_cols} cols. Hail's mt.checkpoint() wrote "
+            f"_SUCCESS but contents are missing — the m3-W1 empty-MT "
+            f"catastrophe signature. See "
+            f".planning/debug/m3-W1-empty-mt-catastrophe.md + "
+            f"[[feedback_hail_checkpoint_contract_violation]]."
+        )
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
@@ -756,6 +806,7 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         # checkpoint write FIRST, then sidecar write).
         if not skip_checkpoint:
             mt = mt.checkpoint(ckpt_post_split, overwrite=overwrite_flag)
+            _assert_checkpoint_nonempty(mt, ckpt_post_split, phase="post_split")
             _write_sidecar(_sidecar_uri(ckpt_post_split), provenance, phase="post_split")
             print(f"[load_qc_cohort] wrote intermediate 1: {ckpt_post_split}")
     elif state == "RESUME_FROM_POST_SPLIT":
@@ -782,6 +833,7 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         # Intermediate 2 checkpoint + sidecar
         if not skip_checkpoint:
             mt = mt.checkpoint(ckpt_post_sqc, overwrite=overwrite_flag)
+            _assert_checkpoint_nonempty(mt, ckpt_post_sqc, phase="post_sample_qc")
             _write_sidecar(_sidecar_uri(ckpt_post_sqc), provenance, phase="post_sample_qc")
             print(f"[load_qc_cohort] wrote intermediate 2: {ckpt_post_sqc}")
 
@@ -802,6 +854,7 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     if not skip_checkpoint:
         ckpt = _qc_checkpoint_uri(bucket, ancestry, sensitivity)
         mt = mt.checkpoint(ckpt, overwrite=True)
+        _assert_checkpoint_nonempty(mt, ckpt, phase="final")
         print(f"[load_qc_cohort] wrote final: {ckpt}")
 
     return mt
