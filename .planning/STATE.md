@@ -4,7 +4,7 @@ milestone: v3.1.2
 milestone_name: milestone
 status: "Track B m3-W1 CATASTROPHIC FAILURE 2026-05-22 (Session 2 update) — Track 1 AoU credit recovery ticket FILED 2026-05-22; tier-1 boilerplate misroute received then corrected; Abby Doyle from AoU triage engaged; substantive forensic reply sent; awaiting engineering team response (holiday weekend — expect 3-5 business days). Track 3 v7→v8 forensic investigation COMPLETE — code change was ONLY a constant string bump (CDR_VERSION 'v7'→'v8' in ac261f2; no filter/schema logic changed); both forensic logs read v8 paths; the 'v7 1h57m success' reference in the OOM postmortem README is unsupported; failure mode is platform-side multi-mode (Hail checkpoint contract violation + possible Hail IR-lowering + Spark version mismatch warning). LD panel decision: AoU AFR LD remains the primary goal (138× power vs 1000G AFR); 1000G AFR LD remains the safety net (~11 .rds files already on disk at data/processed/ld_reference/AFR/). NO AoU compute commitments until Abby's team responds. Track 4 patches still pending. Next-session entry point unchanged = .planning/quick/260521-w1-catastrophe-handoff/HANDOFF.md."
 stopped_at: "Track B m3-W1 **CATASTROPHIC FAILURE CONFIRMED 2026-05-21** via direct Hail read-probe. Bucket inspection revealed: mt_afr_qc.mt + mt_afr_pca_selfid_qc.mt are 0×0 empty MTs (proper schema, 2,045 partitions, _SUCCESS markers on all 5 subtable paths, but count_cols=0 + count_rows=0 + ~71 KiB of Parquet schema footers in entries/entries/parts/); mt_eur_qc.mt directory does not exist at all (Cell 5 EUR write IR submitted 2026-05-20 19:07:36 then truncated 28s later mid-JIT, no Spark stages). Bucket-wide total ~71 MiB (27 MiB is fresh hail.log preserve; remaining ~44 MiB cannot contain populated WGS MTs). Comprehensive search across all visible buckets confirmed no populated WGS MTs anywhere. Disposition: prior 2026-05-20 'Wave-1 COMPLETE' inference REFUTED; new disposition HONEST_FINDING per [[feedback_failed_to_honest_finding]]. ROOT CAUSE (HIGH confidence; full analysis in .planning/debug/m3-W1-empty-mt-catastrophe.md): stacked failure of (1) Hail mt.checkpoint() writing _SUCCESS based on driver-side task-completion accounting without contents validation per new [[feedback_hail_checkpoint_contract_violation]] memory, (2) v7→v8 CDR partition explosion (commit ac261f2 — v8 hail.mt at 290,384 partitions) compounded by aggressive spark.executor.cores=1/mem=5g remediation profile causing silent executor-side write truncation, (3) verification methodology (gsutil _SUCCESS check + Spark UI cascade signature inference) that never traversed entries/entries/parts/ per new [[feedback_aou_success_marker_not_evidence_of_data]] memory, (4) [[feedback_aou_spark_ui_stack_trace_verification]] AMENDED — cascade signature is necessary but NOT sufficient. VERIFIED IN CURRENT BRANCH (m3-W2-aou-deltas HEAD 822d47d): both 2026-05-04 postmortem-prescribed OOM remediations ARE in code (naive_coalesce(2048) at aou_ld_panel.py:629 + executor.cores=1/mem=5g in AOU-1 Cell 1a/1b) — necessary but NOT sufficient to prevent empty-MT outcome. MISSING IN CURRENT CODE (NCSU patches needed before any rebuild fire): _validate_checkpoint_populated() helper, replacement of _has_checkpoint() calls in auto-resume state machine (lines 554/572), post-write count_rows+count_cols assertions at lines 641/667/687, regression tests, AOU-1 bucket-state assertion cells. NEXT-SESSION ENTRY: read .planning/quick/260521-w1-catastrophe-handoff/HANDOFF.md for the 4-track plan. 4 PARALLEL TRACKS (all NCSU-only for 1-2 weeks, no AoU compute): (1) AoU credit recovery claim — file with forensic evidence chain for potential $2,100 refund; (2) Pivot Wave 2 to 1000G LD substrate (free, unblocks immediately, documented 'limited LD substrate' deviation); (3) NCSU v7→v8 forensic investigation — read .planning/quick/260511-aou-w2-oom-fix/forensics/.../11_hail_current_run.log (v8 fail, 2.9 MB) vs 12_hail_prior_run.log (v7 success, 2.9 MB) to identify schema mismatch; (4) NCSU code patches per debugger root-cause report. AoU env: DELETE recommended (already done by Carter end-of-session); $0/hr meter while NCSU tracks land. Optional future spend (only if Track 3 reveals clean fix + Track 1 credit comes through): ~$30-75 chr22 smoke + ~$200-400 full cohort def fresh fire (NOT $1500-2500 — earlier estimate was worst-case before root cause identified). DO-NOT-DO list: (a) do NOT fire any AoU compute without _validate_checkpoint_populated() landed and chr22 smoke validated; (b) do NOT trust _SUCCESS markers alone as evidence of write success — always check entries/entries/parts/ size + Hail count_cols+count_rows; (c) do NOT use cascade signature inference as the sole verification (amended memory); (d) do NOT defer the AoU credit claim — file ASAP while forensic evidence is fresh. Track A submission-in-progress unchanged per [[track_a_submission_in_progress]]. Pre-catastrophe W2 design-delta work (commits e3c29e7 + 6962607 + 001d8b1 + 822d47d) SURVIVES — those are per-region LD compute deltas (Wave 2/4), not cohort-definition deltas (Wave 1); will be re-used after rebuild or with 1000G substrate pivot. [SUPERSEDED: prior status = m3-W2 partial — Tasks 1+2 done atomically (notebooks + tests landed); Task 3 awaiting Carter AoU fire + validation memo signoff + flag touch. SUPERSEDED reason: Task 3 was blocked on Wave 1 MTs that turned out to be empty.]"
-last_updated: "2026-05-28T19:30:00Z"
+last_updated: "2026-05-28T20:15:00Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 12
@@ -13,6 +13,41 @@ progress:
   completed_plans: 30
   percent: 100
 ---
+
+## 2026-05-28 session update — appended at end of session
+
+**Track 4 defensive-code patches LANDED + pushed** (quick task 260528-jvd; 8 commits 59e914b..421e3e7 fast-forwarded to origin/m3-W2-aou-deltas). All 7 catastrophe-pattern guards from the debug §Fix Strategy are now in code:
+
+1. `_validate_checkpoint_populated(uri)` helper in `src/python/aou_ld_panel.py` (commit 86c8a56) — verifies `_SUCCESS` + `entries/entries/parts/` exists + ≥1 file > 1 KB threshold.
+2. Resume-gate at `aou_ld_panel.py:655` + `:683` now uses the validated helper (commit 4c75ca2); explicit catastrophe-pattern elif branches force `auto_fresh = True` on stub MTs.
+3. `_assert_checkpoint_nonempty(mt, uri, *, phase)` at all 3 `mt.checkpoint()` sites (commit 88ab0c5) — raises RuntimeError on `count_rows()==0 OR count_cols()==0`.
+4. 3 pure-Python regression tests (commit 59e914b RED → 86c8a56 GREEN) — `_make_stub_mt` fixture builds the exact 2026-05-21 catastrophe pattern (`_SUCCESS` + 35-byte rows-stub + absent/empty entries).
+5. AOU-1 Cells 3.5 / 4.5 / 5.5 (commit 9b4317f) — gsutil-du-assert > 1 GB on each cohort MT's entries/entries/parts/ before downstream cells fire.
+6. `WAVE-1-CLOSEOUT-CHECKLIST.md` STEP 3 upgraded (commit 4b321c2) — contents-validating verification + Hail read-probe from a fresh Python subprocess (the original kernel's JVM-cached IR masked the W1 catastrophe).
+7. D-M3-10 decision token in `m3-CONTEXT.md` (commit bfe5f0e) — locks contents-validated MT write protocol across Waves 1+2+4+5.
+
+Test sweep 38 PASSED + 11 SKIPPED + 0 FAILED at every commit boundary.
+
+**Track 1 update:** Carter sent a follow-up to Abby Doyle on the Zendesk ticket morning of 2026-05-28; no reply yet as of end-of-session. Holiday weekend already past; engineering response now realistic any business day.
+
+**Carter's competing hypothesis on the catastrophe root cause** — registered for future re-fire strategy decision: Carter posited end-of-session 2026-05-28 that the **mid-Stage-71 kill** (workbench Pause Environment ~22:30 UTC on 2026-05-20) is the proximate cause of the empty MTs, not the Hail-contract-violation theory from the debug doc. The two hypotheses make different predictions for MT #1 + MT #2's `_SUCCESS` markers:
+
+| Hypothesis | Prediction for MT #1 + MT #2 `_SUCCESS` file mtime |
+|---|---|
+| Debug doc (Hail finalize fires on empty contents under cores=1/mem=5g pressure) | mtime is **before** 2026-05-20 22:30 UTC kill — `_SUCCESS` written when tasks falsely reported complete during Stage 36 (~14:30 UTC 2026-05-19) and Stage 45 (~2026-05-20) |
+| Carter (kill interrupted in-progress writes) | mtime is **at or after** 22:30 UTC kill (would require Hail to write `_SUCCESS` very weirdly — before bulk data) |
+
+Carter's hypothesis explains MT #3's absence cleanly (write IR submitted 19:07:36 UTC, truncated 28s later, kill at 22:30; uncontested) and there's a plausible composite where Hail's lazy semantics deferred MT #1 + MT #2's actual entries-write to Cell 7's `count_rows()` trigger, which the kill then interrupted. The debug doc only had MEDIUM-HIGH confidence on the specific Hail mechanism; this is a credible alternative that doesn't change the patch strategy.
+
+**Free distinguishing test for next AoU session:**
+```bash
+gsutil ls -l "gs://${WORKSPACE_BUCKET}/ld/mt_afr_qc.mt/_SUCCESS" \
+              "gs://${WORKSPACE_BUCKET}/ld/mt_afr_pca_selfid_qc.mt/_SUCCESS"
+```
+The `_SUCCESS` mtime resolves which hypothesis is right. Either way, Track 4 patches defend against BOTH (count_rows assertion + entries-dir gsutil check catch zero-content MTs regardless of cause).
+
+Stopped here per Carter's end-of-day signoff: push complete; STATE + memory refreshed; await Abby's engineering team response before any re-fire planning. AoU env remains DELETED ($0/hr meter). Next-session entry point: read this `## 2026-05-28 session update` section + check Zendesk #57144 for Abby's reply + paste reply alongside this hypothesis table for me to reason from both signals at once.
+
 
 # Project State
 
