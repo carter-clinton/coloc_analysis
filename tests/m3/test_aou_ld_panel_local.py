@@ -381,6 +381,92 @@ def test_has_checkpoint_returns_false_when_mt_dir_exists_but_no_success(tmp_path
     assert _has_checkpoint(f"file://{mt_dir}") is False
 
 
+# ----- m3-W1 empty-MT catastrophe regression tests (Track 4 patch 1/7) -----
+#
+# These tests document the contract divergence that the W1 catastrophe
+# exposed: _has_checkpoint() only checks the _SUCCESS marker, which Hail's
+# driver-side finalize() writes based on tasks-reported-complete accounting
+# without validating output contents. Under aggressive
+# spark.executor.cores=1/mem=5g profile, executor tasks can silently
+# truncate after writing Parquet schema footers but before writing
+# entries row-group payloads, leaving a populated-looking MT directory
+# with zero data. Bucket forensics 2026-05-21:
+#   mt_afr_qc.mt/_SUCCESS                                       present
+#   mt_afr_qc.mt/metadata.json.gz                               present
+#   mt_afr_qc.mt/rows/rows/parts/part-00000-X.parquet (~35B)    present (footer stub)
+#   mt_afr_qc.mt/entries/entries/parts/                         ABSENT
+#   hl.read_matrix_table(uri).count_cols()                      0
+#   hl.read_matrix_table(uri).count_rows()                      0
+#
+# _validate_checkpoint_populated() is the contents-validating replacement
+# for _has_checkpoint() in resume-gate semantics. Cross-references:
+# - .planning/debug/m3-W1-empty-mt-catastrophe.md (root-cause analysis)
+# - [[feedback_aou_success_marker_not_evidence_of_data]]
+# - [[feedback_hail_checkpoint_contract_violation]]
+
+
+def _make_stub_mt(mt_dir: Path, with_entries_dir: bool = False) -> None:
+    """Build the W1 catastrophe MT-skeleton pattern at mt_dir.
+
+    Produces: _SUCCESS marker + metadata.json.gz stub + rows/rows/parts/
+    with a single 35-byte Parquet-footer stub file (the exact size class
+    observed on AoU 2026-05-21). Optionally creates an empty
+    entries/entries/parts/ directory (the second catastrophe variant where
+    Hail created the entries scaffold but no executor wrote row-group data).
+    """
+    mt_dir.mkdir(parents=True)
+    (mt_dir / "_SUCCESS").write_text("")
+    (mt_dir / "metadata.json.gz").write_bytes(b"\x1f\x8b\x08" + b"\x00" * 32)
+    rows_parts = mt_dir / "rows" / "rows" / "parts"
+    rows_parts.mkdir(parents=True)
+    # Exactly 35 bytes — matches the Parquet column-metadata footer
+    # size observed in the 2026-05-21 bucket inspection.
+    (rows_parts / "part-00000-stub.parquet").write_bytes(b"PAR1" + b"\x00" * 27 + b"PAR1")
+    if with_entries_dir:
+        entries_parts = mt_dir / "entries" / "entries" / "parts"
+        entries_parts.mkdir(parents=True)
+        # Intentionally empty — no executor wrote row-group payloads.
+
+
+def test_validate_checkpoint_populated_rejects_stub_entries(tmp_path):
+    """Stub MT (_SUCCESS + 35-byte rows footer + NO entries dir) must fail
+    validation. Models the mt_afr_qc.mt state observed on AoU 2026-05-21."""
+    from aou_ld_panel import _validate_checkpoint_populated
+    mt_dir = tmp_path / "stub_afr_qc.mt"
+    _make_stub_mt(mt_dir, with_entries_dir=False)
+    assert _validate_checkpoint_populated(f"file://{mt_dir}") is False
+
+
+def test_validate_checkpoint_populated_rejects_empty_entries_dir(tmp_path):
+    """Stub MT with present-but-empty entries/entries/parts/ must also fail
+    validation. Models the silent-executor-truncation variant where Hail
+    created the entries scaffold but no row-group payloads were written."""
+    from aou_ld_panel import _validate_checkpoint_populated
+    mt_dir = tmp_path / "stub_afr_empty_entries.mt"
+    _make_stub_mt(mt_dir, with_entries_dir=True)
+    assert _validate_checkpoint_populated(f"file://{mt_dir}") is False
+
+
+def test_has_checkpoint_vs_validate_diverge_on_stub_mt(tmp_path):
+    """Document the contract divergence: _has_checkpoint() returns True
+    (the W1 false-positive that triggered RESUME_FROM_POST_SAMPLE_QC into
+    an empty MT), but _validate_checkpoint_populated() returns False
+    (the corrected resume-gate semantics)."""
+    from aou_ld_panel import _has_checkpoint, _validate_checkpoint_populated
+    mt_dir = tmp_path / "stub_diverge.mt"
+    _make_stub_mt(mt_dir, with_entries_dir=False)
+    has = _has_checkpoint(f"file://{mt_dir}")
+    validated = _validate_checkpoint_populated(f"file://{mt_dir}")
+    assert has is True, (
+        "_has_checkpoint() must still return True on stub MT — "
+        "documents the pre-patch false-positive that triggered RESUME"
+    )
+    assert validated is False, (
+        "_validate_checkpoint_populated() must return False on stub MT — "
+        "the corrected resume-gate semantics"
+    )
+
+
 # ----- Live Hail tests (skip individually if hail not available) -----
 
 
