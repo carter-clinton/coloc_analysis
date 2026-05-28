@@ -463,6 +463,13 @@ def _has_checkpoint(uri: str) -> bool:
 
     Scheme dispatch: 'file://' uses pathlib for local-FS tests without
     a Hail dependency; all other schemes defer to hl.hadoop_is_file.
+
+    WARNING: _has_checkpoint() only verifies the _SUCCESS marker exists.
+    The m3-W1 empty-MT catastrophe (2026-05-21) proved this is NOT
+    sufficient evidence of populated data — Hail's driver-side finalize()
+    writes _SUCCESS on tasks-reported-complete accounting WITHOUT
+    validating output contents. For resume-gate decisions, use
+    :func:`_validate_checkpoint_populated` instead.
     """
     success_marker_uri = f"{uri}/_SUCCESS"
     if uri.startswith("file://"):
@@ -475,6 +482,93 @@ def _has_checkpoint(uri: str) -> bool:
         # Defensive: any filesystem error during the existence check
         # is treated as "checkpoint not present" — safer to redo work
         # than to assume a checkpoint that may not actually exist.
+        return False
+
+
+# Minimum entries-file byte size that constitutes "populated" content.
+# The m3-W1 catastrophe bucket forensics 2026-05-21 observed 35-byte
+# Parquet column-metadata footer stubs in rows/rows/parts/ (zero
+# row-group payload). A populated Hail MT partition file is at least
+# tens of KB even for tiny test fixtures. 1 KB cleanly discriminates
+# footer-only stubs from real partition contents.
+MIN_ENTRIES_FILE_BYTES = 1024
+
+
+def _validate_checkpoint_populated(uri: str, *,
+                                    min_entries_bytes: int = MIN_ENTRIES_FILE_BYTES
+                                    ) -> bool:
+    """Strict resume-gate: _SUCCESS + non-empty entries/ row-group payload.
+
+    Contents-validating replacement for :func:`_has_checkpoint`. Defends
+    against the m3-W1 empty-MT catastrophe class
+    (.planning/debug/m3-W1-empty-mt-catastrophe.md), where Hail's
+    driver-side ``finalize()`` writes ``_SUCCESS`` on tasks-reported-
+    complete accounting WITHOUT validating that executor tasks actually
+    wrote row-group payloads. Under aggressive
+    ``spark.executor.cores=1/mem=5g`` profile (necessary for v8
+    partition-explosion OOM remediation), executor tasks can silently
+    truncate after writing Parquet schema footers — producing an MT
+    directory with ``_SUCCESS`` + 35-byte rows-stubs + absent
+    ``entries/entries/parts/`` (the exact 2026-05-21 bucket signature).
+
+    Validation steps:
+      1. ``_has_checkpoint(uri)`` — ``_SUCCESS`` must exist.
+      2. ``{uri}/entries/entries/parts/`` directory must exist.
+      3. At least one file in ``entries/entries/parts/`` must exceed
+         ``min_entries_bytes`` (default 1 KB; filters footer stubs).
+
+    Scheme dispatch mirrors :func:`_has_checkpoint`: ``file://`` uses
+    pathlib for local-FS tests without a Hail dependency; all other
+    schemes defer to ``hl.hadoop_ls``. Defensive ``try/except``: any
+    filesystem error during validation returns False — safer to redo
+    work than to assume a populated checkpoint that may not exist.
+
+    Used by :func:`load_qc_cohort`'s auto-resume state machine
+    (DESIGN §3.5) as the canonical resume-gate. Any new code path that
+    needs to decide "is this MT real?" must use this helper, not
+    :func:`_has_checkpoint`.
+
+    Cross-references:
+      - [[feedback_aou_success_marker_not_evidence_of_data]]
+      - [[feedback_hail_checkpoint_contract_violation]]
+
+    Args:
+        uri: MT directory URI. ``file://`` for tests; ``gs://`` in production.
+        min_entries_bytes: Threshold below which an entries-part file is
+            considered a stub. Keyword-only; default
+            :data:`MIN_ENTRIES_FILE_BYTES`.
+
+    Returns:
+        True iff _SUCCESS + entries-dir + ≥1 populated entries-part.
+    """
+    if not _has_checkpoint(uri):
+        return False
+    entries_dir_uri = f"{uri}/entries/entries/parts"
+    if uri.startswith("file://"):
+        entries_dir = Path(entries_dir_uri[len("file://"):])
+        if not entries_dir.is_dir():
+            return False
+        try:
+            for entry in entries_dir.iterdir():
+                if entry.is_file() and entry.stat().st_size > min_entries_bytes:
+                    return True
+        except OSError:
+            return False
+        return False
+    try:
+        import hail as hl
+        # hl.hadoop_ls returns a list of stat-dicts with 'path' and
+        # 'size_bytes' keys; FileNotFoundError if the dir is absent.
+        listing = hl.hadoop_ls(entries_dir_uri)
+        for entry in listing:
+            size = entry.get("size_bytes", entry.get("size", 0))
+            if size and size > min_entries_bytes:
+                return True
+        return False
+    except Exception:
+        # Defensive: filesystem error, missing entries dir, or hail not
+        # importable all yield "not populated" — safer to redo work
+        # than to resume from a potentially empty checkpoint.
         return False
 
 
