@@ -644,8 +644,15 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
 
         if not force_fresh:
             # Check deepest intermediate first (post_sample_qc) — if it's
-            # present with valid sidecar, we skip both Phase 1 and Phase 2.
-            if _has_checkpoint(ckpt_post_sqc):
+            # present with valid sidecar AND populated entries, we skip
+            # both Phase 1 and Phase 2.
+            #
+            # _validate_checkpoint_populated() is the contents-validating
+            # resume-gate (m3-W1 empty-MT catastrophe defense). A stub MT
+            # with _SUCCESS present but zero entries falls through to the
+            # explicit catastrophe-pattern branch below, then to
+            # auto_fresh recovery.
+            if _validate_checkpoint_populated(ckpt_post_sqc):
                 sidecar = _read_sidecar(_sidecar_uri(ckpt_post_sqc))
                 if sidecar is None:
                     # Orphan: MT present but sidecar absent (crash window between
@@ -663,7 +670,17 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                             f"Use force_fresh=True to overwrite, or fix the "
                             f"parameter mismatch."
                         )
-            elif _has_checkpoint(ckpt_post_split):
+            elif _has_checkpoint(ckpt_post_sqc):
+                # m3-W1 catastrophe pattern: _SUCCESS present but entries
+                # absent or stub-only. The prior fire produced an empty
+                # MT skeleton; do NOT resume from it. Auto-force-fresh
+                # recovery so Phase 1 + Phase 2 re-run from source.
+                # See [[feedback_aou_success_marker_not_evidence_of_data]].
+                print(f"[load_qc_cohort] WARN: empty-MT catastrophe pattern "
+                      f"at {ckpt_post_sqc} (_SUCCESS present but entries/ "
+                      f"absent or stub-only); auto-force-fresh recovery")
+                auto_fresh = True
+            elif _validate_checkpoint_populated(ckpt_post_split):
                 sidecar = _read_sidecar(_sidecar_uri(ckpt_post_split))
                 if sidecar is None:
                     print(f"[load_qc_cohort] WARN: orphan MT at {ckpt_post_split} "
@@ -679,6 +696,12 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                             f"Use force_fresh=True to overwrite, or fix the "
                             f"parameter mismatch."
                         )
+            elif _has_checkpoint(ckpt_post_split):
+                # Same catastrophe-pattern guard for the shallow intermediate.
+                print(f"[load_qc_cohort] WARN: empty-MT catastrophe pattern "
+                      f"at {ckpt_post_split} (_SUCCESS present but entries/ "
+                      f"absent or stub-only); auto-force-fresh recovery")
+                auto_fresh = True
 
     # Effective overwrite flag for intermediate writes
     overwrite_flag = force_fresh or auto_fresh
