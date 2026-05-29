@@ -1,0 +1,81 @@
+# Pre-migration inventory (gate G3) - generated 2026-05-29T01:21:05Z
+# Operator: jupyter@aea702d6d15c  Workspace: gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a  Project: terra-vpc-sc-fe7a5641
+
+=== 1. Workspace bucket top-level layout ===
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/m3-W1-forensics/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/m3-W2-forensics/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/
+
+=== 2. Total bucket size ===
+74.73 MiB    gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a
+
+=== 3. Notebooks in workspace ===
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/AOU-1_cohort_definition.ipynb
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/AOU-2_per_region_ld.ipynb
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/scratch_bootstrap_260514.ipynb
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/temp_terminal.ipynb
+
+=== 4. Catastrophe evidence still present? (must all exist) ===
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/_SUCCESS
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/_SUCCESS
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/AOU-1_cohort_definition.ipynb.pre-260514-bootstrap.bak.20260514T224146Z
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/AOU-1_cohort_definition.ipynb.pre-bucket-prefix-fix.bak.20260515T012956Z
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/forensic_mirror_20260528T231308Z.tar.gz
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail-readprobe.20260522T020936Z.log
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail-smoke.20260522T020936Z.log
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.260516-postmortem
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.cell3-12h-stall.20260518T164046Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.cell3-stall.20260517T173112Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.halt.20260518T011941Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.pre_pd_migration.20260521T201919Z.log
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.suspected-wedge.20260519T0037Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/jstack.20260517T173112Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/jstack.20260517T220636Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/jstack.cell3-12h-stall.20260518T164046Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/jstack.halt.20260518T011941Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/ps-tree.20260517T173112Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/pyspy.20260517T220636Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/pyspy.6777.20260517T173112Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/pyspy.cell3-12h-stall.20260518T164046Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/pyspy.halt.20260518T011941Z.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/spark-stages.20260518T164046Z.json
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/yarn-app.20260518T164046Z.json
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/yarn-metrics.20260518T164046Z.json
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/yarn.halt.20260518T011941Z.json
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/2c6dbee-forensic-20260515T012956Z/
+
+=== 5. Git clone state (pre-migration reference point) ===
+m3-W2-aou-deltas
+e019400ceab21d273260892e122083725ee0c5d6
+e019400 docs(quick-260528-l8r): close-out — PLAN + SUMMARY + STATE row (T7/7)
+4e04226 docs(quick-260528-l8r): AOU-2/AOU-4 Track-4-pattern paste-in doc (T6/7)
+e521cd0 feat(quick-260528-l8r): AOU-1-chr22-smoke notebook — chr22 staging for live-Hail Track 4 validation (T5/7)
+298defc feat(quick-260528-l8r): AOU-0 pre-check notebook — clone+env+mtime+entries probe (T4/7)
+83e8606 docs(quick-260528-l8r): RW 2.0 migration playbook — pre-migration gates + Step 1-4 + post-migration validation (T3/7)
+
+=== 6. Hail version on CURRENT (Legacy) platform ===
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/opt/conda/lib/python3.10/site-packages/hail/__init__.py", line 54, in <module>
+    from . import (
+  File "/opt/conda/lib/python3.10/site-packages/hail/backend/__init__.py", line 1, in <module>
+    from .backend import Backend
+  File "/opt/conda/lib/python3.10/site-packages/hail/backend/backend.py", line 22, in <module>
+    from ..linalg.blockmatrix import BlockMatrix
+  File "/opt/conda/lib/python3.10/site-packages/hail/linalg/__init__.py", line 2, in <module>
+    from .blockmatrix import BlockMatrix, _breeze_from_ndarray, _eigh, _jarray_from_ndarray, _svd
+  File "/opt/conda/lib/python3.10/site-packages/hail/linalg/blockmatrix.py", line 54, in <module>
+    from hail.table import Table
+  File "/opt/conda/lib/python3.10/site-packages/hail/table.py", line 9, in <module>
+    import pyspark
+ModuleNotFoundError: No module named 'pyspark'
+(Hail not importable in this terminal - fine; capture from a notebook later)
+
+=== 7. CDR / env-var snapshot ===
+WORKSPACE_BUCKET=gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a
+WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH=gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt
+WGS_ACAF_THRESHOLD_SPLIT_HAIL_PATH=gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/splitMT/hail.mt
+GOOGLE_PROJECT=terra-vpc-sc-fe7a5641
+WGS_ACAF_THRESHOLD_VCF_PATH=gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/vcf
