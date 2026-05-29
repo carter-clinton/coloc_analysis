@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-29T00:20:59.174Z",
+  "timestamp": "2026-05-29T04:07:44.428Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
@@ -8,34 +8,48 @@
   "task": null,
   "total_tasks": null,
   "status": "paused",
-  "headline": "m3-W1 catastrophe recovery: PRESERVE complete (forensic mirror landed on NCSU, gate G1). Competing root-cause hypothesis RESOLVED. Next = Phase 2 MIGRATE (gate G3 pre-migration inventory, then RW 2.0 Steps 1-4) before the 2026-06-30 RW 2.0 deadline.",
+  "headline": "RW 2.0 MIGRATION COMPLETE + Step-4 integrity validation CLOSED (74.74 MiB / 24,721 obj / 5 dirs). Recovery plan PRESERVE->MIGRATE->STAGE: Preserve + Migrate DONE. Next = STAGE: run env-side CHECK C (AUX_BASE on R9) + CHECK D (Hail version), then AOU-0 precheck, then chr22 smoke (256-vCPU Dataproc).",
+  "new_rw2_coordinates": {
+    "workspace_title": "coloc_analysis",
+    "workspace_id": "aou-rw-476cdac2",
+    "workspace_uuid": "38f1e4ec-399e-4715-9d00-c04e71cae0bc",
+    "google_project": "wb-perky-corn-6639",
+    "billing_pod": "user-pod-cclinton-2d12",
+    "region": "us-central1",
+    "WORKSPACE_BUCKET": "gs://rw-migration-aou-rw-476cdac2",
+    "bucket_structure": "content at bucket ROOT (not nested under workspace/rw-migration-aou-rw-XXXX/)",
+    "CDR": "C2024Q3R9 (cdrv8-R9), was R8",
+    "cli_set_workspace": "wb workspace set --id=aou-rw-476cdac2",
+    "old_legacy_bucket": "gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a",
+    "old_legacy_project": "terra-vpc-sc-fe7a5641"
+  },
   "completed_tasks": [
-    {"id": "G2", "name": "Track 4 patches verified present on AoU clone (grep _validate_checkpoint_populated=5, _assert_checkpoint_nonempty=4)", "status": "done"},
-    {"id": "P1-mirror", "name": "Forensic mirror run in recreated AoU env (gsutil-only, ~$0.05); bundle + MANIFEST + 28MB hail.log produced", "status": "done"},
-    {"id": "P1-distinguisher", "name": "_SUCCESS mtime hypothesis test captured", "status": "done", "result": "mt_afr_qc.mt=2026-05-19T03:11:29Z, mt_afr_pca_selfid_qc.mt=2026-05-20T02:34:45Z, mt_eur_qc.mt=no marker"},
-    {"id": "G1", "name": "Forensic mirror landed on NCSU + committed + pushed", "status": "done", "commit": "c81ac4d"}
+    {"id": "G1", "name": "Forensic mirror committed to NCSU", "status": "done", "commit": "c81ac4d"},
+    {"id": "G2", "name": "Track 4 patches verified on AoU clone (5/4)", "status": "done"},
+    {"id": "G3", "name": "Pre-migration inventory + env-panel snapshot", "status": "done", "commit": "5a9b752"},
+    {"id": "G0", "name": "Disposition: PROCEED without Abby reply (preserve-first satisfies G0; Legacy decommissioned regardless)", "status": "done", "commit": "012abb1"},
+    {"id": "MIGRATE", "name": "Legacy->RW 2.0 migration (legacy-initiated: workspace Data tab -> billing pod -> Start migration; CONTINUE past PD warning)", "status": "done", "note": "no errors; non-destructive; new coords recorded"},
+    {"id": "STEP4-INTEGRITY", "name": "Migration integrity validation: 74.74 MiB / 24,721 objects / 5 dirs all present", "status": "done", "commit": "a95b86c"},
+    {"id": "AUDIT", "name": "NCSU code-impact audit", "status": "done", "result": "bucket-URI change = ZERO code changes (env-driven); CDR R8->R9 has no SQL refs (pure-Hail cohort)"}
   ],
   "remaining_tasks": [
-    {"id": "G3", "name": "Pre-migration inventory per MIGRATION-PLAYBOOK.md", "status": "not_started"},
-    {"id": "P2-migrate", "name": "RW 2.0 migration Steps 1-4 (MIGRATION-PLAYBOOK.md); hard deadline 2026-06-30; recommended window 2026-06-02..06-15", "status": "not_started"},
-    {"id": "P3-precheck", "name": "Run AOU-0-precheck notebook in RW 2.0 -> write post-precheck-routing-decision.txt", "status": "not_started"},
-    {"id": "P3-smoke", "name": "Run AOU-1-chr22-smoke (256 vCPU min); pass -> Wave 2; fail -> 1000G AFR safety net", "status": "not_started"}
+    {"id": "CHECK-C", "name": "Env-side: verify AUX_BASE (gs://fc-aou-datasets-controlled/v8/.../aux/{ancestry_preds.tsv, relatedness_flagged_samples.tsv}) resolves from new project wb-perky-corn-6639 and is R9-consistent. If 404 -> patch AUX_BASE at aou_ld_panel.py:85.", "status": "not_started"},
+    {"id": "CHECK-D", "name": "Env-side: capture Hail version on RW 2.0 (drives chr22-smoke planning; if differs from Legacy the catastrophe mechanism may differ)", "status": "not_started"},
+    {"id": "AOU-0", "name": "Run AOU-0 precheck notebook on RW 2.0 (compute-free; needs git clone in env first) -> post-precheck-routing-decision.txt", "status": "not_started"},
+    {"id": "CHR22-SMOKE", "name": "chr22 smoke (256-vCPU Dataproc, ~$30-75); pass -> Wave 2 (AOU-2/4 paste-ins); fail -> 1000G AFR safety net", "status": "not_started"}
   ],
-  "blockers": [
-    {"description": "AoU credit recovery + RW 2.0 migration guidance pending from AoU engineering", "type": "external", "workaround": "Zendesk #57144 (Abby Doyle); playbook permits proceeding past internal 2026-06-08 deadline; G1+G2 already satisfied so migration is not blocked on Abby"}
-  ],
+  "blockers": [],
   "human_actions_pending": [
-    {"action": "Check Zendesk #57144 for Abby/AoU-engineering reply", "context": "credit recovery + RW 2.0 migration; paste reply for combined reasoning with the now-resolved hypothesis", "blocking": false},
-    {"action": "Send Abby Zendesk reply if not already sent", "context": "paste from .planning/quick/260528-l8r-.../ABBY-MIGRATION-CLARIFICATION-DRAFT.md", "blocking": false},
-    {"action": "Recreate AoU env again for migration/precheck (currently DELETED, $0/hr)", "context": "needed for Phase 2 Step-side actions and Phase 3 notebooks", "blocking": true}
+    {"action": "Stop/Delete the RW 2.0 validation env (n1-standard-1) if still running", "context": "$0.05/hr compute; recommend Delete for full $0 (no PD on RW 2.0). May still be running if not torn down before break.", "blocking": false},
+    {"action": "Run CHECK C + D in a RW 2.0 terminal", "context": "needs a live env; ideally before deleting the validation env, else spin a fresh tiny one", "blocking": false}
   ],
   "decisions": [
-    {"decision": "1000G AFR LD is the smoke-FAILURE safety net only, NOT the primary/genome-wide substrate; do not propose it proactively, but keep the staged-doc fallback language", "rationale": "AoU AFR WGS (~91-100k, 138x power) is the committed genome-wide substrate; Carter directive 2026-05-28", "phase": "m3"},
-    {"decision": "Hypothesis distinguisher RESOLVED: both _SUCCESS mtimes precede the 22:30 UTC 2026-05-20 kill -> Hail-finalize/checkpoint-contract-violation theory SUPPORTED; kill-as-culprit REFUTED for MT#1+MT#2", "rationale": "their empty+_SUCCESS state was sealed ~20h-1.8d before the kill; strengthens Track 1 credit narrative", "phase": "m3"},
-    {"decision": "Commit tarball + MANIFEST only; loose 28MB hail.log left gitignored (repo .gitignore:95 *.log); log preserved inside tarball", "rationale": "repo policy + hygiene; tarball is self-contained immutable record", "phase": "m3"},
-    {"decision": "Phantom nbstripout \\u2014/em-dash churn on AOU-1/2/4 notebooks is cosmetic JSON unicode-encoding; resolved via git checkout -f; do NOT commit those notebook changes", "rationale": "nbstripout clean filter ensure_ascii mismatch perpetually re-dirties; committed versions are authoritative byte-identical", "phase": "m3"}
+    {"decision": "G0 = proceed with migration WITHOUT Abby reply", "rationale": "preserve-first (NCSU mirror + bucket evidence survives) satisfies G0's purpose; Legacy decommissioned at 2026-06-30 regardless; Abby timeline unknown", "ref": ".planning/quick/260528-l8r-.../G0-DISPOSITION.md"},
+    {"decision": "Bucket-URI change requires zero code changes", "rationale": "code reads os.environ['WORKSPACE_BUCKET']; only docstring fc-secure refs"},
+    {"decision": "CDR R8->R9 has no SQL impact", "rationale": "AOU-1 cohort is pure-Hail (no BigQuery); only AUX_BASE path needs env-side resolution check"},
+    {"decision": "1000G AFR = smoke-failure safety net ONLY, not genome-wide substrate", "rationale": "AoU AFR WGS committed; don't propose proactively; keep staged-doc fallback", "ref": "feedback_no_1000g_ld_pivot"}
   ],
   "uncommitted_files": [],
-  "next_action": "Decide Phase 2 entry: either (a) run gate G3 pre-migration inventory per MIGRATION-PLAYBOOK.md, or (b) check Zendesk #57144 first and paste Abby's reply for combined reasoning. AoU env must be recreated for any env-side step. Phase 1 PRESERVE is fully complete and pushed (c81ac4d).",
-  "context_notes": "Session resumed via /gsd-resume-work, evolved into executing Phase 1 PRESERVE of the m3-W1 catastrophe recovery 3-step plan (PRESERVE -> MIGRATE -> STAGE). gsutil/gcloud absent on NCSU and AoU fc-secure bucket is not externally readable, so the bundle transfer used Files-UI->laptop->scp (Path B), not direct gsutil cp. Forensic record provably carries the _SUCCESS mtimes (the run_forensic_mirror.sh stdout summary has a tail-1 bug that hid them, but MANIFEST Section 1 captured them; fix the summary to grep _SUCCESS in a later quick task). Gates G1+G2 done; migration is the next gate (G3) before the hard 2026-06-30 RW 2.0 deadline."
+  "next_action": "Run env-side CHECK C (AUX_BASE resolves on R9/new project?) + CHECK D (Hail version) in a RW 2.0 terminal (consolidated block in post-migration-validation.md). Then close the CDR question, then AOU-0 precheck, then chr22 smoke. Also Stop/Delete the validation env if still running.",
+  "context_notes": "Migration arc fully executed this session via /gsd-resume-work continuation. Carter ran env-side actions through an in-Workbench Claude agent (relaying outputs to the NCSU-side Claude orchestrator). Migration was LEGACY-initiated (not a RW2.0 CTA) — playbook Steps 1+3 corrected (34a58cc). All artifacts committed+pushed to origin/m3-W2-aou-deltas through a95b86c; HEAD==origin. NCSU has no gsutil/gcloud and the AoU fc-secure/rw-migration buckets are not externally readable, so all AoU<->NCSU transfers use Path B (Files UI -> laptop -> scp). RW 2.0 does NOT support persistent disks (PD rule retired on this platform)."
 }
