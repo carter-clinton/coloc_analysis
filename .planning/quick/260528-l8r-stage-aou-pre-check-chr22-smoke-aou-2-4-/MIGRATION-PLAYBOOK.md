@@ -73,13 +73,13 @@ Save the output to NCSU at `.planning/quick/260528-l8r-stage-aou-pre-check-chr22
 
 ## Step 1 — Confirm Eligibility and Access Requirements
 
-Per AoU support article. Likely involves:
-- eRA Commons → AoU Researcher Workbench linkage (already in place per [[user_profile]])
-- DUA + RPS status (already approved 2026-04-22 → 2026-04-28 portal sequence; see `.planning/amendments/AOU-WORKBENCH-REGISTRATION.md`)
+Per AoU support article §1, all four must be true:
+- Annual data-access requirements current (eRA Commons linkage + DUA/RPS; already in place per [[user_profile]] + `.planning/amendments/AOU-WORKBENCH-REGISTRATION.md`)
 - Controlled-tier access (already approved; required for v8 WGS access)
-- Billing profile attached (already linked ~2026-04-28 per `[[project_aou_billing_pending]]`)
+- **RW 2.0 logged-in + Verily ToS accepted** — one-time (Carter done 2026-05-29 ✅)
+- Legacy workspace linked to a valid billing account **AND** an active **billing pod** available in RW 2.0 with a billing account attached (Carter attached a billing account to the pod 2026-05-29 ✅)
 
-**Action:** Open Researcher Workbench 2.0 home page; verify the "Migrate" CTA is enabled (not blocked behind any incomplete prerequisite); if blocked, follow the prompt to clear the prerequisite (likely just an attestation re-click).
+**Action:** This is just a one-time RW 2.0 login + Verily ToS accept (done). Do NOT look for a "Migrate" CTA on the RW 2.0 side — it doesn't exist; the trigger is on the legacy side (corrected Step 3). RW 2.0 is only where the migrated `rw-migration-aou-rw-XXXXXXXX` workspace appears afterward.
 
 ---
 
@@ -101,9 +101,21 @@ Specific to `coloc_analysis` workspace:
 
 ## Step 3 — Migrate Your Workspace
 
-Per AoU support article: user-interface-prompted tool. Likely a single click on the workspace card in Researcher Workbench 2.0 home + a confirmation dialog.
+> **CORRECTED PROCEDURE (verified live 2026-05-29).** Migration is initiated from the **legacy** Workbench (`workbench.researchallofus.org`), NOT from RW 2.0/Verily. There is no card-level "Migrate" CTA and no "Import legacy workspace" action on the RW 2.0 side — that side is only the destination. The workspace's ⋮ card menu only shows Duplicate/Edit/Share/Delete (that's why the original playbook's assumption was wrong).
 
-**Carter user-action only.** No automation in this playbook for Step 3 itself — follow the UI prompt.
+**Documented path** (AoU support article §3 "How to Migrate a Workspace"):
+
+1. On the **legacy** landing page → **"Go to workspaces."**
+2. **Open `coloc_analysis` itself** (click into the workspace — NOT the ⋮ card menu).
+3. Go to the workspace's **"Data" tab** → review the eligibility checks + guidance.
+4. On the next page, **select the billing pod** for RW 2.0 to use (Carter attached a billing account to the pod 2026-05-29 ✅ — this is a billing action, Carter's to confirm).
+5. Click **"Start migration."**
+
+**The "data on your persistent disk" dialog** ("Persistent disk data will not be migrated…"): for `coloc_analysis`, **click CONTINUE WITH MIGRATION** — nothing of value is on the PD. Everything we created is already in the workspace bucket (forensic mirror + inventory in `forensics/`; MTs in `ld/`) AND on NCSU git; the PD only held the re-clonable git checkout. Continuing does not delete the PD anyway (it stays in legacy until separately deleted). Do NOT spend time copying re-clonable files to the bucket.
+
+**What migration does** (non-destructive): copies the workspace **bucket** into a NEW RW 2.0 workspace folder named `rw-migration-aou-rw-XXXXXXXX`, preserves metadata + access policies. The **legacy workspace is NOT locked or deleted.** NOT migrated: persistent-disk files (unsupported in RW 2.0) + any cohorts/concept-sets/datasets built with the point-and-click Cohort/Dataset Builder. **Ours ride along in the bucket** — all our cohort logic is in notebooks/scripts, not the point-and-click builder — so nothing is lost.
+
+**Carter user-action only** for Steps 1–5 above; no automation.
 
 While migration is in flight:
 - [ ] Take screenshot of "before" state (Legacy Workbench → coloc_analysis workspace card with workspace ID + DUA + cost-to-date)
