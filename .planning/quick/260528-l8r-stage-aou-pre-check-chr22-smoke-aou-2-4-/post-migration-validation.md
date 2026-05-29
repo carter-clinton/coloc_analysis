@@ -22,11 +22,13 @@
 
 | Check | Status |
 |---|---|
-| 5 top-level dirs (forensics, ld, m3-W1-forensics, m3-W2-forensics, notebooks) | ✅ 5/5 present (UI browser) |
-| Total bucket size ~74.73 MiB | ⏳ PENDING — UI shows "--" for folder sizes; needs `gsutil du -sh` from a terminal in the new env (allow ~30 min for full GCS population; VPC-SC perimeter caveat) |
-| Catastrophe evidence (`ld/mt_*_qc.mt/_SUCCESS`, forensics/) | ⏳ confirm via terminal (dirs present; per-object check pending) |
-| Git clone | n/a yet (env not recreated in RW 2.0) |
-| Hail/Dataproc image version on RW 2.0 vs Legacy | ⏳ PENDING — capture from first notebook (matters for chr22-smoke planning) |
+| 5 top-level dirs (forensics, ld, m3-W1-forensics, m3-W2-forensics, notebooks) | ✅ 5/5 present |
+| Total bucket size ~74.73 MiB | ✅ **CONFIRMED 74.74 MiB** (terminal `gsutil du -sh`, n1-standard-1 env). Per-dir: forensics 61.69 MiB, ld 1.34 MiB, m3-W1-forensics 364.91 KiB, m3-W2-forensics 10.91 MiB, notebooks 448.75 KiB. **Object count: 24,721** (consistent with empty-MT tiny-partition structure). |
+| Catastrophe evidence (`ld/mt_*_qc.mt/_SUCCESS`, forensics/) | ✅ dirs present + sizes consistent (ld 1.34 MiB = empty-MT stubs; forensics 61.69 MiB) |
+| CHECK C — `AUX_BASE` resolves on R9/new project | ⏳ run while env is up (see consolidated block) |
+| CHECK D — Hail/Dataproc version on RW 2.0 | ⏳ run while env is up (matters for chr22-smoke planning) |
+
+**STEP 4 MIGRATION-INTEGRITY VALIDATION: CLOSED** — all data copied (74.74 MiB / 24,721 objects / 5 dirs). Remaining CHECK C + D are forward-looking pre-fire checks for the next phase, not migration-integrity gates.
 
 **Pending size/contents confirmation block** (run in a terminal in the RW 2.0 env, after ~30 min population wait):
 ```bash
