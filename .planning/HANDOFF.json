@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-29T00:20:59.174Z",
+  "phase": "m3",
+  "phase_name": "m3-aou-afr-ld-panel-build",
+  "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
+  "plan": 3,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "headline": "m3-W1 catastrophe recovery: PRESERVE complete (forensic mirror landed on NCSU, gate G1). Competing root-cause hypothesis RESOLVED. Next = Phase 2 MIGRATE (gate G3 pre-migration inventory, then RW 2.0 Steps 1-4) before the 2026-06-30 RW 2.0 deadline.",
+  "completed_tasks": [
+    {"id": "G2", "name": "Track 4 patches verified present on AoU clone (grep _validate_checkpoint_populated=5, _assert_checkpoint_nonempty=4)", "status": "done"},
+    {"id": "P1-mirror", "name": "Forensic mirror run in recreated AoU env (gsutil-only, ~$0.05); bundle + MANIFEST + 28MB hail.log produced", "status": "done"},
+    {"id": "P1-distinguisher", "name": "_SUCCESS mtime hypothesis test captured", "status": "done", "result": "mt_afr_qc.mt=2026-05-19T03:11:29Z, mt_afr_pca_selfid_qc.mt=2026-05-20T02:34:45Z, mt_eur_qc.mt=no marker"},
+    {"id": "G1", "name": "Forensic mirror landed on NCSU + committed + pushed", "status": "done", "commit": "c81ac4d"}
+  ],
+  "remaining_tasks": [
+    {"id": "G3", "name": "Pre-migration inventory per MIGRATION-PLAYBOOK.md", "status": "not_started"},
+    {"id": "P2-migrate", "name": "RW 2.0 migration Steps 1-4 (MIGRATION-PLAYBOOK.md); hard deadline 2026-06-30; recommended window 2026-06-02..06-15", "status": "not_started"},
+    {"id": "P3-precheck", "name": "Run AOU-0-precheck notebook in RW 2.0 -> write post-precheck-routing-decision.txt", "status": "not_started"},
+    {"id": "P3-smoke", "name": "Run AOU-1-chr22-smoke (256 vCPU min); pass -> Wave 2; fail -> 1000G AFR safety net", "status": "not_started"}
+  ],
+  "blockers": [
+    {"description": "AoU credit recovery + RW 2.0 migration guidance pending from AoU engineering", "type": "external", "workaround": "Zendesk #57144 (Abby Doyle); playbook permits proceeding past internal 2026-06-08 deadline; G1+G2 already satisfied so migration is not blocked on Abby"}
+  ],
+  "human_actions_pending": [
+    {"action": "Check Zendesk #57144 for Abby/AoU-engineering reply", "context": "credit recovery + RW 2.0 migration; paste reply for combined reasoning with the now-resolved hypothesis", "blocking": false},
+    {"action": "Send Abby Zendesk reply if not already sent", "context": "paste from .planning/quick/260528-l8r-.../ABBY-MIGRATION-CLARIFICATION-DRAFT.md", "blocking": false},
+    {"action": "Recreate AoU env again for migration/precheck (currently DELETED, $0/hr)", "context": "needed for Phase 2 Step-side actions and Phase 3 notebooks", "blocking": true}
+  ],
+  "decisions": [
+    {"decision": "1000G AFR LD is the smoke-FAILURE safety net only, NOT the primary/genome-wide substrate; do not propose it proactively, but keep the staged-doc fallback language", "rationale": "AoU AFR WGS (~91-100k, 138x power) is the committed genome-wide substrate; Carter directive 2026-05-28", "phase": "m3"},
+    {"decision": "Hypothesis distinguisher RESOLVED: both _SUCCESS mtimes precede the 22:30 UTC 2026-05-20 kill -> Hail-finalize/checkpoint-contract-violation theory SUPPORTED; kill-as-culprit REFUTED for MT#1+MT#2", "rationale": "their empty+_SUCCESS state was sealed ~20h-1.8d before the kill; strengthens Track 1 credit narrative", "phase": "m3"},
+    {"decision": "Commit tarball + MANIFEST only; loose 28MB hail.log left gitignored (repo .gitignore:95 *.log); log preserved inside tarball", "rationale": "repo policy + hygiene; tarball is self-contained immutable record", "phase": "m3"},
+    {"decision": "Phantom nbstripout \\u2014/em-dash churn on AOU-1/2/4 notebooks is cosmetic JSON unicode-encoding; resolved via git checkout -f; do NOT commit those notebook changes", "rationale": "nbstripout clean filter ensure_ascii mismatch perpetually re-dirties; committed versions are authoritative byte-identical", "phase": "m3"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Decide Phase 2 entry: either (a) run gate G3 pre-migration inventory per MIGRATION-PLAYBOOK.md, or (b) check Zendesk #57144 first and paste Abby's reply for combined reasoning. AoU env must be recreated for any env-side step. Phase 1 PRESERVE is fully complete and pushed (c81ac4d).",
+  "context_notes": "Session resumed via /gsd-resume-work, evolved into executing Phase 1 PRESERVE of the m3-W1 catastrophe recovery 3-step plan (PRESERVE -> MIGRATE -> STAGE). gsutil/gcloud absent on NCSU and AoU fc-secure bucket is not externally readable, so the bundle transfer used Files-UI->laptop->scp (Path B), not direct gsutil cp. Forensic record provably carries the _SUCCESS mtimes (the run_forensic_mirror.sh stdout summary has a tail-1 bug that hid them, but MANIFEST Section 1 captured them; fix the summary to grep _SUCCESS in a later quick task). Gates G1+G2 done; migration is the next gate (G3) before the hard 2026-06-30 RW 2.0 deadline."
+}
