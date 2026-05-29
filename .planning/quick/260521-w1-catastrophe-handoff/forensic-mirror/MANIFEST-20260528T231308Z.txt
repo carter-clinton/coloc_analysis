@@ -1,0 +1,204 @@
+# m3-W1 catastrophe forensic mirror — generated 20260528T231308Z
+# Operator: jupyter@aea702d6d15c
+# Workspace: fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a
+# GOOGLE_PROJECT: terra-vpc-sc-fe7a5641
+# Source: .planning/quick/260528-l8r-stage-aou-pre-check-chr22-smoke-aou-2-4-/run_forensic_mirror.sh
+# Catastrophe context: .planning/debug/m3-W1-empty-mt-catastrophe.md
+# Hypothesis distinguisher: [[feedback_w1_catastrophe_hypothesis_distinguisher]]
+
+
+## Section 1: MT inventory + sizes + key file mtimes
+
+
+### mt_afr_qc.mt
+URI: gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt
+
+--- gsutil ls (directory present?) ---
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/README.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/_SUCCESS
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/metadata.json.gz
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/cols/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/entries/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/globals/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/index/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/references/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/
+
+--- gsutil du -s (total bytes including all subpaths) ---
+703523       gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt
+
+--- gsutil du -s entries/entries/parts/ (the W1 catastrophe discriminator) ---
+0            gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/entries/entries/parts
+
+--- gsutil ls -l _SUCCESS (mtime = hypothesis distinguisher) ---
+Interpretation: mtime BEFORE 2026-05-20 22:30:00 UTC = debug-doc Hail-finalize hypothesis
+                mtime AT or AFTER 2026-05-20 22:30:00 UTC = Carter's kill-as-culprit hypothesis
+         0  2026-05-19T03:11:29Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/_SUCCESS
+TOTAL: 1 objects, 0 bytes (0 B)
+
+--- metadata.json.gz parse ---
+  n_partitions: <absent>
+  keys: ['components', 'file_version', 'hail_version', 'matrix_type', 'name', 'references_rel_path']
+
+
+### mt_afr_pca_selfid_qc.mt
+URI: gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt
+
+--- gsutil ls (directory present?) ---
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/README.txt
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/_SUCCESS
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/metadata.json.gz
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/cols/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/entries/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/globals/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/index/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/references/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/
+
+--- gsutil du -s (total bytes including all subpaths) ---
+703194       gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt
+
+--- gsutil du -s entries/entries/parts/ (the W1 catastrophe discriminator) ---
+0            gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/entries/entries/parts
+
+--- gsutil ls -l _SUCCESS (mtime = hypothesis distinguisher) ---
+Interpretation: mtime BEFORE 2026-05-20 22:30:00 UTC = debug-doc Hail-finalize hypothesis
+                mtime AT or AFTER 2026-05-20 22:30:00 UTC = Carter's kill-as-culprit hypothesis
+         0  2026-05-20T02:34:45Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/_SUCCESS
+TOTAL: 1 objects, 0 bytes (0 B)
+
+--- metadata.json.gz parse ---
+  n_partitions: <absent>
+  keys: ['components', 'file_version', 'hail_version', 'matrix_type', 'name', 'references_rel_path']
+
+
+### mt_eur_qc.mt
+URI: gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_eur_qc.mt
+
+--- gsutil ls (directory present?) ---
+CommandException: One or more URLs matched no objects.
+(directory absent or inaccessible)
+
+--- gsutil du -s (total bytes including all subpaths) ---
+0            gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_eur_qc.mt
+
+--- gsutil du -s entries/entries/parts/ (the W1 catastrophe discriminator) ---
+0            gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_eur_qc.mt/entries/entries/parts
+
+--- gsutil ls -l _SUCCESS (mtime = hypothesis distinguisher) ---
+Interpretation: mtime BEFORE 2026-05-20 22:30:00 UTC = debug-doc Hail-finalize hypothesis
+                mtime AT or AFTER 2026-05-20 22:30:00 UTC = Carter's kill-as-culprit hypothesis
+CommandException: One or more URLs matched no objects.
+(no _SUCCESS marker — MT directory absent or write never finalized)
+
+--- metadata.json.gz parse ---
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/opt/conda/lib/python3.10/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/opt/conda/lib/python3.10/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/opt/conda/lib/python3.10/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/opt/conda/lib/python3.10/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+(metadata.json.gz absent or unreadable)
+
+
+## Section 2: rows/rows/parts/ first 10 files (verifies 35-byte stub pattern)
+
+
+### mt_afr_qc.mt rows/rows/parts/ inventory
+Expected per debug doc: ~2,045 files, each ~35 bytes (Parquet column-metadata footer stubs)
+
+        35  2026-05-18T23:56:34Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0000-ac5b7ef7-7431-4da3-8c1b-5e6cdecc534b
+        35  2026-05-19T00:00:51Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0001-fc065a40-d84c-4fe9-acef-0eaa7bc0c418
+        35  2026-05-18T23:59:04Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0002-5f41afa4-9b7c-4267-8740-378869f8dba1
+        35  2026-05-19T00:02:56Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0003-1257ce18-b703-4514-b844-9f341fb343c7
+        35  2026-05-19T00:00:14Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0004-be4a16e8-9c71-45cf-8c96-dcf3732af841
+        35  2026-05-18T23:58:44Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0005-d79e4af8-b4d0-49d3-ada7-f79efff0cb15
+        35  2026-05-18T23:58:04Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0006-fe39628a-18f8-457c-b713-1fa9c8391959
+        35  2026-05-18T23:56:59Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0007-7d533bd5-2bf7-4f6d-8da5-3e4191d7a457
+        35  2026-05-18T23:57:49Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0008-7105af74-37dc-4caa-9caa-5267836aca59
+        35  2026-05-18T23:58:48Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0009-2180d445-566a-4cd8-ad6f-632477dd2627
+        35  2026-05-18T23:58:24Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0010-ac82b903-5cb4-4540-8b3c-e40c1a88222f
+        35  2026-05-19T00:02:03Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0011-22b05df5-28c2-41f2-95d7-65f1d3d4eadf
+        35  2026-05-18T23:57:03Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0012-dbd45185-b651-4d7a-8627-fdbb7d11ffe4
+        35  2026-05-19T00:01:35Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0013-2dc4c6ec-fc0f-42a0-8f5f-b1da558bd976
+        35  2026-05-19T00:02:14Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_qc.mt/rows/rows/parts/part-0014-c441324a-33fd-471a-92dd-a959890f921c
+(inventory failed)
+...
+
+Total file count: 
+2045
+
+### mt_afr_pca_selfid_qc.mt rows/rows/parts/ inventory
+Expected per debug doc: ~2,045 files, each ~35 bytes (Parquet column-metadata footer stubs)
+
+        35  2026-05-19T23:19:50Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0000-15d3cc6c-caf9-481d-84e1-41208601630c
+        35  2026-05-19T23:23:36Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0001-19293b5d-9918-426c-ad39-eb1b234974f9
+        35  2026-05-19T23:21:05Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0002-e070b2ed-3ae0-4587-8e88-b1604974c375
+        35  2026-05-19T23:25:58Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0003-7e6caaf0-73c1-43d3-8c55-9b7a5184ea52
+        35  2026-05-19T23:22:51Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0004-4e712d15-7f1b-4633-9da6-93cb0167045d
+        35  2026-05-19T23:21:36Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0005-faf6c29b-c265-41cd-bcba-b05e6adad167
+        35  2026-05-19T23:20:34Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0006-8be9413b-a341-4fd2-8895-3df664b07a49
+        35  2026-05-19T23:20:00Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0007-78bfbfa7-130a-48a7-90ad-f97533dcd095
+        35  2026-05-19T23:20:34Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0008-5f904fd6-5416-492b-9f12-9c506b371f2a
+        35  2026-05-19T23:21:31Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0009-a69bbe09-88b6-4d68-824c-377e57c97cd9
+        35  2026-05-19T23:20:42Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0010-de4b1236-865a-479d-8b24-f8ab1e777479
+        35  2026-05-19T23:23:54Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0011-69bd1c3d-4a25-4c57-a2ac-60ec41831189
+        35  2026-05-19T23:20:03Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0012-8bb284b0-1450-42b4-ad0e-d1cab73684de
+        35  2026-05-19T23:23:53Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0013-6ba3c9b0-e171-4113-b0bf-bc319d63a5d5
+        35  2026-05-19T23:22:17Z  gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/mt_afr_pca_selfid_qc.mt/rows/rows/parts/part-0014-17a20308-fe43-4f09-9648-678813d97d23
+(inventory failed)
+...
+
+Total file count: 
+2045
+
+## Section 3: bucket-wide inventory (sanity check on total size)
+
+Expected per debug doc: bucket total ~71 MiB (27 MiB hail.log preserve + ~44 MiB everything else).
+
+--- gsutil du -sh gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a ---
+71.96 MiB    gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a
+
+--- top-level directories ---
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/m3-W1-forensics/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/m3-W2-forensics/
+gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/notebooks/
+
+## Section 4: hail.log preserve copy
+
+Source: gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/forensics/hail.log.pre_pd_migration.20260521T201919Z.log
+Local: /tmp/forensic_mirror/hail.log.pre_pd_migration.20260521T201919Z.log
+
+(hail.log copied to /tmp/forensic_mirror/hail.log.pre_pd_migration.20260521T201919Z.log)
+Local size: 28086211 bytes
+
+## Section 5: source code state at time of mirror
+
+--- git rev-parse HEAD ---
+e019400ceab21d273260892e122083725ee0c5d6
+
+--- git log --oneline -10 ---
+e019400 docs(quick-260528-l8r): close-out — PLAN + SUMMARY + STATE row (T7/7)
+4e04226 docs(quick-260528-l8r): AOU-2/AOU-4 Track-4-pattern paste-in doc (T6/7)
+e521cd0 feat(quick-260528-l8r): AOU-1-chr22-smoke notebook — chr22 staging for live-Hail Track 4 validation (T5/7)
+298defc feat(quick-260528-l8r): AOU-0 pre-check notebook — clone+env+mtime+entries probe (T4/7)
+83e8606 docs(quick-260528-l8r): RW 2.0 migration playbook — pre-migration gates + Step 1-4 + post-migration validation (T3/7)
+0e5cba2 feat(quick-260528-l8r): forensic mirror script + NCSU receiver dir (T2/7)
+d16a32f docs(quick-260528-l8r): Abby Doyle Zendesk reply draft — RW 2.0 migration clarification + engineering response nudge (T1/7)
+e38e8f2 docs(state): 2026-05-28 session update — Track 4 landed + Abby follow-up sent + competing-hypothesis registered
+421e3e7 docs(quick-260528-jvd): land m3-W1 Track 4 defensive-code patches — PLAN + SUMMARY + STATE row
+bfe5f0e decision(m3-W1): D-M3-10 MT write verification protocol (Track 4 patch 7/7)
+
+--- Track 4 verifier-helper presence ---
+5
+--- Track 4 assertion-helper presence ---
+4
