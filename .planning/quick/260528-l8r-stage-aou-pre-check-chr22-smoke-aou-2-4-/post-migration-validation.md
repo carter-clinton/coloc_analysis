@@ -41,11 +41,35 @@ gsutil ls "$WORKSPACE_BUCKET/ld/mt_afr_pca_selfid_qc.mt/_SUCCESS"
 ## Code-impact audit (run on NCSU 2026-05-29)
 
 - **`WORKSPACE_BUCKET` change → NO code changes needed.** Code reads it dynamically (`os.environ['WORKSPACE_BUCKET']` / `_require_env`); only `fc-secure` strings in the repo are docstring examples/comments. Notebooks all use `os.environ[...]`. Auto-adapts to the new bucket.
-- **CDR R8→R9 → mostly env-driven, two checks outstanding:**
-  1. `WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH` (MT input) is AoU-set → auto-adapts. ✓
-  2. **`AUX_BASE` hardcoded** at `aou_ld_panel.py:85` = `gs://fc-aou-datasets-controlled/{CDR_VERSION}/wgs/short_read/snpindel/aux` with `CDR_VERSION="v8"` (line 84). Still v8 (R9 is a release within v8), but **verify this AUX path resolves from project wb-perky-corn-6639 on RW 2.0.**
-  3. **Confirm no BigQuery/SQL CDR refs** need the R9 dataset + new project — `aou_ld_panel.py` works off the Hail MT (no SQL); confirm the AOU-1 cohort-definition notebook doesn't query `dataset_*`/CDR BigQuery tables.
-  4. AOU-0 precheck Cell 2 infers CDR via `/v8/` vs `/v9/` — will still report "v8" (correct) but doesn't distinguish R8 vs R9; optional enhancement, non-blocking.
+- **CDR R8→R9 → reduced to ONE env-side check (NCSU audit 2026-05-29):**
+  - ✅ **CHECK A RESOLVED — no BigQuery/SQL CDR refs.** AOU-1 cohort notebook is pure-Hail (filter_cols ancestry → anti-join relateds → filter_rows flags); `aou_ld_panel.py` has no SQL. So no R9-dataset/new-project SQL updates needed.
+  - ✅ `WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH` (MT input) is AoU-set → auto-adapts. 
+  - ⏳ **CHECK B OUTSTANDING (env-side) — `AUX_BASE` is on the cohort's critical path.** `aou_ld_panel.py:85` `AUX_BASE = gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux` feeds `ANCESTRY_PREDS_PATH` (ancestry filter) + `RELATED_SAMPLES_PATH` (relateds anti-join). Path was verified 2026-05-01 on **Legacy/R8**. On RW 2.0 confirm: (1) the path resolves from project `wb-perky-corn-6639`; (2) content is R9-consistent (if R9 uses a different AUX path, update `AUX_BASE`).
+  - AOU-0 precheck Cell 2 infers CDR via `/v8/` vs `/v9/` — still reports "v8" (correct) but doesn't distinguish R8/R9; optional enhancement, non-blocking.
+
+## Consolidated env-side block (run once, in RW 2.0 terminal, after ~30 min population)
+
+```bash
+export WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2
+
+echo "=== A. workspace bucket: 5 dirs + size (expect ~74.73 MiB) ==="
+gsutil ls "$WORKSPACE_BUCKET/"
+gsutil du -sh "$WORKSPACE_BUCKET"
+gsutil du -sh "$WORKSPACE_BUCKET"/*
+
+echo "=== B. catastrophe evidence intact ==="
+gsutil ls "$WORKSPACE_BUCKET/ld/mt_afr_qc.mt/_SUCCESS"
+gsutil ls "$WORKSPACE_BUCKET/ld/mt_afr_pca_selfid_qc.mt/_SUCCESS"
+
+echo "=== C. CDR / AUX path check (the one outstanding CDR item) ==="
+echo "WGS_ACAF path AoU binds:"; echo "  $WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH"
+gsutil ls "gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ancestry/ancestry_preds.tsv"
+gsutil ls "gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/relatedness/relatedness_flagged_samples.tsv"
+# If either 404s -> AUX_BASE needs updating for R9 (note the path AoU actually uses).
+
+echo "=== D. Hail version on RW 2.0 (matters for chr22-smoke planning) ==="
+python3 -c "import hail as hl; print('Hail', hl.__version__)" 2>/dev/null || echo "(capture from a notebook instead)"
+```
 
 ## Next steps (post-migration)
 
