@@ -23,17 +23,20 @@ Verified env vars (RESEARCH Q9):
     GOOGLE_PROJECT                     - billing (AoU-set)
     WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH - AoU-provided ACAF MT path (AoU-set)
 
-Hardcoded auxiliary paths (NOT env vars; pin to CDR version):
-    gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/
-        relatedness/relatedness_flagged_samples.tsv
-        ancestry/ancestry_preds.tsv (VERIFIED 2026-05-01 against CDR v8
-            via AoU Workbench AUX path check; see Run 2 in
-            m3-W1-AUX-PATH-VERIFICATION.md. Initial v7 verification
-            2026-04-30 superseded by v8 adoption — O2 trigger fired
-            because workspace WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH
-            defaulted to v8 once Workbench bound to v8 dataset.
-            v7 paths still resolve but v8 is canonical going forward
-            per DEC-2026-05-01-01.)
+Auxiliary paths (ancestry_preds.tsv + relatedness_flagged_samples.tsv):
+    ENV-DERIVED at runtime from the WGS MT path the cohort is built from, via
+    _resolve_aux_base() (DEC-2026-06-01). The aux/ dir is a documented SIBLING
+    of acaf_threshold/ under .../wgs/short_read/snpindel/, so the tables track
+    whatever CDR version the platform binds (v8, v9, ...) with no code edit --
+    this closes the manual Workbench AUX-path-verification gate (CHECK C) on
+    the RW 2.0 R8->R9 migration. The hardcoded
+    gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux/ literal
+    (CDR_VERSION below) is now the OFFLINE/LOCAL FALLBACK only, used when no
+    AoU WGS path is present (synthetic-MT tests, offline imports). The v8 layout
+    was empirically VERIFIED 2026-05-01 (Run 2, m3-W1-AUX-PATH-VERIFICATION.md;
+    v7->v8 per DEC-2026-05-01-01). A genuine CDR-source change correctly
+    invalidates stale checkpoints (force_fresh rebuild); env-derivation is about
+    path RESOLUTION, not cross-version checkpoint reuse.
 
 Bucket access note:
     The AoU controlled-tier AUX bucket is requester-pays. Hail's GCS
@@ -81,11 +84,58 @@ KING_KINSHIP_THRESHOLD = 0.0442
 # 2026-05-01 because Workbench bound WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH to v8
 # by default and v8 ancestry_preds.tsv has ~+69% participants over v7).
 # v7 paths still resolve but v8 is canonical going forward.
+#
+# These module constants are now the OFFLINE/LOCAL FALLBACK only. At runtime
+# inside the Workbench, load_qc_cohort derives the AUX base from the WGS MT
+# path it is actually reading via _resolve_aux_base() — so the ancestry /
+# relatedness tables track whatever CDR version the platform binds (v8, v9,
+# ...) without a code edit. The constants are used when no AoU WGS path is
+# available (local synthetic-MT tests, offline imports) and as the documented
+# pin value recorded in provenance. (DEC-2026-06-01: env-derive AUX base —
+# closes CHECK-C as a manual gate; see [[feedback_extract_reusable_utilities]].)
 CDR_VERSION = "v8"
 AUX_BASE = f"gs://fc-aou-datasets-controlled/{CDR_VERSION}/wgs/short_read/snpindel/aux"
 RELATED_SAMPLES_PATH = f"{AUX_BASE}/relatedness/relatedness_flagged_samples.tsv"
-RELATEDNESS_FULL_PATH = f"{AUX_BASE}/relatedness/relatedness.tsv"
 ANCESTRY_PREDS_PATH = f"{AUX_BASE}/ancestry/ancestry_preds.tsv"  # VERIFIED 2026-05-01 via AoU Workbench v8 AUX path check (Run 2)
+
+# Stable infix in every AoU controlled-tier WGS path; the aux/ directory is a
+# documented sibling of acaf_threshold/ under it (verified 2026-05-01 Run 2;
+# m3-W1-AUX-PATH-VERIFICATION.md).
+_WGS_PATH_INFIX = "/wgs/short_read/snpindel/"
+
+
+def _resolve_aux_base(mt_path: str | None = None) -> str:
+    """Derive the AoU controlled-tier AUX base from the WGS ACAF MatrixTable
+    path, so the ancestry/relatedness sidecar tables track whatever CDR
+    version the platform binds (v8, v9, ...) instead of a hardcoded literal.
+
+    The aux/ directory is a documented SIBLING of acaf_threshold/ under
+    ``.../wgs/short_read/snpindel/`` (empirically verified 2026-05-01 Run 2;
+    see m3-W1-AUX-PATH-VERIFICATION.md). We split the WGS MT path on that
+    stable infix and rebuild ``<prefix>/wgs/short_read/snpindel/aux``.
+
+    Resolution order:
+      1. explicit ``mt_path`` arg — the WGS MT ``load_qc_cohort`` actually reads
+      2. ``$WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH`` — the env var AoU binds
+      3. the hardcoded ``AUX_BASE`` literal — offline/local/tests (pre-refactor
+         behavior preserved)
+
+    Falls back to ``AUX_BASE`` whenever the source path is absent or does not
+    contain the AoU WGS infix (e.g. local synthetic-MT test paths). This makes
+    the v7→v8→v9 CDR transition a no-op for this code path and removes the
+    manual Workbench AUX-path-verification gate (CHECK C) from the critical
+    path on the RW 2.0 R8→R9 migration.
+    """
+    candidate = mt_path or os.environ.get("WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH")
+    if candidate and _WGS_PATH_INFIX in candidate:
+        prefix = candidate.split(_WGS_PATH_INFIX, 1)[0]
+        # Guard: the prefix must carry a URI scheme (gs://, file://). A
+        # pathological path that starts with the infix yields an empty prefix
+        # and would build a malformed root-rooted '/wgs/.../aux'; fall back to
+        # the literal in that case rather than return a broken path.
+        if "://" in prefix:
+            return f"{prefix}{_WGS_PATH_INFIX}aux"
+    return AUX_BASE
 
 # Sample QC thresholds (AOU-LD-PIPELINE.md §3.1)
 MIN_CALL_RATE_SAMPLE = 0.98
@@ -254,7 +304,9 @@ def _sidecar_uri(checkpoint_uri: str) -> str:
 
 def _collect_provenance(ancestry: str, sensitivity: bool,
                          source_mt_path: str,
-                         interval_filter: str | None = None) -> dict:
+                         interval_filter: str | None = None,
+                         ancestry_preds_path: str | None = None,
+                         relateds_path: str | None = None) -> dict:
     """Collect provenance metadata for sidecar write.
 
     Builds the JSON-serializable dict that becomes the sidecar contents.
@@ -303,8 +355,11 @@ def _collect_provenance(ancestry: str, sensitivity: bool,
             "HET_HOM_SD_BAND": HET_HOM_SD_BAND,
             "KING_KINSHIP_THRESHOLD": KING_KINSHIP_THRESHOLD,
         },
-        "ancestry_preds_path": ANCESTRY_PREDS_PATH,
-        "relateds_path": RELATED_SAMPLES_PATH,
+        # Record the RESOLVED paths actually read (env-derived under R9), not
+        # the hardcoded literal — provenance reproducibility contract. Falls
+        # back to the module constants for callers that don't pass overrides.
+        "ancestry_preds_path": ancestry_preds_path or ANCESTRY_PREDS_PATH,
+        "relateds_path": relateds_path or RELATED_SAMPLES_PATH,
         "cdr_version": CDR_VERSION,
         "git_commit_sha": sha,
         "hail_version": hv,
@@ -671,8 +726,13 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             f"labels are {sorted(ANCESTRY_VALUES)} but routing here only "
             f"covers AFR/EUR (D-M3-02)."
         )
-    anc_path = ancestry_table_path or ANCESTRY_PREDS_PATH
-    rel_path = relateds_table_path or RELATED_SAMPLES_PATH
+    # Env-derive the AUX base from the WGS MT being read so the ancestry /
+    # relatedness tables track the platform-bound CDR version (v8/v9/...).
+    # Explicit overrides (tests) still win via the `or`. Falls back to the
+    # hardcoded AUX_BASE literal for local synthetic-MT paths. (DEC-2026-06-01)
+    aux_base = _resolve_aux_base(mt_path)
+    anc_path = ancestry_table_path or f"{aux_base}/ancestry/ancestry_preds.tsv"
+    rel_path = relateds_table_path or f"{aux_base}/relatedness/relatedness_flagged_samples.tsv"
 
     # Resilience refactor: compute intermediate-checkpoint URIs + auto-resume
     # state machine (DESIGN §3.5).
@@ -690,7 +750,8 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         ckpt_post_sqc = _intermediate_checkpoint_uri(
             bucket, ancestry, "post_sample_qc", sensitivity, interval_filter)
         provenance = _collect_provenance(
-            ancestry, sensitivity, mt_path, interval_filter)
+            ancestry, sensitivity, mt_path, interval_filter,
+            ancestry_preds_path=anc_path, relateds_path=rel_path)
 
         if not force_fresh:
             # Check deepest intermediate first (post_sample_qc) — if it's

@@ -202,6 +202,153 @@ def test_qc_checkpoint_uri_accepts_prefixed_bucket():
     )
 
 
+# ----- _resolve_aux_base env-derive tests
+# ----- (CHECK-C / CDR R8->R9 forward-compat regression guards, 2026-06-01) -----
+#
+# The AUX sidecar tables (ancestry_preds.tsv, relatedness_flagged_samples.tsv)
+# live in an aux/ directory that is a documented SIBLING of acaf_threshold/
+# under .../wgs/short_read/snpindel/ (verified 2026-05-01 Run 2,
+# m3-W1-AUX-PATH-VERIFICATION.md). Deriving AUX_BASE from the WGS MT path the
+# cohort is actually built from makes the ancestry/relatedness tables track
+# whatever CDR version the platform binds (v8, v9, ...) instead of a hardcoded
+# literal -- this removes CHECK-C from the critical path on the RW 2.0 R8->R9
+# migration: the code self-resolves regardless of the R9 prefix.
+
+_V8_WGS_MT = "gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt"
+_V8_AUX_BASE = "gs://fc-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux"
+_V9_WGS_MT = "gs://fc-aou-datasets-controlled/v9/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt"
+_V9_AUX_BASE = "gs://fc-aou-datasets-controlled/v9/wgs/short_read/snpindel/aux"
+
+
+def test_resolve_aux_base_derives_v8_from_mt_path():
+    """Deriving from the canonical v8 WGS MT path yields the v8 aux base
+    (matches the hardcoded literal that Carter's 2026-05-01 gsutil Run 2
+    empirically verified)."""
+    from aou_ld_panel import _resolve_aux_base
+    assert _resolve_aux_base(_V8_WGS_MT) == _V8_AUX_BASE
+
+
+def test_resolve_aux_base_derives_v9_from_mt_path():
+    """CHECK-C REGRESSION GUARD (RW 2.0 R8->R9 migration, 2026-06-01): when the
+    CDR advances and the platform binds the WGS MT to v9, the aux base MUST
+    follow automatically -- no code edit, no manual Workbench path-verification
+    gate. This is the whole point of env-deriving."""
+    from aou_ld_panel import _resolve_aux_base
+    assert _resolve_aux_base(_V9_WGS_MT) == _V9_AUX_BASE
+
+
+def test_resolve_aux_base_derives_from_moved_bucket():
+    """Forward-compat: if AoU relocates controlled-tier WGS to a different
+    bucket, aux derivation follows the bucket too -- the
+    /wgs/short_read/snpindel/ infix is the stable anchor, not the bucket name."""
+    from aou_ld_panel import _resolve_aux_base
+    moved = "gs://fc-aou-datasets-controlled-v2/v9/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt"
+    assert _resolve_aux_base(moved) == \
+        "gs://fc-aou-datasets-controlled-v2/v9/wgs/short_read/snpindel/aux"
+
+
+def test_resolve_aux_base_reads_env_var_when_arg_none(monkeypatch):
+    """No mt_path arg -> derive from $WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH (the
+    env var the AoU platform binds)."""
+    from aou_ld_panel import _resolve_aux_base
+    monkeypatch.setenv("WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH", _V9_WGS_MT)
+    assert _resolve_aux_base() == _V9_AUX_BASE
+
+
+def test_resolve_aux_base_falls_back_to_literal_when_unset(monkeypatch):
+    """Offline/local: no arg + env var unset -> the hardcoded AUX_BASE literal
+    (preserves pre-refactor behavior; the AUX_BASE module constant is the
+    documented fallback)."""
+    from aou_ld_panel import _resolve_aux_base, AUX_BASE
+    monkeypatch.delenv("WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH", raising=False)
+    assert _resolve_aux_base() == AUX_BASE
+    assert _resolve_aux_base(None) == AUX_BASE
+
+
+def test_resolve_aux_base_falls_back_when_path_lacks_infix(monkeypatch):
+    """Local synthetic-MT test paths (e.g. /tmp/.../synthetic_aou.mt) do NOT
+    contain the AoU WGS infix -> fall back to the literal so the test suite and
+    any non-AoU MT path keep current behavior (no bogus aux base)."""
+    from aou_ld_panel import _resolve_aux_base, AUX_BASE
+    monkeypatch.delenv("WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH", raising=False)
+    assert _resolve_aux_base("/tmp/pytest-xyz/synthetic_aou.mt") == AUX_BASE
+
+
+def test_resolve_aux_base_falls_back_on_infix_at_root(monkeypatch):
+    """Defensive (adversarial-review 1.6): a pathological path that STARTS with
+    the infix yields an empty prefix; we must NOT return a malformed root-rooted
+    '/wgs/short_read/snpindel/aux'. The prefix must carry a URI scheme (gs://,
+    file://) to be trusted; otherwise fall back to the literal."""
+    from aou_ld_panel import _resolve_aux_base, AUX_BASE
+    monkeypatch.delenv("WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH", raising=False)
+    assert _resolve_aux_base("/wgs/short_read/snpindel/acaf_threshold/hail.mt") == AUX_BASE
+
+
+def test_resolve_aux_base_mt_path_arg_wins_over_env(monkeypatch):
+    """Resolution order: explicit mt_path arg (the MT actually read) wins over
+    the env var -- guarantees the aux tables match the WGS version being
+    processed even if the env var drifts."""
+    from aou_ld_panel import _resolve_aux_base
+    monkeypatch.setenv("WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH", _V8_WGS_MT)
+    assert _resolve_aux_base(_V9_WGS_MT) == _V9_AUX_BASE
+
+
+def test_resolve_aux_base_child_paths_are_correct_siblings():
+    """The two load-bearing AUX files derive as correct v9 siblings of the aux
+    base (ancestry/ancestry_preds.tsv + relatedness/relatedness_flagged_samples.tsv)."""
+    from aou_ld_panel import _resolve_aux_base
+    aux = _resolve_aux_base(_V9_WGS_MT)
+    assert f"{aux}/ancestry/ancestry_preds.tsv" == \
+        f"{_V9_AUX_BASE}/ancestry/ancestry_preds.tsv"
+    assert f"{aux}/relatedness/relatedness_flagged_samples.tsv" == \
+        f"{_V9_AUX_BASE}/relatedness/relatedness_flagged_samples.tsv"
+
+
+def test_collect_provenance_records_resolved_aux_paths():
+    """Provenance truthfulness: when load_qc_cohort env-derives the AUX paths,
+    the sidecar MUST record the RESOLVED paths actually read (not the stale
+    hardcoded literal). Guards the reproducibility contract under R8->R9."""
+    from aou_ld_panel import _collect_provenance
+    resolved_anc = f"{_V9_AUX_BASE}/ancestry/ancestry_preds.tsv"
+    resolved_rel = f"{_V9_AUX_BASE}/relatedness/relatedness_flagged_samples.tsv"
+    prov = _collect_provenance(
+        ancestry="afr",
+        sensitivity=False,
+        source_mt_path=_V9_WGS_MT,
+        interval_filter=None,
+        ancestry_preds_path=resolved_anc,
+        relateds_path=resolved_rel,
+    )
+    assert prov["ancestry_preds_path"] == resolved_anc
+    assert prov["relateds_path"] == resolved_rel
+
+
+def test_validate_sidecar_rejects_cdr_version_drift():
+    """Contract (adversarial-review 2.2): a checkpoint saved under one CDR
+    version (v8) MUST be invalidated when the platform advances to a new CDR
+    (v9). The v9 WGS source is DIFFERENT DATA; silent reuse would be the
+    version-mismatch hazard DEC-2026-05-01-01 warned against. source_mt_path
+    AND the env-derived aux paths all differ, so _validate_sidecar returns
+    False. This is the data-integrity-correct behavior: 'R8->R9 needs no code
+    edit' refers to AUX-path RESOLUTION, NOT cross-version checkpoint reuse --
+    a genuine source change correctly forces a force_fresh rebuild."""
+    from aou_ld_panel import _collect_provenance, _validate_sidecar
+    v8_sidecar = _collect_provenance(
+        "afr", False, _V8_WGS_MT, None,
+        ancestry_preds_path=f"{_V8_AUX_BASE}/ancestry/ancestry_preds.tsv",
+        relateds_path=f"{_V8_AUX_BASE}/relatedness/relatedness_flagged_samples.tsv",
+    )
+    v9_provenance = _collect_provenance(
+        "afr", False, _V9_WGS_MT, None,
+        ancestry_preds_path=f"{_V9_AUX_BASE}/ancestry/ancestry_preds.tsv",
+        relateds_path=f"{_V9_AUX_BASE}/relatedness/relatedness_flagged_samples.tsv",
+    )
+    matches, diag = _validate_sidecar(v8_sidecar, v9_provenance)
+    assert matches is False, "v8 checkpoint must NOT validate against v9 source"
+    assert "source_mt_path" in diag
+    assert "ancestry_preds_path" in diag
+
+
 def test_intermediate_checkpoint_uri_post_split_afr_primary():
     from aou_ld_panel import _intermediate_checkpoint_uri
     uri = _intermediate_checkpoint_uri("fc-secure-XXX", "afr", "post_split", False)
