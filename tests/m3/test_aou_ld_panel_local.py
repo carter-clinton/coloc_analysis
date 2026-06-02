@@ -1158,3 +1158,198 @@ def test_compute_region_ld_idempotent_skip(synthetic_mt_path: Path,
         f"force_recompute=True must re-invoke hl.ld_matrix exactly once; "
         f"got call_log={call_log}"
     )
+
+
+# ----- 260601-u1b: tiered cheap-first hardening (Task 1) -----
+#
+# Two helpers, both TDD RED-first.
+#
+# (A) _interval_scaled_du_floor — the du byte-floor is a DIAGNOSTIC soft-signal
+#     scaled to the interval span. The 50 MB notebook floor false-positives on a
+#     ~2 Mb nano-interval (its real entries payload is far below 50 MB), so a
+#     nano fire would FAIL the floor even on a perfectly-populated MT. We demote
+#     the du-floor to an interval-scaled soft check; the count_rows>0 /
+#     count_cols>0 assertion inside load_qc_cohort (_assert_checkpoint_nonempty,
+#     UNCHANGED) remains the authoritative HARD catastrophe gate. The floor only
+#     scales DOWN for span-bounded intervals — whole-chromosome / None keep the
+#     full base floor so the chr22 (Tier 2) check is never weakened.
+#
+# (B) _capture_catastrophe_forensics — best-effort forensic capture invoked by
+#     notebook cells on any Track-4 halt. NEVER raises (defensive); standalone
+#     (NOT injected into _assert_checkpoint_nonempty, so the hard-fail/raise
+#     contract of the Track-4 guard is byte-for-byte unchanged). Records the
+#     _SUCCESS-mtime-vs-part-mtimes hypothesis distinguisher
+#     ([[feedback_w1_catastrophe_hypothesis_distinguisher]]) and emits a
+#     _forensics/<phase>_capture.json.
+
+
+# --- (A) du-floor parameterization helper ---
+
+def test_interval_scaled_du_floor_nano_interval_no_false_positive():
+    """A ~2 Mb nano-interval ('chr22:16000000-18000000') must NOT inherit the
+    unscaled 50 MB base floor — that floor false-positives a populated nano MT.
+    The scaled floor must be < 50 MB AND >= a documented few-MB minimum.
+
+    RATIONALE (load-bearing): the du-floor is a DIAGNOSTIC soft-signal scaled to
+    the interval span. The real catastrophe gate is count_rows>0/count_cols>0
+    in _assert_checkpoint_nonempty (inside load_qc_cohort), which is untouched.
+    """
+    from aou_ld_panel import _interval_scaled_du_floor
+    base = 50_000_000
+    floor = _interval_scaled_du_floor("chr22:16000000-18000000",
+                                      base_floor_bytes=base)
+    assert floor < base, (
+        f"nano-interval floor must scale BELOW the 50 MB base (no "
+        f"false-positive); got {floor}"
+    )
+    # Documented few-MB minimum so the soft-signal still catches a footer-stub
+    # (~71 KiB) MT even on a tiny span.
+    assert floor >= 1_000_000, (
+        f"nano-interval floor must stay >= a few-MB documented minimum; "
+        f"got {floor}"
+    )
+
+
+def test_interval_scaled_du_floor_whole_chromosome_keeps_base():
+    """A whole-chromosome 'chr22' (no span bounds) must NOT down-scale — it
+    keeps the full base floor so the chr22 (Tier 2) du check is not weakened."""
+    from aou_ld_panel import _interval_scaled_du_floor
+    base = 50_000_000
+    assert _interval_scaled_du_floor("chr22", base_floor_bytes=base) == base
+
+
+def test_interval_scaled_du_floor_none_keeps_base():
+    """interval_filter=None (full-genome) keeps the full base floor."""
+    from aou_ld_panel import _interval_scaled_du_floor
+    base = 50_000_000
+    assert _interval_scaled_du_floor(None, base_floor_bytes=base) == base
+
+
+def test_interval_scaled_du_floor_scales_with_span():
+    """A wider span yields a higher (or equal) floor than a narrower span on
+    the same chromosome — the floor tracks expected payload monotonically."""
+    from aou_ld_panel import _interval_scaled_du_floor
+    base = 50_000_000
+    narrow = _interval_scaled_du_floor("chr22:16000000-18000000",
+                                       base_floor_bytes=base)   # 2 Mb
+    wide = _interval_scaled_du_floor("chr22:16000000-36000000",
+                                     base_floor_bytes=base)     # 20 Mb
+    assert wide >= narrow, (
+        f"wider span must not yield a smaller floor; narrow={narrow} "
+        f"wide={wide}"
+    )
+    assert wide <= base, "a sub-chromosomal span must never exceed the base floor"
+
+
+# --- (B) _capture_catastrophe_forensics(uri, *, phase) ---
+
+def _mk_listing(success_mtime, part_mtimes):
+    """Build a mock hl.hadoop_ls-style stat-dict listing for an MT dir:
+    a _SUCCESS marker + N entries-part files, each with a 'modification_time'
+    epoch and a 'size_bytes'. Mirrors the dict shape _capture inspects."""
+    listing = [
+        {"path": "gs://b/ld/x.mt/_SUCCESS",
+         "modification_time": success_mtime, "size_bytes": 0, "is_dir": False},
+    ]
+    for i, mt in enumerate(part_mtimes):
+        listing.append({
+            "path": f"gs://b/ld/x.mt/entries/entries/parts/part-{i:05d}.parquet",
+            "modification_time": mt, "size_bytes": 70_000, "is_dir": False,
+        })
+    return listing
+
+
+def test_capture_forensics_flags_hail_finalize_signature(tmp_path):
+    """_SUCCESS mtime AFTER all entries-part mtimes = the
+    Hail-finalize-on-empty-contents signature
+    ([[feedback_w1_catastrophe_hypothesis_distinguisher]]). The capture json
+    must record that ordering / a hypothesis flag."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    listing = _mk_listing(success_mtime=2000, part_mtimes=[1000, 1500])
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=lambda d: listing,
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        bucket=f"file://{out_dir}",
+    )
+    assert result is not None
+    assert result.get("hypothesis_flag") == "hail_finalize_on_empty", (
+        f"_SUCCESS after all parts must flag hail_finalize_on_empty; got "
+        f"{result.get('hypothesis_flag')!r}"
+    )
+
+
+def test_capture_forensics_flags_kill_interrupted_signature(tmp_path):
+    """Some entries-part mtimes AFTER the _SUCCESS mtime = the
+    kill-interrupted-write signature. The capture must record the opposite
+    hypothesis flag."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    listing = _mk_listing(success_mtime=1000, part_mtimes=[1500, 2000])
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=lambda d: listing,
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        bucket=f"file://{out_dir}",
+    )
+    assert result is not None
+    assert result.get("hypothesis_flag") == "kill_interrupted_write", (
+        f"part mtime after _SUCCESS must flag kill_interrupted_write; got "
+        f"{result.get('hypothesis_flag')!r}"
+    )
+
+
+def test_capture_forensics_never_raises_when_collaborators_raise(tmp_path):
+    """LOAD-BEARING defensive guarantee: when every injected collaborator
+    RAISES, the helper does NOT propagate — it returns its sentinel (a dict,
+    never None-on-success-path) and still writes whatever partial json it
+    could. Forensic capture must NEVER take down the cell it is trying to
+    diagnose."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+
+    def _boom(*a, **k):
+        raise RuntimeError("collaborator exploded")
+
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    # Must not raise.
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=_boom,
+        copier=_boom,
+        http_getter=_boom,
+        bucket=f"file://{out_dir}",
+    )
+    assert result is not None, "capture must return a sentinel dict, not raise"
+    assert isinstance(result, dict)
+    # It should still have recorded the phase + uri even when listing failed.
+    assert result.get("phase") == "afr"
+
+
+def test_capture_forensics_writes_parseable_capture_json(tmp_path):
+    """The helper writes a parseable _forensics/<phase>_capture.json that
+    round-trips through json.loads and contains the phase + uri."""
+    import json as _json
+    from aou_ld_panel import _capture_catastrophe_forensics
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    uri = f"file://{out_dir}/x.mt"
+    _capture_catastrophe_forensics(
+        uri, phase="probe",
+        lister=lambda d: _mk_listing(2000, [1000]),
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": [{"stageId": 71}]},
+        bucket=f"file://{out_dir}",
+    )
+    capture_json = out_dir / "ld" / "_forensics" / "probe_capture.json"
+    assert capture_json.is_file(), (
+        f"capture json must be written at {capture_json}"
+    )
+    parsed = _json.loads(capture_json.read_text())
+    assert parsed["phase"] == "probe"
+    assert parsed["uri"] == uri

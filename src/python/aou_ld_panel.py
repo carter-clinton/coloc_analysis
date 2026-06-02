@@ -753,6 +753,314 @@ def _assert_checkpoint_nonempty(mt: "hl.MatrixTable", uri: str,
         )
 
 
+# Documented minimum du soft-floor for ANY span (260601-u1b). Even a ~2 Mb
+# nano-interval populated MT carries a few MB of entries row-group payload, so a
+# floor below ~1 MB would never fire; a floor at a few MB still catches the
+# m3-W1 footer-stub signature (~71 KiB total) while NOT false-positiving a
+# legitimately small nano cohort. This is the soft-signal minimum, NOT a hard
+# gate — _assert_checkpoint_nonempty's count_rows>0/count_cols>0 is the gate.
+MIN_DU_FLOOR_BYTES = 2_000_000  # 2 MB
+
+# Approximate GRCh38 chromosome lengths (bp) for du-floor span scaling. Only the
+# chromosomes the LD panel touches need exact values; an unknown contig falls
+# back to chr1's length (largest) so scaling is conservative (never over-floors).
+# Source: GRCh38 primary assembly (rounded to the nearest 1e3); used ONLY to
+# scale a DIAGNOSTIC soft-floor, so megabase-level rounding is immaterial.
+_GRCH38_CHROM_LEN_BP = {
+    "chr1": 248_956_422, "chr2": 242_193_529, "chr3": 198_295_559,
+    "chr4": 190_214_555, "chr5": 181_538_259, "chr6": 170_805_979,
+    "chr7": 159_345_973, "chr8": 145_138_636, "chr9": 138_394_717,
+    "chr10": 133_797_422, "chr11": 135_086_622, "chr12": 133_275_309,
+    "chr13": 114_364_328, "chr14": 107_043_718, "chr15": 101_991_189,
+    "chr16": 90_338_345, "chr17": 83_257_441, "chr18": 80_373_285,
+    "chr19": 58_617_616, "chr20": 64_444_167, "chr21": 46_709_983,
+    "chr22": 50_818_468, "chrX": 156_040_895, "chrY": 57_227_415,
+}
+_DEFAULT_CHROM_LEN_BP = _GRCH38_CHROM_LEN_BP["chr1"]
+
+
+def _interval_scaled_du_floor(interval_filter: str | None, *,
+                              base_floor_bytes: int) -> int:
+    """Return an interval-span-scaled du byte-floor (DIAGNOSTIC soft-signal).
+
+    The notebook du-floor (historically a hardcoded 50 MB) is a SOFT diagnostic
+    signal, NOT the catastrophe gate. The authoritative gate is
+    :func:`_assert_checkpoint_nonempty`'s ``count_rows()>0 / count_cols()>0``
+    assertion inside :func:`load_qc_cohort`, which is UNCHANGED by this helper.
+
+    The 50 MB floor false-positives on a ~2 Mb nano-interval: a perfectly
+    populated nano cohort carries only a few MB of ``entries/entries/parts/``
+    payload, so the unscaled floor would FAIL a healthy nano fire and mask the
+    real signal. This helper scales the floor DOWN for span-bounded intervals so
+    a Tier-1 nano fire gets a proportionate floor, while NOT weakening the
+    Tier-2 chr22 / full-genome check.
+
+    Scaling policy:
+      * ``interval_filter`` is ``None`` (full-genome) or a bare whole-chromosome
+        token (``"chr22"`` — no ``:start-end`` span) → return ``base_floor_bytes``
+        unchanged (NO down-scaling; the chr22-tier check stays at full strength).
+      * a span-bounded interval (``"chr22:16000000-18000000"``) → scale by the
+        span fraction of the chromosome:
+        ``base_floor_bytes * span_bp / chrom_len_bp``, floored at
+        :data:`MIN_DU_FLOOR_BYTES` (a few MB) and capped at ``base_floor_bytes``.
+
+    The floor scales monotonically with span (wider span → larger floor) and
+    never exceeds ``base_floor_bytes`` for a sub-chromosomal interval. Pure
+    function — no I/O, fully unit-testable.
+
+    Args:
+        interval_filter: ``None``, a whole-chromosome token (``"chr22"``), or a
+            span-bounded GRCh38 locus interval (``"chr22:16000000-18000000"``).
+        base_floor_bytes: the full-genome / whole-chromosome floor the notebook
+            passes in (the per-tier policy still lives in the notebook).
+
+    Returns:
+        An integer byte floor, in ``[MIN_DU_FLOOR_BYTES, base_floor_bytes]`` for
+        a span-bounded interval, or exactly ``base_floor_bytes`` otherwise.
+    """
+    if not interval_filter or ":" not in interval_filter:
+        # full-genome (None) or whole-chromosome ('chr22') — no down-scaling.
+        return base_floor_bytes
+    chrom, _, span = interval_filter.partition(":")
+    try:
+        start_s, _, end_s = span.partition("-")
+        start_bp = int(start_s)
+        end_bp = int(end_s)
+        span_bp = max(0, end_bp - start_bp)
+    except (ValueError, TypeError):
+        # Unparseable span — fall back to the full base floor (conservative;
+        # never under-floors on a malformed interval string).
+        return base_floor_bytes
+    chrom_len = _GRCH38_CHROM_LEN_BP.get(chrom, _DEFAULT_CHROM_LEN_BP)
+    if chrom_len <= 0 or span_bp <= 0:
+        return base_floor_bytes
+    scaled = int(base_floor_bytes * span_bp / chrom_len)
+    # Clamp into [MIN_DU_FLOOR_BYTES, base_floor_bytes].
+    scaled = max(MIN_DU_FLOOR_BYTES, min(scaled, base_floor_bytes))
+    return scaled
+
+
+def _hail_hadoop_copy(src: str, dst: str) -> None:
+    """Production file copier: Hail ``hadoop_copy`` (used for the hail.log
+    preserve in :func:`_capture_catastrophe_forensics`). Injected in tests."""
+    import hail as hl
+    hl.hadoop_copy(src, dst)
+
+
+def _spark_rest_active_stages(url: str) -> dict:
+    """Production Spark-REST getter: GET ``<url>`` and parse JSON (best-effort
+    active-stages snapshot). Injected in tests so no network is touched."""
+    import json as _json
+    import urllib.request
+    with urllib.request.urlopen(url, timeout=5) as resp:  # nosec B310 - local Spark UI
+        return _json.loads(resp.read().decode("utf-8"))
+
+
+def _capture_catastrophe_forensics(
+    uri: str,
+    *,
+    phase: str,
+    lister=None,
+    copier=None,
+    http_getter=None,
+    bucket: str | None = None,
+    log_path: str = "/tmp/hail.log",
+    spark_rest_url: str = "http://localhost:4040/api/v1/applications",
+    now=None,
+    writer=None,
+) -> dict:
+    """Best-effort forensic capture at ANY Track-4 halt — NEVER raises.
+
+    STANDALONE helper invoked by notebook cells on an ``AssertionError`` /
+    ``RuntimeError`` from the Track-4 guards. It is DELIBERATELY NOT injected
+    into :func:`_assert_checkpoint_nonempty`: keeping it standalone means the
+    Track-4 guard's hard-fail/raise contract (``count_rows>0`` / ``count_cols>0``
+    → ``RuntimeError``) is byte-for-byte unchanged. The notebook pattern is::
+
+        try:
+            _assert_checkpoint_nonempty(mt, uri, phase='afr')
+            ... du soft-floor ...
+        except Exception:
+            _capture_catastrophe_forensics(uri, phase='afr')
+            raise   # re-raise AFTER capture so the cell still halts loudly
+
+    LOAD-BEARING DEFENSIVE GUARANTEE: forensic capture must NEVER take down the
+    cell it is diagnosing. Every sub-step is wrapped in ``try/except``; on total
+    failure the helper still returns a sentinel dict (carrying at least ``phase``
+    + ``uri``) and never propagates. The caller's ``raise`` is what halts the
+    cell — not this helper.
+
+    Captures the hypothesis-distinguisher data
+    ([[feedback_w1_catastrophe_hypothesis_distinguisher]]):
+
+      (a) ``_SUCCESS`` mtime vs ``entries/entries/parts/`` part mtimes →
+          ``hypothesis_flag``:
+            * ``"hail_finalize_on_empty"`` — ``_SUCCESS`` mtime is at/after ALL
+              part mtimes (Hail wrote ``_SUCCESS`` on driver-side task accounting
+              after the executor writes; the debug-doc theory);
+            * ``"kill_interrupted_write"`` — at least one part mtime is AFTER the
+              ``_SUCCESS`` mtime (writes continued past the marker; Carter's
+              kill-as-culprit theory);
+            * ``"indeterminate"`` — listing/mtimes unavailable.
+      (b) the MT directory listing + entries-part sizes;
+      (c) copy ``/tmp/hail.log`` → ``<bucket>/ld/_forensics/<phase>_hail.log``;
+      (d) a Spark-REST active-stages snapshot (best-effort HTTP/JSON);
+      (e) a ``<bucket>/ld/_forensics/<phase>_capture.json`` with the gathered
+          facts (json round-trippable; contains ``phase`` + ``uri``).
+
+    Testability: side-effecting collaborators are injected as keyword params
+    with production defaults (mirrors the existing ``lister=lambda d: entries``
+    idiom). ``file://`` URIs are handled for the json-write path so tests run
+    with no Hail / no network.
+
+    Args:
+        uri: the halted MT directory URI (``gs://`` in prod; ``file://`` in tests).
+        phase: the cohort/phase label (``"afr"`` / ``"eur"`` / ``"probe"`` / ...);
+            names the forensic artifacts.
+        lister: ``callable(dir) -> list[stat-dict]``. Production default
+            :func:`_hail_hadoop_lister`-style (``hl.hadoop_ls`` stat dicts with
+            ``path`` + ``modification_time`` + ``size_bytes``). Injected in tests.
+        copier: ``callable(src, dst) -> None`` for the hail.log preserve.
+            Production default :func:`_hail_hadoop_copy`. Injected in tests.
+        http_getter: ``callable(url) -> dict`` for the Spark-REST snapshot.
+            Production default :func:`_spark_rest_active_stages`. Injected.
+        bucket: forensic-artifact destination root (defaults to the parent of
+            ``uri``'s ``/ld/...`` segment, else ``$WORKSPACE_BUCKET``). Artifacts
+            land under ``<bucket>/ld/_forensics/``.
+        log_path: hail.log source path (default ``/tmp/hail.log``).
+        spark_rest_url: Spark REST applications endpoint (default localhost:4040).
+        now: ``callable() -> float`` epoch source (defaults to ``time.time``).
+        writer: ``callable(dest_uri, text) -> None`` json writer (defaults to a
+            ``file://`` pathlib writer for ``file://`` dests, else
+            ``hl.hadoop_open``). Injected in tests if desired.
+
+    Returns:
+        A dict of gathered forensic facts (always contains ``phase`` + ``uri``);
+        NEVER ``None``, NEVER raises.
+    """
+    if now is None:
+        now = time.time
+    if lister is None:
+        lister = _hail_hadoop_lister_stat
+    if copier is None:
+        copier = _hail_hadoop_copy
+    if http_getter is None:
+        http_getter = _spark_rest_active_stages
+
+    capture: dict = {
+        "phase": phase,
+        "uri": uri,
+        "captured_at": None,
+        "hypothesis_flag": "indeterminate",
+        "success_mtime": None,
+        "entries_part_mtimes": [],
+        "entries_part_sizes": [],
+        "mt_listing": [],
+        "hail_log_copied_to": None,
+        "spark_active_stages": None,
+        "errors": [],
+    }
+    try:
+        capture["captured_at"] = now()
+    except Exception as exc:  # noqa: BLE001 - never propagate from capture
+        capture["errors"].append(f"now(): {exc!r}")
+
+    # Resolve the forensics destination root.
+    if bucket is None:
+        try:
+            bucket = os.environ.get("WORKSPACE_BUCKET")
+        except Exception as exc:  # noqa: BLE001
+            capture["errors"].append(f"bucket-resolve: {exc!r}")
+    forensics_dir = f"{(bucket or '').rstrip('/')}/ld/_forensics" if bucket else None
+    capture["forensics_dir"] = forensics_dir
+
+    # (a)+(b): listing + _SUCCESS-mtime-vs-part-mtimes hypothesis distinguisher.
+    try:
+        entries_parts_dir = f"{uri.rstrip('/')}/entries/entries/parts"
+        success_uri = f"{uri.rstrip('/')}/_SUCCESS"
+        listing = lister(uri.rstrip("/"))
+        capture["mt_listing"] = [e.get("path") for e in listing
+                                 if isinstance(e, dict)]
+        # _SUCCESS mtime
+        success_mtime = None
+        for e in listing:
+            if isinstance(e, dict) and str(e.get("path", "")).rstrip("/").endswith("_SUCCESS"):
+                success_mtime = e.get("modification_time")
+                break
+        # entries-part mtimes/sizes
+        try:
+            entries = lister(entries_parts_dir)
+        except Exception:
+            entries = [e for e in listing
+                       if isinstance(e, dict)
+                       and "/entries/entries/parts" in str(e.get("path", ""))]
+        part_mtimes = [e.get("modification_time") for e in entries
+                       if isinstance(e, dict) and not e.get("is_dir", False)
+                       and "modification_time" in e]
+        part_sizes = [e.get("size_bytes", e.get("size")) for e in entries
+                      if isinstance(e, dict) and not e.get("is_dir", False)]
+        capture["success_mtime"] = success_mtime
+        capture["entries_part_mtimes"] = part_mtimes
+        capture["entries_part_sizes"] = part_sizes
+        # Distinguisher: any part written AFTER _SUCCESS => kill-interrupted;
+        # else _SUCCESS at/after all parts => hail-finalize-on-empty.
+        usable = [m for m in part_mtimes if m is not None]
+        if success_mtime is not None and usable:
+            if any(m > success_mtime for m in usable):
+                capture["hypothesis_flag"] = "kill_interrupted_write"
+            else:
+                capture["hypothesis_flag"] = "hail_finalize_on_empty"
+        else:
+            capture["hypothesis_flag"] = "indeterminate"
+    except Exception as exc:  # noqa: BLE001 - never propagate
+        capture["errors"].append(f"listing/distinguisher: {exc!r}")
+
+    # (c): preserve /tmp/hail.log to the forensics dir (best-effort).
+    if forensics_dir:
+        try:
+            dst = f"{forensics_dir}/{phase}_hail.log"
+            copier(log_path, dst)
+            capture["hail_log_copied_to"] = dst
+        except Exception as exc:  # noqa: BLE001
+            capture["errors"].append(f"hail.log-copy: {exc!r}")
+
+    # (d): Spark-REST active-stages snapshot (best-effort).
+    try:
+        capture["spark_active_stages"] = http_getter(spark_rest_url)
+    except Exception as exc:  # noqa: BLE001
+        capture["errors"].append(f"spark-rest: {exc!r}")
+
+    # (e): write the capture json (best-effort).
+    if forensics_dir:
+        try:
+            capture_json_uri = f"{forensics_dir}/{phase}_capture.json"
+            payload = json.dumps(capture, indent=2, default=str)
+            if writer is not None:
+                writer(capture_json_uri, payload)
+            elif capture_json_uri.startswith("file://"):
+                p = Path(capture_json_uri[len("file://"):])
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(payload)
+            else:
+                import hail as hl
+                with hl.hadoop_open(capture_json_uri, "w") as fh:
+                    fh.write(payload)
+            capture["capture_json_uri"] = capture_json_uri
+        except Exception as exc:  # noqa: BLE001
+            capture["errors"].append(f"capture-json-write: {exc!r}")
+
+    return capture
+
+
+def _hail_hadoop_lister_stat(dirpath: str) -> list[dict]:
+    """Production stat-dict lister: Hail ``hadoop_ls`` returning the FULL stat
+    dicts (``path`` + ``modification_time`` + ``size_bytes`` + ``is_dir``), as
+    :func:`_capture_catastrophe_forensics` needs the mtimes/sizes, not just
+    paths (so it cannot reuse the path-only :func:`_hail_hadoop_lister`)."""
+    import hail as hl
+    return list(hl.hadoop_ls(dirpath))
+
+
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
