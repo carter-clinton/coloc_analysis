@@ -37,6 +37,32 @@ the entire pip / Spark-version problem disappears.
   Hail 0.2.135. (Dataproc 2.1 = Spark 3.3.2 = incompatible with Hail 0.2.135.)
 - **Version:** use the env's pre-installed Hail (the platform version; CHECK D =
   0.2.135). Do **NOT** pip-pin on the Hail Genomics cluster.
+- **Master/driver node: `n2-highmem-4` (32 GB) minimum — `n2-highmem-8` (52 GB)
+  to carry Gate C + the full fire.** The default `n2-standard-2` (8 GB / 2 vCPU)
+  **OOM-kills the Hail driver during query compilation** (`__C4Compile.<init>`) —
+  surfaces as `Could not find CoarseGrainedScheduler` + py4j RemoteDisconnected
+  with a CLEAN hail.log (no executor-lost / no container-killed). Gate A's
+  synthetic write doesn't exercise driver-side compilation; Gate B's real WGS read
+  does. Master size is fixed at cluster-create → size it right up front
+  (2026-06-02 finding).
+
+**Migrated-Verily env deltas — now BAKED into AOU-0.5 + AOU-1 (Cells 1a / 1a' / 1a''),
+so a fresh clone + `git pull` runs with no manual env setup:**
+1. HOME is `/home/dataproc`, not `/home/jupyter` → portable `sys.path` (Cell 1a',
+   `os.path.expanduser("~/coloc_analysis/src/python")`).
+2. `WORKSPACE_BUCKET` NOT auto-set → Cell 1a'' `os.environ.setdefault(...)`
+   (`gs://rw-migration-aou-rw-476cdac2`).
+3. `WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH` NOT auto-set → Cell 1a'' setdefault
+   (`gs://vwb-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt`;
+   verified readable 2026-06-02).
+4. The controlled WGS bucket is **requester-pays** → Cell 1a sets
+   `spark.hadoop.fs.gs.requester.pays.mode=CUSTOM` +
+   `.buckets=vwb-aou-datasets-controlled` (NAME only, **no `gs://`**) +
+   `.project.id=$GOOGLE_PROJECT`. If reads still 400, the env forced
+   `STORAGE_CLIENT` → add `--conf spark.hadoop.fs.gs.client.type=HTTP_API_CLIENT`.
+
+Only `GOOGLE_PROJECT` is auto-set on this cluster. The classic AoU Hail Genomics
+image pre-set all of the above in spark-defaults; the migrated Verily image does not.
 
 **Run sequence (Gate A; same shape for B/C with the right INTERVAL + cluster):**
 1. Terminal: `git clone https://github.com/carter-clinton/coloc_analysis.git ~/coloc_analysis 2>/dev/null; cd ~/coloc_analysis && git checkout m3-W2-aou-deltas && git pull origin m3-W2-aou-deltas` → confirm `git rev-parse --short HEAD` = **e0f4182**.
