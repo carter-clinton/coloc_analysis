@@ -323,6 +323,124 @@ def test_collect_provenance_records_resolved_aux_paths():
     assert prov["relateds_path"] == resolved_rel
 
 
+# ----- _resolve_aux_file discovery tests
+# ----- (RW 2.0 / R8 filename-prefix gap, 2026-06-01) -----
+#
+# On RW 2.0 (vwb- bucket, cdrv8/R8) the aux files carry pipeline-version
+# prefixes the bare-name code missed (verified live: CHECK C 404):
+#   aux/ancestry/echo_v4_r2.ancestry_preds.tsv
+#   aux/relatedness/samples_relatedness_flagged_samples.tsv
+# The fix discovers the file by its canonical SUFFIX (so the echo_v4_r2./
+# samples_ prefixes — which will drift again — don't require a code edit),
+# the same "discover, don't pin" lesson as _resolve_aux_base.
+
+_AUXB = "gs://vwb-aou-datasets-controlled/v8/wgs/short_read/snpindel/aux"
+
+
+def test_resolve_aux_file_bare_when_no_lister():
+    """No lister (local/offline/tests) -> bare canonical path, pre-discovery
+    behavior preserved."""
+    from aou_ld_panel import _resolve_aux_file
+    assert _resolve_aux_file(_AUXB, "ancestry", "ancestry_preds.tsv") == \
+        f"{_AUXB}/ancestry/ancestry_preds.tsv"
+
+
+def test_resolve_aux_file_discovers_prefixed_ancestry():
+    """RW2.0 R8 gap: find echo_v4_r2.ancestry_preds.tsv by the ancestry_preds.tsv
+    suffix among the other ancestry-pipeline artifacts."""
+    from aou_ld_panel import _resolve_aux_file
+    entries = [
+        f"{_AUXB}/ancestry/echo_v4_r2.ancestry_preds.tsv",
+        f"{_AUXB}/ancestry/echo_v4_r2.preds_oth.html",
+        f"{_AUXB}/ancestry/eigenvalues.txt",
+        f"{_AUXB}/ancestry/rf_classifier.pkl",
+        f"{_AUXB}/ancestry/training_pca.tsv",
+    ]
+    assert _resolve_aux_file(_AUXB, "ancestry", "ancestry_preds.tsv",
+                             lister=lambda d: entries) == \
+        f"{_AUXB}/ancestry/echo_v4_r2.ancestry_preds.tsv"
+
+
+def test_resolve_aux_file_discovers_flagged_not_full_relatedness():
+    """Disambiguation guard: suffix relatedness_flagged_samples.tsv must pick the
+    FLAGGED list, NOT the full pairwise samples_relatedness.tsv (schema i.s/j.s/kin)."""
+    from aou_ld_panel import _resolve_aux_file
+    entries = [
+        f"{_AUXB}/relatedness/samples_relatedness.tsv",
+        f"{_AUXB}/relatedness/samples_relatedness_flagged_samples.tsv",
+    ]
+    assert _resolve_aux_file(_AUXB, "relatedness", "relatedness_flagged_samples.tsv",
+                             lister=lambda d: entries) == \
+        f"{_AUXB}/relatedness/samples_relatedness_flagged_samples.tsv"
+
+
+def test_resolve_aux_file_matches_bare_name_legacy_layout():
+    """Back-compat: the old Legacy fc- layout had a bare ancestry_preds.tsv;
+    suffix-match still finds it (a bare name ends with its own suffix)."""
+    from aou_ld_panel import _resolve_aux_file
+    entries = [f"{_AUXB}/ancestry/ancestry_preds.tsv"]
+    assert _resolve_aux_file(_AUXB, "ancestry", "ancestry_preds.tsv",
+                             lister=lambda d: entries) == \
+        f"{_AUXB}/ancestry/ancestry_preds.tsv"
+
+
+def test_resolve_aux_file_falls_back_to_bare_on_zero_match(capsys):
+    """0 matches (layout changed again) -> warn + bare fallback, so the import
+    site keeps its existing semantics (ancestry hard-fails loudly, relatedness
+    soft-fails per its try/except) rather than the resolver guessing."""
+    from aou_ld_panel import _resolve_aux_file
+    entries = [f"{_AUXB}/ancestry/something_unrelated.txt"]
+    got = _resolve_aux_file(_AUXB, "ancestry", "ancestry_preds.tsv",
+                            lister=lambda d: entries)
+    assert got == f"{_AUXB}/ancestry/ancestry_preds.tsv"
+    assert "no entry" in capsys.readouterr().err.lower()
+
+
+def test_resolve_aux_file_raises_on_ambiguous_match():
+    """Default (ancestry, mandatory): >1 match is a genuine 'which one?' ->
+    raise rather than guess."""
+    from aou_ld_panel import _resolve_aux_file
+    entries = [
+        f"{_AUXB}/ancestry/a.ancestry_preds.tsv",
+        f"{_AUXB}/ancestry/b.ancestry_preds.tsv",
+    ]
+    with pytest.raises(RuntimeError, match="[Aa]mbiguous"):
+        _resolve_aux_file(_AUXB, "ancestry", "ancestry_preds.tsv",
+                          lister=lambda d: entries)
+
+
+def test_resolve_aux_file_ambiguous_fallback_mode(capsys):
+    """on_ambiguous='fallback' (relatedness, best-effort): >1 match -> WARN +
+    bare, so a transient rollout collision (echo_v4_r2 + echo_v4_r3 both
+    present) degrades to the soft-skip path instead of hard-crashing
+    load_qc_cohort. Preserves the relatedness try/except contract that the
+    resolver would otherwise bypass (adversarial-review 2.1)."""
+    from aou_ld_panel import _resolve_aux_file
+    entries = [
+        f"{_AUXB}/relatedness/echo_v4_r2.relatedness_flagged_samples.tsv",
+        f"{_AUXB}/relatedness/echo_v4_r3.relatedness_flagged_samples.tsv",
+    ]
+    got = _resolve_aux_file(_AUXB, "relatedness", "relatedness_flagged_samples.tsv",
+                            lister=lambda d: entries, on_ambiguous="fallback")
+    assert got == f"{_AUXB}/relatedness/relatedness_flagged_samples.tsv"  # bare
+    assert "ambiguous" in capsys.readouterr().err.lower()
+
+
+def test_resolve_aux_file_ignores_subdir_entry_with_trailing_slash():
+    """A subdir entry (e.g. the loadings Hail table 'echo_v4_r2_loadings.ht/')
+    must not be mistaken for the preds file; rstrip('/') runs before the
+    basename split so trailing slashes are handled (refutes adversarial-review
+    2.7's mis-trace)."""
+    from aou_ld_panel import _resolve_aux_file
+    entries = [
+        f"{_AUXB}/ancestry/echo_v4_r2_loadings.ht/",
+        f"{_AUXB}/ancestry/echo_v4_r2.ancestry_preds.tsv",
+    ]
+    assert _resolve_aux_file(_AUXB, "ancestry", "ancestry_preds.tsv",
+                             lister=lambda d: entries) == \
+        f"{_AUXB}/ancestry/echo_v4_r2.ancestry_preds.tsv"
+
+
 def test_validate_sidecar_rejects_cdr_version_drift():
     """Contract (adversarial-review 2.2): a checkpoint saved under one CDR
     version (v8) MUST be invalidated when the platform advances to a new CDR

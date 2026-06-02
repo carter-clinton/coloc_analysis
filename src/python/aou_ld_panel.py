@@ -137,6 +137,82 @@ def _resolve_aux_base(mt_path: str | None = None) -> str:
             return f"{prefix}{_WGS_PATH_INFIX}aux"
     return AUX_BASE
 
+
+def _hail_hadoop_lister(dirpath: str) -> list[str]:
+    """Production directory lister: Hail ``hadoop_ls`` over a gs:// dir.
+
+    Uses the AoU Spark/Hadoop GCS connector (requester-pays project already
+    configured in the Workbench), so it lists the same controlled-tier bucket
+    the cohort reads from. Returns full entry paths.
+    """
+    import hail as hl
+    return [entry["path"] for entry in hl.hadoop_ls(dirpath)]
+
+
+def _resolve_aux_file(aux_base: str, subdir: str, suffix: str,
+                      lister=None, *, on_ambiguous: str = "raise") -> str:
+    """Resolve a specific AUX table inside ``aux/<subdir>/`` by its canonical
+    SUFFIX, robust to the pipeline-version filename prefix AoU prepends.
+
+    On RW 2.0 / cdrv8-R8 the files carry prefixes the bare-name code missed
+    (verified live 2026-06-01 via a CHECK-C 404):
+        aux/ancestry/echo_v4_r2.ancestry_preds.tsv
+        aux/relatedness/samples_relatedness_flagged_samples.tsv
+    Those prefixes (``echo_v4_r2.``, ``samples_``) are pipeline-version strings
+    that will drift again, so we DISCOVER the file by the stable suffix
+    (``ancestry_preds.tsv`` / ``relatedness_flagged_samples.tsv``) instead of
+    pinning the prefix — the same "discover, don't pin" posture as
+    ``_resolve_aux_base`` (DEC-2026-06-01).
+
+    Args:
+        aux_base: the env-derived AUX base (``_resolve_aux_base``).
+        subdir: ``"ancestry"`` or ``"relatedness"``.
+        suffix: the bare canonical filename to match on (endswith).
+        lister: callable(dir) -> list[str] of entry paths (full gs:// paths in
+            production via ``_hail_hadoop_lister``; injected in tests). The
+            basename is extracted (``rstrip('/')`` first, so subdir entries like
+            ``echo_v4_r2_loadings.ht/`` are handled). If ``None``
+            (local/offline/tests) returns the bare ``<aux_base>/<subdir>/<suffix>``
+            (pre-discovery behavior preserved).
+        on_ambiguous: behavior when >1 entry matches the suffix. ``"raise"``
+            (default; used for the MANDATORY ancestry table — refuse to guess)
+            vs ``"fallback"`` (used for the BEST-EFFORT relatedness table —
+            WARN + bare, so a transient rollout collision degrades to the
+            soft-skip path the import-site try/except already handles, rather
+            than hard-crashing the cohort load).
+
+    Resolution:
+        1 match  -> the discovered (possibly prefixed) path.
+        0 matches -> WARN + bare fallback. The import site keeps its existing
+            semantics: ancestry hard-fails loudly, relatedness soft-fails via
+            its try/except — the resolver does not guess.
+        >1 matches -> RuntimeError (on_ambiguous="raise") or WARN+bare
+            (on_ambiguous="fallback").
+    """
+    bare = f"{aux_base}/{subdir}/{suffix}"
+    if lister is None:
+        return bare
+    dirpath = f"{aux_base}/{subdir}"
+    matches = sorted(
+        e for e in lister(dirpath)
+        if e.rstrip("/").rsplit("/", 1)[-1].endswith(suffix)
+    )
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        msg = (f"Ambiguous AUX file: {len(matches)} entries under {dirpath} "
+               f"end with {suffix!r}: {matches}.")
+        if on_ambiguous == "fallback":
+            print(f"[load_qc_cohort] WARN: {msg} Falling back to bare {bare} "
+                  f"(best-effort table; anti_join may be skipped).",
+                  file=sys.stderr)
+            return bare
+        raise RuntimeError(f"{msg} Refusing to guess.")
+    print(f"[load_qc_cohort] WARN: no entry under {dirpath} ends with "
+          f"{suffix!r}; falling back to bare {bare}", file=sys.stderr)
+    return bare
+
+
 # Sample QC thresholds (AOU-LD-PIPELINE.md §3.1)
 MIN_CALL_RATE_SAMPLE = 0.98
 HET_HOM_SD_BAND = 3.0
@@ -727,12 +803,23 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             f"covers AFR/EUR (D-M3-02)."
         )
     # Env-derive the AUX base from the WGS MT being read so the ancestry /
-    # relatedness tables track the platform-bound CDR version (v8/v9/...).
-    # Explicit overrides (tests) still win via the `or`. Falls back to the
-    # hardcoded AUX_BASE literal for local synthetic-MT paths. (DEC-2026-06-01)
+    # relatedness tables track the platform-bound CDR version (v8/v9/...), then
+    # DISCOVER each table by its canonical suffix so pipeline-version filename
+    # prefixes (echo_v4_r2./samples_) need no code edit either. Explicit
+    # overrides (tests) still win via the `or`. The lister is active only on
+    # real runs; skip_checkpoint (tests/local, no real bucket) -> bare names.
+    # (DEC-2026-06-01: env-derive base + suffix-discover filename.)
     aux_base = _resolve_aux_base(mt_path)
-    anc_path = ancestry_table_path or f"{aux_base}/ancestry/ancestry_preds.tsv"
-    rel_path = relateds_table_path or f"{aux_base}/relatedness/relatedness_flagged_samples.tsv"
+    aux_lister = None if skip_checkpoint else _hail_hadoop_lister
+    # Ancestry is MANDATORY -> on_ambiguous="raise" (hard-fail, don't guess).
+    # Relatedness is BEST-EFFORT (import wrapped in try/except below) ->
+    # on_ambiguous="fallback" so a transient rollout collision degrades to the
+    # soft-skip path instead of hard-crashing the cohort load.
+    anc_path = ancestry_table_path or _resolve_aux_file(
+        aux_base, "ancestry", "ancestry_preds.tsv", lister=aux_lister)
+    rel_path = relateds_table_path or _resolve_aux_file(
+        aux_base, "relatedness", "relatedness_flagged_samples.tsv",
+        lister=aux_lister, on_ambiguous="fallback")
 
     # Resilience refactor: compute intermediate-checkpoint URIs + auto-resume
     # state machine (DESIGN §3.5).
