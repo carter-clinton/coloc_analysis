@@ -86,6 +86,15 @@ Stopped here per Carter's end-of-day signoff: push complete; STATE + memory refr
 
 **Status:** CHECK D ✅ (q04, Hail 0.2.135). CHECK C ✅ code-side. **Next:** push to origin (fix is inert on AoU until pushed — clone pulls from origin) → AOU-0 precheck (compute-free) in a CDR-wired Standard Analysis env → chr22 smoke (Carter holds trigger). Track 4 patches remain load-bearing (mechanism live). 1000G AFR remains smoke-fail safety net only ([[feedback_no_1000g_ld_pivot]]).
 
+### Session 2 (2026-06-01 cont.) — live R8 bind validated the fix + surfaced 2 more gaps
+
+Carter launched a CDR-wired Standard Analysis env and ran Steps 0–3. Outcomes (all confirmed live; commits `3ee42c8`+`09c1e32`; DEC-2026-06-01-aou-r8-env-derive):
+1. **CDR bind fixed (R9→R8).** R9 was bound-in-metadata but **unresolvable by the env-creation binder** — a genuine Standard env's startup threw `cdrv8 - R9 not found` (NOT a featherweight artifact; the q04 keep-pin reopen-trigger was met). Removed the R9 reference (kebab → Delete, reference-only), adopted **C2024Q3R8 + prep_C2024Q3R8**; R8 binds clean (`WORKSPACE_CDR=…C2024Q3R8`). R8≡R9 genomically (both cdrv8) for the pure-Hail build.
+2. **vwb- rename — env-derive VINDICATED.** WGS bound to `gs://vwb-aou-datasets-controlled/v8/…` (was `fc-`). `_resolve_aux_base` absorbed it (`ENV-DERIVED: True`, zero code edit) — a hardcoded `fc-` literal would have failed.
+3. **Filename-prefix gap (CHECK C 404, not 403).** Aux files carry pipeline-version prefixes (`echo_v4_r2.ancestry_preds.tsv`, `samples_relatedness_flagged_samples.tsv`); schemas unchanged (verified by header peek). Fixed with `_resolve_aux_file` **suffix-discovery** (discover, don't pin) — `on_ambiguous` keeps ancestry hard-fail / relatedness soft-fail. tests/m3 **94 passed / 27 skipped / 0 failed**; 2nd adversarial-review round cleared (1 real regression caught+fixed, rest verified-and-dismissed; in `260601-cca/SUMMARY.md`).
+
+**Net:** the driver now self-resolves AoU bucket + CDR version + aux filename — no code edit on future platform drift. CHECK C remaining = compute-free re-test: Carter Starts the Stopped R8 env, `git pull` `09c1e32`, re-runs AOU-0 Cell 2 → expect `[OK]` on both aux files → chr22 smoke. Env left **Stopped** ($0.01/hr disk) for fast warm-start; delete to $0 after re-test passes.
+
 
 # Project State
 

@@ -988,3 +988,25 @@ Once cache-staleness is refuted, the rigor-correct disposition (per `feedback_ri
 - Cowork-side decides at v5 ship time: (i) retroactive OSF posting + post-hoc deviation note, or (ii) v5 cover-letter disclosure as pre-registration limitation. Both are acceptable.
 - Cross-references: `.planning/osf_deviations.md` (under "Deviations (OSF amendment required)"); `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md` D-TA-R3-OSF-COVERAGE token; `.planning/amendments/osf-amendment-r3-2026-05-04.md` amendment text.
 
+
+## 2026-06-01 — DEC-2026-06-01-aou-r8-env-derive: R9→R8 CDR switch + env-derive/suffix-discover AoU AUX paths (Track B m3)
+
+**Decision:** (1) Switch the AoU workspace CDR reference from the unresolvable `C2024Q3R9` to `C2024Q3R8` (cdrv8; + `prep_C2024Q3R8`). (2) Make `src/python/aou_ld_panel.py` resolve the AUX ancestry/relatedness tables fully from the runtime environment instead of hardcoded literals: `_resolve_aux_base` env-derives the AUX base from `$WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH`, and `_resolve_aux_file` discovers each table by its canonical filename SUFFIX. Commits `f4c495c`, `e196ac1`, `9646ac9` (env-derive base + close CHECK-C gate), `3ee42c8`, `09c1e32` (suffix-discover filenames).
+
+**Context (all confirmed live this session):**
+- R9 was bound in workspace metadata but **unresolvable by the env-creation CDR binder** — a genuine Standard Analysis (Jupyter) env's startup log threw `cdrv8 - R9 not found` (not a featherweight artifact). R8 binds cleanly (`WORKSPACE_CDR=…C2024Q3R8`). R8 and R9 are both **cdrv8/v8** → genomically identical for the pure-Hail LD build (the R-revision refreshes the curated/BigQuery tier we do not use + applies participant withdrawals).
+- The RW 2.0 controlled genomic bucket is **`gs://vwb-aou-datasets-controlled/`** (was `fc-aou-datasets-controlled`). `_resolve_aux_base` absorbed the rename with no code edit (`ENV-DERIVED: True`).
+- The R8 aux files carry **pipeline-version filename prefixes** (`aux/ancestry/echo_v4_r2.ancestry_preds.tsv`, `aux/relatedness/samples_relatedness_flagged_samples.tsv`); schemas unchanged (research_id/ancestry_pred; sample_id — verified by byte-range header peek). `_resolve_aux_file` discovers them by suffix; `samples_relatedness.tsv` (pairwise i.s/j.s/kin) is correctly NOT selected.
+
+**Alternatives considered:**
+- Keep the R9 pin and re-probe (rejected — R9 is a broken pin; a broken pin is not a valid pin; reopen-trigger of the q04 keep-pin lock was met).
+- Hardcode the new R8 literals (bucket + `echo_v4_r2.`/`samples_` filenames) (rejected — these are platform/pipeline-version strings that already drifted twice (fc→vwb, bare→prefixed) and will drift again; "discover, don't pin" per [[feedback_extract_reusable_utilities]] / [[feedback_rigor_over_speed]]).
+- Auto-tie-break ancestry ambiguity (rejected — silently picking among >1 ancestry-prediction files could corrupt the cohort; hard-fail and stop instead).
+
+**Why:** R9 will not bind, so it cannot be the analysis CDR; R8 is genomically equivalent for this pure-Hail build and is the pre-migration revision. Env-derivation + suffix-discovery make the whole AoU path surface (bucket / CDR version / filename prefix) a no-op for future platform changes, removing the manual CHECK-C gate from the critical path while keeping the code reviewer-defensible.
+
+**How to apply (Track B reproducibility / OSF disclosure):**
+- Disclose the **CDR-revision deviation (C2024Q3R9 → C2024Q3R8, both cdrv8)** in the Track B methods/deviation trail; note R8/R9 are genomically identical for the LD build.
+- Provenance sidecars record the RESOLVED (discovered, prefixed) aux paths, so the exact files used are captured per fire.
+- Adjudicated adversarial-review dispositions (2 rounds) recorded in `.planning/quick/260601-cca-env-derive-aux-base-close-check-c/SUMMARY.md`.
+- Reopen only if a future CDR fails to expose WGS/AUX at AOU-0 (same trigger as the prior keep-pin lock).

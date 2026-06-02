@@ -88,3 +88,47 @@ sidecar). Dead `RELATEDNESS_FULL_PATH` removed. Module docstring corrected.
 AOU-0 precheck (compute-free, after `git clone` + push) → chr22 smoke (Carter
 holds trigger). Push `f4c495c`/`e196ac1` + this commit to origin so a fresh AoU
 clone carries the fix + the reframed precheck.
+
+---
+
+## Session 2 (2026-06-01 cont.) — live R8 bind + the second + third gaps
+
+The env-derive fix met reality on a CDR-wired Standard Analysis env, and reality
+threw two more brittleness points — both absorbed by the "discover, don't pin"
+posture:
+
+1. **CDR bind fixed (R9→R8).** R9 was bound-in-metadata but unresolvable by the
+   env-creation binder (a genuine Standard Analysis env's startup threw
+   `cdrv8 - R9 not found`). Removed the R9 reference, adopted `C2024Q3R8` +
+   `prep_C2024Q3R8`; R8 binds clean. R8≡R9 genomically (both cdrv8) for the
+   pure-Hail build. Logged as DEC-2026-06-01-aou-r8-env-derive.
+2. **vwb- bucket rename — env-derive VINDICATED.** WGS path bound as
+   `gs://vwb-aou-datasets-controlled/v8/…` (was `fc-aou-datasets-controlled`).
+   `_resolve_aux_base` absorbed it with zero code edit (`ENV-DERIVED: True`).
+   The old hardcoded `fc-` literal would have failed here.
+3. **Filename-prefix gap (CHECK C 404, not 403).** Bucket readable; the aux
+   files carry pipeline-version prefixes (`echo_v4_r2.ancestry_preds.tsv`,
+   `samples_relatedness_flagged_samples.tsv`). Schemas verified unchanged via
+   byte-range header peek (research_id/ancestry_pred; sample_id). Fixed with
+   `_resolve_aux_file` (suffix-discovery) rather than hardcoding the new names —
+   commits `3ee42c8` + `09c1e32`. tests/m3: 94 passed / 27 skipped / 0 failed.
+
+### Adversarial review (round 2) dispositions
+Lens-1 (discovery/lister wiring): fully cleared. Lens-2 (semantics/coverage):
+- **Accepted (2.1, the one real regression):** `_resolve_aux_file` raised on >1
+  match before the relatedness try/except → would hard-crash relatedness's
+  best-effort soft-fail. Fixed via `on_ambiguous` (ancestry "raise" = mandatory,
+  relatedness "fallback" = WARN+bare→soft-skip). +2 tests.
+- **Verified-and-dismissed:** 2.7 trailing-slash (reviewer mis-traced — rstrip
+  runs first; added a proving test); 2.5 offline Hail integration test (schema
+  verified live + CHECK-C re-run is the integration check); 2.3 gsutil-vs-
+  hadoop_ls divergence (plain `gsutil ls` emits bare gs:// lines; same pet SA /
+  bucket — theoretical); 2.6 stale bare-name test assertions (none exist).
+- **Rejected:** auto-tie-break for ancestry ambiguity (guessing the ancestry
+  file is dangerous — hard-fail + stop is correct).
+
+### CHECK C status
+Now: **env binds R8 clean + WGS var resolves + env-derive correct.** Remaining =
+re-run the AOU-0 precheck CHECK-C confirmation in the (Stopped) R8 env after
+pulling `09c1e32` — expecting `[OK]` on both `echo_v4_r2.ancestry_preds.tsv` and
+`samples_relatedness_flagged_samples.tsv`. Then chr22 smoke (separate Dataproc).
