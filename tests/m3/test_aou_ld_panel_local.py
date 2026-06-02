@@ -1246,7 +1246,11 @@ def test_interval_scaled_du_floor_scales_with_span():
 def _mk_listing(success_mtime, part_mtimes):
     """Build a mock hl.hadoop_ls-style stat-dict listing for an MT dir:
     a _SUCCESS marker + N entries-part files, each with a 'modification_time'
-    epoch and a 'size_bytes'. Mirrors the dict shape _capture inspects."""
+    epoch and a 'size_bytes'. Mirrors the dict shape _capture inspects.
+
+    ``success_mtime`` / ``part_mtimes`` may be ints (epochs) OR formatted
+    strings (the form Hail's ``hl.hadoop_ls`` emits across versions) — the
+    distinguisher must resolve either."""
     listing = [
         {"path": "gs://b/ld/x.mt/_SUCCESS",
          "modification_time": success_mtime, "size_bytes": 0, "is_dir": False},
@@ -1353,3 +1357,184 @@ def test_capture_forensics_writes_parseable_capture_json(tmp_path):
     parsed = _json.loads(capture_json.read_text())
     assert parsed["phase"] == "probe"
     assert parsed["uri"] == uri
+
+
+# --- IN-01 (remediation 260601-u1b): string / mixed-type modification_time ---
+# Hail's hl.hadoop_ls can emit modification_time as a FORMATTED STRING (epoch
+# string, ISO, or 'YYYY-MM-DD HH:MM:SS') rather than an int/float epoch. A naive
+# `m > success_mtime` comparison across str-vs-int raises TypeError, which the
+# outer never-raise guard swallows and degrades the hypothesis_flag to
+# 'indeterminate' — destroying the diagnostic at the exact moment it matters.
+# These tests pin that a PARSEABLE string mtime resolves the CORRECT flag.
+
+def test_capture_forensics_flags_finalize_with_epoch_string_mtimes(tmp_path):
+    """modification_time as numeric epoch STRINGS ('1700000000') must still
+    resolve hail_finalize_on_empty when _SUCCESS >= all parts — NOT degrade
+    to indeterminate."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    listing = _mk_listing(success_mtime="1700000200",
+                          part_mtimes=["1700000000", "1700000100"])
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=lambda d: listing,
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        bucket=f"file://{out_dir}",
+    )
+    assert result.get("hypothesis_flag") == "hail_finalize_on_empty", (
+        f"epoch-string _SUCCESS after all parts must flag hail_finalize_on_empty "
+        f"(not indeterminate); got {result.get('hypothesis_flag')!r}"
+    )
+
+
+def test_capture_forensics_flags_finalize_with_uneven_epoch_strings(tmp_path):
+    """Epoch STRINGS of differing digit-length must compare NUMERICALLY, not
+    lexicographically. _SUCCESS='1700000000' (10 digits) is numerically AFTER
+    parts '999999999' (9 digits) => hail_finalize_on_empty. A naive string '>'
+    would invert this ('1...' < '9...' lexicographically) and mis-flag it
+    kill_interrupted_write — so this pins genuine numeric coercion, not the
+    accidental same-width-string lexical match."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    listing = _mk_listing(success_mtime="1700000000",
+                          part_mtimes=["999999999", "999999000"])
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=lambda d: listing,
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        bucket=f"file://{out_dir}",
+    )
+    assert result.get("hypothesis_flag") == "hail_finalize_on_empty", (
+        f"uneven-length epoch strings must compare numerically; _SUCCESS "
+        f"'1700000000' is numerically after part '999999999' => "
+        f"hail_finalize_on_empty; got {result.get('hypothesis_flag')!r}"
+    )
+
+
+def test_capture_forensics_flags_kill_with_human_string_mtimes(tmp_path):
+    """modification_time as human 'YYYY-MM-DD HH:MM:SS' strings must still
+    resolve kill_interrupted_write when a part is later than _SUCCESS — NOT
+    degrade to indeterminate (this is the form Hail historically emits)."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    listing = _mk_listing(success_mtime="2024-01-15 12:34:56",
+                          part_mtimes=["2024-01-15 12:35:10",
+                                       "2024-01-15 12:40:00"])
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=lambda d: listing,
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        bucket=f"file://{out_dir}",
+    )
+    assert result.get("hypothesis_flag") == "kill_interrupted_write", (
+        f"human-string part after _SUCCESS must flag kill_interrupted_write "
+        f"(not indeterminate); got {result.get('hypothesis_flag')!r}"
+    )
+
+
+def test_capture_forensics_flags_finalize_with_iso_string_mtimes(tmp_path):
+    """modification_time as ISO 'YYYY-MM-DDTHH:MM:SSZ' strings must still
+    resolve hail_finalize_on_empty when _SUCCESS >= all parts."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    listing = _mk_listing(success_mtime="2024-01-15T12:40:00Z",
+                          part_mtimes=["2024-01-15T12:34:56Z",
+                                       "2024-01-15T12:35:10Z"])
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=lambda d: listing,
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        bucket=f"file://{out_dir}",
+    )
+    assert result.get("hypothesis_flag") == "hail_finalize_on_empty", (
+        f"ISO-string _SUCCESS at/after all parts must flag hail_finalize_on_empty "
+        f"(not indeterminate); got {result.get('hypothesis_flag')!r}"
+    )
+
+
+def test_capture_forensics_flags_kill_with_mixed_type_mtimes(tmp_path):
+    """MIXED types — _SUCCESS as a string, a part as an int epoch (or vice
+    versa) — must coerce to a common comparable before comparison and resolve
+    the CORRECT flag, NOT raise TypeError that degrades to indeterminate.
+    Here _SUCCESS='1700000000' (string) and a part is 1700000500 (int, later)
+    => kill_interrupted_write."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    listing = _mk_listing(success_mtime="1700000000",
+                          part_mtimes=[1700000300, 1700000500])
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=lambda d: listing,
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        bucket=f"file://{out_dir}",
+    )
+    assert result.get("hypothesis_flag") == "kill_interrupted_write", (
+        f"mixed str/int mtimes must coerce + resolve kill_interrupted_write "
+        f"(not indeterminate via TypeError); got {result.get('hypothesis_flag')!r}"
+    )
+
+
+# --- IN-02 (remediation 260601-u1b): pin the production no-bucket + partial-JSON
+# never-raise contract paths the existing suite leaves uncovered. ---
+
+def test_capture_forensics_never_raises_with_bucket_none_and_env_unset(monkeypatch):
+    """Production default-arg path: notebook calls _capture_catastrophe_forensics(uri,
+    phase='afr') with NO bucket. With WORKSPACE_BUCKET unset, forensics_dir is None
+    (hail.log-copy + json-write skipped) — the helper must STILL not raise and STILL
+    return a best-effort partial dict carrying phase + uri."""
+    from aou_ld_panel import _capture_catastrophe_forensics
+    monkeypatch.delenv("WORKSPACE_BUCKET", raising=False)
+    result = _capture_catastrophe_forensics(
+        "gs://some-bucket/ld/mt_afr_qc.mt", phase="afr",
+        lister=lambda d: _mk_listing(2000, [1000]),
+        copier=lambda src, dst: None,
+        http_getter=lambda url: {"activeStages": []},
+        # NO bucket= -> resolves to WORKSPACE_BUCKET (unset) -> None.
+    )
+    assert isinstance(result, dict)
+    assert result.get("phase") == "afr"
+    assert result.get("uri") == "gs://some-bucket/ld/mt_afr_qc.mt"
+    assert result.get("forensics_dir") is None
+
+
+def test_capture_forensics_writes_partial_json_when_collaborators_raise(tmp_path):
+    """Partial-JSON promise: when the non-writer collaborators (lister / copier /
+    http_getter) all raise, the _forensics/<phase>_capture.json is STILL written
+    (json round-trips) with the sub-step errors recorded in its 'errors' list."""
+    import json as _json
+    from aou_ld_panel import _capture_catastrophe_forensics
+
+    def _boom(*a, **k):
+        raise RuntimeError("collaborator exploded")
+
+    out_dir = tmp_path / "bucket"
+    out_dir.mkdir()
+    result = _capture_catastrophe_forensics(
+        f"file://{out_dir}/x.mt", phase="afr",
+        lister=_boom,
+        copier=_boom,
+        http_getter=_boom,
+        bucket=f"file://{out_dir}",
+    )
+    assert isinstance(result, dict)
+    capture_json = out_dir / "ld" / "_forensics" / "afr_capture.json"
+    assert capture_json.is_file(), (
+        f"partial capture json must STILL be written at {capture_json} even "
+        f"when collaborators raise"
+    )
+    parsed = _json.loads(capture_json.read_text())
+    assert parsed["phase"] == "afr"
+    assert parsed["errors"], (
+        "partial json must record the sub-step errors that fired "
+        "(listing/distinguisher + hail.log-copy + spark-rest)"
+    )

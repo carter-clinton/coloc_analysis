@@ -856,6 +856,71 @@ def _spark_rest_active_stages(url: str) -> dict:
         return _json.loads(resp.read().decode("utf-8"))
 
 
+def _coerce_mtime(value) -> "float | None":
+    """Normalize an ``hl.hadoop_ls`` ``modification_time`` to a comparable float.
+
+    Hail's ``hadoop_ls`` does NOT guarantee an integer/float epoch for
+    ``modification_time`` across versions/backends — historically it has been
+    emitted as a formatted datetime STRING (e.g. ``'2026-05-21 14:03:22'``), and
+    the production stat lister passes whatever Hail returns straight through.
+    A naive numeric ``>`` comparison then either (a) raises ``TypeError`` on a
+    mixed str/int pair — swallowed by the never-raise guard and silently
+    degrading ``hypothesis_flag`` to ``'indeterminate'`` — or (b) compares
+    same-format strings LEXICOGRAPHICALLY, which inverts across digit-length /
+    date / format boundaries. Either way the W1-catastrophe distinguisher (the
+    single mechanism the ``$2,140``-class re-fire decision hinges on) loses its
+    value at the exact moment it matters (IN-01, remediation 260601-u1b).
+
+    This normalizer is used on BOTH sides of the comparison so the flag decision
+    is always on a common float scale. It NEVER raises (every parse is guarded);
+    an uncoercible value returns ``None`` so it is dropped from the comparable
+    set — and if nothing is comparable, ``'indeterminate'`` remains the honest
+    answer, but a PARSEABLE string must NOT degrade.
+
+    Accepts:
+      * ``int`` / ``float`` epochs (returned verbatim as float);
+      * numeric-as-string epochs (``'1700000000'``, including differing
+        digit-lengths — compared numerically, not lexically);
+      * common formatted timestamp strings: ``'YYYY-MM-DD HH:MM:SS'`` (the
+        historical Hail form), ISO ``'YYYY-MM-DDTHH:MM:SS'``, a trailing ``Z``,
+        and a ``.%f`` microsecond fraction.
+
+    Returns:
+        A ``float`` epoch (seconds) if coercible; otherwise ``None``.
+    """
+    try:
+        if isinstance(value, bool):
+            # bool is an int subclass; an mtime is never a bool, so reject it
+            # rather than coerce True->1.0 / False->0.0.
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            s = value.strip()
+            if not s:
+                return None
+            try:
+                return float(s)  # numeric-as-string epoch (any digit-length)
+            except ValueError:
+                pass
+            from datetime import datetime
+            # Allow a trailing 'Z' (UTC designator) on ISO-like strings.
+            s_norm = s[:-1] if s.endswith("Z") else s
+            for fmt in (
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%dT%H:%M:%S",
+                "%Y-%m-%d %H:%M:%S.%f",
+                "%Y-%m-%dT%H:%M:%S.%f",
+            ):
+                try:
+                    return datetime.strptime(s_norm, fmt).timestamp()
+                except ValueError:
+                    continue
+    except Exception:  # noqa: BLE001 - the coercer must NEVER raise
+        return None
+    return None
+
+
 def _capture_catastrophe_forensics(
     uri: str,
     *,
@@ -977,7 +1042,6 @@ def _capture_catastrophe_forensics(
     # (a)+(b): listing + _SUCCESS-mtime-vs-part-mtimes hypothesis distinguisher.
     try:
         entries_parts_dir = f"{uri.rstrip('/')}/entries/entries/parts"
-        success_uri = f"{uri.rstrip('/')}/_SUCCESS"
         listing = lister(uri.rstrip("/"))
         capture["mt_listing"] = [e.get("path") for e in listing
                                  if isinstance(e, dict)]
@@ -999,14 +1063,25 @@ def _capture_catastrophe_forensics(
                        and "modification_time" in e]
         part_sizes = [e.get("size_bytes", e.get("size")) for e in entries
                       if isinstance(e, dict) and not e.get("is_dir", False)]
+        # Store the RAW mtimes/sizes verbatim in the JSON (so a human can always
+        # resolve the hypothesis manually); coercion below is ONLY for the flag.
         capture["success_mtime"] = success_mtime
         capture["entries_part_mtimes"] = part_mtimes
         capture["entries_part_sizes"] = part_sizes
         # Distinguisher: any part written AFTER _SUCCESS => kill-interrupted;
         # else _SUCCESS at/after all parts => hail-finalize-on-empty.
-        usable = [m for m in part_mtimes if m is not None]
-        if success_mtime is not None and usable:
-            if any(m > success_mtime for m in usable):
+        # Coerce BOTH sides to a common float scale first (IN-01): Hail may emit
+        # modification_time as an int/float epoch OR a formatted string; a naive
+        # str-vs-int '>' raises TypeError (-> degrades to 'indeterminate') and a
+        # same-width-string '>' compares lexicographically (inverts across
+        # digit-length / date boundaries). A pair where EITHER side is
+        # uncoercible is skipped; if nothing is comparable, 'indeterminate' is
+        # the honest answer — but a parseable string must NOT degrade.
+        success_cmp = _coerce_mtime(success_mtime)
+        usable = [c for c in (_coerce_mtime(m) for m in part_mtimes)
+                  if c is not None]
+        if success_cmp is not None and usable:
+            if any(c > success_cmp for c in usable):
                 capture["hypothesis_flag"] = "kill_interrupted_write"
             else:
                 capture["hypothesis_flag"] = "hail_finalize_on_empty"

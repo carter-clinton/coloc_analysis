@@ -114,3 +114,32 @@ FAILED tests/m3/test_aou_ld_panel_local.py::test_capture_forensics_flags_kill_in
 FAILED tests/m3/test_aou_ld_panel_local.py::test_capture_forensics_never_raises_when_collaborators_raise
 FAILED tests/m3/test_aou_ld_panel_local.py::test_capture_forensics_writes_parseable_capture_json
 4 failed, 72 deselected in 0.09s
+
+================================================================
+### IN-01 mtime-coerce RED   (captured 2026-06-01, remediation pass)
+================================================================
+Run BEFORE adding _coerce_mtime. Two genuine failures proving the
+string/mixed-type mtime distinguisher gap (IN-01):
+  * uneven_epoch_strings -> lexicographic '>' INVERTS the flag
+    (gives kill_interrupted_write instead of hail_finalize_on_empty)
+  * mixed_type -> TypeError swallowed by never-raise guard ->
+    hypothesis_flag silently degrades to 'indeterminate'
+----------------------------------------------------------------
+            http_getter=lambda url: {"activeStages": []},
+            bucket=f"file://{out_dir}",
+        )
+>       assert result.get("hypothesis_flag") == "kill_interrupted_write", (
+            f"mixed str/int mtimes must coerce + resolve kill_interrupted_write "
+            f"(not indeterminate via TypeError); got {result.get('hypothesis_flag')!r}"
+        )
+E       AssertionError: mixed str/int mtimes must coerce + resolve kill_interrupted_write (not indeterminate via TypeError); got 'indeterminate'
+E       assert 'indeterminate' == 'kill_interrupted_write'
+E         
+E         - kill_interrupted_write
+E         + indeterminate
+
+tests/m3/test_aou_ld_panel_local.py:1481: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_aou_ld_panel_local.py::test_capture_forensics_flags_finalize_with_uneven_epoch_strings
+FAILED tests/m3/test_aou_ld_panel_local.py::test_capture_forensics_flags_kill_with_mixed_type_mtimes
+2 failed, 81 deselected in 0.08s
