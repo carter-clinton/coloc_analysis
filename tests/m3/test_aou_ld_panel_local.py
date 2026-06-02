@@ -55,6 +55,93 @@ def test_canonical_ordering_split_before_variant_qc():
     )
 
 
+# ----- Post-split partitioning regression guards
+# ----- (m3-gateb-load-qc-cohort-driver-collect, 2026-06-02) -----
+#
+# Gate B chr22 smoke surfaced an INDEFINITE driver-side stall in
+# load_qc_cohort(): jstack showed the driver in SpillingCollectIterator ->
+# TableValue.mapRows, spilling ~2,077 surviving row-partitions to /tmp with
+# 0 active executor threads. Root cause: mt.repartition(2048) (shuffle=True is
+# the MatrixTable.repartition DEFAULT) was called AFTER split_multi_hts and
+# BEFORE the post_split checkpoint write. repartition(shuffle=True) builds a
+# Spark RangePartitioner by SAMPLING row keys across all input partitions;
+# split_multi_hts had just re-keyed/added rows so the carried partitioner was
+# invalidated, and Hail lowered the boundary computation to a DRIVER collect.
+# The op was also redundant (naive_coalesce already set count=2048) and an
+# anti-pattern the Hail core team warns against: "avoid repartition, especially
+# shuffle=True; repartition AFTER you've written data with too many partitions,
+# NOT before -- use _n_partitions on read"
+# (discuss.hail.is: "best way to repartition heavily-filtered matrix tables").
+#
+# Fix: drop the pre-write repartition; rebalance on the post-split checkpoint
+# READ-BACK via read_matrix_table(..., _n_partitions=...), which uses the
+# on-disk partition index (no key-sampling, no driver gather). These guards
+# FAIL on the pre-fix source (repartition-before-write) and PASS on the fix.
+
+
+def test_fresh_path_no_repartition_before_post_split_checkpoint():
+    """REGRESSION GUARD (m3-gateb-load-qc-cohort-driver-collect, 2026-06-02):
+
+    The FRESH path of load_qc_cohort must NOT call .repartition() between
+    split_multi_hts and the post_split checkpoint write. repartition(shuffle=True)
+    there triggers a driver-side SpillingCollectIterator gather over the surviving
+    partitions (the Gate B indefinite stall). Static-source check so it runs
+    without Hail (NCSU-side, no Hail install).
+    """
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    # Anchor on the ACTUAL FRESH-path call (the LAST split_multi_hts occurrence;
+    # earlier ones are the module + function docstrings), and bound the window at
+    # the post_split checkpoint WRITE. Then assert there is no executable
+    # repartition CALL in that window -- matching `mt.repartition(` as code, not
+    # the substring `.repartition(` which legitimately appears in explanatory
+    # comments/docstrings describing why the op was removed.
+    split_idx = src.rfind("mt = hl.split_multi_hts(mt)")
+    ckpt_idx = src.find("ckpt_post_split, overwrite=overwrite_flag", split_idx)
+    assert split_idx > 0, "FRESH-path split_multi_hts call not found"
+    assert ckpt_idx > split_idx, "post_split checkpoint write not found after split"
+    window = src[split_idx:ckpt_idx]
+    assert "mt.repartition(" not in window, (
+        "load_qc_cohort FRESH path calls mt.repartition() between split_multi_hts "
+        "and the post_split checkpoint write -- this is the shuffle=True driver "
+        "collect that caused the Gate B indefinite stall. Rebalance on the "
+        "checkpoint read-back via read_matrix_table(_n_partitions=...) instead "
+        "(repartition AFTER write, not before)."
+    )
+
+
+def test_post_split_read_partitions_helper_exists_and_returns_target():
+    """REGRESSION GUARD (m3-gateb-load-qc-cohort-driver-collect, 2026-06-02):
+
+    The post-split rebalance target is computed by a pure, Hail-free helper so
+    the partitioning decision is unit-testable without a live cluster. It must
+    return the documented Q3-hybrid target partition count (_COHORT_TARGET_PARTITIONS).
+    """
+    from aou_ld_panel import _post_split_read_partitions, _COHORT_TARGET_PARTITIONS
+    assert _COHORT_TARGET_PARTITIONS == 2048, (
+        "Q3-hybrid balanced-QC target partition count (DEC-2026-05-04-01) is 2048"
+    )
+    assert _post_split_read_partitions() == _COHORT_TARGET_PARTITIONS
+    # Never returns a non-positive count (would be an invalid _n_partitions).
+    assert _post_split_read_partitions() > 0
+
+
+def test_post_split_read_partitions_never_exceeds_current():
+    """The read-back target must never exceed the available on-disk partition
+    count (read_matrix_table(_n_partitions=N) cannot fabricate partitions beyond
+    what the checkpoint holds -- it coalesces down). When the post-split MT has
+    FEWER partitions than the 2048 target (e.g. a nano interval that pruned to a
+    handful), the helper must clamp to the available count, not the target."""
+    from aou_ld_panel import _post_split_read_partitions, _COHORT_TARGET_PARTITIONS
+    # Plenty available -> target.
+    assert _post_split_read_partitions(available_partitions=145_192) == \
+        _COHORT_TARGET_PARTITIONS
+    # Fewer available than target -> clamp to available (no over-request).
+    assert _post_split_read_partitions(available_partitions=37) == 37
+    # available unknown (None) -> fall back to target (preserves prior behavior).
+    assert _post_split_read_partitions(available_partitions=None) == \
+        _COHORT_TARGET_PARTITIONS
+
+
 def test_uses_verified_env_var_names():
     """Verify the driver does NOT use the broken RELATED_SAMPLES_HT_PATH env var (Q9 correction)."""
     src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()

@@ -223,6 +223,19 @@ MAX_MAF = 0.995  # 1 - MIN_MAF_INTERNAL
 MIN_CALL_RATE_VARIANT = 0.95
 MIN_HWE_PVALUE = 1e-6
 
+# Cohort partition target for the balanced-QC phase (DEC-2026-05-04-01 "Q3
+# hybrid" remediation for the v8 ~145k-partition explosion). naive_coalesce
+# reduces the source MT to this count cheaply (no shuffle). The post-split
+# REBALANCE to this target is then done on the checkpoint READ-BACK via
+# read_matrix_table(_n_partitions=...), NOT via a pre-write mt.repartition()
+# -- repartition(shuffle=True) before a write builds a RangePartitioner by
+# sampling keys across all input partitions and routes through a driver-side
+# SpillingCollectIterator gather (the m3-gateb-load-qc-cohort-driver-collect
+# indefinite stall, 2026-06-02). The Hail core team's guidance is explicit:
+# repartition AFTER you've written data with too many partitions, not before
+# (discuss.hail.is "best way to repartition heavily-filtered matrix tables").
+_COHORT_TARGET_PARTITIONS = 2048
+
 # Export MAF floor (Q6 lock, 260520-s2s-CONTEXT.md): 0.005 overrides
 # AOU-LD-PIPELINE.md §7.2 default of 0.01. Rationale: M2-novel AFR variants
 # concentrate in the 0.005-0.01 band (m3-RESEARCH.md Q10); dropping them at
@@ -701,6 +714,45 @@ def _validate_checkpoint_populated(uri: str, *,
         # importable all yield "not populated" — safer to redo work
         # than to resume from a potentially empty checkpoint.
         return False
+
+
+def _post_split_read_partitions(available_partitions: int | None = None,
+                                *,
+                                target: int = _COHORT_TARGET_PARTITIONS) -> int:
+    """Target partition count for the post-split checkpoint READ-BACK.
+
+    Pure (Hail-free) so the partitioning decision is unit-testable without a
+    live cluster. Replaces the pre-write ``mt.repartition(2048)`` that caused
+    the m3-gateb-load-qc-cohort-driver-collect indefinite driver stall
+    (2026-06-02): ``repartition(shuffle=True)`` before a write builds a
+    RangePartitioner by sampling keys across all input partitions and routes
+    through a driver-side ``SpillingCollectIterator`` gather. Rebalancing
+    on the checkpoint read-back via ``read_matrix_table(_n_partitions=...)``
+    uses the on-disk partition index instead — no key sampling, no driver
+    collect (the Hail-team-recommended "repartition after write, not before").
+
+    ``read_matrix_table(_n_partitions=N)`` coalesces DOWN to ``N``; it cannot
+    fabricate more partitions than the checkpoint physically holds. So when the
+    post-split MT has fewer partitions than ``target`` (e.g. a nano interval
+    that pruned to a handful), clamp to what is available rather than
+    over-requesting.
+
+    Args:
+        available_partitions: On-disk partition count of the post-split
+            checkpoint, when known (``mt.n_partitions()`` is a cheap metadata
+            read). ``None`` -> use ``target`` unconditionally (preserves the
+            prior fixed-2048 behavior when the count is not threaded in).
+        target: Desired balanced-QC partition count (default
+            ``_COHORT_TARGET_PARTITIONS``).
+
+    Returns:
+        A positive partition count to pass as ``_n_partitions`` on read-back:
+        ``min(target, available_partitions)`` when available is known,
+        else ``target``.
+    """
+    if available_partitions is None:
+        return target
+    return max(1, min(target, int(available_partitions)))
 
 
 def _assert_checkpoint_nonempty(mt: "hl.MatrixTable", uri: str,
@@ -1323,15 +1375,15 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         if sensitivity and "self_report" in mt.col:
             mt = mt.filter_cols(mt.self_report.contains("Black or African American"))
 
-        # Step 5: naive_coalesce (cheap upstream coalesce; DEC-2026-05-04-01)
-        mt = mt.naive_coalesce(2048)
+        # Step 5: naive_coalesce (cheap upstream coalesce; DEC-2026-05-04-01).
+        # No shuffle -> reduces the ~145k-partition source toward the target
+        # without a driver gather. The balanced-QC REBALANCE to the target is
+        # deferred to the post-split checkpoint read-back below (NOT a pre-write
+        # repartition -- see m3-gateb-load-qc-cohort-driver-collect, 2026-06-02).
+        mt = mt.naive_coalesce(_COHORT_TARGET_PARTITIONS)
 
         # Step 6: split_multi_hts BEFORE variant_qc (canonical ordering)
         mt = hl.split_multi_hts(mt)
-
-        # Q3 hybrid: repartition for balanced QC phase before writing intermediate 1.
-        # The shuffle cost amortizes into the GCS write that was already required.
-        mt = mt.repartition(2048)
 
         # Intermediate 1 checkpoint + sidecar (DESIGN §3.5 atomicity policy:
         # checkpoint write FIRST, then sidecar write).
@@ -1340,8 +1392,24 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             _assert_checkpoint_nonempty(mt, ckpt_post_split, phase="post_split")
             _write_sidecar(_sidecar_uri(ckpt_post_split), provenance, phase="post_split")
             print(f"[load_qc_cohort] wrote intermediate 1: {ckpt_post_split}")
+            # Q3-hybrid balanced-QC rebalance, done the Hail-recommended way:
+            # repartition AFTER the write by RE-READING the checkpoint with a
+            # target partition count. read_matrix_table(_n_partitions=...) uses
+            # the on-disk partition index (no key sampling, no driver collect),
+            # unlike the removed pre-write mt.repartition(shuffle=True) that
+            # caused the Gate B indefinite SpillingCollectIterator driver stall.
+            mt = hl.read_matrix_table(
+                ckpt_post_split,
+                _n_partitions=_post_split_read_partitions(mt.n_partitions()),
+            )
     elif state == "RESUME_FROM_POST_SPLIT":
-        mt = hl.read_matrix_table(ckpt_post_split)
+        # Resume also rebalances on read so Phase 2 runs over balanced partitions
+        # (the post_split checkpoint carries the naive_coalesce'd, possibly
+        # uneven, partition sizes). Same driver-collect-free read-back path.
+        mt = hl.read_matrix_table(
+            ckpt_post_split,
+            _n_partitions=_post_split_read_partitions(),
+        )
         print(f"[load_qc_cohort] resumed from intermediate 1: {ckpt_post_split}")
     elif state == "RESUME_FROM_POST_SAMPLE_QC":
         mt = hl.read_matrix_table(ckpt_post_sqc)
