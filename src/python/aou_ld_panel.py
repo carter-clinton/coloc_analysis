@@ -349,6 +349,35 @@ def _qc_checkpoint_uri(bucket: str, ancestry: str, sensitivity: bool) -> str:
     return f"gs://{_normalize_bucket(bucket)}/ld/mt_{ancestry}{suffix}.mt"
 
 
+def _sanitize_interval_suffix(interval_filter: str) -> str:
+    """Sanitize an INTERVAL token into a filesystem/URI-safe path suffix.
+
+    Replaces ``:`` and ``-`` with ``_`` so a span-bounded GRCh38 interval
+    (``"chr22:16000000-18000000"``) becomes a path-safe token
+    (``"chr22_16000000_18000000"``). A bare whole-chromosome token
+    (``"chr22"``) passes through unchanged.
+
+    WHY (m3-gateb-load-qc-cohort-driver-collect, 2026-06-02 follow-on): GCS
+    tolerates a colon on the checkpoint WRITE, but the post-write read-back
+    ``hl.read_matrix_table(...)`` routes the URI through Hadoop's Path/URI
+    parser, which reads ``"chr22:"`` as a URI *scheme* and raises
+    ``java.net.URISyntaxException: Relative path in absolute URI``. The
+    Tier-2 ``"chr22"`` default (no colon) never exercised the path.
+
+    This is the single sanitization point for INTERVAL-derived suffixes; it
+    encapsulates the same ``.replace(":", "_").replace("-", "_")`` convention
+    the AOU-1 smoke notebook applies to its final-output ``_suffix`` (so the
+    intermediate checkpoint name matches the final cohort MT naming).
+
+    Examples:
+        >>> _sanitize_interval_suffix("chr22")
+        'chr22'
+        >>> _sanitize_interval_suffix("chr22:16000000-18000000")
+        'chr22_16000000_18000000'
+    """
+    return interval_filter.replace(":", "_").replace("-", "_")
+
+
 def _intermediate_checkpoint_uri(bucket: str, ancestry: str, phase: str,
                                   sensitivity: bool,
                                   interval_filter: str | None = None) -> str:
@@ -361,19 +390,29 @@ def _intermediate_checkpoint_uri(bucket: str, ancestry: str, phase: str,
         phase: "post_split" or "post_sample_qc".
         sensitivity: When True, appends "_pca_selfid" before phase suffix
             (matches the existing _qc_checkpoint_uri convention).
-        interval_filter: When set (e.g., "chr22" for smoke), appends
-            "_{interval}" to the URI for path-level isolation between
-            smoke and production paths. Defense in depth alongside
-            sidecar-level mismatch detection. Per DESIGN §3.3.
+        interval_filter: When set (e.g., "chr22" for smoke, or a span-bounded
+            nano interval like "chr22:16000000-18000000"), appends a
+            URI-safe "_{interval}" to the URI for path-level isolation
+            between smoke and production paths. The interval is sanitized via
+            :func:`_sanitize_interval_suffix` (``:`` and ``-`` -> ``_``) so the
+            colon does not break the post-write read-back's Hadoop URI parse
+            (m3-gateb-load-qc-cohort-driver-collect, 2026-06-02 follow-on).
+            Defense in depth alongside sidecar-level mismatch detection.
+            Per DESIGN §3.3.
 
     Examples:
         >>> _intermediate_checkpoint_uri("bkt", "afr", "post_split", False)
         'gs://bkt/ld/intermediate/mt_afr_post_split.mt'
         >>> _intermediate_checkpoint_uri("bkt", "afr", "post_split", True, "chr22")
         'gs://bkt/ld/intermediate/mt_afr_pca_selfid_post_split_chr22.mt'
+        >>> _intermediate_checkpoint_uri("bkt", "afr", "post_split", False,
+        ...                              "chr22:16000000-18000000")
+        'gs://bkt/ld/intermediate/mt_afr_post_split_chr22_16000000_18000000.mt'
     """
     sens_suffix = "_pca_selfid" if sensitivity else ""
-    interval_suffix = f"_{interval_filter}" if interval_filter else ""
+    interval_suffix = (
+        f"_{_sanitize_interval_suffix(interval_filter)}" if interval_filter else ""
+    )
     return (
         f"gs://{_normalize_bucket(bucket)}/ld/intermediate/"
         f"mt_{ancestry}{sens_suffix}_{phase}{interval_suffix}.mt"

@@ -585,6 +585,85 @@ def test_intermediate_checkpoint_uri_accepts_prefixed_bucket():
     assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_post_split.mt"
 
 
+def test_intermediate_checkpoint_uri_sanitizes_colon_nano_interval():
+    """Regression (m3-gateb-load-qc-cohort-driver-collect, 2026-06-02 follow-on).
+
+    A span-bounded nano INTERVAL ('chr22:16000000-18000000') must NOT leak its
+    colon/dash into the intermediate checkpoint URI. GCS tolerates a colon on
+    WRITE, but the e23c081 driver-collect fix re-reads the post_split checkpoint
+    via hl.read_matrix_table(...), which routes the URI through Hadoop's Path/URI
+    parser. An unsanitized 'chr22:' is read as a URI scheme and raises
+    java.net.URISyntaxException: Relative path in absolute URI. The sanitized
+    name must match the notebook's final-output convention
+    (INTERVAL.replace(':','_').replace('-','_') -> '_chr22_16000000_18000000').
+    """
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri(
+        "fc-secure-XXX", "afr", "post_split", False, "chr22:16000000-18000000")
+    # Hard URI-fatal char: a colon ANYWHERE in the path after the gs:// scheme
+    # makes Hadoop read e.g. 'chr22:' as a (second) URI scheme.
+    assert ":" not in uri.removeprefix("gs://"), \
+        f"colon leaked into intermediate URI path: {uri!r}"
+    # The interval suffix (filename component) must carry NO ':' or '-' — full
+    # consistency with the notebook's final-output suffix convention. Scoped to
+    # the basename: a bucket name may legitimately contain '-' (e.g.
+    # 'rw-migration-aou-rw-476cdac2'); only the MT filename is at issue.
+    filename = uri.rsplit("/", 1)[-1]
+    assert ":" not in filename and "-" not in filename, \
+        f"colon/dash leaked into intermediate MT filename: {filename!r}"
+    assert uri == (
+        "gs://fc-secure-XXX/ld/intermediate/"
+        "mt_afr_post_split_chr22_16000000_18000000.mt"
+    )
+
+
+def test_intermediate_checkpoint_uri_sanitizes_colon_nano_interval_sensitivity():
+    """Same colon-sanitization regression on the sensitivity=True branch.
+
+    Both ckpt_post_split AND ckpt_post_sqc derive from this one builder
+    (aou_ld_panel.py:1270-1273), and the sensitivity fire is a separate live
+    path, so the sanitization must hold with the _pca_selfid infix too.
+    """
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri(
+        "fc-secure-XXX", "afr", "post_sample_qc", True, "chr22:16000000-18000000")
+    assert ":" not in uri.removeprefix("gs://"), \
+        f"colon leaked into intermediate URI path: {uri!r}"
+    filename = uri.rsplit("/", 1)[-1]
+    assert ":" not in filename and "-" not in filename, \
+        f"colon/dash leaked into intermediate MT filename: {filename!r}"
+    assert uri == (
+        "gs://fc-secure-XXX/ld/intermediate/"
+        "mt_afr_pca_selfid_post_sample_qc_chr22_16000000_18000000.mt"
+    )
+
+
+def test_intermediate_checkpoint_uri_clean_chr22_unchanged():
+    """The Tier-2 whole-chrom 'chr22' (no colon/dash) must be byte-identical
+    before and after the sanitization fix — the existing contract is preserved.
+    """
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    uri = _intermediate_checkpoint_uri(
+        "fc-secure-XXX", "afr", "post_split", False, "chr22")
+    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_post_split_chr22.mt"
+
+
+def test_sanitize_interval_suffix_helper():
+    """The reusable sanitizer encapsulates the notebook's
+    INTERVAL.replace(':','_').replace('-','_') convention (one sanitization
+    point per the 'recurrent bug class -> reusable utility' rule).
+    """
+    from aou_ld_panel import _sanitize_interval_suffix
+    # Span-bounded nano interval: colon AND dash -> underscore.
+    assert _sanitize_interval_suffix("chr22:16000000-18000000") == \
+        "chr22_16000000_18000000"
+    # Whole-chromosome token: no change.
+    assert _sanitize_interval_suffix("chr22") == "chr22"
+    # No residual URI-fatal chars after sanitization.
+    out = _sanitize_interval_suffix("chr22:16000000-18000000")
+    assert ":" not in out and "-" not in out
+
+
 def test_sidecar_uri_format():
     from aou_ld_panel import _sidecar_uri
     checkpoint_uri = "gs://bkt/ld/intermediate/mt_afr_post_split.mt"
