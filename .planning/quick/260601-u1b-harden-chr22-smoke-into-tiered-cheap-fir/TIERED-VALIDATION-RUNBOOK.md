@@ -12,6 +12,61 @@ possible** BEFORE the expensive full-genome rebuild is greenlit.
 
 ---
 
+## 0. Cluster provisioning — READ FIRST (2026-06-02, web-verified, high-confidence)
+
+**Use the Hail-preinstalled cluster — do NOT pip-install Hail.** AoU RW 2.0
+(Verily Workbench) offers a dedicated **"Hail Genomics Analysis"** cloud
+environment (Verily backend: a Dataproc cluster with **`software-framework =
+HAIL`**) where **Hail is pre-installed and correctly YARN-wired**. Pick that and
+the entire pip / Spark-version problem disappears.
+
+> The generic **"JupyterLab Spark cluster for AoU (Dataproc)"** is the
+> `software-framework = NONE` variant — **no Hail bundled.** That was the
+> 2026-06-02 blocker (a 64-vCPU NONE cluster was spun, found Hail-less, and
+> deleted). Do **not** pick it.
+
+**Cluster spec (all tiers):**
+- Worker **Machine type: `n2-standard-16`** — Verily's Dataproc UI lists ONLY the
+  `n2-standard` family (NO `n1-highmem`). Gate A+B = **4× n2-standard-16 = 64 vCPU**;
+  Gate C = **24× n2-standard-16 = 384 vCPU**. Secondary/preemptible workers **0**.
+- Standard-memory node is fine: the `PYSPARK_SUBMIT_ARGS` lever (Cell 1a)
+  **forces `spark.executor.memory=5g`** regardless of node family, so YARN
+  memory-binds to ~9-10 executors/node at 5g (some cores idle) — the per-executor
+  1-core/5g catastrophe profile is **preserved**, NOT downgraded to 3.5-4 GB.
+- Image (if a selector appears): **Dataproc 2.2 (Spark 3.5)** — matches the bundled
+  Hail 0.2.135. (Dataproc 2.1 = Spark 3.3.2 = incompatible with Hail 0.2.135.)
+- **Version:** use the env's pre-installed Hail (the platform version; CHECK D =
+  0.2.135). Do **NOT** pip-pin on the Hail Genomics cluster.
+
+**Run sequence (Gate A; same shape for B/C with the right INTERVAL + cluster):**
+1. Terminal: `git clone https://github.com/carter-clinton/coloc_analysis.git ~/coloc_analysis 2>/dev/null; cd ~/coloc_analysis && git checkout m3-W2-aou-deltas && git pull origin m3-W2-aou-deltas` → confirm `git rev-parse --short HEAD` = **e0f4182**.
+2. Open `AOU-0.5-mechanism-probe_template.ipynb` on the **Hail / PySpark kernel** (NOT plain Python3). Fresh kernel → run **Cell 1a FIRST**, then **Cell 1b**.
+3. **Verify YARN-not-local** (paste as a new cell after 1b — the single check that prevents a silently-invalid probe; a local backend runs only on the master, defeats the cluster, and does not reproduce the distributed write):
+   ```python
+   sc = hl.spark_context()
+   print("master   :", sc.master)                                    # MUST start 'yarn' (not 'local')
+   print("appId    :", sc.applicationId)                              # 'application_...' = YARN
+   print("executors:", sc._jsc.sc().getExecutorMemoryStatus().size()) # > 1
+   print("exec mem :", sc.getConf().get('spark.executor.memory'))     # '5g'
+   print("hail ver :", hl.__version__)                                # ~0.2.135
+   ```
+   `yarn` + executors>1 + `5g` → run the probe cell. `local[...]` → STOP.
+4. Run the probe cell → `GATE A PASS` or a traceback (→ §2 decision rule).
+
+**pip FALLBACK — ONLY if the wizard has no Hail option.** Cluster image MUST be
+Dataproc 2.2; `<kernel sys.executable> -m pip install hail==0.2.135`; then
+`pip uninstall -y pyspark` (the wheel's toy pyspark shadows the cluster Spark);
+wire `<site-packages>/hail/backend/hail-all-spark.jar` onto executors via `--jars`
++ `spark.executor.extraClassPath=./hail-all-spark.jar` in PYSPARK_SUBMIT_ARGS.
+Full recipe + failure modes in `[[project_aou_dataproc_hail_install]]`. This is the
+rabbit hole the Hail Genomics cluster avoids.
+
+**`wb` CLI note:** the UI cannot set Dataproc data-disk size; `wb resource create
+dataproc-cluster --software-framework=HAIL ...` can — relevant for the eventual
+genome-wide build, not for Gate A/B/C.
+
+---
+
 ## 1. Purpose + rigor framing
 
 The catastrophe is a **Hail checkpoint write-finalization failure** under
@@ -61,7 +116,7 @@ per-partition data trivial (plausibly runs on a far smaller / cheaper cluster).
 
 | | |
 |---|---|
-| **Cluster** | 4x `n1-highmem-16` = **64 vCPU** (SHARED with Tier 1) |
+| **Cluster** | 4x `n2-standard-16` = **64 vCPU** (SHARED with Tier 1) |
 | **Workers** | **NON-preemptible** (spot would muddy the kill-interrupted-write hypothesis) |
 | **Cost** | **~$1-3** |
 | **Compute** | a synthetic `range_matrix_table(50_000, 2_000).repartition(2048)` write under cores=1/5g; ZERO source read, ZERO QC |
@@ -90,7 +145,7 @@ pipeline over genome-scale data.
 
 | | |
 |---|---|
-| **Cluster** | SAME 4x `n1-highmem-16` = **64 vCPU** (reuse the Gate-A cluster) |
+| **Cluster** | SAME 4x `n2-standard-16` = **64 vCPU** (reuse the Gate-A cluster) |
 | **Workers** | **NON-preemptible** |
 | **Cost** | **~$1-3** (shares the Gate-A cluster envelope) |
 | **Interval** | `chr22:16000000-18000000` — ~2 Mb, gene-dense, a strict subset of chr22 |
@@ -123,7 +178,7 @@ pipeline over genome-scale data.
 
 | | |
 |---|---|
-| **Cluster** | 24x `n1-highmem-16` = **384 vCPU** |
+| **Cluster** | 24x `n2-standard-16` = **384 vCPU** |
 | **Workers** | **NON-preemptible** |
 | **Cost** | **~$35-80**, ~2h wall |
 | **Interval** | `chr22` (whole chromosome) — the first tier that approaches genome-scale memory pressure |
