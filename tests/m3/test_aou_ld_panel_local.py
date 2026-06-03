@@ -1704,3 +1704,230 @@ def test_capture_forensics_writes_partial_json_when_collaborators_raise(tmp_path
         "partial json must record the sub-step errors that fired "
         "(listing/distinguisher + hail.log-copy + spark-rest)"
     )
+
+
+# ===================================================================
+# Nano-tier sample-axis collapse — call-rate degeneracy guard
+# (.planning/debug/m3-gateb-nano-sample-axis-collapse.md)
+#
+# Root cause: the unguarded call_rate sample filter at
+# aou_ld_panel.py:1460-1461 collapsed the sample (column) axis to 0 at
+# Gate B nano (chr22:16-18Mb, ~119K un-QC'd variants) because per-sample
+# call_rate computed over a tiny pre-variant-QC window is degenerate.
+# Fix design: docs/superpowers/specs/2026-06-03-nano-sample-axis-callrate-guard-design.md
+#
+# Two test layers:
+#   (A) pure-Python (run under smoke_dev, no hail): the assertion-message
+#       branch, the MIN_VARIANTS_FOR_SAMPLE_CALLRATE constant + provenance
+#       params, and the sample_callrate_filtered sidecar threading.
+#   (B) hail-gated integration (skip locally via _require_hail; exercised
+#       on a hail env / cluster): the guard skip-on-nano col-retention and
+#       the above-floor genuinely-bad-sample drop.
+# ===================================================================
+
+
+class _FakeMT:
+    """Minimal stand-in exposing count_rows()/count_cols() for the
+    pure-Python _assert_checkpoint_nonempty message tests (no hail)."""
+
+    def __init__(self, n_rows: int, n_cols: int):
+        self._n_rows = n_rows
+        self._n_cols = n_cols
+
+    def count_rows(self) -> int:
+        return self._n_rows
+
+    def count_cols(self) -> int:
+        return self._n_cols
+
+
+def test_assert_checkpoint_sample_axis_collapse_message():
+    """rows>0, cols==0 -> the message must name the SAMPLE-axis collapse
+    and explicitly disclaim the m3-W1 0x0 finalize catastrophe.
+
+    RED before the fix: the canned message labels every empty MT (including
+    this 118903x0 sample-collapse) as the 'm3-W1 empty-MT catastrophe
+    signature', which mislabels a QC-predicate collapse as a platform
+    finalize bug (the mislabel that pushed toward an incorrect 1000G pivot).
+    """
+    from aou_ld_panel import _assert_checkpoint_nonempty
+
+    with pytest.raises(RuntimeError) as exc:
+        _assert_checkpoint_nonempty(
+            _FakeMT(118903, 0), "gs://b/mt_afr_post_sample_qc.mt",
+            phase="post_sample_qc")
+    msg = str(exc.value)
+    assert "118903 rows x 0 cols" in msg
+    # Names the sample/column axis collapse + QC-predicate cause.
+    assert "sample" in msg.lower() and "axis" in msg.lower()
+    assert "QC" in msg or "qc" in msg
+    # Explicitly NOT the 0x0 finalize catastrophe.
+    assert "NOT the m3-W1" in msg or "not the m3-w1" in msg.lower()
+
+
+def test_assert_checkpoint_variant_axis_collapse_message():
+    """cols>0, rows==0 -> analogous row(variant)-axis collapse message."""
+    from aou_ld_panel import _assert_checkpoint_nonempty
+
+    with pytest.raises(RuntimeError) as exc:
+        _assert_checkpoint_nonempty(
+            _FakeMT(0, 250), "gs://b/mt_afr_final.mt", phase="final")
+    msg = str(exc.value)
+    assert "0 rows x 250 cols" in msg
+    assert "variant" in msg.lower() or "row" in msg.lower()
+    assert "NOT the m3-W1" in msg or "not the m3-w1" in msg.lower()
+
+
+def test_assert_checkpoint_zero_by_zero_keeps_finalize_message():
+    """True 0x0 -> the existing m3-W1 finalize-catastrophe message is kept
+    verbatim (the genuine catastrophe signature)."""
+    from aou_ld_panel import _assert_checkpoint_nonempty
+
+    with pytest.raises(RuntimeError) as exc:
+        _assert_checkpoint_nonempty(
+            _FakeMT(0, 0), "gs://b/mt_afr_post_split.mt", phase="post_split")
+    msg = str(exc.value)
+    assert "0 rows x 0 cols" in msg
+    assert "m3-W1 empty-MT" in msg
+    assert "contents are missing" in msg
+    # Cross-reference pointers preserved.
+    assert "m3-W1-empty-mt-catastrophe.md" in msg
+    assert "feedback_hail_checkpoint_contract_violation" in msg
+
+
+def test_min_variants_for_sample_callrate_constant():
+    """The new floor constant exists and is the documented 500K value, and
+    it never trips at whole-chromosome-or-larger scale (chr22 ~2.4M)."""
+    from aou_ld_panel import MIN_VARIANTS_FOR_SAMPLE_CALLRATE
+    assert MIN_VARIANTS_FOR_SAMPLE_CALLRATE == 500_000
+    # Nano (~119K) trips; whole-chr22 (~2.4M) does not.
+    assert 118_903 < MIN_VARIANTS_FOR_SAMPLE_CALLRATE < 2_400_000
+
+
+def test_collect_provenance_records_sample_callrate_floor():
+    """The floor constant is recorded in provenance.params so a change to
+    it invalidates intermediates (symmetric with the other QC thresholds)."""
+    from aou_ld_panel import (_collect_provenance,
+                              MIN_VARIANTS_FOR_SAMPLE_CALLRATE)
+    prov = _collect_provenance(
+        ancestry="afr", sensitivity=False,
+        source_mt_path="gs://src/path.mt", interval_filter=None)
+    assert prov["params"]["MIN_VARIANTS_FOR_SAMPLE_CALLRATE"] == \
+        MIN_VARIANTS_FOR_SAMPLE_CALLRATE
+    # The runtime OUTCOME flag must NOT be baked into _collect_provenance
+    # output (it is a per-fire result, not a fire-level parameter, and would
+    # spuriously fail resume-validation if compared). It is threaded at
+    # sidecar-write time instead.
+    assert "sample_callrate_filtered" not in prov
+
+
+def test_write_sidecar_threads_sample_callrate_filtered_flag(tmp_path):
+    """post_sample_qc sidecar honestly records whether the call-rate sample
+    filter was applied (sample_callrate_filtered), WITHOUT mutating the
+    reusable provenance dict and WITHOUT putting an outcome into the
+    resume-validation comparison surface
+    ([[feedback_aou_success_marker_not_evidence_of_data]])."""
+    from aou_ld_panel import (_collect_provenance, _write_sidecar,
+                              _read_sidecar, _validate_sidecar,
+                              _SIDECAR_COMPARE_EXCLUDE_FIELDS)
+    prov = _collect_provenance("afr", False, "gs://src/path.mt")
+
+    # post_split sidecar: filter not yet decided -> no flag written.
+    split_uri = f"file://{tmp_path}/post_split.meta.json"
+    _write_sidecar(split_uri, prov, phase="post_split")
+    split = _read_sidecar(split_uri)
+    assert "sample_callrate_filtered" not in split
+
+    # post_sample_qc sidecar: the runtime flag is threaded through.
+    sqc_uri = f"file://{tmp_path}/post_sqc.meta.json"
+    _write_sidecar(sqc_uri, prov, phase="post_sample_qc",
+                   sample_callrate_filtered=False)
+    sqc = _read_sidecar(sqc_uri)
+    assert sqc["sample_callrate_filtered"] is False
+
+    # The input provenance dict must not have been mutated by either write.
+    assert "sample_callrate_filtered" not in prov
+    assert "phase" not in prov
+
+    # The outcome flag must be excluded from resume-validation comparison
+    # (it is an outcome, not a parameter; comparing it would spuriously
+    # invalidate a post_sample_qc intermediate on resume).
+    assert "sample_callrate_filtered" in _SIDECAR_COMPARE_EXCLUDE_FIELDS
+    matches, diag = _validate_sidecar(sqc, prov)
+    assert matches, f"outcome flag must not break sidecar validation: {diag}"
+
+
+# ----- Hail-gated integration tests (skip locally; run on hail env) -----
+
+
+def test_nano_span_guard_retains_samples(synthetic_mt_path_missing: Path,
+                                          mock_aou_env, tmp_path, capsys):
+    """Span-bounded + low-call window below MIN_VARIANTS_FOR_SAMPLE_CALLRATE:
+    the guard SKIPS the call_rate sample filter, COLS ARE RETAINED, the skip
+    is logged, and the post_sample_qc sidecar records
+    sample_callrate_filtered=False.
+
+    This is the regression that reproduces the Gate B nano 118903x0 collapse:
+    pre-fix the call_rate filter would drop every sample on this low-call,
+    below-floor window; post-fix the guard keeps them.
+    """
+    _require_hail()
+    import json as _json
+    from aou_ld_panel import load_qc_cohort, _sidecar_uri, _read_sidecar
+
+    bucket_dir = tmp_path / "wb"
+    bucket_dir.mkdir()
+    mt = load_qc_cohort(
+        mt_path=str(synthetic_mt_path_missing),
+        ancestry="afr",
+        interval_filter="chr16:50000000-52000000",
+        workspace_bucket=f"file://{bucket_dir}",
+        force_fresh=True,
+    )
+    assert mt.count_cols() > 0, (
+        "sample axis collapsed on a below-floor low-call window — the guard "
+        "must SKIP the call_rate filter and retain samples")
+    out = capsys.readouterr().out
+    assert "SKIP call_rate sample filter" in out
+    # Provenance honestly records the skip.
+    from aou_ld_panel import _intermediate_checkpoint_uri
+    sqc_ckpt = _intermediate_checkpoint_uri(
+        f"file://{bucket_dir}", "afr", "post_sample_qc", False,
+        "chr16:50000000-52000000")
+    sidecar = _read_sidecar(_sidecar_uri(sqc_ckpt))
+    assert sidecar is not None
+    assert sidecar["sample_callrate_filtered"] is False
+
+
+def test_above_floor_callrate_filter_still_drops_bad_sample(
+        synthetic_mt_path_missing: Path, mock_aou_env, tmp_path, monkeypatch,
+        capsys):
+    """With variant count >= the floor (floor lowered for the test) AND a
+    genuinely-bad low-call-rate sample, the filter STILL applies: the bad
+    sample is dropped, good samples kept, provenance flag True. Locks the
+    genome-scale path (the guard does not weaken real QC at scale)."""
+    _require_hail()
+    import aou_ld_panel as ldp
+    from aou_ld_panel import load_qc_cohort, _sidecar_uri, _read_sidecar, \
+        _intermediate_checkpoint_uri
+
+    # Lower the floor below the fixture's chr16 variant count so the
+    # above-floor (filter-applied) branch is exercised on a small fixture.
+    monkeypatch.setattr(ldp, "MIN_VARIANTS_FOR_SAMPLE_CALLRATE", 10)
+
+    bucket_dir = tmp_path / "wb"
+    bucket_dir.mkdir()
+    mt = load_qc_cohort(
+        mt_path=str(synthetic_mt_path_missing),
+        ancestry="afr",
+        interval_filter="chr16:50000000-52000000",
+        workspace_bucket=f"file://{bucket_dir}",
+        force_fresh=True,
+    )
+    assert mt.count_cols() > 0, "good samples must survive QC"
+    sqc_ckpt = _intermediate_checkpoint_uri(
+        f"file://{bucket_dir}", "afr", "post_sample_qc", False,
+        "chr16:50000000-52000000")
+    sidecar = _read_sidecar(_sidecar_uri(sqc_ckpt))
+    assert sidecar is not None
+    assert sidecar["sample_callrate_filtered"] is True

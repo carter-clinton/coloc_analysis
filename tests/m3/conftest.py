@@ -123,3 +123,33 @@ def synthetic_mt_path(tmp_path_factory) -> Path:
     if res.returncode != 0:
         pytest.skip(f"synthetic MT build failed (code {res.returncode}): {res.stderr[-2000:]}")
     return target
+
+
+@pytest.fixture(scope="session")
+def synthetic_mt_path_missing(tmp_path_factory) -> Path:
+    """Synthetic AoU MT WITH per-genotype missingness injected (call_rate<1.0).
+
+    The default ``synthetic_mt_path`` fixture is built from Balding-Nichols
+    fully-called genotypes (call_rate==1.0), which makes the >=0.98 call_rate
+    sample filter a guaranteed no-op — the coverage gap that let the Gate B
+    nano sample-axis collapse through
+    (.planning/debug/m3-gateb-nano-sample-axis-collapse.md).
+
+    This fixture injects ~5% per-genotype missingness so per-sample call_rate
+    on a small (below-floor) window falls below 0.98. Pre-fix that would drop
+    every sample (118903x0 collapse); post-fix the nano-degeneracy guard skips
+    the filter and retains samples. Built into a session-scoped tmp dir so it
+    never collides with the committed default fixture.
+    """
+    hail = pytest.importorskip("hail")  # noqa: F841 - surface skip reason cleanly
+    fixtures_dir = PROJECT_ROOT / "tests" / "m3" / "fixtures"
+    builder = fixtures_dir / "build_synthetic_mt.py"
+    if not builder.exists():
+        pytest.skip(f"synthetic MT builder not present: {builder}")
+    target = tmp_path_factory.mktemp("synthetic_mt_missing") / "synthetic_aou_missing.mt"
+    cmd = [sys.executable, str(builder), "--out", str(target),
+           "--missingness", "0.05", "--force"]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode != 0:
+        pytest.skip(f"synthetic missing-MT build failed (code {res.returncode}): {res.stderr[-2000:]}")
+    return target

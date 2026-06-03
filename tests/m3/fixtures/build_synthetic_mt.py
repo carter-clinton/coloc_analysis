@@ -34,6 +34,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--n-variants-chr16", type=int, default=1000)
     parser.add_argument("--n-variants-chr6", type=int, default=500)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--missingness", type=float, default=0.0,
+        help="Per-genotype no-call fraction in [0,1). Default 0.0 keeps the "
+             "Balding-Nichols genotypes fully called (call_rate==1.0), "
+             "backward-compatible with every pre-existing fixture consumer. "
+             "A value >0 sets a deterministic fraction of GT entries to "
+             "no-call so per-sample sqc.call_rate < 1.0 is achievable — "
+             "required to exercise the call_rate sample filter / its nano "
+             "degeneracy guard (.planning/debug/"
+             "m3-gateb-nano-sample-axis-collapse.md). The coverage gap that "
+             "let the nano sample-axis collapse through was that the default "
+             "fixture has zero missingness, making the >=0.98 filter a "
+             "guaranteed no-op in tests.")
     parser.add_argument("--force", action="store_true",
                         help="Rebuild even if target exists")
     args = parser.parse_args(argv)
@@ -112,11 +125,35 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
 
+    # Optional per-genotype missingness injection. The AoU ACAF callset sets
+    # FT-failed genotypes to no-call, so real sqc.call_rate is < 1.0 and varies
+    # with which variants are in scope. The Balding-Nichols generator emits
+    # fully-called genotypes (call_rate==1.0), so without this knob the
+    # call_rate sample filter (>=0.98) is a guaranteed no-op in tests — the
+    # exact coverage gap that let the nano sample-axis collapse through
+    # (.planning/debug/m3-gateb-nano-sample-axis-collapse.md). Default 0.0
+    # preserves the fully-called behavior for every existing consumer.
+    if args.missingness and args.missingness > 0.0:
+        # Deterministic pseudo-random mask keyed on (row index, col index) +
+        # seed so the fixture is reproducible across builds. A genotype is set
+        # to no-call when the hashed unit-interval value < missingness.
+        mt = mt.add_row_index("_miss_row_idx")
+        mt = mt.add_col_index("_miss_col_idx")
+        h = hl.hash(
+            hl.str(mt._miss_row_idx) + "_" + hl.str(mt._miss_col_idx)
+            + "_" + hl.str(args.seed))
+        # hl.hash -> int32; map to [0,1) via abs(h) / 2^31.
+        u = hl.float64(hl.abs(h)) / 2147483648.0
+        mt = mt.annotate_entries(
+            GT=hl.if_else(u < args.missingness, hl.missing(hl.tcall), mt.GT))
+        mt = mt.drop("_miss_row_idx", "_miss_col_idx")
+
     # Persist
     mt.write(str(args.out), overwrite=True)
     print(f"OK: synthetic MT written to {args.out}")
     print(f"     n_samples = {n}; n_variants = {n_total} "
-          f"(chr16: {args.n_variants_chr16}, chr6: {args.n_variants_chr6})")
+          f"(chr16: {args.n_variants_chr16}, chr6: {args.n_variants_chr6}); "
+          f"missingness = {args.missingness}")
     return 0
 
 
