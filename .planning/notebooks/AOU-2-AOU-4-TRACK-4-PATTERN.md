@@ -57,7 +57,7 @@ for cohort_name, mt, uri in [
     assert _validate_checkpoint_populated(uri), (
         f"{cohort_name} at {uri} fails _validate_checkpoint_populated despite non-zero "
         f"in-memory count — possibly cached JVM-side IR masking an empty bucket commit. "
-        f"HALT and inspect entries/entries/parts/ directly via gsutil."
+        f"HALT and inspect entries/rows/parts/ directly via gsutil."
     )
     print(f"  {cohort_name} validated: {n_cols:,} samples x {n_rows:,} variants at {uri}")
 ```
