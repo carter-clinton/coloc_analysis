@@ -825,9 +825,15 @@ def test_has_checkpoint_returns_false_when_mt_dir_exists_but_no_success(tmp_path
 #   mt_afr_qc.mt/_SUCCESS                                       present
 #   mt_afr_qc.mt/metadata.json.gz                               present
 #   mt_afr_qc.mt/rows/rows/parts/part-00000-X.parquet (~35B)    present (footer stub)
-#   mt_afr_qc.mt/entries/entries/parts/                         ABSENT
+#   mt_afr_qc.mt/entries/rows/parts/                            footer-only
 #   hl.read_matrix_table(uri).count_cols()                      0
 #   hl.read_matrix_table(uri).count_rows()                      0
+#
+# (Historical note: the 2026-05-21 forensics recorded `entries/entries/parts/`
+# as ABSENT — but that path is a PHANTOM and is ALWAYS absent on a real Hail
+# 0.2.135 MT; entries live at `entries/rows/parts/`. The only true empty-vs-
+# populated discriminator was count_rows/count_cols. Corrected
+# 2026-06-03 per .planning/debug/m3-entries-path-phantom-subpath.md.)
 #
 # _validate_checkpoint_populated() is the contents-validating replacement
 # for _has_checkpoint() in resume-gate semantics. Cross-references:
@@ -842,8 +848,12 @@ def _make_stub_mt(mt_dir: Path, with_entries_dir: bool = False) -> None:
     Produces: _SUCCESS marker + metadata.json.gz stub + rows/rows/parts/
     with a single 35-byte Parquet-footer stub file (the exact size class
     observed on AoU 2026-05-21). Optionally creates an empty
-    entries/entries/parts/ directory (the second catastrophe variant where
+    entries/rows/parts/ directory (the second catastrophe variant where
     Hail created the entries scaffold but no executor wrote row-group data).
+
+    NOTE: entries live at the REAL Hail layout `entries/rows/parts/`
+    (m3-entries-path-phantom-subpath fix 2026-06-03), NOT the phantom
+    `entries/entries/parts/` the original Track-4 fixtures used.
     """
     mt_dir.mkdir(parents=True)
     (mt_dir / "_SUCCESS").write_text("")
@@ -854,7 +864,7 @@ def _make_stub_mt(mt_dir: Path, with_entries_dir: bool = False) -> None:
     # size observed in the 2026-05-21 bucket inspection.
     (rows_parts / "part-00000-stub.parquet").write_bytes(b"PAR1" + b"\x00" * 27 + b"PAR1")
     if with_entries_dir:
-        entries_parts = mt_dir / "entries" / "entries" / "parts"
+        entries_parts = mt_dir / "entries" / "rows" / "parts"
         entries_parts.mkdir(parents=True)
         # Intentionally empty — no executor wrote row-group payloads.
 
@@ -895,6 +905,84 @@ def test_has_checkpoint_vs_validate_diverge_on_stub_mt(tmp_path):
     assert validated is False, (
         "_validate_checkpoint_populated() must return False on stub MT — "
         "the corrected resume-gate semantics"
+    )
+
+
+# ----- m3-entries-path-phantom-subpath regression (2026-06-03) -----
+#
+# The Track-4 path-based probe hardcoded `entries/entries/parts/`, a PHANTOM
+# subpath that does NOT exist on a real Hail 0.2.135 MatrixTable. Real entry
+# row-group payload is at `<mt>/entries/rows/parts/` (Carter verified LIVE at
+# Gate B #3: EUR mt 3.25 GB total, 3.24 GB at entries/rows/parts/,
+# entries/entries/parts/ ABSENT). The bug was FAIL-SAFE (wrong path -> always
+# False -> force-recompute; never passed an empty MT as populated) but blocked
+# real runs (Gate-C blocker) and the old fixtures validated the phantom path =
+# false confidence. These tests pin the REAL layout.
+#
+# Cross-reference: .planning/debug/m3-entries-path-phantom-subpath.md
+
+
+# Real Hail MatrixTable on-disk entries payload location.
+_REAL_ENTRIES_PARTS = "entries/rows/parts"
+
+
+def _make_populated_mt(mt_dir: Path) -> None:
+    """Build a PASSING MT skeleton at the REAL Hail layout.
+
+    _SUCCESS + metadata.json.gz + rows/rows/parts/ + a populated
+    `entries/rows/parts/` part file comfortably above MIN_ENTRIES_FILE_BYTES
+    (default 1 KB). This is what a genuinely-written Hail MT looks like on
+    disk; `_validate_checkpoint_populated` must return True on it.
+    """
+    mt_dir.mkdir(parents=True)
+    (mt_dir / "_SUCCESS").write_text("")
+    (mt_dir / "metadata.json.gz").write_bytes(b"\x1f\x8b\x08" + b"\x00" * 32)
+    rows_parts = mt_dir / "rows" / "rows" / "parts"
+    rows_parts.mkdir(parents=True)
+    (rows_parts / "part-00000.parquet").write_bytes(b"PAR1" + b"\x00" * 4096 + b"PAR1")
+    entries_parts = mt_dir / "entries" / "rows" / "parts"
+    entries_parts.mkdir(parents=True)
+    # > 1 KB row-group payload (NOT a 35-byte footer stub).
+    (entries_parts / "part-00000.parquet").write_bytes(b"PAR1" + b"\x00" * 8192 + b"PAR1")
+
+
+def _make_empty_real_path_mt(mt_dir: Path) -> None:
+    """Build an EMPTY MT skeleton at the REAL Hail layout: _SUCCESS + rows
+    footer stub + a present-but-footer-only `entries/rows/parts/` (35-byte
+    stub, below the 1 KB threshold). `_validate_checkpoint_populated` must
+    return False — the catastrophe is still caught at the real path."""
+    mt_dir.mkdir(parents=True)
+    (mt_dir / "_SUCCESS").write_text("")
+    (mt_dir / "metadata.json.gz").write_bytes(b"\x1f\x8b\x08" + b"\x00" * 32)
+    entries_parts = mt_dir / "entries" / "rows" / "parts"
+    entries_parts.mkdir(parents=True)
+    # 35-byte Parquet footer stub — below MIN_ENTRIES_FILE_BYTES.
+    (entries_parts / "part-00000-stub.parquet").write_bytes(b"PAR1" + b"\x00" * 27 + b"PAR1")
+
+
+def test_validate_checkpoint_populated_accepts_real_path_populated_mt(tmp_path):
+    """A populated MT at the REAL Hail layout (`entries/rows/parts/` with a
+    >1 KB part) must validate True. Against the pre-fix code (which probed the
+    phantom `entries/entries/parts/`) this returns False -> the m3-entries-path
+    RED state."""
+    from aou_ld_panel import _validate_checkpoint_populated
+    mt_dir = tmp_path / "real_eur_qc.mt"
+    _make_populated_mt(mt_dir)
+    assert _validate_checkpoint_populated(f"file://{mt_dir}") is True, (
+        "populated MT at entries/rows/parts/ must validate True — the probe "
+        "must look at the real Hail layout, not the phantom entries/entries/parts/"
+    )
+
+
+def test_validate_checkpoint_populated_rejects_empty_real_path_mt(tmp_path):
+    """An empty/footer-stub MT at the REAL Hail layout must still validate
+    False — the catastrophe guard is preserved at the corrected path."""
+    from aou_ld_panel import _validate_checkpoint_populated
+    mt_dir = tmp_path / "empty_real.mt"
+    _make_empty_real_path_mt(mt_dir)
+    assert _validate_checkpoint_populated(f"file://{mt_dir}") is False, (
+        "footer-only entries/rows/parts/ must validate False — catastrophe "
+        "still caught at the real path"
     )
 
 
@@ -1423,7 +1511,7 @@ def _mk_listing(success_mtime, part_mtimes):
     ]
     for i, mt in enumerate(part_mtimes):
         listing.append({
-            "path": f"gs://b/ld/x.mt/entries/entries/parts/part-{i:05d}.parquet",
+            "path": f"gs://b/ld/x.mt/entries/rows/parts/part-{i:05d}.parquet",
             "modification_time": mt, "size_bytes": 70_000, "is_dir": False,
         })
     return listing
@@ -1931,3 +2019,56 @@ def test_above_floor_callrate_filter_still_drops_bad_sample(
     sidecar = _read_sidecar(_sidecar_uri(sqc_ckpt))
     assert sidecar is not None
     assert sidecar["sample_callrate_filtered"] is True
+
+
+def test_real_hail_mt_entries_layout_and_validate_populated(
+        synthetic_mt_path: Path, tmp_path):
+    """GROUND TRUTH (hail-gated): write a small REAL Hail MatrixTable and pin
+    the on-disk entries layout the fix depends on.
+
+    SKIPs on smoke_dev (no Hail) via _require_hail(); RUNS on any Hail env
+    (AoU / Dataproc). This is the anti-false-confidence test: without it we'd
+    just be trusting a hardcoded string. Asserts:
+      (a) `<mt>/entries/rows/parts/` exists and is non-empty (the REAL layout),
+          and the phantom `<mt>/entries/entries/parts/` does NOT exist;
+      (b) `_validate_checkpoint_populated` returns True on the populated MT;
+      (c) an emptied MT (filter_cols to zero) returns False (catastrophe still
+          caught at the corrected path).
+
+    Cross-reference: .planning/debug/m3-entries-path-phantom-subpath.md
+    """
+    hl = _require_hail()
+    from aou_ld_panel import _validate_checkpoint_populated
+
+    # (a) Write a small real Hail MT and inspect its on-disk layout.
+    mt = hl.read_matrix_table(str(synthetic_mt_path))
+    real_mt = tmp_path / "real_populated.mt"
+    mt.write(str(real_mt), overwrite=True)
+
+    real_entries = real_mt / "entries" / "rows" / "parts"
+    phantom_entries = real_mt / "entries" / "entries" / "parts"
+    assert real_entries.is_dir(), (
+        f"real Hail MT must store entries at entries/rows/parts/ — not found "
+        f"at {real_entries}; Hail layout may have changed, re-verify the probe"
+    )
+    real_parts = [p for p in real_entries.iterdir()
+                  if p.is_file() and p.suffix == ".parquet"]
+    assert real_parts, "entries/rows/parts/ must contain >=1 parquet part file"
+    assert not phantom_entries.exists(), (
+        "phantom entries/entries/parts/ must NOT exist on a real Hail MT — "
+        "if it does, the on-disk layout assumption is wrong"
+    )
+
+    # (b) the populated MT validates True at the corrected path.
+    assert _validate_checkpoint_populated(f"file://{real_mt}") is True, (
+        "a freshly-written real Hail MT must validate populated at "
+        "entries/rows/parts/"
+    )
+
+    # (c) an emptied MT (zero columns) validates False — catastrophe caught.
+    empty_mt = tmp_path / "real_empty.mt"
+    mt.filter_cols(hl.literal(False)).write(str(empty_mt), overwrite=True)
+    assert _validate_checkpoint_populated(f"file://{empty_mt}") is False, (
+        "an emptied (0-column) real Hail MT must validate False — the "
+        "catastrophe guard must still fire at the corrected path"
+    )
