@@ -737,13 +737,19 @@ def _validate_checkpoint_populated(uri: str, *,
     ``spark.executor.cores=1/mem=5g`` profile (necessary for v8
     partition-explosion OOM remediation), executor tasks can silently
     truncate after writing Parquet schema footers — producing an MT
-    directory with ``_SUCCESS`` + 35-byte rows-stubs + absent
-    ``entries/entries/parts/`` (the exact 2026-05-21 bucket signature).
+    directory with ``_SUCCESS`` + 35-byte rows-stubs + footer-only
+    ``entries/rows/parts/`` (the 2026-05-21 catastrophe signature; the
+    only true empty-vs-populated discriminator was count_rows/count_cols,
+    NOT a "missing entries dir" — see m3-entries-path-phantom-subpath).
+
+    NOTE (m3-entries-path-phantom-subpath, 2026-06-03): real Hail 0.2.135
+    stores entry row-group payload at ``entries/rows/parts/`` — NOT the
+    phantom ``entries/entries/parts/`` the original Track-4 probe used.
 
     Validation steps:
       1. ``_has_checkpoint(uri)`` — ``_SUCCESS`` must exist.
-      2. ``{uri}/entries/entries/parts/`` directory must exist.
-      3. At least one file in ``entries/entries/parts/`` must exceed
+      2. ``{uri}/entries/rows/parts/`` directory must exist.
+      3. At least one file in ``entries/rows/parts/`` must exceed
          ``min_entries_bytes`` (default 1 KB; filters footer stubs).
 
     Scheme dispatch mirrors :func:`_has_checkpoint`: ``file://`` uses
@@ -772,7 +778,7 @@ def _validate_checkpoint_populated(uri: str, *,
     """
     if not _has_checkpoint(uri):
         return False
-    entries_dir_uri = f"{uri}/entries/entries/parts"
+    entries_dir_uri = f"{uri}/entries/rows/parts"
     if uri.startswith("file://"):
         entries_dir = Path(entries_dir_uri[len("file://"):])
         if not entries_dir.is_dir():
@@ -955,7 +961,7 @@ def _interval_scaled_du_floor(interval_filter: str | None, *,
     assertion inside :func:`load_qc_cohort`, which is UNCHANGED by this helper.
 
     The 50 MB floor false-positives on a ~2 Mb nano-interval: a perfectly
-    populated nano cohort carries only a few MB of ``entries/entries/parts/``
+    populated nano cohort carries only a few MB of ``entries/rows/parts/``
     payload, so the unscaled floor would FAIL a healthy nano fire and mask the
     real signal. This helper scales the floor DOWN for span-bounded intervals so
     a Tier-1 nano fire gets a proportionate floor, while NOT weakening the
@@ -1124,7 +1130,7 @@ def _capture_catastrophe_forensics(
     Captures the hypothesis-distinguisher data
     ([[feedback_w1_catastrophe_hypothesis_distinguisher]]):
 
-      (a) ``_SUCCESS`` mtime vs ``entries/entries/parts/`` part mtimes →
+      (a) ``_SUCCESS`` mtime vs ``entries/rows/parts/`` part mtimes →
           ``hypothesis_flag``:
             * ``"hail_finalize_on_empty"`` — ``_SUCCESS`` mtime is at/after ALL
               part mtimes (Hail wrote ``_SUCCESS`` on driver-side task accounting
@@ -1207,7 +1213,7 @@ def _capture_catastrophe_forensics(
 
     # (a)+(b): listing + _SUCCESS-mtime-vs-part-mtimes hypothesis distinguisher.
     try:
-        entries_parts_dir = f"{uri.rstrip('/')}/entries/entries/parts"
+        entries_parts_dir = f"{uri.rstrip('/')}/entries/rows/parts"
         listing = lister(uri.rstrip("/"))
         capture["mt_listing"] = [e.get("path") for e in listing
                                  if isinstance(e, dict)]
@@ -1223,7 +1229,7 @@ def _capture_catastrophe_forensics(
         except Exception:
             entries = [e for e in listing
                        if isinstance(e, dict)
-                       and "/entries/entries/parts" in str(e.get("path", ""))]
+                       and "/entries/rows/parts" in str(e.get("path", ""))]
         part_mtimes = [e.get("modification_time") for e in entries
                        if isinstance(e, dict) and not e.get("is_dir", False)
                        and "modification_time" in e]
