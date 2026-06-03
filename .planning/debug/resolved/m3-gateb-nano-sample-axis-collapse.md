@@ -1,16 +1,17 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "m3-gateb-nano-sample-axis-collapse: post_sample_qc returned 118903 rows x 0 cols at Gate B nano (chr22:16000000-18000000)"
 created: 2026-06-03T00:00:00Z
-updated: 2026-06-03T14:30:00Z
+updated: 2026-06-03T15:30:00Z
+resolved: 2026-06-03T15:30:00Z
 ---
 
 ## Current Focus
 
 hypothesis: CONFIRMED H2 - the call_rate sample filter (Step 7) collapses the sample axis at nano scale because per-sample call_rate is computed over the small, unfiltered (pre-variant-QC) 2 Mb variant set; AoU ACAF FT-no-calls depress it below 0.98 for all samples. Het filter (Step 8) is already guarded by stdev>0; call_rate had no analogous nano guard.
-test: FIX APPLIED + verified code-side (RED->GREEN, tests/m3 122 passed / 29 skipped). Degeneracy guard mirrors the het stdev>0 precedent; provenance + assertion-message + fixture-missingness all landed.
-expecting: Gate B nano re-fire -> post_sample_qc writes non-zero cols (filter skipped + logged), 3 cohort MTs populate, assertions silent = PASS.
-next_action: AWAITING HUMAN-VERIFY at Gate B nano re-fire (end-to-end col-retention proof). Commits e5bf0e7 (RED) + fad2847 (GREEN) on m3-W2-aou-deltas; NOT pushed (Carter controls pushes). On confirmation: move to resolved/ + knowledge-base entry already staged below.
+test: RESOLVED. Fix LIVE-VERIFIED on AoU at Gate B nano re-fire #3 (HEAD 9f0c837). The SKIP guard fired with the exact expected log line; the sample axis survived sample-QC end-to-end on all 3 cohorts. See RESOLUTION section below.
+expecting: (met) Gate B nano re-fire -> post_sample_qc writes non-zero cols (filter skipped + logged), 3 cohort MTs populate, assertions silent = PASS.
+next_action: NONE. Session resolved 2026-06-03 after human-verify CONFIRMED FIXED. Commits e5bf0e7 (RED) + fad2847 (fix) + 9f0c837 (live-verified HEAD) on m3-W2-aou-deltas. KB entry appended; session archived to resolved/.
 
 ## Symptoms
 
@@ -283,3 +284,74 @@ confirming_forensics: |
   0 in-memory before the checkpoint (rules out I/O / _SUCCESS-over-missing-bytes
   corruption). Three independent lines agree (debugger code analysis + Carter
   byte-level forensics + AoU ACAF FT-no-call documentation).
+
+## RESOLUTION (live-verified, 2026-06-03)
+
+status: RESOLVED — fix LIVE-VERIFIED on AoU. Human-verify checkpoint response: CONFIRMED FIXED.
+
+fix_commits:
+  - e5bf0e7  test(m3-nano-sqc): RED regression for sample-axis call-rate collapse
+  - fad2847  fix(m3-nano-sqc): guard call_rate sample filter against nano degeneracy
+  - 9f0c837  the live-verified HEAD (Gate B re-fire #3 ran on this commit)
+
+implemented_design: docs/superpowers/specs/2026-06-03-nano-sample-axis-callrate-guard-design.md
+  (the approved 5-part design; implemented exactly — degeneracy guard mirroring the het
+  stdev>0 precedent, MIN_VARIANTS_FOR_SAMPLE_CALLRATE=500_000 constant, truthful
+  provenance threading, branched assertion message, faithful regression test).
+
+confirming_forensics: .planning/debug/m3-W2-gateB-nano-FAIL-diagnostics.md
+  (Carter's live byte-level forensics of re-fire #2: post_split part-0 = 245,342 bytes
+  full sample table -> post_sample_qc part-0 = 35 bytes schema-only; Hail log "wrote
+  matrix table with 118903 rows and 0 columns" — three independent lines agreeing the
+  collapse was honest in-memory sample-axis loss at the call_rate filter, NOT I/O
+  corruption and NOT the m3-W1 0x0 finalize catastrophe).
+
+live_verification:
+  run: Gate B nano re-fire #3, HEAD 9f0c837, Hail Genomics cluster (n2-standard-16 master
+       + 4x n2-standard-16 workers), INTERVAL=chr22:16000000-18000000, YARN-confirmed
+       executor.cores=1 / 5g.
+
+  guard_fired: The EUR cohort log printed the EXACT expected SKIP line:
+    "[load_qc_cohort] SKIP call_rate sample filter — only 118903 variants (< 500000);
+     call_rate degenerate on this span (mean=0.7942 max=0.8503)"
+    (mean=0.7942, max=0.8503 — every sample below the 0.98 threshold, mechanically
+     confirming H2: at nano scale the metric is degenerate and would have nuked all
+     samples had the filter applied.)
+
+  sample_axis_retained_end_to_end (the 3-cohort col-retention table — the one thing
+  unprovable NCSU-side; hand-transcribed from live Hail write-logs + bucket verification
+  on 2026-06-03, because the cohort_summary TSV did NOT auto-write — see entries-path
+  follow-up note below):
+
+    | Cohort                  | MT                          | Final dims              | _SUCCESS | Notes                                                                      |
+    |-------------------------|-----------------------------|-------------------------|----------|----------------------------------------------------------------------------|
+    | AFR primary             | mt_afr_qc.mt                | 18,648 var x 74,065 smp | PRESENT  | post_split 118903x74576 -> post_sample_qc 118903x74065 (dropped ~511 = sane QC) |
+    | AFR PCA-selfid          | mt_afr_pca_selfid_qc.mt     | populated               | PRESENT  | populated, _SUCCESS present                                                 |
+    | EUR                     | mt_eur_qc.mt                | 10,199 var x 221,572 smp| PRESENT  | post_split 118903x222502 -> post_sample_qc 118903x221572 -> final; ~3.25 GB on disk |
+
+    (Prior failure was 118903 x 0 on EVERY cohort. The sample axis now survives sample-QC
+     on all three; the ~511-sample and ~930-sample drops are normal downstream QC, not
+     collapse.)
+
+  assertion_silent: _assert_checkpoint_nonempty (the count-based, path-INDEPENDENT gate)
+    stayed SILENT on all three cohorts — the genuine end-to-end PASS signal. This is the
+    real gate (count_rows/count_cols based), independent of the entries-path bug noted
+    below.
+
+disposition (Carter's standing framing): this is "no cheap failure mode reproduced —
+  escalating to the real test," NOT "validated." The m3-W1 empty-MT catastrophe is RULED
+  OUT at the nano tier; the column-retention guard is proven on live AoU data. The actual
+  sample-QC threshold validation belongs to Gate C (chr22-full, ~2.4M variants). Cluster
+  torn down -> $0.
+
+separate_followup (NOT part of this session — a distinct future /gsd-debug):
+  entries-path bug. The du-floor diagnostic cells, the catastrophe guard
+  _validate_checkpoint_populated, the auto-resume kill-mtime check, and the tests all
+  probe entries/entries/parts/, which does NOT exist on a real Hail 0.2.135 MatrixTable —
+  real entry data lives at entries/rows/parts/ (Carter verified: EUR mt 3.25 GB total,
+  3.24 GB at entries/rows/parts/, entries/entries/parts/ absent). The bug is FAIL-SAFE
+  (wrong path => false-positive / force-recompute; never passes an empty MT as populated),
+  so THIS session's PASS is VALID (the real gate is the path-independent count-based
+  _assert_checkpoint_nonempty). But the entries-path bug blocked the cohort_summary TSV
+  auto-write (Cell 5.5 false-positive) and must be fixed before Gate C. Tracked in
+  STATE.md as a Gate-C blocker; do NOT conflate with this resolved session.
