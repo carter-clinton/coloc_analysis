@@ -276,11 +276,28 @@ RUNNABLE but parked on the py4j gateway socket read (PythonGatewayServer.main), 
 byte-identical across both samples (zero advance), NO collect/RangePartitioner/BlockMatrix
 frames; Spark UI :4040/:4041/:4042 empty (no live SparkContext / no active stage); kernel
 (PID 81655) State=S in do_epoll_wait. => the run HALTED BETWEEN CELLS (nothing computing),
-NOT a driver wedge and NOT a selfid-cohort query-shape issue. Most likely a between-cells
-run-loop halt (a cell raised under Run All, or the recurring websocket-zombie frontend
-dropping cell dispatch — [[feedback_aou_websocket_drop_zombie_pattern]]). Pre-re-run check:
-inspect the cells between AFR-final and cohort 2 (esp. the AFR du-floor cell 3.5) for a
-traceback; if clean, a Restart Kernel + Run All gets the full 3-cohort pass.
+NOT a driver wedge and NOT a selfid-cohort query-shape issue.
+
+CONFIRMED CAUSE (hypothesis b — uncaught exception). On-disk execution map: Cell 3 [6]=ok,
+**Cell 3.5 [7]=AssertionError**, Cell 4+ [None]=UNRUN. The AFR du-floor guard (Cell 3.5) raised
+and Run All halted, parking the kernel idle in epoll exactly as the signature predicted — the
+selfid cohort never dispatched. The AssertionError is a FALSE POSITIVE from the guard's own
+path construction: `_ckpt_uri = _qc_checkpoint_uri(...) + _suffix` appends `_chr22` AFTER the
+`.mt` extension → a phantom `mt_afr_qc.mt_chr22/entries/rows/parts/` that never exists →
+`gsutil du -s` returns 0 → `0 > 50_000_000` False → halt. The real MT is healthy at the
+un-suffixed `mt_afr_qc.mt/` (283854×74059, _SUCCESS, ~22.4 GB at entries/rows/parts/). The
+author's own comment admitted `_qc_checkpoint_uri` "does NOT honor interval_filter" yet
+suffixed anyway. Smoke-template-only bug (`AOU-1-chr22-smoke_template.ipynb`); the production
+`AOU-1_template.ipynb` is already correct ([[feedback_aou_websocket_drop_zombie_pattern]] was
+NOT the cause — the run-loop halt was the raised guard, not a frontend drop).
+
+FIX (this commit): dropped `+ _suffix` from all 6 affected sites — the 3 du-floor guard
+cells (7/9/11) AND the 3 cohort_summary `checkpoint_path` provenance entries (cell 13, which
+would have recorded phantom paths after the guards passed). Legit `_suffix` uses (cohort
+labels, the `cohort_summary_m3_chr22.tsv` filename) left intact. A notebook guard path-
+construction defect — NOT the ordering bug, NOT a selfid pipeline issue. Separate latent
+observation (tracked, not blocking): the FINAL checkpoint is not interval-isolated (nano/chr22
+share `mt_{ancestry}_qc.mt`) — a load_qc_cohort design question, not this guard's concern.
 
 **Remaining to fully close (human-verify):** a clean uninterrupted re-fire completing all 3
 cohort MTs (non-zero n_samples AND n_variants) + du-floor real GB entries/rows/parts/ +
