@@ -130,12 +130,14 @@ The spec pseudocode runs `variant_qc` BEFORE `split_multi_hts`. This is technica
 2. mt = mt.filter_cols(mt.s in ancestry_afr)                       # PCA cohort
 3. mt = mt.anti_join_cols(related_samples_ht)                      # KING ≥ 0.0442
 4. mt = hl.split_multi_hts(mt)                                     # split FIRST
-5. mt = hl.sample_qc(mt, name='sqc'); filter call_rate ≥ 0.98
-6. mt = hl.variant_qc(mt, name='vqc'); filter MAF/HWE/call_rate
+5. mt = hl.variant_qc(mt, name='vqc'); filter MAF/HWE/call_rate
+6. mt = hl.sample_qc(mt, name='sqc'); filter call_rate ≥ 0.98 over QC-passing variants
 7. mt = mt.filter_rows(hl.len(mt.filters) == 0)                    # AoU-flagged drop
 8. mt = mt.checkpoint("gs://fc-secure-<workspace-id>/ld/mt_afr_qc.mt")
 9. for region in regions: ld = hl.ld_matrix(mt.GT.n_alt_alleles(), mt.locus, radius=region_span+margin)
 ```
+
+> **CORRECTION (2026-06-04, m3-gatec-sample-callrate-ordering-collapse):** Steps 5 and 6 were originally `sample_qc` THEN `variant_qc`. That order was the root cause of the Gate C sample-axis collapse: `hl.sample_qc` computes per-sample `call_rate` over the RAW pre-variant-QC ACAF set, where AoU FT no-calls depress every sample below 0.98 (Probe [A]: RAW call_rate max = 0.8490 → 0/74576 pass), so the 0.98 filter dropped ALL samples (whole-chr22 1,859,922×74,576 → 1,859,922×0). Running `variant_qc` FIRST makes per-sample `call_rate` measured over QC-passing variants (Probe [B]: mean 0.9975, 74,558/74,576 kept). Corrected per `.planning/debug/m3-gatec-sample-callrate-ordering-collapse.md`.
 
 This ordering is documented in `## Wave 1 Findings` below.
 
@@ -612,7 +614,7 @@ These test artifacts must be created in Wave 0 (or Wave 3/4 as specified), befor
 - `ANCESTRY_FIELD = "ancestry_pred"`, `ANCESTRY_VALUES = {"afr","amr","eas","eur","sas","mid","oth"}` constants (Q8)
 - KING kinship threshold: 0.0442 (third-degree, conservative — D-M3-07)
 - `mt.checkpoint("gs://fc-secure-<workspace-id>/ld/mt_afr_qc.mt")` per spec §5.1
-- Sample QC ordering: `split_multi_hts` BEFORE `variant_qc` (corrected from spec; `## Hail v0.2.x API Verification` above)
+- QC ordering: `split_multi_hts` BEFORE `variant_qc` BEFORE `sample_qc` (corrected from spec; `## Hail v0.2.x API Verification` above). `variant_qc` precedes `sample_qc` so per-sample `call_rate` is computed over QC-passing variants — original `sample_qc`-first order caused the Gate C sample-axis collapse (m3-gatec-sample-callrate-ordering-collapse, 2026-06-04).
 
 **Sensitivity-check pattern (D-M3-07):**
 ```python

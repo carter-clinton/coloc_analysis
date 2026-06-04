@@ -560,10 +560,10 @@ def test_intermediate_checkpoint_uri_post_split_afr_primary():
     assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_post_split.mt"
 
 
-def test_intermediate_checkpoint_uri_post_sample_qc_afr_sensitivity():
+def test_intermediate_checkpoint_uri_post_variant_qc_afr_sensitivity():
     from aou_ld_panel import _intermediate_checkpoint_uri
-    uri = _intermediate_checkpoint_uri("fc-secure-XXX", "afr", "post_sample_qc", True)
-    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_pca_selfid_post_sample_qc.mt"
+    uri = _intermediate_checkpoint_uri("fc-secure-XXX", "afr", "post_variant_qc", True)
+    assert uri == "gs://fc-secure-XXX/ld/intermediate/mt_afr_pca_selfid_post_variant_qc.mt"
 
 
 def test_intermediate_checkpoint_uri_eur_no_sensitivity():
@@ -620,13 +620,13 @@ def test_intermediate_checkpoint_uri_sanitizes_colon_nano_interval():
 def test_intermediate_checkpoint_uri_sanitizes_colon_nano_interval_sensitivity():
     """Same colon-sanitization regression on the sensitivity=True branch.
 
-    Both ckpt_post_split AND ckpt_post_sqc derive from this one builder
+    Both ckpt_post_split AND ckpt_post_vqc derive from this one builder
     (aou_ld_panel.py:1270-1273), and the sensitivity fire is a separate live
     path, so the sanitization must hold with the _pca_selfid infix too.
     """
     from aou_ld_panel import _intermediate_checkpoint_uri
     uri = _intermediate_checkpoint_uri(
-        "fc-secure-XXX", "afr", "post_sample_qc", True, "chr22:16000000-18000000")
+        "fc-secure-XXX", "afr", "post_variant_qc", True, "chr22:16000000-18000000")
     assert ":" not in uri.removeprefix("gs://"), \
         f"colon leaked into intermediate URI path: {uri!r}"
     filename = uri.rsplit("/", 1)[-1]
@@ -634,7 +634,7 @@ def test_intermediate_checkpoint_uri_sanitizes_colon_nano_interval_sensitivity()
         f"colon/dash leaked into intermediate MT filename: {filename!r}"
     assert uri == (
         "gs://fc-secure-XXX/ld/intermediate/"
-        "mt_afr_pca_selfid_post_sample_qc_chr22_16000000_18000000.mt"
+        "mt_afr_pca_selfid_post_variant_qc_chr22_16000000_18000000.mt"
     )
 
 
@@ -765,12 +765,12 @@ def test_validate_sidecar_rejects_mismatched_thresholds(monkeypatch):
 
 
 def test_validate_sidecar_ignores_phase_field():
-    """phase legitimately differs between post_split + post_sample_qc sidecars for
+    """phase legitimately differs between post_split + post_variant_qc sidecars for
     the same fire — _validate_sidecar must ignore it during comparison."""
     from aou_ld_panel import _validate_sidecar, _collect_provenance
     prov = _collect_provenance("afr", False, "gs://src/path.mt")
     sidecar_a = {**prov, "phase": "post_split"}
-    sidecar_b = {**prov, "phase": "post_sample_qc"}
+    sidecar_b = {**prov, "phase": "post_variant_qc"}
     assert _validate_sidecar(sidecar_a, prov)[0] is True
     assert _validate_sidecar(sidecar_b, prov)[0] is True
 
@@ -890,7 +890,7 @@ def test_validate_checkpoint_populated_rejects_empty_entries_dir(tmp_path):
 
 def test_has_checkpoint_vs_validate_diverge_on_stub_mt(tmp_path):
     """Document the contract divergence: _has_checkpoint() returns True
-    (the W1 false-positive that triggered RESUME_FROM_POST_SAMPLE_QC into
+    (the W1 false-positive that triggered RESUME_FROM_POST_VARIANT_QC into
     an empty MT), but _validate_checkpoint_populated() returns False
     (the corrected resume-gate semantics)."""
     from aou_ld_panel import _has_checkpoint, _validate_checkpoint_populated
@@ -1117,10 +1117,10 @@ def test_load_qc_cohort_auto_resume_from_post_split(
     captured = capsys.readouterr()
     assert "state=FRESH" in captured.out
 
-    # Delete intermediate 2 (post_sample_qc) — leave intermediate 1 + sidecar intact
+    # Delete intermediate 2 (post_variant_qc) — leave intermediate 1 + sidecar intact
     bucket_path = Path(synthetic_bucket.removeprefix("file://"))
-    int2_dir = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt"
-    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt.meta.json"
+    int2_dir = bucket_path / "ld" / "intermediate" / "mt_afr_post_variant_qc.mt"
+    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_variant_qc.mt.meta.json"
     assert int2_dir.exists(), "first fire should have written intermediate 2"
     shutil.rmtree(int2_dir)
     int2_sidecar.unlink()
@@ -1138,7 +1138,7 @@ def test_load_qc_cohort_auto_resume_from_post_split(
     assert "resumed from intermediate 1" in captured.out
 
 
-def test_load_qc_cohort_auto_resume_from_post_sample_qc(
+def test_load_qc_cohort_auto_resume_from_post_variant_qc(
     synthetic_mt_path: Path, synthetic_bucket: str, capsys
 ):
     """Fire once; fire again unchanged -> expect resume from intermediate 2
@@ -1162,7 +1162,7 @@ def test_load_qc_cohort_auto_resume_from_post_sample_qc(
         workspace_bucket=synthetic_bucket.removeprefix("file://"),
     )
     captured = capsys.readouterr()
-    assert "state=RESUME_FROM_POST_SAMPLE_QC" in captured.out
+    assert "state=RESUME_FROM_POST_VARIANT_QC" in captured.out
     assert "resumed from intermediate 2" in captured.out
 
 
@@ -1225,7 +1225,7 @@ def test_load_qc_cohort_raises_on_sidecar_mismatch(
 
     # Manually edit the intermediate-2 sidecar to flip ancestry to "eur"
     bucket_path = Path(synthetic_bucket.removeprefix("file://"))
-    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt.meta.json"
+    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_variant_qc.mt.meta.json"
     sc = json.loads(int2_sidecar.read_text())
     sc["ancestry"] = "eur"  # mismatch with the next call's ancestry="afr"
     int2_sidecar.write_text(json.dumps(sc, indent=2, sort_keys=True))
@@ -1267,8 +1267,8 @@ def test_load_qc_cohort_auto_recovers_from_orphan_mt(
     assert int1_mt.exists(), "MT directory should still exist after sidecar removal"
 
     # Also need to delete intermediate-2 (else auto-resume picks deepest valid)
-    int2_mt = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt"
-    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_sample_qc.mt.meta.json"
+    int2_mt = bucket_path / "ld" / "intermediate" / "mt_afr_post_variant_qc.mt"
+    int2_sidecar = bucket_path / "ld" / "intermediate" / "mt_afr_post_variant_qc.mt.meta.json"
     import shutil
     shutil.rmtree(int2_mt)
     int2_sidecar.unlink()
@@ -1842,8 +1842,8 @@ def test_assert_checkpoint_sample_axis_collapse_message():
 
     with pytest.raises(RuntimeError) as exc:
         _assert_checkpoint_nonempty(
-            _FakeMT(118903, 0), "gs://b/mt_afr_post_sample_qc.mt",
-            phase="post_sample_qc")
+            _FakeMT(118903, 0), "gs://b/mt_afr_post_variant_qc.mt",
+            phase="post_variant_qc")
     msg = str(exc.value)
     assert "118903 rows x 0 cols" in msg
     # Names the sample/column axis collapse + QC-predicate cause.
@@ -1910,7 +1910,7 @@ def test_collect_provenance_records_sample_callrate_floor():
 
 
 def test_write_sidecar_threads_sample_callrate_filtered_flag(tmp_path):
-    """post_sample_qc sidecar honestly records whether the call-rate sample
+    """post_variant_qc sidecar honestly records whether the call-rate sample
     filter was applied (sample_callrate_filtered), WITHOUT mutating the
     reusable provenance dict and WITHOUT putting an outcome into the
     resume-validation comparison surface
@@ -1926,9 +1926,9 @@ def test_write_sidecar_threads_sample_callrate_filtered_flag(tmp_path):
     split = _read_sidecar(split_uri)
     assert "sample_callrate_filtered" not in split
 
-    # post_sample_qc sidecar: the runtime flag is threaded through.
-    sqc_uri = f"file://{tmp_path}/post_sqc.meta.json"
-    _write_sidecar(sqc_uri, prov, phase="post_sample_qc",
+    # post_variant_qc sidecar: the runtime flag is threaded through.
+    sqc_uri = f"file://{tmp_path}/post_vqc.meta.json"
+    _write_sidecar(sqc_uri, prov, phase="post_variant_qc",
                    sample_callrate_filtered=False)
     sqc = _read_sidecar(sqc_uri)
     assert sqc["sample_callrate_filtered"] is False
@@ -1939,7 +1939,7 @@ def test_write_sidecar_threads_sample_callrate_filtered_flag(tmp_path):
 
     # The outcome flag must be excluded from resume-validation comparison
     # (it is an outcome, not a parameter; comparing it would spuriously
-    # invalidate a post_sample_qc intermediate on resume).
+    # invalidate a post_variant_qc intermediate on resume).
     assert "sample_callrate_filtered" in _SIDECAR_COMPARE_EXCLUDE_FIELDS
     matches, diag = _validate_sidecar(sqc, prov)
     assert matches, f"outcome flag must not break sidecar validation: {diag}"
@@ -1952,7 +1952,7 @@ def test_nano_span_guard_retains_samples(synthetic_mt_path_missing: Path,
                                           mock_aou_env, tmp_path, capsys):
     """Span-bounded + low-call window below MIN_VARIANTS_FOR_SAMPLE_CALLRATE:
     the guard SKIPS the call_rate sample filter, COLS ARE RETAINED, the skip
-    is logged, and the post_sample_qc sidecar records
+    is logged, and the post_variant_qc sidecar records
     sample_callrate_filtered=False.
 
     This is the regression that reproduces the Gate B nano 118903x0 collapse:
@@ -1980,7 +1980,7 @@ def test_nano_span_guard_retains_samples(synthetic_mt_path_missing: Path,
     # Provenance honestly records the skip.
     from aou_ld_panel import _intermediate_checkpoint_uri
     sqc_ckpt = _intermediate_checkpoint_uri(
-        f"file://{bucket_dir}", "afr", "post_sample_qc", False,
+        f"file://{bucket_dir}", "afr", "post_variant_qc", False,
         "chr16:50000000-52000000")
     sidecar = _read_sidecar(_sidecar_uri(sqc_ckpt))
     assert sidecar is not None
@@ -2014,7 +2014,7 @@ def test_above_floor_callrate_filter_still_drops_bad_sample(
     )
     assert mt.count_cols() > 0, "good samples must survive QC"
     sqc_ckpt = _intermediate_checkpoint_uri(
-        f"file://{bucket_dir}", "afr", "post_sample_qc", False,
+        f"file://{bucket_dir}", "afr", "post_variant_qc", False,
         "chr16:50000000-52000000")
     sidecar = _read_sidecar(_sidecar_uri(sqc_ckpt))
     assert sidecar is not None
@@ -2094,16 +2094,6 @@ def test_real_hail_mt_entries_layout_and_validate_populated(
 # and PASS on the fix. See .planning/debug/m3-gatec-sample-callrate-ordering-collapse.md.
 
 
-@pytest.mark.xfail(
-    reason="m3-gatec-sample-callrate-ordering-collapse: sample call_rate filter "
-           "currently runs BEFORE variant_qc (computes call_rate over the raw "
-           "pre-variant-QC ACAF set -> unsatisfiable 0.98 threshold -> Gate C "
-           "sample-axis collapse). Fix reorders variant_qc ahead of the sample "
-           "call_rate filter; this xfail flips to XPASS (strict -> hard fail) when "
-           "that lands, prompting removal of the marker. Awaiting live Probe [B] "
-           "confirmation before applying the reorder (Iron Law: root cause first).",
-    strict=True,
-)
 def test_sample_callrate_filter_runs_after_variant_qc():
     """STATIC GUARD (Hail-free, NCSU-side): the per-sample call_rate filter must
     run AFTER variant_qc, so sample call_rate is measured over QC-passing variants
@@ -2129,7 +2119,9 @@ def test_sample_callrate_filter_runs_after_variant_qc():
 
 
 @pytest.mark.skip(
-    reason="SKELETON — calibrate from live Gate C Probe [A]/[B] "
+    reason="SKELETON — Gate C Probe numbers now known ([A] RAW call_rate max "
+           "0.8490 -> 0/74576 pass 0.98; [B] post-variant-QC 74558/74576 kept), "
+           "but the structured-missingness fixture work below is out of scope here "
            "(.planning/debug/m3-gatec-sample-callrate-ordering-collapse.md). "
            "Needs STRUCTURED missingness: the fixture's current --missingness knob "
            "is UNIFORM per-genotype, which depresses call_rate independent of "

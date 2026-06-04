@@ -11,9 +11,12 @@ AOU-LD-PIPELINE.md §5.1 spec inversion):
     2. mt = filter_cols by ancestry (ancestry_pred == 'afr' | 'eur')
     3. mt = anti_join_cols against relateds (KING >= 0.0442 flagged samples)
     4. mt = hl.split_multi_hts(mt)              # canonical ordering
-    5. mt = hl.sample_qc(mt, name='sqc'); call_rate >= 0.98
-    6. mt = hl.variant_qc(mt, name='vqc'); MAF/HWE/call_rate
+    5. mt = hl.variant_qc(mt, name='vqc'); MAF/HWE/call_rate
+    6. mt = hl.sample_qc(mt, name='sqc'); call_rate >= 0.98 over QC-passing
+       variants + het
     7. mt = filter_rows hl.len(mt.filters) == 0  (drop AoU-flagged variants)
+       # variant_qc precedes sample_qc so per-sample call_rate is computed over
+       # QC-passing variants (m3-gatec-sample-callrate-ordering-collapse).
     8. mt = mt.checkpoint(_qc_checkpoint_uri(bucket, ancestry, sensitivity))
        # path: gs://${WORKSPACE_BUCKET}/ld/mt_{ancestry}[_pca_selfid]_qc.mt
     9. for region: hl.ld_matrix(..., radius=region.radius_bp)
@@ -217,19 +220,24 @@ def _resolve_aux_file(aux_base: str, subdir: str, suffix: str,
 MIN_CALL_RATE_SAMPLE = 0.98
 HET_HOM_SD_BAND = 3.0
 
-# Minimum in-scope variant count below which the per-sample call_rate metric
-# is statistically degenerate and the call_rate sample filter is SKIPPED
-# (.planning/debug/m3-gateb-nano-sample-axis-collapse.md). sqc.call_rate is a
-# per-sample mean over the variant rows currently in the MT, computed BEFORE
-# variant_qc (Phase 3); on a tiny pre-QC window dominated by low-call / FT-
-# failed AoU ACAF genotypes every sample's call_rate falls below
-# MIN_CALL_RATE_SAMPLE, collapsing the sample (column) axis to 0. Derivation:
-# nano density ~59.5K variants/Mb (Gate B nano chr22:16-18Mb = ~119K over
-# 2 Mb); whole-chr22 ~2.4M. 500K is ~4x the nano count and ~5x below the
-# smallest real tier (chr22-full), so it NEVER trips at whole-chromosome-or-
-# larger scale (genome-wide QC thresholds untouched) and ALWAYS trips at nano.
-# This mirrors the het filter's documented `stdev > 0` degeneracy guard
-# (:1465) -- the asymmetry (call_rate was unguarded) was the bug.
+# Raw (pre-variant-QC) in-scope variant count below which the per-sample
+# call_rate sample filter is SKIPPED as a nano-smoke convenience
+# (.planning/debug/m3-gateb-nano-sample-axis-collapse.md). After the
+# variant-QC-before-sample-QC reorder (m3-gatec-sample-callrate-ordering-
+# collapse, 2026-06-04), sqc.call_rate is measured over the QC-passing clean
+# variant set, so the 0.98 threshold is satisfiable at every real tier; this
+# guard NO LONGER masks the ordering bug (the reorder fixed that). It now
+# keys on the RAW interval size purely to decide "real tier vs nano smoke
+# window": at nano scale a 2 Mb window has too few QC-passing variants for a
+# meaningful per-sample call_rate, so the filter is skipped to keep the nano
+# smoke tier a clean PASS. Derivation: nano density ~59.5K variants/Mb (Gate B
+# nano chr22:16-18Mb = ~119K over 2 Mb); whole-chr22 raw ~1.86M. 500K is ~4x
+# the nano count and ~4x below the smallest real tier (chr22-full), so it
+# NEVER trips at whole-chromosome-or-larger scale (genome-wide QC thresholds
+# untouched) and ALWAYS trips at nano. The guard is captured on the RAW count
+# BEFORE variant_qc and persisted to the post_variant_qc sidecar so a resume
+# applies the same decision. Mirrors the het filter's `stdev > 0` degeneracy
+# guard.
 MIN_VARIANTS_FOR_SAMPLE_CALLRATE = 500_000
 
 # Variant QC thresholds (AOU-LD-PIPELINE.md §4)
@@ -402,7 +410,7 @@ def _intermediate_checkpoint_uri(bucket: str, ancestry: str, phase: str,
         bucket: Workspace bucket (bare-name or gs://-prefixed; normalized
             via :func:`_normalize_bucket`).
         ancestry: "afr" or "eur".
-        phase: "post_split" or "post_sample_qc".
+        phase: "post_split" or "post_variant_qc".
         sensitivity: When True, appends "_pca_selfid" before phase suffix
             (matches the existing _qc_checkpoint_uri convention).
         interval_filter: When set (e.g., "chr22" for smoke, or a span-bounded
@@ -455,7 +463,7 @@ def _collect_provenance(ancestry: str, sensitivity: bool,
     Builds the JSON-serializable dict that becomes the sidecar contents.
     DOES NOT include 'phase' field — that is added by _write_sidecar at
     write time so the same provenance dict can be written to both
-    post_split and post_sample_qc sidecars.
+    post_split and post_variant_qc sidecars.
 
     Per DESIGN §3.4: conservative semantics — all QC parameters are
     captured regardless of which phase consumes them. Any parameter
@@ -502,7 +510,7 @@ def _collect_provenance(ancestry: str, sensitivity: bool,
             # intermediates symmetric with the other QC thresholds. The
             # RUNTIME OUTCOME of the guard (whether the filter actually ran on
             # this fire) is a per-fire result, NOT a parameter -- it is
-            # threaded separately into the post_sample_qc sidecar via
+            # threaded separately into the post_variant_qc sidecar via
             # _write_sidecar(sample_callrate_filtered=...) so it does not
             # participate in resume-validation comparison.
             "MIN_VARIANTS_FOR_SAMPLE_CALLRATE": MIN_VARIANTS_FOR_SAMPLE_CALLRATE,
@@ -555,14 +563,16 @@ def _write_sidecar(uri: str, provenance: dict, phase: str,
         uri: Sidecar URI. Local-FS tests pass "file:///path/to/sidecar.meta.json";
             production AoU passes "gs://bucket/ld/intermediate/mt_*.mt.meta.json".
         provenance: Output of _collect_provenance (does NOT include 'phase').
-        phase: One of {"post_split", "post_sample_qc"}.
-        sample_callrate_filtered: Per-fire OUTCOME of the call_rate sample
-            filter's nano-degeneracy guard -- True if the filter was applied,
-            False if skipped (in-scope variant count below
-            MIN_VARIANTS_FOR_SAMPLE_CALLRATE). Recorded ONLY for the
-            post_sample_qc sidecar (the phase after the guard runs); None for
-            post_split (the guard has not run yet) so no flag is written.
-            It is EXCLUDED from resume-validation comparison
+        phase: One of {"post_split", "post_variant_qc"}.
+        sample_callrate_filtered: The raw-count guard DECISION (will the
+            call_rate sample filter be applied), recorded on the post_variant_qc
+            sidecar so a resume restores it. Excluded from resume-validation
+            comparison. True if the filter will be applied (raw in-scope variant
+            count >= MIN_VARIANTS_FOR_SAMPLE_CALLRATE), False if skipped (raw
+            count below the threshold -- nano smoke tier). Recorded ONLY for the
+            post_variant_qc sidecar (the phase where the raw-count decision is
+            made); None for post_split (the decision has not been made yet) so
+            no flag is written. It is EXCLUDED from resume-validation comparison
             (_SIDECAR_COMPARE_EXCLUDE_FIELDS) because it is an outcome, not a
             parameter. See
             .planning/debug/m3-gateb-nano-sample-axis-collapse.md +
@@ -617,10 +627,10 @@ _SIDECAR_COMPARE_EXCLUDE_FIELDS = frozenset({
     "git_commit_sha",   # audit metadata; non-breaking code changes ok
     "hail_version",     # build-environment; ok to drift across runs
     # Per-fire OUTCOME of the nano-degeneracy guard (whether the call_rate
-    # sample filter actually ran), recorded ONLY in the post_sample_qc
+    # sample filter will run), recorded ONLY in the post_variant_qc
     # sidecar. It is a result, not an input parameter, so it must not
     # participate in resume-validation comparison -- comparing it would
-    # spuriously invalidate a post_sample_qc intermediate. See
+    # spuriously invalidate a post_variant_qc intermediate. See
     # .planning/debug/m3-gateb-nano-sample-axis-collapse.md +
     # [[feedback_aou_success_marker_not_evidence_of_data]].
     "sample_callrate_filtered",
@@ -1381,7 +1391,7 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     state = "FRESH"
     auto_fresh = False
     ckpt_post_split = None
-    ckpt_post_sqc = None
+    ckpt_post_vqc = None
     provenance = None
     if not skip_checkpoint:
         bucket = workspace_bucket or os.environ.get("WORKSPACE_BUCKET")
@@ -1389,48 +1399,48 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             raise RuntimeError("WORKSPACE_BUCKET not set; cannot checkpoint")
         ckpt_post_split = _intermediate_checkpoint_uri(
             bucket, ancestry, "post_split", sensitivity, interval_filter)
-        ckpt_post_sqc = _intermediate_checkpoint_uri(
-            bucket, ancestry, "post_sample_qc", sensitivity, interval_filter)
+        ckpt_post_vqc = _intermediate_checkpoint_uri(
+            bucket, ancestry, "post_variant_qc", sensitivity, interval_filter)
         provenance = _collect_provenance(
             ancestry, sensitivity, mt_path, interval_filter,
             ancestry_preds_path=anc_path, relateds_path=rel_path)
 
         if not force_fresh:
-            # Check deepest intermediate first (post_sample_qc) — if it's
+            # Check deepest intermediate first (post_variant_qc) — if it's
             # present with valid sidecar AND populated entries, we skip
-            # both Phase 1 and Phase 2.
+            # both Phase 1 and Phase 2 (variant QC).
             #
             # _validate_checkpoint_populated() is the contents-validating
             # resume-gate (m3-W1 empty-MT catastrophe defense). A stub MT
             # with _SUCCESS present but zero entries falls through to the
             # explicit catastrophe-pattern branch below, then to
             # auto_fresh recovery.
-            if _validate_checkpoint_populated(ckpt_post_sqc):
-                sidecar = _read_sidecar(_sidecar_uri(ckpt_post_sqc))
+            if _validate_checkpoint_populated(ckpt_post_vqc):
+                sidecar = _read_sidecar(_sidecar_uri(ckpt_post_vqc))
                 if sidecar is None:
                     # Orphan: MT present but sidecar absent (crash window between
                     # the two writes in a prior fire). Auto-recover.
-                    print(f"[load_qc_cohort] WARN: orphan MT at {ckpt_post_sqc} "
+                    print(f"[load_qc_cohort] WARN: orphan MT at {ckpt_post_vqc} "
                           f"(sidecar absent); auto-force-fresh recovery")
                     auto_fresh = True
                 else:
                     matches, diag = _validate_sidecar(sidecar, provenance)
                     if matches:
-                        state = "RESUME_FROM_POST_SAMPLE_QC"
+                        state = "RESUME_FROM_POST_VARIANT_QC"
                     else:
                         raise RuntimeError(
-                            f"Stale intermediate at {ckpt_post_sqc}: {diag}\n"
+                            f"Stale intermediate at {ckpt_post_vqc}: {diag}\n"
                             f"Use force_fresh=True to overwrite, or fix the "
                             f"parameter mismatch."
                         )
-            elif _has_checkpoint(ckpt_post_sqc):
+            elif _has_checkpoint(ckpt_post_vqc):
                 # m3-W1 catastrophe pattern: _SUCCESS present but entries
                 # absent or stub-only. The prior fire produced an empty
                 # MT skeleton; do NOT resume from it. Auto-force-fresh
-                # recovery so Phase 1 + Phase 2 re-run from source.
+                # recovery so Phase 1 + Phase 2 (variant QC) re-run from source.
                 # See [[feedback_aou_success_marker_not_evidence_of_data]].
                 print(f"[load_qc_cohort] WARN: empty-MT catastrophe pattern "
-                      f"at {ckpt_post_sqc} (_SUCCESS present but entries/ "
+                      f"at {ckpt_post_vqc} (_SUCCESS present but entries/ "
                       f"absent or stub-only); auto-force-fresh recovery")
                 auto_fresh = True
             elif _validate_checkpoint_populated(ckpt_post_split):
@@ -1460,6 +1470,12 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     overwrite_flag = force_fresh or auto_fresh
     print(f"[load_qc_cohort] state={state} ancestry={ancestry} "
           f"sensitivity={sensitivity} interval_filter={interval_filter}")
+
+    # Guard decision for the Phase 3 sample-callrate filter. Initialized here
+    # (before any state branch) so the RESUME_FROM_POST_VARIANT_QC branch can
+    # restore it from the resumed sidecar; FRESH / RESUME_FROM_POST_SPLIT set it
+    # from the raw variant count in the Phase 2 (variant QC) block below.
+    sample_callrate_filtered = None
 
     # Phase 1: read + filter + split (former steps 1-6)
     if state == "FRESH":
@@ -1531,67 +1547,83 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             _n_partitions=_post_split_read_partitions(),
         )
         print(f"[load_qc_cohort] resumed from intermediate 1: {ckpt_post_split}")
-    elif state == "RESUME_FROM_POST_SAMPLE_QC":
-        mt = hl.read_matrix_table(ckpt_post_sqc)
-        print(f"[load_qc_cohort] resumed from intermediate 2: {ckpt_post_sqc}")
+    elif state == "RESUME_FROM_POST_VARIANT_QC":
+        mt = hl.read_matrix_table(ckpt_post_vqc)
+        print(f"[load_qc_cohort] resumed from intermediate 2: {ckpt_post_vqc}")
+        # Restore the raw-count guard DECISION from the resumed sidecar so the
+        # Phase 3 sample-callrate filter applies (or skips) exactly as the
+        # producing fire decided, without re-reading source for the raw count.
+        _resumed_sc = _read_sidecar(_sidecar_uri(ckpt_post_vqc))
+        sample_callrate_filtered = (_resumed_sc or {}).get("sample_callrate_filtered", True)
 
-    # Phase 2: sample QC + het filter (former steps 7-9)
-    sample_callrate_filtered = None
+    # Phase 2: variant QC (was Phase 3) — MOVED AHEAD of sample QC so per-sample
+    # call_rate is computed over QC-passing (common, well-called) variants, not
+    # the raw pre-variant-QC ACAF set. Computing call_rate pre-variant-QC made the
+    # 0.98 sample threshold unsatisfiable at ALL scales (Gate C whole-chr22
+    # collapse 1859922x74576 -> 1859922x0; probe [A] max call_rate 0.8490).
+    # variant-QC-first lifts call_rate to mean 0.9975 (probe [B], 74558/74576 kept).
+    # See .planning/debug/m3-gatec-sample-callrate-ordering-collapse.md.
     if state in ("FRESH", "RESUME_FROM_POST_SPLIT"):
-        # Step 7: sample_qc + call_rate >= 0.98, guarded against nano-tier
-        # degeneracy. sqc.call_rate is a per-sample mean over the variant rows
-        # CURRENTLY in the MT (interval-filtered + split, but pre-variant-QC).
-        # On a tiny window dominated by low-call / FT-failed AoU ACAF genotypes
-        # every sample's call_rate falls below MIN_CALL_RATE_SAMPLE, collapsing
-        # the sample (column) axis to 0 (Gate B nano 118903x0;
-        # .planning/debug/m3-gateb-nano-sample-axis-collapse.md). Skip the
-        # filter when fewer than MIN_VARIANTS_FOR_SAMPLE_CALLRATE variants are
-        # in scope -- mirrors the het filter's `stdev > 0` degeneracy guard
-        # below. Sample-QC thresholds are validated at the whole-chromosome+
-        # tier where call_rate is statistically meaningful.
-        mt = hl.sample_qc(mt, name="sqc")
-        _n_var = mt.count_rows()
-        if _n_var < MIN_VARIANTS_FOR_SAMPLE_CALLRATE:
-            cr = mt.aggregate_cols(hl.agg.stats(mt.sqc.call_rate))
-            print(f"[load_qc_cohort] SKIP call_rate sample filter — only "
-                  f"{_n_var} variants (< {MIN_VARIANTS_FOR_SAMPLE_CALLRATE}); "
-                  f"call_rate degenerate on this span (mean={cr.mean:.4f} "
-                  f"max={cr.max:.4f}). Sample-QC thresholds validated at "
-                  f"whole-chromosome+ tier.")
-            sample_callrate_filtered = False
-        else:
-            mt = mt.filter_cols(mt.sqc.call_rate >= MIN_CALL_RATE_SAMPLE)
-            sample_callrate_filtered = True
+        # Capture the RAW (pre-variant-QC) in-scope variant count for the sample-
+        # callrate degeneracy guard. The guard keys on RAW interval size (the
+        # honest "real tier vs nano smoke window" discriminator), NOT the post-
+        # variant-QC count, so the validated MIN_VARIANTS_FOR_SAMPLE_CALLRATE=500K
+        # threshold keeps its meaning after the reorder (DEC-2026-06-04). nano
+        # (raw <500K) SKIPs; whole-chromosome+ (raw >=500K) APPLIES over the clean
+        # variants. The decision is persisted to the post_variant_qc sidecar so a
+        # RESUME_FROM_POST_VARIANT_QC fire applies the same guard without re-reading
+        # source.
+        _n_var_raw = mt.count_rows()
+        sample_callrate_filtered = _n_var_raw >= MIN_VARIANTS_FOR_SAMPLE_CALLRATE
 
-        # Step 8: heterozygosity ±3 SD (within ancestry-filtered cohort)
-        het_stats = mt.aggregate_cols(hl.agg.stats(mt.sqc.r_het_hom_var))
-        if het_stats.stdev is not None and het_stats.stdev > 0:
-            lo = het_stats.mean - HET_HOM_SD_BAND * het_stats.stdev
-            hi = het_stats.mean + HET_HOM_SD_BAND * het_stats.stdev
-            mt = mt.filter_cols((mt.sqc.r_het_hom_var >= lo) &
-                                (mt.sqc.r_het_hom_var <= hi))
+        # variant_qc + MAF/HWE/call_rate filters
+        mt = hl.variant_qc(mt, name="vqc")
+        mt = mt.filter_rows(
+            (mt.vqc.AF[1] >= MIN_MAF_INTERNAL) &
+            (mt.vqc.AF[1] <= MAX_MAF) &
+            (mt.vqc.call_rate >= MIN_CALL_RATE_VARIANT) &
+            (mt.vqc.p_value_hwe >= MIN_HWE_PVALUE)
+        )
+        # Drop AoU-flagged variants (filters non-empty)
+        if "filters" in mt.row:
+            mt = mt.filter_rows(hl.len(mt.filters) == 0)
 
-        # Intermediate 2 checkpoint + sidecar
+        # Intermediate 2 checkpoint (post_variant_qc) + sidecar. The raw-count
+        # guard DECISION is persisted (sample_callrate_filtered); it is a non-
+        # compared sidecar field (resume-safe).
         if not skip_checkpoint:
-            mt = mt.checkpoint(ckpt_post_sqc, overwrite=overwrite_flag)
-            _assert_checkpoint_nonempty(mt, ckpt_post_sqc, phase="post_sample_qc")
-            _write_sidecar(_sidecar_uri(ckpt_post_sqc), provenance,
-                           phase="post_sample_qc",
+            mt = mt.checkpoint(ckpt_post_vqc, overwrite=overwrite_flag)
+            _assert_checkpoint_nonempty(mt, ckpt_post_vqc, phase="post_variant_qc")
+            _write_sidecar(_sidecar_uri(ckpt_post_vqc), provenance,
+                           phase="post_variant_qc",
                            sample_callrate_filtered=sample_callrate_filtered)
-            print(f"[load_qc_cohort] wrote intermediate 2: {ckpt_post_sqc}")
+            print(f"[load_qc_cohort] wrote intermediate 2: {ckpt_post_vqc}")
 
-    # Phase 3: variant_qc + filters + final checkpoint (former steps 10-12)
-    mt = hl.variant_qc(mt, name="vqc")
-    mt = mt.filter_rows(
-        (mt.vqc.AF[1] >= MIN_MAF_INTERNAL) &
-        (mt.vqc.AF[1] <= MAX_MAF) &
-        (mt.vqc.call_rate >= MIN_CALL_RATE_VARIANT) &
-        (mt.vqc.p_value_hwe >= MIN_HWE_PVALUE)
-    )
+    # Phase 3: sample QC (was Phase 2) — sample_qc + call_rate filter (guarded by
+    # the raw-count decision) + het +/-3SD. call_rate is now measured over the
+    # post-variant-QC clean variant set, so the 0.98 threshold is satisfiable.
+    if sample_callrate_filtered is None:
+        # Reached only on RESUME_FROM_POST_VARIANT_QC; the decision was restored
+        # from the resumed sidecar in the resume block above. Defensive default:
+        # APPLY (production-correct; only nano smoke skips).
+        sample_callrate_filtered = True
+    mt = hl.sample_qc(mt, name="sqc")
+    if sample_callrate_filtered:
+        mt = mt.filter_cols(mt.sqc.call_rate >= MIN_CALL_RATE_SAMPLE)
+    else:
+        cr = mt.aggregate_cols(hl.agg.stats(mt.sqc.call_rate))
+        print(f"[load_qc_cohort] SKIP call_rate sample filter — raw in-scope "
+              f"variant count < {MIN_VARIANTS_FOR_SAMPLE_CALLRATE} (nano-tier "
+              f"degeneracy guard); call_rate mean={cr.mean:.4f} max={cr.max:.4f}. "
+              f"Sample-QC thresholds validated at whole-chromosome+ tier.")
 
-    # Drop AoU-flagged variants (filters non-empty)
-    if "filters" in mt.row:
-        mt = mt.filter_rows(hl.len(mt.filters) == 0)
+    # het +/-3SD within ancestry-filtered cohort, guarded against stdev<=0
+    het_stats = mt.aggregate_cols(hl.agg.stats(mt.sqc.r_het_hom_var))
+    if het_stats.stdev is not None and het_stats.stdev > 0:
+        lo = het_stats.mean - HET_HOM_SD_BAND * het_stats.stdev
+        hi = het_stats.mean + HET_HOM_SD_BAND * het_stats.stdev
+        mt = mt.filter_cols((mt.sqc.r_het_hom_var >= lo) &
+                            (mt.sqc.r_het_hom_var <= hi))
 
     # Final checkpoint to workspace bucket
     if not skip_checkpoint:
