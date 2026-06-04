@@ -258,8 +258,31 @@ and shipped it to a $35-80 fire. Generalization for the KB: a degeneracy guard t
 check on a "degenerate" tier is masking, not fixing, unless the check is independently shown
 to be valid on the non-skipped tier — verify the assumption, don't assume the dilution.
 
-**Remaining to fully close (human-verify):** live Gate C re-fire on the fixed branch — the
-sample axis must survive end-to-end (all 3 cohort MTs non-zero n_samples AND n_variants;
-du-floor cells report real GB entries/rows/parts/; cohort_summary writes 3 non-zero rows).
-On PASS → mark resolved + archive to resolved/ + KB entry; close the sibling entries-path +
-driver-collect sessions; greenlight Wave 2 full-genome rebuild.
+**LIVE CONFIRMATION (2026-06-04 re-fire, branch HEAD 0e3ef2a / fix 80d0a00).** On the exact
+AFR cohort that collapsed to ×0 before, the fix WORKS:
+```
+20:53:31  post_split        1,859,922 × 74,576   (sample axis intact)
+20:55:43  post_variant_qc     283,854 × 74,576   (NEW reordered checkpoint; was post_sample_qc=×0)
+20:57:56  mt_afr_qc (final)   283,854 × 74,059   (_SUCCESS) — call_rate APPLIED (raw 1.86M>500K,
+                                                  guard did NOT skip), ~517 legit low-call trim,
+                                                  NOT a collapse; _assert_checkpoint_nonempty silent
+```
+Variant count 283,854 matches Probe [B] exactly. The ordering bug is RESOLVED on the failing
+cohort. Forensic readout (cluster-local, transcribed NCSU-side): `.planning/debug/m3-gatec-refire-result.txt`.
+
+**Run halted after AFR (separate, NOT this bug).** Cohorts 2 (AFR pca_selfid) + 3 (EUR) did
+not run this pass. Post-stall driver diagnosis (jstack ×2 5s apart, PID 81718): `main`
+RUNNABLE but parked on the py4j gateway socket read (PythonGatewayServer.main), CPU
+byte-identical across both samples (zero advance), NO collect/RangePartitioner/BlockMatrix
+frames; Spark UI :4040/:4041/:4042 empty (no live SparkContext / no active stage); kernel
+(PID 81655) State=S in do_epoll_wait. => the run HALTED BETWEEN CELLS (nothing computing),
+NOT a driver wedge and NOT a selfid-cohort query-shape issue. Most likely a between-cells
+run-loop halt (a cell raised under Run All, or the recurring websocket-zombie frontend
+dropping cell dispatch — [[feedback_aou_websocket_drop_zombie_pattern]]). Pre-re-run check:
+inspect the cells between AFR-final and cohort 2 (esp. the AFR du-floor cell 3.5) for a
+traceback; if clean, a Restart Kernel + Run All gets the full 3-cohort pass.
+
+**Remaining to fully close (human-verify):** a clean uninterrupted re-fire completing all 3
+cohort MTs (non-zero n_samples AND n_variants) + du-floor real GB entries/rows/parts/ +
+cohort_summary 3 non-zero rows. On PASS → mark resolved + archive to resolved/ + KB entry;
+close the sibling entries-path + driver-collect sessions; greenlight Wave 2 full-genome rebuild.
