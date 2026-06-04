@@ -12,7 +12,13 @@ related:
 ## Current Focus
 
 hypothesis: |
-  H1 (ORDERING — provisional, pending live probe). The per-sample call_rate sample
+  H1 (ORDERING — CONFIRMED on live data 2026-06-04, see "Probe results" below).
+  [A] RAW call_rate max=0.8490 → 0/74576 pass 0.98 (unsatisfiable pre-variant-QC).
+  [A2] het ±3SD keeps 74142/74576 (het exonerated). [B] variant-QC-first (1.86M →
+  283,854 vars) → call_rate mean=0.9975, 74558/74576 (99.98%) pass 0.98 (reorder
+  recovers the full sample axis). Fix validated before any production code.
+
+  H1 (ORDERING — original statement). The per-sample call_rate sample
   filter (Phase 2, src/python/aou_ld_panel.py:1563, `filter_cols(sqc.call_rate >= 0.98)`)
   collapses the sample axis at ALL scales, not just nano. Cause: `hl.sample_qc` (:1552)
   computes call_rate over the RAW, pre-variant-QC variant set (interval-filtered + split,
@@ -130,8 +136,28 @@ B's PASS did not exonerate the threshold — it skipped it. ([[feedback_cheap_ti
     rare/low-call variants variant-QC removes) so sample-QC-first collapses the axis and
     variant-QC-first retains it. ([[feedback_extract_reusable_utilities]])
 
+## Probe results (LIVE, 2026-06-04, against mt_afr_post_split_chr22.mt 1859922×74576)
+
+Forensic readout was also saved cluster-side to
+`.planning/debug/m3-gatec-sample-axis-collapse-probe.txt` (CLUSTER LOCAL DISK —
+lost at teardown; numbers transcribed here NCSU-side so they survive):
+
+```
+[A]  RAW call_rate (pre-variant-QC):  mean=0.8075  min=0.7520  max=0.8490  | >=0.98 : 0/74576
+[A2] het ±3.0SD survivors:            74142/74576
+[B]  after variant-QC (283854 vars):  mean=0.9975  min=0.9568  max=0.9996  | >=0.98 : 74558/74576
+```
+
+- [A] CONFIRMS the threshold is unsatisfiable on the raw set: max call_rate 0.8490 < 0.98 →
+  the 0.98 filter at :1563 keeps 0/74576. Independent of scale (this is whole-chr22).
+- [A2] EXONERATES the het ±3SD filter (74142/74576 retained) → call_rate is the sole collapser.
+- [B] VALIDATES the reorder fix on real Gate C data: variant-QC-first (1.86M → 283,854 clean
+  variants) lifts sample call_rate to mean 0.9975; 74558/74576 (99.98%) clear 0.98. The 18
+  dropped samples are legitimate low-call-rate exclusions — the intended behavior of the
+  filter when computed over QC-passing variants.
+
 root_cause: |
-  PROVISIONAL (pending live Probe [A]/[B]). QC ORDERING BUG.
+  CONFIRMED (live Probe 2026-06-04, [A]/[A2]/[B] above). QC ORDERING BUG.
 
   load_qc_cohort runs sample-QC (per-sample call_rate filter, >= 0.98) in Phase 2 BEFORE
   variant-QC in Phase 3 (src/python/aou_ld_panel.py:1552/1563 precede :1584). hl.sample_qc
