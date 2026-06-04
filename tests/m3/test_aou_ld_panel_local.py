@@ -2072,3 +2072,92 @@ def test_real_hail_mt_entries_layout_and_validate_populated(
         "an emptied (0-column) real Hail MT must validate False — the "
         "catastrophe guard must still fire at the corrected path"
     )
+
+
+# ----- Sample-QC / variant-QC ORDERING regression guards -----
+# ----- (m3-gatec-sample-callrate-ordering-collapse, 2026-06-04) -----
+#
+# Gate C (whole chr22, 1,859,922 variants) collapsed the AFR sample axis to 0:
+# post_split 1859922x74576 -> post_sample_qc 1859922x0. Root cause = QC ORDERING.
+# load_qc_cohort runs the per-sample call_rate filter (Phase 2,
+# src/python/aou_ld_panel.py: `filter_cols(sqc.call_rate >= 0.98)`) BEFORE
+# variant_qc (Phase 3). hl.sample_qc computes call_rate over the RAW, pre-variant-QC
+# ACAF variant set; AoU sets FT-failed genotypes to no-call, so over that un-QC'd
+# set (rich in rare/low-call variants) every sample's call_rate sits below 0.98 —
+# the threshold is UNSATISFIABLE pre-variant-QC at ANY scale. The
+# MIN_VARIANTS_FOR_SAMPLE_CALLRATE=500_000 guard only SKIPPED the filter below 500K
+# (masking it at the Gate B nano tier); above 500K the filter applies and zeroes
+# the sample axis. Fix = compute sample call_rate over QC-passing variants, i.e.
+# run variant_qc + variant filters BEFORE sample_qc + the sample call_rate filter.
+#
+# These guards FAIL on the pre-fix source (sample-callrate-filter before variant_qc)
+# and PASS on the fix. See .planning/debug/m3-gatec-sample-callrate-ordering-collapse.md.
+
+
+@pytest.mark.xfail(
+    reason="m3-gatec-sample-callrate-ordering-collapse: sample call_rate filter "
+           "currently runs BEFORE variant_qc (computes call_rate over the raw "
+           "pre-variant-QC ACAF set -> unsatisfiable 0.98 threshold -> Gate C "
+           "sample-axis collapse). Fix reorders variant_qc ahead of the sample "
+           "call_rate filter; this xfail flips to XPASS (strict -> hard fail) when "
+           "that lands, prompting removal of the marker. Awaiting live Probe [B] "
+           "confirmation before applying the reorder (Iron Law: root cause first).",
+    strict=True,
+)
+def test_sample_callrate_filter_runs_after_variant_qc():
+    """STATIC GUARD (Hail-free, NCSU-side): the per-sample call_rate filter must
+    run AFTER variant_qc, so sample call_rate is measured over QC-passing variants
+    (common, well-called) — NOT over the raw pre-variant-QC ACAF set whose FT
+    no-calls depress every sample below 0.98 (the Gate C collapse).
+
+    Anchored on the EXACT executable call-site tokens (unique in source; the
+    substrings also appear in docstrings/comments, hence the full-statement match).
+    """
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    vqc_idx = src.find('mt = hl.variant_qc(mt, name="vqc")')
+    sample_filter_idx = src.find("mt = mt.filter_cols(mt.sqc.call_rate >= MIN_CALL_RATE_SAMPLE)")
+    assert vqc_idx > 0, "executable variant_qc call not found"
+    assert sample_filter_idx > 0, "executable sample call_rate filter_cols not found"
+    assert sample_filter_idx > vqc_idx, (
+        "load_qc_cohort applies the per-sample call_rate filter "
+        f"(pos {sample_filter_idx}) BEFORE variant_qc (pos {vqc_idx}). Per-sample "
+        "call_rate is then computed over the raw pre-variant-QC ACAF variant set, "
+        "where FT no-calls make the 0.98 threshold unsatisfiable -> the Gate C "
+        "sample-axis collapse (1859922x0). Run variant_qc + variant filters FIRST, "
+        "then sample_qc + the call_rate filter over QC-passing variants."
+    )
+
+
+@pytest.mark.skip(
+    reason="SKELETON — calibrate from live Gate C Probe [A]/[B] "
+           "(.planning/debug/m3-gatec-sample-callrate-ordering-collapse.md). "
+           "Needs STRUCTURED missingness: the fixture's current --missingness knob "
+           "is UNIFORM per-genotype, which depresses call_rate independent of "
+           "variant QC and so will NOT reproduce the ordering-dependence. To make "
+           "sample-QC-first collapse the axis while variant-QC-first retains it, "
+           "no-call must be CONCENTRATED on the rare/low-call variants variant_qc "
+           "removes (likely a build_synthetic_mt fixture enhancement). Unskip once "
+           "Probe numbers fix the missingness profile + variant counts."
+)
+def test_sample_axis_survives_at_scale_with_structured_missingness(
+    mock_aou_env, tmp_path
+):
+    """E2E REPRODUCTION (hail-gated): on a fixture whose no-calls are concentrated
+    in a rare/low-call variant tail (the AoU ACAF FT pattern), the pre-fix
+    sample-QC-first ordering collapses the sample axis (post_sample_qc cols == 0),
+    while the variant-QC-first fix retains it.
+
+    Calibration TODO (from Probe):
+      - [A] target: RAW sample call_rate max < 0.98 -> 0 samples pass (collapse).
+      - [B] target: after variant_qc, ~all samples pass 0.98 (retained).
+      - structured-missingness fraction + variant counts that reproduce [A]/[B]
+        deterministically on a small synthetic MT.
+    """
+    _require_hail()
+    from aou_ld_panel import load_qc_cohort  # noqa: F401
+
+    # TODO(probe): build a structured-missingness fixture (no-call concentrated on
+    # rare/low-call variants), run load_qc_cohort(ancestry="afr", skip_checkpoint=
+    # True) through the (fixed) variant-QC-first ordering, and assert the sample
+    # axis is RETAINED (n_cols > 0). Numbers come from Probe [A]/[B].
+    raise NotImplementedError("calibrate from Gate C Probe [A]/[B]")
