@@ -1,8 +1,9 @@
 ---
-status: investigating
+status: awaiting_human_verify
 trigger: "m3-gatec-sample-callrate-ordering-collapse: post_sample_qc returned 1859922 rows x 0 cols at Gate C (whole chr22) — the sample-axis collapse the nano guard masked, reproduced at scale"
 created: 2026-06-04T00:00:00Z
-updated: 2026-06-04T00:00:00Z
+updated: 2026-06-04T12:00:00Z
+fix_commit: 80d0a00
 supersedes: .planning/debug/resolved/m3-gateb-nano-sample-axis-collapse.md
 related:
   - .planning/debug/m3-W1-empty-mt-catastrophe.md
@@ -227,4 +228,38 @@ print(f"[B] after variant-QC ({n_var} variants): call_rate mean={cr2.mean:.4f} "
 
 ## RESOLUTION
 
-(pending — fill after Probe [A]/[B] + fix + GREEN + live Gate C re-fire PASS)
+status: awaiting_human_verify — fix landed + GREEN NCSU-side; pending live Gate C re-fire.
+
+**Fix (commit 80d0a00).** Reordered load_qc_cohort so variant_qc + variant filters
+(Phase 2) run BEFORE sample_qc + call_rate + het (Phase 3). Per-sample call_rate is now
+measured over the post-variant-QC clean variant set. Per DEC-2026-06-04 (Carter) the
+MIN_VARIANTS_FOR_SAMPLE_CALLRATE=500K nano guard keys on the RAW (pre-variant-QC) variant
+count — captured before variant_qc, persisted to the renamed post_variant_qc sidecar,
+restored on RESUME_FROM_POST_VARIANT_QC — so the validated threshold and the nano-smoke
+clean-PASS tier are preserved (whole-chr+ raw ≥500K → APPLY over clean variants; nano raw
+<500K → SKIP).
+
+Checkpoint topology renamed for honesty: intermediate-2 post_sample_qc → post_variant_qc
+(URI phase, ckpt var, RESUME_FROM_POST_VARIANT_QC state, sidecar phase, assert phases).
+m3-RESEARCH.md "Recommended ordering" (steps 5/6 swapped + dated correction) + module
+docstrings amended.
+
+**Tests (GREEN NCSU-side, 125 passed / 31 skipped, no Hail).** The staged
+test_sample_callrate_filter_runs_after_variant_qc (static, was xfail-strict) now PASSES as
+a normal guard; topology-rename tests updated; no assertions weakened. The e2e
+structured-missingness reproduction stays skipped (needs a fixture enhancement — probe
+target numbers recorded in its skip reason).
+
+**Why the prior session's guard wasn't enough (lesson).** resolved/m3-gateb-nano-sample-
+axis-collapse.md found the mechanism but mis-scoped it as a nano artifact and chose a guard
+over a reorder, on the untested assumption that genome-wide call_rate "stabilizes above
+0.98." Gate C falsified that (max 0.8490 at 1.86M variants). The guard masked the bug ≤500K
+and shipped it to a $35-80 fire. Generalization for the KB: a degeneracy guard that SKIPS a
+check on a "degenerate" tier is masking, not fixing, unless the check is independently shown
+to be valid on the non-skipped tier — verify the assumption, don't assume the dilution.
+
+**Remaining to fully close (human-verify):** live Gate C re-fire on the fixed branch — the
+sample axis must survive end-to-end (all 3 cohort MTs non-zero n_samples AND n_variants;
+du-floor cells report real GB entries/rows/parts/; cohort_summary writes 3 non-zero rows).
+On PASS → mark resolved + archive to resolved/ + KB entry; close the sibling entries-path +
+driver-collect sessions; greenlight Wave 2 full-genome rebuild.
