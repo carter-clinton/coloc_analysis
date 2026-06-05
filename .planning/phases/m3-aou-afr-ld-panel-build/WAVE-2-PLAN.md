@@ -64,7 +64,7 @@ The variant×variant LD matrices must be **classified for egress by AoU, in writ
 - [x] HIGH-1 OOM routing fix landed + tested (`c6c32b3`).
 - [x] **HIGH-3 decided** — accepted + documented (`c11949e`).
 - [x] **MED-4 / MED-5 / MED-6 fixed** + tested (`c11949e`); A.2/A.3 coverage tests added.
-- [ ] **Cluster preset:** reconcile DESIGN-DELTA's 16× n1-highmem-16 (256 vCPU, ~$19/hr) vs the post-Gate-C 24× n2-standard-16 (384 vCPU). Pick one; non-preemptible; "Software to install = Hail". *(Carter)*
+- [x] **Cluster preset DECIDED (Carter 2026-06-05): MAX workers to AoU vCPU quota, no overthreading.** Workers = `n2-standard-16` (only practical type), count pushed to the quota ceiling (Gate C ran 24 = 384 vCPU; go higher, 32–48 = 512–768 vCPU, if quota allows), NON-preemptible. Master = `n2-standard-16` (64 GB, confirmed floor; optional 128 GB `n2-standard-32`/`n2-highmem-16` for driver headroom). "Software to install = Hail". **No-overthread = the baked-in `PYSPARK_SUBMIT_ARGS spark.executor.cores=1` + 5g/executor lever (~12 mem-bound executors/node) — DO NOT raise executor.cores.** More workers speed the WGS scan; the EUR collectDArray gather is driver-bound (partition-capped 2048) so it's master-bound, not worker-bound.
 - [ ] **CDR pin** confirm (v8, no v8→v9 migration mid-flight). *(Carter)*
 - [ ] **Cost/credit confirmation:** convert ~1,117 cluster-h to AoU credit-dollars, confirm against your balance + a cap (spec R3). *(Carter only)*
 
