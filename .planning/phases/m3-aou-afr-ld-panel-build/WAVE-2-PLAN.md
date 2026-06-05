@@ -44,14 +44,14 @@ A two-agent audit of the Wave 2 compute path found the following. **The one fire
 ### ✅ FIXED — HIGH-1: `to_numpy()` driver-OOM routing (commit `c6c32b3`)
 `compute_region_ld` routed by `region_class` first; the manifest classes regions up to 25 Mb as "medium", but Paths A.1/A.2 end in `BlockMatrix.to_numpy()` — an O(n_var²) **driver-side dense collect**. **86 of 322 cells** (largest 23.7 Mb → ~225 GB dense float32) would have OOM'd the driver — including the **dev-10 set's `m2_region_00006` (17.7 Mb)**, i.e. the *first* dev fire would have crashed. Fixed via a pure `_route_region_path()` helper with a hard span veto (any A.1/A.2 with span > 10 Mb → A.3 BlockMatrix write). Verified by 3 pure tests (suite 128 passed). This is the same driver-collect hazard class as the cohort-build bug we fixed at Gate B.
 
-### 🚩 FLAGGED — needs your decision (NOT auto-fixed):
+### ✅ RESOLVED — fixed/decided NCSU-side (Carter greenlight, commit `c11949e`):
 
-- **HIGH-3 (scientific call): xlarge radius cap → banded LD.** The 16 xlarge cells (span >50 Mb, e.g. `m2_region_00120` 101.7 Mb) have `radius_bp = 50 Mb < span`, so `hl.ld_matrix` structurally zeroes all variant pairs >50 Mb apart. This contradicts the Q2 "radius = span" intent, but is arguably fine (long-range LD ≈ 0 at >50 Mb). **It ships silently** (A.3, no crash). **Decide:** (a) accept the 50 Mb band with a documented SuSiE caveat (recommended — full-radius LD over a 100 Mb region is computationally intractable, ~10¹² entries), (b) subdivide xlarge regions for LD, or (c) exclude them. A guard test pins that only these 16 cells are banded, so any new banded region surfaces. **Recommendation: (a)**, document the caveat; revisit only if a fine-mapped signal lands in an xlarge region.
-- **MED-4 (catastrophe-class): A.3 `.bm` write has no populated-validation.** Given the m3-W1 empty-MT catastrophe (`_SUCCESS` on empty contents), a `BlockMatrix.write` that finalizes empty would ship silently. 36 A.3 regions/ancestry exposed. **Recommend fixing before the fire** (add a non-empty assertion after `.bm` write, analogous to `_assert_checkpoint_nonempty`). ~30 min NCSU-side.
-- **MED-6 (catastrophe-class): idempotency skips on existence, not validity.** `_existing_region_npz` short-circuits if `{region_id}.npz` exists — a corrupt/truncated `.npz` from a websocket-drop is never re-driven. Same blind spot as the original `_has_checkpoint`. **Recommend fixing** (validate `.npz` is non-trivially-sized / loadable before skip) — cheap, and directly echoes [[feedback_aou_success_marker_not_evidence_of_data]].
-- **MED-5: swallowed A.3 sidecar-upload failure** → orphan `.bm` without `variant_ids.tsv` (breaks `bm_to_npz.py` post-egress). Low-cost fix: check `_upload_to_gcs` return value in the A.3 branch.
-- **Manifest mismatch (root of HIGH-1):** `build_ld_region_manifest.CLASS_MEDIUM_MAX_MB=25` vs driver `PATH_A2_MAX_MB=10`. The driver fix makes this safe, but reconciling the manifest classes would make the labels honest. Optional.
-- **Coverage gap:** no live Path-A.2/A.3 tests (only A.1). The dev-10 fire will exercise A.3 for the first time — watch it. A hail-gated A.2/A.3 fixture test is a good follow-up.
+- **HIGH-3 (scientific call): xlarge radius cap → banded LD — ACCEPTED + DOCUMENTED.** The 16 xlarge cells (span >50 Mb, e.g. `m2_region_00120` 101.7 Mb) have `radius_bp = 50 Mb < span`, so `hl.ld_matrix` zeroes variant pairs >50 Mb apart. **Accepted** (full-radius LD over a 100 Mb region is intractable, ~10¹² entries, and long-range LD ≈ 0 at >50 Mb). Documented at the `ld_matrix` call + here; **downstream (SuSiE-RSS / `ld_npz_to_rds.R`) must treat xlarge-region LD as 50-Mb-banded.** Guard test pins that only those 16 cells are banded, so any new banded region in a regenerated manifest surfaces. Revisit only if a fine-mapped signal lands in an xlarge region.
+- **MED-4 (catastrophe-class): A.3 `.bm` populated-validation — FIXED.** New `_assert_blockmatrix_written` re-reads the `.bm` metadata and asserts `shape == (n_var, n_var)`; raises on empty/corrupt. Called in both A.3 branches. Closes the m3-W1-class "_SUCCESS on empty contents" hole for Path A.3. Hail-gated A.3 coverage test added.
+- **MED-6 (catastrophe-class): idempotency validity — FIXED.** `_existing_region_npz` now requires `size >= _MIN_REGION_NPZ_BYTES` (256 B) before short-circuiting — a 0-byte/truncated `.npz` from a websocket-drop is no longer treated as "done". Pure regression test added.
+- **MED-5: swallowed A.3 sidecar-upload failure — FIXED.** The A.3 GCS branch now raises if `_upload_to_gcs` returns None, instead of shipping an orphan `.bm` that `bm_to_npz.py` can't ingest.
+- **Coverage gap — ADDRESSED.** Added Hail-gated Path-A.2 (sparsify lower-tri) + A.3 (`.bm` + sidecars + MED-4 guard) smoke tests — first coverage of those paths; they run on the dev fire.
+- **Manifest mismatch (root of HIGH-1):** `build_ld_region_manifest.CLASS_MEDIUM_MAX_MB=25` vs driver `PATH_A2_MAX_MB=10`. LEFT as-is — the HIGH-1 span-veto makes it safe and `region_class` is now advisory; regenerating the manifest just to relabel isn't worth it. (Noted only.)
 
 ---
 
@@ -62,11 +62,13 @@ The variant×variant LD matrices must be **classified for egress by AoU, in writ
 
 ### 🟠 GATE 1 — Pre-fire readiness (mostly NCSU-side; some need you)
 - [x] HIGH-1 OOM routing fix landed + tested (`c6c32b3`).
-- [ ] **Decide HIGH-3** (radius/banding) — recommend accept + document.
-- [ ] **Decide MED-4 / MED-6** (catastrophe-class) — recommend fix before fire (~1 hr NCSU-side; I can do these on your word).
-- [ ] **Cluster preset:** reconcile DESIGN-DELTA's 16× n1-highmem-16 (256 vCPU, ~$19/hr) vs the post-Gate-C 24× n2-standard-16 (384 vCPU). Pick one; non-preemptible; "Software to install = Hail".
-- [ ] **CDR pin** confirm (v8, no v8→v9 migration mid-flight).
-- [ ] **Cost/credit confirmation:** convert ~1,117 cluster-h to AoU credit-dollars, confirm against your balance + a cap (spec R3). Carter-only.
+- [x] **HIGH-3 decided** — accepted + documented (`c11949e`).
+- [x] **MED-4 / MED-5 / MED-6 fixed** + tested (`c11949e`); A.2/A.3 coverage tests added.
+- [ ] **Cluster preset:** reconcile DESIGN-DELTA's 16× n1-highmem-16 (256 vCPU, ~$19/hr) vs the post-Gate-C 24× n2-standard-16 (384 vCPU). Pick one; non-preemptible; "Software to install = Hail". *(Carter)*
+- [ ] **CDR pin** confirm (v8, no v8→v9 migration mid-flight). *(Carter)*
+- [ ] **Cost/credit confirmation:** convert ~1,117 cluster-h to AoU credit-dollars, confirm against your balance + a cap (spec R3). *(Carter only)*
+
+**All NCSU-side pre-fire code work is DONE.** GATE 1 now needs only the three Carter-only items above. Remaining gates are operational (egress ruling, dev-10 fire, production).
 
 ### 🟡 GATE 2 — dev-10 fire + validation (the rigor gate; cheap; catches remaining bugs)
 This is the Wave-2-scheme equivalent of the Gate C smoke for the LD step. **Do NOT skip — rigor over speed.**
@@ -103,14 +105,14 @@ git log --oneline -1   # expect c6c32b3 or later (contains the HIGH-1 OOM fix)
 
 ## 5. Open decisions for Carter (consolidated)
 
+Resolved (Carter greenlight 2026-06-04, fixes in `c11949e`): HIGH-3 (accept+document), MED-4/5/6 (fixed). Still open:
+
 1. **[HARD] GATE 0 egress classification ruling** — in hand? If not, file before any spend.
 2. **Cost ceiling / credit balance** — confirm ~1,117 cluster-h fits credits + set a cap.
-3. **HIGH-3 radius/banding** on the 16 xlarge cells — accept+document (rec) / subdivide / exclude.
-4. **MED-4 + MED-6 catastrophe-class fixes** — fix before fire? (rec yes; ~1 hr; say the word and I'll do them.)
-5. **Cluster preset** — 256 vs 384 vCPU.
-6. **Export MAF** — keep 0.005 (rec, AFR rare-allele signal) or revert to 0.01.
-7. **Self-ID escalation** — pre-bless the auto-escalate (<0.995 trigger) or require a manual checkpoint.
-8. **CDR pin** — confirm v8 stable.
+3. **Cluster preset** — 256 vs 384 vCPU.
+4. **Export MAF** — keep 0.005 (rec, AFR rare-allele signal) or revert to 0.01.
+5. **Self-ID escalation** — pre-bless the auto-escalate (<0.995 trigger) or require a manual checkpoint.
+6. **CDR pin** — confirm v8 stable.
 
 ## 6. Working-tree note (unrelated to Wave 2, but flag)
 At session start the working tree had **59 unstaged tracked-file deletions** (config/, envs/, docs/legacy/, data/). I restored the 5 Wave-2-critical config files (`ld_regions*.tsv`, `region_id_mapping.tsv`, `regions_curated_grch38.csv`, `envs/ld_build.yml`). **~54 deletions remain** (m1/m2 envs, pathway configs, legacy docs) — recoverable from HEAD. Decide whether that's an intentional cleanup (commit it) or accidental (`git checkout -- .`). Not Wave-2-blocking.
