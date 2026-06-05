@@ -2153,3 +2153,88 @@ def test_sample_axis_survives_at_scale_with_structured_missingness(
     # True) through the (fixed) variant-QC-first ordering, and assert the sample
     # axis is RETAINED (n_cols > 0). Numbers come from Probe [A]/[B].
     raise NotImplementedError("calibrate from Gate C Probe [A]/[B]")
+
+
+# ----- Wave 2 LD-compute routing OOM guards -----
+# ----- (m3-W2 pre-fire audit HIGH-1 / HIGH-3, 2026-06-04) -----
+#
+# compute_region_ld routed by region_class FIRST; the Wave-0 manifest
+# (build_ld_region_manifest.CLASS_MEDIUM_MAX_MB=25) classes regions up to 25 Mb
+# as "medium", but Paths A.1/A.2 end in BlockMatrix.to_numpy() -- an O(n_var^2)
+# DRIVER-side dense collect that OOMs the driver far below 25 Mb. 86 of the 322
+# config cells are small/medium-classed yet span > PATH_A2_MAX_MB (largest 23.7
+# Mb -> ~225 GB dense float32). These pure (Hail-free) guards pin the OOM-safe
+# routing and the radius-cap invariant. See the Wave-2 plan / audit.
+
+import csv as _csv  # noqa: E402
+
+
+def _read_ld_regions():
+    """Yield rows of config/ld_regions.tsv as dicts (tab-separated)."""
+    p = PROJECT_ROOT / "config" / "ld_regions.tsv"
+    with open(p, newline="") as f:
+        yield from _csv.DictReader(f, delimiter="\t")
+
+
+def test_route_region_path_oom_veto():
+    """_route_region_path must NEVER route a region whose span exceeds the A.2 cap
+    into a to_numpy() path (A.1/A.2), regardless of its region_class label."""
+    from aou_ld_panel import _route_region_path, PATH_A1_MAX_MB, PATH_A2_MAX_MB
+    # in-band: region_class routing honored
+    assert _route_region_path("small", 3.0) == "A.1"
+    assert _route_region_path("small", PATH_A1_MAX_MB) == "A.1"
+    assert _route_region_path("medium", 8.0) == "A.2"
+    assert _route_region_path("medium", PATH_A2_MAX_MB) == "A.2"        # 10.0 ok
+    # OOM veto: oversized "medium"/"small" demoted to A.3 (the HIGH-1 bug)
+    assert _route_region_path("medium", 10.1) == "A.3"
+    assert _route_region_path("medium", 17.7) == "A.3"  # dev-10 m2_region_00006
+    assert _route_region_path("medium", 23.7) == "A.3"  # largest medium in config
+    assert _route_region_path("small", 12.0) == "A.3"
+    # large/xlarge always A.3
+    assert _route_region_path("large", 33.0) == "A.3"
+    assert _route_region_path("xlarge", 73.0) == "A.3"
+    # span-only routing when class is unknown/None
+    assert _route_region_path(None, 4.0) == "A.1"
+    assert _route_region_path(None, 9.0) == "A.2"
+    assert _route_region_path(None, 40.0) == "A.3"
+
+
+def test_ld_regions_config_no_to_numpy_oom():
+    """REGRESSION GUARD (m3-W2 HIGH-1): under the fixed router, NO config region
+    whose span exceeds PATH_A2_MAX_MB routes to a to_numpy() path. This FAILS on
+    the pre-fix region_class-first routing (86 of 322 cells would OOM)."""
+    from aou_ld_panel import _route_region_path, PATH_A2_MAX_MB
+    offenders = []
+    for row in _read_ld_regions():
+        span_mb = (int(row["end_grch38"]) - int(row["start_grch38"])) / 1_000_000
+        path = _route_region_path(row["region_class"], span_mb)
+        if span_mb > PATH_A2_MAX_MB and path in ("A.1", "A.2"):
+            offenders.append((row["region_id"], row["ancestry"], row["region_class"],
+                              round(span_mb, 1), path))
+    assert not offenders, (
+        f"{len(offenders)} region cells route a >{PATH_A2_MAX_MB}Mb span into a "
+        f"driver to_numpy() (OOM). First few: {offenders[:5]}"
+    )
+
+
+def test_ld_regions_radius_cap_only_affects_xlarge():
+    """FLAG GUARD (m3-W2 HIGH-3): the Wave-0 radius cap (50 Mb) leaves radius < span
+    on the xlarge regions, structurally zeroing long-range LD. That is a flagged
+    scientific trade-off (long-range LD ~ 0); this test pins the invariant that
+    ONLY xlarge regions are radius-capped, so any NEW non-xlarge banded region in a
+    regenerated manifest is surfaced for review (rather than silently shipped)."""
+    banded_nonxlarge = []
+    n_banded = 0
+    for row in _read_ld_regions():
+        span = int(row["end_grch38"]) - int(row["start_grch38"])
+        if int(row["radius_bp"]) < span:
+            n_banded += 1
+            if row["region_class"] != "xlarge":
+                banded_nonxlarge.append((row["region_id"], row["ancestry"],
+                                         row["region_class"]))
+    assert not banded_nonxlarge, (
+        "non-xlarge region(s) have radius < span (unexpected banding — review): "
+        f"{banded_nonxlarge}"
+    )
+    # Sanity: the known xlarge banding set is present (16 cells = 8 regions x 2 anc).
+    assert n_banded == 16, f"expected 16 banded xlarge cells, found {n_banded}"

@@ -276,6 +276,37 @@ PATH_A1_MAX_MB = 5     # to_numpy direct
 PATH_A2_MAX_MB = 10    # sparsify_triangle + to_numpy
 # > 10 Mb -> Path A.3 (BlockMatrix write to bucket; densify NCSU-side)
 
+
+def _route_region_path(region_class: "str | None", span_mb: float) -> str:
+    """Select the Path-A export branch for a region, with an OOM safety veto.
+
+    region_class is the Wave-0 pinned routing label (D-M3-09); span_mb is the
+    region span and the true OOM determinant. Paths A.1/A.2 end in
+    ``BlockMatrix.to_numpy()`` -- an O(n_var**2) DRIVER-side dense collect -- so a
+    large-span region routed there OOMs the driver.
+
+    m3-W2 pre-fire audit (2026-06-04) HIGH-1: the Wave-0 manifest
+    (build_ld_region_manifest.CLASS_MEDIUM_MAX_MB=25) classes regions up to 25 Mb
+    as "medium", but to_numpy OOMs the driver far below that (a ~24 Mb region at
+    AFR density is a ~200+ GB dense float32; 86 of the 322 config cells are
+    small/medium-classed yet span > PATH_A2_MAX_MB). So region_class ALONE must
+    not route into to_numpy. This applies the region_class routing, then a HARD
+    span veto: any A.1/A.2 whose span exceeds PATH_A2_MAX_MB is demoted to A.3
+    (BlockMatrix streaming write, never densified on the driver).
+
+    Returns one of "A.1", "A.2", "A.3".
+    """
+    if region_class == "small" or span_mb <= PATH_A1_MAX_MB:
+        path_a = "A.1"
+    elif region_class == "medium" or span_mb <= PATH_A2_MAX_MB:
+        path_a = "A.2"
+    else:
+        path_a = "A.3"
+    # OOM safety veto: never to_numpy() a region whose span exceeds the A.2 cap.
+    if path_a in ("A.1", "A.2") and span_mb > PATH_A2_MAX_MB:
+        path_a = "A.3"
+    return path_a
+
 # Skip threshold (matches AOU-LD-PIPELINE.md §5.1 line 186)
 MIN_VARIANTS_PER_REGION = 10
 
@@ -1796,19 +1827,24 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     )
 
     span_mb = (end_b38 - start_b38) / 1_000_000
-    if region_class == "small" or span_mb <= PATH_A1_MAX_MB:
-        path_a = "A.1"
+    path_a = _route_region_path(region_class, span_mb)
+    # Observability: log when the OOM veto demoted a small/medium-classed region
+    # to A.3 by span (m3-W2 audit HIGH-1) — otherwise the path choice is silent.
+    if path_a == "A.3" and region_class in ("small", "medium") and span_mb > PATH_A2_MAX_MB:
+        print(f"[compute_region_ld] OOM-veto (m3-W2 HIGH-1): region_class="
+              f"{region_class!r} but span {span_mb:.1f} Mb > {PATH_A2_MAX_MB} Mb "
+              f"-> A.3 BlockMatrix write (avoids an O(n_var^2) driver to_numpy OOM).")
+
+    if path_a == "A.1":
         ld_np = ld_bm.to_numpy().astype("float32")
         out_uri = _save_npz(rid, ld_np, variant_ids, rsids, out_bucket, out_local_dir)
-    elif region_class == "medium" or span_mb <= PATH_A2_MAX_MB:
-        path_a = "A.2"
+    elif path_a == "A.2":
         # Sparsify lower triangle in place; result is still a BlockMatrix
         ld_bm_lt = ld_bm.sparsify_triangle(lower=True)
         ld_np = ld_bm_lt.to_numpy().astype("float32")
         out_uri = _save_npz(rid, ld_np, variant_ids, rsids, out_bucket, out_local_dir,
                             lower_triangular=True)
     else:
-        path_a = "A.3"
         # Never densify on driver for large/xlarge regions.
         # CR-003 fix (2026-05-01): emit variant_ids.tsv + rsids.tsv sidecars
         # alongside the BlockMatrix write so bm_to_npz.py (Wave 3 NCSU-side
