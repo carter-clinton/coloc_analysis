@@ -310,6 +310,14 @@ def _route_region_path(region_class: "str | None", span_mb: float) -> str:
 # Skip threshold (matches AOU-LD-PIPELINE.md §5.1 line 186)
 MIN_VARIANTS_PER_REGION = 10
 
+# Minimum byte size for an existing region .npz to be trusted as a completed
+# idempotent result (m3-W2 audit MED-6). The idempotency guard must NOT skip a
+# 0-byte / truncated .npz left by a websocket-drop mid-write -- that is the same
+# "exists != populated" blind spot as the m3-W1 empty-MT catastrophe
+# ([[feedback_aou_success_marker_not_evidence_of_data]]). A real LD .npz for the
+# >=10-variant floor is comfortably > 256 B; a partial write is 0 / a few bytes.
+_MIN_REGION_NPZ_BYTES = 256
+
 
 def _require_env(name: str) -> str:
     """Read AoU env var; raise RuntimeError with a helpful message if missing."""
@@ -1689,14 +1697,22 @@ def _existing_region_npz(region_id: str, out_bucket: str | None,
     .bm write is wasteful but not incorrect since BlockMatrix.write accepts
     overwrite=True).
     """
-    # GCS / Hadoop-style bucket check
+    # GCS / Hadoop-style bucket check. MED-6: validate the file is populated
+    # (size >= _MIN_REGION_NPZ_BYTES), not merely present — a 0-byte / truncated
+    # .npz from a websocket-drop mid-write must NOT short-circuit as "done".
     if out_bucket is not None:
         candidate = f"{out_bucket}/{region_id}.npz"
         if candidate.startswith("gs://"):
             try:
                 import hail as hl
                 if hl.hadoop_is_file(candidate):
-                    return candidate
+                    size = int(hl.hadoop_stat(candidate)["size_bytes"])
+                    if size >= _MIN_REGION_NPZ_BYTES:
+                        return candidate
+                    print(f"WARN: existing {candidate} is {size} B "
+                          f"(< {_MIN_REGION_NPZ_BYTES} B floor) — treating as a "
+                          f"truncated/corrupt write; will recompute (m3-W2 MED-6).",
+                          file=sys.stderr)
             except Exception:
                 # Defensive: any filesystem/Hail error treated as "not present"
                 # — safer to redo work than to assume a checkpoint that may
@@ -1704,11 +1720,12 @@ def _existing_region_npz(region_id: str, out_bucket: str | None,
                 pass
         elif candidate.startswith("file://"):
             local_candidate = Path(candidate[len("file://"):])
-            if local_candidate.is_file():
+            if local_candidate.is_file() and \
+                    local_candidate.stat().st_size >= _MIN_REGION_NPZ_BYTES:
                 return candidate
     # Local-dir fallback (matches _save_npz's local_path convention)
     local = (out_local_dir or Path("/tmp")) / f"{region_id}.npz"
-    if local.is_file():
+    if local.is_file() and local.stat().st_size >= _MIN_REGION_NPZ_BYTES:
         return str(local)
     return None
 
@@ -1780,7 +1797,18 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
         return {"region_id": rid, "status": "skipped_few_variants", "n_var": n_var,
                 "path_a": "skip", "out": None}
 
-    # hl.ld_matrix returns a BlockMatrix of Pearson correlations on n_alt_alleles dosages
+    # hl.ld_matrix returns a BlockMatrix of Pearson correlations on n_alt_alleles dosages.
+    # radius_bp is the per-region radius (span + 500 kb) emitted by the Wave-0
+    # reformatter, CAPPED at 50 Mb (build_ld_region_manifest.RADIUS_HARD_CAP_BP).
+    # m3-W2 audit HIGH-3 (ACCEPTED trade-off, Carter 2026-06-04): for the 16 xlarge
+    # cells (span > 50 Mb) radius < span, so hl.ld_matrix structurally zeroes
+    # variant pairs > 50 Mb apart -> long-range LD is banded out. This is accepted:
+    # full-radius LD over a ~100 Mb region is computationally intractable
+    # (O(n_var^2) ~ 10^12 entries) and long-range LD ~ 0 at > 50 Mb anyway.
+    # Downstream (SuSiE-RSS / ld_npz_to_rds.R) must treat xlarge-region LD as
+    # 50-Mb-banded. The invariant "only xlarge cells are radius-capped" is pinned
+    # by tests::test_ld_regions_radius_cap_only_affects_xlarge, so a new banded
+    # region in a regenerated manifest surfaces for review. See WAVE-2-PLAN.md HIGH-3.
     ld_bm = hl.ld_matrix(
         mt_r.GT.n_alt_alleles(),
         mt_r.locus,
@@ -1857,6 +1885,10 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             local_path = (out_local_dir or Path("/tmp")) / "bm" / f"{rid}.bm"
             local_path.parent.mkdir(parents=True, exist_ok=True)
             ld_bm.write(str(local_path), overwrite=True)
+            # MED-4: validate the .bm is populated (read-back shape), not merely
+            # that write() returned. m3-W1 wrote a success marker on empty
+            # contents; Path A.3 had no analogous catastrophe guard.
+            _assert_blockmatrix_written(str(local_path), n_var, rid)
             # Sidecars beside the .bm directory (matches bm_to_npz.py CLI)
             sidecar_dir = local_path.parent
             np.savetxt(
@@ -1873,19 +1905,31 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
         else:
             bm_uri = f"{out_bucket}/bm/{rid}.bm"
             ld_bm.write(bm_uri, overwrite=True)
+            _assert_blockmatrix_written(bm_uri, n_var, rid)  # MED-4
             # Upload sidecar TSVs to the same gs://.../bm/ prefix so the
             # NCSU-side gsutil cp -r picks them up alongside the .bm dir.
+            # MED-5: a swallowed upload failure would ship an orphan .bm that
+            # bm_to_npz.py cannot ingest (the CR-003 failure) — discovered only
+            # post-egress. Fail loudly so the region is re-fired instead of
+            # silently returning status=ok.
             for sidecar_name, payload in (
                 (f"{rid}.variant_ids.tsv", variant_ids),
                 (f"{rid}.rsids.tsv", rsids),
             ):
                 local_tmp = Path("/tmp") / sidecar_name
                 np.savetxt(str(local_tmp), np.array(payload, dtype=object), fmt="%s")
-                _upload_to_gcs(
+                uploaded = _upload_to_gcs(
                     local_path=local_tmp,
                     out_bucket=out_bucket,
                     blob_subpath=f"bm/{sidecar_name}",
                 )
+                if uploaded is None:
+                    raise RuntimeError(
+                        f"Path A.3 sidecar upload FAILED for {sidecar_name} "
+                        f"(region {rid}); refusing status=ok with an orphan .bm "
+                        f"that bm_to_npz.py cannot ingest (m3-W2 MED-5). Re-fire "
+                        f"the region."
+                    )
             out_uri = bm_uri
 
     return {
@@ -1921,6 +1965,33 @@ def _upload_to_gcs(local_path: Path, out_bucket: str, blob_subpath: str) -> str 
             file=sys.stderr,
         )
         return None
+
+
+def _assert_blockmatrix_written(uri: str, n_var: int, region_id: str) -> None:
+    """Validate a Path-A.3 BlockMatrix write produced a populated matrix.
+
+    m3-W2 audit MED-4: ``BlockMatrix.write`` returning is NOT proof of populated
+    contents — the m3-W1 empty-MT catastrophe wrote a success marker on empty
+    contents, and Path A.3 had no analogous guard. Re-reads the BlockMatrix
+    metadata and asserts its shape is the expected ``(n_var, n_var)``; a read
+    failure or shape mismatch means the ``.bm`` is empty/corrupt. ``read`` is lazy
+    (metadata only) so this is cheap. Mirrors :func:`_assert_checkpoint_nonempty`
+    for the MT path. See [[feedback_aou_success_marker_not_evidence_of_data]].
+    """
+    import hail as hl
+    try:
+        nr, nc = hl.linalg.BlockMatrix.read(uri).shape
+    except Exception as e:
+        raise RuntimeError(
+            f"Path A.3 BlockMatrix at {uri} (region {region_id}) is unreadable "
+            f"after write — empty/corrupt .bm (m3-W1-class catastrophe): {e}"
+        )
+    if nr != n_var or nc != n_var:
+        raise RuntimeError(
+            f"Path A.3 BlockMatrix at {uri} (region {region_id}) has shape "
+            f"({nr}, {nc}); expected ({n_var}, {n_var}) — empty/corrupt write "
+            f"(m3-W2 MED-4)."
+        )
 
 
 def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,

@@ -2238,3 +2238,60 @@ def test_ld_regions_radius_cap_only_affects_xlarge():
     )
     # Sanity: the known xlarge banding set is present (16 cells = 8 regions x 2 anc).
     assert n_banded == 16, f"expected 16 banded xlarge cells, found {n_banded}"
+
+
+def test_existing_region_npz_rejects_truncated(tmp_path):
+    """MED-6: the idempotency guard must NOT short-circuit a 0-byte / truncated
+    .npz (exists != populated — the m3-W1 blind-spot class). Pure, no Hail."""
+    from aou_ld_panel import _existing_region_npz, _MIN_REGION_NPZ_BYTES
+    rid = "synth_region_med6"
+    target = tmp_path / f"{rid}.npz"
+    # (a) 0-byte -> NOT a valid skip
+    target.write_bytes(b"")
+    assert _existing_region_npz(rid, None, tmp_path) is None
+    # (b) truncated (< floor) -> NOT a valid skip
+    target.write_bytes(b"PK\x03\x04" + b"\x00" * 8)
+    assert _existing_region_npz(rid, None, tmp_path) is None
+    # (c) populated (>= floor) -> valid idempotent skip
+    target.write_bytes(b"\x00" * (_MIN_REGION_NPZ_BYTES + 1))
+    assert _existing_region_npz(rid, None, tmp_path) == str(target)
+
+
+def test_compute_region_ld_path_a2_medium(synthetic_mt_path, mock_aou_env, tmp_path):
+    """A.2 (medium region_class): sparsify_triangle + to_numpy -> lower-tri .npz.
+    Hail-gated (runs on AoU / the dev fire) — first coverage of Path A.2."""
+    _require_hail()
+    import numpy as np
+    from aou_ld_panel import compute_region_ld, load_qc_cohort
+    mt = load_qc_cohort(mt_path=str(synthetic_mt_path), ancestry="afr",
+                        skip_checkpoint=True)
+    region = {"region_id": "synth_a2", "chr": "16", "start_grch38": 50_100_000,
+              "end_grch38": 51_900_000, "radius_bp": 2_400_000,
+              "region_class": "medium"}
+    res = compute_region_ld(region, mt, out_bucket=None, out_local_dir=tmp_path)
+    assert res["status"] == "ok", res
+    assert res["path_a"] == "A.2"
+    z = np.load(res["out"])
+    assert z["ld"].dtype == np.float32
+    assert bool(z["lower_triangular"][0]) is True
+
+
+def test_compute_region_ld_path_a3_large_validates_bm(synthetic_mt_path, mock_aou_env,
+                                                      tmp_path):
+    """A.3 (large region_class): BlockMatrix .bm + sidecar TSVs, with the MED-4
+    populated-validation (_assert_blockmatrix_written) running inside
+    compute_region_ld. Hail-gated — first coverage of Path A.3 + the new guard."""
+    _require_hail()
+    from aou_ld_panel import compute_region_ld, load_qc_cohort
+    mt = load_qc_cohort(mt_path=str(synthetic_mt_path), ancestry="afr",
+                        skip_checkpoint=True)
+    region = {"region_id": "synth_a3", "chr": "16", "start_grch38": 50_100_000,
+              "end_grch38": 51_900_000, "radius_bp": 2_400_000,
+              "region_class": "large"}
+    res = compute_region_ld(region, mt, out_bucket=None, out_local_dir=tmp_path)
+    assert res["status"] == "ok", res
+    assert res["path_a"] == "A.3"        # OOM-veto + region_class both -> A.3
+    bm_dir = Path(res["out"])
+    assert bm_dir.exists(), f"BlockMatrix .bm dir missing: {bm_dir}"
+    assert (bm_dir.parent / "synth_a3.variant_ids.tsv").is_file()
+    assert (bm_dir.parent / "synth_a3.rsids.tsv").is_file()
