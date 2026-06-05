@@ -70,6 +70,21 @@ The variant×variant LD matrices must be **classified for egress by AoU, in writ
 
 **All NCSU-side pre-fire code work is DONE.** GATE 1 now needs only the three Carter-only items above. Remaining gates are operational (egress ruling, dev-10 fire, production).
 
+### 🟣 GATE 1.5 — GENOME-WIDE COHORT REBUILD (prerequisite for ALL LD compute)
+**The cohort MTs in the bucket are chr22-ONLY** — Gate C's smoke run overwrote the production
+`mt_{ancestry}_qc.mt` paths with chr22-only data (the final checkpoint isn't interval-isolated).
+AOU-2 reads those MTs directly, and the dev-10 / production regions span all autosomes — so
+**LD compute cannot run until the cohorts are rebuilt genome-wide.** Run the **production**
+`AOU-1_template.ipynb` (it calls `load_qc_cohort` with NO `interval_filter` → genome-wide; do
+NOT use the chr22-smoke template). This is the first full-scale run of the now-fixed pipeline
+(the m3-W1 catastrophe was the *failed* genome-wide attempt; Gate C proved the fixes correct on
+chr22). Builds genome-wide `mt_afr_qc` + `mt_afr_pca_selfid_qc` + `mt_eur_qc` (overwrites the
+chr22 versions; intermediates are interval-suffixed so no collision). **Watch the EUR Phase-3
+`aggregate_cols`/`collectDArray` gather** (221K samples × genome-wide partitions — the scaling
+watch-point). PASS = 3 MTs with genome-wide variant counts (millions, not 283K) + non-zero
+samples + du-floor real GB + `_assert_checkpoint_nonempty` silent. This is internal (no egress),
+so it's gated on GATE 1 (cluster/cost/CDR) but NOT on GATE 0.
+
 ### 🟡 GATE 2 — dev-10 fire + validation (the rigor gate; cheap; catches remaining bugs)
 This is the Wave-2-scheme equivalent of the Gate C smoke for the LD step. **Do NOT skip — rigor over speed.**
 - Fire `config/ld_regions_dev.tsv` (10 regions) on AFR (+ EUR if cheap), production AOU-2 notebook, `USE_DEV_SUBSET=True`.
@@ -94,6 +109,7 @@ git log --oneline -1   # expect c6c32b3 or later (contains the HIGH-1 OOM fix)
 # 2. (sanity, NCSU-equivalent) the cohort MTs from Gate C persist in the bucket:
 #    gs://$WORKSPACE_BUCKET/ld/{mt_afr_qc.mt, mt_afr_pca_selfid_qc.mt, mt_eur_qc.mt}
 ```
+- **GATE 1.5 (FIRST):** open the **production** `AOU-1_template.ipynb` (genome-wide; NOT the chr22-smoke template), Restart Kernel & Run All → genome-wide `mt_afr_qc` / `mt_afr_pca_selfid_qc` / `mt_eur_qc`. Confirm genome-wide variant counts (millions) before proceeding. THEN:
 - Open the **production** `AOU-2_per_region_ld.ipynb` (NOT the chr22-smoke template).
 - **GATE 2:** set `USE_DEV_SUBSET = True` (→ `ld_regions_dev.tsv`), Restart Kernel & Run All. Verify: per-region `.npz`/`.bm` written, the first A.3 region's `.bm` + 2 sidecar TSVs present and non-empty, AOU-4 Checks pass, Q10 + D-M3-07 checks evaluated.
 - **GATE 3:** set `USE_DEV_SUBSET = False` (→ full 322 cells), fire in staged batches; monitor driver gather time on the large EUR regions (the collectDArray scaling watch-point); use idempotent resume on any websocket drop.
