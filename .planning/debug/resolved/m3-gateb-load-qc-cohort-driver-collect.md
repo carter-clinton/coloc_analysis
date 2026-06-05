@@ -1,9 +1,18 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "m3-gateb-load-qc-cohort-driver-collect: load_qc_cohort() stalls indefinitely on Hail DRIVER (SpillingCollectIterator) during Gate B chr22 smoke, instead of distributing to executors"
 created: 2026-06-02T00:00:00Z
-updated: 2026-06-02T02:55:00Z
+updated: 2026-06-04T18:00:00Z
+resolved: 2026-06-04T18:00:00Z
 ---
+
+> **RESOLVED 2026-06-04 — Gate C live-confirmed.** The read-back rebalance fix (e23c081, drop
+> pre-write repartition → read_matrix_table(_n_partitions=)) + the colon-sanitize follow-on
+> (a96f2cf) held across all 3 cohorts at whole-chr22 scale. EUR's heavier final-phase
+> aggregate_cols collectDArray gather (221,624 samples) completed in ~4 min — a mid-run jstack
+> briefly misread it as a wedge; it was in-flight and finished cleanly. WAVE-2 WATCH-POINT:
+> driver-side collectDArray scales with samples × partitions; watch EUR genome-wide (see
+> [[m3-gatec-sample-callrate-ordering-collapse]] closeout).
 
 ## Current Focus
 

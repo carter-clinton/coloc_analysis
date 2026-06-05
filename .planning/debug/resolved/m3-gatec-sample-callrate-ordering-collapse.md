@@ -1,9 +1,10 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "m3-gatec-sample-callrate-ordering-collapse: post_sample_qc returned 1859922 rows x 0 cols at Gate C (whole chr22) — the sample-axis collapse the nano guard masked, reproduced at scale"
 created: 2026-06-04T00:00:00Z
-updated: 2026-06-04T12:00:00Z
-fix_commit: 80d0a00
+updated: 2026-06-04T18:00:00Z
+resolved: 2026-06-04T18:00:00Z
+fix_commit: 80d0a00 (ordering) + 1e00851 (du-floor phantom-path)
 supersedes: .planning/debug/resolved/m3-gateb-nano-sample-axis-collapse.md
 related:
   - .planning/debug/m3-W1-empty-mt-catastrophe.md
@@ -299,7 +300,29 @@ construction defect — NOT the ordering bug, NOT a selfid pipeline issue. Separ
 observation (tracked, not blocking): the FINAL checkpoint is not interval-isolated (nano/chr22
 share `mt_{ancestry}_qc.mt`) — a load_qc_cohort design question, not this guard's concern.
 
-**Remaining to fully close (human-verify):** a clean uninterrupted re-fire completing all 3
-cohort MTs (non-zero n_samples AND n_variants) + du-floor real GB entries/rows/parts/ +
-cohort_summary 3 non-zero rows. On PASS → mark resolved + archive to resolved/ + KB entry;
-close the sibling entries-path + driver-collect sessions; greenlight Wave 2 full-genome rebuild.
+**RESOLVED — Gate C PASS (re-fire #2, 2026-06-04 22:46:52Z), all 3 cohorts, cross-verified
+against on-disk _SUCCESS + the 3-row cohort_summary (not just notebook output):**
+
+```
+cohort                n_samples  n_variants  checkpoint_path                                  du @ entries/rows/parts/
+AFR_pca_chr22          74,059     283,854    gs://.../ld/mt_afr_qc.mt                          ~22.4 GB
+AFR_pca_selfid_chr22   74,059     283,854    gs://.../ld/mt_afr_pca_selfid_qc.mt              ~22.4 GB
+EUR_pca_chr22         221,624     157,555    gs://.../ld/mt_eur_qc.mt                          47,589.6 MB
+```
+- Ordering fix held on all paths: selfid post_variant_qc kept the full 74,576-col axis (no
+  collapse); AFR call_rate trim was a sane ~517 samples. The exact cohort that collapsed to ×0
+  now lands 74,059 cols. _assert_checkpoint_nonempty silent throughout; Cell 6 AFR∩EUR=∅ OK.
+- du-floor false-positive (1e00851) confirmed fixed: all 3 guard cells passed on the real
+  un-suffixed paths with real GB sizes. The entries-path fix (entries/rows/parts/) is
+  live-confirmed (closes [[m3-entries-path-phantom-subpath]]).
+- The Gate B driver-collect read-back fix held; EUR's heavier final-phase aggregate_cols
+  gather (221K samples) completed in ~4 min — NOT a wedge (a mid-run jstack misread it; the
+  collectDArray was in-flight and finished). Closes [[m3-gateb-load-qc-cohort-driver-collect]].
+
+WAVE-2 WATCH-POINT (not a blocker): EUR's final-phase driver-side collectDArray gather scales
+with sample count × partitions. It completed fine on chr22 (221K samples) but genome-wide has
+far more partitions — a plausible scaling pressure point. Watch driver-side gather time on the
+first genome-wide EUR fire; if it dominates, checkpoint sample_qc before the het aggregate or
+reduce the gather footprint. Recorded for Wave 2.
+
+Both fixes proven; the cheap tiered validation did its job (no 1000G pivot). Greenlight Wave 2.

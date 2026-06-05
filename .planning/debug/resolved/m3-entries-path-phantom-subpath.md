@@ -1,9 +1,16 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "The catastrophe-defense layer probes entries/entries/parts/, which does NOT exist on a real Hail 0.2.135 MatrixTable. Real entry data is at entries/rows/parts/. find_and_fix with TDD."
 created: 2026-06-03T23:19:27Z
-updated: 2026-06-03T23:19:27Z
+updated: 2026-06-04T18:00:00Z
+resolved: 2026-06-04T18:00:00Z
 ---
+
+> **RESOLVED 2026-06-04 — Gate C live-confirmed.** All 3 du-floor cells passed on real MTs
+> reporting GB-scale sizes at `entries/rows/parts/` (AFR/selfid ~22.4 GB, EUR 47,589.6 MB).
+> The path fix (entries/entries→entries/rows; 195766b/39ad37e/2054859/288d4bd) is proven on
+> live data. A SEPARATE du-floor `+ _suffix` phantom-path defect surfaced + was fixed in the
+> same run (1e00851) — see [[m3-gatec-sample-callrate-ordering-collapse]].
 
 ## Current Focus
 
