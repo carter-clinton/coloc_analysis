@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-06-05T00:00:00.000Z",
+  "phase": "m3",
+  "phase_name": "m3-aou-afr-ld-panel-build",
+  "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
+  "plan": 3,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "headline": "Gate C PASSED (chr22, all 3 cohorts). Wave 2 (full-genome) fully scoped + pre-fire-audited + all NCSU bugs fixed + cluster preset decided. PAUSED before the next AoU fire = the genome-wide cohort rebuild (Carter relocating). HEAD e5e673f on origin/m3-W2-aou-deltas, ALL PUSHED. Cluster = $0.",
+  "head_commit": "e5e673f",
+  "branch": "m3-W2-aou-deltas",
+  "resume_entry_point": ".planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md",
+  "authoritative_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-PLAN.md",
+  "next_action": "Carter confirms AoU credits + CDR v8 (no egress ruling needed — internal), then fires the PRODUCTION AOU-1_template.ipynb (genome-wide by default; NOT the chr22-smoke template) to rebuild the cohort MTs genome-wide. Cluster = MAX n2-standard-16 workers to vCPU quota (non-preemptible, 64-128GB master, Software=Hail; executor.cores=1 lever baked in, do not raise). Clone+pull m3-W2-aou-deltas (HEAD must be >= e5e673f), restart kernel, Run All. PASS = 3 cohort MTs (mt_afr_qc, mt_afr_pca_selfid_qc, mt_eur_qc) with genome-wide variant counts (MILLIONS not 283K) + non-zero samples + du-floor real GB + _assert_checkpoint_nonempty silent. Full run sheet in .continue-here.md. Send Claude the AFR post_split timestamp for a tight ETA; if EUR parks in collectDArray run the jstack-CPU discriminator before concluding wedge (almost certainly slow at 221K samples, not stuck).",
+  "why_cohort_rebuild_first": "The bucket cohort MTs are chr22-ONLY (Gate C's smoke overwrote the production mt_{ancestry}_qc.mt paths; the final checkpoint is not interval-isolated). AOU-2 (LD) reads them directly and dev-10/production regions span all autosomes -> LD would skip every region. So cohorts must be rebuilt genome-wide first. This is the first full-scale run of the now-fixed pipeline (m3-W1 was the FAILED genome-wide attempt; Gate C proved the fixes on chr22). ETA ~3-6h, EUR the long pole.",
+  "gate_sequence": [
+    {"gate": "1.5", "name": "genome-wide cohort rebuild (AOU-1)", "status": "NEXT", "gated_on": "GATE 1 only (cost/credit, CDR) — internal, no egress"},
+    {"gate": "0", "name": "AoU egress classification ruling (HARD)", "status": "open", "note": "required before LD egress, not before the cohort rebuild"},
+    {"gate": "1", "name": "readiness", "status": "cluster DECIDED; cost/credit + CDR pin remain (Carter)"},
+    {"gate": "2", "name": "dev-10 LD + AOU-4 validation", "status": "open", "note": "all 10 dev regions are large/xlarge -> Path A.3; first live test of OOM-veto + MED-4 .bm validation + HIGH-3 banding"},
+    {"gate": "3", "name": "322-cell production LD + 44 egress requests", "status": "open"}
+  ],
+  "completed_this_session": [
+    {"id": "GATE-C", "name": "Gate C PASS re-fire #2 (chr22, all 3 cohorts cross-verified)", "status": "done"},
+    {"id": "ORDERING-FIX", "name": "QC-ordering sample-axis collapse fixed (reorder variant_qc before sample_qc; 500K guard on RAW count)", "status": "done", "commit": "80d0a00/0e3ef2a"},
+    {"id": "DU-FLOOR-FIX", "name": "du-floor +_suffix phantom-path false-positive fixed", "status": "done", "commit": "1e00851"},
+    {"id": "DEBUG-CLOSE", "name": "3 debug sessions resolved -> .planning/debug/resolved/", "status": "done", "commit": "f67ac19/43478a2"},
+    {"id": "WAVE2-SCOPE", "name": "Wave 2 scoped + audited (2 agents) -> WAVE-2-PLAN.md", "status": "done", "commit": "31a1809"},
+    {"id": "HIGH-1", "name": "compute_region_ld OOM-veto routing fix (86/322 cells would OOM via to_numpy)", "status": "done", "commit": "c6c32b3"},
+    {"id": "HIGH-3", "name": "xlarge radius->banded LD ACCEPTED + documented", "status": "done", "commit": "c11949e"},
+    {"id": "MED-4-5-6", "name": "A.3 .bm populated-validation + sidecar-upload-raises + idempotency size-floor; A.2/A.3 hail-gated coverage tests", "status": "done", "commit": "c11949e"},
+    {"id": "CLUSTER-DECISION", "name": "cluster preset = max n2-standard-16 to quota, no overthreading", "status": "done", "commit": "e5e673f"}
+  ],
+  "remaining_tasks": [
+    {"id": "COHORT-REBUILD", "name": "Fire AOU-1_template.ipynb genome-wide (the next AoU fire)", "status": "not_started"},
+    {"id": "DEV-10-LD", "name": "AOU-2 USE_DEV_SUBSET=True + AOU-4 Checks 1-4", "status": "not_started"},
+    {"id": "PROD-LD", "name": "AOU-2 USE_DEV_SUBSET=False (322 cells) + 44 egress requests", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Confirm AoU credits cover the genome-wide cohort build + confirm CDR v8", "blocking": true, "context": "GATE 1, Carter-only; cheap to confirm"},
+    {"action": "File/confirm the AoU egress classification ruling", "blocking": false, "context": "GATE 0; needed before LD egress, NOT before the cohort rebuild"},
+    {"action": "Triage the ~54 unstaged working-tree deletions (m1/m2 envs, pathway configs, legacy docs)", "blocking": false, "context": "restored only the 5 Wave-2 config files; intentional cleanup vs accidental — `git checkout -- .` restores all, or commit the deletion"}
+  ],
+  "key_coordinates": {
+    "workspace_id": "aou-rw-476cdac2",
+    "google_project": "wb-perky-corn-6639",
+    "WORKSPACE_BUCKET": "gs://rw-migration-aou-rw-476cdac2",
+    "WGS_path": "gs://vwb-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt",
+    "CDR": "C2024Q3R8 (cdrv8)",
+    "cluster_type": "JupyterLab Spark cluster for AoU (Dataproc) + Software to install = Hail",
+    "rw2_no_persistent_disks": true
+  },
+  "watch_points": [
+    "EUR Phase-3 collectDArray gather (221K samples) is driver-bound + partition-capped (2048) -> a few min; jstack-CPU discriminator before any kill.",
+    "First full-scale run of the fixed pipeline (ordering/du-floor/driver-collect/empty-MT guards all in, proven on chr22).",
+    "max workers cuts wall-time not cluster-hours (cost ~ vCPU x time); I/O-bound WGS read may saturate GCS bandwidth past some worker count."
+  ],
+  "uncommitted_files": []
+}
