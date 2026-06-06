@@ -240,6 +240,15 @@ HET_HOM_SD_BAND = 3.0
 # guard.
 MIN_VARIANTS_FOR_SAMPLE_CALLRATE = 500_000
 
+# GRCh38 autosomes (chr1..chr22). The LD panel is AUTOSOMAL per the M2 region
+# manifest scope (no chrX/Y/M). Used by the genome-wide per-chromosome fan-out
+# in load_qc_cohort (interval_filter=None): every Hail action is bounded to one
+# chromosome's partition set -- the exact condition under which the chr22 Gate-C
+# run passed -- so the driver never has to materialize the un-pruned whole-genome
+# plan over the ~145k-partition v8 source in one shot (the genome-wide first-
+# action wedge; .planning/debug/m3-W2-genome-wide-countcols-py4j-wedge.md).
+AUTOSOMES = tuple(f"chr{i}" for i in range(1, 23))
+
 # Variant QC thresholds (AOU-LD-PIPELINE.md §4)
 MIN_MAF_INTERNAL = 0.005
 MAX_MAF = 0.995  # 1 - MIN_MAF_INTERNAL
@@ -1365,6 +1374,7 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    *,
                    force_fresh: bool = False,
                    interval_filter: str | None = None,
+                   _skip_final_write: bool = False,
                    ) -> "hl.MatrixTable":
     """Load + cohort-define + QC-filter the AoU AFR/EUR cohort.
 
@@ -1391,11 +1401,35 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         interval_filter: When set (e.g., "chr22"), filter source MT to
             this interval right after read_matrix_table. Used by smoke
             tests for path-isolated execution; produces URI-suffixed
-            intermediates. Default None (no filter; production fire).
-            Per DESIGN §3.5.
+            intermediates. Default None.
+
+            When None AND not skip_checkpoint (the GENOME-WIDE production
+            fire), load_qc_cohort FANS OUT per autosome: it recurses 22
+            times with interval_filter="chrN" and _skip_final_write=True
+            (running Phases 1-2 only), then ``union_rows`` the 22 per-chrom
+            variant-QC'd MTs and runs Phase 3 (sample QC + het) ONCE over the
+            union before the final cohort checkpoint. This bounds every Hail
+            action to a single chromosome's partition set -- the condition
+            under which chr22 Gate-C passed -- instead of materializing the
+            un-pruned whole-genome plan over the ~145k-partition v8 source on
+            the first action (the genome-wide first-action wedge;
+            .planning/debug/m3-W2-genome-wide-countcols-py4j-wedge.md). Per-
+            chrom intermediates are path-isolated via _intermediate_checkpoint_uri
+            so the loop is RESTARTABLE (a websocket-drop after chrK resumes at
+            chrK+1). Per DESIGN §3.5.
+        _skip_final_write: PRIVATE. When True, stop after the post_variant_qc
+            checkpoint (end of Phase 2) and RETURN the variant-QC'd MT WITHOUT
+            running Phase 3 (sample QC + het) or the final cohort write. Used
+            ONLY by the genome-wide per-chromosome fan-out: sample QC and the
+            het +/-3SD band MUST be computed once over the full unioned cohort
+            (per-sample call_rate needs all variants per sample; the het band
+            must be centered on the whole cohort), NOT per-chromosome -- so the
+            per-chrom calls chunk Phases 1-2 only. Not part of the public API.
 
     Returns:
         QC-filtered ``hl.MatrixTable`` ready for per-region LD computation.
+        When ``_skip_final_write`` is True, the returned MT is the
+        post-variant-QC (Phase 2) MT (sample QC NOT yet applied).
     """
     import hail as hl
 
@@ -1406,6 +1440,81 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             f"labels are {sorted(ANCESTRY_VALUES)} but routing here only "
             f"covers AFR/EUR (D-M3-02)."
         )
+
+    # ------------------------------------------------------------------
+    # GENOME-WIDE PER-CHROMOSOME FAN-OUT (interval_filter is None, real run).
+    #
+    # Root cause of the genome-wide first-action wedge: with interval_filter
+    # None there is NO filter_intervals partition pruning, so naive_coalesce +
+    # split_multi_hts must build (and the first checkpoint must materialize) a
+    # driver-side plan over the FULL un-pruned ~145k-partition v8 source in one
+    # shot -- the driver wedges in that pre-task plan phase (stage=0, no
+    # executors, flat CPU). chr22 Gate-C never hit this because filter_intervals
+    # bounded every action to chr22's partitions first. So: GENERALIZE the
+    # proven-good chr22 condition to all 22 autosomes -- recurse per-autosome
+    # (each call bounded by interval_filter="chrN"), run Phases 1-2 only
+    # (_skip_final_write=True), then union_rows the per-chrom variant-QC'd MTs
+    # and run Phase 3 (sample QC + het) ONCE over the union below.
+    #
+    # Gated on `interval_filter is None and not skip_checkpoint` so:
+    #   * the chr22 / nano / synthetic SINGLE-INTERVAL paths (interval_filter
+    #     SET) are byte-identical -- they fall straight through to the existing
+    #     per-interval body, untouched;
+    #   * the local synthetic-MT tests (skip_checkpoint=True, interval_filter
+    #     None) ALSO fall through unchanged -- they run the single in-memory
+    #     pass, no fan-out (no bucket to write per-chrom intermediates to).
+    # See .planning/debug/m3-W2-genome-wide-countcols-py4j-wedge.md.
+    # ------------------------------------------------------------------
+    if interval_filter is None and not skip_checkpoint and not _skip_final_write:
+        import hail as hl  # local: graceful offline import (mirrors body below)
+
+        print(f"[load_qc_cohort] GENOME-WIDE fan-out: {len(AUTOSOMES)} autosomes "
+              f"(chr1..chr22) ancestry={ancestry} sensitivity={sensitivity}; "
+              f"each chrom bounded to its own partition set (restartable per chrom)")
+        per_chrom_mts = []
+        for idx, chrom in enumerate(AUTOSOMES, start=1):
+            print(f"[load_qc_cohort] genome-wide {idx}/{len(AUTOSOMES)}: {chrom}")
+            mt_c = load_qc_cohort(
+                mt_path=mt_path,
+                ancestry=ancestry,
+                sensitivity=sensitivity,
+                ancestry_table_path=ancestry_table_path,
+                relateds_table_path=relateds_table_path,
+                workspace_bucket=workspace_bucket,
+                skip_checkpoint=skip_checkpoint,
+                force_fresh=force_fresh,
+                interval_filter=chrom,        # bounds every action to one chrom
+                _skip_final_write=True,       # Phases 1-2 only; return post-vqc MT
+            )
+            per_chrom_mts.append(mt_c)
+
+        # Variant-axis union of the 22 disjoint per-chrom MTs. union_rows is a
+        # metadata-level concatenation (identical col-keys/samples + identical
+        # post-split_multi_hts/variant_qc row schema across all 22, since each is
+        # built from the same source over the same ancestry/relateds filter) --
+        # no shuffle, no driver collect.
+        mt = per_chrom_mts[0].union_rows(*per_chrom_mts[1:])
+
+        # The raw-count sample-callrate guard keys on the UNIONED raw count, NOT
+        # any single chromosome (one chrom may dip below MIN_VARIANTS_FOR_SAMPLE_
+        # CALLRATE and wrongly skip the genome-wide filter). The union of 22
+        # variant-QC'd autosomes is far above 500K, so this resolves to APPLY at
+        # genome-wide scale -- preserving today's chr22-Gate-C semantics. One
+        # bounded count over the already-balanced, checkpointed union.
+        _n_var_union = mt.count_rows()
+        sample_callrate_filtered = _n_var_union >= MIN_VARIANTS_FOR_SAMPLE_CALLRATE
+
+        # Phase 3 (sample QC + het) ONCE over the union, then the UNCHANGED final
+        # cohort checkpoint (same _qc_checkpoint_uri downstream AOU-2/AOU-4/
+        # cohort_summary already read). bucket resolved here for the final write.
+        bucket = workspace_bucket or os.environ.get("WORKSPACE_BUCKET")
+        if not bucket:
+            raise RuntimeError("WORKSPACE_BUCKET not set; cannot checkpoint")
+        mt = _apply_sample_qc_and_finalize(
+            mt, ancestry=ancestry, sensitivity=sensitivity, bucket=bucket,
+            sample_callrate_filtered=sample_callrate_filtered)
+        return mt
+
     # Env-derive the AUX base from the WGS MT being read so the ancestry /
     # relatedness tables track the platform-bound CDR version (v8/v9/...), then
     # DISCOVER each table by its canonical suffix so pipeline-version filename
@@ -1638,13 +1747,55 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                            sample_callrate_filtered=sample_callrate_filtered)
             print(f"[load_qc_cohort] wrote intermediate 2: {ckpt_post_vqc}")
 
-    # Phase 3: sample QC (was Phase 2) — sample_qc + call_rate filter (guarded by
-    # the raw-count decision) + het +/-3SD. call_rate is now measured over the
-    # post-variant-QC clean variant set, so the 0.98 threshold is satisfiable.
+    # GENOME-WIDE FAN-OUT boundary: a per-chromosome recursion stops HERE, after
+    # the post_variant_qc checkpoint, and returns the variant-QC'd MT. Phase 3
+    # (sample QC + het) and the final write run ONCE over the UNIONED cohort in
+    # the genome-wide caller above -- NOT per-chromosome (per-sample call_rate
+    # needs all variants per sample; the het band must center on the whole
+    # cohort). _skip_final_write is only ever True on those internal recursive
+    # calls. See .planning/debug/m3-W2-genome-wide-countcols-py4j-wedge.md.
+    if _skip_final_write:
+        return mt
+
+    # Phase 3: sample QC (was Phase 2) + final cohort checkpoint. Shared with the
+    # genome-wide union path via _apply_sample_qc_and_finalize so both code paths
+    # run IDENTICAL sample-QC / het / final-write logic (no drift).
+    return _apply_sample_qc_and_finalize(
+        mt, ancestry=ancestry, sensitivity=sensitivity,
+        bucket=(bucket if not skip_checkpoint else None),
+        sample_callrate_filtered=sample_callrate_filtered)
+
+
+def _apply_sample_qc_and_finalize(mt: "hl.MatrixTable", *, ancestry: str,
+                                  sensitivity: bool, bucket: str | None,
+                                  sample_callrate_filtered: bool | None
+                                  ) -> "hl.MatrixTable":
+    """Phase 3 (sample QC + het +/-3SD) and the final cohort checkpoint.
+
+    Extracted so the single-interval path (load_qc_cohort body) and the
+    genome-wide per-chromosome UNION path run byte-identical sample-QC / het /
+    final-write logic. variant_qc has ALREADY been applied upstream (per the
+    W1 QC-ordering fix: variant_qc BEFORE sample_qc, so per-sample call_rate is
+    measured over QC-passing variants -- do NOT reintroduce the sample-axis
+    collapse). sample QC and the het band are correctly computed ONCE over the
+    full (single-interval or unioned-genome) cohort here.
+
+    Args:
+        mt: post-variant-QC MatrixTable (sample QC not yet applied).
+        ancestry/sensitivity: select the final checkpoint URI.
+        bucket: workspace bucket for the final write; None => skip the write
+            (local synthetic-MT tests, no real bucket).
+        sample_callrate_filtered: raw-count guard decision (APPLY vs SKIP the
+            >=0.98 per-sample call_rate filter). None => defensive APPLY
+            (reached only on RESUME_FROM_POST_VARIANT_QC where the producing
+            fire's decision is restored from the sidecar).
+    """
+    import hail as hl
+
+    # call_rate is measured over the post-variant-QC clean variant set, so the
+    # 0.98 threshold is satisfiable.
     if sample_callrate_filtered is None:
-        # Reached only on RESUME_FROM_POST_VARIANT_QC; the decision was restored
-        # from the resumed sidecar in the resume block above. Defensive default:
-        # APPLY (production-correct; only nano smoke skips).
+        # Defensive default: APPLY (production-correct; only nano smoke skips).
         sample_callrate_filtered = True
     mt = hl.sample_qc(mt, name="sqc")
     if sample_callrate_filtered:
@@ -1664,8 +1815,10 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         mt = mt.filter_cols((mt.sqc.r_het_hom_var >= lo) &
                             (mt.sqc.r_het_hom_var <= hi))
 
-    # Final checkpoint to workspace bucket
-    if not skip_checkpoint:
+    # Final checkpoint to workspace bucket (UNCHANGED URI -- downstream AOU-2 /
+    # AOU-4 / cohort_summary read this exact path; producer/consumer contract
+    # preserved for both the single-interval and genome-wide union paths).
+    if bucket is not None:
         ckpt = _qc_checkpoint_uri(bucket, ancestry, sensitivity)
         mt = mt.checkpoint(ckpt, overwrite=True)
         _assert_checkpoint_nonempty(mt, ckpt, phase="final")
