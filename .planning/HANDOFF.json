@@ -1,93 +1,76 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-06T00:15:00.000Z",
+  "timestamp": "2026-06-07T19:35:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
   "plan": 3,
   "task": null,
   "total_tasks": null,
-  "status": "running_unattended",
-  "headline": "GENOME-WIDE COHORT REBUILD IS LIVE. Production AOU-1_template.ipynb fired + RUNNING server-side on AoU Dataproc (YARN app application_1780701402498_0001, ~10% at disconnect). Carter relocating/disconnected ~2026-06-06 00:15 UTC; job continues server-side. NEXT SESSION = RECONNECT to the running job (do NOT restart the kernel), check state, verify PASS gate when it finishes. HEAD 997461b on origin/m3-W2-aou-deltas.",
-  "head_commit": "997461b",
+  "status": "genome_wide_build_running_cohort1of3_verified",
+  "headline": "GENOME-WIDE COHORT BUILD LIVE. Per-chromosome fan-out fix (ab0853a) PROVEN end-to-end on a full genome — the count_cols/Py4J mutual-wait that wedged twice is resolved. Cohort 1/3 AFR-primary COMPLETE + VERIFIED (mt_afr_qc.mt = 73,122 samples x 20,767,864 variants). Cohort 2/3 AFR-sens (Cell 4) RUNNING. Cohort 3/3 EUR (Cell 5) still to come (long pole). Claude monitors + gates only; Carter holds every fire/kill/$ trigger. HEAD dedffe5 on origin/m3-W2-aou-deltas (no code changed this session).",
+  "head_commit": "dedffe5",
   "branch": "m3-W2-aou-deltas",
   "resume_entry_point": ".planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md",
   "authoritative_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-PLAN.md",
-  "next_action": "RECONNECT to the running AOU-1 job — do NOT restart the kernel. (1) Reattach the AoU env + open a terminal. (2) `ps -ef | grep -E 'ipykernel|java' | grep -v grep` — confirm the kernel (was PID 31804) + Hail driver JVM (was PID 32639) are still alive. (3) `yarn application -list` — is application_1780701402498_0001 RUNNING or FINISHED/FAILED? (4) `grep -iE 'post_split|post_variant_qc|wrote intermediate|Traceback|Error' /tmp/hail.log; tail -n 60 /tmp/hail.log`. Then: RUNNING -> keep watching, paste AFR post_split timestamp for ETA, EUR collectDArray -> jstack x2 before any kill. SUCCEEDED -> verify PASS gate (3 MTs, millions of variants, AFR ~74K / EUR ~221K samples, du-floor real GB at entries/rows/parts/, _assert_checkpoint_nonempty silent, cohort_summary_m3.tsv 3 non-zero rows) then mirror cohort_summary_m3.tsv to GPFS. FAILED -> preserve /tmp/hail.log to gs://.../ld/_forensics/, capture traceback, /gsd-debug.",
-  "why_cohort_rebuild_first": "The bucket cohort MTs were chr22-ONLY (Gate C smoke overwrote the production mt_{ancestry}_qc.mt paths; final checkpoint is not interval-isolated). AOU-2 (LD) reads them directly and dev-10/production regions span all autosomes -> LD would skip every region. So cohorts had to be rebuilt genome-wide first. THIS run is that rebuild — the first full-scale run of the now-fixed pipeline (m3-W1 was the FAILED genome-wide attempt; Gate C proved the fixes on chr22).",
-  "live_job": {
-    "fired_at_utc": "2026-06-06T00:10:00Z",
-    "yarn_application_id": "application_1780701402498_0001",
-    "yarn_app_name": "Hail",
-    "state_at_disconnect": "RUNNING ~10% (still in load-WGS-MatrixTable / cohort-definition phase, before split_multi -> post_split -> checkpoint; no AFR post_split line yet)",
-    "kernel_pid": 31804,
-    "kernel_proc": "ipykernel_launcher",
-    "hail_driver_jvm_pid": 32639,
-    "hail_driver_jar": "hail-all-spark.jar",
-    "spark_ui": "http://<master ...20260605-m>:36349",
-    "hail_log": "/tmp/hail.log (init lines only at disconnect: benign Spark 3.5.0-vs-3.5.3 compile-skew WARN, SparkUI URL, Running Hail version 0.2.135)",
-    "cells_done": "Cell 1a [2] (bucket-guard re-pin idempotent), Cell 1b [3] (hl.init, no traceback)",
-    "monitoring_posture": "terminal-based (notebook UI scroll uncooperative): `yarn application -list` + grep/tail /tmp/hail.log for the post_split marker. Disconnect-safe."
+  "next_action": "MONITOR the running AFR-sens build (Cell 4) on a cadence; do NOT touch the cluster. Arbiter = `gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/intermediate/ | grep pca_selfid`, tracking mt_afr_pca_selfid_post_variant_qc_chr* climbing to 22 (DISCOUNT the chr22 06-04 leftover). Completion = mt_afr_pca_selfid_qc.mt/_SUCCESS flip 06-04 -> 06-07 + Cell 4.5 PASS. At Cell 4.5 N/M: expect samples != 73,122 by a few % (~70-76K) and variants ~= 20.8M but NOT byte-identical; BYTE-IDENTICAL 73,122 x 20,767,864 = contamination flag -> PAUSE. Then Cell 5 (EUR, long pole ~221K samples, ~217-220K x ~10-14M variants, watch the GC-heavy union->sample-QC->write tail) -> 5.5 -> Cell 6 disjoint -> Cell 7 cohort_summary_m3.tsv (3 non-zero rows) -> mirror cohort_summary_m3.tsv to GPFS -> teardown (Stop NOT Delete) -> close debug session m3-W2-genome-wide-countcols-py4j-wedge to resolved/. STOP + surface only on: a traceback / final-MT arbiter flatlined >20-30 min WITH the JVM confirmed live / an assertion failure.",
+  "cohorts": {
+    "afr_primary": {
+      "status": "COMPLETE_VERIFIED",
+      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt",
+      "samples": 73122,
+      "variants": 20767864,
+      "success_timestamp_utc": "2026-06-07T15:37:30Z",
+      "du_floor": "1603.66 GB at entries/rows/parts/ (cleared 1 GB floor ~1600x; first production-scale proof of the du-floor fix)",
+      "verification": "count_cols/count_rows read directly off the written MT (not a marker); _assert_checkpoint_nonempty silent in-run (non-empty both axes); Cell 3.5 du-floor PASS; overwrite=True clobbered the stale 06-04 stub. Sample -1.3% vs Gate-C 74,059 = genome-wide call_rate>=0.98 correctly dropping low-quality samples chr22-alone missed (filter working). 20.8M variants in range for an AFR WGS ACAF callset.",
+      "note": "Cell 3 front-end shows [ ]: + viewport stuck at chr12 = websocket-drop artifact (N/M print lost to the front-end, not the data; recovered via a read-only count cell). Do NOT re-run Cell 3."
+    },
+    "afr_sens": {
+      "status": "RUNNING",
+      "cell": 4,
+      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt",
+      "started_utc": "2026-06-07T16:19:00Z",
+      "progress_at_1932z": "~5 of 22 chroms (raw split=5/var_qc=5 minus the chr22 06-04 leftover), ~3h12m in, healthy. JVM PID 5932 alive, hail.log live 19:25 (collectDArray writing partitions), selfid final _SUCCESS still 06-04 (tail not reached), no traceback. Pace tracks AFR-primary's largest-first profile (early chroms heavy, back half accelerates). No teardown.",
+      "intermediate_isolation": "VERIFIED in code: fan-out threads sensitivity=True (aou_ld_panel.py:1480); _intermediate_checkpoint_uri inserts _pca_selfid token (:486) -> writes mt_afr_pca_selfid_post_*_chrN, isolated from primary's mt_afr_post_*_chrN. This isolation IS the contamination guard — had sensitivity not threaded, sens would be a byte-identical copy of primary and would have passed the count sanity check undetected.",
+      "arbiter": "gsutil ls .../intermediate/ | grep pca_selfid ; track mt_afr_pca_selfid_post_variant_qc_chr* -> 22, discount the chr22 06-04 leftover. Completion = mt_afr_pca_selfid_qc.mt/_SUCCESS 06-04 -> 06-07 + Cell 4.5 PASS.",
+      "cell_4_5_anchors": "samples != 73,122 (a few % drift, ~70-76K); variants ~= 20.8M but probably not byte-identical; BYTE-IDENTICAL = contamination flag -> PAUSE."
+    },
+    "eur": {
+      "status": "PENDING",
+      "cell": 5,
+      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt",
+      "anchors": "long pole (~221K samples). Gate-C chr22 was 221,624 x 157,555; genome-wide expect ~217-220K samples (after sample-QC drop) x ~10-14M variants (fewer than AFR, lower EUR diversity). Watch the quiet-but-CPU-pegged GC-heavy union->sample-QC->write tail; judge by the entries/rows/parts/ write timestamp + _assert_checkpoint_nonempty, NOT thread state."
+    }
+  },
+  "fan_out_fix": {
+    "commit": "ab0853a",
+    "status": "PROVEN end-to-end on a full genome (AFR-primary). chr1 (the exact wedge condition) cleared in minutes.",
+    "debug_session": "m3-W2-genome-wide-countcols-py4j-wedge = awaiting_human_verify -> move to resolved/ once the full AFR+EUR build lands.",
+    "mechanism_resolved": "genome-wide load_qc_cohort now fans out per-chromosome (interval_filter=chrN, _skip_final_write=True), union_rows the 22 variant-QC'd MTs, runs sample-QC once over the union. Bounds every Hail action the way interval_filter=chr22 did in the passing Gate-C run. The wedge was the first action materializing the un-pruned ~145k-partition v8 plan (interval_filter=None)."
   },
   "cluster": {
-    "type": "Dataproc cluster (JupyterLab Spark for AoU), Software=Hail (Spark 3.5.0 runtime / hail 0.2.135)",
+    "state": "LIVE (billing while Idle between cohorts)",
+    "started_from": "...20260605 (preserves Gate-C config)",
+    "type": "Dataproc, Software=Hail (Spark 3.5.0 / hail 0.2.135)",
     "master": "n2-standard-16, 500 GB",
-    "workers": "24 x n2-standard-16, non-preemptible (0 Spot)",
-    "total_vcpu": 400,
+    "workers": "~24 x n2-standard-16, non-preemptible (~400 vCPU)",
     "region": "us-central1",
-    "no_spark_config_in_ui": true,
-    "executor_lever": "PYSPARK_SUBMIT_ARGS cores=1/5g baked into Cell 1a (do NOT raise)",
-    "quota_headroom": "N2 CPUs quota = 5,000 vCPU; 400 used; no clamp risk"
+    "driver_jvm_pid": 5932,
+    "executor_lever": "PYSPARK_SUBMIT_ARGS cores=1/5g (do NOT raise)",
+    "do_not": "Do NOT fire/kill/reconnect/touch. Carter holds all triggers. Do NOT reconnect to any older torn-down cluster."
   },
-  "live_session_gotchas": [
-    {
-      "id": "WORKSPACE_BUCKET-template-pollution",
-      "severity": "HIGH (operationally resolved; durable fix PENDING)",
-      "what": "The Spark_20260604 saved cluster config injected a stale placeholder gs://cloned-mybucket-wb-perky-corn-6639 (404, never existed) into the terminal env. The Jupyter kernel had WORKSPACE_BUCKET UNSET (None). Diagnosed Row-1: ONLY WORKSPACE_BUCKET polluted; project (wb-perky-corn-6639), UFID (aou-rw-476cdac2), CDR (vwb-silky-artichoke-2408.C2024Q3R8 = v8), and all WGS_* paths (gs://vwb-aou-datasets-controlled/v8) correct; cluster SA has full read+write+delete on the REAL bucket; placeholder 404s (no shadow data).",
-      "fix_applied_operationally": "Manual Cell 1a guard `os.environ['WORKSPACE_BUCKET']='gs://rw-migration-aou-rw-476cdac2'` (fires on None or placeholder) + terminal `export WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2`. Verified: Cell 1a printed `[bucket-guard] overriding None -> gs://rw-migration-aou-rw-476cdac2`. Resolution is call-time (aou_ld_panel.py:1436/1257 os.environ.get) and driver-only (executors receive fully-resolved gs:// paths), so the driver override covers all checkpoint writes.",
-      "CRITICAL_for_refire": "This guard is a MANUAL live-notebook edit, NOT in the repo. If the kernel/notebook is lost and AOU-1 must be re-run from a fresh clone, RE-APPLY the override (set WORKSPACE_BUCKET to gs://rw-migration-aou-rw-476cdac2) BEFORE Run All, or it writes to a 404 placeholder.",
-      "durable_followup": "Bake the guard into repo Cell 1a via /gsd-quick + regression note. See [[feedback_aou_cluster_template_bucket_pollution]]."
-    },
-    {
-      "id": "nbformat-filter-redirties-notebooks",
-      "severity": "MED (operationally resolved; durable doc PENDING)",
-      "what": "A clean/smudge filter (source of the MissingIDFieldWarning spam — adds missing cell `id` fields) re-dirties the 3 AOU notebooks on every git op, so `git checkout -- <files>` can never produce a clean tree. The cluster's pre-existing clone was on main @ 50f071c with those 3 notebooks dirty; checkout to m3-W2-aou-deltas kept aborting.",
-      "fix_applied_operationally": "`git checkout -f m3-W2-aou-deltas` (discards working-tree churn AND switches atomically, no window for the filter to re-dirty) -> landed 997461b. Diffs were pre-confirmed non-source (pure output/metadata churn). Untracked files preserved.",
-      "durable_followup": "cat .gitattributes / .git/hooks to document the filter; note checkout -f as the standard fix for fresh AoU clones."
-    }
-  ],
-  "refire_protocol_if_job_lost": [
-    "If browser dropped AND kernel PID gone but YARN app still RUNNING: job may continue server-side but the notebook lost its cell outputs. Check the bucket for written MTs; re-run the validation cells (3.5/4.5/5.5/6/7) in a FRESH kernel AFTER re-applying the Cell 1a bucket-guard.",
-    "If the whole job must be re-fired from scratch: recreate cluster (24x n2-standard-16, non-preemptible, Software=Hail, n2-standard-16/500GB master), `git checkout -f m3-W2-aou-deltas` + `git pull --ff-only` (HEAD >= 997461b), kill orphan ipykernel/java, terminal `export WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2`, hygiene `gsutil -m rm -r ${WORKSPACE_BUCKET}/ld/intermediate/mt_*_chr22*.mt` (leave _forensics/), open production AOU-1_template.ipynb, ADD the Cell 1a bucket-guard, run Cell 1a alone to confirm the override print, then Run All."
-  ],
-  "pass_gate": "3 MTs (mt_afr_qc, mt_afr_pca_selfid_qc, mt_eur_qc) with _SUCCESS + genome-wide variant counts (MILLIONS, not the chr22 283K) + non-zero samples (AFR ~74K, EUR ~221K); du-floor cells report real GB at entries/rows/parts/; _assert_checkpoint_nonempty silent; log shows 'wrote intermediate 2: ...post_variant_qc...' (fixed split->variant_qc->sample_qc order); cohort_summary_m3.tsv 3 non-zero rows; Cell 6 AFR∩EUR=∅.",
-  "after_pass": [
-    "Mirror cohort_summary_m3.tsv to GPFS at .planning/phases/m3-aou-afr-ld-panel-build/cohort_summary_m3.tsv.",
-    "Durable follow-ups (NCSU, no cluster): (1) bake bucket-guard into repo Cell 1a; (2) document nbformat filter / .gitattributes; (3) triage the ~54 unstaged working-tree deletions.",
-    "Then AOU-2_per_region_ld.ipynb USE_DEV_SUBSET=True -> dev-10 LD + AOU-4 Checks 1-4 (all 10 dev regions large/xlarge -> Path A.3; first live test of OOM-veto + MED-4 .bm validation + HIGH-3 banding). Then USE_DEV_SUBSET=False -> 322-cell production LD.",
-    "44 per-chromosome egress requests — needs GATE 0 (AoU egress classification ruling) in hand first."
-  ],
-  "blockers": [],
-  "human_actions_pending": [
-    {"action": "On return: reconnect to the running job per next_action (do NOT restart the kernel)", "blocking": true},
-    {"action": "File/confirm the AoU egress classification ruling (GATE 0)", "blocking": false, "context": "needed before LD egress, NOT before/after this cohort rebuild"},
-    {"action": "Triage the ~54 unstaged working-tree deletions (m1/m2 envs, pathway configs, legacy docs)", "blocking": false}
-  ],
-  "key_coordinates": {
-    "workspace_id": "aou-rw-476cdac2",
-    "google_project": "wb-perky-corn-6639",
-    "WORKSPACE_BUCKET_REAL": "gs://rw-migration-aou-rw-476cdac2",
-    "WORKSPACE_BUCKET_PLACEHOLDER_404": "gs://cloned-mybucket-wb-perky-corn-6639 (template artifact — do NOT use)",
-    "WGS_path": "gs://vwb-aou-datasets-controlled/v8/wgs/short_read/snpindel/acaf_threshold/multiMT/hail.mt",
-    "CDR": "vwb-silky-artichoke-2408.C2024Q3R8 (cdrv8)",
-    "rw2_no_persistent_disks": true,
-    "ld_bucket_contents": "gs://rw-migration-aou-rw-476cdac2/ld/ has _forensics/ (Track 1 credit evidence — DO NOT touch), _probe_synthetic.mt/ (Gate A leftover, harmless), intermediate/ (chr22 hygiene done), and the 3 mt_*_qc.mt being overwritten genome-wide by this run"
+  "coordinates": {
+    "workspace": "aou-rw-476cdac2",
+    "project": "wb-perky-corn-6639",
+    "workspace_bucket": "gs://rw-migration-aou-rw-476cdac2",
+    "wgs_controlled": "gs://vwb-aou-datasets-controlled (requester-pays)",
+    "cdr": "C2024Q3R8 (v8)",
+    "env_guards_baked": "3 guards in AOU-1_template.ipynb (commit 29d0a1f): requester-pays CUSTOM + WORKSPACE_BUCKET/WGS hard-override + RUN PROTOCOL banner.",
+    "open_gate": "GATE 0 egress classification ruling still open — required before LD egress, not this cohort build."
   },
-  "watch_points": [
-    "First full-scale run of the fixed pipeline (ordering/du-floor/driver-collect/empty-MT guards all in, proven on chr22). Expect success; watch closely.",
-    "EUR final-phase collectDArray gather (221K samples x more genome-wide partitions) is driver-bound -> may take minutes; jstack-CPU discriminator before any kill (cpu= advancing on a worker = slow, not wedged).",
-    "Websocket-drop orphan pattern: on reconnect, ps-confirm + reattach; never reflexive kernel restart ([[feedback_aou_websocket_drop_zombie_pattern]]).",
-    "max workers cuts wall-time not cluster-hours; I/O-bound WGS read may saturate GCS bandwidth."
-  ],
-  "uncommitted_files": []
+  "verification_discipline": [
+    "Counts not markers: verify count_cols + count_rows, never trust _SUCCESS (W1 catastrophe). [[feedback_aou_success_marker_not_evidence_of_data]]",
+    "Liveness arbiter = GCS object listing, NOT jstack/PID/CPU — inter-chrom quiescent gaps mimic a wedge. [[feedback_aou_fanout_gcs_listing_arbiter]]",
+    "Verify the path-builder, not just the count — contamination would pass the count sanity check (the AFR-sens isolation check)."
+  ]
 }
