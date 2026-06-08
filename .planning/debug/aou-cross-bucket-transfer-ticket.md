@@ -1,8 +1,11 @@
 # AoU Support Ticket — cross-perimeter file transfer (READY TO SEND)
 
-**Status:** prepared 2026-06-08. Send when back in a fresh session. This is the
-ONLY remaining blocker for the AFR-sens sensitivity cohort (D-M3-07). The
-critical path (EUR + LD panel) does NOT depend on it.
+**Status:** ✅ SENT 2026-06-08 via the AoU help desk (confirmation: "Your request
+was sent. An agent will get back to you soon. You'll receive updates by email").
+**Awaiting AoU reply.** This was the ONLY remaining blocker for the AFR-sens
+sensitivity cohort (D-M3-07). The critical path (EUR + LD panel) does NOT depend
+on it. Fresh-session action = check email / AoU help center for the reply, then
+execute the re-fire below.
 
 ## Why this ticket exists (one-line)
 
