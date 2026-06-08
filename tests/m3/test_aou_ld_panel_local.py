@@ -219,6 +219,63 @@ def test_qc_checkpoint_uri_distinct_paths_regression():
     )
 
 
+# ----- AFR sensitivity self-report sourcing tests
+# ----- (m3-W2-afr-sensitivity-selfid, 2026-06-08) -----
+#
+# The sensitivity=True (D-M3-07) AFR cohort must be a STRICT non-empty SUBSET of
+# the genetic-ancestry-only primary: genetic-ancestry AFR ∩ self-reports
+# "Black or African American". Surfaced 2026-06-08 as a silent no-op — the
+# self_report column was NEVER sourced onto the MT (referenced only at the
+# filter), and the filter sat behind `and "self_report" in mt.col` which turned
+# the missing column into a silent skip. sensitivity=True therefore yielded the
+# IDENTICAL predicate as sensitivity=False (AFR-sens == AFR-primary,
+# membership-identical). The fix sources self_report through the EXISTING
+# _resolve_aux_file + import_table + annotate_cols machinery (mirroring the
+# MANDATORY ancestry pattern) and hard-fails when it cannot be sourced.
+# See .planning/debug/m3-W2-afr-sensitivity-selfid-noop.md.
+
+
+def test_selfreport_filter_version_token_in_provenance():
+    """Provenance must carry the self_report sidecar path + a sensitivity-filter
+    version token so any future change to the sensitivity-restriction semantics
+    auto-invalidates intermediates (belt-and-suspenders atop the explicit purge).
+
+    RED pre-fix: _collect_provenance has no self_report_path / sens_filter_version
+    keys at all. GREEN: both present, and the resolved sidecar path is recorded
+    when sensitivity=True."""
+    from aou_ld_panel import _collect_provenance
+    prov = _collect_provenance(
+        ancestry="afr",
+        sensitivity=True,
+        source_mt_path="gs://src/path.mt",
+        interval_filter=None,
+        self_report_path="gs://aux/self_report/self_report.tsv",
+    )
+    assert prov.get("self_report_path") == "gs://aux/self_report/self_report.tsv", (
+        "sensitivity provenance must record the resolved self_report sidecar path"
+    )
+    assert "sens_filter_version" in prov, (
+        "provenance must carry a sensitivity-filter version token so a change to "
+        "the self-report restriction auto-invalidates intermediates"
+    )
+
+
+def test_selfreport_filter_version_token_independent_of_sensitivity_false():
+    """A sensitivity=False provenance must NOT record a self_report_path (the
+    primary cohort never sources self-report). Guards the scoping contract: the
+    fix must not perturb the sensitivity=False path that EUR builds on."""
+    from aou_ld_panel import _collect_provenance
+    prov = _collect_provenance(
+        ancestry="afr",
+        sensitivity=False,
+        source_mt_path="gs://src/path.mt",
+    )
+    # No self_report sidecar for the primary; key may be absent or None.
+    assert not prov.get("self_report_path"), (
+        "sensitivity=False provenance must not record a self_report sidecar path"
+    )
+
+
 # ----- _normalize_bucket + prefixed-bucket contract tests
 # ----- (m3-W1-bucket-prefix-defensive, 2026-05-14 regression guards) -----
 
@@ -985,6 +1042,95 @@ def test_validate_checkpoint_populated_rejects_empty_real_path_mt(tmp_path):
     assert _validate_checkpoint_populated(f"file://{mt_dir}") is False, (
         "footer-only entries/rows/parts/ must validate False — catastrophe "
         "still caught at the real path"
+    )
+
+
+# ----- AFR sensitivity self-report sourcing — live-Hail dynamic tests
+# ----- (m3-W2-afr-sensitivity-selfid, 2026-06-08) -----
+
+
+def _build_selfreport_sidecar(path: Path, mt, self_report_value_fn) -> None:
+    """Write a research_id -> self_report TSV sidecar covering every sample of
+    `mt`. Mirrors the AoU CDR person-table extraction the runbook produces.
+
+    self_report_value_fn(i, sample_id) -> the self_report string for sample i.
+    Columns: research_id<TAB>self_report (matches the import_table(key=...) the
+    resolver consumes; the col key on the synthetic MT is 's')."""
+    ids = mt.s.collect()
+    lines = ["research_id\tself_report"]
+    for i, sid in enumerate(ids):
+        lines.append(f"{sid}\t{self_report_value_fn(i, sid)}")
+    path.write_text("\n".join(lines) + "\n")
+
+
+def test_sensitivity_true_yields_strict_nonempty_subset(
+    synthetic_mt_path: Path, synthetic_bucket: str, tmp_path
+):
+    """T1 (first test to ever exercise the TRUE sensitivity branch).
+
+    With a self_report sidecar mixing "Black or African American" and another
+    race value across the AFR samples, sensitivity=True must:
+      * apply the restriction (N_sens == count of Black/AA in-scope), AND
+      * be a STRICT non-empty subset (0 < N_sens < N_primary).
+    Pre-fix this fails: the filter is never applied (self_report never sourced;
+    silent skip) so N_sens == N_primary (the membership-identical defect)."""
+    hl = _require_hail()
+    from aou_ld_panel import load_qc_cohort
+
+    bucket = synthetic_bucket.removeprefix("file://")
+
+    # Primary (sensitivity=False) membership — the superset.
+    mt_primary = load_qc_cohort(
+        mt_path=str(synthetic_mt_path), ancestry="afr",
+        sensitivity=False, skip_checkpoint=True,
+    )
+    n_primary = mt_primary.count_cols()
+    assert n_primary > 1, "fixture must have >1 AFR sample for a meaningful subset"
+
+    # Build a sidecar: roughly half the AFR samples self-report Black/AA, the
+    # rest "White" (an out-of-restriction value). Deterministic by index parity.
+    sidecar = tmp_path / "self_report.tsv"
+    _build_selfreport_sidecar(
+        sidecar, hl.read_matrix_table(str(synthetic_mt_path)),
+        lambda i, sid: "Black or African American" if (i % 2 == 0) else "White",
+    )
+
+    mt_sens = load_qc_cohort(
+        mt_path=str(synthetic_mt_path), ancestry="afr",
+        sensitivity=True, skip_checkpoint=True,
+        self_report_table_path=str(sidecar),
+    )
+    n_sens = mt_sens.count_cols()
+
+    assert n_sens > 0, "sensitivity cohort must be non-empty (subset, not collapse)"
+    assert n_sens < n_primary, (
+        f"sensitivity=True must be a STRICT subset of primary "
+        f"(got n_sens={n_sens} == n_primary={n_primary} — the silent-no-op defect)"
+    )
+
+
+def test_sensitivity_true_raises_when_self_report_unresolvable(
+    synthetic_mt_path: Path, tmp_path
+):
+    """T2: sensitivity=True with NO self_report column and an unresolvable
+    sidecar must HARD-FAIL (raise), not silently skip. Pre-fix the missing
+    column fell through `and "self_report" in mt.col` to a no-op cohort."""
+    _require_hail()
+    from aou_ld_panel import load_qc_cohort
+
+    missing_sidecar = tmp_path / "does_not_exist_self_report.tsv"
+    assert not missing_sidecar.exists()
+
+    with pytest.raises(Exception) as exc:
+        load_qc_cohort(
+            mt_path=str(synthetic_mt_path), ancestry="afr",
+            sensitivity=True, skip_checkpoint=True,
+            self_report_table_path=str(missing_sidecar),
+        )
+    # Must be a loud failure tied to self_report sourcing, not a silent return.
+    assert "self_report" in str(exc.value).lower() or "self report" in str(exc.value).lower(), (
+        f"sensitivity=True must hard-fail on unresolvable self_report sidecar; "
+        f"got: {exc.value!r}"
     )
 
 
@@ -2549,4 +2695,48 @@ def test_genome_wide_branch_gate_is_static_in_source():
     assert "if _skip_final_write:\n        return mt" in src, (
         "the per-interval body must early-return after post_variant_qc when "
         "_skip_final_write is set (so sample QC stays union-level)"
+    )
+
+
+# ----- m3-W2-afr-sensitivity-selfid static-source guards (no Hail) -----
+#
+# These run on the GPFS dev host (no Hail) and give the RED->GREEN signal for
+# the silent-no-op fix without a cluster. They lock the two structural
+# invariants the live-Hail T1/T2 tests below exercise dynamically.
+
+
+def test_sensitivity_silent_skip_escape_is_deleted():
+    """RED pre-fix / GREEN post-fix: the silent-skip escape
+    `if sensitivity and "self_report" in mt.col:` MUST be deleted. That guard
+    converted the never-sourced self_report column into a no-op, making
+    sensitivity=True == sensitivity=False (the 2026-06-08 AFR-sens==AFR-primary
+    membership-identical defect). It violated the codebase's own ancestry-is-
+    MANDATORY discipline (refuse to guess; hard-fail loudly)."""
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    assert 'if sensitivity and "self_report" in mt.col:' not in src, (
+        "the silent-skip escape must be deleted — a missing self_report column "
+        "under sensitivity=True must HARD-FAIL, not silently skip the filter"
+    )
+
+
+def test_sensitivity_sources_self_report_via_resolve_aux_file():
+    """RED pre-fix / GREEN post-fix: self_report must be SOURCED through the
+    existing _resolve_aux_file machinery (mirroring the MANDATORY ancestry
+    pattern with on_ambiguous='raise'), not merely referenced at the filter.
+    Pre-fix self_report appeared at exactly two lines (the filter guard + the
+    filter) and was NEVER import_table'd / annotate_cols'd."""
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    # The resolver must be invoked for the self_report subdir/suffix.
+    assert "SELF_REPORT_SUBDIR" in src and "SELF_REPORT_SUFFIX" in src, (
+        "self_report must be resolved via _resolve_aux_file with stable "
+        "subdir/suffix constants (discover-by-suffix, mirror ancestry_preds.tsv)"
+    )
+    # The MANDATORY discipline: hard-fail (on_ambiguous='raise') like ancestry.
+    assert 'on_ambiguous="raise"' in src, (
+        "self_report sourcing must use on_ambiguous='raise' — MANDATORY, "
+        "refuse to guess (mirror the ancestry table)"
+    )
+    # The filter semantics (person.race source value) must be preserved.
+    assert '.contains("Black or African American")' in src, (
+        "the self-report restriction string-match semantics must be preserved"
     )
