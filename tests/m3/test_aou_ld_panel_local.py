@@ -2736,7 +2736,14 @@ def test_sensitivity_sources_self_report_via_resolve_aux_file():
         "self_report sourcing must use on_ambiguous='raise' — MANDATORY, "
         "refuse to guess (mirror the ancestry table)"
     )
-    # The filter semantics (person.race source value) must be preserved.
-    assert '.contains("Black or African American")' in src, (
-        "the self-report restriction string-match semantics must be preserved"
+    # The filter semantics (person.race source value) must be preserved: a
+    # .contains() match against the "Black or African American" restriction
+    # string (carried by the SELF_REPORT_AFR_MATCH constant).
+    assert '"Black or African American"' in src, (
+        "the self-report restriction string ('Black or African American') "
+        "must be preserved (person.race source value)"
+    )
+    assert ".contains(" in src and "SELF_REPORT_AFR_MATCH" in src, (
+        "the restriction must be applied via a .contains() string-match against "
+        "the SELF_REPORT_AFR_MATCH constant"
     )

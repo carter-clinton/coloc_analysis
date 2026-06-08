@@ -101,6 +101,31 @@ AUX_BASE = f"gs://fc-aou-datasets-controlled/{CDR_VERSION}/wgs/short_read/snpind
 RELATED_SAMPLES_PATH = f"{AUX_BASE}/relatedness/relatedness_flagged_samples.tsv"
 ANCESTRY_PREDS_PATH = f"{AUX_BASE}/ancestry/ancestry_preds.tsv"  # VERIFIED 2026-05-01 via AoU Workbench v8 AUX path check (Run 2)
 
+# AFR sensitivity (D-M3-07) self-reported-race sidecar. UNLIKE ancestry_preds /
+# relatedness_flagged_samples (AoU-shipped genomic aux files under aux/), AoU
+# self-reported race lives in the CDR `person` table and is NOT shipped as an
+# aux TSV. The runbook extracts it via BigQuery (person.race source value ->
+# research_id, self_report) and stages it under aux/self_report/ so the SAME
+# _resolve_aux_file discover-by-suffix machinery (mirroring ancestry_preds.tsv)
+# resolves it. The self-report restriction is MANDATORY for the sensitivity
+# cohort -> on_ambiguous="raise" + hard-fail when unresolvable (the ancestry
+# discipline), never a silent skip. See
+# .planning/debug/m3-W2-afr-sensitivity-selfid-noop.md.
+SELF_REPORT_FIELD = "self_report"
+SELF_REPORT_SUBDIR = "self_report"
+SELF_REPORT_SUFFIX = "self_report.tsv"
+SELF_REPORT_PATH = f"{AUX_BASE}/{SELF_REPORT_SUBDIR}/{SELF_REPORT_SUFFIX}"
+# person.race source value the AFR sensitivity cohort restricts to (string
+# .contains match, mirroring AoU person-table self-reported race conventions).
+SELF_REPORT_AFR_MATCH = "Black or African American"
+# Bump on ANY change to the sensitivity-restriction semantics (match string,
+# coverage policy, sourcing). Threaded into provenance so a change auto-
+# invalidates intermediates (belt-and-suspenders atop the runbook purge).
+SENS_FILTER_VERSION = "1"
+# Defense in depth: require self_report non-null for ~all in-scope samples, else
+# the sidecar is malformed / mis-keyed and the cohort would silently shrink.
+MIN_SELF_REPORT_COVERAGE = 0.95
+
 # Stable infix in every AoU controlled-tier WGS path; the aux/ directory is a
 # documented sibling of acaf_threshold/ under it (verified 2026-05-01 Run 2;
 # m3-W1-AUX-PATH-VERIFICATION.md).
@@ -505,7 +530,8 @@ def _collect_provenance(ancestry: str, sensitivity: bool,
                          source_mt_path: str,
                          interval_filter: str | None = None,
                          ancestry_preds_path: str | None = None,
-                         relateds_path: str | None = None) -> dict:
+                         relateds_path: str | None = None,
+                         self_report_path: str | None = None) -> dict:
     """Collect provenance metadata for sidecar write.
 
     Builds the JSON-serializable dict that becomes the sidecar contents.
@@ -568,6 +594,14 @@ def _collect_provenance(ancestry: str, sensitivity: bool,
         # back to the module constants for callers that don't pass overrides.
         "ancestry_preds_path": ancestry_preds_path or ANCESTRY_PREDS_PATH,
         "relateds_path": relateds_path or RELATED_SAMPLES_PATH,
+        # AFR sensitivity self-report sidecar + restriction version. Recorded
+        # ONLY for the sensitivity cohort (None on the primary, so the primary
+        # provenance is byte-stable -- the EUR/AFR-primary builds are
+        # unaffected). A change to SENS_FILTER_VERSION (or the resolved
+        # self_report_path) flips the sidecar -> auto-invalidates the
+        # sensitivity intermediates on the next fire.
+        "self_report_path": (self_report_path or SELF_REPORT_PATH) if sensitivity else None,
+        "sens_filter_version": SENS_FILTER_VERSION if sensitivity else None,
         "cdr_version": CDR_VERSION,
         "git_commit_sha": sha,
         "hail_version": hv,
@@ -1369,6 +1403,7 @@ def _hail_hadoop_lister_stat(dirpath: str) -> list[dict]:
 def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                    ancestry_table_path: str | None = None,
                    relateds_table_path: str | None = None,
+                   self_report_table_path: str | None = None,
                    workspace_bucket: str | None = None,
                    skip_checkpoint: bool = False,
                    *,
@@ -1391,6 +1426,13 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
         ancestry_table_path: Override ANCESTRY_PREDS_PATH (mostly used by
             tests; production reads from the AoU-hardcoded path).
         relateds_table_path: Override RELATED_SAMPLES_PATH (tests only).
+        self_report_table_path: Override the self-report sidecar path used ONLY
+            when sensitivity=True (tests, or an explicit staged sidecar). When
+            None, production resolves SELF_REPORT_SUFFIX under aux/self_report/
+            via _resolve_aux_file (discover-by-suffix, mirroring ancestry_preds).
+            The self-report restriction is MANDATORY for the sensitivity cohort:
+            if it cannot be sourced, load_qc_cohort RAISES (no silent skip).
+            Ignored when sensitivity=False (the primary cohort never sources it).
         workspace_bucket: Override $WORKSPACE_BUCKET; if None and not
             skip_checkpoint, reads from env.
         skip_checkpoint: Skip the gs:// checkpoint write (used by tests
@@ -1480,6 +1522,7 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
                 sensitivity=sensitivity,
                 ancestry_table_path=ancestry_table_path,
                 relateds_table_path=relateds_table_path,
+                self_report_table_path=self_report_table_path,
                 workspace_bucket=workspace_bucket,
                 skip_checkpoint=skip_checkpoint,
                 force_fresh=force_fresh,
@@ -1533,6 +1576,16 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
     rel_path = relateds_table_path or _resolve_aux_file(
         aux_base, "relatedness", "relatedness_flagged_samples.tsv",
         lister=aux_lister, on_ambiguous="fallback")
+    # AFR sensitivity self-report sidecar (D-M3-07). Resolved ONLY when
+    # sensitivity=True so the primary cohort's resolution + provenance are
+    # unchanged (EUR / AFR-primary stay byte-equivalent). MANDATORY discipline,
+    # like ancestry: on_ambiguous="raise" -> hard-fail, refuse to guess. An
+    # explicit override (tests / staged sidecar) still wins via the `or`.
+    self_report_path = None
+    if sensitivity:
+        self_report_path = self_report_table_path or _resolve_aux_file(
+            aux_base, SELF_REPORT_SUBDIR, SELF_REPORT_SUFFIX,
+            lister=aux_lister, on_ambiguous="raise")
 
     # Resilience refactor: compute intermediate-checkpoint URIs + auto-resume
     # state machine (DESIGN §3.5).
@@ -1551,7 +1604,8 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             bucket, ancestry, "post_variant_qc", sensitivity, interval_filter)
         provenance = _collect_provenance(
             ancestry, sensitivity, mt_path, interval_filter,
-            ancestry_preds_path=anc_path, relateds_path=rel_path)
+            ancestry_preds_path=anc_path, relateds_path=rel_path,
+            self_report_path=self_report_path)
 
         if not force_fresh:
             # Check deepest intermediate first (post_variant_qc) — if it's
@@ -1655,9 +1709,94 @@ def load_qc_cohort(mt_path: str, ancestry: str, sensitivity: bool = False,
             print(f"WARN: relateds table unavailable ({rel_path}): {e}; "
                   f"skipping anti_join", file=sys.stderr)
 
-        # Step 4: optional sensitivity filter
-        if sensitivity and "self_report" in mt.col:
-            mt = mt.filter_cols(mt.self_report.contains("Black or African American"))
+        # Step 4: AFR sensitivity (D-M3-07) self-report restriction.
+        #
+        # The sensitivity cohort = genetic-ancestry AFR ∩ self-reports
+        # "Black or African American" — a STRICT non-empty subset of the
+        # primary. self_report is NOT a column on the AoU WGS MT (it lives in
+        # the CDR person table, BigQuery-only); it must be SOURCED here through
+        # the same _resolve_aux_file + import_table + annotate_cols machinery as
+        # ancestry, then filtered. MANDATORY discipline (mirror ancestry): if it
+        # cannot be sourced -> RAISE. NO silent skip — the silent skip was the
+        # 2026-06-08 root cause that made AFR-sens == AFR-primary (membership-
+        # identical no-op). See
+        # .planning/debug/m3-W2-afr-sensitivity-selfid-noop.md.
+        if sensitivity:
+            if self_report_path is None:
+                # Defensive: the resolver above sets self_report_path whenever
+                # sensitivity=True. If it is None here the wiring regressed.
+                raise RuntimeError(
+                    "sensitivity=True but self_report sidecar was not resolved; "
+                    "refusing to build a cohort without the MANDATORY "
+                    "self-report restriction (would silently == the primary "
+                    "cohort). See m3-W2-afr-sensitivity-selfid-noop."
+                )
+            # Source self_report onto the cols if the MT does not already carry
+            # it (it never does in production; a test fixture may pre-annotate
+            # it as a col field, mirroring how ancestry_pred is pre-annotated on
+            # the synthetic MT). import_table HARD-FAILS loudly if the sidecar
+            # path is unresolvable — that is the intended MANDATORY behavior.
+            if SELF_REPORT_FIELD not in mt.col:
+                try:
+                    sr_ht = hl.import_table(
+                        self_report_path, key="research_id",
+                        types={"research_id": hl.tstr})
+                except Exception as e:
+                    raise RuntimeError(
+                        f"sensitivity=True self-report sidecar could not be "
+                        f"sourced ({self_report_path}): {e}. The AFR sensitivity "
+                        f"cohort REQUIRES self-reported race (D-M3-07); refusing "
+                        f"to silently fall back to the primary cohort. Stage the "
+                        f"sidecar (see runbook) and re-fire."
+                    ) from e
+                mt = mt.annotate_cols(
+                    **{SELF_REPORT_FIELD: sr_ht[mt.s][SELF_REPORT_FIELD]})
+
+            # Defense in depth (1/2): self_report must be non-null for ~all
+            # in-scope (already ancestry+relateds-filtered) samples. Low coverage
+            # => malformed / mis-keyed sidecar (e.g. research_id type/format
+            # drift) that would silently shrink the cohort. Fail loudly.
+            n_in_scope = mt.count_cols()
+            if n_in_scope == 0:
+                raise RuntimeError(
+                    "sensitivity=True: zero AFR samples in scope BEFORE the "
+                    "self-report filter — upstream ancestry/relateds filtering "
+                    "collapsed the cohort; aborting (not a self-report issue)."
+                )
+            n_covered = mt.aggregate_cols(
+                hl.agg.count_where(hl.is_defined(mt[SELF_REPORT_FIELD])))
+            coverage = n_covered / n_in_scope
+            if coverage < MIN_SELF_REPORT_COVERAGE:
+                raise RuntimeError(
+                    f"sensitivity=True self-report coverage {coverage:.4f} "
+                    f"({n_covered}/{n_in_scope}) below "
+                    f"MIN_SELF_REPORT_COVERAGE={MIN_SELF_REPORT_COVERAGE}: the "
+                    f"sidecar ({self_report_path}) is malformed or mis-keyed "
+                    f"(research_id mismatch). Refusing to build a silently-"
+                    f"truncated cohort."
+                )
+
+            # Apply the restriction (person.race source value string-match).
+            mt = mt.filter_cols(
+                mt[SELF_REPORT_FIELD].contains(SELF_REPORT_AFR_MATCH))
+
+            # Defense in depth (2/2): the result must be a PROPER non-empty
+            # SUBSET (0 < N_post < N_pre). An empty cohort (bad match string /
+            # empty sidecar) or a no-shrink (== primary, the original defect)
+            # both fail here loudly rather than shipping a degenerate cohort.
+            n_post = mt.count_cols()
+            if not (0 < n_post < n_in_scope):
+                raise RuntimeError(
+                    f"sensitivity=True self-report filter did not yield a proper "
+                    f"non-empty subset: N_pre={n_in_scope} N_post={n_post} "
+                    f"(expected 0 < N_post < N_pre). N_post==0 => bad match "
+                    f"string / empty sidecar; N_post==N_pre => the silent-no-op "
+                    f"defect (every in-scope sample matched). "
+                    f"See m3-W2-afr-sensitivity-selfid-noop."
+                )
+            print(f"[load_qc_cohort] sensitivity self-report filter applied: "
+                  f"{n_in_scope} -> {n_post} samples (match="
+                  f"{SELF_REPORT_AFR_MATCH!r}, ver={SENS_FILTER_VERSION})")
 
         # Step 5: naive_coalesce (cheap upstream coalesce; DEC-2026-05-04-01).
         # No shuffle -> reduces the ~145k-partition source toward the target
