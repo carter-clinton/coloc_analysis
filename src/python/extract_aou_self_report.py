@@ -25,11 +25,13 @@ A tab-separated file with exactly two columns and a header::
 
 * ``research_id`` -- the CDR person_id as a STRING (matches the col key ``s`` /
   ``import_table(key="research_id")`` contract the driver uses for ancestry).
-* ``self_report`` -- the person-table self-reported race SOURCE VALUE
-  (``race_source_value`` / its concept ``concept_name``), e.g.
-  ``"Black or African American"``. The driver applies a ``.contains(
-  "Black or African American")`` match (string-contains, robust to the
-  AoU "Black or African American" / multi-select concatenations).
+* ``self_report`` -- the person-table self-reported race SOURCE-VALUE CODE
+  (``race_source_value`` emitted verbatim), e.g. ``"WhatRaceEthnicity_Black"`` /
+  ``"WhatRaceEthnicity_White"``. The driver applies a ``.contains(
+  "WhatRaceEthnicity_Black")`` match against the STABLE survey-answer code --
+  NOT the human-readable display string, whose concept-name JOIN AoU names
+  "Black, African American, or African" and which silently zero-matched
+  (confirmed live on C2024Q3R9, 2026-06-08).
 
 STAGING PATH
 ------------
@@ -63,34 +65,38 @@ import os
 import sys
 
 
-# The person-table self-reported race SOURCE value the AFR sensitivity cohort
-# restricts to. Kept in lockstep with aou_ld_panel.SELF_REPORT_AFR_MATCH (the
-# driver applies the .contains() match; this script only emits the raw value).
-AFR_RACE_SOURCE_VALUE = "Black or African American"
+# The person-table self-reported race SOURCE-VALUE CODE the AFR sensitivity
+# cohort restricts to. Kept in lockstep with aou_ld_panel.SELF_REPORT_AFR_MATCH
+# (the driver applies the .contains() match; this script only emits the raw
+# value). We use the stable AoU survey answer CODE, not the human-readable
+# display string -- a live C2024Q3R9 `GROUP BY race_source_value` (2026-06-08)
+# confirmed the Black answer is coded 'WhatRaceEthnicity_Black' (99,788). The
+# display string "Black or African American" is only produced by a fragile
+# concept-name JOIN that AoU often names "Black, African American, or African"
+# instead -> the old query silently matched ZERO. See
+# .planning/debug/m3-W2-afr-sensitivity-selfid-noop.md.
+AFR_RACE_SOURCE_VALUE = "WhatRaceEthnicity_Black"
 
 
 def build_query(cdr_dataset: str) -> str:
     """CDR person-table self-reported race query.
 
-    Emits one row per person: person_id (-> research_id) + the human-readable
-    self-reported race string. We prefer the concept NAME of the race source
-    concept (``c.concept_name``) and fall back to ``race_source_value`` so the
-    string the driver ``.contains("Black or African American")`` matches is the
-    AoU display value, robust to CDR-version column drift.
-
-    NOTE: AoU CDR schemas have varied slightly across data releases. If your CDR
-    exposes the race via the OMOP ``race_concept_id`` -> ``concept`` join only,
-    keep the LEFT JOIN below; if it exposes ``race_source_value`` directly, the
-    COALESCE still resolves. Inspect ``{cdr}.person`` schema once if a column is
-    absent and adjust the SELECT accordingly.
+    Emits one row per person: person_id (-> research_id) + the AoU survey answer
+    CODE for self-reported race (``race_source_value``), e.g.
+    'WhatRaceEthnicity_Black' / 'WhatRaceEthnicity_White'. We emit the raw
+    ``race_source_value`` verbatim -- NOT the concept-name JOIN -- because the
+    code is release-stable and the driver matches it directly via
+    SELF_REPORT_AFR_MATCH. (Earlier we COALESCEd in ``concept.concept_name`` for
+    a human-readable string, but that join is fragile: AoU names the Black answer
+    concept "Black, African American, or African", which does NOT contain the
+    substring the driver matched -> silent zero-match. Confirmed live on
+    C2024Q3R9, 2026-06-08.)
     """
     return f"""
         SELECT
           CAST(p.person_id AS STRING) AS research_id,
-          COALESCE(c.concept_name, p.race_source_value) AS self_report
+          p.race_source_value AS self_report
         FROM `{cdr_dataset}.person` AS p
-        LEFT JOIN `{cdr_dataset}.concept` AS c
-          ON p.race_source_concept_id = c.concept_id
         WHERE p.person_id IS NOT NULL
     """
 

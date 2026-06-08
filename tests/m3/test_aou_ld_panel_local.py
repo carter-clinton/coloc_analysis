@@ -1068,7 +1068,7 @@ def test_sensitivity_true_yields_strict_nonempty_subset(
 ):
     """T1 (first test to ever exercise the TRUE sensitivity branch).
 
-    With a self_report sidecar mixing "Black or African American" and another
+    With a self_report sidecar mixing "WhatRaceEthnicity_Black" and another
     race value across the AFR samples, sensitivity=True must:
       * apply the restriction (N_sens == count of Black/AA in-scope), AND
       * be a STRICT non-empty subset (0 < N_sens < N_primary).
@@ -1092,7 +1092,8 @@ def test_sensitivity_true_yields_strict_nonempty_subset(
     sidecar = tmp_path / "self_report.tsv"
     _build_selfreport_sidecar(
         sidecar, hl.read_matrix_table(str(synthetic_mt_path)),
-        lambda i, sid: "Black or African American" if (i % 2 == 0) else "White",
+        lambda i, sid: "WhatRaceEthnicity_Black" if (i % 2 == 0)
+        else "WhatRaceEthnicity_White",
     )
 
     mt_sens = load_qc_cohort(
@@ -2736,12 +2737,14 @@ def test_sensitivity_sources_self_report_via_resolve_aux_file():
         "self_report sourcing must use on_ambiguous='raise' — MANDATORY, "
         "refuse to guess (mirror the ancestry table)"
     )
-    # The filter semantics (person.race source value) must be preserved: a
-    # .contains() match against the "Black or African American" restriction
-    # string (carried by the SELF_REPORT_AFR_MATCH constant).
-    assert '"Black or African American"' in src, (
-        "the self-report restriction string ('Black or African American') "
-        "must be preserved (person.race source value)"
+    # The filter semantics (person.race SOURCE-VALUE code) must be preserved: a
+    # .contains() match against the stable 'WhatRaceEthnicity_Black' survey-answer
+    # code (carried by the SELF_REPORT_AFR_MATCH constant) -- NOT the fragile
+    # human-readable display string (which the concept JOIN named differently and
+    # silently zero-matched). See m3-W2-afr-sensitivity-selfid-noop.
+    assert '"WhatRaceEthnicity_Black"' in src, (
+        "the self-report restriction must match the stable race_source_value "
+        "code 'WhatRaceEthnicity_Black' (person.race source value)"
     )
     assert ".contains(" in src and "SELF_REPORT_AFR_MATCH" in src, (
         "the restriction must be applied via a .contains() string-match against "

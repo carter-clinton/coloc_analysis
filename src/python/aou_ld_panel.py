@@ -115,13 +115,24 @@ SELF_REPORT_FIELD = "self_report"
 SELF_REPORT_SUBDIR = "self_report"
 SELF_REPORT_SUFFIX = "self_report.tsv"
 SELF_REPORT_PATH = f"{AUX_BASE}/{SELF_REPORT_SUBDIR}/{SELF_REPORT_SUFFIX}"
-# person.race source value the AFR sensitivity cohort restricts to (string
-# .contains match, mirroring AoU person-table self-reported race conventions).
-SELF_REPORT_AFR_MATCH = "Black or African American"
+# person.race SOURCE-VALUE CODE the AFR sensitivity cohort restricts to (string
+# .contains match). We match the stable AoU survey answer CODE
+# (`race_source_value`), NOT the human-readable display string: a live
+# C2024Q3R9 `GROUP BY race_source_value` (2026-06-08) showed the Black answer is
+# coded 'WhatRaceEthnicity_Black' (99,788), and the display string
+# "Black or African American" is only produced by a fragile concept-name JOIN
+# (race_source_concept_id -> concept.concept_name) that AoU often names
+# "Black, African American, or African" instead -> COALESCE falls back to the
+# code -> the old display-string match silently matched ZERO. The code is
+# release-stable and empirically confirmed; the extractor emits race_source_value
+# verbatim so producer/consumer agree. See
+# .planning/debug/m3-W2-afr-sensitivity-selfid-noop.md.
+SELF_REPORT_AFR_MATCH = "WhatRaceEthnicity_Black"
 # Bump on ANY change to the sensitivity-restriction semantics (match string,
 # coverage policy, sourcing). Threaded into provenance so a change auto-
 # invalidates intermediates (belt-and-suspenders atop the runbook purge).
-SENS_FILTER_VERSION = "1"
+# v2 (2026-06-08): match the race_source_value code, not the display string.
+SENS_FILTER_VERSION = "2"
 # Defense in depth: require self_report non-null for ~all in-scope samples, else
 # the sidecar is malformed / mis-keyed and the cohort would silently shrink.
 MIN_SELF_REPORT_COVERAGE = 0.95
