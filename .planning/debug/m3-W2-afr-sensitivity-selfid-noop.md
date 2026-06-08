@@ -156,7 +156,31 @@ Two issues surfaced during the live PRODUCE attempt:
    extractor emits race_source_value verbatim (concept JOIN dropped), T1 + static
    tests updated, SENS_FILTER_VERSION 1->2. tests/m3 102 passed/19 skipped.
 
-NEXT: re-pull on the AoU clone (origin now 06b8a97) -> re-run the extractor
-(emits WhatRaceEthnicity_Black codes) -> 4-check verify (#4 research_id==`s`
-still decisive) -> mv contaminated mt_afr_pca_selfid_* to forensics -> FRESH
-re-fire AFR-sens. EUR fireable in parallel (no CDR needed).
+## 2026-06-08 STATUS — TSV produced + validated; relay VPC-SC-blocked; ticket prepared
+
+Extractor re-run on the classic (in-perimeter) AoU side; TSV produced and
+ALL 4 CHECKS GREEN: header `research_id<TAB>self_report`; 633,548 rows; 99,788
+`WhatRaceEthnicity_Black`; research_id == MT `s` key (both str bare integer
+person_ids — `mt_afr_qc.mt.s.take(5)` = ['1000000','1000042',...] vs TSV
+['1447308',...]). Producer↔consumer lockstep confirmed end-to-end.
+
+**TSV is staged in the CLASSIC bucket** (`gs://fc-secure-f72fd8d8-90e7-469f-b53d-8cd80cf7823a/ld/aux/self_report/self_report.tsv`, 20,643,040 bytes) and must reach the **Verily bucket** (`gs://rw-migration-aou-rw-476cdac2/ld/aux/self_report/self_report.tsv`) for the cluster to read it. **EVERY self-serve transfer path is confirmed dead (VPC-SC):**
+- PET-to-PET copy -> IAM 403 (mutually walled)
+- user CLI as `cclinton@researchallofus.org` (reads BOTH buckets) -> cross-bucket `gsutil cp` VPC-SC-blocked by org policy
+- project switch to `wb-perky-corn-6639` -> same VPC-SC denial (perimeter, not quota project)
+- Cloud Console same identity -> same API -> same block
+This is the RW1.0->RW2.0 migration two-perimeter split working as designed. NOT bypassed.
+
+**NEXT (Carter, fresh session): SEND THE AOU TICKET.** Full ready-to-send text +
+VPC-SC denial IDs + both acceptable resolutions + post-resolution re-fire steps:
+`.planning/debug/aou-cross-bucket-transfer-ticket.md`. When AoU lands the TSV in
+the Verily bucket (or grants the Verily PET read on the classic object) -> mv
+contaminated `mt_afr_pca_selfid_*` to forensics -> FRESH re-fire AFR-sens
+(`self_report_table_path=<resolved>, force_fresh=True`). Arbiter: count_cols <
+73,122 + `.describe()` shows self_report.
+
+**CRITICAL PATH proceeds in parallel, NO ticket needed:** EUR (Cell 5/9) was
+FIRED and is building on the cluster (sensitivity=False, no CDR). Resume = check
+EUR via GCS `intermediate/mt_eur_post_variant_qc_chrN` listing; on landing ->
+Cell 5.5 (validate) -> 6 (disjoint AFR∩EUR) -> 7 (cohort_summary; interim
+2-cohort, backfill the sens row when the ticket clears).
