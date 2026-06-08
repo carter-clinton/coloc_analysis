@@ -129,3 +129,34 @@ CONTAMINATION ARBITER (per byte-magnitude proof): verify MEMBERSHIP, not just
 the _SUCCESS marker or the path. mt_afr_pca_selfid_qc.mt count_cols MUST be
 strictly < mt_afr_qc.mt count_cols (a few % fewer). A byte-identical or
 N-identical sens MT == still contaminated.
+
+---
+
+## 2026-06-08 FOLLOW-UP — VPC-SC perimeter + self-report match contract (commit 06b8a97)
+
+Two issues surfaced during the live PRODUCE attempt:
+
+1. **VPC-SC perimeter (infra, not code).** BigQuery CDR job-insert from the
+   migrated Verily workbench (wb-perky-corn-6639 / terra-vpc-sc-fe7a5641) is
+   blocked by an org VPC Service Controls perimeter wrapping the classic AoU CDR
+   (fc-aou-cdr-prod-ct.C2024Q3R9). Error class = "VPC Service Controls", NOT an
+   IAM Access-Denied — data + grant are fine; the request originates outside the
+   fence. RESOLUTION = run the extract from an in-perimeter sanctioned AoU env
+   (classic Jupyter), stage the TSV to the Verily bucket the PET-SA cluster
+   reads. DO NOT circumvent the perimeter.
+
+2. **Match-string contract bug (FIXED 06b8a97).** Live `GROUP BY
+   race_source_value` on C2024Q3R9: the Black answer is coded
+   `WhatRaceEthnicity_Black` (99,788). The display string "Black or African
+   American" is produced only by a fragile concept-name JOIN (AoU names that
+   concept "Black, African American, or African") -> the old
+   `.contains("Black or African American")` silently matched ZERO -> the
+   proper-subset assert would hard-fail the re-fire. FIX = match the stable
+   survey CODE in lockstep: driver SELF_REPORT_AFR_MATCH="WhatRaceEthnicity_Black",
+   extractor emits race_source_value verbatim (concept JOIN dropped), T1 + static
+   tests updated, SENS_FILTER_VERSION 1->2. tests/m3 102 passed/19 skipped.
+
+NEXT: re-pull on the AoU clone (origin now 06b8a97) -> re-run the extractor
+(emits WhatRaceEthnicity_Black codes) -> 4-check verify (#4 research_id==`s`
+still decisive) -> mv contaminated mt_afr_pca_selfid_* to forensics -> FRESH
+re-fire AFR-sens. EUR fireable in parallel (no CDR needed).
