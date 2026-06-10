@@ -1,19 +1,19 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-10T02:10:00.000Z",
+  "timestamp": "2026-06-10T03:30:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
   "plan": 3,
   "task": null,
   "total_tasks": null,
-  "status": "genome_wide_build_2of3_verified_interim_summary_banked_afrsens_deferred",
-  "headline": "GENOME-WIDE COHORT BUILD 2/3 DONE + VERIFIED. AFR-primary (73,122 x 20,767,864) and EUR (220,098 x 11,375,140) both COMPLETE + verified off the data layer (not the notebook print); disjoint (AFR n EUR = 0). INTERIM 2-cohort cohort_summary_m3.tsv banked to the phase dir on GPFS + a .NOTES.md provenance sidecar. AFR-sens (selfid) row DEFERRED: its v1 MT is contaminated (silent no-op) and the clean re-fire needs a self-report sidecar that is VPC-SC-stranded in the classic bucket. Strategy shifted to regenerating the sidecar NATIVELY in Verily against the in-perimeter v8 CDR (sidesteps the cross-perimeter transfer + fixes a v8/v9 version mismatch). Claude monitors + gates only; Carter holds every fire/kill/$ trigger. Cluster LIVE + billing while Idle.",
-  "head_commit": "pending-interim-checkpoint-commit",
+  "status": "afrsens_clean_refire_LIVE_contamination_fixed_at_firetime",
+  "headline": "AFR-SENS CLEAN RE-FIRE LIVE; CONTAMINATION FIXED + PROVEN at fire-time: '[load_qc_cohort] sensitivity self-report filter applied: 74576 -> 63312 samples (match=WhatRaceEthnicity_Black, ver=2)' = a genuine strict subset (0 < 63,312 < 73,122; the v1 silent-no-op was membership-identical at exactly 73,122), subset + coverage>=0.95 asserts silent. Genome-wide per-chrom fan-out building (chr1/22 at fire; multi-hour). Self-report sidecar was REGENERATED NATIVELY in Verily against the in-perimeter v8 CDR (relay obviated; AoU ticket moot). AFR-primary (73,122 x 20,767,864) + EUR (220,098 x 11,375,140) COMPLETE+VERIFIED; interim 2-row cohort_summary banked (commit 6c1c27b). Same live kernel that built AFR-primary+EUR (Cell 1b hl.init re-raise is benign). Claude monitors+gates; Carter holds every kill/$ trigger. Cluster LIVE.",
+  "head_commit": "see git log (interim banked at 6c1c27b; this handoff is a later commit)",
   "branch": "m3-W2-aou-deltas",
-  "resume_entry_point": ".planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md",
+  "resume_entry_point": ".planning/STATE.md (2026-06-10 LATE RESUME HERE block) + this file",
   "authoritative_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-PLAN.md",
-  "next_action": "v8-native self-report regen probe (sidesteps the VPC-SC cross-perimeter transfer). In a Verily notebook/terminal cell: `echo $WORKSPACE_CDR` + `$GOOGLE_PROJECT`, then a 1-row in-perimeter probe `pd.read_gbq('SELECT COUNT(*) AS n FROM `{WORKSPACE_CDR}.person`', project_id=$GOOGLE_PROJECT)`. If it returns (no VPC-SC error) -> run `python src/python/extract_aou_self_report.py --cdr-dataset $WORKSPACE_CDR --out gs://${WORKSPACE_BUCKET}/ld/aux/self_report/self_report.tsv` (native, in-perimeter, v8-matched); validate (~600-630K rows, ~99-100K WhatRaceEthnicity_Black, research_id==MT `s`). If VPC-SC blocks the probe -> fall back to the RW2.0 Dataset Builder UI export; Folder Sync of the stranded v9 TSV is last resort (additive, but confirm it cannot collide with the native ld/ dir first). Then: purge contaminated selfid intermediates+final -> FRESH AFR-sens re-fire (sensitivity=True, force_fresh=True, self_report_table_path=<resolved>; expect 0 < N_sens < 73,122) -> Cell 4.5 -> backfill cohort_summary_m3.tsv to 3 rows -> mv contaminated MT to ld/_forensics/ -> teardown (Stop NOT Delete) -> close debug session m3-W2-genome-wide-countcols-py4j-wedge to resolved/. STOP + surface only on: a traceback / a flatlined arbiter WITH the JVM live / an assertion failure. The interim 2-cohort path (AFR-primary + EUR) does NOT depend on any of this — it is already banked.",
+  "next_action": "MONITOR the live AFR-sens re-fire; do NOT restart the kernel (job runs server-side; reconnect only). Arbiter = `gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/intermediate/ | grep pca_selfid | grep -c post_variant_qc` climbing 0->22 (NO stale-leftover caveat -- namespace swept clean of 484 markers pre-fire). Liveness = GCS listing deltas, not jstack. If COMPLETE (mt_afr_pca_selfid_qc.mt/_SUCCESS fresh-today): verify FINAL via count_cols/count_rows off the MT -- EXPECT ~62,000-62,500 samples x ~20.5-20.8M variants (the 63,312 self-report set minus the genome-wide call_rate>=0.98 sample-QC drop that took primary 74,576->73,122; final < 63,312 is EXPECTED not a regression; strictly < 73,122; NOT byte-identical to primary; .describe() shows self_report). Then Cell 4.5 (du-floor, needs WORKSPACE_BUCKET override) -> backfill cohort_summary_m3.tsv to 3 rows (add AFR_pca_selfid: final NxM, kinship 0.0442, ancestry_pred, checkpoint _qc_checkpoint_uri(...,'afr',True)) -> mirror to GPFS phase dir -> commit. DEFERRED green-lights: (a) delete the ~7.8 TiB _forensics contaminated copy; (b) teardown cluster Stop-not-Delete; (c) close debug sessions m3-W2-afr-sensitivity-selfid-noop + m3-W2-genome-wide-countcols-py4j-wedge -> resolved/. Then Wave 2 (AOU-2 per-region LD), GATE 0 egress ruling still open. STOP+surface only on: traceback / arbiter flatline >20-30min WITH JVM live / assertion failure.",
   "cohorts": {
     "afr_primary": {
       "status": "COMPLETE_VERIFIED",
@@ -53,11 +53,16 @@
       "rows": "2 (AFR_pca 73122x20767864, EUR_pca 220098x11375140; kinship 0.0442; ancestry_pred; clean False checkpoint paths). 3rd row AFR_pca_selfid DEFERRED pending the clean v8-native re-fire.",
       "cluster_copy": "/home/dataproc/coloc_analysis/.planning/notebooks/cohort_summary_m3.tsv (incidental notebook CWD, 266 bytes, leave as-is; GPFS copy is canonical)."
     },
-    "afr_sens_deferred": {
-      "status": "DEFERRED_CONTAMINATED_V1_PARKED",
-      "contaminated_mt": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt (v1 silent no-op; _SUCCESS 06-08T08:19Z; UNTOUCHED in live path; awaiting green-light for ld/_forensics/ move once the clean re-fire is staged).",
-      "root_cause_doc": ".planning/debug/m3-W2-afr-sensitivity-selfid-noop.md (SENS_FILTER_VERSION=2; match stable code WhatRaceEthnicity_Black).",
-      "blocker": "Clean re-fire needs a research_id->self_report sidecar. The validated v9 sidecar is VPC-SC-stranded in the classic bucket. Preferred resolution = regenerate natively in Verily against the in-perimeter v8 CDR (see next_action). Folder Sync of the v9 TSV is the additive fallback (researchallofus.org docs: re-sync overwrites migrated files / is one-way legacy->2.0; Folder Sync moves new folders additively — confirm no collision with native ld/ before using)."
+    "afr_sens": {
+      "status": "CLEAN_REFIRE_LIVE_contamination_fixed_at_firetime",
+      "cell": 4,
+      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt",
+      "firetime_verdict": "[load_qc_cohort] sensitivity self-report filter applied: 74576 -> 63312 samples (match='WhatRaceEthnicity_Black', ver=2). Strict subset (0 < 63,312 < 73,122); the v1 silent-no-op was membership-identical at exactly 73,122. subset + coverage>=0.95 asserts silent. The fix took.",
+      "final_gate": "When the build lands, FINAL count expected ~62,000-62,500 samples x ~20.5-20.8M variants (63,312 minus the genome-wide call_rate>=0.98 sample-QC drop; final < 63,312 is EXPECTED, strictly < 73,122, NOT byte-identical to primary, .describe() shows self_report). Then Cell 4.5 du-floor PASS.",
+      "sidecar": "gs://rw-migration-aou-rw-476cdac2/ld/aux/self_report/self_report.tsv (REGENERATED NATIVELY in Verily against in-perimeter v8 CDR wb-silky-artichoke-2408.C2024Q3R8; 633,547 rows / 99,788 WhatRaceEthnicity_Black; research_id==MT s; v8/R8-matched to the cohorts. Cross-perimeter relay OBVIATED; AoU ticket MOOT.).",
+      "cell4_edit": "Cell 4 edited LIVE in the notebook (NOT in the repo template): hardcoded SELF_REPORT_TSV to the canonical bucket + force_fresh=True + an embedded spark.executor.cores=='1' guard off the live SparkContext. Re-apply from the runbook on a fresh clone.",
+      "contaminated_v1": "MOVED to gs://rw-migration-aou-rw-476cdac2/ld/_forensics/contaminated_afr_selfid_noop_20260608/ (final + 88 intermediates, ~7.8 TiB = 1.5 TiB final + 6.3 TiB intermediates). Live selfid path swept clean of 484 zero-byte markers. Deferred green-light to DELETE this ~7.8 TiB once the clean re-fire verifies (intermediates near-zero forensic value).",
+      "root_cause_doc": ".planning/debug/m3-W2-afr-sensitivity-selfid-noop.md (SENS_FILTER_VERSION=2)."
     }
   },
   "fan_out_fix": {
