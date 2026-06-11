@@ -976,6 +976,32 @@ def _final_is_trustworthy(uri: str) -> bool:
     return _validate_checkpoint_populated(uri)
 
 
+def read_final_cohort_mt(uri: str):
+    """Gate-then-read a FINAL cohort MT (mt_afr_qc.mt / mt_eur_qc.mt /
+    mt_afr_pca_selfid_qc.mt). Closes the read-side hole the m3-W2 empty-final
+    catastrophe (2026-06-10) exposed: hl.read_matrix_table trusts _SUCCESS
+    directly, so a lying _SUCCESS over 0-byte contents (driver killed mid
+    finalize-flush) would propagate silently into LD compute. Call
+    _final_is_trustworthy(uri) (CONTENTS-only) FIRST and RAISE on False, so
+    the reject runs before any Hail read.
+    See DURABLE-FIX-DESIGN-atomic-final-write.md +
+    [[feedback_aou_success_marker_not_evidence_of_data]]."""
+    if not _final_is_trustworthy(uri):
+        raise RuntimeError(
+            f"REFUSING to read untrustworthy final cohort MT: {uri}\n"
+            f"_final_is_trustworthy() returned False — _SUCCESS is present but "
+            f"the contents are empty/footer-stub (the m3-W2 empty-final "
+            f"catastrophe class: a driver killed mid finalize-flush leaves a "
+            f"lying _SUCCESS over 0-byte entries).\n"
+            f"RECOVERY: re-finalize via force_fresh=False from the still-intact "
+            f"22 per-chrom intermediates (a finalize-only re-drive, minutes not "
+            f"hours — do NOT force_fresh=True). "
+            f"See DURABLE-FIX-DESIGN-atomic-final-write.md."
+        )
+    import hail as hl
+    return hl.read_matrix_table(uri)
+
+
 def _post_split_read_partitions(available_partitions: int | None = None,
                                 *,
                                 target: int = _COHORT_TARGET_PARTITIONS) -> int:

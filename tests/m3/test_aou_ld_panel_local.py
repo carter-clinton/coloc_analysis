@@ -1128,6 +1128,40 @@ def test_final_is_trustworthy_rejects_stale_marker_over_empty(tmp_path):
 # (aou_ld_panel.py, after _assert_checkpoint_nonempty) is correct by inspection.
 
 
+# --- Phase 2 (read-side wiring): read_final_cohort_mt gate-then-read ----------
+
+def test_read_final_cohort_mt_raises_on_empty_success_only(tmp_path):
+    """The 2026-06-10 empty-final catastrophe signature (_SUCCESS over an empty
+    entries dir, NO _VALIDATED) must be REJECTED loudly BEFORE any Hail read.
+    The gate-and-raise runs before `import hail`, so the reject path is fully
+    exercised without a live Hail. The error must name the uri (so the operator
+    knows WHICH final) and the recovery action (force_fresh=False finalize-only
+    re-drive)."""
+    from aou_ld_panel import read_final_cohort_mt
+    mt_dir = tmp_path / "mt_afr_pca_selfid_qc.mt"
+    _make_stub_mt(mt_dir, with_entries_dir=True)  # _final_is_trustworthy -> False
+    with pytest.raises(RuntimeError) as excinfo:
+        read_final_cohort_mt(f"file://{mt_dir}")
+    assert str(mt_dir) in str(excinfo.value), "error must name the rejected uri"
+    assert "force_fresh=False" in str(excinfo.value), (
+        "error must name the recovery action (finalize-only re-drive, not a "
+        "force_fresh=True 15h re-build from RAW)"
+    )
+
+
+def test_read_final_cohort_mt_gate_passes_on_populated(tmp_path):
+    """A populated final passes the gate, so read_final_cohort_mt would proceed
+    to hl.read_matrix_table — proving the reject path does NOT fire on a good
+    final."""
+    from aou_ld_panel import read_final_cohort_mt, _final_is_trustworthy  # noqa: F401
+    mt_dir = tmp_path / "mt_eur_qc.mt"
+    _make_populated_mt(mt_dir)
+    # read_final_cohort_mt is NOT called here — the populated branch hits
+    # hl.read_matrix_table which is unavailable locally; the gate-True assertion
+    # proves the reject path does not fire on a good final.
+    assert _final_is_trustworthy(f"file://{mt_dir}") is True
+
+
 # ----- AFR sensitivity self-report sourcing — live-Hail dynamic tests
 # ----- (m3-W2-afr-sensitivity-selfid, 2026-06-08) -----
 

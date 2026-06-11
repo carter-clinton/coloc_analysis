@@ -1,6 +1,6 @@
 # Durable-fix design — atomic final-write contract for `_apply_sample_qc_and_finalize`
 
-**Status:** ⚙️ **PHASE 1 LANDED 2026-06-11** (producer stamp + helpers + contents-only gate + tests). **PHASE 2 PENDING** (consumer wiring + chr22 smoke). Originally drafted 2026-06-10 as design-only; implemented after the cohort was banked.
+**Status:** ⚙️ **PHASE 1 LANDED 2026-06-11** (producer stamp + helpers + contents-only gate + tests). **PHASE 2 item 1 LANDED 2026-06-11** (read-side wiring: `read_final_cohort_mt` gate wired into AOU-2 cell 4). **PHASE 2 item 2 PENDING** (chr22 smoke — needs the cluster); **item 3 deferred** (the `_qc_checkpoint_uri` `file://` footgun, latent/inert in production). Originally drafted 2026-06-10 as design-only; implemented after the cohort was banked.
 
 ## ✅ Implementation status (2026-06-11)
 
@@ -12,8 +12,8 @@
 **Review correction (adversarial review, 2026-06-11):** the originally-designed Option-2 gate `_has_marker(_VALIDATED) OR _validate_checkpoint_populated` was **REJECTED** — a stale `_VALIDATED` surviving a killed `mt.checkpoint(overwrite=True)` re-fire could vouch for re-emptied contents (the exact re-fire failure this project hit). **The landed gate is CONTENTS-ONLY** (`_final_is_trustworthy = _validate_checkpoint_populated`); the marker is producer-side documentation, never a trust fast-path. The RED-2 snippet below shows the rejected OR form — ignore it; the code is the source of truth.
 
 **PHASE 2 — REMAINING (needs the cluster; Carter):**
-1. **Wire the gate into consumers** — the protective value is unrealized until the **AOU-2 / AOU-4 notebook readers** call `_final_is_trustworthy(final_uri)` and **raise on False** before `hl.read_matrix_table`. Until then the producer stamps a marker nobody reads (the read-side hole the catastrophe exposed is reduced-but-not-closed). This is the load-bearing remaining step.
-2. **chr22 smoke** — verify the producer actually writes `_VALIDATED` on a real `gs://` finalize (not unit-testable locally — see #3).
+1. **Wire the gate into consumers** — ✅ **DONE 2026-06-11** (NCSU-side, TDD, `tests/m3` GREEN). The consumer reader is `read_final_cohort_mt(uri)` in `src/python/aou_ld_panel.py` (immediately after `_final_is_trustworthy`): it calls `_final_is_trustworthy(uri)` (CONTENTS-only) and **raises a loud, actionable `RuntimeError` on False — naming the uri + the `force_fresh=False` finalize-only recovery — BEFORE any `import hail` / `hl.read_matrix_table`**, so the reject path is exercised without a live Hail. Wired into **AOU-2 cell 4** for both `mt_afr_qc.mt` and `mt_eur_qc.mt` (cell 3 import adds `read_final_cohort_mt`). **AOU-4 reads only AOU-2 `.rds` products** (not the final MTs directly), so AOU-2 cell 4 was the **only direct final-MT reader** — the read-side hole the empty-final catastrophe exposed is now closed. Two RED→GREEN tests guard it (`test_read_final_cohort_mt_raises_on_empty_success_only`, `test_read_final_cohort_mt_gate_passes_on_populated`). The producer still stamps `_VALIDATED` (Phase 1) but the gate is contents-only — the marker remains documentation, never a trust fast-path.
+2. **chr22 smoke** — ⏳ **PENDING** (needs the cluster). Verify the producer actually writes `_VALIDATED` on a real `gs://` finalize (not unit-testable locally — see #3).
 3. **`_qc_checkpoint_uri` `file://` footgun (Finding 4, latent):** `_normalize_bucket` strips only `gs://` and `_qc_checkpoint_uri` force-prepends `gs://`, so a `file://` bucket yields `gs://file://…`. Inert in production (always `gs://`) but blocks local finalize integration testing. Fix = make the URI builder scheme-aware. Low priority.
 
 ---
