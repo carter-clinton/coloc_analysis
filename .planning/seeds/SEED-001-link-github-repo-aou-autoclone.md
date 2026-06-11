@@ -3,7 +3,7 @@ id: SEED-001
 status: dormant
 planted: 2026-06-07
 planted_during: v3.1.2 / m3-W2 genome-wide AoU AFR LD cohort build
-trigger_when: After the genome-wide AFR+EUR cohort build fully validates AND m3-W2-aou-deltas is merged to main
+trigger_when: After the genome-wide build validates (DONE 2026-06-11) AND the GitHub default branch is flipped to m3-W2-aou-deltas (NOT a merge — origin/main is a stale, unrelated parallel history)
 scope: Small
 ---
 
@@ -15,14 +15,14 @@ RW 2.0 environments are **ephemeral — no persistent disk** (per `[[feedback_ao
 
 ## When to Surface
 
-**Trigger:** After the genome-wide AFR+EUR cohort build fully validates AND `m3-W2-aou-deltas` is merged to `main`.
+**Trigger:** After the genome-wide build validates (✅ DONE 2026-06-11) AND the GitHub **default branch is flipped to `m3-W2-aou-deltas`**.
 
-Surface during the post-AFR / post-genome-wide-build wrap-up, or at `/gsd-new-milestone` when the scope touches AoU environment setup / reproducibility / onboarding. Do NOT act before BOTH conditions hold:
+Surface during the post-genome-wide-build wrap-up, or at `/gsd-new-milestone` when the scope touches AoU environment setup / reproducibility / onboarding. Do NOT act before BOTH conditions hold:
 
-1. **Genome-wide build validated** — Cell 3/4/5 + validation cells 3.5/4.5/5.5 all PASS. Don't poke workspace config mid-production-run.
-2. **`m3-W2-aou-deltas` merged to `main`** — the auto-clone pulls the **default branch (`main`)**, which currently lacks the fan-out fix (`ab0853a`) and the baked-in env guards (`fdf257c`, only on `m3-W2-aou-deltas`). Until merged, auto-clone lands `main` and STILL requires a manual checkout+pull — defeating the purpose.
+1. **Genome-wide build validated** — ✅ DONE (all 3 cohorts banked 2026-06-11).
+2. **GitHub default branch = `m3-W2-aou-deltas`** — the auto-clone pulls the repo's **default branch**. `origin/main` is a STALE, UNRELATED parallel history (re-init'd root; no merge base; frozen 2026-05-18; lacks the fan-out fix `ab0853a` + baked env guards), so auto-cloning today's default (`main`) lands broken code. **Resolution chosen 2026-06-11 = flip the default branch to `m3-W2-aou-deltas`** (GitHub repo Settings → Branches; non-destructive) — a merge is impossible across the unrelated histories. ⏳ Pending: Carter's one-time settings flip.
 
-**Real payoff sequence:** validate build → clean PR `m3-W2-aou-deltas` → `main` (via `/gsd-pr-branch`, filtering `.planning/` commits) → THEN link the repo so a fresh app auto-clones working code at `main` directly.
+**Real payoff sequence:** validate build (done) → flip default branch to `m3-W2-aou-deltas` → THEN link the repo so a fresh app auto-clones working code directly (no manual checkout needed).
 
 ## Scope Estimate
 

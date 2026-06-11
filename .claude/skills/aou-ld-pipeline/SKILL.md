@@ -31,7 +31,7 @@ The Researcher Workbench 2.0 (Verily) migration **mirrors** the legacy RW1.0 ("c
 
 ## Branch trap — do NOT run from `main`
 
-`origin/main` lacks the fan-out fix (`ab0853a`) and the LD OOM-routing fix (`c6c32b3`) and the baked env guards. **A clone-from-`main` re-run wedges deterministically** on the first genome-wide action and/or OOMs the first dev-10 A.2 region. Until `m3-W2-aou-deltas` is merged to `main`, every re-run MUST `git checkout m3-W2-aou-deltas`. (SEED-001 auto-clone pulls the default branch → don't enable it before the merge.)
+`origin/main` is a STALE, UNRELATED parallel history (re-init'd root, **no merge base** with the working line; frozen 2026-05-18) — it lacks the fan-out fix (`ab0853a`), the LD OOM-routing fix (`c6c32b3`), and the baked env guards. **A clone-from-`main` re-run wedges deterministically** on the first genome-wide action and/or OOMs the first dev-10 A.2 region. A merge is impossible across the unrelated histories; the resolution (chosen 2026-06-11, non-destructive) is to **flip the GitHub default branch to `m3-W2-aou-deltas`** (repo Settings → Branches). Until that flip lands, every re-run MUST `git checkout m3-W2-aou-deltas`, and SEED-001 auto-clone (pulls the default branch) stays dormant.
 
 ## Fresh-clone re-run checklist (before "Run All")
 
