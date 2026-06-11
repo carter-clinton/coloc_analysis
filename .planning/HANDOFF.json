@@ -1,19 +1,19 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-11T00:00:00.000Z",
+  "timestamp": "2026-06-11T07:00:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
   "plan": 3,
   "task": null,
   "total_tasks": null,
-  "status": "gate_1_5_complete_all_3_cohorts_banked_afr_sens_recovered_and_verified",
+  "status": "gate_1_5_complete_cohorts_banked_durablefix_phase1_landed__open=GATE1_cost+durablefix_phase2",
   "headline": "GATE 1.5 COMPLETE — all 3 genome-wide AoU cohorts banked. The AFR-sens empty-final catastrophe (H1: driver killed mid-finalize-flush, NOT a logic/config bug) was RECOVERED: a finalize-only re-drive from the 22 intact intermediates was proven in a read-only _scratch dry-run (entries ~1.38 TB; cols 62,557; rows 20,817,925; self_report present), then promoted to the live URI mt_afr_pca_selfid_qc.mt via `gsutil -m rsync -r -d` and re-verified at the data layer (live counts identical to scratch: 62,557 x 20,817,925; du-floor 1,380.19 GB; self_report present; rsync exit 0). The empty live MT is overwritten in place with the correct, byte-and-count-verified cohort. Scratch dropped post-verification. cohort_summary_m3.tsv promoted to 3 rows; NOTES flipped to COMPLETE.",
   "head_commit": "see git log (banking edits uncommitted in working tree atop 66c1931 on m3-W2-aou-deltas)",
   "branch": "m3-W2-aou-deltas",
   "resume_entry_point": ".planning/STATE.md (2026-06-11 * RESUME HERE * block) + this file + .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md",
   "authoritative_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-PLAN.md",
-  "next_action": "Cohort axis is DONE. Remaining items are DEFERRED green-lights (each its own trigger; Carter holds all; do NOT auto-fire): (1) commit the banking with EXPLICIT paths (cohort_summary_m3.tsv, cohort_summary_m3.NOTES.md, .continue-here.md, WAVE-2-GATE-READINESS.md, DURABLE-FIX-DESIGN-atomic-final-write.md, STATE.md, HANDOFF.json) -- never `git add -A` on GPFS; (2) delete contaminated v1 at ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB reclaim); (3) teardown cluster STOP-not-DELETE; (4) close debug sessions -> resolved/. THEN Wave 2 (LD compute) per WAVE-2-GATE-READINESS.md: GATE 0 egress classification is already RESOLVED (RULED PASS 2026-04-28, .planning/amendments/aou-egress-audit-log.md -- aggregate LD matrices governed by standard AoU per-file egress review at export time; NOT a blocker, nothing to file); GATE 1 Carter-only items (CDR pin v8, cost/credit); GATE 2 dev-10 LD fire (does NOT need GATE 0); durable atomic-final-write fix via /gsd-plan-phase --gaps before GATE 3 production.",
+  "next_action": "OVERNIGHT SESSION (2026-06-11): cohort fully banked (GATE 1.5 done); durable atomic-final-write fix PHASE 1 LANDED (commit f931446, TDD GREEN tests/m3 145 passed, adversarial-reviewed + corrected to a contents-only gate). All AoU-perimeter items were NOT done (no gsutil/cluster/notebook access here + Carter's triggers). CARTER's OPEN ITEMS, priority order: (1) GATE 1 #1 cost/credit -- look up ~1,117 cluster-h -> AoU credit-$ vs balance + a cap (the only thing gating the next fire; CDR v8 already confirmed). (2) GATE 2 -- fire dev-10 LD (AOU-2, USE_DEV_SUBSET=True) + AOU-4 validation memo; cohort substrate built, egress cleared (GATE 0 = RESOLVED 2026-04-28, nothing to file). (3) Durable-fix PHASE 2 (needs cluster): wire _final_is_trustworthy(final_uri) into AOU-2/AOU-4 notebook readers (raise on False before hl.read_matrix_table) -- until then consumers read the final blind -- + chr22 smoke; see DURABLE-FIX-DESIGN-atomic-final-write.md. (4) Deferred triggers (Carter only): delete ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB; holds Track-1 credit evidence -- do NOT delete unless sure); cluster already STOPPED; debug housekeeping DONE (4 sessions -> resolved/, ticket MOOT). Do durable-fix phase 2 before GATE 3.",
   "cohorts": {
     "afr_primary": {
       "status": "COMPLETE_VERIFIED",

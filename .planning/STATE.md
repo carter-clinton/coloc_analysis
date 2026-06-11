@@ -16,7 +16,19 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/HANDOFF.json` (the primary resume source) + `.planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md`.
 
-## 2026-06-11 — GATE 1.5 COMPLETE: all 3 genome-wide cohorts banked; AFR-sens RECOVERED + VERIFIED (★ RESUME HERE ★)
+## 2026-06-11 OVERNIGHT — durable-fix PHASE 1 landed autonomously; open = GATE 1 cost + phase 2 (★ RESUME HERE ★)
+
+**Autonomous overnight session (Carter asleep; NOTHING fired in the AoU perimeter — no compute, no deletes, cluster stayed Stopped).** Primary resume = `.planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md` (full morning handoff).
+
+- **Durable atomic-final-write fix — PHASE 1 LANDED** (commit `f931446`). `_apply_sample_qc_and_finalize` now stamps `{final}/_VALIDATED` after the non-empty assert; new helpers `_has_marker` / `_write_validated_marker` / `_final_is_trustworthy` (+ `VALIDATED_MARKER`). TDD: 7 new tests; full `tests/m3` GREEN (145 passed, 35 skipped). An **adversarial review team** found + I fixed: a stale-marker false-pass → the gate is **CONTENTS-ONLY** (the `_has_marker OR …` fast-path was rejected — a stale `_VALIDATED` could vouch for re-emptied contents after a killed `overwrite=True` re-fire); a malformed hail test (removed); plus flagged the inert-gate (phase 2) + a `_qc_checkpoint_uri` `file://` footgun (inert in production).
+- **PHASE 2 PENDING (Carter, needs the cluster):** wire `_final_is_trustworthy(final_uri)` into the **AOU-2 / AOU-4 notebook readers** (raise on False) — until then consumers read the final blind — + chr22 smoke. The producer-side stamp is landed but the protective read-side is not yet wired. `DURABLE-FIX-DESIGN-atomic-final-write.md` § Implementation status.
+- **Could NOT be done autonomously (perimeter-locked + Carter's triggers):** `_forensics` delete (7.8 TiB, holds Track-1 credit evidence — vital, irreversible), GATE 2/3 LD fires (cost $, need GATE 1 cost-confirm), cell cleanup. All left for Carter.
+- **CARTER's open items, priority:** (1) GATE 1 #1 cost/credit (~1,117 cluster-h → $ vs balance + cap; #2 CDR v8 ✅) — the only thing gating the next fire; (2) GATE 2 dev-10 LD fire + AOU-4 memo; (3) durable-fix phase 2 + chr22 smoke; (4) deferred deletes/teardown triggers.
+- **GATE 0 = RESOLVED** (RULED PASS 2026-04-28; corrected earlier — not a blocker). Commits this session: `49cb50f`/`c2dfb08`/`d3ff143`/`fea82ff`/`889f692`/`f931446`, all on `m3-W2-aou-deltas`.
+
+---
+
+## 2026-06-11 — GATE 1.5 COMPLETE: all 3 genome-wide cohorts banked; AFR-sens RECOVERED + VERIFIED
 
 **The AFR-sens empty-final catastrophe (H1 — driver killed mid-finalize-flush, NOT a logic/config bug) is RECOVERED. A finalize-only re-drive from the 22 intact intermediates was proven in a read-only `_scratch` dry-run, then promoted to the live URI `mt_afr_pca_selfid_qc.mt` via `gsutil -m rsync -r -d` and re-verified at the data layer. ALL 3 cohorts are banked genome-wide; `cohort_summary_m3.tsv` is at 3 rows + NOTES flipped to COMPLETE. This closes GATE 1.5 — LD compute (Wave 2) is unblocked on the cohort axis.**
 
