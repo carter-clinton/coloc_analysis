@@ -57,8 +57,10 @@ A two-agent audit of the Wave 2 compute path found the following. **The one fire
 
 ## 3. Gate sequence (do these IN ORDER)
 
-### 🔴 GATE 0 — AoU egress classification ruling (HARD GATE, before ANY compute)
-The variant×variant LD matrices must be **classified for egress by AoU, in writing**, before any Dataproc spend (spec R1 / Q12 — "the classification ruling is the critical hard-gate row"). **Unverified whether this ruling exists yet.** Confirm it's in hand (or file the request) before firing anything. The §13/§7 framing (each LD entry computed from all n≥60k AFR / n≥130k EUR participants → clears the ≥20-person floor) is the argument, but the *ruling* is the gate.
+### ✅ GATE 0 — AoU egress classification (RESOLVED — this section's "unverified" was stale)
+**CORRECTION 2026-06-11:** GATE 0 was **RULED PASS 2026-04-28** (institutional basis) — see `.planning/amendments/aou-egress-audit-log.md` ("Egress Classification Ruling (HARD GATE) — RULED PASS 2026-04-28") + the `.eml` stub. The "unverified" claim below was written 2026-06-04 without cross-checking the amendments folder, and wrongly drove a "file it now" recommendation through 2026-06-11. The variant×variant LD matrices are aggregate statistics (each cell over all n≥60k AFR / n≥130k EUR → clears the n≥20 floor), governed by AoU's **standard per-file egress review at export time**, NOT a per-data-class ruling letter. **Nothing to file**; per-bundle egress review happens automatically at Wave 4 (append to the audit log).
+
+_Original (stale) framing:_ The variant×variant LD matrices must be classified for egress by AoU, in writing, before any Dataproc spend (spec R1 / Q12). [Claimed "unverified whether this ruling exists yet" — incorrect; it existed since 2026-04-28.] The §13/§7 framing (each LD entry computed from all n≥60k AFR / n≥130k EUR participants → clears the ≥20-person floor) is the argument.
 
 ### 🟠 GATE 1 — Pre-fire readiness (mostly NCSU-side; some need you)
 - [x] HIGH-1 OOM routing fix landed + tested (`c6c32b3`).
@@ -123,7 +125,7 @@ git log --oneline -1   # expect c6c32b3 or later (contains the HIGH-1 OOM fix)
 
 Resolved (Carter greenlight 2026-06-04, fixes in `c11949e`): HIGH-3 (accept+document), MED-4/5/6 (fixed). Still open:
 
-1. **[HARD] GATE 0 egress classification ruling** — in hand? If not, file before any spend.
+1. ~~**[HARD] GATE 0 egress classification ruling**~~ — ✅ RESOLVED (RULED PASS 2026-04-28; see §3 correction + `aou-egress-audit-log.md`). No filing needed.
 2. **Cost ceiling / credit balance** — confirm ~1,117 cluster-h fits credits + set a cap.
 3. **Cluster preset** — 256 vs 384 vCPU.
 4. **Export MAF** — keep 0.005 (rec, AFR rare-allele signal) or revert to 0.01.

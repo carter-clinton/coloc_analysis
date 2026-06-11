@@ -75,7 +75,7 @@ The Researcher Workbench 2.0 (Verily) migration **mirrors** the legacy RW1.0 ("c
 
 ## Wave 2 gate sequence
 - ✅ **GATE 1.5** — genome-wide cohort rebuild (3 MTs). DONE + verified (cohort_summary 3 rows).
-- 🔴 **GATE 0** — AoU egress classification ruling (written) for the variant×variant LD matrices. The HARD gate; longest external SLA; **NOT on the cohort path → file/confirm in parallel ASAP.**
+- ✅ **GATE 0** — AoU egress classification of the LD matrices. **RESOLVED: RULED PASS 2026-04-28** (institutional basis; `.planning/amendments/aou-egress-audit-log.md`). Aggregate stats (every cell over n≥60k AFR / n≥130k EUR → clears the n≥20 floor) → standard AoU **per-file egress review at export time**, NOT a per-data-class letter. Not a blocker; append each of the 44 export bundles to the audit log as they're reviewed at Wave 4.
 - 🟠 **GATE 1** — Carter-only: CDR pin (v8, no mid-flight v8→v9), cost/credit confirmation (~1,117 cluster-h). Code work done.
 - 🟡 **GATE 2** — dev-10 LD fire + AOU-4 validation memo. Needs GATE 1, **not** GATE 0. First live A.2/A.3 + first `.bm` write.
 - 🟢 **GATE 3** — full 322-cell production + 44 egress. Land the durable atomic-final-write fix first.

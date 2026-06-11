@@ -37,7 +37,7 @@ progress:
 4. **Close debug sessions** → `resolved/`: `m3-W2-afr-sens-empty-final-merge.md`, `m3-W2-afr-sensitivity-selfid-noop.md`, `m3-W2-genome-wide-countcols-py4j-wedge.md`.
 
 ### THEN — Wave 2 (LD compute), gated — see `.planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md`
-- 🔴 **GATE 0** (egress classification ruling) — the long pole, NOT on the cohort path; **file/confirm in parallel now** (AoU SLA). Blocks GATE 3 production egress.
+- ✅ **GATE 0** (egress classification) — **RESOLVED: RULED PASS 2026-04-28** (institutional basis; `.planning/amendments/aou-egress-audit-log.md`). Aggregate LD matrices (each cell over n≥60k/130k → clears the n≥20 floor); standard AoU **per-file egress review at export time**, not a per-data-class letter. No filing needed. (WAVE-2-PLAN §3's "unverified" note was stale — never cross-checked the amendments folder.)
 - 🟠 **GATE 1** Carter-only: CDR pin (v8), cost/credit confirmation. All NCSU code fixes already landed.
 - 🟡 **GATE 2** dev-10 LD fire + AOU-4 validation memo (does NOT need GATE 0) — unblocked once GATE 1 clears.
 - **Durable atomic-final-write fix** (design staged: `DURABLE-FIX-DESIGN-atomic-final-write.md`) via `/gsd-plan-phase --gaps` — close the H1 `_SUCCESS`-before-validate window before GATE 3 production.
