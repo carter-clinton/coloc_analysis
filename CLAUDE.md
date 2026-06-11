@@ -45,7 +45,7 @@ Architecture not yet mapped. Follow existing patterns found in the codebase.
 <!-- GSD:skills-start source:skills/ -->
 ## Project Skills
 
-No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, or `.github/skills/` with a `SKILL.md` index file.
+- **`aou-ld-pipeline`** (`.claude/skills/aou-ld-pipeline/SKILL.md`) — operating manual for the All of Us genome-wide cohort build (AOU-1) and per-region LD panel (AOU-2). Auto-surfaces on AoU pipeline / cohort / LD work. Holds the fresh-clone re-run checklist (incl. the manual notebook edits NOT in the templates), the verification invariants (`_SUCCESS` ≠ data; liveness = GCS listing not the kernel light; `force_fresh=False` on resume), the **RW2.0-is-a-mirror / VPC-SC perimeter** facts (regenerate in-perimeter rather than cross-perimeter transfer), the "do not run from `main`" branch trap, the Wave 2 gate sequence, and the catastrophe→recovery recipes. **Read it before any AoU fire.**
 <!-- GSD:skills-end -->
 
 <!-- GSD:workflow-start source:GSD defaults -->

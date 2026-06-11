@@ -1,99 +1,53 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-10T03:30:00.000Z",
+  "timestamp": "2026-06-11T00:00:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
   "plan": 3,
   "task": null,
   "total_tasks": null,
-  "status": "afrsens_clean_refire_LIVE_contamination_fixed_at_firetime",
-  "headline": "AFR-SENS CLEAN RE-FIRE LIVE; CONTAMINATION FIXED + PROVEN at fire-time: '[load_qc_cohort] sensitivity self-report filter applied: 74576 -> 63312 samples (match=WhatRaceEthnicity_Black, ver=2)' = a genuine strict subset (0 < 63,312 < 73,122; the v1 silent-no-op was membership-identical at exactly 73,122), subset + coverage>=0.95 asserts silent. Genome-wide per-chrom fan-out building (chr1/22 at fire; multi-hour). Self-report sidecar was REGENERATED NATIVELY in Verily against the in-perimeter v8 CDR (relay obviated; AoU ticket moot). AFR-primary (73,122 x 20,767,864) + EUR (220,098 x 11,375,140) COMPLETE+VERIFIED; interim 2-row cohort_summary banked (commit 6c1c27b). Same live kernel that built AFR-primary+EUR (Cell 1b hl.init re-raise is benign). Claude monitors+gates; Carter holds every kill/$ trigger. Cluster LIVE.",
-  "head_commit": "see git log (interim banked at 6c1c27b; this handoff is a later commit)",
+  "status": "gate_1_5_complete_all_3_cohorts_banked_afr_sens_recovered_and_verified",
+  "headline": "GATE 1.5 COMPLETE — all 3 genome-wide AoU cohorts banked. The AFR-sens empty-final catastrophe (H1: driver killed mid-finalize-flush, NOT a logic/config bug) was RECOVERED: a finalize-only re-drive from the 22 intact intermediates was proven in a read-only _scratch dry-run (entries ~1.38 TB; cols 62,557; rows 20,817,925; self_report present), then promoted to the live URI mt_afr_pca_selfid_qc.mt via `gsutil -m rsync -r -d` and re-verified at the data layer (live counts identical to scratch: 62,557 x 20,817,925; du-floor 1,380.19 GB; self_report present; rsync exit 0). The empty live MT is overwritten in place with the correct, byte-and-count-verified cohort. Scratch dropped post-verification. cohort_summary_m3.tsv promoted to 3 rows; NOTES flipped to COMPLETE.",
+  "head_commit": "see git log (banking edits uncommitted in working tree atop 66c1931 on m3-W2-aou-deltas)",
   "branch": "m3-W2-aou-deltas",
-  "resume_entry_point": ".planning/STATE.md (2026-06-10 LATE RESUME HERE block) + this file",
+  "resume_entry_point": ".planning/STATE.md (2026-06-11 * RESUME HERE * block) + this file + .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md",
   "authoritative_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-PLAN.md",
-  "next_action": "MONITOR the live AFR-sens re-fire; do NOT restart the kernel (job runs server-side; reconnect only). Arbiter = `gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/intermediate/ | grep pca_selfid | grep -c post_variant_qc` climbing 0->22 (NO stale-leftover caveat -- namespace swept clean of 484 markers pre-fire). Liveness = GCS listing deltas, not jstack. If COMPLETE (mt_afr_pca_selfid_qc.mt/_SUCCESS fresh-today): verify FINAL via count_cols/count_rows off the MT -- EXPECT ~62,000-62,500 samples x ~20.5-20.8M variants (the 63,312 self-report set minus the genome-wide call_rate>=0.98 sample-QC drop that took primary 74,576->73,122; final < 63,312 is EXPECTED not a regression; strictly < 73,122; NOT byte-identical to primary; .describe() shows self_report). Then Cell 4.5 (du-floor, needs WORKSPACE_BUCKET override) -> backfill cohort_summary_m3.tsv to 3 rows (add AFR_pca_selfid: final NxM, kinship 0.0442, ancestry_pred, checkpoint _qc_checkpoint_uri(...,'afr',True)) -> mirror to GPFS phase dir -> commit. DEFERRED green-lights: (a) delete the ~7.8 TiB _forensics contaminated copy; (b) teardown cluster Stop-not-Delete; (c) close debug sessions m3-W2-afr-sensitivity-selfid-noop + m3-W2-genome-wide-countcols-py4j-wedge -> resolved/. Then Wave 2 (AOU-2 per-region LD), GATE 0 egress ruling still open. STOP+surface only on: traceback / arbiter flatline >20-30min WITH JVM live / assertion failure.",
+  "next_action": "Cohort axis is DONE. Remaining items are DEFERRED green-lights (each its own trigger; Carter holds all; do NOT auto-fire): (1) commit the banking with EXPLICIT paths (cohort_summary_m3.tsv, cohort_summary_m3.NOTES.md, .continue-here.md, WAVE-2-GATE-READINESS.md, DURABLE-FIX-DESIGN-atomic-final-write.md, STATE.md, HANDOFF.json) -- never `git add -A` on GPFS; (2) delete contaminated v1 at ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB reclaim); (3) teardown cluster STOP-not-DELETE; (4) close debug sessions -> resolved/. THEN Wave 2 (LD compute) per WAVE-2-GATE-READINESS.md: GATE 0 egress ruling is the long pole and is NOT on the cohort path -- file/confirm it in parallel NOW (AoU SLA); GATE 1 Carter-only items (CDR pin v8, cost/credit); GATE 2 dev-10 LD fire (does NOT need GATE 0); durable atomic-final-write fix via /gsd-plan-phase --gaps before GATE 3 production.",
   "cohorts": {
     "afr_primary": {
       "status": "COMPLETE_VERIFIED",
       "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt",
       "samples": 73122,
-      "variants": 20767864,
-      "success_timestamp_utc": "2026-06-07T15:37:30Z",
-      "du_floor": "1603.66 GB at entries/rows/parts/ (cleared 1 GB floor ~1600x; first production-scale proof of the du-floor fix)",
-      "verification": "count_cols/count_rows read directly off the written MT (not a marker); _assert_checkpoint_nonempty silent in-run (non-empty both axes); Cell 3.5 du-floor PASS; overwrite=True clobbered the stale 06-04 stub. Sample -1.3% vs Gate-C 74,059 = genome-wide call_rate>=0.98 correctly dropping low-quality samples chr22-alone missed (filter working). 20.8M variants in range for an AFR WGS ACAF callset.",
-      "note": "Cell 3 front-end shows [ ]: + viewport stuck at chr12 = websocket-drop artifact (N/M print lost to the front-end, not the data; recovered via a read-only count cell). Do NOT re-run Cell 3."
-    },
-    "afr_sens": {
-      "status": "RUNNING",
-      "cell": 4,
-      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt",
-      "started_utc": "2026-06-07T16:19:00Z",
-      "progress_at_1932z": "~5 of 22 chroms (raw split=5/var_qc=5 minus the chr22 06-04 leftover), ~3h12m in, healthy. JVM PID 5932 alive, hail.log live 19:25 (collectDArray writing partitions), selfid final _SUCCESS still 06-04 (tail not reached), no traceback. Pace tracks AFR-primary's largest-first profile (early chroms heavy, back half accelerates). No teardown.",
-      "intermediate_isolation": "VERIFIED in code: fan-out threads sensitivity=True (aou_ld_panel.py:1480); _intermediate_checkpoint_uri inserts _pca_selfid token (:486) -> writes mt_afr_pca_selfid_post_*_chrN, isolated from primary's mt_afr_post_*_chrN. This isolation IS the contamination guard — had sensitivity not threaded, sens would be a byte-identical copy of primary and would have passed the count sanity check undetected.",
-      "arbiter": "gsutil ls .../intermediate/ | grep pca_selfid ; track mt_afr_pca_selfid_post_variant_qc_chr* -> 22, discount the chr22 06-04 leftover. Completion = mt_afr_pca_selfid_qc.mt/_SUCCESS 06-04 -> 06-07 + Cell 4.5 PASS.",
-      "cell_4_5_anchors": "samples != 73,122 (a few % drift, ~70-76K); variants ~= 20.8M but probably not byte-identical; BYTE-IDENTICAL = contamination flag -> PAUSE."
+      "variants": 20767864
     },
     "eur": {
       "status": "COMPLETE_VERIFIED",
-      "cell": 5,
       "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt",
       "samples": 220098,
-      "variants": 11375140,
-      "success_timestamp_utc": "2026-06-10T00:03:29Z",
-      "du_floor": "3433.88 GB at entries/rows/parts/ (~3.12 TiB; Cell 5.5 W1-regression guard PASS, ~3400x the 1 GB floor)",
-      "verification": "Direct count() off the written MT (220,098 x 11,375,140 — not a marker, not the notebook print which was websocket-glitched). _SUCCESS mtime 2026-06-10T00:03:29Z = today's run, not the stale Gate-C chr22 leftover (221,624 x 157,555). 11.4M variants (millions) is the decisive tell it is the genome-wide write, not the chr22 stub. Samples -0.69% vs Gate-C 221,624 = genome-wide call_rate>=0.98 working. Disjoint vs AFR confirmed (0 overlap).",
-      "note": "Kernel had recycled before validation; rehydrated setup-block only (Cells 1a/1a''/1b), then Cell 5.5 + a lazy rebind of mt_afr/mt_eur (both 'False'/clean) + Cell 6 + a 2-row interim Cell 7. Held cells (4 AFR-sens load, 4.5 contaminated validate, 5 EUR load) were NEVER executed; nothing referencing 'afr', True / selfid ran. Hold held."
-    },
-    "interim_summary": {
-      "status": "BANKED_ON_GPFS",
-      "tsv": ".planning/phases/m3-aou-afr-ld-panel-build/cohort_summary_m3.tsv",
-      "notes": ".planning/phases/m3-aou-afr-ld-panel-build/cohort_summary_m3.NOTES.md",
-      "rows": "2 (AFR_pca 73122x20767864, EUR_pca 220098x11375140; kinship 0.0442; ancestry_pred; clean False checkpoint paths). 3rd row AFR_pca_selfid DEFERRED pending the clean v8-native re-fire.",
-      "cluster_copy": "/home/dataproc/coloc_analysis/.planning/notebooks/cohort_summary_m3.tsv (incidental notebook CWD, 266 bytes, leave as-is; GPFS copy is canonical)."
+      "variants": 11375140
     },
     "afr_sens": {
-      "status": "CLEAN_REFIRE_LIVE_contamination_fixed_at_firetime",
-      "cell": 4,
+      "status": "COMPLETE_VERIFIED_RECOVERED",
       "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt",
-      "firetime_verdict": "[load_qc_cohort] sensitivity self-report filter applied: 74576 -> 63312 samples (match='WhatRaceEthnicity_Black', ver=2). Strict subset (0 < 63,312 < 73,122); the v1 silent-no-op was membership-identical at exactly 73,122. subset + coverage>=0.95 asserts silent. The fix took.",
-      "final_gate": "When the build lands, FINAL count expected ~62,000-62,500 samples x ~20.5-20.8M variants (63,312 minus the genome-wide call_rate>=0.98 sample-QC drop; final < 63,312 is EXPECTED, strictly < 73,122, NOT byte-identical to primary, .describe() shows self_report). Then Cell 4.5 du-floor PASS.",
-      "sidecar": "gs://rw-migration-aou-rw-476cdac2/ld/aux/self_report/self_report.tsv (REGENERATED NATIVELY in Verily against in-perimeter v8 CDR wb-silky-artichoke-2408.C2024Q3R8; 633,547 rows / 99,788 WhatRaceEthnicity_Black; research_id==MT s; v8/R8-matched to the cohorts. Cross-perimeter relay OBVIATED; AoU ticket MOOT.).",
-      "cell4_edit": "Cell 4 edited LIVE in the notebook (NOT in the repo template): hardcoded SELF_REPORT_TSV to the canonical bucket + force_fresh=True + an embedded spark.executor.cores=='1' guard off the live SparkContext. Re-apply from the runbook on a fresh clone.",
-      "contaminated_v1": "MOVED to gs://rw-migration-aou-rw-476cdac2/ld/_forensics/contaminated_afr_selfid_noop_20260608/ (final + 88 intermediates, ~7.8 TiB = 1.5 TiB final + 6.3 TiB intermediates). Live selfid path swept clean of 484 zero-byte markers. Deferred green-light to DELETE this ~7.8 TiB once the clean re-fire verifies (intermediates near-zero forensic value).",
-      "root_cause_doc": ".planning/debug/m3-W2-afr-sensitivity-selfid-noop.md (SENS_FILTER_VERSION=2)."
+      "samples": 62557,
+      "variants": 20817925,
+      "du_floor_bytes": 1380194367072,
+      "note": "Recovered from the empty-final H1 catastrophe via finalize-only re-drive from the 22 intact intermediates; promoted from verified _scratch dry-run by gsutil rsync; re-verified live. Strict subset (62,557 < 63,312 self-report union < 73,122 primary); self_report sourced; contamination tell (byte-identical 73,122 copy) absent. Sample-QC dropped 755/63,312 (1.19%). Contaminated v1 parked at ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB), awaiting separate deletion green-light."
     }
   },
-  "fan_out_fix": {
-    "commit": "ab0853a",
-    "status": "PROVEN end-to-end on a full genome (AFR-primary). chr1 (the exact wedge condition) cleared in minutes.",
-    "debug_session": "m3-W2-genome-wide-countcols-py4j-wedge = awaiting_human_verify -> move to resolved/ once the full AFR+EUR build lands.",
-    "mechanism_resolved": "genome-wide load_qc_cohort now fans out per-chromosome (interval_filter=chrN, _skip_final_write=True), union_rows the 22 variant-QC'd MTs, runs sample-QC once over the union. Bounds every Hail action the way interval_filter=chr22 did in the passing Gate-C run. The wedge was the first action materializing the un-pruned ~145k-partition v8 plan (interval_filter=None)."
-  },
-  "cluster": {
-    "state": "LIVE (billing while Idle between cohorts)",
-    "started_from": "...20260605 (preserves Gate-C config)",
-    "type": "Dataproc, Software=Hail (Spark 3.5.0 / hail 0.2.135)",
-    "master": "n2-standard-16, 500 GB",
-    "workers": "~24 x n2-standard-16, non-preemptible (~400 vCPU)",
-    "region": "us-central1",
-    "driver_jvm_pid": 5932,
-    "executor_lever": "PYSPARK_SUBMIT_ARGS cores=1/5g (do NOT raise)",
-    "do_not": "Do NOT fire/kill/reconnect/touch. Carter holds all triggers. Do NOT reconnect to any older torn-down cluster."
-  },
-  "coordinates": {
-    "workspace": "aou-rw-476cdac2",
-    "project": "wb-perky-corn-6639",
-    "workspace_bucket": "gs://rw-migration-aou-rw-476cdac2",
-    "wgs_controlled": "gs://vwb-aou-datasets-controlled (requester-pays)",
-    "cdr": "C2024Q3R8 (v8)",
-    "env_guards_baked": "3 guards in AOU-1_template.ipynb (commit 29d0a1f): requester-pays CUSTOM + WORKSPACE_BUCKET/WGS hard-override + RUN PROTOCOL banner.",
-    "open_gate": "GATE 0 egress classification ruling still open — required before LD egress, not this cohort build."
-  },
-  "verification_discipline": [
-    "Counts not markers: verify count_cols + count_rows, never trust _SUCCESS (W1 catastrophe). [[feedback_aou_success_marker_not_evidence_of_data]]",
-    "Liveness arbiter = GCS object listing, NOT jstack/PID/CPU — inter-chrom quiescent gaps mimic a wedge. [[feedback_aou_fanout_gcs_listing_arbiter]]",
-    "Verify the path-builder, not just the count — contamination would pass the count sanity check (the AFR-sens isolation check)."
-  ]
+  "deferred_green_lights": [
+    "Commit banking (explicit paths only -- multi-terminal GPFS staging rule).",
+    "Delete ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB) -- separate trigger.",
+    "Teardown cluster STOP-not-DELETE (AoU disk-type check before any delete).",
+    "Close debug sessions m3-W2-afr-sens-empty-final-merge.md / m3-W2-afr-sensitivity-selfid-noop.md / m3-W2-genome-wide-countcols-py4j-wedge.md -> resolved/.",
+    "Durable atomic-final-write fix (DURABLE-FIX-DESIGN-atomic-final-write.md) via /gsd-plan-phase --gaps before GATE 3 production."
+  ],
+  "do_not": [
+    "Do NOT auto-fire any of the deferred green-lights -- Carter holds every delete/teardown/$ trigger.",
+    "Do NOT `git add -A` / `git add .` on the GPFS shared tree -- explicit paths only.",
+    "Do NOT delete the contaminated _forensics copy, the clean cohorts, the 22 intermediates, or teardown the cluster without a separate explicit go.",
+    "Do NOT trust _SUCCESS as evidence of data -- always du-floor entries/rows/parts + count_cols/count_rows (feedback_aou_success_marker_not_evidence_of_data)."
+  ],
+  "cluster": "LIVE + billing while idle (Stop-not-Delete teardown is a deferred green-light). Dataproc, n2-standard-16 master. Coords: workspace aou-rw-476cdac2 / project wb-perky-corn-6639 / bucket gs://rw-migration-aou-rw-476cdac2 / WGS v8 gs://vwb-aou-datasets-controlled / CDR C2024Q3R8."
 }

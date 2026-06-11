@@ -1,5 +1,6 @@
 ---
-status: awaiting_human_verify
+status: resolved
+resolution: "2026-06-11 — per-chrom fan-out fix (ab0853a) live-proven end-to-end on a full genome; all 3 cohorts built genome-wide. The count_cols/Py4J mutual-wait is gone."
 trigger: "Genome-wide LD-panel rebuild (AOU-1_template Cell 3 load_qc_cohort) deterministically freezes at the first genome-wide Hail action; chr22 Gate C passed; only differing variable is interval_filter (chr22 -> None)"
 created: 2026-06-06
 updated: 2026-06-06

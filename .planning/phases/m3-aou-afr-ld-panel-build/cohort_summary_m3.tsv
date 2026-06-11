@@ -1,3 +1,4 @@
 cohort	n_samples	n_variants	kinship_threshold	ancestry_field	checkpoint_path
 AFR_pca	73122	20767864	0.0442	ancestry_pred	gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt
 EUR_pca	220098	11375140	0.0442	ancestry_pred	gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt
+AFR_pca_selfid	62557	20817925	0.0442	ancestry_pred	gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt

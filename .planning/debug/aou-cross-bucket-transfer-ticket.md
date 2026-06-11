@@ -1,11 +1,19 @@
-# AoU Support Ticket — cross-perimeter file transfer (READY TO SEND)
+# AoU Support Ticket — cross-perimeter file transfer (MOOT — DO NOT PURSUE)
 
-**Status:** ✅ SENT 2026-06-08 via the AoU help desk (confirmation: "Your request
-was sent. An agent will get back to you soon. You'll receive updates by email").
-**Awaiting AoU reply.** This was the ONLY remaining blocker for the AFR-sens
-sensitivity cohort (D-M3-07). The critical path (EUR + LD panel) does NOT depend
-on it. Fresh-session action = check email / AoU help center for the reply, then
-execute the re-fire below.
+**Status:** ⛔ MOOT / CLOSED 2026-06-11. The cross-perimeter transfer was OBVIATED:
+the self-report sidecar was regenerated natively in-perimeter against the v8 CDR
+(`wb-silky-artichoke-2408.C2024Q3R8`), so no classic→Verily transfer was ever
+needed. The AFR-sens cohort is built + banked (62,557×20,817,925). **Stop tracking
+the AoU reply; do not re-send.** The VPC-SC perimeter knowledge below is preserved
+for reference but is now distilled into the `aou-ld-pipeline` skill +
+[[reference_aou_rw2_mirror_vpcsc]] — regenerate in-perimeter, never transfer.
+
+---
+
+_Historical (the ticket as sent):_ ✅ SENT 2026-06-08 via the AoU help desk
+("Your request was sent. An agent will get back to you soon."). Was the only
+remaining blocker for the AFR-sens cohort (D-M3-07); the critical path (EUR + LD
+panel) never depended on it.
 
 ## Why this ticket exists (one-line)
 

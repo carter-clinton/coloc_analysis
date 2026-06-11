@@ -1,5 +1,6 @@
 ---
-status: awaiting_human_verify
+status: resolved
+resolution: "2026-06-11 — fix live-confirmed (74,576→63,312 strict subset, SENS_FILTER_VERSION=2 matching WhatRaceEthnicity_Black); clean AFR-sens cohort banked (62,557×20,817,925, self_report present, contamination tell absent). Pattern: knowledge-base.md#m3-afr-sensitivity-selfid-noop."
 trigger: "m3-W2-afr-sensitivity-selfid-noop — AFR sensitivity cohort is a null/no-op duplicate of AFR primary"
 created: 2026-06-08T15:39:28Z
 updated: 2026-06-08T15:55:00Z

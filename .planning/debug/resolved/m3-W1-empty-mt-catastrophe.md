@@ -1,5 +1,6 @@
 ---
-status: diagnosed
+status: resolved
+resolution: "2026-06-11 — progenitor of the empty-MT _SUCCESS-before-validate class; defenses landed (_validate_checkpoint_populated, _assert_checkpoint_nonempty). The W2 final-merge recurrence was recovered + banked. The remaining durable atomic-final-write fix is owned by DURABLE-FIX-DESIGN-atomic-final-write.md. Pattern: knowledge-base.md#m3-empty-mt-success-before-validate."
 trigger: "m3-W1-empty-mt-catastrophe — bucket inspection reveals MTs lack entries/ data despite _SUCCESS markers and ~$2,100 burn"
 created: 2026-05-21T00:00:00Z
 updated: 2026-05-21T01:00:00Z
