@@ -1,3 +1,0 @@
-NEGCTRL_HLA_IMMUNE	Negative_control:extreme_LD_region	HLA-A	HLA-B	HLA-C	HLA-DRB1	HLA-DQB1	HLA-DPB1
-NEGCTRL_COSMETIC	Negative_control:pigmentation_no_cardiometabolic	OCA2	SLC24A5	MC1R	TYR	HERC2	IRF4
-NEGCTRL_BLOOD_GROUP	Negative_control:blood_antigens_no_cardiometabolic	ABO	RH	FUT1	FUT2	KEL

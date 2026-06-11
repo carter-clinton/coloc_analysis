@@ -1,9 +1,0 @@
-Category	Pathway	N_Genes	Genes
-Metabolic	Appetite_regulation	6	MC4R, FTO, NEGR1, TMEM18, SEC16B, GPRC5B
-Lipid	Lipid_transport	2	APOE, LPA
-Metabolic	Insulin_secretion	1	KCNJ11
-Metabolic	Glucose_metabolism	1	GCKR
-Metabolic	Wnt_signaling	1	TCF7L2
-Lipid	Fatty_acid_metabolism	1	FADS1
-Cardiovascular	Inflammation	1	SH2B3
-Cardiovascular	Blood_pressure	1	UMOD
