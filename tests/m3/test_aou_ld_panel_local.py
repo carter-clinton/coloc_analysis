@@ -1045,6 +1045,89 @@ def test_validate_checkpoint_populated_rejects_empty_real_path_mt(tmp_path):
     )
 
 
+# ----- Atomic final-write contract — _VALIDATED sentinel
+# ----- (m3-W2-afr-sens-empty-final-merge durable fix, 2026-06-11) -----
+# Hail's mt.checkpoint() writes _SUCCESS on driver-side task accounting BEFORE
+# the post-write _assert_checkpoint_nonempty runs; a driver kill in that window
+# leaves a lying _SUCCESS over 0-byte contents (the 2026-06-10 H1 empty-final
+# catastrophe). The producer writes a {final}/_VALIDATED sentinel ONLY AFTER the
+# non-empty assertion passes, so "_SUCCESS without _VALIDATED" documents a final
+# that never passed validation. _final_is_trustworthy() gates on CONTENTS
+# (_validate_checkpoint_populated), NOT the marker — a stale marker must never
+# vouch for re-emptied contents. Back-compat: finals written before this fix
+# (mt_afr_qc, mt_eur_qc, recovered mt_afr_pca_selfid_qc) have no _VALIDATED and
+# stay trustworthy via contents validation.
+
+
+def test_has_marker_true_when_present_false_when_absent(tmp_path):
+    from aou_ld_panel import _has_marker, VALIDATED_MARKER
+    mt_dir = tmp_path / "m.mt"
+    mt_dir.mkdir()
+    assert _has_marker(f"file://{mt_dir}", VALIDATED_MARKER) is False
+    (mt_dir / VALIDATED_MARKER).write_text("")
+    assert _has_marker(f"file://{mt_dir}", VALIDATED_MARKER) is True
+
+
+def test_write_validated_marker_creates_sentinel(tmp_path):
+    from aou_ld_panel import _write_validated_marker, _has_marker, VALIDATED_MARKER
+    mt_dir = tmp_path / "final.mt"
+    _make_populated_mt(mt_dir)
+    assert _has_marker(f"file://{mt_dir}", VALIDATED_MARKER) is False
+    _write_validated_marker(f"file://{mt_dir}")
+    assert _has_marker(f"file://{mt_dir}", VALIDATED_MARKER) is True
+
+
+def test_final_is_trustworthy_rejects_empty_success_only(tmp_path):
+    """The 2026-06-10 H1 catastrophe signature: _SUCCESS over a footer-stub
+    entries dir, NO _VALIDATED marker. The final-trust gate MUST reject it."""
+    from aou_ld_panel import _final_is_trustworthy
+    mt_dir = tmp_path / "mt_afr_pca_selfid_qc.mt"
+    _make_empty_real_path_mt(mt_dir)  # _SUCCESS + 35-byte stub, no _VALIDATED
+    assert _final_is_trustworthy(f"file://{mt_dir}") is False
+
+
+def test_final_is_trustworthy_backcompat_populated_without_marker(tmp_path):
+    """A populated final written BEFORE this fix (no _VALIDATED) stays trustworthy
+    via contents validation — the clean cohorts (mt_afr_qc, mt_eur_qc) and the
+    recovered mt_afr_pca_selfid_qc carry no _VALIDATED and must remain readable."""
+    from aou_ld_panel import _final_is_trustworthy
+    mt_dir = tmp_path / "mt_afr_qc.mt"
+    _make_populated_mt(mt_dir)  # populated, no _VALIDATED
+    assert _final_is_trustworthy(f"file://{mt_dir}") is True
+
+
+def test_final_is_trustworthy_accepts_validated_marker(tmp_path):
+    """A populated final WITH the _VALIDATED marker (the post-fix producer path)
+    is trustworthy."""
+    from aou_ld_panel import _final_is_trustworthy, _write_validated_marker
+    mt_dir = tmp_path / "final.mt"
+    _make_populated_mt(mt_dir)
+    _write_validated_marker(f"file://{mt_dir}")
+    assert _final_is_trustworthy(f"file://{mt_dir}") is True
+
+
+def test_final_is_trustworthy_rejects_stale_marker_over_empty(tmp_path):
+    """REGRESSION (Finding 2): a STALE _VALIDATED marker over emptied contents
+    must NOT vouch for the final. A prior fire's marker can survive a
+    mt.checkpoint(overwrite=True) re-fire that is then killed mid-write; the gate
+    must reject it on contents, never short-circuit on the marker."""
+    from aou_ld_panel import _final_is_trustworthy, _write_validated_marker
+    mt_dir = tmp_path / "mt_afr_qc.mt"
+    _make_empty_real_path_mt(mt_dir)            # _SUCCESS + 35-byte footer stub
+    _write_validated_marker(f"file://{mt_dir}")  # stale marker present
+    assert _final_is_trustworthy(f"file://{mt_dir}") is False, (
+        "contents are the source of truth — a stale _VALIDATED must not vouch "
+        "for empty contents"
+    )
+
+# NOTE: producer integration (that _apply_sample_qc_and_finalize stamps
+# _VALIDATED after the non-empty assert) is verified at chr22 smoke on the real
+# gs:// path — not unit-tested here, because _qc_checkpoint_uri force-prepends
+# gs:// (it does not honor a file:// test bucket; see DURABLE-FIX-DESIGN
+# "remaining: _qc_checkpoint_uri file:// footgun"). The one-line producer call
+# (aou_ld_panel.py, after _assert_checkpoint_nonempty) is correct by inspection.
+
+
 # ----- AFR sensitivity self-report sourcing — live-Hail dynamic tests
 # ----- (m3-W2-afr-sensitivity-selfid, 2026-06-08) -----
 

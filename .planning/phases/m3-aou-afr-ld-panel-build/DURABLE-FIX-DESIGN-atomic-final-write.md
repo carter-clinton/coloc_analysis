@@ -1,6 +1,24 @@
 # Durable-fix design — atomic final-write contract for `_apply_sample_qc_and_finalize`
 
-**Status:** DESIGN ONLY (drafted while the AFR-sens finalize-only recovery dry-run runs server-side, 2026-06-10). **No source touched.** Route via `/gsd-plan-phase --gaps` **after** the AFR-sens cohort is recovered + banked — editing the finalize path now would change the very code the promote re-fire (`force_fresh=False`, stock Cell 4) runs on the cluster clone.
+**Status:** ⚙️ **PHASE 1 LANDED 2026-06-11** (producer stamp + helpers + contents-only gate + tests). **PHASE 2 PENDING** (consumer wiring + chr22 smoke). Originally drafted 2026-06-10 as design-only; implemented after the cohort was banked.
+
+## ✅ Implementation status (2026-06-11)
+
+**Landed (NCSU-side, TDD, `tests/m3` GREEN — 145 passed / 35 skipped):**
+- `VALIDATED_MARKER` + `_has_marker()` + `_write_validated_marker()` + `_final_is_trustworthy()` in `src/python/aou_ld_panel.py` (near `_validate_checkpoint_populated`).
+- Producer: `_apply_sample_qc_and_finalize` writes `_VALIDATED` **after** `_assert_checkpoint_nonempty` passes.
+- 6 pure `file://` tests (helpers + the catastrophe-signature rejection + a **stale-marker regression**).
+
+**Review correction (adversarial review, 2026-06-11):** the originally-designed Option-2 gate `_has_marker(_VALIDATED) OR _validate_checkpoint_populated` was **REJECTED** — a stale `_VALIDATED` surviving a killed `mt.checkpoint(overwrite=True)` re-fire could vouch for re-emptied contents (the exact re-fire failure this project hit). **The landed gate is CONTENTS-ONLY** (`_final_is_trustworthy = _validate_checkpoint_populated`); the marker is producer-side documentation, never a trust fast-path. The RED-2 snippet below shows the rejected OR form — ignore it; the code is the source of truth.
+
+**PHASE 2 — REMAINING (needs the cluster; Carter):**
+1. **Wire the gate into consumers** — the protective value is unrealized until the **AOU-2 / AOU-4 notebook readers** call `_final_is_trustworthy(final_uri)` and **raise on False** before `hl.read_matrix_table`. Until then the producer stamps a marker nobody reads (the read-side hole the catastrophe exposed is reduced-but-not-closed). This is the load-bearing remaining step.
+2. **chr22 smoke** — verify the producer actually writes `_VALIDATED` on a real `gs://` finalize (not unit-testable locally — see #3).
+3. **`_qc_checkpoint_uri` `file://` footgun (Finding 4, latent):** `_normalize_bucket` strips only `gs://` and `_qc_checkpoint_uri` force-prepends `gs://`, so a `file://` bucket yields `gs://file://…`. Inert in production (always `gs://`) but blocks local finalize integration testing. Fix = make the URI builder scheme-aware. Low priority.
+
+---
+
+_Original design rationale follows (the OR fast-path in "Option 2" + RED-2 was superseded by the contents-only gate above)._
 
 ---
 

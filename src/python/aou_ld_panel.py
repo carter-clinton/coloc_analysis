@@ -910,6 +910,72 @@ def _validate_checkpoint_populated(uri: str, *,
         return False
 
 
+# Sentinel marker written into a FINAL cohort MT directory ONLY after the MT has
+# passed _assert_checkpoint_nonempty. Closes the m3-W2 empty-final window
+# (.planning/debug/resolved/m3-W2-afr-sens-empty-final-merge.md): Hail's
+# mt.checkpoint() writes the canonical _SUCCESS on driver-side task accounting
+# BEFORE our post-write validation runs, so a driver kill in the
+# checkpoint->assert window (the 2026-06-10 H1 catastrophe — a stray browser
+# navigation killed the finalize flush) leaves a lying _SUCCESS over 0-byte
+# contents. A canonical _VALIDATED marker is written only AFTER the non-empty
+# assertion passes, so the trustworthy-final contract is "_SUCCESS + _VALIDATED",
+# NOT _SUCCESS alone. See [[feedback_aou_success_marker_not_evidence_of_data]].
+VALIDATED_MARKER = "_VALIDATED"
+
+
+def _has_marker(uri: str, marker: str) -> bool:
+    """True iff ``{uri}/{marker}`` exists. Scheme dispatch mirrors
+    :func:`_has_checkpoint`: ``file://`` uses pathlib (no Hail dependency for
+    local tests); all other schemes defer to ``hl.hadoop_is_file``. Any
+    filesystem error is treated as absent (safer to redo than to trust)."""
+    marker_uri = f"{uri}/{marker}"
+    if uri.startswith("file://"):
+        return Path(marker_uri[len("file://"):]).is_file()
+    try:
+        import hail as hl
+        return hl.hadoop_is_file(marker_uri)
+    except Exception:
+        return False
+
+
+def _write_validated_marker(uri: str) -> None:
+    """Write the ``{uri}/_VALIDATED`` sentinel (idempotent, empty file).
+
+    Call ONLY after a final MT has passed :func:`_assert_checkpoint_nonempty`
+    (see :data:`VALIDATED_MARKER`) — a present marker is the producer's stamp
+    that the canonical contents were validated non-empty at write time. Scheme
+    dispatch mirrors :func:`_has_marker`."""
+    marker_uri = f"{uri}/{VALIDATED_MARKER}"
+    if uri.startswith("file://"):
+        Path(marker_uri[len("file://"):]).write_text("")
+        return
+    import hail as hl
+    with hl.hadoop_open(marker_uri, "w") as f:
+        f.write("")
+
+
+def _final_is_trustworthy(uri: str) -> bool:
+    """Consumer / resume gate for a FINAL cohort MT (mt_{ancestry}_qc.mt etc.).
+
+    CONTENTS are the sole source of truth: returns
+    :func:`_validate_checkpoint_populated` (the m3-W1 empty-MT catastrophe guard
+    applied to the final). The ``_VALIDATED`` sentinel is producer-side
+    DOCUMENTATION only (a canonical ``_SUCCESS`` *without* ``_VALIDATED`` flags a
+    final that never passed post-write validation) and is deliberately **NOT** a
+    trust fast-path: a stale ``_VALIDATED`` can survive a
+    ``mt.checkpoint(overwrite=True)`` re-fire that is then killed mid-write, so
+    trusting the marker alone would vouch for re-emptied contents — exactly the
+    re-fire failure mode this project hit. Back-compat: the three already-banked
+    cohorts carry no ``_VALIDATED`` and validate True via contents. The m3-W2
+    empty-final signature (``_SUCCESS`` over 0-byte / footer-stub entries) returns
+    False, so consumers reject a bad final instead of silently consuming it.
+
+    NB: consumers must CALL this before reading a final — wiring it into the
+    AOU-2 / AOU-4 notebook readers (raise on False) is the remaining phase-2 step
+    (.planning/phases/m3-aou-afr-ld-panel-build/DURABLE-FIX-DESIGN-atomic-final-write.md)."""
+    return _validate_checkpoint_populated(uri)
+
+
 def _post_split_read_partitions(available_partitions: int | None = None,
                                 *,
                                 target: int = _COHORT_TARGET_PARTITIONS) -> int:
@@ -1972,6 +2038,13 @@ def _apply_sample_qc_and_finalize(mt: "hl.MatrixTable", *, ancestry: str,
         ckpt = _qc_checkpoint_uri(bucket, ancestry, sensitivity)
         mt = mt.checkpoint(ckpt, overwrite=True)
         _assert_checkpoint_nonempty(mt, ckpt, phase="final")
+        # Atomic-final-write contract: stamp _VALIDATED ONLY after the non-empty
+        # assertion passes, so a canonical _SUCCESS WITHOUT _VALIDATED documents a
+        # final that never passed post-write validation (the m3-W2 H1 driver kill
+        # died between the _SUCCESS-writing checkpoint() and this assert). The
+        # marker is documentation; _final_is_trustworthy() gates on CONTENTS, not
+        # the marker (a stale marker must never vouch for re-emptied contents).
+        _write_validated_marker(ckpt)
         print(f"[load_qc_cohort] wrote final: {ckpt}")
 
     return mt
