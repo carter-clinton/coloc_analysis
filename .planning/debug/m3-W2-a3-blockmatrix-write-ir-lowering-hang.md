@@ -2,7 +2,7 @@
 status: awaiting_human_verify
 trigger: "m3-W2-a3-blockmatrix-write-ir-lowering-hang — compute_region_ld Path A.3 ld_bm.write() on a fused lazy BlockMatrixIR hangs (BlockMatrixIR lowering not yet efficient/scalable -> interpreted BlockMatrixWrite -> driver-bound hang)"
 created: 2026-06-12T00:00:00Z
-updated: 2026-06-12T00:30:00Z
+updated: 2026-06-12T01:00:00Z
 mode: symptoms_prefilled / find_and_fix
 ---
 
@@ -12,13 +12,17 @@ hypothesis: LOCKED (do not re-investigate). `hl.ld_matrix(...)` returns a fused 
   BlockMatrixIR (row_correlation of standardized genotypes + radius banding). `.write()`
   on that fused IR triggers Hail's non-scalable BlockMatrixIR lowering -> falls back to the
   interpreted (driver-mediated) BlockMatrixWrite -> hangs on large banded matrices.
-test: standalone cluster repro (a3_blockmatrix_lowering_repro.py) runs OLD vs NEW path on a
-  small synthetic MT and inspects the Hail driver log for the "BlockMatrixIR lowering not yet
-  efficient/scalable" warning (VISIBLE on OLD, ABSENT on NEW) + asserts a valid .bm/_SUCCESS on NEW.
-expecting: NEW path materializes the correlation BlockMatrix to disk (native distributed writer)
-  BEFORE the sparsify+write, so the final write IR is small and lowers natively.
-next_action: implement A.3-only fix in compute_region_ld; add pure-Python regression tests;
-  write the cluster repro; commit + push.
+test: standalone cluster repro (a3_blockmatrix_lowering_repro.py) runs OLD / ordering A / ordering
+  B on a synthetic MT at a HANG-INDUCING n_var and decides PASS on WALL-CLOCK COMPLETION within a
+  per-ordering budget + valid .bm/_SUCCESS + r-parity vs OLD (adversarial review Finding B —
+  re-gated 2026-06-12). The lowering warning is INFORMATIONAL ONLY (it fires on ALL BlockMatrix
+  writes per CanLowerEfficiently; it is NOT the signal). OLD is the intractability control (expected
+  to TIME OUT). The discriminator between A and B is completion-time + scratch footprint.
+expecting: NEW path's checkpoint MATERIALIZES the matmul to concrete on-disk blocks BEFORE the
+  sparsify+write, so the final (still-interpreted) write reads concrete blocks and is cheap — NOT
+  "lowers natively" (the warning still fires). Ordering B (Pan-UKBB band-then-checkpoint) favored.
+next_action: REMEDIATION COMPLETE (2026-06-12). Cluster experiment must decide ordering A
+  (dense scratch) vs B (banded, Pan-UKBB-favored) on COMPLETION within budget at real region scales.
 
 ## Symptoms
 <!-- IMMUTABLE -->
@@ -100,23 +104,73 @@ started: First surfaced 2026-06-12 on the dev-10 GATE-2 fire (first live A.3 wri
   implication: GATE-3 (322-cell production) is BLOCKED on CR-01. The cluster ordering experiment
     must decide the production ordering BEFORE GATE-3 fires (see Resolution.gate3_blocker).
 
+- timestamp: 2026-06-12T00:00:00Z
+  checked: ADVERSARIAL CODE REVIEW — accepted findings (verified against Hail source) + remediation
+  found: A second adversarial pass confirmed the fix's NUMERICS are byte-identical to hl.ld_matrix
+    (sound — row_correlation + locus_windows + sparsify_row_intervals, blocks_only=False, same args)
+    but found three real defects in the EXPLANATION + the REPRO + the ordering choice. ALL ACCEPTED:
+    - FINDING A (HIGH): the lowering warning is CONSTANT, not eliminated. Hail
+      `CanLowerEfficiently.scala` fails on EVERY `BlockMatrixWrite` unconditionally, and
+      `.checkpoint()` IS a BlockMatrixWrite -> the warning fires on the OLD write, the checkpoint,
+      AND the final write; all run interpreted (`LowerOrInterpretNonCompilable.scala` ->
+      `Interpret.alreadyLowered`). The fix does NOT "lower to the native distributed writer." Its
+      REAL mechanism: the checkpoint MATERIALIZES the matmul so the final interpreted write reads
+      CONCRETE on-disk blocks (cheap) instead of driving an un-materialized matmul through the
+      driver-side ContextRDD.collect (BlockMatrix.scala:978) that caused the OLD stall. Stated as
+      "interpreted-but-cheap-because-inputs-are-concrete," with a version caveat (could not
+      100%-confirm at 0.2.135 that no native-writer bypass exists for materialized sub-writes).
+    - FINDING B (HIGH): the repro's PASS gate (`a_warning is False and a_ok`) was unsatisfiable —
+      per Finding A the warning is ALWAYS present, so the repro always ESCALATED / returned 1 even
+      when the fix works. RE-GATED on WALL-CLOCK COMPLETION at a hang-inducing scale: PASS = the
+      ordering completes within a per-ordering wall-time budget AND produces a valid .bm AND matches
+      OLD's r values. OLD is the intractability control (expected to TIME OUT); too-small --n-var =
+      vacuous run (OLD completes, proves nothing) -> default --n-var raised + a vacuity warning. The
+      warning grep is downgraded to informational logging with the CanLowerEfficiently explanation.
+    - FINDING C (MEDIUM): ordering B (band-then-checkpoint) is the PROVEN Pan-UKBB production pattern
+      (atgu/ukbb_pan_ancestry compute_ld_matrix.py: matmul -> _sparsify_row_intervals_expr ->
+      sparsify_triangle -> checkpoint, at biobank scale). The "B might re-hang" fear was
+      over-cautious / contradicted. B elevated to LEADING production-default candidate (avoids the
+      CR-01 ~2 TB dense scratch; banded ~GB). Production default code stays A until the re-gated
+      repro shows B completes within budget at the real 122k/710k scales (IR-shape caveat: OLD and B
+      are the SAME BlockMatrixWrite(sparsify(matmul)) shape, so completion must be shown empirically).
+    - FINDING D (LOW, NO CODE CHANGE): the fix's `locus_windows(..., _localize default True)` forces
+      a ~5.7 MB driver collect of starts/stops for 710k vars — trivial (ld_matrix uses
+      _localize=False). Minor non-issue; no action.
+  implication: REMEDIATION APPLIED 2026-06-12: (1) repro RE-GATED on completion-within-budget +
+    valid .bm + r-parity (Finding B) — new `_run_with_budget` helper, `--budget-sec`, default
+    `--n-var=50000`, warning downgraded to informational; (2) mechanism prose corrected in
+    aou_ld_panel.py (_a3_scratch_uri docstring, _write_a3_banded_correlation_bm docstring + step-2/5
+    comments) + this doc's root_cause/fix — no more "lowers natively" (Finding A, cites
+    CanLowerEfficiently.scala + LowerOrInterpretNonCompilable.scala, keeps version caveat); (3)
+    ordering B elevated as leading candidate here + in WAVE-2-GATE-READINESS.md (Finding C), default
+    code unchanged; (4) Finding D recorded as a LOW non-issue. The cluster experiment now decides
+    A vs B on COMPLETION-TIME + SCRATCH, since the warning is no longer the signal.
+
 ## Resolution
 <!-- OVERWRITE as understanding evolves -->
 
 root_cause: |
   hl.ld_matrix(GT, locus, radius) builds a single fused lazy BlockMatrixIR:
   row_correlation(standardized genotypes) [G-center-normalize then G @ G.T] composed with the
-  locus_windows radius banding (sparsify_row_intervals). Calling .write() on that fused IR forces
-  Hail to lower the *entire* composed BlockMatrixIR in one query. Hail 0.2.135's BlockMatrixIR
-  lowerer cannot lower this composition scalably -> it emits
-  "BlockMatrixIR lowering not yet efficient/scalable" and falls back to the INTERPRETED
-  (driver-mediated) BlockMatrixWrite path (`interpreting non-compilable result: BlockMatrixWrite`).
-  The interpreted writer drives the matrix through a single driver-side ContextRDD.collect
-  (BlockMatrix.scala:978 <- ContextRDD.scala:172), which serializes the whole banded matrix through
-  the driver -> on a 122,678 x 122,678 banded matrix (region m2_region_00006, span 17.7 Mb) it hangs
-  for 60+ min with no forward progress. This is structural to the FUSED IR, not a data/OOM/kill bug,
-  so it deterministically blocks all 36 large/xlarge A.3 regions. A.1/A.2 are unaffected because they
-  call to_numpy() (a different, already-materializing collect path) on much smaller spans.
+  locus_windows radius banding (sparsify_row_intervals). Calling .write() on that IR is a
+  BlockMatrixWrite.
+
+  CORRECTED MECHANISM (adversarial review 2026-06-12, Finding A — verified against Hail source):
+  The "BlockMatrixIR lowering not yet efficient/scalable" warning is NOT specific to this fused IR
+  and is NOT eliminated by the fix. Hail 0.2.135's `CanLowerEfficiently.scala` fails on EVERY
+  `BlockMatrixWrite` node UNCONDITIONALLY, so `LowerOrInterpretNonCompilable.scala` routes ALL
+  BlockMatrix writes to `Interpret.alreadyLowered` (interpreted execution). The warning therefore
+  fires on the OLD fused write, the fix's `.checkpoint()`, AND the fix's final write alike.
+
+  The actual hang is NOT "the lowerer fails" — it is WHAT the interpreted writer has to do. When the
+  write's input is an UN-MATERIALIZED matmul (the fused row_correlation @ G.T composed with the
+  band), the interpreted writer drives the WHOLE matmul through a single driver-side
+  ContextRDD.collect (BlockMatrix.scala:978 <- ContextRDD.scala:172) -> on a 122,678 x 122,678
+  matrix (region m2_region_00006, span 17.7 Mb) it hangs 60+ min with no forward progress. This is
+  structural to feeding an un-materialized matmul to the interpreted writer, not a data/OOM/kill
+  bug, so it deterministically blocks all 36 large/xlarge A.3 regions. A.1/A.2 are unaffected
+  because they call to_numpy() (a different, already-materializing collect path) on much smaller
+  spans.
 
 fix: |
   A.3-ONLY restructure (A.1/A.2 untouched, still use the existing `ld_bm = hl.ld_matrix(...)`).
@@ -124,12 +178,16 @@ fix: |
   steps, inserting a checkpoint that breaks the fused IR:
 
     1. corr_bm = hl.row_correlation(mt_r.GT.n_alt_alleles())     # standardized Pearson-r Gram matrix
-    2. corr_bm = corr_bm.checkpoint(scratch_uri)                  # MATERIALIZE -> native distributed writer
-                                                                  #   (breaks the fused IR; the write that
-                                                                  #    follows reads a concrete BM)
+    2. corr_bm = corr_bm.checkpoint(scratch_uri)                  # MATERIALIZE the matmul to concrete
+                                                                  #   on-disk blocks (this checkpoint is
+                                                                  #   ITSELF an interpreted BlockMatrixWrite
+                                                                  #   — warning fires here too — but it
+                                                                  #   writes the dense matrix ONCE)
     3. starts, stops = hl.linalg.utils.locus_windows(mt_r.locus, radius=radius_bp)  # bp radius -> row-index band
     4. banded = corr_bm.sparsify_row_intervals(starts, stops, blocks_only=False)    # EXACT same band as ld_matrix
-    5. banded.write(bm_uri, overwrite=True)                       # small IR (read-checkpoint + sparsify) -> lowers
+    5. banded.write(bm_uri, overwrite=True)                       # STILL interpreted (warning fires) but
+                                                                  #   CHEAP: reads concrete blocks, not an
+                                                                  #   un-materialized matmul -> no driver collect
 
   Then the existing _assert_blockmatrix_written guard + the CR-003 variant_ids/rsids sidecar
   emission/upload run UNCHANGED. A new pure helper `_a3_scratch_uri(bm_uri)` derives the scratch
@@ -157,13 +215,21 @@ fix: |
     production region m2_region_00145 (102.5 Mb, ~710k var) -> ~2 TB dense scratch.
     The 50-Mb-banded xlarge invariant (HIGH-3) is preserved for the FINAL .bm (locus_windows
     uses the SAME radius_bp), but it does NOT bound the scratch.
-  - WHY WE DID NOT BLINDLY SWITCH TO band-before-checkpoint (ordering B): `.checkpoint()` IS a
-    write, so checkpointing `row_correlation -> sparsify_row_intervals` materializes the SAME
-    fused (correlation+band) IR shape that originally hung as `hl.ld_matrix(...).write()`.
-    Ordering B MIGHT RE-INTRODUCE THE HANG. Ordering A checkpoints `row_correlation` ALONE
-    (likely lowers) precisely to avoid that fusion. WHICH ORDERING ACTUALLY LOWERS IS
-    EMPIRICALLY UNKNOWN WITHOUT THE CLUSTER. Therefore the production default ordering is NOT
-    changed here; the cluster repro (now a 3-way ordering experiment) decides — see CR-01 below.
+  - ORDERING B (band-then-checkpoint) IS THE LEADING PRODUCTION-DEFAULT CANDIDATE (adversarial
+    review 2026-06-12, Finding C). The earlier "B might re-introduce the hang because .checkpoint()
+    is a write of the same fused IR" framing was OVER-CAUTIOUS and is CONTRADICTED by Pan-UKBB:
+    atgu/ukbb_pan_ancestry `compute_ld_matrix.py` does exactly `(bm_Z @ bm_Z.T) ->
+    _sparsify_row_intervals_expr -> sparsify_triangle -> checkpoint` — it bands FIRST and
+    checkpoints the BANDED matrix, AT BIOBANK SCALE. So band-then-checkpoint is a PROVEN
+    production pattern, and it avoids the CR-01 ~2 TB dense scratch (banded scratch is ~GB).
+    IR-SHAPE CAVEAT (why we still do not flip the default in code yet): OLD's
+    `hl.ld_matrix(...).write()` and ordering B's checkpoint are the SAME
+    `BlockMatrixWrite(sparsify(matmul))` shape. Pan-UKBB suggests B completes, but our
+    122,678^2 / ~710k^2 scales must be EMPIRICALLY confirmed on the cluster. Therefore: B is
+    FAVORED and documented as the leading candidate, but the production default code stays A
+    until the RE-GATED repro shows B COMPLETES within budget at the real scales. The repro now
+    decides on completion-time + scratch footprint, NOT on the (always-present) lowering warning
+    — see the re-gated experiment + CR-01 below.
 
 verification: |
   PURE-PYTHON (run here, NCSU HPC — Hail not importable): regression tests for
@@ -172,18 +238,24 @@ verification: |
     (c) static-AST check that the A.3 branch now calls row_correlation + locus_windows +
         sparsify_row_intervals + checkpoint, and that A.1/A.2 still reference ld_matrix/to_numpy,
     (d) static-AST check that _assert_blockmatrix_written + sidecar emission still present after the write.
-  CLUSTER (Carter runs; Hail-required, NOT runnable here): a3_blockmatrix_lowering_repro.py is now a
-    3-WAY ORDERING EXPERIMENT. It builds a small synthetic MT and runs OLD `hl.ld_matrix(...).write()`,
-    ordering A (checkpoint dense correlation -> band -> write; current default), and ordering B
-    (band -> checkpoint banded -> write; the review's proposal that MIGHT re-hang). For EACH it reports
-    the lowering-warning presence (PRESENT on OLD = positive control; the A/B results DECIDE), the
-    scratch footprint (dense vs banded), .bm validity ((n,n)+_SUCCESS), and r-parity vs OLD. A no-Hail
-    `--report-scratch-size` mode extrapolates the dense-vs-banded scratch at REAL production n_var from
-    config/ld_regions.tsv so a green small-n run cannot falsely clear GATE 3.
-    DECISION RUBRIC: ship the warning-free ordering with the smallest scratch; if both A and B are
-    warning-free, prefer B (banded); if only A is warning-free, A is required and the ~2 TB worst-case
-    must be sized against cluster scratch capacity. THIS experiment is the lowering PROOF + the
-    GATE-3 ordering decision — the pure-Python tests cannot exercise Hail.
+  CLUSTER (Carter runs; Hail-required, NOT runnable here): a3_blockmatrix_lowering_repro.py is a
+    3-WAY ORDERING EXPERIMENT, RE-GATED on WALL-CLOCK COMPLETION (adversarial review Finding B). It
+    builds a synthetic MT at a HANG-INDUCING n_var and runs OLD `hl.ld_matrix(...).write()`, ordering
+    A (checkpoint dense correlation -> band -> write; current default), and ordering B (band ->
+    checkpoint banded -> write; the Pan-UKBB pattern, leading candidate). For EACH it reports whether
+    it COMPLETED within a per-ordering wall-time budget (`--budget-sec`), the scratch footprint (dense
+    vs banded), .bm validity ((n,n)+_SUCCESS), and r-parity vs OLD. The lowering-warning grep is kept
+    as INFORMATIONAL logging ONLY (it WILL appear on all BlockMatrix writes — CanLowerEfficiently —
+    and is NOT a failure signal). A no-Hail `--report-scratch-size` mode extrapolates the
+    dense-vs-banded scratch at REAL production n_var from config/ld_regions.tsv so a green small-n run
+    cannot falsely clear GATE 3.
+    DECISION RUBRIC (completion + scratch, NOT warning): OLD is the intractability CONTROL — at a
+    large enough --n-var it must TIME OUT (if OLD COMPLETES, --n-var is too small and the run is
+    VACUOUS — raise it). Pick the ordering that COMPLETES within budget + valid .bm + r-parity, with
+    the smallest scratch. If both A and B complete -> ship B (Pan-UKBB-proven, banded ~GB vs A's ~TB
+    dense). If only A completes -> A required and the ~2 TB worst case must fit cluster scratch
+    capacity. THIS experiment is the completion PROOF + the GATE-3 ordering decision — the pure-Python
+    tests cannot exercise Hail.
   PURE-PYTHON STATUS: PASS. `tests/m3/ -q` => 153 passed, 35 skipped (Hail-gated skips expected).
     5 pure-Python guards green: test_a3_scratch_uri_is_path_isolated_and_idempotent,
     test_a3_branch_uses_materialize_then_band_not_fused_write,
@@ -193,20 +265,25 @@ verification: |
   CLUSTER STATUS: PENDING (Carter). scripts/a3_blockmatrix_lowering_repro.py is the lowering PROOF
     + the GATE-3 ordering decision (3-way experiment).
 gate3_blocker: |
-  CR-01 (review 2026-06-11): GATE-3 (322-cell production) is BLOCKED until the cluster ordering
-  experiment (scripts/a3_blockmatrix_lowering_repro.py) picks a warning-free ordering whose
-  worst-case scratch fits cluster scratch capacity. The current default (ordering A) checkpoints
-  the FULL DENSE n×n correlation (~2 TB worst case, m2_region_00145 ~710k var). Ordering B
-  (band-before-checkpoint) shrinks scratch ONLY for mid-size A.3 regions — for the ~100 Mb
-  xlarge regions the 50-Mb-capped radius bands ~98% of the row, so banded ≈ dense, and B might
-  re-hang anyway. dev-10 GATE-2 (one dev region, region_00006 ~60 GB scratch, ordering A) is
+  CR-01 (review 2026-06-11; re-gated 2026-06-12): GATE-3 (322-cell production) is BLOCKED until the
+  cluster ordering experiment (scripts/a3_blockmatrix_lowering_repro.py) picks an ordering that
+  COMPLETES within the wall-time budget at a hang-inducing scale AND whose worst-case scratch fits
+  cluster scratch capacity. (The discriminator is COMPLETION-TIME + SCRATCH, NOT the lowering
+  warning — Finding B; the warning fires on all BlockMatrix writes.) The current default (ordering
+  A) checkpoints the FULL DENSE n×n correlation (~2 TB worst case, m2_region_00145 ~710k var).
+  Ordering B (band-before-checkpoint) is the Pan-UKBB-proven pattern and is FAVORED: it shrinks
+  scratch to ~GB for mid-size A.3 regions. For the ~100 Mb xlarge regions the 50-Mb-capped radius
+  bands ~98% of the row so banded ≈ dense (B saves little scratch THERE — its value is completion),
+  but Pan-UKBB running band-then-checkpoint at biobank scale contradicts the earlier "B might
+  re-hang" fear. dev-10 GATE-2 (one dev region, region_00006 ~60 GB scratch, ordering A) is
   TOLERABLE and may proceed on current code; the production 322-cell fire is NOT until CR-01 is
   resolved by the cluster experiment. See WAVE-2-GATE-READINESS.md.
 files_changed:
   - src/python/aou_ld_panel.py (A.3-only: route-before-ld_bm so the fused ld_bm is built ONLY for A.1/A.2 [IN-01]; _dense_footprint_bytes helper [WR-02]; _write_a3_banded_correlation_bm logs n_var + dense footprint + loud WARN past 300 GiB before the checkpoint [WR-02]; A.1/A.2 + MED-4 guard + CR-003 sidecars behaviorally untouched; default ordering A UNCHANGED — the cluster decides A vs B)
   - tests/m3/test_aou_ld_panel_local.py (3 prior A.3 guards + 2 new: _dense_footprint_bytes unit test + static-AST that the A.3 helper logs the footprint)
-  - scripts/a3_blockmatrix_lowering_repro.py (RESTRUCTURED into a 3-way OLD/A/B ordering experiment + no-Hail --report-scratch-size extrapolation + decision rubric)
-  - .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md (dev-10 GATE-2 may proceed on ordering A; GATE-3 BLOCKED on CR-01)
+  - scripts/a3_blockmatrix_lowering_repro.py (RESTRUCTURED into a 3-way OLD/A/B ordering experiment + no-Hail --report-scratch-size extrapolation + decision rubric; 2026-06-12 RE-GATED on wall-clock completion (Finding B): _run_with_budget helper + --budget-sec + default --n-var=50000 + warning downgraded to informational; B reframed as Pan-UKBB-proven candidate (Finding C); mechanism prose corrected (Finding A))
+  - .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md (dev-10 GATE-2 may proceed on ordering A; GATE-3 BLOCKED on CR-01; 2026-06-12 ordering B elevated as Pan-UKBB-favored candidate, discriminator = completion-time not warning)
+  - tests/m3/test_aou_ld_panel_local.py (2026-06-12: + _run_with_budget unit test for the re-gated completion discriminator)
 
 ## .continue-here / SUMMARY
 <!-- What still needs the cluster before dev-10 GATE-2 resumes -->
@@ -219,21 +296,36 @@ WHAT LANDED (NCSU-side, original fix):
 
 WHAT LANDED (REMEDIATION, 2026-06-11 review pass):
 - CR-01 corrected in this doc: ordering A checkpoints the FULL DENSE n×n correlation (~2 TB worst case),
-  NOT a banded matrix. The default ordering is INTENTIONALLY UNCHANGED (band-before-checkpoint = ordering
-  B might re-hang because .checkpoint() is a write of the same fused IR; the cluster must decide).
+  NOT a banded matrix.
 - repro RESTRUCTURED into a 3-way OLD/A/B ordering experiment + a no-Hail --report-scratch-size mode
   (worst case m2_region_00145 ~1.8 TiB) + a decision rubric. WR-02 observability log + soft guard added.
   IN-01: ld_bm built only for A.1/A.2. New _dense_footprint_bytes helper + 2 unit tests.
-- Full m3 suite 153 passed / 35 skipped.
+
+WHAT LANDED (REMEDIATION, 2026-06-12 ADVERSARIAL review pass — Findings A/B/C/D accepted):
+- FINDING A: mechanism prose corrected throughout (aou_ld_panel.py + this doc) — the lowering warning
+  fires on ALL BlockMatrix writes (CanLowerEfficiently.scala); the fix is "interpreted-but-cheap-because-
+  inputs-are-concrete," NOT "lowers natively." Version caveat kept.
+- FINDING B: repro RE-GATED on WALL-CLOCK COMPLETION (the old `a_warning is False` gate was
+  unsatisfiable). New _run_with_budget helper + --budget-sec + default --n-var=50000 (hang-inducing) +
+  vacuity warning if OLD completes; warning grep downgraded to informational. +2 unit tests.
+- FINDING C: ordering B (band-then-checkpoint) elevated to LEADING production-default candidate — it is
+  the PROVEN Pan-UKBB pattern (atgu/ukbb_pan_ancestry compute_ld_matrix.py at biobank scale); the "B might
+  re-hang" framing was over-cautious. Default code STAYS A pending the re-gated repro (IR-shape caveat:
+  OLD and B share the BlockMatrixWrite(sparsify(matmul)) shape, so B's completion must be shown at scale).
+- FINDING D (LOW, no code change): locus_windows _localize=True forces a ~5.7 MB driver collect for 710k
+  vars — trivial; noted as a non-issue.
+- Full m3 suite 155 passed / 35 skipped (153 + the 2 new completion-discriminator tests).
 
 WHAT STILL REQUIRES THE CLUSTER:
 1. dev-10 GATE-2 (TOLERABLE on current ordering A; ~60 GB scratch for region_00006): run the repro
-   ordering experiment, then re-fire the previously-hanging A.3 cell (m2_region_00006). Verify at the
-   data layer (gsutil du of the .bm/parts + _assert_blockmatrix_written shape) — _SUCCESS is NOT proof.
-2. GATE-3 (322-cell production) is BLOCKED on CR-01: the cluster ordering experiment must pick a
-   warning-free ordering whose worst-case scratch (~2 TB) fits cluster scratch capacity. Apply the
-   decision rubric in the repro docstring; if it selects ordering B, re-order
-   _write_a3_banded_correlation_bm (band-before-checkpoint) and re-run --report-scratch-size before
-   the production fire.
+   ordering experiment at a hang-inducing --n-var, then re-fire the previously-hanging A.3 cell
+   (m2_region_00006). Verify at the data layer (gsutil du of the .bm/parts + _assert_blockmatrix_written
+   shape) — _SUCCESS is NOT proof.
+2. GATE-3 (322-cell production) is BLOCKED on CR-01: the cluster ordering experiment must pick the
+   ordering that COMPLETES within the wall-time budget (NOT the always-present lowering warning) and
+   whose worst-case scratch (~2 TB) fits cluster scratch capacity. Apply the re-gated decision rubric in
+   the repro docstring; ordering B (Pan-UKBB-favored) is the expected pick — if selected, re-order
+   _write_a3_banded_correlation_bm (band-before-checkpoint) and re-run --report-scratch-size before the
+   production fire.
 
 ONLY AFTER the cluster ordering experiment + the GATE-3 sizing decision is this session resolvable.

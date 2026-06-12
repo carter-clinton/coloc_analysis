@@ -2295,12 +2295,14 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             # Local-test path: write to a temp local dir
             local_path = (out_local_dir or Path("/tmp")) / "bm" / f"{rid}.bm"
             local_path.parent.mkdir(parents=True, exist_ok=True)
-            # m3-W2 A.3-lowering fix: do NOT write the fused hl.ld_matrix IR directly
-            # (it falls back to the interpreted, driver-bound BlockMatrixWrite that hangs
-            # 60+ min on large banded matrices). Instead reproduce ld_matrix's internals
-            # (row_correlation -> checkpoint -> sparsify_row_intervals banding -> write) so
-            # the final write IR is small and lowers to the native distributed writer.
-            # Numerically identical (same Pearson r, same bp-radius band). See
+            # m3-W2 A.3-lowering fix: do NOT write the fused hl.ld_matrix IR directly (its
+            # input is an un-materialized matmul that the interpreted BlockMatrixWrite drives
+            # through a driver-bound ContextRDD.collect -> 60+ min hang). Instead reproduce
+            # ld_matrix's internals (row_correlation -> checkpoint -> sparsify_row_intervals
+            # banding -> write); the checkpoint materializes the matmul so the final
+            # (still-interpreted) write reads CONCRETE blocks and is cheap (Finding A — NOT
+            # "lowers natively"; the warning still fires). Numerically identical (same Pearson
+            # r, same bp-radius band). See
             # .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md.
             _write_a3_banded_correlation_bm(mt_r, radius_bp, str(local_path), n_var=n_var)
             # MED-4: validate the .bm is populated (read-back shape), not merely
@@ -2446,16 +2448,20 @@ def _a3_scratch_uri(bm_uri: str) -> str:
     """Derive the Path-A.3 intermediate correlation-BlockMatrix scratch URI.
 
     m3-W2 A.3-lowering fix (.planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md):
-    ``hl.ld_matrix(...).write()`` builds a single FUSED lazy ``BlockMatrixIR`` (the
-    row_correlation of standardized genotypes composed with the radius banding). Hail
-    0.2.135's BlockMatrixIR lowerer cannot lower that composition scalably -> it falls back
-    to the INTERPRETED, driver-mediated ``BlockMatrixWrite`` -> a single driver-side
-    ``ContextRDD.collect`` that hangs for 60+ min on a large banded matrix.
+    ``hl.ld_matrix(...).write()`` writes a single FUSED, UN-MATERIALIZED ``BlockMatrixIR``
+    (the row_correlation matmul of standardized genotypes composed with the radius banding).
+    Every ``BlockMatrixWrite`` runs INTERPRETED (Hail's ``CanLowerEfficiently.scala`` reports
+    all BlockMatrix writes as not-efficiently-lowerable; ``LowerOrInterpretNonCompilable.scala``
+    then routes to ``Interpret.alreadyLowered``). When the write's input is an un-materialized
+    matmul, the interpreted writer drives the WHOLE matmul through a single driver-side
+    ``ContextRDD.collect`` (BlockMatrix.scala:978) -> hangs 60+ min on a large region.
 
     The fix materializes the (un-banded) correlation BlockMatrix to a scratch path FIRST
-    (native distributed writer), then reads it back, applies the radius band, and writes
-    the final ``.bm`` — a small IR (read-checkpoint + sparsify) that lowers natively. This
-    helper builds the scratch path: ``{bm_uri}`` ("…/bm/{rid}.bm") -> "…/bm/{rid}.corr_scratch.bm".
+    (the ``checkpoint`` write is ALSO interpreted, but it writes a CONCRETE matrix once), then
+    reads it back, applies the radius band, and writes the final ``.bm``. That final write is
+    STILL interpreted (the warning still fires) — but it is now CHEAP because its inputs are
+    concrete on-disk blocks, not an un-materialized matmul forced through the driver collect.
+    This helper builds the scratch path: ``{bm_uri}`` ("…/bm/{rid}.bm") -> "…/bm/{rid}.corr_scratch.bm".
 
     The scratch path is path-isolated from the final ``.bm`` (distinct suffix), so a
     best-effort cleanup failure or a re-fire can never clobber the real output, and the
@@ -2477,8 +2483,21 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
     radius=radius_bp).write(bm_uri)`` — it reproduces ld_matrix's OWN documented internals
     (``row_correlation`` of standardized genotypes, then ``sparsify_row_intervals`` banded
     by ``locus_windows``) but inserts a ``checkpoint`` between the correlation and the
-    sparsify+write so the final write IR is small and lowers to Hail's native distributed
-    writer instead of the interpreted (driver-bound) one.
+    sparsify+write.
+
+    MECHANISM (adversarial review, Finding A — NOT "lowers natively"):
+      Every ``BlockMatrixWrite`` is INTERPRETED in Hail 0.2.135 — ``CanLowerEfficiently.scala``
+      reports all BlockMatrix writes as not-efficiently-lowerable, so the
+      "BlockMatrixIR lowering not yet efficient/scalable" warning fires on the OLD fused
+      write, on the ``checkpoint`` below (a BlockMatrixWrite), AND on the final write. The
+      checkpoint does NOT make anything "lower to the native distributed writer." What it
+      DOES: it MATERIALIZES the row_correlation matmul to concrete on-disk blocks once, so the
+      final (still-interpreted) write reads CONCRETE blocks instead of driving an
+      un-materialized matmul through the driver-side ``ContextRDD.collect``
+      (BlockMatrix.scala:978) that caused the OLD path's intractable 60+ min stall. The win is
+      "interpreted-but-cheap-because-inputs-are-concrete," not "lowers." (Version caveat: at
+      0.2.135 it could not be 100%-confirmed that no native-writer bypass exists for a
+      materialized sub-write; the safe, verified statement is the interpreted-but-cheap one.)
 
     Why this is exactly ld_matrix and NOT a hand-rolled covariance:
       - ``hl.row_correlation(entry_expr)`` IS ld_matrix's standardization step: it
@@ -2522,12 +2541,16 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
                   f"exceeds the {A3_DENSE_SCRATCH_WARN_BYTES / 1024 ** 3:,.0f} GiB soft "
                   f"threshold (m3-W2 WR-02/CR-01). For the largest production regions this "
                   f"can reach ~2 TB. GATE-3 production is BLOCKED until the cluster ordering "
-                  f"experiment picks a warning-free ordering whose worst-case scratch fits "
-                  f"cluster capacity. See WAVE-2-GATE-READINESS.md / debug session.")
+                  f"experiment picks an ordering that COMPLETES within budget (NOT the lowering "
+                  f"warning — that fires on all writes) and whose worst-case scratch fits cluster "
+                  f"capacity; ordering B (band-then-checkpoint, Pan-UKBB) is favored. "
+                  f"See WAVE-2-GATE-READINESS.md / debug session.")
     # 1. Standardized Pearson-r correlation matrix (ld_matrix's own first step).
     corr_bm = hl.row_correlation(mt_r.GT.n_alt_alleles())
-    # 2. MATERIALIZE -> native distributed writer; breaks the fused BlockMatrixIR so the
-    #    write below reads a CONCRETE on-disk BlockMatrix rather than re-lowering the fusion.
+    # 2. MATERIALIZE the matmul to concrete on-disk blocks. This checkpoint is ITSELF an
+    #    interpreted BlockMatrixWrite (the lowering warning fires here too — Finding A), but it
+    #    writes the dense matrix ONCE so the final write below reads CONCRETE blocks rather than
+    #    driving an un-materialized matmul through the driver-side ContextRDD.collect that hung.
     corr_bm = corr_bm.checkpoint(scratch_uri, overwrite=True)
     # 3. bp radius -> row-index band (identical mapping to ld_matrix).
     starts, stops = hl.linalg.utils.locus_windows(mt_r.locus, radius=radius_bp)
@@ -2535,7 +2558,8 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
     banded = corr_bm.sparsify_row_intervals(
         starts=starts, stops=stops, blocks_only=False,
     )
-    # 5. Final write is now a small IR (read-checkpoint + sparsify) -> lowers natively.
+    # 5. Final write is STILL interpreted (warning fires) but CHEAP: its input is the concrete
+    #    checkpointed matrix, not the un-materialized matmul. No driver-bound full collect.
     banded.write(bm_uri, overwrite=True, stage_locally=stage_locally)
     # 6. Best-effort scratch cleanup (survival is harmless: overwrite=True on any re-fire).
     try:

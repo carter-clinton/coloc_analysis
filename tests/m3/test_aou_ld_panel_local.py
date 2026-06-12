@@ -2539,13 +2539,17 @@ def test_existing_region_npz_rejects_truncated(tmp_path):
 
 # ----- m3-W2 A.3 BlockMatrixIR-lowering fix (pure-Python guards) -----
 # .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md
-# hl.ld_matrix(...).write() builds a FUSED lazy BlockMatrixIR that Hail 0.2.135 cannot
-# lower scalably -> interpreted (driver-bound) BlockMatrixWrite -> 60+ min hang on the 36
-# large/xlarge A.3 regions. Fix = reproduce ld_matrix's internals (row_correlation ->
-# checkpoint -> sparsify_row_intervals band -> write) so the final write IR lowers natively.
-# These tests are Hail-free: they cover the pure scratch-URI helper + a static-AST check of
-# the restructured A.3 branch. The lowering PROOF itself is the cluster repro
-# scripts/a3_blockmatrix_lowering_repro.py (Carter runs it; Hail not importable here).
+# hl.ld_matrix(...).write() writes a FUSED, UN-MATERIALIZED BlockMatrixIR. Every BlockMatrixWrite
+# runs INTERPRETED in Hail 0.2.135 (CanLowerEfficiently.scala fails on all of them) -> feeding an
+# un-materialized matmul to the interpreted writer drives a driver-bound ContextRDD.collect ->
+# 60+ min hang on the 36 large/xlarge A.3 regions. Fix = reproduce ld_matrix's internals
+# (row_correlation -> checkpoint -> sparsify_row_intervals band -> write); the checkpoint
+# MATERIALIZES the matmul so the final (still-interpreted) write reads CONCRETE on-disk blocks and
+# is cheap (adversarial review Finding A — NOT "lowers natively"; the warning still fires).
+# These tests are Hail-free: they cover the pure scratch-URI helper + a static-AST check of the
+# restructured A.3 branch + the repro's wall-clock-budget discriminator. The completion PROOF
+# itself is the cluster repro scripts/a3_blockmatrix_lowering_repro.py (Carter runs it; Hail not
+# importable here).
 
 
 def test_a3_scratch_uri_is_path_isolated_and_idempotent():
@@ -2576,8 +2580,9 @@ def test_a3_branch_uses_materialize_then_band_not_fused_write():
     """STATIC-AST regression: the restructured A.3 path must NOT write the fused
     hl.ld_matrix IR directly; it must reproduce ld_matrix's internals with a checkpoint
     inserted (row_correlation + locus_windows + sparsify_row_intervals + checkpoint) so the
-    final write lowers to the native distributed writer. Also pins that A.1/A.2 still use
-    ld_matrix/to_numpy and that the MED-4 guard + CR-003 sidecars remain. Pure-Python."""
+    final (still-interpreted) write reads CONCRETE materialized blocks and is cheap (Finding A —
+    NOT "lowers natively"). Also pins that A.1/A.2 still use ld_matrix/to_numpy and that the
+    MED-4 guard + CR-003 sidecars remain. Pure-Python."""
     src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
     tree = ast.parse(src)
     attrs = {n.attr for n in ast.walk(tree) if isinstance(n, ast.Attribute)}
@@ -2659,6 +2664,60 @@ def test_dense_footprint_helper_used_by_a3_write_for_observability():
     assert "_dense_footprint_bytes" in called, (
         "WR-02: the A.3 helper must log the dense scratch footprint before the checkpoint"
     )
+
+
+def _load_a3_repro_module():
+    """Import the cluster repro as a module. It has NO top-level Hail import (Hail is imported
+    inside run_experiment only), so its pure helpers are importable on the NCSU HPC node."""
+    import importlib.util
+    path = PROJECT_ROOT / "scripts" / "a3_blockmatrix_lowering_repro.py"
+    spec = importlib.util.spec_from_file_location("a3_repro", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_a3_repro_run_with_budget_completion_discriminator():
+    """Adversarial review Finding B: the repro PASS gate is now WALL-CLOCK COMPLETION, not the
+    (always-present) lowering warning. _run_with_budget must report completed=True for a fast
+    callable and completed=False for one that exceeds the budget (the intractability control =
+    OLD timing out). Pure-Python (threading), no Hail."""
+    mod = _load_a3_repro_module()
+
+    # A fast callable completes within budget.
+    completed, wall, err = mod._run_with_budget(lambda: None, budget_sec=5.0)
+    assert completed is True
+    assert err is None
+    assert wall < 5.0
+
+    # A callable that outlives the budget is reported NOT completed (the OLD-stall control).
+    import time as _t
+    completed, wall, err = mod._run_with_budget(lambda: _t.sleep(2.0), budget_sec=0.2)
+    assert completed is False
+    assert wall < 1.0  # we stop WAITING at the budget, not at the sleep's natural end
+
+    # An erroring callable is NOT counted as completed (PASS requires a clean finish).
+    def _boom():
+        raise RuntimeError("simulated Spark/Hail error")
+    completed, wall, err = mod._run_with_budget(_boom, budget_sec=5.0)
+    assert completed is False
+    assert isinstance(err, RuntimeError)
+
+
+def test_a3_repro_pass_gate_is_completion_not_warning():
+    """Finding B regression guard (STATIC): the repro must NOT gate PASS on warning-absence
+    (the old `a_warning is False` predicate). It must gate on completion + validity. Assert the
+    dead predicate is gone and the completion-based one is present."""
+    src = (PROJECT_ROOT / "scripts" / "a3_blockmatrix_lowering_repro.py").read_text()
+    # the old unsatisfiable warning-absence gate must be removed
+    assert "a_warning is False" not in src
+    assert "b_warning is False" not in src
+    # the re-gated completion discriminator must be present
+    assert "a_clear = a_completed and a_ok" in src
+    assert "b_clear = b_completed and b_ok" in src
+    # the warning is explicitly downgraded to informational
+    assert "INFORMATIONAL" in src
+    assert "CanLowerEfficiently" in src
 
 
 def test_compute_region_ld_path_a2_medium(synthetic_mt_path, mock_aou_env, tmp_path):
