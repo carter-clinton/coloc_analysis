@@ -324,6 +324,20 @@ def test_normalize_bucket_handles_malformed_extra_slash():
     assert _normalize_bucket("gs:///fc-secure-XXX") == "fc-secure-XXX"
 
 
+def test_normalize_bucket_aou2_production_value_single_prefix():
+    """REGRESSION GUARD (gap C3, 260611-tbw): AOU-2 cells 3/4/6 build cohort-read and
+    LD-output URIs from $WORKSPACE_BUCKET, which AoU (and AOU-1's baked Cell-1a'' override)
+    ship as the gs://-prefixed 'gs://rw-migration-aou-rw-476cdac2'. Normalizing then
+    re-prefixing must yield a SINGLE gs:// (not the gs://gs://.../ld/... double-prefix the
+    notebook produced before this fix)."""
+    from aou_ld_panel import _normalize_bucket
+    wb = _normalize_bucket("gs://rw-migration-aou-rw-476cdac2")
+    assert wb == "rw-migration-aou-rw-476cdac2"
+    uri = f"gs://{wb}/ld/mt_afr_qc.mt"
+    assert uri == "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt"
+    assert uri.count("gs://") == 1
+
+
 def test_qc_checkpoint_uri_accepts_prefixed_bucket():
     """REGRESSION GUARD (m3-W1-bucket-prefix-defensive, 2026-05-14):
     _qc_checkpoint_uri must accept both bare ('fc-secure-XXX') and
