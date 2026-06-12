@@ -1,53 +1,38 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-11T07:00:00.000Z",
+  "timestamp": "2026-06-12T04:30:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "plan": 3,
-  "task": null,
-  "total_tasks": null,
-  "status": "gate_1_5_complete_cohorts_banked_durablefix_phase1_landed__open=GATE1_cost+durablefix_phase2",
-  "headline": "GATE 1.5 COMPLETE — all 3 genome-wide AoU cohorts banked. The AFR-sens empty-final catastrophe (H1: driver killed mid-finalize-flush, NOT a logic/config bug) was RECOVERED: a finalize-only re-drive from the 22 intact intermediates was proven in a read-only _scratch dry-run (entries ~1.38 TB; cols 62,557; rows 20,817,925; self_report present), then promoted to the live URI mt_afr_pca_selfid_qc.mt via `gsutil -m rsync -r -d` and re-verified at the data layer (live counts identical to scratch: 62,557 x 20,817,925; du-floor 1,380.19 GB; self_report present; rsync exit 0). The empty live MT is overwritten in place with the correct, byte-and-count-verified cohort. Scratch dropped post-verification. cohort_summary_m3.tsv promoted to 3 rows; NOTES flipped to COMPLETE.",
-  "head_commit": "see git log (banking edits uncommitted in working tree atop 66c1931 on m3-W2-aou-deltas)",
+  "wave": "Wave 2 (LD compute) — GATE-2 dev-10",
+  "status": "gate2_dev10_FIRED_then_PAUSED_on_A3_blockmatrix_lowering_bug__fix_landed_double_reviewed__cluster_STOPPED__open=cluster_ordering_experiment",
+  "headline": "GATE-1 cost cleared 2026-06-12 -> dev-10 (AOU-2, USE_DEV_SUBSET=True) FIRED. Region 1 (m2_region_00006, AFR, 17.7 Mb, n_var=122,678) HUNG on the first live Path-A.3 BlockMatrix write: hl.ld_matrix(...).write() falls into Hail's INTERPRETED BlockMatrixWrite driven through a driver-side ContextRDD.collect (736/900 blocks in ~73 min = operationally intractable; diagnosed from a frozen /tmp/hail.log + driver jstack parked in Py4J recv). Killed via Spark-UI job-kill (soft kernel interrupt did not take); kernel + Hail session recovered cleanly; the 99 GB orphan partial .bm was deleted + verified gone. Carter then STOPPED the cluster (verified STOPPED via wb resource describe, $0; live Hail session is cold/gone). NO banked-data loss (3 cohort MTs on GCS untouched). A code fix landed + was double-reviewed NCSU-side; dev-10 is PAUSED pending a cluster ordering experiment.",
   "branch": "m3-W2-aou-deltas",
-  "resume_entry_point": ".planning/STATE.md (2026-06-11 * RESUME HERE * block) + this file + .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md",
-  "authoritative_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-PLAN.md",
-  "next_action": "OVERNIGHT SESSION (2026-06-11): cohort fully banked (GATE 1.5 done); durable atomic-final-write fix PHASE 1 LANDED (commit f931446, TDD GREEN tests/m3 145 passed, adversarial-reviewed + corrected to a contents-only gate). All AoU-perimeter items were NOT done (no gsutil/cluster/notebook access here + Carter's triggers). CARTER's OPEN ITEMS, priority order: (1) GATE 1 #1 cost/credit -- look up ~1,117 cluster-h -> AoU credit-$ vs balance + a cap (the only thing gating the next fire; CDR v8 already confirmed). (2) GATE 2 -- fire dev-10 LD (AOU-2, USE_DEV_SUBSET=True) + AOU-4 validation memo; cohort substrate built, egress cleared (GATE 0 = RESOLVED 2026-04-28, nothing to file). (3) Durable-fix PHASE 2 (needs cluster): wire _final_is_trustworthy(final_uri) into AOU-2/AOU-4 notebook readers (raise on False before hl.read_matrix_table) -- until then consumers read the final blind -- + chr22 smoke; see DURABLE-FIX-DESIGN-atomic-final-write.md. (4) Deferred triggers (Carter only): delete ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB; holds Track-1 credit evidence -- do NOT delete unless sure); cluster already STOPPED; debug housekeeping DONE (4 sessions -> resolved/, ticket MOOT). Do durable-fix phase 2 before GATE 3.",
-  "cohorts": {
-    "afr_primary": {
-      "status": "COMPLETE_VERIFIED",
-      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt",
-      "samples": 73122,
-      "variants": 20767864
-    },
-    "eur": {
-      "status": "COMPLETE_VERIFIED",
-      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt",
-      "samples": 220098,
-      "variants": 11375140
-    },
-    "afr_sens": {
-      "status": "COMPLETE_VERIFIED_RECOVERED",
-      "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt",
-      "samples": 62557,
-      "variants": 20817925,
-      "du_floor_bytes": 1380194367072,
-      "note": "Recovered from the empty-final H1 catastrophe via finalize-only re-drive from the 22 intact intermediates; promoted from verified _scratch dry-run by gsutil rsync; re-verified live. Strict subset (62,557 < 63,312 self-report union < 73,122 primary); self_report sourced; contamination tell (byte-identical 73,122 copy) absent. Sample-QC dropped 755/63,312 (1.19%). Contaminated v1 parked at ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB), awaiting separate deletion green-light."
-    }
+  "head_commit_chain": "125b353 (A.3 fix) -> 13a1055 (review remediation) -> a554c26 (adversarial remediation) -> 4fb40bd/69c1bfa (docs); all pushed to origin/m3-W2-aou-deltas",
+  "resume_entry_point": ".planning/STATE.md (2026-06-12 ★ RESUME HERE ★ block) + this file + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST 2026-06-12 block) + the debug session .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md (+ -REVIEW.md)",
+  "the_bug": "Path A.3 (large/xlarge regions, span > 10 Mb) called hl.ld_matrix(GT.n_alt_alleles(), locus, radius).write(uri). That writes a fused lazy BlockMatrixIR (row_correlation + radius band). Per Hail CanLowerEfficiently.scala EVERY BlockMatrixWrite runs INTERPRETED (the 'BlockMatrixIR lowering not yet efficient/scalable' warning is NOT a discriminator — it fires on all writes); the OLD fused write was intractable because the interpreted write drove an un-materialized matmul through a single driver-side ContextRDD.collect (BlockMatrix.scala:978). Hangs every large/xlarge A.3 region (36 in the 322-cell production fire).",
+  "the_fix": "src/python/aou_ld_panel.py: new helper _write_a3_banded_correlation_bm replaces the A.3 fused write with hl.row_correlation -> checkpoint(scratch) -> locus_windows -> sparsify_row_intervals(blocks_only=False) -> write(stage_locally=True). The checkpoint materializes the matmul so the final (still-interpreted) write reads CONCRETE on-disk blocks (cheap) instead of an un-materialized matmul. BYTE-IDENTICAL numerics to ld_matrix (verified vs Hail statgen.py source: ld_matrix == row_correlation then sparsify_row_intervals(blocks_only=False); row_correlation == standardized bm @ bm.T = Pearson r). A.1/A.2, the _assert_blockmatrix_written guard, and CR-003 sidecars unchanged. tests/m3 155 passed / 35 skipped.",
+  "open_critical_CR01": "Ordering A (current code) checkpoints the FULL DENSE n x n correlation BEFORE banding -> O(n^2) scratch: ~60 GB for region_00006, ~2 TB for the largest region (m2_region_00145, ~710k var). This is a GATE-3 production blocker. Pan-UKBB's compute_ld_matrix.py uses ordering B (band-then-checkpoint, ~GB banded scratch) at biobank scale -> B is the LEADING production-default candidate and likely resolves CR-01. Default code stays A pending the cluster experiment.",
+  "next_action": "NEEDS A CLUSTER RESTART (everything NCSU-side is done). (1) Bring the cluster up: `wb cluster start --id=JupyterLab_Spark_cluster_for_AoU_Spark_20260605` (Claude can fire from the HPC node on Carter's say-so) -- cold, ~90s; NO cohort re-read needed for the experiment (the repro uses a small synthetic MT). (2) In the Workbench: `git pull && git checkout -f` -> a554c26. (3) Run `scripts/a3_blockmatrix_lowering_repro.py` -- RE-GATED on WALL-CLOCK COMPLETION within --budget-sec, NOT the lowering warning (the warning fires on every BlockMatrix write). OLD must TIME OUT (intractability control proving the experiment is non-vacuous). Decide ordering A (dense ~2 TB scratch) vs B (banded ~GB, Pan-UKBB-favored) by completion-time + scratch; also `--report-scratch-size` for the per-region footprint. (4) If B wins -> Claude re-orders _write_a3_banded_correlation_bm to band-before-checkpoint (resolves CR-01), re-runs --report-scratch-size, THEN re-fire dev-10 region_00006 (valid .bm, DATA-LAYER verified via _assert_blockmatrix_written + gsutil du of .bm/parts, NOT _SUCCESS) -> resume the rest of dev-10 -> AOU-4 validation memo.",
+  "gates": {
+    "GATE_1_5_cohorts": "COMPLETE (3 cohort MTs banked + verified)",
+    "GATE_0_egress": "RESOLVED (RULED PASS 2026-04-28)",
+    "GATE_1_cost": "CLEARED (Carter 2026-06-12; CDR v8 pinned)",
+    "GATE_2_dev10": "PAUSED on the A.3 ordering experiment (the only open item)",
+    "GATE_3_322cell": "BLOCKED on CR-01 (the ~2 TB dense-scratch ordering question)"
   },
-  "deferred_green_lights": [
-    "Commit banking (explicit paths only -- multi-terminal GPFS staging rule).",
-    "Delete ld/_forensics/contaminated_afr_selfid_noop_20260608/ (~7.8 TiB) -- separate trigger.",
-    "Teardown cluster STOP-not-DELETE (AoU disk-type check before any delete).",
-    "Close debug sessions m3-W2-afr-sens-empty-final-merge.md / m3-W2-afr-sensitivity-selfid-noop.md / m3-W2-genome-wide-countcols-py4j-wedge.md -> resolved/.",
-    "Durable atomic-final-write fix (DURABLE-FIX-DESIGN-atomic-final-write.md) via /gsd-plan-phase --gaps before GATE 3 production."
-  ],
+  "cohorts": {
+    "afr_primary": {"status": "COMPLETE_VERIFIED", "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864},
+    "eur": {"status": "COMPLETE_VERIFIED", "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "variants": 11375140},
+    "afr_sens": {"status": "COMPLETE_VERIFIED_RECOVERED", "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "variants": 20817925}
+  },
+  "cluster": "STOPPED 2026-06-12 (verified via `wb resource describe --name=JupyterLab_Spark_cluster_for_AoU_Spark_20260605` -> Status: STOPPED). $0. Dataproc, HAIL 0.2.135, 24 workers, us-central1. A stopped cluster = cold kernel (no reattach; re-init Hail + re-read cohorts only for the eventual dev-10 re-fire, NOT for the repro). Coords: workspace aou-rw-476cdac2 / project wb-perky-corn-6639 / bucket gs://rw-migration-aou-rw-476cdac2 / WGS v8 gs://vwb-aou-datasets-controlled / CDR C2024Q3R8.",
+  "wb_cli": "Verily Workbench `wb` CLI installed + authed on the NCSU HPC node (wrappers ~/bin/wb + ~/bin/gcloud; setup + capability map in memory reference_wb_cli_hpc_setup). CONTROL-PLANE works off-perimeter (workspace/resource list+describe, cluster start/stop/launch, status). DATA-PLANE is VPC-SC-WALLED (gcloud storage/bq/dataproc-submit -> 403 org policy by request origin) -> MT verification + the fire MUST run inside the Workbench, not from HPC. So Claude can start/stop/status the cluster from the terminal but CANNOT run the repro / verify MTs / submit jobs.",
   "do_not": [
-    "Do NOT auto-fire any of the deferred green-lights -- Carter holds every delete/teardown/$ trigger.",
-    "Do NOT `git add -A` / `git add .` on the GPFS shared tree -- explicit paths only.",
-    "Do NOT delete the contaminated _forensics copy, the clean cohorts, the 22 intermediates, or teardown the cluster without a separate explicit go.",
-    "Do NOT trust _SUCCESS as evidence of data -- always du-floor entries/rows/parts + count_cols/count_rows (feedback_aou_success_marker_not_evidence_of_data)."
-  ],
-  "cluster": "LIVE + billing while idle (Stop-not-Delete teardown is a deferred green-light). Dataproc, n2-standard-16 master. Coords: workspace aou-rw-476cdac2 / project wb-perky-corn-6639 / bucket gs://rw-migration-aou-rw-476cdac2 / WGS v8 gs://vwb-aou-datasets-controlled / CDR C2024Q3R8."
+    "Do NOT start/stop the cluster without Carter's explicit say-so (his lifecycle/$ trigger; Claude CAN fire `wb cluster start/stop` from HPC but only on his go).",
+    "Do NOT change the A.3 production default from ordering A to B until the cluster repro decides (band-before-checkpoint shares the OLD write's IR shape; Pan-UKBB suggests it completes, but it must be shown empirically at 122k^2/710k^2).",
+    "Do NOT trust the lowering warning as a pass/fail signal (it fires on every BlockMatrix write) or _SUCCESS as evidence of data (du-floor + count/shape).",
+    "Do NOT `git add -A` / `git add .` on the GPFS tree -- explicit paths only.",
+    "Do NOT delete the contaminated _forensics copy, the clean cohorts, or re-fire anything without an explicit go."
+  ]
 }
