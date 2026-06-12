@@ -2537,6 +2537,92 @@ def test_existing_region_npz_rejects_truncated(tmp_path):
     assert _existing_region_npz(rid, None, tmp_path) == str(target)
 
 
+# ----- m3-W2 A.3 BlockMatrixIR-lowering fix (pure-Python guards) -----
+# .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md
+# hl.ld_matrix(...).write() builds a FUSED lazy BlockMatrixIR that Hail 0.2.135 cannot
+# lower scalably -> interpreted (driver-bound) BlockMatrixWrite -> 60+ min hang on the 36
+# large/xlarge A.3 regions. Fix = reproduce ld_matrix's internals (row_correlation ->
+# checkpoint -> sparsify_row_intervals band -> write) so the final write IR lowers natively.
+# These tests are Hail-free: they cover the pure scratch-URI helper + a static-AST check of
+# the restructured A.3 branch. The lowering PROOF itself is the cluster repro
+# scripts/a3_blockmatrix_lowering_repro.py (Carter runs it; Hail not importable here).
+
+
+def test_a3_scratch_uri_is_path_isolated_and_idempotent():
+    """The A.3 correlation-scratch URI must be derived from the final .bm URI with a
+    DISTINCT suffix (so cleanup/re-fire can never clobber the real output) and be
+    deterministic (idempotent for resume). Pure-Python, no Hail."""
+    from aou_ld_panel import _a3_scratch_uri
+    bm = "gs://rw-migration-aou-rw-476cdac2/ld/bm/m2_region_00006.bm"
+    scratch = _a3_scratch_uri(bm)
+    # distinct from the final .bm (no clobber)
+    assert scratch != bm
+    # path-isolated: shares the prefix dir, distinct leaf
+    assert scratch == "gs://rw-migration-aou-rw-476cdac2/ld/bm/m2_region_00006.corr_scratch.bm"
+    # the final .bm path is NOT a prefix of the scratch in a way that would nest it inside
+    assert not scratch.startswith(bm + "/")
+    # deterministic / idempotent
+    assert _a3_scratch_uri(bm) == scratch
+    # local path (no gs://) also handled
+    local = "/tmp/bm/synth_a3.bm"
+    assert _a3_scratch_uri(local) == "/tmp/bm/synth_a3.corr_scratch.bm"
+    # defensive: a URI not ending in .bm still gets a distinct, non-nested scratch
+    weird = "gs://bkt/ld/bm/region_x"
+    assert _a3_scratch_uri(weird) == "gs://bkt/ld/bm/region_x.corr_scratch.bm"
+    assert _a3_scratch_uri(weird) != weird
+
+
+def test_a3_branch_uses_materialize_then_band_not_fused_write():
+    """STATIC-AST regression: the restructured A.3 path must NOT write the fused
+    hl.ld_matrix IR directly; it must reproduce ld_matrix's internals with a checkpoint
+    inserted (row_correlation + locus_windows + sparsify_row_intervals + checkpoint) so the
+    final write lowers to the native distributed writer. Also pins that A.1/A.2 still use
+    ld_matrix/to_numpy and that the MED-4 guard + CR-003 sidecars remain. Pure-Python."""
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    tree = ast.parse(src)
+    attrs = {n.attr for n in ast.walk(tree) if isinstance(n, ast.Attribute)}
+    # NEW A.3 building blocks present (these reproduce hl.ld_matrix's own internals)
+    assert "row_correlation" in attrs, "A.3 fix must call hl.row_correlation"
+    assert "locus_windows" in attrs, "A.3 fix must map bp radius via locus_windows"
+    assert "sparsify_row_intervals" in attrs, "A.3 fix must band via sparsify_row_intervals"
+    assert "checkpoint" in attrs, "A.3 fix must checkpoint the correlation BM (break fused IR)"
+    # A.1/A.2 preserved: ld_matrix + to_numpy still referenced
+    assert "ld_matrix" in attrs, "A.1/A.2 must still construct hl.ld_matrix"
+    assert "to_numpy" in attrs, "A.1/A.2 must still densify via to_numpy"
+    assert "sparsify_triangle" in attrs, "A.2 must still sparsify_triangle"
+    # The dedicated helper exists and is wired into the A.3 branch
+    assert "_write_a3_banded_correlation_bm" in src
+    assert src.count("_write_a3_banded_correlation_bm(") >= 3  # 1 def + 2 call sites
+    # MED-4 guard + CR-003 sidecars survive the restructure
+    assert "_assert_blockmatrix_written" in src
+    assert ".variant_ids.tsv" in src and ".rsids.tsv" in src
+
+
+def test_a3_helper_does_not_call_fused_ld_matrix_write():
+    """The _write_a3_banded_correlation_bm helper body must NOT itself call
+    hl.ld_matrix (that would re-introduce the fused-IR write). It must build the
+    correlation BM via row_correlation and band via sparsify_row_intervals. Pure-Python:
+    parse just that function's AST subtree."""
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    tree = ast.parse(src)
+    fn = next(
+        (n for n in ast.walk(tree)
+         if isinstance(n, ast.FunctionDef) and n.name == "_write_a3_banded_correlation_bm"),
+        None,
+    )
+    assert fn is not None, "_write_a3_banded_correlation_bm must be defined"
+    fn_attrs = {n.attr for n in ast.walk(fn) if isinstance(n, ast.Attribute)}
+    assert "ld_matrix" not in fn_attrs, (
+        "the A.3 helper must NOT call hl.ld_matrix (re-introduces the fused-IR hang); "
+        "it must reproduce ld_matrix's internals instead"
+    )
+    assert "row_correlation" in fn_attrs
+    assert "sparsify_row_intervals" in fn_attrs
+    assert "locus_windows" in fn_attrs
+    assert "checkpoint" in fn_attrs
+    assert "write" in fn_attrs
+
+
 def test_compute_region_ld_path_a2_medium(synthetic_mt_path, mock_aou_env, tmp_path):
     """A.2 (medium region_class): sparsify_triangle + to_numpy -> lower-tri .npz.
     Hail-gated (runs on AoU / the dev fire) — first coverage of Path A.2."""

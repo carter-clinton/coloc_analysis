@@ -2286,7 +2286,14 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             # Local-test path: write to a temp local dir
             local_path = (out_local_dir or Path("/tmp")) / "bm" / f"{rid}.bm"
             local_path.parent.mkdir(parents=True, exist_ok=True)
-            ld_bm.write(str(local_path), overwrite=True)
+            # m3-W2 A.3-lowering fix: do NOT write the fused hl.ld_matrix IR directly
+            # (it falls back to the interpreted, driver-bound BlockMatrixWrite that hangs
+            # 60+ min on large banded matrices). Instead reproduce ld_matrix's internals
+            # (row_correlation -> checkpoint -> sparsify_row_intervals banding -> write) so
+            # the final write IR is small and lowers to the native distributed writer.
+            # Numerically identical (same Pearson r, same bp-radius band). See
+            # .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md.
+            _write_a3_banded_correlation_bm(mt_r, radius_bp, str(local_path))
             # MED-4: validate the .bm is populated (read-back shape), not merely
             # that write() returned. m3-W1 wrote a success marker on empty
             # contents; Path A.3 had no analogous catastrophe guard.
@@ -2306,7 +2313,11 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             out_uri = str(local_path)
         else:
             bm_uri = f"{out_bucket}/bm/{rid}.bm"
-            ld_bm.write(bm_uri, overwrite=True)
+            # m3-W2 A.3-lowering fix (see local-test branch above + debug session):
+            # materialize the correlation BM (native writer) before banding+write so the
+            # fused-IR interpreted-write hang is avoided. Identical numerics to the old
+            # hl.ld_matrix(...).write(bm_uri) path.
+            _write_a3_banded_correlation_bm(mt_r, radius_bp, bm_uri)
             _assert_blockmatrix_written(bm_uri, n_var, rid)  # MED-4
             # Upload sidecar TSVs to the same gs://.../bm/ prefix so the
             # NCSU-side gsutil cp -r picks them up alongside the .bm dir.
@@ -2394,6 +2405,82 @@ def _assert_blockmatrix_written(uri: str, n_var: int, region_id: str) -> None:
             f"({nr}, {nc}); expected ({n_var}, {n_var}) — empty/corrupt write "
             f"(m3-W2 MED-4)."
         )
+
+
+def _a3_scratch_uri(bm_uri: str) -> str:
+    """Derive the Path-A.3 intermediate correlation-BlockMatrix scratch URI.
+
+    m3-W2 A.3-lowering fix (.planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md):
+    ``hl.ld_matrix(...).write()`` builds a single FUSED lazy ``BlockMatrixIR`` (the
+    row_correlation of standardized genotypes composed with the radius banding). Hail
+    0.2.135's BlockMatrixIR lowerer cannot lower that composition scalably -> it falls back
+    to the INTERPRETED, driver-mediated ``BlockMatrixWrite`` -> a single driver-side
+    ``ContextRDD.collect`` that hangs for 60+ min on a large banded matrix.
+
+    The fix materializes the (un-banded) correlation BlockMatrix to a scratch path FIRST
+    (native distributed writer), then reads it back, applies the radius band, and writes
+    the final ``.bm`` — a small IR (read-checkpoint + sparsify) that lowers natively. This
+    helper builds the scratch path: ``{bm_uri}`` ("…/bm/{rid}.bm") -> "…/bm/{rid}.corr_scratch.bm".
+
+    The scratch path is path-isolated from the final ``.bm`` (distinct suffix), so a
+    best-effort cleanup failure or a re-fire can never clobber the real output, and the
+    correlation BM is overwritten (``overwrite=True``) on resume.
+
+    Pure-Python (no Hail) so it is unit-testable on the NCSU HPC node.
+    """
+    if bm_uri.endswith(".bm"):
+        return bm_uri[: -len(".bm")] + ".corr_scratch.bm"
+    return bm_uri + ".corr_scratch.bm"
+
+
+def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
+                                    bm_uri: str, *, stage_locally: bool = True) -> None:
+    """Write a Path-A.3 radius-banded Pearson-r BlockMatrix WITHOUT the fused-IR hang.
+
+    Numerically identical to ``hl.ld_matrix(mt_r.GT.n_alt_alleles(), mt_r.locus,
+    radius=radius_bp).write(bm_uri)`` — it reproduces ld_matrix's OWN documented internals
+    (``row_correlation`` of standardized genotypes, then ``sparsify_row_intervals`` banded
+    by ``locus_windows``) but inserts a ``checkpoint`` between the correlation and the
+    sparsify+write so the final write IR is small and lowers to Hail's native distributed
+    writer instead of the interpreted (driver-bound) one.
+
+    Why this is exactly ld_matrix and NOT a hand-rolled covariance:
+      - ``hl.row_correlation(entry_expr)`` IS ld_matrix's standardization step: it
+        mean-imputes missing genotypes WITHIN variant, centers + unit-normalizes each row,
+        then computes the Gram matrix => Pearson **r** (not raw covariance). We call it
+        directly, so there is zero standardization-drift risk.
+      - ``hl.linalg.utils.locus_windows(locus_expr, radius)`` maps the BASE-PAIR radius to
+        the SAME row-index windows ld_matrix uses (the loci are sorted, so a bp window is a
+        contiguous row-index interval). ``sparsify_row_intervals(..., blocks_only=False)``
+        keeps the EXACT in-band r values (blocks_only=True would zero whole off-band blocks
+        but admit extra in-block entries — wrong for an LD reference panel consumed by
+        SuSiE-RSS; we want byte-equivalent banding to the old path).
+
+    See .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md for the full
+    root-cause + tradeoff record. ``stage_locally=True`` reduces the distributed-write
+    network bottleneck (per the Hail BlockMatrix docs).
+    """
+    import hail as hl
+
+    scratch_uri = _a3_scratch_uri(bm_uri)
+    # 1. Standardized Pearson-r correlation matrix (ld_matrix's own first step).
+    corr_bm = hl.row_correlation(mt_r.GT.n_alt_alleles())
+    # 2. MATERIALIZE -> native distributed writer; breaks the fused BlockMatrixIR so the
+    #    write below reads a CONCRETE on-disk BlockMatrix rather than re-lowering the fusion.
+    corr_bm = corr_bm.checkpoint(scratch_uri, overwrite=True)
+    # 3. bp radius -> row-index band (identical mapping to ld_matrix).
+    starts, stops = hl.linalg.utils.locus_windows(mt_r.locus, radius=radius_bp)
+    # 4. Apply the EXACT same band as ld_matrix (blocks_only=False = exact in-band r values).
+    banded = corr_bm.sparsify_row_intervals(
+        starts=starts, stops=stops, blocks_only=False,
+    )
+    # 5. Final write is now a small IR (read-checkpoint + sparsify) -> lowers natively.
+    banded.write(bm_uri, overwrite=True, stage_locally=stage_locally)
+    # 6. Best-effort scratch cleanup (survival is harmless: overwrite=True on any re-fire).
+    try:
+        hl.current_backend().fs.rmtree(scratch_uri)
+    except Exception as e:  # noqa: BLE001 -- cleanup is best-effort, never fatal
+        print(f"[compute_region_ld] A.3 scratch cleanup skipped for {scratch_uri}: {e}")
 
 
 def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
