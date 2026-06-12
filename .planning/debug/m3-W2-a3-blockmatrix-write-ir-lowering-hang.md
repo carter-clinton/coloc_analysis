@@ -81,6 +81,25 @@ started: First surfaced 2026-06-12 on the dev-10 GATE-2 fire (first live A.3 wri
     locus_windows(radius)) -> write. Numerically IDENTICAL to hl.ld_matrix (same standardization,
     same banding), but the write IR is broken so it lowers to the native distributed writer.
 
+- timestamp: 2026-06-11T18:00:00Z
+  checked: code review (m3-W2-a3-blockmatrix-write-ir-lowering-hang-REVIEW.md) — CR-01 + WR-01..04 + IN-01..03
+  found: REMEDIATION APPLIED (this session). (1) CR-01 confirmed real: ordering A checkpoints the
+    UN-banded full-dense correlation -> O(n_var^2) scratch (~60 GB region_00006, ~2 TB
+    m2_region_00145). The doc's "radius-banded not dense" claim was wrong and is corrected above.
+    (2) The review's suggested band-before-checkpoint (ordering B) was NOT adopted as the default
+    because `.checkpoint()` is a write and band-before-checkpoint re-materializes the SAME fused
+    correlation+band IR that hung — it might re-hang. (3) scripts/a3_blockmatrix_lowering_repro.py
+    restructured into a 3-WAY ordering experiment (OLD / A / B) that, per ordering, reports the
+    lowering-warning presence + scratch footprint + .bm validity + r-parity vs OLD, plus a no-Hail
+    `--report-scratch-size` mode that extrapolates dense-vs-banded scratch from config/ld_regions.tsv
+    (worst case m2_region_00145 ~1.8 TiB). (4) WR-02 observability + soft-guard log added to
+    _write_a3_banded_correlation_bm (logs n_var + dense footprint before the checkpoint; loud WARN
+    past 300 GiB). (5) IN-01: routing now happens before `ld_bm = hl.ld_matrix(...)`, which is
+    constructed ONLY for A.1/A.2 (A.3 no longer holds the unused fused IR). (6) New pure-Python
+    helper `_dense_footprint_bytes(n_var)` + unit tests. Full m3 suite 153 passed / 35 skipped.
+  implication: GATE-3 (322-cell production) is BLOCKED on CR-01. The cluster ordering experiment
+    must decide the production ordering BEFORE GATE-3 fires (see Resolution.gate3_blocker).
+
 ## Resolution
 <!-- OVERWRITE as understanding evolves -->
 
@@ -128,10 +147,23 @@ fix: |
     locus_windows directly, so the NEW band is BYTE-equivalent to ld_matrix's band. We use
     blocks_only=False to keep exact in-band r values (blocks_only=True trades exactness for fewer
     blocks — wrong for an LD reference panel consumed by SuSiE-RSS).
-  - One extra on-disk materialization (the scratch correlation BM) is the cost. For a banded region
-    that is bounded (radius-banded, not the full O(n^2) dense), and it is written by the SCALABLE
-    native writer — which is the entire point. The 50-Mb-banded xlarge invariant (HIGH-3) is preserved
-    because locus_windows uses the SAME radius_bp the old code passed to hl.ld_matrix.
+  - One extra on-disk materialization (the scratch correlation BM) is the cost. CORRECTION
+    (2026-06-11, review CR-01): the EARLIER claim here — "radius-banded, not the full O(n^2)
+    dense" — was FACTUALLY WRONG for the code as written. The current ordering (call it
+    ordering A) checkpoints `hl.row_correlation(...)` BEFORE `sparsify_row_intervals`, so the
+    scratch BM is the FULL DENSE n×n float32 correlation matrix (O(n_var^2)), NOT the banded
+    one. The band is applied only AFTER the checkpoint, to the already-materialized dense
+    scratch. Quantified: region_00006 (n_var=122,678) -> ~60 GB dense scratch; the largest
+    production region m2_region_00145 (102.5 Mb, ~710k var) -> ~2 TB dense scratch.
+    The 50-Mb-banded xlarge invariant (HIGH-3) is preserved for the FINAL .bm (locus_windows
+    uses the SAME radius_bp), but it does NOT bound the scratch.
+  - WHY WE DID NOT BLINDLY SWITCH TO band-before-checkpoint (ordering B): `.checkpoint()` IS a
+    write, so checkpointing `row_correlation -> sparsify_row_intervals` materializes the SAME
+    fused (correlation+band) IR shape that originally hung as `hl.ld_matrix(...).write()`.
+    Ordering B MIGHT RE-INTRODUCE THE HANG. Ordering A checkpoints `row_correlation` ALONE
+    (likely lowers) precisely to avoid that fusion. WHICH ORDERING ACTUALLY LOWERS IS
+    EMPIRICALLY UNKNOWN WITHOUT THE CLUSTER. Therefore the production default ordering is NOT
+    changed here; the cluster repro (now a 3-way ordering experiment) decides — see CR-01 below.
 
 verification: |
   PURE-PYTHON (run here, NCSU HPC — Hail not importable): regression tests for
@@ -140,41 +172,68 @@ verification: |
     (c) static-AST check that the A.3 branch now calls row_correlation + locus_windows +
         sparsify_row_intervals + checkpoint, and that A.1/A.2 still reference ld_matrix/to_numpy,
     (d) static-AST check that _assert_blockmatrix_written + sidecar emission still present after the write.
-  CLUSTER (Carter runs; Hail-required, NOT runnable here): a3_blockmatrix_lowering_repro.py builds a
-    small synthetic MT, runs OLD `hl.ld_matrix(...).write()` and NEW path, greps the Hail driver log
-    for the lowering warning (must be PRESENT on OLD, ABSENT on NEW), and asserts a valid .bm/_SUCCESS
-    on NEW with the expected (n,n) shape. THIS is the lowering PROOF — the pure-Python tests cannot
-    exercise Hail.
-  PURE-PYTHON STATUS: PASS. `tests/m3/ -q` => 151 passed, 35 skipped (Hail-gated skips expected).
-    3 new pure-Python guards green: test_a3_scratch_uri_is_path_isolated_and_idempotent,
+  CLUSTER (Carter runs; Hail-required, NOT runnable here): a3_blockmatrix_lowering_repro.py is now a
+    3-WAY ORDERING EXPERIMENT. It builds a small synthetic MT and runs OLD `hl.ld_matrix(...).write()`,
+    ordering A (checkpoint dense correlation -> band -> write; current default), and ordering B
+    (band -> checkpoint banded -> write; the review's proposal that MIGHT re-hang). For EACH it reports
+    the lowering-warning presence (PRESENT on OLD = positive control; the A/B results DECIDE), the
+    scratch footprint (dense vs banded), .bm validity ((n,n)+_SUCCESS), and r-parity vs OLD. A no-Hail
+    `--report-scratch-size` mode extrapolates the dense-vs-banded scratch at REAL production n_var from
+    config/ld_regions.tsv so a green small-n run cannot falsely clear GATE 3.
+    DECISION RUBRIC: ship the warning-free ordering with the smallest scratch; if both A and B are
+    warning-free, prefer B (banded); if only A is warning-free, A is required and the ~2 TB worst-case
+    must be sized against cluster scratch capacity. THIS experiment is the lowering PROOF + the
+    GATE-3 ordering decision — the pure-Python tests cannot exercise Hail.
+  PURE-PYTHON STATUS: PASS. `tests/m3/ -q` => 153 passed, 35 skipped (Hail-gated skips expected).
+    5 pure-Python guards green: test_a3_scratch_uri_is_path_isolated_and_idempotent,
     test_a3_branch_uses_materialize_then_band_not_fused_write,
-    test_a3_helper_does_not_call_fused_ld_matrix_write. The existing OOM-veto routing test
+    test_a3_helper_does_not_call_fused_ld_matrix_write, test_dense_footprint_bytes_matches_n2_times_4,
+    test_dense_footprint_helper_used_by_a3_write_for_observability. The existing OOM-veto routing test
     (test_route_region_path_oom_veto) still green (A.1/A.2 routing unchanged).
-  CLUSTER STATUS: PENDING (Carter). scripts/a3_blockmatrix_lowering_repro.py is the lowering PROOF.
+  CLUSTER STATUS: PENDING (Carter). scripts/a3_blockmatrix_lowering_repro.py is the lowering PROOF
+    + the GATE-3 ordering decision (3-way experiment).
+gate3_blocker: |
+  CR-01 (review 2026-06-11): GATE-3 (322-cell production) is BLOCKED until the cluster ordering
+  experiment (scripts/a3_blockmatrix_lowering_repro.py) picks a warning-free ordering whose
+  worst-case scratch fits cluster scratch capacity. The current default (ordering A) checkpoints
+  the FULL DENSE n×n correlation (~2 TB worst case, m2_region_00145 ~710k var). Ordering B
+  (band-before-checkpoint) shrinks scratch ONLY for mid-size A.3 regions — for the ~100 Mb
+  xlarge regions the 50-Mb-capped radius bands ~98% of the row, so banded ≈ dense, and B might
+  re-hang anyway. dev-10 GATE-2 (one dev region, region_00006 ~60 GB scratch, ordering A) is
+  TOLERABLE and may proceed on current code; the production 322-cell fire is NOT until CR-01 is
+  resolved by the cluster experiment. See WAVE-2-GATE-READINESS.md.
 files_changed:
-  - src/python/aou_ld_panel.py (A.3-only: _a3_scratch_uri + _write_a3_banded_correlation_bm helpers; A.3 branch now calls the helper instead of ld_bm.write(); A.1/A.2 + MED-4 guard + CR-003 sidecars untouched)
-  - tests/m3/test_aou_ld_panel_local.py (3 new pure-Python A.3 guards)
-  - scripts/a3_blockmatrix_lowering_repro.py (NEW; cluster lowering proof)
-  - .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md (A.3-fix note + re-fire flag)
+  - src/python/aou_ld_panel.py (A.3-only: route-before-ld_bm so the fused ld_bm is built ONLY for A.1/A.2 [IN-01]; _dense_footprint_bytes helper [WR-02]; _write_a3_banded_correlation_bm logs n_var + dense footprint + loud WARN past 300 GiB before the checkpoint [WR-02]; A.1/A.2 + MED-4 guard + CR-003 sidecars behaviorally untouched; default ordering A UNCHANGED — the cluster decides A vs B)
+  - tests/m3/test_aou_ld_panel_local.py (3 prior A.3 guards + 2 new: _dense_footprint_bytes unit test + static-AST that the A.3 helper logs the footprint)
+  - scripts/a3_blockmatrix_lowering_repro.py (RESTRUCTURED into a 3-way OLD/A/B ordering experiment + no-Hail --report-scratch-size extrapolation + decision rubric)
+  - .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-GATE-READINESS.md (dev-10 GATE-2 may proceed on ordering A; GATE-3 BLOCKED on CR-01)
 
 ## .continue-here / SUMMARY
 <!-- What still needs the cluster before dev-10 GATE-2 resumes -->
 
-WHAT LANDED (NCSU-side, this session):
+WHAT LANDED (NCSU-side, original fix):
 - A.3-only code fix in src/python/aou_ld_panel.py. The fused `hl.ld_matrix(...).write()` is replaced
-  in BOTH A.3 sub-branches (local-test + bucket) by `_write_a3_banded_correlation_bm(mt_r, radius_bp, uri)`,
-  which does row_correlation -> checkpoint(scratch) -> locus_windows(radius_bp) -> sparsify_row_intervals
-  (blocks_only=False) -> write(stage_locally=True). Numerically identical to the old path; A.1/A.2,
-  the MED-4 `_assert_blockmatrix_written` guard, and the CR-003 sidecar emission/upload are unchanged.
-- 3 pure-Python regression tests (above) — all green; full m3 suite 151 passed / 35 skipped.
+  in BOTH A.3 sub-branches (local-test + bucket) by `_write_a3_banded_correlation_bm(...)`, which does
+  row_correlation -> checkpoint(scratch) -> locus_windows(radius_bp) -> sparsify_row_intervals
+  (blocks_only=False) -> write(stage_locally=True). Numerically identical to the old path.
 
-WHAT STILL REQUIRES THE CLUSTER (BLOCKS dev-10 GATE-2 resume — Carter, Hail-required):
-1. LOWERING PROOF: run scripts/a3_blockmatrix_lowering_repro.py on the Dataproc/Hail cluster.
-   EXPECT: lowering-warning PRESENT on OLD, ABSENT on NEW; NEW .bm readable shape (n,n) + _SUCCESS;
-   OLD vs NEW max|Δr| ~ 0 (parity). Run instructions are in the script docstring.
-2. SMALL-REGION RE-TEST: after the repro passes, re-fire dev-10 GATE-2 with the fixed code. The
-   previously-hanging A.3 cell (m2_region_00006, span 17.7 Mb) must write a valid .bm in bounded time.
-   Verify at the data layer (gsutil du of the .bm/parts + _assert_blockmatrix_written shape) — _SUCCESS
-   is NOT proof (the project invariant).
+WHAT LANDED (REMEDIATION, 2026-06-11 review pass):
+- CR-01 corrected in this doc: ordering A checkpoints the FULL DENSE n×n correlation (~2 TB worst case),
+  NOT a banded matrix. The default ordering is INTENTIONALLY UNCHANGED (band-before-checkpoint = ordering
+  B might re-hang because .checkpoint() is a write of the same fused IR; the cluster must decide).
+- repro RESTRUCTURED into a 3-way OLD/A/B ordering experiment + a no-Hail --report-scratch-size mode
+  (worst case m2_region_00145 ~1.8 TiB) + a decision rubric. WR-02 observability log + soft guard added.
+  IN-01: ld_bm built only for A.1/A.2. New _dense_footprint_bytes helper + 2 unit tests.
+- Full m3 suite 153 passed / 35 skipped.
 
-ONLY AFTER both cluster steps PASS is this session resolvable (move to resolved/ + KB entry + DEBUG COMPLETE).
+WHAT STILL REQUIRES THE CLUSTER:
+1. dev-10 GATE-2 (TOLERABLE on current ordering A; ~60 GB scratch for region_00006): run the repro
+   ordering experiment, then re-fire the previously-hanging A.3 cell (m2_region_00006). Verify at the
+   data layer (gsutil du of the .bm/parts + _assert_blockmatrix_written shape) — _SUCCESS is NOT proof.
+2. GATE-3 (322-cell production) is BLOCKED on CR-01: the cluster ordering experiment must pick a
+   warning-free ordering whose worst-case scratch (~2 TB) fits cluster scratch capacity. Apply the
+   decision rubric in the repro docstring; if it selects ordering B, re-order
+   _write_a3_banded_correlation_bm (band-before-checkpoint) and re-run --report-scratch-size before
+   the production fire.
+
+ONLY AFTER the cluster ordering experiment + the GATE-3 sizing decision is this session resolvable.

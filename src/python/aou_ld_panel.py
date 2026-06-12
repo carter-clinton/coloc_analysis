@@ -2211,11 +2211,29 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     # 50-Mb-banded. The invariant "only xlarge cells are radius-capped" is pinned
     # by tests::test_ld_regions_radius_cap_only_affects_xlarge, so a new banded
     # region in a regenerated manifest surfaces for review. See WAVE-2-PLAN.md HIGH-3.
-    ld_bm = hl.ld_matrix(
-        mt_r.GT.n_alt_alleles(),
-        mt_r.locus,
-        radius=radius_bp,
-    )
+    # IN-01 (m3-W2 A.3 review): the lazy `hl.ld_matrix(...)` IR is consumed ONLY by the
+    # A.1/A.2 branches (.to_numpy() / .sparsify_triangle().to_numpy()). The A.3 branch no
+    # longer touches it — it rebuilds ld_matrix's internals via
+    # _write_a3_banded_correlation_bm (row_correlation -> checkpoint -> band -> write) to
+    # dodge the fused-IR lowering hang. Constructing ld_bm here for an A.3 region is harmless
+    # (BlockMatrix construction is lazy; no compute) but confusing, so we route FIRST and only
+    # build ld_bm for A.1/A.2. A.1/A.2 behavior is byte-identical (same args, same object).
+    span_mb = (end_b38 - start_b38) / 1_000_000
+    path_a = _route_region_path(region_class, span_mb)
+    # Observability: log when the OOM veto demoted a small/medium-classed region
+    # to A.3 by span (m3-W2 audit HIGH-1) — otherwise the path choice is silent.
+    if path_a == "A.3" and region_class in ("small", "medium") and span_mb > PATH_A2_MAX_MB:
+        print(f"[compute_region_ld] OOM-veto (m3-W2 HIGH-1): region_class="
+              f"{region_class!r} but span {span_mb:.1f} Mb > {PATH_A2_MAX_MB} Mb "
+              f"-> A.3 BlockMatrix write (avoids an O(n_var^2) driver to_numpy OOM).")
+
+    ld_bm = None
+    if path_a in ("A.1", "A.2"):
+        ld_bm = hl.ld_matrix(
+            mt_r.GT.n_alt_alleles(),
+            mt_r.locus,
+            radius=radius_bp,
+        )
     # CR-002 fix (2026-05-01): collect variant_ids and rsids in a SINGLE
     # aggregate_rows traversal to guarantee row-order alignment between the
     # two sidecar vectors. Both come from the same MT row pass; row order
@@ -2256,15 +2274,6 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
         f"rsids count {len(rsids)} != n_var {n_var} for region {rid}"
     )
 
-    span_mb = (end_b38 - start_b38) / 1_000_000
-    path_a = _route_region_path(region_class, span_mb)
-    # Observability: log when the OOM veto demoted a small/medium-classed region
-    # to A.3 by span (m3-W2 audit HIGH-1) — otherwise the path choice is silent.
-    if path_a == "A.3" and region_class in ("small", "medium") and span_mb > PATH_A2_MAX_MB:
-        print(f"[compute_region_ld] OOM-veto (m3-W2 HIGH-1): region_class="
-              f"{region_class!r} but span {span_mb:.1f} Mb > {PATH_A2_MAX_MB} Mb "
-              f"-> A.3 BlockMatrix write (avoids an O(n_var^2) driver to_numpy OOM).")
-
     if path_a == "A.1":
         ld_np = ld_bm.to_numpy().astype("float32")
         out_uri = _save_npz(rid, ld_np, variant_ids, rsids, out_bucket, out_local_dir)
@@ -2293,7 +2302,7 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             # the final write IR is small and lowers to the native distributed writer.
             # Numerically identical (same Pearson r, same bp-radius band). See
             # .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md.
-            _write_a3_banded_correlation_bm(mt_r, radius_bp, str(local_path))
+            _write_a3_banded_correlation_bm(mt_r, radius_bp, str(local_path), n_var=n_var)
             # MED-4: validate the .bm is populated (read-back shape), not merely
             # that write() returned. m3-W1 wrote a success marker on empty
             # contents; Path A.3 had no analogous catastrophe guard.
@@ -2317,7 +2326,7 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             # materialize the correlation BM (native writer) before banding+write so the
             # fused-IR interpreted-write hang is avoided. Identical numerics to the old
             # hl.ld_matrix(...).write(bm_uri) path.
-            _write_a3_banded_correlation_bm(mt_r, radius_bp, bm_uri)
+            _write_a3_banded_correlation_bm(mt_r, radius_bp, bm_uri, n_var=n_var)
             _assert_blockmatrix_written(bm_uri, n_var, rid)  # MED-4
             # Upload sidecar TSVs to the same gs://.../bm/ prefix so the
             # NCSU-side gsutil cp -r picks them up alongside the .bm dir.
@@ -2407,6 +2416,32 @@ def _assert_blockmatrix_written(uri: str, n_var: int, region_id: str) -> None:
         )
 
 
+# m3-W2 A.3 review WR-02: soft guard threshold. If the projected DENSE correlation
+# scratch (n_var^2 x 4 bytes) exceeds this, the run logs a loud WARNING so the largest
+# regions surface for review rather than silently writing hundreds of GB / TBs to scratch.
+# This is observability only — it does NOT change the (ordering A) default behavior. The
+# real ordering decision (A vs B) is gated on the cluster repro (see the debug session /
+# WAVE-2-GATE-READINESS GATE-3 block + CR-01).
+A3_DENSE_SCRATCH_WARN_BYTES = 300 * 1024 ** 3  # 300 GiB
+
+
+def _dense_footprint_bytes(n_var: int) -> int:
+    """Bytes a FULL DENSE n_var x n_var float32 correlation matrix would occupy.
+
+    This is the footprint of ordering A's checkpointed scratch (CR-01): the current
+    A.3 path checkpoints the UN-banded ``hl.row_correlation(...)`` result, so the scratch
+    is the complete O(n_var^2) dense matrix (4 bytes/float32 entry), NOT the radius-banded
+    matrix. Used for the WR-02 observability log + the scratch-size extrapolation in
+    scripts/a3_blockmatrix_lowering_repro.py --report-scratch-size.
+
+    Pure-Python (no Hail / numpy) so it is unit-testable on the NCSU HPC node.
+    """
+    n = int(n_var)
+    if n < 0:
+        raise ValueError(f"n_var must be non-negative, got {n_var!r}")
+    return n * n * 4
+
+
 def _a3_scratch_uri(bm_uri: str) -> str:
     """Derive the Path-A.3 intermediate correlation-BlockMatrix scratch URI.
 
@@ -2434,7 +2469,8 @@ def _a3_scratch_uri(bm_uri: str) -> str:
 
 
 def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
-                                    bm_uri: str, *, stage_locally: bool = True) -> None:
+                                    bm_uri: str, *, stage_locally: bool = True,
+                                    n_var: "int | None" = None) -> None:
     """Write a Path-A.3 radius-banded Pearson-r BlockMatrix WITHOUT the fused-IR hang.
 
     Numerically identical to ``hl.ld_matrix(mt_r.GT.n_alt_alleles(), mt_r.locus,
@@ -2463,6 +2499,31 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
     import hail as hl
 
     scratch_uri = _a3_scratch_uri(bm_uri)
+    # WR-02 (m3-W2 A.3 review): surface the scratch cost BEFORE the checkpoint. The current
+    # ordering (A) checkpoints the UN-banded correlation, so the scratch is the FULL DENSE
+    # n_var x n_var float32 matrix (CR-01), NOT the radius-banded one. Log n_var + the dense
+    # footprint so production runs make the scratch cost visible; loud WARN past the soft
+    # threshold so the biggest regions surface for review. Pure logging — no behavior change
+    # to the default ordering (the A-vs-B ordering decision is gated on the cluster repro).
+    if n_var is None:
+        try:
+            n_var = mt_r.count_rows()
+        except Exception:  # noqa: BLE001 -- count is best-effort for the log only
+            n_var = None
+    if n_var is not None:
+        dense_bytes = _dense_footprint_bytes(n_var)
+        dense_gib = dense_bytes / 1024 ** 3
+        print(f"[compute_region_ld] A.3 scratch (ordering A, CR-01): n_var={n_var:,} -> "
+              f"checkpointing the FULL DENSE correlation = {dense_gib:,.1f} GiB float32 "
+              f"({dense_bytes:,} bytes) to {scratch_uri}. The radius band is applied AFTER "
+              f"this checkpoint, so the scratch is dense (O(n_var^2)), not banded.")
+        if dense_bytes > A3_DENSE_SCRATCH_WARN_BYTES:
+            print(f"[compute_region_ld] WARNING A.3 dense scratch {dense_gib:,.1f} GiB "
+                  f"exceeds the {A3_DENSE_SCRATCH_WARN_BYTES / 1024 ** 3:,.0f} GiB soft "
+                  f"threshold (m3-W2 WR-02/CR-01). For the largest production regions this "
+                  f"can reach ~2 TB. GATE-3 production is BLOCKED until the cluster ordering "
+                  f"experiment picks a warning-free ordering whose worst-case scratch fits "
+                  f"cluster capacity. See WAVE-2-GATE-READINESS.md / debug session.")
     # 1. Standardized Pearson-r correlation matrix (ld_matrix's own first step).
     corr_bm = hl.row_correlation(mt_r.GT.n_alt_alleles())
     # 2. MATERIALIZE -> native distributed writer; breaks the fused BlockMatrixIR so the

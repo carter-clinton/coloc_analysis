@@ -2623,6 +2623,44 @@ def test_a3_helper_does_not_call_fused_ld_matrix_write():
     assert "write" in fn_attrs
 
 
+def test_dense_footprint_bytes_matches_n2_times_4():
+    """WR-02 / CR-01: the dense-scratch footprint helper must return n_var^2 * 4 (float32),
+    which is what ordering A checkpoints (the UN-banded correlation). Pure-Python, no Hail.
+    Pins the worst-case extrapolation the GATE-3 sizing decision relies on."""
+    from aou_ld_panel import _dense_footprint_bytes
+    assert _dense_footprint_bytes(0) == 0
+    assert _dense_footprint_bytes(1) == 4
+    assert _dense_footprint_bytes(2) == 16
+    # dev-10 failure region: 122,678 var -> ~60.2 GB dense scratch (decimal GB, per review CR-01)
+    n = 122_678
+    assert _dense_footprint_bytes(n) == n * n * 4
+    assert abs(_dense_footprint_bytes(n) / 1e9 - 60.2) < 0.5
+    # largest production region (m2_region_00145 ~710k var) -> ~2 TB dense scratch
+    big = 710_000
+    assert _dense_footprint_bytes(big) == big * big * 4
+    assert abs(_dense_footprint_bytes(big) / 1e12 - 2.0) < 0.1
+    with pytest.raises(ValueError):
+        _dense_footprint_bytes(-1)
+
+
+def test_dense_footprint_helper_used_by_a3_write_for_observability():
+    """STATIC-AST: the A.3 write helper must reference the dense-footprint helper so the
+    scratch cost (CR-01) is logged before the checkpoint (WR-02). Pure-Python."""
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    tree = ast.parse(src)
+    fn = next(
+        (n for n in ast.walk(tree)
+         if isinstance(n, ast.FunctionDef) and n.name == "_write_a3_banded_correlation_bm"),
+        None,
+    )
+    assert fn is not None
+    called = {n.func.id for n in ast.walk(fn)
+              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "_dense_footprint_bytes" in called, (
+        "WR-02: the A.3 helper must log the dense scratch footprint before the checkpoint"
+    )
+
+
 def test_compute_region_ld_path_a2_medium(synthetic_mt_path, mock_aou_env, tmp_path):
     """A.2 (medium region_class): sparsify_triangle + to_numpy -> lower-tri .npz.
     Hail-gated (runs on AoU / the dev fire) — first coverage of Path A.2."""
