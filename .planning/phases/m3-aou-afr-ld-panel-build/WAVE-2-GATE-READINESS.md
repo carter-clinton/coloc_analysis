@@ -33,6 +33,7 @@
 - HIGH-1 `to_numpy()` driver-OOM span-veto routing — FIXED `c6c32b3` (would have crashed the *first* dev-10 region).
 - HIGH-3 xlarge-radius → 50-Mb-banded LD — accepted + documented `c11949e` (downstream SuSiE-RSS must treat the 16 xlarge cells as banded).
 - MED-4 `.bm` populated-validation / MED-5 sidecar-upload-raise / MED-6 idempotency-byte-floor — FIXED `c11949e`; A.2/A.3 coverage tests added.
+- **A.3 BlockMatrixIR-lowering HANG — FIXED (2026-06-12).** The first live A.3 write on dev-10 GATE-2 (m2_region_00006, span 17.7 Mb, n_var=122,678) HUNG 60+ min: `hl.ld_matrix(...).write()` builds a single FUSED lazy `BlockMatrixIR` that Hail 0.2.135 cannot lower scalably → falls back to the INTERPRETED driver-bound `BlockMatrixWrite` (a single `ContextRDD.collect`). Fix = reproduce ld_matrix's own internals (`row_correlation` → **`checkpoint`** → `locus_windows` band → `sparsify_row_intervals` → `write`) so the final write IR is small and lowers to the native distributed writer. **Numerically identical** (same Pearson r, same bp-radius band; `blocks_only=False`). A.1/A.2 untouched. Pure-Python regression tests added; cluster lowering PROOF = `scripts/a3_blockmatrix_lowering_repro.py` (Carter runs on the cluster — Hail not importable on the NCSU node). **dev-10 GATE-2 must be RE-FIRED after the cluster repro confirms.** Session: `.planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md`.
 
 ## Sequencing recommendation (when recovery lands)
 1. ✅ AFR-sens promoted → 3-row `cohort_summary_m3.tsv` (GATE 1.5 closed 2026-06-11).
