@@ -1,9 +1,45 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "m3-W2-a3-blockmatrix-write-ir-lowering-hang — compute_region_ld Path A.3 ld_bm.write() on a fused lazy BlockMatrixIR hangs (BlockMatrixIR lowering not yet efficient/scalable -> interpreted BlockMatrixWrite -> driver-bound hang)"
 created: 2026-06-12T00:00:00Z
-updated: 2026-06-12T01:00:00Z
+updated: 2026-06-18T06:30:00Z
 mode: symptoms_prefilled / find_and_fix
+resolution: "FIX VALIDATED ON CLUSTER 2026-06-18 (quick 260618-3at). Ordering experiment ran on a 16-worker resize of cluster 20260617 (--skip-old --n-var 130000 --budget-sec 3600): ordering A COMPLETED 928.0s (valid A/repro_A.bm) = first cluster proof of the deployed fix; ordering B COMPLETED 863.5s (hang-free). --report-scratch-size shows banded(B)==dense(A) for ALL 23 A.3 regions (radius span+500kb, cap 50Mb, always >= span/2 -> band covers whole region) => B saves NO scratch => KEEP ordering A, B RETIRED. CR-01 reframed: ~1.8 TiB worst case (m2_region_00145) is ordering-INDEPENDENT; remaining GATE-3 question = xlarge dense-materialize compute cost vs region-splitting (NOT checkpoint ordering)."
+---
+
+## ★ 2026-06-18 RESOLUTION (quick `260618-3at`) — FIX CLUSTER-VALIDATED; KEEP A; B RETIRED
+
+The cluster ordering experiment ran on a **16-worker resize of cluster `20260617`**
+(`--skip-old --n-var 130000 --n-samples 2000 --radius-bp 1000000 --budget-sec 3600`,
+`MASTER=yarn`, 64 concurrent tasks):
+
+- **Ordering A COMPLETED — 928.0 s**, shape (130000,130000), valid `A/repro_A.bm`. The 21-second
+  gap between the dense checkpoint write and the final write is the mechanism working as designed
+  (final write reads concrete blocks → no driver collect). **First cluster validation of the
+  deployed A.3 fix** — dev-10 had paused before ever confirming ordering A on a cluster.
+- **Ordering B COMPLETED — 863.5 s**, valid `B/repro_B.bm`. B's `sparsify→checkpoint` (same IR
+  shape as the OLD hung write) **did NOT reproduce the hang** — the IR-shape caveat is cleared.
+- **OLD** skipped (`--skip-old`); the hang is already proven (dev-10 + the 8-vCPU 0.21 MiB/s grind
+  on the prior 2-worker attempt, which confirmed OLD is driver-bound and intractable).
+- The 2→16 resize succeeding **diagnosed the original 24-worker prod-cluster failure as
+  quota/size-bound, not project-level** (perimeter/credit).
+
+**DECISIVE FINDING (`--report-scratch-size`, full `config/ld_regions.tsv`):** `banded(B) ==
+dense(A)` for **all 23 A.3 regions**, not just the worst. The manifest sets `radius = span+500kb`
+(capped 50 Mb), which is always ≥ span/2, so the band covers ~the whole region for every A.3
+region → **ordering B saves scratch NOWHERE.** The script's generic `SHIP B` line assumes
+`banded ≪ dense`, which is false here.
+
+**DECISION: KEEP ordering A** (deployed + now cluster-validated). **Ordering B RETIRED** — it is
+byte-identical numerics with zero scratch benefit and nonzero change-risk; the
+`DRAFT-orderingB-band-before-checkpoint.md` patch is parked (revisit only if a future manifest
+adopts radius ≪ span). **CR-01 is ordering-INDEPENDENT:** region_00145 (~710k var) needs ~1.8 TiB
+of transient GCS scratch under A *or* B. **The hang bug (this session's subject) is FIXED +
+cluster-confirmed → session RESOLVED.** The remaining GATE-3 item is a SEPARATE scoping question
+(xlarge dense-materialize compute cost vs region-splitting), tracked in WAVE-2-GATE-READINESS.md.
+
+Everything below this block is the pre-experiment record (kept as history).
+
 ---
 
 ## Current Focus
