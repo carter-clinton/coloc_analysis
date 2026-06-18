@@ -1,38 +1,61 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-12T04:30:00.000Z",
+  "timestamp": "2026-06-18T07:30:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "wave": "Wave 2 (LD compute) — GATE-2 dev-10",
-  "status": "gate2_dev10_FIRED_then_PAUSED_on_A3_blockmatrix_lowering_bug__fix_landed_double_reviewed__cluster_STOPPED__open=cluster_ordering_experiment",
-  "headline": "GATE-1 cost cleared 2026-06-12 -> dev-10 (AOU-2, USE_DEV_SUBSET=True) FIRED. Region 1 (m2_region_00006, AFR, 17.7 Mb, n_var=122,678) HUNG on the first live Path-A.3 BlockMatrix write: hl.ld_matrix(...).write() falls into Hail's INTERPRETED BlockMatrixWrite driven through a driver-side ContextRDD.collect (736/900 blocks in ~73 min = operationally intractable; diagnosed from a frozen /tmp/hail.log + driver jstack parked in Py4J recv). Killed via Spark-UI job-kill (soft kernel interrupt did not take); kernel + Hail session recovered cleanly; the 99 GB orphan partial .bm was deleted + verified gone. Carter then STOPPED the cluster (verified STOPPED via wb resource describe, $0; live Hail session is cold/gone). NO banked-data loss (3 cohort MTs on GCS untouched). A code fix landed + was double-reviewed NCSU-side; dev-10 is PAUSED pending a cluster ordering experiment.",
+  "wave": "Wave 2 (LD compute) — GATE-2 dev-10 LD fire",
+  "status": "GATE-2 dev-10 FIRED + RUNNING server-side on cluster 20260617; ordering A (A.3 fix VALIDATED on cluster); monitoring region-by-region; Carter stepped away",
+  "headline": "dev-10 (AOU-2, USE_DEV_SUBSET=True) is LIVE. After the A.3 ordering experiment closed (KEEP ordering A; B retired; CR-01 ordering-independent), the repo was synced to HEAD on the cluster (sha256 byte-identical, A.3 fix helper count 4, LOADED FROM verified into the synced repo via realpath), three prep landmines were fixed, all gates went green (AFR 73,122 / EUR 220,098), and Cell 6 (the per-region LD loop) was fired. region_00006 (the region that HUNG before the fix) is computing first — healthy at ~2 min (Spark app application_1781785150907_0001, 64/64 vCPU, runJob stage 270/540 advancing, output bucket 0 bytes = expected pre-write). The loop is SERVER-SIDE and survives a clean disconnect.",
   "branch": "m3-W2-aou-deltas",
-  "head_commit_chain": "125b353 (A.3 fix) -> 13a1055 (review remediation) -> a554c26 (adversarial remediation) -> 4fb40bd/69c1bfa (docs); all pushed to origin/m3-W2-aou-deltas",
-  "resume_entry_point": ".planning/STATE.md (2026-06-12 ★ RESUME HERE ★ block) + this file + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST 2026-06-12 block) + the debug session .planning/debug/m3-W2-a3-blockmatrix-write-ir-lowering-hang.md (+ -REVIEW.md)",
-  "the_bug": "Path A.3 (large/xlarge regions, span > 10 Mb) called hl.ld_matrix(GT.n_alt_alleles(), locus, radius).write(uri). That writes a fused lazy BlockMatrixIR (row_correlation + radius band). Per Hail CanLowerEfficiently.scala EVERY BlockMatrixWrite runs INTERPRETED (the 'BlockMatrixIR lowering not yet efficient/scalable' warning is NOT a discriminator — it fires on all writes); the OLD fused write was intractable because the interpreted write drove an un-materialized matmul through a single driver-side ContextRDD.collect (BlockMatrix.scala:978). Hangs every large/xlarge A.3 region (36 in the 322-cell production fire).",
-  "the_fix": "src/python/aou_ld_panel.py: new helper _write_a3_banded_correlation_bm replaces the A.3 fused write with hl.row_correlation -> checkpoint(scratch) -> locus_windows -> sparsify_row_intervals(blocks_only=False) -> write(stage_locally=True). The checkpoint materializes the matmul so the final (still-interpreted) write reads CONCRETE on-disk blocks (cheap) instead of an un-materialized matmul. BYTE-IDENTICAL numerics to ld_matrix (verified vs Hail statgen.py source: ld_matrix == row_correlation then sparsify_row_intervals(blocks_only=False); row_correlation == standardized bm @ bm.T = Pearson r). A.1/A.2, the _assert_blockmatrix_written guard, and CR-003 sidecars unchanged. tests/m3 155 passed / 35 skipped.",
-  "open_critical_CR01": "Ordering A (current code) checkpoints the FULL DENSE n x n correlation BEFORE banding -> O(n^2) scratch: ~60 GB for region_00006, ~2 TB for the largest region (m2_region_00145, ~710k var). This is a GATE-3 production blocker. Pan-UKBB's compute_ld_matrix.py uses ordering B (band-then-checkpoint, ~GB banded scratch) at biobank scale -> B is the LEADING production-default candidate and likely resolves CR-01. Default code stays A pending the cluster experiment.",
-  "next_action": "NEEDS A CLUSTER RESTART (everything NCSU-side is done). (1) Bring the cluster up: `wb cluster start --id=JupyterLab_Spark_cluster_for_AoU_Spark_20260605` (Claude can fire from the HPC node on Carter's say-so) -- cold, ~90s; NO cohort re-read needed for the experiment (the repro uses a small synthetic MT). (2) In the Workbench: `git pull && git checkout -f` -> a554c26. (3) Run `scripts/a3_blockmatrix_lowering_repro.py` -- RE-GATED on WALL-CLOCK COMPLETION within --budget-sec, NOT the lowering warning (the warning fires on every BlockMatrix write). OLD must TIME OUT (intractability control proving the experiment is non-vacuous). Decide ordering A (dense ~2 TB scratch) vs B (banded ~GB, Pan-UKBB-favored) by completion-time + scratch; also `--report-scratch-size` for the per-region footprint. (4) If B wins -> Claude re-orders _write_a3_banded_correlation_bm to band-before-checkpoint (resolves CR-01), re-runs --report-scratch-size, THEN re-fire dev-10 region_00006 (valid .bm, DATA-LAYER verified via _assert_blockmatrix_written + gsutil du of .bm/parts, NOT _SUCCESS) -> resume the rest of dev-10 -> AOU-4 validation memo.",
-  "gates": {
-    "GATE_1_5_cohorts": "COMPLETE (3 cohort MTs banked + verified)",
-    "GATE_0_egress": "RESOLVED (RULED PASS 2026-04-28)",
-    "GATE_1_cost": "CLEARED (Carter 2026-06-12; CDR v8 pinned)",
-    "GATE_2_dev10": "PAUSED on the A.3 ordering experiment (the only open item)",
-    "GATE_3_322cell": "BLOCKED on CR-01 (the ~2 TB dense-scratch ordering question)"
+  "the_fire": {
+    "what": "AOU-2 dev-10 LD compute — Cell 6 per-region loop in .planning/notebooks/AOU-2_per_region_ld.ipynb (USE_DEV_SUBSET=True)",
+    "spark_app": "application_1781785150907_0001 (runJob at SparkBackend.scala; 64/64 vCPU on 16 workers)",
+    "cells_total": "10 = 7 AFR (m2_region_00006,00027,00040,00067,00083,00143,00153) + 3 EUR (00040,00067,00083)",
+    "headline_region": "m2_region_00006 (AFR, 17.7 Mb span -> routed A.3 by the >10 Mb span-veto, n_var=122,678) — the region that HUNG on the OLD fused write; it COMPLETING is the proof the fix holds on real data. Expect path_a=A.3.",
+    "long_poles": "m2_region_00040 (xlarge, ~615k var, chr12) runs in BOTH AFR and EUR -> two ~1.4 TiB / multi-hour A.3 materializations. Their wall-time + .bm scratch size = the GATE-3 xlarge cost number for free.",
+    "output_paths": "gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/ and /EUR_aou/ (.npz for A.1/A.2, .bm for A.3); A.3 scratch = <bm_uri>.corr_scratch.bm (cleaned per-region by the helper; peak transient ~1.4 TiB, not cumulative)",
+    "run_log": "ld_run_log_dev.tsv written by Cell 6 at the end",
+    "est": "~several hours total on 16x n2-standard-4 (64 vCPU), ~$35-45; cluster billing throughout",
+    "maf": "MAF_THRESHOLD_EXPORT=0.005 (Q6 design-delta over the 0.01 default)"
+  },
+  "resume_on_reconnect": [
+    "DO NOT restart the kernel — the Cell 6 loop runs server-side; a websocket/tab drop does not kill it (a stray NAVIGATION mid-write can — keep the tab foregrounded if reattaching during a write).",
+    "Check liveness at the DATA LAYER, not the kernel light: (a) Spark/YARN app application_1781785150907_0001 RUNNING + stage tasks advancing; (b) `gsutil ls -r gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/ gs://.../ld/EUR_aou/` for landed region outputs; (c) `gsutil du -s .../<region>.bm/parts/` growing for the in-flight region (esp. region_00040).",
+    "Verify each completed region at the data layer (du of .bm/parts or .npz size + the in-loop _assert_blockmatrix_written shape), NEVER _SUCCESS alone.",
+    "Read Cell 6's printed `region/ancestry: status n_var path_a` lines (and ld_run_log_dev.tsv if written) to see which regions landed. region_00006 COMPLETED with path_a=A.3 = headline success.",
+    "Halt-checks: Q10 (>50% variant drop at MAF 0.005 vs 0.01 -> halt); D-M3-07 (dev self-ID-vs-PCA LD r < 0.995 -> escalate self-ID to a full fire).",
+    "When all 10 land + verify -> AOU-4 validation memo (.planning/notebooks/AOU-4_validation.ipynb). region_00040 wall-time + scratch -> GATE-3 cost memo (likely 'accept the cost', no region-splitting).",
+    "If a region HANGS (region_00006 driver-collect signature: app stuck, no du growth on .corr_scratch.bm for >20-30 min with JVM live): that would mean the fix is NOT actually loaded -> re-verify aou_ld_panel.__file__ + hasattr(_write_a3_banded_correlation_bm); kill via Spark-UI job-kill, delete orphan .bm, debug."
+  ],
+  "prep_landmines_fixed_this_session": [
+    "IMPORT PATH: Cell 3 hardcodes `sys.path.insert(0, ~/coloc_analysis/src/python)` but the synced repo is at ~/workspace/rw-migration-aou-rw-476cdac2/coloc_analysis -> symlinked ~/coloc_analysis -> the synced repo so the FIXED module loads (verified: aou_ld_panel.__file__ realpath into the synced repo, helper count 4, 'A.3 fix present' assert passed). RE-APPLY on any fresh cluster.",
+    "WORKSPACE_BUCKET was UNSET (None) on this generic cluster -> pinned in a cell: os.environ['WORKSPACE_BUCKET']='gs://rw-migration-aou-rw-476cdac2' BEFORE Cell 3's _normalize_bucket read. RE-APPLY.",
+    "CWD: Cell 3 ran from .planning/notebooks/ so its relative pd.read_csv('config/ld_regions_dev.tsv') threw FileNotFoundError -> inserted an os.chdir(~/coloc_analysis) cell BEFORE Cell 6; now 'Loaded 10 region rows'. RE-APPLY (chdir to repo root before the loop)."
+  ],
+  "cluster": {
+    "id": "20260617 (JupyterLab Spark cluster for AoU; generic Dataproc, NOT 'Hail Genomics Analysis')",
+    "spec": "master n2-standard-16 + 16x n2-standard-4 workers (resized 2->16); 64 worker-vCPU; pip-installed hail==0.2.135, MASTER=yarn verified",
+    "state": "RUNNING + BILLING throughout the dev-10 fire (~$4-5/hr). wb cluster stop --id=... halts it from the HPC node (control-plane works); data-plane is VPC-SC-walled from HPC so verification/fire stay in the Workbench.",
+    "repo_on_cluster": "synced to HEAD (2b179f0+) via GitHub branch-ZIP upload + cp -a overwrite (rsync absent on image); .git left stale at 0fc3109 (harmless — runtime imports by path, not git). aou_ld_panel.py sha256 = 9a31c03527343bf04dd0c50735cb7059e67616af95094832a4d4b79e7ecc2e66."
   },
   "cohorts": {
-    "afr_primary": {"status": "COMPLETE_VERIFIED", "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864},
-    "eur": {"status": "COMPLETE_VERIFIED", "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "variants": 11375140},
-    "afr_sens": {"status": "COMPLETE_VERIFIED_RECOVERED", "path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "variants": 20817925}
+    "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864, "status": "COMPLETE_VERIFIED (read live by Cell 4)"},
+    "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "variants": 11375140, "status": "COMPLETE_VERIFIED (read live by Cell 4)"},
+    "afr_sens": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "variants": 20817925, "status": "COMPLETE_VERIFIED (not used by dev-10)"}
   },
-  "cluster": "STOPPED 2026-06-12 (verified via `wb resource describe --name=JupyterLab_Spark_cluster_for_AoU_Spark_20260605` -> Status: STOPPED). $0. Dataproc, HAIL 0.2.135, 24 workers, us-central1. A stopped cluster = cold kernel (no reattach; re-init Hail + re-read cohorts only for the eventual dev-10 re-fire, NOT for the repro). Coords: workspace aou-rw-476cdac2 / project wb-perky-corn-6639 / bucket gs://rw-migration-aou-rw-476cdac2 / WGS v8 gs://vwb-aou-datasets-controlled / CDR C2024Q3R8.",
-  "wb_cli": "Verily Workbench `wb` CLI installed + authed on the NCSU HPC node (wrappers ~/bin/wb + ~/bin/gcloud; setup + capability map in memory reference_wb_cli_hpc_setup). CONTROL-PLANE works off-perimeter (workspace/resource list+describe, cluster start/stop/launch, status). DATA-PLANE is VPC-SC-WALLED (gcloud storage/bq/dataproc-submit -> 403 org policy by request origin) -> MT verification + the fire MUST run inside the Workbench, not from HPC. So Claude can start/stop/status the cluster from the terminal but CANNOT run the repro / verify MTs / submit jobs.",
+  "gates": {
+    "GATE_1_5_cohorts": "COMPLETE",
+    "GATE_0_egress": "RESOLVED (RULED PASS 2026-04-28)",
+    "GATE_1_cost": "CLEARED 2026-06-12",
+    "GATE_2_dev10": "FIRING NOW (ordering A; A.3 fix cluster-validated) — was the open gate, now in flight",
+    "GATE_3_322cell": "open item is the xlarge dense-materialize cost (ORDERING-INDEPENDENT, reframed 2026-06-18); region_00040's dev numbers will inform 'accept cost' vs 'split regions'"
+  },
+  "resume_entry_point": ".planning/STATE.md (2026-06-18 'dev-10 FIRED + RUNNING' block) + this HANDOFF.json + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST). aou-ld-pipeline skill = the operating manual.",
   "do_not": [
-    "Do NOT start/stop the cluster without Carter's explicit say-so (his lifecycle/$ trigger; Claude CAN fire `wb cluster start/stop` from HPC but only on his go).",
-    "Do NOT change the A.3 production default from ordering A to B until the cluster repro decides (band-before-checkpoint shares the OLD write's IR shape; Pan-UKBB suggests it completes, but it must be shown empirically at 122k^2/710k^2).",
-    "Do NOT trust the lowering warning as a pass/fail signal (it fires on every BlockMatrix write) or _SUCCESS as evidence of data (du-floor + count/shape).",
-    "Do NOT `git add -A` / `git add .` on the GPFS tree -- explicit paths only.",
-    "Do NOT delete the contaminated _forensics copy, the clean cohorts, or re-fire anything without an explicit go."
+    "Do NOT restart the cluster kernel on reconnect (server-side loop survives disconnect).",
+    "Do NOT trust _SUCCESS as evidence — du of .bm/parts + shape.",
+    "Do NOT `git add -A` / `git add .` on the GPFS tree — explicit paths only.",
+    "Do NOT re-fire / stop the cluster / delete anything without Carter's explicit go (his lifecycle/$ triggers)."
   ]
 }
