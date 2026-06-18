@@ -1,62 +1,51 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-18T07:30:00.000Z",
+  "timestamp": "2026-06-18T10:00:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "wave": "Wave 2 (LD compute) — GATE-2 dev-10 LD fire",
-  "status": "GATE-2 dev-10 FIRED + RUNNING server-side on cluster 20260617; ordering A (A.3 fix VALIDATED on cluster); monitoring region-by-region; Carter stepped away",
-  "headline": "dev-10 (AOU-2, USE_DEV_SUBSET=True) is LIVE. After the A.3 ordering experiment closed (KEEP ordering A; B retired; CR-01 ordering-independent), the repo was synced to HEAD on the cluster (sha256 byte-identical, A.3 fix helper count 4, LOADED FROM verified into the synced repo via realpath), three prep landmines were fixed, all gates went green (AFR 73,122 / EUR 220,098), and Cell 6 (the per-region LD loop) was fired. region_00006 (the region that HUNG before the fix) is computing first — healthy at ~2 min (Spark app application_1781785150907_0001, 64/64 vCPU, runJob stage 270/540 advancing, output bucket 0 bytes = expected pre-write). The loop is SERVER-SIDE and survives a clean disconnect.",
+  "wave": "Wave 2 (LD compute) — GATE-2 dev-10",
+  "status": "dev-10 FIRED then KILLED — intractable on the dev cluster (real-cohort sample counts); 0 regions completed; cluster STOPPED; Wave-2 RE-SCOPE needed (cluster sizing + xlarge region-splitting + cost-model redo)",
+  "headline": "The dev-10 LD fire is DONE (killed, not completed). It proved a CAPACITY wall, not a correctness bug: real cohorts (AFR 73,122 / EUR 220,098 samples) make each correlation block ~36-110x heavier than the synthetic repro (--n-samples 2000) measured, so region_00006 (the CHEAPEST A.3 region) crawled at ~1-2 blocks/min (vs ~66 in the repro) AND the 64 GB master CRASHED during its ~65 GiB dense-scratch phase. region_00040 (xlarge, x2) would be ~weeks/cell. The A.3 FIX ITSELF IS CORRECT (blocks advanced, no driver-collect hang) — the problem is cluster size + the dense-scratch unit of work. NEXT = a Wave-2 re-scope, NOT a re-fire on the same config.",
   "branch": "m3-W2-aou-deltas",
-  "the_fire": {
-    "what": "AOU-2 dev-10 LD compute — Cell 6 per-region loop in .planning/notebooks/AOU-2_per_region_ld.ipynb (USE_DEV_SUBSET=True)",
-    "spark_app": "application_1781785150907_0001 (runJob at SparkBackend.scala; 64/64 vCPU on 16 workers)",
-    "cells_total": "10 = 7 AFR (m2_region_00006,00027,00040,00067,00083,00143,00153) + 3 EUR (00040,00067,00083)",
-    "headline_region": "m2_region_00006 (AFR, 17.7 Mb span -> routed A.3 by the >10 Mb span-veto, n_var=122,678) — the region that HUNG on the OLD fused write; it COMPLETING is the proof the fix holds on real data. Expect path_a=A.3.",
-    "long_poles": "m2_region_00040 (xlarge, ~615k var, chr12) runs in BOTH AFR and EUR -> two ~1.4 TiB / multi-hour A.3 materializations. Their wall-time + .bm scratch size = the GATE-3 xlarge cost number for free.",
-    "output_paths": "gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/ and /EUR_aou/ (.npz for A.1/A.2, .bm for A.3); A.3 scratch = <bm_uri>.corr_scratch.bm (cleaned per-region by the helper; peak transient ~1.4 TiB, not cumulative)",
-    "run_log": "ld_run_log_dev.tsv written by Cell 6 at the end",
-    "est": "~several hours total on 16x n2-standard-4 (64 vCPU), ~$35-45; cluster billing throughout",
-    "maf": "MAF_THRESHOLD_EXPORT=0.005 (Q6 design-delta over the 0.01 default)"
-  },
-  "resume_on_reconnect": [
-    "DO NOT restart the kernel — the Cell 6 loop runs server-side; a websocket/tab drop does not kill it (a stray NAVIGATION mid-write can — keep the tab foregrounded if reattaching during a write).",
-    "Check liveness at the DATA LAYER, not the kernel light: (a) Spark/YARN app application_1781785150907_0001 RUNNING + stage tasks advancing; (b) `gsutil ls -r gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/ gs://.../ld/EUR_aou/` for landed region outputs; (c) `gsutil du -s .../<region>.bm/parts/` growing for the in-flight region (esp. region_00040).",
-    "Verify each completed region at the data layer (du of .bm/parts or .npz size + the in-loop _assert_blockmatrix_written shape), NEVER _SUCCESS alone.",
-    "FAIL-FAST GATE (agreed protocol): the loop runs cheap regions first (00006 -> 00027) before the expensive 00040. Verify 00006 (and 00027) the moment they land; if a cheap region is bad/empty, Spark-UI job-kill BEFORE 00040 burns ~1.4 TiB / hours. If cheap regions are good, 00040 is green. Do not wait until the end to evaluate.",
-    "Read Cell 6's printed `region/ancestry: status n_var path_a` lines (and ld_run_log_dev.tsv if written) to see which regions landed. region_00006 COMPLETED with path_a=A.3 = headline success.",
-    "Halt-checks: Q10 (>50% variant drop at MAF 0.005 vs 0.01 -> halt); D-M3-07 (dev self-ID-vs-PCA LD r < 0.995 -> escalate self-ID to a full fire).",
-    "When all 10 land + verify -> AOU-4 validation memo (.planning/notebooks/AOU-4_validation.ipynb). region_00040 wall-time + scratch -> GATE-3 cost memo (likely 'accept the cost', no region-splitting).",
-    "If a region HANGS (region_00006 driver-collect signature: app stuck, no du growth on .corr_scratch.bm for >20-30 min with JVM live): that would mean the fix is NOT actually loaded -> re-verify aou_ld_panel.__file__ + hasattr(_write_a3_banded_correlation_bm); kill via Spark-UI job-kill, delete orphan .bm, debug."
+  "the_finding": "dev-10 on 16x n2-standard-4 (64 vCPU/16 GB workers): region_00006 (n_var=122,678, AFR n_samples=73,122) ran its 900-block Stage-4 at ~0.9-2.1 blocks/min and the driver crashed at ~65 GiB dense scratch; 0 regions completed, no run log. Root cause: the repro used --n-samples 2000; the correlation matmul inner dim IS n_samples (73k-220k real) -> ~36x (AFR)/~110x (EUR) more compute per block + 16 GB workers spilling + 64 GB master can't sustain the dense scratch. The repro validated the A.3 fix's CORRECTNESS but its 928s wall-time never represented real-cohort COST.",
+  "rescope_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-RESCOPE-real-cohort-compute.md — three coupled changes via /gsd-plan-phase: (1) cluster sized for real cohorts (n2-highmem-16 workers for RAM, 256-384 vCPU to quota, highmem master); (2) SPLIT the ~16 xlarge regions into <=~75-100k-var sub-regions (drops cross-sub-region LD beyond the 50 Mb radius -> already the accepted banded treatment; shrinks compute + scratch + driver load all at once; touches build_ld_region_manifest.py / compute_region_ld / ld_npz_to_rds.R); (3) redo the ~1,117 cluster-h cost model from real per-region rates (EUR ~3x AFR/block).",
+  "next_action": "Run /gsd-plan-phase for the Wave-2 re-scope (cluster sizing + xlarge region-splitting + cost-model redo) per WAVE-2-RESCOPE-real-cohort-compute.md. Do NOT re-fire dev-10 on the same 64-vCPU/16 GB config — it is intractable. The xlarge-region split is the load-bearing change; the cluster resize alone does not make xlarge tractable.",
+  "settled_do_not_relitigate": [
+    "A.3 fix is CORRECT (materialize-then-band, no driver-collect hang) — confirmed on the repro (130k/928s) and on region_00006 (blocks advancing). The problem is CAPACITY, not the fix.",
+    "Ordering A vs B is SETTLED (keep A) — banded==dense under the span+500kb radius scheme; splitting, not re-ordering, shrinks the dense intermediate.",
+    "Cohorts intact + read-gate/bucket wiring proven (AFR 73,122 / EUR 220,098 read live by Cell 4)."
   ],
-  "prep_landmines_fixed_this_session": [
-    "IMPORT PATH: Cell 3 hardcodes `sys.path.insert(0, ~/coloc_analysis/src/python)` but the synced repo is at ~/workspace/rw-migration-aou-rw-476cdac2/coloc_analysis -> symlinked ~/coloc_analysis -> the synced repo so the FIXED module loads (verified: aou_ld_panel.__file__ realpath into the synced repo, helper count 4, 'A.3 fix present' assert passed). RE-APPLY on any fresh cluster.",
-    "WORKSPACE_BUCKET was UNSET (None) on this generic cluster -> pinned in a cell: os.environ['WORKSPACE_BUCKET']='gs://rw-migration-aou-rw-476cdac2' BEFORE Cell 3's _normalize_bucket read. RE-APPLY.",
-    "CWD: Cell 3 ran from .planning/notebooks/ so its relative pd.read_csv('config/ld_regions_dev.tsv') threw FileNotFoundError -> inserted an os.chdir(~/coloc_analysis) cell BEFORE Cell 6; now 'Loaded 10 region rows'. RE-APPLY (chdir to repo root before the loop)."
+  "prep_landmines_for_any_refire": [
+    "symlink ~/coloc_analysis -> the synced repo (Cell 3 hardcodes import from ~/coloc_analysis)",
+    "pin WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2 before Cell 3 (it was None on the generic cluster)",
+    "os.chdir(~/coloc_analysis) before the loop (Cell 3 CWD was .planning/notebooks/ -> relative config read failed)",
+    "repo must be at HEAD with the A.3 fix: aou_ld_panel.py sha256 9a31c03527343bf04dd0c50735cb7059e67616af95094832a4d4b79e7ecc2e66, helper count >=3"
   ],
-  "cluster": {
-    "id": "20260617 (JupyterLab Spark cluster for AoU; generic Dataproc, NOT 'Hail Genomics Analysis')",
-    "spec": "master n2-standard-16 + 16x n2-standard-4 workers (resized 2->16); 64 worker-vCPU; pip-installed hail==0.2.135, MASTER=yarn verified",
-    "state": "RUNNING + BILLING throughout the dev-10 fire (~$4-5/hr). wb cluster stop --id=... halts it from the HPC node (control-plane works); data-plane is VPC-SC-walled from HPC so verification/fire stay in the Workbench.",
-    "repo_on_cluster": "synced to HEAD (2b179f0+) via GitHub branch-ZIP upload + cp -a overwrite (rsync absent on image); .git left stale at 0fc3109 (harmless — runtime imports by path, not git). aou_ld_panel.py sha256 = 9a31c03527343bf04dd0c50735cb7059e67616af95094832a4d4b79e7ecc2e66."
+  "teardown_state": {
+    "job": "KILLED (kernel self-restarted on the driver crash; Spark app gone; session free)",
+    "regions_completed": 0,
+    "run_log": "ld_run_log_dev.tsv NEVER written",
+    "orphan_deleted": "gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/bm/m2_region_00006.corr_scratch.bm (520 objects, ~65 GiB dense scratch) — rm exit 0; everything else in ld/ intact",
+    "cluster": "20260617 STOPPED (not deleted) via Environment panel; billing halted; synced repo (HEAD, A.3 fix) + hail==0.2.135 preserved if boot disk persists, else re-sync via GitHub branch ZIP"
   },
   "cohorts": {
-    "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864, "status": "COMPLETE_VERIFIED (read live by Cell 4)"},
-    "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "variants": 11375140, "status": "COMPLETE_VERIFIED (read live by Cell 4)"},
-    "afr_sens": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "variants": 20817925, "status": "COMPLETE_VERIFIED (not used by dev-10)"}
+    "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864, "status": "COMPLETE_VERIFIED, untouched"},
+    "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "variants": 11375140, "status": "COMPLETE_VERIFIED, untouched"},
+    "afr_sens": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "variants": 20817925, "status": "COMPLETE_VERIFIED, untouched"}
   },
   "gates": {
     "GATE_1_5_cohorts": "COMPLETE",
     "GATE_0_egress": "RESOLVED (RULED PASS 2026-04-28)",
-    "GATE_1_cost": "CLEARED 2026-06-12",
-    "GATE_2_dev10": "FIRING NOW (ordering A; A.3 fix cluster-validated) — was the open gate, now in flight",
-    "GATE_3_322cell": "open item is the xlarge dense-materialize cost (ORDERING-INDEPENDENT, reframed 2026-06-18); region_00040's dev numbers will inform 'accept cost' vs 'split regions'"
+    "GATE_1_cost": "CLEARED 2026-06-12 (but the cost MODEL now needs redoing — see rescope_plan #3)",
+    "GATE_2_dev10": "BLOCKED — needs the re-scope (sized cluster + xlarge splitting) before a viable re-fire",
+    "GATE_3_322cell": "BLOCKED on the same re-scope (xlarge regions are a compute AND scratch problem at real sample counts)"
   },
-  "resume_entry_point": ".planning/STATE.md (2026-06-18 'dev-10 FIRED + RUNNING' block) + this HANDOFF.json + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST). aou-ld-pipeline skill = the operating manual.",
+  "resume_entry_point": ".planning/STATE.md (2026-06-18 'dev-10 KILLED / re-scope' block) + this HANDOFF.json + .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-RESCOPE-real-cohort-compute.md + .continue-here.md. Operating manual = aou-ld-pipeline skill.",
   "do_not": [
-    "Do NOT restart the cluster kernel on reconnect (server-side loop survives disconnect).",
-    "Do NOT trust _SUCCESS as evidence — du of .bm/parts + shape.",
-    "Do NOT `git add -A` / `git add .` on the GPFS tree — explicit paths only.",
-    "Do NOT re-fire / stop the cluster / delete anything without Carter's explicit go (his lifecycle/$ triggers)."
+    "Do NOT re-fire dev-10 on the 64-vCPU/16 GB config (intractable).",
+    "Do NOT re-open ordering A vs B (settled) or the A.3 fix correctness (confirmed).",
+    "Do NOT `git add -A` on the GPFS tree — explicit paths only.",
+    "Do NOT start/stop/delete the cluster or delete any ld/ content without Carter's explicit go."
   ]
 }
