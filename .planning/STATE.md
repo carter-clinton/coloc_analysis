@@ -35,7 +35,8 @@ progress:
 ### RESUME (reconnect)
 - **Do NOT restart the kernel** — the loop is server-side; a clean disconnect doesn't kill it (a stray navigation mid-write can — keep the tab foregrounded if reattaching during a write).
 - **Liveness = data layer:** Spark app `application_1781785150907_0001` advancing + `gsutil ls -r …/ld/AFR_aou/ …/ld/EUR_aou/` for landed outputs + `gsutil du -s …/<region>.bm/parts/` growing for the in-flight region.
-- **Verify each region** at the data layer (du of `.bm/parts` / `.npz` size + `_assert_blockmatrix_written` shape), never `_SUCCESS`. **Halt-checks:** Q10 (>50% variant drop MAF 0.005 vs 0.01 → halt); D-M3-07 (self-ID-vs-PCA r < 0.995 → escalate).
+- **Verify each region** at the data layer (du of `.bm/parts` / `.npz` size + `_assert_blockmatrix_written` shape), never `_SUCCESS`. **Halt-checks:** Q10 (>50% variant drop MAF 0.005 vs 0.01 → halt); D-M3-07 (self-ID-vs-PCA r < 0.995 → escalate; this is an AOU-4 step).
+- **Fail-fast monitoring gate (agreed protocol):** the loop runs cheap regions first (`00006` → `00027`) before the expensive `00040`. Verify `00006` (and `00027`) at the data layer as they land — if a cheap region comes back **bad/empty**, **Spark-UI job-kill before `00040`** burns ~1.4 TiB / hours; if they're good, `00040` is green to proceed. Don't wait until the end to evaluate.
 - **All 10 land + verify → AOU-4 validation memo** (`.planning/notebooks/AOU-4_validation.ipynb`); `region_00040` numbers → GATE-3 cost memo (likely "accept the cost", no region-splitting).
 - **If a region hangs** (no `.corr_scratch.bm` du growth >20–30 min, JVM live): the fix may not be the loaded module → re-verify `aou_ld_panel.__file__` + the helper; Spark-UI job-kill, delete orphan `.bm`, debug.
 - Full structured resume = **`.planning/HANDOFF.json`** (primary). Cluster billing throughout; `wb cluster stop --id=…20260617` from HPC halts it on Carter's go.
