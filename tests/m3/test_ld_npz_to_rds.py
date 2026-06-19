@@ -604,13 +604,18 @@ def test_bm_to_npz_writes_allele_freq_when_provided(tmp_path, monkeypatch):
     af_tsv = tmp_path / "region.allele_freq.tsv"
     vids = [f"16:{53_800_000 + i:d}:A:G" for i in range(n)]
     vid_tsv.write_text("\n".join(vids) + "\n")
-    rsid_tsv.write_text("\n".join([""] * n) + "\n")
+    # Non-empty rsids: _load_sidecar (np.loadtxt) collapses an all-blank file to
+    # a length-0 array (pre-existing quirk, unrelated to AF); use placeholders so
+    # the rsids length-guard sees n_rows and the AF path is what's under test.
+    rsid_tsv.write_text("\n".join(f"rs{i}" for i in range(n)) + "\n")
     # WR-03: middle entry genuinely missing (blank) -> must round-trip to NaN.
     _write_af_sidecar(af_tsv, [0.12, "", 0.34])
 
     out_npz = tmp_path / "out.npz"
+    fake_bm = tmp_path / "fake.bm"
+    fake_bm.mkdir()  # bm_to_npz() guards is_dir(); stub read ignores contents
     bm.bm_to_npz(
-        bm_dir=tmp_path / "fake.bm",  # stub ignores contents
+        bm_dir=fake_bm,
         variant_ids_tsv=vid_tsv,
         rsids_tsv=rsid_tsv,
         out_npz=out_npz,
@@ -646,11 +651,16 @@ def test_bm_to_npz_omitted_allele_freq_is_all_nan_and_warns(tmp_path, monkeypatc
     rsid_tsv = tmp_path / "rsids.tsv"
     vids = [f"16:{53_800_000 + i:d}:A:G" for i in range(n)]
     vid_tsv.write_text("\n".join(vids) + "\n")
-    rsid_tsv.write_text("\n".join([""] * n) + "\n")
+    # Non-empty rsids: _load_sidecar (np.loadtxt) collapses an all-blank file to
+    # a length-0 array (pre-existing quirk, unrelated to AF); use placeholders so
+    # the rsids length-guard sees n_rows and the AF path is what's under test.
+    rsid_tsv.write_text("\n".join(f"rs{i}" for i in range(n)) + "\n")
 
     out_npz = tmp_path / "out.npz"
+    fake_bm = tmp_path / "fake.bm"
+    fake_bm.mkdir()  # bm_to_npz() guards is_dir(); stub read ignores contents
     bm.bm_to_npz(
-        bm_dir=tmp_path / "fake.bm",
+        bm_dir=fake_bm,
         variant_ids_tsv=vid_tsv,
         rsids_tsv=rsid_tsv,
         out_npz=out_npz,
@@ -684,14 +694,19 @@ def test_bm_to_npz_misaligned_allele_freq_raises(tmp_path, monkeypatch):
     af_tsv = tmp_path / "region.allele_freq.tsv"
     vids = [f"16:{53_800_000 + i:d}:A:G" for i in range(n)]
     vid_tsv.write_text("\n".join(vids) + "\n")
-    rsid_tsv.write_text("\n".join([""] * n) + "\n")
+    # Non-empty rsids: _load_sidecar (np.loadtxt) collapses an all-blank file to
+    # a length-0 array (pre-existing quirk, unrelated to AF); use placeholders so
+    # the rsids length-guard sees n_rows and the AF path is what's under test.
+    rsid_tsv.write_text("\n".join(f"rs{i}" for i in range(n)) + "\n")
     # Only 2 AF values for a 3-row BlockMatrix -> misaligned.
     _write_af_sidecar(af_tsv, [0.12, 0.34])
 
     out_npz = tmp_path / "out.npz"
+    fake_bm = tmp_path / "fake.bm"
+    fake_bm.mkdir()  # bm_to_npz() guards is_dir(); stub read ignores contents
     with pytest.raises(ValueError) as excinfo:
         bm.bm_to_npz(
-            bm_dir=tmp_path / "fake.bm",
+            bm_dir=fake_bm,
             variant_ids_tsv=vid_tsv,
             rsids_tsv=rsid_tsv,
             out_npz=out_npz,
