@@ -510,9 +510,11 @@ def test_npz_payload_has_allele_freq(synthetic_mt_path, mock_aou_env, tmp_path):
     z = np.load(str(out_dir / "synth_af_region.npz"))
     assert "allele_freq" in z.files, z.files
     assert z["allele_freq"].shape[0] == z["ld"].shape[0], "AF must be row-aligned to LD"
-    # AF values are valid frequencies in [0,1]
+    # AF values are valid frequencies in [0,1]. BR-02: after the WR-03 change a
+    # null AF is NaN, and NaN fails BOTH >=0 and <=1 (NaN comparisons are
+    # False) -- so allow NaN explicitly while still range-checking non-null AF.
     af = z["allele_freq"]
-    assert ((af >= 0) & (af <= 1)).all(), af[:10]
+    assert ((af >= 0) & (af <= 1) | np.isnan(af)).all(), af[:10]
 
 
 def test_af_null_becomes_nan_not_zero():
