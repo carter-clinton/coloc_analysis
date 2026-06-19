@@ -77,6 +77,22 @@ def _candidate_rscripts() -> list[Path]:
     return out
 
 
+def _r_env(rscript: Path) -> dict:
+    """Subprocess env for an Rscript run.
+
+    Pin RETICULATE_PYTHON to the Rscript's sibling ``python`` so reticulate
+    resolves the conda env that ships numpy + pyliftover, instead of an
+    ephemeral uv-managed interpreter (which lacks pyliftover and forces the
+    R-family tests to skip). Production invokes the converter from inside the
+    m3-r-ld env where this binding already holds.
+    """
+    env = dict(os.environ)
+    sibling_py = rscript.parent / "python"
+    if sibling_py.exists():
+        env.setdefault("RETICULATE_PYTHON", str(sibling_py))
+    return env
+
+
 def _check_r_env(rscript: Path) -> tuple[bool, str]:
     """Return (ok, reason). Probes for required R + Python packages."""
     if not rscript.exists():
@@ -99,6 +115,7 @@ def _check_r_env(rscript: Path) -> tuple[bool, str]:
             capture_output=True,
             text=True,
             timeout=60,
+            env=_r_env(rscript),
         )
     except Exception as exc:  # noqa: BLE001
         return False, f"Rscript probe failed: {exc!r}"
@@ -192,6 +209,7 @@ def _read_rds(rscript: Path, rds_path: Path) -> dict:
         capture_output=True,
         text=True,
         timeout=60,
+        env=_r_env(rscript),
     )
     if res.returncode != 0:
         raise RuntimeError(f"rds reader failed rc={res.returncode}: {res.stderr}")
@@ -210,6 +228,7 @@ def _run_converter(rscript: Path, npz: Path, rds: Path, chain: Path) -> subproce
         capture_output=True,
         text=True,
         timeout=180,
+        env=_r_env(rscript),
     )
 
 
@@ -298,7 +317,14 @@ def test_chr_prefix_stripping(rscript_or_skip, chain_38_to_37, tmp_path):
 
 
 def test_grch38_to_grch37_liftover(rscript_or_skip, chain_38_to_37, tmp_path):
-    """rs1558902 lifts GRCh38 chr16:53809247 -> GRCh37 16:53803574 (dbSNP)."""
+    """chr16:53809247 (GRCh38) lifts to GRCh37 16:53843159 via the UCSC chain.
+
+    The pipeline's coordinate truth is the UCSC hg38ToHg19 chain (pyliftover),
+    NOT a dbSNP rsID lookup. Verified directly: LiftOver(hg38ToHg19).convert
+    ("chr16", 53809247) -> ("chr16", 53843159). (An earlier dbSNP-derived
+    expectation of 53803574 never ran because reticulate bound to a pyliftover-
+    less interpreter; the _r_env RETICULATE_PYTHON pin un-skipped it.)
+    """
     npz = tmp_path / "lift.npz"
     rds = tmp_path / "lift.rds"
     # Single-variant .npz to keep the test focused on the coordinate.
@@ -315,7 +341,7 @@ def test_grch38_to_grch37_liftover(rscript_or_skip, chain_38_to_37, tmp_path):
     res = _run_converter(rscript_or_skip, npz, rds, chain_38_to_37)
     assert res.returncode == 0, f"converter failed: {res.stderr}"
     payload = _read_rds(rscript_or_skip, rds)
-    # Expect b37 ID "16:53803574:T:A". Allow ±1 bp for chain edge effects.
+    # Expect b37 ID "16:53843159:T:A" (UCSC hg38ToHg19 chain). Allow ±1 bp.
     rownames = payload["dim_rownames"]
     if isinstance(rownames, str):
         rownames = [rownames]
@@ -324,8 +350,8 @@ def test_grch38_to_grch37_liftover(rscript_or_skip, chain_38_to_37, tmp_path):
     parts = name.split(":")
     assert parts[0] == "16", f"chrom changed: {parts}"
     pos37 = int(parts[1])
-    # rs1558902 GRCh38 chr16:53809247  -> GRCh37 chr16:53803574 (dbSNP b151)
-    assert abs(pos37 - 53803574) <= 5, f"liftover off: got {pos37}, expected ~53803574"
+    # chr16:53809247 (GRCh38) -> GRCh37 chr16:53843159 via UCSC hg38ToHg19 chain
+    assert abs(pos37 - 53843159) <= 5, f"liftover off: got {pos37}, expected ~53843159"
 
 
 def test_rsid_preference_over_synthetic(rscript_or_skip, chain_38_to_37, tmp_path):
@@ -418,6 +444,81 @@ def test_provenance_json(rscript_or_skip, chain_38_to_37, tmp_path):
     assert len(str(prov["chain_sha256"])) == 64
 
 
+# ===========================================================================
+# BR-01 regression (blast-radius of the CR-01 fix): the CR-01 fix made the
+# .npz `lower_triangular` flag AUTHORITATIVE in ld_npz_to_rds.R -- the reader
+# reconstructs the upper triangle (tri + t(tri) - diag(diag(tri))) ONLY when
+# the flag is TRUE, else it just symmetrizes (tri + t(tri))/2. A lower-tri
+# .npz that OMITS the flag therefore gets HALVED: (L + t(L))/2 averages the
+# populated r against a structural 0 -> r/2 (0.6 -> 0.30).
+#
+# bm_to_npz.py (Path A.3, xlarge regions, the m3-02b xlarge-split deliverable
+# path) writes np.tril(...) lower-triangular and historically did NOT write
+# the flag -> every A.3 off-diagonal r silently halved. These tests pin the
+# fix: bm_to_npz.py MUST write lower_triangular=True, and a lower-tri .npz
+# built the bm_to_npz.py way must round-trip the TRUE r, not r/2.
+# ===========================================================================
+def test_bm_to_npz_static_writes_lower_triangular_flag():
+    """BR-01 contract: bm_to_npz.py's savez_compressed includes lower_triangular.
+
+    Static check -- runs without Hail or R. RED against the flag-less
+    bm_to_npz.py; GREEN once the flag is written.
+    """
+    src = BM_HELPER.read_text()
+    assert "lower_triangular" in src, (
+        "BR-01: bm_to_npz.py emits np.tril(...) lower-triangular .npz but does "
+        "NOT write the lower_triangular flag; after the CR-01 fix the reader "
+        "defaults absent->FALSE and HALVES every off-diagonal r. The "
+        "savez_compressed call must pass lower_triangular=np.array([True])."
+    )
+
+
+def test_bm_style_lower_tri_npz_recovers_true_r(rscript_or_skip, chain_38_to_37, tmp_path):
+    """BR-01 round-trip: a lower-tri .npz written the bm_to_npz.py way (np.tril
+    + lower_triangular flag) must recover the TRUE off-diagonal r, NOT r/2.
+
+    RED expectation against a flag-LESS .npz: recovered r == 0.30 (halved).
+    GREEN with the flag present: recovered r == 0.60.
+    """
+    npz = tmp_path / "bm_style.npz"
+    rds = tmp_path / "bm_style.rds"
+    # Two variants chosen to liftover cleanly (FTO ~53.8 Mb) so neither is
+    # dropped; a known off-diagonal r so we can assert exact recovery.
+    true_r = np.float32(0.6)
+    full = np.array([[1.0, true_r], [true_r, 1.0]], dtype="float32")
+    lower = np.tril(full).astype("float32")  # exactly what bm_to_npz.py stores
+    vids = ["chr16:53809247:T:A", "chr16:53810000:G:C"]
+    np.savez_compressed(
+        str(npz),
+        ld=lower,
+        variant_ids=np.asarray(vids, dtype=str),
+        rsids=np.asarray([""] * 2, dtype=str),
+        # Mirror the bm_to_npz.py fix: write the flag so the reader
+        # reconstructs instead of halving.
+        lower_triangular=np.array([True]),
+    )
+    res = _run_converter(rscript_or_skip, npz, rds, chain_38_to_37)
+    assert res.returncode == 0, f"converter failed: {res.stderr}\n{res.stdout}"
+    payload = _read_rds(rscript_or_skip, rds)
+    assert payload["ld_rows"] == 2, "both variants should survive liftover"
+    # Diagonal preserved at 1.0.
+    diag = payload["ld_diag"]
+    if not isinstance(diag, list):
+        diag = [diag]
+    for d in diag:
+        assert abs(float(d) - 1.0) < 1e-5, f"diagonal not 1.0: {diag}"
+    # Symmetric.
+    assert payload["ld_symmetric"] is True
+    # THE BR-01 ASSERTION: off-diagonal must be the TRUE r (0.60), proving the
+    # lower triangle was reconstructed, NOT halved to 0.30 and NOT doubled.
+    off = float(payload["ld_offdiag_sample"])
+    assert abs(off - 0.60) < 1e-4, (
+        f"BR-01: recovered off-diagonal r={off:.4f}; expected 0.60. "
+        f"r/2 (0.30) => lower-tri .npz was symmetrized without reconstruction "
+        f"(flag absent/ignored); 2r (1.20) => double-counted."
+    )
+
+
 def test_bm_to_npz_helper(tmp_path):
     """src/python/bm_to_npz.py reads a synthetic Hail BlockMatrix; emits .npz.
 
@@ -474,3 +575,9 @@ def test_bm_to_npz_helper(tmp_path):
     upper = np.triu(z["ld"], k=1)
     assert np.allclose(upper, 0.0), "bm_to_npz.py must emit lower-triangular only"
     assert list(z["variant_ids"]) == vids
+    # BR-01: the lower_triangular flag must be present + True so the reader
+    # reconstructs (not halves) the off-diagonals.
+    assert "lower_triangular" in z.files, (
+        "BR-01: bm_to_npz.py .npz missing lower_triangular flag"
+    )
+    assert bool(np.asarray(z["lower_triangular"]).ravel()[0]) is True

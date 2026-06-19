@@ -118,12 +118,24 @@ def bm_to_npz(
     # ld_npz_to_rds.R reconstructs symmetry via tri + t(tri) - diag(diag(tri)).
     lower = np.tril(ld_dense)
 
+    # BR-01 fix (2026-06-19): write the `lower_triangular` flag so the reader
+    # RECONSTRUCTS the upper triangle instead of HALVING the off-diagonals.
+    # The CR-01 fix (ld_npz_to_rds.R / stitch_subregions_to_rds.R, commit
+    # 3b2de9a) made this flag AUTHORITATIVE: the one-sided recovery
+    # (tri + t(tri) - diag(diag(tri))) runs ONLY when lower_triangular == TRUE;
+    # absent => defaulted FALSE => the matrix is treated as already-full and is
+    # ONLY symmetrized (L + t(L))/2, which averages each populated r against a
+    # structural 0 and HALVES every off-diagonal (0.6 -> 0.30). Path A.3 stores
+    # np.tril(...) (lower only), so the flag MUST be present. This matches the
+    # Path A.2 `_save_npz` convention in aou_ld_panel.py (lower_triangular=
+    # np.array([lower_triangular])).
     out_npz.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         str(out_npz),
         ld=lower,
         variant_ids=variant_ids,
         rsids=rsids,
+        lower_triangular=np.array([True]),
     )
     print(
         f"WROTE {out_npz} ({n_rows} x {n_rows}; "
