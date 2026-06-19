@@ -519,6 +519,257 @@ def test_bm_style_lower_tri_npz_recovers_true_r(rscript_or_skip, chain_38_to_37,
     )
 
 
+# ===========================================================================
+# AF SIDECAR (AF-SIDECAR-01): bm_to_npz.py must carry the A.3 allele_freq
+# sidecar into the .npz `allele_freq` key (row-aligned to variant_ids), with
+# the missing-vs-zero distinction (WR-03: blank -> NaN, never a fake 0.0),
+# a loud all-NaN + WARNING when the sidecar is omitted, and a loud ValueError
+# when the sidecar is row-misaligned. These converter-level tests do NOT depend
+# on a real Hail install or on R: they inject a stub `hail` module so the real
+# bm_to_npz() AF code path (loader + length-guard + savez_compressed) runs even
+# where Hail is absent (e.g. the smoke_dev / Track A NCSU devboxes). The A.3
+# end-to-end test is R-env-gated via rscript_or_skip.
+# ===========================================================================
+def _install_stub_hail(monkeypatch, dense: np.ndarray) -> None:
+    """Inject a minimal stub `hail` module so bm_to_npz() runs without Hail.
+
+    bm_to_npz() does `import hail as hl` then
+    `hl.linalg.BlockMatrix.read(str(bm_dir))` -> `.shape` / `.to_numpy()`.
+    We stub exactly that surface so the AF loader / length-guard / savez path
+    is exercised on the real bm_to_npz.py code (no real JVM, no real .bm dir).
+    """
+    import sys
+    import types
+
+    dense = np.asarray(dense, dtype="float64")
+
+    class _StubBM:
+        def __init__(self, arr):
+            self._arr = arr
+            self.shape = (arr.shape[0], arr.shape[1])
+
+        def to_numpy(self):
+            return self._arr
+
+    class _StubBMClass:
+        @staticmethod
+        def read(_path):
+            return _StubBM(dense)
+
+    hail_mod = types.ModuleType("hail")
+    linalg_mod = types.ModuleType("hail.linalg")
+    linalg_mod.BlockMatrix = _StubBMClass
+    hail_mod.linalg = linalg_mod
+    hail_mod.is_initialized = lambda: True
+    hail_mod.init = lambda *a, **k: None
+    monkeypatch.setitem(sys.modules, "hail", hail_mod)
+    monkeypatch.setitem(sys.modules, "hail.linalg", linalg_mod)
+
+
+def _import_bm_to_npz():
+    """Import the bm_to_npz module from src/python by file path."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("bm_to_npz_under_test", BM_HELPER)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _write_af_sidecar(path: Path, values: list) -> None:
+    """Write a one-float-per-line AF sidecar (blank line for a missing AF)."""
+    lines = []
+    for v in values:
+        if v is None or (isinstance(v, str) and v == ""):
+            lines.append("")
+        else:
+            lines.append(repr(float(v)))
+    path.write_text("\n".join(lines) + "\n")
+
+
+def test_bm_to_npz_writes_allele_freq_when_provided(tmp_path, monkeypatch):
+    """--allele-freq sidecar -> row-aligned numeric allele_freq key; blank -> NaN.
+
+    RED against the current bm_to_npz.py (no allele_freq key, no allele_freq_tsv
+    param). Exercises the real bm_to_npz() AF loader via a stubbed Hail.
+    """
+    bm = _import_bm_to_npz()
+    n = 3
+    dense = np.eye(n, dtype="float64")
+    dense[1, 0] = dense[0, 1] = 0.5
+    _install_stub_hail(monkeypatch, dense)
+
+    vid_tsv = tmp_path / "variant_ids.tsv"
+    rsid_tsv = tmp_path / "rsids.tsv"
+    af_tsv = tmp_path / "region.allele_freq.tsv"
+    vids = [f"16:{53_800_000 + i:d}:A:G" for i in range(n)]
+    vid_tsv.write_text("\n".join(vids) + "\n")
+    rsid_tsv.write_text("\n".join([""] * n) + "\n")
+    # WR-03: middle entry genuinely missing (blank) -> must round-trip to NaN.
+    _write_af_sidecar(af_tsv, [0.12, "", 0.34])
+
+    out_npz = tmp_path / "out.npz"
+    bm.bm_to_npz(
+        bm_dir=tmp_path / "fake.bm",  # stub ignores contents
+        variant_ids_tsv=vid_tsv,
+        rsids_tsv=rsid_tsv,
+        out_npz=out_npz,
+        allele_freq_tsv=af_tsv,
+    )
+    z = np.load(str(out_npz))
+    assert "allele_freq" in z.files, "allele_freq key missing from .npz"
+    af = np.asarray(z["allele_freq"], dtype=float)
+    assert af.shape == (n,), f"allele_freq length {af.shape} != n_rows {n}"
+    assert abs(af[0] - 0.12) < 1e-6
+    assert abs(af[2] - 0.34) < 1e-6
+    # WR-03: blank entry is NaN, NOT a fake 0.0.
+    assert np.isnan(af[1]), f"blank AF must be NaN, got {af[1]!r}"
+    assert af[1] != 0.0
+    # Existing keys unchanged (no BR-01 regression).
+    assert bool(np.asarray(z["lower_triangular"]).ravel()[0]) is True
+    assert list(z["variant_ids"]) == vids
+    upper = np.triu(z["ld"], k=1)
+    assert np.allclose(upper, 0.0), "ld must remain lower-triangular only"
+
+
+def test_bm_to_npz_omitted_allele_freq_is_all_nan_and_warns(tmp_path, monkeypatch, capsys):
+    """No --allele-freq -> all-NaN allele_freq key (len n_rows) + loud WARNING.
+
+    RED against the current bm_to_npz.py (no allele_freq key at all).
+    """
+    bm = _import_bm_to_npz()
+    n = 3
+    dense = np.eye(n, dtype="float64")
+    _install_stub_hail(monkeypatch, dense)
+
+    vid_tsv = tmp_path / "variant_ids.tsv"
+    rsid_tsv = tmp_path / "rsids.tsv"
+    vids = [f"16:{53_800_000 + i:d}:A:G" for i in range(n)]
+    vid_tsv.write_text("\n".join(vids) + "\n")
+    rsid_tsv.write_text("\n".join([""] * n) + "\n")
+
+    out_npz = tmp_path / "out.npz"
+    bm.bm_to_npz(
+        bm_dir=tmp_path / "fake.bm",
+        variant_ids_tsv=vid_tsv,
+        rsids_tsv=rsid_tsv,
+        out_npz=out_npz,
+        allele_freq_tsv=None,
+    )
+    captured = capsys.readouterr()
+    z = np.load(str(out_npz))
+    assert "allele_freq" in z.files, "allele_freq key must ALWAYS be present"
+    af = np.asarray(z["allele_freq"], dtype=float)
+    assert af.shape == (n,)
+    assert np.all(np.isnan(af)), f"omitted AF must be all-NaN, got {af!r}"
+    # Absence must be VISIBLE, not silent.
+    assert "WARNING" in captured.out, f"no loud WARNING printed: {captured.out!r}"
+    assert "no --allele-freq" in captured.out, (
+        f"WARNING must name the missing --allele-freq: {captured.out!r}"
+    )
+
+
+def test_bm_to_npz_misaligned_allele_freq_raises(tmp_path, monkeypatch):
+    """AF sidecar length != n_rows -> loud ValueError naming the lengths + path.
+
+    RED against the current bm_to_npz.py (no allele_freq handling at all).
+    """
+    bm = _import_bm_to_npz()
+    n = 3
+    dense = np.eye(n, dtype="float64")
+    _install_stub_hail(monkeypatch, dense)
+
+    vid_tsv = tmp_path / "variant_ids.tsv"
+    rsid_tsv = tmp_path / "rsids.tsv"
+    af_tsv = tmp_path / "region.allele_freq.tsv"
+    vids = [f"16:{53_800_000 + i:d}:A:G" for i in range(n)]
+    vid_tsv.write_text("\n".join(vids) + "\n")
+    rsid_tsv.write_text("\n".join([""] * n) + "\n")
+    # Only 2 AF values for a 3-row BlockMatrix -> misaligned.
+    _write_af_sidecar(af_tsv, [0.12, 0.34])
+
+    out_npz = tmp_path / "out.npz"
+    with pytest.raises(ValueError) as excinfo:
+        bm.bm_to_npz(
+            bm_dir=tmp_path / "fake.bm",
+            variant_ids_tsv=vid_tsv,
+            rsids_tsv=rsid_tsv,
+            out_npz=out_npz,
+            allele_freq_tsv=af_tsv,
+        )
+    msg = str(excinfo.value)
+    assert "allele_freq" in msg, f"ValueError must name allele_freq: {msg!r}"
+    assert "2" in msg and "3" in msg, f"ValueError must name lengths: {msg!r}"
+    assert "out.npz" in msg, f"ValueError must name the out path: {msg!r}"
+
+
+def test_a3_style_npz_carries_af_into_variants(rscript_or_skip, chain_38_to_37, tmp_path):
+    """End-to-end: an A.3-shaped .npz with allele_freq lands in obj$variants$AF.
+
+    Proves the bm_to_npz OUTPUT CONTRACT (np.tril ld + variant_ids + rsids +
+    lower_triangular=[True] + allele_freq) carries AF into obj$variants$AF via
+    ld_npz_to_rds.R. R-env-gated (skips with diagnostic if m3-r-ld absent).
+    Coords chosen to lift cleanly (FTO ~53.8 Mb) so neither variant drops.
+    """
+    npz = tmp_path / "a3_style.npz"
+    rds = tmp_path / "a3_style.rds"
+    vids = ["chr16:53809247:T:A", "chr16:53810000:G:C"]
+    af = [0.12, 0.34]
+    true_r = np.float32(0.6)
+    full = np.array([[1.0, true_r], [true_r, 1.0]], dtype="float32")
+    lower = np.tril(full).astype("float32")
+    np.savez_compressed(
+        str(npz),
+        ld=lower,
+        variant_ids=np.asarray(vids, dtype=str),
+        rsids=np.asarray([""] * 2, dtype=str),
+        lower_triangular=np.array([True]),
+        allele_freq=np.asarray(af, dtype=float),
+    )
+    res = _run_converter(rscript_or_skip, npz, rds, chain_38_to_37)
+    assert res.returncode == 0, f"converter failed: {res.stderr}\n{res.stdout}"
+    payload = _read_rds_with_af(rscript_or_skip, rds)
+    assert payload["ld_rows"] == 2, "both variants should survive liftover"
+    variants_af = payload["variants_af"]
+    if not isinstance(variants_af, list):
+        variants_af = [variants_af]
+    assert len(variants_af) == 2, f"expected 2 AF values, got {variants_af!r}"
+    assert abs(float(variants_af[0]) - 0.12) < 1e-6, f"AF[0] off: {variants_af}"
+    assert abs(float(variants_af[1]) - 0.34) < 1e-6, f"AF[1] off: {variants_af}"
+
+
+def _read_rds_with_af(rscript: Path, rds_path: Path) -> dict:
+    """Read .rds via Rscript dumping obj$variants$AF (na='null') as JSON.
+
+    Mirror of _read_rds but also dumps the variants$AF column so the A.3
+    end-to-end test can assert AF landed in obj$variants$AF.
+    """
+    reader = (
+        'args <- commandArgs(trailingOnly=TRUE); '
+        'obj <- readRDS(args[[1]]); '
+        'out <- list( '
+        '  ld_rows = nrow(obj$ld), '
+        '  ld_cols = ncol(obj$ld), '
+        '  variants_af = obj$variants$AF '
+        '); '
+        'cat(jsonlite::toJSON(out, auto_unbox=TRUE, null="null", na="null"))'
+    )
+    res = subprocess.run(
+        [str(rscript), "-e", reader, str(rds_path)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env=_r_env(rscript),
+    )
+    if res.returncode != 0:
+        raise RuntimeError(f"rds AF reader failed rc={res.returncode}: {res.stderr}")
+    payload = res.stdout
+    j_start = payload.find("{")
+    if j_start < 0:
+        raise RuntimeError(f"no JSON in rds AF reader output: {payload!r}")
+    return json.loads(payload[j_start:])
+
+
 def test_bm_to_npz_helper(tmp_path):
     """src/python/bm_to_npz.py reads a synthetic Hail BlockMatrix; emits .npz.
 
