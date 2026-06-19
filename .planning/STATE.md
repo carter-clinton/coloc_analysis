@@ -31,9 +31,9 @@ progress:
 
 ### NEXT (RESUME HERE)
 1. **Execute Wave 0 now (autonomous, NCSU-side, no cluster):** `/gsd-execute-phase m3` → runs `m3-02b` (split/stitch/tests). `/clear` first.
-2. **Carter, in parallel (longest-lead):** file the AoU/Verily **N2_CPUS ≥ 400, region us-central1** quota ticket (`m3-02c` Task 1) — it gates the Wave-1 cost probe but NOT the Wave-0 code.
+2. ~~Carter files the N2 quota ticket~~ — **DONE / NOT NEEDED (2026-06-18).** The N2_CPUS / us-central1 ceiling on `wb-perky-corn-6639` is **already 5,000** (usage 0; ~12× the 400-vCPU target). No filing, no ticket. The "longest-lead" gate is GREEN with zero lead. Audit record + belt-and-suspenders re-check command: `m3-W2-quota-grant.md`. So m3-02c Task 1 (FILED) + Task 2 (GRANTED) are **pre-satisfied** — the executor marks them done and proceeds to the preflight/probe.
 
-GATE-1.5 ✅ · GATE-0 ✅ · GATE-1 ✅ (cost MODEL re-derived by m3-02c) · **GATE-2 🟡 unblocked once Wave 0 lands + quota granted + probe GREEN** · GATE-3 still gated on the probe.
+GATE-1.5 ✅ · GATE-0 ✅ · GATE-1 ✅ (cost MODEL re-derived by m3-02c) · **QUOTA ✅ (5,000 ≥ 400, nothing to file)** · **GATE-2 🟡 unblocked once Wave 0 code lands + cluster launched + probe GREEN** · GATE-3 still gated on the probe.
 
 ---
 
