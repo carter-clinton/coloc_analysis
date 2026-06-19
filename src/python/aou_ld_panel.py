@@ -2242,27 +2242,36 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     # locus). Two separate aggregate_rows calls are deterministic in
     # current Hail but the contract is "no row order guarantee" — coupling
     # them in one struct collect closes the silent-misalignment hole.
+    # m3-W2 (phase deliverable = LD + AF): collect allele frequency in the SAME
+    # aggregate_rows pass as vid/rsid so AF is row-aligned to the LD/variant axis.
+    # AF source preference: the variant_qc 'vqc.AF[1]' alt-allele frequency
+    # (load_qc_cohort runs hl.variant_qc(mt, name="vqc") upstream). If the MT was
+    # not variant_qc'd (e.g. a raw synthetic fixture), fall back to a per-row
+    # call_stats AF computed in the same collect so row order is preserved.
     has_rsid = "rsid" in mt_r.row
-    if has_rsid:
-        aligned = mt_r.aggregate_rows(
-            hl.agg.collect(
-                hl.struct(
-                    vid=hl.str(mt_r.locus) + ":" + mt_r.alleles[0] + ":" + mt_r.alleles[1],
-                    rsid=hl.coalesce(mt_r.rsid, hl.str("")),
-                )
-            )
-        )
+    # If the MT carries no variant_qc AF (e.g. a raw synthetic fixture), compute
+    # a per-variant alt-allele frequency via a row-wise call_stats annotation
+    # BEFORE the collect (call_stats is an entry aggregator, so it must run as an
+    # annotate_rows pass — it cannot live inside hl.agg.collect). The collect then
+    # reads the materialized 'vqc.AF' / '_af' row field, preserving row order.
+    if "vqc" in mt_r.row and "AF" in mt_r.row.vqc:
+        af_expr = hl.float64(mt_r.vqc.AF[1])
     else:
-        aligned = mt_r.aggregate_rows(
-            hl.agg.collect(
-                hl.struct(
-                    vid=hl.str(mt_r.locus) + ":" + mt_r.alleles[0] + ":" + mt_r.alleles[1],
-                    rsid=hl.str(""),
-                )
+        mt_r = mt_r.annotate_rows(_af=hl.agg.call_stats(mt_r.GT, mt_r.alleles).AF[1])
+        af_expr = hl.float64(mt_r._af)
+    rsid_expr = hl.coalesce(mt_r.rsid, hl.str("")) if has_rsid else hl.str("")
+    aligned = mt_r.aggregate_rows(
+        hl.agg.collect(
+            hl.struct(
+                vid=hl.str(mt_r.locus) + ":" + mt_r.alleles[0] + ":" + mt_r.alleles[1],
+                rsid=rsid_expr,
+                af=af_expr,
             )
         )
+    )
     variant_ids = [a.vid for a in aligned]
     rsids = [a.rsid if a.rsid is not None else "" for a in aligned]
+    allele_freq = [float(a.af) if a.af is not None else 0.0 for a in aligned]
     # IR-003 defensive assertion: variant_ids/rsids row count must equal n_var
     # (the BlockMatrix row count). A divergence here means hl.ld_matrix and
     # aggregate_rows traversed mt_r with inconsistent row sets — should not
@@ -2273,16 +2282,20 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     assert len(rsids) == n_var, (
         f"rsids count {len(rsids)} != n_var {n_var} for region {rid}"
     )
+    assert len(allele_freq) == n_var, (
+        f"allele_freq count {len(allele_freq)} != n_var {n_var} for region {rid}"
+    )
 
     if path_a == "A.1":
         ld_np = ld_bm.to_numpy().astype("float32")
-        out_uri = _save_npz(rid, ld_np, variant_ids, rsids, out_bucket, out_local_dir)
+        out_uri = _save_npz(rid, ld_np, variant_ids, rsids, out_bucket, out_local_dir,
+                            allele_freq=allele_freq)
     elif path_a == "A.2":
         # Sparsify lower triangle in place; result is still a BlockMatrix
         ld_bm_lt = ld_bm.sparsify_triangle(lower=True)
         ld_np = ld_bm_lt.to_numpy().astype("float32")
         out_uri = _save_npz(rid, ld_np, variant_ids, rsids, out_bucket, out_local_dir,
-                            lower_triangular=True)
+                            lower_triangular=True, allele_freq=allele_freq)
     else:
         # Never densify on driver for large/xlarge regions.
         # CR-003 fix (2026-05-01): emit variant_ids.tsv + rsids.tsv sidecars
@@ -2321,6 +2334,13 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
                 np.array(rsids, dtype=object),
                 fmt="%s",
             )
+            # m3-W2: AF sidecar (phase deliverable = LD + AF), row-aligned to
+            # the variant_ids the bm_to_npz converter reads back.
+            np.savetxt(
+                str(sidecar_dir / f"{rid}.allele_freq.tsv"),
+                np.array(allele_freq, dtype="float32"),
+                fmt="%.6g",
+            )
             out_uri = str(local_path)
         else:
             bm_uri = f"{out_bucket}/bm/{rid}.bm"
@@ -2336,12 +2356,14 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             # bm_to_npz.py cannot ingest (the CR-003 failure) — discovered only
             # post-egress. Fail loudly so the region is re-fired instead of
             # silently returning status=ok.
-            for sidecar_name, payload in (
-                (f"{rid}.variant_ids.tsv", variant_ids),
-                (f"{rid}.rsids.tsv", rsids),
+            for sidecar_name, payload, fmt in (
+                (f"{rid}.variant_ids.tsv", variant_ids, "%s"),
+                (f"{rid}.rsids.tsv", rsids, "%s"),
+                (f"{rid}.allele_freq.tsv", allele_freq, "%.6g"),
             ):
                 local_tmp = Path("/tmp") / sidecar_name
-                np.savetxt(str(local_tmp), np.array(payload, dtype=object), fmt="%s")
+                _dtype = "float32" if fmt != "%s" else object
+                np.savetxt(str(local_tmp), np.array(payload, dtype=_dtype), fmt=fmt)
                 uploaded = _upload_to_gcs(
                     local_path=local_tmp,
                     out_bucket=out_bucket,
@@ -2570,7 +2592,8 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
 
 def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
               rsids: list, out_bucket: str | None, out_local_dir: Path | None,
-              lower_triangular: bool = False) -> str:
+              lower_triangular: bool = False,
+              allele_freq: "list | np.ndarray | None" = None) -> str:
     """Save dense LD as .npz (locally + optionally upload to GCS bucket).
 
     Q2/Q4 lock (260520-s2s-CONTEXT.md): asserts ld_np is float32 — float64
@@ -2579,6 +2602,13 @@ def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
     precision in the signed-r band. Path A.1/A.2 callers already cast via
     ``.astype("float32")`` (defensive assertion traps a future regression
     where the cast is dropped).
+
+    m3-W2 (phase deliverable = LD + AF metadata): ``allele_freq`` is a
+    per-variant allele-frequency array row-aligned to ``variant_ids`` (same
+    aggregate_rows pass). It is written as ``allele_freq=`` and asserted
+    present + length-aligned so a future regression that drops AF (or
+    mis-aligns it) fails loudly rather than shipping a silent misalignment
+    into the stitched obj$variants AF column.
     """
     import numpy as np
 
@@ -2586,6 +2616,18 @@ def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
         f"Q2/Q4 lock (260520-s2s): LD array must be float32 before .npz write; "
         f"got dtype={ld_np.dtype} for region_id={region_id!r}. "
         f"float64 doubles egress; float16 loses SuSiE-RSS precision."
+    )
+
+    # m3-W2: AF metadata is part of the phase deliverable — assert present +
+    # row-aligned to the LD/variant axis before writing.
+    assert allele_freq is not None, (
+        f"m3-W2 deliverable (LD + AF): allele_freq is required for region "
+        f"{region_id!r}; compute_region_ld must pass the row-aligned AF array."
+    )
+    allele_freq = np.asarray(allele_freq, dtype="float32")
+    assert allele_freq.shape[0] == ld_np.shape[0], (
+        f"allele_freq length {allele_freq.shape[0]} != LD rows {ld_np.shape[0]} "
+        f"for region {region_id!r}: AF must be row-aligned to variant_ids."
     )
 
     out_local_dir = out_local_dir or Path("/tmp")
@@ -2596,6 +2638,7 @@ def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
         ld=ld_np,
         variant_ids=np.array(variant_ids),
         rsids=np.array(rsids),
+        allele_freq=allele_freq,
         lower_triangular=np.array([lower_triangular]),
     )
     if out_bucket is not None:

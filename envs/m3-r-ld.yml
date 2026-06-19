@@ -27,7 +27,16 @@ dependencies:
   - r-matrix
   - r-testthat
   - r-jsonlite
+  - r-digest
   - r-data.table
+  # m3-02b additions: the real-loader contract test
+  # (tests/m3/test_finemap_loader_contract.py) exercises
+  # run_susie_rss.R::load_ld_matrix() -> susieR::susie_rss(); the no-skip
+  # must_have A6 forbids pytest.skip on the R-dependent families IN THIS env,
+  # so susieR + coloc are correctness requirements here (not optional).
+  # r-digest backs ld_npz_to_rds.R's chain SHA-256 provenance.
+  - r-susier
+  - r-coloc
   - numpy>=1.26
   - pip
   - pip:

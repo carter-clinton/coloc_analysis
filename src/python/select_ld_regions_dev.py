@@ -54,6 +54,13 @@ HLA_STRESS_TARGETS = (
     {"chr": "8", "min_b38": 5_000_000, "max_b38": 15_000_000, "label": "8p23_inversion"},
 )
 
+# m3-W2 re-scope: when a requested (parent_id, ancestry) pick was SPLIT at
+# manifest-build time, it is absent as a compute row; we substitute its __sub
+# compute rows for THAT ancestry only. Cap the substitution to the first
+# DEV_SUBREGION_CAP sub-rows (sorted by subregion_index) so a 9-sub parent does
+# not balloon the dev fire (e.g. m2_region_00040 at 10 Mb core -> several subs).
+DEV_SUBREGION_CAP = 2
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
@@ -64,30 +71,71 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def select_dev_rows(manifest_df: pd.DataFrame) -> pd.DataFrame:
-    """Apply RESEARCH Q11 overlap design.
+def _resolve_request_tuple(manifest_df: pd.DataFrame, region_id: str, ancestry: str,
+                           cap: int = DEV_SUBREGION_CAP) -> pd.DataFrame:
+    """Resolve ONE (region_id, ancestry) request tuple to dev compute rows.
 
-    Step 1: emit AFR-only rows for all 5 AFR-known regions.
-    Step 2: emit EUR-only rows for the 3 overlap regions (FTO/SH2B3/APOE).
+    If (region_id, ancestry) exists as a compute row, return it. ELSE if the
+    region was SPLIT (its __sub compute rows carry parent_region_id == region_id),
+    substitute the first ``cap`` sub-rows for THAT ancestry only (sorted by
+    subregion_index) — never mixing ancestries. Returns an empty frame if neither
+    the whole region nor any split children exist for the ancestry.
+    """
+    direct = manifest_df[
+        (manifest_df["region_id"] == region_id) &
+        (manifest_df["ancestry"] == ancestry)
+    ]
+    if not direct.empty:
+        return direct.copy()
+
+    # SPLIT case: the parent is absent as a compute row; expand to __sub rows.
+    if "parent_region_id" in manifest_df.columns:
+        children = manifest_df[
+            (manifest_df["parent_region_id"].astype(str) == str(region_id)) &
+            (manifest_df["ancestry"] == ancestry)
+        ].copy()
+        if not children.empty:
+            children = children.sort_values("subregion_index")
+            return children.head(cap)
+    return manifest_df.iloc[0:0].copy()
+
+
+def select_dev_rows(manifest_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply RESEARCH Q11 overlap design, m3-W2 re-scope tuple-resolution.
+
+    Step 1: resolve (parent_id, AFR) request tuples for all 5 AFR-known regions.
+    Step 2: resolve (parent_id, EUR) request tuples for the 3 overlap regions.
+            A selected parent that was SPLIT (e.g. m2_region_00040) is replaced
+            by its __sub compute rows for THAT ancestry, capped at
+            DEV_SUBREGION_CAP — AFR and EUR sub-rows are never mixed.
     Step 3: pick 1 HLA-stress region per target (chr6 HLA / chr8 8p23) and
             emit AFR-only rows. We deterministically pick the first manifest
-            row whose interval overlaps the target window.
+            row (or its first capped __sub rows) whose interval overlaps the
+            target window.
     """
     # Coerce chr to string for safe comparison (manifest emits int-like strings)
     manifest_df = manifest_df.copy()
     manifest_df["chr"] = manifest_df["chr"].astype(str)
 
-    # Step 1: AFR-only rows for all 5 AFR-known
-    afr_known = manifest_df[
-        (manifest_df["region_id"].isin(AFR_KNOWN_REGIONS)) &
-        (manifest_df["ancestry"] == "AFR")
-    ].copy()
+    # Step 1: AFR request tuples for all 5 AFR-known (resolve whole-or-split).
+    afr_parts = [
+        _resolve_request_tuple(manifest_df, rid, "AFR") for rid in AFR_KNOWN_REGIONS
+    ]
+    afr_parts = [p for p in afr_parts if not p.empty]
+    afr_known = (
+        pd.concat(afr_parts, axis=0, ignore_index=True) if afr_parts
+        else manifest_df.iloc[0:0].copy()
+    )
 
-    # Step 2: EUR-only rows for the 3 overlap regions
-    eur_overlap = manifest_df[
-        (manifest_df["region_id"].isin(EUR_OVERLAP_REGIONS)) &
-        (manifest_df["ancestry"] == "EUR")
-    ].copy()
+    # Step 2: EUR request tuples for the 3 overlap regions (resolve whole-or-split).
+    eur_parts = [
+        _resolve_request_tuple(manifest_df, rid, "EUR") for rid in EUR_OVERLAP_REGIONS
+    ]
+    eur_parts = [p for p in eur_parts if not p.empty]
+    eur_overlap = (
+        pd.concat(eur_parts, axis=0, ignore_index=True) if eur_parts
+        else manifest_df.iloc[0:0].copy()
+    )
 
     # Step 3: HLA-stress rows
     stress_picks: list[pd.DataFrame] = []
