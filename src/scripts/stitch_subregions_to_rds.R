@@ -168,7 +168,16 @@ for (npz_path in cli$npz) {
   z   <- np$load(npz_path, allow_pickle = TRUE)
   tri <- z$f[["ld"]]
   if (!is.matrix(tri)) stop("STITCH_INPUT: unexpected ld shape in ", npz_path)
-  if (!isSymmetric(tri)) tri <- tri + t(tri) - diag(diag(tri))
+  # CR-01 fix (2026-06-19): HONOR the per-window lower_triangular flag. The
+  # one-sided recovery (tri + t(tri) - diag(diag(tri))) is valid ONLY for a
+  # lower-triangular npz; on a FULL float32 matrix it DOUBLES off-diagonals
+  # (r -> 2r) because the OLD `!isSymmetric` gate trips on ~1e-7 Hail block-sum
+  # asymmetry (>> isSymmetric's 2.2e-14 tol). Read the flag; mirror only when
+  # one-sided; ALWAYS symmetrize (avg(r,r)=r kills float drift WITHOUT doubling).
+  win_lower_only <- tryCatch(as.logical(z$f[["lower_triangular"]])[1],
+                             error = function(e) FALSE)
+  if (is.na(win_lower_only)) win_lower_only <- FALSE
+  if (isTRUE(win_lower_only)) tri <- tri + t(tri) - diag(diag(tri))
   tri <- (tri + t(tri)) / 2
 
   rsids <- as.character(z$f[["rsids"]])

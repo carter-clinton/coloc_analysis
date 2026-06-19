@@ -448,6 +448,49 @@ def test_stitch_overlap_pair_agreement(r_toolchain, chain_38_to_37, tmp_path):
     assert vals["SYMOK"].strip() == "TRUE"
 
 
+def test_stitch_full_window_float32_asymmetric_not_doubled(
+        r_toolchain, chain_38_to_37, tmp_path):
+    """CR-01 regression (RED-first), stitch path: a window .npz holding a FULL
+    matrix with ~1e-7 float32 triangle asymmetry must NOT have its off-diagonals
+    doubled by the per-window symmetry recovery. The straddle r is staged from
+    tri[ra,rb]; if the recovery doubles the full matrix (r->2r) the stitched
+    R[A,B] becomes ~1.2 instead of ~0.6. Honor the lower_triangular flag."""
+    rscript, env = r_toolchain
+    parent = "m2_region_00040"
+    A = "12:9999500:A:G"
+    B = "12:10000500:C:T"
+    # FULL window matrix with deliberate float32 asymmetry (not lower-tri).
+    w = np.array([[1.0, 0.6000001], [0.5999999, 1.0]], dtype="float32")
+    npz0 = tmp_path / f"{parent}__sub00.npz"
+    npz1 = tmp_path / f"{parent}__sub01.npz"
+    np.savez_compressed(str(npz0), ld=w,
+                        variant_ids=np.asarray([A, B], dtype=str),
+                        rsids=np.asarray(["", ""], dtype=str),
+                        allele_freq=np.asarray([0.25, 0.25], dtype="float32"),
+                        lower_triangular=np.array([False]))
+    np.savez_compressed(str(npz1), ld=w,
+                        variant_ids=np.asarray([A, B], dtype=str),
+                        rsids=np.asarray(["", ""], dtype=str),
+                        allele_freq=np.asarray([0.25, 0.25], dtype="float32"),
+                        lower_triangular=np.array([False]))
+    manifest = tmp_path / "manifest.tsv"
+    _write_manifest(manifest, parent, "AFR", [
+        {"idx": 0, "core_start": 0, "core_end": 10_000_000},
+        {"idx": 1, "core_start": 10_000_000, "core_end": 20_000_000},
+    ], 5_000_000)
+    out_rds = tmp_path / f"{parent}.rds"
+    res = _run_stitch(rscript, env, parent, "AFR", out_rds, chain_38_to_37, manifest, [npz0, npz1])
+    assert res.returncode == 0, f"stitch failed: {res.stderr}\n{res.stdout}"
+    code = (
+        'v <- obj$variants; R <- as.matrix(obj$R); ord <- order(v$POS); '
+        'ia <- ord[1]; ib <- ord[2]; '
+        'cat(sprintf("R_AB=%.5f\\n", R[ia, ib]))'
+    )
+    out = _read_rds_summary(rscript, env, out_rds, code)
+    r_ab = float([l for l in out.splitlines() if l.startswith("R_AB=")][0].split("=")[1])
+    assert abs(r_ab - 0.6) < 1e-3, f"full-window off-diagonal DOUBLED: {r_ab} (CR-01)"
+
+
 def test_stitch_overlap_pair_disagreement_raises(r_toolchain, chain_38_to_37, tmp_path):
     """If the two windows DISAGREE on a shared pair, the stitch STOPs (integrity)."""
     rscript, env = r_toolchain
@@ -554,3 +597,55 @@ def test_whole_region_payload_reconciled(r_toolchain, chain_38_to_37, tmp_path):
     assert {"SNP_ID", "CHR", "POS", "REF", "ALT", "AF"}.issubset(
         set(vals["VCOLS"].strip().split(",")))
     assert vals["HASSNP"].strip() == "TRUE", "back-compat obj$snp_ids must remain"
+
+
+def test_whole_region_full_matrix_float32_asymmetric_not_doubled(
+        r_toolchain, chain_38_to_37, tmp_path):
+    """CR-01 regression (RED-first): a FULL (Path A.1) float32 matrix carries
+    ~1e-7 triangle asymmetry from Hail block-sum order. The OLD unconditional
+    ``if (!isSymmetric(tri)) tri <- tri + t(tri) - diag(diag(tri))`` recovery
+    DOUBLES every off-diagonal (r -> 2r) on such a full matrix because
+    isSymmetric's ~2.2e-14 tol trips on the 1e-7 noise. The fix HONORS the
+    ``lower_triangular`` flag the .npz carries: for a full matrix (flag False or
+    absent) it must ONLY project out float asymmetry via (tri+t(tri))/2, never
+    double. Assert the recovered off-diagonal equals the true r (~0.6), NOT 2r.
+    """
+    rscript, env = r_toolchain
+    vids = ["chr16:53809247:T:A", "chr16:53810000:G:C", "chr16:53811000:A:T"]
+    n = len(vids)
+    # FULL symmetric-in-intent matrix with deliberate float32 triangle asymmetry
+    # ~1e-7 (above isSymmetric's 2.2e-14 tol, exactly the Hail block-sum drift).
+    ld = np.eye(n, dtype="float32")
+    ld[0, 1] = np.float32(0.6000001)
+    ld[1, 0] = np.float32(0.5999999)
+    ld[0, 2] = np.float32(0.3000001)
+    ld[2, 0] = np.float32(0.2999999)
+    npz = tmp_path / "full_asym.npz"
+    # lower_triangular=False (Path A.1 convention) — full matrix, NOT one-sided.
+    np.savez_compressed(str(npz), ld=ld,
+                        variant_ids=np.asarray(vids, dtype=str),
+                        rsids=np.asarray([""] * n, dtype=str),
+                        allele_freq=np.asarray([0.3] * n, dtype="float32"),
+                        lower_triangular=np.array([False]))
+    rds = tmp_path / "full_asym.rds"
+    conv = subprocess.run([str(rscript), str(CONVERTER_R), str(npz), str(rds),
+                           str(chain_38_to_37)], capture_output=True, text=True,
+                          timeout=180, env=env)
+    assert conv.returncode == 0, f"converter failed: {conv.stderr}\n{conv.stdout}"
+    code = (
+        'R <- as.matrix(obj$R); '
+        'cat(sprintf("R01=%.5f\\n", R[1, 2])); '
+        'cat(sprintf("R02=%.5f\\n", R[1, 3])); '
+        'cat(sprintf("SYM=%s\\n", isSymmetric(R))); '
+        'cat(sprintf("DIAG1=%s\\n", all(abs(diag(R)-1) < 1e-9)))'
+    )
+    out = _read_rds_summary(rscript, env, rds, code)
+    vals = dict(l.split("=") for l in out.splitlines()
+                if "=" in l and not l.startswith("WROTE"))
+    # The bug doubles 0.6 -> 1.2 and 0.3 -> 0.6. The fix keeps them ~r.
+    assert abs(float(vals["R01"]) - 0.6) < 1e-3, (
+        f"off-diagonal DOUBLED (got {vals['R01']}, expected ~0.6) -- CR-01 bug")
+    assert abs(float(vals["R02"]) - 0.3) < 1e-3, (
+        f"off-diagonal DOUBLED (got {vals['R02']}, expected ~0.3) -- CR-01 bug")
+    assert vals["SYM"].strip() == "TRUE"
+    assert vals["DIAG1"].strip() == "TRUE"

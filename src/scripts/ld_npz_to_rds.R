@@ -104,17 +104,37 @@ tri <- z$f[["ld"]]
 if (!is.matrix(tri)) stop("unexpected ld shape in ", npz_path)
 
 # ---------------------------------------------------------------------------
-# 2. Symmetry recovery (lower-triangular -> full symmetric)
+# 2. Symmetry recovery -- HONOR the lower_triangular flag the .npz carries.
 #
-# WR-003 fix (2026-05-01): the AoU side casts to float32 in _save_npz +
-# bm_to_npz, and `tri + t(tri) - diag(diag(tri))` over float32 introduces
-# ~1e-6 ulp drift on the off-diagonal that depends on float ordering. This
-# can leave isSymmetric(tri) FALSE for huge regions (HLA, 8p23) even after
-# the recovery step. Force exact symmetry via the (M + t(M))/2 idempotent
-# projection so the downstream Cholesky path in coloc/SuSiE never trips
-# on near-symmetric numerical noise.
+# CR-01 fix (2026-06-19): the one-sided recovery `tri + t(tri) - diag(diag(tri))`
+# is ONLY valid when `tri` is one-sided (lower-triangular, upper == 0) -- the
+# Path A.2 case (_save_npz lower_triangular=True). For a FULL (Path A.1) matrix
+# it DOUBLES every off-diagonal (r -> 2r), and the subsequent (tri+t(tri))/2 does
+# NOT undo it. The OLD gate `if (!isSymmetric(tri))` was the trap: a full float32
+# LD matrix carries ~1e-7 triangle asymmetry from Hail block-sum order -- ~7
+# orders of magnitude above isSymmetric's ~2.2e-14 tol -- so the gate fired and
+# silently doubled the off-diagonals (corrupting the LD panel fed to SuSiE-RSS).
+#
+# WR-003 (float32) rationale, corrected: the float32 drift is real for both
+# paths. The .npz already records which triangle convention it used in the
+# `lower_triangular` flag (aou_ld_panel.py _save_npz). We read it and:
+#   * lower_triangular == TRUE  -> one-sided input: mirror the populated triangle
+#     (tri + t(tri) - diag(diag(tri))), THEN symmetrize to kill float drift.
+#   * lower_triangular == FALSE / absent -> FULL input: already two-sided, so
+#     ONLY project out float asymmetry via (tri + t(tri))/2 (avg(r,r)=r, never
+#     doubles). This is also a no-op for the already-mirrored lower-tri case.
+# The (tri + t(tri))/2 idempotent projection is ALWAYS applied so the downstream
+# Cholesky path in coloc/SuSiE never trips on near-symmetric numerical noise.
 # ---------------------------------------------------------------------------
-if (!isSymmetric(tri)) tri <- tri + t(tri) - diag(diag(tri))
+lower_only <- tryCatch(as.logical(z$f[["lower_triangular"]])[1],
+                       error = function(e) FALSE)
+if (is.na(lower_only)) lower_only <- FALSE
+if (isTRUE(lower_only)) {
+  # one-sided input: mirror the populated lower triangle into the upper
+  tri <- tri + t(tri) - diag(diag(tri))
+}
+# ALWAYS symmetrize: kills float32 noise on a full matrix WITHOUT doubling
+# (avg(r,r)=r) and is a no-op on the just-mirrored lower-tri case.
 tri <- (tri + t(tri)) / 2
 
 # ---------------------------------------------------------------------------
