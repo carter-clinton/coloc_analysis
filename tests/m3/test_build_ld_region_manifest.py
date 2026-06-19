@@ -500,6 +500,18 @@ def test_npz_payload_has_allele_freq(synthetic_mt_path, mock_aou_env, tmp_path):
     assert ((af >= 0) & (af <= 1)).all(), af[:10]
 
 
+def test_af_null_becomes_nan_not_zero():
+    """WR-03: a null AF must coerce to NaN (distinguishable from a real 0.0),
+    never the old 0.0 sentinel that masks a collection fault."""
+    import math
+    import aou_ld_panel as alp
+    assert math.isnan(alp._af_or_nan(None)), "null AF must be NaN, not 0.0"
+    # a genuine 0.0 stays 0.0 (and is now distinguishable from missing)
+    assert alp._af_or_nan(0.0) == 0.0
+    assert alp._af_or_nan(0.0) is not None and not math.isnan(alp._af_or_nan(0.0))
+    assert alp._af_or_nan(0.42) == 0.42
+
+
 def test_save_npz_raises_on_missing_or_misaligned_af(tmp_path):
     """_save_npz asserts allele_freq present + length-aligned (raises otherwise)."""
     import numpy as np

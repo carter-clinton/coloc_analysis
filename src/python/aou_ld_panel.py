@@ -364,6 +364,22 @@ MIN_VARIANTS_PER_REGION = 10
 _MIN_REGION_NPZ_BYTES = 256
 
 
+def _af_or_nan(af: "float | None") -> float:
+    """Coerce a collected allele frequency to float, mapping a NULL to NaN.
+
+    WR-03 fix (2026-06-19): the prior ``0.0`` sentinel for a null AF is
+    indistinguishable from a genuine allele frequency of 0 (a legitimate value).
+    For a ``MAF >= 0.005``-prefiltered cohort a true 0.0 is impossible, so a 0.0
+    in the AF column actually signals a COLLECTION FAULT — which the sentinel
+    masked. We emit ``float('nan')`` instead so the missing-vs-zero distinction
+    survives into ``obj$variants$AF`` (NaN -> R ``NA``), where the manuscript /
+    QC can audit it, rather than silently shipping a fake 0.0.
+    """
+    if af is None:
+        return float("nan")
+    return float(af)
+
+
 def _require_env(name: str) -> str:
     """Read AoU env var; raise RuntimeError with a helpful message if missing."""
     v = os.environ.get(name)
@@ -2271,7 +2287,9 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     )
     variant_ids = [a.vid for a in aligned]
     rsids = [a.rsid if a.rsid is not None else "" for a in aligned]
-    allele_freq = [float(a.af) if a.af is not None else 0.0 for a in aligned]
+    # WR-03: a NULL AF becomes NaN (-> obj$variants$AF NA), NOT a fake 0.0 that
+    # would be indistinguishable from a real (impossible, post-MAF-filter) AF=0.
+    allele_freq = [_af_or_nan(a.af) for a in aligned]
     # IR-003 defensive assertion: variant_ids/rsids row count must equal n_var
     # (the BlockMatrix row count). A divergence here means hl.ld_matrix and
     # aggregate_rows traversed mt_r with inconsistent row sets — should not

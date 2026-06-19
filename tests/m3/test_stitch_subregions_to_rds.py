@@ -599,6 +599,43 @@ def test_whole_region_payload_reconciled(r_toolchain, chain_38_to_37, tmp_path):
     assert vals["HASSNP"].strip() == "TRUE", "back-compat obj$snp_ids must remain"
 
 
+def test_whole_region_null_af_survives_as_na_not_zero(
+        r_toolchain, chain_38_to_37, tmp_path):
+    """WR-03 regression: a missing AF (NaN in the .npz) must survive into
+    obj$variants$AF as NA, NOT be coerced to a fake 0.0 (which would be
+    indistinguishable from a real allele frequency of 0)."""
+    rscript, env = r_toolchain
+    vids = ["chr16:53809247:T:A", "chr16:53810000:G:C", "chr16:53811000:A:T"]
+    n = len(vids)
+    ld = np.eye(n, dtype="float32")
+    ld[0, 1] = ld[1, 0] = 0.4
+    # AF: variant 0 missing (NaN), variant 1 a genuine 0.0, variant 2 a real AF.
+    af = np.asarray([np.nan, 0.0, 0.3], dtype="float32")
+    npz = tmp_path / "nullaf.npz"
+    np.savez_compressed(str(npz), ld=np.tril(ld).astype("float32"),
+                        variant_ids=np.asarray(vids, dtype=str),
+                        rsids=np.asarray([""] * n, dtype=str),
+                        allele_freq=af,
+                        lower_triangular=np.array([True]))
+    rds = tmp_path / "nullaf.rds"
+    conv = subprocess.run([str(rscript), str(CONVERTER_R), str(npz), str(rds),
+                           str(chain_38_to_37)], capture_output=True, text=True,
+                          timeout=180, env=env)
+    assert conv.returncode == 0, f"converter failed: {conv.stderr}\n{conv.stdout}"
+    code = (
+        'v <- obj$variants; '
+        'cat(sprintf("AF0NA=%s\\n", is.na(v$AF[1]))); '   # missing -> NA
+        'cat(sprintf("AF1=%.4f\\n", v$AF[2])); '          # genuine 0.0 preserved
+        'cat(sprintf("AF2=%.4f\\n", v$AF[3]))'
+    )
+    out = _read_rds_summary(rscript, env, rds, code)
+    vals = dict(l.split("=") for l in out.splitlines()
+                if "=" in l and not l.startswith("WROTE"))
+    assert vals["AF0NA"].strip() == "TRUE", "missing AF must be NA, not 0.0 (WR-03)"
+    assert abs(float(vals["AF1"]) - 0.0) < 1e-6, "a genuine AF=0 must be preserved"
+    assert abs(float(vals["AF2"]) - 0.3) < 1e-3
+
+
 def test_whole_region_full_matrix_float32_asymmetric_not_doubled(
         r_toolchain, chain_38_to_37, tmp_path):
     """CR-01 regression (RED-first): a FULL (Path A.1) float32 matrix carries
