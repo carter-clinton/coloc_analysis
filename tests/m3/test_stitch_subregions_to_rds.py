@@ -511,6 +511,38 @@ def test_stitch_overlap_pair_disagreement_raises(r_toolchain, chain_38_to_37, tm
     assert "disagreement" in (res.stderr + res.stdout).lower()
 
 
+def test_stitch_completeness_guard_not_bypassed_by_filename(
+        r_toolchain, chain_38_to_37, tmp_path):
+    """WR-02 regression: the missing-child completeness guard must NOT be silently
+    bypassed when an .npz filename lacks the __subNN token. A 2-subregion parent
+    fed only ONE window whose file is named without __sub used to slip past the
+    guard (seen_idx stayed empty, length(seen_idx) > 0L was FALSE) and write an
+    INCOMPLETE panel. The stitch must instead REFUSE (subregion identity is
+    derived from the manifest; an un-mappable npz is an error)."""
+    rscript, env = r_toolchain
+    parent = "m2_region_00040"
+    A = "12:9999500:A:G"
+    B = "12:10000500:C:T"
+    # Manifest declares n_subregions=2 for this parent.
+    manifest = tmp_path / "manifest.tsv"
+    _write_manifest(manifest, parent, "AFR", [
+        {"idx": 0, "core_start": 0, "core_end": 10_000_000},
+        {"idx": 1, "core_start": 10_000_000, "core_end": 20_000_000},
+    ], 5_000_000)
+    # ONE npz, named WITHOUT the __subNN token (cannot be inferred from filename).
+    npz_noname = tmp_path / "window_zero.npz"
+    _write_window_npz(npz_noname, [A, B],
+                      np.array([[1.0, 0.6], [0.6, 1.0]], dtype="float32"))
+    out_rds = tmp_path / f"{parent}.rds"
+    res = _run_stitch(rscript, env, parent, "AFR", out_rds, chain_38_to_37,
+                      manifest, [npz_noname])
+    assert res.returncode != 0, (
+        "stitch must REFUSE an un-mappable / incomplete npz set, not silently "
+        "write an incomplete panel (WR-02)")
+    combined = (res.stderr + res.stdout)
+    assert "STITCH_INPUT" in combined, combined
+
+
 def test_stitch_sparse_payload(r_toolchain, chain_38_to_37, tmp_path):
     """obj$R inherits sparseMatrix (dgCMatrix), round-trips, dims == owned count."""
     rscript, env = r_toolchain

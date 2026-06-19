@@ -156,14 +156,22 @@ b38_key <- function(chr, pos, ref, alt) paste(chr, pos, ref, alt, sep = ":")
 for (npz_path in cli$npz) {
   if (!file.exists(npz_path)) stop("STITCH_INPUT: missing child .npz: ", npz_path)
   idx <- infer_sub_index(npz_path)
-  if (!is.na(idx)) {
-    if (idx %in% seen_idx) stop("STITCH_INPUT: duplicate child for subregion_index ", idx)
-    if (is.null(core_by_idx[[as.character(idx)]])) {
-      stop("STITCH_INPUT: extra child .npz subregion_index ", idx,
-           " not in parent's manifest set")
-    }
-    seen_idx <- c(seen_idx, idx)
+  # WR-02 fix (2026-06-19): subregion identity is AUTHORITATIVE from the manifest.
+  # An un-inferable index (filename lacks __subNN) is an ERROR, never a silent
+  # pass -- otherwise the missing-child completeness guard below is bypassed
+  # (seen_idx would stay empty, length(seen_idx) > 0L FALSE) and an incomplete
+  # panel (missing whole core intervals) ships silently. Every --npz MUST map to
+  # a known subregion_index in this parent's manifest set.
+  if (is.na(idx)) {
+    stop("STITCH_INPUT: cannot infer subregion_index from ", npz_path,
+         " (expected __subNN); refusing to stitch (completeness unverifiable)")
   }
+  if (idx %in% seen_idx) stop("STITCH_INPUT: duplicate child for subregion_index ", idx)
+  if (is.null(core_by_idx[[as.character(idx)]])) {
+    stop("STITCH_INPUT: extra child .npz subregion_index ", idx,
+         " not in parent's manifest set")
+  }
+  seen_idx <- c(seen_idx, idx)
 
   z   <- np$load(npz_path, allow_pickle = TRUE)
   tri <- z$f[["ld"]]
@@ -239,10 +247,12 @@ for (npz_path in cli$npz) {
   }
 }
 
-if (!is.na(n_subregions) && length(seen_idx) > 0L &&
-    length(unique(seen_idx)) < n_subregions) {
-  stop("STITCH_INPUT: missing child (.npz count ", length(unique(seen_idx)),
-       " < n_subregions ", n_subregions, ")")
+# WR-02 fix: completeness is checked UNCONDITIONALLY. Every --npz now contributes
+# a manifest-mapped subregion_index (un-inferable -> hard error above), so an
+# empty seen_idx can only mean zero valid children. Require the full child set.
+if (length(unique(seen_idx)) != n_subregions) {
+  stop("STITCH_INPUT: missing child (.npz subregion count ",
+       length(unique(seen_idx)), " != n_subregions ", n_subregions, ")")
 }
 
 # ---------------------------------------------------------------------------
