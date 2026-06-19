@@ -1,34 +1,44 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-18T10:00:00.000Z",
+  "timestamp": "2026-06-19T14:20:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "wave": "Wave 2 (LD compute) — GATE-2 dev-10",
-  "status": "dev-10 FIRED then KILLED — intractable on the dev cluster (real-cohort sample counts); 0 regions completed; cluster STOPPED; Wave-2 RE-SCOPE needed (cluster sizing + xlarge region-splitting + cost-model redo)",
-  "headline": "The dev-10 LD fire is DONE (killed, not completed). It proved a CAPACITY wall, not a correctness bug: real cohorts (AFR 73,122 / EUR 220,098 samples) make each correlation block ~36-110x heavier than the synthetic repro (--n-samples 2000) measured, so region_00006 (the CHEAPEST A.3 region) crawled at ~1-2 blocks/min (vs ~66 in the repro) AND the 64 GB master CRASHED during its ~65 GiB dense-scratch phase. region_00040 (xlarge, x2) would be ~weeks/cell. The A.3 FIX ITSELF IS CORRECT (blocks advanced, no driver-collect hang) — the problem is cluster size + the dense-scratch unit of work. NEXT = a Wave-2 re-scope, NOT a re-fire on the same config.",
+  "wave": "Wave 0 (NCSU code) — m3-02b EXECUTED + hardened",
+  "status": "m3-02b (split/stitch/banded-LD/tests) EXECUTED, adversarially code-reviewed, CR-01 + WR-01/02/03 fixed, blast-radius swept (BR-01 regression caught + fixed). Pure NCSU-side, NO cluster, NO cost, NOTHING running. Full tests/m3 = 194 passed / 0 failed / 30 skipped. NEXT = m3-02c (quota + real-cohort cost probe + go/no-go; autonomous:false; Carter fires in-perimeter, costs money).",
+  "headline": "Disconnect-safe: this was a code-only session, no server-side fire. m3-02b is now COMPLETE and hardened — the overlapping-window xlarge split + BANDED sparse stitch + real-loader A6 verify + Q-RS2 notebook cell all landed (3 TDD tasks), then an adversarial deep review found CR-01 (full-matrix LD doubling), fixed with TDD; then a wide blast-radius sweep caught BR-01 — the CR-01 fix made the lower_triangular flag authoritative but bm_to_npz.py (Path A.3, the xlarge-split deliverable path) never wrote it, HALVING A.3 off-diagonals — fixed with TDD. One pre-existing gap (A.3 regions get NA AF) is tracked + deferred. m3-02b is the load-bearing structural fix; m3-02c is the next plan.",
   "branch": "m3-W2-aou-deltas",
-  "the_finding": "dev-10 on 16x n2-standard-4 (64 vCPU/16 GB workers): region_00006 (n_var=122,678, AFR n_samples=73,122) ran its 900-block Stage-4 at ~0.9-2.1 blocks/min and the driver crashed at ~65 GiB dense scratch; 0 regions completed, no run log. Root cause: the repro used --n-samples 2000; the correlation matmul inner dim IS n_samples (73k-220k real) -> ~36x (AFR)/~110x (EUR) more compute per block + 16 GB workers spilling + 64 GB master can't sustain the dense scratch. The repro validated the A.3 fix's CORRECTNESS but its 928s wall-time never represented real-cohort COST.",
-  "rescope_plan": ".planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-RESCOPE-real-cohort-compute.md — three coupled changes via /gsd-plan-phase: (1) cluster sized for real cohorts (n2-highmem-16 workers for RAM, 256-384 vCPU to quota, highmem master); (2) SPLIT the ~16 xlarge regions into <=~75-100k-var sub-regions (drops cross-sub-region LD beyond the 50 Mb radius -> already the accepted banded treatment; shrinks compute + scratch + driver load all at once; touches build_ld_region_manifest.py / compute_region_ld / ld_npz_to_rds.R); (3) redo the ~1,117 cluster-h cost model from real per-region rates (EUR ~3x AFR/block).",
-  "next_action": "Run /gsd-plan-phase for the Wave-2 re-scope (cluster sizing + xlarge region-splitting + cost-model redo) per WAVE-2-RESCOPE-real-cohort-compute.md. Do NOT re-fire dev-10 on the same 64-vCPU/16 GB config — it is intractable. The xlarge-region split is the load-bearing change; the cluster resize alone does not make xlarge tractable.",
+  "running_now": "NOTHING. No AoU cluster, no Spark/YARN app, no kernel, no background job. The cluster 20260617 was STOPPED last session; this session touched only the NCSU GPFS repo. A fresh session resumes purely from the docs below — no reattach needed.",
+  "this_session_work": {
+    "executed": "m3-02b-W2-rescope-split-stitch-code (Wave 0, autonomous) — 3 TDD tasks: (1) overlapping-window xlarge split in build_ld_region_manifest.py (half-open cores tile parent + core+/-buffer windows + explicit buffer_bp) + dev tuple-resolve/capped-expansion + AF metadata in aou_ld_panel.py .npz; (2) NEW stitch_subregions_to_rds.R BANDED sparse stitch (cross-core pairs within buffer_bp retained, beyond zeroed; obj$R+obj$variants for the real load_ld_matrix) + ld_npz_to_rds.R payload reconcile; (3) A6 real-loader verify + sparse-parent benchmark + AOU-2 Q-RS2 executor cell.",
+    "review": "Adversarial deep code review (m3-02b-W2-rescope-REVIEW.md): banded-stitch geometry CONFIRMED correct (fuzz-verified); found CR-01 (critical) + WR-01/02/03.",
+    "fixes": "CR-01 (honor lower_triangular flag — stop full-matrix off-diagonal DOUBLING) + WR-01 (loud guard vs radius-default parent-spanning window) + WR-02 (un-mappable npz hard error) + WR-03 (null AF = NaN not 0.0) — all TDD RED-first (m3-02b-W2-rescope-REVIEW-FIX.md).",
+    "blast_radius": "4 parallel read-only sweeps (m3-02b-W2-rescope-BLAST-RADIUS-FIX.md). 2 dimensions clean (LD-output change forward-looking — dev-10 killed w/ 0 artifacts, Track A uses GTEx; WR guards break no caller). CAUGHT BR-01 (CRITICAL regression): CR-01 fix made the lower_triangular flag authoritative but bm_to_npz.py (Path A.3) never wrote it -> A.3 off-diagonals HALVED (proven 0.6->0.30). FIXED: bm_to_npz.py writes lower_triangular=True + 2 RED-first regression tests. Also: env-probe _r_env fix un-skipped converter R tests, which EXPOSED a stale liftover test (asserted dbSNP 53803574; UCSC hg38ToHg19 chain truth = 53843159, confirmed via pyliftover) -> corrected the test, converter is right. BR-02: NaN-safe AF range assertion.",
+    "tests": "Full pytest tests/m3 = 194 passed, 0 failed, 30 skipped (R families run in the m3-r-ld env, no skips on the no-skip A6 stitch/loader/sparse families)."
+  },
+  "deferred_must_close_before_m3_04": {
+    "item": "A.3 AF sidecar gap — bm_to_npz.py writes NO allele_freq, so Path A.3 (large/xlarge) LD regions get NA AF in obj$variants$AF. Pre-existing (not a CR-01 regression).",
+    "fix": "(1) A.3 branch of aou_ld_panel.py::compute_region_ld exports a row-aligned AF sidecar (same _af_or_nan as A.1/A.2) beside the variant_ids/rsids sidecars; (2) bm_to_npz.py reads it + writes allele_freq= into the .npz (NaN for missing per WR-03); (3) round-trip test A.3 .npz -> obj$variants$AF.",
+    "tracked": ".planning/todos/pending/2026-06-19-close-a-3-af-sidecar-gap-for-large-xlarge-ld-regions.md + carry-forward note in the m3-02c PLAN + BLAST-RADIUS-FIX.md DEFERRED section",
+    "gate": "Do NOT ship the A.3 LD panel claiming 'LD + AF' until closed. Surfaces naturally at m3-02c's A.3 preflight cells."
+  },
+  "next_action": "Run m3-02c (m3-02c-W2-rescope-quota-probe-and-gonogo-PLAN.md) — autonomous:false, Carter fires in-perimeter, COSTS MONEY. It does: QUOTA GATE 1 (file N2_CPUS>=400 ticket — already PARTLY satisfied: us-central1 N2_CPUS is ALREADY 5000, see reference_aou_n2_quota_already_5000) + GATE 2 (record granted ceiling) + a preflight count pass over every post-split cell + a >=3-cell cost probe (AFR whole region_00006 + AFR/EUR xlarge sub-regions + HLA region_00145) on a sized n2-highmem-16 cluster + cost-model redo + the PROJECTED x 1.3 <= BUDGET_CAP go/no-go. Address the A.3 AF sidecar gap before the m3-04 production fire.",
+  "open_flags": [
+    "buffer_bp default = 50 Mb radius makes a split window span ~the whole parent -> the --subregion-buffer-mb 10 (Pan-UKBB) lever is effectively mandatory; m3-02c must resolve the correct AFR/EUR LD-decay band (small targeted research flagged in m3-02b SUMMARY) and count region_00145 (chr6 HLA) real density (may need --max-subregion-span-mb 7).",
+    "WR-01 now makes the radius-default fail LOUDLY (guard) — a manifest re-gen for the real 16 xlarge regions MUST pass an explicit --subregion-buffer-mb."
+  ],
   "settled_do_not_relitigate": [
-    "A.3 fix is CORRECT (materialize-then-band, no driver-collect hang) — confirmed on the repro (130k/928s) and on region_00006 (blocks advancing). The problem is CAPACITY, not the fix.",
-    "Ordering A vs B is SETTLED (keep A) — banded==dense under the span+500kb radius scheme; splitting, not re-ordering, shrinks the dense intermediate.",
-    "Cohorts intact + read-gate/bucket wiring proven (AFR 73,122 / EUR 220,098 read live by Cell 4)."
+    "A.3 fix is CORRECT (materialize-then-band, no driver-collect hang); ordering A kept (banded==dense under span+500kb).",
+    "banded stitch geometry is CORRECT (fuzz-verified in the adversarial review).",
+    "Cohorts intact (AFR 73,122 / EUR 220,098 / AFR-sens 62,557), untouched.",
+    "dev-10 on 64-vCPU/16 GB is INTRACTABLE (capacity wall) — the SPLIT (m3-02b, now done) is the structural fix; m3-02c sizes the cluster + redoes cost."
   ],
   "prep_landmines_for_any_refire": [
-    "symlink ~/coloc_analysis -> the synced repo (Cell 3 hardcodes import from ~/coloc_analysis)",
-    "pin WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2 before Cell 3 (it was None on the generic cluster)",
-    "os.chdir(~/coloc_analysis) before the loop (Cell 3 CWD was .planning/notebooks/ -> relative config read failed)",
-    "repo must be at HEAD with the A.3 fix: aou_ld_panel.py sha256 9a31c03527343bf04dd0c50735cb7059e67616af95094832a4d4b79e7ecc2e66, helper count >=3"
+    "symlink ~/coloc_analysis -> the synced repo (Cell 3 imports from ~/coloc_analysis)",
+    "pin WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2 (HARD os.environ override) before Cell 3",
+    "os.chdir(~/coloc_analysis) before the per-region loop",
+    "repo at HEAD on m3-W2-aou-deltas (gets the m3-02b code + all the CR-01/WR/BR-01 fixes); m3-r-ld conda env must exist at /rs1/researchers/c/ckclinto/conda_envs/m3-r-ld for the no-skip R tests (reference_m3_r_ld_conda_env)"
   ],
-  "teardown_state": {
-    "job": "KILLED (kernel self-restarted on the driver crash; Spark app gone; session free)",
-    "regions_completed": 0,
-    "run_log": "ld_run_log_dev.tsv NEVER written",
-    "orphan_deleted": "gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/bm/m2_region_00006.corr_scratch.bm (520 objects, ~65 GiB dense scratch) — rm exit 0; everything else in ld/ intact",
-    "cluster": "20260617 STOPPED (not deleted) via Environment panel; billing halted; synced repo (HEAD, A.3 fix) + hail==0.2.135 preserved if boot disk persists, else re-sync via GitHub branch ZIP"
-  },
   "cohorts": {
     "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864, "status": "COMPLETE_VERIFIED, untouched"},
     "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "variants": 11375140, "status": "COMPLETE_VERIFIED, untouched"},
@@ -37,15 +47,18 @@
   "gates": {
     "GATE_1_5_cohorts": "COMPLETE",
     "GATE_0_egress": "RESOLVED (RULED PASS 2026-04-28)",
-    "GATE_1_cost": "CLEARED 2026-06-12 (but the cost MODEL now needs redoing — see rescope_plan #3)",
-    "GATE_2_dev10": "BLOCKED — needs the re-scope (sized cluster + xlarge splitting) before a viable re-fire",
-    "GATE_3_322cell": "BLOCKED on the same re-scope (xlarge regions are a compute AND scratch problem at real sample counts)"
+    "GATE_1_cost": "cost MODEL redo is m3-02c Task; N2 quota already 5000 in us-central1 (reference_aou_n2_quota_already_5000)",
+    "m3_02b_code": "COMPLETE + hardened (review + blast-radius); tests/m3 194 passed/0 failed",
+    "GATE_2_dev10_refire": "BLOCKED on m3-02c (quota grant record + sized cluster + cost go/no-go)",
+    "GATE_3_322cell": "BLOCKED on m3-02c go/no-go + the A.3 AF sidecar precondition"
   },
-  "resume_entry_point": ".planning/STATE.md (2026-06-18 'dev-10 KILLED / re-scope' block) + this HANDOFF.json + .planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-RESCOPE-real-cohort-compute.md + .continue-here.md. Operating manual = aou-ld-pipeline skill.",
+  "cluster": "20260617 STOPPED last session (not deleted); billing $0; nothing fired this session.",
+  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md (2026-06-19 RESUME HERE block) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md + the m3-02b SUMMARY/REVIEW/REVIEW-FIX/BLAST-RADIUS-FIX docs + the m3-02c PLAN. Operating manual = aou-ld-pipeline skill.",
   "do_not": [
     "Do NOT re-fire dev-10 on the 64-vCPU/16 GB config (intractable).",
-    "Do NOT re-open ordering A vs B (settled) or the A.3 fix correctness (confirmed).",
+    "Do NOT re-open: A.3 fix correctness, ordering A, or the banded-stitch geometry (all settled/verified).",
+    "Do NOT ship the A.3 LD panel as 'LD + AF' until the A.3 AF sidecar gap is closed.",
     "Do NOT `git add -A` on the GPFS tree — explicit paths only.",
-    "Do NOT start/stop/delete the cluster or delete any ld/ content without Carter's explicit go."
+    "Do NOT start/stop/delete the cluster or touch ld/ content without Carter's explicit go."
   ]
 }
