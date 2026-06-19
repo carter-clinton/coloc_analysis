@@ -37,6 +37,11 @@ dependencies:
   # r-digest backs ld_npz_to_rds.R's chain SHA-256 provenance.
   - r-susier
   - r-coloc
+  # run_susie_rss.R's top library block needs optparse + yaml (in addition to
+  # the data.table/susieR/jsonlite/Matrix/digest/coloc already listed); the
+  # loader-contract test source()s that file, so both must be in the M3 env.
+  - r-optparse
+  - r-yaml
   - numpy>=1.26
   - pip
   - pip:

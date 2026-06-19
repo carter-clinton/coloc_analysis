@@ -47,6 +47,39 @@ suppressPackageStartupMessages({
 })
 
 # ---------------------------------------------------------------------------
+# m3-02b (HIGH#3) payload reconciliation:
+#   The REAL downstream loader (src/legacy/region_analysis/scripts/run_susie_rss.R
+#   ::load_ld_matrix) reads obj$R + obj$variants and does as.matrix(R). The old
+#   list(ld, snp_ids, provenance) payload has obj$R == NULL and is REJECTED. We
+#   now emit list(R=<Matrix>, variants=<data.frame CHR,POS,REF,ALT,SNP_ID,AF>,
+#   snp_ids=<kept for back-compat>, provenance=...). Helper below parses a b37
+#   SNP_ID (chr:pos:ref:alt OR rsid) into the variants data.frame columns.
+# ---------------------------------------------------------------------------
+parse_variants_frame <- function(snp_ids_b37, af = NULL) {
+  n <- length(snp_ids_b37)
+  chr <- rep(NA_character_, n); pos <- rep(NA_integer_, n)
+  ref <- rep(NA_character_, n); alt <- rep(NA_character_, n)
+  for (i in seq_len(n)) {
+    sid <- snp_ids_b37[[i]]
+    if (is.na(sid) || !nzchar(sid)) next
+    if (grepl("^rs[0-9]+$", sid)) next  # rsid: CHR/POS stay NA (loader falls back to SNP_ID)
+    parts <- strsplit(sid, ":", fixed = TRUE)[[1]]
+    if (length(parts) >= 4L) {
+      chr[[i]] <- parts[[1]]
+      pos[[i]] <- suppressWarnings(as.integer(parts[[2]]))
+      ref[[i]] <- parts[[3]]
+      alt[[i]] <- parts[[4]]
+    }
+  }
+  if (is.null(af)) af <- rep(NA_real_, n)
+  data.frame(
+    SNP_ID = as.character(snp_ids_b37),
+    CHR = chr, POS = pos, REF = ref, ALT = alt, AF = as.numeric(af),
+    stringsAsFactors = FALSE
+  )
+}
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
@@ -92,6 +125,13 @@ vids  <- as.character(z$f[["variant_ids"]])
 snp_ids_grch38 <- ifelse(nzchar(rsids), rsids, vids)
 n_input <- length(snp_ids_grch38)
 
+# m3-02b: AF metadata (phase deliverable = LD + AF). Read the allele_freq array
+# if present (row-aligned to variant_ids); else NA. Carried into obj$variants$AF.
+allele_freq_in <- tryCatch(as.numeric(z$f[["allele_freq"]]), error = function(e) NULL)
+if (is.null(allele_freq_in) || length(allele_freq_in) != n_input) {
+  allele_freq_in <- rep(NA_real_, n_input)
+}
+
 # ---------------------------------------------------------------------------
 # 4. Strip "chr" prefix on non-rsid synthetic IDs.  rsids never have a
 #    "chr" prefix, so the regex anchored at start matches "chrN:..." only.
@@ -133,6 +173,7 @@ if (n_dropped > 0L) {
   keep <- !drop_idx
   tri <- tri[keep, keep, drop = FALSE]
   snp_ids_grch37 <- snp_ids_grch37[keep]
+  allele_freq_in <- allele_freq_in[keep]  # m3-02b: align AF to kept rows
 }
 n_output <- length(snp_ids_grch37)
 
@@ -159,12 +200,29 @@ provenance <- list(
 )
 
 # ---------------------------------------------------------------------------
-# 8. Save
+# 8. Save  (m3-02b HIGH#3: reconcile payload to the REAL loader contract)
+#
+# run_susie_rss.R::load_ld_matrix() reads obj$R + obj$variants and does
+# as.matrix(R). We emit:
+#   R        = the symmetric LD as a sparse Matrix (dgCMatrix), dimnames = b37 IDs
+#   variants = data.frame(SNP_ID, CHR, POS, REF, ALT, AF) in row order
+#   snp_ids  = kept for back-compat (legacy consumers that read obj$snp_ids)
+#   ld       = kept for back-compat (legacy consumers that read obj$ld)
 # ---------------------------------------------------------------------------
+R <- methods::as(tri, "CsparseMatrix")  # sparse dgCMatrix; loader densifies lazily
+dimnames(R) <- list(snp_ids_grch37, snp_ids_grch37)
+variants <- parse_variants_frame(snp_ids_grch37, af = allele_freq_in)
+
 saveRDS(
-  list(ld = tri, snp_ids = snp_ids_grch37, provenance = provenance),
+  list(
+    R          = R,
+    variants   = variants,
+    snp_ids    = snp_ids_grch37,  # back-compat
+    ld         = tri,             # back-compat (legacy dense consumers)
+    provenance = provenance
+  ),
   rds_path,
   compress = "xz"
 )
-message(sprintf("WROTE %s (%d x %d; dropped %d of %d)",
+message(sprintf("WROTE %s (%d x %d; dropped %d of %d; R+variants payload)",
                 rds_path, n_output, n_output, n_dropped, n_input))
