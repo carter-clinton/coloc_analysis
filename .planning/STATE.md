@@ -14,9 +14,30 @@ progress:
   percent: 100
 ---
 
-> **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/HANDOFF.json` (the primary resume source) + `.planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md`.
+> **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-18 (latest) — dev-10 LD fire KILLED: intractable on the dev cluster; Wave-2 RE-SCOPE needed (★ RESUME HERE ★)
+## 2026-06-18 (★ LATEST / RESUME HERE ★) — Wave-2 re-scope PLANNED + cross-AI REVIEWED + REVISED; ready to EXECUTE
+
+**The Wave-2 re-scope is fully planned, peer-reviewed, and revised. Next = execute Wave 0 (NCSU code).** No AoU compute fired this session.
+
+### What happened (this session)
+- **Planned** the re-scope → `m3-02b` (Wave 0: xlarge split + stitch + executor config + tests, autonomous) + `m3-02c` (Wave 1: N2 quota gates + real-cohort cost probe + go/no-go, `autonomous:false`). Passed `gsd-plan-checker` clean. (commit `23a8922`)
+- **Cross-AI review** (Codex CLI — installed on the NCSU node, reuses ChatGPT auth; see memory `reference_codex_cli_for_gsd_review`) → `m3-REVIEWS.md` (commit `efdd4a7`). Verdict HIGH risk: it caught goal-level design flaws the plan-checker passed over.
+- **Revised per review** (`/gsd-plan-phase m3 --reviews`, commit `1a07541`) — folded all Codex HIGH/MEDIUM findings. **Carter steering (the key fix):** the stitch is now **OVERLAPPING-WINDOW BANDED** — each sub-region computes on a `core ± buffer_bp` window so cross-boundary variant pairs **within the banding radius are RETAINED**; only pairs beyond the radius are zeroed (the arbitrary-boundary `Matrix::bdiag` block-diagonal design is RETIRED — it could have silently corrupted SuSiE-RSS credible sets). Buffer/radius is an explicit `--subregion-buffer-mb` knob tied to the 02c cost-probe's YELLOW-narrow-radius lever. Also: real `run_susie_rss.R::load_ld_matrix()` (`obj$R`+`obj$variants`) is the A6 target; mandatory EUR probe cell; in-perimeter preflight count pass (HLA region_00145 included); master-inclusive cost; filed-vs-granted quota split; executable runaway-cost controls + shutdown-verify artifact; AF metadata in the egress payload.
+- **Re-checked** → 0 blockers; 3 warnings CLOSED (commit `16f8acb`): bdiag-supersede banner in the research doc, HLA-grade (13k var/Mb) Wave-0 scratch bound, `test_stitch_overlap_pair_agreement`.
+
+### Settled (do NOT relitigate)
+- A.3 fix correct; ordering A kept; cohorts intact; **split-the-xlarge is right** (the defect was the STITCH, now fixed); n2-highmem-16 sizing; probe-before-fire. Full 322-cell production fire stays OUT of scope (m3-04).
+
+### NEXT (RESUME HERE)
+1. **Execute Wave 0 now (autonomous, NCSU-side, no cluster):** `/gsd-execute-phase m3` → runs `m3-02b` (split/stitch/tests). `/clear` first.
+2. **Carter, in parallel (longest-lead):** file the AoU/Verily **N2_CPUS ≥ 400, region us-central1** quota ticket (`m3-02c` Task 1) — it gates the Wave-1 cost probe but NOT the Wave-0 code.
+
+GATE-1.5 ✅ · GATE-0 ✅ · GATE-1 ✅ (cost MODEL re-derived by m3-02c) · **GATE-2 🟡 unblocked once Wave 0 lands + quota granted + probe GREEN** · GATE-3 still gated on the probe.
+
+---
+
+## 2026-06-18 — dev-10 LD fire KILLED: intractable on the dev cluster; Wave-2 RE-SCOPE needed (the finding that triggered the re-scope above)
 
 **The dev-10 LD fire is DONE — killed, 0 regions completed. It proved a CAPACITY wall, not a correctness bug.** Cluster STOPPED, billing halted, orphan scratch deleted.
 
@@ -30,6 +51,8 @@ progress:
 - **Cohorts intact**, read-gate + bucket wiring proven (AFR 73,122 / EUR 220,098 read live).
 
 ### NEXT (RESUME HERE) — Wave-2 re-scope, NOT a re-fire
+**2026-06-18 (resume) — DECISION: plan the FULL re-scope before any re-fire.** Carter confirmed the bigger-cluster path, and we agreed that a resize alone is insufficient because dev-10 itself contains `region_00040` (xlarge) — so the xlarge-region split (change #2) must land before the re-fire. Proceeding to `/gsd-plan-phase`.
+
 Run **`/gsd-plan-phase`** for the re-scope per **`.planning/phases/m3-aou-afr-ld-panel-build/WAVE-2-RESCOPE-real-cohort-compute.md`** — three coupled changes:
 1. **Cluster sized for real cohorts** — n2-highmem-16 workers (RAM stops the spill), 256–384 vCPU (push to quota), highmem master (the dense scratch crashed a 64 GB master).
 2. **Split the ~16 xlarge regions** into ≤~75–100k-var sub-regions (drops cross-sub-region LD beyond the 50 Mb radius — already the accepted banded treatment; shrinks compute + scratch + driver load at once; the **load-bearing** change — resize alone does NOT make xlarge tractable). Touches `build_ld_region_manifest.py` / `compute_region_ld` / `ld_npz_to_rds.R`.
