@@ -40,6 +40,19 @@ ANCESTRIES = ("AFR", "EUR")
 RADIUS_SAFETY_MARGIN_BP = 500_000
 RADIUS_HARD_CAP_BP = 50_000_000
 
+# WR-01 guard (2026-06-19): the buffer default = the parent region radius (up to
+# 50 Mb). For an xlarge parent a 50 Mb buffer makes each compute window
+# core + 2*buffer ~= the WHOLE parent span -> the per-window dense scratch
+# regresses to the ~65 GiB master-crash / "intractable" wall the split exists to
+# fix (project_state: dev-10 KILLED). We do NOT unilaterally pick a scientific
+# band width (m3-02c's cost probe owns that measurement); instead we make the
+# SILENT parent-spanning-window failure mode IMPOSSIBLE. If the radius-based
+# DEFAULT (no explicit --subregion-buffer-mb) yields a window whose span reaches
+# this fraction of the parent span, the build RAISES and tells the user to pass
+# an explicit --subregion-buffer-mb (the Pan-UKBB AFR/EUR anchor bands at 10 Mb).
+# An explicit override is always honored (so m3-02c can widen + measure).
+SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC = 0.90
+
 # region_class thresholds (RESEARCH Q2 + Q5 Path A.1/A.2/A.3)
 CLASS_SMALL_MAX_MB = 5
 CLASS_MEDIUM_MAX_MB = 25
@@ -497,6 +510,30 @@ def build_manifest(
             buffer_bp = buffer_override_bp if buffer_override_bp is not None else radius_bp
             subs = split_region_overlapping(new_start, new_end, core_span_bp, buffer_bp)
             n_sub = len(subs)
+
+            # WR-01 guard: refuse to SILENTLY emit a parent-spanning compute
+            # window from the radius-based DEFAULT buffer (the exact 65 GiB
+            # master-crash condition). Only fires when no explicit buffer was
+            # given AND the widest window reaches ~the whole parent span. An
+            # explicit --subregion-buffer-mb is always honored (m3-02c widens +
+            # measures). We deliberately do NOT pick a band width here.
+            if buffer_override_bp is None and n_sub > 1:
+                widest_window = max(s["window_end"] - s["window_start"] for s in subs)
+                if widest_window >= SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC * span_bp:
+                    raise ValueError(
+                        f"SUBREGION_BUFFER_GUARD: region {region_id} "
+                        f"({region_class}, {span_bp/1e6:.1f} Mb) split into {n_sub} "
+                        f"sub-regions, but the DEFAULT buffer "
+                        f"({buffer_bp/1e6:.1f} Mb = the parent radius) makes the "
+                        f"widest compute window {widest_window/1e6:.1f} Mb "
+                        f">= {SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC:.0%} of the "
+                        f"parent span -- a parent-spanning window whose dense "
+                        f"scratch regresses to the ~65 GiB intractable wall the "
+                        f"split exists to avoid. Pass an explicit "
+                        f"--subregion-buffer-mb (the Pan-UKBB AFR/EUR LD anchor "
+                        f"bands at 10 Mb; m3-02c's cost probe measures the correct "
+                        f"width). Refusing to silently keep the 50 Mb default."
+                    )
 
             # Parent projection row (NOT a compute row).
             projection_rows.append({

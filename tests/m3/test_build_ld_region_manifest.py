@@ -261,6 +261,9 @@ def test_subregion_region_ids_match_sub_suffix():
     manifest, projection = blm.build_manifest(
         bed_df, _IdentityChain(), ["AFR", "EUR"],
         max_subregion_span_mb=10.0, split_classes="xlarge",
+        # WR-01: an explicit bounded buffer avoids the parent-spanning-window
+        # guard (this test exercises __sub id suffixes, not the buffer default).
+        subregion_buffer_mb=10.0,
     )
     sub_ids = set(manifest["region_id"])
     assert all(re.search(r"__sub\d{2}$", s) for s in sub_ids), sub_ids
@@ -331,11 +334,23 @@ def test_buffer_bp_is_explicit_column_and_param():
     assert (manifest["buffer_bp"] != 50_000_000).all(), "buffer must not silently be 50 Mb"
 
 
-def test_buffer_bp_defaults_to_region_radius_when_unset():
-    """No --subregion-buffer-mb -> buffer_bp == compute_radius_bp(parent) capped 50Mb."""
-    manifest, _ = _build_split_manifest(0, 90_000_000, buffer_mb=None)
-    expected = blm.compute_radius_bp(0, 90_000_000)  # = 50 Mb cap
-    assert (manifest["buffer_bp"] == expected).all(), manifest["buffer_bp"].unique()
+def test_default_buffer_parent_spanning_window_guard_raises():
+    """WR-01: the radius-based DEFAULT buffer (no --subregion-buffer-mb) makes
+    each xlarge compute window span ~the whole parent -- the 65 GiB master-crash
+    condition. The manifest build must REFUSE this silent footgun and tell the
+    user to pass an explicit --subregion-buffer-mb (NOT enshrine the 50 Mb
+    default). An explicit override must still work (so m3-02c can widen+measure).
+    """
+    # Default buffer on a 90 Mb xlarge -> parent-spanning windows -> guard RAISES.
+    with pytest.raises(ValueError, match="SUBREGION_BUFFER_GUARD"):
+        _build_split_manifest(0, 90_000_000, buffer_mb=None)
+
+    # An EXPLICIT bounded override is honored (no raise) -- m3-02c's lever.
+    manifest, _ = _build_split_manifest(0, 90_000_000, buffer_mb=10.0)
+    assert (manifest["buffer_bp"] == 10_000_000).all(), manifest["buffer_bp"].unique()
+    # And the windows are now bounded (NOT parent-spanning): core 10 + 2*10 = 30 Mb.
+    win_span = manifest["end_grch38"] - manifest["start_grch38"]
+    assert (win_span <= 31_000_000).all(), win_span.unique()
 
 
 def test_nonxlarge_region_stays_whole():
