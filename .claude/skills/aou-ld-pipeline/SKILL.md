@@ -43,7 +43,7 @@ The Researcher Workbench 2.0 (Verily) migration **mirrors** the legacy RW1.0 ("c
 4. **`echo $WORKSPACE_BUCKET`** in a terminal → must be `gs://rw-migration-aou-rw-476cdac2`, NOT a `gs://cloned-mybucket-…` placeholder.
 5. **Sensitivity cohort only — the manual Cell 4 edits (NOT baked):** ensure the self-report sidecar exists at `…/ld/aux/self_report/self_report.tsv`; add `self_report_table_path=` (canonical path) to the Cell 4 `load_qc_cohort(...)` call; on a post-contamination rebuild also add `force_fresh=True` (after purging `mt_afr_pca_selfid_*`).
 6. Run smallest→largest, verifying each at the data layer: Cell 3→3.5 (AFR primary) → 4→4.5 (AFR sens) → 5→5.5 (EUR) → 6 (disjoint AFR∩EUR=∅) → 7 (`cohort_summary_m3.tsv`).
-7. **AOU-2:** run in the same kernel as AOU-1 (so `WORKSPACE_BUCKET` is pinned) OR `export WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2` first — AOU-2 does NOT pin it itself (gap C3). Set `USE_DEV_SUBSET` (`True`=dev-10/GATE 2, `False`=full 322/GATE 3).
+7. **AOU-2:** the `WORKSPACE_BUCKET` hard pin is now **BAKED** into AOU-2 (cell index 5, before the `_normalize_bucket` read; quick `c3a3292`, gap C3 closed) — it hard-assigns `gs://rw-migration-aou-rw-476cdac2` and asserts in-kernel that it is NOT the `cloned-mybucket` placeholder. Confirm that cell ran (echoes the canonical bucket) before Cell 6/8. Set `USE_DEV_SUBSET` (`True`=dev-10/GATE 2, `False`=full 322/GATE 3).
 
 ## Baked-vs-manual edit table
 
@@ -55,7 +55,7 @@ The Researcher Workbench 2.0 (Verily) migration **mirrors** the legacy RW1.0 ("c
 | `WGS_ACAF_THRESHOLD_MULTI_HAIL_PATH` literal backfill | AOU-1 Cell 1a'' | **BAKED** `29d0a1f` | Cell 3 `mt_path` KeyErrors (migrated cluster doesn't auto-set it) |
 | **`self_report_table_path=` (sensitivity)** | AOU-1 Cell 4 | **MANUAL** ⚠️ | code default resolves under the read-only controlled-tier aux base → sens build fails / silently no-ops (the contamination bug) |
 | **`force_fresh=True` (post-contamination sens rebuild only)** | AOU-1 Cell 4 | **MANUAL** ⚠️ | auto-resume re-ships the contaminated checkpoint |
-| `WORKSPACE_BUCKET` pin for AOU-2 | AOU-2 setup | **GAP (manual)** ⚠️ | LD `.npz`/`.bm` written to the 404 placeholder if run in a fresh kernel |
+| `WORKSPACE_BUCKET` **HARD** override (`os.environ[…] = …`, not `setdefault`) + `cloned-mybucket` assert | AOU-2 cell idx 5 (before `_normalize_bucket`) | **BAKED** `c3a3292` (gap C3 closed) | LD `.npz`/`.bm` + MT reads resolve to the 404 placeholder in a fresh kernel → lost writes |
 | `git checkout -f` | terminal | **MANUAL** | Workbench filter re-dirties notebooks, can strip baked guards |
 
 > **Smoke-template trap:** `AOU-1-chr22-smoke_template.ipynb` Cell 1a'' uses the UNSAFE `os.environ.setdefault(...)`. Use the **production** `AOU-1_template.ipynb` (hard assign). Never copy the bucket line from the smoke notebook.
