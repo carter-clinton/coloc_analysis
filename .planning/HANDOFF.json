@@ -1,43 +1,39 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-19T14:20:00.000Z",
+  "timestamp": "2026-06-20T03:00:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "wave": "Wave 0 (NCSU code) — m3-02b EXECUTED + hardened",
-  "status": "m3-02b (split/stitch/banded-LD/tests) EXECUTED, adversarially code-reviewed, CR-01 + WR-01/02/03 fixed, blast-radius swept (BR-01 regression caught + fixed). Pure NCSU-side, NO cluster, NO cost, NOTHING running. Full tests/m3 = 194 passed / 0 failed / 30 skipped. NEXT = m3-02c (quota + real-cohort cost probe + go/no-go; autonomous:false; Carter fires in-perimeter, costs money).",
-  "headline": "Disconnect-safe: this was a code-only session, no server-side fire. m3-02b is now COMPLETE and hardened — the overlapping-window xlarge split + BANDED sparse stitch + real-loader A6 verify + Q-RS2 notebook cell all landed (3 TDD tasks), then an adversarial deep review found CR-01 (full-matrix LD doubling), fixed with TDD; then a wide blast-radius sweep caught BR-01 — the CR-01 fix made the lower_triangular flag authoritative but bm_to_npz.py (Path A.3, the xlarge-split deliverable path) never wrote it, HALVING A.3 off-diagonals — fixed with TDD. One pre-existing gap (A.3 regions get NA AF) is tracked + deferred. m3-02b is the load-bearing structural fix; m3-02c is the next plan.",
+  "wave": "Wave 1 (m3-02c) — fully PREPPED + AoU STEP-0 inspection ALL-GREEN; PAUSED at the sized-cluster-start gate (Carter's explicit go)",
+  "status": "Pure NCSU code session — NOTHING running, no AoU cluster (all 3 Dataproc clusters STOPPED, confirmed $0 by Carter + wb resource list), no Spark/YARN app, no kernel. Three quick tasks landed + PUSHED (origin == local HEAD cb76115): (1) 260619-qjy closed the A.3 AF sidecar gap; (2) 260619-rqs regenerated the post-split LD manifest (Path B); (3) 260619-vcp baked the AOU-2 gap-C3 WORKSPACE_BUCKET hard pin. The AoU Workbench agent then ran a read-only STEP-0 inspection on a cheap inspection VM ($0.15/hr) and reported ALL FOUR preconditions GREEN + the 3 carry-over checks green. Carter is stepping away; will resume in ~30 min in a NEW session to authorize the sized-cluster start and drive the m3-02c probe.",
+  "headline": "Disconnect-safe: NCSU code-only session, nothing fired. The m3-02c real-cohort cost probe is FULLY PREPPED and unblocked. The AoU agent's read-only inspection confirmed: branch m3-W2-aou-deltas, commit cb76115 (origin==local), manifest 18 m2_region_00040__sub rows, the new AOU-2 bucket-pin bakes before the _normalize_bucket read, USE_DEV_SUBSET=True, A.3 uses _write_a3_banded_correlation_bm, Q-RS2 executor config present. The inspection CAUGHT two real issues this session and both are FIXED: (a) origin was 32 commits behind local — the NCSU line had never been pushed (FIXED by push; memory feedback_push_ncsu_before_aou_clone_fire); (b) AOU-2 gap C3 — the WORKSPACE_BUCKET hard pin was missing (FIXED by bake, 260619-vcp). NEXT = Carter authorizes the AoU agent to start the sized n2-highmem cluster, then the probe runs STEP A (preflight) -> PAUSE -> STEP B (>=3 cells) -> STEP C (shutdown).",
   "branch": "m3-W2-aou-deltas",
-  "running_now": "NOTHING. No AoU cluster, no Spark/YARN app, no kernel, no background job. The cluster 20260617 was STOPPED last session; this session touched only the NCSU GPFS repo. A fresh session resumes purely from the docs below — no reattach needed.",
+  "origin_synced": "origin == local HEAD == cb76115 (PUSHED this session; the AoU clone target is current — a fresh git pull gets the split manifest + the gap-C3 bucket bake)",
+  "running_now": "NOTHING. No AoU cluster (3 Dataproc clusters all STOPPED, $0), no Spark/YARN app, no kernel, no NCSU background job. The AoU agent was on a cheap read-only inspection VM ($0.15/hr) — Carter may stop it on the AoU side. A fresh session resumes purely from the docs below; no reattach.",
   "this_session_work": {
-    "executed": "m3-02b-W2-rescope-split-stitch-code (Wave 0, autonomous) — 3 TDD tasks: (1) overlapping-window xlarge split in build_ld_region_manifest.py (half-open cores tile parent + core+/-buffer windows + explicit buffer_bp) + dev tuple-resolve/capped-expansion + AF metadata in aou_ld_panel.py .npz; (2) NEW stitch_subregions_to_rds.R BANDED sparse stitch (cross-core pairs within buffer_bp retained, beyond zeroed; obj$R+obj$variants for the real load_ld_matrix) + ld_npz_to_rds.R payload reconcile; (3) A6 real-loader verify + sparse-parent benchmark + AOU-2 Q-RS2 executor cell.",
-    "review": "Adversarial deep code review (m3-02b-W2-rescope-REVIEW.md): banded-stitch geometry CONFIRMED correct (fuzz-verified); found CR-01 (critical) + WR-01/02/03.",
-    "fixes": "CR-01 (honor lower_triangular flag — stop full-matrix off-diagonal DOUBLING) + WR-01 (loud guard vs radius-default parent-spanning window) + WR-02 (un-mappable npz hard error) + WR-03 (null AF = NaN not 0.0) — all TDD RED-first (m3-02b-W2-rescope-REVIEW-FIX.md).",
-    "blast_radius": "4 parallel read-only sweeps (m3-02b-W2-rescope-BLAST-RADIUS-FIX.md). 2 dimensions clean (LD-output change forward-looking — dev-10 killed w/ 0 artifacts, Track A uses GTEx; WR guards break no caller). CAUGHT BR-01 (CRITICAL regression): CR-01 fix made the lower_triangular flag authoritative but bm_to_npz.py (Path A.3) never wrote it -> A.3 off-diagonals HALVED (proven 0.6->0.30). FIXED: bm_to_npz.py writes lower_triangular=True + 2 RED-first regression tests. Also: env-probe _r_env fix un-skipped converter R tests, which EXPOSED a stale liftover test (asserted dbSNP 53803574; UCSC hg38ToHg19 chain truth = 53843159, confirmed via pyliftover) -> corrected the test, converter is right. BR-02: NaN-safe AF range assertion.",
-    "tests": "Full pytest tests/m3 = 194 passed, 0 failed, 30 skipped (R families run in the m3-r-ld env, no skips on the no-skip A6 stitch/loader/sparse families)."
+    "task_1": "260619-qjy — closed the A.3 AF sidecar gap. bm_to_npz.py now reads {rid}.allele_freq.tsv + writes a row-aligned allele_freq key into the .npz (NaN per WR-03; loud ValueError on row-misalignment; loud WARNING + all-NaN key when --allele-freq omitted). Verified aou_ld_panel.py's AF sidecar export + ld_npz_to_rds.R's reader already landed in m3-02b (a17a47a) — only the middle converter was missing. Commits c14c3e8 (RED) + 5ef39d6 (GREEN). Resolved the pending todo. The m3-04 A.3 'LD + AF' precondition is CLOSED.",
+    "task_2": "260619-rqs — regenerated the post-split LD region manifest (Path B). The canonical build_ld_region_manifest.py --bed/--chain inputs are gitignored artifacts cleaned from the tree (forward chain gone, M2 union bed nowhere), so we SPLIT the existing committed manifest instead: added split_existing_manifest() + --split-existing-manifest CLI mode reusing a factored-out _assemble_region_rows() (faithfulness proven byte-identical to build_manifest on the 14 shared geometry columns). Regenerated at --subregion-buffer-mb 10: config/ld_regions.tsv 322->434 rows (16 whole xlarge retired, 128 __sub rows, all buffer_bp=10Mb, 0 whole xlarge left), config/ld_regions_dev.tsv = 12 rows w/ m2_region_00040__sub00/01 AFR+EUR. Commits abf79c3 + 388ea3f.",
+    "task_3": "260619-vcp — closed AOU-2 gap C3. Baked a HARD WORKSPACE_BUCKET override into .planning/notebooks/AOU-2_per_region_ld.ipynb (new cell idx 5, BEFORE the _normalize_bucket read) that hard-assigns gs://rw-migration-aou-rw-476cdac2 (not setdefault) + asserts 'cloned-mybucket' NOT present so a polluted bind HALTS loudly. 14->15 cells, 14 originals byte-identical, notebook NOT executed (VPC-SC). SKILL.md gap-C3 row flipped GAP->BAKED. Commits 88fa55d + c3a3292.",
+    "push": "Pushed twice this session: d4a613d (qjy+rqs, fixed the 32-behind origin the AoU agent caught) then cb76115 (vcp). origin/m3-W2-aou-deltas == cb76115 == local HEAD.",
+    "aou_inspection": "The AoU Workbench agent ran a read-only STEP-0 inspection (cheap VM, no cluster, no cells). All 4 preconditions GREEN on cb76115. It correctly stopped and surfaced the 32-behind origin + gap C3 BEFORE any spend — exactly the discipline the probe plan intends.",
+    "tests": "Full pytest tests/m3 = 205 passed / 0 failed / 30 skipped at session end (qjy +4, rqs +6, vcp +1 over the 194 m3-02b baseline)."
   },
-  "deferred_must_close_before_m3_04": {
-    "item": "A.3 AF sidecar gap — bm_to_npz.py writes NO allele_freq, so Path A.3 (large/xlarge) LD regions get NA AF in obj$variants$AF. Pre-existing (not a CR-01 regression).",
-    "fix": "(1) A.3 branch of aou_ld_panel.py::compute_region_ld exports a row-aligned AF sidecar (same _af_or_nan as A.1/A.2) beside the variant_ids/rsids sidecars; (2) bm_to_npz.py reads it + writes allele_freq= into the .npz (NaN for missing per WR-03); (3) round-trip test A.3 .npz -> obj$variants$AF.",
-    "tracked": ".planning/todos/pending/2026-06-19-close-a-3-af-sidecar-gap-for-large-xlarge-ld-regions.md + carry-forward note in the m3-02c PLAN + BLAST-RADIUS-FIX.md DEFERRED section",
-    "gate": "Do NOT ship the A.3 LD panel claiming 'LD + AF' until closed. Surfaces naturally at m3-02c's A.3 preflight cells."
-  },
-  "next_action": "Run m3-02c (m3-02c-W2-rescope-quota-probe-and-gonogo-PLAN.md) — autonomous:false, Carter fires in-perimeter, COSTS MONEY. It does: QUOTA GATE 1 (file N2_CPUS>=400 ticket — already PARTLY satisfied: us-central1 N2_CPUS is ALREADY 5000, see reference_aou_n2_quota_already_5000) + GATE 2 (record granted ceiling) + a preflight count pass over every post-split cell + a >=3-cell cost probe (AFR whole region_00006 + AFR/EUR xlarge sub-regions + HLA region_00145) on a sized n2-highmem-16 cluster + cost-model redo + the PROJECTED x 1.3 <= BUDGET_CAP go/no-go. Address the A.3 AF sidecar gap before the m3-04 production fire.",
-  "open_flags": [
-    "buffer_bp default = 50 Mb radius makes a split window span ~the whole parent -> the --subregion-buffer-mb 10 (Pan-UKBB) lever is effectively mandatory; m3-02c must resolve the correct AFR/EUR LD-decay band (small targeted research flagged in m3-02b SUMMARY) and count region_00145 (chr6 HLA) real density (may need --max-subregion-span-mb 7).",
-    "WR-01 now makes the radius-default fail LOUDLY (guard) — a manifest re-gen for the real 16 xlarge regions MUST pass an explicit --subregion-buffer-mb."
+  "next_action": "Resume in a NEW session to RUN the m3-02c probe (autonomous:false; COSTS MONEY). The mechanical NCSU entry = /gsd-execute-phase m3 (it records the pre-satisfied quota Tasks 1-2, then PAUSES at Task 3 for the AoU fire, then runs Task 4 cost model + go/no-go). The AoU fire itself: Carter authorizes the AoU agent to START the sized cluster -> the new bucket-pin cell runs first (watch it echo gs://rw-migration-aou-rw-476cdac2, no halt) -> Q-RS2 executor cell -> STEP A preflight count pass (cheap) -> PAUSE for Carter's go -> STEP B (>=3 LD-compute cells: m2_region_00006 AFR whole + m2_region_00040__sub00 AFR + m2_region_00040__sub00 EUR mandatory + HLA region_00145 preflight) under executable cost controls (MAX_WALL_MIN_PER_CELL=90, MAX_PROBE_CREDIT_USD=60, spill/OOM kill) -> data-layer-verify each cell -> STEP C guaranteed shutdown + verification artifact. Hand back 3 artifacts (m3-W2-preflight-counts.tsv, m3-W2-cost-probe.tsv, m3-W2-cluster-shutdown.md); commit + push from the AoU side; then NCSU Task 4 reads them.",
+  "pending_decision_carter_was_mid_making": "At session close Carter was choosing how to authorize the sized-cluster start (AskUserQuestion was interrupted as he went home). The fork: (A) Start + stay present (give the STEP-B go quickly so the ~$25-30/hr cluster idles minimally during the STEP A->B pause); (B) Start + have the agent STOP the cluster after STEP A while Carter reviews the preflight counts, then restart for STEP B (avoids idle billing during review); (C) Hold. This is purely Carter's spend decision — re-offer it next session before any cluster boot.",
+  "aou_agent_brief": "A full self-contained AoU mission brief was delivered IN CHAT this session (not written to a repo file). If a fresh session needs it, regenerate it from the m3-02c PLAN Task 3 + the aou-ld-pipeline SKILL.md, or offer to write it to a repo file (e.g. under the m3 phase dir) so it travels with the clone.",
+  "step0_preconditions_all_green_on_cb76115": [
+    "Branch = m3-W2-aou-deltas",
+    "Commit = cb76115 (origin == local)",
+    "Manifest: grep -c m2_region_00040__sub config/ld_regions.tsv = 18 (>0)",
+    "Bucket gate: AOU-2 now bakes the hard WORKSPACE_BUCKET pin + cloned-mybucket assert at cell idx 5, BEFORE the _normalize_bucket read (gap C3 closed)",
+    "USE_DEV_SUBSET = True (dev-10 subset, NOT the 322-cell production fire)",
+    "A.3 write path uses _write_a3_banded_correlation_bm (NOT hl.ld_matrix(...).write() — invariant #5)",
+    "Q-RS2 executor config present + probe-tuned (cores=2/24g/10g overhead/24g driver; drop to cores=1 if EUR spills)"
   ],
-  "settled_do_not_relitigate": [
-    "A.3 fix is CORRECT (materialize-then-band, no driver-collect hang); ordering A kept (banded==dense under span+500kb).",
-    "banded stitch geometry is CORRECT (fuzz-verified in the adversarial review).",
-    "Cohorts intact (AFR 73,122 / EUR 220,098 / AFR-sens 62,557), untouched.",
-    "dev-10 on 64-vCPU/16 GB is INTRACTABLE (capacity wall) — the SPLIT (m3-02b, now done) is the structural fix; m3-02c sizes the cluster + redoes cost."
-  ],
-  "prep_landmines_for_any_refire": [
-    "symlink ~/coloc_analysis -> the synced repo (Cell 3 imports from ~/coloc_analysis)",
-    "pin WORKSPACE_BUCKET=gs://rw-migration-aou-rw-476cdac2 (HARD os.environ override) before Cell 3",
-    "os.chdir(~/coloc_analysis) before the per-region loop",
-    "repo at HEAD on m3-W2-aou-deltas (gets the m3-02b code + all the CR-01/WR/BR-01 fixes); m3-r-ld conda env must exist at /rs1/researchers/c/ckclinto/conda_envs/m3-r-ld for the no-skip R tests (reference_m3_r_ld_conda_env)"
+  "prep_landmines_for_the_fire": [
+    "WORKSPACE_BUCKET hard pin: NOW BAKED into AOU-2 cell idx 5 (260619-vcp) — no longer a manual step; just confirm the cell echoes the canonical bucket when it runs.",
+    "Still manual on a fresh cluster/clone: git checkout m3-W2-aou-deltas + git pull + git checkout -f (beats the Workbench nbformat filter); symlink ~/coloc_analysis -> the synced repo (a Cell imports from ~/coloc_analysis); os.chdir(~/coloc_analysis) before the per-region loop; set USE_DEV_SUBSET=True.",
+    "The sized cluster must be PROVISIONED in the Workbench UI (n2-highmem-16 master + 24x n2-highmem-16 workers, non-preemptible, us-central1, 'Hail Genomics Analysis' = software-framework=HAIL). wb cluster start only RESUMES an existing stopped cluster at its SAVED size — it will not size a fresh one (and one of the 3 saved clusters is the SMALL A3 repro cluster — do NOT start that for the probe)."
   ],
   "cohorts": {
     "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864, "status": "COMPLETE_VERIFIED, untouched"},
@@ -47,18 +43,19 @@
   "gates": {
     "GATE_1_5_cohorts": "COMPLETE",
     "GATE_0_egress": "RESOLVED (RULED PASS 2026-04-28)",
-    "GATE_1_cost": "cost MODEL redo is m3-02c Task; N2 quota already 5000 in us-central1 (reference_aou_n2_quota_already_5000)",
-    "m3_02b_code": "COMPLETE + hardened (review + blast-radius); tests/m3 194 passed/0 failed",
-    "GATE_2_dev10_refire": "BLOCKED on m3-02c (quota grant record + sized cluster + cost go/no-go)",
-    "GATE_3_322cell": "BLOCKED on m3-02c go/no-go + the A.3 AF sidecar precondition"
+    "QUOTA_tasks_1_2": "PRE-SATISFIED — N2_CPUS already 5000 in us-central1 (reference_aou_n2_quota_already_5000); record the 5000 ceiling, do NOT file a ticket",
+    "m3_02c_prep": "COMPLETE — manifest split (rqs), A.3 AF gap (qjy), AOU-2 bucket bake (vcp) all landed + pushed; AoU STEP-0 inspection ALL-GREEN",
+    "CLUSTER_START_authorization": "PENDING — Carter's explicit go (the decision he was mid-making at close)",
+    "STEP_B_billable_cells": "GATED on Carter's go after STEP A preflight review",
+    "GATE_3_322cell_production": "stays in m3-04, AFTER the m3-02c go/no-go"
   },
-  "cluster": "20260617 STOPPED last session (not deleted); billing $0; nothing fired this session.",
-  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md (2026-06-19 RESUME HERE block) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md + the m3-02b SUMMARY/REVIEW/REVIEW-FIX/BLAST-RADIUS-FIX docs + the m3-02c PLAN. Operating manual = aou-ld-pipeline skill.",
+  "cluster": "All 3 Dataproc clusters STOPPED, $0 (Carter confirmed; wb resource list shows them, none running). wb CLI from NCSU = control-plane only (start/stop/launch + resource list); data-plane VPC-SC-walled (no gsutil/bq) — the probe + all data-layer verification stay in the Workbench notebook. wb cluster stop is the from-NCSU billing-safety lever.",
+  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md (2026-06-20 RESUME HERE block) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST) + the m3-02c PLAN (Task 3 = the AoU fire). Operating manual = aou-ld-pipeline skill.",
   "do_not": [
-    "Do NOT re-fire dev-10 on the 64-vCPU/16 GB config (intractable).",
-    "Do NOT re-open: A.3 fix correctness, ordering A, or the banded-stitch geometry (all settled/verified).",
-    "Do NOT ship the A.3 LD panel as 'LD + AF' until the A.3 AF sidecar gap is closed.",
-    "Do NOT `git add -A` on the GPFS tree — explicit paths only.",
-    "Do NOT start/stop/delete the cluster or touch ld/ content without Carter's explicit go."
+    "Do NOT start the sized cluster (bills ~$25-30/hr from boot) without Carter's explicit go — re-offer the start/stay vs start/stop-between vs hold decision first.",
+    "Do NOT fire any STEP B LD-compute cell before STEP A preflight is reviewed.",
+    "Do NOT start the SMALL A3 repro cluster for the probe (wrong size).",
+    "Do NOT git add -A on the GPFS tree — explicit paths only.",
+    "Nothing is running, so there is NO kernel to protect and NO reattach — a fresh session starts clean from the docs."
   ]
 }
