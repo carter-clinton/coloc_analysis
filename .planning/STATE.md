@@ -16,7 +16,22 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-20 (★ LATEST / RESUME HERE ★) — m3-02c probe FULLY PREPPED + AoU STEP-0 inspection ALL-GREEN; PAUSED at the sized-cluster-start gate (Carter's explicit go)
+## 2026-06-20 (★ LATEST / RESUME HERE ★) — m3-02c Tasks 1-2 closed + option-B AoU fire brief written & PUSHED; awaiting the Workbench-side probe
+
+**Carter resumed, authorized OPTION B** (start the sized cluster → STEP A preflight → **STOP** the cluster while he reviews counts → restart for STEP B → STEP C), and `/gsd-execute-phase m3` was entered. Pure NCSU code session, **nothing running, $0**. Commit **76a7e3c** pushed; **origin == local HEAD**.
+
+**Done this session (NCSU half of m3-02c):**
+- **Tasks 1-2 (quota) CLOSED.** Pre-satisfied (N2_CPUS=5000 us-central1, ~12× headroom). Wrote `m3-W2-quota-ticket.md` (FILED gate — no ticket needed); pairs with the pre-existing `m3-W2-quota-grant.md` (numeric grant).
+- **Task 3 fire brief written + pushed:** `m3-W2-AOU-FIRE-BRIEF.md` — self-contained Workbench runbook under option B (3 fresh-clone landmines, Q-RS2 executor cell, cost controls 90min/cell + $60 credit + spill/OOM kill, D-M3-10 data-layer verify, guaranteed shutdown-verify artifact, explicit STOP between STEP A and STEP B).
+- **Dev probe-manifest correction (HLA 143+145).** Found the plan prose's "HLA `region_00145`" is STALE on the rqs-regenerated manifest: `region_00145` = chr6 68-170Mb (6q), NOT the MHC. The real **MHC/6p21** is **`m2_region_00143`** = chr6 14.5-58.5Mb, **`class=large`, UNSPLIT 43.9Mb**. Per Carter ("Both"), `config/ld_regions_dev.tsv` now counts BOTH in STEP A: `region_00143` AFR+EUR (real MHC — **count-only, flag for auto-split if over_threshold; do NOT compute-fire the 44Mb whole**) + `region_00145__sub00` AFR+EUR (plan literal ref). +3 rows (`region_00143` AFR was already present). `tests/m3/test_build_ld_region_manifest.py` 18 passed.
+
+**KEY CONSTRAINT (re-confirmed live this session):** the Task 3 fire **CANNOT run from the NCSU session** — the `wb` data plane is VPC-SC-walled (can't run notebook cells) AND there is no correctly-sized stopped cluster to resume (`wb resource list`: one is the small A3 repro = do-not-start; the other `20260617` is standard-family `n2-standard`, not the required `n2-highmem-16`×24). The highmem cluster must be **provisioned in the Workbench UI**. So the fire runs **Workbench-side** (Carter / AoU-side session) from the brief.
+
+**RESUME — NEXT:** Carter runs the fire Workbench-side per `m3-W2-AOU-FIRE-BRIEF.md` (provision → STEP 0 → STEP A → STOP/review → STEP B → STEP C), commits + pushes the 3 artifacts (`m3-W2-preflight-counts.tsv`, `m3-W2-cost-probe.tsv`, `m3-W2-cluster-shutdown.md`), then pings the NCSU session **"probe-recorded"**. THEN the NCSU session pulls and builds + runs **Task 4** (`redo_ld_cost_model.py` + 8 TDD tests, deferred until the real TSVs land per Carter): real-count extrapolation, 3 separate totals, master-inclusive end-to-end cluster-hours, contingency + egress projection, and the `PROJECTED × 1.3 ≤ BUDGET_CAP_CLUSTER_H` go/no-go → `m3-W2-budget-redo.md`. Operating manual = `aou-ld-pipeline` skill.
+
+---
+
+## 2026-06-20 (earlier — SUPERSEDED by the block above) — m3-02c probe FULLY PREPPED + AoU STEP-0 inspection ALL-GREEN; PAUSED at the sized-cluster-start gate (Carter's explicit go)
 
 **Pure NCSU code session — NOTHING running, no AoU cluster (all 3 Dataproc clusters STOPPED, $0), no kernel.** Three quick tasks landed + PUSHED (origin == local HEAD **cb76115**): **260619-qjy** closed the A.3 AF sidecar gap (`bm_to_npz.py` carries `allele_freq` into the `.npz`; m3-04 precondition CLOSED); **260619-rqs** regenerated the post-split LD manifest via **Path B** (the canonical `--bed`/`--chain` inputs are gitignored artifacts cleaned from the tree → split the EXISTING committed manifest reusing a factored-out `_assemble_region_rows()`; `config/ld_regions.tsv` 322→434, 128 `__sub` rows at `buffer_bp=10Mb`, 0 whole xlarge; dev manifest carries `m2_region_00040__sub00/01` AFR+EUR); **260619-vcp** baked the **AOU-2 gap-C3 WORKSPACE_BUCKET hard pin** (new cell idx 5, before the `_normalize_bucket` read, + `cloned-mybucket` halt-assert). `tests/m3` 205 passed/0 failed/30 skipped.
 
