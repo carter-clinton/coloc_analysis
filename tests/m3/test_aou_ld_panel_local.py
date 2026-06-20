@@ -2497,27 +2497,39 @@ def test_ld_regions_config_no_to_numpy_oom():
     )
 
 
-def test_ld_regions_radius_cap_only_affects_xlarge():
-    """FLAG GUARD (m3-W2 HIGH-3): the Wave-0 radius cap (50 Mb) leaves radius < span
-    on the xlarge regions, structurally zeroing long-range LD. That is a flagged
-    scientific trade-off (long-range LD ~ 0); this test pins the invariant that
-    ONLY xlarge regions are radius-capped, so any NEW non-xlarge banded region in a
-    regenerated manifest is surfaced for review (rather than silently shipped)."""
-    banded_nonxlarge = []
+def test_ld_regions_radius_cap_only_affects_split_subregions():
+    """FLAG GUARD (m3-W2 HIGH-3, UPDATED 260619-rqs for the overlapping-window
+    split): banding (radius_bp < span) is a flagged scientific trade-off
+    (long-range LD ~ 0 beyond the band). Pre-split this only happened on the 16
+    whole xlarge cells; the m3-02b overlapping-window split RETIRED those whole
+    xlarge compute rows and replaced them with __sub compute rows whose
+    region_class is the WINDOW class (medium/large) and whose radius_bp ==
+    buffer_bp (the explicit band knob) — so radius_bp < window-span is BY DESIGN
+    for every __sub row (that IS the banded compute window). The invariant now:
+    a banded row must be a SPLIT __sub compute row (non-empty parent_region_id);
+    NO whole (non-__sub) row may be banded. Any whole banded region in a
+    regenerated manifest is surfaced for review rather than silently shipped."""
+    banded_whole = []
     n_banded = 0
     for row in _read_ld_regions():
         span = int(row["end_grch38"]) - int(row["start_grch38"])
         if int(row["radius_bp"]) < span:
             n_banded += 1
-            if row["region_class"] != "xlarge":
-                banded_nonxlarge.append((row["region_id"], row["ancestry"],
-                                         row["region_class"]))
-    assert not banded_nonxlarge, (
-        "non-xlarge region(s) have radius < span (unexpected banding — review): "
-        f"{banded_nonxlarge}"
+            is_sub = "__sub" in row["region_id"] or str(row.get("parent_region_id", "")).strip()
+            if not is_sub:
+                banded_whole.append((row["region_id"], row["ancestry"],
+                                     row["region_class"]))
+    assert not banded_whole, (
+        "WHOLE (non-__sub) region(s) have radius < span (unexpected banding — review): "
+        f"{banded_whole}"
     )
-    # Sanity: the known xlarge banding set is present (16 cells = 8 regions x 2 anc).
-    assert n_banded == 16, f"expected 16 banded xlarge cells, found {n_banded}"
+    # Sanity: the post-split banded set = every __sub compute row (8 xlarge parents
+    # split into overlapping windows x 2 ancestries). All banded rows are __sub.
+    n_sub = sum(1 for r in _read_ld_regions() if "__sub" in r["region_id"])
+    assert n_banded == n_sub, (
+        f"expected every __sub compute row banded (={n_sub}), found {n_banded} banded"
+    )
+    assert n_banded > 0, "expected the split __sub rows to be present + banded"
 
 
 def test_existing_region_npz_rejects_truncated(tmp_path):
