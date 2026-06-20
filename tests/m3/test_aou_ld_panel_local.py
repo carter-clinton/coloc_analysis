@@ -338,6 +338,46 @@ def test_normalize_bucket_aou2_production_value_single_prefix():
     assert uri.count("gs://") == 1
 
 
+# ----- AOU-2 notebook gap-C3 WORKSPACE_BUCKET hard-pin guard (260619-vcp) -----
+
+def test_aou2_workspace_bucket_hard_pin():
+    """gap C3 (260619-vcp): AOU-2 must HARD-pin WORKSPACE_BUCKET to the canonical
+    bucket BEFORE Cell [5] reads it, so a fresh AoU clone never writes to the
+    gs://cloned-mybucket-<project> 404 placeholder (lost-writes catastrophe class).
+    Mirrors AOU-1 Cell 1a'' (quick 260606-qc1). See feedback_aou_cluster_template_bucket_pollution."""
+    import json
+    nb_path = PROJECT_ROOT / ".planning" / "notebooks" / "AOU-2_per_region_ld.ipynb"
+    nb = json.loads(nb_path.read_text())
+    code_cells = [(i, "".join(c.get("source", [])))
+                  for i, c in enumerate(nb["cells"]) if c.get("cell_type") == "code"]
+    HARD = 'os.environ["WORKSPACE_BUCKET"] = "gs://rw-migration-aou-rw-476cdac2"'
+    pins = [(i, s) for i, s in code_cells if HARD in s]
+    assert pins, (
+        "AOU-2 gap C3: no cell hard-assigns WORKSPACE_BUCKET to the canonical bucket "
+        f"({HARD!r}). A fresh AoU clone would resolve $WORKSPACE_BUCKET to the "
+        "gs://cloned-mybucket-<project> 404 placeholder -> lost writes."
+    )
+    pin_idx, pin_src = pins[0]
+    assert 'os.environ.setdefault("WORKSPACE_BUCKET"' not in pin_src and \
+           "os.environ.setdefault('WORKSPACE_BUCKET'" not in pin_src, (
+        "WORKSPACE_BUCKET pin must be a HARD os.environ[...] = ... assignment, "
+        "NOT setdefault (setdefault is unsafe — a polluted placeholder survives)."
+    )
+    reads = [i for i, s in code_cells
+             if '_normalize_bucket(os.environ["WORKSPACE_BUCKET"])' in s]
+    assert reads, "AOU-2 read cell (_normalize_bucket(os.environ[...])) not found"
+    read_idx = reads[0]
+    assert pin_idx < read_idx, (
+        f"AOU-2 pin cell (index {pin_idx}) must come BEFORE the bucket-read cell "
+        f"(index {read_idx}) — pin-before-read ordering; otherwise Cell [5] reads the "
+        "un-pinned placeholder."
+    )
+    assert "cloned-mybucket" in pin_src, (
+        "pin cell must include the cloned-mybucket no-placeholder assert so a "
+        "still-polluted bind hard-fails in-kernel instead of silently writing to the dead bucket."
+    )
+
+
 def test_qc_checkpoint_uri_accepts_prefixed_bucket():
     """REGRESSION GUARD (m3-W1-bucket-prefix-defensive, 2026-05-14):
     _qc_checkpoint_uri must accept both bare ('fc-secure-XXX') and
