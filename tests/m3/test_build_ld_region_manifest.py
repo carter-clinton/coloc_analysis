@@ -546,3 +546,241 @@ def test_save_npz_raises_on_missing_or_misaligned_af(tmp_path):
     out = alp._save_npz("r", ld, vids, rsids, None, tmp_path,
                         allele_freq=[0.1, 0.2, 0.3, 0.4])
     assert Path(out).exists()
+
+
+# ===========================================================================
+# 260619-rqs: split_existing_manifest (Path B) — split the committed manifest
+# in place (no --bed/--chain; forward chain + M2 union BED are GONE), reusing
+# the SAME _assemble_region_rows helper build_manifest calls (faithfulness).
+# ===========================================================================
+
+# 12-column OLD-schema columns (the committed config/ld_regions.tsv shape).
+_OLD_MANIFEST_COLS = [
+    "region_id", "chr", "start_grch37", "end_grch37", "start_grch38",
+    "end_grch38", "ancestry", "source_trait", "lead_variant", "radius_bp",
+    "region_class", "liftover_status",
+]
+
+
+def _old_row(region_id, chrom, start38, end38, ancestry, region_class,
+             *, start37=None, end37=None, source_trait=None, lead_variant="NA",
+             radius_bp=None, liftover_status="primary"):
+    """Build ONE OLD-schema (12-col) existing-manifest row dict."""
+    start37 = start38 if start37 is None else start37
+    end37 = end38 if end37 is None else end37
+    radius_bp = (min((end38 - start38) + 500_000, 50_000_000)
+                 if radius_bp is None else radius_bp)
+    source_trait = (f"ldl.{ancestry}.GLGC.2021.{ancestry}"
+                    if source_trait is None else source_trait)
+    return {
+        "region_id": region_id, "chr": chrom,
+        "start_grch37": start37, "end_grch37": end37,
+        "start_grch38": start38, "end_grch38": end38,
+        "ancestry": ancestry, "source_trait": source_trait,
+        "lead_variant": lead_variant, "radius_bp": radius_bp,
+        "region_class": region_class, "liftover_status": liftover_status,
+    }
+
+
+def _existing_manifest_df(rows):
+    return pd.DataFrame(rows, columns=_OLD_MANIFEST_COLS)
+
+
+def test_split_existing_emits_sub_rows_for_xlarge():
+    """split_existing_manifest splits xlarge parents into __sub compute rows for
+    BOTH ancestries; the bare parent id is absent as a compute row."""
+    import re
+    rows = []
+    # m2_region_00040 (chr12 SH2B3): ~88 Mb b38 span -> xlarge.
+    for anc in ("AFR", "EUR"):
+        rows.append(_old_row("m2_region_00040", "12", 37_463_740, 126_289_702,
+                             anc, "xlarge"))
+    # m2_region_00145 (chr6 HLA): ~60 Mb b38 span -> xlarge.
+    for anc in ("AFR", "EUR"):
+        rows.append(_old_row("m2_region_00145", "6", 100_000, 60_100_000,
+                             anc, "xlarge"))
+    df = _existing_manifest_df(rows)
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb=10.0, max_subregion_span_mb=10.0,
+        split_classes="xlarge",
+    )
+    ids = set(manifest["region_id"])
+    # __sub rows for m2_region_00040 for BOTH ancestries
+    for anc in ("AFR", "EUR"):
+        anc_subs = manifest[
+            (manifest["parent_region_id"] == "m2_region_00040") &
+            (manifest["ancestry"] == anc)
+        ]
+        assert not anc_subs.empty, f"no m2_region_00040 __sub for {anc}"
+        assert all(re.search(r"m2_region_00040__sub\d{2}$", r)
+                   for r in anc_subs["region_id"]), anc_subs["region_id"].tolist()
+    # m2_region_00145 also splits for both ancestries
+    for anc in ("AFR", "EUR"):
+        anc_subs = manifest[
+            (manifest["parent_region_id"] == "m2_region_00145") &
+            (manifest["ancestry"] == anc)
+        ]
+        assert not anc_subs.empty, f"no m2_region_00145 __sub for {anc}"
+    # bare parent ids absent as compute rows
+    assert "m2_region_00040" not in ids
+    assert "m2_region_00145" not in ids
+
+
+def test_split_existing_buffer_is_10mb():
+    """Every __sub compute row has buffer_bp == 10_000_000 (NOT 50 Mb)."""
+    rows = [_old_row("m2_region_00040", "12", 37_463_740, 126_289_702, anc, "xlarge")
+            for anc in ("AFR", "EUR")]
+    manifest, _ = blm.split_existing_manifest(
+        _existing_manifest_df(rows), subregion_buffer_mb=10.0,
+        max_subregion_span_mb=10.0, split_classes="xlarge",
+    )
+    subs = manifest[manifest["region_id"].str.contains("__sub")]
+    assert (subs["buffer_bp"] == 10_000_000).all(), subs["buffer_bp"].unique()
+    assert (subs["buffer_bp"] != 50_000_000).all()
+
+
+def test_split_existing_cores_tile_parent_half_open():
+    """The __sub cores tile the parent [start, end) exactly (half-open)."""
+    start38, end38 = 37_463_740, 126_289_702
+    rows = [_old_row("m2_region_00040", "12", start38, end38, "AFR", "xlarge")]
+    manifest, _ = blm.split_existing_manifest(
+        _existing_manifest_df(rows), subregion_buffer_mb=10.0,
+        max_subregion_span_mb=10.0, split_classes="xlarge",
+    )
+    afr = manifest[manifest["ancestry"] == "AFR"].sort_values("subregion_index")
+    cores = list(zip(afr["core_start_grch38"].astype(int),
+                     afr["core_end_grch38"].astype(int)))
+    assert cores[0][0] == start38, cores
+    assert cores[-1][1] == end38, cores
+    for k in range(1, len(cores)):
+        assert cores[k][0] == cores[k - 1][1], f"cores must tile: {cores}"
+
+
+def test_split_existing_nonxlarge_passthrough_unchanged():
+    """A medium m2_region_00006 passes through unchanged + whole-region columns."""
+    rows = []
+    for anc in ("AFR", "EUR"):
+        rows.append(_old_row(
+            "m2_region_00006", "1", 108_000_000, 120_000_000, anc, "medium",
+            start37=109_500_000, end37=121_500_000,
+            source_trait=f"sort1.{anc}.GLGC.2021.{anc}", lead_variant="rs12740374",
+            radius_bp=12_500_000, liftover_status="multi-segment",
+        ))
+    df = _existing_manifest_df(rows)
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb=10.0, max_subregion_span_mb=10.0,
+        split_classes="xlarge",
+    )
+    r6 = manifest[manifest["region_id"] == "m2_region_00006"]
+    assert len(r6) == 2, r6
+    assert all("__sub" not in r for r in r6["region_id"])
+    for anc in ("AFR", "EUR"):
+        out = r6[r6["ancestry"] == anc].iloc[0]
+        src = df[(df["region_id"] == "m2_region_00006") &
+                 (df["ancestry"] == anc)].iloc[0]
+        for col in ("start_grch37", "end_grch37", "start_grch38", "end_grch38",
+                    "source_trait", "lead_variant", "radius_bp", "region_class",
+                    "liftover_status"):
+            assert str(out[col]) == str(src[col]), \
+                f"{anc} {col}: {out[col]} != {src[col]}"
+        # whole-region convention columns
+        assert int(out["subregion_index"]) == -1
+        assert int(out["n_subregions"]) == 1
+        assert out["parent_region_id"] == ""
+
+
+# Shared geometry columns the faithfulness test compares.
+_FAITHFULNESS_COLS = [
+    "region_id", "chr", "ancestry", "parent_region_id", "subregion_index",
+    "n_subregions", "core_start_grch38", "core_end_grch38",
+    "window_start_grch38", "window_end_grch38", "buffer_bp", "start_grch38",
+    "end_grch38", "region_class",
+]
+
+
+def test_split_existing_matches_build_manifest_faithfulness():
+    """THE faithfulness test: split_existing_manifest emits __sub geometry
+    byte-identical to build_manifest on the shared geometry columns, proving
+    the SHARED _assemble_region_rows helper is the single source of geometry."""
+    start38, end38 = 0, 88_000_000  # xlarge
+    region_id, chrom = "m2_region_00040", "12"
+
+    # (a) build_manifest via an identity-chain one-row bed (b37==b38).
+    bed_df = pd.DataFrame([{
+        "chr": f"chr{chrom}", "start": start38, "end": end38,
+        "region_id": region_id, "score": ".", "strand": ".",
+        "provenance_json": '{"mtag":["ldl.AFR.GLGC.2021.AFR","ldl.EUR.GLGC.2021.EUR"]}',
+        "lead_token": "",
+    }])
+
+    class _IdentityChain:
+        def convert_coordinate(self, c, pos):
+            return [(c, pos, "+", 0)]
+
+    bm_manifest, _ = blm.build_manifest(
+        bed_df, _IdentityChain(), ["AFR", "EUR"],
+        max_subregion_span_mb=10.0, split_classes="xlarge",
+        subregion_buffer_mb=10.0,
+    )
+
+    # (b) equivalent existing-manifest rows from the SAME parent coords.
+    region_class = blm.derive_region_class(start38, end38)
+    radius_bp = blm.compute_radius_bp(start38, end38)
+    existing_rows = [
+        _old_row(region_id, chrom, start38, end38, anc, region_class,
+                 start37=start38, end37=end38,
+                 source_trait=f"ldl.{anc}.GLGC.2021.{anc}",
+                 radius_bp=radius_bp, liftover_status="primary")
+        for anc in ("AFR", "EUR")
+    ]
+    se_manifest, _ = blm.split_existing_manifest(
+        _existing_manifest_df(existing_rows), subregion_buffer_mb=10.0,
+        max_subregion_span_mb=10.0, split_classes="xlarge",
+    )
+
+    def _norm(df):
+        out = df[_FAITHFULNESS_COLS].copy()
+        out = out.sort_values(["region_id", "ancestry"]).reset_index(drop=True)
+        for c in out.columns:
+            if c not in ("region_id", "chr", "ancestry", "parent_region_id",
+                         "region_class"):
+                out[c] = out[c].astype("int64")
+            else:
+                out[c] = out[c].astype(str)
+        return out
+
+    pd.testing.assert_frame_equal(_norm(bm_manifest), _norm(se_manifest))
+
+
+def test_split_existing_cli_xor_with_bed(tmp_path):
+    """argparse XOR: --split-existing-manifest with --bed -> nonzero exit; the
+    split-existing CLI mode alone -> exit 0 + __sub rows in the output."""
+    # XOR violation: both modes given -> argparse error (nonzero exit).
+    res = subprocess.run(
+        [sys.executable, str(SRC_REFORMATTER),
+         "--split-existing-manifest", str(tmp_path / "in.tsv"),
+         "--bed", str(tmp_path / "x.bed"),
+         "--out-manifest", str(tmp_path / "m.tsv"),
+         "--out-projection", str(tmp_path / "p.tsv")],
+        capture_output=True, text=True,
+    )
+    assert res.returncode != 0, f"expected XOR error, got 0\n{res.stderr}"
+
+    # Valid split-existing CLI invocation.
+    in_tsv = tmp_path / "in.tsv"
+    rows = [_old_row("m2_region_00040", "12", 0, 88_000_000, anc, "xlarge")
+            for anc in ("AFR", "EUR")]
+    _existing_manifest_df(rows).to_csv(in_tsv, sep="\t", index=False)
+    out_m = tmp_path / "out_manifest.tsv"
+    out_p = tmp_path / "out_projection.tsv"
+    res = subprocess.run(
+        [sys.executable, str(SRC_REFORMATTER),
+         "--split-existing-manifest", str(in_tsv),
+         "--out-manifest", str(out_m), "--out-projection", str(out_p),
+         "--subregion-buffer-mb", "10", "--max-subregion-span-mb", "10"],
+        capture_output=True, text=True,
+    )
+    assert res.returncode == 0, f"split-existing CLI failed: {res.stderr}"
+    out_df = pd.read_csv(out_m, sep="\t")
+    assert out_df["region_id"].str.contains("m2_region_00040__sub").any(), \
+        out_df["region_id"].unique()

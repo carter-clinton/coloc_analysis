@@ -100,10 +100,17 @@ MANIFEST_COLUMNS = [
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--bed", required=True, type=Path,
-                   help="M2 union BED (GRCh37, 8 columns; results/regions/union_region_list.bed)")
-    p.add_argument("--chain", required=True, type=Path,
-                   help="UCSC GRCh37 to GRCh38 chain (data/external/liftover/hg19ToHg38.over.chain.gz)")
+    p.add_argument("--bed", required=False, default=None, type=Path,
+                   help="M2 union BED (GRCh37, 8 columns; results/regions/union_region_list.bed). "
+                        "Required UNLESS --split-existing-manifest is given (XOR).")
+    p.add_argument("--chain", required=False, default=None, type=Path,
+                   help="UCSC GRCh37 to GRCh38 chain (data/external/liftover/hg19ToHg38.over.chain.gz). "
+                        "Required UNLESS --split-existing-manifest is given (XOR).")
+    p.add_argument("--split-existing-manifest", dest="split_existing_manifest",
+                   required=False, default=None, type=Path,
+                   help="Path B regen: split an EXISTING committed manifest TSV in place "
+                        "(no --bed/--chain; the forward chain + M2 union BED are gone). "
+                        "Mutually exclusive with --bed/--chain.")
     p.add_argument("--out-manifest", required=True, type=Path,
                    help="Output 322-row TSV (config/ld_regions.tsv)")
     p.add_argument("--out-projection", required=True, type=Path,
@@ -129,7 +136,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         "the m3-02c cost probe measures this buffer's real cost and the "
                         "narrow-to-10Mb lever is the YELLOW disposition. DO NOT silently "
                         "keep 50 Mb.")
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    # XOR: split-existing mode vs. bed/chain mode. Enforce mutual exclusion +
+    # the required-inputs-present check via argparse-native p.error().
+    if args.split_existing_manifest is not None:
+        if args.bed is not None or args.chain is not None:
+            p.error("--split-existing-manifest is mutually exclusive with --bed/--chain")
+    else:
+        if not (args.bed is not None and args.chain is not None):
+            p.error("either --split-existing-manifest OR both --bed and --chain are required")
+    return args
 
 
 def parse_provenance(prov_str: str) -> dict:
@@ -419,6 +435,184 @@ def _path_a_for_class(region_class: str) -> tuple[str, float]:
     return "A.3", 24.0
 
 
+def _assemble_region_rows(
+    *,
+    region_id: str,
+    chr_int_str: str,
+    start_b37: int,
+    end_b37: int,
+    start_b38: int,
+    end_b38: int,
+    region_class: str,
+    radius_bp: int,
+    status: str,
+    ancestries: list[str],
+    trait_lead_fn,
+    split_set: set,
+    core_span_bp: int,
+    buffer_override_bp: "int | None",
+) -> tuple[list[dict], list[dict]]:
+    """Assemble (manifest_rows, projection_rows) for ONE successfully-resolved
+    GRCh38 region — the SHARED single-source-of-geometry helper called by BOTH
+    ``build_manifest`` (post-liftover) and ``split_existing_manifest`` (reading
+    the GRCh38 coords straight from an existing manifest row).
+
+    ``trait_lead_fn(ancestry) -> (source_trait, lead_variant)`` resolves per-cell
+    provenance. The caller supplies GRCh38 coords/class/radius/grch37/status; this
+    helper owns the SPLIT-vs-WHOLE decision, the overlapping-window geometry, the
+    WR-01 SUBREGION_BUFFER_GUARD, and the whole-region convention columns. The
+    failed-liftover projection branch stays in ``build_manifest`` (liftover-specific,
+    never shared).
+    """
+    path_a, est_hrs = _path_a_for_class(region_class)
+    span_bp = end_b38 - start_b38
+    manifest_rows: list[dict] = []
+    projection_rows: list[dict] = []
+
+    if region_class in split_set:
+        # SPLIT branch: overlapping-window sub-regions. buffer_bp = override if
+        # given, else the parent region radius (the band knob).
+        buffer_bp = buffer_override_bp if buffer_override_bp is not None else radius_bp
+        subs = split_region_overlapping(start_b38, end_b38, core_span_bp, buffer_bp)
+        n_sub = len(subs)
+
+        # WR-01 guard: refuse to SILENTLY emit a parent-spanning compute window
+        # from the radius-based DEFAULT buffer (the 65 GiB master-crash condition).
+        # Only fires when no explicit buffer was given AND the widest window
+        # reaches ~the whole parent span. An explicit --subregion-buffer-mb is
+        # always honored (m3-02c widens + measures). No band width is picked here.
+        if buffer_override_bp is None and n_sub > 1:
+            widest_window = max(s["window_end"] - s["window_start"] for s in subs)
+            if widest_window >= SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC * span_bp:
+                raise ValueError(
+                    f"SUBREGION_BUFFER_GUARD: region {region_id} "
+                    f"({region_class}, {span_bp/1e6:.1f} Mb) split into {n_sub} "
+                    f"sub-regions, but the DEFAULT buffer "
+                    f"({buffer_bp/1e6:.1f} Mb = the parent radius) makes the "
+                    f"widest compute window {widest_window/1e6:.1f} Mb "
+                    f">= {SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC:.0%} of the "
+                    f"parent span -- a parent-spanning window whose dense "
+                    f"scratch regresses to the ~65 GiB intractable wall the "
+                    f"split exists to avoid. Pass an explicit "
+                    f"--subregion-buffer-mb (the Pan-UKBB AFR/EUR LD anchor "
+                    f"bands at 10 Mb; m3-02c's cost probe measures the correct "
+                    f"width). Refusing to silently keep the 50 Mb default."
+                )
+
+        # Parent projection row (NOT a compute row).
+        projection_rows.append({
+            "region_id": region_id,
+            "chr": chr_int_str,
+            "start_grch37": start_b37,
+            "end_grch37": end_b37,
+            "start_grch38": start_b38,
+            "end_grch38": end_b38,
+            "span_bp_grch38": span_bp,
+            "span_mb_grch38": round(span_bp / 1_000_000, 3),
+            "region_class": region_class,
+            "radius_bp": radius_bp,
+            "path_a_class": path_a,
+            "est_cluster_hours_per_ancestry": est_hrs,
+            "split_status": "parent",
+            "n_subregions": n_sub,
+            "liftover_status": status,
+        })
+
+        for sub in subs:
+            k = sub["subregion_index"]
+            sub_id = f"{region_id}__sub{k:02d}"
+            win_start = sub["window_start"]
+            win_end = sub["window_end"]
+            win_class = derive_region_class(win_start, win_end)
+            win_path_a, win_est = _path_a_for_class(win_class)
+            projection_rows.append({
+                "region_id": sub_id,
+                "chr": chr_int_str,
+                "start_grch37": start_b37,
+                "end_grch37": end_b37,
+                "start_grch38": win_start,
+                "end_grch38": win_end,
+                "span_bp_grch38": win_end - win_start,
+                "span_mb_grch38": round((win_end - win_start) / 1_000_000, 3),
+                "region_class": win_class,
+                "radius_bp": buffer_bp,
+                "path_a_class": win_path_a,
+                "est_cluster_hours_per_ancestry": win_est,
+                "split_status": "subregion",
+                "n_subregions": n_sub,
+                "liftover_status": status,
+            })
+            for ancestry in ancestries:
+                source_trait, lead_variant = trait_lead_fn(ancestry)
+                manifest_rows.append({
+                    "region_id": sub_id,
+                    "chr": chr_int_str,
+                    "start_grch37": start_b37,
+                    "end_grch37": end_b37,
+                    "start_grch38": win_start,
+                    "end_grch38": win_end,
+                    "ancestry": ancestry,
+                    "source_trait": source_trait,
+                    "lead_variant": lead_variant,
+                    "parent_region_id": region_id,
+                    "subregion_index": k,
+                    "n_subregions": n_sub,
+                    "core_start_grch38": sub["core_start"],
+                    "core_end_grch38": sub["core_end"],
+                    "window_start_grch38": win_start,
+                    "window_end_grch38": win_end,
+                    "buffer_bp": buffer_bp,
+                    "radius_bp": buffer_bp,
+                    "region_class": win_class,
+                    "liftover_status": status,
+                })
+        return manifest_rows, projection_rows
+
+    # WHOLE branch: one compute row per ancestry + whole-region convention.
+    projection_rows.append({
+        "region_id": region_id,
+        "chr": chr_int_str,
+        "start_grch37": start_b37,
+        "end_grch37": end_b37,
+        "start_grch38": start_b38,
+        "end_grch38": end_b38,
+        "span_bp_grch38": span_bp,
+        "span_mb_grch38": round(span_bp / 1_000_000, 3),
+        "region_class": region_class,
+        "radius_bp": radius_bp,
+        "path_a_class": path_a,
+        "est_cluster_hours_per_ancestry": est_hrs,
+        "split_status": "whole",
+        "n_subregions": 1,
+        "liftover_status": status,
+    })
+    for ancestry in ancestries:
+        source_trait, lead_variant = trait_lead_fn(ancestry)
+        manifest_rows.append({
+            "region_id": region_id,
+            "chr": chr_int_str,
+            "start_grch37": start_b37,
+            "end_grch37": end_b37,
+            "start_grch38": start_b38,
+            "end_grch38": end_b38,
+            "ancestry": ancestry,
+            "source_trait": source_trait,
+            "lead_variant": lead_variant,
+            "parent_region_id": "",
+            "subregion_index": -1,
+            "n_subregions": 1,
+            "core_start_grch38": start_b38,
+            "core_end_grch38": end_b38,
+            "window_start_grch38": start_b38,
+            "window_end_grch38": end_b38,
+            "buffer_bp": radius_bp,
+            "radius_bp": radius_bp,
+            "region_class": region_class,
+            "liftover_status": status,
+        })
+    return manifest_rows, projection_rows
+
+
 def build_manifest(
     bed_df: pd.DataFrame,
     chain,
@@ -501,164 +695,116 @@ def build_manifest(
 
         radius_bp = compute_radius_bp(new_start, new_end)
         region_class = derive_region_class(new_start, new_end)
-        path_a, est_hrs = _path_a_for_class(region_class)
-        span_bp = new_end - new_start
 
-        if region_class in split_set:
-            # SPLIT branch: overlapping-window sub-regions. The buffer_bp is the
-            # override if given, else the parent region radius (the band knob).
-            buffer_bp = buffer_override_bp if buffer_override_bp is not None else radius_bp
-            subs = split_region_overlapping(new_start, new_end, core_span_bp, buffer_bp)
-            n_sub = len(subs)
-
-            # WR-01 guard: refuse to SILENTLY emit a parent-spanning compute
-            # window from the radius-based DEFAULT buffer (the exact 65 GiB
-            # master-crash condition). Only fires when no explicit buffer was
-            # given AND the widest window reaches ~the whole parent span. An
-            # explicit --subregion-buffer-mb is always honored (m3-02c widens +
-            # measures). We deliberately do NOT pick a band width here.
-            if buffer_override_bp is None and n_sub > 1:
-                widest_window = max(s["window_end"] - s["window_start"] for s in subs)
-                if widest_window >= SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC * span_bp:
-                    raise ValueError(
-                        f"SUBREGION_BUFFER_GUARD: region {region_id} "
-                        f"({region_class}, {span_bp/1e6:.1f} Mb) split into {n_sub} "
-                        f"sub-regions, but the DEFAULT buffer "
-                        f"({buffer_bp/1e6:.1f} Mb = the parent radius) makes the "
-                        f"widest compute window {widest_window/1e6:.1f} Mb "
-                        f">= {SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC:.0%} of the "
-                        f"parent span -- a parent-spanning window whose dense "
-                        f"scratch regresses to the ~65 GiB intractable wall the "
-                        f"split exists to avoid. Pass an explicit "
-                        f"--subregion-buffer-mb (the Pan-UKBB AFR/EUR LD anchor "
-                        f"bands at 10 Mb; m3-02c's cost probe measures the correct "
-                        f"width). Refusing to silently keep the 50 Mb default."
-                    )
-
-            # Parent projection row (NOT a compute row).
-            projection_rows.append({
-                "region_id": region_id,
-                "chr": chr_int_str,
-                "start_grch37": start_b37,
-                "end_grch37": end_b37,
-                "start_grch38": new_start,
-                "end_grch38": new_end,
-                "span_bp_grch38": span_bp,
-                "span_mb_grch38": round(span_bp / 1_000_000, 3),
-                "region_class": region_class,
-                "radius_bp": radius_bp,
-                "path_a_class": path_a,
-                "est_cluster_hours_per_ancestry": est_hrs,
-                "split_status": "parent",
-                "n_subregions": n_sub,
-                "liftover_status": status,
-            })
-
-            for sub in subs:
-                k = sub["subregion_index"]
-                sub_id = f"{region_id}__sub{k:02d}"
-                win_start = sub["window_start"]
-                win_end = sub["window_end"]
-                # The compute window may be 30 Mb (10 Mb core + 2x10 Mb buffer) ->
-                # large/xlarge by span; that's fine — dense scratch is bounded by
-                # the WINDOW n_var, not the parent span. radius_bp = buffer_bp so
-                # compute_region_ld bands the window at the buffer.
-                win_class = derive_region_class(win_start, win_end)
-                win_path_a, win_est = _path_a_for_class(win_class)
-                # Sub-region projection row.
-                projection_rows.append({
-                    "region_id": sub_id,
-                    "chr": chr_int_str,
-                    "start_grch37": start_b37,
-                    "end_grch37": end_b37,
-                    "start_grch38": win_start,
-                    "end_grch38": win_end,
-                    "span_bp_grch38": win_end - win_start,
-                    "span_mb_grch38": round((win_end - win_start) / 1_000_000, 3),
-                    "region_class": win_class,
-                    "radius_bp": buffer_bp,
-                    "path_a_class": win_path_a,
-                    "est_cluster_hours_per_ancestry": win_est,
-                    "split_status": "subregion",
-                    "n_subregions": n_sub,
-                    "liftover_status": status,
-                })
-                for ancestry in ancestries:
-                    source_trait, lead_variant = derive_source_trait_and_lead(prov, ancestry)
-                    manifest_rows.append({
-                        "region_id": sub_id,
-                        "chr": chr_int_str,
-                        "start_grch37": start_b37,
-                        "end_grch37": end_b37,
-                        "start_grch38": win_start,
-                        "end_grch38": win_end,
-                        "ancestry": ancestry,
-                        "source_trait": source_trait,
-                        "lead_variant": lead_variant,
-                        "parent_region_id": region_id,
-                        "subregion_index": k,
-                        "n_subregions": n_sub,
-                        "core_start_grch38": sub["core_start"],
-                        "core_end_grch38": sub["core_end"],
-                        "window_start_grch38": win_start,
-                        "window_end_grch38": win_end,
-                        "buffer_bp": buffer_bp,
-                        "radius_bp": buffer_bp,
-                        "region_class": win_class,
-                        "liftover_status": status,
-                    })
-            continue
-
-        # WHOLE branch: today's behavior + the new provenance columns.
-        projection_rows.append({
-            "region_id": region_id,
-            "chr": chr_int_str,
-            "start_grch37": start_b37,
-            "end_grch37": end_b37,
-            "start_grch38": new_start,
-            "end_grch38": new_end,
-            "span_bp_grch38": span_bp,
-            "span_mb_grch38": round(span_bp / 1_000_000, 3),
-            "region_class": region_class,
-            "radius_bp": radius_bp,
-            "path_a_class": path_a,
-            "est_cluster_hours_per_ancestry": est_hrs,
-            "split_status": "whole",
-            "n_subregions": 1,
-            "liftover_status": status,
-        })
-
-        # Emit one manifest row per ancestry (D-M3-02). Whole-region convention:
-        # parent_region_id="", subregion_index=-1, core==window==region,
-        # buffer_bp == the region radius.
-        for ancestry in ancestries:
-            source_trait, lead_variant = derive_source_trait_and_lead(prov, ancestry)
-            manifest_rows.append({
-                "region_id": region_id,
-                "chr": chr_int_str,
-                "start_grch37": start_b37,
-                "end_grch37": end_b37,
-                "start_grch38": new_start,
-                "end_grch38": new_end,
-                "ancestry": ancestry,
-                "source_trait": source_trait,
-                "lead_variant": lead_variant,
-                "parent_region_id": "",
-                "subregion_index": -1,
-                "n_subregions": 1,
-                "core_start_grch38": new_start,
-                "core_end_grch38": new_end,
-                "window_start_grch38": new_start,
-                "window_end_grch38": new_end,
-                "buffer_bp": radius_bp,
-                "radius_bp": radius_bp,
-                "region_class": region_class,
-                "liftover_status": status,
-            })
+        m_rows, p_rows = _assemble_region_rows(
+            region_id=region_id,
+            chr_int_str=chr_int_str,
+            start_b37=start_b37,
+            end_b37=end_b37,
+            start_b38=new_start,
+            end_b38=new_end,
+            region_class=region_class,
+            radius_bp=radius_bp,
+            status=status,
+            ancestries=ancestries,
+            trait_lead_fn=lambda a, _prov=prov: derive_source_trait_and_lead(_prov, a),
+            split_set=split_set,
+            core_span_bp=core_span_bp,
+            buffer_override_bp=buffer_override_bp,
+        )
+        manifest_rows.extend(m_rows)
+        projection_rows.extend(p_rows)
 
     if audit_failures:
         print(f"AUDIT: {len(audit_failures)} liftover failures (dropped from manifest)",
               file=sys.stderr)
+
+    manifest_df = pd.DataFrame(manifest_rows, columns=MANIFEST_COLUMNS)
+    projection_df = pd.DataFrame(projection_rows)
+    return manifest_df, projection_df
+
+
+def split_existing_manifest(
+    in_manifest_df: pd.DataFrame,
+    *,
+    subregion_buffer_mb: "float | None" = None,
+    max_subregion_span_mb: float = DEFAULT_MAX_SUBREGION_SPAN_MB,
+    split_classes: "str | list[str]" = DEFAULT_SPLIT_CLASSES,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Path B regen: split an EXISTING (committed) manifest in place.
+
+    The canonical ``--bed``/``--chain`` regen inputs are GONE (the forward
+    ``hg19ToHg38`` chain was deleted; the M2 union BED is nowhere on the tree),
+    so we split the already-lifted-over GRCh38 manifest directly. This does NOT
+    liftover and does NOT recompute radius/region_class — those are carried
+    straight from the existing rows (recomputation is impossible without the chain
+    AND unnecessary, since the split geometry is GRCh38-only). ``region_class``
+    drives the split decision exactly as ``build_manifest``.
+
+    The existing manifest may be the OLD 12-column schema (region_id, chr,
+    start_grch37, end_grch37, start_grch38, end_grch38, ancestry, source_trait,
+    lead_variant, radius_bp, region_class, liftover_status) — it carries NONE of
+    the 8 split-provenance columns. This function OUTPUTS the full 20-column
+    ``MANIFEST_COLUMNS`` schema, ADDING the split columns (xlarge -> __sub rows;
+    non-xlarge -> whole-region convention) by reusing the SAME
+    ``_assemble_region_rows`` helper ``build_manifest`` calls. The __sub geometry
+    is therefore byte-identical to ``build_manifest`` for the same coords.
+
+    Returns ``(manifest_df, projection_df)`` — same shape as ``build_manifest``.
+    """
+    if isinstance(split_classes, str):
+        split_set = {c.strip() for c in split_classes.split(",") if c.strip()}
+    else:
+        split_set = set(split_classes)
+    core_span_bp = int(round(max_subregion_span_mb * 1_000_000))
+    buffer_override_bp = (
+        int(round(subregion_buffer_mb * 1_000_000)) if subregion_buffer_mb is not None else None
+    )
+
+    manifest_rows: list[dict] = []
+    projection_rows: list[dict] = []
+
+    # Group by region_id preserving first-seen order; each group = per-ancestry
+    # rows for one region.
+    for region_id, group in in_manifest_df.groupby("region_id", sort=False):
+        first = group.iloc[0]
+        # chr column may carry a bare int or a 'chr'-prefixed string; normalize.
+        chr_int_str = str(first["chr"]).replace("chr", "")
+        start_b37 = int(first["start_grch37"])
+        end_b37 = int(first["end_grch37"])
+        start_b38 = int(first["start_grch38"])
+        end_b38 = int(first["end_grch38"])
+        region_class = str(first["region_class"])
+        radius_bp = int(first["radius_bp"])
+        status = str(first["liftover_status"])
+
+        # Per-ancestry (source_trait, lead_variant) lookup from the group's rows.
+        lookup: dict[str, tuple[str, str]] = {}
+        for _, r in group.iterrows():
+            lookup[str(r["ancestry"])] = (
+                str(r["source_trait"]), str(r["lead_variant"])
+            )
+        # Preserve input ancestry order (AFR then EUR as committed).
+        ancestries = list(dict.fromkeys(str(a) for a in group["ancestry"]))
+
+        m_rows, p_rows = _assemble_region_rows(
+            region_id=str(region_id),
+            chr_int_str=chr_int_str,
+            start_b37=start_b37,
+            end_b37=end_b37,
+            start_b38=start_b38,
+            end_b38=end_b38,
+            region_class=region_class,
+            radius_bp=radius_bp,
+            status=status,
+            ancestries=ancestries,
+            trait_lead_fn=lambda a, _lk=lookup: _lk[a],
+            split_set=split_set,
+            core_span_bp=core_span_bp,
+            buffer_override_bp=buffer_override_bp,
+        )
+        manifest_rows.extend(m_rows)
+        projection_rows.extend(p_rows)
 
     manifest_df = pd.DataFrame(manifest_rows, columns=MANIFEST_COLUMNS)
     projection_df = pd.DataFrame(projection_rows)
@@ -696,15 +842,25 @@ def write_mapping(manifest_df: pd.DataFrame, projection_df: pd.DataFrame, path: 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    bed_df = read_union_bed(args.bed)
-    chain = load_chain(args.chain)
-    ancestries = [a.strip() for a in args.ancestries.split(",") if a.strip()]
-    manifest_df, projection_df = build_manifest(
-        bed_df, chain, ancestries,
-        max_subregion_span_mb=args.max_subregion_span_mb,
-        split_classes=args.split_classes,
-        subregion_buffer_mb=args.subregion_buffer_mb,
-    )
+    if args.split_existing_manifest is not None:
+        # Path B regen: split an EXISTING manifest in place (no --bed/--chain).
+        in_df = pd.read_csv(args.split_existing_manifest, sep="\t")
+        manifest_df, projection_df = split_existing_manifest(
+            in_df,
+            subregion_buffer_mb=args.subregion_buffer_mb,
+            max_subregion_span_mb=args.max_subregion_span_mb,
+            split_classes=args.split_classes,
+        )
+    else:
+        bed_df = read_union_bed(args.bed)
+        chain = load_chain(args.chain)
+        ancestries = [a.strip() for a in args.ancestries.split(",") if a.strip()]
+        manifest_df, projection_df = build_manifest(
+            bed_df, chain, ancestries,
+            max_subregion_span_mb=args.max_subregion_span_mb,
+            split_classes=args.split_classes,
+            subregion_buffer_mb=args.subregion_buffer_mb,
+        )
     write_tsv(manifest_df, args.out_manifest)
     write_tsv(projection_df, args.out_projection)
     if args.out_mapping is not None:
