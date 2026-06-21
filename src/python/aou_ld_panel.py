@@ -364,6 +364,119 @@ MIN_VARIANTS_PER_REGION = 10
 _MIN_REGION_NPZ_BYTES = 256
 
 
+# ---------------------------------------------------------------------------
+# m3-02c STEP A — preflight count pass (count-only; NO correlation compute)
+# ---------------------------------------------------------------------------
+# The cost probe (m3-02c Task 3) requires a cheap in-perimeter count pass over
+# every post-split compute cell BEFORE any billable LD compute, feeding REAL
+# n_var / routed_path / block-count estimates into the cost model (Task 4) and
+# flagging any over-threshold (>75k var) cell for finer splitting. This mirrors
+# the filter+count+route prefix of compute_region_ld WITHOUT invoking the
+# matmul/write. Reusable for the m3-04 production preflight.
+_LD_BLOCK_SIZE = 4096                       # Hail BlockMatrix default block edge
+_PREFLIGHT_OVER_THRESHOLD_NVAR = 75_000     # m3-02c: cells above this auto-split
+
+PREFLIGHT_COUNT_COLUMNS = [
+    "region_id", "ancestry", "region_class", "window_span_mb", "n_var",
+    "routed_path", "est_block_count", "est_output_gib", "over_threshold",
+]
+
+
+def _preflight_estimates(n_var: int, span_mb: float, region_class: "str | None",
+                         radius_bp: int) -> dict:
+    """Pure cost-sizing estimates for one preflight cell (no Hail).
+
+    - ``routed_path``: the REAL :func:`_route_region_path` on the WINDOW span.
+    - ``est_block_count``: ``ceil(n_var/4096)**2 / 2`` (upper-triangle block
+      count; m3-02c PLAN Task 3 STEP A definition).
+    - ``est_output_gib``: banded non-zero entries * 4 bytes / 1e9, where the
+      band fraction = ``min(radius_bp/span_bp, 1)`` (within-radius pairs;
+      ``radius_bp >= span`` => full upper triangle).
+    - ``over_threshold``: ``n_var > 75_000`` (auto-split / finer-split trigger).
+    """
+    import math
+    routed_path = _route_region_path(region_class, span_mb)
+    n_blocks_1d = math.ceil(n_var / _LD_BLOCK_SIZE) if n_var > 0 else 0
+    est_block_count = (n_blocks_1d ** 2) / 2.0
+    span_bp = span_mb * 1_000_000
+    band_frac = min(radius_bp / span_bp, 1.0) if span_bp > 0 else 1.0
+    banded_nnz = 0.5 * (n_var ** 2) * band_frac
+    est_output_gib = banded_nnz * 4.0 / 1e9
+    return {
+        "routed_path": routed_path,
+        "est_block_count": est_block_count,
+        "est_output_gib": est_output_gib,
+        "over_threshold": bool(n_var > _PREFLIGHT_OVER_THRESHOLD_NVAR),
+    }
+
+
+def count_region_n_var(region_row: dict, mt_source: "hl.MatrixTable") -> int:
+    """``count_rows()`` over the region's WINDOW interval — NO correlation compute.
+
+    Mirrors :func:`compute_region_ld`'s filter prefix EXACTLY (same
+    ``[start_grch38, end_grch38]`` GRCh38 interval) so the preflight ``n_var``
+    equals what the compute cell would see. This is the only billable-ish action
+    (an eager Hail count over a filtered MT) and is far cheaper than the matmul.
+    """
+    import hail as hl
+    chrom = str(region_row["chr"])
+    if not chrom.startswith("chr"):
+        chrom = f"chr{chrom}"
+    start_b38 = int(region_row["start_grch38"])
+    end_b38 = int(region_row["end_grch38"])
+    interval = hl.parse_locus_interval(
+        f"{chrom}:{start_b38}-{end_b38}", reference_genome="GRCh38",
+    )
+    mt_r = hl.filter_intervals(mt_source, [interval])
+    return mt_r.count_rows()
+
+
+def write_preflight_counts(region_rows, mt_by_ancestry: dict, out_path) -> list:
+    """STEP A driver: count-only preflight over every cell -> TSV.
+
+    ``region_rows``: iterable of dict-like region rows (region_id, chr, ancestry,
+        region_class, start_grch38, end_grch38, radius_bp, ...).
+    ``mt_by_ancestry``: ``{"AFR": mt_afr, "EUR": mt_eur}`` — the SAME MT handles
+        the compute loop routes by ancestry (so counts match compute).
+    ``out_path``: m3-W2-preflight-counts.tsv.
+
+    Returns the list of result dicts. Writes incrementally (flush per row) so a
+    mid-pass failure still leaves completed rows on disk. NO correlation compute,
+    NO writes to the LD output buckets — this is the cheap STEP A gate.
+    """
+    import csv
+    rows_out = []
+    with open(out_path, "w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=PREFLIGHT_COUNT_COLUMNS,
+                                delimiter="\t")
+        writer.writeheader()
+        for row in region_rows:
+            anc = row["ancestry"]
+            if anc not in mt_by_ancestry:
+                raise KeyError(
+                    f"no MT provided for ancestry {anc!r} "
+                    f"(region {row.get('region_id')}); have {list(mt_by_ancestry)}"
+                )
+            n_var = count_region_n_var(row, mt_by_ancestry[anc])
+            start_b38 = int(row["start_grch38"])
+            end_b38 = int(row["end_grch38"])
+            span_mb = (end_b38 - start_b38) / 1_000_000
+            est = _preflight_estimates(n_var, span_mb, row["region_class"],
+                                       int(row["radius_bp"]))
+            rec = {
+                "region_id": row["region_id"],
+                "ancestry": anc,
+                "region_class": row["region_class"],
+                "window_span_mb": round(span_mb, 4),
+                "n_var": n_var,
+                **est,
+            }
+            writer.writerow(rec)
+            fh.flush()
+            rows_out.append(rec)
+    return rows_out
+
+
 def _af_or_nan(af: "float | None") -> float:
     """Coerce a collected allele frequency to float, mapping a NULL to NaN.
 
