@@ -3,7 +3,7 @@
 **Generated:** 2026-06-20 · **Branch/commit to clone:** `m3-W2-aou-deltas` @ origin tip (≥ this commit) · **Authorized by:** Carter (option B).
 
 This is the self-contained runbook for the **Workbench-side** execution of m3-02c Task 3.
-The NCSU session **cannot** run this (VPC-SC walls the data plane; the highmem cluster must be
+The NCSU session **cannot** run this (VPC-SC walls the data plane; the sized cluster must be
 provisioned in the Workbench UI). Operating manual = the `aou-ld-pipeline` project skill;
 authoritative task spec = `m3-02c-W2-rescope-quota-probe-and-gonogo-PLAN.md` Task 3.
 
@@ -34,9 +34,21 @@ it at its saved size in a few minutes.
    `20260617` is standard-family `n2-standard`):
    - Compute type: **Dataproc "Hail Genomics Analysis"** (Verily software-framework = HAIL; Hail
      pre-installed + YARN-wired — do NOT pick the generic "JupyterLab Spark cluster" = no Hail).
-   - **Master `n2-highmem-16`**, **workers 24× `n2-highmem-16`** (128 GB each — stops the spill),
-     **non-preemptible**, region **us-central1**. vCPU = `min(granted, 400)` = **400**.
-   - Confirm in the env panel: workers are **n2-highmem** (NOT n1-highmem) and region == us-central1.
+   - **⚠️ DEVIATION FROM THE LOCKED DECISION (2026-06-20, Carter-approved):** the Workbench machine-type
+     picker offers **no highmem family** (only `n2-standard-2..128`) — the documented "2026-06-02
+     n2-standard-only picker" condition, DOM-confirmed. The locked `n2-highmem-16` is therefore
+     unprovisionable via the supported/Hail-wired/AoU-managed path. The binding constraint the highmem
+     choice was a proxy for is **128 GB RAM per worker** (the EUR block-pair ~14 GiB must fit in an
+     executor without spill). **`n2-standard-32` = 32 vCPU / 128 GB delivers exactly that 128 GB/node**,
+     RAM-bound to the same ~3 executors/node as highmem with the same Q-RS2 config → identical spill
+     behavior; the extra vCPU sits idle (cost premium only). A hand-rolled `gcloud dataproc clusters
+     create` n2-highmem cluster was REJECTED (unmanaged, not notebook-wired, VPC-SC/init-action risk).
+   - **Master `n2-standard-32`**, **workers 24× `n2-standard-32`** (128 GB each — stops the spill),
+     **non-preemptible** (no secondary workers), region **us-central1**. Total vCPU = 25 × 32 = **800**
+     (under the 5,000 `N2_CPUS` ceiling).
+   - Confirm in the env panel: workers are **`n2-standard-32` (128 GB each)** — NOT n1-highmem, NOT the
+     64 GB `n2-standard-16` (that spills) — and region == us-central1, 24 workers + 1 master,
+     non-preemptible.
 2. **Belt-and-suspenders quota re-check** (Console value can lag; run from the cluster terminal):
    ```bash
    PROJECT=$(gcloud config get-value project 2>/dev/null)   # expect wb-perky-corn-6639
@@ -103,7 +115,7 @@ gcloud dataproc clusters stop <CLUSTER_NAME> --region us-central1
 ```
 Confirm the env panel shows **no running cluster** ($0 idle). Carter reviews
 `m3-W2-preflight-counts.tsv` and gives the STEP-B go. **Then restart** the same cluster (resumes at the
-saved 400-vCPU size).
+saved 800-vCPU `n2-standard-32`×24 size).
 
 ---
 
@@ -112,7 +124,9 @@ saved 400-vCPU size).
 **Encode these hard controls in the probe loop BEFORE firing (code, not prose):**
 - `MAX_WALL_MIN_PER_CELL = 90` — if a cell exceeds it, **KILL** the job (cancel the Spark stage /
   interrupt the cell) and record `any_spill`/timeout.
-- `MAX_PROBE_CREDIT_USD = 60` — track elapsed cluster-hours × rate; if running spend exceeds the cap,
+- `MAX_PROBE_CREDIT_USD = 90` — RAISED from 60 (the 60 cap assumed ~$25/hr n2-highmem; the
+  n2-standard-32 substitute is ~$39/hr, so 60 would truncate STEP B mid-probe). Track elapsed
+  cluster-hours × rate; if running spend exceeds the cap,
   **STOP** firing further cells and shut down.
 - **SPILL/OOM KILL** — if executor spill bytes > 0 at cores=2 **or** an OOM is observed: record it, set
   the production projection to cores=1, and (if OOM) kill + re-fire that cell once at cores=1.
