@@ -1,61 +1,61 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-20T03:00:00.000Z",
+  "timestamp": "2026-06-20T20:30:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "wave": "Wave 1 (m3-02c) — fully PREPPED + AoU STEP-0 inspection ALL-GREEN; PAUSED at the sized-cluster-start gate (Carter's explicit go)",
-  "status": "Pure NCSU code session — NOTHING running, no AoU cluster (all 3 Dataproc clusters STOPPED, confirmed $0 by Carter + wb resource list), no Spark/YARN app, no kernel. Three quick tasks landed + PUSHED (origin == local HEAD cb76115): (1) 260619-qjy closed the A.3 AF sidecar gap; (2) 260619-rqs regenerated the post-split LD manifest (Path B); (3) 260619-vcp baked the AOU-2 gap-C3 WORKSPACE_BUCKET hard pin. The AoU Workbench agent then ran a read-only STEP-0 inspection on a cheap inspection VM ($0.15/hr) and reported ALL FOUR preconditions GREEN + the 3 carry-over checks green. Carter is stepping away; will resume in ~30 min in a NEW session to authorize the sized-cluster start and drive the m3-02c probe.",
-  "headline": "Disconnect-safe: NCSU code-only session, nothing fired. The m3-02c real-cohort cost probe is FULLY PREPPED and unblocked. The AoU agent's read-only inspection confirmed: branch m3-W2-aou-deltas, commit cb76115 (origin==local), manifest 18 m2_region_00040__sub rows, the new AOU-2 bucket-pin bakes before the _normalize_bucket read, USE_DEV_SUBSET=True, A.3 uses _write_a3_banded_correlation_bm, Q-RS2 executor config present. The inspection CAUGHT two real issues this session and both are FIXED: (a) origin was 32 commits behind local — the NCSU line had never been pushed (FIXED by push; memory feedback_push_ncsu_before_aou_clone_fire); (b) AOU-2 gap C3 — the WORKSPACE_BUCKET hard pin was missing (FIXED by bake, 260619-vcp). NEXT = Carter authorizes the AoU agent to start the sized n2-highmem cluster, then the probe runs STEP A (preflight) -> PAUSE -> STEP B (>=3 cells) -> STEP C (shutdown).",
+  "wave": "Wave 1 (m3-02c) — real-cohort cost probe. STEP A/B NOT yet run. Blocked-then-unblocked on Hail-cluster provisioning; the START is HELD until Carter returns (~1hr) to avoid idle billing while away.",
+  "status": "Carter headed home ~2026-06-20 20:30Z, resuming in ~1hr. NOTHING billable running except the $0.15/hr inspection VM (the working in-perimeter terminal — LEAVE it up). All Dataproc clusters STOPPED. The m3-02c probe is prepped and UNBLOCKED pending one action: on return, START the existing HAIL cluster 20260604 (n2-standard-16 x24, 64GB, framework=HAIL, already Workbench-registered) via the Apps-panel Start, override Q-RS2 to cores=1 for 64GB workers, then run STEP 0 -> STEP A count-only -> option-B STOP/review -> STEP B 3-cell probe -> STEP C stop+verify.",
+  "headline": "m3-02c probe is one Apps-panel Start away from running. Two false starts this session were diagnosed + resolved: (1) the AoU agent's first cluster 20260620 (n2-standard-32 x24, 800 vCPU — correct SIZE) had NO Hail (created from the generic 'JupyterLab Spark cluster' app; missing software-framework=HAIL + hailctl-0.2.135 wheel + the HAIL startup-script revision that the cohort clusters carry); (2) the UI machine-type picker exposes NO highmem family. RESOLUTION: start the existing 64GB HAIL cluster 20260604 instead — it sidesteps both the no-Hail and no-highmem problems (Hail baked in, Workbench-registered). 64GB needs cores=1 (vs the cores=2 planned for 128GB). Probing on 64GB HAIL ALSO answers the m3-04 viability question: if 64GB cores=1 runs EUR without catastrophic spill, production can reuse these existing HAIL clusters and we never need to solve 128GB-HAIL creation.",
   "branch": "m3-W2-aou-deltas",
-  "origin_synced": "origin == local HEAD == cb76115 (PUSHED this session; the AoU clone target is current — a fresh git pull gets the split manifest + the gap-C3 bucket bake)",
-  "running_now": "NOTHING. No AoU cluster (3 Dataproc clusters all STOPPED, $0), no Spark/YARN app, no kernel, no NCSU background job. The AoU agent was on a cheap read-only inspection VM ($0.15/hr) — Carter may stop it on the AoU side. A fresh session resumes purely from the docs below; no reattach.",
-  "this_session_work": {
-    "task_1": "260619-qjy — closed the A.3 AF sidecar gap. bm_to_npz.py now reads {rid}.allele_freq.tsv + writes a row-aligned allele_freq key into the .npz (NaN per WR-03; loud ValueError on row-misalignment; loud WARNING + all-NaN key when --allele-freq omitted). Verified aou_ld_panel.py's AF sidecar export + ld_npz_to_rds.R's reader already landed in m3-02b (a17a47a) — only the middle converter was missing. Commits c14c3e8 (RED) + 5ef39d6 (GREEN). Resolved the pending todo. The m3-04 A.3 'LD + AF' precondition is CLOSED.",
-    "task_2": "260619-rqs — regenerated the post-split LD region manifest (Path B). The canonical build_ld_region_manifest.py --bed/--chain inputs are gitignored artifacts cleaned from the tree (forward chain gone, M2 union bed nowhere), so we SPLIT the existing committed manifest instead: added split_existing_manifest() + --split-existing-manifest CLI mode reusing a factored-out _assemble_region_rows() (faithfulness proven byte-identical to build_manifest on the 14 shared geometry columns). Regenerated at --subregion-buffer-mb 10: config/ld_regions.tsv 322->434 rows (16 whole xlarge retired, 128 __sub rows, all buffer_bp=10Mb, 0 whole xlarge left), config/ld_regions_dev.tsv = 12 rows w/ m2_region_00040__sub00/01 AFR+EUR. Commits abf79c3 + 388ea3f.",
-    "task_3": "260619-vcp — closed AOU-2 gap C3. Baked a HARD WORKSPACE_BUCKET override into .planning/notebooks/AOU-2_per_region_ld.ipynb (new cell idx 5, BEFORE the _normalize_bucket read) that hard-assigns gs://rw-migration-aou-rw-476cdac2 (not setdefault) + asserts 'cloned-mybucket' NOT present so a polluted bind HALTS loudly. 14->15 cells, 14 originals byte-identical, notebook NOT executed (VPC-SC). SKILL.md gap-C3 row flipped GAP->BAKED. Commits 88fa55d + c3a3292.",
-    "push": "Pushed twice this session: d4a613d (qjy+rqs, fixed the 32-behind origin the AoU agent caught) then cb76115 (vcp). origin/m3-W2-aou-deltas == cb76115 == local HEAD.",
-    "aou_inspection": "The AoU Workbench agent ran a read-only STEP-0 inspection (cheap VM, no cluster, no cells). All 4 preconditions GREEN on cb76115. It correctly stopped and surfaced the 32-behind origin + gap C3 BEFORE any spend — exactly the discipline the probe plan intends.",
-    "tests": "Full pytest tests/m3 = 205 passed / 0 failed / 30 skipped at session end (qjy +4, rqs +6, vcp +1 over the 194 m3-02b baseline)."
+  "origin_synced": "origin == local HEAD == 520ca68 (all session work pushed: dev-manifest 143+145, quota-ticket, AOU fire brief + n2-standard-32 deviation, STEP-A count helper + tests, STATE blocker checkpoint)",
+  "running_now": "NOTHING billable except the inspection VM ($0.15/hr Standard VM — the working terminal; LEAVE up for the return). All 4 Dataproc clusters STOPPED ($0): 20260604 (HAIL 64GB x24, the one to start), 20260605 (HAIL 64GB x24, identical spare), 20260617 (n2-standard-4 16GB x16, NOT HAIL, do-not-start small repro), 20260620 (n2-standard-32 128GB x24, NO Hail, the agent's wrong-typed one — STOPPED). No Spark/YARN app, no kernel.",
+  "cluster_survey_2026_06_20": {
+    "20260604": {"state": "STOPPED", "master": "n2-standard-16", "worker_type": "n2-standard-16 (64GB)", "workers": 24, "framework": "HAIL", "disposition": "START THIS on return (Hail baked, Workbench-registered, metadata fully verified)"},
+    "20260605": {"state": "STOPPED", "master": "n2-standard-16", "worker_type": "n2-standard-16 (64GB)", "workers": 24, "framework": "HAIL", "disposition": "identical spare to 20260604"},
+    "20260617": {"state": "STOPPED", "master": "n2-standard-16", "worker_type": "n2-standard-4 (16GB)", "workers": 16, "framework": "(none)", "disposition": "DO NOT start — 16GB spills; not HAIL; the small A3 repro"},
+    "20260620": {"state": "STOPPED", "master": "n2-standard-32", "worker_type": "n2-standard-32 (128GB)", "workers": 24, "framework": "(none)", "disposition": "DO NOT start — correct size but NO Hail (generic Spark app). Delete or ignore."}
   },
-  "next_action": "Resume in a NEW session to RUN the m3-02c probe (autonomous:false; COSTS MONEY). The mechanical NCSU entry = /gsd-execute-phase m3 (it records the pre-satisfied quota Tasks 1-2, then PAUSES at Task 3 for the AoU fire, then runs Task 4 cost model + go/no-go). The AoU fire itself: Carter authorizes the AoU agent to START the sized cluster -> the new bucket-pin cell runs first (watch it echo gs://rw-migration-aou-rw-476cdac2, no halt) -> Q-RS2 executor cell -> STEP A preflight count pass (cheap) -> PAUSE for Carter's go -> STEP B (>=3 LD-compute cells: m2_region_00006 AFR whole + m2_region_00040__sub00 AFR + m2_region_00040__sub00 EUR mandatory + HLA region_00145 preflight) under executable cost controls (MAX_WALL_MIN_PER_CELL=90, MAX_PROBE_CREDIT_USD=60, spill/OOM kill) -> data-layer-verify each cell -> STEP C guaranteed shutdown + verification artifact. Hand back 3 artifacts (m3-W2-preflight-counts.tsv, m3-W2-cost-probe.tsv, m3-W2-cluster-shutdown.md); commit + push from the AoU side; then NCSU Task 4 reads them.",
-  "pending_decision_carter_was_mid_making": "At session close Carter was choosing how to authorize the sized-cluster start (AskUserQuestion was interrupted as he went home). The fork: (A) Start + stay present (give the STEP-B go quickly so the ~$25-30/hr cluster idles minimally during the STEP A->B pause); (B) Start + have the agent STOP the cluster after STEP A while Carter reviews the preflight counts, then restart for STEP B (avoids idle billing during review); (C) Hold. This is purely Carter's spend decision — re-offer it next session before any cluster boot.",
-  "aou_agent_brief": "A full self-contained AoU mission brief was delivered IN CHAT this session (not written to a repo file). If a fresh session needs it, regenerate it from the m3-02c PLAN Task 3 + the aou-ld-pipeline SKILL.md, or offer to write it to a repo file (e.g. under the m3 phase dir) so it travels with the clone.",
-  "step0_preconditions_all_green_on_cb76115": [
-    "Branch = m3-W2-aou-deltas",
-    "Commit = cb76115 (origin == local)",
-    "Manifest: grep -c m2_region_00040__sub config/ld_regions.tsv = 18 (>0)",
-    "Bucket gate: AOU-2 now bakes the hard WORKSPACE_BUCKET pin + cloned-mybucket assert at cell idx 5, BEFORE the _normalize_bucket read (gap C3 closed)",
-    "USE_DEV_SUBSET = True (dev-10 subset, NOT the 322-cell production fire)",
-    "A.3 write path uses _write_a3_banded_correlation_bm (NOT hl.ld_matrix(...).write() — invariant #5)",
-    "Q-RS2 executor config present + probe-tuned (cores=2/24g/10g overhead/24g driver; drop to cores=1 if EUR spills)"
+  "decision_locked": "Start 20260604 (NOT 20260605 — 04 is the one whose HAIL provisioning metadata we fully inspected). Keep 24 workers (representative throughput + the 64GB-viability test for m3-04). Start via Apps-panel Start (preserves Workbench registration), NOT now — only when Carter is back and ready to drive STEP 0->A in one window (avoids ~$20/hr idle).",
+  "q_rs2_override_for_64gb": "The committed AOU-2 Cell 0 has cores=2/24g/10g overhead/24g driver (sized for 128GB). On 64GB n2-standard-16 workers that won't fit. Override BEFORE the hail import: PYSPARK_SUBMIT_ARGS='--conf spark.executor.cores=1 --conf spark.executor.memory=40g --conf spark.executor.memoryOverhead=12g --conf spark.driver.memory=24g pyspark-shell'. One ~40g executor/node holds a single EUR block-pair (~14GiB) + overhead within 64GB. NOT yet baked into the notebook — give it to the agent INLINE on return. Print PYSPARK_SUBMIT_ARGS to confirm it bound; watch EUR for spill.",
+  "resume_on_reconnect": [
+    "1. Confirm meter state: all clusters STOPPED except the inspection VM ($0.15/hr). Re-offer Carter the start (it restarts a ~$19-20/hr meter on 24x n2-standard-16).",
+    "2. On Carter's go: START cluster 20260604 via the Apps-panel Start button (NOT gcloud, to keep Workbench registration). Open ITS JupyterLab (not the inspection VM).",
+    "3. Sync the repo ON 20260604: cd ~/coloc_analysis && git pull && git checkout -f && git rev-parse HEAD (expect 520ca68 or later).",
+    "4. STEP 0: run AOU-2 Cell 0 (executor config) BUT override to the 64GB cores=1 PYSPARK_SUBMIT_ARGS above; Cell 1 bucket pin (echoes gs://rw-migration-aou-rw-476cdac2, no halt); Cell 2 imports+regions load (15 rows, USE_DEV_SUBSET=True); Cell 3 load MTs + count_cols (AFR 73122 / EUR 220098). Read each output aloud.",
+    "5. STEP A (count-only): paste the write_preflight_counts cell (in chat / regenerate from aou_ld_panel) -> writes .planning/phases/m3-aou-afr-ld-panel-build/m3-W2-preflight-counts.tsv over all 15 dev cells incl. region_00143 (real MHC) + region_00145__sub00. Commit+push that TSV (explicit path) + report the table; watch whether region_00143 is over_threshold.",
+    "6. Option B: STOP the cluster, $0-idle confirm, Carter reviews counts, gives STEP-B go.",
+    "7. STEP B: restart, fire 3 mandatory cells (m2_region_00006 AFR, m2_region_00040__sub00 AFR, m2_region_00040__sub00 EUR) under controls (MAX_WALL=90min/cell, MAX_CREDIT=$90, spill/OOM kill -> already cores=1 here); WATCH EUR SPILL on 64GB (this is the m3-04 viability signal). Data-layer verify each (gsutil du + read-back). Write m3-W2-cost-probe.tsv.",
+    "8. STEP C: STOP cluster + write m3-W2-cluster-shutdown.md (stop output + $0 idle). Commit+push the 3 artifacts; ping NCSU 'probe-recorded' -> NCSU builds+runs Task 4 (redo_ld_cost_model.py + go/no-go)."
   ],
-  "prep_landmines_for_the_fire": [
-    "WORKSPACE_BUCKET hard pin: NOW BAKED into AOU-2 cell idx 5 (260619-vcp) — no longer a manual step; just confirm the cell echoes the canonical bucket when it runs.",
-    "Still manual on a fresh cluster/clone: git checkout m3-W2-aou-deltas + git pull + git checkout -f (beats the Workbench nbformat filter); symlink ~/coloc_analysis -> the synced repo (a Cell imports from ~/coloc_analysis); os.chdir(~/coloc_analysis) before the per-region loop; set USE_DEV_SUBSET=True.",
-    "The sized cluster must be PROVISIONED in the Workbench UI (n2-highmem-16 master + 24x n2-highmem-16 workers, non-preemptible, us-central1, 'Hail Genomics Analysis' = software-framework=HAIL). wb cluster start only RESUMES an existing stopped cluster at its SAVED size — it will not size a fresh one (and one of the 3 saved clusters is the SMALL A3 repro cluster — do NOT start that for the probe)."
+  "prep_landmines_fixed_or_pending": [
+    "FIXED+pushed: dev manifest counts BOTH region_00143 (real MHC, chr6 14.5-58.5Mb, class=large UNSPLIT 43.9Mb) + region_00145__sub00 (plan's stale 'HLA' ref = chr6 68-170Mb/6q). region_00143 is COUNT-ONLY in STEP A; if over_threshold -> flag for auto-split before m3-04.",
+    "FIXED+pushed: STEP A count-only mechanism (the AOU-2 notebook had none) — count_region_n_var/_preflight_estimates/write_preflight_counts in src/python/aou_ld_panel.py (commit 040002c, 9 TDD tests).",
+    "PENDING (manual, on the started cluster): git pull+checkout -f on 20260604's home; symlink ~/coloc_analysis; os.chdir before the loop; the 64GB cores=1 Q-RS2 override (above); USE_DEV_SUBSET=True.",
+    "DO NOT run AOU-2 Cell 9 (compute loop = billable STEP B) until Carter's STEP-B go; NEVER run Cell 12 (egress — out of scope for m3-02c)."
   ],
   "cohorts": {
-    "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "variants": 20767864, "status": "COMPLETE_VERIFIED, untouched"},
-    "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "variants": 11375140, "status": "COMPLETE_VERIFIED, untouched"},
-    "afr_sens": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "variants": 20817925, "status": "COMPLETE_VERIFIED, untouched"}
+    "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "status": "COMPLETE_VERIFIED, untouched"},
+    "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "status": "COMPLETE_VERIFIED, untouched"},
+    "afr_sens": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "status": "COMPLETE_VERIFIED, untouched"}
   },
   "gates": {
-    "GATE_1_5_cohorts": "COMPLETE",
-    "GATE_0_egress": "RESOLVED (RULED PASS 2026-04-28)",
-    "QUOTA_tasks_1_2": "PRE-SATISFIED — N2_CPUS already 5000 in us-central1 (reference_aou_n2_quota_already_5000); record the 5000 ceiling, do NOT file a ticket",
-    "m3_02c_prep": "COMPLETE — manifest split (rqs), A.3 AF gap (qjy), AOU-2 bucket bake (vcp) all landed + pushed; AoU STEP-0 inspection ALL-GREEN",
-    "CLUSTER_START_authorization": "PENDING — Carter's explicit go (the decision he was mid-making at close)",
-    "STEP_B_billable_cells": "GATED on Carter's go after STEP A preflight review",
+    "QUOTA_tasks_1_2": "CLOSED — N2_CPUS=5000 us-central1, pre-satisfied (m3-W2-quota-ticket.md + m3-W2-quota-grant.md)",
+    "CLUSTER_PROVISIONING": "RESOLVED to start-existing-HAIL (20260604, 64GB) — the highmem picker gap + the no-Hail generic-app gap both sidestepped; START held for Carter's return",
+    "STEP_A_preflight": "NOT RUN — mechanism built (040002c); runs after 20260604 starts",
+    "STEP_B_billable_cells": "NOT RUN — gated on Carter's go after STEP A review",
+    "M3_04_VIABILITY": "OPEN — does 64GB cores=1 run EUR without catastrophic spill? STEP B answers it. If yes, m3-04 reuses existing HAIL clusters; if no, must solve 128GB-HAIL creation (no HAIL highmem exists; UI exposes no HAIL selector).",
     "GATE_3_322cell_production": "stays in m3-04, AFTER the m3-02c go/no-go"
   },
-  "cluster": "All 3 Dataproc clusters STOPPED, $0 (Carter confirmed; wb resource list shows them, none running). wb CLI from NCSU = control-plane only (start/stop/launch + resource list); data-plane VPC-SC-walled (no gsutil/bq) — the probe + all data-layer verification stay in the Workbench notebook. wb cluster stop is the from-NCSU billing-safety lever.",
-  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md (2026-06-20 RESUME HERE block) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST) + the m3-02c PLAN (Task 3 = the AoU fire). Operating manual = aou-ld-pipeline skill.",
+  "cluster": "Start 20260604 via Apps-panel (~$19-20/hr, 24x n2-standard-16). wb CLI from NCSU = control-plane only (start/stop/launch-proxy; NO create — creation is UI-only) + VPC-SC-walled data plane (no gsutil/bq/gcloud-describe from NCSU; all in-perimeter work is agent-side). wb cluster stop is the from-NCSU billing-safety lever.",
+  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md (2026-06-20 Hail-blocker RESUME HERE block) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST) + m3-W2-AOU-FIRE-BRIEF.md (option B; cluster section now superseded toward 20260604 64GB HAIL + cores=1). Operating manual = aou-ld-pipeline skill.",
   "do_not": [
-    "Do NOT start the sized cluster (bills ~$25-30/hr from boot) without Carter's explicit go — re-offer the start/stay vs start/stop-between vs hold decision first.",
-    "Do NOT fire any STEP B LD-compute cell before STEP A preflight is reviewed.",
-    "Do NOT start the SMALL A3 repro cluster for the probe (wrong size).",
+    "Do NOT start cluster 20260620 (no Hail) or 20260617 (16GB, not HAIL).",
+    "Do NOT start 20260604 while Carter is away — only when he's back and ready to drive (avoid idle billing).",
+    "Do NOT use cores=2 on the 64GB cluster — cores=1/40g (won't fit otherwise).",
+    "Do NOT hand-install the Hail wheel on a live cluster (JVM/Spark version-mismatch guardrail).",
+    "Do NOT run AOU-2 Cell 9 (billable compute) before the STEP-B go; NEVER run Cell 12 (egress).",
     "Do NOT git add -A on the GPFS tree — explicit paths only.",
-    "Nothing is running, so there is NO kernel to protect and NO reattach — a fresh session starts clean from the docs."
+    "Do NOT stop the inspection VM (it's the working terminal; $0.15/hr trivial)."
   ]
 }
