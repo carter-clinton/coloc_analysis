@@ -17,6 +17,7 @@ Covers the 5 driver behaviors enumerated in m3-00 plan task 3:
 from __future__ import annotations
 
 import ast
+import inspect
 import sys
 import types
 from pathlib import Path
@@ -2594,9 +2595,9 @@ def test_existing_region_npz_rejects_truncated(tmp_path):
 # hl.ld_matrix(...).write() writes a FUSED, UN-MATERIALIZED BlockMatrixIR. Every BlockMatrixWrite
 # runs INTERPRETED in Hail 0.2.135 (CanLowerEfficiently.scala fails on all of them) -> feeding an
 # un-materialized matmul to the interpreted writer drives a driver-bound ContextRDD.collect ->
-# 60+ min hang on the 36 large/xlarge A.3 regions. Fix = reproduce ld_matrix's internals
-# (row_correlation -> checkpoint -> sparsify_row_intervals band -> write); the checkpoint
-# MATERIALIZES the matmul so the final (still-interpreted) write reads CONCRETE on-disk blocks and
+# 60+ min hang on the 36 large/xlarge A.3 regions. Fix (ORDERING B, m3-02d) = reproduce
+# ld_matrix's internals (row_correlation -> sparsify_row_intervals band -> checkpoint -> write);
+# the checkpoint MATERIALIZES the BANDED matmul so the final (still-interpreted) write reads CONCRETE on-disk blocks and
 # is cheap (adversarial review Finding A — NOT "lowers natively"; the warning still fires).
 # These tests are Hail-free: they cover the pure scratch-URI helper + a static-AST check of the
 # restructured A.3 branch + the repro's wall-clock-budget discriminator. The completion PROOF
@@ -2716,6 +2717,111 @@ def test_dense_footprint_helper_used_by_a3_write_for_observability():
     assert "_dense_footprint_bytes" in called, (
         "WR-02: the A.3 helper must log the dense scratch footprint before the checkpoint"
     )
+
+
+# ----- m3-02d ORDERING B: band-before-checkpoint (CR-01 resolution) -----
+# The per-ancestry buffer (AFR 3 Mb / EUR 5 Mb over a 5 Mb core) makes radius << span
+# for the first time, so ordering B is non-vacuous: its banded scratch is ~7x smaller
+# than ordering A's dense scratch, directly attacking the measured ~0.15-tasks/min A.3
+# write bottleneck. These tests are pure-Python AST (no Hail) and run on NCSU.
+
+
+def test_a3_band_before_checkpoint_ordering():
+    """ORDERING LOCK (m3-02d, CR-01 resolution): the helper must apply the radius band
+    (sparsify_row_intervals) BEFORE the checkpoint, so the materialized scratch is the
+    banded matrix (~GB at radius << span) and NOT the dense O(n_var^2) correlation. A
+    regression to band-AFTER-checkpoint (ordering A) re-opens CR-01 / the write bottleneck.
+    Pure-Python (no Hail)."""
+    from aou_ld_panel import _write_a3_banded_correlation_bm
+    src = inspect.getsource(_write_a3_banded_correlation_bm)
+    tree = ast.parse(src)
+    fn = next(n for n in ast.walk(tree)
+              if isinstance(n, ast.FunctionDef) and n.name == "_write_a3_banded_correlation_bm")
+    sparsify_lines = [n.lineno for n in ast.walk(fn)
+                      if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                      and n.func.attr == "sparsify_row_intervals"]
+    checkpoint_lines = [n.lineno for n in ast.walk(fn)
+                        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                        and n.func.attr == "checkpoint"]
+    assert sparsify_lines, "helper must band via sparsify_row_intervals"
+    assert checkpoint_lines, "helper must checkpoint the banded BM"
+    assert min(sparsify_lines) < min(checkpoint_lines), (
+        "ORDERING B regression: sparsify_row_intervals (band) must come BEFORE checkpoint "
+        "(materialize) — band-after-checkpoint is ordering A and re-opens CR-01."
+    )
+
+
+def test_a3_keeps_blocks_only_false():
+    """Q4: the sparsify_row_intervals call keeps blocks_only=False (exact in-band r;
+    numerics byte-identical to ld_matrix). Ordering B does NOT change the band semantics."""
+    from aou_ld_panel import _write_a3_banded_correlation_bm
+    src = inspect.getsource(_write_a3_banded_correlation_bm)
+    tree = ast.parse(src)
+    fn = next(n for n in ast.walk(tree)
+              if isinstance(n, ast.FunctionDef) and n.name == "_write_a3_banded_correlation_bm")
+    sparsify_calls = [n for n in ast.walk(fn)
+                      if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                      and n.func.attr == "sparsify_row_intervals"]
+    assert sparsify_calls
+    for call in sparsify_calls:
+        kw = {k.arg: k.value for k in call.keywords}
+        assert "blocks_only" in kw
+        assert isinstance(kw["blocks_only"], ast.Constant)
+        assert kw["blocks_only"].value is False, "blocks_only must stay False (exact in-band r)"
+
+
+def test_a3_doc_flip_to_ordering_b():
+    """STATIC: the A.3 docstrings/comments flipped from 'ordering A / CR-01 open' to
+    ordering B / band-then-checkpoint / CR-01 resolution."""
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    assert any(tok in src for tok in (
+        "ordering B", "band-before-checkpoint", "band-then-checkpoint",
+        "CR-01 resolution", "CR-01 resolved",
+    ))
+    assert "lower_triangular" in src  # the npz flag contract is untouched
+    # the dense-footprint helper is relabeled as the UN-BANDED UPPER BOUND
+    assert "un-banded upper bound" in src.lower() or "upper bound" in src.lower()
+
+
+def test_lower_triangular_flag_contract_preserved():
+    """The ordering-B edit touches the BlockMatrix write path, NOT the .npz triangle
+    flag. _save_npz still writes lower_triangular= (>=2 references in the module:
+    the param + the saved array) so the CR-01 doubling / BR-01 halving regression
+    guard stays valid (feedback_npz_triangle_flag_contract)."""
+    src = (PROJECT_ROOT / "src" / "python" / "aou_ld_panel.py").read_text()
+    assert src.count("lower_triangular") >= 2
+    # _write_a3_banded_correlation_bm must NOT reference lower_triangular (it writes a
+    # .bm BlockMatrix, not a triangle-flagged .npz).
+    tree = ast.parse(src)
+    fn = next((n for n in ast.walk(tree)
+               if isinstance(n, ast.FunctionDef)
+               and n.name == "_write_a3_banded_correlation_bm"), None)
+    assert fn is not None
+    fn_src = ast.get_source_segment(src, fn)
+    assert "lower_triangular" not in fn_src, (
+        "the ordering-B reorder must not touch the npz triangle flag"
+    )
+
+
+def test_over_threshold_keys_on_write_and_egress_not_nvar():
+    """m3-02d: the re-derived over_threshold predicate flags a cell on EITHER
+    est_block_count > WRITE_BLOCK_THRESHOLD OR est_output_gib > OUTPUT_GIB_THRESHOLD,
+    NOT on n_var alone (the retired 75k-var MEMORY proxy). A cell BELOW 75k var but
+    with a banded block-count over the write ceiling is flagged — the memory proxy
+    would have MISSED it. The probe proved no spill, so memory is not the constraint;
+    the A.3 write + egress are."""
+    import aou_ld_panel as alp
+    # n_var below the retired 75k proxy, but a full-band 30 Mb window -> banded block
+    # count over the write ceiling (~162 > 150). The 75k-var rule would have MISSED it.
+    est = alp._preflight_estimates(70_000, 30.0, "large", 30_000_000)
+    assert est["est_block_count"] > alp.WRITE_BLOCK_THRESHOLD
+    assert est["over_threshold"] is True
+    # the locked AFR core5/buf3 cell (~80k var, ~7 GiB, ~109 banded blocks) is UNDER
+    # both ceilings -> not flagged (the buffer-floor fix).
+    afr = alp._preflight_estimates(80_000, 11.0, "large", 3_000_000)
+    assert afr["est_block_count"] <= alp.WRITE_BLOCK_THRESHOLD
+    assert afr["est_output_gib"] <= alp.OUTPUT_GIB_THRESHOLD
+    assert afr["over_threshold"] is False
 
 
 def _load_a3_repro_module():

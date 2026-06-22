@@ -31,35 +31,68 @@ def test_routing_by_span():
 
 
 def test_est_block_count_formula():
-    # ceil(n_var/4096)**2 / 2  (PLAN Task 3 STEP A definition)
+    # m3-02d: BANDED in-band block count = ceil(n_var/4096)**2 / 2 * band_frac,
+    # band_frac = min(2*buffer / window_span, 1). buffer (radius_bp) >= span/2 -> full.
     n_var = 122_678
+    span_mb = 17.7
+    radius_bp = 18_197_067  # buffer >= span/2 -> band_frac == 1
     exp = (math.ceil(n_var / 4096) ** 2) / 2.0
-    got = ld._preflight_estimates(n_var, 17.7, "medium", 18_197_067)["est_block_count"]
+    got = ld._preflight_estimates(n_var, span_mb, "medium", radius_bp)["est_block_count"]
     assert got == exp
 
 
-def test_over_threshold_boundary():
-    # n_var > 75_000 is the trigger; exactly 75_000 is NOT over
-    assert ld._preflight_estimates(75_000, 10.0, "medium", 10_000_000)["over_threshold"] is False
-    assert ld._preflight_estimates(75_001, 10.0, "medium", 10_000_000)["over_threshold"] is True
+def test_est_block_count_banded_when_buffer_narrow():
+    # m3-02d: a narrow per-ancestry buffer (radius_bp = buffer_bp) << span/2 prunes
+    # out-of-band blocks: est_block_count = dense * (2*buffer/span).
+    n_var = 80_000
+    span_mb = 11.0           # AFR core5/buf3 window
+    radius_bp = 3_000_000    # AFR buffer
+    band_frac = (2.0 * radius_bp) / (span_mb * 1e6)
+    dense = (math.ceil(n_var / 4096) ** 2) / 2.0
+    got = ld._preflight_estimates(n_var, span_mb, "large", radius_bp)["est_block_count"]
+    assert got == pytest.approx(dense * band_frac)
+    assert band_frac < 1.0
 
 
-def test_est_output_gib_full_triangle_when_radius_ge_span():
-    # radius_bp >= span_bp -> band_frac == 1.0 -> full upper-triangle nnz
+def test_over_threshold_keys_on_write_and_egress_not_nvar():
+    # m3-02d RE-DERIVED: over_threshold trips on EITHER est_block_count >
+    # WRITE_BLOCK_THRESHOLD OR est_output_gib > OUTPUT_GIB_THRESHOLD, NOT n_var alone.
+    # (a) a cell BELOW the retired 75k-var memory proxy but with a banded block-count
+    # above the write ceiling is still flagged (the 75k rule would have MISSED it).
+    n_var = 70_000  # < 75_000 (would be "safe" under the retired proxy)
+    span_mb = 30.0
+    radius_bp = 30_000_000  # buffer >= span/2 -> full band -> ~162 banded blocks > 150
+    est = ld._preflight_estimates(n_var, span_mb, "large", radius_bp)
+    assert est["est_block_count"] > ld.WRITE_BLOCK_THRESHOLD
+    assert est["over_threshold"] is True
+    # (b) a locked AFR core5/buf3 cell (~80k var, banded ~7 GiB, ~109 banded blocks)
+    # is UNDER both ceilings -> over_threshold False (the buffer-floor fix landed).
+    afr = ld._preflight_estimates(80_000, 11.0, "large", 3_000_000)
+    assert afr["est_block_count"] <= ld.WRITE_BLOCK_THRESHOLD
+    assert afr["est_output_gib"] <= ld.OUTPUT_GIB_THRESHOLD
+    assert afr["over_threshold"] is False
+    # (c) a small-window cell whose banded OUTPUT GiB exceeds the egress ceiling trips it.
+    big = ld._preflight_estimates(120_000, 11.0, "large", 3_000_000)
+    assert big["est_output_gib"] > ld.OUTPUT_GIB_THRESHOLD
+    assert big["over_threshold"] is True
+
+
+def test_est_output_gib_full_triangle_when_buffer_ge_half_span():
+    # buffer (radius_bp) >= span/2 -> band_frac == 1.0 -> full upper-triangle nnz
     n_var = 50_000
     span_mb = 17.7
-    radius_bp = 18_197_067  # >= span
+    radius_bp = 18_197_067  # >= span/2
     full = 0.5 * (n_var ** 2) * 4.0 / 1e9
     got = ld._preflight_estimates(n_var, span_mb, "medium", radius_bp)["est_output_gib"]
     assert got == pytest.approx(full)
 
 
-def test_est_output_gib_banded_fraction_when_radius_lt_span():
-    # radius_bp < span_bp -> est scales by band_frac = radius/span
+def test_est_output_gib_banded_fraction_when_buffer_narrow():
+    # m3-02d: band_frac = 2*buffer/span; a narrow buffer prunes off-band entries.
     n_var = 50_000
     span_mb = 20.0
-    radius_bp = 10_000_000  # half the span
-    band_frac = radius_bp / (span_mb * 1e6)
+    radius_bp = 5_000_000  # 2*5/20 = 0.5 band fraction
+    band_frac = (2.0 * radius_bp) / (span_mb * 1e6)
     exp = 0.5 * (n_var ** 2) * band_frac * 4.0 / 1e9
     got = ld._preflight_estimates(n_var, span_mb, "medium", radius_bp)["est_output_gib"]
     assert got == pytest.approx(exp)

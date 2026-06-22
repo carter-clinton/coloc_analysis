@@ -374,7 +374,30 @@ _MIN_REGION_NPZ_BYTES = 256
 # the filter+count+route prefix of compute_region_ld WITHOUT invoking the
 # matmul/write. Reusable for the m3-04 production preflight.
 _LD_BLOCK_SIZE = 4096                       # Hail BlockMatrix default block edge
-_PREFLIGHT_OVER_THRESHOLD_NVAR = 75_000     # m3-02c: cells above this auto-split
+_PREFLIGHT_OVER_THRESHOLD_NVAR = 75_000     # m3-02c (RETIRED memory proxy; see below)
+
+# m3-02d RE-DERIVED over_threshold criterion (research Q2). The prior 75k-var rule
+# was a MEMORY proxy; the cost probe proved the A.3 cell ran the entire matmul with
+# ZERO spill — memory is NOT the binding constraint. The REAL binding constraints are
+# (a) the A.3 BlockMatrix WRITE throughput (block-count bound) and (b) the per-cell
+# EGRESS output GiB. So over_threshold now keys on the BANDED write-block count AND
+# the per-cell banded output GiB, NOT on n_var alone.
+#
+# WRITE_BLOCK_THRESHOLD derivation: the probe measured ~0.15 dense tasks/min on the
+# 64 GB cluster; ordering B shrinks the materialized scratch ~7x at radius << span, so
+# the banded write rate is ~1 block/min order-of-magnitude. A per-cell wall budget of
+# ~90 min (the re-probe MAX_WALL_MIN_PER_CELL) over the banded block count puts the
+# tractable ceiling at ~150 banded blocks. The LOCKED per-ancestry cells sit comfortably
+# under it: AFR core5/buf3 ~80k var = ~109 banded blocks; EUR core5/buf5 ~60k var = ~75.
+# A cell that would still be write-intractable (e.g. a ~70k-var FULL-band 30 Mb window =
+# ~162 banded blocks, or any larger-window cell) trips it — so the predicate flags a cell
+# that is SMALL in n_var but LARGE in banded block-count, which the retired n_var proxy
+# would have missed.
+WRITE_BLOCK_THRESHOLD = 150.0
+# OUTPUT_GIB_THRESHOLD: single-digit-GiB egress-tractable target. The locked per-ancestry
+# buffer lands AFR cells at ~3.5 GiB / EUR at ~2.4 GiB banded output; 10 GiB is the
+# conservative ceiling above which a cell needs finer splitting before the 322-cell fire.
+OUTPUT_GIB_THRESHOLD = 10.0
 
 PREFLIGHT_COUNT_COLUMNS = [
     "region_id", "ancestry", "region_class", "window_span_mb", "n_var",
@@ -387,26 +410,43 @@ def _preflight_estimates(n_var: int, span_mb: float, region_class: "str | None",
     """Pure cost-sizing estimates for one preflight cell (no Hail).
 
     - ``routed_path``: the REAL :func:`_route_region_path` on the WINDOW span.
-    - ``est_block_count``: ``ceil(n_var/4096)**2 / 2`` (upper-triangle block
-      count; m3-02c PLAN Task 3 STEP A definition).
-    - ``est_output_gib``: banded non-zero entries * 4 bytes / 1e9, where the
-      band fraction = ``min(radius_bp/span_bp, 1)`` (within-radius pairs;
-      ``radius_bp >= span`` => full upper triangle).
-    - ``over_threshold``: ``n_var > 75_000`` (auto-split / finer-split trigger).
+    - ``band_frac``: ``min(2*buffer_bp / window_span_bp, 1)`` — the per-ancestry
+      banded fraction of the upper triangle (the compute window is core +/- buffer,
+      so the in-band reach is ~2*buffer over the window span; ``radius_bp`` is the
+      per-row buffer_bp carried by the manifest). ``buffer >= span/2`` => full band.
+    - ``est_block_count``: the BANDED in-band block count =
+      ``(ceil(n_var/4096))**2 / 2 * band_frac`` (m3-02d re-derivation; the prior
+      dense ``ceil(n_var/4096)**2/2`` over-counted out-of-band blocks ordering B
+      prunes).
+    - ``est_output_gib``: ``0.5 * n_var^2 * band_frac * 4 bytes / 1e9`` (banded
+      non-zero entries).
+    - ``over_threshold``: m3-02d RE-DERIVED — ``(est_block_count >
+      WRITE_BLOCK_THRESHOLD) OR (est_output_gib > OUTPUT_GIB_THRESHOLD)``, keyed on
+      the REAL binding constraints (A.3 write block-count + per-cell egress GiB),
+      NOT the retired 75k-var MEMORY proxy (the probe proved no spill — memory is
+      not the constraint; the write + egress are). A cell that is small in n_var but
+      large in banded block-count is still flagged.
     """
     import math
     routed_path = _route_region_path(region_class, span_mb)
-    n_blocks_1d = math.ceil(n_var / _LD_BLOCK_SIZE) if n_var > 0 else 0
-    est_block_count = (n_blocks_1d ** 2) / 2.0
     span_bp = span_mb * 1_000_000
-    band_frac = min(radius_bp / span_bp, 1.0) if span_bp > 0 else 1.0
+    # band_frac: the in-band reach is ~2*buffer (each side) over the window span.
+    # radius_bp carries the per-ancestry buffer_bp from the manifest row.
+    band_frac = min((2.0 * radius_bp) / span_bp, 1.0) if span_bp > 0 else 1.0
+    n_blocks_1d = math.ceil(n_var / _LD_BLOCK_SIZE) if n_var > 0 else 0
+    dense_block_count = (n_blocks_1d ** 2) / 2.0
+    est_block_count = dense_block_count * band_frac
     banded_nnz = 0.5 * (n_var ** 2) * band_frac
     est_output_gib = banded_nnz * 4.0 / 1e9
+    over_threshold = bool(
+        est_block_count > WRITE_BLOCK_THRESHOLD
+        or est_output_gib > OUTPUT_GIB_THRESHOLD
+    )
     return {
         "routed_path": routed_path,
         "est_block_count": est_block_count,
         "est_output_gib": est_output_gib,
-        "over_threshold": bool(n_var > _PREFLIGHT_OVER_THRESHOLD_NVAR),
+        "over_threshold": over_threshold,
     }
 
 
@@ -2343,7 +2383,8 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     # IN-01 (m3-W2 A.3 review): the lazy `hl.ld_matrix(...)` IR is consumed ONLY by the
     # A.1/A.2 branches (.to_numpy() / .sparsify_triangle().to_numpy()). The A.3 branch no
     # longer touches it — it rebuilds ld_matrix's internals via
-    # _write_a3_banded_correlation_bm (row_correlation -> checkpoint -> band -> write) to
+    # _write_a3_banded_correlation_bm (row_correlation -> band -> checkpoint -> write,
+    # ORDERING B / CR-01 resolution) to
     # dodge the fused-IR lowering hang. Constructing ld_bm here for an A.3 region is harmless
     # (BlockMatrix construction is lazy; no compute) but confusing, so we route FIRST and only
     # build ld_bm for A.1/A.2. A.1/A.2 behavior is byte-identical (same args, same object).
@@ -2442,8 +2483,9 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
             # m3-W2 A.3-lowering fix: do NOT write the fused hl.ld_matrix IR directly (its
             # input is an un-materialized matmul that the interpreted BlockMatrixWrite drives
             # through a driver-bound ContextRDD.collect -> 60+ min hang). Instead reproduce
-            # ld_matrix's internals (row_correlation -> checkpoint -> sparsify_row_intervals
-            # banding -> write); the checkpoint materializes the matmul so the final
+            # ld_matrix's internals (row_correlation -> sparsify_row_intervals banding ->
+            # checkpoint -> write; ORDERING B, CR-01 resolution); the checkpoint materializes
+            # the BANDED matmul so the final
             # (still-interpreted) write reads CONCRETE blocks and is cheap (Finding A — NOT
             # "lowers natively"; the warning still fires). Numerically identical (same Pearson
             # r, same bp-radius band). See
@@ -2571,23 +2613,24 @@ def _assert_blockmatrix_written(uri: str, n_var: int, region_id: str) -> None:
         )
 
 
-# m3-W2 A.3 review WR-02: soft guard threshold. If the projected DENSE correlation
-# scratch (n_var^2 x 4 bytes) exceeds this, the run logs a loud WARNING so the largest
-# regions surface for review rather than silently writing hundreds of GB / TBs to scratch.
-# This is observability only — it does NOT change the (ordering A) default behavior. The
-# real ordering decision (A vs B) is gated on the cluster repro (see the debug session /
-# WAVE-2-GATE-READINESS GATE-3 block + CR-01).
+# m3-W2 A.3 review WR-02: soft guard threshold on the UN-BANDED UPPER BOUND. If the dense
+# correlation footprint (n_var^2 x 4 bytes) exceeds this, the run logs a NOTE so the largest
+# regions surface for review. Under ordering B (m3-02d, CR-01 resolution) the materialized
+# scratch is the radius-BANDED subset (~GB at radius << span), so this is the upper bound, not
+# the actual scratch; for radius ~ span it is tight. Observability only — the ordering-B
+# default is locked (see the debug session / WAVE-2-GATE-READINESS GATE-3 block + CR-01).
 A3_DENSE_SCRATCH_WARN_BYTES = 300 * 1024 ** 3  # 300 GiB
 
 
 def _dense_footprint_bytes(n_var: int) -> int:
     """Bytes a FULL DENSE n_var x n_var float32 correlation matrix would occupy.
 
-    This is the footprint of ordering A's checkpointed scratch (CR-01): the current
-    A.3 path checkpoints the UN-banded ``hl.row_correlation(...)`` result, so the scratch
-    is the complete O(n_var^2) dense matrix (4 bytes/float32 entry), NOT the radius-banded
-    matrix. Used for the WR-02 observability log + the scratch-size extrapolation in
-    scripts/a3_blockmatrix_lowering_repro.py --report-scratch-size.
+    This is the UN-BANDED UPPER BOUND on the A.3 checkpointed scratch. Under ordering B
+    (m3-02d, CR-01 resolution) the A.3 path checkpoints the radius-BANDED matrix, so the
+    actual scratch is <= this dense bound (O(n_var * band_width) ~ GB at radius << span);
+    for the very largest regions (radius ~ span) the band covers most of the row so banded
+    ~ dense and this bound is tight. Used for the WR-02 observability log + the scratch-size
+    extrapolation in scripts/a3_blockmatrix_lowering_repro.py --report-scratch-size.
 
     Pure-Python (no Hail / numpy) so it is unit-testable on the NCSU HPC node.
     """
@@ -2609,11 +2652,13 @@ def _a3_scratch_uri(bm_uri: str) -> str:
     matmul, the interpreted writer drives the WHOLE matmul through a single driver-side
     ``ContextRDD.collect`` (BlockMatrix.scala:978) -> hangs 60+ min on a large region.
 
-    The fix materializes the (un-banded) correlation BlockMatrix to a scratch path FIRST
-    (the ``checkpoint`` write is ALSO interpreted, but it writes a CONCRETE matrix once), then
-    reads it back, applies the radius band, and writes the final ``.bm``. That final write is
-    STILL interpreted (the warning still fires) — but it is now CHEAP because its inputs are
-    concrete on-disk blocks, not an un-materialized matmul forced through the driver collect.
+    The fix (ORDERING B, m3-02d, CR-01 resolution) applies the radius band to the LAZY
+    correlation FIRST, then materializes the BANDED matrix to a scratch path via ``checkpoint``
+    (the checkpoint write is ALSO interpreted, but it writes a CONCRETE banded matrix once —
+    ~GB at radius << span, not the dense O(n_var^2)), then writes the final ``.bm`` from the
+    concrete blocks. That final write is STILL interpreted (the warning still fires) — but it
+    is now CHEAP because its inputs are concrete on-disk blocks, not an un-materialized matmul
+    forced through the driver collect.
     This helper builds the scratch path: ``{bm_uri}`` ("…/bm/{rid}.bm") -> "…/bm/{rid}.corr_scratch.bm".
 
     The scratch path is path-isolated from the final ``.bm`` (distinct suffix), so a
@@ -2635,8 +2680,22 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
     Numerically identical to ``hl.ld_matrix(mt_r.GT.n_alt_alleles(), mt_r.locus,
     radius=radius_bp).write(bm_uri)`` — it reproduces ld_matrix's OWN documented internals
     (``row_correlation`` of standardized genotypes, then ``sparsify_row_intervals`` banded
-    by ``locus_windows``) but inserts a ``checkpoint`` between the correlation and the
-    sparsify+write.
+    by ``locus_windows``) but inserts a ``checkpoint`` between the BANDING and the final
+    write (ORDERING B: band-then-checkpoint).
+
+    ORDERING (m3-02d, CR-01 resolution — the per-ancestry buffer now makes
+    radius << span for the FIRST time, so ordering B is non-vacuous): the radius
+    band (``sparsify_row_intervals``) is applied to the LAZY correlation BEFORE the
+    checkpoint, so the checkpoint MATERIALIZES the radius-BANDED matrix
+    (``O(n_var * band_width)`` ~ GB at radius << span) and NOT the full dense
+    ``O(n_var^2)`` correlation scratch (the measured ~0.15-tasks/min A.3 write
+    bottleneck under the prior ordering A). This is the Pan-UKBB production pattern
+    (atgu/ukbb_pan_ancestry compute_ld_matrix.py: matmul -> sparsify_row_intervals
+    -> sparsify_triangle -> checkpoint). ``blocks_only=False`` is preserved (exact
+    in-band r; numerics byte-identical to ld_matrix). The m3-W2 cluster repro
+    showed ordering B COMPLETES within budget (A 928.0 s / B 863.5 s at 130k var,
+    hang-free). ``test_a3_band_before_checkpoint_ordering`` locks the order in so a
+    future edit cannot silently revert to ordering A's dense scratch.
 
     MECHANISM (adversarial review, Finding A — NOT "lowers natively"):
       Every ``BlockMatrixWrite`` is INTERPRETED in Hail 0.2.135 — ``CanLowerEfficiently.scala``
@@ -2671,12 +2730,12 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
     import hail as hl
 
     scratch_uri = _a3_scratch_uri(bm_uri)
-    # WR-02 (m3-W2 A.3 review): surface the scratch cost BEFORE the checkpoint. The current
-    # ordering (A) checkpoints the UN-banded correlation, so the scratch is the FULL DENSE
-    # n_var x n_var float32 matrix (CR-01), NOT the radius-banded one. Log n_var + the dense
-    # footprint so production runs make the scratch cost visible; loud WARN past the soft
-    # threshold so the biggest regions surface for review. Pure logging — no behavior change
-    # to the default ordering (the A-vs-B ordering decision is gated on the cluster repro).
+    # WR-02 (m3-W2 A.3 review): surface the scratch cost. Under ORDERING B (m3-02d) the
+    # checkpoint holds the radius-BANDED matrix, so the actual scratch is <= the dense upper
+    # bound below (O(n_var * band_width), ~GB at radius << span). _dense_footprint_bytes is
+    # logged as the UN-BANDED UPPER BOUND for continuity with --report-scratch-size; for the
+    # very largest regions (radius ~ span) the band covers most of the row so banded ~ dense
+    # and the cluster scratch-capacity check still governs GATE-3.
     if n_var is None:
         try:
             n_var = mt_r.count_rows()
@@ -2685,34 +2744,37 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
     if n_var is not None:
         dense_bytes = _dense_footprint_bytes(n_var)
         dense_gib = dense_bytes / 1024 ** 3
-        print(f"[compute_region_ld] A.3 scratch (ordering A, CR-01): n_var={n_var:,} -> "
-              f"checkpointing the FULL DENSE correlation = {dense_gib:,.1f} GiB float32 "
-              f"({dense_bytes:,} bytes) to {scratch_uri}. The radius band is applied AFTER "
-              f"this checkpoint, so the scratch is dense (O(n_var^2)), not banded.")
+        print(f"[compute_region_ld] A.3 scratch (ordering B, banded checkpoint): n_var={n_var:,}"
+              f" -> checkpointing the RADIUS-BANDED correlation (actual <= the un-banded upper "
+              f"bound {dense_gib:,.1f} GiB float32 = {dense_bytes:,} bytes) to {scratch_uri}. "
+              f"The band is applied BEFORE this checkpoint (CR-01 resolution), so the scratch is "
+              f"banded (O(n_var * band_width)), not dense.")
         if dense_bytes > A3_DENSE_SCRATCH_WARN_BYTES:
-            print(f"[compute_region_ld] WARNING A.3 dense scratch {dense_gib:,.1f} GiB "
+            print(f"[compute_region_ld] NOTE A.3 un-banded upper bound {dense_gib:,.1f} GiB "
                   f"exceeds the {A3_DENSE_SCRATCH_WARN_BYTES / 1024 ** 3:,.0f} GiB soft "
-                  f"threshold (m3-W2 WR-02/CR-01). For the largest production regions this "
-                  f"can reach ~2 TB. GATE-3 production is BLOCKED until the cluster ordering "
-                  f"experiment picks an ordering that COMPLETES within budget (NOT the lowering "
-                  f"warning — that fires on all writes) and whose worst-case scratch fits cluster "
-                  f"capacity; ordering B (band-then-checkpoint, Pan-UKBB) is favored. "
+                  f"threshold (m3-W2 WR-02). Under ordering B the materialized scratch is the "
+                  f"BANDED subset (typically ~GB at radius << span); for the very largest "
+                  f"regions the band still covers most of the span, so confirm the banded "
+                  f"footprint fits cluster scratch capacity before GATE-3 "
+                  f"(run scripts/a3_blockmatrix_lowering_repro.py --report-scratch-size). "
                   f"See WAVE-2-GATE-READINESS.md / debug session.")
-    # 1. Standardized Pearson-r correlation matrix (ld_matrix's own first step).
+    # 1. Standardized Pearson-r correlation matrix (ld_matrix's own first step) — LAZY.
     corr_bm = hl.row_correlation(mt_r.GT.n_alt_alleles())
-    # 2. MATERIALIZE the matmul to concrete on-disk blocks. This checkpoint is ITSELF an
-    #    interpreted BlockMatrixWrite (the lowering warning fires here too — Finding A), but it
-    #    writes the dense matrix ONCE so the final write below reads CONCRETE blocks rather than
-    #    driving an un-materialized matmul through the driver-side ContextRDD.collect that hung.
-    corr_bm = corr_bm.checkpoint(scratch_uri, overwrite=True)
-    # 3. bp radius -> row-index band (identical mapping to ld_matrix).
+    # 2. bp radius -> row-index band (identical mapping to ld_matrix).
     starts, stops = hl.linalg.utils.locus_windows(mt_r.locus, radius=radius_bp)
-    # 4. Apply the EXACT same band as ld_matrix (blocks_only=False = exact in-band r values).
+    # 3. ORDERING B: apply the EXACT same band as ld_matrix to the LAZY correlation FIRST
+    #    (blocks_only=False = exact in-band r values; prunes fully out-of-band blocks).
     banded = corr_bm.sparsify_row_intervals(
         starts=starts, stops=stops, blocks_only=False,
     )
+    # 4. MATERIALIZE the BANDED matrix to scratch (CR-01: banded ~GB at radius << span, not
+    #    dense). This checkpoint is ITSELF an interpreted BlockMatrixWrite (warning fires) but
+    #    it is bounded by the BANDED block count and was shown to complete within budget by the
+    #    cluster repro. The final write below then reads CONCRETE blocks instead of driving an
+    #    un-materialized matmul through the driver ContextRDD.collect that hung under ordering A.
+    banded = banded.checkpoint(scratch_uri, overwrite=True)
     # 5. Final write is STILL interpreted (warning fires) but CHEAP: its input is the concrete
-    #    checkpointed matrix, not the un-materialized matmul. No driver-bound full collect.
+    #    checkpointed banded matrix, not the un-materialized matmul. No driver-bound full collect.
     banded.write(bm_uri, overwrite=True, stage_locally=stage_locally)
     # 6. Best-effort scratch cleanup (survival is harmless: overwrite=True on any re-fire).
     try:
