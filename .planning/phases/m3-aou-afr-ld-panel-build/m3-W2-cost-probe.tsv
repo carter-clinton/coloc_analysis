@@ -1,0 +1,2 @@
+region_id	ancestry	region_class	n_var	block_count	stage4_wall_min	end_to_end_wall_min	blocks_per_min	peak_executor_mem_gib	any_spill	cluster_vcpu	n_workers	cluster_hours	status
+m2_region_00040__sub00	EUR	medium	78730	200	16	56	NA	NA	False	384	24	23.3	INTERRUPTED_write_bound
