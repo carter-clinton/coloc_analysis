@@ -98,6 +98,39 @@ MANIFEST_COLUMNS = [
 ]
 
 
+def _parse_buffer_by_ancestry(spec: "str | None") -> "dict[str, float] | None":
+    """Parse a ``ANC:MB,ANC:MB`` per-ancestry buffer spec into ``{anc: mb_float}``.
+
+    Returns None for an empty/None spec (the global single-knob path stays in
+    effect). The locked M3 spec is ``"AFR:3,EUR:5"``. The values are CLI inputs,
+    NOT hardcoded constants — this just parses them.
+    """
+    if spec is None:
+        return None
+    spec = spec.strip()
+    if not spec:
+        return None
+    out: dict[str, float] = {}
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if ":" not in part:
+            raise ValueError(
+                f"--subregion-buffer-mb-by-ancestry entry {part!r} is not ANC:MB"
+            )
+        anc, mb = part.split(":", 1)
+        anc = anc.strip()
+        try:
+            out[anc] = float(mb.strip())
+        except ValueError as e:
+            raise ValueError(
+                f"--subregion-buffer-mb-by-ancestry buffer for {anc!r} is not a "
+                f"number: {mb!r}"
+            ) from e
+    return out or None
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--bed", required=False, default=None, type=Path,
@@ -135,8 +168,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         "min(core_span+500kb, 50Mb). The Pan-UKBB anchor bands at 10 Mb; "
                         "the m3-02c cost probe measures this buffer's real cost and the "
                         "narrow-to-10Mb lever is the YELLOW disposition. DO NOT silently "
-                        "keep 50 Mb.")
+                        "keep 50 Mb. This is the GLOBAL (single, all-ancestry) knob; for "
+                        "an ancestry-specific buffer use --subregion-buffer-mb-by-ancestry.")
+    p.add_argument("--subregion-buffer-mb-by-ancestry",
+                   dest="subregion_buffer_mb_by_ancestry", type=str, default=None,
+                   help="PER-ANCESTRY banding buffer as a comma-separated ANC:MB mapping "
+                        "(e.g. 'AFR:3,EUR:5'). When given, it OVERRIDES --subregion-buffer-mb "
+                        "for the named ancestries; an unnamed ancestry falls back to "
+                        "--subregion-buffer-mb (or the region radius if neither is given). "
+                        "Each ancestry's compute window = core +/- ITS buffer, so an AFR "
+                        "__sub row and the matching EUR __sub row carry DIFFERENT "
+                        "window_start/window_end/buffer_bp while the half-open CORES (which "
+                        "are buffer-independent) stay identical across ancestries. "
+                        "The LOCKED M3 value (Carter 2026-06-22, per-ancestry LD-decay scale) "
+                        "is 'AFR:3,EUR:5' with --max-subregion-span-mb 5. These 3/5 numbers "
+                        "are CLI parameters threaded through the build, NOT hardcoded library "
+                        "constants.")
     args = p.parse_args(argv)
+    # Parse the per-ancestry buffer mapping into {ancestry: buffer_mb_float}.
+    args.subregion_buffer_mb_by_ancestry = _parse_buffer_by_ancestry(
+        args.subregion_buffer_mb_by_ancestry
+    )
     # XOR: split-existing mode vs. bed/chain mode. Enforce mutual exclusion +
     # the required-inputs-present check via argparse-native p.error().
     if args.split_existing_manifest is not None:
@@ -451,6 +503,7 @@ def _assemble_region_rows(
     split_set: set,
     core_span_bp: int,
     buffer_override_bp: "int | None",
+    buffer_override_bp_by_ancestry: "dict[str, int] | None" = None,
 ) -> tuple[list[dict], list[dict]]:
     """Assemble (manifest_rows, projection_rows) for ONE successfully-resolved
     GRCh38 region — the SHARED single-source-of-geometry helper called by BOTH
@@ -470,36 +523,62 @@ def _assemble_region_rows(
     projection_rows: list[dict] = []
 
     if region_class in split_set:
-        # SPLIT branch: overlapping-window sub-regions. buffer_bp = override if
-        # given, else the parent region radius (the band knob).
-        buffer_bp = buffer_override_bp if buffer_override_bp is not None else radius_bp
-        subs = split_region_overlapping(start_b38, end_b38, core_span_bp, buffer_bp)
-        n_sub = len(subs)
+        # SPLIT branch: overlapping-window sub-regions. The banding buffer is
+        # resolved PER ANCESTRY (m3-02d): an explicit per-ancestry override wins,
+        # else the global scalar override, else the parent region radius (the band
+        # knob). Each ancestry's compute WINDOW = core +/- ITS buffer, so an AFR
+        # __sub row and the matching EUR __sub row may carry DIFFERENT
+        # window_start/window_end/buffer_bp. The half-open CORES are
+        # buffer-INDEPENDENT (split_region_overlapping tiles on core_span_bp only),
+        # so they are byte-identical across ancestries — only the windows differ.
+        by_anc = buffer_override_bp_by_ancestry or {}
+
+        def _buffer_for(ancestry: str) -> int:
+            if ancestry in by_anc:
+                return int(by_anc[ancestry])
+            if buffer_override_bp is not None:
+                return int(buffer_override_bp)
+            return int(radius_bp)
+
+        # The CORE tiling is buffer-independent (window-only depends on buffer), so
+        # compute it ONCE (n_sub + the per-sub cores are shared across ancestries).
+        ref_subs = split_region_overlapping(
+            start_b38, end_b38, core_span_bp, _buffer_for(ancestries[0])
+        )
+        n_sub = len(ref_subs)
 
         # WR-01 guard: refuse to SILENTLY emit a parent-spanning compute window
         # from the radius-based DEFAULT buffer (the 65 GiB master-crash condition).
-        # Only fires when no explicit buffer was given AND the widest window
-        # reaches ~the whole parent span. An explicit --subregion-buffer-mb is
-        # always honored (m3-02c widens + measures). No band width is picked here.
-        if buffer_override_bp is None and n_sub > 1:
-            widest_window = max(s["window_end"] - s["window_start"] for s in subs)
+        # Only fires when NEITHER an explicit per-ancestry NOR a global buffer was
+        # given for an ancestry AND that ancestry's widest window reaches ~the whole
+        # parent span. An explicit buffer (per-ancestry or global) is always honored
+        # (the locked 3/5 Mb buffers bypass it). Checked per ancestry.
+        for ancestry in ancestries:
+            explicit = (ancestry in by_anc) or (buffer_override_bp is not None)
+            if explicit or n_sub <= 1:
+                continue
+            anc_subs = split_region_overlapping(
+                start_b38, end_b38, core_span_bp, _buffer_for(ancestry)
+            )
+            widest_window = max(s["window_end"] - s["window_start"] for s in anc_subs)
             if widest_window >= SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC * span_bp:
                 raise ValueError(
                     f"SUBREGION_BUFFER_GUARD: region {region_id} "
                     f"({region_class}, {span_bp/1e6:.1f} Mb) split into {n_sub} "
-                    f"sub-regions, but the DEFAULT buffer "
-                    f"({buffer_bp/1e6:.1f} Mb = the parent radius) makes the "
-                    f"widest compute window {widest_window/1e6:.1f} Mb "
+                    f"sub-regions, but the DEFAULT buffer for ancestry {ancestry} "
+                    f"({_buffer_for(ancestry)/1e6:.1f} Mb = the parent radius) makes "
+                    f"the widest compute window {widest_window/1e6:.1f} Mb "
                     f">= {SUBREGION_WINDOW_PARENT_SPAN_GUARD_FRAC:.0%} of the "
                     f"parent span -- a parent-spanning window whose dense "
                     f"scratch regresses to the ~65 GiB intractable wall the "
                     f"split exists to avoid. Pass an explicit "
-                    f"--subregion-buffer-mb (the Pan-UKBB AFR/EUR LD anchor "
-                    f"bands at 10 Mb; m3-02c's cost probe measures the correct "
-                    f"width). Refusing to silently keep the 50 Mb default."
+                    f"--subregion-buffer-mb (or --subregion-buffer-mb-by-ancestry; "
+                    f"the locked M3 buffers are AFR:3,EUR:5 Mb; m3-02c's cost probe "
+                    f"measures the correct width). Refusing to silently keep the "
+                    f"50 Mb default."
                 )
 
-        # Parent projection row (NOT a compute row).
+        # Parent projection row (NOT a compute row). radius_bp = the parent radius.
         projection_rows.append({
             "region_id": region_id,
             "chr": chr_int_str,
@@ -518,31 +597,52 @@ def _assemble_region_rows(
             "liftover_status": status,
         })
 
-        for sub in subs:
-            k = sub["subregion_index"]
+        # Per (subregion_index, ancestry): compute THAT ancestry's window geometry
+        # and emit a compute row carrying that ancestry's window + buffer_bp. The
+        # PROJECTION carries ONE sub row per subregion_index (the logical split
+        # structure the cost model's three-totals counts over); its geometry uses
+        # the WIDEST ancestry window (a conservative envelope) so the projection's
+        # span/est stays an upper bound. The per-ANCESTRY geometry the cost model
+        # consumes per-cell lives in the MANIFEST compute rows (each carries its own
+        # ancestry's window_start/window_end/buffer_bp).
+        anc_subs_by_anc = {
+            ancestry: split_region_overlapping(
+                start_b38, end_b38, core_span_bp, _buffer_for(ancestry)
+            )
+            for ancestry in ancestries
+        }
+        widest_anc = max(ancestries, key=_buffer_for)
+        for k in range(n_sub):
             sub_id = f"{region_id}__sub{k:02d}"
-            win_start = sub["window_start"]
-            win_end = sub["window_end"]
-            win_class = derive_region_class(win_start, win_end)
-            win_path_a, win_est = _path_a_for_class(win_class)
+            core = ref_subs[k]
+            # Projection sub row: widest-ancestry window (conservative envelope).
+            wide = anc_subs_by_anc[widest_anc][k]
+            wstart, wend = wide["window_start"], wide["window_end"]
+            wclass = derive_region_class(wstart, wend)
+            wpath_a, west = _path_a_for_class(wclass)
             projection_rows.append({
                 "region_id": sub_id,
                 "chr": chr_int_str,
                 "start_grch37": start_b37,
                 "end_grch37": end_b37,
-                "start_grch38": win_start,
-                "end_grch38": win_end,
-                "span_bp_grch38": win_end - win_start,
-                "span_mb_grch38": round((win_end - win_start) / 1_000_000, 3),
-                "region_class": win_class,
-                "radius_bp": buffer_bp,
-                "path_a_class": win_path_a,
-                "est_cluster_hours_per_ancestry": win_est,
+                "start_grch38": wstart,
+                "end_grch38": wend,
+                "span_bp_grch38": wend - wstart,
+                "span_mb_grch38": round((wend - wstart) / 1_000_000, 3),
+                "region_class": wclass,
+                "radius_bp": _buffer_for(widest_anc),
+                "path_a_class": wpath_a,
+                "est_cluster_hours_per_ancestry": west,
                 "split_status": "subregion",
                 "n_subregions": n_sub,
                 "liftover_status": status,
             })
             for ancestry in ancestries:
+                buf_anc = _buffer_for(ancestry)
+                sub = anc_subs_by_anc[ancestry][k]
+                win_start = sub["window_start"]
+                win_end = sub["window_end"]
+                win_class = derive_region_class(win_start, win_end)
                 source_trait, lead_variant = trait_lead_fn(ancestry)
                 manifest_rows.append({
                     "region_id": sub_id,
@@ -557,12 +657,12 @@ def _assemble_region_rows(
                     "parent_region_id": region_id,
                     "subregion_index": k,
                     "n_subregions": n_sub,
-                    "core_start_grch38": sub["core_start"],
-                    "core_end_grch38": sub["core_end"],
+                    "core_start_grch38": core["core_start"],
+                    "core_end_grch38": core["core_end"],
                     "window_start_grch38": win_start,
                     "window_end_grch38": win_end,
-                    "buffer_bp": buffer_bp,
-                    "radius_bp": buffer_bp,
+                    "buffer_bp": buf_anc,
+                    "radius_bp": buf_anc,
                     "region_class": win_class,
                     "liftover_status": status,
                 })
@@ -620,6 +720,7 @@ def build_manifest(
     max_subregion_span_mb: float = DEFAULT_MAX_SUBREGION_SPAN_MB,
     split_classes: "str | list[str]" = DEFAULT_SPLIT_CLASSES,
     subregion_buffer_mb: "float | None" = None,
+    subregion_buffer_mb_by_ancestry: "dict[str, float] | None" = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Expand bed_df × ancestries into the AOU §6 manifest + per-region projection.
 
@@ -650,6 +751,10 @@ def build_manifest(
     core_span_bp = int(round(max_subregion_span_mb * 1_000_000))
     buffer_override_bp = (
         int(round(subregion_buffer_mb * 1_000_000)) if subregion_buffer_mb is not None else None
+    )
+    buffer_override_bp_by_ancestry = (
+        {a: int(round(mb * 1_000_000)) for a, mb in subregion_buffer_mb_by_ancestry.items()}
+        if subregion_buffer_mb_by_ancestry else None
     )
 
     manifest_rows: list[dict] = []
@@ -711,6 +816,7 @@ def build_manifest(
             split_set=split_set,
             core_span_bp=core_span_bp,
             buffer_override_bp=buffer_override_bp,
+            buffer_override_bp_by_ancestry=buffer_override_bp_by_ancestry,
         )
         manifest_rows.extend(m_rows)
         projection_rows.extend(p_rows)
@@ -728,6 +834,7 @@ def split_existing_manifest(
     in_manifest_df: pd.DataFrame,
     *,
     subregion_buffer_mb: "float | None" = None,
+    subregion_buffer_mb_by_ancestry: "dict[str, float] | None" = None,
     max_subregion_span_mb: float = DEFAULT_MAX_SUBREGION_SPAN_MB,
     split_classes: "str | list[str]" = DEFAULT_SPLIT_CLASSES,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -759,6 +866,10 @@ def split_existing_manifest(
     core_span_bp = int(round(max_subregion_span_mb * 1_000_000))
     buffer_override_bp = (
         int(round(subregion_buffer_mb * 1_000_000)) if subregion_buffer_mb is not None else None
+    )
+    buffer_override_bp_by_ancestry = (
+        {a: int(round(mb * 1_000_000)) for a, mb in subregion_buffer_mb_by_ancestry.items()}
+        if subregion_buffer_mb_by_ancestry else None
     )
 
     manifest_rows: list[dict] = []
@@ -802,6 +913,7 @@ def split_existing_manifest(
             split_set=split_set,
             core_span_bp=core_span_bp,
             buffer_override_bp=buffer_override_bp,
+            buffer_override_bp_by_ancestry=buffer_override_bp_by_ancestry,
         )
         manifest_rows.extend(m_rows)
         projection_rows.extend(p_rows)
@@ -848,6 +960,7 @@ def main(argv: list[str] | None = None) -> int:
         manifest_df, projection_df = split_existing_manifest(
             in_df,
             subregion_buffer_mb=args.subregion_buffer_mb,
+            subregion_buffer_mb_by_ancestry=args.subregion_buffer_mb_by_ancestry,
             max_subregion_span_mb=args.max_subregion_span_mb,
             split_classes=args.split_classes,
         )
@@ -860,6 +973,7 @@ def main(argv: list[str] | None = None) -> int:
             max_subregion_span_mb=args.max_subregion_span_mb,
             split_classes=args.split_classes,
             subregion_buffer_mb=args.subregion_buffer_mb,
+            subregion_buffer_mb_by_ancestry=args.subregion_buffer_mb_by_ancestry,
         )
     write_tsv(manifest_df, args.out_manifest)
     write_tsv(projection_df, args.out_projection)

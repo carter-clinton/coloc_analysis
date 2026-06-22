@@ -784,3 +784,207 @@ def test_split_existing_cli_xor_with_bed(tmp_path):
     out_df = pd.read_csv(out_m, sep="\t")
     assert out_df["region_id"].str.contains("m2_region_00040__sub").any(), \
         out_df["region_id"].unique()
+
+
+# ===========================================================================
+# m3-02d Task 1: PER-ANCESTRY banding buffer (AFR 3 Mb / EUR 5 Mb over a
+# 5 Mb core). The current single global --subregion-buffer-mb cannot express a
+# different window geometry per ancestry; this feature threads a per-ancestry
+# {ancestry: buffer_mb} map (the locked M3 value AFR:3,EUR:5 is a CLI param,
+# NOT a hardcoded library constant) so an AFR __sub row and the matching EUR
+# __sub row carry DIFFERENT window_start/window_end/buffer_bp while the
+# half-open CORES (buffer-independent) stay identical across ancestries.
+# ===========================================================================
+
+
+def _existing_xlarge_df(start38, end38, region_id="m2_region_00040", chrom="12",
+                        ancestries=("AFR", "EUR")):
+    """Build an OLD-schema existing-manifest DF with ONE xlarge parent x ancestries."""
+    rows = [_old_row(region_id, chrom, start38, end38, anc, "xlarge")
+            for anc in ancestries]
+    return _existing_manifest_df(rows)
+
+
+def test_per_ancestry_buffer_geometry():
+    """AFR __sub00 window = core +/- 3 Mb (buffer_bp 3_000_000); EUR __sub00
+    window = core +/- 5 Mb (buffer_bp 5_000_000). For the SAME subregion_index
+    the AFR and EUR windows DIFFER (AFR narrower); the CORES are identical
+    across ancestries (the core tiling does not depend on the buffer)."""
+    # 30 Mb xlarge, core 5 Mb -> 6 cores. Use split_existing (the regen route).
+    df = _existing_xlarge_df(0, 30_000_000)
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb_by_ancestry={"AFR": 3.0, "EUR": 5.0},
+        max_subregion_span_mb=5.0, split_classes="xlarge",
+    )
+    afr0 = manifest[(manifest["ancestry"] == "AFR") &
+                    (manifest["subregion_index"] == 0)].iloc[0]
+    eur0 = manifest[(manifest["ancestry"] == "EUR") &
+                    (manifest["subregion_index"] == 0)].iloc[0]
+    assert int(afr0["buffer_bp"]) == 3_000_000
+    assert int(eur0["buffer_bp"]) == 5_000_000
+    # identical CORES across ancestries (buffer-independent tiling)
+    assert int(afr0["core_start_grch38"]) == int(eur0["core_start_grch38"])
+    assert int(afr0["core_end_grch38"]) == int(eur0["core_end_grch38"])
+    # windows = core +/- buffer (clamped to parent); __sub00 left-clamps to 0
+    core_start = int(afr0["core_start_grch38"])
+    core_end = int(afr0["core_end_grch38"])
+    assert int(afr0["window_start_grch38"]) == max(0, core_start - 3_000_000)
+    assert int(afr0["window_end_grch38"]) == min(30_000_000, core_end + 3_000_000)
+    assert int(eur0["window_start_grch38"]) == max(0, core_start - 5_000_000)
+    assert int(eur0["window_end_grch38"]) == min(30_000_000, core_end + 5_000_000)
+    # an INTERIOR sub (index 2, not clamped) makes the AFR window strictly
+    # narrower than the EUR window for the SAME core.
+    afr2 = manifest[(manifest["ancestry"] == "AFR") &
+                    (manifest["subregion_index"] == 2)].iloc[0]
+    eur2 = manifest[(manifest["ancestry"] == "EUR") &
+                    (manifest["subregion_index"] == 2)].iloc[0]
+    afr2_span = int(afr2["window_end_grch38"]) - int(afr2["window_start_grch38"])
+    eur2_span = int(eur2["window_end_grch38"]) - int(eur2["window_start_grch38"])
+    assert afr2_span < eur2_span, (afr2_span, eur2_span)
+    assert int(afr2["window_start_grch38"]) != int(eur2["window_start_grch38"])
+
+
+def test_per_ancestry_buffer_default_falls_back():
+    """With NO per-ancestry override, AFR and EUR get the SAME buffer_bp == the
+    global --subregion-buffer-mb (back-compat with m3-02b's single-knob path)."""
+    df = _existing_xlarge_df(0, 30_000_000)
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb=4.0, max_subregion_span_mb=5.0,
+        split_classes="xlarge",
+    )
+    subs = manifest[manifest["region_id"].str.contains("__sub")]
+    assert (subs["buffer_bp"] == 4_000_000).all(), subs["buffer_bp"].unique()
+    afr = subs[subs["ancestry"] == "AFR"].sort_values("subregion_index")
+    eur = subs[subs["ancestry"] == "EUR"].sort_values("subregion_index")
+    # same windows across ancestries when no per-ancestry override
+    assert list(afr["window_start_grch38"]) == list(eur["window_start_grch38"])
+    assert list(afr["window_end_grch38"]) == list(eur["window_end_grch38"])
+
+
+def test_locked_flags_produce_3_5_buffers():
+    """The LOCKED M3 flags (--max-subregion-span-mb 5, AFR:3,EUR:5) -> every
+    AFR compute row buffer_bp 3_000_000, every EUR compute row 5_000_000; NO row
+    carries buffer_bp 50_000_000."""
+    df = _existing_xlarge_df(0, 88_000_000)  # SH2B3-grade xlarge
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb_by_ancestry={"AFR": 3.0, "EUR": 5.0},
+        max_subregion_span_mb=5.0, split_classes="xlarge",
+    )
+    afr = manifest[manifest["ancestry"] == "AFR"]
+    eur = manifest[manifest["ancestry"] == "EUR"]
+    assert (afr["buffer_bp"] == 3_000_000).all(), afr["buffer_bp"].unique()
+    assert (eur["buffer_bp"] == 5_000_000).all(), eur["buffer_bp"].unique()
+    assert (manifest["buffer_bp"] != 50_000_000).all()
+
+
+def test_regen_cells_under_target():
+    """Geometry-level buffer-floor fix: at core5/buf3 (AFR) the interior window
+    span ~= 11 Mb (5 core + 2*3 buffer); at core5/buf5 (EUR) ~= 15 Mb. At the
+    research densities (AFR 7,300 / EUR 4,000 var/Mb) that implies <= ~80k (AFR)
+    / <= ~60k (EUR) var per cell — the buffer-floor fix (the prior 10 Mb buffer
+    forced every cell > 75k var)."""
+    df = _existing_xlarge_df(0, 100_000_000)
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb_by_ancestry={"AFR": 3.0, "EUR": 5.0},
+        max_subregion_span_mb=5.0, split_classes="xlarge",
+    )
+    afr = manifest[manifest["ancestry"] == "AFR"]
+    eur = manifest[manifest["ancestry"] == "EUR"]
+    # interior windows = 5 core + 2*buffer (clamped subs at the ends are smaller).
+    afr_span = (afr["window_end_grch38"] - afr["window_start_grch38"]) / 1e6
+    eur_span = (eur["window_end_grch38"] - eur["window_start_grch38"]) / 1e6
+    assert afr_span.max() <= 11.001, afr_span.max()
+    assert eur_span.max() <= 15.001, eur_span.max()
+    AFR_DENSITY = 7_300
+    EUR_DENSITY = 4_000
+    assert (afr_span.max() * AFR_DENSITY) <= 81_000
+    assert (eur_span.max() * EUR_DENSITY) <= 61_000
+
+
+def test_dev_regen_carries_new_geometry():
+    """After a per-ancestry regen, the dev selector's __sub rows carry buffer_bp
+    3_000_000 (AFR) / 5_000_000 (EUR); the capped expansion (DEV_SUBREGION_CAP)
+    still holds; AFR and EUR sub-rows are not mixed for a single ancestry pick."""
+    import select_ld_regions_dev as sel
+    # m2_region_00040 is in BOTH AFR_KNOWN and EUR_OVERLAP -> resolved per ancestry.
+    df = _existing_xlarge_df(0, 88_000_000, region_id="m2_region_00040", chrom="12")
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb_by_ancestry={"AFR": 3.0, "EUR": 5.0},
+        max_subregion_span_mb=5.0, split_classes="xlarge",
+    )
+    dev_df = sel.select_dev_rows(manifest)
+    afr_subs = dev_df[(dev_df["parent_region_id"] == "m2_region_00040") &
+                      (dev_df["ancestry"] == "AFR")]
+    eur_subs = dev_df[(dev_df["parent_region_id"] == "m2_region_00040") &
+                      (dev_df["ancestry"] == "EUR")]
+    assert len(afr_subs) == sel.DEV_SUBREGION_CAP
+    assert len(eur_subs) <= sel.DEV_SUBREGION_CAP
+    assert (afr_subs["buffer_bp"] == 3_000_000).all(), afr_subs["buffer_bp"].unique()
+    assert (eur_subs["buffer_bp"] == 5_000_000).all(), eur_subs["buffer_bp"].unique()
+    assert (afr_subs["ancestry"] == "AFR").all()
+    assert (eur_subs["ancestry"] == "EUR").all()
+
+
+def test_whole_region_unaffected_by_per_ancestry_buffer():
+    """A non-xlarge region still emits ONE whole row per ancestry (no __sub),
+    unchanged by the per-ancestry buffer feature."""
+    rows = [_old_row("m2_region_00006", "1", 0, 12_000_000, anc, "medium")
+            for anc in ("AFR", "EUR")]
+    manifest, projection = blm.split_existing_manifest(
+        _existing_manifest_df(rows),
+        subregion_buffer_mb_by_ancestry={"AFR": 3.0, "EUR": 5.0},
+        max_subregion_span_mb=5.0, split_classes="xlarge",
+    )
+    r6 = manifest[manifest["region_id"] == "m2_region_00006"]
+    assert len(r6) == 2
+    assert all("__sub" not in r for r in r6["region_id"])
+    assert (r6["subregion_index"] == -1).all()
+    assert (r6["n_subregions"] == 1).all()
+    assert (r6["parent_region_id"] == "").all()
+    assert (projection["split_status"] == "whole").all()
+
+
+def test_per_ancestry_cores_identical_across_ancestries():
+    """The half-open CORES tile the parent exactly and are byte-identical across
+    AFR and EUR even when their buffers differ (cores are buffer-independent)."""
+    df = _existing_xlarge_df(0, 88_000_000)
+    manifest, _ = blm.split_existing_manifest(
+        df, subregion_buffer_mb_by_ancestry={"AFR": 3.0, "EUR": 5.0},
+        max_subregion_span_mb=5.0, split_classes="xlarge",
+    )
+    afr = manifest[manifest["ancestry"] == "AFR"].sort_values("subregion_index")
+    eur = manifest[manifest["ancestry"] == "EUR"].sort_values("subregion_index")
+    assert list(afr["core_start_grch38"]) == list(eur["core_start_grch38"])
+    assert list(afr["core_end_grch38"]) == list(eur["core_end_grch38"])
+    # cores tile [0, 88e6) exactly
+    cores = list(zip(afr["core_start_grch38"].astype(int),
+                     afr["core_end_grch38"].astype(int)))
+    assert cores[0][0] == 0
+    assert cores[-1][1] == 88_000_000
+    for k in range(1, len(cores)):
+        assert cores[k][0] == cores[k - 1][1]
+
+
+def test_build_manifest_threads_per_ancestry_buffer():
+    """build_manifest (the liftover path) also accepts the per-ancestry map and
+    threads it through _assemble_region_rows (parity with split_existing_manifest)."""
+    bed_df = pd.DataFrame([{
+        "chr": "chr12", "start": 0, "end": 88_000_000, "region_id": "m2_region_00040",
+        "score": ".", "strand": ".",
+        "provenance_json": '{"mtag":["ldl.AFR.GLGC.2021.AFR","ldl.EUR.GLGC.2021.EUR"]}',
+        "lead_token": "",
+    }])
+
+    class _IdentityChain:
+        def convert_coordinate(self, c, pos):
+            return [(c, pos, "+", 0)]
+
+    manifest, _ = blm.build_manifest(
+        bed_df, _IdentityChain(), ["AFR", "EUR"],
+        max_subregion_span_mb=5.0, split_classes="xlarge",
+        subregion_buffer_mb_by_ancestry={"AFR": 3.0, "EUR": 5.0},
+    )
+    afr = manifest[manifest["ancestry"] == "AFR"]
+    eur = manifest[manifest["ancestry"] == "EUR"]
+    assert (afr["buffer_bp"] == 3_000_000).all()
+    assert (eur["buffer_bp"] == 5_000_000).all()
