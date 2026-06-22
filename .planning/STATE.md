@@ -16,7 +16,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-20 (★ LATEST / RESUME HERE ★) — SESSION CLOSED (Carter home ~1hr); m3-02c probe one Apps-panel Start from running — START existing HAIL cluster 20260604 (64GB) on return
+## 2026-06-22 (★ LATEST / RESUME HERE ★) — m3-02c probe FIRED (STEP A + minimal STEP B); 3 artifacts committed; cluster STOPPED $0; NEXT = REPLAN the split (write+egress-bound, not memory-bound)
+
+**STEP A + minimal STEP B are DONE on cluster 20260604 (n2-standard-16 ×24, 64GB, HAIL, cores=1/11g/3g). Cluster STOPPED, $0. Three artifacts committed + pushed (origin==local @ 9337af2):** `m3-W2-preflight-counts.tsv` (15 cells), `m3-W2-cost-probe.tsv` (1 EUR cell, INTERRUPTED/partial), `m3-W2-cluster-shutdown.md`.
+
+**DECISIVE FINDINGS (these reshape m3-04):**
+1. **All 15 preflight cells are `over_threshold` (>75k var)** — the m3-02b split (10Mb buffer → ~20Mb windows → 78k–372k var) did NOT hit the <75k target. AFR 122k–372k, EUR 78k–218k.
+2. **Single-cell A.3 outputs blow the 50GB egress cap** — AFR 00067≈277, 00143≈263, 00153≈252 GiB (full-triangle banded est). One cell ≈5× the bundle cap.
+3. **EUR does NOT spill** — minimal STEP B fired EUR `m2_region_00040__sub00` (78,730 var): memSpill=0/diskSpill=0 across matmul (STAGE 18, 1080 tasks, ~16min) AND write; master rock-steady ~48GB free (NO dev-10 crash). **→ the pre-probe spill fear was wrong; 64GB HAIL clusters at cores=1 are viable for EUR. We likely do NOT need to solve 128GB-HAIL creation.**
+4. **The new bottleneck = the A.3 WRITE (STAGE 19), not memory** — write was 4/400 tasks in ~26min (slow ~14min waves), interrupted at ~56min wall per the 90min control (Option 1). No clean end-to-end rate captured (cell didn't complete) → cost-probe.tsv is PRELIMINARY (blocks_per_min=NA).
+
+**REVISED m3-04 CONSTRAINTS (the replan must target these, NOT memory):** the binding constraints are now (a) **A.3 write throughput** (slow, scales with block_count) and (b) **egress bundle size** (50GB cap) — NOT spill/memory (no spill observed). The 75k-var threshold was a memory proxy that the no-spill result loosens. DESIGN TENSION for the split: a 10Mb buffer alone is ~73k var of window, so you CANNOT get cells <75k without shrinking the buffer (which loses cross-region LD). So the replan fork = shrink buffer (lose some long-range LD) vs accept larger cells + fix the write (ordering B?) + per-chromosome (not per-cell) egress bundling.
+
+**NEXT = NCSU-side REPLAN (no cluster needed, $0):** re-scope m3-02c Task 4 + the m3-04 split granularity against the write+egress constraints, then re-probe a COMPLETING properly-sized cell (AFR + EUR) for clean rates before the go/no-go. Likely a `/gsd-plan-phase` re-scope or a design discussion. Carter present 2026-06-22; cluster stopped, nothing running. origin==local @ 9337af2. Operating manual = aou-ld-pipeline skill; durable cluster lesson = [[reference_aou_hail_cluster_create_time_config]].
+
+---
+
+## 2026-06-20 (SUPERSEDED by the 2026-06-22 block above) — SESSION CLOSED (Carter home ~1hr); m3-02c probe one Apps-panel Start from running — START existing HAIL cluster 20260604 (64GB) on return
 
 **BLOCKER (live):** the m3-02c probe is paused — the cluster the AoU agent created (`...20260620`) has **no Hail**. Root cause (conclusive, via `gcloud dataproc clusters describe`): it was created from the generic "JupyterLab Spark cluster for AoU" Dataproc app, which lacks the `software-framework: HAIL` metadata + the hailctl-0.2.135 wheel URL + the HAIL startup-script revision that the working cohort clusters (e.g. `...20260604`) carry. The Verily wizard the agent used exposed no "Hail Genomics Analysis" selector. ALL 4 workspace Dataproc clusters share the name `JupyterLab_Spark_cluster_for_AoU_Spark` → Hail is a CREATE-TIME config (framework=HAIL + wheel + startup script), NOT a separate app name (the legacy "Hail Genomics Analysis vs generic" framing is RW1; RW2.0/Verily differ). `wb` CLI has NO `create` (only start/stop/launch-proxy) → cluster creation is UI-only; gcloud from NCSU is VPC-SC-walled (no Google ADC) so all cluster describe/create is agent-side in-perimeter.
 
