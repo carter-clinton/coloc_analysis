@@ -16,7 +16,7 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-22 (★ LATEST / RESUME HERE ★) — m3-02c probe FIRED (STEP A + minimal STEP B); 3 artifacts committed; cluster STOPPED $0; NEXT = REPLAN the split (write+egress-bound, not memory-bound)
+## 2026-06-22 (★ LATEST / RESUME HERE ★) — SESSION CLOSED (end of day); m3-02c probe fired + m3-02d replanned + Tasks 1-3 EXECUTED; NEXT = Task 4 in-perimeter re-probe (new session, Carter fires)
 
 **STEP A + minimal STEP B are DONE on cluster 20260604 (n2-standard-16 ×24, 64GB, HAIL, cores=1/11g/3g). Cluster STOPPED, $0. Three artifacts committed + pushed (origin==local @ 9337af2):** `m3-W2-preflight-counts.tsv` (15 cells), `m3-W2-cost-probe.tsv` (1 EUR cell, INTERRUPTED/partial), `m3-W2-cluster-shutdown.md`.
 
