@@ -16,7 +16,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-22 (★ LATEST / RESUME HERE ★) — SESSION CLOSED (end of day); m3-02c probe fired + m3-02d replanned + Tasks 1-3 EXECUTED; NEXT = Task 4 in-perimeter re-probe (new session, Carter fires)
+## 2026-06-23 (★ LATEST / RESUME HERE ★) — m3-02d Task 4 re-probe v1 LANDED (partial) → density-OOM routing bug FOUND+FIXED; NEXT = AFR re-probe v2 (Carter fires), THEN Task 5 go/no-go
+
+**Re-probe v1 pushed by the AoU agent (`210e66c`), pulled to NCSU.** It came back **PARTIAL, not a clean pass** — and surfaced a real bug + a RED-magnitude cost signal. The Task 5 go/no-go memo (`m3-W2-budget-redo.md`) is **deliberately NOT written yet** (Carter's call: fix routing + get a clean AFR rate first).
+
+**What v1 delivered:**
+- **EUR `m2_region_00040__sub01`** (60,606 var, A.3 ordering-B): **COMPLETED** — 4.85 blocks/min, 0 spill, peak heap 1.85 GiB, 15.6 GiB banded `.bm`, read-back OK. **BUT 180.6 min end-to-end** (blew the 90-min cap — A.3 write long-tail; completed on its own).
+- **AFR `m2_region_00040__sub00`** (64,176 var): **INTERRUPTED** — routed to **A.2** (span 7.93 Mb ≤ 10 Mb) and OOMed the driver in `to_numpy()` (float64 dense collect 32.9 GB ≫ 11 GiB heap). **NO clean AFR rate.**
+
+**Cost-model dry-run (placeholder cap, EUR-only basis):** PROJECTED ≈ **22,316 cluster-h w/ contingency (~$18–22k, ~37 cluster-days)** — but **inflated ~3×** because, lacking an AFR completing cell, the model used EUR's 4.85 AS the AFR reference then ×3.01 the EUR-penalty (double-count). "True" ~7k cluster-h. **Either end ≫ the old ~1,117 estimate.** Egress: 8,867 GiB, 47 per-chrom bundles over the 50 GB working ceiling. **Carter's gate decisions: (a) fix routing + re-probe AFR before any disposition; (b) budget cap recorded qualitatively — RED regardless of exact number.**
+
+**ROOT-CAUSE BUG FIXED (`/gsd-debug`; commits `31d6e6c` fix + `05e42a9` docs, NOT pushed):** `_route_region_path` demoted A.1/A.2→A.3 **only on the span axis** (>10 Mb), but the `to_numpy()` driver-OOM determinant is the **density axis** = `n_var²×8 bytes` (Hail BlockMatrix is **float64**; the `.astype(float32)` runs AFTER the collect peak). A dense-but-narrow cell passed the span veto and OOMed. **Fix = a second density veto:** new constants `DRIVER_HEAP_GIB=11` / `DRIVER_COLLECT_SAFE_FRACTION=0.40` / helper `_max_safe_to_numpy_n_var()`=**24,301** var; any A.1/A.2 cell with `n_var>24,301` demoted to A.3. `n_var` threaded through `_route_region_path` + **both** call sites (live `compute_region_ld` @2452 + `_preflight_estimates`); omitting `n_var` preserves prior behavior (backward-compat). **Systemic: 100/106 A.2 cells flip A.2→A.3** (6 genuinely-safe low-density remain); all 6 named dense-narrow AFR cells now route A.3. TDD RED-first regression; **tests/m3 244 passed / 30 skipped / 0 failed** (`smoke_dev` py3.11+pandas — the `m3-r-ld` env has NO pandas). Debug session resolved → `.planning/debug/resolved/m3-W2-a2-dense-narrow-driver-oom-routing.md` + knowledge-base append. 0.40 fraction is conservative-correct (the float32 astype copy co-resides → true transient peak `n²×12`).
+
+**NEXT (RESUME HERE) = AFR re-probe v2 (Carter fires in-perimeter, COSTS MONEY) → then NCSU Task 5.** Turnkey runbook = `m3-02d-REPROBE-BRIEF.md` (now **v2**, clone target ≥ `31d6e6c`): the AFR `__sub00` cell now routes A.3 post-fix and will complete like EUR; **RAISE the per-cell wall cap to ≥200 min** (the A.3 write long-tail is legitimate — kill only on spill/OOM/stalled counter, not wall-clock); fire AFR ordering A vs B + re-confirm EUR → clean AFR `blocks_per_min` → REPLACE `m3-W2-cost-probe.tsv` → ping "reprobe-recorded" → NCSU runs `redo_ld_cost_model.py` (Task 5) with a REAL AFR reference → `m3-W2-budget-redo.md` GREEN/RED. **⚠ Cluster `20260604` was still UP at the push (idle ~$20/hr) — Carter to tell the AoU agent "pushed" so it STOPS the cluster.** 322-cell production stays in m3-04.
+
+---
+
+## 2026-06-22 (SUPERSEDED by the 2026-06-23 block above) — SESSION CLOSED (end of day); m3-02c probe fired + m3-02d replanned + Tasks 1-3 EXECUTED; NEXT = Task 4 in-perimeter re-probe (new session, Carter fires)
 
 **STEP A + minimal STEP B are DONE on cluster 20260604 (n2-standard-16 ×24, 64GB, HAIL, cores=1/11g/3g). Cluster STOPPED, $0. Three artifacts committed + pushed (origin==local @ 9337af2):** `m3-W2-preflight-counts.tsv` (15 cells), `m3-W2-cost-probe.tsv` (1 EUR cell, INTERRUPTED/partial), `m3-W2-cluster-shutdown.md`.
 

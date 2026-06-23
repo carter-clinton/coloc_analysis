@@ -1,6 +1,6 @@
 # m3-02d Task 4 — in-perimeter RE-PROBE brief (completing AFR+EUR cells, ordering A vs B)
 
-**Generated:** 2026-06-22 · **Clone target:** `m3-W2-aou-deltas` @ origin ≥ `19fb1e3` · **autonomous: false (COSTS MONEY).**
+**Generated:** 2026-06-22 · **Updated:** 2026-06-23 (v2 — see UPDATE block) · **Clone target:** `m3-W2-aou-deltas` @ origin ≥ `31d6e6c` · **autonomous: false (COSTS MONEY).**
 
 This is the Workbench-side runbook for m3-02d Task 4. Tasks 1–3 (NCSU code) are DONE + pushed:
 per-ancestry buffer (AFR 3 Mb / EUR 5 Mb, core 5 Mb) regenerated the manifests, ordering-B A.3 write
@@ -8,6 +8,25 @@ landed, `redo_ld_cost_model.py` built. The prior m3-02c probe's `cost-probe.tsv`
 (no clean rate) — **this re-probe replaces it with COMPLETING cells.** Authoritative spec = the m3-02d
 PLAN Task 4. Operating manual = `aou-ld-pipeline` skill. (Supersedes the cluster section of
 `m3-W2-AOU-FIRE-BRIEF.md`.)
+
+## ⚠ UPDATE 2026-06-23 (re-probe v1 fired; this is now the v2 brief)
+The first re-probe (committed `210e66c`) delivered **only a partial result** — read this before re-firing:
+- **EUR `m2_region_00040__sub01` (60,606 var, A.3 ordering-B): COMPLETED** — 4.85 blocks/min, 0 spill,
+  15.6 GiB banded `.bm`, read-back OK. **BUT it ran 180.6 min — blew the 90-min/cell cap** (the A.3
+  write is a slow long-tail). It completed on its own between polls.
+- **AFR `m2_region_00040__sub00` (64,176 var): INTERRUPTED** — it **routed to A.2** (span 7.93 Mb ≤ 10 Mb)
+  and OOMed the driver in `to_numpy()` (float64 dense collect 32.9 GB ≫ 11 GiB heap). **NO AFR rate.**
+- **ROOT-CAUSE FIXED on NCSU (`31d6e6c`):** `_route_region_path` now has a **density-axis OOM veto** —
+  any A.1/A.2 cell whose `n_var²×8` dense collect exceeds 40% of the driver heap (n_var > **24,301**) is
+  demoted to **A.3**. After `git pull ≥ 31d6e6c`, the AFR `__sub00` cell (and ~100 other dense-narrow
+  cells) **routes A.3** automatically and will complete like the EUR cell did.
+
+**v2 goal = get the missing CLEAN AFR completing rate** (and re-confirm EUR), so Task 5 has a real
+AFR reference. Two changes from v1:
+1. **RAISE the per-cell wall cap to ≥ 200 min** (or remove it) — the A.3 write long-tail means a
+   completing cell legitimately exceeds 90 min; the v1 cap would kill a cell that is healthily writing.
+   Confirm 0 spill + steady block progress instead of wall-clock-killing. (Carter sets the $ cap.)
+2. The AFR cell now routes A.3 (was A.2) — so the ordering A-vs-B comparison applies to it too.
 
 ## Goal
 Fire **completing** properly-sized cells → clean `blocks_per_min` for an AFR and a EUR cell, comparing
@@ -23,7 +42,7 @@ radius≪span). Feed the completing rates into `redo_ld_cost_model.py` (Task 5) 
   `PYSPARK_SUBMIT_ARGS` BEFORE the hail import; restart the kernel if a prior import bound a stale config.
 
 ## STEP 0 — sync + pre-flight
-1. `cd ~/coloc_analysis && git pull && git checkout -f && git rev-parse HEAD`  (≥ `19fb1e3`)
+1. `cd ~/coloc_analysis && git pull && git checkout -f && git rev-parse HEAD`  (≥ `31d6e6c` — includes the density-veto routing fix)
 2. Confirm Hail: `python3 -c "import hail; print(hail.__version__)"` → 0.2.135; `which hailctl`.
 3. Bucket pin echoes `gs://rw-migration-aou-rw-476cdac2`, no halt. `USE_DEV_SUBSET=True`.
 4. Load MTs (AFR 73,122 / EUR 220,098).
@@ -42,9 +61,11 @@ region_00145's sub-rows from the FULL manifest and include them in the STEP-A co
 still exceeds the thresholds, finer-split chr6 (`--max-subregion-span-mb 3`) before m3-04 (per the plan's
 T-M3RS2-HLA-01).
 
-## STEP B — fire COMPLETING cells (cost controls: 90 min/cell, ~$60 cap, spill/OOM kill)
-Fire each to **completion** (they're small enough now) and record the clean rate:
-1. **AFR** core5/buf3 sub-cell (e.g. `m2_region_00040__sub00` AFR at the new geometry) — **ordering A**.
+## STEP B — fire COMPLETING cells (cost controls: ≥200 min/cell — see v2 UPDATE, ~$ cap Carter sets, spill/OOM kill)
+Fire each to **completion** and record the clean rate. **Do NOT wall-clock-kill a cell that is writing with
+0 spill + steady block progress** — the A.3 write is a legitimate long-tail (v1 EUR took 180 min). Kill only
+on spill / OOM / a stalled block counter.
+1. **AFR** core5/buf3 sub-cell (`m2_region_00040__sub00` AFR, 64,176 var — now routes **A.3** post-fix) — **ordering A**.
 2. **same AFR cell — ordering B** (band-before-checkpoint) → compare write wall-clock vs A.
 3. **EUR** core5/buf5 sub-cell (`m2_region_00040__sub00` EUR) — **mandatory** (the cost driver); ordering
    B (and A if budget allows) → the measured EUR/AFR factor.
