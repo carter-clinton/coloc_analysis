@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "m3-W2-a2-dense-narrow-driver-oom-routing — _route_region_path routes by span only; dense-narrow A.2 cell OOMs driver in to_numpy()"
 created: 2026-06-23T00:00:00Z
 updated: 2026-06-23T00:00:00Z
