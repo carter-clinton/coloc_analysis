@@ -2520,6 +2520,57 @@ def test_route_region_path_oom_veto():
     assert _route_region_path(None, 40.0) == "A.3"
 
 
+def test_route_region_path_density_veto():
+    """m3-W2 dense-narrow OOM: _route_region_path must demote an A.1/A.2 cell to
+    A.3 when its to_numpy() dense collect (n_var^2 * 8 bytes, Hail BlockMatrix is
+    float64) would exceed a safe fraction of the driver heap — even when the span
+    is <= PATH_A2_MAX_MB. The span-only veto missed this density axis.
+
+    Cell region_00040__sub00 AFR: span 7.93 Mb (<= 10 Mb A.2 cap), n_var 64,176 ->
+    a 32.9 GB float64 driver collect >> the 11 GiB heap. It routed A.2 and OOMed
+    in to_numpy(). It must now route A.3.
+    """
+    from aou_ld_panel import (
+        _route_region_path,
+        PATH_A2_MAX_MB,
+        DRIVER_HEAP_GIB,
+        DRIVER_COLLECT_SAFE_FRACTION,
+        _DENSE_COLLECT_BYTES_PER_ELEM,
+        _max_safe_to_numpy_n_var,
+    )
+
+    # (a) the OOM cell: dense-narrow medium -> A.3 (the bug being fixed)
+    assert _route_region_path("medium", 7.93, n_var=64_176) == "A.3"
+    # other listed dense-narrow AFR cells (all span <= 10 Mb)
+    assert _route_region_path("medium", 7.832, n_var=81_933) == "A.3"   # region_00146__sub00
+    assert _route_region_path("medium", 8.0198, n_var=70_041) == "A.3"  # region_00151
+    assert _route_region_path("medium", 7.883, n_var=70_243) == "A.3"   # region_00145__sub20
+    assert _route_region_path("medium", 7.873, n_var=65_878) == "A.3"   # region_00161__sub14
+    assert _route_region_path("medium", 7.8937, n_var=54_127) == "A.3"  # region_00154 (~23 GB)
+
+    # (b) genuinely small / sparse-medium low-density cells UNCHANGED
+    assert _route_region_path("small", 3.0, n_var=5_000) == "A.1"
+    assert _route_region_path("medium", 8.0, n_var=3_000) == "A.2"
+    assert _route_region_path("medium", 9.0, n_var=20_000) == "A.2"   # ~3.2 GB f64: safe
+
+    # (c) existing SPAN veto still fires for wide-span low-density cells
+    assert _route_region_path("medium", 17.7, n_var=10_000) == "A.3"
+    assert _route_region_path("medium", 23.7, n_var=5_000) == "A.3"
+
+    # (d) backward compat: n_var omitted -> density check skipped, span routing only
+    assert _route_region_path("medium", 8.0) == "A.2"
+    assert _route_region_path("medium", 7.93) == "A.2"  # no n_var -> can't see density
+
+    # (e) the threshold is a named module constant with conservative headroom
+    assert 0.0 < DRIVER_COLLECT_SAFE_FRACTION < 1.0
+    assert DRIVER_HEAP_GIB == 11
+    assert _DENSE_COLLECT_BYTES_PER_ELEM == 8  # float64 to_numpy collect
+    # exact boundary: a cell at the safe ceiling stays A.2; one var over flips A.3
+    n_safe = _max_safe_to_numpy_n_var()
+    assert _route_region_path("medium", 8.0, n_var=n_safe) == "A.2"
+    assert _route_region_path("medium", 8.0, n_var=n_safe + 1) == "A.3"
+
+
 def test_ld_regions_config_no_to_numpy_oom():
     """REGRESSION GUARD (m3-W2 HIGH-1): under the fixed router, NO config region
     whose span exceeds PATH_A2_MAX_MB routes to a to_numpy() path. This FAILS on

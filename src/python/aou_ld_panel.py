@@ -321,23 +321,73 @@ PATH_A1_MAX_MB = 5     # to_numpy direct
 PATH_A2_MAX_MB = 10    # sparsify_triangle + to_numpy
 # > 10 Mb -> Path A.3 (BlockMatrix write to bucket; densify NCSU-side)
 
+# m3-W2 dense-narrow driver-OOM veto (2026-06-23).
+# Paths A.1/A.2 finish with ``ld_bm.to_numpy().astype("float32")``. Hail
+# BlockMatrix is float64, and ``to_numpy()`` materializes the FULL n_var x n_var
+# dense float64 array on the DRIVER (via tofile->fromfile) BEFORE the float32
+# cast. So the driver-OOM determinant for A.1/A.2 is the dense collect size =
+# n_var**2 * 8 bytes -- a DENSITY axis that is INDEPENDENT of span_mb. The earlier
+# span-only veto caught wide-span regions but let a dense-but-narrow cell (span
+# <= PATH_A2_MAX_MB, very high variant density) route into to_numpy() and OOM the
+# driver (region_00040__sub00 AFR: span 7.93 Mb, n_var 64,176 -> 32.9 GB float64
+# collect >> the 11 GiB heap; INTERRUPTED_a2_driver_collect in the m3-02d Task-4
+# re-probe).
+#
+# DRIVER_HEAP_GIB: the HAIL cluster 20260604 driver heap (the cores=1/11g/3g
+# config the re-probe ran). _DENSE_COLLECT_BYTES_PER_ELEM is 8 because to_numpy()
+# returns float64 (the .astype("float32") halving happens AFTER the collect peak).
+#
+# DRIVER_COLLECT_SAFE_FRACTION (0.40, conservative): the driver heap is NOT all
+# available to the dense array. Budgeting the full 11 GiB would ignore (a) the
+# Spark driver / Py4J JVM machinery and the JVM-side tofile buffer, (b) the Python
+# interpreter + numpy import overhead, and (c) the TRANSIENT second array allocated
+# by ``.astype("float32")``, which briefly co-resides with the float64 source
+# during the cast. 40% (~4.4 GiB for the float64 array, ~24,300 var) leaves room
+# for the float32 copy plus the JVM/Python overhead before the cast frees the
+# float64 source. A demotion to A.3 is always SAFE (the banded BlockMatrix.write
+# path is proven viable: the EUR cell completed with 0 spill, 15.6 GiB .bm,
+# read-back OK), so we err on the side of more A.3.
+DRIVER_HEAP_GIB = 11
+DRIVER_COLLECT_SAFE_FRACTION = 0.40
+_DENSE_COLLECT_BYTES_PER_ELEM = 8  # Hail BlockMatrix.to_numpy() is float64
 
-def _route_region_path(region_class: "str | None", span_mb: float) -> str:
-    """Select the Path-A export branch for a region, with an OOM safety veto.
+
+def _max_safe_to_numpy_n_var() -> int:
+    """Largest n_var whose to_numpy() float64 dense collect fits the safe heap.
+
+    Safe budget = ``DRIVER_HEAP_GIB * DRIVER_COLLECT_SAFE_FRACTION`` (in bytes);
+    a square n_var x n_var float64 array uses ``n_var**2 * 8`` bytes, so the
+    ceiling is ``floor(sqrt(budget_bytes / 8))``.
+    """
+    import math
+    budget_bytes = DRIVER_HEAP_GIB * (1024 ** 3) * DRIVER_COLLECT_SAFE_FRACTION
+    return int(math.floor(math.sqrt(budget_bytes / _DENSE_COLLECT_BYTES_PER_ELEM)))
+
+
+def _route_region_path(region_class: "str | None", span_mb: float,
+                       n_var: "int | None" = None) -> str:
+    """Select the Path-A export branch for a region, with OOM safety vetoes.
 
     region_class is the Wave-0 pinned routing label (D-M3-09); span_mb is the
-    region span and the true OOM determinant. Paths A.1/A.2 end in
-    ``BlockMatrix.to_numpy()`` -- an O(n_var**2) DRIVER-side dense collect -- so a
-    large-span region routed there OOMs the driver.
+    region span; n_var is the region variant count (optional). Paths A.1/A.2 end
+    in ``BlockMatrix.to_numpy()`` -- an O(n_var**2) DRIVER-side dense collect --
+    so a region routed there OOMs the driver along TWO independent axes:
 
-    m3-W2 pre-fire audit (2026-06-04) HIGH-1: the Wave-0 manifest
-    (build_ld_region_manifest.CLASS_MEDIUM_MAX_MB=25) classes regions up to 25 Mb
-    as "medium", but to_numpy OOMs the driver far below that (a ~24 Mb region at
-    AFR density is a ~200+ GB dense float32; 86 of the 322 config cells are
-    small/medium-classed yet span > PATH_A2_MAX_MB). So region_class ALONE must
-    not route into to_numpy. This applies the region_class routing, then a HARD
-    span veto: any A.1/A.2 whose span exceeds PATH_A2_MAX_MB is demoted to A.3
-    (BlockMatrix streaming write, never densified on the driver).
+    1. SPAN (m3-W2 HIGH-1, 2026-06-04): the Wave-0 manifest
+       (build_ld_region_manifest.CLASS_MEDIUM_MAX_MB=25) classes regions up to
+       25 Mb as "medium", but to_numpy OOMs far below that. HARD span veto: any
+       A.1/A.2 whose span exceeds PATH_A2_MAX_MB is demoted to A.3.
+
+    2. DENSITY (m3-W2, 2026-06-23): a dense-but-NARROW cell (span <=
+       PATH_A2_MAX_MB but very high variant density) passes the span veto yet its
+       to_numpy() dense float64 collect (n_var**2 * 8 bytes) exceeds the driver
+       heap. HARD density veto: any A.1/A.2 whose dense collect would exceed
+       ``DRIVER_HEAP_GIB * DRIVER_COLLECT_SAFE_FRACTION`` is demoted to A.3. Only
+       applied when n_var is provided (callers that omit it keep the prior
+       span-only behavior).
+
+    A.3 (the banded BlockMatrix streaming write) never densifies on the driver,
+    so demotion is always OOM-safe.
 
     Returns one of "A.1", "A.2", "A.3".
     """
@@ -347,8 +397,12 @@ def _route_region_path(region_class: "str | None", span_mb: float) -> str:
         path_a = "A.2"
     else:
         path_a = "A.3"
-    # OOM safety veto: never to_numpy() a region whose span exceeds the A.2 cap.
+    # OOM safety veto (1): never to_numpy() a region whose span exceeds the A.2 cap.
     if path_a in ("A.1", "A.2") and span_mb > PATH_A2_MAX_MB:
+        path_a = "A.3"
+    # OOM safety veto (2): never to_numpy() a region whose dense float64 collect
+    # would exceed the safe fraction of the driver heap (the density axis).
+    if path_a in ("A.1", "A.2") and n_var is not None and n_var > _max_safe_to_numpy_n_var():
         path_a = "A.3"
     return path_a
 
@@ -428,7 +482,10 @@ def _preflight_estimates(n_var: int, span_mb: float, region_class: "str | None",
       large in banded block-count is still flagged.
     """
     import math
-    routed_path = _route_region_path(region_class, span_mb)
+    # Thread n_var so the preflight routing matches the live compute_region_ld
+    # routing exactly — including the m3-W2 density veto that demotes a dense-but-
+    # narrow A.1/A.2 cell (to_numpy float64 collect > safe driver heap) to A.3.
+    routed_path = _route_region_path(region_class, span_mb, n_var=n_var)
     span_bp = span_mb * 1_000_000
     # band_frac: the in-band reach is ~2*buffer (each side) over the window span.
     # radius_bp carries the per-ancestry buffer_bp from the manifest row.
@@ -2389,13 +2446,24 @@ def compute_region_ld(region_row: dict, mt_source: "hl.MatrixTable",
     # (BlockMatrix construction is lazy; no compute) but confusing, so we route FIRST and only
     # build ld_bm for A.1/A.2. A.1/A.2 behavior is byte-identical (same args, same object).
     span_mb = (end_b38 - start_b38) / 1_000_000
-    path_a = _route_region_path(region_class, span_mb)
-    # Observability: log when the OOM veto demoted a small/medium-classed region
-    # to A.3 by span (m3-W2 audit HIGH-1) — otherwise the path choice is silent.
-    if path_a == "A.3" and region_class in ("small", "medium") and span_mb > PATH_A2_MAX_MB:
-        print(f"[compute_region_ld] OOM-veto (m3-W2 HIGH-1): region_class="
-              f"{region_class!r} but span {span_mb:.1f} Mb > {PATH_A2_MAX_MB} Mb "
-              f"-> A.3 BlockMatrix write (avoids an O(n_var^2) driver to_numpy OOM).")
+    # Thread n_var so the density veto (m3-W2 2026-06-23) can demote a dense-but-
+    # narrow cell whose to_numpy() float64 collect would OOM the driver, even when
+    # span <= PATH_A2_MAX_MB.
+    path_a = _route_region_path(region_class, span_mb, n_var=n_var)
+    # Observability: log when an OOM veto demoted a small/medium-classed region to
+    # A.3 — otherwise the path choice is silent. Distinguish span vs density veto.
+    if path_a == "A.3" and region_class in ("small", "medium"):
+        if span_mb > PATH_A2_MAX_MB:
+            print(f"[compute_region_ld] OOM-veto (m3-W2 HIGH-1, span): region_class="
+                  f"{region_class!r} but span {span_mb:.1f} Mb > {PATH_A2_MAX_MB} Mb "
+                  f"-> A.3 BlockMatrix write (avoids an O(n_var^2) driver to_numpy OOM).")
+        elif n_var > _max_safe_to_numpy_n_var():
+            _gib = (n_var ** 2) * _DENSE_COLLECT_BYTES_PER_ELEM / (1024 ** 3)
+            print(f"[compute_region_ld] OOM-veto (m3-W2 density): region_class="
+                  f"{region_class!r}, span {span_mb:.1f} Mb <= {PATH_A2_MAX_MB} Mb but "
+                  f"n_var {n_var:,} -> {_gib:.1f} GiB float64 to_numpy collect > "
+                  f"{DRIVER_HEAP_GIB * DRIVER_COLLECT_SAFE_FRACTION:.1f} GiB safe heap "
+                  f"-> A.3 BlockMatrix write (avoids the dense-narrow driver OOM).")
 
     ld_bm = None
     if path_a in ("A.1", "A.2"):
