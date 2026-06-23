@@ -26,7 +26,7 @@ AFR reference. Two changes from v1:
 1. **RAISE the per-cell wall cap to ≥ 200 min** (or remove it) — the A.3 write long-tail means a
    completing cell legitimately exceeds 90 min; the v1 cap would kill a cell that is healthily writing.
    Confirm 0 spill + steady block progress instead of wall-clock-killing. (Carter sets the $ cap.)
-2. The AFR cell now routes A.3 (was A.2) — so the ordering A-vs-B comparison applies to it too.
+2. The AFR cell now routes A.3 (was A.2). **There is no ordering-A comparison to run** — A.3 is hard-locked to ordering B at this HEAD (A was retired as hang-prone). Fire AFR ordering B only. See the ⚠ note in STEP B.
 
 ## Goal
 Fire **completing** properly-sized cells → clean `blocks_per_min` for an AFR and a EUR cell, comparing
@@ -61,20 +61,29 @@ region_00145's sub-rows from the FULL manifest and include them in the STEP-A co
 still exceeds the thresholds, finer-split chr6 (`--max-subregion-span-mb 3`) before m3-04 (per the plan's
 T-M3RS2-HLA-01).
 
-## STEP B — fire COMPLETING cells (cost controls: ≥200 min/cell — see v2 UPDATE, ~$ cap Carter sets, spill/OOM kill)
-Fire each to **completion** and record the clean rate. **Do NOT wall-clock-kill a cell that is writing with
-0 spill + steady block progress** — the A.3 write is a legitimate long-tail (v1 EUR took 180 min). Kill only
-on spill / OOM / a stalled block counter.
-1. **AFR** core5/buf3 sub-cell (`m2_region_00040__sub00` AFR, 64,176 var — now routes **A.3** post-fix) — **ordering A**.
-2. **same AFR cell — ordering B** (band-before-checkpoint) → compare write wall-clock vs A.
-3. **EUR** core5/buf5 sub-cell (`m2_region_00040__sub00` EUR) — **mandatory** (the cost driver); ordering
-   B (and A if budget allows) → the measured EUR/AFR factor.
-For each: watch spill (expect 0) + capture `block_count`, `stage4_wall_min`, `end_to_end_wall_min`,
-`blocks_per_min`, `peak_executor_mem_gib`, `any_spill`. **DATA-LAYER VERIFY** each (D-M3-10): `gsutil du -s`
-the `.npz`/`.bm` (≫ 0) + a read-back — `_SUCCESS` is NOT evidence.
+## STEP B — fire the COMPLETING AFR cell (cost controls: ≥200 min/cell — see v2 UPDATE, ~$ cap Carter sets, spill/OOM kill)
+
+**⚠ ORDERING A IS RETIRED — do NOT attempt it (v2.1 correction, 2026-06-23).** At HEAD ≥ `31d6e6c`,
+`compute_region_ld`'s A.3 branch is hard-locked to **ordering B** (band via `sparsify_row_intervals` →
+`checkpoint` → `write`), guarded by `test_a3_band_before_checkpoint_ordering`. Ordering A (the
+un-materialized matmul through the driver `ContextRDD.collect`) was deliberately removed as hang-prone;
+the A-vs-B question was already decided in B's favor. **Firing "ordering A" would require re-adding the
+removed hang-prone path on a billable run — do NOT do it.** The A-vs-B comparison collapses to B.
+
+Fire **ONE** cell to **completion** and record the clean rate. **Do NOT wall-clock-kill a cell that is
+writing with 0 spill + steady block progress** — the A.3 write is a legitimate long-tail (v1 EUR took
+180 min). Kill only on spill / OOM / a stalled block counter.
+1. **AFR** core5/buf3 sub-cell (`m2_region_00040__sub00` AFR, 64,176 var — routes **A.3** post-fix) —
+   **ordering B** (the only supported A.3 ordering). **This is the whole point: the v1-missing clean AFR rate.**
+2. **EUR re-confirm — SKIP (optional).** v1 already captured a clean EUR-B rate (`m2_region_00040__sub01`,
+   4.85 blocks/min, COMPLETED). With both AFR-B and EUR-B, Task 5 upgrades from the 3.01 *assumed* factor
+   to a **measured** EUR/AFR factor. Only fire EUR if budget is ample and you want the same-geometry pair.
+For the AFR cell: watch spill (expect 0) + capture `block_count`, `stage4_wall_min`, `end_to_end_wall_min`,
+`blocks_per_min`, `peak_executor_mem_gib`, `any_spill`. **DATA-LAYER VERIFY** (D-M3-10): `gsutil du -s`
+the `.bm` (≫ 0) + a read-back — `_SUCCESS` is NOT evidence.
 
 **RECORD `m3-W2-cost-probe.tsv`** (REPLACE the interrupted file) — header + one COMPLETED row per fire,
-add an `ordering` (A/B) column + `status=COMPLETED`:
+`ordering` column = **B**, `status=COMPLETED`:
 `region_id  ancestry  region_class  n_var  block_count  stage4_wall_min  end_to_end_wall_min  blocks_per_min  peak_executor_mem_gib  any_spill  cluster_vcpu  n_workers  cluster_hours  ordering  status`
 (cluster_vcpu=384, n_workers=24, cluster_hours = end_to_end_wall_min/60 × 25.)
 
@@ -91,4 +100,5 @@ production stays in m3-04.
 ## Do-NOT
 - Do NOT start 20260620 (no Hail) or 20260617 (16 GB, not HAIL).
 - Do NOT use cores=2 (won't fit the 15564 MB container cap) — cores=1/11g/3g.
-- Do NOT skip the mandatory EUR cell. Do NOT `git add -A`. Do NOT cross the perimeter from NCSU.
+- Do NOT attempt ordering A — it's retired/hang-prone and would need a source edit on a billable run (see STEP B ⚠).
+- Do NOT `git add -A`. Do NOT cross the perimeter from NCSU.
