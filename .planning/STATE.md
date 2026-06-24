@@ -16,7 +16,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-23 (★ RESUME HERE ★) — AFR re-probe v2 COMPLETE (clean AFR-B rate) + Task 5 go/no-go RUN → NOT GREEN (~34k cluster-h); NEXT = finer-split re-scope before m3-04
+## 2026-06-23 (★★ RESUME HERE ★★) — COST RE-ARCHITECTURE ACCEPTED; NEXT = Carter fires the native-plink PILOT (`m3-W2-PILOT-plink-native-BRIEF.md`)
+
+Carter capped production at ~$1k, then asked for a cost-effective re-architecture (budget can stretch to **$3–4k**). 5 cited research threads → **`m3-W2-cost-effective-rearchitecture.md`**: fits $3–4k AND improves rigor via 3 moves — **(1) EUR LD = a PUBLIC biobank reference (Carter CHOSE public UKBB)**, not computed ($0, and better-matched to external EUR GWAS than AoU 220k; Weissbrod 337k `.npz` / Pan-UKBB 420k; needs hg19→hg38 + format adapter on NCSU); **(2) AFR LD computed in-house** (no adequate public AFR ref exists — it's the contribution; MultiSuSiE NatGenet 2025 is the direct AoU-in-sample precedent) **but with a NATIVE tool (plink1.9/LDstore2/emeraLD) on a single Spot VM (~$1.49/hr) instead of Hail BlockMatrix on a 24-node cluster (~$23.4/hr)** → ~1–2 orders of magnitude cheaper; **(3) downstream coloc/SuSiE/MR on NCSU** (aggregate-LD egress is policy-clean). Total likely < $2.5k. **The old Hail 34k-cluster-h projection is now the path NOT taken.**
+
+**NEXT = Carter fires the one-region native PILOT** (`m3-W2-PILOT-plink-native-BRIEF.md`, autonomous:false, ~$5–25): START HAIL 20260604 (resize workers to 2 to save $) → export the SAME cell the Hail v2 probe measured (`m2_region_00040__sub00` AFR, chr12 GRCh38 37,463,740–45,398,515, MAF≥0.005, ~64,176 var) to plink → `plink1.9 --r ... --keep-allele-order` banded + dense, measure wall/RAM/output → extrapolate ×276 AFR regions × VM-$/hr → verdict "AFR panel < $3–4k?" → STOP, `cat` handback, ping "pilot-recorded" → NCSU reconstructs+pushes → **then re-plan (m3-02e)**. Pilot is apples-to-apples vs the Hail 24-cluster-h baseline for this cell.
+
+---
+
+## 2026-06-23 (SUPERSEDED by the re-architecture block above) — AFR re-probe v2 COMPLETE (clean AFR-B rate) + Task 5 go/no-go RUN → NOT GREEN (~34k cluster-h)
 
 **DONE this session (NCSU, token-free reconstruct-and-push):** the AoU agent fired AFR re-probe v2 on HAIL **20260604** — ONE cell `m2_region_00040__sub00` **AFR, A.3, ordering B** — and it **COMPLETED CLEAN**: density-veto routed A.3 (n_var 64,176 > 24,301), **3.0173 blocks/min, 0 spill**, `.bm` data-layer-verified ~18.5 GiB (`gs://rw-migration-aou-rw-476cdac2/ld/cost_probe_m3d/bm/m2_region_00040__sub00.bm`; _SUCCESS+metadata, part-000 read-back OK). Cluster **STOPPED, $0**. The Workbench clone had **NO push token** (brief STEP C assumed one) → token-free handback: AoU `cat`ed the 3 artifacts + stopped (local commit `07f43dc` discarded), **NCSU reconstructed + pushed**. See [[feedback_push_ncsu_before_aou_clone_fire]].
 
