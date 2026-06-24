@@ -69,6 +69,79 @@ def _place_stitched_parent(rscript, env, chain, tmp_path):
     return parent, ld_dir, out_rds
 
 
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_FINEMAP_SMK = _PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
+_SUSIE_R = _PROJECT_ROOT / "src" / "legacy" / "region_analysis" / "scripts" / "run_susie_rss.R"
+
+
+def test_estimate_s_guard_present():
+    """W-2: finemap.smk gained a NEW per-region s-diagnostic capture (a log:
+    directive / captured artifact for the estimate_s z-vs-LD consistency scalar)
+    AND a NEW m3-02e comment block tying the guard to the two new LD sources
+    (native AFR --keep-allele-order + public-EUR liftover). The pre-existing
+    run_susie_rss.R:611 kriging_rss alone does NOT satisfy this — the guard must
+    be surfaced as NEW work in finemap.smk + a NEW estimate_s serialization."""
+    smk = _FINEMAP_SMK.read_text()
+    # NEW capture/log line in finemap.smk (had ZERO of these before m3-02e)
+    assert any(tok in smk for tok in
+               ("estimate_s", "ld_z_consistency", "s_diagnostic", "kriging_rss")), (
+        "finemap.smk must gain a NEW per-region s-diagnostic capture/log line"
+    )
+    # NEW m3-02e comment block tying the guard to the two new sources
+    assert "m3-02e" in smk
+    assert "--keep-allele-order" in smk or "public-EUR liftover" in smk
+    # the guard is surfaced as NEW estimate_s serialization in run_susie_rss.R
+    susie = _SUSIE_R.read_text()
+    assert "estimate_s_rss" in susie, (
+        "run_susie_rss.R must serialize a NEW per-region estimate_s scalar "
+        "(Zou 2022 z-vs-LD consistency) — not just the pre-existing kriging_rss"
+    )
+    assert "ld_z_consistency" in susie or "estimate_s" in susie
+
+
+def test_loader_contract_unchanged_for_both_sources(tmp_path):
+    """One resolver/loader contract serves BOTH new sources: the AFR native
+    .npz->.rds (AFR_aou) and the public EUR .rds (EUR_ukbb_pub). Hermetic
+    (no R): resolve_ld_path returns the right head for each ancestry."""
+    sys.path.insert(0, str(_PROJECT_ROOT / "src" / "python"))
+    from ld_panel import resolve_ld_path
+
+    base = tmp_path / "data" / "processed" / "ld_reference"
+    cfg = {"ld_panel": {
+        "EUR": [
+            {"source": "EUR_ukbb_pub", "path": str(base / "EUR_ukbb_pub" / "{region_safe}.rds")},
+            {"source": "EUR_aou", "path": str(base / "EUR_aou" / "{region_id}.rds")},
+        ],
+        "AFR": [
+            {"source": "AFR_aou", "path": str(base / "AFR_aou" / "{region_id}.rds")},
+            {"source": "AFR_1kg", "path": str(base / "AFR" / "{region_safe}.rds")},
+        ],
+        "strict_aou_only": False,
+        "pin": {"EUR": None, "AFR": None},
+    }}
+    rid = "m2_region_00067"
+    eur = base / "EUR_ukbb_pub" / f"{rid}.rds"
+    afr = base / "AFR_aou" / f"{rid}.rds"
+    for p in (eur, afr):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.touch()
+    assert resolve_ld_path(rid, "EUR", cfg, region_safe=rid) == eur
+    assert resolve_ld_path(rid, "AFR", cfg, region_safe=rid) == afr
+
+
+def test_production_boundary_documented():
+    """The M3 LD-build is recorded COMPLETE within m3-02e and m3-04 (the stale
+    322-cell Hail LD fire) is SUPERSEDED-PENDING-REPLAN: it must CONSUME the
+    m3-02e .npz/.rds, not rebuild LD via Hail. 322 = pre-m3-02d 161x2;
+    276 = post-m3-02d per-ancestry AFR count."""
+    smk = _FINEMAP_SMK.read_text()
+    assert "SUPERSEDED-PENDING-REPLAN" in smk
+    assert "m3-04" in smk
+    assert "consume" in smk.lower()
+    assert "Hail" in smk
+    assert "276" in smk and "322" in smk
+
+
 def test_loader_contract_no_skip_in_m3_env(r_toolchain):
     """If the M3 env is active the toolchain MUST be present (a skip is FAILURE)."""
     rscript, env = r_toolchain

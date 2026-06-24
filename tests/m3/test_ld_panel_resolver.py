@@ -28,6 +28,8 @@ def _build_config(tmp_path: Path) -> dict:
     return {
         "ld_panel": {
             "EUR": [
+                # m3-02e Move 3: public UKBB 337k is the EUR chain HEAD.
+                {"source": "EUR_ukbb_pub", "path": str(base / "EUR_ukbb_pub" / "{region_safe}.rds")},
                 {"source": "EUR_aou",  "path": str(base / "EUR_aou" / "{region_id}.rds")},
                 {"source": "EUR_ukbb", "path": str(base / "EUR_ukbb_ld" / "{region_safe}.rds")},
                 {"source": "EUR_1kg",  "path": str(base / "EUR" / "{region_safe}.rds")},
@@ -173,10 +175,61 @@ def test_production_pipeline_yaml_loads(tmp_path):
     panel = cfg["ld_panel"]
     assert {"EUR", "AFR", "TRANS", "strict_aou_only", "pin"}.issubset(set(panel))
     assert panel["strict_aou_only"] is False
-    # AFR_aou is the head of the AFR chain per D-M3-05
+    # AFR_aou is the head of the AFR chain per D-M3-05 (native-plink .npz->.rds)
     assert panel["AFR"][0]["source"] == "AFR_aou"
-    # EUR_aou is the head of the EUR chain per D-M3-01
-    assert panel["EUR"][0]["source"] == "EUR_aou"
+    # m3-02e Move 3: EUR chain head is now the PUBLIC UKBB 337k panel
+    # (EUR_ukbb_pub), AHEAD of the legacy EUR_aou/EUR_ukbb/EUR_1kg entries.
+    assert panel["EUR"][0]["source"] == "EUR_ukbb_pub"
+    eur_sources = [e["source"] for e in panel["EUR"]]
+    assert eur_sources.index("EUR_ukbb_pub") < eur_sources.index("EUR_aou")
+
+
+def test_eur_chain_head_is_public(tmp_path):
+    """m3-02e Move 3: a representative EUR region resolves to EUR_ukbb_pub (chain
+    head) when its .rds exists; the legacy entries remain BEHIND it as fallbacks."""
+    cfg = _build_config(tmp_path)
+    base = tmp_path / "data" / "processed" / "ld_reference"
+    rid = "m2_region_00001"
+
+    pub = _touch(base / "EUR_ukbb_pub" / f"{rid}.rds")
+    _touch(base / "EUR_aou" / f"{rid}.rds")  # legacy present but behind the head
+    got = resolve_ld_path(rid, "EUR", cfg, region_safe=rid)
+    assert got == pub, f"EUR head must be the public panel; got {got}"
+
+    # remove the public head -> falls back to the legacy EUR_aou
+    pub.unlink()
+    got2 = resolve_ld_path(rid, "EUR", cfg, region_safe=rid)
+    assert got2.name == f"{rid}.rds" and "EUR_aou" in str(got2)
+
+
+def test_afr_chain_head_unchanged(tmp_path):
+    """The AFR chain head stays AFR_aou (native-plink .npz->.rds); fallback tail
+    AFR_hgdp/AFR_1kg unchanged."""
+    cfg = _build_config(tmp_path)
+    base = tmp_path / "data" / "processed" / "ld_reference"
+    rid = "m2_region_00040"
+    afr = _touch(base / "AFR_aou" / f"{rid}.rds")
+    got = resolve_ld_path(rid, "AFR", cfg, region_safe=rid)
+    assert got == afr
+    assert cfg["ld_panel"]["AFR"][0]["source"] == "AFR_aou"
+
+
+def test_eur_pin_to_public_works(tmp_path):
+    """Pinning EUR to EUR_ukbb_pub resolves only the public panel; pinning to a
+    source not in the chain still raises ValueError (back-compat)."""
+    cfg = _build_config(tmp_path)
+    base = tmp_path / "data" / "processed" / "ld_reference"
+    rid = "m2_region_00002"
+
+    cfg["ld_panel"]["pin"]["EUR"] = "EUR_ukbb_pub"
+    pub = _touch(base / "EUR_ukbb_pub" / f"{rid}.rds")
+    _touch(base / "EUR_aou" / f"{rid}.rds")
+    got = resolve_ld_path(rid, "EUR", cfg, region_safe=rid)
+    assert got == pub
+
+    cfg["ld_panel"]["pin"]["EUR"] = "EUR_not_a_real_source"
+    with pytest.raises(ValueError, match="not in"):
+        resolve_ld_path(rid, "EUR", cfg, region_safe=rid)
 
 
 # ---------------------------------------------------------------------
