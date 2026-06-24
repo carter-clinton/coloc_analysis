@@ -155,17 +155,33 @@ bullet + the plan frontmatter `supersedes_note`.
 - All Task 1–3 acceptance criteria + the 9 phase-level checks pass.
 - Snakemake 7.32.4 parses the full workflow with the new include + the new
   `finemap.smk` log directive (rc=0).
-- `pytest tests/m3 -q`: **0 failed.** 18 `errors` remain in
-  `test_stitch_subregions_to_rds.py` — an UNTOUCHED R-execution file that requires
-  the `m3-r-ld` Rscript env (absent in this session; each probe is slow). They are
-  environmental + pre-existing (nothing m3-02e touched is imported there), not
-  failures. They will RUN (not error) under the `m3-r-ld` env per the no-skip
-  loader discipline.
+- **Full `pytest tests/m3` (47 min, with the `m3-r-ld` Rscript env present):
+  260 passed, 38 skipped, 3 FAILED.** All 3 failures are in
+  `test_stitch_subregions_to_rds.py` (`test_stitch_zeroes_only_beyond_buffer`,
+  `test_stitch_banded_psd`, `test_stitch_allele_aware_alignment`) and are
+  **PRE-EXISTING, independent of m3-02e** — proof: every file they exercise
+  (`src/scripts/stitch_subregions_to_rds.R`, `src/scripts/ld_npz_to_rds.R`,
+  the test, `conftest.py`) is BYTE-IDENTICAL to the pre-m3-02e base `1cd6789`
+  (`git diff --quiet 1cd6789..HEAD` clean for each); the tests invoke only
+  `STITCH_R` (`stitch_subregions_to_rds.R`, untouched) via `_run_stitch`, and the
+  one R file m3-02e DID change (`run_susie_rss.R`'s `estimate_s_rss` at line 628)
+  is far BELOW the loader-extraction marker `option_list <- list(` at line 234,
+  so the stitch test's `_loader_functions_only` never sees it. The earlier
+  probe-failing run mis-reported these as 18 environmental `errors`; with the R
+  env actually present they are 3 real but PRE-EXISTING stitch-path failures.
 
 ## Issues Encountered
 
-None blocking. The 18 R-env `errors` above are environmental (no `m3-r-ld` Rscript
-in this session), not introduced by m3-02e.
+- **3 PRE-EXISTING stitch-R failures (NOT m3-02e regressions)** surfaced when the
+  full suite ran with the `m3-r-ld` Rscript env. They live entirely in the
+  `stitch_subregions_to_rds.R` path (zeroes-beyond-buffer / banded-PSD /
+  allele-aware alignment) — all exercised files byte-identical to base `1cd6789`,
+  none in m3-02e's dependency path. A modified-but-uncommitted
+  `tests/m3/sparse_parent_benchmark.tsv` (from m3-02b commit `908de71`) was
+  already present at session start, corroborating a pre-existing stitch-path
+  drift. **Recommend a separate `/gsd-debug` on the stitch path** (likely a
+  susieR/Matrix version-drift or PSD/allele-alignment assertion) — out of scope
+  for m3-02e, which is clean (38/38 new + 0 introduced regressions).
 
 ## Next Phase Readiness
 
