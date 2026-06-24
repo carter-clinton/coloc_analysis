@@ -16,7 +16,24 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-23 (★★ RESUME HERE ★★) — COST RE-ARCHITECTURE ACCEPTED; NEXT = Carter fires the native-plink PILOT (`m3-W2-PILOT-plink-native-BRIEF.md`)
+## 2026-06-24 (★★ RESUME HERE ★★) — native-plink PILOT COMPLETE = **GREEN**; artifacts reconstructed + pushed; NEXT = re-plan **m3-02e** (Carter's explicit trigger)
+
+The AoU agent fired the one-region native-plink pilot (`m3-W2-PILOT-plink-native-BRIEF.md`) on the **same cell the Hail v2 probe measured** — `m2_region_00040__sub00` AFR, chr12 GRCh38 37,463,740–45,398,515, MAF≥0.005, **n_var = 64,060** (`count_cols = 73,122` ✓). On the master `n2-standard-16` (plink1.9 v1.90b7.2, single-node):
+
+- **Banded** (`--r gz --ld-window-kb 3000 --ld-window 9999999 --ld-window-r2 0 --keep-allele-order`): wall **25.446 min**, peak RAM **16.68 GiB**, `.ld.gz` **16.55 GiB** (cols `CHR_A BP_A SNP_A CHR_B BP_B SNP_B R`, signed R∈[−1,1], in-band).
+- **Square** (`--r square bin4 --keep-allele-order`): wall **56.224 min**, peak RAM **17.89 GiB**, `.ld.bin` **15.29 GiB** = 64060² float32 (diag=1.0, symmetric, sym_check=0.0).
+
+**Extrapolation ×276 regions → VERDICT GREEN:** banded **117.05 VM-h** ($174 Spot / $490 on-demand), square **258.6 VM-h** ($385 Spot / $1,084 on-demand) — well inside the $3–4k budget and **~1–2 OOM cheaper** than the Hail path (~24 cluster-h for THIS cell → ~17k cluster-h AFR half of the NOT-GREEN 34k projection). **Move 2** of the re-architecture is confirmed. Recommended output mode = **square bin4** (SuSiE-ready, fixed-size, verified symmetric) unless disk-tight (then banded + r² floor); footprint ~4.6 TB square / ~4.2 TB banded across 276 regions.
+
+**Handback was token-free** (no Workbench push token). The terminal websocket dropped as cluster `20260604` stopped, so the on-disk copies were lost — but the agent `cat`'d all measurements first. **NCSU reconstructed + pushed** three artifacts: `m3-W2-pilot-plink-native.tsv` (verbatim row, conformed to the brief's 11-col schema — RAM lifted into `plink_band_peak_ram_gib`), `m3-W2-pilot-report.md` (authored from the handback numbers, provenance-noted), `m3-W2-pilot-cluster-shutdown.md`. Cluster `20260604` **STOPPED, $0**; the other three left Stopped/untouched. (Worker resize-to-2 was abandoned as an UPDATING stall → ran on 24 workers, but plink is single-node so worker count was immaterial.)
+
+**PILOT CAVEATS to fold into m3-02e:** (1) the $4.19/$1.49 rates are labelled `n2-highmem-64` but the pilot ran on `n2-standard-16` → **re-measure production-VM wall before committing the m3-02e budget**; (2) banded pair count ~400M is estimated from output size (exact `wc -l` was interrupted to save cost); (3) per-region export ~33 s, the ~20 min `count_cols` scan is one-time/amortized. The two `*_time.txt` files were not cat'd back (websocket drop) — not reconstructable, but their key values are in the TSV.
+
+**NEXT = re-plan m3-02e** (Carter's explicit trigger, e.g. `/gsd-plan-phase`): export-once (QC'd AFR cohort → plink `.bed` from the Hail MT) → native per-region AFR LD on a single Spot VM looping the 276 regions (`plink1.9 --r square bin4 --keep-allele-order`) → egress-clean aggregate `.npz` → NCSU ingest AFR `.npz` + **public EUR LD** (Weissbrod/PolyFun 337k or Pan-UKBB 420k) + hg19→hg38 liftover adapter → coloc/SuSiE with `estimate_s`. The Hail 34k-cluster-h path is NOT taken. Nothing running, $0, origin synced.
+
+---
+
+## 2026-06-23 (SUPERSEDED by the 2026-06-24 PILOT-GREEN block above) — COST RE-ARCHITECTURE ACCEPTED; the native-plink PILOT was the next step
 
 Carter capped production at ~$1k, then asked for a cost-effective re-architecture (budget can stretch to **$3–4k**). 5 cited research threads → **`m3-W2-cost-effective-rearchitecture.md`**: fits $3–4k AND improves rigor via 3 moves — **(1) EUR LD = a PUBLIC biobank reference (Carter CHOSE public UKBB)**, not computed ($0, and better-matched to external EUR GWAS than AoU 220k; Weissbrod 337k `.npz` / Pan-UKBB 420k; needs hg19→hg38 + format adapter on NCSU); **(2) AFR LD computed in-house** (no adequate public AFR ref exists — it's the contribution; MultiSuSiE NatGenet 2025 is the direct AoU-in-sample precedent) **but with a NATIVE tool (plink1.9/LDstore2/emeraLD) on a single Spot VM (~$1.49/hr) instead of Hail BlockMatrix on a 24-node cluster (~$23.4/hr)** → ~1–2 orders of magnitude cheaper; **(3) downstream coloc/SuSiE/MR on NCSU** (aggregate-LD egress is policy-clean). Total likely < $2.5k. **The old Hail 34k-cluster-h projection is now the path NOT taken.**
 
