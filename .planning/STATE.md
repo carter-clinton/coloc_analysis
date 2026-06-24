@@ -16,7 +16,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-24 (★★ RESUME HERE ★★) — m3-02e wave PLANNED + plan-checked + committed (`8d3dbe4`); NEXT = **EXECUTE m3-02e Tasks 1-3 in a FRESH SESSION**
+## 2026-06-24 (★★ RESUME HERE — LATEST ★★) — m3-02e Tasks 1-3 EXECUTED + fire brief authored; NEXT = **Carter fires T4 (the only billable step) per `m3-02e-AFR-NATIVE-FIRE-BRIEF.md`**
+
+Executed the m3-02e wave's autonomous code in a fresh session (the planned fresh-session re-try; the prior session's gsd-executor subagent dispatch tripped the false-positive cyber safeguard 3×). **Executed INLINE** (the documented fallback) — benign LD-matrix code, TDD RED-first, atomic commits per task. Nothing ran in-perimeter, **$0**.
+
+**DONE (7 commits `fe83e8b`..`e17e77a`, +1,757 lines, 14 files):**
+- **T1** (`158a29a`) `plink_ld_to_npz.py` (square `.ld.bin`→lower_triangular=False / banded `.ld.gz`→True → the exact `_save_npz` .npz contract; canonical vid `chr:pos:REF:ALT = chr:pos:A2:A1`) + `aou_ld_panel.export_cohort_to_plink`/`build_plink_ld_command` (`--keep-allele-order` hardcoded). 14 tests.
+- **T2** (`90e9189`) `build_public_eur_manifest.py` (276 EUR regions → public Weissbrod 337k tiles; Pan-UKBB 420k alternate; hg19/hg38 adapter) + additive `download_ukbb_ld_tiles.py` + `m3_public_eur_ld.smk` (AWS S3 boto3 UNSIGNED) + Snakefile include. 7 tests.
+- **T3** (`ec01ab3`) `pipeline.yaml` EUR head=`EUR_ukbb_pub` (AFR head unchanged) + NEW `estimate_s_rss` serialization in `run_susie_rss.R` + `finemap.smk` Move-3 guard comment + per-region log capture + **m3-04 SUPERSEDED-PENDING-REPLAN** record. 17 tests.
+- **T4 brief** (`e17e77a`) `m3-02e-AFR-NATIVE-FIRE-BRIEF.md` (245-line turnkey runbook; production-VM re-measure stop-gate + PILOT going-in numbers).
+
+**Verification:** 38 new m3-02e tests pass (`smoke_dev` py3.11). Snakemake 7.32.4 parses the full workflow (rc=0). `pytest tests/m3 -q` = **0 failed**; the 18 `errors` are in the UNTOUCHED `test_stitch_subregions_to_rds.py` (R-execution file needing the `m3-r-ld` Rscript env, absent this session) — environmental + pre-existing, not m3-02e regressions. SUMMARY = `m3-02e-W2-native-ld-export-and-public-eur-SUMMARY.md`.
+
+**NEXT = Carter fires T4** in the AoU perimeter (export-once → 276-region native plink loop → egress-clean `.npz` panel → real-cost TSV → verified shutdown → token-free handback). The production-VM wall re-measure is a BLOCKING stop-gate. After the handback, `m3-W2-native-plink-panel.tsv` + `m3-02e-cluster-shutdown.md` are reconstructed + pushed by NCSU. **Then m3-04 must be RE-PLANNED to consume m3-02e outputs** (not rebuild LD via Hail). Push this state commit; origin synced through `1cd6789` at session start.
+
+---
+
+## 2026-06-24 (SUPERSEDED by the EXECUTED block above) — m3-02e wave PLANNED + plan-checked + committed (`8d3dbe4`); NEXT = **EXECUTE m3-02e Tasks 1-3 in a FRESH SESSION**
 
 The native-plink PILOT (below) came back GREEN, so this session re-planned the cost re-architecture as the **m3-02e** wave (Carter: "proceed --auto --chain"). Routing note: the whole M3 milestone is ONE GSD-resolvable phase (`m3-aou-afr-ld-panel-build`); m3-00..05 + 02b/c/d/e are WAVES inside it (the resolver returns `found:false` for the lettered ids), so `/gsd-discuss-phase m3-02e` would've re-opened all of M3 — instead the wave was planned the way 02b/c/d were (gsd-planner → gsd-plan-checker writing a wave PLAN into the shared dir).
 
