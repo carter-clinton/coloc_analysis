@@ -625,6 +625,21 @@ d3 <- if (!is.null(krig)) {
   }
 } else list(n_outliers = NA_integer_, max_logLR = NA_real_, lambda = NA_real_)
 
+# D3b -- m3-02e Move 3 (Zou 2022): SuSiE-RSS estimate_s z-vs-LD consistency guard.
+# estimate_s_rss returns a scalar s in [0,1] measuring agreement between the GWAS
+# z-scores and the LD matrix. A high s indicates a z-vs-LD mismatch -- exactly the
+# allele-flip / encoding failure that the native-plink AFR LD (--keep-allele-order)
+# and the public-EUR hg19->hg38 liftover are most exposed to. Serialized per region
+# (ld_z_consistency_s) so the finemap rule can flag an LD-source mismatch before it
+# silently corrupts fine-mapping. tryCatch -> NA on any susieR-version/shape error
+# (additive field; backward compatible with summarize_finemap_results.py).
+s_estimate <- tryCatch(
+  susieR::estimate_s_rss(z = subset$z, R = R, n = mean_n),
+  error = function(e) NA_real_
+)
+result$d3b_ld_z_consistency_s   <- s_estimate
+result$ld_source_mismatch_flag  <- isTRUE(is.numeric(s_estimate) && s_estimate > 0.5)
+
 # Post-hoc min_abs_corr sweep (FREE -- no refit, Pattern 4)
 sweep_rows <- lapply(MIN_ABS_CORR_SWEEP, function(macor) {
   cs_m <- tryCatch(

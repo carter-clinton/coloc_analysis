@@ -72,6 +72,28 @@ rule build_finemap_manifest:
         """
 
 
+# ---------------------------------------------------------------------------
+# m3-02e Move 3: estimate_s z-vs-LD consistency guard (Zou 2022).
+# run_susie_rss.R now serializes a per-region estimate_s_rss scalar
+# (d3b_ld_z_consistency_s) + an ld_source_mismatch_flag. The two NEW LD sources
+# this wave introduces -- the native-plink AFR LD (built with --keep-allele-order)
+# and the public-EUR panel (hg19->hg38 liftover) -- are the ones most exposed to
+# an allele-flip / encoding mismatch between the LD source and the GWAS z-scores,
+# the exact failure estimate_s catches. The run_finemap rule captures that
+# per-region s-estimate to a log artifact so a z-vs-LD mismatch is flagged before
+# it silently corrupts fine-mapping.
+#
+# m3-02e (B-1) LD-BUILD BOUNDARY: the M3 LD-build is COMPLETE within m3-02e --
+# AFR LD = the ~276 native-plink per-ancestry windows (Task 4 in-perimeter fire)
+# + EUR LD = the public UKBB 337k panel (Task 2, $0). The Hail BlockMatrix LD
+# path is RETIRED. m3-04-W4-production-and-egress-PLAN.md is the STALE 322-cell
+# HAIL LD production fire (322 = pre-m3-02d 161 union regions x 2 ancestries;
+# 276 = the post-m3-02d per-ancestry AFR window count) and is
+# SUPERSEDED-PENDING-REPLAN: it must be re-planned to consume m3-02e's AFR-native
+# .npz + public EUR .rds, NOT to rebuild LD via Hail (which would spend the
+# 160-260 cluster-h the cost re-architecture exists to avoid). The downstream
+# coloc/SuSiE fine-mapping fire is a separate M4 concern, unaffected.
+# ---------------------------------------------------------------------------
 rule run_finemap:
     input:
         sumstats=lambda wildcards: os.path.join(
@@ -120,6 +142,11 @@ rule run_finemap:
     output:
         json=finemap_output("{method}", "{trait}", "{ancestry}", "{region}"),
         fit=finemap_output("{method}", "{trait}", "{ancestry}", "{region}").replace(".json", ".fit.rds"),
+    log:
+        # m3-02e Move 3: per-region estimate_s (z-vs-LD consistency) capture.
+        ld_z_consistency=finemap_output(
+            "{method}", "{trait}", "{ancestry}", "{region}"
+        ).replace(".json", ".estimate_s.log"),
     conda:
         "envs/r_coloc.yml"
     threads: 1
@@ -155,6 +182,10 @@ rule run_finemap:
           --credible-set {params.credible_set} \
           --policy {input.policy} \
           --output {output.json}
+        # m3-02e Move 3: surface the per-region estimate_s z-vs-LD consistency
+        # scalar (Zou 2022) to a log artifact. No f-string braces here -- only
+        # Snakemake's intended {{}} placeholders -- so the rule shell stays valid.
+        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'ld_z_consistency_s', d.get('d3b_ld_z_consistency_s'), 'ld_source_mismatch_flag', d.get('ld_source_mismatch_flag'))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
         """
 
 

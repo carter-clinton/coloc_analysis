@@ -205,7 +205,12 @@ enable_ld_pipeline: true
 # resolver's region argument (config/region_id_mapping.tsv translates
 # between the two naming conventions when needed).
 ld_panel:
+  # m3-02e Move 3 (D-02e-02): for M3 the EUR LD is the PUBLIC UKBB 337k reference
+  # (Weissbrod/PolyFun, $0 compute, hg19->analytic-plane) and the AFR LD is the
+  # native-plink AoU panel (AFR_aou). EUR_ukbb_pub is the chain HEAD, ahead of
+  # the legacy EUR_aou/EUR_ukbb/EUR_1kg fallbacks.
   EUR:
+    - {source: "EUR_ukbb_pub", path: "data/processed/ld_reference/EUR_ukbb_pub/{region_safe}.rds"}
     - {source: "EUR_aou",   path: "data/processed/ld_reference/EUR_aou/{region_id}.rds"}
     - {source: "EUR_ukbb",  path: "data/processed/ld_reference/EUR_ukbb_ld/{region_safe}.rds"}
     - {source: "EUR_1kg",   path: "data/processed/ld_reference/EUR/{region_safe}.rds"}
@@ -220,7 +225,8 @@ ld_panel:
   # rather than walking the fallback chain. Used at manuscript-freeze time.
   strict_aou_only: false
   # Optional pin override: pin a specific source for one ancestry to force the
-  # resolver to that entry only (e.g., "EUR_1kg" to keep Track A real-LD comparator).
+  # resolver to that entry only (e.g., "EUR_1kg" to keep Track A real-LD
+  # comparator, or "EUR_ukbb_pub" to force the m3-02e public 337k panel).
   pin:
     EUR: null
     AFR: null
