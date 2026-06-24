@@ -2851,6 +2851,86 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
         print(f"[compute_region_ld] A.3 scratch cleanup skipped for {scratch_uri}: {e}")
 
 
+def build_plink_ld_command(bfile_prefix: str, chrom, from_bp: int, to_bp: int,
+                           out_prefix: str, mode: str = "square",
+                           ld_window_kb: int = 3000, r2_floor: float = 0.0,
+                           threads: int | None = None) -> list[str]:
+    """Build the native plink1.9 per-region LD command (m3-02e Move 1).
+
+    ``--keep-allele-order`` is HARDCODED on EVERY LD call (not optional): plink
+    otherwise sets A1 to the minor allele, which flips LD signs relative to the
+    GWAS z-scores and makes susieR fail. A test asserts it is always present.
+
+    ``mode='square'`` -> ``--r square bin4`` (raw float32 .ld.bin; D-02e-01
+    default, SuSiE-ready fixed-size). ``mode='banded'`` -> ``--r gz`` with the
+    ld-window + r2 floor (the disk-tight alternate; ~400M-pair .ld.gz). The
+    window is extracted via ``--chr/--from-bp/--to-bp`` over the cohort bfile.
+
+    Returns the plink argv list (the fire brief renders + runs it via subprocess).
+    The cohort ``.bed`` it reads is INDIVIDUAL-LEVEL and stays IN-PERIMETER; only
+    the resulting aggregate LD matrix is ever egressed (REQ-AOU-LD-EGRESS).
+    """
+    if mode not in ("square", "banded"):
+        raise ValueError(f"mode must be 'square' or 'banded', got {mode!r}")
+    cmd = [
+        "plink1.9",
+        "--bfile", str(bfile_prefix),
+        "--keep-allele-order",  # MANDATORY: sign-correct LD vs GWAS z (susieR)
+        "--chr", str(chrom),
+        "--from-bp", str(from_bp),
+        "--to-bp", str(to_bp),
+    ]
+    if mode == "square":
+        cmd += ["--r", "square", "bin4"]
+    else:
+        cmd += [
+            "--r", "gz",
+            "--ld-window-kb", str(ld_window_kb),
+            "--ld-window", "99999",
+            "--ld-window-r2", str(r2_floor),
+        ]
+    if threads is not None:
+        cmd += ["--threads", str(threads)]
+    cmd += ["--out", str(out_prefix)]
+    return cmd
+
+
+def export_cohort_to_plink(mt_uri: str, out_bfile_prefix: str, *, mt=None) -> str:
+    """Export the QC'd cohort MT to plink ``.bed/.bim/.fam`` ONCE (m3-02e Move 1).
+
+    The export-once design: ``hl.export_plink`` runs a single time over the whole
+    cohort (the expensive ``count_cols`` scan is amortized across all ~276 AFR
+    regions instead of paid per-region). The native plink LD loop then extracts
+    each region's window from this one bfile via ``--chr/--from-bp/--to-bp``.
+
+    EGRESS BOUNDARY (REQ-AOU-LD-EGRESS): the exported ``.bed/.bim/.fam`` is
+    INDIVIDUAL-LEVEL genotype data and STAYS IN-PERIMETER — it is NEVER egressed.
+    Only the per-region aggregate LD ``.npz`` + AF crosses the AoU perimeter.
+
+    Args:
+        mt_uri: gs:// URI of the QC'd cohort MT (e.g. .../ld/mt_afr_qc.mt). Read
+            through read_final_cohort_mt (the empty-final trust gate).
+        out_bfile_prefix: plink output prefix (in-perimeter scratch / bucket).
+        mt: Optional already-loaded MatrixTable (test injection); when given, the
+            gated read of ``mt_uri`` is skipped.
+
+    Returns the bfile prefix.
+    """
+    import hail as hl  # hail-optional: import only when actually exporting
+
+    cohort = mt if mt is not None else read_final_cohort_mt(mt_uri)
+    # One amortized scan (the count_cols cost is paid ONCE, not per region).
+    try:
+        n_samples = cohort.count_cols()
+        print(f"[export_cohort_to_plink] cohort {mt_uri} count_cols={n_samples} "
+              f"(one-time amortized scan); exporting plink .bed (IN-PERIMETER, "
+              f"individual-level — never egressed).")
+    except Exception as e:  # noqa: BLE001 -- the scan log is best-effort
+        print(f"[export_cohort_to_plink] count_cols log skipped: {e}")
+    hl.export_plink(cohort, str(out_bfile_prefix))
+    return str(out_bfile_prefix)
+
+
 def _save_npz(region_id: str, ld_np: "np.ndarray", variant_ids: list,
               rsids: list, out_bucket: str | None, out_local_dir: Path | None,
               lower_triangular: bool = False,

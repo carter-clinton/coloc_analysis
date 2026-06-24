@@ -274,9 +274,16 @@ def test_no_hardcoded_abs_paths():
 
 
 def test_plink_ld_to_npz_does_not_import_hail():
-    """Runs on the Spot VM / NCSU — must not import hail."""
+    """Runs on the Spot VM / NCSU — must not import hail (AST: no actual import
+    statement; the docstring may mention the word)."""
+    import ast
     src = (PROJECT_ROOT / "src" / "python" / "plink_ld_to_npz.py").read_text()
-    assert "import hail" not in src
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            assert all(a.name != "hail" for a in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            assert node.module != "hail"
 
 
 # --------------------------------------------------------------------------- #
