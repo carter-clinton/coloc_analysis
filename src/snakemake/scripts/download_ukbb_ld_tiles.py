@@ -71,6 +71,16 @@ except ImportError:
 BUCKET = "broad-alkesgroup-ukbb-ld"
 PREFIX = "UKBB_LD/"
 
+# m3-02e Move 2 (additive): the public UKBB 337k panel is the M3 EUR LD source
+# (EUR_ukbb_pub), written to its own target dir so it does not collide with the
+# legacy curated EUR_ukbb_ld output. The existing rule behavior is unchanged;
+# m3_public_eur_ld.smk passes this dir via the existing --out-dir parameter.
+# These tiles are hg19/GRCh37 (the Weissbrod build); the M3 analytic plane is
+# GRCh37, so the EUR_ukbb_pub .rds drops into the same loader contract after the
+# standard chr-prefix + provenance handling (DEC-2026-04-24-01).
+EUR_UKBB_PUB_OUT_DIR = "data/processed/ld_reference/EUR_ukbb_pub"
+EUR_UKBB_PUB_BUILD = "hg19"  # GRCh37
+
 # Tile naming regex: chr{N}_{start}_{end}.npz (N is 1..22 or X)
 _TILE_RE = re.compile(r"chr([0-9XY]+)_(\d+)_(\d+)\.npz$")
 

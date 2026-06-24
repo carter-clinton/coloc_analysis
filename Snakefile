@@ -120,6 +120,9 @@ if FINEMAP_METHODS:
 # the head of the ld_panel: chain consumed by run_finemap's resolver).
 include: "src/snakemake/rules/m3_ingest_aou_ld.smk"
 include: "src/snakemake/rules/m3_convert_npz_rds.smk"
+# m3-02e Move 2: public UKBB 337k EUR LD ($0 compute). EUR_ukbb_pub is the
+# ld_panel.EUR chain head; the AFR native-plink .npz->.rds stays AFR_aou.
+include: "src/snakemake/rules/m3_public_eur_ld.smk"
 
 # Phase 2 QTL coloc rules. qtl_download.smk defines QTL_RAW_DIR and
 # QTL_HARMONIZED_DIR; qtl_coloc.smk uses those plus finemap_output() from
