@@ -1,20 +1,22 @@
-# m3-W2 Cluster Shutdown — AoU LD cost RE-PROBE (m3-02d)
+# m3-W2 Cluster Shutdown (Task 4 AFR re-probe v2)
 
-**Cluster:** HAIL 20260604 (JupyterLab_Spark_cluster_for_AoU_Spark_20260604) — n2-standard-16 x24, 64 GB master.
-**Workspace:** aou-rw-476cdac2 / project wb-perky-corn-6639 / bucket gs://rw-migration-aou-rw-476cdac2 / region us-central1.
-**Shutdown timestamp (UTC):** 2026-06-23T20:55:00Z
-**Stop method:** AoU Workbench Apps panel -> Pause/Stop on the 20260604 cluster (UI control; not a billable compute action).
-**Status:** STOPPED (compute paused; $0 idle compute confirmed — no running cluster after stop).
+- Cluster: HAIL Spark 20260604 (reused from v1; not 20260605/20260617/20260620)
+- Action: STOPPED at handback via Apps panel (UI Pause/Stop; not a billable compute action).
+- UTC timestamp: 2026-06-24T01:18:25Z
+- Status: STOPPED (idle cost while stopped = $0/hr). Apps panel shows the Stopped badge + Start button.
 
-## Work completed this session (Task 4 = in-perimeter LD cost RE-PROBE)
-- STEP A full preflight: count-only write_preflight_counts over the FULL config/ld_regions.tsv (552 compute cells, 276 AFR + 276 EUR). Wrote m3-W2-preflight-counts.tsv (552 data rows). Wall ~38.4 min. Count-only (filtered count_rows per cell) — NO matmul/LD-output writes.
-- STEP B billable fires:
-  - B.1 AFR m2_region_00040__sub00 (A.2): matmul completed (288 blocks) but driver collect in to_numpy() hung (dense 16.5 GB > 11 GiB driver heap). INTERRUPTED_a2_driver_collect; killed (SIGINT/TERM + yarn -kill). NOT a usable rate.
-  - B.3 EUR m2_region_00040__sub01 (A.3, ordering B): COMPLETED. matmul 810 blocks (~13 min) then banded checkpoint 143 blocks; 0 spill throughout; peak exec heap ~1.85 GiB; end-to-end 180.6 min (exceeded 90-min brief cap — write-throughput-bound long tail). Data-layer verified: final .bm = 15.6 GiB (16,765,544,992 B), 143 parts, _SUCCESS + metadata.json, part-000 read-back OK. This is the CR-01 'banded write completes' proof + the A.3 ordering-B rate.
-  - B.2 EUR A.2: deferred per user (low-density pass would not validate high-density A.2; A.2 rate needs a bigger driver). B.4 AFR A.3 factor: NOT fired per user.
+## STEP B result (recorded in m3-W2-cost-probe.tsv)
+- AFR m2_region_00040__sub00, routed A.3 (density veto: n_var 64176 > 24301), ordering B, status COMPLETED.
+- n_var=64176, block_count=168, stage4_wall_min=55.679, end_to_end_wall_min=57.421, blocks_per_min=3.0173, any_spill=False.
+- peak_executor_mem_gib = na (no per-executor peak emitted in the run logs; recorded as na, not a number).
+- Data-layer verify (D-M3-10): .bm du=19917095023 bytes (~18.5 GiB) >> 0; _SUCCESS + metadata.json present; part-000 = 134534698 bytes (read-back OK).
+- Output: gs://rw-migration-aou-rw-476cdac2/ld/cost_probe_m3d/bm/m2_region_00040__sub00.bm
 
-## Path-bug note (resolved)
-First full-preflight attempt crashed on read_final_cohort_mt: it used gs://.../ld/mt/mt_{anc}_qc.mt (erroneous /mt/ segment); the canonical path is gs://.../ld/mt_{anc}_qc.mt. The reader reads literally and refused the non-existent path (false 'empty-final' alarm). Verified after fix: AFR count_cols=73122, EUR count_cols=220098 (no refusal). NO re-finalize was performed; MTs were intact all along.
+## Artifact handback (token-free path)
+- The AoU Workbench clone has NO git push token (the brief's STEP C assumed one). Rather than place a PAT in a browser terminal, the three artifacts were `cat` to the terminal and the AoU local commit (07f43dc) was DISCARDED when the cluster stopped.
+- Source of truth = the verified .bm in GCS + the cat output; NCSU reconstructs the three artifacts and pushes them from the credentialed NCSU node. The discarded AoU commit SHA is immaterial (the rate/wall numbers and .bm are preserved).
 
-## Idle-cost sequencing
-Artifacts committed + pushed BEFORE the cluster stop (prior session lesson: stopping the cluster kills the gateway/terminal mid-handback). Stop performed from the Apps panel AFTER push.
+## Notes
+- Ordering A was not run: the A.3 write path at HEAD is hard-locked to ordering B (band-before-checkpoint); the un-materialized matmul ordering A was deliberately removed (hang-prone). Fired ordering B only.
+- HLA forward note: region_00145__sub19 AFR is over-threshold in preflight (95997 var, est 158.8 blk, 10.16 GiB) -> chr6 finer-split (--max-subregion-span-mb 3) needed before m3-04 (plan T-M3RS2-HLA-01).
+- EUR re-confirm was skipped (optional per brief v2.1). The v1 EUR-B completing rate (m2_region_00040__sub01, 4.85 blocks/min, commit 210e66c) is on a different block basis (810 matmul blocks) than this AFR cell (168 banded blocks) and is NOT combined into a measured AFR/EUR factor; Task 5 uses the conservative 3.01 sample-ratio fallback.
