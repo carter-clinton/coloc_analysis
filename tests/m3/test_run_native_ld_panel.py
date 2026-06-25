@@ -371,3 +371,26 @@ def test_filters_to_afr_only(tmp_path, monkeypatch):
     processed = {r["region_id"] for r in res}
     assert processed == {"afr1", "afr2"}
     assert not (out_dir / "eur1.npz").exists()
+
+
+# --------------------------------------------------------------------------- #
+# 7. retired-Hail-path boundary + no hardcoded abs paths (Task 2 guards)      #
+# --------------------------------------------------------------------------- #
+
+def test_driver_does_not_touch_retired_hail_path():
+    """The driver imports aou_ld_panel ONLY for _existing_region_npz +
+    build_plink_ld_command; it must NOT reference the retired Hail A.3 markers
+    (mirrors test_afr_native_path_does_not_route_through_retired_a3)."""
+    src = (_SRC_PYTHON / "run_native_ld_panel.py").read_text()
+    for marker in ("compute_region_ld", "_write_a3_banded_correlation_bm",
+                   "row_correlation", "ld_matrix"):
+        assert marker not in src, (
+            f"driver must not reference retired Hail A.3 marker {marker!r}"
+        )
+
+
+def test_no_hardcoded_abs_paths():
+    """REQ-PATH-PARAMETERIZATION: no /share|/rs1|/gpfs_common literals."""
+    src = (_SRC_PYTHON / "run_native_ld_panel.py").read_text()
+    for bad in ("/share/clintonlab", "/rs1/researchers", "/gpfs_common"):
+        assert bad not in src, f"hardcoded path {bad} in run_native_ld_panel.py"

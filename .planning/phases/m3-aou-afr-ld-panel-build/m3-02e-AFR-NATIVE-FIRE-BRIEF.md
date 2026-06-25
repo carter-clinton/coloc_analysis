@@ -137,29 +137,35 @@ alternate if square ×276 disk (~4.6 TB) is tight.
 
 ## STEP 4 — THE LOOP (276 AFR windows, single Spot VM)
 
-For each AFR row in `config/ld_regions.tsv` (iterate `window_start_grch38..
-window_end_grch38` per `chr`):
+Run the resumable native-plink loop driver **once**. It is idempotent across Spot
+preemption: re-run this **verbatim** after any preemption and every content-valid
+region is skipped via `_existing_region_npz` (the MED-6 byte-floor), so the re-run
+banks only what's still missing — never a truncated `.npz`.
 
 ```bash
-plink1.9 --bfile <bfile_prefix> --keep-allele-order \
-    --chr {chr} --from-bp {window_start_grch38} --to-bp {window_end_grch38} \
-    --r square bin4 --out {region_id}      # banded alternate: --r gz --ld-window-kb 3000 --ld-window 99999 --ld-window-r2 <floor>
+# STEP 4 — resumable native-plink loop (idempotent across Spot preemption)
+python src/python/run_native_ld_panel.py \
+    --manifest config/ld_regions.tsv \
+    --bfile-prefix <bfile_prefix> \
+    --out-dir <in_perimeter_out_dir> \
+    --mode square \
+    --ancestry AFR \
+    --panel-tsv <out_dir>/m3-W2-native-plink-panel.tsv
+# square (D-02e-01 default) -> lower_triangular=False ; --mode banded -> the
+# disk-tight alternate (lower_triangular=True), set automatically per --mode.
 ```
 
-Then convert each region to the egress-clean `.npz`:
+The driver, per region: skips-if-banked (MED-6 floor); else issues plink ONLY via
+`build_plink_ld_command` (so `--keep-allele-order` is always present); converts the
+`.ld.bin`/`.ld.gz` to the egress-clean `.npz` via `plink_ld_to_npz`; **content-
+verifies every region inline (D-M3-10)** — float32 / square / diag==1.0 / symmetric
+(or the one-triangle invariant for banded) — and records `region_id, chr, n_var,
+wall_min, peak_ram_gib, output_gib, status` to the panel TSV. A region that fails
+verification is marked `verify_failed` and the loop **continues** (one bad region
+never aborts the 276 loop).
 
-```bash
-python src/python/plink_ld_to_npz.py \
-    --mode square --ld {region_id}.ld.bin --bim <bfile_prefix>.bim \
-    --allele-freq {region_id}.afreq \
-    --out-npz {region_id}.npz --region-id {region_id} --n-var {n_var}
-# square -> lower_triangular=False ; banded -> lower_triangular=True (set automatically per --mode)
-```
-
-Record per region into **`m3-W2-native-plink-panel.tsv`**: `region_id, chr,
-n_var, wall_min, peak_ram_gib, output_gib`. This TSV is the **REAL
-production-cost measurement** and **REPLACES** the one-cell pilot TSV as the cost
-basis.
+**`m3-W2-native-plink-panel.tsv`** is the **REAL production-cost measurement** and
+**REPLACES** the one-cell pilot TSV as the cost basis.
 
 > The `--keep-allele-order` flag is hardcoded into `build_plink_ld_command` and is
 > MANDATORY on every call (else LD signs mismatch the GWAS z → susieR failure;
@@ -169,6 +175,14 @@ basis.
 ---
 
 ## STEP 5 — VERIFY (D-M3-10; markers are NOT evidence)
+
+The STEP-4 driver **already content-verifies every region inline** (D-M3-10) —
+float32 / square / `diag==1.0` / symmetric (or the one-triangle invariant for
+banded) — and records the per-region `status` (`ok` / `verify_failed`) in the panel
+TSV. **The driver's inline gate is now the PRIMARY D-M3-10 check.** This STEP-5
+standalone numpy check is the **spot re-check** (run it on a sample of regions, plus
+any row whose panel `status` is not `ok`), not the primary gate. First skim the
+panel TSV: any `status != ok` row must be re-fired (the loop banked nothing for it).
 
 Per region, **contents-validate** — never trust `_SUCCESS` / file existence:
 

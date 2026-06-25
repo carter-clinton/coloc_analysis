@@ -33,10 +33,10 @@ Design contracts (all enforced by tests/m3/test_run_native_ld_panel.py):
     ``verify_failed`` and the loop CONTINUES (no whole-loop abort); markers /
     file existence are never trusted.
 
-  * **Retired Hail A.3 path untouched.** This module does NOT reference
-    ``compute_region_ld`` / ``_write_a3_banded_correlation_bm`` / ``row_correlation``
-    / ``ld_matrix``; it imports ``aou_ld_panel`` ONLY for ``_existing_region_npz``
-    + ``build_plink_ld_command``.
+  * **Retired Hail A.3 path untouched.** This module imports ``aou_ld_panel``
+    ONLY for ``_existing_region_npz`` + ``build_plink_ld_command``; it never calls
+    the retired Hail BlockMatrix correlation/banding helpers (a regression test
+    asserts none of those retired symbols appear anywhere in this source).
 
 Horizontal fan-out note: N Spot VMs sharing one ``out_dir`` is SAFE because
 ``_existing_region_npz`` makes every process skip what the others already banked
