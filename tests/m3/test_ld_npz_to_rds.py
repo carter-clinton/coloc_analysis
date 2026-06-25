@@ -41,10 +41,24 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
+
+# Make tests/m3 importable as a bare module dir so `from conftest import ...`
+# resolves regardless of pytest import mode (mirrors the sibling modules).
+_THIS_DIR = Path(__file__).resolve().parent
+if str(_THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_THIS_DIR))
+
+# Shared contention-safe R-subprocess wall-clock budget (single source of truth in
+# the ROOT tests/conftest.py — the bare ``conftest`` module pytest imports). Closes
+# the m3-W2-stitch-rds-test-failures flake CLASS: this module's R/reticulate
+# round-trips pay the same ~66s cold-start and previously used tight literal timeouts
+# (60/60/180s) that flake under shared-node contention.
+from conftest import R_SUBPROCESS_TIMEOUT_S  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -114,7 +128,7 @@ def _check_r_env(rscript: Path) -> tuple[bool, str]:
             [str(rscript), "-e", probe],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=R_SUBPROCESS_TIMEOUT_S,
             env=_r_env(rscript),
         )
     except Exception as exc:  # noqa: BLE001
@@ -208,7 +222,7 @@ def _read_rds(rscript: Path, rds_path: Path) -> dict:
         [str(rscript), "-e", reader, str(rds_path)],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=R_SUBPROCESS_TIMEOUT_S,
         env=_r_env(rscript),
     )
     if res.returncode != 0:
@@ -227,7 +241,7 @@ def _run_converter(rscript: Path, npz: Path, rds: Path, chain: Path) -> subproce
         [str(rscript), str(R_CONVERTER), str(npz), str(rds), str(chain)],
         capture_output=True,
         text=True,
-        timeout=180,
+        timeout=R_SUBPROCESS_TIMEOUT_S,
         env=_r_env(rscript),
     )
 
@@ -773,7 +787,7 @@ def _read_rds_with_af(rscript: Path, rds_path: Path) -> dict:
         [str(rscript), "-e", reader, str(rds_path)],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=R_SUBPROCESS_TIMEOUT_S,
         env=_r_env(rscript),
     )
     if res.returncode != 0:

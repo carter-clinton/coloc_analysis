@@ -30,10 +30,17 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
+
+# Make tests/m3 importable as a bare module dir so `from conftest import ...`
+# resolves regardless of pytest import mode (mirrors the sibling modules).
+_THIS_DIR = Path(__file__).resolve().parent
+if str(_THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_THIS_DIR))
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -49,6 +56,15 @@ M3_R_LD_RSCRIPT = Path("/rs1/researchers/c/ckclinto/conda_envs/m3-r-ld/bin/Rscri
 M3_R_LD_PYTHON = Path("/rs1/researchers/c/ckclinto/conda_envs/m3-r-ld/bin/python")
 
 R_PKGS = ("reticulate", "Matrix", "digest", "jsonlite", "susieR")
+
+# Contention-safe subprocess wall-clock budget for every R round-trip below.
+# SINGLE SOURCE OF TRUTH = the ROOT tests/conftest.py (the bare ``conftest`` module
+# pytest imports; the tests/m3 conftest is shadowed by it). Flake-class fix for
+# m3-W2-stitch-rds-test-failures: a ~66s reticulate cold-start under shared-node
+# contention used to push tight literal timeouts past budget -> TimeoutExpired ->
+# spurious FAILED. Re-exported here so sibling modules that already do
+# `from test_stitch_subregions_to_rds import R_SUBPROCESS_TIMEOUT_S` keep working.
+from conftest import R_SUBPROCESS_TIMEOUT_S  # noqa: E402,F401
 
 
 def _candidate_rscripts() -> list[Path]:
@@ -96,7 +112,7 @@ def _check_r_env(rscript: Path) -> tuple[bool, str]:
     )
     try:
         res = subprocess.run([str(rscript), "-e", probe], capture_output=True,
-                             text=True, timeout=120,
+                             text=True, timeout=R_SUBPROCESS_TIMEOUT_S,
                              env=_r_env_with_reticulate_python(rscript))
     except Exception as exc:  # noqa: BLE001
         return False, f"Rscript probe failed: {exc!r}"
@@ -229,7 +245,8 @@ def _run_stitch(rscript: Path, env: dict, parent: str, ancestry: str,
            "--out", str(out_rds), "--chain", str(chain), "--manifest", str(manifest)]
     for p in npzs:
         cmd += ["--npz", str(p)]
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=300, env=env)
+    return subprocess.run(cmd, capture_output=True, text=True,
+                          timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
 
 
 def _read_rds_summary(rscript: Path, env: dict, rds_path: Path, r_expr: str) -> str:
@@ -241,7 +258,7 @@ def _read_rds_summary(rscript: Path, env: dict, rds_path: Path, r_expr: str) -> 
     code = (f'suppressPackageStartupMessages(library(Matrix)); '
             f'obj <- readRDS("{rds_path}"); {r_expr}')
     res = subprocess.run([str(rscript), "-e", code], capture_output=True,
-                         text=True, timeout=120, env=env)
+                         text=True, timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
     if res.returncode != 0:
         raise RuntimeError(f"rds read failed rc={res.returncode}: {res.stderr}\n{res.stdout}")
     return res.stdout
@@ -589,7 +606,7 @@ def test_loader_accepts_stitched_payload(r_toolchain, chain_38_to_37, tmp_path):
         'cat(sprintf("ISMAT=%%s\\n", is.matrix(r$R)))'
     ) % (loader_funcs, out_rds, ld_dir, parent)
     proc = subprocess.run([str(rscript), "-e", code], capture_output=True,
-                          text=True, timeout=180, env=env)
+                          text=True, timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
     assert proc.returncode == 0, f"loader call failed: {proc.stderr}\n{proc.stdout}"
     vals = dict(l.split("=") for l in proc.stdout.splitlines() if "=" in l)
     assert vals.get("RNULL", "").strip() == "FALSE", f"loader returned NULL R: {proc.stdout}"
@@ -613,7 +630,7 @@ def test_whole_region_payload_reconciled(r_toolchain, chain_38_to_37, tmp_path):
     rds = tmp_path / "whole.rds"
     conv = subprocess.run([str(rscript), str(CONVERTER_R), str(npz), str(rds),
                            str(chain_38_to_37)], capture_output=True, text=True,
-                          timeout=180, env=env)
+                          timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
     assert conv.returncode == 0, f"converter failed: {conv.stderr}\n{conv.stdout}"
     code = (
         'obj <- readRDS("%s"); '
@@ -652,7 +669,7 @@ def test_whole_region_null_af_survives_as_na_not_zero(
     rds = tmp_path / "nullaf.rds"
     conv = subprocess.run([str(rscript), str(CONVERTER_R), str(npz), str(rds),
                            str(chain_38_to_37)], capture_output=True, text=True,
-                          timeout=180, env=env)
+                          timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
     assert conv.returncode == 0, f"converter failed: {conv.stderr}\n{conv.stdout}"
     code = (
         'v <- obj$variants; '
@@ -699,7 +716,7 @@ def test_whole_region_full_matrix_float32_asymmetric_not_doubled(
     rds = tmp_path / "full_asym.rds"
     conv = subprocess.run([str(rscript), str(CONVERTER_R), str(npz), str(rds),
                            str(chain_38_to_37)], capture_output=True, text=True,
-                          timeout=180, env=env)
+                          timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
     assert conv.returncode == 0, f"converter failed: {conv.stderr}\n{conv.stdout}"
     code = (
         'R <- as.matrix(obj$R); '

@@ -12,7 +12,6 @@ sample_qc -> variant_qc -> filter_intervals -> ld_matrix).
 """
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -27,6 +26,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _SRC_PYTHON = PROJECT_ROOT / "src" / "python"
 if str(_SRC_PYTHON) not in sys.path:
     sys.path.insert(0, str(_SRC_PYTHON))
+
+# The shared contention-safe R-subprocess timeout constant
+# (R_SUBPROCESS_TIMEOUT_S) lives in the ROOT tests/conftest.py — that is the
+# module pytest imports as the bare ``conftest`` (this m3 conftest is shadowed by
+# it under the default prepend import mode), so the m3 R-execution modules import
+# it via ``from conftest import R_SUBPROCESS_TIMEOUT_S``.
 
 
 @pytest.fixture(scope="session")

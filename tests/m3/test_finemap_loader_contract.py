@@ -35,6 +35,7 @@ if str(_THIS_DIR) not in sys.path:
 # Reuse the toolchain discovery + fixture builders from the stitch test module.
 from test_stitch_subregions_to_rds import (  # noqa: E402
     LOADER_R,
+    R_SUBPROCESS_TIMEOUT_S,
     _loader_functions_only,
     _require_m3_r_toolchain,
     _run_stitch,
@@ -152,7 +153,7 @@ def test_loader_contract_no_skip_in_m3_env(r_toolchain):
         'cat("OK\\n")'
     )
     res = subprocess.run([str(rscript), "-e", probe], capture_output=True,
-                         text=True, timeout=120, env=env)
+                         text=True, timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
     assert res.returncode == 0 and "OK" in res.stdout, (
         f"M3 env must carry Matrix+susieR+coloc (no-skip A6): {res.stdout} {res.stderr}"
     )
@@ -188,7 +189,7 @@ def test_resolver_loads_and_susie_runs_on_stitched_parent(r_toolchain, chain_38_
         'cat(sprintf("SUSIE_OK=%%s\\n", inherits(fit, "susie") || !is.null(fit$pip)))'
     ) % (loader_funcs, out_rds, ld_dir, parent)
     proc = subprocess.run([str(rscript), "-e", code], capture_output=True,
-                          text=True, timeout=300, env=env)
+                          text=True, timeout=R_SUBPROCESS_TIMEOUT_S, env=env)
     assert proc.returncode == 0, f"resolver->loader->susie failed: {proc.stderr}\n{proc.stdout}"
     vals = dict(l.split("=") for l in proc.stdout.splitlines() if "=" in l)
     assert vals.get("RNULL", "").strip() == "FALSE", proc.stdout
