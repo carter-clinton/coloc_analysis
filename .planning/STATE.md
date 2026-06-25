@@ -16,7 +16,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-06-25 (★★ RESUME HERE — LATEST ★★) — m3-02e-T4 STEP 3 re-measure gate is RUNNING in-perimeter (billable); session disconnecting
+## 2026-06-25 (★★ RESUME HERE — LATEST ★★) — m3-02e-T4 STEP 3 re-measure ACCEPTED (gate satisfied) + cluster STOPPED ($0); NEXT = build the resumable native-plink loop driver before firing STEP 4
+
+**Nothing running, $0.** STEP 3 production-VM re-measure **completed and is ACCEPTED** — the budget gate is satisfied. Cluster `20260604` is **STOPPED** (Apps-panel Stopped badge, Current cost `--`, all 24 workers deprovisioned; pre-stop master check `NO_PLINK` + `NO_STRAY_PYTHON`). No other workspace cluster running.
+
+**Accepted STEP 3 result (representative region `m2_region_00040__sub00` AFR, chr12, square bin4, n_var=64,060, on cluster master n2-standard-16):** wall **57.14 min**, peak RAM **17.89 GiB**, output **15.29 GiB** (64060² float32, contents-verified: diag=1.0, off-diag ∈ [−0.998,1.0], symmetry max-abs-diff=0.0, `--keep-allele-order` present, exit 0). **×276 = 262.9 VM-h.** Projection: ~$392 Spot / ~$1,101 on-demand at the brief's n2-highmem-64 labels — but the measured VM is n2-standard-16, so a dedicated **single n2-standard-16 Spot** is cheaper still (~$0.16–0.19/hr → **~$45–50 whole panel**). Every scenario clears the $3–4k budget and the ~$1.5k Spot cap. Footprint ×276 square ≈ 4.12 TB.
+
+**⚠ BLOCKING FINDING — the 276-loop is NOT turnkey-resumable yet; do NOT fire STEP 4 as written.** The fire brief STEP 4 is **hand-described bash**, not a script. The only manifest loop driver (`aou_ld_panel.py::main`, line ~3004) drives the **retired Hail `compute_region_ld` path**, not the native-plink path. The native path (`export_cohort_to_plink` + `build_plink_ld_command` + `plink_ld_to_npz.py`) has **no loop driver**. 276 × 57.14 min ≈ **11 days serial wall** on one Spot VM → multiple preemptions are near-certain. The content-validated resume guard `_existing_region_npz` (line ~2361, min-bytes floor / MED-6) EXISTS but is wired only into the Hail path; a naive `[ -f .npz ]` bash guard would silently bank truncated regions ([[feedback_aou_success_marker_not_evidence_of_data]]).
+
+**NEXT (autonomous, $0, NCSU code):** write + TDD + push a native-plink resumable loop driver — read manifest → filter AFR (276) → per region: `_existing_region_npz` skip-if-valid → `build_plink_ld_command` subprocess → `plink_ld_to_npz.py` → content-verify (diag/symmetry) → append `m3-W2-native-plink-panel.tsv`; idempotent across preemption. THEN regenerate the STEP-4 loop paste-in pointing the AOU agent at the driver. Optional wall lever: plink already saturates 16 vCPUs (no `--threads` cap), so the only speedup is horizontal — N Spot VMs sharing the bucket prefix + same driver (same cost, wall/N); the resume guard makes that safe.
+
+**Open decisions carried (Carter):** (1) driver-first sequence — confirm; (2) budget cap (rec ~$1.5k hard cap; expected ~$45–50 on dedicated n2-standard-16 Spot); (3) production VM type — rec **dedicated single n2-standard-16 Spot** (matches the measured wall exactly, no re-measure risk), NOT the 24-worker cluster (which would idle-burn ~$6.3k over the run); (4) optional horizontal fan-out across N Spot VMs to cut the ~11-day wall.
+
+**NCSU-side, ALL committed+pushed, origin == local == `80fbb9a`** (unchanged from the STEP-3-running block): m3-02e T1-3 @ `1a7bfdd` + stitch flake-class debug @ `80fbb9a`. Resume = this block + `.planning/HANDOFF.json` + `m3-02e-AFR-NATIVE-FIRE-BRIEF.md`.
+
+---
+
+## 2026-06-25 (SUPERSEDED by the ACCEPTED block above) — m3-02e-T4 STEP 3 re-measure gate is RUNNING in-perimeter (billable); session disconnecting
 
 **ACTIVE BILLABLE RUN — do NOT restart the kernel on reconnect.** Carter authorized **STEP 0 + STEP 3 ONLY** of the T4 fire brief (`m3-02e-AFR-NATIVE-FIRE-BRIEF.md`) and went home. The STEP 3 production-VM re-measure is **mid-run**: `plink1.9 PID 6063`, `--r square bin4 --keep-allele-order`, the representative region `m2_region_00040__sub00` AFR (chr12 GRCh38 37,463,740–45,398,515, n_var=64,060) on the **HAIL cluster 20260604 MASTER (n2-standard-16)**. Healthy mid-run signature: **1550% CPU** (15.5 cores), **RES ~14.2 GiB** climbing toward the pilot ~17.9 GiB peak. **The output `~/pilot/step3_remeasure.ld.bin` is 0 bytes — NORMAL for square mode** (plink writes the binary only at completion); liveness = plink %CPU + RES, **not** the file. Expected wall ~56 min.
 
