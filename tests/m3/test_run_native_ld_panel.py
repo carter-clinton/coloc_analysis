@@ -538,3 +538,188 @@ def test_sharding_args_in_main_signature():
     src = (_SRC_PYTHON / "run_native_ld_panel.py").read_text()
     for flag in ("--num-shards", "--shard-index", "--panel-tsv"):
         assert flag in src, f"main() must expose {flag}"
+
+
+# --------------------------------------------------------------------------- #
+# 9. durable gs:// out-dir (Dataproc bucket-first; local disk dies w/ cluster) #
+# --------------------------------------------------------------------------- #
+
+class _MockGsutil:
+    """Monkeypatch target for drv._run_gsutil. Emulates a bucket as an in-memory
+    dict {gs_uri: size_bytes}. Records every gsutil argv. Supports the two verbs
+    the driver uses: `stat <uri>` (-> Content-Length) and `cp <src> <dst>`."""
+
+    def __init__(self, *, prestaged: dict | None = None, stat_error_uris=None):
+        self.objects: dict[str, int] = dict(prestaged or {})
+        self.stat_error_uris = set(stat_error_uris or [])
+        self.calls: list[list[str]] = []
+
+    def __call__(self, args: list[str]):
+        import subprocess as _sp
+        self.calls.append(list(args))
+        verb = args[0]
+        if verb == "stat":
+            uri = args[1]
+            if uri in self.stat_error_uris or uri not in self.objects:
+                # gsutil stat exits non-zero on a missing object
+                raise _sp.CalledProcessError(1, ["gsutil", *args], output="", stderr="No URL matched")
+            size = self.objects[uri]
+            out = (
+                f"{uri}:\n"
+                f"    Creation time:          Tue, 24 Jun 2026 00:00:00 GMT\n"
+                f"    Content-Length:         {size}\n"
+                f"    Content-Type:           application/octet-stream\n"
+            )
+            return _sp.CompletedProcess(["gsutil", *args], 0, stdout=out, stderr="")
+        if verb == "cp":
+            src, dst = args[1], args[2]
+            self.objects[dst] = Path(src).stat().st_size  # "upload" -> record size
+            return _sp.CompletedProcess(["gsutil", *args], 0, stdout="", stderr="")
+        raise AssertionError(f"unexpected gsutil verb {verb!r}")
+
+
+def test_gs_out_dir_uploads_verified_npz(tmp_path, monkeypatch):
+    """gs:// out-dir: after a region verifies, the driver uploads the .npz (and the
+    .afreq sidecar if present) to the bucket via gsutil cp; the .bed/.bim/.fam are
+    NEVER uploaded."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    scratch = tmp_path / "scratch"
+
+    mock_plink = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock_plink)
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=scratch)
+    assert res[0]["status"] == "ok"
+
+    cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+    assert f"{gs_out}/afr1.npz" in cp_dsts          # the verified .npz was uploaded
+    # NO individual-level genotype upload
+    for dst in cp_dsts:
+        assert not dst.endswith((".bed", ".bim", ".fam"))
+    # the recorded out URI points at the bucket, not local scratch
+    assert res[0]["out"] == f"{gs_out}/afr1.npz"
+
+
+def test_gs_resume_skips_when_object_meets_floor(tmp_path, monkeypatch):
+    """gs:// resume-check consults the BUCKET via gsutil stat: an object whose
+    Content-Length >= MED-6 floor short-circuits (zero plink work)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+
+    floor = drv.alp._MIN_REGION_NPZ_BYTES
+    mock_gs = _MockGsutil(prestaged={f"{gs_out}/afr1.npz": floor + 1000})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    mock_plink = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock_plink)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=tmp_path / "scratch")
+    assert len(mock_plink.calls) == 0                 # banked in bucket -> skipped
+    assert res[0]["status"] == "skipped_idempotent"
+
+
+def test_gs_resume_recomputes_when_object_short_or_stat_errors(tmp_path, monkeypatch):
+    """A short (< floor) bucket object OR a gsutil stat error -> recompute (the
+    MED-6 truncation floor + 'any error = not present' safety)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+
+    # (a) short object < floor -> recompute
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr_short", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    floor = drv.alp._MIN_REGION_NPZ_BYTES
+    mock_gs = _MockGsutil(prestaged={f"{gs_out}/afr_short.npz": floor - 1})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    mock_plink = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock_plink)
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=tmp_path / "s1")
+    assert len(mock_plink.calls) == 1                 # short -> recompute
+    assert res[0]["status"] == "ok"
+
+    # (b) stat errors (e.g. transient) -> treat as not present -> recompute
+    manifest2 = tmp_path / "regions2.tsv"
+    _write_manifest(manifest2, [
+        {"region_id": "afr_err", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    mock_gs2 = _MockGsutil(stat_error_uris={f"{gs_out}/afr_err.npz"})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs2)
+    mock_plink2 = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock_plink2)
+    res2 = drv.run_native_ld_panel(manifest2, bfile, gs_out, mode="square",
+                                   scratch_dir=tmp_path / "s2")
+    assert len(mock_plink2.calls) == 1                # stat error -> recompute
+    assert res2[0]["status"] == "ok"
+
+
+def test_gs_panel_tsv_uploaded(tmp_path, monkeypatch):
+    """A gs:// --panel-tsv is written locally in scratch then uploaded via gsutil cp
+    (resume-safe dedup-by-region_id preserved within the local file)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    gs_panel = "gs://test-bucket/ld/AFR_aou/m3-W2-native-plink-panel.tsv"
+
+    mock_plink = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock_plink)
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                            panel_tsv=gs_panel, scratch_dir=tmp_path / "scratch")
+
+    cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+    assert gs_panel in cp_dsts                         # panel TSV uploaded to bucket
+
+
+def test_local_out_dir_unchanged_no_gsutil(tmp_path, monkeypatch):
+    """Regression: a LOCAL --out-dir path never touches gsutil and behaves exactly
+    as before (zero _run_gsutil calls)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+        {"region_id": "afr2", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+
+    mock_plink = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock_plink)
+    # If the local path tries to call gsutil, blow up loudly.
+    def _boom(args):
+        raise AssertionError(f"local out-dir must not call gsutil; got {args!r}")
+    monkeypatch.setattr(drv, "_run_gsutil", _boom)
+
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+    assert {r["region_id"] for r in res} == {"afr1", "afr2"}
+    assert (out_dir / "afr1.npz").is_file()
+    assert (out_dir / "afr2.npz").is_file()
+
+
+def test_is_gs_uri_helper():
+    assert drv._is_gs_uri("gs://bucket/ld") is True
+    assert drv._is_gs_uri("/local/path") is False
+    assert drv._is_gs_uri(Path("/local/path")) is False

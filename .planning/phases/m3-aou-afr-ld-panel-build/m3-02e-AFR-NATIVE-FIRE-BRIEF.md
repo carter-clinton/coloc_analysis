@@ -178,6 +178,33 @@ python src/python/run_native_ld_panel.py \
 **Single-VM fallback:** omit `--num-shards/--shard-index` (defaults `1`/`0`) to
 process all 276 on one VM into a single `m3-W2-native-plink-panel.tsv`.
 
+### Durable `gs://` out-dir (AoU Dataproc bucket-first — REQUIRED if local disk is ephemeral)
+
+On an AoU Dataproc cluster the local disk **dies with the cluster**
+([[feedback_aou_use_persistent_disk]]), so point `--out-dir` (and `--panel-tsv`) at
+a **`gs://` bucket prefix** instead of local disk. The driver then computes each
+region into a local `--scratch-dir`, content-verifies it, and `gsutil cp`s the
+verified `.npz` (+ AF sidecar) up to the bucket; the `gs://` **resume check consults
+the bucket via `gsutil stat`** (same MED-6 byte-floor), so a cluster recycle loses
+nothing and a re-run banks only what's still missing. The individual-level
+`.bed/.bim/.fam` are **NEVER** uploaded by the driver — only the aggregate `.npz`/AF
+land in the bucket (REQ-AOU-LD-EGRESS).
+
+```bash
+# Durable variant: --out-dir / --panel-tsv are gs:// ; --scratch-dir is local.
+python src/python/run_native_ld_panel.py \
+    --manifest config/ld_regions.tsv \
+    --bfile-prefix <bfile_prefix> \
+    --out-dir gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou \   # SHARED bucket prefix (all 8 VMs)
+    --scratch-dir /tmp/native_ld_scratch \                     # local compute scratch
+    --mode square --ancestry AFR \
+    --num-shards 8 --shard-index k \
+    --panel-tsv gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.shard${k}.tsv
+```
+
+`--out-dir` accepts a LOCAL dir OR a `gs://` prefix interchangeably; local behavior
+is unchanged. `gsutil` is a subprocess (the driver stays Hail-free).
+
 The driver, per region: skips-if-banked (MED-6 floor, against the SHARED out-dir);
 else issues plink ONLY via `build_plink_ld_command` (so `--keep-allele-order` is
 always present); converts the `.ld.bin`/`.ld.gz` to the egress-clean `.npz` via

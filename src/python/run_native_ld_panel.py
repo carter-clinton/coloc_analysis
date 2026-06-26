@@ -12,8 +12,20 @@ Design contracts (all enforced by tests/m3/test_run_native_ld_panel.py):
     after egress); it must import with no hail installed. It REUSES
     ``aou_ld_panel`` (which is itself hail-free at module scope — the hail import
     is lazy, inside ``_existing_region_npz``'s ``gs://`` branch only). Passing
-    ``out_bucket=None`` keeps the resume guard on its local-dir branch, so no
-    hail import is ever triggered.
+    ``out_bucket=None`` keeps that reused guard on its local-dir branch, so no
+    hail import is ever triggered. The durable ``gs://`` support uses ``gsutil``
+    as a plain SUBPROCESS (NOT a hail import), so the module still imports with no
+    hail installed.
+
+  * **Durable ``gs://`` destination (AoU Dataproc bucket-first).** ``out_dir`` may
+    be a ``gs://`` bucket prefix: regions compute into a LOCAL scratch dir, are
+    content-verified, then the verified ``.npz`` (+ AF sidecar) is uploaded via
+    ``gsutil cp`` — so banked regions survive a Dataproc cluster recycle (local disk
+    dies with the cluster; [[feedback_aou_use_persistent_disk]]). The ``gs://``
+    resume guard consults the BUCKET via ``gsutil stat`` (``_existing_region_npz_gs``,
+    same MED-6 floor; a truncated/short object recomputes). The individual-level
+    ``.bed/.bim/.fam`` are NEVER uploaded by the driver — only the aggregate
+    ``.npz``/AF cross into the bucket (REQ-AOU-LD-EGRESS).
 
   * **Idempotent resume via the MED-6 byte-floor, NOT a bare ``[ -f ]``.** The
     per-region skip reuses ``aou_ld_panel._existing_region_npz`` (``out_bucket=None``,
@@ -42,13 +54,22 @@ Horizontal fan-out note: N Spot VMs sharing one ``out_dir`` is SAFE because
 ``_existing_region_npz`` makes every process skip what the others already banked
 — but this module builds NO orchestration; it is a single serial loop.
 
-Usage:
+Usage (local out-dir):
     python src/python/run_native_ld_panel.py \
         --manifest config/ld_regions.tsv \
         --bfile-prefix <in_perimeter_bfile> \
         --out-dir <in_perimeter_out_dir> \
         --mode square --ancestry AFR \
         --panel-tsv <out_dir>/m3-W2-native-plink-panel.tsv
+
+Usage (durable gs:// out-dir, AoU Dataproc):
+    python src/python/run_native_ld_panel.py \
+        --manifest config/ld_regions.tsv \
+        --bfile-prefix <in_perimeter_bfile> \
+        --out-dir gs://<bucket>/ld/AFR_aou \
+        --scratch-dir /tmp/native_ld_scratch \
+        --mode square --ancestry AFR \
+        --panel-tsv gs://<bucket>/ld/AFR_aou/m3-W2-native-plink-panel.tsv
 """
 from __future__ import annotations
 
@@ -59,6 +80,7 @@ import os
 import resource
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -100,6 +122,74 @@ def _run_plink(cmd: list[str]) -> tuple[float, float]:
     peak_kib = max(rss_after - rss_before, rss_after)
     peak_ram_gib = peak_kib / 1024.0 / 1024.0
     return (wall_min, peak_ram_gib)
+
+
+# --------------------------------------------------------------------------- #
+# Durable gs:// destination (Dataproc bucket-first; local disk dies w/ cluster) #
+#                                                                             #
+# On an AoU Dataproc cluster the local disk is ephemeral (it dies with the    #
+# cluster — [[feedback_aou_use_persistent_disk]]), so banked .npz must land in #
+# a gs:// bucket to survive a recycle and to make resume work across recycles. #
+# gsutil is a SUBPROCESS (NOT a hail import): the module stays hail-free.      #
+# These are the SOLE gsutil call sites; tests monkeypatch _run_gsutil.        #
+# --------------------------------------------------------------------------- #
+
+def _is_gs_uri(path: "str | Path") -> bool:
+    """True iff ``path`` is a ``gs://`` URI (a str starting with gs://)."""
+    return isinstance(path, str) and path.startswith("gs://")
+
+
+def _gs_join(prefix: str, name: str) -> str:
+    """Join a gs:// prefix and an object name with a single slash."""
+    return f"{prefix.rstrip('/')}/{name}"
+
+
+def _run_gsutil(args: list[str]) -> "subprocess.CompletedProcess":
+    """Run ``gsutil <args>`` and return the CompletedProcess (check=True).
+
+    SOLE gsutil seam — tests monkeypatch exactly this function. gsutil is a plain
+    subprocess (NOT a hail import), so the module stays importable without hail.
+    """
+    return subprocess.run(["gsutil", *args], check=True,
+                          capture_output=True, text=True)
+
+
+def _gsutil_object_size(gs_uri: str) -> "int | None":
+    """Return the Content-Length of ``gs_uri`` via ``gsutil stat``, or None if the
+    object is absent / any gsutil error occurs (safer to recompute than to assume a
+    checkpoint that may not exist)."""
+    try:
+        proc = _run_gsutil(["stat", gs_uri])
+    except Exception:
+        return None
+    for line in (proc.stdout or "").splitlines():
+        if "Content-Length:" in line:
+            try:
+                return int(line.split("Content-Length:")[1].strip())
+            except (ValueError, IndexError):
+                return None
+    return None
+
+
+def _existing_region_npz_gs(region_id: str, gs_out_dir: str) -> "str | None":
+    """Hail-free gs:// resume guard: return ``{gs_out_dir}/{region_id}.npz`` iff it
+    exists in the bucket AND its size >= ``_MIN_REGION_NPZ_BYTES`` (the MED-6
+    truncation floor), else None. Does NOT use _existing_region_npz's hail hadoop
+    branch — consults the bucket purely via ``gsutil stat`` (subprocess)."""
+    uri = _gs_join(gs_out_dir, f"{region_id}.npz")
+    size = _gsutil_object_size(uri)
+    if size is not None and size >= alp._MIN_REGION_NPZ_BYTES:
+        return uri
+    if size is not None and size < alp._MIN_REGION_NPZ_BYTES:
+        print(f"WARN: existing {uri} is {size} B (< {alp._MIN_REGION_NPZ_BYTES} B "
+              f"floor) — treating as truncated; will recompute (m3-W2 MED-6).",
+              file=sys.stderr, flush=True)
+    return None
+
+
+def _gsutil_upload(local_path: "str | Path", gs_uri: str) -> None:
+    """Upload a single local file to ``gs_uri`` via ``gsutil cp``."""
+    _run_gsutil(["cp", str(local_path), gs_uri])
 
 
 # --------------------------------------------------------------------------- #
@@ -191,23 +281,15 @@ def _n_var_from_ld_bin(ld_bin_path: "str | Path") -> int:
 # Resume-safe panel TSV append                                                #
 # --------------------------------------------------------------------------- #
 
-def append_panel_row(tsv_path: "str | Path", row: dict) -> None:
-    """Append one row to the panel TSV, resume-safe.
-
-    If the TSV does not exist -> write header + row. If it exists and the row's
-    ``region_id`` is already present -> do nothing (no duplicate). Otherwise append
-    the row WITHOUT re-writing the header. Columns are fixed (``_PANEL_COLUMNS``).
-    """
-    tsv_path = Path(tsv_path)
+def _append_panel_row_local(tsv_path: Path, row: dict) -> None:
+    """Resume-safe append to a LOCAL panel TSV (the core dedup-by-region_id logic)."""
     out_row = {c: row.get(c) for c in _PANEL_COLUMNS}
-
     if not tsv_path.exists():
         tsv_path.parent.mkdir(parents=True, exist_ok=True)
         pd.DataFrame([out_row], columns=_PANEL_COLUMNS).to_csv(
             tsv_path, sep="\t", index=False
         )
         return
-
     existing = pd.read_csv(tsv_path, sep="\t", dtype={"region_id": str})
     if str(out_row["region_id"]) in set(existing["region_id"].astype(str)):
         return  # already banked -> no duplicate row
@@ -217,40 +299,97 @@ def append_panel_row(tsv_path: "str | Path", row: dict) -> None:
         )
 
 
+def append_panel_row(tsv_path: "str | Path", row: dict,
+                     *, scratch_dir: "str | Path | None" = None) -> None:
+    """Append one row to the panel TSV, resume-safe (dedup by ``region_id``).
+
+    Local ``tsv_path`` -> write/append in place. A ``gs://`` ``tsv_path`` -> maintain
+    the local mirror under ``scratch_dir`` (downloading the current bucket copy on
+    first touch so dedup survives a recycle), append, then upload the updated TSV.
+    Columns are fixed (``_PANEL_COLUMNS``).
+    """
+    if not _is_gs_uri(tsv_path):
+        _append_panel_row_local(Path(tsv_path), row)
+        return
+
+    # gs:// panel TSV: mirror locally in scratch, append, re-upload.
+    gs_uri = str(tsv_path)
+    scratch_dir = Path(scratch_dir or Path(tempfile.gettempdir()))
+    scratch_dir.mkdir(parents=True, exist_ok=True)
+    local_mirror = scratch_dir / gs_uri.rsplit("/", 1)[-1]
+    if not local_mirror.exists():
+        # Seed the local mirror from the bucket copy if one exists (resume-safe
+        # dedup across a cluster recycle); absent/erroring -> start fresh.
+        existing_size = _gsutil_object_size(gs_uri)
+        if existing_size is not None and existing_size > 0:
+            try:
+                _run_gsutil(["cp", gs_uri, str(local_mirror)])
+            except Exception:
+                pass
+    _append_panel_row_local(local_mirror, row)
+    _gsutil_upload(local_mirror, gs_uri)
+
+
 # --------------------------------------------------------------------------- #
 # Per-region processing                                                        #
 # --------------------------------------------------------------------------- #
 
-def process_region(row: dict, *, bfile_prefix: str, out_dir: Path,
-                   mode: str = "square", panel_tsv: "str | Path | None" = None) -> dict:
-    """Process ONE manifest region: skip-if-banked, else plink -> .npz -> verify.
+def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
+                   mode: str = "square", panel_tsv: "str | Path | None" = None,
+                   scratch_dir: "str | Path | None" = None) -> dict:
+    """Process ONE manifest region: skip-if-banked, else plink -> .npz -> verify
+    -> (durable) land in the destination.
 
-    Resume guard (REUSED ``_existing_region_npz``, MED-6 floor) short-circuits a
-    content-valid existing ``.npz`` with ZERO plink work. Every plink command is
-    built through ``build_plink_ld_command`` (--keep-allele-order). Any exception
-    or verify failure on this region records a status and lets the loop continue.
+    ``out_dir`` may be a LOCAL path OR a ``gs://`` bucket prefix:
+
+      * LOCAL ``out_dir`` -> compute directly into it; resume guard reuses the
+        hail-free ``_existing_region_npz`` local-dir branch (MED-6 floor). Behavior
+        is byte-identical to the pre-gs:// driver.
+      * ``gs://`` ``out_dir`` (AoU Dataproc bucket-first; local disk dies with the
+        cluster) -> compute into a LOCAL ``scratch_dir``, content-verify, THEN
+        upload the verified ``.npz`` (and its ``.afreq`` sidecar if present) to the
+        bucket via ``gsutil cp``. The resume guard consults the BUCKET via
+        ``gsutil stat`` (``_existing_region_npz_gs``, MED-6 floor) — hail-free. The
+        individual-level ``.bed/.bim/.fam`` are NEVER uploaded by the driver (only
+        the aggregate ``.npz``/AF cross into the bucket; REQ-AOU-LD-EGRESS).
+
+    Every plink command is built through ``build_plink_ld_command``
+    (--keep-allele-order). Any exception or verify failure on this region records a
+    status and lets the loop continue (one bad region never aborts the loop).
     """
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
     region_id = str(row["region_id"])
     chrom = row["chr"]
     from_bp = int(row["window_start_grch38"])
     to_bp = int(row["window_end_grch38"])
-    panel_tsv = panel_tsv or (out_dir / _DEFAULT_PANEL_NAME)
+    gs_mode = _is_gs_uri(out_dir)
 
-    # (a) SKIP guard -- out_bucket=None keeps the guard hail-free (local-dir branch,
-    #     which enforces the _MIN_REGION_NPZ_BYTES floor).
-    existing = alp._existing_region_npz(region_id, None, out_dir)
+    if gs_mode:
+        gs_out_dir = str(out_dir)
+        compute_dir = Path(scratch_dir or Path(tempfile.gettempdir()) / "native_ld_scratch")
+        panel_tsv = panel_tsv or _gs_join(gs_out_dir, _DEFAULT_PANEL_NAME)
+    else:
+        gs_out_dir = None
+        compute_dir = Path(out_dir)
+        panel_tsv = panel_tsv or (Path(out_dir) / _DEFAULT_PANEL_NAME)
+    compute_dir.mkdir(parents=True, exist_ok=True)
+
+    # (a) SKIP guard. gs:// -> consult the BUCKET via gsutil stat (hail-free);
+    #     local -> reuse _existing_region_npz local-dir branch. Both enforce the
+    #     _MIN_REGION_NPZ_BYTES MED-6 floor (a truncated object/file recomputes).
+    if gs_mode:
+        existing = _existing_region_npz_gs(region_id, gs_out_dir)
+    else:
+        existing = alp._existing_region_npz(region_id, None, compute_dir)
     if existing is not None:
         result = {
             "region_id": region_id, "chr": chrom, "n_var": None,
             "wall_min": None, "peak_ram_gib": None, "output_gib": None,
             "status": "skipped_idempotent", "out": existing,
         }
-        append_panel_row(panel_tsv, result)  # dedups internally
+        append_panel_row(panel_tsv, result, scratch_dir=compute_dir)  # dedups
         return result
 
-    out_prefix = str(out_dir / region_id)
+    out_prefix = str(compute_dir / region_id)
     result = {
         "region_id": region_id, "chr": chrom, "n_var": None,
         "wall_min": None, "peak_ram_gib": None, "output_gib": None,
@@ -286,7 +425,7 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: Path,
 
         af_sidecar = Path(f"{out_prefix}.afreq")
         af_arg = af_sidecar if af_sidecar.is_file() else None
-        out_npz = out_dir / f"{region_id}.npz"
+        out_npz = compute_dir / f"{region_id}.npz"
         pln.plink_ld_to_npz(
             mode=mode, ld_path=ld_path, bim_path=window_bim,
             af_sidecar_path=af_arg, out_npz=out_npz, region_id=region_id, n_var=n_var,
@@ -294,15 +433,28 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: Path,
 
         ok, reason = content_verify_npz(out_npz, mode=mode)
         result["output_gib"] = round(out_npz.stat().st_size / 1024.0 ** 3, 6)
-        result["out"] = str(out_npz)
         result["status"] = "ok" if ok else "verify_failed"
         if not ok:
             print(f"VERIFY-FAILED {region_id}: {reason}", file=sys.stderr, flush=True)
-    except Exception as e:  # one bad region never aborts the whole 276 loop
+
+        if gs_mode:
+            if ok:
+                # Upload ONLY the verified aggregate .npz (+ AF sidecar). The
+                # individual-level .bed/.bim/.fam never leave the compute node.
+                npz_uri = _gs_join(gs_out_dir, f"{region_id}.npz")
+                _gsutil_upload(out_npz, npz_uri)
+                result["out"] = npz_uri
+                if af_arg is not None and Path(af_arg).is_file():
+                    _gsutil_upload(af_arg, _gs_join(gs_out_dir, f"{region_id}.afreq"))
+            else:
+                result["out"] = str(out_npz)  # left in scratch for inspection
+        else:
+            result["out"] = str(out_npz)
+    except Exception as e:  # one bad region never aborts the whole loop
         result["status"] = f"error: {e}"
         print(f"ERROR {region_id}: {e}", file=sys.stderr, flush=True)
 
-    append_panel_row(panel_tsv, result)
+    append_panel_row(panel_tsv, result, scratch_dir=compute_dir)
     return result
 
 
@@ -362,7 +514,8 @@ def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
                         out_dir: "str | Path", *, mode: str = "square",
                         panel_tsv: "str | Path | None" = None,
                         ancestry: str = "AFR",
-                        num_shards: int = 1, shard_index: int = 0) -> list[dict]:
+                        num_shards: int = 1, shard_index: int = 0,
+                        scratch_dir: "str | Path | None" = None) -> list[dict]:
     """Drive the native-plink LD loop over the ``ancestry`` rows of the manifest.
 
     Reads the manifest (``aou_ld_panel._read_manifest``), filters to
@@ -371,29 +524,35 @@ def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
     processes a region at filtered position ``idx`` ONLY when
     ``idx % num_shards == shard_index``. With ``num_shards==1`` (default) every
     region is processed (single-VM behavior unchanged). Returns the list of
-    per-region result dicts. ``panel_tsv`` defaults to
-    ``out_dir/m3-W2-native-plink-panel.tsv``.
+    per-region result dicts.
+
+    ``out_dir`` may be a LOCAL path OR a ``gs://`` bucket prefix (durable,
+    resume-safe via ``gsutil`` for the AoU Dataproc bucket-first layout — local disk
+    dies with the cluster). For ``gs://``, regions compute into ``scratch_dir`` (a
+    local temp dir) and the verified ``.npz``/AF are uploaded; the resume guard
+    consults the bucket via ``gsutil stat``. ``panel_tsv`` defaults to
+    ``out_dir/m3-W2-native-plink-panel.tsv`` (gs:// when out_dir is gs://).
 
     8-VM Spot fan-out: launch 8 VMs with ``--num-shards 8`` and
     ``--shard-index 0..7`` against the SAME ``out_dir`` but DISTINCT ``--panel-tsv``
     paths (e.g. ``...shard0.tsv``..``...shard7.tsv``). Sharding partitions WHICH
     regions each VM computes; it does NOT shard the output path — the ``.npz``
-    outputs AND the ``_existing_region_npz`` resume guard stay pointed at the one
-    shared ``out_dir``, so the resume guard is GLOBAL across all VMs and the egress
-    bundler later sees all 276. The per-shard panel TSVs avoid concurrent-append
-    corruption on the shared filesystem and are merged at handback.
+    outputs AND the resume guard stay pointed at the one shared ``out_dir``, so the
+    resume guard is GLOBAL across all VMs and the egress bundler later sees all 276.
+    The per-shard panel TSVs avoid concurrent-append corruption and are merged at
+    handback.
     """
     _validate_shard(num_shards, shard_index)
-    out_dir = Path(out_dir)
-    panel_tsv = panel_tsv or (out_dir / _DEFAULT_PANEL_NAME)
+    # Do NOT Path()-wrap a gs:// URI (Path would collapse gs:// -> gs:/).
+    out_dir_arg: "str | Path" = str(out_dir) if _is_gs_uri(out_dir) else Path(out_dir)
     regions = _filter_ancestry(alp._read_manifest(Path(manifest_path)), ancestry)
     regions = _shard_rows(regions, num_shards, shard_index)
 
     results: list[dict] = []
     for row in regions:
         res = process_region(
-            row, bfile_prefix=bfile_prefix, out_dir=out_dir,
-            mode=mode, panel_tsv=panel_tsv,
+            row, bfile_prefix=bfile_prefix, out_dir=out_dir_arg,
+            mode=mode, panel_tsv=panel_tsv, scratch_dir=scratch_dir,
         )
         results.append(res)
     return results
@@ -407,12 +566,19 @@ def main(argv: "list[str] | None" = None) -> int:
                    help="Region manifest TSV (default config/ld_regions.tsv)")
     p.add_argument("--bfile-prefix", dest="bfile_prefix", required=True,
                    help="In-perimeter plink bfile prefix (.bed/.bim/.fam)")
-    p.add_argument("--out-dir", dest="out_dir", required=True, type=Path,
-                   help="Output dir for per-region .ld.bin/.ld.gz + .npz")
+    p.add_argument("--out-dir", dest="out_dir", required=True,
+                   help="Destination for per-region .npz: a LOCAL dir OR a gs:// "
+                        "bucket prefix (durable/resume-safe on AoU Dataproc, where "
+                        "local disk dies with the cluster). gs:// uploads only the "
+                        "aggregate .npz/AF — never the individual-level .bed/.bim/.fam.")
+    p.add_argument("--scratch-dir", dest="scratch_dir", default=None,
+                   help="Local scratch dir used to compute per-region outputs before "
+                        "upload when --out-dir is gs:// (default: a system temp dir).")
     p.add_argument("--mode", choices=["square", "banded"], default="square",
                    help="LD output mode (D-02e-01 default: square)")
-    p.add_argument("--panel-tsv", dest="panel_tsv", default=None, type=Path,
-                   help="Panel TSV (default <out-dir>/m3-W2-native-plink-panel.tsv)")
+    p.add_argument("--panel-tsv", dest="panel_tsv", default=None,
+                   help="Panel TSV (local OR gs://; default "
+                        "<out-dir>/m3-W2-native-plink-panel.tsv)")
     p.add_argument("--ancestry", default="AFR",
                    help="Manifest ancestry filter (default AFR)")
     p.add_argument("--num-shards", dest="num_shards", type=int, default=1,
@@ -428,6 +594,7 @@ def main(argv: "list[str] | None" = None) -> int:
         args.manifest, args.bfile_prefix, args.out_dir,
         mode=args.mode, panel_tsv=args.panel_tsv, ancestry=args.ancestry,
         num_shards=args.num_shards, shard_index=args.shard_index,
+        scratch_dir=args.scratch_dir,
     )
     for res in results:
         print(json.dumps(res), flush=True)
