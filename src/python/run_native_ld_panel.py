@@ -307,25 +307,87 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: Path,
 
 
 # --------------------------------------------------------------------------- #
+# Static index-sharding (8-VM Spot fan-out partitioning)                      #
+# --------------------------------------------------------------------------- #
+
+def _validate_shard(num_shards: int, shard_index: int) -> None:
+    """Loudly reject an out-of-range shard spec.
+
+    ``num_shards`` must be >= 1; ``shard_index`` must satisfy
+    ``0 <= shard_index < num_shards``. Without this, a typo'd shard would either
+    silently process nothing or re-run another VM's partition.
+    """
+    if not isinstance(num_shards, int) or num_shards < 1:
+        raise ValueError(f"num_shards must be a positive int, got {num_shards!r}")
+    if not isinstance(shard_index, int) or not (0 <= shard_index < num_shards):
+        raise ValueError(
+            f"shard_index must satisfy 0 <= shard_index < num_shards "
+            f"({num_shards}); got shard_index={shard_index!r}"
+        )
+
+
+def _filter_ancestry(regions: list[dict], ancestry: str) -> list[dict]:
+    """Filter manifest rows to ``ancestry`` (uppercase match) PRESERVING order."""
+    return [r for r in regions
+            if str(r.get("ancestry", "")).upper() == ancestry.upper()]
+
+
+def _shard_rows(regions: list[dict], num_shards: int, shard_index: int) -> list[dict]:
+    """Static index-shard: keep rows at positions ``idx`` where
+    ``idx % num_shards == shard_index``, in the EXISTING (un-re-sorted) order.
+
+    All shards must see the IDENTICAL ancestry-filtered order so the partition is
+    consistent across VMs — callers must NOT re-sort before this. With
+    ``num_shards==1`` every row is kept (single-VM behavior unchanged).
+    """
+    return [row for idx, row in enumerate(regions)
+            if idx % num_shards == shard_index]
+
+
+def select_shard_region_ids(manifest_path: "str | Path", *, num_shards: int = 1,
+                            shard_index: int = 0, ancestry: str = "AFR") -> list[str]:
+    """Pure partition preview: the ``region_id``s this shard would PROCESS (no
+    plink, no I/O beyond reading the manifest). Used to prove the 8-shard
+    partition is disjoint + exhaustive without running the loop."""
+    _validate_shard(num_shards, shard_index)
+    regions = _filter_ancestry(alp._read_manifest(Path(manifest_path)), ancestry)
+    return [str(r["region_id"]) for r in _shard_rows(regions, num_shards, shard_index)]
+
+
+# --------------------------------------------------------------------------- #
 # Loop driver                                                                  #
 # --------------------------------------------------------------------------- #
 
 def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
                         out_dir: "str | Path", *, mode: str = "square",
                         panel_tsv: "str | Path | None" = None,
-                        ancestry: str = "AFR") -> list[dict]:
+                        ancestry: str = "AFR",
+                        num_shards: int = 1, shard_index: int = 0) -> list[dict]:
     """Drive the native-plink LD loop over the ``ancestry`` rows of the manifest.
 
     Reads the manifest (``aou_ld_panel._read_manifest``), filters to
     ``str(row['ancestry']).upper() == ancestry.upper()`` (mirrors the fire brief
-    ``awk '$7=="AFR"'``), and calls :func:`process_region` per row. Returns the
-    list of per-region result dicts. ``panel_tsv`` defaults to
+    ``awk '$7=="AFR"'``), then STATIC-INDEX-SHARDS the filtered rows: this VM
+    processes a region at filtered position ``idx`` ONLY when
+    ``idx % num_shards == shard_index``. With ``num_shards==1`` (default) every
+    region is processed (single-VM behavior unchanged). Returns the list of
+    per-region result dicts. ``panel_tsv`` defaults to
     ``out_dir/m3-W2-native-plink-panel.tsv``.
+
+    8-VM Spot fan-out: launch 8 VMs with ``--num-shards 8`` and
+    ``--shard-index 0..7`` against the SAME ``out_dir`` but DISTINCT ``--panel-tsv``
+    paths (e.g. ``...shard0.tsv``..``...shard7.tsv``). Sharding partitions WHICH
+    regions each VM computes; it does NOT shard the output path — the ``.npz``
+    outputs AND the ``_existing_region_npz`` resume guard stay pointed at the one
+    shared ``out_dir``, so the resume guard is GLOBAL across all VMs and the egress
+    bundler later sees all 276. The per-shard panel TSVs avoid concurrent-append
+    corruption on the shared filesystem and are merged at handback.
     """
+    _validate_shard(num_shards, shard_index)
     out_dir = Path(out_dir)
     panel_tsv = panel_tsv or (out_dir / _DEFAULT_PANEL_NAME)
-    regions = alp._read_manifest(Path(manifest_path))
-    regions = [r for r in regions if str(r.get("ancestry", "")).upper() == ancestry.upper()]
+    regions = _filter_ancestry(alp._read_manifest(Path(manifest_path)), ancestry)
+    regions = _shard_rows(regions, num_shards, shard_index)
 
     results: list[dict] = []
     for row in regions:
@@ -353,11 +415,19 @@ def main(argv: "list[str] | None" = None) -> int:
                    help="Panel TSV (default <out-dir>/m3-W2-native-plink-panel.tsv)")
     p.add_argument("--ancestry", default="AFR",
                    help="Manifest ancestry filter (default AFR)")
+    p.add_argument("--num-shards", dest="num_shards", type=int, default=1,
+                   help="Total number of parallel VMs/shards (default 1 = single VM). "
+                        "Static index-shard: this VM processes filtered rows where "
+                        "idx %% num_shards == shard_index, against the SHARED out-dir.")
+    p.add_argument("--shard-index", dest="shard_index", type=int, default=0,
+                   help="0-based index of THIS shard (0 <= shard_index < num_shards). "
+                        "For the 8-VM fan-out: 0..7, each with its own --panel-tsv.")
     args = p.parse_args(argv)
 
     results = run_native_ld_panel(
         args.manifest, args.bfile_prefix, args.out_dir,
         mode=args.mode, panel_tsv=args.panel_tsv, ancestry=args.ancestry,
+        num_shards=args.num_shards, shard_index=args.shard_index,
     )
     for res in results:
         print(json.dumps(res), flush=True)

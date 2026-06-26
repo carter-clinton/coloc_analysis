@@ -135,37 +135,61 @@ alternate if square ×276 disk (~4.6 TB) is tight.
 
 ---
 
-## STEP 4 — THE LOOP (276 AFR windows, single Spot VM)
+## STEP 4 — THE LOOP (276 AFR windows, 8-VM Spot fan-out)
 
-Run the resumable native-plink loop driver **once**. It is idempotent across Spot
-preemption: re-run this **verbatim** after any preemption and every content-valid
+Run the resumable native-plink loop driver. It is idempotent across Spot
+preemption: re-run any shard **verbatim** after a preemption and every content-valid
 region is skipped via `_existing_region_npz` (the MED-6 byte-floor), so the re-run
 banks only what's still missing — never a truncated `.npz`.
 
+### 8-VM parallel fan-out (the chosen production layout)
+
+Launch **8 Spot VMs**, each with the SAME `--out-dir` but a DISTINCT
+`--shard-index` (0..7) and its OWN `--panel-tsv`. Static index-sharding partitions
+WHICH of the 276 AFR regions each VM computes — `idx % 8 == shard_index` over the
+deterministic, un-re-sorted AFR row order — so the 8 partitions are disjoint and
+exhaustive (≈34–35 regions each, union == all 276).
+
 ```bash
-# STEP 4 — resumable native-plink loop (idempotent across Spot preemption)
+# On VM k (k = 0,1,2,...,7) — identical except --shard-index k and the panel-TSV name:
 python src/python/run_native_ld_panel.py \
     --manifest config/ld_regions.tsv \
     --bfile-prefix <bfile_prefix> \
-    --out-dir <in_perimeter_out_dir> \
+    --out-dir <shared_in_perimeter_out_dir> \   # SAME dir on all 8 VMs (global resume + egress)
     --mode square \
     --ancestry AFR \
-    --panel-tsv <out_dir>/m3-W2-native-plink-panel.tsv
+    --num-shards 8 \
+    --shard-index k \                            # 0..7, one per VM
+    --panel-tsv <out_dir>/m3-W2-native-plink-panel.shard${k}.tsv
 # square (D-02e-01 default) -> lower_triangular=False ; --mode banded -> the
 # disk-tight alternate (lower_triangular=True), set automatically per --mode.
 ```
 
-The driver, per region: skips-if-banked (MED-6 floor); else issues plink ONLY via
-`build_plink_ld_command` (so `--keep-allele-order` is always present); converts the
-`.ld.bin`/`.ld.gz` to the egress-clean `.npz` via `plink_ld_to_npz`; **content-
-verifies every region inline (D-M3-10)** — float32 / square / diag==1.0 / symmetric
-(or the one-triangle invariant for banded) — and records `region_id, chr, n_var,
-wall_min, peak_ram_gib, output_gib, status` to the panel TSV. A region that fails
-verification is marked `verify_failed` and the loop **continues** (one bad region
-never aborts the 276 loop).
+> **`--out-dir` is SHARED, `--panel-tsv` is PER-SHARD.** Sharding partitions which
+> regions a VM computes, NOT where outputs land: the `.npz` outputs AND the
+> `_existing_region_npz` skip-check stay pointed at the one shared out-dir, so the
+> resume guard is GLOBAL across all 8 VMs (a region banked by any VM is skipped by
+> all) and the egress bundler later sees all 276. Each VM writes its OWN panel TSV
+> (`...shard0.tsv`..`...shard7.tsv`) because 8 VMs concurrently appending to ONE TSV
+> on the shared filesystem would interleave/corrupt it. **Merge the 8 shard TSVs at
+> handback** (concat, dedup by `region_id`) to reconstruct the single
+> `m3-W2-native-plink-panel.tsv` cost basis.
 
-**`m3-W2-native-plink-panel.tsv`** is the **REAL production-cost measurement** and
-**REPLACES** the one-cell pilot TSV as the cost basis.
+**Single-VM fallback:** omit `--num-shards/--shard-index` (defaults `1`/`0`) to
+process all 276 on one VM into a single `m3-W2-native-plink-panel.tsv`.
+
+The driver, per region: skips-if-banked (MED-6 floor, against the SHARED out-dir);
+else issues plink ONLY via `build_plink_ld_command` (so `--keep-allele-order` is
+always present); converts the `.ld.bin`/`.ld.gz` to the egress-clean `.npz` via
+`plink_ld_to_npz`; **content-verifies every region inline (D-M3-10)** — float32 /
+square / diag==1.0 / symmetric (or the one-triangle invariant for banded) — and
+records `region_id, chr, n_var, wall_min, peak_ram_gib, output_gib, status` to that
+shard's panel TSV. A region that fails verification is marked `verify_failed` and the
+loop **continues** (one bad region never aborts the loop).
+
+The merged **`m3-W2-native-plink-panel.tsv`** (8 shard TSVs concatenated + deduped)
+is the **REAL production-cost measurement** and **REPLACES** the one-cell pilot TSV
+as the cost basis.
 
 > The `--keep-allele-order` flag is hardcoded into `build_plink_ld_command` and is
 > MANDATORY on every call (else LD signs mismatch the GWAS z → susieR failure;
@@ -218,11 +242,17 @@ egress-clean per the prior G0 ruling.
 
 ## STEP 7 — SHUTDOWN + TOKEN-FREE HANDBACK
 
-1. **STOP** the Spot VM (and the HAIL cluster 20260604 if used for the export) —
-   verify the Stopped badge in the Apps panel. `wb cluster stop` is the
+1. **STOP all 8 Spot VMs** (and the HAIL cluster 20260604 if used for the export) —
+   verify the Stopped badge in the Apps panel for EACH. `wb cluster stop` is the
    from-NCSU billing-safety lever.
-2. Write **`m3-02e-cluster-shutdown.md`** with the verified Stopped badge + $-spent.
-3. **Token-free handback** (no Workbench push token): `cat` the panel TSV
+2. **Merge the 8 shard panel TSVs** into the single canonical
+   `m3-W2-native-plink-panel.tsv` (concat the 8 `...shard0.tsv`..`...shard7.tsv`,
+   keep ONE header, dedup by `region_id`). Confirm the merged TSV has 276 rows and
+   every `status == ok` (re-fire any non-ok region on any free VM against the shared
+   out-dir before merging — the global resume guard makes that safe).
+3. Write **`m3-02e-cluster-shutdown.md`** with the verified Stopped badge (all 8) +
+   $-spent.
+4. **Token-free handback** (no Workbench push token): `cat` the MERGED panel TSV
    (`m3-W2-native-plink-panel.tsv`) + the shutdown record to the chat; ping NCSU
    **`native-panel-recorded`**. NCSU reconstructs both artifacts verbatim + pushes,
    then verifies `origin tip == local HEAD`.

@@ -394,3 +394,147 @@ def test_no_hardcoded_abs_paths():
     src = (_SRC_PYTHON / "run_native_ld_panel.py").read_text()
     for bad in ("/share/clintonlab", "/rs1/researchers", "/gpfs_common"):
         assert bad not in src, f"hardcoded path {bad} in run_native_ld_panel.py"
+
+
+# --------------------------------------------------------------------------- #
+# 8. static index-sharding for the 8-VM Spot fan-out (follow-up)              #
+# --------------------------------------------------------------------------- #
+
+def _write_276_afr_manifest(path: Path, chrom: int = 12, bp0: int = 53_000_000):
+    """276 AFR rows (mirrors config/ld_regions.tsv AFR count), with a few EUR rows
+    interleaved so the AFR-filter-then-shard ordering is exercised. Each AFR row
+    gets its own non-overlapping window so the regions are distinguishable."""
+    import pandas as pd
+    cols = ["region_id", "chr", "ancestry", "window_start_grch38", "window_end_grch38"]
+    rows = []
+    for i in range(276):
+        start = bp0 + i * 10_000
+        rows.append({
+            "region_id": f"afr_{i:03d}", "chr": chrom, "ancestry": "AFR",
+            "window_start_grch38": start, "window_end_grch38": start + 5_000,
+        })
+        if i % 40 == 0:  # sprinkle EUR rows that must be filtered out before sharding
+            estart = bp0 + 5_000_000 + i * 10_000
+            rows.append({
+                "region_id": f"eur_{i:03d}", "chr": chrom, "ancestry": "EUR",
+                "window_start_grch38": estart, "window_end_grch38": estart + 5_000,
+            })
+    pd.DataFrame(rows, columns=cols).to_csv(path, sep="\t", index=False)
+
+
+def _shard_region_ids(manifest, num_shards, shard_index, ancestry="AFR"):
+    """Return the region_ids a given shard would PROCESS, without running plink
+    (uses the driver's pure partition helper)."""
+    return drv.select_shard_region_ids(
+        manifest, num_shards=num_shards, shard_index=shard_index, ancestry=ancestry,
+    )
+
+
+def test_sharding_partitions_disjoint_and_exhaustive(tmp_path):
+    """num_shards=8 over the 276 AFR regions: the 8 shards' region sets are
+    pairwise-disjoint AND their union == all 276 (no region dropped, none doubled)."""
+    manifest = tmp_path / "regions.tsv"
+    _write_276_afr_manifest(manifest)
+
+    full = set(_shard_region_ids(manifest, 1, 0))
+    assert len(full) == 276
+
+    shards = [set(_shard_region_ids(manifest, 8, i)) for i in range(8)]
+    union = set().union(*shards)
+    assert union == full                      # exhaustive
+    assert sum(len(s) for s in shards) == 276  # pairwise-disjoint (no overlap)
+    for a in range(8):
+        for b in range(a + 1, 8):
+            assert shards[a].isdisjoint(shards[b])
+    # static idx % num_shards == shard_index assignment (round-robin balance)
+    assert all(33 <= len(s) <= 36 for s in shards)
+
+
+def test_sharding_index_out_of_range_raises(tmp_path):
+    manifest = tmp_path / "regions.tsv"
+    _write_276_afr_manifest(manifest)
+    bfile, bim, _ = _setup_cohort(tmp_path)
+    for bad_idx, n in [(8, 8), (-1, 8), (3, 3), (0, 0)]:
+        with pytest.raises(ValueError):
+            drv.run_native_ld_panel(
+                manifest, bfile, tmp_path / "out", mode="square",
+                num_shards=n, shard_index=bad_idx,
+            )
+
+
+def test_num_shards_one_processes_all_regions(tmp_path, monkeypatch):
+    """Regression: default num_shards=1 / shard_index=0 processes every AFR region
+    (existing single-VM behavior unchanged)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+        {"region_id": "afr2", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+        {"region_id": "afr3", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+    mock = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    # explicit defaults
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square",
+                                  num_shards=1, shard_index=0)
+    assert {r["region_id"] for r in res} == {"afr1", "afr2", "afr3"}
+    assert len(mock.calls) == 3
+
+
+def test_shards_share_resume_guard_across_distinct_panel_tsvs(tmp_path, monkeypatch):
+    """Two shards pointed at the SAME out_dir but DIFFERENT --panel-tsv: a region
+    banked by shard 0 is skipped by ANY shard that later looks at it, because the
+    _existing_region_npz guard consults the SHARED out_dir (resume is global, NOT
+    per-shard) while each shard writes its own panel TSV (no concurrent-append
+    corruption)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    # 2 AFR regions; with num_shards=2: afr_a -> shard 0, afr_b -> shard 1
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr_a", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+        {"region_id": "afr_b", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "shared_out"           # SHARED across shards
+    panel0 = tmp_path / "panel.shard0.tsv"
+    panel1 = tmp_path / "panel.shard1.tsv"
+
+    # shard 0 computes its partition (afr_a) into the shared out_dir
+    mock0 = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock0)
+    res0 = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square",
+                                   num_shards=2, shard_index=0, panel_tsv=panel0)
+    assert {r["region_id"] for r in res0} == {"afr_a"}  # only its partition
+    assert (out_dir / "afr_a.npz").is_file()
+    assert not (out_dir / "afr_b.npz").exists()
+
+    # shard 1 computes its partition (afr_b) into the SAME shared out_dir
+    mock1 = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock1)
+    res1 = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square",
+                                   num_shards=2, shard_index=1, panel_tsv=panel1)
+    assert {r["region_id"] for r in res1} == {"afr_b"}
+    assert (out_dir / "afr_b.npz").is_file()
+
+    # Distinct panel TSVs (no shared-append corruption); the resume guard is GLOBAL:
+    # re-running shard 0 now skips afr_a (banked) with zero plink work because it
+    # consults the shared out_dir, not panel0.
+    mock0b = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock0b)
+    res0b = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square",
+                                    num_shards=2, shard_index=0, panel_tsv=panel0)
+    assert len(mock0b.calls) == 0
+    assert all(r["status"] == "skipped_idempotent" for r in res0b)
+    assert panel0.exists() and panel1.exists()  # each shard wrote its OWN TSV
+
+
+def test_sharding_args_in_main_signature():
+    """main() exposes --num-shards / --shard-index / --panel-tsv for the 8-VM fan-out."""
+    src = (_SRC_PYTHON / "run_native_ld_panel.py").read_text()
+    for flag in ("--num-shards", "--shard-index", "--panel-tsv"):
+        assert flag in src, f"main() must expose {flag}"
