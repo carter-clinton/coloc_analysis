@@ -1,12 +1,12 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-25T21:30:00.000Z",
+  "timestamp": "2026-06-25T23:55:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
   "wave": "m3-02e — native LD export + public EUR. Tasks 1-3 DONE+pushed; T4 STEP 0+STEP 3 (preflight + production-VM re-measure) DONE + ACCEPTED; STEP 4 (the 276-region loop) NOT YET FIRED — gated on building a resumable native-plink driver first.",
-  "status": "2026-06-25. NOTHING RUNNING, $0. m3-02e-T4 STEP 3 production-VM re-measure COMPLETED and is ACCEPTED — the budget gate is satisfied (well under $3-4k and the ~$1.5k Spot cap on every scenario). Cluster 20260604 is STOPPED (Apps-panel Stopped badge, Current cost --, 24 workers deprovisioned; pre-stop master check NO_PLINK + NO_STRAY_PYTHON; no other workspace cluster running). BLOCKING FINDING surfaced this session: the 276-region loop is NOT turnkey-resumable yet — the fire brief STEP 4 is hand-described bash with no resumable native-plink driver, and a ~11-day serial Spot run will be preempted. Recommended NEXT = NCSU writes+tests+pushes a native-plink resumable loop driver (autonomous, $0) BEFORE firing STEP 4. NCSU-side ALL committed+pushed @ 80fbb9a (m3-02e T1-3 + stitch flake-class debug).",
-  "headline": "STEP 3 ACCEPTED: 57.14 min/region, 17.89 GiB peak RAM, 15.29 GiB output (contents-verified diag=1.0, sym max-abs-diff=0.0, --keep-allele-order present). x276 = 262.9 VM-h. Projection ~$392 Spot / ~$1,101 on-demand at the brief's n2-highmem-64 labels; on a dedicated n2-standard-16 Spot (the VM actually measured) ~$45-50 whole panel. Budget gate SATISFIED. DO NOT fire STEP 4 as written — the native-plink loop has no resumable driver; build it first.",
+  "status": "2026-06-25. NOTHING RUNNING, $0. m3-02e-T4 STEP 3 production-VM re-measure COMPLETED + ACCEPTED (budget gate satisfied). Cluster 20260604 STOPPED + verified. The BLOCKING loop-driver gap is now RESOLVED: quick task 260625-r6m built the resumable native-plink loop driver (src/python/run_native_ld_panel.py) — TDD, --validate (plan-checker PASSED + verifier 8/8), full tests/m3 282 passed / 0 failed / 30 skipped, fire brief STEP 4 re-pointed to it. STEP 4 is now turnkey-resumable. NEXT = regenerate the STEP-4 AOU-agent paste-in once Carter confirms budget cap + production VM type (rec dedicated single n2-standard-16 Spot, ~$45-50). NCSU-side committed; PUSH pending (driver commits 35361e5, 1a1a361 + docs).",
+  "headline": "STEP 3 ACCEPTED (57.14 min / 17.89 GiB / 15.29 GiB contents-verified; x276 budget gate SATISFIED, ~$45-50 on dedicated n2-standard-16 Spot). Loop-driver gap RESOLVED — run_native_ld_panel.py built+verified (resume via _existing_region_npz, --keep-allele-order via helper, content-verify, resume-safe panel TSV, Hail path untouched). STEP 4 now turnkey. Next = confirm budget cap + VM type, then regenerate the STEP-4 paste-in.",
   "branch": "m3-W2-aou-deltas",
   "origin_synced": "origin == local HEAD == 80fbb9a (clean). m3-02e T1-3 pushed @ 1a7bfdd; stitch flake-class fix pushed @ 80fbb9a. (This session's STATE.md/HANDOFF.json handoff-record commit is the only pending local change.)",
   "running_now": "NOTHING. $0. Cluster 20260604 STOPPED + verified (Stopped badge, Current cost --). No orphan plink PID, no stray python, no other running cluster. The single idle Jupyter kernel went down with the cluster.",
@@ -36,7 +36,15 @@
     "3_production_vm_type": "RECOMMENDED dedicated single n2-standard-16 Spot (matches the measured 57.14 min wall exactly, no re-measure risk). NOT the 24-worker cluster (idle-worker burn ~$6.3k over the run). Confirm.",
     "4_horizontal_fanout": "OPTIONAL N Spot VMs to cut the ~11-day serial wall (same cost). Decide N or single-VM."
   },
-  "next_action": "Build + TDD + push the native-plink resumable loop driver (autonomous NCSU code, $0). Then regenerate the STEP-4 loop paste-in for the AOU agent with the confirmed budget cap + VM type. The 276-region loop is the ONLY remaining billable step in m3-02e; after the panel lands + token-free handback, m3-04 must be RE-PLANNED to consume m3-02e .npz + public EUR .rds (NOT rebuild LD via Hail).",
+  "next_action": "Driver DONE (run_native_ld_panel.py, quick 260625-r6m, verified). Regenerate the STEP-4 loop paste-in for the AOU agent pointing at `python src/python/run_native_ld_panel.py`, once Carter confirms: (1) budget cap (rec ~$1.5k; expected ~$45-50), (2) production VM type (rec dedicated single n2-standard-16 Spot, NOT the 24-worker cluster), (3) single-VM ~11-day wall vs N-VM fan-out (same cost). PUSH the driver+docs commits to origin BEFORE the fire (clone precondition: origin == HEAD). The 276-region loop is the ONLY remaining billable step in m3-02e; after the panel lands + token-free handback, m3-04 must be RE-PLANNED to consume m3-02e .npz + public EUR .rds (NOT rebuild LD via Hail).",
+  "driver_built": {
+    "module": "src/python/run_native_ld_panel.py (NEW, Hail-free at module scope, separate from the retired aou_ld_panel.py::main Hail loop)",
+    "tests": "tests/m3/test_run_native_ld_panel.py (11 tests, TDD RED-first)",
+    "quick_task": "260625-r6m (--validate: plan-checker PASSED, verifier 8/8)",
+    "commits": "35361e5 (driver+tests), 1a1a361 (guards + fire-brief STEP 4 re-point)",
+    "guarantees": "resume via REUSED _existing_region_npz (MED-6 256-byte floor, not bare [ -f ]); --keep-allele-order on every argv via build_plink_ld_command; content-verify float32/square/full-diag==1.0/symmetric; resume-safe panel TSV (header once, dedup by region_id); one bad region continues the loop; second run = zero plink work; retired Hail symbols absent (AST guard).",
+    "full_suite": "pytest tests/m3 = 282 passed / 0 failed / 30 skipped (no regression)"
+  },
   "this_session_work": {
     "step3_accepted": "Captured + accepted the production-VM re-measure (57.14 min / 17.89 GiB / 15.29 GiB, contents-verified). Reconciled the rate-label vs measured-VM mismatch the brief flagged as GATE caveat #1: a dedicated n2-standard-16 Spot is CHEAPER than the brief's labels, so the gate is comfortably satisfied.",
     "cluster_stopped": "Directed + verified STOP of cluster 20260604 (Stopped badge, $0, 24 workers deprovisioned, no orphans). Saved ~$24.07/hr idle.",
@@ -52,7 +60,7 @@
     "m3_02e_T1_3": "DONE + pushed @ 1a7bfdd (38 tests pass)",
     "stitch_flake_class": "RESOLVED + pushed @ 80fbb9a (full-suite 271/30/0)",
     "m3_02e_T4_step3_remeasure": "DONE + ACCEPTED (57.14 min / 17.89 GiB / 15.29 GiB contents-verified; x276 budget gate SATISFIED).",
-    "m3_02e_T4_full_loop": "NOT FIRED. Blocked on: (a) resumable native-plink driver (autonomous, recommended FIRST), then (b) Carter's budget cap + confirmed production VM type.",
+    "m3_02e_T4_full_loop": "NOT FIRED. Driver READY (run_native_ld_panel.py, quick 260625-r6m, verified). Remaining gate: Carter's budget cap + confirmed production VM type, then regenerate the STEP-4 paste-in + push.",
     "m3_04": "SUPERSEDED-PENDING-REPLAN — must CONSUME m3-02e AFR .npz + public EUR .rds (NOT rebuild LD via Hail). Re-plan after the T4 panel lands."
   },
   "cluster": "20260604 (HAIL, n2-standard-16 x24, 64GB) is STOPPED + verified ($0). For the eventual STEP-4 loop, run on a dedicated single n2-standard-16 Spot VM (NOT this cluster). wb cluster stop = from-NCSU billing-safety lever. Do NOT start 20260620/20260617 (no Hail).",
