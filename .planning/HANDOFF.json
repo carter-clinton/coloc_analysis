@@ -1,15 +1,50 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-26T03:15:00.000Z",
+  "timestamp": "2026-06-26T23:35:00.000Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "wave": "m3-02e — native LD export + public EUR. Tasks 1-3 DONE+pushed; T4 STEP 0+STEP 3 (preflight + production-VM re-measure) DONE + ACCEPTED; STEP 4 (the 276-region loop) NOT YET FIRED — gated on building a resumable native-plink driver first.",
-  "status": "2026-06-26 SESSION CLOSED for the night. NOTHING RUNNING IN-PERIMETER, $0 (cluster 20260604 STOPPED + verified). m3-02e-T4 STEP 3 ACCEPTED (budget gate satisfied). The resumable native-plink loop driver (run_native_ld_panel.py, quick 260625-r6m) is BUILT + verified + 8-VM-sharded (commits 35361e5, 1a1a361, cdc2103; full suite 287/0/30). ONE NCSU background job still running at close: a driver GCS-durability fix (gs:// out-dir via gsutil, Hail-free) — it auto-commits+pushes when its ~46-min full-suite gate passes, so by morning the driver is ~1 commit AHEAD of HEAD 1b68192. TOMORROW'S FIRST STEP = git pull + git log (pick up the GCS-fix commit). KEY DECISION DEFERRED TO CARTER: the 276-region loop compute shape — the 8-VM/~$50/1.4-day plan is INFEASIBLE unattended (the AoU agent can't/won't provision 8 Spot VMs; NCSU wb-CLI has no `create` + gcloud is VPC-SC-walled). Only executable shape = single-node n2-standard-16 Dataproc cluster, serial, ~11 days, ~$250-300 (under Carter's ~$500 cap). PREREQUISITE PENDING: STEP 2 export-once — the full-cohort plink bfile does NOT exist (only the 1-region pilot bfile); must export to gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/bfile/ before the loop.",
-  "headline": "Closed for the night, $0 everywhere. Driver built+verified+8-VM-sharded+gs://-durable; the GCS-durability fix LANDED @ 10aaa6f (origin == local == 10aaa6f, full suite 293/0/30) — no background job left. 8-VM fast path is INFEASIBLE to provision unattended; realistic path = single-node n2-standard-16 Dataproc, serial, ~11 days, ~$250-300 (under the $500 cap), writing .npz to a gs:// out-dir (now durable). Two things gate the fire: (1) Carter picks the compute shape, (2) STEP 2 export-once (full-cohort bfile doesn't exist yet). Tomorrow: git pull on the AoU clone -> reach 10aaa6f.",
+  "wave": "m3-02e — native LD export + public EUR. Tasks 1-3 DONE+pushed; T4 STEP 0+STEP 3 (preflight + production-VM re-measure) DONE + ACCEPTED. STEP 2 EXPORT is RUNNING in-perimeter RIGHT NOW (decoupled Hail-free fallback path).",
+  "status": "2026-06-26 ~23:35Z — MID-FIRE, Phase 1 (export) RUNNING in-perimeter, attended by the AOU agent. The single-node-Dataproc plan from the prior handoff is DEAD: (a) Standard->single-node convert is not supported in-place by the Workbench UI, and (b) the in-perimeter pet SA holds ONLY dataproc.clusters.list (create/get/delete/update/start/stop all DENIED — verified via testIamPermissions), so gcloud-create and the in-node trap-EXIT self-delete are both impossible. NEW PLAN = decoupled Hail-free fallback: export the AFR MT -> plink bfile DIRECT to the in-perimeter bucket on the existing Hail cluster 20260604 (UI-started; Hail writes gs:// natively), then run the 276-region plink loop on a separate UI-managed Cloud Analysis VM (n2-standard-16, >=500GB reattachable PD, Hail-free). All cluster/VM lifecycle is UI-driven; the loop wrapper has NO self-delete (timeout 312h still caps compute).",
+  "headline": "Phase 1 export RUNNING on cluster 20260604 (UI-started at full 25-node, $24.07/hr, attended). hl.export_plink wrote 36944 part-tasks in ~29.5 min, then began the single-driver merge of 353.6G to gs://.../ld/afr_native_panel/bfile/afr_cohort.{bed,bim,fam}. Bucket shows only .fam mid-merge — EXPECTED (Hail streams the .bed as one resumable upload that commits only at merge end). Agent at 15-min cadence; will stage plink1.9 to the bucket, byte-verify the bfile, UI-STOP the cluster, then report + HOLD for Carter's Phase 2 go.",
   "branch": "m3-W2-aou-deltas",
-  "origin_synced": "origin == local HEAD == 10aaa6f (clean, all pushed). This session: m3-02e driver 35361e5 + guards 1a1a361 + 8-VM sharding cdc2103 + handoff docs (ceaf390/9aca79b/1b68192/88aa1fd) + the durable gs:// out-dir fix 10aaa6f. The AoU clone needs `git pull` to reach 10aaa6f before any fire ([[feedback_push_ncsu_before_aou_clone_fire]]).",
-  "running_now": "NOTHING running anywhere, $0. In-perimeter: cluster 20260604 STOPPED + verified. The NCSU background driver GCS-durability fix COMPLETED + pushed -> origin == local HEAD == 10aaa6f (full suite 293 passed / 0 failed / 30 skipped; 22 driver tests). Tomorrow's AoU clone still needs `git pull` to reach 10aaa6f before any fire.",
+  "origin_synced": "origin == NCSU-local HEAD (this handoff commit, on top of f37fbea/10aaa6f). The AoU export cluster clone pulls to >= 10aaa6f as part of Phase 1. No new NCSU code this session — anchors + IAM-finding memory only.",
+  "running_now": "IN-PERIMETER: cluster 20260604 RUNNING at $24.07/hr (full 25-node), executing the STEP 2 export (single-driver merge of 353.6G, ~33+ min in at last check; driver Java PID 5826 ~20% CPU + network I/O = healthy, not hung). Attended by the AOU agent at a 15-min cadence; it UI-stops the instant the .bed/.bim land + byte-verify. NCSU-side: nothing running, $0.",
+  "fire_in_progress": {
+    "what": "m3-02e-T4 PHASE 1: export the QC'd AFR cohort MT to a plink bfile, written DIRECT to the in-perimeter bucket (Hail writes gs:// natively, so no big Dataproc local disk needed and the export cluster only lives for the export).",
+    "compute_shape": "Existing Hail cluster 20260604 (25-node n2-standard-16, software-framework=HAIL), UI-STARTED. Worker-scale-down to min was attempted/intended to cut $24->~$3/hr but the run is at full 25-node; the single-driver merge phase leaves the 24 workers idle = the expensive-idle case, but it is sunk (~$25-60 total expected) and scaling mid-merge is too risky to attempt. Bounded + attended.",
+    "export_command": "from aou_ld_panel import export_cohort_to_plink; export_cohort_to_plink('gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt', 'gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/bfile/afr_cohort')",
+    "export_progress_at_handoff": "Distributed part-write DONE (36944 tasks / 29m35s). Single-driver merge of 353.6G to gs:// STARTED at 22:59:54, ~33+ min in at last check. Only .fam visible in the bucket so far (EXPECTED — the .bed/.bim commit only when the resumable upload finishes).",
+    "phase1_remaining_steps": [
+      "1. Stage the EXACT plink1.9 binary for the loop VM BEFORE stopping the cluster (it only exists on the running master): plink1.9 --version (record; expect v1.90b7.2); gsutil cp \"$(command -v plink1.9)\" gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/tools/plink1.9",
+      "2. Byte-verify the bfile (contents, not existence): gsutil ls -l gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/bfile/afr_cohort.* — expect .bed ~353.6G, .bim ~variant-count rows, .fam == 73,122 lines.",
+      "3. UI-STOP cluster 20260604; confirm the Stopped badge ($0).",
+      "4. Report bfile sizes + plink1.9 version + 'export done, cluster stopped'; HOLD for Carter's Phase 2 go."
+    ],
+    "phase2_loop_plan": {
+      "host": "A separate AoU Cloud Analysis VM (UI-provisioned): n2-standard-16, >=500GB REATTACHABLE persistent disk, Hail-free. NOT a Dataproc cluster. Lifecycle is UI-managed (Carter/agent click stop).",
+      "setup": "clone/pull repo to >= 10aaa6f; confirm numpy; gsutil cp the staged plink1.9 -> ~/bin, chmod +x, on PATH, --version must match Phase 1; gsutil -m cp the bfile gs://.../bfile/afr_cohort.* -> LOCAL /home/jupyter/ (~353.6G, fits the 500GB disk; plink CANNOT read gs://).",
+      "loop_command": "nohup bash -c 'export PATH=~/bin:$PATH; timeout 312h python ~/coloc_analysis/src/python/run_native_ld_panel.py --manifest ~/coloc_analysis/config/ld_regions.tsv --bfile-prefix /home/jupyter/afr_cohort --out-dir gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/ --scratch-dir /home/jupyter/native_ld_scratch --mode square --ancestry AFR --num-shards 1 --panel-tsv gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/m3-W2-native-plink-panel.tsv' > ~/native_ld_loop.log 2>&1 &",
+      "no_self_delete": "The loop wrapper has NO trap-EXIT gcloud delete — the pet SA can't delete/stop clusters (PERMISSION_DENIED). timeout 312h caps the python compute (~$293 ceiling at ~$0.94/hr); teardown is a manual UI stop by Carter/agent.",
+      "expected": "~57 min/region x 276 ~= 263 VM-h ~= ~11 days serial wall on n2-standard-16 ~$0.94/hr ~= ~$248. Whole fallback ~$260 incl. the ~$40-60 export. Under the $500 cap.",
+      "output_paths": {
+        "npz_out_dir": "gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/ (durable; per-region {region_id}.npz + AF)",
+        "panel_tsv": "gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/m3-W2-native-plink-panel.tsv (per-region wall/RAM/output/n_var/status; THE real production cost basis)",
+        "bfile_bucket": "gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/bfile/afr_cohort.{bed,bim,fam} (INDIVIDUAL-LEVEL, in-perimeter ONLY, never egress)",
+        "bfile_local_on_loop_vm": "/home/jupyter/afr_cohort.{bed,bim,fam} (gsutil-pulled from the bucket; plink reads this)",
+        "plink_binary": "gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/tools/plink1.9 (staged from the export master)",
+        "run_log": "~/native_ld_loop.log (on the loop VM)"
+      },
+      "liveness_arbiter": "Climbing bucket .npz count: gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/*.npz | wc -l (target 276). NOT a moving log, NOT _SUCCESS, NOT the kernel light.",
+      "backstops": "(1) timeout 312h caps compute even if the loop hangs; (2) reattachable PD makes the run resume-safe — a VM pause/stop loses no work, the re-run skips banked .npz (and .npz are durable in the bucket regardless); (3) Carter 2-3 day UI check-ins cap idle-billing + UI-stop at 276. NO self-deleting wrapper (SA can't)."
+    }
+  },
+  "why_plan_changed": {
+    "single_node_convert_dead": "Workbench UI Edit cannot flip Standard->Single-node in-place (cluster-type radio won't toggle, Update stays disabled) — single-node is a Dataproc create-time property.",
+    "gcloud_create_dead": "In-perimeter pet SA (pet-2766287214923ed0b0e17@wb-perky-corn-6639.iam.gserviceaccount.com) holds ONLY dataproc.clusters.list (verified via clusters:testIamPermissions). create/get/delete/update/start/stop all DENIED. So no gcloud single-node create, and can't even describe a cluster to clone its Hail config.",
+    "self_delete_dead": "Same list-only SA -> a trap 'gcloud dataproc clusters delete ... EXIT' wrapper would itself PERMISSION_DENIED. Cluster/VM lifecycle is UI-only (a different control-plane identity). See memory reference_aou_pet_sa_listonly_dataproc.",
+    "fallback_chosen": "Decoupled Hail-free: export on the UI-started Hail cluster -> bucket bfile -> 276-region plink loop on a UI-managed Cloud Analysis VM (Hail-free, reattachable PD). The 11-day loop needs no Hail; the export writes gs:// natively so the export cluster needs no big local disk and dies right after."
+  },
   "accepted_step3_result": {
     "region": "m2_region_00040__sub00 AFR, chr12 GRCh38 37,463,740-45,398,515, MAF>=0.005, n_var=64,060, count_cols=73,122",
     "mode": "square --r square bin4 --keep-allele-order",
@@ -17,62 +52,49 @@
     "wall_min": 57.14,
     "peak_ram_gib": 17.89,
     "output_gib": 15.29,
-    "contents_verified": "diag=1.0, off-diag in [-0.998, 1.0], symmetry max-abs-diff=0.0, exit 0 (NOT just exit code — matrix read back)",
+    "contents_verified": "diag=1.0, off-diag in [-0.998, 1.0], symmetry max-abs-diff=0.0, exit 0 (matrix read back, NOT just exit code)",
     "x276_vm_hours": 262.9,
-    "projection_brief_labels": "~$392 Spot / ~$1,101 on-demand (brief's n2-highmem-64 $1.49/$4.19 rates)",
-    "projection_true_vm": "dedicated single n2-standard-16 Spot ~$0.16-0.19/hr -> ~$45-50 whole panel (CHEAPER than the labels)",
-    "footprint_x276_square_tb": 4.12,
-    "verdict": "budget gate SATISFIED on every scenario (under $3-4k ceiling and ~$1.5k Spot cap)"
-  },
-  "blocking_finding_loop_not_resumable": {
-    "what": "The fire brief STEP 4 (m3-02e-AFR-NATIVE-FIRE-BRIEF.md L138-168) is HAND-DESCRIBED BASH, not a script. The only manifest loop driver (aou_ld_panel.py::main ~L3004) drives the RETIRED Hail compute_region_ld path. The native-plink path (export_cohort_to_plink + build_plink_ld_command + plink_ld_to_npz.py) has NO loop driver.",
-    "why_it_matters": "276 x 57.14 min ~= 11 days serial wall on one Spot VM -> multiple preemptions near-certain. The content-validated resume guard _existing_region_npz (aou_ld_panel.py ~L2361, min-bytes floor / MED-6) EXISTS but is wired only into the Hail path. A naive `[ -f region.npz ]` bash guard would silently bank truncated regions from a mid-write preemption (feedback_aou_success_marker_not_evidence_of_data).",
-    "recommended_fix": "NCSU writes+TDD+pushes a native-plink resumable loop driver (autonomous, $0): read manifest -> filter AFR (276) -> per region: _existing_region_npz skip-if-valid (resume) -> build_plink_ld_command subprocess -> plink_ld_to_npz.py -> content-verify (diag/symmetry) -> append m3-W2-native-plink-panel.tsv; idempotent across preemption. THEN regenerate the STEP-4 loop paste-in pointing the AOU agent at the driver.",
-    "wall_lever_optional": "plink already saturates 16 vCPUs (no --threads cap), so no intra-VM speedup. Only horizontal lever: N Spot VMs sharing the bucket prefix + same driver = same total cost, wall/N. The resume guard makes that safe (each VM skips regions another banked)."
-  },
-  "open_decisions_carter": {
-    "1_driver_first_sequence": "RECOMMENDED: build the resumable driver before firing STEP 4. Confirm.",
-    "2_budget_cap": "RECOMMENDED ~$1.5k hard cap (expected actual ~$45-50 on dedicated n2-standard-16 Spot; clears the $3-4k ceiling with huge margin). Carter sets his number.",
-    "3_production_vm_type": "RECOMMENDED dedicated single n2-standard-16 Spot (matches the measured 57.14 min wall exactly, no re-measure risk). NOT the 24-worker cluster (idle-worker burn ~$6.3k over the run). Confirm.",
-    "4_horizontal_fanout": "OPTIONAL N Spot VMs to cut the ~11-day serial wall (same cost). Decide N or single-VM."
-  },
-  "next_action": "TOMORROW (Carter resumes): STEP 1 = git pull + git log (pick up the background GCS-durability fix commit). STEP 2 = Carter picks the loop compute shape (the one deferred decision): 8-VM/~$50/1.4-day is INFEASIBLE to provision unattended (agent can't/won't spin up 8 Spot VMs; NCSU can't either via VPC-SC) -> realistic = single-node n2-standard-16 Dataproc cluster, serial (--num-shards 1), ~11 days, ~$250-300, under the $500 cap; resume-safe so killable if he later wants to hand-provision 8 VMs for speed. STEP 3 = run the EXPORT-ONCE prereq (the full-cohort plink bfile does NOT exist yet — export_cohort_to_plink AFR MT -> gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/bfile/afr_cohort, ~20-40 min on a Hail cluster; .bed individual-level, stays in-perimeter). STEP 4 = fire the loop on the single-node cluster writing .npz to a gs:// --out-dir (the GCS fix makes this durable), e.g. `python src/python/run_native_ld_panel.py --manifest config/ld_regions.tsv --bfile-prefix gs://.../afr_native_panel/bfile/afr_cohort --out-dir gs://.../afr_native_panel/ --mode square --ancestry AFR --panel-tsv gs://.../afr_native_panel/m3-W2-native-plink-panel.tsv`; runs unattended, resume-safe. SAFETY: must self-stop / wall-cap the cluster so it can't run away past the cap (billing-runaway is this project's recurring catastrophe class). After: STOP cluster, verify 276-row panel all status ok, egress aggregate .npz+AF only, handback 'native-panel-recorded' -> NCSU pushes -> m3-04 REPLAN to consume m3-02e .npz + public EUR .rds. The 8-VM-fan-out invocation (--num-shards 8 --shard-index k) stays valid IF Carter ever hand-provisions multiple VMs.",
-  "driver_built": {
-    "module": "src/python/run_native_ld_panel.py (NEW, Hail-free at module scope, separate from the retired aou_ld_panel.py::main Hail loop)",
-    "tests": "tests/m3/test_run_native_ld_panel.py (11 tests, TDD RED-first)",
-    "quick_task": "260625-r6m (--validate: plan-checker PASSED, verifier 8/8)",
-    "commits": "35361e5 (driver+tests), 1a1a361 (guards + fire-brief STEP 4 re-point), cdc2103 (8-VM static index-sharding + per-shard --panel-tsv + brief STEP 4/7 8-VM update), 10aaa6f (durable gs:// out-dir: gsutil cp .npz to bucket + gsutil-stat resume-check, Hail-free; --out-dir/--panel-tsv accept gs:// + new --scratch-dir; brief STEP 4 gs:// subsection)",
-    "gcs_durable_out_dir": "LANDED @ 10aaa6f. --out-dir accepts gs:// OR local (local byte-identical). gs:// path: compute into local scratch -> content-verify -> gsutil cp verified .npz (+.afreq) to the bucket; .bed/.bim/.fam never uploaded (REQ-AOU-LD-EGRESS). Resume-check = gsutil stat Content-Length vs _MIN_REGION_NPZ_BYTES (short/err -> recompute). Panel TSV mirrored in scratch (seeded from bucket for cross-recycle dedup) + uploaded. Module still imports without hail (gsutil is a subprocess). 22 driver tests; full suite 293/0/30. THIS is what makes the single-node Dataproc loop durable (bucket-first, survives cluster recycle).",
-    "sharding": "--num-shards 8 --shard-index k (idx % 8 == k over the deterministic AFR order) -> 8 disjoint+exhaustive partitions ~34-35 regions each (partition test PASSED). Per-shard --panel-tsv avoids concurrent-append corruption; all .npz to ONE shared --out-dir so the resume guard is global across VMs + egress sees all 276. Full suite 287/0/30.",
-    "fire_decisions": "Carter: budget cap ~$500 hard tripwire; 8 Spot VMs (~1.4-day wall); dedicated n2-standard-16 Spot (~$50-60 expected total incl. dense-region tail).",
-    "guarantees": "resume via REUSED _existing_region_npz (MED-6 256-byte floor, not bare [ -f ]); --keep-allele-order on every argv via build_plink_ld_command; content-verify float32/square/full-diag==1.0/symmetric; resume-safe panel TSV (header once, dedup by region_id); one bad region continues the loop; second run = zero plink work; retired Hail symbols absent (AST guard).",
-    "full_suite": "pytest tests/m3 = 282 passed / 0 failed / 30 skipped (no regression)"
-  },
-  "this_session_work": {
-    "step3_accepted": "Captured + accepted the production-VM re-measure (57.14 min / 17.89 GiB / 15.29 GiB, contents-verified). Reconciled the rate-label vs measured-VM mismatch the brief flagged as GATE caveat #1: a dedicated n2-standard-16 Spot is CHEAPER than the brief's labels, so the gate is comfortably satisfied.",
-    "cluster_stopped": "Directed + verified STOP of cluster 20260604 (Stopped badge, $0, 24 workers deprovisioned, no orphans). Saved ~$24.07/hr idle.",
-    "loop_driver_gap_found": "Inspected aou_ld_panel.py: confirmed main() drives the retired Hail path and the native-plink path has no resumable loop driver. Flagged as a BLOCKING precondition to STEP 4. NOT YET FIXED (awaiting Carter's driver-first go).",
-    "m3_02e_T1_3": "DONE prior, pushed @ 1a7bfdd (38 tests). stitch flake-class debug DONE, pushed @ 80fbb9a (full-suite 271/30/0)."
+    "verdict": "budget gate SATISFIED. Loop on a dedicated n2-standard-16 ~$248; whole fallback ~$260; clears the $500 cap."
   },
   "cohorts": {
-    "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "status": "COMPLETE_VERIFIED, untouched (path is /ld/ NOT /ld/mt/)"},
-    "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "status": "COMPLETE_VERIFIED — EUR LD now sourced from PUBLIC Weissbrod 337k (m3-02e T2), this AoU EUR cohort no longer needed for LD"},
+    "afr_primary": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt", "samples": 73122, "status": "COMPLETE_VERIFIED, untouched (path is /ld/ NOT /ld/mt/). Source for the STEP 2 export now running."},
+    "eur": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_eur_qc.mt", "samples": 220098, "status": "COMPLETE_VERIFIED — EUR LD now sourced from PUBLIC Weissbrod 337k (m3-02e T2); this AoU EUR cohort no longer needed for LD"},
     "afr_sens": {"path": "gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_pca_selfid_qc.mt", "samples": 62557, "status": "COMPLETE_VERIFIED, untouched"}
   },
   "gates": {
     "m3_02e_T1_3": "DONE + pushed @ 1a7bfdd (38 tests pass)",
-    "stitch_flake_class": "RESOLVED + pushed @ 80fbb9a (full-suite 271/30/0)",
     "m3_02e_T4_step3_remeasure": "DONE + ACCEPTED (57.14 min / 17.89 GiB / 15.29 GiB contents-verified; x276 budget gate SATISFIED).",
-    "m3_02e_T4_full_loop": "NOT FIRED. Driver READY (run_native_ld_panel.py, quick 260625-r6m, verified). Remaining gate: Carter's budget cap + confirmed production VM type, then regenerate the STEP-4 paste-in + push.",
-    "m3_04": "SUPERSEDED-PENDING-REPLAN — must CONSUME m3-02e AFR .npz + public EUR .rds (NOT rebuild LD via Hail). Re-plan after the T4 panel lands."
+    "disk_safety_gate": "MOOT for the fallback (no destructive single-node convert; forensic mirror was done+byte-verified earlier anyway, at gs://.../forensics_archive/m3-W2-localdisk-mirror-20260626T171108Z).",
+    "m3_02e_T4_phase1_export": "RUNNING NOW — single-driver merge of 353.6G to the bucket bfile; agent attended at 15-min cadence; HOLD after for Phase 2 go.",
+    "m3_02e_T4_phase2_loop": "PENDING Carter's go after Phase 1 reports. Cloud Analysis VM (n2-standard-16, 500GB reattachable PD, Hail-free), nohup + timeout 312h, gs:// out-dir.",
+    "m3_04": "SUPERSEDED-PENDING-REPLAN — must CONSUME m3-02e AFR .npz + public EUR .rds (NOT rebuild via Hail). Re-plan after the T4 panel lands."
   },
-  "cluster": "20260604 (HAIL, n2-standard-16 x24, 64GB) is STOPPED + verified ($0). For the eventual STEP-4 loop, run on a dedicated single n2-standard-16 Spot VM (NOT this cluster). wb cluster stop = from-NCSU billing-safety lever. Do NOT start 20260620/20260617 (no Hail).",
-  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md (2026-06-25 ACCEPTED RESUME-HERE block) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST) + the T4 fire brief m3-02e-AFR-NATIVE-FIRE-BRIEF.md. Operating manual = aou-ld-pipeline skill.",
+  "cluster": "20260604 = the Hail cluster (25-node n2-standard-16, software-framework=HAIL), UI-STARTED for the export, RUNNING $24.07/hr, agent UI-stops right after the bfile verifies. 20260605 = other Hail cluster (untouched). 20260617/20260620 = NO Hail, do not use. The loop runs on a SEPARATE Cloud Analysis VM, not any of these.",
+  "resume_on_reconnect": [
+    "1. Do NOT restart any kernel — the export is server-side + attended. FIRST read the AOU agent's most recent chat report to see where Phase 1 is (merge still running? bfile verified? cluster stopped? Phase 2 started?).",
+    "2. Phase 1 liveness: the bfile commits to the bucket only at merge end. Check `gsutil ls -l gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/bfile/afr_cohort.*` for .bed (~353.6G) + .bim + .fam. Mid-merge the bucket may show only .fam — that is NORMAL; confirm forward progress via the driver Java CPU/network instead.",
+    "3. ⚠ If cluster 20260604 is RUNNING and the export is DONE/aborted/unclear: it burns $24.07/hr — get the agent (or Carter via the UI) to STOP it. The pet SA CANNOT stop it via gcloud; it is a UI action only.",
+    "4. When Phase 1 reports 'export done, cluster stopped' (bfile verified + plink1.9 staged to gs://.../tools/): give the Phase 2 go -> provision the Cloud Analysis VM and fire the loop (see fire_in_progress.phase2_loop_plan.loop_command).",
+    "5. Phase 2 liveness by DATA LAYER: `gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/afr_native_panel/*.npz | wc -l` climbing toward 276. Do NOT restart the loop kernel; it is nohup'd. Resume-safe (banked .npz skipped). Next check-in ~2-3 days.",
+    "6. On 'native-panel-recorded': NCSU reconstructs m3-W2-native-plink-panel.tsv + the shutdown record, pushes, verifies origin tip == local HEAD, then m3-04 REPLAN."
+  ],
+  "prep_landmines_fixed": [
+    "Plan pivoted off single-node-Dataproc -> decoupled Hail-free fallback because the pet SA is list-only Dataproc (memory reference_aou_pet_sa_listonly_dataproc) AND the UI can't convert Standard->single-node.",
+    "Export writes the bfile DIRECT to gs:// (Hail-native) -> the export cluster needs no big local disk and dies right after; only the loop VM needs the bfile locally.",
+    "plink1.9 must be STAGED to the bucket from the export master BEFORE the cluster is UI-stopped (the binary only lives on the running master); the loop VM pulls it (version must match the STEP-3 measure, v1.90b7.2).",
+    "--bfile-prefix on the loop VM is LOCAL (/home/jupyter/afr_cohort) — plink can't read gs://; only --out-dir/--panel-tsv are gs://.",
+    "Loop VM = Cloud Analysis VM with a REATTACHABLE PD (per feedback_aou_use_persistent_disk) -> resume-safe across pause/stop. Extend/disable its auto-pause if possible (a nohup loop can read as idle; PD makes a pause merely a delay).",
+    "NO self-deleting wrapper (pet SA can't delete/stop); teardown is a manual UI stop. timeout 312h still caps compute."
+  ],
+  "resume_entry_point": ".planning/HANDOFF.json (this file, the 2026-06-26T23:35Z mid-export block) + .planning/STATE.md (2026-06-26 ~23:35Z RESUME-HERE block) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md (LATEST) + m3-02e-AFR-NATIVE-FIRE-BRIEF.md. Operating manual = aou-ld-pipeline skill. Permission boundary = memory reference_aou_pet_sa_listonly_dataproc.",
   "do_not": [
-    "Do NOT fire the 276-region loop (STEP 4) on the brief's hand-bash — build the resumable native-plink driver first (the resume guard _existing_region_npz is only wired into the retired Hail path).",
-    "Do NOT run the STEP-4 loop on the 24-worker cluster — plink is single-node; use a dedicated single n2-standard-16 Spot VM (idle-worker burn would be ~$6.3k).",
-    "Do NOT launch the loop without Carter's fresh go + confirmed budget cap + confirmed production VM type.",
-    "Do NOT egress the .bed/.bim/.fam (individual-level, in-perimeter only) — only aggregate LD .npz + AF crosses.",
+    "Do NOT restart the export kernel on reconnect — it is server-side + attended.",
+    "Do NOT judge export liveness by the empty bucket — the .bed commits only at merge end; use the driver Java CPU/network, then the committed .bed size.",
+    "Do NOT leave cluster 20260604 RUNNING ($24.07/hr) — UI-stop it the instant the bfile verifies (the pet SA can't stop it via gcloud).",
+    "Do NOT put a `gcloud dataproc clusters delete/stop` self-teardown in the loop wrapper — it PERMISSION_DENIEDs (pet SA is list-only).",
+    "Do NOT set --bfile-prefix to a gs:// path on the loop VM — plink can't read it; pull the bfile to LOCAL disk first.",
+    "Do NOT run the loop on a Dataproc cluster (idle-worker burn / idle-delete trap) — use the Hail-free Cloud Analysis VM.",
+    "Do NOT egress the .bed/.bim/.fam or the forensic mirror (individual-level / in-perimeter only) — only aggregate LD .npz + AF crosses.",
     "Do NOT drop --keep-allele-order (hardcoded in build_plink_ld_command).",
     "Do NOT route AFR through the retired Hail A.3 BlockMatrix path.",
     "Do NOT git add -A on the GPFS tree — explicit paths only."
