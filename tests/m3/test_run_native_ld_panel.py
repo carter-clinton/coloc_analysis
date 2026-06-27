@@ -609,6 +609,48 @@ def test_gs_out_dir_uploads_verified_npz(tmp_path, monkeypatch):
     assert res[0]["out"] == f"{gs_out}/afr1.npz"
 
 
+def test_gs_mode_reclaims_region_scratch(tmp_path, monkeypatch):
+    """gs:// out-dir: after a region's verified .npz is uploaded to the bucket, its
+    bulky LOCAL scratch ({region_id}.ld.bin ~ n_var^2 f32 + the local .npz) is
+    DELETED so a long serial panel can't fill the disk. The bucket copy is the
+    durable deliverable; the cohort bfile (outside scratch) is untouched."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    scratch = tmp_path / "scratch"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    monkeypatch.setattr(drv, "_run_gsutil", _MockGsutil())
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=scratch)
+    assert res[0]["status"] == "ok"
+    leftovers = sorted(p.name for p in scratch.glob("afr1.*"))
+    assert leftovers == [], f"per-region scratch not reclaimed: {leftovers}"
+
+
+def test_local_mode_keeps_npz_but_drops_ld_bin(tmp_path, monkeypatch):
+    """LOCAL out-dir: the .npz IS the deliverable (kept for the local resume guard),
+    but the bulky intermediate .ld.bin is still reclaimed so a long serial panel
+    can't fill the disk."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+    assert res[0]["status"] == "ok"
+    assert (out_dir / "afr1.npz").is_file()            # deliverable kept
+    assert not (out_dir / "afr1.ld.bin").exists()      # intermediate reclaimed
+
+
 def test_gs_resume_skips_when_object_meets_floor(tmp_path, monkeypatch):
     """gs:// resume-check consults the BUCKET via gsutil stat: an object whose
     Content-Length >= MED-6 floor short-circuits (zero plink work)."""

@@ -334,6 +334,29 @@ def append_panel_row(tsv_path: "str | Path", row: dict,
 # Per-region processing                                                        #
 # --------------------------------------------------------------------------- #
 
+def _reclaim_region_scratch(compute_dir: "str | Path", region_id: str,
+                            *, keep_npz: bool) -> None:
+    """Delete a region's local scratch artifacts once its output is durable.
+
+    The bulky plink intermediates (``{region_id}.ld.bin``/``.ld.gz`` ~ n_var^2
+    float32, plus ``.afreq``/``.log``/``.nosex``) accumulate ~30+ GiB/region; over a
+    long serial panel (e.g. 276 AFR windows) that overflows any finite scratch disk.
+    Called ONLY after the deliverable is safe: ``gs://`` -> the verified ``.npz`` is
+    already uploaded to the bucket (``keep_npz=False``, drop everything); LOCAL ->
+    the ``.npz`` IS the deliverable + the resume guard reads it (``keep_npz=True``,
+    drop only the intermediates). The cohort bfile lives OUTSIDE ``compute_dir`` (a
+    distinct ``--bfile-prefix`` dir), so the ``{region_id}.*`` glob never touches it.
+    """
+    compute_dir = Path(compute_dir)
+    for p in compute_dir.glob(f"{region_id}.*"):
+        if keep_npz and p.name == f"{region_id}.npz":
+            continue
+        try:
+            p.unlink()
+        except OSError:  # best-effort reclaim; never fail the loop on cleanup
+            pass
+
+
 def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                    mode: str = "square", panel_tsv: "str | Path | None" = None,
                    scratch_dir: "str | Path | None" = None) -> dict:
@@ -455,6 +478,12 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
         print(f"ERROR {region_id}: {e}", file=sys.stderr, flush=True)
 
     append_panel_row(panel_tsv, result, scratch_dir=compute_dir)
+    # Reclaim per-region scratch so a long serial panel can't fill the disk. ONLY on
+    # success: a verify_failed/error region's artifacts are left for inspection (rare,
+    # surfaced via the panel `status` column). gs:// -> the bucket holds the verified
+    # .npz, drop everything; LOCAL -> keep the .npz (deliverable + resume guard).
+    if result["status"] == "ok":
+        _reclaim_region_scratch(compute_dir, region_id, keep_npz=not gs_mode)
     return result
 
 
