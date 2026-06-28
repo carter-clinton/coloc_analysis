@@ -243,6 +243,22 @@ def content_verify_npz(npz_path: "str | Path", *, mode: str = "square") -> tuple
 # Window-subset .bim + n_var cross-check                                      #
 # --------------------------------------------------------------------------- #
 
+def _chrom_match_key(chrom) -> str:
+    """Normalize a contig label for cohort-.bim ↔ manifest matching.
+
+    plink1.9 normalizes a leading ``chr``/``CHR`` prefix, so ``--chr 1`` matches a
+    ``chr1``-prefixed GRCh38 ``.bim`` and emits the in-window ``.ld.bin``. The
+    ``config/ld_regions.tsv`` ``chr`` column is bare numeric (``1``) while the AoU
+    GRCh38 cohort ``.bim`` is ``chr``-prefixed (``chr1``), so the verify MUST strip
+    the prefix on both sides or it counts 0 in-window rows and fails ``n_var``
+    cross-check on every region ([[feedback_npz_triangle_flag_contract]] class of
+    silent contig-format drift; see also ld_npz_to_rds.R's downstream ``^chr`` strip).
+    """
+    s = str(chrom).strip()
+    low = s.lower()
+    return s[3:] if low.startswith("chr") else s
+
+
 def _window_bim_n_var(bim_path: "str | Path", chrom, from_bp: int, to_bp: int) -> tuple[int, Path]:
     """Build the WINDOW-SUBSET .bim (in cohort row order) for [from_bp, to_bp] on
     ``chrom`` and return (n_var, window_bim_path).
@@ -252,10 +268,12 @@ def _window_bim_n_var(bim_path: "str | Path", chrom, from_bp: int, to_bp: int) -
     read a ``.bim`` containing ONLY the in-window rows (in that order) so its row
     order == the ``.ld.bin`` row order. The subset ``.bim`` is written next to the
     cohort ``.bim`` as ``{cohort}.{region-window}.bim``-style temp; callers pass
-    that path to plink_ld_to_npz.
+    that path to plink_ld_to_npz. The chrom compare is ``chr``-prefix agnostic
+    (``_chrom_match_key``, mirroring plink1.9); kept-line content stays VERBATIM so
+    the written window ``.bim`` preserves the cohort's native contig labels.
     """
     bim_path = Path(bim_path)
-    chrom_s = str(chrom)
+    chrom_key = _chrom_match_key(chrom)
     kept_lines: list[str] = []
     for line in bim_path.read_text().splitlines():
         if not line.strip():
@@ -263,10 +281,10 @@ def _window_bim_n_var(bim_path: "str | Path", chrom, from_bp: int, to_bp: int) -
         parts = line.split()
         if len(parts) < 6:
             continue
-        if str(parts[0]) == chrom_s and from_bp <= int(parts[3]) <= to_bp:
+        if _chrom_match_key(parts[0]) == chrom_key and from_bp <= int(parts[3]) <= to_bp:
             kept_lines.append(line.rstrip("\n"))
     n_var = len(kept_lines)
-    window_bim = bim_path.with_name(f"{bim_path.stem}.{chrom_s}_{from_bp}_{to_bp}.window.bim")
+    window_bim = bim_path.with_name(f"{bim_path.stem}.{chrom_key}_{from_bp}_{to_bp}.window.bim")
     window_bim.write_text("\n".join(kept_lines) + ("\n" if kept_lines else ""))
     return n_var, window_bim
 

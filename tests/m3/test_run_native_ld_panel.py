@@ -765,3 +765,42 @@ def test_is_gs_uri_helper():
     assert drv._is_gs_uri("gs://bucket/ld") is True
     assert drv._is_gs_uri("/local/path") is False
     assert drv._is_gs_uri(Path("/local/path")) is False
+
+
+# --------------------------------------------------------------------------- #
+# 12. chr-prefix normalization in the window-.bim verify (260628-244)         #
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize(
+    "bim_chrom, manifest_chrom",
+    [
+        ("chr12", "12"),    # prefixed .bim (AoU GRCh38 export) + bare manifest -> the LIVE bug
+        ("12", "chr12"),    # symmetric reverse
+        ("chr12", "chr12"),  # both prefixed
+        ("12", "12"),       # both bare (pre-existing happy path)
+    ],
+)
+def test_window_bim_n_var_chr_prefix_agnostic(tmp_path, bim_chrom, manifest_chrom):
+    """``_window_bim_n_var`` must mirror plink1.9's chr-prefix normalization.
+
+    The AoU GRCh38 cohort ``.bim`` uses ``chr``-prefixed contigs (``chr12``); the
+    ``config/ld_regions.tsv`` ``chr`` column is bare numeric (``12``). plink1.9
+    normalizes the prefix, so ``--chr 12`` correctly emits the in-window
+    ``.ld.bin`` — but a literal ``str(parts[0]) == chrom`` compare yields 0 rows on
+    the mismatched-prefix case, so EVERY region fails the ``n_var`` cross-check,
+    never banks, and never reclaims its ``.ld.bin`` (the 0/276-banked-after-17h
+    scratch-fill live failure). The kept window-``.bim`` content stays VERBATIM
+    (downstream ``ld_npz_to_rds.R`` strips a leading ``chr`` before the GWAS join).
+    """
+    n, bp0 = 20, 53_000_000
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, _default_bim_rows(n, chrom=bim_chrom, bp0=bp0))
+    from_bp, to_bp = bp0, bp0 + (n - 1) * 100
+
+    n_var, window_bim = drv._window_bim_n_var(bim, manifest_chrom, from_bp, to_bp)
+
+    assert n_var == n, f"{bim_chrom!r} .bim vs {manifest_chrom!r} manifest -> {n_var} (want {n})"
+    kept = [ln for ln in window_bim.read_text().splitlines() if ln.strip()]
+    assert len(kept) == n
+    # verbatim contig preserved in the written window .bim (not rewritten):
+    assert all(ln.split()[0] == str(bim_chrom) for ln in kept)
