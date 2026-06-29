@@ -133,6 +133,21 @@ def _bim_bp_index(bim_path: Path) -> dict[str, int]:
 # LD readers                                                                   #
 # --------------------------------------------------------------------------- #
 
+def _is_symmetric_blocked(m: np.ndarray, atol: float, block: int = 1024) -> bool:
+    """Memory-lean symmetry check. ``np.allclose(m, m.T)`` builds several full
+    n_var**2 float32 temporaries (~39 GiB each at n_var≈1e5) on top of the matrix
+    and OOM-kills a 64 GB VM (m3-02e-T4, region 1). Compare ``block`` rows at a
+    time against the matching transposed column block so the transient is bounded
+    by ``block * n_var * 4`` bytes (≈420 MB at block=1024, n_var≈1e5)."""
+    n = m.shape[0]
+    for i in range(0, n, block):
+        a = m[i:i + block, :]          # row block (view, b×n)
+        b = m[:, i:i + block].T        # transposed col block (b×n)
+        if not np.allclose(a, b, atol=atol):
+            return False
+    return True
+
+
 def read_square_bin(ld_bin_path: "str | Path", n_var: int) -> np.ndarray:
     """Read a plink ``--r square bin4`` ``.ld.bin`` -> dense (n_var, n_var) float32.
 
@@ -153,7 +168,7 @@ def read_square_bin(ld_bin_path: "str | Path", n_var: int) -> np.ndarray:
             f"square LD diagonal is not ~1.0 for {ld_bin_path}; "
             f"plink --r square should write self-correlation 1.0 on the diagonal."
         )
-    if not np.allclose(m, m.T, atol=1e-4):
+    if not _is_symmetric_blocked(m, atol=1e-4):
         raise ValueError(
             f"square LD is not symmetric for {ld_bin_path} "
             f"(plink --r square is symmetric; the PILOT measured sym_check=0.0)."

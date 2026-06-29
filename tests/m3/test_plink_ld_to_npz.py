@@ -104,6 +104,59 @@ def test_plink_square_bin_to_npz(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# Memory-bounded symmetry check (m3-02e-T4 OOM regression, failing-first)      #
+# --------------------------------------------------------------------------- #
+
+def test_is_symmetric_blocked_accepts_and_rejects():
+    """The blocked check is True for a symmetric matrix and False once a single
+    off-diagonal is perturbed beyond atol on ONE side only (m != m.T)."""
+    for n in (5, 33, 100):
+        m = _symmetric_corr(n)
+        assert pln._is_symmetric_blocked(m, atol=1e-4) is True
+
+    n = 100
+    m = _symmetric_corr(n)
+    m[0, n - 1] += 1.0  # perturb one side only; leave m[n-1, 0] unchanged
+    assert pln._is_symmetric_blocked(m, atol=1e-4) is False
+
+
+def test_blocked_check_matches_allclose():
+    """The blocked verdict must equal np.allclose(m, m.T) for both symmetric and
+    asymmetric inputs, across block-boundary edge cases (n not a multiple of the
+    block, and block > n)."""
+    for n in (5, 17, 100):
+        sym = _symmetric_corr(n)
+        # default block, and a block strictly larger than n (single-block path)
+        for block in (1024, 4096):
+            assert (
+                pln._is_symmetric_blocked(sym, atol=1e-4, block=block)
+                == np.allclose(sym, sym.T, atol=1e-4)
+            )
+
+        asym = _symmetric_corr(n)
+        asym[0, n - 1] += 1.0  # one-sided perturbation -> asymmetric
+        for block in (1024, 4096):
+            assert (
+                pln._is_symmetric_blocked(asym, atol=1e-4, block=block)
+                == np.allclose(asym, asym.T, atol=1e-4)
+            )
+
+
+def test_read_square_bin_rejects_asymmetric(tmp_path):
+    """read_square_bin still raises ValueError on a non-symmetric .ld.bin with a
+    unit diagonal (the diagonal check passes, so we reach the symmetry check) —
+    proves the invariant is PRESERVED (bounded, not skipped)."""
+    n = 50
+    m = _symmetric_corr(n)
+    m[0, n - 1] += 1.0          # perturb one off-diagonal on one side only
+    np.fill_diagonal(m, 1.0)    # keep the diagonal unit so the diag check passes
+    ld_bin = tmp_path / "asym.ld.bin"
+    m.astype("<f4").tofile(ld_bin)
+    with pytest.raises(ValueError):
+        pln.read_square_bin(ld_bin, n)
+
+
+# --------------------------------------------------------------------------- #
 # Banded mode                                                                 #
 # --------------------------------------------------------------------------- #
 
