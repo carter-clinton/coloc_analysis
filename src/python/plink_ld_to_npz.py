@@ -148,6 +148,22 @@ def _is_symmetric_blocked(m: np.ndarray, atol: float, block: int = 1024) -> bool
     return True
 
 
+def _strict_upper_is_zero_blocked(m, block=1024):
+    """Memory-lean 'strict upper triangle is all zero' check (banded-npz gate).
+    Equivalent to ``np.allclose(np.triu(m, k=1), 0.0)`` but bounded. The plain
+    ``np.triu(m, k=1)`` materializes a FULL n_var**2 float32 copy (~39 GiB at
+    n_var≈1e5) — the SAME OOM class as the un-blocked symmetry check
+    (_is_symmetric_blocked). Do it block-wise so the transient is bounded by
+    ~``block * n_var`` entries: for a row block starting at global row ``i``,
+    ``np.triu(block, k=i+1)`` selects exactly the strict-upper entries
+    (global column > global row)."""
+    n = m.shape[0]
+    for i in range(0, n, block):
+        if not np.allclose(np.triu(m[i:i + block, :], k=i + 1), 0.0):
+            return False
+    return True
+
+
 def read_square_bin(ld_bin_path: "str | Path", n_var: int) -> np.ndarray:
     """Read a plink ``--r square bin4`` ``.ld.bin`` -> dense (n_var, n_var) float32.
 

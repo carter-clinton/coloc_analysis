@@ -225,13 +225,13 @@ def content_verify_npz(npz_path: "str | Path", *, mode: str = "square") -> tuple
         diag = np.diag(ld)
         if not np.allclose(diag, 1.0, atol=1e-3):
             return (False, "diagonal != 1.0 (atol 1e-3)")
-        if not np.allclose(ld, ld.T, atol=1e-4):
+        if not pln._is_symmetric_blocked(ld, atol=1e-4):
             return (False, "not symmetric (atol 1e-4)")
     elif mode == "banded":
         lt = bool(z["lower_triangular"][0]) if "lower_triangular" in z.files else False
         if lt is not True:
             return (False, "banded npz lower_triangular flag is not True")
-        if not np.allclose(np.triu(ld, k=1), 0.0):
+        if not pln._strict_upper_is_zero_blocked(ld):
             return (False, "banded npz has non-zero strict upper triangle")
     else:
         return (False, f"unknown mode {mode!r}")

@@ -231,6 +231,35 @@ def test_content_verify_rejects_bad_npz(tmp_path):
     assert ok2 is False and reason2
 
 
+def test_content_verify_banded_accepts_lower_triangular(tmp_path):
+    """A banded npz (lower_triangular flag True, strict upper all zero, unit
+    diagonal) ACCEPTS — proves the bounded strict-upper check is behavior-
+    preserving on the accept path."""
+    n = 8
+    m = np.tril(_symmetric_corr(n))  # lower-triangular, unit diagonal preserved
+    banded = tmp_path / "banded_good.npz"
+    np.savez_compressed(banded, ld=m, variant_ids=np.array(["x"] * n),
+                        rsids=np.array([""] * n), allele_freq=np.zeros(n, "float32"),
+                        lower_triangular=np.array([True]))
+    ok, _ = drv.content_verify_npz(banded, mode="banded")
+    assert ok is True
+
+
+def test_content_verify_banded_rejects_nonzero_strict_upper(tmp_path):
+    """A banded npz with a nonzero strict-upper entry REJECTS with the
+    BYTE-IDENTICAL reason string (guards the bounded-helper swap against drift)."""
+    n = 8
+    m = np.tril(_symmetric_corr(n))
+    m[0, n - 1] = np.float32(0.3)  # nonzero strict-upper entry
+    banded = tmp_path / "banded_bad.npz"
+    np.savez_compressed(banded, ld=m, variant_ids=np.array(["x"] * n),
+                        rsids=np.array([""] * n), allele_freq=np.zeros(n, "float32"),
+                        lower_triangular=np.array([True]))
+    ok, reason = drv.content_verify_npz(banded, mode="banded")
+    assert ok is False
+    assert reason == "banded npz has non-zero strict upper triangle"
+
+
 def test_one_bad_region_does_not_abort_loop(tmp_path, monkeypatch):
     bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
     manifest = tmp_path / "regions.tsv"

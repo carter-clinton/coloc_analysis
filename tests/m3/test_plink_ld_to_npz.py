@@ -142,6 +142,32 @@ def test_blocked_check_matches_allclose():
             )
 
 
+def test_strict_upper_is_zero_blocked_matches_allclose():
+    """The memory-bounded 'strict upper triangle is all zero' check (banded-npz
+    gate) must equal np.allclose(np.triu(m, k=1), 0.0) for both a lower-triangular
+    (strict upper all-zero) input AND a copy with a single nonzero strict-upper
+    entry, across block-boundary edge cases (block > n, n % block != 0, block=1)."""
+    for n in (5, 17, 100):
+        # lower-triangular populated -> strict upper all zero -> True
+        lower = np.tril(_symmetric_corr(n))
+        for block in (1, 1024, 4096):
+            assert (
+                pln._strict_upper_is_zero_blocked(lower, block=block)
+                == np.allclose(np.triu(lower, k=1), 0.0)
+                is True
+            )
+
+        # one nonzero strict-upper entry -> False
+        dirty = lower.copy()
+        dirty[0, n - 1] = np.float32(0.5)
+        for block in (1, 1024, 4096):
+            assert (
+                pln._strict_upper_is_zero_blocked(dirty, block=block)
+                == np.allclose(np.triu(dirty, k=1), 0.0)
+                is False
+            )
+
+
 def test_read_square_bin_rejects_asymmetric(tmp_path):
     """read_square_bin still raises ValueError on a non-symmetric .ld.bin with a
     unit diagonal (the diagonal check passes, so we reach the symmetry check) —
