@@ -833,3 +833,143 @@ def test_window_bim_n_var_chr_prefix_agnostic(tmp_path, bim_chrom, manifest_chro
     assert len(kept) == n
     # verbatim contig preserved in the written window .bim (not rewritten):
     assert all(ln.split()[0] == str(bim_chrom) for ln in kept)
+
+
+# --------------------------------------------------------------------------- #
+# 13. transient-short-read retry guard (260630-rn4)                           #
+# --------------------------------------------------------------------------- #
+#
+# m3-02e-T4 fire #3 errored region 1 with `n_var mismatch ... window .bim has 0
+# rows` while plink had already emitted a correct 102,421-var .ld.bin. Forensics
+# proved NO static defect (code md5 authentic, cohort .bim full+stable, driver
+# path REPLAYS to window_n_var == bin_n_var == 102421) -> a one-off TRANSIENT
+# short read of the cohort .bim by ``_window_bim_n_var``'s ``read_text()`` at the
+# instant plink finished writing the 42 GB .ld.bin. A transient must SELF-HEAL
+# in-run rather than silently drop a region across an ~11-day serial fire, while
+# a GENUINE persistent mismatch must still raise the byte-identical ValueError.
+
+
+def _throwaway_window_bim(tmp_path: Path) -> Path:
+    """A real (empty) .bim path so a stubbed _window_bim_n_var can return a valid Path."""
+    p = tmp_path / "throwaway.window.bim"
+    p.write_text("")
+    return p
+
+
+def test_retry_wrapper_self_heals_on_transient_zero_and_warns(tmp_path, monkeypatch, capsys):
+    """T1: first call returns 0 (transient), retry returns the real count; the
+    wrapper recovers, calls the wrapped fn EXACTLY twice, and emits a LOUD
+    auditable stderr WARN naming the recovered count / window."""
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+    tmp_win = _throwaway_window_bim(tmp_path)
+    calls = {"n": 0}
+
+    def stub(bim_path, chrom, from_bp, to_bp):
+        calls["n"] += 1
+        return (0, tmp_win) if calls["n"] == 1 else (102421, tmp_win)
+
+    monkeypatch.setattr(drv, "_window_bim_n_var", stub)
+
+    from_bp, to_bp = 53_000_000, 53_100_000
+    n_var, window_bim = drv._window_bim_n_var_retry_on_zero(
+        tmp_path / "cohort.bim", "12", from_bp, to_bp, expect_nonzero=True,
+    )
+
+    assert n_var == 102421           # recovered on retry
+    assert window_bim == tmp_win     # returns the wrapped fn's Path
+    assert calls["n"] == 2           # exactly one retry
+
+    captured = capsys.readouterr()
+    assert "WARN" in captured.err
+    # auditable tokens: the recovered count AND the window from_bp appear
+    assert "102421" in captured.err
+    assert str(from_bp) in captured.err
+
+
+def test_retry_wrapper_persistent_zero_preserves_byte_identical_mismatch(tmp_path, monkeypatch):
+    """T2: a persistent n_var==0 against a NON-EMPTY square .ld.bin still raises
+    the byte-identical ValueError mismatch -> the region records
+    ``status='error: ...'`` and the loop continues; the region does NOT bank."""
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "regZERO", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+
+    # non-empty square .ld.bin IS written for the region (bin_n_var > 0) ...
+    mock = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    # ... but the window count NEVER heals (always 0) -> persistent mismatch.
+    tmp_win = _throwaway_window_bim(tmp_path)
+    monkeypatch.setattr(drv, "_window_bim_n_var", lambda *_a, **_k: (0, tmp_win))
+
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    by_id = {r["region_id"]: r for r in res}
+    status = by_id["regZERO"]["status"]
+
+    # bin_n_var recomputed the SAME way the driver does, from the written .ld.bin
+    region_id = "regZERO"
+    ld_bin = out_dir / f"{region_id}.ld.bin"
+    if not ld_bin.is_file():
+        # gs-mode/scratch layouts aside, local square writes {region_id}.ld.bin
+        # next to the compute prefix; fall back to the mock's known write path.
+        ld_bin = next(out_dir.rglob(f"{region_id}.ld.bin"))
+    bin_n_var = drv._n_var_from_ld_bin(ld_bin)
+
+    expected = (
+        f"n_var mismatch for {region_id}: .ld.bin implies {bin_n_var} but the "
+        f"window .bim has 0 rows — the .ld.bin and the [{from_bp},{to_bp}] window "
+        f"must agree."
+    )
+    assert status.startswith("error:")
+    assert expected in status
+    # region did NOT bank a .npz
+    assert not (out_dir / f"{region_id}.npz").is_file()
+
+
+def test_retry_wrapper_nonzero_first_call_no_retry_no_warn(tmp_path, monkeypatch, capsys):
+    """T3: a legit nonzero on the first (and only) call does NOT retry and emits
+    NO WARN."""
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+    tmp_win = _throwaway_window_bim(tmp_path)
+    calls = {"n": 0}
+
+    def stub(bim_path, chrom, from_bp, to_bp):
+        calls["n"] += 1
+        return (20, tmp_win)
+
+    monkeypatch.setattr(drv, "_window_bim_n_var", stub)
+
+    n_var, window_bim = drv._window_bim_n_var_retry_on_zero(
+        tmp_path / "cohort.bim", "12", 53_000_000, 53_100_000, expect_nonzero=True,
+    )
+
+    assert n_var == 20
+    assert calls["n"] == 1  # no retry
+    captured = capsys.readouterr()
+    assert "WARN" not in captured.err
+
+
+def test_retry_wrapper_expect_nonzero_false_does_not_spin(tmp_path, monkeypatch):
+    """T4: expect_nonzero=False on a legitimately empty window returns 0 with NO
+    retry spin (a genuinely empty region must not loop)."""
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+    tmp_win = _throwaway_window_bim(tmp_path)
+    calls = {"n": 0}
+
+    def stub(bim_path, chrom, from_bp, to_bp):
+        calls["n"] += 1
+        return (0, tmp_win)
+
+    monkeypatch.setattr(drv, "_window_bim_n_var", stub)
+
+    n_var, window_bim = drv._window_bim_n_var_retry_on_zero(
+        tmp_path / "cohort.bim", "12", 53_000_000, 53_100_000, expect_nonzero=False,
+    )
+
+    assert n_var == 0
+    assert calls["n"] == 1  # never spins the retry loop
