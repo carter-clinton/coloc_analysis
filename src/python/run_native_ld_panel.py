@@ -101,6 +101,15 @@ _PANEL_COLUMNS = [
 ]
 _DEFAULT_PANEL_NAME = "m3-W2-native-plink-panel.tsv"
 
+# m3-02e-T4 transient short-read guard (260630-rn4): a one-off short read of the
+# cohort .bim by _window_bim_n_var's read_text() at the instant plink finishes
+# writing the 42 GB .ld.bin can return 0 in-window rows against a NON-empty
+# .ld.bin, dropping a region across an ~11-day serial fire. The SQUARE verify path
+# retries the window count a bounded number of times so the transient self-heals
+# in-run; a genuine persistent 0 still raises the byte-identical n_var mismatch.
+_WINDOW_BIM_RETRIES = 3
+_WINDOW_BIM_RETRY_SLEEP_S = 0.5
+
 
 # --------------------------------------------------------------------------- #
 # SOLE subprocess seam (tests monkeypatch exactly this one function)          #
@@ -289,6 +298,53 @@ def _window_bim_n_var(bim_path: "str | Path", chrom, from_bp: int, to_bp: int) -
     return n_var, window_bim
 
 
+def _window_bim_n_var_retry_on_zero(
+    bim_path: "str | Path", chrom, from_bp: int, to_bp: int, *,
+    expect_nonzero: bool,
+    retries: int = _WINDOW_BIM_RETRIES,
+    sleep_s: float = _WINDOW_BIM_RETRY_SLEEP_S,
+) -> tuple[int, Path]:
+    """Transient-short-read guard around ``_window_bim_n_var`` (m3-02e-T4 260630-rn4).
+
+    ``_window_bim_n_var`` reads the cohort ``.bim`` via ``read_text()``. At the
+    instant plink finishes writing the 42 GB ``.ld.bin``, that read can return a
+    one-off ZERO in-window count against a NON-empty ``.ld.bin`` — a transient that
+    would otherwise fail the SQUARE ``n_var`` cross-check and silently drop the
+    region across an ~11-day serial fire. When the caller KNOWS the window is
+    non-empty (``expect_nonzero`` — i.e. the square ``.ld.bin`` already implies
+    ``bin_n_var > 0``), retry the window count up to ``retries`` more times so the
+    transient self-heals in-run, emitting a LOUD auditable stderr WARN on recovery.
+
+    A GENUINE persistent ``0`` never recovers: the LAST ``(0, window_bim)`` is
+    returned UNCHANGED so the caller's existing ``bin_n_var != window_n_var`` check
+    raises the byte-identical ``ValueError`` (the region records ``status='error:
+    ...'`` and the loop continues). When ``expect_nonzero`` is False (a legitimately
+    empty window), the loop is NOT spun — the single first result is returned.
+    Fixed with a REUSABLE wrapper + failing-first regression per
+    [[feedback_extract_reusable_utilities]] (recurrent window-verify drift class).
+    """
+    n_var, window_bim = _window_bim_n_var(bim_path, chrom, from_bp, to_bp)
+    if not (n_var == 0 and expect_nonzero):
+        return n_var, window_bim
+
+    for _ in range(retries):
+        time.sleep(sleep_s)
+        n_var, window_bim = _window_bim_n_var(bim_path, chrom, from_bp, to_bp)
+        if n_var > 0:
+            print(
+                f"WARN: transient zero-row window .bim for "
+                f"chr{_chrom_match_key(chrom)}:[{from_bp},{to_bp}] recovered on retry "
+                f"(n_var={n_var}); a transient short read of the cohort .bim "
+                f"self-healed in-run (m3-02e-T4 260630-rn4).",
+                file=sys.stderr, flush=True,
+            )
+            return n_var, window_bim
+
+    # never recovered -> return the last (0, window_bim) so the caller raises the
+    # byte-identical n_var mismatch (persistent genuine-empty vs a non-empty .ld.bin).
+    return n_var, window_bim
+
+
 def _n_var_from_ld_bin(ld_bin_path: "str | Path") -> int:
     """square .ld.bin holds n_var**2 little-endian float32 -> n_var = sqrt(bytes/4)."""
     nbytes = Path(ld_bin_path).stat().st_size
@@ -447,11 +503,17 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
 
         # window-subset .bim (load_bim row order == .ld.bin row order)
         bim_path = f"{bfile_prefix}.bim"
-        window_n_var, window_bim = _window_bim_n_var(bim_path, chrom, from_bp, to_bp)
 
         if mode == "square":
+            # SQUARE: compute bin_n_var FIRST so a NON-empty .ld.bin drives
+            # expect_nonzero; the transient-short-read guard (m3-02e-T4 260630-rn4)
+            # then self-heals a one-off zero-row window read in-run. A genuine
+            # persistent 0 falls through to the byte-identical mismatch below.
             ld_path = Path(f"{out_prefix}.ld.bin")
             bin_n_var = _n_var_from_ld_bin(ld_path)
+            window_n_var, window_bim = _window_bim_n_var_retry_on_zero(
+                bim_path, chrom, from_bp, to_bp, expect_nonzero=(bin_n_var > 0),
+            )
             if bin_n_var != window_n_var:
                 raise ValueError(
                     f"n_var mismatch for {region_id}: .ld.bin implies {bin_n_var} "
@@ -460,6 +522,7 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                 )
             n_var = window_n_var
         else:
+            window_n_var, window_bim = _window_bim_n_var(bim_path, chrom, from_bp, to_bp)
             ld_path = Path(f"{out_prefix}.ld.gz")
             n_var = window_n_var
         result["n_var"] = n_var
