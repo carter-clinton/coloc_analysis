@@ -17,6 +17,7 @@ subprocess seam (``_run_plink``) is monkeypatched to WRITE a synthetic
 from __future__ import annotations
 
 import ast
+import gzip
 import sys
 from pathlib import Path
 
@@ -116,6 +117,16 @@ class _MockPlink:
         out_prefix = _arg("--out")
         region_id = Path(out_prefix).name
         window_rows = self._window_rows(chrom, from_bp, to_bp)
+
+        # BANDED (``--r gz``): plink writes ``{out_prefix}.ld.gz`` (text), and banded
+        # does NOT drop MAC=0 (no ``--mac`` / ``--write-snplist``), so no snplist is
+        # emitted. A minimal HEADER-ONLY .ld.gz -> read_banded_gz builds a valid
+        # identity lower-triangle that content_verify_npz(mode='banded') accepts.
+        if "--r" in cmd and cmd[cmd.index("--r") + 1] == "gz":
+            Path(out_prefix + ".ld.gz").parent.mkdir(parents=True, exist_ok=True)
+            with gzip.open(out_prefix + ".ld.gz", "wt") as fh:
+                fh.write("CHR_A BP_A SNP_A CHR_B BP_B SNP_B R\n")
+            return (1.5, 2.0)  # (wall_min, peak_ram_gib)
 
         if "--write-snplist" in cmd:
             # --mac 1 drops MAC=0 monomorphic rows BEFORE --r; --write-snplist emits
@@ -339,6 +350,7 @@ def test_panel_tsv_append_resume_safe(tmp_path, monkeypatch):
     df = pd.read_csv(panel, sep="\t")
     assert list(df.columns) == [
         "region_id", "chr", "n_var", "wall_min", "peak_ram_gib", "output_gib", "status",
+        "n_dropped_monomorphic",  # 260701-qcy hardening H2: drop-count provenance
     ]
     # exactly one row per region (no duplicates after the re-skip pass)
     assert sorted(df["region_id"].tolist()) == ["regA", "regB"]
@@ -1157,3 +1169,181 @@ def test_square_path_still_routes_through_transient_guard(tmp_path, monkeypatch)
     assert state["n"] >= 2                       # the guard DID retry (self-heal)
     assert res[0]["status"] == "ok"              # healed + threaded, not an error
     assert res[0]["n_var"] == n - len(mono) == 18
+
+
+# --------------------------------------------------------------------------- #
+# 15. drop-monomorphic HARDENING (260701-qcy blast-radius D1+D2, D4)          #
+# --------------------------------------------------------------------------- #
+#
+# H1 (blast-radius D1+D2): a DUPLICATE col-2 (SNP id) in the RAW window .bim that
+#   the snplist references would SILENTLY misalign LD rows against variant ids —
+#   n_var still matches and the matrix is still symmetric, so NO existing guard
+#   catches it. _retained_window_bim must FAIL LOUD (ValueError naming region+id)
+#   instead of first-occurrence-wins misalignment. Production hl.export_plink
+#   varids chr:pos:ref:alt ARE unique, so this never trips on the real cohort.
+# H2 (blast-radius D4): the per-region monomorphic-drop count was computed then
+#   DISCARDED. Make it durable: a new appended panel column n_dropped_monomorphic
+#   + a LOUD per-region stderr line (plink's own .log is reclaimed).
+
+
+def test_retained_window_bim_raises_on_duplicate_snp_id(tmp_path):
+    """(H1-i) A DUPLICATE col-2 id in the RAW window .bim that the snplist references
+    would SILENTLY misalign LD rows against variant ids (n_var still matches, the
+    matrix is still symmetric -> no existing guard catches it). _retained_window_bim
+    must RAISE a clear ValueError naming the region + the offending id instead."""
+    chrom, bp0 = 12, 53_000_000
+    # two DISTINCT bp share the SAME col-2 id "rsDUP" -> ambiguous LD-row alignment
+    rows = [
+        (chrom, "rs1000", 0, bp0 + 0, "A", "T"),
+        (chrom, "rsDUP", 0, bp0 + 100, "A", "T"),
+        (chrom, "rsDUP", 0, bp0 + 200, "A", "T"),   # duplicate col-2 id, distinct bp
+        (chrom, "rs1003", 0, bp0 + 300, "A", "T"),
+    ]
+    raw_bim = tmp_path / "cohort.12_win.window.bim"
+    _write_bim(raw_bim, rows)
+    snplist = tmp_path / "afr_dup.snplist"
+    snplist.write_text("rs1000\nrsDUP\nrs1003\n")   # references the ambiguous id
+
+    with pytest.raises(ValueError) as ei:
+        drv._retained_window_bim(raw_bim, snplist, region_id="afr_dup")
+    msg = str(ei.value)
+    assert "afr_dup" in msg          # names the region
+    assert "rsDUP" in msg            # names the offending id
+
+
+def test_retained_window_bim_unique_ids_do_not_false_trip(tmp_path):
+    """(H1-ii) Regression: the duplicate-id assertion must NOT false-trip on the
+    normal UNIQUE-id case — it returns the correct (n_retained, .bim) in snplist
+    order with NO raise even when region_id is threaded (production
+    chr:pos:ref:alt varids are unique)."""
+    n, chrom, bp0 = 8, 12, 53_000_000
+    rows = _default_bim_rows(n, chrom=chrom, bp0=bp0)
+    raw_bim = tmp_path / "cohort.12_win.window.bim"
+    _write_bim(raw_bim, rows)
+    snplist_order = ["rs1005", "rs1000", "rs1007", "rs1002", "rs1004"]  # subset+reorder
+    snplist = tmp_path / "afr_uniq.snplist"
+    snplist.write_text("".join(f"{s}\n" for s in snplist_order))
+
+    n_ret, ret_bim = drv._retained_window_bim(raw_bim, snplist, region_id="afr_uniq")
+    assert n_ret == len(snplist_order) == 5
+    kept = [ln.split() for ln in ret_bim.read_text().splitlines() if ln.strip()]
+    assert [r[1] for r in kept] == snplist_order    # order == snplist, no false raise
+
+
+def test_panel_columns_include_n_dropped_monomorphic():
+    """(H2-iv) The new provenance column is APPENDED to _PANEL_COLUMNS (existing
+    columns keep their exact leading order/positions; append-only)."""
+    assert "n_dropped_monomorphic" in drv._PANEL_COLUMNS
+    assert drv._PANEL_COLUMNS[:7] == [
+        "region_id", "chr", "n_var", "wall_min", "peak_ram_gib", "output_gib", "status",
+    ]
+    assert drv._PANEL_COLUMNS[-1] == "n_dropped_monomorphic"
+
+
+def test_process_region_records_n_dropped_monomorphic(tmp_path, monkeypatch):
+    """(H2-iii) process_region on a window with k=2 monomorphic -> the result dict
+    records n_dropped_monomorphic == raw_window - retained == 2 (the drop count is
+    now durable provenance, blast-radius D4)."""
+    n, chrom, bp0 = 20, 12, 53_000_000
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, _default_bim_rows(n, chrom=chrom, bp0=bp0))
+    bfile = str(tmp_path / "cohort")
+    from_bp, to_bp = bp0, bp0 + (n - 1) * 100
+    mono = {"rs1005", "rs1012"}
+
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, mono_snps=mono))
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert res[0]["status"] == "ok"
+    assert res[0]["n_dropped_monomorphic"] == 2
+    assert res[0]["n_var"] == n - 2 == 18
+
+
+def test_process_region_logs_drop_to_stderr(tmp_path, monkeypatch, capsys):
+    """(H2-v) When n_dropped > 0 the square path emits a LOUD per-region stderr line
+    (plink's own .log is reclaimed, so the drop must be visible in the run log)."""
+    n, chrom, bp0 = 20, 12, 53_000_000
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, _default_bim_rows(n, chrom=chrom, bp0=bp0))
+    bfile = str(tmp_path / "cohort")
+    from_bp, to_bp = bp0, bp0 + (n - 1) * 100
+    mono = {"rs1005", "rs1012"}
+
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, mono_snps=mono))
+    drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    err = capsys.readouterr().err
+    assert "afr1" in err
+    assert "dropped 2 monomorphic" in err
+
+
+def test_skip_and_error_result_dicts_carry_none_drop_count(tmp_path, monkeypatch):
+    """(H2-vi) Schema consistency: the skip-idempotent AND error result dicts BOTH
+    carry n_dropped_monomorphic=None (no drop happened / not computed), so
+    append_panel_row writes a consistent schema with NO KeyError."""
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+
+    # (a) skip-idempotent: run once, then re-run -> the second result is a skip, None.
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    res_skip = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+    assert res_skip[0]["status"] == "skipped_idempotent"
+    assert res_skip[0]["n_dropped_monomorphic"] is None
+
+    # (b) error: a persistent zero-row window .bim vs a NON-empty .ld.bin raises the
+    # n_var mismatch BEFORE the drop count is computed -> the init/error dict is None.
+    manifest2 = tmp_path / "regions2.tsv"
+    _write_manifest(manifest2, [
+        {"region_id": "regERR", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir2 = tmp_path / "out2"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    tmp_win = _throwaway_window_bim(tmp_path)
+    monkeypatch.setattr(drv, "_window_bim_n_var", lambda *_a, **_k: (0, tmp_win))
+    res_err = drv.run_native_ld_panel(manifest2, bfile, out_dir2, mode="square")
+    assert res_err[0]["status"].startswith("error:")
+    assert res_err[0]["n_dropped_monomorphic"] is None
+
+
+def test_banded_result_dict_carries_none_drop_count(tmp_path, monkeypatch):
+    """(H2-vi, banded) The BANDED path does not drop MAC=0 variants (``--mac`` /
+    ``--write-snplist`` are square-only), so its result dict carries
+    n_dropped_monomorphic=None (banded doesn't drop)."""
+    n, chrom, bp0 = 12, 12, 53_000_000
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, _default_bim_rows(n, chrom=chrom, bp0=bp0))
+    bfile = str(tmp_path / "cohort")
+    from_bp, to_bp = bp0, bp0 + (n - 1) * 100
+
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "bnd1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="banded")
+
+    assert res[0]["status"] == "ok"
+    assert res[0]["n_dropped_monomorphic"] is None
