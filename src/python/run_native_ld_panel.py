@@ -98,6 +98,10 @@ import plink_ld_to_npz as pln  # hail-free .ld.bin/.ld.gz -> egress-clean .npz
 
 _PANEL_COLUMNS = [
     "region_id", "chr", "n_var", "wall_min", "peak_ram_gib", "output_gib", "status",
+    # 260701-qcy hardening H2 (blast-radius D4): durable per-region record of how
+    # many monomorphic (MAC=0-in-AFR) variants --mac 1 dropped before --r square.
+    # APPENDED (never reorder the leading columns); None on skip/banded/error rows.
+    "n_dropped_monomorphic",
 ]
 _DEFAULT_PANEL_NAME = "m3-W2-native-plink-panel.tsv"
 
@@ -346,7 +350,8 @@ def _window_bim_n_var_retry_on_zero(
 
 
 def _retained_window_bim(raw_window_bim: "str | Path",
-                         snplist_path: "str | Path") -> tuple[int, Path]:
+                         snplist_path: "str | Path",
+                         *, region_id: str = "") -> tuple[int, Path]:
     """Subset a RAW in-window ``.bim`` to the plink ``--write-snplist`` RETAINED set,
     in snplist order, and return ``(n_retained, retained_window_bim_path)``
     (quick 260701-qcy — drop monomorphic MAC=0 variants).
@@ -368,19 +373,41 @@ def _retained_window_bim(raw_window_bim: "str | Path",
     A snplist id absent from the raw window ``.bim`` is skipped, so a genuine
     bin/window disagreement still trips the caller's byte-identical ``n_var``
     mismatch ``ValueError``.
+
+    HARDENING (260701-qcy blast-radius D1+D2): the raw-window keying was
+    first-occurrence-wins (``setdefault``). A DUPLICATE col-2 id that the snplist
+    references would then SILENTLY pick one of two distinct rows and misalign the
+    LD rows against the variant ids — and NO existing guard catches it (``n_var``
+    counts still match, the matrix is still symmetric). Instead of silently
+    misaligning, RAISE a clear ``ValueError`` naming the region + the offending id.
+    Production ``hl.export_plink`` varids (``chr:pos:ref:alt``) ARE unique, so this
+    never trips on the real cohort; it only converts the one silent-catastrophe
+    path into a loud, resume-safe failure (the loop records ``status='error: ...'``
+    and continues).
     """
     raw_window_bim = Path(raw_window_bim)
     snplist_path = Path(snplist_path)
     retained_ids = [ln.strip() for ln in snplist_path.read_text().splitlines()
                     if ln.strip()]
+    retained_set = set(retained_ids)
     by_snp: dict[str, str] = {}
+    seen: set[str] = set()
     for line in raw_window_bim.read_text().splitlines():
         if not line.strip():
             continue
         parts = line.split()
         if len(parts) < 6:
             continue
-        by_snp.setdefault(parts[1], line.rstrip("\n"))  # SNP id (col 2) -> verbatim line
+        snp = parts[1]  # SNP id (col 2)
+        # LOUD uniqueness guard: a duplicate col-2 id the snplist references cannot
+        # be aligned to a single LD row -> fail instead of first-occurrence-wins.
+        if snp in seen and snp in retained_set:
+            raise ValueError(
+                f"ambiguous variant id {snp!r} appears >1x in the window .bim for "
+                f"{region_id} — cannot align LD rows to variant ids"
+            )
+        seen.add(snp)
+        by_snp.setdefault(snp, line.rstrip("\n"))  # SNP id (col 2) -> verbatim line
     kept_lines = [by_snp[snp] for snp in retained_ids if snp in by_snp]
     retained_n_var = len(kept_lines)
     retained_bim = raw_window_bim.with_name(f"{raw_window_bim.stem}.retained.bim")
@@ -525,6 +552,7 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             "region_id": region_id, "chr": chrom, "n_var": None,
             "wall_min": None, "peak_ram_gib": None, "output_gib": None,
             "status": "skipped_idempotent", "out": existing,
+            "n_dropped_monomorphic": None,  # skip: no drop computed this run
         }
         append_panel_row(panel_tsv, result, scratch_dir=compute_dir)  # dedups
         return result
@@ -534,6 +562,7 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
         "region_id": region_id, "chr": chrom, "n_var": None,
         "wall_min": None, "peak_ram_gib": None, "output_gib": None,
         "status": "error", "out": None,
+        "n_dropped_monomorphic": None,  # set in the SQUARE ok path; None otherwise
     }
     try:
         cmd = alp.build_plink_ld_command(
@@ -565,7 +594,9 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             # snplist == .ld.bin order, so the cross-check and load_bim align to the
             # retained set (n_var now EXCLUDES monomorphic MAC=0 variants; 260701-qcy).
             snplist_path = f"{out_prefix}.snplist"
-            window_n_var, window_bim = _retained_window_bim(raw_window_bim, snplist_path)
+            window_n_var, window_bim = _retained_window_bim(
+                raw_window_bim, snplist_path, region_id=region_id,
+            )
             if bin_n_var != window_n_var:
                 raise ValueError(
                     f"n_var mismatch for {region_id}: .ld.bin implies {bin_n_var} "
@@ -573,10 +604,23 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                     f"the [{from_bp},{to_bp}] window must agree."
                 )
             n_var = window_n_var
+            # HARDENING (260701-qcy H2, blast-radius D4): record + LOUDLY log how many
+            # monomorphic (MAC=0) variants --mac 1 dropped. plink's own .log is
+            # reclaimed with the region scratch, so this is the durable provenance.
+            n_dropped = raw_window_n_var - window_n_var
+            result["n_dropped_monomorphic"] = n_dropped
+            if n_dropped > 0:
+                print(
+                    f"region {region_id}: dropped {n_dropped} monomorphic (MAC=0) "
+                    f"variants ({raw_window_n_var} in-window -> {window_n_var} "
+                    f"retained)",
+                    file=sys.stderr, flush=True,
+                )
         else:
             window_n_var, window_bim = _window_bim_n_var(bim_path, chrom, from_bp, to_bp)
             ld_path = Path(f"{out_prefix}.ld.gz")
             n_var = window_n_var
+            result["n_dropped_monomorphic"] = None  # banded does not drop MAC=0
         result["n_var"] = n_var
 
         af_sidecar = Path(f"{out_prefix}.afreq")
