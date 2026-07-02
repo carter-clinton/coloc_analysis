@@ -77,20 +77,33 @@ def _write_manifest(path: Path, rows: list[dict]) -> None:
 class _MockPlink:
     """Monkeypatch target for drv._run_plink. WRITES a synthetic square
     {out_prefix}.ld.bin (n_var derived from the --from-bp/--to-bp window over the
-    cohort .bim) and records every argv it received."""
+    cohort .bim) and records every argv it received.
 
-    def __init__(self, bim_path: Path, *, corrupt_regions=None, seed: int = 0):
+    ``mono_snps`` (quick 260701-qcy) models plink ``--mac 1``: when the issued argv
+    contains ``--write-snplist``, the in-window rows whose SNP id is in ``mono_snps``
+    are DROPPED (monomorphic / MAC=0 -> plink would emit NaN LD), a
+    ``{out_prefix}.snplist`` is written with the RETAINED SNP ids one-per-line in
+    ``.bim`` order (== ``.ld.bin`` row order), and the ``.ld.bin`` is sized to
+    ``(n_retained)^2``. Without ``--write-snplist`` (banded, or the PRE-fix square
+    argv) NO snplist is written and the ``.ld.bin`` is the full raw-window ``N^2``."""
+
+    def __init__(self, bim_path: Path, *, corrupt_regions=None, seed: int = 0,
+                 mono_snps=None):
         self.bim_path = Path(bim_path)
         self.calls: list[list[str]] = []
         self.corrupt_regions = set(corrupt_regions or [])
         self.seed = seed
+        self.mono_snps = set(mono_snps or [])
         self._bim_rows = [ln.split() for ln in self.bim_path.read_text().splitlines() if ln.strip()]
 
-    def _n_var_in_window(self, chrom: str, from_bp: int, to_bp: int) -> int:
-        return sum(
-            1 for r in self._bim_rows
+    def _window_rows(self, chrom: str, from_bp: int, to_bp: int) -> list[list[str]]:
+        return [
+            r for r in self._bim_rows
             if str(r[0]) == str(chrom) and from_bp <= int(r[3]) <= to_bp
-        )
+        ]
+
+    def _n_var_in_window(self, chrom: str, from_bp: int, to_bp: int) -> int:
+        return len(self._window_rows(chrom, from_bp, to_bp))
 
     def __call__(self, cmd: list[str]):
         self.calls.append(list(cmd))
@@ -101,8 +114,21 @@ class _MockPlink:
         from_bp = int(_arg("--from-bp"))
         to_bp = int(_arg("--to-bp"))
         out_prefix = _arg("--out")
-        n = self._n_var_in_window(chrom, from_bp, to_bp)
         region_id = Path(out_prefix).name
+        window_rows = self._window_rows(chrom, from_bp, to_bp)
+
+        if "--write-snplist" in cmd:
+            # --mac 1 drops MAC=0 monomorphic rows BEFORE --r; --write-snplist emits
+            # the RETAINED ids in .bim order (== .ld.bin row order).
+            retained = [r for r in window_rows if r[1] not in self.mono_snps]
+            Path(out_prefix + ".snplist").parent.mkdir(parents=True, exist_ok=True)
+            Path(out_prefix + ".snplist").write_text(
+                "".join(f"{r[1]}\n" for r in retained)
+            )
+            n = len(retained)
+        else:
+            n = len(window_rows)
+
         m = _symmetric_corr(n, seed=self.seed)
         if region_id in self.corrupt_regions:
             # break symmetry AND the diagonal -> content_verify_npz must reject
@@ -973,3 +999,161 @@ def test_retry_wrapper_expect_nonzero_false_does_not_spin(tmp_path, monkeypatch)
 
     assert n_var == 0
     assert calls["n"] == 1  # never spins the retry loop
+
+
+# --------------------------------------------------------------------------- #
+# 14. drop monomorphic (MAC=0-in-AFR) variants via --mac 1 + --write-snplist   #
+#     (quick 260701-qcy)                                                        #
+# --------------------------------------------------------------------------- #
+#
+# m3-02e-T4 fire #3 region 1 hit a REAL, reproducible symmetry-check failure:
+# ~11 monomorphic (MAC=0-in-AFR) variants make plink --r emit NaN LD (0/0), and
+# NaN != NaN breaks read_square_bin's symmetry check. Decision (Carter 2026-07-01):
+# DROP MAC=0 variants at the plink step (--mac 1 --nonfounders --write-snplist),
+# threading the RETAINED snplist so the .ld.bin, the window .bim, n_var, and the
+# .npz variant list all align to the same retained (polymorphic) set.
+
+
+def _retained_vid(row: tuple) -> str:
+    """Canonical vid for a _default_bim_rows tuple: chr:bp:REF:ALT = chr:bp:A2:A1."""
+    chrom, _snp, _cm, bp, a1, a2 = row
+    return f"{chrom}:{bp}:{a2}:{a1}"
+
+
+def test_square_command_emits_mac_and_snplist_banded_does_not():
+    """(a) build_plink_ld_command SQUARE argv drops MAC=0 (``--mac 1``), counts all
+    samples (``--nonfounders``), and emits the retained ids (``--write-snplist``),
+    while KEEPING ``--keep-allele-order`` and ``--r square bin4``. The BANDED argv
+    does NOT gain ``--mac`` / ``--write-snplist`` / ``--nonfounders`` (the fire runs
+    square only; banded is out of scope)."""
+    import aou_ld_panel as alp
+
+    sq = alp.build_plink_ld_command(
+        bfile_prefix="cohort", chrom=1, from_bp=1, to_bp=100,
+        out_prefix="m2_region_00001", mode="square",
+    )
+    assert "--mac" in sq and sq[sq.index("--mac") + 1] == "1"
+    assert "--nonfounders" in sq
+    assert "--write-snplist" in sq
+    assert "--keep-allele-order" in sq
+    ri = sq.index("--r")
+    assert sq[ri:ri + 3] == ["--r", "square", "bin4"]
+
+    bd = alp.build_plink_ld_command(
+        bfile_prefix="cohort", chrom=1, from_bp=1, to_bp=100,
+        out_prefix="r", mode="banded",
+    )
+    assert "--mac" not in bd
+    assert "--write-snplist" not in bd
+    assert "--nonfounders" not in bd
+    assert "--keep-allele-order" in bd  # sign-correctness flag unchanged on banded
+
+
+def test_process_region_drops_monomorphic_and_aligns_npz(tmp_path, monkeypatch):
+    """(b) process_region on a window with k=2 designated monomorphic variants ->
+    status==ok, n_var == retained (N-k), the produced .npz variant/rsid lists ==
+    the RETAINED set in snplist order, and the LD matrix is (N-k)^2 with NO NaN."""
+    n, chrom, bp0 = 20, 12, 53_000_000
+    bim = tmp_path / "cohort.bim"
+    rows = _default_bim_rows(n, chrom=chrom, bp0=bp0)
+    _write_bim(bim, rows)
+    bfile = str(tmp_path / "cohort")
+    from_bp, to_bp = bp0, bp0 + (n - 1) * 100
+
+    mono = {"rs1005", "rs1012"}  # drop rows at in-window indices 5 and 12
+    retained_rows = [r for r in rows if r[1] not in mono]
+    retained_snps = [r[1] for r in retained_rows]
+    retained_vids = [_retained_vid(r) for r in retained_rows]
+
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, mono_snps=mono))
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    r0 = res[0]
+    assert r0["status"] == "ok"
+    assert r0["n_var"] == n - len(mono) == 18
+
+    z = np.load(out_dir / "afr1.npz", allow_pickle=True)
+    assert z["ld"].shape == (18, 18)
+    assert not np.isnan(z["ld"]).any()          # monomorphic NaN rows are GONE
+    assert list(z["rsids"]) == retained_snps     # retained ids, in snplist order
+    assert list(z["variant_ids"]) == retained_vids
+    assert "rs1005" not in set(z["rsids"])       # the dropped monomorphic vars
+    assert "rs1012" not in set(z["rsids"])
+
+
+def test_retained_window_bim_reorders_to_snplist(tmp_path):
+    """(c) _retained_window_bim intersects the RAW in-window .bim with the plink
+    .snplist, RE-ORDERED to snplist (== .ld.bin) order, returning (n_retained,
+    path). A snplist that both subsets AND reorders the raw window proves the
+    row order follows the snplist, not the raw .bim."""
+    n, chrom, bp0 = 8, 12, 53_000_000
+    rows = _default_bim_rows(n, chrom=chrom, bp0=bp0)
+    raw_bim = tmp_path / "cohort.12_win.window.bim"
+    _write_bim(raw_bim, rows)
+
+    # snplist: drop rs1003, and deliberately REORDER (not raw .bim order)
+    snplist_order = ["rs1005", "rs1000", "rs1007", "rs1002", "rs1001", "rs1006", "rs1004"]
+    snplist = tmp_path / "afr1.snplist"
+    snplist.write_text("".join(f"{s}\n" for s in snplist_order))
+
+    n_ret, ret_bim = drv._retained_window_bim(raw_bim, snplist)
+
+    assert n_ret == len(snplist_order) == 7
+    kept = [ln.split() for ln in ret_bim.read_text().splitlines() if ln.strip()]
+    assert [r[1] for r in kept] == snplist_order   # row order == snplist order
+    assert "rs1003" not in {r[1] for r in kept}    # dropped variant absent
+
+
+def test_square_path_still_routes_through_transient_guard(tmp_path, monkeypatch):
+    """(e) GUARD-PRESERVATION integration test (checker warning 1): with k=2
+    monomorphic dropped, a process_region SQUARE call whose RAW window .bim read
+    returns 0 on the FIRST attempt then the real count on retry (a transient short
+    read) STILL self-heals THROUGH the 27af416 retry guard AND threads the retained
+    snplist -> status==ok with n_var == retained (N-k). If the fix had bypassed the
+    guard, the first-attempt 0 would intersect to 0 retained and raise the n_var
+    mismatch (status error) instead of healing."""
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+    n, chrom, bp0 = 20, 12, 53_000_000
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, _default_bim_rows(n, chrom=chrom, bp0=bp0))
+    bfile = str(tmp_path / "cohort")
+    from_bp, to_bp = bp0, bp0 + (n - 1) * 100
+    mono = {"rs1005", "rs1012"}
+
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "afr1", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, mono_snps=mono))
+
+    # Wrap the REAL _window_bim_n_var so the FIRST call short-reads to 0 (transient)
+    # and the retry returns the true raw window .bim -> the guard must heal it, then
+    # _retained_window_bim subsets to the retained set.
+    real_wbnv = drv._window_bim_n_var
+    state = {"n": 0}
+
+    def flaky(bim_path, chrom_, from_bp_, to_bp_):
+        state["n"] += 1
+        real_n, real_bim = real_wbnv(bim_path, chrom_, from_bp_, to_bp_)
+        if state["n"] == 1:
+            empty = tmp_path / "transient_empty.window.bim"
+            empty.write_text("")
+            return (0, empty)          # transient short read
+        return (real_n, real_bim)
+
+    monkeypatch.setattr(drv, "_window_bim_n_var", flaky)
+
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert state["n"] >= 2                       # the guard DID retry (self-heal)
+    assert res[0]["status"] == "ok"              # healed + threaded, not an error
+    assert res[0]["n_var"] == n - len(mono) == 18

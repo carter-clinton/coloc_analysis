@@ -182,6 +182,31 @@ def test_read_square_bin_rejects_asymmetric(tmp_path):
         pln.read_square_bin(ld_bin, n)
 
 
+def test_read_square_bin_raises_on_monomorphic_nan(tmp_path):
+    """m3-02e-T4 diagnosis lock (quick 260701-qcy): a square ``.ld.bin`` carrying
+    NaN LD entries — the fingerprint of a MONOMORPHIC (MAC=0-in-AFR / zero-variance)
+    variant, for which plink ``--r`` computes ``0/0 -> NaN`` — must make
+    ``read_square_bin`` RAISE ``square LD is not symmetric`` (``NaN != NaN`` breaks
+    the symmetry equality even where the NaN placement is itself symmetric). This
+    locks WHY the fix drops MAC=0 variants (``--mac 1``) BEFORE ``--r``:
+    ``read_square_bin`` is CORRECT and is NOT modified — it CAUGHT the bug (fire #3
+    region 1: 12 NaN entries across 11 rows, diagonals still 1.0)."""
+    n = 40
+    m = _symmetric_corr(n)
+    # Model a monomorphic variant at row/col k: its LD with every other variant is
+    # NaN (0/0), symmetric in placement, but plink still writes 1.0 self-corr on the
+    # diagonal. The diagonal check therefore PASSES and we reach the symmetry check.
+    k = 7
+    nan32 = np.float32("nan")
+    m[k, :] = nan32
+    m[:, k] = nan32
+    np.fill_diagonal(m, 1.0)  # diagonals stay 1.0 -> diag check passes
+    ld_bin = tmp_path / "mono_nan.ld.bin"
+    m.astype("<f4").tofile(ld_bin)
+    with pytest.raises(ValueError, match="not symmetric"):
+        pln.read_square_bin(ld_bin, n)
+
+
 # --------------------------------------------------------------------------- #
 # Banded mode                                                                 #
 # --------------------------------------------------------------------------- #
