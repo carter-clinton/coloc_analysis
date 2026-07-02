@@ -2866,6 +2866,20 @@ def build_plink_ld_command(bfile_prefix: str, chrom, from_bp: int, to_bp: int,
     ld-window + r2 floor (the disk-tight alternate; ~400M-pair .ld.gz). The
     window is extracted via ``--chr/--from-bp/--to-bp`` over the cohort bfile.
 
+    ``mode='square'`` ALSO emits ``--mac 1 --nonfounders --write-snplist`` (quick
+    260701-qcy). plink1.9's order of operations applies ``--mac`` (a minor-allele-
+    COUNT filter) AFTER the position window but BEFORE ``--r``, so ``--mac 1`` drops
+    MAC=0 (monomorphic-in-AFR / zero-variance) variants BEFORE the LD is computed —
+    without it plink writes ``0/0 -> NaN`` LD for a monomorphic site and
+    ``read_square_bin``'s symmetry check fails (``NaN != NaN``; m3-02e-T4 fire #3
+    region 1). ``--nonfounders`` counts ALL samples (not founders-only) so an
+    ``hl.export_plink`` .fam with parent-cols=0 is unaffected regardless.
+    ``--write-snplist`` emits the RETAINED variant ids in filtered ``.bim`` order
+    (== ``.ld.bin`` row order); the driver threads that snplist so ``n_var``, the
+    window ``.bim``, and the ``.npz`` variant list all align to the retained
+    (polymorphic, MAC>=1) set. The banded branch does NOT gain ``--mac`` (the fire
+    runs square only; banded scatters named pairs, a different NaN symptom).
+
     Returns the plink argv list (the fire brief renders + runs it via subprocess).
     The cohort ``.bed`` it reads is INDIVIDUAL-LEVEL and stays IN-PERIMETER; only
     the resulting aggregate LD matrix is ever egressed (REQ-AOU-LD-EGRESS).
@@ -2881,7 +2895,11 @@ def build_plink_ld_command(bfile_prefix: str, chrom, from_bp: int, to_bp: int,
         "--to-bp", str(to_bp),
     ]
     if mode == "square":
-        cmd += ["--r", "square", "bin4"]
+        # --mac 1 drops MAC=0 monomorphic (zero-variance -> NaN LD) variants BEFORE
+        # --r; --write-snplist emits the retained ids in .ld.bin row order for the
+        # driver's retained-set alignment; --nonfounders counts all samples
+        # (founders-only default is a no-op for an all-founder export, insurance).
+        cmd += ["--mac", "1", "--nonfounders", "--write-snplist", "--r", "square", "bin4"]
     else:
         cmd += [
             "--r", "gz",

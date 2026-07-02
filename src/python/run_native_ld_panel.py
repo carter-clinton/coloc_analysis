@@ -345,6 +345,49 @@ def _window_bim_n_var_retry_on_zero(
     return n_var, window_bim
 
 
+def _retained_window_bim(raw_window_bim: "str | Path",
+                         snplist_path: "str | Path") -> tuple[int, Path]:
+    """Subset a RAW in-window ``.bim`` to the plink ``--write-snplist`` RETAINED set,
+    in snplist order, and return ``(n_retained, retained_window_bim_path)``
+    (quick 260701-qcy — drop monomorphic MAC=0 variants).
+
+    plink1.9 applies ``--mac 1`` (drop MAC=0) AFTER the ``--chr/--from-bp/--to-bp``
+    window but BEFORE ``--r square``, so the emitted ``.ld.bin`` is
+    ``(n_retained)^2`` with NO monomorphic (zero-variance -> ``0/0 -> NaN`` LD)
+    rows, and ``--write-snplist`` writes the retained variant ids in filtered
+    ``.bim`` order == the ``.ld.bin`` row order. The raw window ``.bim`` (from
+    ``_window_bim_n_var``, produced THROUGH the 27af416 transient-short-read guard)
+    still lists ALL in-window variants, so its count would DISAGREE with the
+    ``.ld.bin`` on every region. This helper intersects the raw window ``.bim`` with
+    the snplist and RE-ORDERS to snplist order (the authoritative ``.ld.bin`` row
+    order — not a bp re-sort), so ``plink_ld_to_npz.load_bim``'s row order matches
+    the ``.ld.bin`` columns and ``n_var == n_retained`` (the per-region ``n_var``
+    now legitimately EXCLUDES monomorphic MAC=0 variants). ``read_square_bin`` /
+    ``load_bim`` are UNCHANGED (they CAUGHT the NaN — they are correct).
+
+    A snplist id absent from the raw window ``.bim`` is skipped, so a genuine
+    bin/window disagreement still trips the caller's byte-identical ``n_var``
+    mismatch ``ValueError``.
+    """
+    raw_window_bim = Path(raw_window_bim)
+    snplist_path = Path(snplist_path)
+    retained_ids = [ln.strip() for ln in snplist_path.read_text().splitlines()
+                    if ln.strip()]
+    by_snp: dict[str, str] = {}
+    for line in raw_window_bim.read_text().splitlines():
+        if not line.strip():
+            continue
+        parts = line.split()
+        if len(parts) < 6:
+            continue
+        by_snp.setdefault(parts[1], line.rstrip("\n"))  # SNP id (col 2) -> verbatim line
+    kept_lines = [by_snp[snp] for snp in retained_ids if snp in by_snp]
+    retained_n_var = len(kept_lines)
+    retained_bim = raw_window_bim.with_name(f"{raw_window_bim.stem}.retained.bim")
+    retained_bim.write_text("\n".join(kept_lines) + ("\n" if kept_lines else ""))
+    return retained_n_var, retained_bim
+
+
 def _n_var_from_ld_bin(ld_bin_path: "str | Path") -> int:
     """square .ld.bin holds n_var**2 little-endian float32 -> n_var = sqrt(bytes/4)."""
     nbytes = Path(ld_bin_path).stat().st_size
@@ -511,9 +554,18 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             # persistent 0 falls through to the byte-identical mismatch below.
             ld_path = Path(f"{out_prefix}.ld.bin")
             bin_n_var = _n_var_from_ld_bin(ld_path)
-            window_n_var, window_bim = _window_bim_n_var_retry_on_zero(
+            # The RAW in-window .bim read STAYS behind the 27af416 transient guard
+            # (retry-on-zero semantics INTACT — it is the producer of raw_window_bim).
+            raw_window_n_var, raw_window_bim = _window_bim_n_var_retry_on_zero(
                 bim_path, chrom, from_bp, to_bp, expect_nonzero=(bin_n_var > 0),
             )
+            # --mac 1 dropped MAC=0 monomorphic (zero-variance -> NaN LD) variants
+            # BEFORE --r, so the .ld.bin (and --write-snplist) list only the RETAINED
+            # polymorphic set. Intersect the raw window .bim with the snplist, in
+            # snplist == .ld.bin order, so the cross-check and load_bim align to the
+            # retained set (n_var now EXCLUDES monomorphic MAC=0 variants; 260701-qcy).
+            snplist_path = f"{out_prefix}.snplist"
+            window_n_var, window_bim = _retained_window_bim(raw_window_bim, snplist_path)
             if bin_n_var != window_n_var:
                 raise ValueError(
                     f"n_var mismatch for {region_id}: .ld.bin implies {bin_n_var} "
