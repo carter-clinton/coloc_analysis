@@ -716,12 +716,30 @@ def select_shard_region_ids(manifest_path: "str | Path", *, num_shards: int = 1,
 # Loop driver                                                                  #
 # --------------------------------------------------------------------------- #
 
+class RegionGateError(RuntimeError):
+    """Raised when ``fail_fast`` is set and a region completes with a non-``ok``
+    status — HALTS the serial native-plink LD loop so a broken region (e.g. region
+    1) cannot silently precede a ~276-region / multi-day fire. ``process_region``
+    already appended the failed region's panel row before this raises, so the loop
+    stays resume-safe (fix the region, re-fire, the errored region recomputes)."""
+
+    def __init__(self, region_id, status):
+        self.region_id = region_id
+        self.status = status
+        super().__init__(
+            f"region gate FAILED at {region_id}: status={status!r} — halting the "
+            f"native-plink LD loop (fail_fast). Fix the region before re-firing; a "
+            f"gate that only logs cannot protect a 276-region run."
+        )
+
+
 def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
                         out_dir: "str | Path", *, mode: str = "square",
                         panel_tsv: "str | Path | None" = None,
                         ancestry: str = "AFR",
                         num_shards: int = 1, shard_index: int = 0,
-                        scratch_dir: "str | Path | None" = None) -> list[dict]:
+                        scratch_dir: "str | Path | None" = None,
+                        fail_fast: bool = False) -> list[dict]:
     """Drive the native-plink LD loop over the ``ancestry`` rows of the manifest.
 
     Reads the manifest (``aou_ld_panel._read_manifest``), filters to
@@ -730,7 +748,10 @@ def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
     processes a region at filtered position ``idx`` ONLY when
     ``idx % num_shards == shard_index``. With ``num_shards==1`` (default) every
     region is processed (single-VM behavior unchanged). Returns the list of
-    per-region result dicts.
+    per-region result dicts. When ``fail_fast`` is set, the loop STOPS and raises
+    ``RegionGateError`` on the first region whose ``status != 'ok'`` (its panel row
+    is already written — resume-safe); default ``False`` keeps the resume-safe
+    continue so one bad region never aborts the whole loop.
 
     ``out_dir`` may be a LOCAL path OR a ``gs://`` bucket prefix (durable,
     resume-safe via ``gsutil`` for the AoU Dataproc bucket-first layout — local disk
@@ -761,6 +782,8 @@ def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
             mode=mode, panel_tsv=panel_tsv, scratch_dir=scratch_dir,
         )
         results.append(res)
+        if fail_fast and str(res.get("status")) != "ok":
+            raise RegionGateError(str(res.get("region_id")), str(res.get("status")))
     return results
 
 
@@ -794,13 +817,17 @@ def main(argv: "list[str] | None" = None) -> int:
     p.add_argument("--shard-index", dest="shard_index", type=int, default=0,
                    help="0-based index of THIS shard (0 <= shard_index < num_shards). "
                         "For the 8-VM fan-out: 0..7, each with its own --panel-tsv.")
+    p.add_argument("--fail-fast", dest="fail_fast", action="store_true",
+                   help="Halt the loop (raise RegionGateError) on the FIRST region "
+                        "whose status != 'ok'. Use to GATE region 1 before committing "
+                        "to a full 276-region fire. Default off = resume-safe continue.")
     args = p.parse_args(argv)
 
     results = run_native_ld_panel(
         args.manifest, args.bfile_prefix, args.out_dir,
         mode=args.mode, panel_tsv=args.panel_tsv, ancestry=args.ancestry,
         num_shards=args.num_shards, shard_index=args.shard_index,
-        scratch_dir=args.scratch_dir,
+        scratch_dir=args.scratch_dir, fail_fast=args.fail_fast,
     )
     for res in results:
         print(json.dumps(res), flush=True)
