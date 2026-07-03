@@ -148,6 +148,37 @@ def _is_symmetric_blocked(m: np.ndarray, atol: float, block: int = 1024) -> bool
     return True
 
 
+def _has_any_nan_blocked(m, block: int = 1024) -> bool:
+    """Memory-lean 'does the matrix contain any NaN' check. Scans ``block`` rows at
+    a time so the transient is bounded by ``block * n_var * 1`` bool bytes (no full
+    n_var**2 temporary), matching the OOM discipline of _is_symmetric_blocked /
+    _strict_upper_is_zero_blocked (m3-02e-T4 dense-verify OOM class)."""
+    n = m.shape[0]
+    for i in range(0, n, block):
+        if bool(np.isnan(m[i:i + block, :]).any()):
+            return True
+    return False
+
+
+def nan_variant_indices(m, block: int = 1024, max_report: int = 32) -> list:
+    """Row indices carrying NaN LD, ranked by NaN count (worst first) and capped at
+    ``max_report``. A zero-variance variant NaNs its ENTIRE row/col, so its row has
+    the MOST NaNs and ranks first; a naive any-NaN scan would instead flag every
+    row (each innocent row picks up one NaN from the source's column). Ranking +
+    cap surfaces the SOURCE variant(s) whether the NaN pattern is whole-row (with a
+    1.0 diagonal — the real fire-#3 fingerprint, where ``np.isnan(row).all(axis=1)``
+    returns [] — OR a NaN diagonal) or a sparse cluster. Memory-lean: one
+    ``block``-row bool slice at a time (no full n_var**2 temporary)."""
+    n = m.shape[0]
+    ranked = []  # (nan_count, row_index) for every row with >=1 NaN
+    for i in range(0, n, block):
+        counts = np.isnan(m[i:i + block, :]).sum(axis=1)
+        for off in np.nonzero(counts)[0]:
+            ranked.append((int(counts[off]), i + int(off)))
+    ranked.sort(key=lambda t: (-t[0], t[1]))
+    return [idx for _, idx in ranked[:max_report]]
+
+
 def _strict_upper_is_zero_blocked(m, block=1024):
     """Memory-lean 'strict upper triangle is all zero' check (banded-npz gate).
     Equivalent to ``np.allclose(np.triu(m, k=1), 0.0)`` but bounded. The plain
@@ -179,6 +210,22 @@ def read_square_bin(ld_bin_path: "str | Path", n_var: int) -> np.ndarray:
             f"Check --n-var matches the cohort .bim row count for this region."
         )
     m = arr.reshape(n_var, n_var).astype("float32", copy=False)
+    # NaN check FIRST: plink --r writes 0/0 -> NaN for a zero-variance variant, and
+    # NaN != NaN would otherwise trip the symmetry check below and MISREPORT the
+    # cause as an asymmetry. Diagnose the NaN and name the likely source variant(s)
+    # so it can be QC'd out upstream (drop MAC=0 before --r). The diagonal + symmetry
+    # checks stay AFTER this, so a NaN-free asymmetric matrix still raises below.
+    if _has_any_nan_blocked(m):
+        src = nan_variant_indices(m)
+        preview = ", ".join(str(i) for i in src[:10]) + ("..." if len(src) > 10 else "")
+        raise ValueError(
+            f"square LD carries NaN for {ld_bin_path}: likely source variant row(s) "
+            f"ranked by NaN count [index: {preview}] — plink --r writes 0/0 -> NaN "
+            f"for a zero-variance variant (monomorphic within the --nonfounders set, "
+            f"all-missing, or all-heterozygous). QC these variants out (MAF/missingness "
+            f"on the actual sample set) or apply an explicit NaN policy BEFORE the .npz; "
+            f"do NOT confuse this with an asymmetry."
+        )
     if not np.allclose(np.diag(m), 1.0, atol=1e-3):
         raise ValueError(
             f"square LD diagonal is not ~1.0 for {ld_bin_path}; "
