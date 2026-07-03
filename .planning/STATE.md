@@ -16,7 +16,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is now STALE** (timestamp 2026-06-18T10:00; its "next: run /gsd-plan-phase for the re-scope" is DONE — see the block immediately below).
 
-## 2026-07-02T20:20Z (★★ RESUME HERE — LATEST ★★) — 🔥 LOOP FIRED + RUNNING on the AoU VM; region-1 gate in flight
+## 2026-07-03 (★★ RESUME HERE — LATEST ★★) — Seth Defects 3+4 landed (quick-260703-o0m); AoU loop STILL RUNNING (do NOT re-fire)
+
+**Session close (Carter away ~30 min).** Landed two NC-State-side defensive fixes requested by the Claude Science agent (Seth), verified against the VM's running code (`2d23d67`) — **CODE ONLY; nothing fired; the AoU loop, VM, and kernel were untouched:**
+
+- **(D3)** `read_square_bin` (`src/python/plink_ld_to_npz.py`) now raises a **NaN-specific** `ValueError` naming the culprit variant row(s) BEFORE the diagonal/symmetry checks — was the misleading `not symmetric`. New block-wise `_has_any_nan_blocked` + `nan_variant_indices` (ranked by NaN count, robust to the real fire-#3 **diagonal-1.0 / sparse** fingerprint where `.all(axis=1)` yields `[]` — this **corrected** Seth's proposed `.all(axis=1)` helper). The diagonal/symmetry/OOM checks are unchanged and still run AFTER it (a NaN-free asymmetric matrix still raises `not symmetric`).
+- **(D4)** opt-in `RegionGateError` / `--fail-fast` gate in `run_native_ld_panel.py` so a non-`ok` region 1 can HALT a 276-region fire; **default-off = resume-safe continue, byte-behaviour-identical.**
+- TDD RED→GREEN, **5 commits** (`28c70ff`+`ebceb43` RED, `b57d31e`+`12b86d6` GREEN, `5b8a51a` docs) + this handoff commit. Full `tests/m3` **333 passed / 30 skipped**. Carter-approved `read_square_bin` do_not EXCEPTION (diagnostic-only; recorded in HANDOFF `do_not`).
+
+**⚠ The AoU 276-region LD loop is STILL RUNNING server-side on the VM (`2d23d67`) — these fixes are NOT on the VM and it MUST NOT be re-fired.** Seth Defects 1 (snplist∩bim=0) + 2 (true NaN source) root-cause remain pending in-perimeter diagnostics. The loop-running state + reattach + liveness (bucket `.npz` count → 276) is the **block immediately below** — that remains the PRIMARY in-flight concern; do NOT restart the kernel.
+
+**⚠ GPFS object-store corruption recurred:** 17 index blobs were lost from the store this session (the known dangling-blob pathology, cf quick-260628-244); all 17 recovered from intact working-tree files via `git hash-object -w` (0 unrecoverable). Because the local store is demonstrably unreliable, the new commits were **pushed to `origin/m3-W2-aou-deltas`** (durable backup + keeps the Claude Science / Seth GitHub bridge current).
+
+**RESUME:** nothing running NC-State-side. AoU loop → see the block below (do NOT restart the kernel; liveness = bucket `.npz` count). If Seth pings → the fixes are on origin (`m3-W2-aou-deltas` ≥ `5b8a51a`).
+
+## 2026-07-02T20:20Z (SUPERSEDED by the 2026-07-03 close-session block above — but STILL the PRIMARY in-flight concern: the loop is RUNNING) — 🔥 LOOP FIRED + RUNNING on the AoU VM; region-1 gate in flight
 
 **Carter fired step 4 — the 276-region AFR native-plink LD loop is now RUNNING server-side** on the drop-monomorphic + hardened code (`2d23d67`, origin==local, pushed), VM `AoU_Jupyter_ComputeEngine_20260626b` (n1-standard-32 / 120 GB, us-central1-a), nohup + `timeout 312h`, run log `~/native_ld_loop.log`. Steps 1–3 (pull → re-gate grep `write-snplist`/`n_dropped_monomorphic` → `.bim` col-2 uniqueness `awk`) passed before the fire. **Survives disconnect — do NOT restart the kernel.**
 
