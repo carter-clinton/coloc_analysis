@@ -183,28 +183,35 @@ def test_read_square_bin_rejects_asymmetric(tmp_path):
 
 
 def test_read_square_bin_raises_on_monomorphic_nan(tmp_path):
-    """m3-02e-T4 diagnosis lock (quick 260701-qcy): a square ``.ld.bin`` carrying
-    NaN LD entries — the fingerprint of a MONOMORPHIC (MAC=0-in-AFR / zero-variance)
-    variant, for which plink ``--r`` computes ``0/0 -> NaN`` — must make
-    ``read_square_bin`` RAISE ``square LD is not symmetric`` (``NaN != NaN`` breaks
-    the symmetry equality even where the NaN placement is itself symmetric). This
-    locks WHY the fix drops MAC=0 variants (``--mac 1``) BEFORE ``--r``:
-    ``read_square_bin`` is CORRECT and is NOT modified — it CAUGHT the bug (fire #3
-    region 1: 12 NaN entries across 11 rows, diagonals still 1.0)."""
+    """m3-02e-T4 diagnosis lock (quick 260701-qcy; NaN-message fix quick 260703-o0m):
+    a square ``.ld.bin`` carrying NaN LD entries — the fingerprint of a MONOMORPHIC
+    (MAC=0-in-AFR / zero-variance) variant, for which plink ``--r`` computes
+    ``0/0 -> NaN`` — must make ``read_square_bin`` RAISE a NaN-SPECIFIC error that
+    NAMES the source variant row(s), NOT the misleading ``square LD is not
+    symmetric``. Pre-260703 the reader had no NaN check, so ``NaN != NaN`` tripped
+    the symmetry equality and mis-reported the cause; the reader now DIAGNOSES the
+    NaN first (fire #3 region 1: 12 NaN entries across 11 rows, diagonals still
+    1.0). Dropping MAC=0 variants (``--mac 1``) BEFORE ``--r`` remains the upstream
+    fix; this locks the reader's error message."""
     n = 40
     m = _symmetric_corr(n)
     # Model a monomorphic variant at row/col k: its LD with every other variant is
     # NaN (0/0), symmetric in placement, but plink still writes 1.0 self-corr on the
-    # diagonal. The diagonal check therefore PASSES and we reach the symmetry check.
+    # diagonal (the REAL fire-#3 fingerprint) — so the diagonal check would PASS and
+    # the NaN pre-check must fire FIRST and name k.
     k = 7
     nan32 = np.float32("nan")
     m[k, :] = nan32
     m[:, k] = nan32
-    np.fill_diagonal(m, 1.0)  # diagonals stay 1.0 -> diag check passes
+    np.fill_diagonal(m, 1.0)  # diagonals stay 1.0 -> diag check would pass
     ld_bin = tmp_path / "mono_nan.ld.bin"
     m.astype("<f4").tofile(ld_bin)
-    with pytest.raises(ValueError, match="not symmetric"):
+    with pytest.raises(ValueError) as excinfo:
         pln.read_square_bin(ld_bin, n)
+    msg = str(excinfo.value)
+    assert "NaN" in msg                   # NaN-specific, not a generic failure
+    assert "not symmetric" not in msg     # must NOT mis-report the cause
+    assert str(k) in msg                  # names the culprit source variant row
 
 
 # --------------------------------------------------------------------------- #
