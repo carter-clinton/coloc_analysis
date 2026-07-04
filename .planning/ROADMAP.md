@@ -999,3 +999,87 @@ orthogonal and already landed.
 
 **Refs:** `quick/260703-vk9-.../260703-vk9-SUMMARY.md` · quick-260703-o0m · STATE.md
 2026-07-04 block.
+
+---
+
+#### 999.1 design detail (Seth, 2026-07-04) — resolved OSF finding + work breakdown
+
+**Reuse, do not reinvent — PSD machinery already exists.**
+`src/R/regularization/refit_sh2b3_psd_regularized.R` already implements
+`psd_regularize_ridge(R, λ)` (Wen 2017: `R + λI`, then row/col normalize) and
+`psd_regularize_eigclip(R, λ_floor=1e-6)` (Hutchinson 2020: eigen-clip negatives,
+reconstruct, normalize), applied at SuSiE-RSS fit time on the credible-set submatrix
+`R_sub`. 999.1 must NOT add a third PSD implementation — factor these two into a shared
+`src/R/regularization/psd_utils.R` that both the EUR refit and the AFR native panel
+source.
+
+**NaN topology locks the policy (region-1 in-perimeter diagnostic, aggregate egress).**
+`n_var=102421`, 12 NaN cells, 11 rows, **0 fully-NaN rows** — isolated symmetric
+off-diagonal pairs between index-adjacent low-MAF variants (MAF 0.005–0.02, F_MISS
+≤0.05, no all-het), clustered in 5 tight bp windows. This is **pairwise-undefined `r`**
+(`0/0` on that pair's complete-sample intersection), NOT a zero-variance source and NOT
+a confirmed plink bug. Policy: **off-diagonal `NaN→0` + PSD conditioning, per-region
+provenance — NOT a variant drop.** A DIFFERENT topology (a fully-NaN row →
+`nan_variant_indices` non-empty) WOULD be a zero-variance source and SHOULD be dropped
+by MAF/missingness QC; the conditioning util must branch on topology.
+
+**Where in the pipeline.** `NaN→0` at an explicit, recorded conditioning stage (raw
+panel `.npz` stays NaN-raising + auditable; conditioned artifact is separate). PSD stays
+at fit time on the region submatrix — a full 102421² eigen needs ~195 GiB working set
+(VM 120 GB) + ~8 h/region, infeasible. Order is fixed by correctness: `eigen()` returns
+all-NaN on any NaN input, so **NaN→0 first, PSD (on the submatrix, later) second**;
+zeroing off-diagonals can introduce mild indefiniteness that the downstream PSD then
+repairs.
+
+**OSF gate — RESOLVED: a NEW amendment is required.** `osf-amendment-r3-2026-05-04.md`
+is **EUR-only** — it pre-registers PSD for the "1000 Genomes Phase 3 EUR LD matrix at
+`data/processed/ld_reference/EUR/SH2B3_12q24.rds`" (ridge λ∈{0.001,0.01,0.1} + eigclip
+λ_floor=1e-6), SH2B3 + 4 EUR regions, and its "what is not changing" clause pins the
+substrate to the EUR reference panel. No AFR, no All-of-Us native panel, no NaN→0
+step. The PSD methods are reusable; their pre-registration coverage is NOT. 999.1 needs
+a **new OSF amendment** (or a scoped amendment-update citing r3's record at
+`osf.io/az52u`) pre-specifying: AFR native-panel scope + ancestry, the NaN→0 policy +
+`n_zeroed` ceiling, the PSD method + λ (pre-specified, not tuned), and — mirroring r3 —
+the allowable outcome branches. Carter posts to OSF; the agent side only DRAFTS the
+paste-ready text. This is the TRUE blocker on 999.1 promotion — the code is small; the
+governance is the gate. Draft the amendment BEFORE writing conditioning code so the
+pre-specified parameters lock before any fit can back-influence them.
+
+**Fine-mapping caveats (must appear in the methods writeup, not buried):**
+(1) Zeroing a pairwise `r` asserts an independence not measured — negligible in
+aggregate for 12/102421², but if two zeroed variants fall in the SAME credible-set
+region the local LD is misspecified there; flag those regions + report PIP sensitivity
+with/without. (2) PSD renormalizes the WHOLE submatrix, not just zeroed cells — record
+`max|R_reg−R|` + min-eigenvalue before/after per region. (3) λ/method is a researcher
+degree of freedom — pre-specify in the amendment; default eigclip λ_floor=1e-6 (least
+aggressive) unless a pre-registered sweep says otherwise.
+
+**Work breakdown (for /gsd-plan-phase when promoted):**
+1. **OSF gate (BLOCKS all below)** — draft the new AFR amendment (NaN→0 policy,
+   `n_zeroed` ceiling, PSD method+λ pre-spec, AFR panel scope, outcome branches);
+   Carter posts; record record-URL + timestamp in `.planning/osf_deviations.md`.
+2. **Refactor PSD** — extract `psd_regularize_ridge`/`_eigclip` → `psd_utils.R`;
+   regression-test byte-identical to current `refit_sh2b3_psd_regularized.R` output
+   (pure refactor, no behavior change).
+3. **NaN→0 conditioning util (Python)** — `condition_ld_matrix(m, policy, record)`:
+   topology branch (RAISE→drop on fully-NaN rows; zero on isolated pairs), `n_zeroed`
+   ceiling (RAISE if exceeded — large NaN fraction is a substrate problem, re-diagnose),
+   provenance. Failing-first tests: isolated-pair zeros+records; fully-NaN-row RAISES;
+   over-ceiling RAISES.
+4. **Conditioned artifact** — write conditioned `.npz`/`.rds` with provenance keys
+   (`n_zeroed`, `zeroed_pairs`, `nan_policy`, `psd_method`, `psd_lambda`); leave the raw
+   panel `.npz` contract frozen (`ld_npz_to_rds.R` unchanged).
+5. **Fit-time wiring + diagnostics** — AFR fit sources `psd_utils.R`; record
+   `lambda_method`/`lambda`/`max|R_reg−R|`/min-eigenvalue per region + the credible-set-
+   overlap flag & PIP sensitivity for regions containing a zeroed pair.
+6. **Verification** — on region-1's real 12-NaN matrix (in-perimeter, aggregate egress):
+   conditioned matrix finite + PSD (min-eig ≥ 0), `n_zeroed==6`, downstream SuSiE
+   converges. Egress only aggregate diagnostics.
+
+**Do-NOTs:** not folded into any Defect 1/3/4 fix (landed, orthogonal); no loop re-fire
+until §1–6 land (`read_square_bin` correctly still raises); no full-panel PSD (O(n³));
+no tuning λ/method to a fine-mapping result.
+
+**Refs (design):** Seth ticket `ticket_999_1_nan_psd_design.md` (Science-side artifact,
+2026-07-04) · `osf-amendment-r3-2026-05-04.md` (read in full, EUR-only) ·
+`src/R/regularization/refit_sh2b3_psd_regularized.R`.
