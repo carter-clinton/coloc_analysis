@@ -349,9 +349,23 @@ def _window_bim_n_var_retry_on_zero(
     return n_var, window_bim
 
 
+def _needs_retained_subset(bin_n_var: int, raw_window_n_var: int) -> bool:
+    """Defect 1 (quick 260703-vk9): the snplist∩raw-window-.bim intersection is
+    needed ONLY when ``--mac`` actually dropped variants — i.e. the ``.ld.bin`` count
+    differs from the raw in-window count. In the observed AFR regime ``--mac 1``
+    drops 0 (``bin_n_var == raw_window_n_var``), so the intersection is a no-op that
+    only adds a snplist-read race; skip it and use the (already race-guarded) raw
+    window ``.bim`` directly. A non-equal count (a real drop, OR a genuine mismatch)
+    -> do the intersection so ``n_var`` aligns to the retained ``.ld.bin`` row order
+    (a genuine mismatch still trips the caller's byte-identical ``n_var`` check
+    downstream)."""
+    return bin_n_var != raw_window_n_var
+
+
 def _retained_window_bim(raw_window_bim: "str | Path",
                          snplist_path: "str | Path",
-                         *, region_id: str = "") -> tuple[int, Path]:
+                         *, region_id: str = "",
+                         expect_nonzero: bool = False) -> tuple[int, Path]:
     """Subset a RAW in-window ``.bim`` to the plink ``--write-snplist`` RETAINED set,
     in snplist order, and return ``(n_retained, retained_window_bim_path)``
     (quick 260701-qcy — drop monomorphic MAC=0 variants).
@@ -387,8 +401,28 @@ def _retained_window_bim(raw_window_bim: "str | Path",
     """
     raw_window_bim = Path(raw_window_bim)
     snplist_path = Path(snplist_path)
+    # Defect 1 (quick 260703-vk9): the snplist read must be guarded against the SAME
+    # transient short read that _window_bim_n_var_retry_on_zero guards for the raw
+    # window .bim. The live region-1 failure was this exact race: a bare read_text()
+    # hit an un-flushed (empty) {out_prefix}.snplist -> 0 retained ids -> a false
+    # n_var mismatch. When the caller KNOWS a real drop occurred (expect_nonzero),
+    # retry the read until it is non-empty; a genuinely-empty snplist still returns
+    # [] after the bounded retries so the caller's mismatch check still fires.
     retained_ids = [ln.strip() for ln in snplist_path.read_text().splitlines()
                     if ln.strip()]
+    if not retained_ids and expect_nonzero:
+        for _ in range(_WINDOW_BIM_RETRIES):
+            time.sleep(_WINDOW_BIM_RETRY_SLEEP_S)
+            retained_ids = [ln.strip() for ln in snplist_path.read_text().splitlines()
+                            if ln.strip()]
+            if retained_ids:
+                print(
+                    f"WARN: transient empty snplist for {region_id} recovered on retry "
+                    f"({len(retained_ids)} retained); a short read of {snplist_path.name} "
+                    f"self-healed in-run (Defect 1, quick 260703-vk9).",
+                    file=sys.stderr, flush=True,
+                )
+                break
     retained_set = set(retained_ids)
     by_snp: dict[str, str] = {}
     seen: set[str] = set()
@@ -588,15 +622,23 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             raw_window_n_var, raw_window_bim = _window_bim_n_var_retry_on_zero(
                 bim_path, chrom, from_bp, to_bp, expect_nonzero=(bin_n_var > 0),
             )
-            # --mac 1 dropped MAC=0 monomorphic (zero-variance -> NaN LD) variants
-            # BEFORE --r, so the .ld.bin (and --write-snplist) list only the RETAINED
-            # polymorphic set. Intersect the raw window .bim with the snplist, in
-            # snplist == .ld.bin order, so the cross-check and load_bim align to the
-            # retained set (n_var now EXCLUDES monomorphic MAC=0 variants; 260701-qcy).
-            snplist_path = f"{out_prefix}.snplist"
-            window_n_var, window_bim = _retained_window_bim(
-                raw_window_bim, snplist_path, region_id=region_id,
-            )
+            # --mac 1 drops MAC=0 monomorphic (zero-variance -> NaN LD) variants
+            # BEFORE --r. When it dropped SOMETHING (bin_n_var != raw_window_n_var),
+            # the .ld.bin (and --write-snplist) list only the RETAINED set, so we must
+            # intersect the raw window .bim with the snplist (in snplist == .ld.bin
+            # order) to align n_var + load_bim. But when it dropped NOTHING
+            # (bin_n_var == raw_window_n_var — the observed AFR regime), that
+            # intersection is a NO-OP that only re-reads the snplist and reintroduces
+            # the Defect 1 race; SKIP it and use the (already race-guarded) raw window
+            # .bim directly (quick 260703-vk9).
+            if _needs_retained_subset(bin_n_var, raw_window_n_var):
+                snplist_path = f"{out_prefix}.snplist"
+                window_n_var, window_bim = _retained_window_bim(
+                    raw_window_bim, snplist_path, region_id=region_id,
+                    expect_nonzero=(bin_n_var > 0),
+                )
+            else:
+                window_n_var, window_bim = raw_window_n_var, raw_window_bim
             if bin_n_var != window_n_var:
                 raise ValueError(
                     f"n_var mismatch for {region_id}: .ld.bin implies {bin_n_var} "
