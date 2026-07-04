@@ -968,3 +968,34 @@ M: 11 (parallel from Phase 9)
 | M6 manuscript + replication + submission | not planned | gated on M5 | 2027-04 / 2027-05 |
 | Track-A-finalization | Route A in flight; audit-V2 sweep landed 2026-04-27 (`260427-azv` — 12 atomic commits, 15 V2-CLOSED tracker rows, Fig S2 + frozen scalars + 3 DEC entries) | in flight (independent of M0–M6) | 2026-05 / 2026-06 |
 | Track-A-R2-sh2b3-canonical-and-cache-refresh | 3/8 (W0 + W1 + W2 complete; W1.5 LD-audit landed 2026-04-29 alongside W2; W3 next = checkpoint:human-verify) | in flight; W2 SUMMARY 2026-04-29 (3 SURVIVE_GE_0.8 + 2 COLLAPSE_BELOW_0.5; PP.H4 BMI-HTN=1.0); W1.5 LD-audit demonstrates panel pathology (50.4% rank deficiency; 23.46% negative eigenvalues) substantively justifying DISCLOSE-AS-COLUMN; Pitfall 3 + Invariant 2 preserved; closes SH2B3 reference-LD coverage gap (Issue 1) + variant-ID matcher cache propagation (Issue 2) ahead of Genome Medicine R2 submission | 2026-05 / 2026-06 |
+
+## Backlog (parking lot — 999.x)
+
+Ideas captured for later triage; not scheduled. Promote via `/gsd-review-backlog`.
+
+### 999.1 — LD NaN policy: off-diagonal NaN→0 + PSD regularization (pre-SuSiE conditioning)
+
+**Captured:** 2026-07-04 (Seth carry-forward from quick-260703-vk9) · **Milestone:** M3/M4, pre-m3-04 · **Status:** parked
+
+The native-plink AFR LD panel emits `NaN` for a handful of pairwise `r` where the
+pair's complete-sample intersection is degenerate (`0/0` among clustered low-MAF
+variants — region 1 = 12 NaN across 11 index-adjacent rows in 5 tight bp windows; a
+**pairwise-undefined `r`**, NOT a "plink bug"). `read_square_bin` now RAISES on any NaN
+(correct — diagnostic + resume-safe, quick-260703-o0m). It does **not** yet REPAIR.
+
+**Scope of the design pass (must NOT be folded into any Defect fix):** the recommended
+policy (browser agent + Seth) is **off-diagonal `NaN→0` + PSD projection, NOT a variant
+drop** — a downstream step in the `.npz`/`.rds` build or a dedicated pre-SuSiE
+conditioning stage. Open decisions with real fine-mapping consequences:
+
+- Zeroing a pairwise `r` asserts an independence you have **not measured**.
+- PSD projection (e.g. nearest-PD / eigenvalue clip) perturbs the **whole** matrix.
+- Record `n_zeroed` + provenance per region; decide the PSD method and where in the
+  pipeline it runs.
+
+Until this lands, a loop re-fire still (correctly) raises on the NaN cells. This is the
+**true region-1 substrate fix**; Defect 1 (the snplist race, quick-260703-vk9) is
+orthogonal and already landed.
+
+**Refs:** `quick/260703-vk9-.../260703-vk9-SUMMARY.md` · quick-260703-o0m · STATE.md
+2026-07-04 block.
