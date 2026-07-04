@@ -91,3 +91,25 @@ The decision is a Cowork-side editorial decision, not an HPC-side compute decisi
 - `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-CONTEXT.md` (D-TA-R3-W5-PHASE-CLOSURE recorded)
 
 **Honest-framing-lock invariant verified at W5 closeout:** `docs/manuscript/id-vs-ref-LD.md` md5 = `2a57c1a061f0c66988a55d1d6600efdf` at phase entry AND exit (byte-identical through all 5 waves; lock holds end-to-end).
+
+## 2026-07-04 — AFR native-panel LD NaN→0 + PSD conditioning amendment (999.1 OSF gate)
+
+- **Posted:** OSF file `tcujq` on parent record az52u —
+  https://osf.io/az52u/files/tcujq (append-only supplementary file; M1/r3 pattern).
+- **OSF timestamp (authoritative, UTC):** 2026-07-04T04:14:46.635031Z
+  (Jul 4 2026 00:14 EDT).
+- **Pre-execute gate commit:** 0f3c68b (committer-date 2026-07-04T03:45:29Z). OSF post
+  is +29 min after the gate and before any conditioning-output commit → pre-registration
+  precedes the analysis it covers. Gate holds.
+- **DISCLOSED DEVIATION (minor, date-field vs post-instant):** the amendment body's
+  `Date:` field reads 2026-07-03, but the immutable OSF post instant is 2026-07-04
+  00:14 EDT — one calendar day later. The OSF-assigned timestamp is authoritative for
+  precedence; the text date was set before the exact post time was known. Recorded here
+  for honesty; the amendment was NOT re-posted (append-only record; re-posting would
+  duplicate, not correct).
+- **Scope covered:** AFR All-of-Us native-plink LD panel — off-diagonal NaN→0 policy,
+  n_zeroed ceiling (0.05% of n_var), PSD via reused r3 methods (eigclip λ_floor=1e-6
+  primary; ridge λ∈{0.001,0.01,0.1} robustness), three outcome branches
+  (CLEAN/APPLIED/DEFERRED). Extends r3 (EUR-only) to AFR; r3 not retracted.
+- **Amends:** osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J). Sibling of
+  osf-amendment-r3-2026-05-04.md.
