@@ -66,25 +66,25 @@ opt <- OptionParser(option_list = list(
 )) |> parse_args()
 
 # -------------------------------------------------------------------------
-# PSD regularization functions
-# Wen 2017 ridge: R_reg = R + lambda * I; then row-and-column normalize so diag(R_reg) = 1
-psd_regularize_ridge <- function(R, lambda) {
-  R_reg <- R + lambda * diag(nrow(R))
-  d <- sqrt(diag(R_reg))
-  R_reg <- sweep(sweep(R_reg, 1, d, "/"), 2, d, "/")
-  R_reg
+# PSD regularization functions (psd_regularize_ridge — Wen 2017;
+# psd_regularize_eigclip — Hutchinson 2020, lambda_floor=1e-6). Factored into the
+# canonical src/R/regularization/psd_utils.R (m3-06-W6, 2026-07-07) so the SAME
+# pre-registered numerics are the single source of truth reused by the AFR
+# native-panel conditioning (osf-amendment-afr-native-ld-nan-psd-2026-07-03.md).
+# The extraction is byte-identity-gated by
+# tests/testthat-phase1/test_psd_utils_byte_identical.R (r3 / Track-A numerics
+# unchanged). Path-robust source mirrors the snp_id_bridge.R dual-path block above.
+.psd_utils_path <- file.path(dirname(sub("^--file=", "",
+  grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)[1])),
+  "psd_utils.R")
+if (!file.exists(.psd_utils_path)) {
+  # Fallback to project-relative path when sourced via R -e.
+  .psd_utils_path <- "src/R/regularization/psd_utils.R"
 }
-
-# Hutchinson 2020 eigenvalue-clip: clip negative eigenvalues to lambda_floor (default 1e-6),
-# reconstruct R_clip = V * diag(max(d, lambda_floor)) * V^T, then row-col normalize.
-psd_regularize_eigclip <- function(R, lambda_floor = 1e-6) {
-  e <- eigen(R, symmetric = TRUE)
-  d_clip <- pmax(e$values, lambda_floor)
-  R_clip <- e$vectors %*% diag(d_clip) %*% t(e$vectors)
-  d <- sqrt(diag(R_clip))
-  R_clip <- sweep(sweep(R_clip, 1, d, "/"), 2, d, "/")
-  R_clip
-}
+stopifnot(file.exists(.psd_utils_path))
+source(.psd_utils_path)
+stopifnot(exists("psd_regularize_ridge", mode = "function"),
+          exists("psd_regularize_eigclip", mode = "function"))
 
 # -------------------------------------------------------------------------
 # Load LD
