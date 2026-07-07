@@ -975,7 +975,9 @@ Ideas captured for later triage; not scheduled. Promote via `/gsd-review-backlog
 
 ### 999.1 — LD NaN policy: off-diagonal NaN→0 + PSD regularization (pre-SuSiE conditioning)
 
-**Captured:** 2026-07-04 (Seth carry-forward from quick-260703-vk9) · **Milestone:** M3/M4, pre-m3-04 · **Status:** parked
+**Captured:** 2026-07-04 (Seth carry-forward from quick-260703-vk9) · **Milestone:** M3/M4, pre-m3-04 · **Status:** PARTIALLY PROMOTED 2026-07-04
+
+> **PROMOTED 2026-07-04:** step 1 (OSF gate) is CLOSED (amendment posted as OSF file `tcujq`, recorded + verified; tag `AFR-NANPSD-OSF-AMENDMENT-POSTED-2026-07-04` on `0f3c68b`). **Steps §2-4** (NC-State conditioning code: shared `psd_utils.R`, `condition_ld_matrix` util, conditioned-artifact writer) are promoted to a new **m3 wave `m3-06-ld-nan-psd-conditioning`** inside `m3-aou-afr-ld-panel-build` (planner→executor pattern, matching m3-02b/c/d/e). **Steps §5-6** (fit-time wiring against the real AFR panel + in-perimeter region-1 verification) REMAIN PARKED here — **loop-gated** (the 276-region AoU LD loop is still running; the panel does not exist yet), to be promoted as a follow-on wave when the panel lands. Design detail below is the spec source for the wave.
 
 The native-plink AFR LD panel emits `NaN` for a handful of pairwise `r` where the
 pair's complete-sample intersection is degenerate (`0/0` among clustered low-MAF
