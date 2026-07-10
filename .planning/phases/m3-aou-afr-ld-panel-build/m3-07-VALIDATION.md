@@ -78,7 +78,7 @@ plan_split: [07a, 07b, 07c]
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Genome-wide 276-region filter correctness against the REAL in-perimeter `.bim` | REQ-AOU-LD-VALIDATION | Requires in-perimeter AoU data + a gated region-1 re-run (out of scope this phase; loop stays untouched) | At the gated re-run: run the span-filter over all 276 region `.bim`s, confirm region-1 NaN cleared and the occlusion catalog is produced; unit-covered on the region-1 fixture now |
+| Genome-wide 276-region filter correctness against the REAL in-perimeter `.bim` | REQ-AOU-LD-VALIDATION | Requires in-perimeter AoU data + a gated region-1 re-run (out of scope this phase; loop stays untouched) | At the gated re-run: run the span-filter over all 276 region `.bim`s, confirm region-1 NaN cleared and the occlusion catalog is produced. SETTLED known-answer oracle (Seth 5/5 vs geometry verdict `4543dcf4…`): region-1 occluded set `{10328,44784,46714,59097,66730}`, 7-deletion REF-span inventory 60/29/7/31/31/17/29 bp, 0 same-position — the detector must reproduce this. Unit-covered on the region-1 fixture (same topology) now |
 | OSF amendment-update posted + recorded (07a Task 1) | REQ-OSF-PREREG | Human action on osf.io; integrity gate, not code | Post the scoped panel overlapping-variant policy amendment-update (exclusion + provenance, never zeroing); record file id/SHA-256/git tag before any fix code lands |
 
 ---

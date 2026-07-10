@@ -20,6 +20,7 @@ requirements:
 must_haves:
   truths:
     - "occlusion_span_filter.detect_occluded_variants applies the CONSERVATIVE rule — V is occluded iff ∃ D with len(REF_D)>1 and POS_D < POS_V ≤ POS_D + len(REF_D)−1 — computed over the ORIGINAL window; on the region-1 `.bim` fixture (from 07a) it returns EXACTLY {1980475, 5733487, 5922718, 7492693, 8375822} (5 occluded; the 5922716/5922718/5922724 tangle collapses to the single 5922718 drop) and edges capture occluder→occluded incl. the second-order 5922718↔5922724 as disjoint."
+    - "The pair-4 second-order tangle is attributed correctly (SETTLED, Seth 5/5 vs geometry verdict `4543dcf4…`): the detector attributes SNP 5922718 to the UPSTREAM DEL 5922716 (predicate POS < variant_POS ≤ POS + len(REF) − 1), NOT the downstream DEL 5922724, and dropping 5922718 collapses the 5922716/5922718/5922724 tangle. The SETTLED region-1 REAL-window known-answer oracle `{10328, 44784, 46714, 59097, 66730}` + 7-deletion inventory (60/29/7/31/31/17/29 bp) is the answer reproduced at the GATED real-`.bim` validation (Seth's full prototype is a read-only reference, not committed)."
     - "Footprint is len(REF)=len(A2) ONLY: an SNV (len(REF)=1) never occludes, and an insertion (len(ALT)>len(REF), footprint = single anchor base) never occludes a downstream base; a boundary variant at POS_D+len(REF_D)−1 IS occluded, one at POS_D+len(REF_D) is NOT (grep/test-verifiable in test_occlusion_span_filter.py)."
     - "build_plink_ld_command gains an optional `exclude=` param that appends `--exclude <path>` BEFORE `--r` only when non-None, and `--keep-allele-order` still appears on EVERY issued command (test_run_native_ld_panel.py -k exclude proves both)."
     - "process_region reads the raw window `.bim` BEFORE `_run_plink` (plain `_window_bim_n_var`, no retry — no concurrent writer), runs the filter, writes `{out_prefix}.occluded.excludelist` (one `.bim` col-2 id/line), passes it as `exclude=`, so the excluded window `.npz` carries NO NaN and PASSES content_verify_npz — the frozen read_square_bin NaN-raise never trips."
@@ -126,6 +127,17 @@ Insertions (len(ALT)>len(REF)) footprint = single anchor base -> NEVER occlude. 
 Excluding the downstream occluded member removes every occlusion edge (occluder always has smaller POS).
 ```
 
+SETTLED — the predicate is validated 5/5 against the region-1 geometry verdict `4543dcf4…` (Seth):
+- Predicate (verbatim): a deletion record occludes a downstream variant iff `POS < variant_POS ≤ POS + len(REF) − 1`.
+- PAIR-4 UPSTREAM-ATTRIBUTION: SNP 5922718 is occluded by the UPSTREAM `DEL 5922716` (its len(REF) span covers 5922718),
+  NOT by the downstream `DEL 5922724`; the detector MUST attribute occlusion to the correct (upstream) deletion, and
+  dropping 5922718 collapses the 3-record 5922716/5922718/5922724 tangle.
+- Region-1 REAL-window known-answer occluded set = `{10328, 44784, 46714, 59097, 66730}`; 7-deletion REF-span inventory
+  60/29/7/31/31/17/29 bp; 0 same-position (`bcftools norm -m` fixes none). This is the oracle the detector must reproduce
+  at the GATED real-`.bim` validation (the synthetic 07a fixture unit-covers the SAME topology in fixture coordinates).
+- Seth's full detector prototype exists as a READ-ONLY executor reference (NOT for commit — it needs the real `.bim` loader
+  + the GSD RED-first TDD flow): build the detector test-first against the 07a RED suite, do not paste the prototype.
+
 From src/python/aou_ld_panel.py:2854 (build_plink_ld_command — EXTEND with exclude=):
 ```python
 def build_plink_ld_command(bfile_prefix, chrom, from_bp, to_bp, out_prefix, mode="square",
@@ -181,8 +193,9 @@ Env = /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest (py3.11, numpy
       `rows` = list of 6-col sequences (idx 1=id, 3=bp, 5=A2=REF). Deterministic CONSERVATIVE rule over the
       ORIGINAL window: V occluded iff ∃ D (len(REF_D)>1) with POS_D < POS_V ≤ POS_D+len(REF_D)−1. Footprint =
       len(REF)=len(A2) ONLY. occluded_ids = sorted unique col-2 ids of every occluded V; edges = one dict per
-      (occluder_id, occluded_id, geometry∈{"ref_span_overlap"}) — plus, for the tangle, a "disjoint"/second-order
-      note that removing the upstream-occluded member also resolves the downstream NaN edge. Pure: no I/O, no plink.
+      (occluder_id, occluded_id, geometry∈{"ref_span_overlap"}) — attributing each occluded V to the UPSTREAM deletion
+      whose REF span covers it (SETTLED pair-4: 5922718 ← 5922716, NOT 5922724), plus a "disjoint"/second-order note that
+      removing the upstream-occluded member also resolves the downstream NaN edge. Pure: no I/O, no plink.
       Validates each row is ≥6 fields with integer bp; RAISES ValueError on a malformed row.
     - Region-1 fixture -> EXACTLY {1980475,5733487,5922718,7492693,8375822} (5 ids; tangle collapses to 5922718).
     - build_plink_ld_command(..., exclude=None): when exclude is a non-None path, append `--exclude <path>` BEFORE
@@ -212,7 +225,10 @@ Env = /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest (py3.11, numpy
     expect_nonzero=(bin_n_var>0))` block UNCHANGED (it now fires because exclusion drops variants); compute the split
     n_dropped_occluded / n_dropped_monomorphic; append the panel column; emit a LOUD stderr line per region when
     n_dropped_occluded>0. Leave the banded branch and content_verify_npz body UNTOUCHED. Do NOT modify
-    plink_ld_to_npz.py or ld_npz_to_rds.R. Commit GREEN, explicit paths, tag m3-07b-W7-T1.
+    plink_ld_to_npz.py or ld_npz_to_rds.R. SETTLED (Seth 5/5 vs `4543dcf4…`): the predicate + pair-4 upstream-attribution
+    + the region-1 real-window oracle `{10328,44784,46714,59097,66730}` (7-deletion inventory 60/29/7/31/31/17/29 bp) are
+    the known answer — a READ-ONLY prototype exists for reference but MUST NOT be committed; build the detector test-first
+    against the 07a RED suite. Commit GREEN, explicit paths, tag m3-07b-W7-T1.
   </action>
   <acceptance_criteria>
     - `pytest tests/m3/test_occlusion_span_filter.py -x` exits 0 (region-1 fixture -> the 5 expected ids; boundary/SNV/insertion cases pass).

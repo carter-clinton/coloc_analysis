@@ -24,6 +24,7 @@ must_haves:
     - "The OSF gate is honored: `.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md` exists describing the panel overlapping-variant policy = exclusion + provenance (never zeroing), it is POSTED to osf.io/az52u, and its OSF file id + SHA-256 + a git tag are RECORDED before ANY code plan (07b/07c) begins (mirrors the `tcujq` / 999.1 OSF-gate precedent). This plan BLOCKS 07b and 07c via the depends_on chain."
     - "Wave 0 RED scaffolds exist and FAIL RED for the RIGHT reason: the 4 new test files (test_occlusion_span_filter/manifest/present_rate_scan/lockstep_drop) + the extended test_run_native_ld_panel.py COLLECT cleanly (impl modules imported INSIDE test bodies, not at module top) and FAIL as test/assert failures (ModuleNotFoundError raised at call-time), NOT as pytest collection errors."
     - "The synthetic region-1 `.bim` fixture helper `_REGION1_BIM_ROWS` reproduces the geometry verdict's coordinates (7 deletions of 60/29/7/31/31/17/29 bp occluding neighbours) so the downstream 07b filter must return EXACTLY {1980475, 5733487, 5922718, 7492693, 8375822} (5 occluded; the 5922716/5922718/5922724 tangle collapses to 5922718)."
+    - "The pair-4 second-order tangle is pinned (SETTLED, Seth 5/5 vs geometry verdict `4543dcf4…`): SNP 5922718 is attributed to the UPSTREAM DEL 5922716 (not the downstream DEL 5922724), and dropping 5922718 collapses the 5922716/5922718/5922724 3-record tangle. The SETTLED region-1 REAL-window known-answer oracle `{10328, 44784, 46714, 59097, 66730}` + the 7-deletion REF-span inventory (60/29/7/31/31/17/29 bp) is documented as the answer the detector must reproduce at the GATED real-`.bim` validation (Seth's full prototype is a read-only reference for the executor, not committed)."
   artifacts:
     - path: ".planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md"
       provides: "The scoped OSF amendment-update: panel overlapping-variant policy = exclusion + provenance, never zeroing (the HARD GATE artifact)"
@@ -65,6 +66,10 @@ Output: the OSF amendment-update doc + 4 new test files + the extended driver te
 ⚠ **EXECUTION ORDER (hard):** Task 1 is the OSF pre-registration HARD GATE. It BLOCKS Task 2
 of this plan AND all of 07b/07c. No test/impl code lands until the amendment-update is POSTED
 to OSF and its file id/SHA-256/git tag are RECORDED.
+
+**STATUS 2026-07-10 — GATE CLEARED:** the amendment-update was POSTED 2026-07-10T13:32:22Z and
+recorded in-repo (tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`, commit `ac4c990`).
+Task 1 STAYS in the plan as the provenance record (do not delete); 07b/07c are now unblocked.
 </objective>
 
 <execution_context>
@@ -110,7 +115,14 @@ bp=7492679 del5 A1=G A2=<31ch> ; bp=7492693 del6 A1=G A2=<17ch> (occluded by del
 bp=8375794 del7 A1=G A2=<29ch> ; bp=8375822 snpD A1=A A2=A  (occluded)
 ```
 Variant ids = f"1:{bp}:{A2}:{A1}" (production chr:pos:ref:alt). Expected occluded set = the 5 downstream members;
-edges mark 5922718↔5922724 as disjoint/second-order (removing 5922718 clears both NaN edges).
+edges mark 5922718↔5922724 as disjoint/second-order.
+PAIR-4 SECOND-ORDER (SETTLED, Seth 5/5 vs geometry verdict `4543dcf4…`): SNP 5922718 is occluded by the UPSTREAM
+DEL 5922716 (its len(REF) span covers 5922718), NOT by the downstream DEL 5922724 — the detector MUST attribute the
+occlusion to 5922716 and drop 5922718, collapsing the 3-record 5922716/5922718/5922724 tangle with the single drop.
+SETTLED region-1 REAL-window oracle (for the GATED real-`.bim` validation, NOT the synthetic-fixture unit):
+occluded set `{10328, 44784, 46714, 59097, 66730}`; 7-deletion REF-span inventory 60/29/7/31/31/17/29 bp; 0 same-position
+(`bcftools norm -m` fixes none). Seth's full detector prototype exists as a READ-ONLY reference for the executor once the
+plan lands — NOT for commit (it needs the real `.bim` loader + the GSD RED-first TDD flow; build the detector test-first).
 
 Liftover anchors (reuse ld_npz_to_rds.R:167-183, chain data/external/liftover/hg38ToHg19.over.chain.gz, pos−1 in/+1 out):
 5922716→5982776, 5922718→5982778, 5922724→5982784.
@@ -176,7 +188,7 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
     <automated>D=.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md; test -f "$D" && grep -qi 'exclusion' "$D" && grep -qi 'provenance' "$D" && grep -qi 'never zeroing' "$D" && grep -q '4543dcf4' "$D" && grep -q '42d70167' "$D" && echo GATE_DOC_OK</automated>
     Note: the automated check confirms the DRAFTED doc only (exists + exclusion + provenance + never-zeroing + BOTH anchors); the OSF POSTING + file-id/SHA-256/tag recording is the human resume-signal (no CLI).
   </verify>
-  <done>The amendment-update doc exists (exclusion + provenance, never zeroing; both anchors cited), is POSTED to osf.io/az52u, and its OSF file id + SHA-256 + git tag are RECORDED before Task 2 begins. Task 2 + 07b + 07c remain blocked until then.</done>
+  <done>✅ COMPLETE 2026-07-10T13:32:22Z — the amendment-update doc exists (exclusion + provenance, never zeroing; both anchors cited), is POSTED to osf.io/az52u, and its OSF file id + SHA-256 + git tag are RECORDED at commit `ac4c990` / tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`. Gate CLEARED; Task 1 kept as the provenance record. 07b/07c unblocked.</done>
   <resume-signal>Reply "OSF posted: file id &lt;id&gt;, sha256 &lt;hash&gt;, tag &lt;tag&gt;" — then Task 2 (and 07b/07c) are unblocked. If blocked, describe the blocker.</resume-signal>
 </task>
 
@@ -228,6 +240,15 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
         -> each counted in its own column). (This file imports the driver — which exists — so it collects fine and
         its new tests fail on ASSERTIONS, not import.)
 
+    SETTLED ORACLE (fold into the fixture assertions — Seth 5/5 vs geometry verdict `4543dcf4…`): (i) the fixture MUST
+    reproduce the pair-4 second-order tangle and assert the detector attributes SNP 5922718 to the UPSTREAM DEL 5922716
+    (NOT the downstream DEL 5922724), so the single 5922718 drop collapses the 5922716/5922718/5922724 tangle; (ii) DOCUMENT
+    (as a comment / xfail-marked gated stub) the SETTLED region-1 REAL-window known-answer occluded set
+    `{10328, 44784, 46714, 59097, 66730}` + the 7-deletion REF-span inventory 60/29/7/31/31/17/29 bp — the oracle the
+    detector must reproduce at the GATED real-`.bim` validation (out-of-scope for the synthetic unit; it gives the gated
+    276-region Nyquist check a concrete expected answer). Note in the test module docstring that Seth's full detector
+    prototype exists as a READ-ONLY executor reference (NOT committed; build the detector test-first against the real loader).
+
     Commit RED (explicit paths — GPFS, NEVER `git add -A`/`.`), tag m3-07a-W7-T-WAVE0. The suite must FAIL only on
     test/assert failures (module/attribute not found raised at call-time; not-yet-wired driver behavior) — NOT on
     pytest collection errors.
@@ -235,7 +256,10 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
   <acceptance_criteria>
     - The 4 new test files + the extended test_run_native_ld_panel.py exist and are COLLECTED by pytest with ZERO collection errors.
     - Running the 4 new suites exits NON-ZERO (RED) with NO "error ... collect" line — i.e. they fail as test/assert failures, not collection errors.
-    - The region-1 `.bim` fixture helper `_REGION1_BIM_ROWS` is present in test_occlusion_span_filter.py.
+    - The region-1 `.bim` fixture helper `_REGION1_BIM_ROWS` is present in test_occlusion_span_filter.py AND encodes the
+      pair-4 tangle (5922716/5922718/5922724) so the detector-attribution assertion (5922718 ← upstream 5922716) is testable.
+    - The SETTLED region-1 REAL-window oracle `{10328,44784,46714,59097,66730}` + the 7-deletion inventory (60/29/7/31/31/17/29 bp)
+      is documented (comment / gated-xfail stub) as the gated real-`.bim` known-answer; the read-only prototype availability is noted.
   </acceptance_criteria>
   <verify>
     <automated>bash -c 'out=$(/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest tests/m3/test_occlusion_span_filter.py tests/m3/test_occlusion_manifest.py tests/m3/test_occlusion_present_rate_scan.py tests/m3/test_occlusion_lockstep_drop.py -q 2>&1); rc=$?; echo "$out" | grep -qiE "error.*collect" && { echo COLLECTION_ERROR; exit 1; }; [ $rc -ne 0 ] && echo RED_AS_EXPECTED || { echo UNEXPECTED_GREEN; exit 1; }'</automated>
