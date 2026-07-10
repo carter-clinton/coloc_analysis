@@ -1,4 +1,6 @@
 > POSTED 2026-07-04T04:14:46Z as https://osf.io/az52u/files/tcujq
+>
+> ⚠ **SUPERSEDED (policy withdrawal) 2026-07-10:** The NaN→0 off-diagonal conditioning policy in this amendment is **WITHDRAWN** by the occlusion amendment-update posted to `osf.io/az52u` on 2026-07-10T13:32:22Z (`osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`; project-side copy at `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`). The AFR panel NaN entries were established to be overlapping-deletion **occlusion** (structurally undefined LD), so NaN→0 is directionally wrong; see that update for the replacement (occlusion **exclude-in-lockstep** across panel + sumstats, with a mandatory provenance manifest — never zeroing). The PSD-regularization methods and λ in this amendment are **retained unchanged**; only the NaN→0 items (a)-isolated-pair-branch and (b) the zeroing ceiling, plus the BRANCH_AFR_COND_* outcomes, are withdrawn.
 
 # OSF Amendment — Paste-Ready Text (AFR native-plink LD panel: NaN→0 + PSD conditioning)
 

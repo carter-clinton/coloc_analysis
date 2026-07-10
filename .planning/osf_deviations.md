@@ -113,3 +113,41 @@ The decision is a Cowork-side editorial decision, not an HPC-side compute decisi
   (CLEAN/APPLIED/DEFERRED). Extends r3 (EUR-only) to AFR; r3 not retracted.
 - **Amends:** osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J). Sibling of
   osf-amendment-r3-2026-05-04.md.
+
+## 2026-07-10 — AFR native-panel occlusion exclude-in-lockstep amendment-update (WITHDRAWS the 2026-07-04 NaN→0 policy; m3-07 OSF gate)
+
+- **Posted:** OSF supplementary file on parent record az52u — filename
+  `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` (append-only; M1/r3/tcujq
+  pattern). Direct file GUID/URL to be filled from the OSF file page (activity confirmed
+  via OSF Recent Activity screenshot).
+- **OSF timestamp (authoritative, UTC):** 2026-07-10T13:32:22.212989Z (from the OSF
+  Recent Activity entry "Carter Clinton added file …").
+- **Project-side copy:** `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`.
+- **Pre-execute gate commit:** 5fd58a5 (the four supporting amendment docs — scientific
+  review 3516c18, hinge check c4e0875, policy 8f36fdf, geometry verdict 5fd58a5 — all on
+  origin). At OSF post time NO occlusion exclude / span-filter / lockstep-drop code had
+  landed (m3-07 code is 07b/07c, gated on this record). Withdrawal + replacement policy is
+  on the OSF record BEFORE the replacement executes → pre-registration precedes analysis.
+- **What it WITHDRAWS:** the off-diagonal NaN→0 conditioning of isolated pairwise-undefined
+  entries (2026-07-04 tcujq items (a)-isolated-pair-branch + (b) zeroing ceiling) and its
+  three BRANCH_AFR_COND_* outcomes. Rationale: the AFR panel NaN is overlapping-deletion
+  **occlusion** (structurally undefined LD, mechanism resolved 6/6 in region 1), so 0 is a
+  fabricated correlation asserting independence between high-LD co-located variants.
+- **What it PRE-REGISTERS (replacement):** occlusion detection (coordinate-only,
+  `[POS, POS+len(REF)−1]` covers a neighbor POS) → **exclude-in-lockstep** across panel AND
+  harmonized sumstats + a **mandatory provenance manifest** (per excluded variant: ID +
+  both-build positions, occluding deletion + REF span, locus, traits-present,
+  reason=reference-occlusion→undefined-LD) + per-region anomaly gate
+  (n_excluded ≤ 0.0005×n_var → DEFERRED) + genome-wide present-rate-per-ancestry reporting.
+  New outcome branches BRANCH_AFR_OCC_{NONE,EXCLUDED,DEFERRED}. Panel-only-exclude prohibited
+  (orphans the sumstats-present occluded SNP on the (CHR,POS) join, e.g. rs182965575 in 7/9
+  AFR traits); NaN→0 prohibited.
+- **What it RETAINS unchanged:** the r3 PSD-regularization methods + λ (eigclip λ_floor=1e-6
+  primary; ridge λ∈{0.001,0.01,0.1} robustness); fully-NaN-row → drop; raw-panel NaN-raise
+  contract.
+- **Supersedes-pointer added** to the top of the project-side tcujq body
+  (`osf-amendment-afr-native-ld-nan-psd-2026-07-03.md`) per the append-only withdrawal
+  convention (the prior file is NOT deleted).
+- **Git tag:** `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10` on the record commit.
+- **Amends:** osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J) via osf.io/az52u file tcujq. Sibling
+  of osf-amendment-afr-native-ld-nan-psd-2026-07-03.md.
