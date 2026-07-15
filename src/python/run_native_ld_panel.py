@@ -95,6 +95,7 @@ if str(_SRC_PYTHON) not in sys.path:
 
 import aou_ld_panel as alp  # hail-free at module scope; reused for the guard + cmd builder
 import plink_ld_to_npz as pln  # hail-free .ld.bin/.ld.gz -> egress-clean .npz
+import occlusion_manifest as ocm  # Stage-A (coordinate-only) occlusion provenance
 from occlusion_span_filter import detect_occluded_variants  # m3-07b span filter
 
 _PANEL_COLUMNS = [
@@ -675,6 +676,20 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                     f"provenance, never zeroed — osf.io/az52u)",
                     file=sys.stderr, flush=True,
                 )
+                # Stage-A (coordinate/id-only) provenance manifest. Guarded: a
+                # manifest write must never abort a region (one bad region never
+                # aborts the loop) — the excludelist above is the redundant record.
+                try:
+                    ocm.append_occlusion_rows(
+                        compute_dir, region_id, raw_rows, edges=occlusion_edges,
+                    )
+                except Exception as manifest_exc:  # noqa: BLE001 — provenance is best-effort
+                    print(
+                        f"WARN {region_id}: occlusion manifest append failed "
+                        f"({manifest_exc}); the .occluded.excludelist still records "
+                        f"the drop set",
+                        file=sys.stderr, flush=True,
+                    )
 
         cmd = alp.build_plink_ld_command(
             bfile_prefix=bfile_prefix, chrom=chrom, from_bp=from_bp, to_bp=to_bp,
