@@ -86,15 +86,32 @@ class _MockPlink:
     ``{out_prefix}.snplist`` is written with the RETAINED SNP ids one-per-line in
     ``.bim`` order (== ``.ld.bin`` row order), and the ``.ld.bin`` is sized to
     ``(n_retained)^2``. Without ``--write-snplist`` (banded, or the PRE-fix square
-    argv) NO snplist is written and the ``.ld.bin`` is the full raw-window ``N^2``."""
+    argv) NO snplist is written and the ``.ld.bin`` is the full raw-window ``N^2``.
+
+    ``--exclude <file>`` (m3-07) models plink's exclude-list: the listed col-2 ids
+    are dropped from the window BEFORE sizing the ``.ld.bin``/snplist, composing
+    with (and applied ahead of) the ``--mac``/``--write-snplist`` monomorphic drop —
+    so ``n_dropped_occluded`` and ``n_dropped_monomorphic`` are separable. Every
+    exclude file is recorded in ``self.exclude_calls``.
+
+    ``nan_snps`` (m3-07) models THE MECHANISM THIS PHASE EXISTS FOR: a variant whose
+    LD is structurally undefined because an overlapping deletion's REF span occludes
+    it makes plink ``--r`` emit a NaN row/col. It reproduces the REAL m3-02e-T4
+    fire-#3 fingerprint — whole-row/col NaN with the DIAGONAL STILL 1.0. Any retained
+    row whose id is in ``nan_snps`` gets that treatment, so a driver that does NOT
+    exclude the occluded variants produces a NaN matrix (and fails conversion), while
+    a driver that DOES excludes them cleanly. Without this, an "npz has no NaN" test
+    would pass GREEN for the wrong reason."""
 
     def __init__(self, bim_path: Path, *, corrupt_regions=None, seed: int = 0,
-                 mono_snps=None):
+                 mono_snps=None, nan_snps=None):
         self.bim_path = Path(bim_path)
         self.calls: list[list[str]] = []
         self.corrupt_regions = set(corrupt_regions or [])
         self.seed = seed
         self.mono_snps = set(mono_snps or [])
+        self.nan_snps = set(nan_snps or [])
+        self.exclude_calls: list[set[str]] = []
         self._bim_rows = [ln.split() for ln in self.bim_path.read_text().splitlines() if ln.strip()]
 
     def _window_rows(self, chrom: str, from_bp: int, to_bp: int) -> list[list[str]]:
@@ -118,6 +135,17 @@ class _MockPlink:
         region_id = Path(out_prefix).name
         window_rows = self._window_rows(chrom, from_bp, to_bp)
 
+        # ``--exclude <file>``: plink drops the listed col-2 ids from the window
+        # BEFORE any sizing/LD work (m3-07 occlusion span-filter seam).
+        if "--exclude" in cmd:
+            excluded = {
+                ln.strip()
+                for ln in Path(_arg("--exclude")).read_text().splitlines()
+                if ln.strip()
+            }
+            self.exclude_calls.append(excluded)
+            window_rows = [r for r in window_rows if r[1] not in excluded]
+
         # BANDED (``--r gz``): plink writes ``{out_prefix}.ld.gz`` (text), and banded
         # does NOT drop MAC=0 (no ``--mac`` / ``--write-snplist``), so no snplist is
         # emitted. A minimal HEADER-ONLY .ld.gz -> read_banded_gz builds a valid
@@ -136,11 +164,24 @@ class _MockPlink:
             Path(out_prefix + ".snplist").write_text(
                 "".join(f"{r[1]}\n" for r in retained)
             )
+            emitted_rows = retained
             n = len(retained)
         else:
+            emitted_rows = window_rows
             n = len(window_rows)
 
         m = _symmetric_corr(n, seed=self.seed)
+
+        # Occluded (structurally-undefined-LD) variants that SURVIVED into the LD
+        # step make plink --r emit NaN: whole row/col NaN, diagonal still 1.0 (the
+        # real fire-#3 fingerprint). Excluded variants never reach here.
+        if self.nan_snps:
+            for i, row in enumerate(emitted_rows):
+                if row[1] in self.nan_snps:
+                    m[i, :] = np.float32("nan")
+                    m[:, i] = np.float32("nan")
+                    m[i, i] = np.float32(1.0)
+
         if region_id in self.corrupt_regions:
             # break symmetry AND the diagonal -> content_verify_npz must reject
             m[0, 1] = np.float32(0.5)
@@ -1347,3 +1388,218 @@ def test_banded_result_dict_carries_none_drop_count(tmp_path, monkeypatch):
 
     assert res[0]["status"] == "ok"
     assert res[0]["n_dropped_monomorphic"] is None
+
+
+# --------------------------------------------------------------------------- #
+# 16. occlusion span-filter integration (m3-07a Wave 0 — RED)                 #
+# --------------------------------------------------------------------------- #
+#
+# The panel policy pre-registered on OSF (osf.io/az52u, POSTED 2026-07-10T13:32:22Z,
+# recorded ac4c990) is: a variant whose LD is structurally undefined because an
+# overlapping deletion's REF span occludes it is EXCLUDED — in lockstep, with
+# provenance — NEVER zeroed. NaN->0 is DEAD.
+#
+# These tests are RED until 07b wires the span-filter into the driver. They fail on
+# ASSERTIONS (the driver module imports fine), not on collection.
+#
+# Occlusion rule (SETTLED, geometry verdict `4543dcf4…`):
+#   V is OCCLUDED iff ∃ window D with len(REF_D) > 1 and
+#   POS_D < POS_V <= POS_D + len(REF_D) − 1.
+# Region-1 synthetic fixture -> EXACTLY 5 occluded: {1980475, 5733487, 5922718,
+# 7492693, 8375822}. Pair-4 is second-order: 5922718 is occluded by the UPSTREAM
+# DEL 5922716, not the downstream DEL 5922724.
+
+
+def _region1_fixture_module():
+    """Load the CANONICAL region-1 `.bim` fixture from test_occlusion_span_filter.py.
+
+    Loaded by file path so it resolves regardless of pytest's package/rootdir import
+    mode. Sourcing the single source of truth (rather than re-typing the coordinate
+    table here) is the T-m3-07a-02 mitigation: a drifted copy would let a WRONG 07b
+    impl pass. Safe to exec — that module's impl imports are all function-local.
+    """
+    import importlib.util
+
+    path = Path(__file__).with_name("test_occlusion_span_filter.py")
+    spec = importlib.util.spec_from_file_location("_m3_occlusion_span_fixture", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _setup_region1_cohort(tmp_path: Path):
+    """Cohort .bim/.afreq seeded with the region-1 occlusion topology (chr1, 11 rows:
+    7 deletions + 4 SNPs, 5 of which are occluded).
+
+    Returns (bfile_prefix, bim_path, (chrom, from_bp, to_bp), occluded_ids, vid_at).
+    """
+    fx = _region1_fixture_module()
+    rows = list(fx._REGION1_BIM_ROWS)
+
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, rows)
+    _write_af(tmp_path / "cohort.afreq", len(rows))
+
+    def vid_at(bp: int) -> str:
+        hits = [r[1] for r in rows if int(r[3]) == bp]
+        assert len(hits) == 1
+        return hits[0]
+
+    occluded_ids = {vid_at(bp) for bp in fx._REGION1_EXPECTED_OCCLUDED_POS}
+    assert len(occluded_ids) == 5
+    chrom = int(rows[0][0])
+    from_bp, to_bp = 1_980_000, 8_400_000
+    return str(tmp_path / "cohort"), bim, (chrom, from_bp, to_bp), occluded_ids, vid_at
+
+
+def _region1_manifest(path: Path, chrom, from_bp, to_bp, region_id="m2_region_00001"):
+    _write_manifest(path, [
+        {"region_id": region_id, "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    return path
+
+
+def test_driver_writes_occluded_excludelist_with_exactly_the_occluded_ids(tmp_path, monkeypatch):
+    """(a) For a cohort seeded with the region-1 topology, the driver writes
+    ``{out_prefix}.occluded.excludelist`` containing EXACTLY the 5 occluded ids —
+    and NOT the occluding deletions (only the downstream V is excluded). The
+    excludelist is durable provenance, not a scratch temp."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    excl = out_dir / "m2_region_00001.occluded.excludelist"
+    assert excl.is_file(), "driver did not write {out_prefix}.occluded.excludelist"
+    listed = {ln.strip() for ln in excl.read_text().splitlines() if ln.strip()}
+    assert listed == occluded_ids
+    # the occluding deletions are KEPT
+    for keeper_bp in (1_980_423, 5_733_474, 5_922_716, 5_922_724, 7_492_679, 8_375_794):
+        assert vid_at(keeper_bp) not in listed
+
+
+def test_exclude_reaches_the_plink_argv(tmp_path, monkeypatch):
+    """(b) ``--exclude <file>`` reaches the issued plink argv, and the file it names
+    is the occluded excludelist carrying exactly the 5 occluded ids."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    mock = _MockPlink(bim, nan_snps=occluded_ids)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert len(mock.calls) == 1
+    argv = mock.calls[0]
+    assert "--exclude" in argv, f"--exclude absent from plink argv: {argv}"
+    assert argv[argv.index("--exclude") + 1].endswith(".occluded.excludelist")
+    assert mock.exclude_calls == [occluded_ids]
+
+
+def test_keep_allele_order_still_present_alongside_exclude(tmp_path, monkeypatch):
+    """(c) Adding ``--exclude`` must NOT disturb the sign-correctness contract:
+    ``--keep-allele-order`` is still on every issued command, the argv still comes
+    from build_plink_ld_command, and ``--mac``/``--write-snplist`` survive."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    mock = _MockPlink(bim, nan_snps=occluded_ids)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    for argv in mock.calls:
+        assert "--keep-allele-order" in argv
+        assert argv[0] == "plink1.9"
+        assert "--mac" in argv and "--write-snplist" in argv
+        assert "--exclude" in argv
+
+
+def test_occlusion_filtered_npz_has_no_nan_and_verifies(tmp_path, monkeypatch):
+    """(d) THE HEADLINE: with the occluded variants excluded, the region's .npz has
+    NO NaN and passes content_verify_npz — and the excluded variants are absent from
+    its variant list.
+
+    The mock models the real mechanism: an occluded variant that SURVIVES into the
+    LD step makes plink emit a NaN row/col (diagonal 1.0 — the fire-#3 fingerprint).
+    So this test is RED today for the RIGHT reason (the unfiltered driver banks NaN
+    or errors out), and goes GREEN only once 07b actually excludes them — never by
+    zeroing anything. NaN->0 is DEAD.
+    """
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert res[0]["status"] == "ok"
+    npz = out_dir / "m2_region_00001.npz"
+    assert npz.is_file()
+
+    z = np.load(npz, allow_pickle=True)
+    assert not np.isnan(z["ld"]).any(), "occluded variants must be EXCLUDED, never zeroed"
+    assert z["ld"].shape == (6, 6)                       # 11 raw − 5 occluded
+    assert set(z["variant_ids"]) & occluded_ids == set()  # excluded, not present
+    ok, reason = drv.content_verify_npz(npz, mode="square")
+    assert ok is True, reason
+
+
+def test_n_dropped_occluded_is_separated_from_n_dropped_monomorphic(tmp_path, monkeypatch):
+    """(e) The two drop reasons are DISTINCT provenance columns and must not be
+    conflated: a window carrying BOTH an occluded set (5) AND an in-window
+    monomorphic variant (1) records n_dropped_occluded==5 and
+    n_dropped_monomorphic==1 — each counted in its own column.
+
+    This is the assertion that catches the naive implementation: computing
+    n_dropped_monomorphic as (RAW window − retained) would score 6 here. It must be
+    computed against the POST-exclude window (6 − 5 == 1).
+
+    del4 (5922724) is chosen as the monomorphic variant precisely because it is
+    neither occluded nor an occluder of anything in this window — so the two
+    counts cannot overlap.
+    """
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    mono_id = vid_at(5_922_724)          # a deletion; occludes nothing, not occluded
+    assert mono_id not in occluded_ids   # the two drop reasons are disjoint here
+
+    monkeypatch.setattr(
+        drv, "_run_plink",
+        _MockPlink(bim, mono_snps={mono_id}, nan_snps=occluded_ids),
+    )
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    r0 = res[0]
+    assert r0["status"] == "ok"
+    assert r0["n_dropped_occluded"] == 5
+    assert r0["n_dropped_monomorphic"] == 1     # NOT 6 (raw − retained)
+    assert r0["n_var"] == 11 - 5 - 1 == 5
+
+
+def test_panel_columns_include_n_dropped_occluded():
+    """(e-ii) ``n_dropped_occluded`` is APPENDED to _PANEL_COLUMNS as durable panel
+    provenance (append-only: the existing leading columns keep their positions, and
+    n_dropped_monomorphic is retained)."""
+    assert "n_dropped_occluded" in drv._PANEL_COLUMNS
+    assert drv._PANEL_COLUMNS[:7] == [
+        "region_id", "chr", "n_var", "wall_min", "peak_ram_gib", "output_gib", "status",
+    ]
+    assert "n_dropped_monomorphic" in drv._PANEL_COLUMNS
+
+
+def test_no_nan_to_zero_conditioning_in_the_driver():
+    """The pre-registered policy is EXCLUSION, never zeroing. The driver must not
+    grow a NaN->0 conditioning path: the retired m3-06 conditioning module
+    (condition_ld_matrix, FROZEN/HELD) must never be imported or referenced here.
+    Mirrors the retired-Hail-A.3 boundary guard."""
+    src = (_SRC_PYTHON / "run_native_ld_panel.py").read_text()
+    for marker in ("condition_ld_matrix", "write_conditioned_ld_npz", "nan_to_num"):
+        assert marker not in src, (
+            f"driver must not reference the retired NaN->0 conditioning path: {marker!r}"
+        )
