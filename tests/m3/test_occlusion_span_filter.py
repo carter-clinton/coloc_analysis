@@ -162,12 +162,28 @@ _REGION1_DELETION_REF_SPANS: list[int] = [60, 29, 7, 31, 31, 17, 29]
 #
 # SETTLED (Seth 5/5 vs the geometry verdict `4543dcf4…`):
 #   * occluded set                 = {10328, 44784, 46714, 59097, 66730}
-#       (window-relative offsets; 5 direct ref_span_overlap + 1 second-order)
+#       These are 0-based .bim ROW INDICES, NOT bp positions and NOT window offsets.
+#       RECONCILED 2026-07-15 (blast-radius HIGH): the prior comment mislabelled them
+#       "window-relative offsets" and the gated assertion compared them against `_pos_of`
+#       = absolute bp (`int(r[3])`). Region-1's variants span ~1.98M–8.38M bp, so that
+#       comparison can NEVER hold for a correct detector — it would fail a good impl at
+#       the gated run, inviting someone to weaken the one oracle that validates the
+#       genome-wide panel. The scientific review fixes the space unambiguously as row
+#       indices: `m3_nan_conditioning_scientific_review.md` — "pairs are index-adjacent
+#       (10327/10328, 46713/46714/46715, …); one variant (46714) chains two pairs (a run
+#       of co-located records)". Consecutive integers + "index-adjacent" + "co-located
+#       records" describe .bim row ordering, not bp.
 #   * 7-deletion REF-span inventory = 60/29/7/31/31/17/29 bp
 #   * same-position variants        = 0  (`bcftools norm -m` fixes none)
 # This gives the gated 276-region Nyquist check a CONCRETE expected answer.
+#
+# ⚠ ONE reconciliation item for the gated run (harmless while skipped): confirm the
+# index ORIGIN (0- vs 1-based) against the real region-1 `.bim` header before trusting
+# the equality — the source doc does not state the base explicitly. 0-based is assumed
+# here (the natural `enumerate(rows)` index). If the real `.bim` shows 1-based, add 1.
 
-_REGION1_REAL_WINDOW_OCCLUDED: set[int] = {10328, 44784, 46714, 59097, 66730}
+#: 0-based .bim row indices of the occluded variants in the REAL region-1 window.
+_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES: set[int] = {10328, 44784, 46714, 59097, 66730}
 _REGION1_REAL_DELETION_REF_SPANS: list[int] = [60, 29, 7, 31, 31, 17, 29]
 _REGION1_REAL_SAME_POSITION_COUNT: int = 0
 
@@ -415,6 +431,60 @@ def test_rule_computed_over_the_original_window_not_iteratively():
     assert d1[1] not in set(occluded)
 
 
+def test_doubly_occluded_variant_appears_exactly_once():
+    """A variant covered by TWO deletions must appear EXACTLY ONCE in ``occluded``
+    (blast-radius MEDIUM 2026-07-15). The region-1 fixture has at most one occluder
+    per occluded variant, so its ``set(occluded) == {...}`` assertions cannot catch a
+    naive per-edge-append impl that emits a doubly-covered variant TWICE — the
+    surrounding `set()` silently swallows the duplicate. A genome-wide window WILL
+    have nested deletions, and a duplicated drop double-counts the Angle-1/3 catalog
+    and can double-drop in lockstep. Pin the LIST (not the set) to length-unique."""
+    import occlusion_span_filter as osf
+
+    d1 = _del_row(1_000, 100)   # footprint [1000, 1099]
+    d2 = _del_row(1_010, 20)    # footprint [1010, 1029]; itself inside d1
+    v3 = _snp_row(1_015)        # inside BOTH d1 and d2
+    occluded, edges = osf.detect_occluded_variants([d1, d2, v3])
+
+    occ_list = list(occluded)
+    assert len(occ_list) == len(set(occ_list)), f"duplicate drop(s): {occ_list}"
+    assert occ_list.count(v3[1]) == 1
+    # the manifest attributes ONE occluder per variant, so the detector must expose a
+    # deterministic single attribution for v3 (which specific deletion is the
+    # manifest tie-break decision, pinned in test_occlusion_manifest.py); here we only
+    # require that v3's attribution is SOME real covering deletion, chosen deterministically.
+    v3_occluders = {o for (o, v) in set(edges) if v == v3[1]}
+    assert v3_occluders <= {d1[1], d2[1]} and len(v3_occluders) >= 1
+    again, _ = osf.detect_occluded_variants([d1, d2, v3])
+    assert list(again) == occ_list  # deterministic across calls
+
+
+def test_distinct_variant_at_the_deletion_position_is_not_occluded():
+    """Strict-left boundary against a DISTINCT co-located variant (blast-radius
+    MEDIUM 2026-07-15). The rule is ``POS_D < POS_V`` (STRICT on the left), so a
+    variant sharing the deletion's POS is NOT occluded — it is a co-located
+    representation (handled upstream by `bcftools norm -m`), not an occlusion drop
+    (RESEARCH §7 decision 2; verdict "0 same-position"). Region-1 has 0 same-position
+    rows and `_vid` forbids them, so the existing self-occlusion check (`D not in
+    occluded`) is passed by any `if V is D: continue` impl REGARDLESS of `<` vs `<=`
+    on the left. Hail `split_multi` DOES emit same-position rows genome-wide, so an
+    impl using `POS_D <= POS_V` would over-drop the multiallelic partner. This is the
+    only test that distinguishes `<` from `<=` on the left."""
+    import occlusion_span_filter as osf
+
+    d = _del_row(1_000, 10)                       # footprint [1000, 1009]
+    # a DISTINCT variant at the SAME position (different ref/alt -> different vid)
+    same_pos = _snp_row(1_000, ref="C", alt="T")
+    assert same_pos[1] != d[1] and int(same_pos[3]) == int(d[3])
+    downstream = _snp_row(1_005)                  # genuinely inside -> the positive control
+
+    occluded, _edges = osf.detect_occluded_variants([d, same_pos, downstream])
+    occ = set(occluded)
+    assert same_pos[1] not in occ                 # strict POS_D < POS_V: co-located, NOT occluded
+    assert d[1] not in occ                         # the deletion itself
+    assert downstream[1] in occ                    # positive control: a real downstream drop
+
+
 # --------------------------------------------------------------------------- #
 # 5. GATED real-`.bim` known-answer stub (out of scope for the synthetic unit) #
 # --------------------------------------------------------------------------- #
@@ -423,17 +493,19 @@ def test_region1_real_window_known_answer_gated():
     """GATED: the SETTLED real-window oracle the detector must reproduce when run
     against the REAL region-1 window `.bim` inside the AoU perimeter.
 
-    Occluded set {10328, 44784, 46714, 59097, 66730}; 7-deletion REF-span
-    inventory 60/29/7/31/31/17/29 bp; 0 same-position variants. NC-State has no
-    perimeter access this phase, so the real `.bim` is absent and this SKIPS —
-    it stands as the concrete expected answer for the gated 276-region check.
+    Occluded set {10328, 44784, 46714, 59097, 66730} as 0-based .bim ROW INDICES
+    (NOT bp — see the constant's note); 7-deletion REF-span inventory
+    60/29/7/31/31/17/29 bp; 0 same-position variants. NC-State has no perimeter
+    access this phase, so the real `.bim` is absent and this SKIPS — it stands as
+    the concrete expected answer for the gated 276-region check.
     """
     real_bim = PROJECT_ROOT / "data" / "aou" / "region1_window.bim"
     if not real_bim.exists():
         pytest.skip(
             "GATED real-`.bim` validation: no AoU perimeter access this phase "
             f"({real_bim} absent). SETTLED oracle held for the gated run — "
-            f"occluded={sorted(_REGION1_REAL_WINDOW_OCCLUDED)}, "
+            f"occluded_row_indices={sorted(_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES)} "
+            "(0-based; confirm origin vs the real .bim header), "
             f"ref_span_inventory={_REGION1_REAL_DELETION_REF_SPANS} bp, "
             f"same_position={_REGION1_REAL_SAME_POSITION_COUNT}."
         )
@@ -442,6 +514,10 @@ def test_region1_real_window_known_answer_gated():
 
     rows = osf.load_bim_rows(real_bim)
     occluded, _edges = osf.detect_occluded_variants(rows)
-    assert {_pos_of(v, rows) for v in occluded} == _REGION1_REAL_WINDOW_OCCLUDED
+    # Compare in the CORRECT space: 0-based .bim row index of each occluded variant
+    # (the oracle is index-adjacent row indices, not bp — see the constant's note).
+    occluded_set = set(occluded)
+    got_row_indices = {i for i, r in enumerate(rows) if r[1] in occluded_set}
+    assert got_row_indices == _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES
     spans = sorted(len(r[5]) for r in rows if len(r[5]) > 1)
     assert spans == sorted(_REGION1_REAL_DELETION_REF_SPANS)

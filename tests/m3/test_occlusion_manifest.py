@@ -120,10 +120,26 @@ def test_stage_a_record_carries_no_individual_level_fields():
     import occlusion_manifest as om
 
     records = om.build_region_records("m2_region_00001", _region1_rows())
-    forbidden = ("genotype", "sample", "person", "individual", "gt", "ac", "an")
+    # SUBSTRING match, not whole-key equality (blast-radius MEDIUM 2026-07-15): the
+    # prior whole-key check let `n_samples` / `sample_count` / `genotype_ac` / `AC_alt`
+    # ride out — exactly the individual-level leak REQ-AOU-LD-EGRESS forbids — because
+    # `_STAGE_A_COLUMNS` contains no such literal key. `genotype`/`sample`/`person`/
+    # `individual` are matched as substrings; the short allele-tally tokens `gt`/`ac`/
+    # `an` are matched as delimited TOKENS (not substrings) to avoid false positives on
+    # innocent keys (the 'an' in 'span'/'variant', the 'gt' in 'length'). AF/MAF are NOT
+    # forbidden — allele frequency is aggregate and legitimately egresses (the AF
+    # sidecar); this guard targets per-person / per-sample / per-genotype fields only.
+    import re
+    substring_forbidden = ("genotype", "sample", "person", "individual")
+    token_forbidden = ("gt", "ac", "an")
     for rec in records:
         for key in rec:
-            assert key.lower() not in forbidden, f"individual-level column {key!r}"
+            k = key.lower()
+            for bad in substring_forbidden:
+                assert bad not in k, f"individual-level column {key!r} (contains {bad!r})"
+            tokens = set(re.split(r"[^a-z0-9]+", k))
+            for bad in token_forbidden:
+                assert bad not in tokens, f"individual-level column {key!r} (token {bad!r})"
 
 
 def test_ref_span_derives_from_the_occluding_deletion():
@@ -178,22 +194,45 @@ def test_reason_is_the_reference_occlusion_constant():
     assert {r["reason"] for r in records} == {reason}
 
 
-def test_occlusion_order_marks_direct_vs_second_order():
-    """The optional ``occlusion_order`` column distinguishes the plain
-    ref_span_overlap drops from the pair-4 tangle member (Angle-1/3 catalog
-    flags deletion chains explicitly — RESEARCH §7 decision 1)."""
+def test_occlusion_order_is_direct_for_every_coordinate_derived_drop():
+    """``occlusion_order`` records HOW a variant's occlusion was derived, and for a
+    Stage-A (coordinate-geometry-only) manifest every occluded variant is ``direct``
+    — each sits inside exactly one occluding deletion's REF span.
+
+    RECONCILED 2026-07-15 (blast-radius BLOCKER). The prior assertion demanded snpC
+    (5922718) be ``second_order``, which INVERTED the byte-verified geometry verdict
+    (`m3_region1_nan_geometry_verdict.md:19` — pair 3 `DEL 5922716 → SNP 5922718` is
+    `ref_span_overlap` = DIRECT; the "2nd-order" label attaches to the *disjoint*
+    pair-4 EDGE `5922718 → DEL 5922724`, which occludes NOTHING). It was also
+    underivable: the sibling detector pins `edges` to EXACTLY the 5 direct-overlap
+    edges and explicitly EXCLUDES the disjoint pair-4 edge
+    (`test_occlusion_span_filter.py:267,292`), so nothing a coordinate Stage-A can see
+    separates snpC from the other four — the only way to make ``second_order`` pass was
+    to hardcode position 5922718, publishing a false provenance label across all 276
+    regions (T-m3-07a-02 realized). snpC's OCCLUSION is direct (via the upstream
+    DEL 5922716); the pair-4 disjoint NaN is a genotype-layer, second-order CONSEQUENCE
+    of that single drop ("one drop, two edges" — RESEARCH §7), not a second-order
+    occlusion, and it is not visible to a genotype-free Stage A. If a later
+    genotype-aware stage annotates the tangle, it does so in its own field, not by
+    mislabelling this variant's coordinate-derived occlusion.
+
+    The value is derivable from the SAME edge set the detector suite pins (one direct
+    edge per occluded variant), so a correct impl produces ``direct`` for all five
+    without hardcoding anything.
+    """
     import occlusion_manifest as om
 
     rows = _region1_rows()
     records = om.build_region_records("m2_region_00001", rows)
-    by_vid = {r["variant_id"]: r for r in records}
 
-    assert {r["occlusion_order"] for r in records} <= {"direct", "second_order"}
-    # the plain ref_span_overlap drops are 'direct'
-    for bp in (1_980_475, 5_733_487, 7_492_693, 8_375_822):
-        assert by_vid[_vid_at(rows, bp)]["occlusion_order"] == "direct"
-    # snpC is the pair-4 tangle member (the 3-record 5922716/5922718/5922724 knot)
-    assert by_vid[_vid_at(rows, 5_922_718)]["occlusion_order"] == "second_order"
+    # ``occlusion_order`` is OPTIONAL (RESEARCH §7:296 — "A (optional, from edges)"),
+    # so do NOT force 07b to emit it. But IF present, every coordinate-derived value
+    # MUST be "direct" — INCLUDING snpC (5922718), whose occluder is the UPSTREAM
+    # DEL 5922716 (a genuine ref_span_overlap), NOT the downstream disjoint DEL 5922724.
+    present = [r["occlusion_order"] for r in records if "occlusion_order" in r]
+    if present:
+        assert set(present) == {"direct"}
+        assert len(present) == len(records)  # all-or-none, not a partial column
 
 
 # --------------------------------------------------------------------------- #

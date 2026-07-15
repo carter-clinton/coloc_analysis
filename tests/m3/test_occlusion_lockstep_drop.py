@@ -245,3 +245,75 @@ def test_result_reports_counts(tmp_path):
     assert res["n_out"] == 2
     assert res["n_in"] - res["n_dropped"] == res["n_out"]
     assert len(_body_lines(out)) == res["n_out"]
+
+
+# --------------------------------------------------------------------------- #
+# 5. producer -> consumer SEAM (the two modules must actually compose)         #
+# --------------------------------------------------------------------------- #
+
+#: The only chain present in-repo, and the correct direction (GRCh38 -> GRCh37).
+_HG38_TO_HG19_CHAIN = (
+    PROJECT_ROOT / "data" / "external" / "liftover" / "hg38ToHg19.over.chain.gz"
+)
+
+
+def _region1_rows() -> list[tuple]:
+    """Canonical region-1 `.bim` fixture, loaded by file path from the single source
+    of truth (mirrors test_occlusion_manifest.py — no coordinate duplication)."""
+    import importlib.util
+
+    path = Path(__file__).with_name("test_occlusion_span_filter.py")
+    spec = importlib.util.spec_from_file_location("_m3_occlusion_span_fixture", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # safe: its impl imports are function-local
+    return list(mod._REGION1_BIM_ROWS)
+
+
+def test_producer_manifest_feeds_the_consumer(tmp_path):
+    """SEAM (blast-radius MEDIUM 2026-07-15): the manifest PRODUCER (occlusion_manifest,
+    07b) and the sumstats CONSUMER (drop_occluded_from_sumstats, 07c) must interoperate.
+
+    Every other test in this file HAND-WRITES a manifest with columns
+    (region_id, variant_id, chr, pos_grch37). But the real producer emits the Stage-A
+    schema, which carries `pos_grch38` and NO `pos_grch37` — Stage B's
+    `add_grch37_positions` adds it. Nothing else pins that the producer's lifted output
+    actually carries the (chr, pos_grch37) key the consumer drops on, nor that the two
+    modules agree on the `chr` encoding (`"1"` vs `1` vs `"chr1"`). Without this test,
+    07b and 07c can each ship green while producing a manifest the other cannot consume.
+
+    This runs the REAL producer end-to-end: build_region_records -> add_grch37_positions
+    -> persist -> drop_occluded_from_sumstats, and asserts the occluded variant leaves
+    the sumstats. RED now (both modules unbuilt); a GREEN integration check once both land.
+    """
+    import pandas as pd
+    if not _HG38_TO_HG19_CHAIN.exists():
+        pytest.skip(f"chain file not present: {_HG38_TO_HG19_CHAIN}")
+    pytest.importorskip("pyliftover")
+    import occlusion_manifest as om
+    import drop_occluded_from_sumstats as dof
+
+    rows = _region1_rows()
+    records = om.build_region_records("m2_region_00001", rows)
+    lifted = om.add_grch37_positions(records, chain_path=_HG38_TO_HG19_CHAIN)
+
+    # schema compatibility: the producer's lifted records carry the exact key the
+    # consumer drops on — this is the assertion that catches a renamed/missing column.
+    for rec in lifted:
+        assert "chr" in rec and "pos_grch37" in rec, (
+            f"lifted record missing the (chr, pos_grch37) drop key: {sorted(rec)}"
+        )
+
+    manifest = tmp_path / "occlusion_manifest.grch37.tsv"
+    pd.DataFrame(lifted).to_csv(manifest, sep="\t", index=False)
+
+    # snpC (GRCh38 5922718) lifts to GRCh37 5982778 — it must leave the sumstats;
+    # a non-occluded row at a different position must survive.
+    ss = _write_sumstats(tmp_path / "bmi.AFR.tsv", [(1, _SNP_C_B37), (1, 7_000_000)])
+    out = tmp_path / "bmi.AFR.filtered.tsv"
+
+    res = dof.drop_occluded_from_sumstats(ss, manifest, out)
+
+    kept = [(int(ln.split("\t")[0]), int(ln.split("\t")[1])) for ln in _body_lines(out)]
+    assert (1, _SNP_C_B37) not in kept          # the producer-identified occluded variant is gone
+    assert (1, 7_000_000) in kept                # a non-occluded row survives
+    assert res["n_dropped"] >= 1
