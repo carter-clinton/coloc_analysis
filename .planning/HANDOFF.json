@@ -1,77 +1,66 @@
 {
   "version": "1.0",
-  "timestamp": "2026-07-10T16:10:32Z",
+  "timestamp": "2026-07-15T00:00:00Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
-  "wave": "m3-07-W7 — overlapping-deletion span-filter + provenance manifest + present-rate scan + lockstep drop. PLANNING COMPLETE (3 plan files 07a/07b/07c, gsd-plan-checker VERIFICATION PASSED iter 2, 5/5 REQs). OSF hard gate CLEARED. Execution NOT started — Carter chose '07a then pause' then said stop-and-close.",
-  "headline": "m3-07 PLANNED (07a/07b/07c) + OSF occlusion-exclude amendment-update POSTED+RECORDED → hard gate CLEARED. Ready to EXECUTE 07a (adapted planner→executor pattern) then pause before 07b/07c. Nothing running NC-State; $0. No AoU loop re-fire (loop stopped, .npz 0/276).",
-  "status": "SESSION CLOSE 2026-07-10. /gsd-plan-phase m3-07 --auto --chain ran to completion (research a795fac → validation 7f701a8 → plan v1 7272d03 → checker-split 07a/07b/07c 0d3e37e → VERIFICATION PASSED iter 2). OSF amendment-update posted by Carter to osf.io/az52u 2026-07-10T13:32:22Z and recorded in-repo (ac4c990, tag AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10). Seth's coordinate-predicate + region-1 known-answer folded into 07a/07b (f1b167a). Execution decision = 07a-then-pause; NOT started (Carter said stop+close). ⚠ ONE open reconciliation item before executing 07a (see resume_on_reconnect[0]).",
+  "wave": "m3-07-W7 — overlapping-deletion span-filter + provenance manifest + present-rate scan + lockstep drop. 07a EXECUTED + COMPLETE (Task 1 gate pre-closed/confirmed; Task 2 Wave 0 RED landed). 07b/07c PLANNED but NOT AUTHORIZED — Carter's explicit 'PAUSE before the production-code waves'.",
+  "headline": "m3-07a DONE (RED scaffolds 296157a + tag m3-07a-W7-T-WAVE0; the 2026-07-10 Task-1 placeholder reconciliation is CLOSED at e10c893). PAUSED awaiting Carter's go for 07b. Nothing running; $0. ⚠ 10 commits UNPUSHED — push blocked on Carter's PAT. ⚠ GPFS lost 13 blobs this session (3rd recurrence; all recovered).",
+  "status": "SUPERSEDES the 2026-07-10 handoff — BOTH of its open items are DONE: (1) the 07a Task 1 filename/tag mismatch is RECONCILED (e10c893), (2) 07a is EXECUTED (296157a + bd3fe0e). Next action is Carter's authorization decision on 07b, nothing else.",
   "no_fire_running": true,
   "nc_state_cost": "$0 — nothing running server-side or NC-State-side",
-  "planning_artifacts": {
-    "research": ".planning/phases/m3-aou-afr-ld-panel-build/m3-07-RESEARCH.md (a795fac) — #1 crux resolved: panel .bim A2 carries full multi-char indel REF, so deletion span [POS, POS+len(A2)-1] computable from window .bim alone (load_bim A1=ALT/A2=REF); no new data plumbing",
-    "validation": ".planning/phases/m3-aou-afr-ld-panel-build/m3-07-VALIDATION.md (7f701a8, synced in split)",
-    "plans": [
-      "m3-07a-W7-osf-gate-and-red-scaffold-PLAN.md — wave 1, autonomous:false, depends_on [] — Task 1 OSF gate (CLEARED) + Task 2 Wave 0 RED scaffolds + region-1 .bim fixture",
-      "m3-07b-W7-span-filter-and-manifest-PLAN.md — wave 2, depends_on [07a] — T1 occlusion span-filter (--exclude before --r, n_dropped_occluded) + T2 provenance manifest",
-      "m3-07c-W7-present-rate-and-lockstep-PLAN.md — wave 3, depends_on [07b] — T3 present-rate-per-ancestry scan + T4 reusable lockstep drop (m3-04 consume-wiring deferred; finemap.smk m3-04-W4 STALE/pending-replan)"
-    ],
-    "checker_verdict": "VERIFICATION PASSED iteration 2 (post-split re-check): 5/5 REQ-IDs (OSF-PREREG, SNAKEMAKE-CI, AOU-LD-VALIDATION, AOU-LD-EGRESS, PUBLIC-DATA-ONLY); dependency chain acyclic; frozen contracts git-diff-gated in 07b+07c; NaN→0/condition_ld_matrix.py never revived"
+
+  "completed_this_session": {
+    "e10c893": "docs(m3-07a) — RECONCILED Task 1 to the real posted OSF amendment. The plan named a PLACEHOLDER (osf-amendment-panel-occlusion-exclusion-2026-07-10.md / PANEL-OCCLUSION-OSF-AMENDMENT-POSTED-2026-07-10) that NEVER EXISTED, and its <verify> grepped 3 strings the real Carter-authored doc lacks ('never zeroing', 4543dcf4, 42d70167 — the doc names its supporting docs by FILENAME, not by body-SHA anchor). Fixed the PLAN, not the amendment: the amendment is byte-identical to the OSF-posted file, so an in-repo edit would diverge the repo from the posted bytes (new threat T-m3-07a-03). Task 1 marked PRE-CLOSED; verify retargeted to real artifacts + re-verifies both science body anchors WHERE THEY LIVE (tail -c 5012 geometry verdict == 4543dcf4…; tail -c 5247 policy == 42d70167…). Runs read-only → GATE_CONFIRMED_OK.",
+    "296157a": "test(m3-07a) — Wave 0 RED scaffolds, 5 files / 1432 insertions, explicit-path staging. Tag m3-07a-W7-T-WAVE0 (annotated → derefs to 296157a).",
+    "bd3fe0e": "docs(m3-07a) — SUMMARY + STATE.md."
   },
-  "osf_gate": {
-    "status": "CLEARED (posted + recorded)",
-    "posted": "osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md → supplementary file on osf.io/az52u at 2026-07-10T13:32:22.212989Z (OSF Recent Activity; before any occlusion fix code)",
-    "recorded_commit": "ac4c990",
-    "git_tag": "AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10",
-    "record_artifacts": [
-      ".planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md (project-side copy)",
-      "superseded-by pointer prepended to prior tcujq body (osf-amendment-afr-native-ld-nan-psd-2026-07-03.md)",
-      ".planning/osf_deviations.md dated 2026-07-10 entry",
-      ".planning/STATE.md RESUME-HERE block"
-    ],
-    "policy": "WITHDRAWS 2026-07-04 NaN→0 (tcujq); pre-registers occlusion exclude-in-lockstep (panel+sumstats) + mandatory provenance manifest; retains r3 PSD methods+λ unchanged",
-    "open_followup": "OSF direct file GUID/URL not captured (only activity timestamp from Carter's screenshot). Fill osf.io/az52u/files/<GUID> into the amendment doc header + osf_deviations.md when available."
+
+  "verification_evidence": {
+    "osf_gate": "GATE_CONFIRMED_OK on an unmodified tree (read-only). Amendment doc's last commit is still ac4c990 — never touched. No placeholder file or tag was created.",
+    "red_state": "4 new suites: 38 failed / 2 passed / 1 skipped, exit 1, ZERO collection errors, failures are call-time ModuleNotFoundError. The 2 passes are fixture-shape/inventory assertions (constants — legitimately pass without impl, NOT vacuous); the 1 skip is the gated real-.bim oracle.",
+    "no_regressions": "Full tests/m3 = 44 failed / 363 passed / 31 skipped, and 44 == 38 + 6 == exactly the new tests → zero pre-existing regressions (baseline was 360 passed/30 skipped; +3 passed / +1 skipped reconcile to the 2 fixture tests, the NaN→0 creep-guard, and the gated oracle).",
+    "red_preserved": "No impl module exists (src/python/occlusion_*.py absent) — Wave 0 is failing tests ONLY, as required.",
+    "fixture_geometry_confirmed_end_to_end": "The driver fails through the REAL NaN guard ranking top-NaN rows [1,3,5,8,10] == exactly the 5 occluded fixture rows ([1,3,5,7,9] once monomorphic del4 drops). The fixture reproduces the real fire-#3 NaN fingerprint — confirmed, not merely asserted."
   },
-  "seth_design_input_folded": {
-    "commit": "f1b167a",
-    "predicate": "a deletion occludes a downstream variant iff POS < variant_POS <= POS + len(REF) - 1 (validated 5/5 vs geometry verdict 4543dcf4)",
-    "region1_known_answer_occluded_set": "{10328, 44784, 46714, 59097, 66730}",
-    "seven_deletion_ref_span_inventory_bp": "60/29/7/31/31/17/29",
-    "same_position_count": "0 (bcftools norm -m fixes none)",
-    "pair4_second_order": "SNP 5922718 occluded by UPSTREAM DEL 5922716 (NOT downstream DEL 5922724); dropping 5922718 collapses the 5922716/5922718/5922724 tangle",
-    "prototype": "Seth's full detector prototype is a READ-ONLY executor reference once the plan lands — NOT for commit (needs the real .bim loader + GSD RED-first TDD flow)"
-  },
-  "decisions": [
-    "Did NOT auto-advance to gsd-execute-phase — it cannot resolve the custom m3-07a naming (init returns phase_found:false). Execution runs via the adapted planner→executor pattern (spawn gsd-executor directly on each PLAN.md, exactly like m3-06/m3-02b-e).",
-    "Carter chose 'execute 07a, then pause' before 07b/07c (the production-code waves). Execution NOT started — Carter said stop + close.",
-    "Security gate: enabled but this is a code-only NC-State batch pipeline; real boundary = data egress + LD integrity (covered by RESEARCH Security Domain + plan threat_model). UI/schema gates: N/A (no frontend, no ORM).",
-    "T4 (lockstep drop) ships a reusable manifest-driven filter now; the actual m3-04 consume-wiring is deferred (finemap.smk m3-04-W4 is STALE/SUPERSEDED-PENDING-REPLAN) — checker-approved disclosed deferral, not a scope reduction."
-  ],
+
+  "accepted_deviation": "_MockPlink gained `nan_snps` (executor Rule 2). The plan specified only --exclude, but then the 'npz has NO NaN' test would have passed GREEN with zero implementation (the mock never emits NaN) — a vacuous test violating the plan's own RED-for-the-right-reason mandate. The mock now models the mechanism (occluded variant surviving into --r → NaN row/col, diagonal still 1.0). REVIEWED AND ACCEPTED: sound TDD judgment, and it paid off as the independent fixture-geometry validation above. Minor: `reason` pinned via exported constant REASON_REFERENCE_OCCLUSION because RESEARCH §4 and the plan disagree on arrow spacing — pinning either rendering would bake a coin-flip into the contract.",
+
   "resume_on_reconnect": [
-    "⚠ FIRST — reconcile 07a Task 1 filename/tag MISMATCH before executing. The plan (m3-07a-...-PLAN.md) was written expecting the executor to DRAFT a doc named osf-amendment-panel-occlusion-exclusion-2026-07-10.md with tag PANEL-OCCLUSION-OSF-AMENDMENT-POSTED-2026-07-10. The REAL posted+recorded doc is osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md at ac4c990 / tag AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10. Task 1 <done> is already correct, but files_modified (line ~9), must_haves, artifacts, <files>, <what-built>, acceptance_criteria, and the <verify> automated command still reference the placeholder filename. ALSO the plan's Task 1 <verify> greps the doc for literal anchors 4543dcf4 and 42d70167 which the Carter-authored real doc does NOT contain. RESOLUTION OPTIONS: (a) replace_all placeholder filename+tag -> real ones in 07a; (b) add the two byte-verified anchors 4543dcf4…/42d70167… to the real amendment doc's Pre-Paste Reference (provenance + makes the grep pass); OR (c) simplest — treat Task 1 as pre-CLOSED (gate already satisfied) and brief the executor to SKIP Task 1's proxy verify and go straight to Task 2. I had read the amendment doc and was about to make these edits when Carter said stop.",
-    "THEN execute 07a via a gsd-executor agent (adapted pattern): Task 1 = provenance-only / pre-satisfied (do NOT re-draft, do NOT re-post to OSF); Task 2 = author the 4 RED test files (tests/m3/test_occlusion_span_filter.py, test_occlusion_manifest.py, test_occlusion_present_rate_scan.py, test_occlusion_lockstep_drop.py) + extend tests/m3/test_run_native_ld_panel.py (--exclude argv + n_dropped_occluded) + the region-1 .bim fixture helper _REGION1_BIM_ROWS. RED-for-the-right-reason via FUNCTION-LOCAL imports (collect clean, fail as test/assert failures, not collection errors). Env: /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest (py3.11). Commit RED with explicit paths; tag m3-07a-W7-T-WAVE0. Write m3-07a-W7-...-SUMMARY.md.",
-    "THEN PAUSE per Carter — do NOT start 07b/07c (the production-code waves: run_native_ld_panel.py, aou_ld_panel.py, new occlusion modules) without Carter's go.",
-    "Trivial nit to fix opportunistically: 07c frontmatter lists REQ-PUBLIC-DATA-ONLY twice (harmless YAML dupe)."
+    "NEXT = ask Carter whether to authorize 07b (m3-07b-W7-span-filter-and-manifest-PLAN.md; wave 2, depends_on [07a] — SATISFIED). 07a is done and the RED defines the contract. Do NOT start 07b/07c unprompted: they are the production-code waves (run_native_ld_panel.py, aou_ld_panel.py, new occlusion modules) and Carter's standing instruction is 'PAUSE'.",
+    "⚠ PUSH IS OUTSTANDING — 10 commits ahead of origin (origin/m3-W2-aou-deltas = 5fd58a5). This is a DURABILITY issue, not fire-prep: the GPFS object store lost 13 loose blobs THIS session (3rd recurrence after 2026-06-28/10 and 2026-07-03/17). Push needs Carter's fine-grained PAT (Contents: Read and write). A stale `credential.helper=cache` entry gave the documented misleading 'Invalid username or token' — bypass it: `git -c credential.helper= push origin m3-W2-aou-deltas` with GIT_ASKPASS (keep the token OFF argv). See [[reference_ncsu_github_push_auth]]. NOTE `git ls-remote` succeeding proves NOTHING here (repo reads are public).",
+    "Non-blocking: the OSF direct file GUID/URL was never captured (only the activity timestamp). When Carter opens the OSF file page, fill osf.io/az52u/files/<GUID> into the amendment header + .planning/osf_deviations.md. Does NOT gate anything — the gate's requirement is that the policy be on the public record before code lands, which the posting timestamp establishes.",
+    "Trivial nit, still unfixed: 07c frontmatter was reported to list REQ-PUBLIC-DATA-ONLY twice — on inspection the frontmatter has it ONCE (line 15); the apparent dupe is a must_haves prose mention. Nothing to fix.",
+    "KNOWN, NOT YOURS TO FIX: `git fsck` reports 194 broken links in OLDER history. That history is already on origin (the push set is intact: 71 objects, 0 missing), so origin holds the good copy. Do not attempt history surgery; push instead."
   ],
-  "prep_landmines_fixed": [
-    "GSD tooling (init / roadmap get-phase / execute-phase init) does NOT recognize the custom m3-NN milestone-scoped naming (returns phase_found:false). All m3 waves operate by project convention: plans live in .planning/phases/m3-aou-afr-ld-panel-build/ named m3-NN[-letter]-WN-<slug>-PLAN.md; execution = spawn gsd-executor directly on the PLAN.md (planner→executor pattern, not the gsd-execute-phase phase-resolver).",
-    "Prepend $HOME/miniconda3/bin to PATH for all gsd-tools.cjs / node CLI calls (feedback_node_path).",
-    "Commit with EXPLICIT paths only on this GPFS tree — never git add -A/. (multi-terminal collision)."
+
+  "gpfs_object_store_recovery_recipe": "If a commit fails with 'invalid object … / Error building trees': for each index entry (git ls-files -s), test `git cat-file -e <sha>`; for each missing blob, GUARD by confirming `git hash-object <path>` == the index's expected SHA, and ONLY then `git hash-object -w <path>` (restores it byte-identically). If a hash does NOT match, REFUSE and escalate — never fabricate an object. This session: 13 missing, 13 hash-matched, 13 restored, 0 unrecoverable. See [[reference_gpfs_git_object_store_loss]].",
+
+  "prep_landmines": [
+    "GSD tooling does NOT recognize the custom m3-NN milestone-scoped naming (init/roadmap/execute-phase return phase_found:false). Execution = spawn gsd-executor DIRECTLY on the PLAN.md (adapted planner→executor pattern, as m3-06 / m3-02b-e / m3-07a all did).",
+    "Prepend $HOME/miniconda3/bin to PATH for gsd-tools.cjs / node CLI calls ([[feedback_node_path]]).",
+    "Commit with EXPLICIT paths only — never `git add -A`/`.` on this shared GPFS tree ([[feedback_multi_terminal_staging]]).",
+    "pytest env = /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest (py3.11). Full tests/m3 takes ~6.5 min (R subprocess tests) — exceeds a 120s Bash timeout; run it backgrounded.",
+    "Liftover: the ONLY chain present is data/external/liftover/hg38ToHg19.over.chain.gz (the direction m3-07 needs). conftest's `chain_fixture` points at hg19ToHg38 — wrong direction AND absent → it would always skip. Do not reuse it."
   ],
-  "cluster": "None running. AoU Cloud Analysis VM (n1-standard-32, holds /home/jupyter/afr_cohort bfile) is STOPPED, not deleted — preserved for the eventual span-filtered re-fire. Recommend leaving it stopped (no fire imminent).",
-  "data_state": "AoU AFR native-plink LD panel does NOT exist yet: bucket .npz = 0/276 (loop STOPPED, PID 5170 dead, resolved 2026-07-10). The occlusion span-filter (m3-07) is the PRECONDITION for region 1 (and every occlusion region) to bank — the --mac 1 drop-monomorphic fix does NOT catch occlusion NaNs (occluded variants are polymorphic overall, monomorphic only on the pairwise-complete subset).",
+
+  "cluster": "None running. AoU Cloud Analysis VM (n1-standard-32, holds /home/jupyter/afr_cohort bfile) is STOPPED, not deleted — preserved for the eventual span-filtered re-fire. Leave it stopped (no fire imminent).",
+  "data_state": "AoU AFR native-plink LD panel does NOT exist yet: bucket .npz = 0/276 (loop STOPPED, PID 5170 dead). The occlusion span-filter (m3-07) is the PRECONDITION for region 1 (and every occlusion region) to bank — the --mac 1 drop-monomorphic fix does NOT catch occlusion NaNs (occluded variants are polymorphic overall, monomorphic only on the pairwise-complete subset).",
+
   "gates": {
-    "osf_pre_registration": "CLEARED 2026-07-10 (posted 13:32Z + recorded ac4c990 + tag) — 07b/07c unblocked",
-    "execution_gate": "Carter-gated: 07a authorized (then pause); 07b/07c NOT authorized yet",
-    "aou_loop_refire": "BLOCKED until m3-07 span-filter lands + a region-1 re-run validates"
+    "osf_pre_registration": "CLEARED 2026-07-10 (posted 13:32:22Z + recorded ac4c990 + tag); re-confirmed read-only 2026-07-15 → GATE_CONFIRMED_OK. 07b/07c unblocked BY THE GATE.",
+    "execution_gate": "Carter-gated: 07a COMPLETE. 07b/07c NOT authorized — awaiting explicit go.",
+    "aou_loop_refire": "BLOCKED until the m3-07 span-filter lands (07b/07c) + a region-1 re-run validates."
   },
+
   "do_not": [
-    "Do NOT re-fire the AoU loop or touch the perimeter — m3-07 is entirely NC-State panel-build code; the span-filter must land first.",
+    "Do NOT start 07b/07c without Carter's explicit go (production code).",
+    "Do NOT write any occlusion impl module yet — Wave 0 RED must STAY RED until 07b is authorized.",
+    "Do NOT re-fire the AoU loop or touch the perimeter — the span-filter must land first.",
     "Do NOT revive NaN→0 / feed condition_ld_matrix.py to any fit — m3-06 STAYS HELD, condition_ld_matrix.py FROZEN, raw-panel read_square_bin NaN-raise intact.",
-    "Do NOT re-draft or re-post the OSF amendment — it is posted + recorded; only fill the file GUID/URL when available.",
-    "Do NOT start 07b/07c without Carter's go (production code).",
+    "Do NOT re-draft, re-post, or EDIT the OSF amendment — it is posted + recorded and is byte-identical to the OSF copy; only fill the file GUID when available.",
     "Do NOT git add -A/. on this GPFS tree."
   ],
-  "resume_entry_point": ".planning/HANDOFF.json (this block) + .planning/STATE.md top block (2026-07-10 m3-07 planned/gate-cleared) + .planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md"
+
+  "resume_entry_point": ".planning/HANDOFF.json (this block) + .planning/STATE.md top block (2026-07-15 ★ RESUME HERE, m3-07a EXECUTED) + .planning/phases/m3-aou-afr-ld-panel-build/m3-07a-W7-osf-gate-and-red-scaffold-SUMMARY.md"
 }
