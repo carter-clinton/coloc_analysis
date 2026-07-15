@@ -74,11 +74,24 @@ body-SHA. As-posted, the doc does not contain the literal phrase "never zeroing"
 the policy as withdrawing the `tcujq` NaN→0 conditioning. That is the posted reality and
 was not "corrected".
 
-**Open, non-blocking follow-up:** the OSF direct **file GUID/URL was never captured** (only
-the activity timestamp from Carter's screenshot). When Carter opens the OSF file page, fill
-`osf.io/az52u/files/<GUID>` into the amendment doc header + `.planning/osf_deviations.md`.
-This does **not** gate 07a/07b/07c — the gate's requirement is that the policy be publicly
-on the record before code lands, which the posting timestamp establishes.
+**✅ FOLLOW-UP CLOSED 2026-07-15** (was: the OSF direct file GUID/URL had never been
+captured, only the activity timestamp). The GUID is **`trsx5`** —
+https://osf.io/az52u/files/trsx5 — captured from the OSF file page and filled into the
+amendment doc header + `.planning/osf_deviations.md`. **No open items remain on this gate.**
+
+Capture also **verified the append-only commitment**: the update is a SEPARATE NEW FILE,
+not a re-version of the amendment it withdraws (`trsx5` = 1 revision, 2026-07-10 13:32;
+`tcujq` = still 1 revision, 2026-07-04 04:14, unmodified). The pre-registered "post as a
+NEW supplementary file (append-only)" was honored exactly → **no posting deviation to
+disclose**.
+
+⚠ `trsx5` (this update) ≠ `tcujq` (`Prereg_Phase1_amendment3.md`, the 2026-07-04 NaN→0
+amendment this file WITHDRAWS). `tcujq` was offered for this slot on 2026-07-15 and
+refused — writing it would have pointed the withdrawing document at the document it
+withdraws. Filling the header GUID does NOT break byte-parity: only the project-side
+prepended header changed; the posted body is unchanged (`content-after-header` sha256
+`c80d4d26…` identical before/after), mirroring the `tcujq` precedent whose own header
+carries a GUID that OSF only assigns at upload.
 
 ## Task 2 — Wave 0 RED-first scaffolds: COMPLETE
 
