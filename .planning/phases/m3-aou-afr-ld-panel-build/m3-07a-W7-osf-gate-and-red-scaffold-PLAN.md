@@ -6,7 +6,9 @@ wave: 1
 depends_on: []
 tags: [ld, occlusion, osf-prereg, red-first, tdd, aou, afr]
 files_modified:
-  - .planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md
+  # Task 1 is a PRE-CLOSED provenance record (gate cleared at ac4c990) — the doc below
+  # already exists and is POSTED; the executor does NOT create or modify it.
+  - .planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md  # READ-ONLY (pre-existing)
   - tests/m3/test_occlusion_span_filter.py
   - tests/m3/test_occlusion_manifest.py
   - tests/m3/test_occlusion_present_rate_scan.py
@@ -21,13 +23,13 @@ requirements:
 
 must_haves:
   truths:
-    - "The OSF gate is honored: `.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md` exists describing the panel overlapping-variant policy = exclusion + provenance (never zeroing), it is POSTED to osf.io/az52u, and its OSF file id + SHA-256 + a git tag are RECORDED before ANY code plan (07b/07c) begins (mirrors the `tcujq` / 999.1 OSF-gate precedent). This plan BLOCKS 07b and 07c via the depends_on chain."
+    - "The OSF gate is honored — SATISFIED 2026-07-10 (pre-closed; see Task 1): `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` exists describing the panel overlapping-variant policy = exclusion + provenance in lockstep (withdrawing the `tcujq` NaN→0 conditioning rather than zeroing), it is POSTED to osf.io/az52u (2026-07-10T13:32:22Z), and it is RECORDED in-repo at commit `ac4c990` + git tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10` — before ANY code plan (07b/07c) begins (mirrors the `tcujq` / 999.1 OSF-gate precedent). This plan BLOCKS 07b and 07c via the depends_on chain."
     - "Wave 0 RED scaffolds exist and FAIL RED for the RIGHT reason: the 4 new test files (test_occlusion_span_filter/manifest/present_rate_scan/lockstep_drop) + the extended test_run_native_ld_panel.py COLLECT cleanly (impl modules imported INSIDE test bodies, not at module top) and FAIL as test/assert failures (ModuleNotFoundError raised at call-time), NOT as pytest collection errors."
     - "The synthetic region-1 `.bim` fixture helper `_REGION1_BIM_ROWS` reproduces the geometry verdict's coordinates (7 deletions of 60/29/7/31/31/17/29 bp occluding neighbours) so the downstream 07b filter must return EXACTLY {1980475, 5733487, 5922718, 7492693, 8375822} (5 occluded; the 5922716/5922718/5922724 tangle collapses to 5922718)."
     - "The pair-4 second-order tangle is pinned (SETTLED, Seth 5/5 vs geometry verdict `4543dcf4…`): SNP 5922718 is attributed to the UPSTREAM DEL 5922716 (not the downstream DEL 5922724), and dropping 5922718 collapses the 5922716/5922718/5922724 3-record tangle. The SETTLED region-1 REAL-window known-answer oracle `{10328, 44784, 46714, 59097, 66730}` + the 7-deletion REF-span inventory (60/29/7/31/31/17/29 bp) is documented as the answer the detector must reproduce at the GATED real-`.bim` validation (Seth's full prototype is a read-only reference for the executor, not committed)."
   artifacts:
-    - path: ".planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md"
-      provides: "The scoped OSF amendment-update: panel overlapping-variant policy = exclusion + provenance, never zeroing (the HARD GATE artifact)"
+    - path: ".planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md"
+      provides: "The scoped OSF amendment-update (the HARD GATE artifact, PRE-EXISTING + POSTED + RECORDED at ac4c990): withdraws the tcujq NaN→0 conditioning and pre-registers occlusion exclude-in-lockstep + mandatory provenance manifest. Carter-authored, byte-identical to the file posted to osf.io/az52u — the executor MUST NOT edit it (an in-repo edit would diverge the project copy from the posted bytes)."
       contains: "exclusion"
     - path: "tests/m3/test_occlusion_span_filter.py"
       provides: "RED-first occlusion-rule tests + the region-1 `.bim` fixture helper (5 occluded), boundary/SNV/insertion cases; function-local import so it collects clean"
@@ -70,6 +72,15 @@ to OSF and its file id/SHA-256/git tag are RECORDED.
 **STATUS 2026-07-10 — GATE CLEARED:** the amendment-update was POSTED 2026-07-10T13:32:22Z and
 recorded in-repo (tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`, commit `ac4c990`).
 Task 1 STAYS in the plan as the provenance record (do not delete); 07b/07c are now unblocked.
+
+**RECONCILED 2026-07-15 — READ THIS BEFORE EXECUTING.** Task 1 was authored pre-post and guessed both the amendment
+filename and tag. Carter authored and posted the real doc himself under DIFFERENT names; the placeholder
+`osf-amendment-panel-occlusion-exclusion-2026-07-10.md` / `PANEL-OCCLUSION-OSF-AMENDMENT-POSTED-2026-07-10` NEVER
+EXISTED. Task 1 is now **PRE-CLOSED**: its only remaining job is a read-only confirmation of the real artifacts.
+**The executable scope of this plan is Task 2 ONLY.** The as-posted doc does not contain the literal phrase
+"never zeroing" nor the anchors `4543dcf4…`/`42d70167…` (it names its supporting docs by filename); the anchors are
+verified against the SOURCE docs, where they hold byte-exactly. Do not "correct" the amendment doc to match the plan —
+the plan was corrected to match the posted reality.
 </objective>
 
 <execution_context>
@@ -146,19 +157,27 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
     .planning/amendments/m3_region1_nan_geometry_verdict.md (the mechanism it pre-registers),
     .planning/amendments/osf-amendment-afr-native-ld-nan-psd-2026-07-03.md (the tcujq / 999.1 OSF-gate PRECEDENT — mirror its shape + posting discipline).
   </read_first>
-  <files>.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md</files>
+  <files>.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md (READ-ONLY — pre-existing, posted)</files>
   <action>
-    AUTONOMOUS PART (Claude, at execution): DRAFT `.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md`
-    per <what-built> below — the scoped amendment-update stating the panel overlapping-variant policy = exclusion +
-    provenance, never zeroing, in original-research framing, citing the byte-verified anchors 4543dcf4 and 42d70167 and
-    cross-linking osf.io/az52u. Commit the doc with explicit paths.
-    HUMAN PART (Carter, BLOCKING — no CLI): POST the doc to osf.io/az52u and RECORD its OSF file id + SHA-256 + a git
-    tag (PANEL-OCCLUSION-OSF-AMENDMENT-POSTED-2026-07-10) per <human-action>. ⛔ This task BLOCKS Task 2 AND 07b/07c:
-    NO test or fix code lands until the amendment is posted + recorded (mirrors the tcujq / AFR-NANPSD-OSF-AMENDMENT-POSTED-2026-07-04 precedent).
+    ⛔ **PRE-CLOSED — NO ACTION REQUIRED. DO NOT EXECUTE THIS TASK.** The gate it guards is already CLEARED.
+
+    RECONCILED 2026-07-15: this task was authored BEFORE the gate cleared, and it anticipated that Claude would draft a
+    doc named `osf-amendment-panel-occlusion-exclusion-2026-07-10.md` for Carter to post under tag
+    `PANEL-OCCLUSION-OSF-AMENDMENT-POSTED-2026-07-10`. That is NOT what happened. Carter AUTHORED the amendment-update
+    himself as `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`, POSTED it to osf.io/az52u at
+    2026-07-10T13:32:22Z, and it was recorded in-repo at commit `ac4c990` with tag
+    `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`. The placeholder filename/tag never existed. This task is
+    retained ONLY as the provenance record of the gate; its <verify> below now checks the REAL artifact.
+
+    THE EXECUTOR MUST NOT: re-draft the doc; re-post to OSF; create the placeholder filename; create the placeholder
+    tag; or EDIT `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`. That file is byte-identical to what was
+    uploaded to OSF — editing the project-side copy would silently diverge the repo from the posted artifact, which is
+    exactly the provenance failure this gate exists to prevent. Run the <verify> to CONFIRM the gate, then go to Task 2.
   </action>
   <what-built>
-    Claude (autonomous part) DRAFTS `.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md`
-    — the scoped OSF amendment-update. It states, in original-research framing (never "fix/cleanup/revision"):
+    ✅ ALREADY BUILT (Carter-authored, posted 2026-07-10T13:32:22Z, recorded `ac4c990`) —
+    `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`, the scoped OSF amendment-update.
+    Recorded here for provenance; NOT a work item. It states, in original-research framing (never "fix/cleanup/revision"):
       (1) the panel overlapping-variant policy = **exclusion + provenance, never zeroing** — a variant whose
           LD is structurally undefined because an overlapping deletion's REF span makes it uncallable in the AoU
           AFR reference is EXCLUDED in lockstep from BOTH the LD panel and the harmonized sumstats, with an
@@ -168,28 +187,48 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
           geometry verdict — 5 direct ref_span_overlap + 1 second-order, 0 same-position);
       (3) NaN→0 is retired as directionally wrong (cite the concrete harm: rs182965575 present 7/9 AFR sumstats);
       (4) the genome-wide present-rate scan quantifies the scientific cost (Angle-1/3 catalog).
-    Cite the byte-verified anchors (4543dcf4… / 42d70167…) and cross-link osf.io/az52u.
+    AS POSTED, the doc cross-links osf.io/az52u (7×) and names its supporting docs
+    (`m3_region1_nan_geometry_verdict.md`, `m3_panel_occlusion_policy_decision.md`) by FILENAME rather than by
+    body-SHA anchor. The anchors themselves (`4543dcf4…` / `42d70167…`) live in — and are verified against — those
+    source docs, which is where the <verify> now checks them. The as-posted doc frames the policy as withdrawing the
+    tcujq NaN→0 conditioning in favour of exclude-in-lockstep; it does not use the literal phrase "never zeroing".
   </what-built>
   <human-action>
-    Carter (carterclinton@ncsu.edu; researcher account cclinton@researchallofus.org is AUTH-ONLY — never email it):
-    POST the drafted amendment-update to the OSF project **osf.io/az52u** (same project as the tcujq AFR NaN-PSD
-    amendment), then RECORD provenance: the OSF file id + the file's SHA-256 + a git tag (pattern
-    `PANEL-OCCLUSION-OSF-AMENDMENT-POSTED-2026-07-10`) on the commit that lands the amendment doc. This is a human
-    web action with no CLI — Claude cannot post to OSF.
+    ✅ DONE 2026-07-10 — no outstanding human action. Carter (carterclinton@ncsu.edu; researcher account
+    cclinton@researchallofus.org is AUTH-ONLY — never email it) POSTED the amendment-update to the OSF project
+    **osf.io/az52u** (same project as the tcujq AFR NaN-PSD amendment) at 2026-07-10T13:32:22Z, and provenance is
+    RECORDED at commit `ac4c990` + tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10` (project-side copy +
+    tcujq superseded-by pointer + `.planning/osf_deviations.md` dated entry + STATE.md block).
+
+    ONE non-blocking follow-up (does NOT gate 07a/07b/07c): the OSF direct file GUID/URL was never captured — only
+    the activity timestamp from Carter's screenshot. When Carter opens the OSF file page, fill
+    `osf.io/az52u/files/<GUID>` into the amendment doc header + `.planning/osf_deviations.md`. Deferred by design:
+    the gate's requirement is that the policy be publicly on the record before the code lands, which the posting
+    timestamp establishes; the GUID is a convenience pointer.
   </human-action>
   <acceptance_criteria>
-    - `.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md` exists and contains the strings
-      "exclusion", "provenance", and "never zeroing" (or equivalent), AND cites BOTH anchors `4543dcf4` and `42d70167`.
-    - The amendment is POSTED to osf.io/az52u (human confirms the OSF file id).
-    - The OSF file id + SHA-256 + git tag are RECORDED (in the commit message / STATE.md) BEFORE Task 2 starts.
-    - ⛔ Task 2 (and all of 07b/07c) MUST NOT begin until this gate is cleared (mirrors the `AFR-NANPSD-OSF-AMENDMENT-POSTED-2026-07-04` precedent).
+    ALL SATISFIED as of `ac4c990` (2026-07-10). The <verify> below re-confirms them; it does not create anything.
+    - `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` exists and encodes the policy:
+      "exclusion" + "provenance" + "lockstep", and names "tcujq" as the withdrawal target (never zeroing — expressed
+      as the withdrawal of the tcujq NaN→0 conditioning, not as that literal phrase).
+    - The amendment is POSTED to osf.io/az52u (2026-07-10T13:32:22Z, from the OSF Recent Activity record).
+    - Provenance is RECORDED in-repo: commit `ac4c990` + git tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`.
+    - The settled-science body anchors still hold BYTE-EXACTLY in their source docs (this is the check that actually
+      protects the science: `tail -c 5012` of the geometry verdict == `4543dcf4…`; `tail -c 5247` of the policy
+      decision == `42d70167…` — each doc's transfer header is excluded from its hash by construction).
+    - ⛔ Task 2 (and all of 07b/07c) MUST NOT begin until this gate is cleared — it IS cleared (mirrors the
+      `AFR-NANPSD-OSF-AMENDMENT-POSTED-2026-07-04` precedent).
   </acceptance_criteria>
   <verify>
-    <automated>D=.planning/amendments/osf-amendment-panel-occlusion-exclusion-2026-07-10.md; test -f "$D" && grep -qi 'exclusion' "$D" && grep -qi 'provenance' "$D" && grep -qi 'never zeroing' "$D" && grep -q '4543dcf4' "$D" && grep -q '42d70167' "$D" && echo GATE_DOC_OK</automated>
-    Note: the automated check confirms the DRAFTED doc only (exists + exclusion + provenance + never-zeroing + BOTH anchors); the OSF POSTING + file-id/SHA-256/tag recording is the human resume-signal (no CLI).
+    <automated>bash -c 'set -e; D=.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md; test -f "$D"; grep -qi "exclusion" "$D"; grep -qi "provenance" "$D"; grep -qi "lockstep" "$D"; grep -q "tcujq" "$D"; grep -q "az52u" "$D"; git rev-parse -q --verify refs/tags/AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10 >/dev/null; git cat-file -e ac4c990^{commit}; [ "$(tail -c 5012 .planning/amendments/m3_region1_nan_geometry_verdict.md | sha256sum | cut -d" " -f1)" = "4543dcf4a61c3cf79061c8c55b71b316c38c4a938541cf0040c94212c8cdc06a" ]; [ "$(tail -c 5247 .planning/amendments/m3_panel_occlusion_policy_decision.md | sha256sum | cut -d" " -f1)" = "42d701677ac8bc85d3b03f390413c4406ba65f3b11ab085350e560738ab209ef" ]; echo GATE_CONFIRMED_OK'</automated>
+    Note: this is a CONFIRMATION of an already-cleared gate — it is read-only and must PASS on an unmodified tree. It
+    checks the REAL posted artifact (not the never-existent placeholder), the recorded tag + commit, and re-verifies
+    both settled-science body anchors where they actually live (the source docs) rather than grepping them out of the
+    amendment doc, which never cited them. If it FAILS, STOP and escalate to Carter — do NOT "fix" it by editing the
+    amendment doc (that would diverge the repo copy from the bytes posted to OSF).
   </verify>
-  <done>✅ COMPLETE 2026-07-10T13:32:22Z — the amendment-update doc exists (exclusion + provenance, never zeroing; both anchors cited), is POSTED to osf.io/az52u, and its OSF file id + SHA-256 + git tag are RECORDED at commit `ac4c990` / tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`. Gate CLEARED; Task 1 kept as the provenance record. 07b/07c unblocked.</done>
-  <resume-signal>Reply "OSF posted: file id &lt;id&gt;, sha256 &lt;hash&gt;, tag &lt;tag&gt;" — then Task 2 (and 07b/07c) are unblocked. If blocked, describe the blocker.</resume-signal>
+  <done>✅ COMPLETE 2026-07-10T13:32:22Z (reconciled to the real artifact 2026-07-15) — `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` exists (exclusion + provenance + lockstep; withdraws tcujq NaN→0), is POSTED to osf.io/az52u, and is RECORDED at commit `ac4c990` / tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`. Both settled-science body anchors re-verified byte-exact (`4543dcf4…` / `42d70167…`). Gate CLEARED; Task 1 retained as the provenance record only — NOT a work item. 07b/07c unblocked. Non-blocking follow-up: fill the OSF file GUID/URL when available.</done>
+  <resume-signal>None — this gate is already cleared. Run the <verify> to confirm, then proceed directly to Task 2. If the <verify> fails, STOP and escalate to Carter rather than modifying the posted amendment doc.</resume-signal>
 </task>
 
 <task type="auto">
@@ -281,12 +320,13 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
 
 | Threat ID | Category | Component | Disposition | Mitigation Plan |
 |-----------|----------|-----------|-------------|-----------------|
-| T-m3-07a-01 | Repudiation / reproducibility | undisclosed panel-policy deviation | mitigate | OSF HARD GATE pre-registers exclusion + provenance (never zeroing) BEFORE any code; blocks 07b/07c via depends_on; git tag + OSF file id recorded. |
+| T-m3-07a-01 | Repudiation / reproducibility | undisclosed panel-policy deviation | mitigated (CLEARED 2026-07-10) | OSF HARD GATE pre-registered exclusion + provenance in lockstep (withdrawing NaN→0) BEFORE any code: posted 13:32:22Z, recorded `ac4c990`, tagged `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`; blocks 07b/07c via depends_on. |
+| T-m3-07a-03 | Tampering / repudiation | the in-repo amendment copy silently diverges from the bytes posted to OSF | mitigate | The posted doc is READ-ONLY to the executor — Task 1 forbids editing it, and the gate <verify> confirms rather than repairs. A failing verify escalates to Carter; it never "fixes" the doc. |
 | T-m3-07a-02 | Tampering | RED tests encode the wrong excluded set | mitigate | The fixture reproduces the byte-verified verdict coordinates (4543dcf4…); the expected occluded set {1980475,5733487,5922718,7492693,8375822} and liftover anchors (5982776/5982778/5982784) are pinned to the amendment doc-set, not invented. |
 </threat_model>
 
 <verification>
-- Task 1 (OSF gate): the amendment-update doc exists (exclusion + provenance + never-zeroing + BOTH anchors), is POSTED to osf.io/az52u, and its file id/SHA-256/git tag are recorded BEFORE Task 2 (and 07b/07c) begin.
+- Task 1 (OSF gate — PRE-CLOSED, read-only confirmation): `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` exists (exclusion + provenance + lockstep + withdraws tcujq), is POSTED to osf.io/az52u, is recorded at `ac4c990` + tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`, and both settled-science body anchors re-verify byte-exact in their source docs. Confirm only — create/modify nothing.
 - Task 2 (Wave 0): the 4 new test files + extended driver tests collect cleanly (zero collection errors) and fail RED as test/assert failures.
 - NO perimeter access, NO loop contact, NO re-fire. Entirely NC-State (docs + failing tests).
 </verification>
@@ -299,6 +339,8 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
 
 <output>
 After completion, create `.planning/phases/m3-aou-afr-ld-panel-build/m3-07a-W7-osf-gate-and-red-scaffold-SUMMARY.md`.
-Record: the OSF file id/SHA-256/git tag; the RED-collection-clean confirmation (zero collection errors); the
+Record: the OSF gate confirmation (real filename + posted timestamp + `ac4c990` + tag + both re-verified body anchors;
+note Task 1 was PRE-CLOSED and reconciled 2026-07-15, and that the OSF file GUID remains an open non-blocking
+follow-up); the RED-collection-clean confirmation (zero collection errors) with the actual pytest output; the
 region-1 fixture coordinates; and the depends_on chain (07b/07c gated on this).
 </output>
