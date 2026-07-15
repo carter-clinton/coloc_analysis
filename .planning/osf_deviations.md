@@ -96,8 +96,20 @@ The decision is a Cowork-side editorial decision, not an HPC-side compute decisi
 
 - **Posted:** OSF file `tcujq` on parent record az52u —
   https://osf.io/az52u/files/tcujq (append-only supplementary file; M1/r3 pattern).
+- **OSF-side display filename:** `Prereg_Phase1_amendment3.md` (Carter-reported
+  2026-07-15; not independently verifiable from the NC-State node — OSF is a browser
+  action). Recorded so the file page is findable by NAME as well as GUID. Note the
+  project-side copy is named `osf-amendment-afr-native-ld-nan-psd-2026-07-03.md`; the
+  OSF-side and repo-side names differ, which is expected and not a deviation.
 - **OSF timestamp (authoritative, UTC):** 2026-07-04T04:14:46.635031Z
   (Jul 4 2026 00:14 EDT).
+- **⚠ DO NOT confuse `tcujq` with the 2026-07-10 occlusion-exclude UPDATE.** `tcujq` is
+  THIS (2026-07-04) NaN→0 amendment — the one the 2026-07-10 update WITHDRAWS. The
+  occlusion-exclude UPDATE (posted 2026-07-10T13:32:22Z, recorded `ac4c990`, tag
+  `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`) is a SEPARATE, still-uncaptured
+  GUID — see the 2026-07-10 entry below. Filling `tcujq` in as the update's GUID would
+  point the withdrawing document at the document it withdraws and corrupt the
+  pre-registration chain. (Flagged 2026-07-15 after `tcujq` was offered for that slot.)
 - **Pre-execute gate commit:** 0f3c68b (committer-date 2026-07-04T03:45:29Z). OSF post
   is +29 min after the gate and before any conditioning-output commit → pre-registration
   precedes the analysis it covers. Gate holds.
