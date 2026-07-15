@@ -19,13 +19,13 @@ requirements:
 
 must_haves:
   truths:
-    - "occlusion_span_filter.detect_occluded_variants applies the CONSERVATIVE rule — V is occluded iff ∃ D with len(REF_D)>1 and POS_D < POS_V ≤ POS_D + len(REF_D)−1 — computed over the ORIGINAL window; on the region-1 `.bim` fixture (from 07a) it returns EXACTLY {1980475, 5733487, 5922718, 7492693, 8375822} (5 occluded; the 5922716/5922718/5922724 tangle collapses to the single 5922718 drop) and edges capture occluder→occluded incl. the second-order 5922718↔5922724 as disjoint."
+    - "occlusion_span_filter.detect_occluded_variants applies the CONSERVATIVE rule — V is occluded iff ∃ D with len(REF_D)>1 and POS_D < POS_V ≤ POS_D + len(REF_D)−1 (left bound STRICT) — computed over the ORIGINAL window; on the region-1 `.bim` fixture (from 07a) it returns EXACTLY {1980475, 5733487, 5922718, 7492693, 8375822} (5 occluded; the 5922716/5922718/5922724 tangle collapses to the single 5922718 drop). ⚠ RECONCILED 2026-07-15: `edges` are HASHABLE 2-TUPLES (occluder_id, occluded_id) containing ONLY the 5 DIRECT ref_span_overlap edges — NOT dicts (the 07a RED does `set(edges)`; dicts raise TypeError) and NOT including a disjoint/second-order 5922718↔5922724 edge (the RED asserts del4 contributes NO edge and pins edge_set to exactly the 5). The second-order NaN pair is genotype-layer, invisible to this coordinate-only detector, and is resolved as a CONSEQUENCE of the single 5922718 drop — no extra edge."
     - "The pair-4 second-order tangle is attributed correctly (SETTLED, Seth 5/5 vs geometry verdict `4543dcf4…`): the detector attributes SNP 5922718 to the UPSTREAM DEL 5922716 (predicate POS < variant_POS ≤ POS + len(REF) − 1), NOT the downstream DEL 5922724, and dropping 5922718 collapses the 5922716/5922718/5922724 tangle. The SETTLED region-1 REAL-window known-answer oracle `{10328, 44784, 46714, 59097, 66730}` + 7-deletion inventory (60/29/7/31/31/17/29 bp) is the answer reproduced at the GATED real-`.bim` validation (Seth's full prototype is a read-only reference, not committed)."
     - "Footprint is len(REF)=len(A2) ONLY: an SNV (len(REF)=1) never occludes, and an insertion (len(ALT)>len(REF), footprint = single anchor base) never occludes a downstream base; a boundary variant at POS_D+len(REF_D)−1 IS occluded, one at POS_D+len(REF_D) is NOT (grep/test-verifiable in test_occlusion_span_filter.py)."
     - "build_plink_ld_command gains an optional `exclude=` param that appends `--exclude <path>` BEFORE `--r` only when non-None, and `--keep-allele-order` still appears on EVERY issued command (test_run_native_ld_panel.py -k exclude proves both)."
     - "process_region reads the raw window `.bim` BEFORE `_run_plink` (plain `_window_bim_n_var`, no retry — no concurrent writer), runs the filter, writes `{out_prefix}.occluded.excludelist` (one `.bim` col-2 id/line), passes it as `exclude=`, so the excluded window `.npz` carries NO NaN and PASSES content_verify_npz — the frozen read_square_bin NaN-raise never trips."
     - "Drop accounting is split: panel column `n_dropped_occluded` (APPENDED to _PANEL_COLUMNS, never reordered) = len(occluded_ids in-window); `n_dropped_monomorphic` = (raw_window_n_var − len(occluded_ids)) − window_n_var — the existing `_retained_window_bim` snplist-alignment fires automatically because exclusion makes bin_n_var != raw_window_n_var (no change to that machinery)."
-    - "occlusion_manifest emits, per excluded variant, the Stage-A record (region_id, chr, variant_id, pos_grch38, ref, alt, ref_span_start/end_grch38, occluding_deletion_id, occluding_deletion_ref_len, reason='reference-occlusion → undefined-LD', occlusion_order) resume-safe (dedup by (region_id, variant_id)) plus an aggregate `occlusion_catalog.tsv` rollup — the genome-wide Angle-1/3 occlusion catalog. Stage-A is coordinate/id-only (egress-clean; REQ-AOU-LD-EGRESS)."
+    - "occlusion_manifest emits, per excluded variant, the Stage-A record (region_id, chr, variant_id, pos_grch38, ref, alt, ref_span_start/end_grch38, occluding_deletion_id, occluding_deletion_ref_len, reason='reference-occlusion → undefined-LD', and OPTIONALLY occlusion_order) resume-safe (dedup by (region_id, variant_id)) plus an aggregate `occlusion_catalog.tsv` rollup — the genome-wide Angle-1/3 occlusion catalog. ⚠ RECONCILED 2026-07-15: `occlusion_order` is OPTIONAL and, if emitted, is 'direct' for EVERY record — there is NO 'second_order' value (it inverted the verdict and was underivable from a genotype-free Stage A; emitting it required hardcoding 5922718). Stage-A is coordinate/id-only (egress-clean; REQ-AOU-LD-EGRESS) — the RED now enforces this by SUBSTRING/token match, so no 'n_samples'/'genotype_ac'-style column may ride out."
     - "Stage-B enrichment adds pos_grch37 via the ld_npz_to_rds.R liftover recipe (pyliftover, chain data/external/liftover/hg38ToHg19.over.chain.gz, pos−1 in / +1 out) + chain SHA-256 and matches the hinge-check values 5922716/5922718/5922724 → 5982776/5982778/5982784; traits_present columns are populated by the 07c present-rate scan (a documented seam)."
     - "Frozen contracts stay byte-unchanged: `git diff --stat src/python/plink_ld_to_npz.py src/scripts/ld_npz_to_rds.R` is EMPTY and the run_native_ld_panel.py content_verify_npz body is untouched — the fix removes occluded rows UPSTREAM of `--r` so no NaN reaches the reader; m3-06 condition_ld_matrix.py is NOT touched (NaN→0 stays dead)."
   artifacts:
@@ -170,7 +170,14 @@ pos37 = lo.convert_coordinate('chr'+str(chrom), pos38 - 1)[0][1] + 1   # pos-1 i
 
 Provenance manifest schema (Stage-A, per excluded variant): region_id, chr, variant_id, pos_grch38, ref, alt,
 ref_span_start_grch38, ref_span_end_grch38 (from the OCCLUDING deletion), occluding_deletion_id,
-occluding_deletion_ref_len, reason="reference-occlusion → undefined-LD", occlusion_order (direct|second_order).
+occluding_deletion_ref_len, reason="reference-occlusion → undefined-LD", occlusion_order.
+⚠ RECONCILED 2026-07-15 (blast-radius BLOCKER): `occlusion_order` is **OPTIONAL** (RESEARCH §7:296 "A (optional,
+from edges)") and, **if emitted, is `"direct"` for EVERY coordinate-derived record — there is no `second_order`
+value.** The prior `(direct|second_order)` spec INVERTED the byte-verified verdict (pair 3 `DEL 5922716 → SNP
+5922718` is `ref_span_overlap` = DIRECT; "2nd-order" attaches to the *disjoint* pair-4 EDGE, which occludes
+nothing) and was **underivable** from a genotype-free Stage A — the only way to emit `second_order` is to hardcode
+position 5922718, publishing a false provenance label across all 276 regions (T-m3-07a-02 realized). The 07a RED
+(`tests/m3/test_occlusion_manifest.py`, tag `m3-07a-W7-T-WAVE0`, fix `a1e8693`) is the CONTRACT and pins this.
 Stage-B adds pos_grch37 + chain_sha256 (+ traits_present populated by 07c). NO genotypes, NO per-person counts.
 
 Env = /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest (py3.11, numpy/pandas, no hail).
@@ -189,14 +196,28 @@ Env = /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest (py3.11, numpy
   </read_first>
   <files>src/python/occlusion_span_filter.py, src/python/aou_ld_panel.py, src/python/run_native_ld_panel.py</files>
   <behavior>
-    - occlusion_span_filter.detect_occluded_variants(rows) -> (occluded_ids: list[str], edges: list[dict]).
+    - occlusion_span_filter.detect_occluded_variants(rows) -> (occluded_ids: list[str], edges: list[tuple[str, str]]).
       `rows` = list of 6-col sequences (idx 1=id, 3=bp, 5=A2=REF). Deterministic CONSERVATIVE rule over the
       ORIGINAL window: V occluded iff ∃ D (len(REF_D)>1) with POS_D < POS_V ≤ POS_D+len(REF_D)−1. Footprint =
-      len(REF)=len(A2) ONLY. occluded_ids = sorted unique col-2 ids of every occluded V; edges = one dict per
-      (occluder_id, occluded_id, geometry∈{"ref_span_overlap"}) — attributing each occluded V to the UPSTREAM deletion
-      whose REF span covers it (SETTLED pair-4: 5922718 ← 5922716, NOT 5922724), plus a "disjoint"/second-order note that
-      removing the upstream-occluded member also resolves the downstream NaN edge. Pure: no I/O, no plink.
+      len(REF)=len(A2) ONLY. occluded_ids = sorted unique col-2 ids of every occluded V.
+      ⚠ RECONCILED 2026-07-15 — `edges` MUST be HASHABLE 2-TUPLES `(occluder_id, occluded_id)`, NOT dicts, and MUST
+      contain ONLY the direct ref_span_overlap edges. The 07a RED is the CONTRACT and it does `set(edges)` and unpacks
+      `for (o, v) in edge_set` (tests/m3/test_occlusion_span_filter.py:264,283,298) — a list of DICTS raises
+      `TypeError: unhashable type: 'dict'` and CANNOT pass. It also pins `edge_set ==` EXACTLY the 5 direct edges and
+      asserts del4 (5922724) contributes NO edge (`:283`), so a "disjoint"/second-order edge BREAKS the suite. A
+      2-field NamedTuple is acceptable (it compares equal to a plain 2-tuple and is hashable); a 3-field one is NOT.
+      The `geometry` field is dropped as informationless — every edge this detector emits is `ref_span_overlap` by
+      construction (the plan's own spec allowed only that single value).
+      Attribute each occluded V to the UPSTREAM deletion whose REF span covers it (SETTLED pair-4: 5922718 ← 5922716,
+      NOT 5922724). The second-order 5922718↔5922724 NaN pair is a GENOTYPE-layer fact this coordinate-only detector
+      cannot see and MUST NOT synthesize; dropping 5922718 via its direct upstream edge resolves that pair as a
+      consequence ("one drop, two edges" — RESEARCH §7), which requires no extra edge. Pure: no I/O, no plink.
       Validates each row is ≥6 fields with integer bp; RAISES ValueError on a malformed row.
+      A doubly-occluded V (nested deletions) appears EXACTLY ONCE in occluded_ids with a deterministic single
+      attribution to one real covering deletion (07a RED: test_doubly_occluded_variant_appears_exactly_once).
+      A DISTINCT variant sharing a deletion's POS is NOT occluded — the left bound is STRICT (`POS_D < POS_V`);
+      `<=` would over-drop the multiallelic partner Hail's split_multi emits genome-wide (07a RED:
+      test_distinct_variant_at_the_deletion_position_is_not_occluded).
     - Region-1 fixture -> EXACTLY {1980475,5733487,5922718,7492693,8375822} (5 ids; tangle collapses to 5922718).
     - build_plink_ld_command(..., exclude=None): when exclude is a non-None path, append `--exclude <path>` BEFORE
       the `--r` block; `--keep-allele-order` stays on EVERY command. exclude=None -> argv byte-identical to today.
