@@ -1,4 +1,4 @@
-> POSTED 2026-07-10T13:32:22Z as a supplementary file on https://osf.io/az52u (filename `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`; direct file GUID/URL to be filled from the OSF file page).
+> POSTED 2026-07-10T13:32:22Z as https://osf.io/az52u/files/trsx5 — a supplementary file on https://osf.io/az52u (filename `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`; GUID `trsx5` captured 2026-07-15 from the OSF file page). CONFIRMED a SEPARATE NEW FILE, not a new version of the amendment it withdraws: `trsx5` has exactly 1 revision (2026-07-10 13:32) and `tcujq` still has exactly 1 revision (2026-07-04 04:14, unmodified) — so the append-only "post as a NEW supplementary file" pre-registered in the Pre-Paste Reference below was honored exactly, and there is NO posting deviation to disclose. ⚠ Do NOT confuse `trsx5` (this update) with `tcujq` (`Prereg_Phase1_amendment3.md`, the 2026-07-04 NaN→0 amendment THIS FILE WITHDRAWS).
 
 # OSF Amendment-Update — Paste-Ready Text (AFR native-plink LD panel: withdraw NaN→0, adopt occlusion exclude-in-lockstep + provenance manifest)
 

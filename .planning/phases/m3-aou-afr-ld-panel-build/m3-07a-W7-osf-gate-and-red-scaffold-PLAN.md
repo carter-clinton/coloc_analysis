@@ -200,11 +200,13 @@ records every argv; PROJECT_ROOT via Path(__file__).resolve().parents[2]; src/py
     RECORDED at commit `ac4c990` + tag `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10` (project-side copy +
     tcujq superseded-by pointer + `.planning/osf_deviations.md` dated entry + STATE.md block).
 
-    ONE non-blocking follow-up (does NOT gate 07a/07b/07c): the OSF direct file GUID/URL was never captured — only
-    the activity timestamp from Carter's screenshot. When Carter opens the OSF file page, fill
-    `osf.io/az52u/files/<GUID>` into the amendment doc header + `.planning/osf_deviations.md`. Deferred by design:
-    the gate's requirement is that the policy be publicly on the record before the code lands, which the posting
-    timestamp establishes; the GUID is a convenience pointer.
+    ✅ FOLLOW-UP CLOSED 2026-07-15 — the OSF direct file GUID is **`trsx5`**
+    (https://osf.io/az52u/files/trsx5), captured from the OSF file page and filled into the amendment doc header +
+    `.planning/osf_deviations.md`. Nothing remains open on this gate.
+    Also VERIFIED at capture: the update is a SEPARATE NEW FILE, not a re-version of the amendment it withdraws
+    (`trsx5` 1 revision; `tcujq` still 1 revision, unmodified) → the pre-registered append-only "post as a NEW
+    supplementary file" commitment was honored exactly, so there is NO posting deviation to disclose.
+    ⚠ `trsx5` (this update) ≠ `tcujq` (`Prereg_Phase1_amendment3.md`, the 2026-07-04 NaN→0 amendment it WITHDRAWS).
   </human-action>
   <acceptance_criteria>
     ALL SATISFIED as of `ac4c990` (2026-07-10). The <verify> below re-confirms them; it does not create anything.

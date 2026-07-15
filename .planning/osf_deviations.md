@@ -105,11 +105,15 @@ The decision is a Cowork-side editorial decision, not an HPC-side compute decisi
   (Jul 4 2026 00:14 EDT).
 - **⚠ DO NOT confuse `tcujq` with the 2026-07-10 occlusion-exclude UPDATE.** `tcujq` is
   THIS (2026-07-04) NaN→0 amendment — the one the 2026-07-10 update WITHDRAWS. The
-  occlusion-exclude UPDATE (posted 2026-07-10T13:32:22Z, recorded `ac4c990`, tag
-  `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`) is a SEPARATE, still-uncaptured
-  GUID — see the 2026-07-10 entry below. Filling `tcujq` in as the update's GUID would
-  point the withdrawing document at the document it withdraws and corrupt the
-  pre-registration chain. (Flagged 2026-07-15 after `tcujq` was offered for that slot.)
+  occlusion-exclude UPDATE is a SEPARATE file with its own GUID **`trsx5`**
+  (https://osf.io/az52u/files/trsx5; posted 2026-07-10T13:32:22Z, recorded `ac4c990`, tag
+  `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`) — see the 2026-07-10 entry below.
+  Filling `tcujq` in as the update's GUID would point the withdrawing document at the
+  document it withdraws and corrupt the pre-registration chain. (Flagged 2026-07-15 after
+  `tcujq` was offered for that slot; the correct GUID `trsx5` was captured the same day.)
+- **`tcujq` was never re-versioned.** Verified at the OSF file page 2026-07-15: exactly 1
+  revision (2026-07-04 04:14). The 2026-07-10 update superseded it in POLICY, not by
+  altering this record — the append-only commitment holds.
 - **Pre-execute gate commit:** 0f3c68b (committer-date 2026-07-04T03:45:29Z). OSF post
   is +29 min after the gate and before any conditioning-output commit → pre-registration
   precedes the analysis it covers. Gate holds.
@@ -128,12 +132,31 @@ The decision is a Cowork-side editorial decision, not an HPC-side compute decisi
 
 ## 2026-07-10 — AFR native-panel occlusion exclude-in-lockstep amendment-update (WITHDRAWS the 2026-07-04 NaN→0 policy; m3-07 OSF gate)
 
-- **Posted:** OSF supplementary file on parent record az52u — filename
+- **Posted:** OSF file `trsx5` on parent record az52u —
+  https://osf.io/az52u/files/trsx5 — filename
   `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` (append-only; M1/r3/tcujq
-  pattern). Direct file GUID/URL to be filled from the OSF file page (activity confirmed
-  via OSF Recent Activity screenshot).
+  pattern). **GUID CAPTURED 2026-07-15** from the OSF file page, closing the last open
+  follow-up on this record.
+- **APPEND-ONLY COMMITMENT VERIFIED — no posting deviation.** The amendment pre-registered
+  itself as "a NEW supplementary file (append-only)" rather than a re-version of the file
+  it withdraws. Confirmed at the OSF file pages 2026-07-15: `trsx5` has exactly **1
+  revision** (2026-07-10 13:32) and `tcujq` still has exactly **1 revision** (2026-07-04
+  04:14, **unmodified**). Two distinct GUIDs, each single-version → the withdrawn record
+  was never altered, and the supersession is in CONTENT/POLICY terms, not in OSF's
+  version-tracking sense. Had it been posted as a new version of `tcujq`, that would have
+  been a disclosed deviation; it was not, so there is none.
+- **⚠ GUID DISAMBIGUATION (a near-miss worth recording):** `trsx5` = THIS update.
+  `tcujq` (`Prereg_Phase1_amendment3.md`) = the 2026-07-04 NaN→0 amendment this one
+  WITHDRAWS. On 2026-07-15 `tcujq` was initially offered to fill this slot; it was
+  refused. Writing `tcujq` here would have pointed the withdrawing document at the
+  document it withdraws — a plausible-looking value that silently corrupts the
+  pre-registration chain in the one artifact whose job is establishing what was on the
+  record and when.
 - **OSF timestamp (authoritative, UTC):** 2026-07-10T13:32:22.212989Z (from the OSF
-  Recent Activity entry "Carter Clinton added file …").
+  Recent Activity entry "Carter Clinton added file …"). The file page renders this as
+  "Jul 10, 2026, 09:32 AM" local/EDT = 13:32 UTC — consistent. NOTE the file page's
+  "Date created: April 10, 2026" is the PARENT RECORD's creation date (the original
+  pre-registration osf.io/pvb5j was posted 2026-04-10), NOT this file's upload date.
 - **Project-side copy:** `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`.
 - **Pre-execute gate commit:** 5fd58a5 (the four supporting amendment docs — scientific
   review 3516c18, hinge check c4e0875, policy 8f36fdf, geometry verdict 5fd58a5 — all on

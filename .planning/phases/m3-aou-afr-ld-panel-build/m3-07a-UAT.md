@@ -141,4 +141,8 @@ defines the exclude-in-lockstep behavior 07b/07c must deliver) is achieved:
 5. The gated oracle's index ORIGIN (0- vs 1-based) is assumed 0-based; confirm against the
    real region-1 `.bim` header before trusting the equality at the gated run.
 
-Also open (non-blocking): the OSF direct file GUID/URL remains uncaptured.
+✅ CLOSED 2026-07-15 (was the last open non-blocking item): the OSF direct file GUID is
+`trsx5` — https://osf.io/az52u/files/trsx5 — now filled into the amendment header and
+`osf_deviations.md`. Capture also VERIFIED the append-only commitment: the update is a
+SEPARATE NEW FILE, not a re-version of the amendment it withdraws (`trsx5` 1 revision;
+`tcujq` still 1 revision, unmodified) → no posting deviation.
