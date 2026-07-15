@@ -2854,7 +2854,8 @@ def _write_a3_banded_correlation_bm(mt_r: "hl.MatrixTable", radius_bp: int,
 def build_plink_ld_command(bfile_prefix: str, chrom, from_bp: int, to_bp: int,
                            out_prefix: str, mode: str = "square",
                            ld_window_kb: int = 3000, r2_floor: float = 0.0,
-                           threads: int | None = None) -> list[str]:
+                           threads: int | None = None,
+                           exclude: "str | None" = None) -> list[str]:
     """Build the native plink1.9 per-region LD command (m3-02e Move 1).
 
     ``--keep-allele-order`` is HARDCODED on EVERY LD call (not optional): plink
@@ -2880,6 +2881,18 @@ def build_plink_ld_command(bfile_prefix: str, chrom, from_bp: int, to_bp: int,
     (polymorphic, MAC>=1) set. The banded branch does NOT gain ``--mac`` (the fire
     runs square only; banded scatters named pairs, a different NaN symptom).
 
+    ``exclude`` (m3-07b) is an OPTIONAL path to a plink exclude-list (one variant
+    id per line): the REFERENCE-OCCLUSION span filter's
+    ``{out_prefix}.occluded.excludelist``. When non-None, ``--exclude <path>`` is
+    appended BEFORE the ``--r`` block, so plink drops those variants after the
+    ``--chr/--from-bp/--to-bp`` window but BEFORE the LD is computed — the
+    occluded (structurally-undefined-LD) records never reach ``--r``, so no NaN is
+    ever produced and the frozen ``read_square_bin`` NaN-raise never trips. This
+    composes with ``--mac 1``: exclusion and the monomorphic drop are independent,
+    which is what lets the driver report ``n_dropped_occluded`` and
+    ``n_dropped_monomorphic`` as separate provenance columns. ``exclude=None`` ->
+    the argv is BYTE-IDENTICAL to the pre-m3-07b command.
+
     Returns the plink argv list (the fire brief renders + runs it via subprocess).
     The cohort ``.bed`` it reads is INDIVIDUAL-LEVEL and stays IN-PERIMETER; only
     the resulting aggregate LD matrix is ever egressed (REQ-AOU-LD-EGRESS).
@@ -2894,6 +2907,10 @@ def build_plink_ld_command(bfile_prefix: str, chrom, from_bp: int, to_bp: int,
         "--from-bp", str(from_bp),
         "--to-bp", str(to_bp),
     ]
+    if exclude is not None:
+        # Variant-level filter: applied with the window + --mac BEFORE --r, so the
+        # reference-occluded records are gone before any LD is computed.
+        cmd += ["--exclude", str(exclude)]
     if mode == "square":
         # --mac 1 drops MAC=0 monomorphic (zero-variance -> NaN LD) variants BEFORE
         # --r; --write-snplist emits the retained ids in .ld.bin row order for the

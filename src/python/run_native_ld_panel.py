@@ -95,9 +95,24 @@ if str(_SRC_PYTHON) not in sys.path:
 
 import aou_ld_panel as alp  # hail-free at module scope; reused for the guard + cmd builder
 import plink_ld_to_npz as pln  # hail-free .ld.bin/.ld.gz -> egress-clean .npz
+from occlusion_span_filter import detect_occluded_variants  # m3-07b span filter
 
 _PANEL_COLUMNS = [
     "region_id", "chr", "n_var", "wall_min", "peak_ram_gib", "output_gib", "status",
+    # m3-07b: durable per-region record of how many REFERENCE-OCCLUDED variants the
+    # span filter excluded before --r (the pre-registered exclude-in-lockstep
+    # policy, osf.io/az52u). Distinct from the monomorphic drop below: a conflated
+    # single count could not distinguish "plink dropped a MAC=0 site" from "we
+    # excluded a structurally-undefined-LD record", which is exactly the provenance
+    # the OSF amendment-update commits to publishing.
+    #
+    # INSERTED here (not appended after n_dropped_monomorphic) — the leading 7
+    # columns keep their exact positions, AND n_dropped_monomorphic keeps its
+    # position as the LAST column, which the pre-existing
+    # test_panel_columns_include_n_dropped_monomorphic pins (`_PANEL_COLUMNS[-1]`).
+    # See the m3-07b SUMMARY: the plan's prose said "append after
+    # n_dropped_monomorphic", which would have broken that passing test.
+    "n_dropped_occluded",
     # 260701-qcy hardening H2 (blast-radius D4): durable per-region record of how
     # many monomorphic (MAC=0-in-AFR) variants --mac 1 dropped before --r square.
     # APPENDED (never reorder the leading columns); None on skip/banded/error rows.
@@ -524,10 +539,19 @@ def _reclaim_region_scratch(compute_dir: "str | Path", region_id: str,
     the ``.npz`` IS the deliverable + the resume guard reads it (``keep_npz=True``,
     drop only the intermediates). The cohort bfile lives OUTSIDE ``compute_dir`` (a
     distinct ``--bfile-prefix`` dir), so the ``{region_id}.*`` glob never touches it.
+
+    m3-07b: ``{region_id}.occluded.excludelist`` is DURABLE PROVENANCE, not a bulky
+    intermediate — it is the exact drop set plink ``--exclude`` was given, and the
+    pre-registered policy (osf.io/az52u) commits to every drop being auditable. It
+    is tiny (one variant id per line) and is KEPT wherever the ``.npz`` is kept.
+    In ``gs://`` mode the local scratch is fully reclaimed as before (the bucket
+    holds the deliverable); the excludelist is uploaded alongside the verified
+    ``.npz`` before this runs, so the provenance still lands durably.
     """
     compute_dir = Path(compute_dir)
+    _keep_names = {f"{region_id}.npz", f"{region_id}.occluded.excludelist"}
     for p in compute_dir.glob(f"{region_id}.*"):
-        if keep_npz and p.name == f"{region_id}.npz":
+        if keep_npz and p.name in _keep_names:
             continue
         try:
             p.unlink()
@@ -586,6 +610,7 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             "region_id": region_id, "chr": chrom, "n_var": None,
             "wall_min": None, "peak_ram_gib": None, "output_gib": None,
             "status": "skipped_idempotent", "out": existing,
+            "n_dropped_occluded": None,     # skip: no filter run this pass
             "n_dropped_monomorphic": None,  # skip: no drop computed this run
         }
         append_panel_row(panel_tsv, result, scratch_dir=compute_dir)  # dedups
@@ -596,19 +621,68 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
         "region_id": region_id, "chr": chrom, "n_var": None,
         "wall_min": None, "peak_ram_gib": None, "output_gib": None,
         "status": "error", "out": None,
+        "n_dropped_occluded": None,     # set in the SQUARE ok path; None otherwise
         "n_dropped_monomorphic": None,  # set in the SQUARE ok path; None otherwise
     }
     try:
+        # window-subset .bim (load_bim row order == .ld.bin row order)
+        bim_path = f"{bfile_prefix}.bim"
+
+        # (b) REFERENCE-OCCLUSION span filter — m3-07b, BEFORE plink runs.
+        #
+        # Read the RAW window .bim FIRST and detect the variants an overlapping
+        # deletion's REF span occludes, so they can be handed to plink --exclude and
+        # never reach --r. This ORDERING is the whole fix: an occluded record that
+        # survives into --r makes plink emit a NaN row/col (diagonal still 1.0 — the
+        # m3-02e-T4 fire-#3 fingerprint), which the FROZEN read_square_bin correctly
+        # refuses. The reader is right; the input was wrong. We remove the cause
+        # upstream rather than conditioning the symptom downstream — NaN->0 is DEAD,
+        # and the retired m3-06 conditioning module stays FROZEN/HELD and is never
+        # imported here (a source-scan guard in the test suite enforces that, which
+        # is why this comment names no retired symbol).
+        #
+        # This pre-plink read uses the PLAIN _window_bim_n_var, NOT the retry-on-zero
+        # wrapper: the transient-short-read race that wrapper guards is a read racing
+        # plink's own 42 GB .ld.bin write (m3-02e-T4 260630-rn4). Here plink has not
+        # started, so there is no concurrent writer and nothing to race (RESEARCH §1
+        # step 2). The POST-plink read below keeps the guard, untouched.
+        exclude_path = None
+        occluded_ids: list[str] = []
+        occlusion_edges: list = []
+        if mode == "square":
+            pre_window_n_var, pre_window_bim = _window_bim_n_var(
+                bim_path, chrom, from_bp, to_bp,
+            )
+            raw_rows = [
+                ln.split()[:6]
+                for ln in Path(pre_window_bim).read_text().splitlines()
+                if ln.strip()
+            ]
+            occluded_ids, occlusion_edges = detect_occluded_variants(raw_rows)
+            if occluded_ids:
+                # Durable provenance, not a scratch temp: the excludelist is the
+                # exact argv input plink saw, kept next to the region's outputs so a
+                # reviewer can reproduce the drop set (survives _reclaim_region_scratch).
+                excl = Path(f"{out_prefix}.occluded.excludelist")
+                excl.parent.mkdir(parents=True, exist_ok=True)
+                excl.write_text("".join(f"{vid}\n" for vid in occluded_ids))
+                exclude_path = str(excl)
+                print(
+                    f"region {region_id}: EXCLUDING {len(occluded_ids)} "
+                    f"reference-occluded variant(s) before --r "
+                    f"({pre_window_n_var} in-window; overlapping-deletion REF span "
+                    f"-> structurally undefined LD; excluded in lockstep with "
+                    f"provenance, never zeroed — osf.io/az52u)",
+                    file=sys.stderr, flush=True,
+                )
+
         cmd = alp.build_plink_ld_command(
             bfile_prefix=bfile_prefix, chrom=chrom, from_bp=from_bp, to_bp=to_bp,
-            out_prefix=out_prefix, mode=mode,
+            out_prefix=out_prefix, mode=mode, exclude=exclude_path,
         )
         wall_min, peak_ram_gib = _run_plink(cmd)
         result["wall_min"] = round(wall_min, 4)
         result["peak_ram_gib"] = round(peak_ram_gib, 4)
-
-        # window-subset .bim (load_bim row order == .ld.bin row order)
-        bim_path = f"{bfile_prefix}.bim"
 
         if mode == "square":
             # SQUARE: compute bin_n_var FIRST so a NON-empty .ld.bin drives
@@ -649,7 +723,17 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             # HARDENING (260701-qcy H2, blast-radius D4): record + LOUDLY log how many
             # monomorphic (MAC=0) variants --mac 1 dropped. plink's own .log is
             # reclaimed with the region scratch, so this is the durable provenance.
-            n_dropped = raw_window_n_var - window_n_var
+            #
+            # m3-07b SPLIT: the two drop reasons are DISTINCT and must not be
+            # conflated. raw_window_n_var still counts ALL in-window variants
+            # (including the ones we excluded), so the naive
+            # `raw_window_n_var - window_n_var` would charge every occlusion drop to
+            # the monomorphic column. Subtract the occluded set FIRST: the
+            # monomorphic count is measured against the POST-exclude window, which is
+            # the population plink's --mac 1 actually saw.
+            n_dropped_occluded = len(occluded_ids)
+            result["n_dropped_occluded"] = n_dropped_occluded
+            n_dropped = (raw_window_n_var - n_dropped_occluded) - window_n_var
             result["n_dropped_monomorphic"] = n_dropped
             if n_dropped > 0:
                 print(
@@ -662,6 +746,7 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             window_n_var, window_bim = _window_bim_n_var(bim_path, chrom, from_bp, to_bp)
             ld_path = Path(f"{out_prefix}.ld.gz")
             n_var = window_n_var
+            result["n_dropped_occluded"] = None     # banded: no span filter (square is the fire path)
             result["n_dropped_monomorphic"] = None  # banded does not drop MAC=0
         result["n_var"] = n_var
 
@@ -688,6 +773,15 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                 result["out"] = npz_uri
                 if af_arg is not None and Path(af_arg).is_file():
                     _gsutil_upload(af_arg, _gs_join(gs_out_dir, f"{region_id}.afreq"))
+                # m3-07b: the occlusion drop set is durable provenance the OSF
+                # amendment-update commits to publishing — upload it before the
+                # local scratch is reclaimed. Coordinate/id-only (egress-clean:
+                # variant ids + geometry, no genotypes, no per-person counts).
+                if exclude_path is not None and Path(exclude_path).is_file():
+                    _gsutil_upload(
+                        exclude_path,
+                        _gs_join(gs_out_dir, f"{region_id}.occluded.excludelist"),
+                    )
             else:
                 result["out"] = str(out_npz)  # left in scratch for inspection
         else:
