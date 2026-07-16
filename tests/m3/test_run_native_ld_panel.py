@@ -391,6 +391,7 @@ def test_panel_tsv_append_resume_safe(tmp_path, monkeypatch):
     df = pd.read_csv(panel, sep="\t")
     assert list(df.columns) == [
         "region_id", "chr", "n_var", "wall_min", "peak_ram_gib", "output_gib", "status",
+        "n_dropped_occluded",  # m3-07b: occlusion span-filter drop-count provenance
         "n_dropped_monomorphic",  # 260701-qcy hardening H2: drop-count provenance
     ]
     # exactly one row per region (no duplicates after the re-skip pass)
