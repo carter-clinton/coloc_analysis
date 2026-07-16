@@ -1604,3 +1604,87 @@ def test_no_nan_to_zero_conditioning_in_the_driver():
         assert marker not in src, (
             f"driver must not reference the retired NaN->0 conditioning path: {marker!r}"
         )
+
+
+# --------------------------------------------------------------------------- #
+# 17. panel-TSV header reconciliation (260715-u22 blast-radius P1/P2/P4)      #
+# --------------------------------------------------------------------------- #
+#
+# _append_panel_row_local gated the header on file EXISTENCE only (:481) and read the
+# existing TSV ONLY to dedup region_id (:487) — it never compared list(existing.columns)
+# to _PANEL_COLUMNS. m3-07b's 8->9 widening ARMED that (the SECOND arming — ed9cfd4
+# already did 7->8, so EVERY future panel column re-arms it).
+#
+# A stale panel TSV at the gs:// path is very likely: append_panel_row at :808 is called
+# UNCONDITIONALLY after the per-region try/except, and every June/July fire reached
+# region 1 and errored, so those fires DID write panel rows under a 7- or 8-column
+# schema. "0/276 banked" does NOT evidence its absence — 0/276 is measured in .npz
+# objects, and the .npz (not the panel TSV) gates the resume skip (:605-608).
+#
+# These tests call the seam DIRECTLY (no plink mock, no _setup_cohort) — it is pure
+# pandas. The guard REFUSES; it must never auto-repair a stale file
+# ([[feedback_skip_guard_masks_not_fixes]] — a guard that silently repairs HIDES the bug).
+
+
+def test_append_panel_row_local_raises_on_a_stale_header(tmp_path):
+    """A stale (pre-m3-07b, 8-column) panel TSV RAISES instead of appending ragged.
+
+    EMPIRICAL REPRO (pre-fix): the append silently succeeded and produced a file with
+    `field counts: [8, 8, 9]` — 9 fields written under an 8-name header. The damage
+    lands on the NEXT region: its dedup read (`pd.read_csv` at :487) raises
+    `ParserError: Expected 8 fields, saw 9`, UNCAUGHT — `append_panel_row` is called at
+    :808, OUTSIDE the per-region try/except, and the main loop wraps `process_region` in
+    no try (:930-935). The billed ~11-day fire would ABORT after ~2 regions of compute.
+
+    Fail at region 1 at zero cost instead. The message must be ACTIONABLE: name the
+    offending column and tell the operator to rotate the stale file (it is rebuilt from
+    the banked per-region .npz, so deleting it costs no compute).
+    """
+    import pandas as pd
+
+    stale_cols = [c for c in drv._PANEL_COLUMNS if c != "n_dropped_occluded"]
+    assert len(stale_cols) == 8, "the real pre-m3-07b panel schema is 8 columns"
+    panel = tmp_path / "m3-W2-native-plink-panel.tsv"
+    pd.DataFrame(
+        [{c: "regA" if c == "region_id" else 1 for c in stale_cols}], columns=stale_cols
+    ).to_csv(panel, sep="\t", index=False)
+
+    row = {c: "regB" if c == "region_id" else 1 for c in drv._PANEL_COLUMNS}
+    with pytest.raises(ValueError) as exc:
+        drv._append_panel_row_local(panel, row)
+
+    msg = str(exc.value)
+    assert "n_dropped_occluded" in msg          # names the actual skew
+    assert "stale" in msg.lower()               # names the diagnosis
+    assert "rotate" in msg.lower() or "delete" in msg.lower()   # actionable
+
+
+def test_append_panel_row_local_appends_under_a_matching_header(tmp_path):
+    """A header MATCHING _PANEL_COLUMNS still appends — the guard must not false-trip.
+
+    The guard's whole value is that it fires ONLY on real skew; a false trip would
+    abort a healthy fire. Re-appending the same region must still be a dedup no-op:
+    the guard sits upstream of the dedup and must not break resume-safety.
+    """
+    import pandas as pd
+
+    panel = tmp_path / "m3-W2-native-plink-panel.tsv"
+    first = {c: "regA" if c == "region_id" else 1 for c in drv._PANEL_COLUMNS}
+    pd.DataFrame([first], columns=drv._PANEL_COLUMNS).to_csv(
+        panel, sep="\t", index=False
+    )
+
+    second = {c: "regB" if c == "region_id" else 2 for c in drv._PANEL_COLUMNS}
+    drv._append_panel_row_local(panel, second)          # must NOT raise
+
+    df = pd.read_csv(panel, sep="\t")
+    assert list(df.columns) == drv._PANEL_COLUMNS
+    assert sorted(df["region_id"].tolist()) == ["regA", "regB"]
+    # header appears exactly once in the raw text
+    raw = panel.read_text().splitlines()
+    assert sum(1 for ln in raw if ln.startswith("region_id\t")) == 1
+
+    # resume-safety survives the guard: re-appending regB is still a no-op
+    drv._append_panel_row_local(panel, second)
+    df2 = pd.read_csv(panel, sep="\t")
+    assert sorted(df2["region_id"].tolist()) == ["regA", "regB"]

@@ -485,6 +485,25 @@ def _append_panel_row_local(tsv_path: Path, row: dict) -> None:
         )
         return
     existing = pd.read_csv(tsv_path, sep="\t", dtype={"region_id": str})
+    # Reconcile the header BEFORE the dedup read below — ordering is load-bearing: a
+    # shifted stale file can make `existing["region_id"]` KeyError first, masking the
+    # real diagnosis. Appending under a mismatched header writes N fields beneath M
+    # names, which either aborts the next region's dedup read on an UNCAUGHT
+    # ParserError (append_panel_row is called at :808, outside the per-region
+    # try/except) or — against a header-only file — silently shifts every column via
+    # pandas' implicit-index inference. Either way the ~11-day billed fire is lost or
+    # its provenance falsified, so fail at region 1 at zero cost. REFUSE, never
+    # auto-repair: a guard that silently repairs HIDES the bug.
+    if list(existing.columns) != _PANEL_COLUMNS:
+        raise ValueError(
+            f"panel TSV {tsv_path} has a STALE header and cannot be appended to.\n"
+            f"  found:    {list(existing.columns)}\n"
+            f"  expected: {_PANEL_COLUMNS}\n"
+            "Appending under a mismatched header produces a ragged TSV that aborts the "
+            "loop on the next region's dedup read, or silently shifts every column. "
+            "Rotate or delete the stale panel TSV and re-run; it is rebuilt from the "
+            "banked per-region .npz files."
+        )
     if str(out_row["region_id"]) in set(existing["region_id"].astype(str)):
         return  # already banked -> no duplicate row
     with tsv_path.open("a") as fh:
