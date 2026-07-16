@@ -655,12 +655,48 @@ def test_sharding_args_in_main_signature():
 
 class _MockGsutil:
     """Monkeypatch target for drv._run_gsutil. Emulates a bucket as an in-memory
-    dict {gs_uri: size_bytes}. Records every gsutil argv. Supports the two verbs
-    the driver uses: `stat <uri>` (-> Content-Length) and `cp <src> <dst>`."""
+    dict {gs_uri: size_bytes} (plus a parallel {gs_uri: bytes} for the contents the
+    panel-TSV tests need). Records every gsutil argv. Supports the two verbs the
+    driver uses: `stat <uri>` (-> Content-Length) and `cp <src> <dst>`.
 
-    def __init__(self, *, prestaged: dict | None = None, stat_error_uris=None):
+    quick-260715-vxz extended this mock in three ways; every extension is opt-in via a
+    keyword-only kwarg defaulting to None, so all pre-existing call sites are
+    byte-identical (the m3-07b `_MockPlink` precedent):
+
+    * ``stat_indeterminate_uris`` / ``stat_raise_uris`` — the pre-existing
+      ``stat_error_uris`` raises the *absent* signature, so it could NOT express an
+      INDETERMINATE stat (the exact state P3 must distinguish from "absent").
+      ``stat_error_uris`` keeps its original semantics untouched.
+    * ``cp_fail_srcs`` — to model P3b (stat says PRESENT, the seed download fails).
+    * download direction + ``contents`` / ``prestaged_contents`` — the original `cp`
+      was UPLOAD-ONLY (``Path(src).stat()`` on a ``gs://`` src would raise
+      FileNotFoundError), so the mirror-seed DOWNLOAD path had never been exercised
+      by any test. That is how P3 survived.
+
+    The absent stderr is also corrected here from the singular ``"No URL matched"`` to
+    real gsutil's plural ``"No URLs matched: gs://..."``. A mock that misreports its
+    tool's output is the same bug class as P3 itself. This is safe for the
+    pre-existing stat-error test below because ``_gsutil_object_size`` catches ALL
+    exceptions and returns None regardless of stderr.
+    """
+
+    def __init__(self, *, prestaged: dict | None = None, stat_error_uris=None,
+                 prestaged_contents: dict | None = None,
+                 stat_indeterminate_uris=None, stat_raise_uris: dict | None = None,
+                 cp_fail_srcs=None):
         self.objects: dict[str, int] = dict(prestaged or {})
+        self.contents: dict[str, bytes] = {}
+        for _uri, _blob in (prestaged_contents or {}).items():
+            if isinstance(_blob, str):
+                _blob = _blob.encode()
+            self.contents[_uri] = _blob
+            self.objects[_uri] = len(_blob)
         self.stat_error_uris = set(stat_error_uris or [])
+        # a stat error that is NOT a positive "absent" signature -> INDETERMINATE
+        self.stat_indeterminate_uris = set(stat_indeterminate_uris or [])
+        # {uri: exception} -> raised verbatim (e.g. FileNotFoundError: no .stderr)
+        self.stat_raise_uris: dict = dict(stat_raise_uris or {})
+        self.cp_fail_srcs = set(cp_fail_srcs or [])
         self.calls: list[list[str]] = []
 
     def __call__(self, args: list[str]):
@@ -669,9 +705,20 @@ class _MockGsutil:
         verb = args[0]
         if verb == "stat":
             uri = args[1]
+            if uri in self.stat_raise_uris:
+                # a non-CalledProcessError (gsutil not installed / OS-level): the
+                # driver cannot inspect .stderr at all -> must be INDETERMINATE
+                raise self.stat_raise_uris[uri]
+            if uri in self.stat_indeterminate_uris:
+                # a transient/permission error: the object's existence is UNKNOWN
+                raise _sp.CalledProcessError(
+                    1, ["gsutil", *args], output="",
+                    stderr="ServiceException: 503 Backend Error")
             if uri in self.stat_error_uris or uri not in self.objects:
                 # gsutil stat exits non-zero on a missing object
-                raise _sp.CalledProcessError(1, ["gsutil", *args], output="", stderr="No URL matched")
+                raise _sp.CalledProcessError(
+                    1, ["gsutil", *args], output="",
+                    stderr=f"No URLs matched: {uri}")
             size = self.objects[uri]
             out = (
                 f"{uri}:\n"
@@ -682,7 +729,24 @@ class _MockGsutil:
             return _sp.CompletedProcess(["gsutil", *args], 0, stdout=out, stderr="")
         if verb == "cp":
             src, dst = args[1], args[2]
-            self.objects[dst] = Path(src).stat().st_size  # "upload" -> record size
+            if src in self.cp_fail_srcs:
+                raise _sp.CalledProcessError(
+                    1, ["gsutil", *args], output="",
+                    stderr="ServiceException: 503 Backend Error")
+            if src.startswith("gs://"):
+                # DOWNLOAD: bucket -> local mirror
+                if src not in self.contents:
+                    raise _sp.CalledProcessError(
+                        1, ["gsutil", *args], output="",
+                        stderr=f"No URLs matched: {src}")
+                Path(dst).parent.mkdir(parents=True, exist_ok=True)
+                Path(dst).write_bytes(self.contents[src])
+                return _sp.CompletedProcess(["gsutil", *args], 0, stdout="", stderr="")
+            # UPLOAD: local -> bucket. Records size exactly as before; also banks the
+            # bytes so the panel-TSV tests can prove the object is unchanged.
+            blob = Path(src).read_bytes()
+            self.objects[dst] = len(blob)
+            self.contents[dst] = blob
             return _sp.CompletedProcess(["gsutil", *args], 0, stdout="", stderr="")
         raise AssertionError(f"unexpected gsutil verb {verb!r}")
 
@@ -842,6 +906,132 @@ def test_gs_panel_tsv_uploaded(tmp_path, monkeypatch):
 
     cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
     assert gs_panel in cp_dsts                         # panel TSV uploaded to bucket
+
+
+# --------------------------------------------------------------------------- #
+# quick-260715-vxz (P3): a gsutil blip must NOT overwrite the banked panel TSV #
+# --------------------------------------------------------------------------- #
+
+_GS_PANEL_URI = "gs://test-bucket/ld/AFR_aou/m3-W2-native-plink-panel.tsv"
+
+
+def _banked_panel_bytes(region_ids: list[str]) -> bytes:
+    """A POPULATED bucket panel TSV: the real header + one banked row per region."""
+    lines = ["\t".join(drv._PANEL_COLUMNS)]
+    for rid in region_ids:
+        lines.append("\t".join([rid] + ["x"] * (len(drv._PANEL_COLUMNS) - 1)))
+    return ("\n".join(lines) + "\n").encode()
+
+
+def _panel_row(region_id: str) -> dict:
+    row = {c: "y" for c in drv._PANEL_COLUMNS}
+    row["region_id"] = region_id
+    return row
+
+
+def _cp_to(mock_gs, uri: str) -> list:
+    return [c for c in mock_gs.calls if c[0] == "cp" and c[2] == uri]
+
+
+def test_gs_panel_indeterminate_stat_refuses_without_overwriting(tmp_path, monkeypatch):
+    """P3a data-loss proof: an INDETERMINATE `gsutil stat` on the gs:// panel TSV (any
+    error that is NOT a positive absent signature) must RAISE — NOT silently seed a
+    fresh 1-row mirror and upload it OVER a populated bucket object.
+
+    The bucket-unchanged assertion IS the data-loss proof: a `pytest.raises`-only test
+    would pass even if the overwrite happened first.
+    """
+    banked = _banked_panel_bytes(["afr_b1", "afr_b2", "afr_b3"])
+
+    # (i) a transient backend error: a CalledProcessError whose stderr is NOT absent
+    mock_gs = _MockGsutil(prestaged_contents={_GS_PANEL_URI: banked},
+                          stat_indeterminate_uris={_GS_PANEL_URI})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    with pytest.raises(RuntimeError) as excinfo:
+        drv.append_panel_row(_GS_PANEL_URI, _panel_row("afr_new"),
+                             scratch_dir=tmp_path / "sA")
+    msg = str(excinfo.value)
+    assert _GS_PANEL_URI in msg                       # actionable: names the object
+    assert "indeterminate" in msg.lower()             # distinguishes P3a from P3b
+    assert mock_gs.contents[_GS_PANEL_URI] == banked  # THE proof: byte-identical
+    assert _cp_to(mock_gs, _GS_PANEL_URI) == []       # no upload was even attempted
+
+    # (ii) a NON-CalledProcessError (gsutil missing): it carries no .stderr at all, so
+    # it can never be classified absent -> INDETERMINATE. Pins the isinstance guard.
+    mock_gs2 = _MockGsutil(
+        prestaged_contents={_GS_PANEL_URI: banked},
+        stat_raise_uris={_GS_PANEL_URI: FileNotFoundError("gsutil not found")})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs2)
+    with pytest.raises(RuntimeError):
+        drv.append_panel_row(_GS_PANEL_URI, _panel_row("afr_new"),
+                             scratch_dir=tmp_path / "sB")
+    assert mock_gs2.contents[_GS_PANEL_URI] == banked
+    assert _cp_to(mock_gs2, _GS_PANEL_URI) == []
+
+
+def test_gs_panel_failed_seed_download_refuses_without_overwriting(tmp_path, monkeypatch):
+    """P3b data-loss proof: `stat` says the object is PRESENT and populated, but the
+    seed `cp` (download) FAILS. The old code swallowed that (`except Exception: pass`)
+    and uploaded a fresh 1-row file over an object it KNEW existed. It must RAISE and
+    leave the bucket object byte-identical."""
+    banked = _banked_panel_bytes(["afr_b1", "afr_b2", "afr_b3"])
+    mock_gs = _MockGsutil(prestaged_contents={_GS_PANEL_URI: banked},
+                          cp_fail_srcs={_GS_PANEL_URI})   # the DOWNLOAD fails
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        drv.append_panel_row(_GS_PANEL_URI, _panel_row("afr_new"),
+                             scratch_dir=tmp_path / "s")
+    msg = str(excinfo.value)
+    assert _GS_PANEL_URI in msg
+    assert "download" in msg.lower()                  # distinguishes P3b from P3a
+    assert mock_gs.contents[_GS_PANEL_URI] == banked  # THE proof: byte-identical
+    assert _cp_to(mock_gs, _GS_PANEL_URI) == []       # never uploaded over
+
+
+def test_gs_panel_definitively_absent_still_starts_fresh(tmp_path, monkeypatch):
+    """Regression / no-false-trip: a DEFINITIVELY absent panel object (real gsutil's
+    plural `No URLs matched: gs://...`, exit 1) must still start a fresh mirror and
+    upload — exactly as today. This is the legitimate FIRST region of the fire: if the
+    fail-CLOSED classifier is too narrow here, every region raises and the ~11-day fire
+    cannot start at all."""
+    mock_gs = _MockGsutil()                            # empty bucket -> truly absent
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    drv.append_panel_row(_GS_PANEL_URI, _panel_row("afr_first"),
+                         scratch_dir=tmp_path / "s")   # must NOT raise
+
+    assert _cp_to(mock_gs, _GS_PANEL_URI), "first region must still upload its panel row"
+    text = mock_gs.contents[_GS_PANEL_URI].decode()
+    assert text.splitlines()[0].split("\t") == drv._PANEL_COLUMNS
+    assert "afr_first" in text
+
+
+def test_gs_panel_seeded_from_bucket_dedups_across_recycle(tmp_path, monkeypatch):
+    """Regression: the happy path (present + successful seed download) seeds, appends,
+    uploads — and dedup-by-region_id SURVIVES a cluster recycle. Second call uses a
+    FRESH EMPTY scratch (= a recycled cluster whose local disk died), so the mirror can
+    only be rebuilt by actually downloading the bucket copy.
+
+    Per landmine 4 this download seed had never been exercised by any test: the mock's
+    `cp` was upload-only, so the download path was unreachable."""
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    # region 1 on scratch A (bucket empty -> fresh mirror)
+    drv.append_panel_row(_GS_PANEL_URI, _panel_row("afr1"), scratch_dir=tmp_path / "A")
+    # ... cluster recycles: scratch B is EMPTY -> mirror MUST be re-seeded from bucket
+    drv.append_panel_row(_GS_PANEL_URI, _panel_row("afr2"), scratch_dir=tmp_path / "B")
+    # the SAME region_id again on yet another fresh scratch -> must NOT duplicate
+    drv.append_panel_row(_GS_PANEL_URI, _panel_row("afr1"), scratch_dir=tmp_path / "C")
+
+    lines = mock_gs.contents[_GS_PANEL_URI].decode().strip().splitlines()
+    assert lines[0].split("\t") == drv._PANEL_COLUMNS      # header intact
+    region_ids = [ln.split("\t")[0] for ln in lines[1:]]
+    assert region_ids.count("afr1") == 1, f"dedup lost across recycle: {region_ids}"
+    assert sorted(region_ids) == ["afr1", "afr2"]          # afr2 banked, none dropped
+    # the seed really was a DOWNLOAD from the bucket (not an upload-only mock artifact)
+    assert [c for c in mock_gs.calls if c[0] == "cp" and c[1] == _GS_PANEL_URI]
 
 
 def test_local_out_dir_unchanged_no_gsutil(tmp_path, monkeypatch):

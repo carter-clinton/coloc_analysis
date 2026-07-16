@@ -222,6 +222,100 @@ def _gsutil_upload(local_path: "str | Path", gs_uri: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Fail-CLOSED bucket stat for the PANEL TSV path (quick-260715-vxz / P3)      #
+# --------------------------------------------------------------------------- #
+
+# The POSITIVE "this object does not exist" signatures of `gsutil stat`. Real gsutil
+# emits the PLURAL "No URLs matched: gs://..." and exits 1; the singular spelling is
+# tolerated defensively (older gsutil / wrapper variants). Matched case-insensitively.
+# Deliberately NARROW: this tuple is the ONLY thing that can license overwriting the
+# bucket panel TSV, so anything not listed here stays INDETERMINATE.
+_GSUTIL_ABSENT_SIGNATURES = ("no urls matched", "no url matched")
+
+_PANEL_REFUSAL_ADVICE = (
+    "The bucket panel TSV may hold the provenance rows banked by every region "
+    "completed so far. Seeding a FRESH local mirror now would upload a 1-row file "
+    "OVER it and destroy them, and the loss would be SILENT: the per-region .npz "
+    "(not this TSV) gate the resume skip, so the run would continue to completion "
+    "looking healthy. Refusing instead, at zero cost. Re-run once "
+    "connectivity/credentials are restored — completed regions are skipped via their "
+    "banked .npz, and this panel TSV is itself rebuildable from those .npz files."
+)
+
+
+class PanelBucketStateUnknown(RuntimeError):
+    """The bucket state of the panel TSV could not be POSITIVELY established, so
+    proceeding might silently overwrite banked provenance. Raised instead of guessing."""
+
+
+def _gsutil_panel_object_size(gs_uri: str) -> "int | None":
+    """Fail-CLOSED tri-state ``gsutil stat`` for the PANEL TSV path.
+
+    Returns the Content-Length when the object is PRESENT, or ``None`` iff gsutil
+    POSITIVELY reported it ABSENT. Every INDETERMINATE outcome raises
+    ``PanelBucketStateUnknown``.
+
+    WHY this exists alongside the fail-OPEN ``_gsutil_object_size`` (:186) instead of
+    replacing it: that helper has two callers whose failure-safety requirements are
+    OPPOSITE, so one default cannot serve both.
+
+    * ``_existing_region_npz_gs`` (:209, the resume guard) — a false "absent" costs
+      COMPUTE (the region is recomputed) and loses NO data. "Any error -> assume
+      absent" is CORRECT there and is load-bearing for the 276-region resume skip.
+    * the panel-TSV mirror seed (``append_panel_row``) — a false "absent" causes DATA
+      LOSS: an unseeded mirror is written fresh (header + 1 row) and then uploaded OVER
+      the bucket object, destroying every banked row. Here "assume absent" is exactly
+      backwards, so we REFUSE.
+
+    Fail closed: anything that cannot be POSITIVELY classified ABSENT is INDETERMINATE
+    -- another ``CalledProcessError`` (503 ServiceException, 403 AccessDenied, 404
+    BucketNotFound), any non-``CalledProcessError`` (e.g. ``FileNotFoundError`` when
+    gsutil is not installed -- which carries no ``.stderr`` to inspect at all), or an
+    exit-0 stat with no parseable Content-Length.
+    """
+    try:
+        proc = _run_gsutil(["stat", gs_uri])
+    except subprocess.CalledProcessError as exc:
+        # Only a CalledProcessError carries a .stderr worth classifying. (The except
+        # clause IS the isinstance guard: a FileNotFoundError has no .stderr and is
+        # handled by the branch below.)
+        stderr = exc.stderr or ""
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", "replace")
+        if any(sig in stderr.lower() for sig in _GSUTIL_ABSENT_SIGNATURES):
+            return None  # POSITIVELY absent -> a fresh mirror is lossless
+        raise PanelBucketStateUnknown(
+            f"INDETERMINATE bucket state for the panel TSV {gs_uri}: `gsutil stat` "
+            f"failed with exit {exc.returncode} but did NOT report the object absent, "
+            f"so we cannot tell whether it exists.\n"
+            f"  gsutil stderr: {stderr.strip() or '(empty)'}\n"
+            f"{_PANEL_REFUSAL_ADVICE}"
+        ) from exc
+    except Exception as exc:
+        raise PanelBucketStateUnknown(
+            f"INDETERMINATE bucket state for the panel TSV {gs_uri}: `gsutil stat` "
+            f"raised {type(exc).__name__} ({exc}) -- not a gsutil exit status, so the "
+            f"object's existence cannot be established.\n"
+            f"{_PANEL_REFUSAL_ADVICE}"
+        ) from exc
+    for line in (proc.stdout or "").splitlines():
+        if "Content-Length:" in line:
+            try:
+                return int(line.split("Content-Length:")[1].strip())
+            except (ValueError, IndexError) as exc:
+                raise PanelBucketStateUnknown(
+                    f"INDETERMINATE bucket state for the panel TSV {gs_uri}: `gsutil "
+                    f"stat` succeeded but its Content-Length was unparseable "
+                    f"({line.strip()!r}).\n{_PANEL_REFUSAL_ADVICE}"
+                ) from exc
+    raise PanelBucketStateUnknown(
+        f"INDETERMINATE bucket state for the panel TSV {gs_uri}: `gsutil stat` "
+        f"succeeded (exit 0 -> the object EXISTS) but reported no Content-Length, so "
+        f"its size is unknown. This is NOT absence.\n{_PANEL_REFUSAL_ADVICE}"
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Content verification (D-M3-10; markers are NOT evidence)                    #
 # --------------------------------------------------------------------------- #
 
@@ -531,14 +625,40 @@ def append_panel_row(tsv_path: "str | Path", row: dict,
     scratch_dir.mkdir(parents=True, exist_ok=True)
     local_mirror = scratch_dir / gs_uri.rsplit("/", 1)[-1]
     if not local_mirror.exists():
-        # Seed the local mirror from the bucket copy if one exists (resume-safe
-        # dedup across a cluster recycle); absent/erroring -> start fresh.
-        existing_size = _gsutil_object_size(gs_uri)
+        # Seed the local mirror from the bucket copy (resume-safe dedup across a
+        # cluster recycle). INVARIANT (quick-260715-vxz / P3): the mirror is uploaded
+        # OVER the bucket object below, so we may only start FRESH when the bucket
+        # state has been POSITIVELY established -- either the object definitively does
+        # not exist, or we successfully downloaded it. An INDETERMINATE state RAISES:
+        # the old code guessed "absent" on ANY gsutil error and destroyed every banked
+        # row. Note the fail-CLOSED stat here vs the fail-OPEN _gsutil_object_size used
+        # by the resume guard -- see _gsutil_panel_object_size's docstring for why the
+        # two callers need opposite defaults.
+        existing_size = _gsutil_panel_object_size(gs_uri)  # raises if INDETERMINATE
         if existing_size is not None and existing_size > 0:
+            # The object is KNOWN to exist and hold rows -> the seed MUST succeed.
             try:
                 _run_gsutil(["cp", gs_uri, str(local_mirror)])
-            except Exception:
-                pass
+            except Exception as exc:
+                raise PanelBucketStateUnknown(
+                    f"failed to DOWNLOAD the existing panel TSV {gs_uri} "
+                    f"({existing_size} B) to seed the local mirror "
+                    f"{local_mirror}: {type(exc).__name__}: {exc}\n"
+                    f"This object is KNOWN to exist, so appending to an unseeded "
+                    f"mirror would upload a 1-row file over it.\n"
+                    f"{_PANEL_REFUSAL_ADVICE}"
+                ) from exc
+            if not local_mirror.exists():
+                # cp reported success but nothing landed: same data loss, other door.
+                raise PanelBucketStateUnknown(
+                    f"the seed download of the existing panel TSV {gs_uri} "
+                    f"({existing_size} B) reported SUCCESS but produced no local "
+                    f"mirror at {local_mirror}, so its banked rows are not present "
+                    f"locally.\n{_PANEL_REFUSAL_ADVICE}"
+                )
+        # existing_size == 0 -> an empty object holds no rows -> starting fresh is
+        # lossless (preserves the pre-existing `> 0` behavior). None -> POSITIVELY
+        # absent -> the legitimate first region of a fire.
     _append_panel_row_local(local_mirror, row)
     _gsutil_upload(local_mirror, gs_uri)
 
