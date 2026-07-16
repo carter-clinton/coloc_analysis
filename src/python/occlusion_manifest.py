@@ -293,6 +293,30 @@ def add_grch37_positions(records: Iterable[dict],
     return out
 
 
+def _present_rate_key(chrom, pos_grch37):
+    """Canonical present_rate key: ``(chr, pos_grch37)`` on GRCh37.
+
+    Returns None when the variant did not lift (``pos_grch37`` is None/NaN) — such a
+    row can never join the (CHR,POS)-only GRCh37 scan, so it gets ``pd.NA``.
+
+    On the normalization, honestly: pandas hands back ``numpy.int64`` / ``float64``,
+    and Python's numeric hash equality means those *would* incidentally match a plain
+    ``int`` key. This helper exists to make the contract EXPLICIT rather than
+    incidental, to handle a ``"chr"``-prefixed or string contig should an upstream
+    ever supply one, and to give the unlifted row an explicit ``None`` key. The real
+    producer emits ``'1'``, so the prefix branch is deliberately NOT pinned by a
+    contrived ``"chr1"`` test — a fake test would be worse than none.
+    """
+    if pos_grch37 is None or pd.isna(pos_grch37):
+        return None
+    contig = str(chrom).strip()
+    if contig.lower().startswith("chr"):
+        contig = contig[3:]
+    if contig.isdigit():
+        contig = int(contig)
+    return (contig, int(pos_grch37))
+
+
 def enrich_occlusion_manifest(manifest_path: "str | Path",
                               chain_path: "str | Path",
                               *, out_path: "str | Path | None" = None,
@@ -303,10 +327,30 @@ def enrich_occlusion_manifest(manifest_path: "str | Path",
     SHA-256 on every row (so the build-37 coordinates are reproducible from the
     recorded chain identity), and declares the ``traits_present`` seam columns.
 
-    ``present_rate`` is the 07c hand-off: ``{variant_id: {...}}`` supplying the
-    trait-scan columns. When None, the seam columns are declared and left EMPTY —
-    07c populates them. They are declared even when empty so the schema is stable
-    and a downstream consumer can tell "not yet scanned" from "scanned, absent".
+    ``present_rate`` is the 07c hand-off, keyed ``{(chr, pos_grch37): {...}}`` on
+    **GRCh37, POST-LIFTOVER** — the same key ``occlusion_present_rate_scan`` emits
+    (``test_occlusion_present_rate_scan.py:72``: ``target = (1, 5_982_778)``). It is
+    NOT keyed by ``variant_id``: the scan reads public GRCh37 harmonized sumstats and
+    locates rows by (CHR,POS), so it can never compute a GRCh38 ``variant_id``, and
+    the two encode different coordinates AND alleles ('1:5922718:A:A' on GRCh38 vs
+    5982778 on GRCh37). Note :data:`STAGE_A_COLUMNS` carries NO ``pos_grch37`` —
+    :func:`add_grch37_positions` adds it — so this join is only possible HERE, after
+    the lift; that is why the re-key lives inside enrich rather than in the scan.
+
+    When None, the seam columns are declared and left EMPTY — 07c populates them.
+    They are declared even when empty so the schema is stable and a downstream
+    consumer can tell "not yet scanned" from "scanned, absent".
+
+    THE EXACT RAISE BOUNDARY (all three pinned by tests; do not rediscover this
+    during m3-07c integration):
+
+    * a row that did NOT lift (``pos_grch37`` is None) -> ``pd.NA``, **never** a raise;
+    * non-empty ``present_rate`` + at least ONE liftable row + ZERO key matches ->
+      **raises ValueError**, because a total miss among joinable rows is
+      indistinguishable from a real "scanned, absent everywhere" k=0 result and would
+      publish silently-wrong pre-registered provenance (osf.io/az52u);
+    * non-empty ``present_rate`` + ZERO liftable rows -> **no raise**, all ``pd.NA``
+      — there is nothing to join against, so silence is the CORRECT answer.
 
     Writes to ``out_path`` (default: in place) and returns that path.
     """
@@ -326,9 +370,32 @@ def enrich_occlusion_manifest(manifest_path: "str | Path",
         if col not in out.columns:
             out[col] = pd.NA
     if present_rate:
+        keys = [_present_rate_key(c, p)
+                for c, p in zip(out["chr"], out["pos_grch37"])]
+        # Scope the total-miss guard to LIFTABLE rows ONLY. A None key means the
+        # variant did not lift — an EXPLICIT, documented signal (see
+        # add_grch37_positions), NOT a key-contract bug: there is simply nothing to
+        # join against, so pd.NA is the CORRECT answer and silence is right. But if
+        # liftable keys DO exist and not ONE of them matches, the only plausible
+        # cause is a key-contract regression -> raise. Guarding on `keys` instead of
+        # `keys_present` would hard-abort a region whose occluded variants all sit in
+        # a liftover/assembly gap (rare but plausible — nothing upstream excludes
+        # assembly gaps) with a message indistinguishable from a real regression.
+        keys_present = [k for k in keys if k is not None]
+        if keys_present and not any(k in present_rate for k in keys_present):
+            raise ValueError(
+                "present_rate matched NO manifest row. It must be keyed on "
+                "(chr, pos_grch37) — GRCh37, post-liftover — e.g. (1, 5982778). "
+                f"Got {len(present_rate)} key(s) like "
+                f"{next(iter(present_rate))!r}; manifest keys look like "
+                f"{keys_present[0]!r}. "
+                "Refusing to fill pd.NA, which would be indistinguishable from a "
+                "real scanned-but-absent-everywhere result."
+            )
         for col in STAGE_B_TRAIT_COLUMNS:
             out[col] = [
-                present_rate.get(vid, {}).get(col, pd.NA) for vid in out["variant_id"]
+                present_rate.get(k, {}).get(col, pd.NA) if k is not None else pd.NA
+                for k in keys
             ]
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

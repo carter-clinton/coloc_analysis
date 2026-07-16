@@ -345,3 +345,228 @@ def test_liftover_failure_records_na_not_a_wrong_position():
     val = lifted[0]["pos_grch37"]
     is_missing = val is None or val == "NA" or (isinstance(val, float) and math.isnan(val))
     assert is_missing, f"unmappable variant must record NA, got {val!r}"
+
+
+# --------------------------------------------------------------------------- #
+# 4. the scan->enrich SEAM: present_rate is keyed (chr, pos_grch37) on GRCh37  #
+# --------------------------------------------------------------------------- #
+#
+# SEAM (blast-radius 2026-07-15, quick-260715-u22). The sibling seam — the manifest
+# PRODUCER vs the sumstats CONSUMER — got a guard at
+# test_occlusion_lockstep_drop.py:272 (test_producer_manifest_feeds_the_consumer),
+# whose docstring warns that "07b and 07c can each ship green while producing a
+# manifest the other cannot consume". THIS seam is its sibling and had none: the 07c
+# present-rate scan (`scan_present_rate`, unbuilt) is pinned by its own RED to return
+# a dict keyed by a (chr, pos) TUPLE on **GRCh37**
+# (test_occlusion_present_rate_scan.py:72 — `target = (1, 5_982_778)`; the string
+# `variant_id` appears NOWHERE in that suite), while the SHIPPED consumer looked the
+# hand-off up by the GRCh38-derived `variant_id` STRING. A dict `.get()` miss is
+# SILENT: build 07c exactly to its RED and every lookup misses -> traits_present /
+# n_traits_present / n_traits_scanned go pd.NA across ALL 276 regions, reading
+# "scanned but absent everywhere" and INDISTINGUISHABLE from a real k=0 — which would
+# silently blank the rs182965575 "present in 7 of 9 AFR sumstats" evidence that
+# retired NaN->0 and is published as the osf.io/az52u provenance. Both suites stay
+# green throughout.
+#
+# It is not a cast: the scan reads PUBLIC GRCh37 harmonized sumstats and locates rows
+# by (CHR,POS), so it can never compute a GRCh38 variant_id. `STAGE_A_COLUMNS` carries
+# no `pos_grch37` at all — `add_grch37_positions` adds it — so `enrich` (post-lift) is
+# the ONLY place carrying BOTH `variant_id` and `chr` + `pos_grch37`. The join must
+# therefore happen there, on (chr, pos_grch37).
+#
+# The present_rate dicts below are HAND-CONSTRUCTED on purpose: importing
+# `occlusion_present_rate_scan` would tie these tests to unbuilt 07c and keep them RED
+# forever instead of pinning the contract 07c must be built against TODAY.
+
+
+def test_present_rate_joins_on_the_chr_pos_grch37_tuple_key(tmp_path):
+    """present_rate keyed {(chr, pos_grch37): {...}} populates the matching row.
+
+    `(1, 5_982_778)` is byte-identical to the key the 07c producer RED emits
+    (test_occlusion_present_rate_scan.py:72) — that identity IS the seam. snpC is
+    GRCh38 5922718 -> GRCh37 5982778 (the settled hinge-check anchor), so a consumer
+    keying on the GRCh38 `variant_id` ('1:5922718:A:A') can never match it.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import pandas as pd
+    import occlusion_manifest as om
+
+    manifest = tmp_path / "occlusion_manifest.tsv"
+    om.append_region_manifest(
+        manifest, om.build_region_records("m2_region_00001", _region1_rows())
+    )
+
+    out = tmp_path / "enriched.tsv"
+    om.enrich_occlusion_manifest(
+        manifest, chain, out_path=out,
+        present_rate={
+            (1, 5_982_778): {
+                "traits_present": "bmi,ldl",
+                "n_traits_present": 2,
+                "n_traits_scanned": 3,
+            }
+        },
+    )
+
+    df = pd.read_csv(out, sep="\t")
+    target = df[df["pos_grch38"] == 5_922_718]
+    assert len(target) == 1, "the region-1 fixture emits exactly one snpC row"
+    row = target.iloc[0]
+    assert int(row["pos_grch37"]) == 5_982_778          # the seam's join key
+    assert row["traits_present"] == "bmi,ldl"
+    assert int(row["n_traits_present"]) == 2
+    assert int(row["n_traits_scanned"]) == 3
+
+    # the four NON-target occluded rows were not scanned -> explicitly missing
+    others = df[df["pos_grch38"] != 5_922_718]
+    assert len(others) == 4
+    for col in om.STAGE_B_TRAIT_COLUMNS:
+        assert others[col].isna().all(), f"unscanned row got a value in {col!r}"
+
+
+def test_present_rate_leaves_na_for_a_variant_that_did_not_lift(tmp_path):
+    """A row whose liftover FAILED (pos_grch37 is None) can never join the
+    (CHR,POS)-only GRCh37 scan, so its trait columns are pd.NA — deliberately.
+
+    `None` is an EXPLICIT, already-documented signal (add_grch37_positions:270-279,
+    :291), not an error. This test also forces the float normalization the join must
+    survive: one unlifted row demotes `out["pos_grch37"]` from int64 to float64
+    (None -> NaN), so a key built by a naive `int(...)` over the column would raise
+    and a key built without NaN-handling would fabricate a bogus position.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import pandas as pd
+    import occlusion_manifest as om
+
+    manifest = tmp_path / "occlusion_manifest.tsv"
+    om.append_region_manifest(
+        manifest, om.build_region_records("m2_region_00001", _region1_rows())
+    )
+    # one synthetic Stage-A row at an unmappable coordinate far past the end of chr1
+    # (mirrors test_liftover_failure_records_na_not_a_wrong_position:341)
+    unmappable_vid = "1:999999999:A:T"
+    om.append_region_manifest(manifest, [{
+        "region_id": "m2_region_00001",
+        "chr": "1",
+        "variant_id": unmappable_vid,
+        "pos_grch38": 999_999_999,
+        "ref": "A",
+        "alt": "T",
+        "ref_span_start_grch38": 999_999_990,
+        "ref_span_end_grch38": 999_999_999,
+        "occluding_deletion_id": "1:999999990:AAAAAAAAAA:A",
+        "occluding_deletion_ref_len": 10,
+        "reason": om.REASON_REFERENCE_OCCLUSION,
+        "occlusion_order": "direct",
+    }])
+
+    out = tmp_path / "enriched.tsv"
+    # a LEGITIMATE key that DOES match a liftable row, so the total-miss guard
+    # (pinned separately) is not what is under test here
+    om.enrich_occlusion_manifest(
+        manifest, chain, out_path=out,
+        present_rate={
+            (1, 5_982_778): {
+                "traits_present": "bmi", "n_traits_present": 1, "n_traits_scanned": 9,
+            }
+        },
+    )
+
+    df = pd.read_csv(out, sep="\t")
+    unlifted = df[df["variant_id"] == unmappable_vid]
+    assert len(unlifted) == 1
+    assert unlifted.iloc[0]["pos_grch37"] is None or pd.isna(unlifted.iloc[0]["pos_grch37"])
+    for col in om.STAGE_B_TRAIT_COLUMNS:
+        assert unlifted[col].isna().all(), (
+            f"an unlifted variant must carry NA in {col!r}, never a guessed join"
+        )
+    # the liftable target still joined (the unlifted row must not poison the join)
+    target = df[df["pos_grch38"] == 5_922_718]
+    assert target.iloc[0]["traits_present"] == "bmi"
+
+
+def test_present_rate_matching_no_liftable_row_raises_not_silent_na(tmp_path):
+    """A non-empty present_rate that matches NOT ONE liftable row RAISES.
+
+    This whole bug class is silent-pd.NA. When liftable rows EXIST, a total miss is
+    indistinguishable from a real "scanned, absent in every trait" result — the
+    manifest would publish k=0 provenance that is actually a key-contract bug. There
+    is no honest way to tell those apart after the fact, so we refuse to write the
+    file rather than publish silently-wrong pre-registered provenance (osf.io/az52u).
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import occlusion_manifest as om
+
+    manifest = tmp_path / "occlusion_manifest.tsv"
+    # all 5 region-1 records LIFT, so liftable keys exist -> the guard is armed
+    om.append_region_manifest(
+        manifest, om.build_region_records("m2_region_00001", _region1_rows())
+    )
+
+    with pytest.raises(ValueError) as exc:
+        om.enrich_occlusion_manifest(
+            manifest, chain, out_path=tmp_path / "enriched.tsv",
+            present_rate={(99, 1): {"traits_present": "bmi",
+                                    "n_traits_present": 1,
+                                    "n_traits_scanned": 9}},
+        )
+
+    msg = str(exc.value)
+    # the message must NAME the contract, not just say "no match"
+    assert "pos_grch37" in msg
+    assert "chr" in msg
+
+
+def test_present_rate_against_a_wholly_unliftable_manifest_does_not_raise(tmp_path):
+    """ZERO liftable rows + a non-empty present_rate -> NO raise, all pd.NA.
+
+    The symmetric case to the total-miss guard, and the reason that guard is scoped to
+    LIFTABLE rows only. A None key means "this variant did not lift" — an EXPLICIT,
+    already-documented signal (add_grch37_positions:270-279, :291), correctly carried
+    as pd.NA. There is nothing to join against, so silence is CORRECT here.
+
+    A guard that also halted this legitimate case would trade a silent-wrong-data bug
+    for a false-abort bug — hard-aborting a region whose occluded variants all sit in
+    a liftover/assembly gap (rare but plausible; nothing upstream excludes assembly
+    gaps), with a message indistinguishable from a real regression. That guard would
+    get ripped out by a future maintainer, silently restoring the original defect.
+    **Test C and this test together pin the exact raise boundary; neither is complete
+    without the other.**
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import occlusion_manifest as om
+
+    # Mutate the REAL producer's output so nothing lifts — this keeps the full Stage-A
+    # schema (an honest manifest) rather than hand-rolling one. 999_999_999+ is far
+    # past the end of chr1 and is already pinned as unmappable at :341.
+    records = om.build_region_records("m2_region_00001", _region1_rows())
+    assert len(records) == 5
+    for i, rec in enumerate(records):
+        rec["pos_grch38"] = 999_999_999 + i
+        # keep the 5 records distinct under the (region_id, variant_id) dedup
+        rec["variant_id"] = f"{rec['chr']}:{rec['pos_grch38']}:{rec['ref']}:{rec['alt']}"
+
+    manifest = tmp_path / "occlusion_manifest.tsv"
+    om.append_region_manifest(manifest, records)
+
+    out = tmp_path / "enriched.tsv"
+    # a LEGITIMATE non-empty present_rate — the same real key Test A joins on
+    out_path = om.enrich_occlusion_manifest(   # must NOT raise
+        manifest, chain, out_path=out,
+        present_rate={
+            (1, 5_982_778): {
+                "traits_present": "bmi,ldl", "n_traits_present": 2, "n_traits_scanned": 3,
+            }
+        },
+    )
+
+    import pandas as pd
+    df = pd.read_csv(out_path, sep="\t")
+    assert len(df) == 5
+    assert df["pos_grch37"].isna().all(), "the fixture is meant to be wholly unliftable"
+    for col in om.STAGE_B_TRAIT_COLUMNS:
+        assert df[col].isna().all()
