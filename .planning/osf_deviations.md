@@ -186,3 +186,81 @@ The decision is a Cowork-side editorial decision, not an HPC-side compute decisi
 - **Git tag:** `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10` on the record commit.
 - **Amends:** osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J) via osf.io/az52u file tcujq. Sibling
   of osf-amendment-afr-native-ld-nan-psd-2026-07-03.md.
+
+---
+
+### REQ-AOU-LD-VALIDATION Check 2 redefined without prior OSF amendment posting (operator override 2026-08-03)
+
+**Date:** 2026-08-03
+
+**Affected:** `AOU-LD-PIPELINE.md` §9.2 (Check 2 of the four-check validation protocol) and
+REQ-AOU-LD-VALIDATION. Gate location: `m3-04c-W4-panel-reachability-egress-and-fire-PLAN.md`
+Task 3 STEP F ("OSF AMENDMENT-UPDATE FOR THE CHECK-2 REDEFINITION").
+
+**Issue:** §9.2 as pre-registered reads *"Compute AoU EUR LD at the same 10 regions; compute
+entry-wise Pearson correlation against 1000G EUR. Pass threshold: mean entry-wise r ≥ 0.97 for
+variants with MAF ≥ 0.05 in both; ≥ 0.90 for MAF 0.01–0.05."* This is **structurally
+unrunnable**: the m3-02e cost re-architecture retired the AoU EUR panel entirely (EUR LD is now
+the public UKBB 337k reference, built on NCSU at $0 and never crossing an AoU boundary), so the
+`AoU EUR` operand of the comparison will never exist. §9 declares the four checks *"a hard gate
+for promoting the pipeline from dev to production."* All four `validation/` check directories
+are currently EMPTY — the protocol has never been run.
+
+**Resolution:** The posting gate is **bypassed under operator override** (Carter, 2026-08-03).
+Check 2 is redefined in-repo, dated, with its evidence, and the redefinition is recorded here
+rather than silently absorbed. The redefinition is three parts:
+- **2a** — code-path equivalence of `run_native_ld_panel` against a direct `plink --r square`
+  on public 1000G. $0, can genuinely fail, and exercises the exact estimator + IO path
+  including the `lower_triangular` flag contract.
+- **2b** — AoU-AFR vs 1000G-AFR entry-wise r, **REPORTED, NOT THRESHOLDED**.
+- **2c** — `EUR_ukbb_pub` vs 1000G EUR sanity comparison, threshold **retained at r ≥ 0.90**.
+
+**⚠ HOW THIS DIFFERS FROM THE 2026-05-05 PRECEDENT — read before citing that precedent here.**
+The TA-R3 override above was defensible primarily because *"the deviation is in registration
+timing, not in analysis content — the same lambda sweep, same outcome-branch decision matrix,
+same convergence criteria apply."* **That defense does NOT fully transfer to this override.**
+Part 2b **removes a pass/fail threshold**, which changes a decision rule, not merely the timing
+of its disclosure. This is therefore a *content* deviation and must be disclosed as one. Do not
+describe it as timing-only.
+
+**Why the 2b threshold removal is nonetheless scientifically correct (state this, don't hide
+it):** the original 0.97 floor was written for an **AoU EUR vs 1000G EUR** comparison — two EUR
+panels, where near-identity is the legitimate expectation. Applying that floor to an **AFR**
+comparison inverts its meaning: a *low* AoU-AFR vs 1000G-AFR correlation is the **expected and
+desired** finding, because 1000G AFR (n=661) is precisely the inadequate reference whose
+replacement is the entire scientific rationale for building an AoU AFR panel (M1a). A 0.97 pass
+threshold on 2b would fail the panel for succeeding. The honest instrument is to report the
+divergence as the headline result, which is what 2b does — and Check 4 (identity-placeholder
+A/B) already carries the yield comparison. Note that 2c **retains** a real threshold and 2a is
+a genuine pass/fail gate, so the redefined protocol is not threshold-free.
+
+**Disclosure obligations created by this override (NOT discharged by this entry):**
+1. Draft + post an OSF amendment-update to `osf.io/az52u` recording the Check-2 redefinition,
+   under the m3-07a discipline (agent DRAFTS, Carter POSTS, file GUID recorded in-repo).
+2. **Until that posting exists, no redefined Check 2 result may be cited as "passed"** — in the
+   manuscript, in the Sci Data descriptor, or in any closeout artifact. Report it as
+   `OVERRIDDEN — redefined pending amendment` wherever a status is required.
+3. If the panel reaches publication before the posting lands, fold the deviation into the
+   manuscript's pre-registration-limitations statement, mirroring resolution (b) of the
+   2026-05-05 override.
+
+**Related, still open (separate item, not covered by this override):** the per-region occlusion
+provenance manifest currently has **no path out of the AoU perimeter** —
+`run_native_ld_panel.py:822` writes `{compute_dir}/occlusion_manifest.tsv` into local scratch
+(`:733`) and the upload set (`:922-938`) is only `.npz` + `.afreq` + `.occluded.excludelist`.
+The drop KEY is reconstructable from the uploaded excludelists via GRCh38 varid + liftover, but
+the occluder attribution, REF spans and reason/order labels are NOT — and those are precisely
+what the `trsx5` amendment-update commits to publishing. Tracked as PRE-FIRE 1 in the m3-04c
+gate; a compliance gap, not a mechanics blocker.
+
+**Files affected:**
+- `.planning/osf_deviations.md` (this entry)
+- `.planning/phases/m3-aou-afr-ld-panel-build/m3-04c-W4-panel-reachability-egress-and-fire-PLAN.md`
+  (Task 3 STEP F — the posting gate being overridden; Task 2 step 7 — the in-repo redefinition addendum)
+- `.planning/amendments/AOU-LD-PIPELINE.md` §9.2 (the pre-registered text being deviated from; NOT edited)
+
+**Verification at override time:**
+- `AOU-LD-PIPELINE.md` §9.2 present and unmodified (the pre-registered text is preserved verbatim).
+- All four `.planning/phases/m3-aou-afr-ld-panel-build/validation/check_*/` directories EMPTY
+  (0 files each) — no check has been run or cited under either the original or redefined form.
+- No OSF file GUID exists for a Check-2 amendment-update as of this entry.
