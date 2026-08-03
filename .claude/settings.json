@@ -25,7 +25,18 @@
       "Bash(node __TRACKED_VAR__/.claude/get-shit-done/bin/gsd-tools.cjs config-get workflow.discuss_mode)",
       "Skill(gsd-debug)",
       "Skill(gsd-debug:*)",
-      "Read(//gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/**)"
+      "Read(//gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/**)",
+      "WebFetch(domain:www.ncbi.nlm.nih.gov)",
+      "Bash(git -C /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis log --oneline -6)",
+      "Bash(git -C /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis status --short)",
+      "Bash(git -C /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis log --oneline -4)",
+      "Bash(sed -n '220,224p' /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/docs/manuscript/track_a_pivot.md)",
+      "Bash(git -C /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis log --oneline -8)",
+      "Bash(sed -n '220,228p' docs/manuscript/track_a_pivot.md)",
+      "Bash(sed -n '289,310p' docs/manuscript/track_a_pivot.md)"
+    ],
+    "additionalDirectories": [
+      "/home/ckclinto/.codex/.tmp"
     ]
   }
 }
