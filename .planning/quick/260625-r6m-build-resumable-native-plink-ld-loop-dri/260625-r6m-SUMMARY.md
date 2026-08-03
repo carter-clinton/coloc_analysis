@@ -23,6 +23,7 @@ tech-stack:
     - "Per-region content verification (D-M3-10) returns (ok, reason); failures continue the loop, never abort."
     - "Resume-safe TSV append: header once, dedup by region_id."
     - "Static index-sharding (idx %% num_shards == shard_index) over the deterministic, un-re-sorted ancestry-filtered order: disjoint + exhaustive partition across 8 VMs without coordination; outputs + resume guard stay on the SHARED out-dir (sharding partitions WHICH regions, not where outputs land)."
+    - "Durable gs:// destination (Dataproc bucket-first): compute into local scratch, content-verify, gsutil-cp the verified .npz/AF up; gs:// resume via gsutil stat + MED-6 floor (hail-free subprocess, NOT the hail hadoop branch); .bed/.bim/.fam never uploaded."
 key-files:
   created:
     - src/python/run_native_ld_panel.py
@@ -34,9 +35,9 @@ decisions:
   - "content_verify_npz returns (ok, reason) instead of raising, so the loop records the per-region status and continues (DoS mitigation T-260625-r6m-05)."
   - "FOLLOW-UP: sharding partitions WHICH regions a VM computes (idx %% num_shards == shard_index) but NOT where outputs land — .npz outputs + the _existing_region_npz resume guard stay on the SHARED out-dir so resume is GLOBAL across the 8 VMs and the egress bundler sees all 276. Per-shard --panel-tsv (8 VMs cannot safely co-append one TSV on a shared FS); the 8 shard TSVs are merged (concat + dedup by region_id) at handback."
 metrics:
-  duration: ~70 min initial + ~60 min follow-up (each incl. a ~46-48 min full-suite gate)
-  completed: 2026-06-25
-  tasks: 3 (initial) + 1 (sharding follow-up)
+  duration: ~70 min initial + ~60 min sharding follow-up + ~60 min gs:// follow-up (each incl. a ~41-48 min full-suite gate)
+  completed: 2026-06-26
+  tasks: 3 (initial) + 1 (sharding) + 1 (durable gs:// out-dir)
   files: 3
 requirements: [REQ-AOU-LD-EGRESS, D-M3-10, MED-6, T-M3-02e-SIGN, D-02e-01]
 ---
@@ -126,18 +127,60 @@ ALREADY-BANKED regions, not in-flight ones). Added static index-sharding:
 `test_num_shards_one_processes_all_regions` (regression), `..._shards_share_resume_guard_across_distinct_panel_tsvs`
 (two shards, SAME out-dir, DIFFERENT panel TSV, global resume guard), `..._sharding_args_in_main_signature`.
 
+## Follow-up: durable gs:// out-dir (Dataproc bucket-first; commit 10aaa6f)
+
+The 276-region loop will run on an AoU Dataproc cluster where local disk is ephemeral
+(it dies with the cluster — [[feedback_aou_use_persistent_disk]]: bucket-first on
+Dataproc). The driver previously wrote `.npz` to a LOCAL `--out-dir` only, so a cluster
+recycle forfeited every banked region. Added durable `gs://` destination support:
+
+- **`--out-dir` accepts a `gs://` bucket prefix OR a local path** (local behavior
+  byte-identical when local; `test_local_out_dir_unchanged_no_gsutil` asserts a local
+  run issues ZERO gsutil calls). `--out-dir`/`--panel-tsv` are no longer `type=Path`
+  (Path would collapse `gs://` -> `gs:/`); a `gs://` URI is kept as a string.
+- **gs:// per region:** compute plink + `plink_ld_to_npz` into a LOCAL `--scratch-dir`,
+  content-verify (existing inline D-M3-10 gate), THEN `gsutil cp` the verified `.npz`
+  (and its `.afreq` sidecar if present) to the bucket. The individual-level
+  `.bed/.bim/.fam` are NEVER uploaded by the driver — only the aggregate `.npz`/AF cross
+  into the bucket (REQ-AOU-LD-EGRESS; `test_gs_out_dir_uploads_verified_npz` asserts no
+  `.bed/.bim/.fam` upload).
+- **gs:// resume check consults the BUCKET, hail-free:** `_existing_region_npz_gs` runs
+  `gsutil stat <region>.npz`, parses `Content-Length`, and skips only when
+  `size >= _MIN_REGION_NPZ_BYTES` (same MED-6 floor). A short object OR any gsutil error
+  -> recompute (safer than assuming a checkpoint). Does NOT use `_existing_region_npz`'s
+  hail hadoop branch. (`test_gs_resume_skips_when_object_meets_floor`,
+  `test_gs_resume_recomputes_when_object_short_or_stat_errors`.)
+- **gs:// `--panel-tsv`:** mirrored locally in scratch (seeded from the bucket copy on
+  first touch so dedup survives a recycle), appended, then `gsutil cp`'d up; resume-safe
+  dedup-by-`region_id` preserved within the file (`test_gs_panel_tsv_uploaded`).
+- **Hail-free invariant intact:** `gsutil` is a plain subprocess (sole seam
+  `_run_gsutil`), NOT a hail import — `test_module_imports_without_hail` still passes and
+  a clean-subprocess import confirms `hail not in sys.modules`. `--keep-allele-order` via
+  `build_plink_ld_command`, inline `content_verify_npz`, and the disjoint sharding are
+  all unchanged.
+- New helpers: `_is_gs_uri`, `_gs_join`, `_run_gsutil` (sole gsutil seam),
+  `_gsutil_object_size`, `_existing_region_npz_gs`, `_gsutil_upload`; refactored
+  `append_panel_row` (local core `_append_panel_row_local` + gs:// mirror/upload) and
+  `process_region` (compute-dir vs destination split). New `--scratch-dir` CLI arg.
+
+**gs:// tests (6, RED-first; gsutil mocked, no real GCS):** upload-after-verify (+ no
+`.bed`/`.bim`/`.fam` upload), resume skip when bucket object >= floor, recompute when
+object < floor OR `gsutil stat` errors, panel-TSV upload, local-out-dir-untouched
+regression, `_is_gs_uri` helper.
+
 ## Verification
 
 - `pytest tests/m3/test_run_native_ld_panel.py` -> **11 passed** (initial) ->
-  **16 passed** after the sharding follow-up (5 new sharding tests).
+  **16 passed** (sharding follow-up) -> **22 passed** (gs:// follow-up; 6 new tests).
 - `pytest tests/m3` (full-suite gate, smoke_dev py3.11, R `m3-r-ld` env active):
-  initial run **282 passed, 30 skipped, 0 failed** (~48 min); after the sharding
-  follow-up **287 passed, 30 skipped, 0 failed** in 2766.58s (~46 min). No regression;
-  the R stitch tests all ran and passed (the 3 PRE-EXISTING stitch failures previously
-  tracked in STATE.md were the flaky reticulate cold-start class, already resolved at
-  80fbb9a — they did NOT recur).
+  initial **282 passed, 30 skipped**; sharding follow-up **287 passed, 30 skipped**;
+  gs:// follow-up **293 passed, 30 skipped, 0 failed** in 2431.89s (~41 min). No
+  regression; the R stitch tests all ran and passed (the 3 PRE-EXISTING stitch failures
+  previously tracked in STATE.md were the flaky reticulate cold-start class, already
+  resolved at 80fbb9a — they did NOT recur).
 - `grep run_native_ld_panel.py m3-02e-AFR-NATIVE-FIRE-BRIEF.md` -> STEP 4 re-pointed
-  (now the 8-VM fan-out invocation with `--num-shards/--shard-index/--panel-tsv`).
+  (8-VM fan-out + durable gs:// out-dir subsection).
+- Pushed to origin: `origin/m3-W2-aou-deltas == local HEAD == 10aaa6f` (verified).
 
 ## Deviations from Plan
 
@@ -168,7 +211,8 @@ ALREADY-BANKED regions, not in-flight ones). Added static index-sharding:
 
 - FOUND: src/python/run_native_ld_panel.py
 - FOUND: tests/m3/test_run_native_ld_panel.py
-- FOUND: .planning/phases/m3-aou-afr-ld-panel-build/m3-02e-AFR-NATIVE-FIRE-BRIEF.md (STEP 4 8-VM fan-out + STEP 7 merge)
+- FOUND: .planning/phases/m3-aou-afr-ld-panel-build/m3-02e-AFR-NATIVE-FIRE-BRIEF.md (STEP 4 8-VM fan-out + durable gs:// out-dir + STEP 7 merge)
 - FOUND commit 35361e5 (Task 1)
 - FOUND commit 1a1a361 (Task 2)
 - FOUND commit cdc2103 (sharding follow-up)
+- FOUND commit 10aaa6f (durable gs:// out-dir follow-up); pushed, origin == local HEAD
