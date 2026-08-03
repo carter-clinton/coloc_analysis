@@ -419,11 +419,21 @@ def test_params_region_id_is_untouched():
 
 def test_finemap_smk_routes_both_inputs_through_the_lockstep_seam():
     """``finemap.smk`` calls BOTH resolvers exactly once each, and no longer carries
-    the stale SUPERSEDED-PENDING-REPLAN declaration the replan discharges."""
+    the stale SUPERSEDED-PENDING-REPLAN declaration the replan discharges.
+
+    COUNTED ON THE CALL SITE (``name(``), not on the bare name. The m3-04b plan's
+    acceptance criterion says ``grep -c "lockstep_sumstats_path"`` is exactly 1, but
+    its own Task-2 step 4 says to import both resolvers BY NAME (matching the
+    existing ``from ld_panel import resolve_ld_path`` house style) — which makes the
+    bare-name line count 2 (import + lambda) and 1 unreachable. The property that
+    actually matters is "exactly ONE call site per resolver, no accidental
+    double-wiring", and that is what is asserted here.
+    """
     src = _FINEMAP_SMK.read_text()
 
-    assert src.count("lockstep_sumstats_path") == 1
-    assert src.count("lockstep_variants_path") == 1
+    assert src.count("from occlusion_lockstep_cli import") == 1
+    assert src.count("lockstep_sumstats_path(") == 1
+    assert src.count("lockstep_variants_path(") == 1
     assert "SUPERSEDED-PENDING-REPLAN" not in src, (
         "the m3-02e (B-1) boundary block must record that the replan LANDED as "
         "m3-04b + m3-04c"

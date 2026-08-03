@@ -239,3 +239,124 @@ rule m3_assemble_occlusion_catalog:
             {params.degraded_flag} \
             > {log} 2>&1
         """
+
+
+# ---------------------------------------------------------------------------
+# Rule: occlusion_filter_sumstats  (m3-04b Task 2)
+# ---------------------------------------------------------------------------
+rule occlusion_filter_sumstats:
+    """The occlusion-filtered AFR harmonized sumstats mirror, bgzipped + tabixed.
+
+    Input:  {harmonized_sumstats}/{stem}.tsv.bgz  +  the occlusion catalog
+    Output: {occlusion_lockstep.sumstats_dir}/{stem}.tsv.bgz  (+ .tbi)
+
+    The output directory MUST differ from the input directory
+    (``sumstats_harmonized_occl`` vs ``sumstats_harmonized``): a same-directory
+    wildcard would make this rule its own input and produce a DAG cycle.
+
+    The ``{stem}`` constraint ends in ``.AFR`` so this rule can NEVER match a EUR
+    stem. That is belt-and-braces on top of the ancestry gate in
+    ``lockstep_sumstats_path``: Track-A / EUR numerics are frozen, and two
+    independent barriers is the right number for a filter that deletes rows from
+    scientific data.
+
+    TWO LOGS. ``{stem}.counts.json`` is the durable audit ({n_in, n_dropped,
+    n_out}, with n_in - n_dropped == n_out); ``{stem}.drops.log`` captures the
+    module's per-drop STDERR, which is the IN-RUN WITNESS the pre-registration
+    relies on (the catalog is the durable record, the log is the witness).
+
+    ``tabix -f -S 1 -s 1 -b 2 -e 2`` reproduces ``sumstats.smk:157`` exactly, so
+    the mirror keeps full parity with the source it shadows.
+
+    Conda env: envs/python_stats.yml -- the ONLY env carrying bgzip + tabix.
+    """
+    input:
+        sumstats=os.path.join(_OCCL_HARMONIZED_DIR, "{stem}.tsv.bgz"),
+        catalog=OCCLUSION_CATALOG,
+        script=OCCLUSION_CLI,
+    output:
+        bgz=os.path.join(OCCLUSION_SUMSTATS_DIR, "{stem}.tsv.bgz"),
+        tbi=os.path.join(OCCLUSION_SUMSTATS_DIR, "{stem}.tsv.bgz.tbi"),
+    log:
+        counts=os.path.join("logs", "m3_occlusion", "{stem}.counts.json"),
+        drops=os.path.join("logs", "m3_occlusion", "{stem}.drops.log"),
+    wildcard_constraints:
+        stem=r"[A-Za-z0-9_.\-]+\.AFR",
+    params:
+        src_python=OCCLUSION_SRC_PYTHON,
+    conda:
+        PYTHON_STATS_ENV
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=120,
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.bgz}) $(dirname {log.counts})
+        PYTHONPATH={params.src_python}:${{PYTHONPATH:-}} \
+        python {input.script} filter-sumstats \
+            --in {input.sumstats} \
+            --catalog {input.catalog} \
+            --out {output.bgz} \
+            --counts-json {log.counts} \
+            2> {log.drops}
+        tabix -f -S 1 -s 1 -b 2 -e 2 {output.bgz}
+        """
+
+
+# ---------------------------------------------------------------------------
+# Rule: occlusion_filter_variants  (m3-04b Task 2)
+# ---------------------------------------------------------------------------
+rule occlusion_filter_variants:
+    """The occlusion-filtered per-region variant list. Plain TSV in, plain TSV out.
+
+    Input:  {ld_reference}/variants/{region}.tsv  +  the occlusion catalog
+    Output: {ld_reference}/{variants_dir_name}/{region}.tsv
+
+    THE SECOND LEAK. ``ld_reference.smk::collect_region_variants`` pools ALL
+    harmonized files ancestry-agnostically (OrderedDict dedup over every trait and
+    ancestry), so the occluded coordinate survives in the variant list even after
+    the AFR sumstats mirror has dropped it. Filtering only the sumstats is not a
+    lockstep.
+
+    The variant list is NOT re-filtered per ancestry and is NOT itself
+    ancestry-scoped -- ``lockstep_variants_path`` is what decides, per fine-map
+    job, whether a given ancestry reads the filtered or the unfiltered list. That
+    is deliberate: filtering ``collect_region_variants``'s own INPUTS would drag
+    the EUR sumstats through the AFR occlusion filter and move Track-A numerics.
+
+    Same function, same catalog, same (CHR,POS) key as the sumstats drop. No
+    second implementation, no second chance to disagree with the panel.
+    """
+    input:
+        variants=os.path.join(OCCLUSION_VARIANTS_SRC_DIR, "{region}.tsv"),
+        catalog=OCCLUSION_CATALOG,
+        script=OCCLUSION_CLI,
+    output:
+        variants=os.path.join(OCCLUSION_VARIANTS_DIR, "{region}.tsv"),
+    log:
+        counts=os.path.join("logs", "m3_occlusion", "variants", "{region}.counts.json"),
+        drops=os.path.join("logs", "m3_occlusion", "variants", "{region}.drops.log"),
+    wildcard_constraints:
+        region=r"[A-Za-z0-9_.\-]+",
+    params:
+        src_python=OCCLUSION_SRC_PYTHON,
+    conda:
+        PYTHON_STATS_ENV
+    threads: 1
+    resources:
+        mem_mb=4000,
+        runtime=60,
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.variants}) $(dirname {log.counts})
+        PYTHONPATH={params.src_python}:${{PYTHONPATH:-}} \
+        python {input.script} filter-variants \
+            --in {input.variants} \
+            --catalog {input.catalog} \
+            --out {output.variants} \
+            --counts-json {log.counts} \
+            2> {log.drops}
+        """

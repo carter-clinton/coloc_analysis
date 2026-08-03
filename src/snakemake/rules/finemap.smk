@@ -17,6 +17,26 @@ expression maps to the AFR_1kg / EUR_1kg tail of the chain via the
 ``{region_safe}`` template variable, so AFR/EUR regions whose AoU panels
 have not yet landed continue to resolve to the existing 1000G panels --
 zero behavior change for Track A finalization while M3 panels stage in.
+
+Modified 2026-08-03 (m3-04b Task 2): ``run_finemap.input.sumstats`` AND
+``run_finemap.input.variants`` are now routed through the EXCLUDE-IN-LOCKSTEP
+seam (``src/python/occlusion_lockstep_cli.py``), discharging the consume-wiring
+deferral ``src/python/drop_occluded_from_sumstats.py:49-56`` disclosed. Both
+original expressions are retained below as ``# OLD:`` comments for audit,
+matching the house style already used for ``ld_matrix``.
+
+BOTH inputs move, not one. ``ld_reference.smk::collect_region_variants`` pools
+every harmonized file ancestry-agnostically into
+``{ld_reference}/variants/{region}.tsv``, so repointing only the sumstats would
+let the occluded coordinate back in through ``input.variants`` and every
+downstream fine-map would inherit the panel<->sumstats mismatch anyway.
+
+The seam is ANCESTRY-GATED (``config.occlusion_lockstep.ancestries``, AFR only).
+For every other ancestry -- and when the block is disabled or absent -- the
+resolvers return the LEGACY strings character-for-character, so Track-A / EUR
+numerics cannot move. ``params.region_id`` and ``input.ld_matrix`` are
+deliberately UNTOUCHED here: the LD-path crosswalk is m3-04c's change, placed in
+a later wave so the two ``finemap.smk`` edits never collide.
 """
 
 import os
@@ -38,6 +58,14 @@ if _SRC_PYTHON not in sys.path:
     sys.path.insert(0, _SRC_PYTHON)
 
 from ld_panel import resolve_ld_path  # noqa: E402 -- intentional after sys.path mutation
+
+# m3-04b Task 2: the exclude-in-lockstep consume seam. Both resolvers return the
+# LEGACY path string verbatim for any ancestry the seam does not cover, so this
+# import cannot move a frozen number by itself.
+from occlusion_lockstep_cli import (  # noqa: E402 -- same sys.path rationale
+    lockstep_sumstats_path,
+    lockstep_variants_path,
+)
 
 FINEMAP_DIR = config["finemap"]["output_dir"]
 FINEMAP_METHODS = config["finemap"]["methods"]
@@ -88,22 +116,42 @@ rule build_finemap_manifest:
 # + EUR LD = the public UKBB 337k panel (Task 2, $0). The Hail BlockMatrix LD
 # path is RETIRED. m3-04-W4-production-and-egress-PLAN.md is the STALE 322-cell
 # HAIL LD production fire (322 = pre-m3-02d 161 union regions x 2 ancestries;
-# 276 = the post-m3-02d per-ancestry AFR window count) and is
-# SUPERSEDED-PENDING-REPLAN: it must be re-planned to consume m3-02e's AFR-native
-# .npz + public EUR .rds, NOT to rebuild LD via Hail (which would spend the
-# 160-260 cluster-h the cost re-architecture exists to avoid). The downstream
-# coloc/SuSiE fine-mapping fire is a separate M4 concern, unaffected.
+# 276 = the post-m3-02d per-ancestry AFR window count).
+#
+# THE REPLAN LANDED (2026-08-03). m3-04-W4 is superseded by m3-04b (this file's
+# consume seam + the genome-wide occlusion catalog) and m3-04c (panel
+# reachability: the curated<->M2 crosswalk, the stale ingest/convert rules, the
+# egress grouping, the Check-2 redefinition and the in-perimeter fire). Nothing
+# rebuilds LD via Hail; m3-02e's AFR-native .npz + the public EUR .rds are
+# consumed as-is. The DEFERRED consume seam named in
+# ``src/python/drop_occluded_from_sumstats.py:49-56`` is WIRED HERE, on
+# ``input.sumstats`` and ``input.variants`` together. The downstream coloc/SuSiE
+# fine-mapping fire is a separate M4 concern, unaffected.
 # ---------------------------------------------------------------------------
 rule run_finemap:
     input:
-        sumstats=lambda wildcards: os.path.join(
-            HARMONIZED_DIR,
-            f"{wildcards.trait}.{wildcards.ancestry}.tsv.bgz",
+        # m3-04b Task 2: route BOTH consume inputs through the ancestry-gated
+        # exclude-in-lockstep seam (osf.io/az52u, file trsx5). For any ancestry
+        # outside config.occlusion_lockstep.ancestries -- and when the block is
+        # disabled or absent -- these resolvers return the ORIGINAL strings
+        # character-for-character, so Track-A / EUR numerics cannot move.
+        # OLD: sumstats=lambda wildcards: os.path.join(
+        #          HARMONIZED_DIR,
+        #          f"{wildcards.trait}.{wildcards.ancestry}.tsv.bgz",
+        #      ),
+        # OLD: variants=lambda wildcards: os.path.join(
+        #          config["paths"]["ld_reference"],
+        #          "variants",
+        #          f"{wildcards.region}.tsv",
+        #      ),
+        sumstats=lambda wildcards: lockstep_sumstats_path(
+            wildcards.trait, wildcards.ancestry, config, HARMONIZED_DIR
         ),
-        variants=lambda wildcards: os.path.join(
+        variants=lambda wildcards: lockstep_variants_path(
+            wildcards.region,
+            wildcards.ancestry,
+            config,
             config["paths"]["ld_reference"],
-            "variants",
-            f"{wildcards.region}.tsv",
         ),
         # m3-W3-T2: route LD path through ld_panel: resolver (RESEARCH Q7).
         # Original (pre-M3) expression for audit -- this hardcoded the

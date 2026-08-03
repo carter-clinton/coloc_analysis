@@ -131,13 +131,37 @@ def test_loader_contract_unchanged_for_both_sources(tmp_path):
 
 
 def test_production_boundary_documented():
-    """The M3 LD-build is recorded COMPLETE within m3-02e and m3-04 (the stale
-    322-cell Hail LD fire) is SUPERSEDED-PENDING-REPLAN: it must CONSUME the
-    m3-02e .npz/.rds, not rebuild LD via Hail. 322 = pre-m3-02d 161x2;
-    276 = post-m3-02d per-ancestry AFR count."""
+    """The M3 LD-build is recorded COMPLETE within m3-02e, and the stale 322-cell
+    Hail LD fire (m3-04-W4) is recorded as REPLANNED: it must CONSUME the m3-02e
+    .npz/.rds, not rebuild LD via Hail. 322 = pre-m3-02d 161x2; 276 = post-m3-02d
+    per-ancestry AFR count.
+
+    UPDATED 2026-08-03 (m3-04b Task 2). The original assertion required the literal
+    ``SUPERSEDED-PENDING-REPLAN``. That token records a MUTABLE PROJECT STATE
+    ("awaiting a replan"), not a contract, and the replan has now LANDED as m3-04b
+    (the occlusion catalog + the consume seam wired here) plus m3-04c (panel
+    reachability). Leaving the token in ``finemap.smk`` would publish a status that
+    is no longer true, and the m3-04b plan makes its ABSENCE an explicit acceptance
+    criterion.
+
+    The assertion is REPLACED, not relaxed: the boundary must still be documented,
+    and it must now ALSO name both successor plans and the wired seam. That is
+    strictly more than the original pinned. Precedent: ``1a9d170`` updated a
+    companion column-list assertion in the same commit as the column it described.
+    """
     smk = _FINEMAP_SMK.read_text()
-    assert "SUPERSEDED-PENDING-REPLAN" in smk
+    assert "SUPERSEDED-PENDING-REPLAN" not in smk, (
+        "the replan LANDED (m3-04b + m3-04c); finemap.smk must not keep publishing "
+        "a pending-replan status that is no longer true"
+    )
     assert "m3-04" in smk
+    assert "m3-04b" in smk and "m3-04c" in smk, (
+        "the boundary block must name the two plans that superseded m3-04-W4"
+    )
+    assert "occlusion_lockstep" in smk, (
+        "the deferred consume seam (drop_occluded_from_sumstats.py:49-56) is wired "
+        "here; the boundary block must say so"
+    )
     assert "consume" in smk.lower()
     assert "Hail" in smk
     assert "276" in smk and "322" in smk
