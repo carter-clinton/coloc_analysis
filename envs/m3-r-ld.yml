@@ -43,6 +43,16 @@ dependencies:
   - r-optparse
   - r-yaml
   - numpy>=1.26
+  # m3-04b (Rule-3 deviation, blocking): src/python/assemble_occlusion_catalog.py
+  # runs under this env (rule m3_assemble_occlusion_catalog) and its whole call
+  # chain -- occlusion_manifest + drop_occluded_from_sumstats -- is pandas-based.
+  # The m3-04b PLAN asserted this env already carried pandas; it did NOT (verified:
+  # ModuleNotFoundError in the built env). pandas is added here rather than
+  # pyliftover being added to envs/python_stats.yml, because python_stats backs a
+  # dozen already-built rules (harmonize_sumstats, collect_region_variants, ...) and
+  # re-hashing it would force a rebuild across the whole pipeline; this env already
+  # carries python 3.11 + numpy + pyliftover and is only consumed by M3 rules.
+  - pandas>=2.2
   - pip
   - pip:
       - pyliftover

@@ -334,4 +334,44 @@ properties:
           "^(EUR|AFR|EAS|HIS|SAS|AMR|TRANS)$":
             type: ["string", "null"]
 
+  # M3 occlusion_lockstep: the pre-registered exclude-in-lockstep seam (m3-04b).
+  # Consumed by src/python/occlusion_lockstep_cli.py's two path resolvers (wired
+  # into finemap.smk) and by src/snakemake/rules/m3_occlusion_lockstep.smk.
+  #
+  # Added under an m3-04b Rule-3 (blocking issue) deviation, exactly mirroring the
+  # ta-sh2b3-W0 precedent recorded above for `ld_panel`: the schema's top-level
+  # `additionalProperties: false` rejects any config key it does not declare, so
+  # without this entry EVERY Snakemake invocation fails at validate() the moment
+  # the occlusion_lockstep block exists in config/pipeline.yaml.
+  occlusion_lockstep:
+    type: object
+    description: "Exclude-in-lockstep occlusion seam (osf.io/az52u, file trsx5)"
+    properties:
+      enabled:
+        type: boolean
+        description: "Kill switch: false restores the legacy sumstats/variant paths for every ancestry"
+      ancestries:
+        type: array
+        description: "Ancestries the occlusion filter applies to (AFR only; the EUR chain head is the public UKBB panel and carries no occlusion manifest)"
+        items:
+          type: string
+      catalog:
+        type: string
+        description: "Genome-wide enriched occlusion catalog TSV"
+      sumstats_dir:
+        type: string
+        description: "Output dir for the occlusion-filtered harmonized sumstats mirror"
+      variants_dir_name:
+        type: string
+        description: "Sibling dir name (under paths.ld_reference) for the filtered region variant lists"
+      manifest_dir:
+        type: string
+        description: "Dir searched for egressed per-region Stage-A occlusion manifests"
+      excludelist_dir:
+        type: string
+        description: "Dir searched for {region_id}.occluded.excludelist objects (degraded fallback)"
+      allow_degraded:
+        type: boolean
+        description: "Authorise an excludelist-derived catalog, which permanently loses the ref-span / occluding-deletion attribution"
+
 additionalProperties: false

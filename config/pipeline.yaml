@@ -232,6 +232,39 @@ ld_panel:
     AFR: null
     TRANS: null
 
+# M3 occlusion_lockstep: the pre-registered EXCLUDE-IN-LOCKSTEP seam (m3-04b).
+#
+# PRE-REGISTRATION: osf.io/az52u, file trsx5, POSTED 2026-07-10T13:32:22Z. A variant
+# whose LD is structurally undefined because an overlapping deletion's REF span
+# covers it is dropped from the LD panel AND from the harmonized sumstats, with
+# provenance — never zeroed. Panel-only exclusion is not a smaller version of that
+# policy; it is a different and wrong one (rs182965575, GRCh37 1:5982778, is present
+# in 7 of 9 AFR sumstats, so a panel-only drop orphans it in 7 traits).
+#
+# WHY ancestries IS AFR-ONLY. The occlusion manifest is a by-product of the AoU
+# AFR native-plink panel build (occlusion_span_filter.py, m3-07b). The EUR chain
+# head is the PUBLIC UKBB 337k reference panel (ld_panel.EUR -> EUR_ukbb_pub),
+# which carries no occlusion manifest at all — there is nothing to enforce in
+# lockstep on the EUR side. Gating on ancestry is therefore not a convenience: it
+# is what keeps EUR / Track-A resolved path strings byte-identical to their legacy
+# expressions, so frozen numerics cannot move.
+#
+# Consumed by src/python/occlusion_lockstep_cli.py (the two path resolvers wired
+# into finemap.smk) and src/snakemake/rules/m3_occlusion_lockstep.smk.
+# `enabled: false` is the kill switch: it restores the legacy paths for AFR too.
+occlusion_lockstep:
+  enabled: true
+  ancestries: [AFR]
+  catalog: "data/processed/occlusion/occlusion_catalog_m3.tsv"
+  sumstats_dir: "data/processed/sumstats_harmonized_occl"
+  variants_dir_name: "variants_occl"
+  manifest_dir: "data/interim/aou_ld_exports/AFR_aou"
+  excludelist_dir: "data/interim/aou_ld_exports/AFR_aou"
+  # Degraded (excludelist-derived) reconstruction PERMANENTLY loses the ref-span
+  # and occluding-deletion attribution the pre-registration commits to publishing.
+  # It must be an explicit, recorded act, never a silent fallback.
+  allow_degraded: false
+
 multitrait:
   methods: [mashr, susie]
   window_kb: 500

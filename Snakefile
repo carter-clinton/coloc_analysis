@@ -123,6 +123,12 @@ include: "src/snakemake/rules/m3_convert_npz_rds.smk"
 # m3-02e Move 2: public UKBB 337k EUR LD ($0 compute). EUR_ukbb_pub is the
 # ld_panel.EUR chain head; the AFR native-plink .npz->.rds stays AFR_aou.
 include: "src/snakemake/rules/m3_public_eur_ld.smk"
+# m3-04b: the pre-registered exclude-in-lockstep seam (osf.io/az52u, file trsx5) --
+# the genome-wide occlusion catalog plus the two AFR-gated filter rules whose
+# outputs run_finemap consumes. Included AFTER m3_public_eur_ld.smk and BEFORE the
+# QTL includes; the rules are runnable today as an audited no-op (the catalog is
+# schema-complete even when empty) and go live when the AoU fire banks manifests.
+include: "src/snakemake/rules/m3_occlusion_lockstep.smk"
 
 # Phase 2 QTL coloc rules. qtl_download.smk defines QTL_RAW_DIR and
 # QTL_HARMONIZED_DIR; qtl_coloc.smk uses those plus finemap_output() from
