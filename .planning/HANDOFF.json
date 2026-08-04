@@ -73,6 +73,7 @@
     "Do NOT use worktree isolation on this GPFS tree."
   ],
   "prep_landmines": [
+    "⚠ NEW 2026-08-04 — .planning/STATE.md's YAML FRONTMATTER DOES NOT PARSE, and has not for a long time. yaml.safe_load fails at line 17 (the `last_activity` scalar) because a 2026-06 entry embeds UNESCAPED DOUBLE QUOTES inside the double-quoted string: `_normalize_bucket(os.environ[\"WORKSPACE_BUCKET\"])`. VERIFIED PRE-EXISTING — `git show HEAD:.planning/STATE.md` fails at the SAME line, so this session's edits neither caused nor worsened it. Nothing has broken because the resume workflow reads the BODY, not the frontmatter. DELIBERATELY NOT FIXED at session close: the repair means rewriting a ~34 KB historical scalar, which is not a freeze-moment edit. Fix it in a dedicated /gsd-quick (switch last_activity to a YAML block scalar `|-`, or single-quote it) if any tool ever needs to parse it.",
     "GSD tooling does NOT recognize the custom m3-NN naming: `init plan-phase m3-04` returns phase_found:false (I re-verified today). Execution = spawn gsd-planner / gsd-executor DIRECTLY on the PLAN.md (the adapted planner->executor pattern).",
     "envs/m3-r-ld.yml now carries pandas>=2.2 (added by m3-04b; it did NOT before). A fresh env build needs this.",
     "src/snakemake/schemas/pipeline.schema.yaml is additionalProperties:false — ANY new top-level pipeline.yaml block MUST get a schema entry or every Snakemake invocation dies at validate().",
