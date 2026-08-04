@@ -25,7 +25,84 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-08-03 (★★ RESUME HERE — LATEST ★★) — ★ **m3-04b LANDED** (occlusion catalog + lockstep consume seam WIRED) · full `tests/m3` **444 passed / 31 skipped / 0 failed** (+24, re-run by me at HEAD) · ⚠⚠ **THE AFR_aou PANEL IS UNREACHABLE FROM `run_finemap` — DO NOT FIRE**
+## 2026-08-04 (★★ RESUME HERE — LATEST ★★) — ⛔ **m3-04c IS HALTED: its headline `must_have` is FALSE AS SPECIFIED.** The m3-04b blast-radius sweep found the panel-unreachability diagnosis is **right but one layer too shallow**, plus a second independent blocker in the catalog assembler.
+
+> **Nothing running. $0. NO perimeter contact.** `origin == local == 2bda675`. Tracked tree
+> clean; the only new files are this session's report + state updates.
+> **FULL REPORT (read this first): `.planning/phases/m3-aou-afr-ld-panel-build/m3-04b-BLAST-RADIUS.md`**
+> — it carries the gate-binding table (which gate each issue actually blocks) and the revised
+> 7-step sequence.
+>
+> **METHOD.** Four independent read-only investigators across orthogonal downstream dimensions
+> (path/artifact equivalence · caller surface + DAG integrity · correctness on the newly-live
+> AFR path · forward interaction with m3-04c and the fire), plus orchestrator-side verification
+> of every load-bearing claim. `$0`, NC State only.
+>
+> ### ⛔ BLOCKER-1 — `{input.ld_matrix}` IS NEVER READ. m3-04c T1 cannot deliver its must_have.
+> `{input.ld_matrix}` **does not appear in `run_finemap`'s shell block**. The R script receives
+> only `--ld-dir {params.ld_dir}` and `--region {params.region_id}`, and **reconstructs its own
+> path** at `run_susie_rss.R:124-127` as `file.path(ld_dir, ancestry, region_id.rds)`. `ancestry`
+> is `AFR` — **never `AFR_aou`** — and **no rule promotes `AFR_aou/*.rds` into `AFR/`** (grep over
+> every `.smk` + the Snakefile: zero hits). On a miss it falls **silently to an identity matrix**
+> (`run_susie_rss.R:472-474`).
+> **PROVEN EMPIRICALLY**, simulating the post-fire world: with the AoU panel present on disk,
+> `resolve_ld_path` returns `…/AFR_aou/m2_region_00067.rds` (**exists**) while SuSiE opens
+> `…/AFR/FTO_16q12.rds` (**absent**). Different files.
+> ⇒ **The crosswalk is NECESSARY but NOT SUFFICIENT.** A *third* change m3-04c does not contain
+> is required. **PRE-EXISTING** (m3-W3-T2 wired the resolver into `input:` only); m3-04b
+> aggravated only the *belief*, via its docstring. **CARTER'S DECISION** between: thread
+> `{input.ld_matrix}` into `run_susie_rss.R` behind a new `--ld-file` (**recommended** — makes
+> the resolver the single source of truth); a promote/symlink rule; or a per-ancestry `ld_dir`.
+>
+> ### ⛔ BLOCKER-4 — a PARTIAL Stage-A rollup silently discards excludelist-only regions (autonomous, `$0`)
+> `assemble_occlusion_catalog.py:352-359` ignores **every** excludelist and stamps
+> `stage_a_manifest` whenever the rollup is merely **non-empty** — not **complete**. Its note
+> ("the manifests carry strictly more provenance") is true per-region and **false as a set claim**
+> on a subset. `run_native_ld_panel.py:821-831` **already swallows** the per-region append
+> exception that creates excludelist-only regions. **No completeness check against 276 exists.**
+> Verified: 1 manifest + 1 excludelist-only region → catalog omits the second region, drop reports
+> `n_dropped=1` when the truth is 2, stamped `stage_a_manifest`. ⇒ **orphaned variants wearing a
+> clean provenance stamp** — the exact failure the pre-registration forbids.
+>
+> ### ⛔ BLOCKER-2 / BLOCKER-3 — m3-04c's Task 1 is *unsatisfiable* as written
+> `tests/m3/test_occlusion_lockstep_wiring.py:410` asserts the **exact string** T1 must replace,
+> while its own docstring three lines above says m3-04c changes it. Proven by simulation:
+> applying the plan's edit verbatim → **1 failed / 13 passed**. ⚠ **Dangerous shape:** the real
+> `params.region_id` pin sits at `:406`, *immediately above* the failing assert — "make tests pass"
+> baits an executor at the one line that must never change. Separately, m3-04b added **+48 lines**
+> above `params:`, so **every `finemap.smk` line number in the m3-04c plan is stale** and the
+> plan's own do-not-touch guard now points at the block the executor must **edit**.
+>
+> ### ✅ What the sweep CLEARED (m3-04b itself is sound — no revert warranted)
+> The non-AFR byte-identity claim is **empirically true** across every instantiated combination
+> and all 10 schema-passing config permutations, enforced by two independent barriers.
+> **Track-A / EUR numerics cannot move.** Both `run_finemap` inputs move together (36 AFR jobs
+> filtered on *both* axes, 60 non-AFR on neither) — no half-wired job. The change is strictly
+> additive (178 vs 162 jobs = exactly the 16 new ones). DAG acyclic and unambiguous; mirrors are
+> format-faithful (real BGZF, working tabix, verbatim header, idempotent); alignment is by
+> identifier not position, which is what keeps BLOCKER-1 a detectable over-exclusion rather than
+> silent corruption. **444P/31S/0F** with genuinely non-tautological assertions. All 7 pinned
+> files verified **0-line diff**. I also **independently reproduced the m3-04c crosswalk oracle
+> 12/12 exactly** (incl. `SH2B3_12q24 → m2_region_00040__sub00` from 18 candidates) and verified
+> every factual claim in the m3-04c plan's interfaces block — **that plan's facts are sound; it is
+> its *premise* that is wrong.**
+>
+> ### ▶ NEXT (revised)
+> 1. **Carter decides the BLOCKER-1 remedy** — the only genuine fork.
+> 2. Land the autonomous `$0` fixes that are independent of that fork: **BLOCKER-4** (region-coverage
+>    assertion, or manifest ∪ excludelist instead of override) and **HIGH-0/HIGH-4** (the
+>    `enrich` guard is structurally incapable of firing on a parse failure; nothing counts
+>    unparseable coordinates, so `counts.json` cannot tell "found nothing" from "failed to parse").
+> 3. **Replan m3-04c** around the decision, re-anchored to `2bda675`, with the test rewrite as an
+>    explicit reviewed task and the unsatisfiable dry-run criterion struck citing D-04b-03.
+> 4. Then T1+T2 autonomously. **Fire only after BLOCKER-1 is closed.**
+>
+> **D-04b-01 extent now MEASURED:** exactly one file (`bmi.AFR.PAGE`) but **100% of its 17,195,956
+> rows**; zero sci-notation / whitespace / NA / `chr`-prefix anywhere else in the corpus. Confined
+> to the published *k/n* today only because the mirror's `stem` misses the long-form name — it goes
+> **live** the moment BMI-AFR is re-harmonized to `bmi.AFR.tsv.bgz`.
+
+## 2026-08-03 — ★ **m3-04b LANDED** (occlusion catalog + lockstep consume seam WIRED) · full `tests/m3` **444 passed / 31 skipped / 0 failed** (+24, re-run by me at HEAD) · ⚠⚠ **THE AFR_aou PANEL IS UNREACHABLE FROM `run_finemap` — DO NOT FIRE**
 
 > **Nothing running. $0. NO perimeter contact this entire session.** `origin == local == f038ce0`; remote is SSH (no PAT).
 >
