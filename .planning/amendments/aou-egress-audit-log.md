@@ -151,3 +151,60 @@ above (one written ruling, multiple inheriting derivations).
 **Last updated:** 2026-04-28 (HARD GATE ruled **PASS** under NCSU faculty
 controlled-tier basis; standard AoU egress review applies at
 egress-request time; quick task 260428-vt2 commit `(m3-W1-portal-cleared)`)
+
+---
+
+## SCOPE CORRECTION — 2026-08-05 (m3-04c Task 2, APPENDED)
+
+This section is an **append**, per the append-only policy above. Nothing
+earlier in this file is edited: the 2026-04-28 HARD GATE ruling text, the
+ruling block, the ruling table row and the header's `**M3 egress scope:**`
+line all stand byte-intact as the historical record of what was ruled and
+on what basis.
+
+**What changes:** the SCOPE the 2026-04-28 PASS applies to.
+**What does NOT change:** the ruling itself. Variant×variant LD R matrices
+remain aggregate / derived statistics under standard AoU egress review; no
+re-open condition has been triggered.
+
+| | as stated in the header (2026-04-28) | corrected scope (2026-08-05) |
+|---|---|---|
+| export requests | **44 bundles** (22 chromosomes × 2 ancestries, `AFR_aou` + `EUR_aou`) | **at most 22** AFR chromosome groups, plus within-chromosome size splits |
+| ancestries crossing the boundary | AFR + EUR | **AFR only** |
+| unit | per-chromosome bundle **object** | per-chromosome **grouping of per-region object URIs** |
+| region basis | 322 compute cells | **276** regions (`config/ld_regions.tsv`) |
+
+**Reason — the m3-02e Wave-2 cost re-architecture (2026-06-24).**
+
+1. **EUR left the perimeter entirely.** m3-02e Move 2 made the **public UKBB
+   337k** panel (`EUR_ukbb_pub`) the `ld_panel.EUR` chain head, built on NC
+   State for `$0` by `src/snakemake/rules/m3_public_eur_ld.smk`. No EUR LD is
+   computed inside AoU, so `EUR_aou` produces **zero** egress requests. The
+   22 EUR bundles of the original 44 will never be filed.
+2. **AFR moved to native plink.** `src/python/run_native_ld_panel.py`
+   (Hail-free, single AoU Cloud Analysis VM) uploads per-region `.npz`
+   **directly** to `gs://<bucket>/ld/AFR_aou/{region_id}.npz`
+   (`:922-938`), so no per-chromosome bundle **object** is ever created. A
+   "bundle" in this log is henceforth a **request-level grouping of object
+   URIs** transferred as one `gsutil -m cp`, logged as one row in the
+   Per-Bundle Audit Entries table below.
+
+**Consequence for the table schema:** the `Ancestry` column will carry only
+`AFR_aou` for M3 rows; `Compressed size (GB)` is the summed size of the
+grouped per-region objects, not the size of a single object; and
+`Bundle content (region_ids)` may include m3-02b subregion-split ids of the
+form `m2_region_00040__sub14`.
+
+**Note on the 50 GB per-bundle convention** cited in the schema above: it is a
+**conservative project working ceiling, not a documented hard AoU API limit**
+(`src/python/ld_egress_bundle.py:9-15`). AoU's real mechanism is an alert
+threshold plus manual relaxation at egress-request time; the real number is
+confirmed on the first export. An over-ceiling request is a request needing
+manual relaxation, not a protocol violation.
+
+**Full record + evidence index:**
+`.planning/amendments/m3-egress-and-validation-protocol-addendum.md`
+(egress-unit redefinition, `EGRESS_CAP_GB` provenance correction, and the
+REQ-AOU-LD-VALIDATION Check 2 redefinition). The request plan itself is
+produced by `src/python/plan_ld_egress.py` over the shipped
+`ld_egress_bundle.plan_egress_bundles` helper.

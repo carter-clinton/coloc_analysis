@@ -325,9 +325,8 @@ def test_protocol_addendum_records_both_redefinitions():
 
     # (b) the EGRESS_CAP_GB provenance correction
     assert "CONSERVATIVE PROJECT WORKING CEILING" in text
-    assert "not a documented hard AoU API limit" in text.lower() or (
-        "NOT a documented hard AoU API limit" in text
-    )
+    assert "documented hard AoU API limit" in text
+    assert "ld_egress_bundle.py:9-15" in text
 
     # (c) the Check 2 redefinition, all three parts, plus the OSF consequence
     for part in ("2a", "2b", "2c"):
