@@ -72,28 +72,69 @@ safe_region_id <- function(region_id) {
 
 # m3-04c Task 1b (DEC-2026-08-05-m3-ld-read-path): `ld_file` is the LD .rds that
 # Snakemake DECLARED as run_finemap's `input.ld_matrix`, i.e. whatever
-# src/python/ld_panel.py::resolve_ld_path selected. It is AUTHORITATIVE when
-# readable; the `ld_dir` reconstruction below survives strictly as the
-# back-compat fallback for callers that pass no --ld-file.
+# src/python/ld_panel.py::resolve_ld_path selected.
 #
 # WHY: before this, the declared input was never passed to this script, so a
 # declared `input:` absent from the rule's `shell:` was a DAG DECLARATION ONLY
 # (BLOCKER-1). This function rebuilt its own path as
 # file.path(ld_dir, ancestry, region_id + ".rds") -- where `ancestry` is "AFR"
 # and never "AFR_aou" -- so the AoU panel was UNREACHABLE and every AFR fit fell
-# silently through to the identity matrix below. `ld_file` is placed FIRST in
-# the candidate list so resolve_ld_path is the single source of truth.
+# silently through to the identity matrix below.
 #
-# `ld_file` is the LAST formal and defaults to NULL, so every existing
-# positional caller is unaffected.
-load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) {
+# 260805-23d Task 2 (m3-04c blast radius, BLOCKER-A + BLOCKER-B). The declared
+# file is NO LONGER merely "tried FIRST" -- that made it a PREFERENCE, and the
+# loop only `return`ed a candidate that CLEARED the quality gate, so a sub-gate
+# declared panel fell through to the --ld-dir reconstruction and a plausible fit
+# was emitted on the 1kG panel under a SUCCESS status (proven at the production
+# thresholds 50 / 0.5 / 10). Now:
+#
+#   authoritative = TRUE  and the declared file EXISTS
+#       -> it is the SOLE candidate. dir_candidates are NOT EVEN CONSTRUCTED in
+#          that branch: a fallback that is never built cannot be silently taken.
+#          Rejection is returned STRUCTURED (declared_rejected / reject_reason)
+#          instead of a bare `next`.
+#   authoritative = FALSE
+#       -> `ld_file` is IGNORED ENTIRELY (it is not even tested for existence),
+#          so every expression below reproduces 3f431ab character-for-character.
+#          THIS -- not the shell rendering -- is what contains EUR / TRANS: the
+#          two extra argv tokens are inert BY CONSTRUCTION. m3-04c Task 1b had
+#          un-pinned EUR for every ancestry; measured on two deliberately
+#          different EUR panels, r[1,2] moved 0.1 -> 0.9 while `ld_status`
+#          stayed BYTE-IDENTICAL. Track A is in submission.
+#
+# --ld-dir is now the back-compat path for callers that pass no declared file OR
+# that run with authoritative = FALSE. The value comes from config
+# ld_read_path.ancestries via finemap.smk's params.ld_authoritative.
+#
+# SIGNATURE ORDER IS LOAD-BEARING -- do NOT "tidy" it. `authoritative` is
+# inserted BEFORE `ld_file` because tests/m3/test_ld_read_path.py::T2.2 asserts
+# `ld_file` is the LAST formal (so existing positional callers are unaffected),
+# and it defaults to TRUE because T2.3 / T2.5 call this with `ld_file` and NO
+# `authoritative` argument and require the declared file to be OPENED. TRUE is
+# also the fail-loud direction for any ad-hoc caller.
+load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
+                           authoritative = TRUE, ld_file = NULL) {
   # THE TRAP (m3-04c Task 1b): the pre-change guard tested ld_dir ALONE, so a
   # naive --ld-file addition would still bail here whenever ld_dir was absent --
   # i.e. it would do nothing in exactly the case it exists for. Bail only when
   # NEITHER source is usable. The status string stays byte-identical for the
   # both-absent case so nothing downstream moves.
-  have_ld_file <- !is.null(ld_file) && nzchar(ld_file) && file.exists(ld_file)
+  #
+  # `isTRUE(authoritative) &&` FIRST: when the declared file is not authoritative
+  # it is never even stat()ed, so no branch below can observe it.
+  have_ld_file <- isTRUE(authoritative) && !is.null(ld_file) &&
+    nzchar(ld_file) && file.exists(ld_file)
   have_ld_dir  <- !is.null(ld_dir) && ld_dir != "" && file.exists(ld_dir)
+  # A supplied-but-ABSENT declared file keeps the legacy guard (pre-existing
+  # T2.6 GHOST: byte-identical "ld_dir_missing" at rc 0) -- the loud path arms
+  # only when the declared file EXISTS. Leave a stderr trace so the one residual
+  # silent shape is at least visible in the job log.
+  if (isTRUE(authoritative) && !is.null(ld_file) && nzchar(ld_file) &&
+      !file.exists(ld_file)) {
+    warning(sprintf(
+      "LD_DECLARED_ABSENT: declared=%s region=%s ancestry=%s -- falling back to --ld-dir",
+      ld_file, region_id, ancestry), call. = FALSE)
+  }
   if (!have_ld_file && !have_ld_dir) {
     return(list(R = NULL, source = NULL, status = "ld_dir_missing"))
   }
@@ -151,12 +192,24 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) 
     file.path(ld_dir, ancestry, paste0(region_id, ".rds")),
     file.path(ld_dir, ancestry, paste0(safe_id, ".rds"))
   )) else character(0)
-  # The DECLARED file goes FIRST: that is what makes resolve_ld_path the single
-  # source of truth for which LD matrix a fit reads (m3-04c Task 1b).
-  candidates <- unique(c(
-    if (have_ld_file) ld_file else character(0),
-    dir_candidates
-  ))
+  # 260805-23d Task 2 (BLOCKER-A). The DECLARED file is not merely FIRST -- when
+  # it is authoritative it is the SOLE candidate. Putting it first only made it a
+  # PREFERENCE: the loop below returns a candidate only once it CLEARS the gate,
+  # so a sub-gate declared panel fell through to `dir_candidates` and the fit was
+  # computed on the 1kG panel under a success status. A fallback that is never
+  # CONSTRUCTED cannot be silently taken.
+  #
+  # When !have_ld_file this is `dir_candidates` -- already `unique()`d above and
+  # character-for-character 3f431ab's list.
+  candidates <- if (have_ld_file) ld_file else dir_candidates
+
+  # declared_mode == "the single candidate IS the declared, authoritative panel",
+  # i.e. every failure below is a rejection to be REPORTED, not a `next` to be
+  # taken. Off the allow-list this is FALSE and every legacy branch runs verbatim.
+  declared_mode <- have_ld_file
+  reject_reason <- NULL
+  reject_overlap <- 0
+  reject_coverage <- 0
 
   n_subset <- nrow(subset)
   best_partial <- NULL
@@ -170,6 +223,10 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) 
     seen_candidate <- TRUE
     obj <- tryCatch(readRDS(candidate), error = function(e) NULL)
     if (is.null(obj)) {
+      # 260805-23d Task 2 (BLOCKER-A, defect 4). A truncated .rds from an
+      # interrupted conversion used to be a BARE `next`: no message, no warning,
+      # no JSON field, no non-zero exit -- full compute burned on the 1kG panel.
+      if (declared_mode) reject_reason <- "unreadable"
       next
     }
     overlap <- 0
@@ -180,9 +237,20 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) 
       R <- obj$R
       variants <- obj$variants
       if (use_identity && is.null(R)) {
+        # 260805-23d Task 2 (BLOCKER-A, defect 3). This return fires BEFORE the
+        # gate, and the caller then records ld_matrix = ld_result$source -- so
+        # the receipt read ld_matrix == ld_file_declared (a FORGED green match)
+        # while SuSiE ran on diag(n). make_identity_ld_refs.R:64 really does
+        # write this payload, so it is a live shape, not a hypothetical.
+        # The legacy early return is KEPT VERBATIM off the allow-list.
+        if (declared_mode) {
+          reject_reason <- "use_identity"
+          next
+        }
         return(list(R = NULL, source = candidate, status = status_label, variants = variants))
       }
       if (is.null(R)) {
+        if (declared_mode) reject_reason <- "no_matrix"
         next
       }
       if (is.null(variants) && !is.null(obj$variants)) {
@@ -192,6 +260,7 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) 
       R <- obj
       variants <- NULL
     } else {
+      if (declared_mode) reject_reason <- "no_matrix"
       next
     }
 
@@ -201,6 +270,12 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) 
     overlap <- length(keep_idx)
     coverage <- if (n_subset > 0) overlap / n_subset else 0
     best_overlap <- max(best_overlap, overlap)
+    # Carry the REALIZED numbers out of the loop so a rejection can report them
+    # (an operator needs overlap/coverage vs the thresholds to act on it).
+    if (declared_mode) {
+      reject_overlap <- overlap
+      reject_coverage <- coverage
+    }
 
     if (!is.null(variants) && length(keep_idx) > 0 && !is.null(ld_idx)) {
       variants <- variants[ld_idx, , drop = FALSE]
@@ -229,7 +304,17 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) 
       ))
     }
 
-    if (overlap >= MIN_LD_MIN_USE) {
+    # 260805-23d Task 2 (BLOCKER-A, defect 2): keep the BEST overlap, not the
+    # LAST. The unconditional assignment made a declared panel at 40/100 LOSE to
+    # a dir candidate at 20/100 -- the fit silently took the WORSE panel.
+    # Applied UNCONDITIONALLY (not gated on `authoritative`) because "prefer the
+    # better-overlapping panel" is correct on every path. It is INERT for
+    # EUR/TRANS today: every LD-panel producer under {ld_dir}/{ancestry}/ names
+    # its output by the SAFE slug (ld_reference.smk::build_ld_rds_1kg_eur writes
+    # {region_safe}.rds), so the region_id-form dir candidate never exists and
+    # `dir_candidates` collapses to at most one REAL file.
+    if (overlap >= MIN_LD_MIN_USE &&
+        (is.null(best_partial) || overlap > best_partial$overlap)) {
       status_partial <- status_label
       if (grepl("^ld_loaded", status_label)) {
         status_partial <- sprintf("ld_loaded;partial_overlap;%d;%.3f", overlap, coverage)
@@ -248,6 +333,31 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) 
 
   if (!is.null(best_partial)) {
     return(best_partial)
+  }
+
+  # 260805-23d Task 2 (BLOCKER-A). An AUTHORITATIVE declared panel that produced
+  # neither a gate pass nor a usable partial is a STRUCTURED REJECTION, not a
+  # fall-through. Reaching here in declared_mode means the SOLE candidate failed;
+  # there is deliberately nothing else to try.
+  #
+  # This function stays PURE -- it returns the rejection, it does not raise. The
+  # loud decision belongs to assert_declared_ld_authoritative() (260805-23d
+  # Task 3), which keeps the whole thing behaviourally testable.
+  #
+  # Fields are ADDITIVE: existing callers read $R / $source / $status / $overlap
+  # / $coverage / $variants / $subset_idx and are unaffected.
+  if (declared_mode) {
+    reason <- reject_reason %||% "overlap_below_min_use"
+    return(list(
+      R = NULL,
+      source = ld_file,
+      status = sprintf("ld_declared_rejected;%s", reason),
+      declared_rejected = TRUE,
+      reject_reason = reason,
+      declared = ld_file,
+      overlap = reject_overlap,
+      coverage = reject_coverage
+    ))
   }
 
   if (seen_candidate && best_overlap > 0) {
