@@ -112,8 +112,35 @@ safe_region_id <- function(region_id) {
 # and it defaults to TRUE because T2.3 / T2.5 call this with `ld_file` and NO
 # `authoritative` argument and require the declared file to be OPENED. TRUE is
 # also the fail-loud direction for any ad-hoc caller.
+#
+# 260805-o7o Task 1 (m3-04c blast radius, FINDING H). `allele_aware` arms the
+# 4-key (chr:pos:REF:ALT) sumstats<->panel matcher below. WHY IT EXISTS: the
+# legacy CHR:POS `match()` at the fallback branch takes the FIRST panel row at a
+# position and IGNORES REF/ALT entirely. Measured at HEAD, the SNP_ID branch
+# matches ZERO rows against an AoU panel -- the panel's SNP_ID is
+# `chr:pos:REF:ALT` (ld_npz_to_rds.R parse_variants_frame) while the AFR
+# sumstats carry either an rsid or `chr:pos` -- so 100% of every AFR join fell
+# through to that first-hit position match. On a multiallelic site that binds a
+# variant's z to another ALT's LD row; on a transposed site it binds z to an LD
+# column signed on the OPPOSITE allele, and SuSiE fits a mirrored LD structure
+# with no error and no flag.
+#
+# WHY THE DEFAULT IS FALSE. The caller-relative fail-safe here is CHANGE NOTHING
+# ([[feedback_failsafe_default_is_caller_relative]]): this argument decides which
+# LD ROW a z-score is bound to, so "unspecified -> assume the new join" would
+# silently move numbers for every ad-hoc caller. It is also what keeps the 22
+# pre-existing tests/m3/test_ld_declared_authoritative.py fixtures and the 8
+# tests/m3/test_ld_read_path.py fixtures -- none of which carry REF/ALT columns
+# at all -- passing WITHOUT a single edit. The production value comes from
+# config ld_read_path.allele_aware via finemap.smk's params.ld_allele_aware,
+# gated on the SAME ancestry allow-list that contains AFR (and NOT EUR/TRANS).
+#
+# POSITION IS LOAD-BEARING TOO: `allele_aware` goes BEFORE `ld_file` because
+# test_ld_read_path.py:290 asserts `ld_file` is the LAST formal, and :285 matches
+# the signature with `\(([^)]*)\)` -- so NO default here may contain a
+# parenthesis.
 load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
-                           authoritative = TRUE, ld_file = NULL) {
+                           authoritative = TRUE, allele_aware = FALSE, ld_file = NULL) {
   # THE TRAP (m3-04c Task 1b): the pre-change guard tested ld_dir ALONE, so a
   # naive --ld-file addition would still bail here whenever ld_dir was absent --
   # i.e. it would do nothing in exactly the case it exists for. Bail only when
@@ -139,7 +166,171 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
     return(list(R = NULL, source = NULL, status = "ld_dir_missing"))
   }
 
+  # ---------------------------------------------------------------------
+  # 260805-o7o Task 1 (FINDING H): the ALLELE-AWARE matcher.
+  #
+  # THE ORIENTATION CONTRACT, verified in source and load-bearing:
+  #   * PANEL. src/python/plink_ld_to_npz.py:29-35 -- under plink
+  #     --keep-allele-order the .bim A1 == ALT == alleles[1] and A2 == REF, and
+  #     the canonical vid is {chr}:{bp}:{REF}:{ALT}. plink --r signs the
+  #     correlation on A1 dosage, i.e. on ALT. --keep-allele-order is HARDCODED
+  #     on every LD call (aou_ld_panel.py:2905, "MANDATORY: sign-correct LD vs
+  #     GWAS z (susieR)").
+  #   * SUMSTATS. harmonize_sumstats.py:255-262 sets ALT from RISK_ALLELE;
+  #     harmonize_mvp.py:96-98 maps REF->OA and ALT->EA; EAF is the ALT
+  #     frequency. ALT is the EFFECT allele and BETA is signed to it.
+  #   => Both sides code on ALT. When the two ALTs AGREE, z and R are
+  #      consistent. When they are TRANSPOSED, z must be NEGATED.
+  #
+  # DISPOSITIONS (all counted; a write-only counter is not observability, so
+  # every one of these reaches the region JSON, the per-region estimate_s
+  # receipt and finemap_summary.tsv):
+  #   chr:pos hit + (REF,ALT) exact      -> KEEP, orient +1   `exact`
+  #   chr:pos hit + (REF,ALT) transposed -> KEEP, orient -1   `flipped`
+  #   palindromic (A/T, T/A, C/G, G/C)   -> DROP              `dropped_palindromic`
+  #   position present, no compatible pair-> DROP             `dropped_mismatch`
+  #   >1 panel row shares the 4-key      -> DROP              `dropped_ambiguous`
+  #   REF/ALT missing / "" / "N" / NA    -> DROP              `dropped_unusable`
+  #   position absent from the panel     -> ordinary non-overlap, NOT counted
+  #
+  # WHY PALINDROMES ARE DROPPED RATHER THAN KEPT, and why that is specific to
+  # THIS panel rather than boilerplate: ld_npz_to_rds.R:348-361 (liftover_one)
+  # lifts GRCh38->GRCh37 and re-forms the vid carrying `ref` and `alt` through
+  # VERBATIM -- it does not complement them. A strand-inverted chain block
+  # therefore yields a panel REF/ALT reverse-complemented relative to GRCh37.
+  # For a NON-palindromic variant that surfaces as an allele MISMATCH:
+  # detectable, countable, droppable. For a PALINDROMIC variant it surfaces as
+  # an EXACT MATCH that is silently sign-wrong -- the ONE class whose error is
+  # invisible from the allele codes alone. Dropping them removes the sole
+  # undetectable failure mode. It is deliberately NOT configurable: a knob here
+  # is just another silent lever.
+  #
+  # Two match() calls on 4-keys, no loop: multiallelics are disambiguated BY
+  # CONSTRUCTION rather than by a tie-break someone has to trust.
+  .up <- function(x) toupper(trimws(as.character(x)))
+  .usable <- function(x) {
+    x <- .up(x)
+    !is.na(x) & nzchar(x) & x != "N"
+  }
+  .allele_counts0 <- function(reject = NULL) {
+    list(exact = 0L, flipped = 0L, dropped_ambiguous = 0L,
+         dropped_palindromic = 0L, dropped_mismatch = 0L,
+         dropped_unusable = 0L, reject = reject)
+  }
+  match_indices_allele_aware <- function(subset_dt, variants_dt) {
+    empty <- function(reject = NULL) list(
+      keep = integer(0), ld = integer(0), orient = numeric(0),
+      counts = .allele_counts0(reject))
+
+    need <- c("CHR", "POS", "REF", "ALT")
+    # THE TWO VERIFICATION-IMPOSSIBLE CASES. These are STRUCTURED REJECTIONS,
+    # never a fallback: silently degrading to a position-only match in either
+    # is PRECISELY finding H. They route through the pre-existing
+    # assert_declared_ld_authoritative(), which stops on declared_rejected
+    # regardless of reason and therefore needs no edit.
+    if (is.null(variants_dt) || !all(need %in% names(variants_dt))) {
+      return(empty("alleles_unavailable_panel"))
+    }
+    if (is.null(subset_dt) || !all(need %in% names(subset_dt))) {
+      return(empty("alleles_unavailable_sumstats"))
+    }
+    pan_ref <- .up(variants_dt$REF)
+    pan_alt <- .up(variants_dt$ALT)
+    pan_ok <- .usable(pan_ref) & .usable(pan_alt)
+    if (!any(pan_ok)) return(empty("alleles_unavailable_panel"))
+    sub_ref <- .up(subset_dt$REF)
+    sub_alt <- .up(subset_dt$ALT)
+    sub_ok <- .usable(sub_ref) & .usable(sub_alt)
+    if (!any(sub_ok)) return(empty("alleles_unavailable_sumstats"))
+
+    pan_pos <- suppressWarnings(as.integer(variants_dt$POS))
+    sub_pos <- suppressWarnings(as.integer(subset_dt$POS))
+    pan_chr <- .up(variants_dt$CHR)
+    sub_chr <- .up(subset_dt$CHR)
+    pos_key_pan <- paste(pan_chr, pan_pos, sep = ":")
+    pos_key_sub <- paste(sub_chr, sub_pos, sep = ":")
+    # paste() renders NA as the literal "NA", so an unparseable coordinate would
+    # otherwise become a REAL key that can collide. Null them explicitly.
+    pos_key_pan[is.na(pan_chr) | is.na(pan_pos)] <- NA_character_
+    pos_key_sub[is.na(sub_chr) | is.na(sub_pos)] <- NA_character_
+
+    k4_pan <- paste(pos_key_pan, pan_ref, pan_alt, sep = ":")
+    k4_pan[!pan_ok | is.na(pos_key_pan)] <- NA_character_
+    # AMBIGUITY GUARD. A 4-key that appears twice in the panel cannot be bound
+    # to a single LD row, so it is removed from the match TABLE entirely -- the
+    # same "a fallback that is never constructed cannot be silently taken"
+    # discipline 260805-23d applied to dir_candidates.
+    dup4 <- duplicated(k4_pan) | duplicated(k4_pan, fromLast = TRUE)
+    dup_pos <- unique(pos_key_pan[dup4 & !is.na(k4_pan)])
+    k4_pan[dup4] <- NA_character_
+    # match(NA, table) HITS an NA in the table, so every nulled panel key gets a
+    # unique unmatchable sentinel instead of staying NA.
+    na_pan <- which(is.na(k4_pan))
+    if (length(na_pan) > 0) {
+      k4_pan[na_pan] <- paste0("NO_PANEL_KEY", na_pan)
+    }
+
+    k4_exact <- paste(pos_key_sub, sub_ref, sub_alt, sep = ":")
+    k4_swap <- paste(pos_key_sub, sub_alt, sub_ref, sep = ":")
+    bad_sub <- !sub_ok | is.na(pos_key_sub)
+    k4_exact[bad_sub] <- NA_character_
+    k4_swap[bad_sub] <- NA_character_
+
+    m_exact <- match(k4_exact, k4_pan)
+    m_swap <- match(k4_swap, k4_pan)
+    m_exact[is.na(k4_exact)] <- NA_integer_
+    m_swap[is.na(k4_swap)] <- NA_integer_
+
+    pal <- nchar(sub_ref) == 1L & nchar(sub_alt) == 1L &
+      paste0(sub_ref, sub_alt) %in% c("AT", "TA", "CG", "GC")
+    pal[is.na(pal)] <- FALSE
+    unus <- bad_sub
+    posin <- !is.na(pos_key_sub) & (pos_key_sub %in% pos_key_pan[!is.na(pos_key_pan)])
+    amb <- posin & is.na(m_exact) & is.na(m_swap) & (pos_key_sub %in% dup_pos)
+
+    keep_mask <- !unus & !pal & (!is.na(m_exact) | !is.na(m_swap))
+    m_use <- ifelse(!is.na(m_exact), m_exact, m_swap)
+    orient_all <- ifelse(!is.na(m_exact), 1, -1)
+
+    keep_idx <- which(keep_mask)
+    ld_idx <- as.integer(m_use[keep_mask])
+    orient <- as.numeric(orient_all[keep_mask])
+    # THE SAME order(keep_idx) discipline the legacy body uses -- applied to
+    # keep_idx, ld_idx AND orient TOGETHER. Letting `orient` fall out of step
+    # with `keep_idx` is the one way this fix could itself produce a sign error.
+    if (length(keep_idx) > 0) {
+      ord <- order(keep_idx)
+      keep_idx <- keep_idx[ord]
+      ld_idx <- ld_idx[ord]
+      orient <- orient[ord]
+    }
+
+    counts <- list(
+      exact = as.integer(sum(keep_mask & !is.na(m_exact))),
+      flipped = as.integer(sum(keep_mask & is.na(m_exact))),
+      dropped_ambiguous = as.integer(sum(amb)),
+      dropped_palindromic = as.integer(sum(!unus & pal & posin)),
+      dropped_mismatch = as.integer(sum(!unus & !pal & posin &
+                                          is.na(m_exact) & is.na(m_swap) & !amb)),
+      # NOTE: `dropped_unusable` is the SUMSTATS-side allele-less class. A row
+      # whose PANEL counterpart has the unusable alleles cannot bind either and
+      # is counted under `dropped_mismatch` -- still dropped, still counted,
+      # only the label differs.
+      dropped_unusable = as.integer(sum(unus & posin)),
+      reject = NULL
+    )
+    list(keep = keep_idx, ld = ld_idx, orient = orient, counts = counts)
+  }
+
   match_indices <- function(subset_dt, variants_dt) {
+    # 260805-o7o Task 1: under allele_aware the legacy CHR:POS match() below is
+    # NOT CONSTRUCTED AT ALL. The legacy body is left character-for-character
+    # untouched, which is what makes allele_aware = FALSE provably byte-identical
+    # to 0378ec8 (asserted with identical() on the WHOLE returned list in
+    # tests/m3/test_ld_allele_aware_join.py).
+    if (isTRUE(allele_aware)) {
+      return(match_indices_allele_aware(subset_dt, variants_dt))
+    }
     keep_idx <- integer(0)
     ld_idx <- integer(0)
 
@@ -267,6 +458,24 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
     match_info <- match_indices(subset, variants)
     keep_idx <- match_info$keep
     ld_idx <- match_info$ld
+    # 260805-o7o Task 1 (FINDING H). NULL under allele_aware = FALSE, so every
+    # legacy return below is unchanged and the JSON counters render as `null`
+    # (= "not measured") rather than a misleading 0 (= "measured clean").
+    allele_orient <- match_info$orient
+    allele_counts <- match_info$counts
+    # THE TWO VERIFICATION-IMPOSSIBLE CASES. In declared mode they become a
+    # STRUCTURED rejection that assert_declared_ld_authoritative() turns into a
+    # hard stop(); off the allow-list allele_aware is FALSE so `reject` can never
+    # be set, and even a hand-built allele_aware = TRUE / authoritative = FALSE
+    # caller only SKIPS this candidate -- it can never abort a region.
+    if (!is.null(allele_counts) && !is.null(allele_counts$reject)) {
+      if (declared_mode) {
+        reject_reason <- allele_counts$reject
+        reject_overlap <- 0
+        reject_coverage <- 0
+      }
+      next
+    }
     overlap <- length(keep_idx)
     coverage <- if (n_subset > 0) overlap / n_subset else 0
     best_overlap <- max(best_overlap, overlap)
@@ -293,7 +502,14 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
       if (grepl("^ld_loaded", status_label)) {
         status_final <- sprintf("ld_loaded;overlap_ok;%d;%.3f", overlap, coverage)
       }
-      return(list(
+      # 260805-o7o Task 1: ADDITIVE, and attached ONLY when non-NULL.
+      # `list(allele_orient = NULL)` CREATES a NULL element in R (unlike
+      # `x$k <- NULL`, which deletes one), so writing them inline would make the
+      # allele_aware = FALSE result structurally DIFFERENT from 0378ec8's and
+      # break the identical()-on-the-whole-object containment proof. Caught by
+      # tests/m3/test_ld_allele_aware_join.py's permanent negative control,
+      # which observed identical() == FALSE before this shape was adopted.
+      out <- list(
         R = as.matrix(R),
         source = candidate,
         status = status_final,
@@ -301,7 +517,12 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
         subset_idx = keep_idx,
         overlap = overlap,
         coverage = coverage
-      ))
+      )
+      # allele_orient is aligned to subset_idx -- same length, same order -- so
+      # the caller can apply it AFTER the shrink.
+      if (!is.null(allele_orient)) out$allele_orient <- allele_orient
+      if (!is.null(allele_counts)) out$allele_counts <- allele_counts
+      return(out)
     }
 
     # 260805-23d Task 2 (BLOCKER-A, defect 2): keep the BEST overlap, not the
@@ -328,6 +549,12 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
         overlap = overlap,
         coverage = coverage
       )
+      # 260805-o7o Task 1: ADDITIVE, attached only when non-NULL (see the
+      # gate-pass return above for why `list(k = NULL)` is not safe here), and
+      # captured HERE rather than at the return below so the orientation vector
+      # travels with the candidate whose keep_idx it was computed from.
+      if (!is.null(allele_orient)) best_partial$allele_orient <- allele_orient
+      if (!is.null(allele_counts)) best_partial$allele_counts <- allele_counts
     }
   }
 
