@@ -398,4 +398,25 @@ properties:
         items:
           type: string
 
+  # M3 .npz -> .rds converter sizing (260805-23d Task 5; m3-04c blast radius
+  # BLOCKER-D). Consumed by src/snakemake/rules/m3_convert_npz_rds.smk.
+  #
+  # Same Rule-3 (blocking issue) rationale as `ld_read_path` above: the top-level
+  # `additionalProperties: false` rejects any config key it does not declare, so
+  # without these three entries EVERY Snakemake invocation fails at validate()
+  # the moment the keys exist in config/pipeline.yaml. Caught by
+  # `snakemake --list`, which no unit test exercises.
+  m3_convert_mem_mb:
+    type: integer
+    minimum: 1
+    description: "mem_mb for build_ld_rds_aou_afr. The retired 8000 was fiction: the .npz `ld` key is a dense n_var^2 float32 from the frozen producer, so the READ alone is 22.8 GB at n_var 75,497 (SH2B3 __sub14)"
+  m3_convert_runtime:
+    type: integer
+    minimum: 1
+    description: "runtime (minutes) for build_ld_rds_aou_afr"
+  m3_convert_max_n_var:
+    type: integer
+    minimum: 1
+    description: "FAIL-FAST n_var ceiling handed to ld_npz_to_rds.R as argv[4]. Above it the converter stop()s in seconds naming the region and the implied dense bytes instead of OOM-killing after hours. A producer-side limit, not a capability claim: BLOCKER-D stays open for the ~372k regions"
+
 additionalProperties: false

@@ -286,6 +286,26 @@ ld_read_path:
   enabled: true
   ancestries: [AFR]
 
+# M3 .npz -> .rds converter sizing (260805-23d Task 5; m3-04c blast-radius
+# BLOCKER-D). Consumed by src/snakemake/rules/m3_convert_npz_rds.smk
+# (build_ld_rds_aou_afr resources + params.max_n_var -> ld_npz_to_rds.R argv[4]).
+#
+# The .npz `ld` key is a DENSE n_var^2 float32 written by the FROZEN producer
+# src/python/plink_ld_to_npz.py, so the READ alone costs 4 * n_var^2 bytes:
+# 22.8 GB at n_var 75,497 (SH2B3 m2_region_00040__sub14, the SMALLEST crosswalk
+# target), 67.3 GB at MC4R, ~553 GB at the FTO/HLA ~372k class. The retired
+# mem_mb=8000 was fiction against every one of those.
+#
+# max_n_var is a FAIL-FAST ceiling, not a capability claim: above it the R script
+# stop()s in seconds naming the region, n_var and the implied dense bytes rather
+# than OOM-killing a node after hours. BLOCKER-D is NOT fully closed for the
+# ~372k targets -- closing it needs a sparse .npz, i.e. a producer-side change on
+# a frozen contract, which is out of scope. Raise max_n_var and mem_mb TOGETHER,
+# and only on a node that actually has the memory.
+m3_convert_mem_mb: 64000
+m3_convert_runtime: 480
+m3_convert_max_n_var: 120000
+
 multitrait:
   methods: [mashr, susie]
   window_kb: 500

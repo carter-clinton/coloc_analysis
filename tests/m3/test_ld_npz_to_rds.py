@@ -201,19 +201,35 @@ def _read_rds(rscript: Path, rds_path: Path) -> dict:
 
     Avoids the pyreadr dependency (not in smoke_dev). Encodes the matrix
     as nested list-of-lists; OK for 50 x 50 test matrices.
+
+    260805-23d Task 5 -- THE ONE AUTHORIZED EDIT to this pre-existing module
+    (blast-radius BLOCKER-D; Carter's decision, 2026-08-05). REPLACE, NOT RELAX:
+    every assertion this helper feeds -- dimensions, symmetry, dimnames, the
+    diagonal, the off-diagonal sample, snp_ids, provenance -- is PRESERVED and
+    now reads obj$R, the field the real consumers have always used
+    (run_susie_rss.R::load_ld_matrix reads obj$R + obj$variants;
+    run_qtl_coloc.R:222 reads ld_obj$R). The stopifnot ADDS a pin so the removal
+    of the dense back-compat `ld` field is TESTED rather than merely untested;
+    tests/m3/test_ld_npz_to_rds_bounded.py::test_reader_rejects_a_pre_change_rds
+    is the observation that this pin can fail. Net: strictly more than before.
     """
+    # Matrix is attached first so touching the sparse obj$R cannot emit a lazy
+    # load banner that races cat() for the JSON payload.
     reader = (
+        'suppressPackageStartupMessages(library(Matrix)); '
         'args <- commandArgs(trailingOnly=TRUE); '
         'obj <- readRDS(args[[1]]); '
+        'stopifnot(is.null(obj$ld)); '
+        'M <- as.matrix(obj$R); '
         'out <- list( '
-        '  ld_rows = nrow(obj$ld), '
-        '  ld_cols = ncol(obj$ld), '
-        '  ld_symmetric = isSymmetric(obj$ld), '
-        '  dim_rownames = rownames(obj$ld), '
-        '  dim_colnames = colnames(obj$ld), '
+        '  ld_rows = nrow(M), '
+        '  ld_cols = ncol(M), '
+        '  ld_symmetric = isSymmetric(M), '
+        '  dim_rownames = rownames(M), '
+        '  dim_colnames = colnames(M), '
         '  snp_ids = obj$snp_ids, '
-        '  ld_diag = diag(obj$ld), '
-        '  ld_offdiag_sample = obj$ld[1, min(2L, ncol(obj$ld))], '
+        '  ld_diag = diag(M), '
+        '  ld_offdiag_sample = M[1, min(2L, ncol(M))], '
         '  provenance = obj$provenance '
         '); '
         'cat(jsonlite::toJSON(out, auto_unbox=TRUE, null="null", na="null"))'
@@ -772,13 +788,20 @@ def _read_rds_with_af(rscript: Path, rds_path: Path) -> dict:
 
     Mirror of _read_rds but also dumps the variants$AF column so the A.3
     end-to-end test can assert AF landed in obj$variants$AF.
+
+    260805-23d Task 5 -- the second half of the ONE authorized edit to this
+    module (blast-radius BLOCKER-D). Same discipline as _read_rds above: the
+    dimension assertions are PRESERVED and re-pointed at obj$R, the AF assertions
+    are untouched, and the stopifnot pins the dense `ld` field's removal.
     """
     reader = (
+        'suppressPackageStartupMessages(library(Matrix)); '
         'args <- commandArgs(trailingOnly=TRUE); '
         'obj <- readRDS(args[[1]]); '
+        'stopifnot(is.null(obj$ld)); '
         'out <- list( '
-        '  ld_rows = nrow(obj$ld), '
-        '  ld_cols = ncol(obj$ld), '
+        '  ld_rows = nrow(obj$R), '
+        '  ld_cols = ncol(obj$R), '
         '  variants_af = obj$variants$AF '
         '); '
         'cat(jsonlite::toJSON(out, auto_unbox=TRUE, null="null", na="null"))'

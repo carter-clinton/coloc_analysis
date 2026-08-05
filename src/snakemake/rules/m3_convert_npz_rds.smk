@@ -95,6 +95,42 @@ LIFTOVER_CHAIN_38_TO_37 = "data/external/liftover/hg38ToHg19.over.chain.gz"
 # cwd so the relative path resolves correctly).
 LD_NPZ_TO_RDS_SCRIPT = "src/scripts/ld_npz_to_rds.R"
 
+# ---------------------------------------------------------------------------
+# Converter resources (260805-23d Task 5, m3-04c blast radius BLOCKER-D).
+#
+# THE OLD mem_mb=8000 WAS FICTION. The .npz `ld` key is a DENSE n_var**2 float32
+# written by the FROZEN producer (src/python/plink_ld_to_npz.py:253,
+# ``np.zeros((n_var, n_var), dtype="float32")``), so the READ alone costs
+# 4 * n_var**2 bytes before any conversion work:
+#
+#     n_var    dense float32 read     (old, dense float64 in R: 8 * n_var**2)
+#     -------  --------------------   -------------------------------------
+#      75,497   22.8 GB  (SH2B3 m2_region_00040__sub14 -- the SMALLEST target)
+#     129,700   67.3 GB  (MC4R)
+#     372,000  ~553 GB   (FTO / HLA class)
+#
+# ld_npz_to_rds.R is now block-bounded, so R holds O(nnz) + O(block**2) on top of
+# that one unavoidable copy instead of four whole-matrix float64 temporaries plus
+# a persisted dense field. 64 GB is sized for the SH2B3 subregion class; the
+# banded nnz term scales with the LD band, so the first real conversion should be
+# read back off the converter's own ``R_HEAP_PEAK_MB`` line before the remaining
+# regions are fired, and ``m3_convert_mem_mb`` raised if it lands close.
+#
+# m3_convert_max_n_var is the FAIL-FAST ceiling handed to the R script as argv[4]:
+# above it the script stop()s in seconds naming the region, n_var and the implied
+# dense bytes, instead of OOM-killing a node after hours. It is deliberately a
+# PRODUCER-side limit -- BLOCKER-D is NOT fully closed for the ~372k targets and
+# this ceiling is where that residual is made visible rather than papered over.
+# ---------------------------------------------------------------------------
+try:
+    _M3_CONVERT_CFG = config  # type: ignore[name-defined]
+except NameError:
+    _M3_CONVERT_CFG = {}
+
+M3_CONVERT_MEM_MB = int(_M3_CONVERT_CFG.get("m3_convert_mem_mb", 64000))
+M3_CONVERT_RUNTIME = int(_M3_CONVERT_CFG.get("m3_convert_runtime", 480))
+M3_CONVERT_MAX_N_VAR = int(_M3_CONVERT_CFG.get("m3_convert_max_n_var", 120000))
+
 
 # ---------------------------------------------------------------------------
 # Rule: build_ld_rds_aou_afr
@@ -122,6 +158,9 @@ rule build_ld_rds_aou_afr:
         rds=os.path.join(LD_REF_DIR, "AFR_aou", "{region_id}.rds"),
     log:
         "logs/ld_reference/aou_afr/{region_id}.log",
+    params:
+        # argv[4]: the fail-fast n_var ceiling. See the resources banner above.
+        max_n_var=M3_CONVERT_MAX_N_VAR,
     wildcard_constraints:
         # m3-04c Task 2: admit the m3-02b subregion splits. The old
         # r"m2_region_\d{5}" silently excluded 123 of the 276 manifest ids --
@@ -131,14 +170,14 @@ rule build_ld_rds_aou_afr:
         M3_R_LD_ENV
     threads: 1
     resources:
-        mem_mb=8000,
-        runtime=120,
+        mem_mb=M3_CONVERT_MEM_MB,
+        runtime=M3_CONVERT_RUNTIME,
     shell:
         r"""
         set -euo pipefail
         mkdir -p $(dirname {output.rds}) $(dirname {log})
         Rscript {input.rscript} {input.npz} {output.rds} {input.chain} \
-            > {log} 2>&1
+            {params.max_n_var} > {log} 2>&1
         """
 
 
