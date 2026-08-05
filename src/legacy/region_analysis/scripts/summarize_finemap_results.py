@@ -53,6 +53,24 @@ def summarize_file(path: Path) -> Dict[str, Any]:
         "sumstats": data.get("sumstats"),
         "ld_dir": data.get("ld_dir"),
         "output_path": str(path),
+        # 260805-o7o (m3-04c blast radius, FINDING I). Everything below is
+        # APPENDED -- see the note at FIELDNAMES. ld_dir above is the CONSTANT
+        # config["finemap"]["ld_reference_dir"]; ld_matrix is the panel this row
+        # was actually computed on.
+        "ld_matrix": data.get("ld_matrix"),
+        "ld_file_declared": data.get("ld_file_declared"),
+        "ld_authoritative": data.get("ld_authoritative"),
+        "ld_status": data.get("ld_status"),
+        "ld_overlap": data.get("ld_overlap"),
+        "ld_overlap_fraction": data.get("ld_overlap_fraction"),
+        "ld_allele_aware": data.get("ld_allele_aware"),
+        "ld_allele_exact": data.get("ld_allele_exact"),
+        "ld_allele_flipped": data.get("ld_allele_flipped"),
+        "ld_allele_dropped_ambiguous": data.get("ld_allele_dropped_ambiguous"),
+        "ld_allele_dropped_palindromic": data.get("ld_allele_dropped_palindromic"),
+        "ld_allele_dropped_mismatch": data.get("ld_allele_dropped_mismatch"),
+        "ld_allele_dropped_unusable": data.get("ld_allele_dropped_unusable"),
+        "ld_allele_catalog_join": data.get("ld_allele_catalog_join"),
     }
     return summary
 
@@ -85,11 +103,51 @@ def summarize_inputs(paths: Iterable[str]) -> List[Dict[str, Any]]:
                     "sumstats": None,
                     "ld_dir": None,
                     "output_path": str(path),
+                    # 260805-o7o (FINDING I). This dict MUST stay key-for-key in
+                    # parity with `summary` above. A divergence here is a silent
+                    # COLUMN SHIFT for exactly the rows that already failed --
+                    # the least-inspected rows in the table. Pinned by
+                    # tests/m3/test_finemap_summary_panel_visible.py.
+                    "ld_matrix": None,
+                    "ld_file_declared": None,
+                    "ld_authoritative": None,
+                    "ld_status": None,
+                    "ld_overlap": None,
+                    "ld_overlap_fraction": None,
+                    "ld_allele_aware": None,
+                    "ld_allele_exact": None,
+                    "ld_allele_flipped": None,
+                    "ld_allele_dropped_ambiguous": None,
+                    "ld_allele_dropped_palindromic": None,
+                    "ld_allele_dropped_mismatch": None,
+                    "ld_allele_dropped_unusable": None,
+                    "ld_allele_catalog_join": None,
                 }
             )
     return rows
 
 
+# 260805-o7o (m3-04c blast radius, FINDING I). finemap_summary.tsv was
+# PANEL-BLIND: the only LD column was `ld_dir`, which is the CONSTANT
+# config["finemap"]["ld_reference_dir"] and is therefore identical on every row.
+# A reader could not tell an AoU-panel row from a 1kG-panel row -- and after the
+# ~11-day fire, that table is what the manuscript is built from.
+#
+# `ld_matrix` is the panel this row was ACTUALLY computed on; `ld_file_declared`
+# is what Snakemake resolved; `ld_authoritative` is the regime that makes their
+# comparison interpretable (off the allow-list they are EXPECTED to differ, and
+# that difference is the EUR/TRANS containment working, not a regression).
+#
+# `ld_dir` STAYS WHERE IT IS even though it is the constant that constitutes
+# finding I: removing it would REORDER the header, and this file is read by five
+# scripts. APPEND ONLY. DO NOT REORDER A SINGLE EXISTING ENTRY. The first 17
+# entries are pinned byte-for-byte against 0378ec8 by
+# tests/m3/test_finemap_summary_panel_visible.py.
+#
+# The eight ld_allele_* columns are EMPTY (not 0) whenever the allele-aware join
+# did not run -- run_susie_rss.R emits NA and toJSON(na = "null") renders it as
+# JSON null -> Python None -> an empty cell. Empty means "not measured"
+# (EUR/TRANS); 0 means "measured, and the join was clean" (AFR).
 FIELDNAMES = [
     "trait",
     "ancestry",
@@ -108,6 +166,21 @@ FIELDNAMES = [
     "sumstats",
     "ld_dir",
     "output_path",
+    # --- 260805-o7o APPENDED (FINDING I) ------------------------------------
+    "ld_matrix",
+    "ld_file_declared",
+    "ld_authoritative",
+    "ld_status",
+    "ld_overlap",
+    "ld_overlap_fraction",
+    "ld_allele_aware",
+    "ld_allele_exact",
+    "ld_allele_flipped",
+    "ld_allele_dropped_ambiguous",
+    "ld_allele_dropped_palindromic",
+    "ld_allele_dropped_mismatch",
+    "ld_allele_dropped_unusable",
+    "ld_allele_catalog_join",
 ]
 
 
