@@ -413,7 +413,13 @@ rule run_finemap:
         # set by BOTH reverts, ld_overlap_zero_fallback only by the
         # ld_overlap==0 one, so the pair distinguishes them. Write-only flags
         # are not observability, which is why they are consumed here.
-        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'ld_z_consistency_s', d.get('d3b_ld_z_consistency_s'), 'ld_source_mismatch_flag', d.get('ld_source_mismatch_flag'), 'ld_matrix', d.get('ld_matrix'), 'ld_file_declared', d.get('ld_file_declared'), 'variant_catalog_fallback', d.get('variant_catalog_fallback'), 'ld_overlap_zero_fallback', d.get('ld_overlap_zero_fallback'))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
+        #
+        # 260805-23d Task 3: ld_authoritative is read too, because it is what
+        # makes the receipt INTERPRETABLE. Off the allow-list ld_matrix is
+        # EXPECTED to differ from the declared path -- that difference is the
+        # EUR/TRANS containment working, not a regression -- so a reader that
+        # cannot see the regime would raise a false alarm on every EUR row.
+        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'ld_z_consistency_s', d.get('d3b_ld_z_consistency_s'), 'ld_source_mismatch_flag', d.get('ld_source_mismatch_flag'), 'ld_matrix', d.get('ld_matrix'), 'ld_file_declared', d.get('ld_file_declared'), 'ld_authoritative', d.get('ld_authoritative'), 'variant_catalog_fallback', d.get('variant_catalog_fallback'), 'ld_overlap_zero_fallback', d.get('ld_overlap_zero_fallback'))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
         """
 
 

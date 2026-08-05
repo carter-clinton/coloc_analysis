@@ -373,6 +373,62 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset,
   list(R = NULL, source = NULL, status = "ld_missing", overlap = 0, coverage = 0)
 }
 
+# ---------------------------------------------------------------------------
+# 260805-23d Task 3 (m3-04c blast radius, BLOCKER-A). The declared LD panel is a
+# MANDATE, not a preference. When --ld-authoritative is true and the declared
+# panel is unreadable / has no matrix / is a use_identity placeholder / cannot
+# clear MIN_LD_MIN_USE, we ABORT the region rather than fall through to the
+# --ld-dir reconstruction and emit a plausible fit computed on a different
+# panel. Measured before this landed: a corrupt declared .rds under
+# --ld-authoritative true ran to completion at rc 0 on diag(n) ("No LD matrix
+# found ... Falling back to identity"), writing a JSON that reads as a result.
+#
+# WHY A HARD stop() AND NOT A STATUS FIELD. The alternative -- "a loud,
+# machine-detectable status the DAG can gate on" -- requires the JSON to be
+# written and the process to exit 0, so Snakemake marks the job DONE and
+# `snakemake all` completes green; the gate then degrades into a post-hoc scan
+# someone must remember to run. That is the exact failure class of this whole
+# sweep: the `resolved == opened` receipt ALREADY EXISTS in every region's JSON
+# and estimate_s log, and nobody read it. Write-only observability is not
+# observability. A stop() makes the DAG itself the gate, and with --keep-going
+# the blast radius is ONE region rather than the fire.
+#
+# NO OVERRIDE FLAG EXISTS ON PURPOSE -- a per-run override just re-creates the
+# silent path. The kill switch is the allow-list in config/pipeline.yaml
+# (ld_read_path.ancestries / ld_read_path.enabled), one line for every ancestry.
+#
+# BOTH GUARDS FAIL OPEN, deliberately: a too-eager gate is historically the
+# worse failure in this repo than the defect it guards (cf. the P3 gsutil
+# precedent, where a too-narrow absent-detection would have stopped every
+# legitimate first region). Only an explicitly TRUE `declared_rejected` under an
+# explicitly TRUE `authoritative` aborts. In particular an ABSENT declared panel
+# never reaches here as a rejection -- load_ld_matrix arms declared_mode only
+# when the file EXISTS -- so the AoU .rds arriving over weeks cannot stop every
+# AFR region before the fire has run.
+#
+# PLACEMENT IS LOAD-BEARING -- do NOT move this below `option_list <-`.
+# tests/m3/test_stitch_subregions_to_rds.py::_loader_functions_only() slices this
+# script at the FIRST line starting `option_list <-` so the loader family can be
+# sourced without triggering argument parsing. Defined below that marker, this
+# function would be unreachable from every behavioural test and its suite would
+# silently degrade to source-grep theatre.
+assert_declared_ld_authoritative <- function(ld_result, authoritative, region_id, ancestry,
+                                             min_overlap, min_coverage, min_use) {
+  if (!isTRUE(authoritative)) return(invisible(TRUE))
+  if (!isTRUE(ld_result$declared_rejected)) return(invisible(TRUE))
+  stop(sprintf(
+    paste0("LD_DECLARED_REJECTED: reason=%s declared=%s region=%s ancestry=%s ",
+           "overlap=%s coverage=%s min_ld_overlap=%s min_ld_coverage=%s min_ld_min_use=%s ",
+           "remedy=rebuild or re-crosswalk the declared panel, or clear this ancestry ",
+           "from config ld_read_path.ancestries; the --ld-dir fallback is DELIBERATELY ",
+           "not taken so no fit is produced on a panel other than the one declared"),
+    ld_result$reject_reason %||% "unknown",
+    ld_result$declared %||% ld_result$source %||% "<NULL>",
+    region_id, ancestry,
+    ld_result$overlap %||% NA, ld_result$coverage %||% NA,
+    min_overlap, min_coverage, min_use), call. = FALSE)
+}
+
 option_list <- list(
   make_option("--sumstats", type = "character", help = "Path to harmonized sumstats (.tsv.bgz)"),
   make_option("--trait", type = "character", help = "Trait name"),
@@ -601,7 +657,21 @@ repeat {
   # resolve_ld_path) is threaded through and wins over the --ld-dir
   # reconstruction. opt$`ld-dir` at :368/:400/the result list stays as-is: it is
   # provenance, not the read path.
-  ld_result <- load_ld_matrix(opt$`ld-dir`, opt$ancestry, opt$region, subset, ld_file = opt$`ld-file`)
+  #
+  # 260805-23d Task 3: `authoritative = ld_authoritative` is what makes
+  # --ld-authoritative MEAN anything. Between Task 1 and Task 3 the flag was
+  # declared, rendered by finemap.smk and strictly parsed here -- and then not
+  # consumed, so the formal's TRUE default applied to EVERY ancestry and the
+  # real script opened EUR_ukbb_pub under --ld-authoritative false (measured
+  # end-to-end: ld_overlap 300, i.e. the declared panel, where 3f431ab's read
+  # path yields 200). That is [[feedback_declared_input_is_not_the_read_path]]
+  # in its exact dual -- a parsed flag nothing reads -- and it is why the proof
+  # for this lives in a FULL-SCRIPT test, not a load_ld_matrix() unit test.
+  #
+  # ONE LINE, and `ld_file = opt$`ld-file`` stays LAST: the pre-existing
+  # tests/m3/test_ld_read_path.py::T2.2 matches the call site with a
+  # single-line regex ending in that argument.
+  ld_result <- load_ld_matrix(opt$`ld-dir`, opt$ancestry, opt$region, subset, authoritative = ld_authoritative, ld_file = opt$`ld-file`)
   ld_overlap <- ld_result$overlap %||% 0
   if (ld_overlap == 0 && used_variant_catalog && attempt == 1) {
     message("No LD overlap after applying variant catalog filter; retrying without catalog restriction.")
@@ -620,6 +690,14 @@ repeat {
   }
   break
 }
+
+# 260805-23d Task 3 (BLOCKER-A). THE SOLE CALL SITE, sited here on purpose:
+# AFTER the retry loop has settled (so a Path-2 retry cannot outrun the gate)
+# and BEFORE the subset shrink below (so no fit can be built, and no output
+# written, on a rejected declared panel). Under --ld-authoritative false this is
+# a no-op by construction, so EUR / TRANS can never be aborted by it.
+assert_declared_ld_authoritative(ld_result, ld_authoritative, opt$region, opt$ancestry,
+                                 MIN_LD_OVERLAP, MIN_LD_COVERAGE, MIN_LD_MIN_USE)
 
 if (!is.null(ld_result$subset_idx)) {
   subset <- subset[ld_result$subset_idx]
@@ -734,6 +812,18 @@ result <- list(
     # Additive JSON keys are safe: summarize_finemap_results.py reads with
     # .get() against a fixed FIELDNAMES list.
     ld_file_declared = opt$`ld-file`,
+    # 260805-23d Task 3: WHICH REGIME produced this row. ld_matrix ==
+    # ld_file_declared is only meaningful when the declared panel was
+    # authoritative; off the allow-list the two are expected to differ and a
+    # mismatch is CORRECT (EUR/TRANS containment), not a regression. Without
+    # this field a reader cannot tell those two cases apart -- and blast-radius
+    # finding I is precisely that finemap_summary.tsv is panel-blind.
+    #
+    # ld_reject_reason is DELIBERATELY NOT emitted here: a rejection stop()s
+    # before this list is built and no rejection can be produced off the
+    # allow-list, so the field would be structurally incapable of ever being
+    # non-null -- the same vacuous-assertion shape this sweep exists to remove.
+    ld_authoritative = ld_authoritative,
     ld_status = ld_status,
     ld_overlap = ld_overlap,
     ld_overlap_fraction = ld_overlap_fraction,
