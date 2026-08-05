@@ -60,6 +60,7 @@ from typing import Iterable, Sequence
 
 import pandas as pd
 
+from occlusion_coord_key import canonical_coord_key
 from occlusion_span_filter import detect_occluded_variants, parse_bim_row
 
 __all__ = [
@@ -306,15 +307,17 @@ def _present_rate_key(chrom, pos_grch37):
     ever supply one, and to give the unlifted row an explicit ``None`` key. The real
     producer emits ``'1'``, so the prefix branch is deliberately NOT pinned by a
     contrived ``"chr1"`` test — a fake test would be worse than none.
+
+    The pandas ``None``/``pd.isna`` early return STAYS HERE: it needs pandas, and
+    ``occlusion_coord_key`` is deliberately dependency-free. Everything after it
+    DELEGATES to ``occlusion_coord_key.canonical_coord_key`` — the ONE place the
+    (CHR,POS) key is computed. This body used to duplicate that rule verbatim
+    alongside two other copies, which is how D-04b-01 (a bare ``int(pos)``, fatal on
+    a float-formatted POS column) survived in triplicate.
     """
     if pos_grch37 is None or pd.isna(pos_grch37):
         return None
-    contig = str(chrom).strip()
-    if contig.lower().startswith("chr"):
-        contig = contig[3:]
-    if contig.isdigit():
-        contig = int(contig)
-    return (contig, int(pos_grch37))
+    return canonical_coord_key(chrom, pos_grch37)
 
 
 def enrich_occlusion_manifest(manifest_path: "str | Path",

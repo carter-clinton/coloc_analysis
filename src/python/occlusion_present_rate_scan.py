@@ -30,9 +30,13 @@ a hard failure rather than a manifest silently filled with NA.
 
 Keys are canonicalized ("chr1"/"1" -> 1) by the same rule as
 ``occlusion_manifest._present_rate_key``, so a caller that reads ``chr`` straight
-out of the manifest (where the producer emits the STRING ``'1'``) still joins. The
-rule is mirrored rather than imported: this scanner needs neither the span filter
-nor pyliftover, and must stay importable without them.
+out of the manifest (where the producer emits the STRING ``'1'``) still joins. That
+rule is now IMPORTED from ``occlusion_coord_key`` — the ONE place the (CHR,POS) key
+is computed — rather than mirrored here. It used to be mirrored, and the three
+verbatim copies is how D-04b-01 (a bare ``int(pos)`` that raises on the
+float-formatted POS carried by 100% of ``bmi.AFR.PAGE.2019.GRCh37``) survived in
+triplicate. ``occlusion_coord_key`` is deliberately STDLIB-ONLY, so this scanner
+still needs neither the span filter nor pyliftover and stays importable without them.
 
 CHR/POS ARE LOCATED BY NAME
 ---------------------------
@@ -58,6 +62,8 @@ import gzip
 from pathlib import Path
 from typing import Iterable, Sequence
 
+from occlusion_coord_key import canonical_coord_key
+
 __all__ = ["scan_present_rate"]
 
 #: Fallback column indices, mirroring the hinge-check awk prototype's
@@ -70,20 +76,15 @@ _POS_NAMES = ("POS", "BP")
 
 
 def _canonical_key(chrom, pos) -> tuple:
-    """Canonical GRCh37 scan/join key: ``(chr, pos)`` with a normalized contig.
+    """Canonical GRCh37 scan/join key — see ``occlusion_coord_key``.
 
-    Mirrors ``occlusion_manifest._present_rate_key`` EXACTLY (strip a ``chr``
-    prefix; a purely numeric contig becomes an ``int``) so this scan's return joins
-    the manifest without an adapter. The manifest producer emits ``chr`` as the
-    string ``'1'`` while the RED keys on the int ``1`` — normalizing both to ``1``
-    is what makes those two the same variant instead of two silent near-misses.
+    A ONE-LINE DELEGATION, kept under its private name so every existing reference
+    (and every test that pins the three implementations byte-compatible) still
+    resolves. The rule itself lives in exactly one module now; it used to be
+    duplicated verbatim here, in ``drop_occluded_from_sumstats`` and in
+    ``occlusion_manifest``, which is how D-04b-01 survived in triplicate.
     """
-    contig = str(chrom).strip()
-    if contig.lower().startswith("chr"):
-        contig = contig[3:]
-    if contig.isdigit():
-        contig = int(contig)
-    return (contig, int(pos))
+    return canonical_coord_key(chrom, pos)
 
 
 def _open_text(path: Path):

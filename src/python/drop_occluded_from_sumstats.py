@@ -70,6 +70,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from occlusion_coord_key import canonical_coord_key
+
 __all__ = ["drop_occluded_from_sumstats"]
 
 #: Fallback column indices, mirroring the hinge-check awk prototype
@@ -88,20 +90,20 @@ _MANIFEST_POS = "pos_grch37"
 
 
 def _canonical_key(chrom, pos) -> tuple:
-    """Canonical GRCh37 (CHR,POS) key with a normalized contig.
+    """Canonical GRCh37 (CHR,POS) key — see ``occlusion_coord_key``.
 
-    Mirrors ``occlusion_manifest._present_rate_key`` (strip a ``chr`` prefix; a
-    purely numeric contig becomes an ``int``). Both sides of the join go through
-    this, which is what lets the manifest's ``chr`` (the producer emits ``'1'``;
-    pandas may hand back ``numpy.int64`` ``1``) match the sumstats' ``CHR`` text
-    ``"1"`` instead of near-missing and silently dropping NOTHING.
+    A ONE-LINE DELEGATION, kept under its private name so every existing reference
+    still resolves. Both sides of the join go through it, which is what lets the
+    manifest's ``chr`` (the producer emits ``'1'``; pandas may hand back
+    ``numpy.int64`` ``1``) match the sumstats' ``CHR`` text ``"1"`` instead of
+    near-missing and silently dropping NOTHING.
+
+    The rule used to be duplicated verbatim here, in ``occlusion_present_rate_scan``
+    and in ``occlusion_manifest``. It is now IMPORTED from one place — which is how
+    D-04b-01 (a bare ``int(pos)``, fatal on a float-formatted POS column) stops being
+    a defect that has to be found and fixed three times.
     """
-    contig = str(chrom).strip()
-    if contig.lower().startswith("chr"):
-        contig = contig[3:]
-    if contig.isdigit():
-        contig = int(contig)
-    return (contig, int(pos))
+    return canonical_coord_key(chrom, pos)
 
 
 def _open_binary(path: Path):

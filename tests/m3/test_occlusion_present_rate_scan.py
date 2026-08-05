@@ -157,6 +157,44 @@ def test_chr_pos_columns_auto_detected_regardless_of_order(tmp_path):
     assert res[v]["present_rate"] == 1.0
 
 
+def test_float_formatted_pos_counts_toward_k(tmp_path):
+    """THE k/n UNDERCOUNT (D-04b-01). A float-formatted POS must count toward k.
+
+    Two files carrying the SAME variant: one writes POS as ``5982778`` and the other
+    as ``5982778.0`` — the exact shape 100% of ``bmi.AFR.PAGE.2019.GRCh37``'s
+    17,195,956 rows carry (m3-04b-BLAST-RADIUS.md, D-04b-01). Today
+    ``int('5982778.0')`` raises, ``occlusion_present_rate_scan.py:176-177`` swallows
+    it, and the file scores ABSENT -> k=1 of 2 instead of 2 of 2.
+
+    On the real corpus this is exactly why rs182965575 publishes 6 of 9 today when
+    the project record — and the pre-registration (osf.io/az52u) — is 7 of 9.
+    """
+    import occlusion_present_rate_scan as prs
+
+    v = (1, 5_982_778)
+    f_int = _write_sumstats(tmp_path / "asthma.AFR.tsv", [_row(*v, "asthma")])
+
+    # POS written VERBATIM as a float string — str(int) can never produce this shape
+    f_float = tmp_path / "bmi.AFR.PAGE.2019.GRCh37.tsv"
+    f_float.write_text(
+        "\t".join(_HARMONIZED_HEADER) + "\n"
+        + "\t".join(str(x) for x in [
+            1, "5982778.0", "A", "G", 0.012, 0.004, 3.1e-3, 0.21, 15000,
+            "1:5982778:A:G", "bmi", "AFR", "GRCh37",
+        ]) + "\n"
+    )
+
+    res = prs.scan_present_rate([v], [f_int, f_float])
+
+    rec = res[v]
+    assert rec["n_traits_present"] == 2, (
+        "the float-POS file scores ABSENT today, undercounting k"
+    )
+    assert rec["n_traits_scanned"] == 2
+    assert rec["present_rate"] == 1.0
+    assert sorted(rec["traits_present"]) == ["asthma", "bmi"]
+
+
 def test_scan_multiple_variants_independently(tmp_path):
     """Several occluded variants scanned in one pass keep independent k/n."""
     import occlusion_present_rate_scan as prs

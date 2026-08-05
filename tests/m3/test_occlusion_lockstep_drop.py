@@ -248,6 +248,70 @@ def test_result_reports_counts(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# 4b. D-04b-01 — a FLOAT-formatted POS column must not silently under-drop     #
+# --------------------------------------------------------------------------- #
+
+def _write_sumstats_raw(path: Path, pos_texts: list[str], chrom: int = 1) -> Path:
+    """Write a harmonized AFR sumstats TSV with POS written VERBATIM as given.
+
+    ``_write_sumstats`` above formats POS through ``str(int)``. This writer exists to
+    reproduce the ONE real corpus shape ``str(int)`` can never produce:
+    ``bmi.AFR.PAGE.2019.GRCh37`` carries POS as a FLOAT string (``'5982778.0'``) in
+    100% of its 17,195,956 body rows (m3-04b-BLAST-RADIUS.md, D-04b-01).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["\t".join(_HARMONIZED_HEADER)]
+    for pos_text in pos_texts:
+        lines.append("\t".join(str(x) for x in [
+            chrom, pos_text, "A", "G", 0.012, 0.004, 3.1e-3, 0.21, 15000,
+            f"{chrom}:{pos_text}:A:G", "bmi", "AFR", "GRCh37",
+        ]))
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
+def test_float_formatted_pos_column_still_drops_the_occluded_variant(tmp_path, capsys):
+    """THE SILENT UNDER-DROP (D-04b-01). A float-formatted POS must still drop.
+
+    The manifest is keyed on the INTEGER ``5982778``; the sumstats writes the same
+    coordinate as ``'5982778.0'``. Today ``int('5982778.0')`` raises, the raise is
+    swallowed fail-open at ``drop_occluded_from_sumstats.py:215-216``, the row
+    SURVIVES, and the audit invariant ``n_in - n_dropped == n_out`` holds PERFECTLY
+    over ``n_dropped == 0``.
+
+    Verified side by side in the blast radius on identical content:
+
+        asthma.AFR.tsv   (int POS)   {'n_in':2,'n_dropped':1,'n_out':1}  stderr='...DROP...'
+        bmi.AFR.PAGE.tsv (float POS) {'n_in':2,'n_dropped':0,'n_out':2}  stderr=''
+
+    A clean no-op over a whole trait is the exact failure the lockstep exists to
+    prevent: the panel drops the variant, the sumstats keeps it, and 100% of that
+    trait's rows are ORPHANED against an LD matrix that never heard of them.
+    """
+    import drop_occluded_from_sumstats as dof
+
+    ss = _write_sumstats_raw(
+        tmp_path / "bmi.AFR.PAGE.2019.GRCh37.tsv",
+        [f"{_DEL3_B37}.0", f"{_SNP_C_B37}.0", "7000000.0"],
+    )
+    mf = _write_manifest(tmp_path / "m.tsv", [("r1", "1:5922718:A:A", 1, _SNP_C_B37)])
+    out = tmp_path / "out.tsv"
+
+    res = dof.drop_occluded_from_sumstats(ss, mf, out)
+    err = capsys.readouterr().err
+
+    assert res["n_dropped"] == 1, (
+        "a float-formatted POS silently under-drops: n_dropped==0 wearing a clean "
+        "n_in - n_dropped == n_out"
+    )
+    assert res["n_in"] == 3
+    assert res["n_out"] == 2
+    assert str(_SNP_C_B37) in err, "the drop must still be LOGGED (in-run witness)"
+    kept = [ln.split("\t")[1] for ln in _body_lines(out)]
+    assert f"{_SNP_C_B37}.0" not in kept
+
+
+# --------------------------------------------------------------------------- #
 # 5. producer -> consumer SEAM (the two modules must actually compose)         #
 # --------------------------------------------------------------------------- #
 
