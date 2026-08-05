@@ -1,17 +1,34 @@
-"""M3 Wave 3 NCSU-side AoU LD-export ingest rule.
+"""M3 NCSU-side AoU LD-export ingest rule.
 
-Plan: m3-03-W3-ncsu-ingest-and-resolver, Task 2.
+Plan: m3-03-W3-ncsu-ingest-and-resolver Task 2; DE-STALED by m3-04c Task 2.
 
-Carter exports per-chromosome LD bundles from the AoU Workspace bucket
-(gs://${WORKSPACE_BUCKET}/ld/{ANCESTRY}_aou/) to NCSU GPFS at
-``data/interim/aou_ld_exports/{ANCESTRY}_aou/``. The bundles arrive as
-loose ``.npz`` files (Path A.1 / A.2) plus optional sharded BlockMatrix
-directories under ``bm/`` (Path A.3 large/xlarge regions per D-M3-09).
+AFR-ONLY. The producer is ``src/python/run_native_ld_panel.py`` — native
+plink1.9, Hail-free, looping the regions on a single AoU Cloud Analysis VM
+(m3-02e cost re-architecture). It writes one ``.npz`` per region DIRECTLY to
+``gs://<bucket>/ld/AFR_aou/{region_id}.npz``; there is no intermediate shard
+directory and no per-chromosome bundle OBJECT at any stage. Carter egresses
+those objects in REQUEST-LEVEL groupings (at most 22 AFR chromosome groups
+plus size splits — see .planning/amendments/m3-egress-and-validation-protocol-addendum.md)
+to NCSU GPFS at ``data/interim/aou_ld_exports/AFR_aou/``.
 
-This rule files a per-chromosome ``.aou_export_complete.{ancestry}.{chr}``
-flag once Carter has confirmed the bundle is on disk and inventory matches
+EUR is NOT built inside AoU. m3-02e Move 2 made the PUBLIC UKBB 337k panel
+(``EUR_ukbb_pub``, ``$0``, produced on NC State by
+``src/snakemake/rules/m3_public_eur_ld.smk``) the ``ld_panel.EUR`` chain head,
+so ``data/interim/aou_ld_exports/EUR_aou/`` will never be populated and the
+ancestry wildcard admits AFR only.
+
+Scope: the 276 AFR windows in ``config/ld_regions.tsv`` (552 data rows = 276
+unique region_id × 2 ancestries), 123 of which are m3-02b subregion splits of
+the form ``m2_region_00040__sub00`` — the ``region_id`` wildcard must admit
+them.
+
+This rule files a per-chromosome ``.aou_export_complete.AFR.{chr}``
+flag once Carter has confirmed the group is on disk and inventory matches
 the M2 region manifest. Downstream rules in m3_convert_npz_rds.smk can then
-fire to convert each region's ``.npz`` to its canonical ``.rds``.
+fire to convert each region's ``.npz`` to its canonical ``.rds``. The
+per-chromosome flag is retained deliberately as the ARRIVAL gate: egress runs
+over multiple weeks, and partial arrival must still let partial conversion
+proceed.
 
 Pattern reuse: mirrors ``src/snakemake/rules/m1_download.smk`` lines 46-62
 flag-driven download rule convention. Differs only in the inventory check
@@ -71,7 +88,8 @@ try:
 except (NameError, KeyError):
     LD_REF_DIR = "data/processed/ld_reference"
 
-# M2 region manifest path (322 rows, region × ancestry per D-M3-02).
+# M2 region manifest path (552 data rows = 276 unique region_id × 2 ancestries
+# per D-M3-02; the AFR-only ingest scope below is the 276 unique ids).
 LD_REGIONS_MANIFEST = str(
     _M3_PROJECT_ROOT
     / Path(
@@ -85,26 +103,28 @@ LD_REGIONS_MANIFEST = str(
 # ---------------------------------------------------------------------------
 # Rule: m3_ingest_aou_export_arrives
 #
-# Flag-driven inventory rule. Carter `gsutil cp -r` the chromosome's bundle
-# from the AoU workspace bucket to data/interim/aou_ld_exports/{ANCESTRY}_aou/
-# then touches an "arrived" marker (or runs `snakemake m3_ingest_aou_export_arrives`
-# manually). The rule verifies that every M2 region for the chromosome ×
-# ancestry cell has a corresponding .npz file on disk before stamping the
-# completion flag.
+# Flag-driven inventory rule. Carter `gsutil -m cp` the chromosome's group of
+# per-region .npz objects from gs://<bucket>/ld/AFR_aou/ to
+# data/interim/aou_ld_exports/AFR_aou/ then touches an "arrived" marker (or
+# runs `snakemake m3_ingest_aou_export_arrives` manually). The rule verifies
+# that every M2 AFR region for the chromosome has a corresponding .npz file on
+# disk before stamping the completion flag.
 # ---------------------------------------------------------------------------
 rule m3_ingest_aou_export_arrives:
-    """Verify per-chromosome × ancestry .npz bundle is complete and stamp flag.
+    """Verify the per-chromosome AFR .npz group is complete and stamp flag.
 
     Output:
-        flag = data/interim/aou_ld_exports/.aou_export_complete.{ancestry}.{chr}
+        flag = data/interim/aou_ld_exports/.aou_export_complete.AFR.{chr}
 
-    The flag is the gate consumed by downstream conversion rules (Wave 4
-    production fire). Until the flag exists, snakemake will not attempt
-    to convert that chromosome × ancestry cell.
+    The flag is the ARRIVAL gate consumed by downstream conversion rules
+    (Wave 4 production fire). Until the flag exists, snakemake will not
+    attempt to convert that chromosome. It stays per-chromosome on purpose:
+    egress lands over multiple weeks, so partial arrival must still let
+    partial conversion proceed.
 
     Wildcard constraints:
-        ancestry in {AFR, EUR}
-        chr      in {1..22, X}
+        ancestry == AFR   (m3-02e Move 2: EUR is the public UKBB 337k panel)
+        chr      in {1..22}
     """
     output:
         flag=os.path.join(
@@ -117,7 +137,10 @@ rule m3_ingest_aou_export_arrives:
         ),
         manifest=LD_REGIONS_MANIFEST,
     wildcard_constraints:
-        ancestry=r"AFR|EUR",
+        # m3-04c Task 2: AFR-only. The AoU-side producer builds AFR only
+        # (m3-02e Move 2 put EUR on the public UKBB 337k panel), so admitting
+        # EUR here would plan a DAG against a directory that is never written.
+        ancestry=r"AFR",
         # CR-004 fix (2026-05-01): drop X from the constraint to match the
         # M2 union scope (autosomes only per D-M2-09). The aggregate target
         # m3_ingest_aou_export_arrives_all already iterates only chrs 1..22;
@@ -134,6 +157,18 @@ rule m3_ingest_aou_export_arrives:
         runtime=60,
     run:
         import pandas as pd  # noqa: WPS433 -- in parent Snakemake env
+
+        # m3-04c Task 2: AFR-only, belt-and-braces behind the wildcard
+        # constraint. If the constraint is ever widened by mistake, fail here
+        # with the reason rather than planning against an empty directory.
+        if wildcards.ancestry != "AFR":
+            raise ValueError(
+                f"m3 AoU LD ingest is AFR-only; got ancestry="
+                f"{wildcards.ancestry!r}. m3-02e Move 2 moved EUR to the "
+                f"public UKBB 337k panel (EUR_ukbb_pub, built on NC State by "
+                f"src/snakemake/rules/m3_public_eur_ld.smk), so "
+                f"data/interim/aou_ld_exports/EUR_aou/ is never populated."
+            )
 
         npz_dir = Path(params.npz_dir)
         if not npz_dir.is_dir():
@@ -156,16 +191,17 @@ rule m3_ingest_aou_export_arrives:
         # constraint drop above, chr is always digit-only, but the explicit
         # str() coercion is the defensive form.
         manifest["chr"] = manifest["chr"].astype(str)
-        sub = manifest[
-            (manifest["chr"] == str(wildcards.chr))
-            & (manifest["ancestry"] == wildcards.ancestry)
-        ]
+        # m3-04c Task 2: the ingest scope is the AFR half of the manifest --
+        # the 276 unique region_id values (123 of them m3-02b __sub splits).
+        afr = manifest[manifest["ancestry"] == "AFR"]
+        n_afr_regions = afr["region_id"].nunique()
+        sub = afr[afr["chr"] == str(wildcards.chr)]
         expected_regions = set(sub["region_id"].tolist())
         if not expected_regions:
             raise ValueError(
-                f"manifest has no rows for {wildcards.ancestry} chr "
-                f"{wildcards.chr}; manifest covers chrs "
-                f"{sorted(manifest['chr'].unique().tolist())}; verify the "
+                f"manifest has no AFR rows for chr {wildcards.chr}; the AFR "
+                f"ingest scope is {n_afr_regions} regions across chrs "
+                f"{sorted(afr['chr'].unique().tolist())}; verify the "
                 f"chromosome is within the M2 union scope (autosomes only "
                 f"per D-M2-09)"
             )
@@ -174,8 +210,9 @@ rule m3_ingest_aou_export_arrives:
         missing = sorted(expected_regions - present)
         if missing:
             raise FileNotFoundError(
-                f"chr {wildcards.chr} {wildcards.ancestry} bundle missing "
-                f"{len(missing)} region(s): {missing[:5]}"
+                f"chr {wildcards.chr} AFR group missing {len(missing)} of "
+                f"{len(expected_regions)} region(s) (AFR ingest scope: "
+                f"{n_afr_regions} regions): {missing[:5]}"
                 + ("..." if len(missing) > 5 else "")
             )
 
@@ -186,20 +223,21 @@ rule m3_ingest_aou_export_arrives:
 
 
 # ---------------------------------------------------------------------------
-# Convenience aggregate target: every chromosome × ancestry cell covered.
+# Convenience aggregate target: every AFR chromosome group covered.
 # Wave 4 production fire consumes this; not in ALL_TARGETS by default since
-# it requires manual gsutil cp first.
+# it requires the manual egress + gsutil cp first.
 # ---------------------------------------------------------------------------
 rule m3_ingest_aou_export_arrives_all:
-    """Aggregate marker: every per-chromosome × ancestry export flag present."""
+    """Aggregate marker: every per-chromosome AFR export flag present."""
     input:
-        # 22 autosomes × 2 ancestries (AFR + EUR). chr X is excluded for now;
-        # M2 union BED restricts to autosomes per D-M2-09.
+        # 22 autosomes, AFR only -> at most 22 flags (m3-04c Task 2; it was
+        # 44 = 22 × 2 ancestries under the retired symmetric AoU build).
+        # chr X is excluded; M2 union BED restricts to autosomes per D-M2-09.
         flags=expand(
             os.path.join(
                 LD_INTERIM, ".aou_export_complete.{ancestry}.{chr}"
             ),
-            ancestry=["AFR", "EUR"],
+            ancestry=["AFR"],
             chr=[str(i) for i in range(1, 23)],
         ),
     output:
@@ -283,10 +321,11 @@ def _region_chr(region_id: str) -> str:
 # ---------------------------------------------------------------------------
 # Rule: m3_aou_npz_arrives
 #
-# Per-region .npz "arrives" rule. The .npz itself is produced manually by
-# Carter (gsutil cp -r from AoU workspace bucket); this rule wires the .npz
-# dependency to the per-chromosome export-arrives flag so the DAG can plan
-# all 322 cells against the flag set rather than 322 individual files.
+# Per-region .npz "arrives" rule. The .npz itself lands manually (Carter's
+# gsutil -m cp of the chromosome's AFR object group from the AoU workspace
+# bucket); this rule wires the .npz dependency to the per-chromosome
+# export-arrives flag so the DAG can plan the 276 AFR regions against the
+# ≤22-flag set rather than 276 individual files.
 #
 # At dry-run time, the chain
 #   .rds -> .npz -> .aou_export_complete.{ancestry}.{chr} -> (manual)
@@ -300,8 +339,15 @@ rule m3_aou_npz_arrives:
     Snakemake will not run this rule unless invoked manually with
     ``--touch`` or with the .npz already present on disk; its purpose is to
     let the DAG plan from .rds back to the chromosome flag without a
-    MissingInputException. Carter's manual ``gsutil cp -r`` is the actual
-    file-producer.
+    MissingInputException. Carter's manual ``gsutil -m cp`` of the egressed
+    object group is the actual file-producer.
+
+    Wildcard constraints:
+        ancestry  == AFR
+        region_id matches the M2 manifest convention, INCLUDING the m3-02b
+                  subregion splits: ``m2_region_NNNNN`` or
+                  ``m2_region_NNNNN__subKK`` (123 of the 276 ids are splits;
+                  ``m2_region_00040__sub14`` is SH2B3_12q24's panel).
     """
     input:
         # WR-004 fix (2026-05-01): _region_chr now raises WorkflowError at
@@ -318,8 +364,13 @@ rule m3_aou_npz_arrives:
     output:
         npz=os.path.join(LD_INTERIM, "{ancestry}_aou", "{region_id}.npz"),
     wildcard_constraints:
-        ancestry=r"AFR|EUR",
-        region_id=r"m2_region_\d{5}",
+        # m3-04c Task 2: AFR-only (see the first wildcard_constraints block).
+        ancestry=r"AFR",
+        # m3-04c Task 2: admit the m3-02b subregion splits. The old
+        # r"m2_region_\d{5}" silently excluded 123 of the 276 manifest ids --
+        # including m2_region_00040__sub14, the panel Task 1a's crosswalk
+        # selects for the Track A anchor SH2B3_12q24.
+        region_id=r"m2_region_\d{5}(__sub\d{2})?",
     resources:
         mem_mb=500,
         runtime=15,
