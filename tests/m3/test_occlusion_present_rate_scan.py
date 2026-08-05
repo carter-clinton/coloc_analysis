@@ -208,3 +208,141 @@ def test_scan_multiple_variants_independently(tmp_path):
     assert res[a]["n_traits_present"] == 2
     assert res[b]["n_traits_present"] == 1
     assert res[b]["present_rate"] == pytest.approx(0.5)
+
+
+# --------------------------------------------------------------------------- #
+# 4. HIGH-4 — a PARSE-HEALTH out-param, without touching the per-variant shape #
+# --------------------------------------------------------------------------- #
+
+def _write_raw(path: Path, header: list[str], body_lines: list[str]) -> Path:
+    """Write a sumstats file with body lines VERBATIM (so a row can be malformed)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\t".join(header) + "\n" + "".join(f"{ln}\n" for ln in body_lines))
+    return path
+
+
+def _raw_row(chrom, pos, trait="bmi") -> str:
+    return "\t".join(str(x) for x in [
+        chrom, pos, "A", "G", 0.012, 0.004, 3.1e-3, 0.21, 15000,
+        f"{chrom}:{pos}:A:G", trait, "AFR", "GRCh37",
+    ])
+
+
+def test_stats_out_param_reports_parse_health(tmp_path):
+    """``stats=`` is populated with the scan's PARSE HEALTH, and the per-variant
+    return is left BYTE-IDENTICAL (still exactly the four contract keys).
+
+    The four per-variant names are ``occlusion_manifest.STAGE_B_TRAIT_COLUMNS`` plus
+    the rate and are fed to ``enrich_occlusion_manifest(present_rate=...)`` with NO
+    adapter. Adding a fifth key there would break that contract, so the health
+    numbers ride out through a separate out-param instead.
+    """
+    import occlusion_present_rate_scan as prs
+
+    v = (1, 5_982_778)
+    good = _write_raw(tmp_path / "bmi.AFR.tsv", _HARMONIZED_HEADER,
+                      [_raw_row(1, 5_982_778), _raw_row(1, 7_000_000)])
+    messy = _write_raw(tmp_path / "ldl.AFR.tsv", _HARMONIZED_HEADER,
+                       [_raw_row(1, 5_982_778, "ldl"),
+                        _raw_row(1, "NA", "ldl"),          # unparseable coordinate
+                        "1"])                              # truncated row
+    stats: dict = {}
+
+    res = prs.scan_present_rate([v], [good, messy], stats=stats)
+
+    assert set(res[v]) == {"n_traits_present", "n_traits_scanned",
+                           "present_rate", "traits_present"}, (
+        "the per-variant record is a NO-ADAPTER contract — do not add a fifth key"
+    )
+    assert res[v]["n_traits_present"] == 2
+
+    assert stats["n_files_scanned"] == 2
+    assert stats["n_rows_seen"] == 5
+    assert stats["n_rows_parsed"] == 3
+    assert stats["n_unparseable"] == 1
+    assert stats["n_truncated"] == 1
+    assert stats["n_files_empty"] == 0
+    assert stats["n_distinct_traits_scanned"] == 2
+    assert stats["duplicate_traits"] == []
+    assert len(stats["per_file"]) == 2
+    assert {rec["trait"] for rec in stats["per_file"]} == {"bmi", "ldl"}
+
+
+def test_scan_still_works_without_the_stats_kwarg(tmp_path):
+    """``stats`` is kwarg-only and defaults to None — the shipped call signature is
+    unchanged, so every existing caller keeps working untouched."""
+    import occlusion_present_rate_scan as prs
+
+    v = (1, 5_982_778)
+    f1 = _write_sumstats(tmp_path / "bmi.AFR.tsv", [_row(*v, "bmi")])
+
+    res = prs.scan_present_rate([v], [f1])
+    assert res[v]["n_traits_present"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# 5. HIGH-0 — a guard that can ACTUALLY FIRE on a total parse failure          #
+# --------------------------------------------------------------------------- #
+
+def test_body_rows_but_nothing_parsed_RAISES(tmp_path):
+    """A file with body rows and NOT ONE coercible coordinate is BROKEN, not empty.
+
+    That is the unambiguous predicate the whole HIGH-0 finding turns on: ``n_rows_seen
+    > 0 and n_rows_parsed == 0``. Today ``occlusion_present_rate_scan.py:176-177``
+    swallows every failure and the file scores "nothing present", which is
+    indistinguishable from a real, honest absence and silently mis-counts k.
+    """
+    import occlusion_present_rate_scan as prs
+
+    v = (1, 5_982_778)
+    broken = _write_raw(tmp_path / "broken.AFR.tsv", _HARMONIZED_HEADER,
+                        [_raw_row(1, "1e6"), _raw_row(1, "NA")])
+
+    with pytest.raises(ValueError) as exc:
+        prs.scan_present_rate([v], [broken])
+
+    msg = str(exc.value)
+    assert "broken.AFR.tsv" in msg      # names the file
+    assert "1e6" in msg                 # names the first offending value
+
+
+def test_header_only_and_zero_byte_files_do_not_raise(tmp_path):
+    """A legitimately EMPTY scan stays legal. ``n_rows_seen == 0`` is not a failure —
+    it is a file with nothing in it, and it increments ``n_files_empty``."""
+    import occlusion_present_rate_scan as prs
+
+    v = (1, 5_982_778)
+    header_only = _write_raw(tmp_path / "hdr.AFR.tsv", _HARMONIZED_HEADER, [])
+    zero_byte = tmp_path / "zero.AFR.tsv"
+    zero_byte.write_text("")
+    stats: dict = {}
+
+    res = prs.scan_present_rate([v], [header_only, zero_byte], stats=stats)
+
+    assert res[v]["n_traits_present"] == 0
+    assert res[v]["n_traits_scanned"] == 2
+    assert stats["n_files_empty"] == 2
+    assert stats["n_rows_seen"] == 0
+
+
+def test_blank_first_line_with_content_below_RAISES(tmp_path):
+    """A file whose FIRST line is blank but which carries content below RAISES.
+
+    Today ``occlusion_present_rate_scan.py:159`` ``continue``s on a blank header and
+    scores the WHOLE file "nothing present" — mis-counting BOTH k (the variant is
+    there and is missed) AND n (the file counts toward the denominator while
+    contributing nothing). That is the worst of the swallow sites because it corrupts
+    the published denominator, not just the numerator.
+    """
+    import occlusion_present_rate_scan as prs
+
+    v = (1, 5_982_778)
+    path = tmp_path / "leadingblank.AFR.tsv"
+    path.write_text(
+        "\n" + "\t".join(_HARMONIZED_HEADER) + "\n" + _raw_row(1, 5_982_778) + "\n"
+    )
+
+    with pytest.raises(ValueError) as exc:
+        prs.scan_present_rate([v], [path])
+
+    assert "leadingblank.AFR.tsv" in str(exc.value)

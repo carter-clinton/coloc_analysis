@@ -122,19 +122,48 @@ def _trait_label(path: Path, first_fields: Sequence[str], trait_idx) -> str:
     return path.name.split(".")[0]
 
 
+def _raise_nothing_parsed(path: Path, what: str, first_bad) -> None:
+    """The HIGH-0 guard: the file has content but yielded NO usable coordinate.
+
+    A file with rows and no readable coordinates is BROKEN, not empty — and the two
+    are indistinguishable in the k/n this scan publishes, which is a PRE-REGISTERED
+    number (osf.io/az52u). The only honest answer is to refuse.
+    """
+    raise ValueError(
+        f"REFUSING to score {path} as 'nothing present': {what} "
+        f"(first offending line/value: {first_bad!r}). A file that carries content "
+        "but no readable (CHR,POS) coordinate is BROKEN, not empty, and scoring it "
+        "silently under-counts k — and, for a blank-first-line file, n as well — in "
+        "the PRE-REGISTERED present-rate (osf.io/az52u). Fix the POS column, the "
+        "header, or the column detection; do not silence this."
+    )
+
+
 def scan_present_rate(variants_grch37: Iterable[Sequence],
-                      sumstats_paths: Iterable["str | Path"]) -> dict:
+                      sumstats_paths: Iterable["str | Path"],
+                      *, stats: "dict | None" = None) -> dict:
     """PRESENT-vs-ABSENT rate of each occluded variant across the scanned sumstats.
 
     ``variants_grch37``: the occluded variants as GRCh37 ``(chr, pos)`` pairs (i.e.
     the manifest's ``(chr, pos_grch37)`` AFTER Stage-B liftover).
     ``sumstats_paths``: the harmonized sumstats to scan — the 9 public AFR files in
     production, tiny synthetic TSVs under unit test. One file = one trait.
+    ``stats``: OPTIONAL kwarg-only out-param. When a dict is supplied it is populated
+    IN PLACE with the scan's parse health (see below). Omitting it changes nothing.
 
     Returns ``{(chr, pos): {"n_traits_present": int, "n_traits_scanned": int,
     "present_rate": float, "traits_present": list[str]}}``. Those four names are
     ``occlusion_manifest.STAGE_B_TRAIT_COLUMNS`` + the rate, so the return feeds
     ``enrich_occlusion_manifest(present_rate=...)`` directly (see module docstring).
+    **The per-variant record carries EXACTLY those four keys — a fifth would break
+    that no-adapter contract**, which is why the health numbers ride out through
+    ``stats`` instead.
+
+    ``stats`` receives ``n_files_scanned``, ``n_distinct_traits_scanned``,
+    ``duplicate_traits``, ``n_rows_seen``, ``n_rows_parsed``, ``n_unparseable``,
+    ``n_truncated``, ``n_files_empty`` and ``per_file`` (one record per file, with its
+    resolved trait label). All of it is accumulated inside the EXISTING single pass —
+    these are genome-wide files and a second pass is not affordable.
 
     A variant absent from EVERY file returns a RECORD with ``n_traits_present == 0``
     and ``present_rate == 0.0`` — never a missing key, never a ZeroDivisionError.
@@ -146,6 +175,13 @@ def scan_present_rate(variants_grch37: Iterable[Sequence],
     ONCE toward k — matching the (CHR,POS)-only, first-record-wins join semantics of
     ``snp_id_bridge.R:107-121``. Counting hits instead of files would let
     ``present_rate`` exceed 1.0.
+
+    RAISES ``ValueError`` (HIGH-0) when a file carries body rows but yields ZERO
+    coercible coordinates — including the case where its FIRST line is blank and real
+    content follows, which previously scored the WHOLE file "nothing present" and
+    mis-counted BOTH k and n. A header-only or 0-byte file does NOT raise: it has
+    ``n_rows_seen == 0``, is counted in ``n_files_empty``, and a legitimately empty
+    scan stays legal.
     """
     keys = list(dict.fromkeys(_canonical_key(*v) for v in variants_grch37))
     paths = [Path(p) for p in sumstats_paths]
@@ -153,36 +189,113 @@ def scan_present_rate(variants_grch37: Iterable[Sequence],
     traits_present: dict[tuple, list[str]] = {k: [] for k in keys}
     targets = set(keys)
 
+    per_file: list[dict] = []
+    tot_rows_seen = tot_rows_parsed = tot_unparseable = tot_truncated = 0
+    n_files_empty = 0
+
     for path in paths:
+        # Every file gets a label up front (the filename fallback) so an EMPTY file
+        # still reports which trait it was meant to be; the first body row refines it
+        # from the authoritative TRAIT column exactly as before.
+        label = _trait_label(path, [], None)
+        rows_seen = rows_parsed = n_unparseable = n_truncated = 0
+        first_bad = None
+
         with _open_text(path) as fh:
             header_line = fh.readline()
             if not header_line.strip():
-                continue                      # empty file -> scanned, nothing present
+                # A blank/absent first line is EITHER a legitimately empty file OR a
+                # file whose header is blank and whose content sits below it. The
+                # second case used to be `continue`d silently, scoring the whole file
+                # "nothing present" and mis-counting k AND n. Probe for content
+                # STREAMING (stop at the first non-blank line) so a genome-wide file
+                # is never materialized.
+                stray = next((ln for ln in fh if ln.strip()), None)
+                if stray is not None:
+                    _raise_nothing_parsed(
+                        path,
+                        "its FIRST line is blank but non-blank content follows, so "
+                        "no header could be located and every row below it was "
+                        "previously discarded unread",
+                        stray.rstrip("\r\n"),
+                    )
+                n_files_empty += 1
+                per_file.append({
+                    "path": str(path), "trait": label, "n_rows_seen": 0,
+                    "n_rows_parsed": 0, "n_unparseable": 0, "n_truncated": 0,
+                    "n_hits": 0,
+                })
+                continue
             chr_idx, pos_idx, trait_idx = _locate_columns(
                 header_line.rstrip("\r\n").split("\t")
             )
 
-            label = None
+            labelled = False
             hits: set = set()
             for line in fh:
                 if not line.strip():
                     continue
+                rows_seen += 1
                 fields = line.rstrip("\r\n").split("\t")
-                if label is None:
+                if not labelled:
                     label = _trait_label(path, fields, trait_idx)
+                    labelled = True
                 if max(chr_idx, pos_idx) >= len(fields):
-                    continue                  # truncated row: carries no coordinate
+                    n_truncated += 1          # truncated row: carries no coordinate
+                    if first_bad is None:
+                        first_bad = line.rstrip("\r\n")
+                    continue
                 try:
                     key = _canonical_key(fields[chr_idx], fields[pos_idx])
                 except (TypeError, ValueError):
-                    continue                  # unparseable coordinate cannot match
+                    n_unparseable += 1        # unparseable coordinate cannot match
+                    if first_bad is None:
+                        first_bad = fields[pos_idx]
+                    continue
+                rows_parsed += 1
                 if key in targets:
                     hits.add(key)
 
             for key in hits:
                 traits_present[key].append(label)
 
+        if rows_seen == 0:
+            n_files_empty += 1
+        elif rows_parsed == 0:
+            _raise_nothing_parsed(
+                path,
+                f"it carries {rows_seen} body row(s) and NOT ONE yielded a coercible "
+                f"coordinate ({n_unparseable} unparseable, {n_truncated} truncated)",
+                first_bad,
+            )
+
+        tot_rows_seen += rows_seen
+        tot_rows_parsed += rows_parsed
+        tot_unparseable += n_unparseable
+        tot_truncated += n_truncated
+        per_file.append({
+            "path": str(path), "trait": label, "n_rows_seen": rows_seen,
+            "n_rows_parsed": rows_parsed, "n_unparseable": n_unparseable,
+            "n_truncated": n_truncated, "n_hits": len(hits),
+        })
+
     n_scanned = len(paths)
+
+    if stats is not None:
+        labels = [rec["trait"] for rec in per_file]
+        duplicate_traits = sorted({t for t in labels if labels.count(t) > 1})
+        stats.update({
+            "n_files_scanned": n_scanned,
+            "n_distinct_traits_scanned": len(set(labels)),
+            "duplicate_traits": duplicate_traits,
+            "n_rows_seen": tot_rows_seen,
+            "n_rows_parsed": tot_rows_parsed,
+            "n_unparseable": tot_unparseable,
+            "n_truncated": tot_truncated,
+            "n_files_empty": n_files_empty,
+            "per_file": per_file,
+        })
+
     return {
         key: {
             "n_traits_present": len(traits),

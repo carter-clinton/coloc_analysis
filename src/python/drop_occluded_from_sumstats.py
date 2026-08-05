@@ -20,10 +20,34 @@ CONTRACT (module.function, mirroring ``plink_ld_to_npz.plink_ld_to_npz``)
     drop_occluded_from_sumstats(sumstats_path, manifest_path, out_path) -> dict
 
 FILE-IN / FILE-OUT: all three arguments are PATHS and the function WRITES
-``out_path``. Returns the durable counts ``{"n_in", "n_dropped", "n_out"}`` so the
-lockstep is auditable against the panel's ``n_dropped_occluded`` — the invariant
-``n_in - n_dropped == n_out`` is what makes "the panel and the sumstats dropped the
-same variants" a checkable claim rather than an assertion.
+``out_path``. Returns the durable counts, on EVERY return path:
+
+    n_in          body rows read
+    n_dropped     rows matched against the manifest and removed
+    n_out         rows written
+    n_unparseable rows whose (CHR,POS) could not be coerced  -> row KEPT
+    n_truncated   rows too short to carry a coordinate at all -> row KEPT
+
+so the lockstep is auditable against the panel's ``n_dropped_occluded``.
+
+``n_in - n_dropped == n_out`` HOLDING IS NOT EVIDENCE THE FILE PARSED.
+----------------------------------------------------------------------
+That invariant is arithmetic over rows READ and rows WRITTEN; it is satisfied
+perfectly by a file in which not one coordinate was ever decoded. Measured side by
+side on identical content (m3-04b-BLAST-RADIUS.md, HIGH-4):
+
+    asthma.AFR.tsv   (int POS)   {'n_in':2,'n_dropped':1,'n_out':1}  stderr='...DROP...'
+    bmi.AFR.PAGE.tsv (float POS) {'n_in':2,'n_dropped':0,'n_out':2}  stderr=''
+
+``n_unparseable`` / ``n_truncated`` are the missing POSITIVE SIGNAL that separates
+"ran and correctly found nothing" (a legitimate, expected no-op — present-rate k/n <
+1 is normal) from "ran, silently failed to parse, and dropped nothing". They are
+additive DIAGNOSTICS and never alter the invariant.
+
+And when EVERY body row is unparseable this function REFUSES (``ValueError``). A
+clean ``n_dropped == 0`` over a wholly unparsed file is the exact silent under-drop
+the lockstep exists to prevent, and there is no honest way to tell it from a real
+no-op after the fact.
 
 DROP-ONLY, NEVER A RE-KEY
 --------------------------
@@ -177,15 +201,20 @@ def drop_occluded_from_sumstats(sumstats_path: "str | Path",
 
     Reads ``sumstats_path`` (harmonized GRCh37 TSV, plain or bgzipped) and
     ``manifest_path`` (the 07b occlusion manifest, Stage-B/lifted), writes the
-    filtered sumstats to ``out_path``, and returns ``{"n_in", "n_dropped",
-    "n_out"}`` with ``n_in - n_dropped == n_out`` and ``n_out`` == the number of body
-    rows actually written.
+    filtered sumstats to ``out_path``, and returns ``{"n_in", "n_dropped", "n_out",
+    "n_unparseable", "n_truncated"}`` with ``n_in - n_dropped == n_out`` and
+    ``n_out`` == the number of body rows actually written. The dict shape is UNIFORM
+    across every return path, so a caller (``occlusion_lockstep_cli._emit_counts`` ->
+    ``counts.json``) never has to branch on which path produced it.
 
     Removes EXACTLY the rows whose (CHR,POS) matches a manifest entry's GRCh37
     ``(chr, pos_grch37)``. Drop-only: no re-key, no allele re-orientation, no
     reformatting of survivors. Each drop is logged to STDERR. Idempotent when
     re-run on its own output. See the module docstring for the DEFERRED m3-04
     consume-wiring seam (finemap.smk:89-93 is SUPERSEDED-PENDING-REPLAN).
+
+    Raises ``ValueError`` when ``n_in > 0 and n_unparseable == n_in`` — see the
+    module docstring's note on why the audit invariant is not a parse check.
     """
     sumstats_path, manifest_path = Path(sumstats_path), Path(manifest_path)
     out_path = Path(out_path)
@@ -193,12 +222,15 @@ def drop_occluded_from_sumstats(sumstats_path: "str | Path",
     occluded = _load_manifest_keys(manifest_path)
 
     n_in = n_dropped = n_out = 0
+    n_unparseable = n_truncated = 0
+    first_bad: "str | None" = None
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with _open_binary(sumstats_path) as fin, out_path.open("wb") as fout:
         header_raw = fin.readline()
         if not header_raw.strip():
-            return {"n_in": 0, "n_dropped": 0, "n_out": 0}
+            return {"n_in": 0, "n_dropped": 0, "n_out": 0,
+                    "n_unparseable": 0, "n_truncated": 0}
         fout.write(header_raw)                       # header verbatim
         chr_idx, pos_idx = _locate_chr_pos(
             header_raw.decode("utf-8").rstrip("\r\n").split("\t")
@@ -211,11 +243,22 @@ def drop_occluded_from_sumstats(sumstats_path: "str | Path",
             fields = raw.decode("utf-8").rstrip("\r\n").split("\t")
 
             key = None
-            if max(chr_idx, pos_idx) < len(fields):
+            if max(chr_idx, pos_idx) >= len(fields):
+                n_truncated += 1                     # no coordinate to read at all
+                if first_bad is None:
+                    first_bad = raw.decode("utf-8", "replace").rstrip("\r\n")
+            else:
                 try:
                     key = _canonical_key(fields[chr_idx], fields[pos_idx])
                 except (TypeError, ValueError):
-                    key = None                       # unparseable coord: cannot match
+                    # FAIL-OPEN on the row (keep it) but COUNT it: an unparseable
+                    # coordinate cannot match, and dropping on a guess would delete
+                    # the WRONG variant. The counter is what stops that fail-open
+                    # from being invisible.
+                    key = None
+                    n_unparseable += 1
+                    if first_bad is None:
+                        first_bad = f"{fields[chr_idx]!r}:{fields[pos_idx]!r}"
 
             if key is not None and key in occluded:
                 n_dropped += 1
@@ -229,4 +272,32 @@ def drop_occluded_from_sumstats(sumstats_path: "str | Path",
             fout.write(raw)                          # survivor: bytes verbatim
             n_out += 1
 
-    return {"n_in": n_in, "n_dropped": n_dropped, "n_out": n_out}
+    # One loud STDERR summary, mirroring the established _degraded_records
+    # convention in assemble_occlusion_catalog (loud warning + a counter).
+    if n_unparseable or n_truncated:
+        print(
+            f"[drop_occluded_from_sumstats] WARNING: {sumstats_path.name}: "
+            f"{n_unparseable} row(s) with an UNPARSEABLE coordinate and "
+            f"{n_truncated} TRUNCATED row(s) out of {n_in} — each was KEPT (a drop "
+            "on a guessed coordinate would delete the WRONG variant), so this is an "
+            f"UNDER-DROP, not an over-drop. First offending value: {first_bad!r}. "
+            "NOTE: n_in - n_dropped == n_out holds regardless and is NOT evidence "
+            "this file parsed.",
+            file=sys.stderr,
+        )
+
+    if n_in > 0 and n_unparseable == n_in:
+        raise ValueError(
+            f"REFUSING a wholly UNPARSED sumstats file: {sumstats_path} — all "
+            f"{n_unparseable} of {n_in} body rows had an unreadable (CHR,POS) "
+            f"coordinate (first offending value: {first_bad!r}). The result would "
+            "have been a clean n_dropped == 0 satisfying n_in - n_dropped == n_out, "
+            "which is INDISTINGUISHABLE from an honest no-op (an occluded variant "
+            "genuinely absent from this trait). Every occluded variant would then be "
+            "ORPHANED in this trait's sumstats — the exact failure the pre-registered "
+            "lockstep exists to prevent (osf.io/az52u). Fix the POS column or the "
+            "column detection; do not silence this."
+        )
+
+    return {"n_in": n_in, "n_dropped": n_dropped, "n_out": n_out,
+            "n_unparseable": n_unparseable, "n_truncated": n_truncated}

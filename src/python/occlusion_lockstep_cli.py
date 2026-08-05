@@ -226,6 +226,16 @@ def _emit_counts(counts: dict, counts_json) -> None:
     The counts are the auditable half of the lockstep: ``n_in - n_dropped == n_out``
     is what makes "the panel and the sumstats dropped the same variants" a checkable
     claim rather than an assertion.
+
+    THAT INVARIANT ALONE IS NOT A HEALTH CHECK. It is arithmetic over rows read and
+    rows written, and it holds PERFECTLY over a file in which not one coordinate was
+    ever decoded (m3-04b-BLAST-RADIUS.md, HIGH-4). So the counts now also carry
+    ``n_unparseable`` and ``n_truncated`` from ``drop_occluded_from_sumstats``, which
+    is what separates "ran and correctly found nothing" from "ran, silently failed to
+    parse, and dropped nothing". The whole dict is serialized verbatim, so any
+    diagnostic the filter adds reaches ``counts.json`` — the artifact
+    ``m3_occlusion_lockstep.smk:263-266`` designates as the DURABLE AUDIT — without a
+    change here.
     """
     payload = json.dumps(counts, indent=2)
     if counts_json is not None:

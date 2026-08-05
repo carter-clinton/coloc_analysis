@@ -327,10 +327,15 @@ def assemble_occlusion_catalog(
     ``allow_degraded``  : must be True to emit a degraded (excludelist-derived) catalog.
 
     Returns ``{"n_regions", "n_variants", "n_lifted", "n_unlifted", "n_unparseable",
-    "source"}``.
+    "source", "n_files_scanned", "n_distinct_traits_scanned", "n_scan_rows_seen",
+    "n_scan_rows_parsed", "n_scan_unparseable"}``. The ``n_scan_*`` prefix is
+    load-bearing: ``n_unparseable`` already means "excludelist LINES that did not
+    parse" and must not be conflated with "sumstats COORDINATES that did not parse".
 
     Raises ``ValueError`` when a degraded reconstruction is possible but not
-    authorised. Nothing is written to ``out_path`` in that case.
+    authorised. Nothing is written to ``out_path`` in that case. Also propagates the
+    present-rate scan's own refusal when a scanned file carries body rows but yields
+    no coercible coordinate at all (HIGH-0).
     """
     out_path = Path(out_path)
     chain_path = Path(chain_path)
@@ -392,6 +397,10 @@ def assemble_occlusion_catalog(
         stage_a_df = pd.read_csv(stage_a, sep="\t",
                                  dtype={"region_id": str, "variant_id": str})
         present_rate = None
+        #: The scan's PARSE HEALTH (HIGH-4/HIGH-0). Filled in place by
+        #: scan_present_rate and threaded into enrich, whose key-membership guard
+        #: cannot see a scan that read nothing (every requested key comes back).
+        scan_stats: dict = {}
         if not stage_a_df.empty:
             lifted = om.add_grch37_positions(
                 stage_a_df.to_dict("records"), chain_path=chain_path
@@ -407,12 +416,15 @@ def assemble_occlusion_catalog(
             #     regression, and an empty dict is falsy anyway — being explicit here
             #     keeps the intent readable rather than accidental.
             if keys:
-                present_rate = scan_present_rate(keys, sumstats_paths)
+                present_rate = scan_present_rate(
+                    keys, sumstats_paths, stats=scan_stats
+                )
 
         # (e) the shipped enrichment: pos_grch37 + chain_sha256 + the Stage-B seam.
         out_path.parent.mkdir(parents=True, exist_ok=True)
         om.enrich_occlusion_manifest(
-            stage_a, chain_path, out_path=out_path, present_rate=present_rate
+            stage_a, chain_path, out_path=out_path, present_rate=present_rate,
+            scan_stats=scan_stats or None,
         )
 
     # THE schema completion (see module docstring). Without this an EMPTY catalog
@@ -438,6 +450,19 @@ def assemble_occlusion_catalog(
         "n_unlifted": int(len(df)) - n_lifted,
         "n_unparseable": n_unparseable,
         "source": source,
+        # The present-rate scan's PARSE HEALTH (HIGH-4). Deliberately prefixed
+        # `n_scan_*`: `n_unparseable` above is ALREADY TAKEN by the degraded
+        # excludelist path and counts unparseable excludelist LINES, which is a
+        # different thing from an unparseable sumstats COORDINATE. Colliding them
+        # would make the catalog's own audit numbers ambiguous — the exact class of
+        # failure this plan exists to close.
+        "n_files_scanned": int(scan_stats.get("n_files_scanned", 0)),
+        "n_distinct_traits_scanned": int(
+            scan_stats.get("n_distinct_traits_scanned", 0)
+        ),
+        "n_scan_rows_seen": int(scan_stats.get("n_rows_seen", 0)),
+        "n_scan_rows_parsed": int(scan_stats.get("n_rows_parsed", 0)),
+        "n_scan_unparseable": int(scan_stats.get("n_unparseable", 0)),
     }
 
 

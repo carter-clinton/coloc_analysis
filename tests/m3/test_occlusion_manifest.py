@@ -570,3 +570,141 @@ def test_present_rate_against_a_wholly_unliftable_manifest_does_not_raise(tmp_pa
     assert df["pos_grch37"].isna().all(), "the fixture is meant to be wholly unliftable"
     for col in om.STAGE_B_TRAIT_COLUMNS:
         assert df[col].isna().all()
+
+
+# --------------------------------------------------------------------------- #
+# 5. HIGH-0: the total-miss guard could not fire — SUBSTANCE, not membership   #
+# --------------------------------------------------------------------------- #
+#
+# The shipped guard tests `any(k in present_rate for k in keys_present)`. But the scan
+# keys are built FROM the manifest's own lifted rows (assemble_occlusion_catalog.py:399-410)
+# and `scan_present_rate` returns a record for EVERY requested key — so that membership
+# test is ALWAYS True. It can detect key-SHAPE drift and nothing else.
+#
+# Verified in the blast radius (HIGH-0): a manifest lifted to (1, 5982778) scanned
+# against a file the scan could not parse publishes `n_traits_present=0,
+# traits_present='[]'` and does NOT raise. If every AFR file were unparseable, the
+# catalog would publish "present in 0 of 9 traits" for every row — a wholly wrong
+# PRE-REGISTERED claim (osf.io/az52u) — with zero error signal.
+#
+# Substance (did the scan actually parse anything?) is the missing half, and it is NOT
+# derivable from `present_rate` alone. That is why `scan_stats` is threaded in.
+#
+# The present_rate/scan_stats dicts below are HAND-CONSTRUCTED for the same reason the
+# section-4 ones are: pinning the CONTRACT rather than coupling to the 07c producer.
+
+
+def _lifted_present_rate(records, chain, om):
+    """A present_rate carrying a record for EVERY liftable manifest key, all k=0.
+
+    This is EXACTLY the shape `scan_present_rate` returns after a scan that parsed
+    nothing: never a missing key, always an honest-looking zero. Building it from the
+    REAL lifted records is what makes the membership guard genuinely pass.
+    """
+    lifted = om.add_grch37_positions(records, chain_path=chain)
+    keys = [om._present_rate_key(r["chr"], r["pos_grch37"]) for r in lifted]
+    return {
+        k: {"traits_present": [], "n_traits_present": 0, "n_traits_scanned": 1}
+        for k in keys if k is not None
+    }
+
+
+def test_scan_stats_that_parsed_nothing_raises_even_though_every_key_is_present(tmp_path):
+    """HIGH-0. Key PRESENCE is necessary but NOT sufficient — substance is the guard.
+
+    The first half of this test DEMONSTRATES the defect: with every requested key
+    present in `present_rate`, the shipped membership guard passes and enrich writes a
+    silent, wholly-wrong `n_traits_present = 0` across every row. The second half
+    requires that threading the scan's parse health in makes the SAME call raise.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import pandas as pd
+    import occlusion_manifest as om
+
+    records = om.build_region_records("m2_region_00001", _region1_rows())
+    manifest = tmp_path / "occlusion_manifest.tsv"
+    om.append_region_manifest(manifest, records)
+    present_rate = _lifted_present_rate(records, chain, om)
+    assert len(present_rate) == 5, "every region-1 row lifts -> the old guard is armed"
+
+    # (a) TODAY: no raise, and the catalog silently publishes k=0 everywhere.
+    quiet = om.enrich_occlusion_manifest(
+        manifest, chain, out_path=tmp_path / "quiet.tsv", present_rate=present_rate,
+    )
+    df = pd.read_csv(quiet, sep="\t")
+    assert (df["n_traits_present"] == 0).all(), (
+        "this is the silently-wrong pre-registered provenance HIGH-0 describes"
+    )
+
+    # (b) REQUIRED: the same call, told the scan parsed NOTHING, must refuse.
+    with pytest.raises(ValueError) as exc:
+        om.enrich_occlusion_manifest(
+            manifest, chain, out_path=tmp_path / "loud.tsv",
+            present_rate=present_rate,
+            scan_stats={"n_rows_seen": 17_195_956, "n_rows_parsed": 0,
+                        "n_unparseable": 17_195_956, "n_truncated": 0,
+                        "n_files_scanned": 1},
+        )
+
+    msg = str(exc.value)
+    assert "n_rows_parsed" in msg or "parsed" in msg.lower()
+    assert "17195956" in msg.replace(",", "") or "17,195,956" in msg
+
+
+def test_healthy_scan_stats_do_not_raise(tmp_path):
+    """A scan that DID parse rows is not a failure just because k is 0 everywhere.
+
+    "Scanned and found nowhere" is a real, reportable scientific result — it is the
+    cheap end of the exclusion cost. The new guard must key on parse SUBSTANCE, never
+    on k, or it would forbid an honest answer.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import occlusion_manifest as om
+
+    records = om.build_region_records("m2_region_00001", _region1_rows())
+    manifest = tmp_path / "occlusion_manifest.tsv"
+    om.append_region_manifest(manifest, records)
+
+    om.enrich_occlusion_manifest(          # must NOT raise
+        manifest, chain, out_path=tmp_path / "ok.tsv",
+        present_rate=_lifted_present_rate(records, chain, om),
+        scan_stats={"n_rows_seen": 19_695_660, "n_rows_parsed": 19_695_660,
+                    "n_unparseable": 0, "n_truncated": 0, "n_files_scanned": 1},
+    )
+
+
+def test_assembly_gap_manifest_still_does_not_raise_with_scan_stats(tmp_path):
+    """The DELIBERATE decision at ``occlusion_manifest.py:375-383`` survives.
+
+    ZERO liftable rows (every occluded variant in a liftover/assembly gap) + a healthy
+    scan -> still NO raise, all pd.NA. Scoping the total-miss guard to LIFTABLE rows is
+    correct and documented; adding the substance guard must not turn that legitimate
+    case into a hard abort. A guard that false-aborts gets ripped out by a future
+    maintainer, silently restoring the original defect.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import pandas as pd
+    import occlusion_manifest as om
+
+    records = om.build_region_records("m2_region_00001", _region1_rows())
+    for i, rec in enumerate(records):
+        rec["pos_grch38"] = 999_999_999 + i
+        rec["variant_id"] = f"{rec['chr']}:{rec['pos_grch38']}:{rec['ref']}:{rec['alt']}"
+    manifest = tmp_path / "occlusion_manifest.tsv"
+    om.append_region_manifest(manifest, records)
+
+    out = om.enrich_occlusion_manifest(   # must NOT raise
+        manifest, chain, out_path=tmp_path / "gap.tsv",
+        present_rate={(1, 5_982_778): {"traits_present": "bmi",
+                                       "n_traits_present": 1, "n_traits_scanned": 9}},
+        scan_stats={"n_rows_seen": 19_695_660, "n_rows_parsed": 19_695_660,
+                    "n_unparseable": 0, "n_truncated": 0, "n_files_scanned": 1},
+    )
+
+    df = pd.read_csv(out, sep="\t")
+    assert df["pos_grch37"].isna().all()
+    for col in om.STAGE_B_TRAIT_COLUMNS:
+        assert df[col].isna().all()

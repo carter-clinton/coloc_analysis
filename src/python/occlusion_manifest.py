@@ -323,7 +323,8 @@ def _present_rate_key(chrom, pos_grch37):
 def enrich_occlusion_manifest(manifest_path: "str | Path",
                               chain_path: "str | Path",
                               *, out_path: "str | Path | None" = None,
-                              present_rate: dict | None = None) -> Path:
+                              present_rate: dict | None = None,
+                              scan_stats: dict | None = None) -> Path:
     """Stage B on a whole manifest file: add ``pos_grch37`` + ``chain_sha256``.
 
     Reads the Stage-A manifest, lifts every record to GRCh37, stamps the chain's
@@ -353,7 +354,18 @@ def enrich_occlusion_manifest(manifest_path: "str | Path",
       indistinguishable from a real "scanned, absent everywhere" k=0 result and would
       publish silently-wrong pre-registered provenance (osf.io/az52u);
     * non-empty ``present_rate`` + ZERO liftable rows -> **no raise**, all ``pd.NA``
-      — there is nothing to join against, so silence is the CORRECT answer.
+      — there is nothing to join against, so silence is the CORRECT answer;
+    * non-empty ``present_rate`` + a ``scan_stats`` reporting ``n_rows_seen > 0`` and
+      ``n_rows_parsed == 0`` -> **raises ValueError** (HIGH-0). Key PRESENCE is
+      NECESSARY BUT NOT SUFFICIENT: ``scan_present_rate`` returns a record for EVERY
+      requested key, so the membership test above is ALWAYS True and can only detect
+      key-SHAPE drift. Whether the scan actually PARSED anything is the missing half
+      and is not derivable from ``present_rate`` alone — which is why ``scan_stats``
+      is threaded in rather than inferred.
+
+    ``scan_stats`` is the OPTIONAL out-param ``occlusion_present_rate_scan.
+    scan_present_rate(..., stats=...)`` fills. Omitting it reproduces the shipped
+    behavior exactly.
 
     Writes to ``out_path`` (default: in place) and returns that path.
     """
@@ -375,6 +387,29 @@ def enrich_occlusion_manifest(manifest_path: "str | Path",
     if present_rate:
         keys = [_present_rate_key(c, p)
                 for c, p in zip(out["chr"], out["pos_grch37"])]
+        # SUBSTANCE, not membership (HIGH-0). Key PRESENCE is necessary but NOT
+        # sufficient: the scan returns a record for EVERY requested key, so the
+        # membership test below is ALWAYS True and can only ever catch key-SHAPE
+        # drift. Whether the scan PARSED anything is the other half, it is not
+        # derivable from present_rate, and without it a scan that read not one
+        # coordinate publishes a confident "present in 0 of 9 traits" on every row.
+        if scan_stats:
+            seen = int(scan_stats.get("n_rows_seen", 0) or 0)
+            parsed = int(scan_stats.get("n_rows_parsed", 0) or 0)
+            if seen > 0 and parsed == 0:
+                raise ValueError(
+                    "present_rate came from a scan that PARSED NOTHING: "
+                    f"n_rows_seen={seen}, n_rows_parsed=0 "
+                    f"(n_unparseable={scan_stats.get('n_unparseable')}, "
+                    f"n_truncated={scan_stats.get('n_truncated')}, over "
+                    f"{scan_stats.get('n_files_scanned')} file(s)). Every requested "
+                    "key IS present in present_rate — the scan always returns a "
+                    "record per key — so the key-membership guard cannot see this. "
+                    "Writing it would publish n_traits_present=0 on every row: a "
+                    "confident, wholly wrong PRE-REGISTERED claim (osf.io/az52u) "
+                    "indistinguishable from a real scanned-but-absent-everywhere "
+                    "result. Fix the scan's inputs; do not silence this."
+                )
         # Scope the total-miss guard to LIFTABLE rows ONLY. A None key means the
         # variant did not lift — an EXPLICIT, documented signal (see
         # add_grch37_positions), NOT a key-contract bug: there is simply nothing to

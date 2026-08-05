@@ -254,6 +254,35 @@ def test_filter_sumstats_preserves_counts(tmp_path, monkeypatch):
     assert (1, _SNP_C_B37) not in kept
 
 
+def test_counts_json_carries_the_parse_health_fields(tmp_path, monkeypatch):
+    """HIGH-4: ``counts.json`` — the DURABLE AUDIT artifact
+    (``m3_occlusion_lockstep.smk:263-266``) — must carry the parse-health counters,
+    not just the invariant.
+
+    ``n_in - n_dropped == n_out`` holds PERFECTLY over a file that parsed nothing, so
+    on its own it is not a health check. This asserts the FILE's content rather than
+    the function's return value, because ``_emit_counts`` is what stands between the
+    two and the file is what an auditor actually reads months later.
+    """
+    _install_bgzip_shim(tmp_path, monkeypatch)
+    import occlusion_lockstep_cli as cli
+
+    src = _write_bgzipped_sumstats(
+        tmp_path / "bmi.AFR.tsv.bgz", [(1, _SNP_C_B37), (1, 7_000_000)],
+    )
+    catalog = _write_catalog(tmp_path / "catalog.tsv", [(1, _SNP_C_B37)])
+    out = tmp_path / "occl" / "bmi.AFR.tsv.bgz"
+    counts_json = tmp_path / "bmi.AFR.counts.json"
+
+    cli.main(["filter-sumstats", "--in", str(src), "--catalog", str(catalog),
+              "--out", str(out), "--counts-json", str(counts_json)])
+
+    counts = json.loads(counts_json.read_text())
+    assert counts["n_unparseable"] == 0
+    assert counts["n_truncated"] == 0
+    assert counts["n_in"] - counts["n_dropped"] == counts["n_out"]
+
+
 # --------------------------------------------------------------------------- #
 # T2.3 the variant list uses the SAME function, the SAME catalog, the SAME key  #
 # --------------------------------------------------------------------------- #

@@ -296,6 +296,38 @@ def test_present_rate_is_joined_from_the_real_scan(tmp_path):
     assert float(other["present_rate"]) == pytest.approx(0.0)
 
 
+def test_assembler_surfaces_the_scan_parse_health(tmp_path):
+    """HIGH-4 at the catalog boundary: the scan's parse health is REPORTED.
+
+    ``n_scan_unparseable``, NOT ``n_unparseable`` — the latter is already taken by the
+    DEGRADED excludelist path (``assemble_occlusion_catalog.py:341, :382, :439``) and
+    means something else entirely (unparseable excludelist LINES, not unparseable
+    sumstats COORDINATES). Colliding them would make the catalog's own audit numbers
+    ambiguous, which is the failure mode this whole plan is closing.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import assemble_occlusion_catalog as aoc
+
+    m1 = _write_region_manifest(tmp_path, "m2_region_00001")
+    ss1 = _write_sumstats(tmp_path / "bmi.AFR.tsv",
+                          [(1, _SNP_C_B37), (1, 7_000_000)], trait="bmi")
+    ss2 = _write_sumstats(tmp_path / "ldl.AFR.tsv", [(1, 7_000_000)], trait="ldl")
+    out = tmp_path / "occlusion_catalog_m3.tsv"
+
+    res = aoc.assemble_occlusion_catalog([m1], chain, [ss1, ss2], out)
+
+    assert res["n_files_scanned"] == 2
+    assert res["n_distinct_traits_scanned"] == 2
+    assert res["n_scan_rows_seen"] == 3
+    assert res["n_scan_rows_parsed"] == 3
+    assert res["n_scan_unparseable"] == 0
+    assert "n_unparseable" in res, (
+        "the DEGRADED excludelist counter must survive under its own name"
+    )
+    assert res["n_unparseable"] == 0
+
+
 # --------------------------------------------------------------------------- #
 # T1.5 / T1.6 degraded reconstruction from the excludelists                    #
 # --------------------------------------------------------------------------- #

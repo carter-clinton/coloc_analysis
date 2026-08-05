@@ -312,6 +312,118 @@ def test_float_formatted_pos_column_still_drops_the_occluded_variant(tmp_path, c
 
 
 # --------------------------------------------------------------------------- #
+# 4c. HIGH-4 — "ran and found nothing" vs "parsed nothing and dropped nothing" #
+# --------------------------------------------------------------------------- #
+
+def test_unparseable_and_truncated_rows_are_COUNTED(tmp_path, capsys):
+    """The two swallow sites become COUNTERS, and the audit invariant still holds.
+
+    ``drop_occluded_from_sumstats.py:215-216`` (unparseable coordinate) and ``:212``
+    (short row) are fail-open by design — the row is kept. That is correct; what is
+    missing is any POSITIVE SIGNAL that it happened. The blast radius (HIGH-4)
+    measured the consequence side by side on identical content:
+
+        asthma.AFR.tsv   (int POS)   {'n_in':2,'n_dropped':1,'n_out':1}  stderr='...DROP...'
+        bmi.AFR.PAGE.tsv (float POS) {'n_in':2,'n_dropped':0,'n_out':2}  stderr=''
+
+    ``n_in - n_dropped == n_out`` holds PERFECTLY in the failure case, so the durable
+    audit artifact (``m3_occlusion_lockstep.smk:263-266`` designates ``counts.json``
+    as exactly that) is BLIND to it. The counters are additive diagnostics: they must
+    NOT change the invariant, only make it interpretable.
+    """
+    import drop_occluded_from_sumstats as dof
+
+    path = tmp_path / "messy.AFR.tsv"
+    path.write_text(
+        "\t".join(_HARMONIZED_HEADER) + "\n"
+        + _sumstats_line(1, _SNP_C_B37) + "\n"          # parses, and is occluded
+        + _sumstats_line(1, 7_000_000) + "\n"           # parses, survives
+        + "1\tNA\tA\tG\t0.1\t0.1\t0.1\t0.1\t10\tx\tbmi\tAFR\tGRCh37\n"   # unparseable
+        + "1\tnotanumber\tA\tG\t0.1\t0.1\t0.1\t0.1\t10\tx\tbmi\tAFR\tGRCh37\n"
+        + "1\n"                                          # truncated: no POS at all
+    )
+    mf = _write_manifest(tmp_path / "m.tsv", [("r1", "1:5922718:A:A", 1, _SNP_C_B37)])
+    out = tmp_path / "out.tsv"
+
+    res = dof.drop_occluded_from_sumstats(path, mf, out)
+    err = capsys.readouterr().err
+
+    assert res["n_unparseable"] == 2
+    assert res["n_truncated"] == 1
+    assert res["n_in"] == 5
+    assert res["n_dropped"] == 1
+    assert res["n_out"] == 4
+    assert res["n_in"] - res["n_dropped"] == res["n_out"], (
+        "the counters are DIAGNOSTICS — they must not alter the audit invariant"
+    )
+    # a loud summary naming the file, the counts, and an exemplar raw value
+    assert "messy.AFR.tsv" in err
+    assert "NA" in err
+
+
+def test_a_clean_file_raises_no_false_alarm(tmp_path):
+    """A wholly parseable file reports zero on both counters — the signal has to be
+    quiet when nothing is wrong or nobody will read it when something is."""
+    import drop_occluded_from_sumstats as dof
+
+    ss = _write_sumstats(tmp_path / "bmi.AFR.tsv", [(1, _DEL3_B37), (1, _SNP_C_B37)])
+    mf = _write_manifest(tmp_path / "m.tsv", [("r1", "1:5922718:A:A", 1, _SNP_C_B37)])
+    out = tmp_path / "out.tsv"
+
+    res = dof.drop_occluded_from_sumstats(ss, mf, out)
+
+    assert res["n_unparseable"] == 0
+    assert res["n_truncated"] == 0
+
+
+def test_a_wholly_unparseable_file_RAISES_instead_of_a_clean_zero(tmp_path):
+    """100% unparseable body rows -> ``ValueError``. FAIL-CLOSED.
+
+    This is the whole point of HIGH-4. A clean ``n_dropped == 0`` over a file that
+    parsed NOT ONE coordinate is indistinguishable from an honest no-op, and an
+    honest no-op is a legitimate, expected result (present-rate k/n < 1 is normal).
+    The only way to tell them apart is to refuse. The message must name the file, the
+    count and the first offending raw coordinate, so an operator can act on it
+    without re-deriving the diagnosis.
+    """
+    import drop_occluded_from_sumstats as dof
+
+    path = tmp_path / "broken.AFR.tsv"
+    path.write_text(
+        "\t".join(_HARMONIZED_HEADER) + "\n"
+        + "1\t5982778.5\tA\tG\t0.1\t0.1\t0.1\t0.1\t10\tx\tbmi\tAFR\tGRCh37\n"
+        + "1\t1e6\tA\tG\t0.1\t0.1\t0.1\t0.1\t10\tx\tbmi\tAFR\tGRCh37\n"
+    )
+    mf = _write_manifest(tmp_path / "m.tsv", [("r1", "1:5922718:A:A", 1, _SNP_C_B37)])
+    out = tmp_path / "out.tsv"
+
+    with pytest.raises(ValueError) as exc:
+        dof.drop_occluded_from_sumstats(path, mf, out)
+
+    msg = str(exc.value)
+    assert "broken.AFR.tsv" in msg          # names the file
+    assert "2" in msg                       # names the count
+    assert "5982778.5" in msg               # names the FIRST offending raw value
+
+
+def test_empty_header_return_carries_the_same_five_keys(tmp_path):
+    """The early-return on an empty header has the SAME dict shape as every other
+    path. A caller (``occlusion_lockstep_cli._emit_counts`` -> ``counts.json``) must
+    not have to branch on which return path produced its dict."""
+    import drop_occluded_from_sumstats as dof
+
+    empty = tmp_path / "empty.AFR.tsv"
+    empty.write_text("")
+    mf = _write_manifest(tmp_path / "m.tsv", [("r1", "1:5922718:A:A", 1, _SNP_C_B37)])
+    out = tmp_path / "out.tsv"
+
+    res = dof.drop_occluded_from_sumstats(empty, mf, out)
+
+    assert set(res) == {"n_in", "n_dropped", "n_out", "n_unparseable", "n_truncated"}
+    assert all(v == 0 for v in res.values())
+
+
+# --------------------------------------------------------------------------- #
 # 5. producer -> consumer SEAM (the two modules must actually compose)         #
 # --------------------------------------------------------------------------- #
 
