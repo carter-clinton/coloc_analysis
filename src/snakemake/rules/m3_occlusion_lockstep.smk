@@ -134,6 +134,17 @@ OCCLUSION_EXCLUDELIST_DIR = _OCCL_CFG.get(
 )
 OCCLUSION_ALLOW_DEGRADED = bool(_OCCL_CFG.get("allow_degraded", False))
 
+#: The M2 region manifest, for the BLOCKER-4 region-coverage check. Config key mirrors
+#: m3_ingest_aou_ld.smk:79-80. ⚠ 552 DATA ROWS = 276 unique region_id x 2 ancestries —
+#: the assembler derives the expected set with nunique(region_id) filtered to the
+#: ancestry, NEVER len(df)/wc -l (which give 552/553 and would fail 100% of the time).
+try:
+    OCCLUSION_REGIONS_TSV = config.get(  # type: ignore[name-defined]
+        "ld_regions_manifest", "config/ld_regions.tsv"
+    )
+except NameError:
+    OCCLUSION_REGIONS_TSV = "config/ld_regions.tsv"
+
 #: Liftover chain (DEC-2026-04-24-01: AoU emits GRCh38, the analytic plane is GRCh37).
 OCCLUSION_CHAIN_38_TO_37 = "data/external/liftover/hg38ToHg19.over.chain.gz"
 
@@ -194,9 +205,18 @@ rule m3_assemble_occlusion_catalog:
     artifact is usable EVEN WHEN EMPTY.
 
     Input:
-        chain     = data/external/liftover/hg38ToHg19.over.chain.gz
-        sumstats  = the 9 public AFR harmonized sumstats (present-rate scan scope)
+        chain      = data/external/liftover/hg38ToHg19.over.chain.gz
+        sumstats   = the 9 public AFR harmonized sumstats (present-rate scan scope)
         manifests / excludelists = glob-derived, EMPTY on today's tree
+        regions_tsv = config/ld_regions.tsv — the BLOCKER-4 region-coverage check.
+            Passed as --regions-tsv so the check is LIVE in production, not merely
+            available. With it the assembler REFUSES to stamp
+            provenance_source=stage_a_manifest on a rollup that does not cover every
+            region carrying an excludelist (those regions' occluded variants would
+            otherwise never be dropped from the sumstats = ORPHANED VARIANTS), and it
+            reports n_regions_expected / n_regions_missing. ⚠ The expected set is
+            nunique(region_id) filtered to the ancestry = 276, NEVER the file's 552
+            data rows.
     Output:
         catalog   = config occlusion_lockstep.catalog
                     (+ a sibling {catalog}.README.md written by the assembler)
@@ -208,6 +228,7 @@ rule m3_assemble_occlusion_catalog:
         sumstats=OCCLUSION_AFR_SUMSTATS,
         manifests=OCCLUSION_MANIFESTS,
         excludelists=OCCLUSION_EXCLUDELISTS,
+        regions_tsv=OCCLUSION_REGIONS_TSV,
         script=OCCLUSION_ASSEMBLER,
     output:
         catalog=OCCLUSION_CATALOG,
@@ -233,6 +254,7 @@ rule m3_assemble_occlusion_catalog:
         python {input.script} \
             --chain {input.chain} \
             --out {output.catalog} \
+            --regions-tsv {input.regions_tsv} \
             {params.sumstats_args} \
             {params.manifest_args} \
             {params.excludelist_args} \

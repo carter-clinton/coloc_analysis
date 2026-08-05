@@ -78,6 +78,7 @@ __all__ = [
     "PROVENANCE_EXCLUDELIST_DEGRADED",
     "PROVENANCE_STAGE_A_MANIFEST",
     "assemble_occlusion_catalog",
+    "load_expected_region_ids",
     "main",
 ]
 
@@ -111,6 +112,33 @@ _DEGRADED_UNRECOVERABLE = [
 #: The driver writes ``{region_id}.occluded.excludelist``
 #: (``run_native_ld_panel.py:806``), uploaded under the same name (``:937``).
 _EXCLUDELIST_SUFFIX = ".occluded"
+
+
+def load_expected_region_ids(regions_tsv: "str | Path",
+                             ancestry: str = "AFR") -> "set[str]":
+    """The expected ``region_id`` set for ``ancestry``, from the M2 region manifest.
+
+    ⚠ **THE 276/552 TRAP.** ``config/ld_regions.tsv`` is header + **552 DATA ROWS** =
+    **276 unique ``region_id`` x 2 ancestries (AFR, EUR)**. The authoritative count is
+    ``nunique(region_id)`` FILTERED TO ``ancestry`` — **NEVER** ``len(df)`` or
+    ``wc -l``, which give 552/553 and would make any coverage assertion built on them
+    fail 100% of the time. Verified directly:
+
+        awk -F'\\t' 'NR>1{print $1}' config/ld_regions.tsv | sort -u | wc -l  -> 276
+        ... $7=="AFR" ...                                                     -> 276
+        ... $7=="EUR" ...                                                     -> 276
+
+    Both ancestries carry the SAME 276 ids; only the ROWS double. Returns ``str`` ids
+    so the comparison never depends on a pandas dtype inference.
+    """
+    df = pd.read_csv(regions_tsv, sep="\t", dtype={"region_id": str})
+    for col in ("region_id", "ancestry"):
+        if col not in df.columns:
+            raise ValueError(
+                f"{regions_tsv} is missing the {col!r} column; the expected-region "
+                "set is derived from nunique(region_id) filtered to ancestry."
+            )
+    return set(df.loc[df["ancestry"] == ancestry, "region_id"].astype(str))
 
 
 def _region_id_from_excludelist(path: Path) -> str:
@@ -313,6 +341,8 @@ def assemble_occlusion_catalog(
     *,
     excludelist_paths: "Iterable[str | Path] | None" = None,
     allow_degraded: bool = False,
+    expected_region_ids: "Iterable[str] | None" = None,
+    allow_partial_manifest: bool = False,
 ) -> dict:
     """Assemble the genome-wide enriched occlusion catalog.
 
@@ -325,10 +355,17 @@ def assemble_occlusion_catalog(
     ``excludelist_paths``: optional ``{region_id}.occluded.excludelist`` objects, used
                           ONLY when the Stage-A rollup is empty.
     ``allow_degraded``  : must be True to emit a degraded (excludelist-derived) catalog.
+    ``expected_region_ids``: optional expected ``region_id`` set (see
+                          :func:`load_expected_region_ids` and THE 276/552 TRAP). An
+                          OBSERVED id outside it RAISES; a strict SUBSET is REPORTED.
+    ``allow_partial_manifest``: must be True to accept a Stage-A rollup that does NOT
+                          cover every region carrying an excludelist (BLOCKER-4).
 
     Returns ``{"n_regions", "n_variants", "n_lifted", "n_unlifted", "n_unparseable",
-    "source", "n_files_scanned", "n_distinct_traits_scanned", "n_scan_rows_seen",
-    "n_scan_rows_parsed", "n_scan_unparseable"}``. The ``n_scan_*`` prefix is
+    "source", "n_regions_excludelist_only", "regions_excludelist_only",
+    "n_regions_expected", "n_regions_missing", "n_files_scanned",
+    "n_distinct_traits_scanned", "n_scan_rows_seen", "n_scan_rows_parsed",
+    "n_scan_unparseable"}``. The ``n_scan_*`` prefix is
     load-bearing: ``n_unparseable`` already means "excludelist LINES that did not
     parse" and must not be conflated with "sumstats COORDINATES that did not parse".
 
@@ -344,6 +381,11 @@ def assemble_occlusion_catalog(
     excludelist_paths = [Path(p) for p in (excludelist_paths or [])]
 
     n_unparseable = 0
+    orphaned: list[str] = []
+    expected: "set[str] | None" = (
+        {str(r) for r in expected_region_ids}
+        if expected_region_ids is not None else None
+    )
 
     with tempfile.TemporaryDirectory(prefix="occlusion_catalog_") as tmpdir:
         stage_a = Path(tmpdir) / "occlusion_catalog.stage_a.tsv"
@@ -357,11 +399,56 @@ def assemble_occlusion_catalog(
         # (b) degraded reconstruction, opt-in only
         if not rollup.empty:
             source = PROVENANCE_STAGE_A_MANIFEST
+            # BLOCKER-4. The override below fires when the rollup is merely NON-EMPTY.
+            # The shipped note claimed "the manifests carry strictly more provenance",
+            # which is TRUE PER REGION and FALSE AS A SET CLAIM the moment the
+            # manifest set is a SUBSET of the regions that have excludelists. Those
+            # regions' occluded variants would then never be dropped from the
+            # sumstats: ORPHANED VARIANTS, wearing a `stage_a_manifest` stamp saying
+            # everything is fine. The triggering state is already coded — the
+            # per-region Stage-A append at run_native_ld_panel.py:821-831 is
+            # best-effort and continues on any exception WHILE STILL WRITING the
+            # excludelist.
+            manifest_regions = set(rollup["region_id"].astype(str))
+            excl_regions = {_region_id_from_excludelist(p) for p in excludelist_paths}
+            orphaned = sorted(excl_regions - manifest_regions)
+            if orphaned and not allow_partial_manifest:
+                raise ValueError(
+                    "REFUSING to stamp provenance_source='stage_a_manifest' on a "
+                    f"PARTIAL Stage-A rollup. {len(orphaned)} region(s) carry an "
+                    "excludelist but have NO Stage-A manifest in this rollup: "
+                    f"{', '.join(orphaned)}. Ignoring the excludelists here is only "
+                    "justified when every excludelist region is ALSO covered by a "
+                    "manifest — 'the manifests carry strictly more provenance' is "
+                    "true PER REGION and FALSE AS A SET CLAIM when the manifest set "
+                    "is a SUBSET of the regions with excludelists. Proceeding would "
+                    "silently omit those regions from the catalog, so their occluded "
+                    "variants are NEVER DROPPED from the sumstats — ORPHANED "
+                    "VARIANTS, the exact failure the pre-registered lockstep exists "
+                    "to forbid (osf.io/az52u), under a provenance stamp that says "
+                    "everything is fine. REMEDIES: (1) supply the missing Stage-A "
+                    "manifests for those regions, or (2) pass "
+                    "--allow-partial-manifest / allow_partial_manifest=True to "
+                    "accept a knowingly-incomplete catalog EXPLICITLY (the gap is "
+                    "then reported as n_regions_excludelist_only)."
+                )
+            # NOT A UNION, DELIBERATELY. Merging manifest rows with excludelist rows
+            # would produce a MIXED provenance_source — a property §1 of the blast
+            # radius verified as currently invariant (assemble_occlusion_catalog.py:202
+            # assigns it as a scalar over the whole frame) — and would let DEGRADED
+            # rows, which permanently lack the ref-span / occluding-deletion
+            # attribution, ride out WITHOUT the allow_degraded gate the
+            # pre-registration depends on. Refusing (or an explicit opt-in) keeps both
+            # properties intact.
             if excludelist_paths:
                 print(
-                    "[assemble_occlusion_catalog] NOTE: Stage-A manifests are present, "
-                    f"so the {len(excludelist_paths)} excludelist(s) are IGNORED "
-                    "(the manifests carry strictly more provenance).",
+                    "[assemble_occlusion_catalog] NOTE: every region carrying an "
+                    "excludelist is already covered by a Stage-A manifest"
+                    + (f" EXCEPT {', '.join(orphaned)} (accepted explicitly via "
+                       "--allow-partial-manifest)" if orphaned else "")
+                    + f", so the {len(excludelist_paths)} excludelist(s) are IGNORED "
+                    "(for a covered region the manifest carries strictly more "
+                    "provenance).",
                     file=sys.stderr,
                 )
             _write_stage_a(rollup.to_dict("records"), stage_a, source)
@@ -396,6 +483,34 @@ def assemble_occlusion_catalog(
         #     thousand rows is the honest cost of not editing a frozen module.
         stage_a_df = pd.read_csv(stage_a, sep="\t",
                                  dtype={"region_id": str, "variant_id": str})
+
+        # (b2) region-coverage reporting, computed BEFORE out_path is touched so a
+        #      refusal never leaves a partial catalog behind.
+        observed_regions = (
+            {str(r) for r in stage_a_df["region_id"].dropna()}
+            if "region_id" in stage_a_df.columns and not stage_a_df.empty else set()
+        )
+        n_regions_expected = n_regions_missing = None
+        if expected is not None:
+            unknown = sorted(observed_regions - expected)
+            if unknown:
+                raise ValueError(
+                    f"REFUSING to write a catalog with {len(unknown)} region id(s) "
+                    f"that are NOT in the expected set: {', '.join(unknown)}. That is "
+                    "region-naming drift or a crosswalk bug, and a catalog keyed on "
+                    "ids nothing downstream recognises drops NOTHING while looking "
+                    f"complete. The expected set holds {len(expected)} id(s) (from "
+                    "the M2 region manifest, nunique(region_id) filtered to the "
+                    "ancestry). Fix the ids or the manifest; do not silence this."
+                )
+            n_regions_expected = len(expected)
+            # REPORTED, NEVER ASSERTED. A region with ZERO occluded variants writes no
+            # manifest at all (aggregate_manifests skips absent/empty ones), so
+            # n_regions == len(expected) is NOT a valid invariant — asserting it would
+            # fail on every honest run. What IS actionable is the number itself, next
+            # to the catalog, so a reader can judge coverage rather than assume it.
+            n_regions_missing = len(expected - observed_regions)
+
         present_rate = None
         #: The scan's PARSE HEALTH (HIGH-4/HIGH-0). Filled in place by
         #: scan_present_rate and threaded into enrich, whose key-membership guard
@@ -450,6 +565,12 @@ def assemble_occlusion_catalog(
         "n_unlifted": int(len(df)) - n_lifted,
         "n_unparseable": n_unparseable,
         "source": source,
+        # BLOCKER-4 coverage. `n_regions_excludelist_only` puts the incompleteness IN
+        # the artifact's provenance, so it can never be inferred from an absence.
+        "n_regions_excludelist_only": len(orphaned),
+        "regions_excludelist_only": orphaned,
+        "n_regions_expected": n_regions_expected,
+        "n_regions_missing": n_regions_missing,
         # The present-rate scan's PARSE HEALTH (HIGH-4). Deliberately prefixed
         # `n_scan_*`: `n_unparseable` above is ALREADY TAKEN by the degraded
         # excludelist path and counts unparseable excludelist LINES, which is a
@@ -486,11 +607,31 @@ def main(argv: "Sequence[str] | None" = None) -> int:
     parser.add_argument("--out", required=True, help="catalog TSV to write")
     parser.add_argument("--allow-degraded", action="store_true",
                         help="authorise an excludelist-derived (degraded) catalog")
+    parser.add_argument("--regions-tsv", default=None,
+                        help=("M2 region manifest (config/ld_regions.tsv). When given, "
+                              "the expected region_id set is derived from it — "
+                              "nunique(region_id) filtered to --regions-ancestry, "
+                              "NEVER len(df): the file is 552 data rows = 276 ids x 2 "
+                              "ancestries"))
+    parser.add_argument("--regions-ancestry", default="AFR",
+                        help="ancestry to filter --regions-tsv on (default: AFR)")
+    parser.add_argument("--allow-partial-manifest", action="store_true",
+                        help=("accept a Stage-A rollup that does NOT cover every "
+                              "region carrying an excludelist (the gap is then "
+                              "reported as n_regions_excludelist_only)"))
     args = parser.parse_args(argv)
+
+    expected_region_ids = None
+    if args.regions_tsv:
+        expected_region_ids = load_expected_region_ids(
+            args.regions_tsv, ancestry=args.regions_ancestry
+        )
 
     result = assemble_occlusion_catalog(
         args.manifest, args.chain, args.sumstats, args.out,
         excludelist_paths=args.excludelist, allow_degraded=args.allow_degraded,
+        expected_region_ids=expected_region_ids,
+        allow_partial_manifest=args.allow_partial_manifest,
     )
     print(json.dumps(result, indent=2))
     return 0

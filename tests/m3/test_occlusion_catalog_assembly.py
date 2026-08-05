@@ -463,6 +463,205 @@ def test_catalog_columns_are_egress_clean(tmp_path):
             )
 
 
+# --------------------------------------------------------------------------- #
+# BLOCKER-4: a PARTIAL Stage-A rollup must not be stamped `stage_a_manifest`    #
+# --------------------------------------------------------------------------- #
+#
+# `assemble_occlusion_catalog.py:352-362` overrides the excludelists when the rollup
+# is merely NON-EMPTY, not when it is COMPLETE. The shipped NOTE says "the manifests
+# carry strictly more provenance" — TRUE PER REGION, and FALSE AS A SET CLAIM the
+# moment the manifest set is a SUBSET of the regions that have excludelists.
+#
+# The triggering state is live and already coded: `run_native_ld_panel.py:821-831`
+# treats the per-region Stage-A append as BEST-EFFORT and, on any exception, prints a
+# WARN and continues — WHILE THE EXCLUDELIST IS STILL WRITTEN. Every region that trips
+# it becomes excludelist-only, and so does every region built before the producer-side
+# manifest-upload fix.
+#
+# Verified end-to-end in the blast radius with 1 manifest + 1 excludelist-only region,
+# both variants genuinely present in the sumstats:
+#
+#     return : {'n_regions': 1, ..., 'source': 'stage_a_manifest'}
+#     catalog: 1 row — region m2_region_00002 ABSENT
+#     drop   : {'n_in': 3, 'n_dropped': 1, 'n_out': 2}   # truth: 2 rows should have gone
+#
+# i.e. ORPHANED VARIANTS in the sumstats — the exact failure osf.io/az52u exists to
+# forbid — wearing a `stage_a_manifest` provenance stamp that says everything is fine.
+
+
+def test_partial_stage_a_rollup_refuses_the_stage_a_stamp(tmp_path):
+    """1 Stage-A manifest + 1 excludelist-ONLY region -> ``ValueError``, nothing written.
+
+    The raise must NAME the orphaned region, state the consequence, and name BOTH
+    remedies — supplying the missing Stage-A manifests, or accepting the
+    incompleteness explicitly with ``--allow-partial-manifest``.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import assemble_occlusion_catalog as aoc
+
+    m1 = _write_region_manifest(tmp_path, "m2_region_00001")
+    e2 = _write_excludelist(tmp_path, "m2_region_00002", ["1:8375822:A:G"])
+    ss = _write_sumstats(tmp_path / "bmi.AFR.tsv", [(1, _SNP_C_B37), (1, 8_315_000)])
+    out = tmp_path / "occlusion_catalog_m3.tsv"
+
+    with pytest.raises(ValueError) as exc:
+        aoc.assemble_occlusion_catalog(
+            [m1], chain, [ss], out, excludelist_paths=[e2],
+        )
+
+    msg = str(exc.value)
+    assert "m2_region_00002" in msg, "the ORPHANED region must be named"
+    assert "allow-partial-manifest" in msg or "allow_partial_manifest" in msg
+    assert "orphan" in msg.lower()
+    assert not out.exists(), "a refused assembly must not leave a partial catalog"
+
+
+def test_allow_partial_manifest_accepts_it_and_REPORTS_the_incompleteness(tmp_path):
+    """The same input with ``allow_partial_manifest=True`` is accepted EXPLICITLY, and
+    the incompleteness lands IN the artifact's provenance rather than being inferred
+    from its absence: ``n_regions_excludelist_only == 1``."""
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import assemble_occlusion_catalog as aoc
+
+    m1 = _write_region_manifest(tmp_path, "m2_region_00001")
+    e2 = _write_excludelist(tmp_path, "m2_region_00002", ["1:8375822:A:G"])
+    out = tmp_path / "occlusion_catalog_m3.tsv"
+
+    res = aoc.assemble_occlusion_catalog(
+        [m1], chain, [], out, excludelist_paths=[e2], allow_partial_manifest=True,
+    )
+
+    assert res["source"] == "stage_a_manifest"
+    assert res["n_regions_excludelist_only"] == 1
+    assert out.exists()
+
+
+def test_full_coverage_still_stamps_stage_a_without_complaint(tmp_path, capsys):
+    """When the manifest set DOES cover every excludelist region there is no raise,
+    the stamp is ``stage_a_manifest``, and the STDERR note now claims only what is
+    TRUE (coverage), not the unqualified set claim that was wrong."""
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import assemble_occlusion_catalog as aoc
+
+    m1 = _write_region_manifest(tmp_path, "m2_region_00001")
+    e1 = _write_excludelist(tmp_path, "m2_region_00001", [f"1:{_SNP_C_B38}:A:G"])
+    out = tmp_path / "occlusion_catalog_m3.tsv"
+
+    res = aoc.assemble_occlusion_catalog(
+        [m1], chain, [], out, excludelist_paths=[e1],
+    )
+    err = capsys.readouterr().err
+
+    assert res["source"] == "stage_a_manifest"
+    assert res["n_regions_excludelist_only"] == 0
+    assert "IGNORED" in err
+    assert "covered" in err.lower(), (
+        "the note must claim COVERAGE, which is what actually justifies ignoring them"
+    )
+
+
+def test_allow_partial_manifest_does_not_open_the_degraded_gate(tmp_path):
+    """``allow_partial_manifest`` must NOT become a back door around
+    ``allow_degraded``. The degraded reconstruction permanently loses the ref-span and
+    occluding-deletion attribution the pre-registration commits to publishing, and it
+    stays behind its own explicit flag."""
+    chain = _require_chain()
+    import assemble_occlusion_catalog as aoc
+
+    e1 = _write_excludelist(tmp_path, "m2_region_00001", [f"1:{_SNP_C_B38}:A:G"])
+    out = tmp_path / "occlusion_catalog_m3.tsv"
+
+    with pytest.raises(ValueError) as exc:
+        aoc.assemble_occlusion_catalog(
+            [], chain, [], out, excludelist_paths=[e1],
+            allow_partial_manifest=True,
+        )
+
+    assert "allow-degraded" in str(exc.value) or "allow_degraded" in str(exc.value)
+    assert not out.exists()
+
+
+# --------------------------------------------------------------------------- #
+# THE 276/552 TRAP — the authoritative count is nunique(region_id), NOT len(df) #
+# --------------------------------------------------------------------------- #
+
+def test_expected_region_ids_is_276_not_552(tmp_path):
+    """``config/ld_regions.tsv`` = header + **552 DATA ROWS** = **276 unique
+    ``region_id`` x 2 ancestries (AFR, EUR)**.
+
+    The authoritative count is ``nunique(region_id)`` FILTERED TO the ancestry —
+    NEVER ``len(df)`` or ``wc -l``, which give 552/553 and would make any coverage
+    assertion built on them fail 100% of the time. Asserting ``!= 552`` and
+    ``!= 553`` explicitly is deliberate: it makes that specific regression fail LOUDLY
+    with a message that names the trap, instead of looking like a data problem.
+    """
+    import assemble_occlusion_catalog as aoc
+
+    regions_tsv = PROJECT_ROOT / "config" / "ld_regions.tsv"
+    if not regions_tsv.exists():
+        pytest.skip(f"region manifest not present: {regions_tsv}")
+
+    ids = aoc.load_expected_region_ids(regions_tsv, ancestry="AFR")
+
+    assert len(ids) == 276
+    assert len(ids) != 552, "THE 276/552 TRAP: this is len(df), not nunique(region_id)"
+    assert len(ids) != 553, "THE 276/552 TRAP: this is wc -l (header included)"
+    assert all(isinstance(r, str) for r in ids)
+    assert aoc.load_expected_region_ids(regions_tsv, ancestry="EUR") == ids, (
+        "the 276 region ids are shared across both ancestries; only the ROWS double"
+    )
+
+
+def test_observed_region_not_in_the_expected_set_raises(tmp_path):
+    """An OBSERVED region id absent from the expected set is naming drift or a
+    crosswalk bug — a catalog keyed on ids nothing downstream recognises. RAISE."""
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import assemble_occlusion_catalog as aoc
+
+    m1 = _write_region_manifest(tmp_path, "m2_region_00001")
+    out = tmp_path / "occlusion_catalog_m3.tsv"
+
+    with pytest.raises(ValueError) as exc:
+        aoc.assemble_occlusion_catalog(
+            [m1], chain, [], out, expected_region_ids={"m2_region_00999"},
+        )
+
+    assert "m2_region_00001" in str(exc.value)
+    assert not out.exists()
+
+
+def test_a_strict_subset_of_expected_regions_is_REPORTED_not_asserted(tmp_path):
+    """Observed ⊂ expected -> NO raise; ``n_regions_expected`` / ``n_regions_missing``
+    are REPORTED.
+
+    A region with ZERO occluded variants legitimately writes no manifest
+    (``assemble_occlusion_catalog.py:346-347`` / ``aggregate_manifests``), so
+    ``n_regions == 276`` is NOT a valid invariant and must NEVER be asserted. Pinning
+    the no-raise here is what stops a future reader from "tightening" this into a
+    check that fails on every honest run.
+    """
+    chain = _require_chain()
+    pytest.importorskip("pyliftover")
+    import assemble_occlusion_catalog as aoc
+
+    m1 = _write_region_manifest(tmp_path, "m2_region_00001")
+    out = tmp_path / "occlusion_catalog_m3.tsv"
+    expected = {f"m2_region_{i:05d}" for i in range(1, 11)}
+
+    res = aoc.assemble_occlusion_catalog(   # must NOT raise
+        [m1], chain, [], out, expected_region_ids=expected,
+    )
+
+    assert res["n_regions"] == 1
+    assert res["n_regions_expected"] == 10
+    assert res["n_regions_missing"] == 9
+    assert out.exists()
+
+
 def test_catalog_readme_documents_the_traits_present_serialization(tmp_path):
     """``traits_present`` serializes as a STRINGIFIED LIST, so a catalog reader gets
     a ``str`` not a ``list`` (the second pre-existing ``63bdb59`` consumer note).

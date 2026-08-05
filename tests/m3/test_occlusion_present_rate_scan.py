@@ -325,6 +325,43 @@ def test_header_only_and_zero_byte_files_do_not_raise(tmp_path):
     assert stats["n_rows_seen"] == 0
 
 
+def test_duplicate_trait_labels_are_REPORTED_without_moving_the_denominator(
+        tmp_path, capsys):
+    """LOW-1 — the ``stroke`` double-count is made VISIBLE, and NOTHING is redefined.
+
+    The production glob resolves 9 FILES but only 8 DISTINCT TRAITS: both
+    ``stroke.AFR`` and ``stroke.AFR.GIGASTROKE.2022.GRCh37`` report ``stroke``.
+
+    The published denominator STAYS A FILE RATE. The project record and the
+    pre-registration (osf.io/az52u) say "present in 7 of 9 AFR **sumstats**".
+    Redefining it to distinct traits would MOVE a pre-registered number, which is
+    Carter's call and not an executor's — so this is reported loudly and deferred, not
+    silently corrected.
+    """
+    import occlusion_present_rate_scan as prs
+
+    v = (1, 5_982_778)
+    f1 = _write_sumstats(tmp_path / "stroke.AFR.tsv", [_row(*v, "stroke")])
+    f2 = _write_sumstats(tmp_path / "stroke.AFR.GIGASTROKE.2022.GRCh37.tsv",
+                         [_row(*v, "stroke")])
+    stats: dict = {}
+
+    res = prs.scan_present_rate([v], [f1, f2], stats=stats)
+    err = capsys.readouterr().err
+
+    assert stats["n_files_scanned"] == 2
+    assert stats["n_distinct_traits_scanned"] == 1
+    assert stats["duplicate_traits"] == ["stroke"]
+    assert "stroke" in err and "distinct" in err.lower(), (
+        "the double-count must fire a LOUD note, not just sit in a dict"
+    )
+
+    # THE DENOMINATOR IS UNTOUCHED — it is a FILE rate, deliberately.
+    assert res[v]["n_traits_scanned"] == 2
+    assert res[v]["n_traits_present"] == 2
+    assert res[v]["present_rate"] == 1.0
+
+
 def test_blank_first_line_with_content_below_RAISES(tmp_path):
     """A file whose FIRST line is blank but which carries content below RAISES.
 

@@ -60,3 +60,39 @@ line of `ld_panel.py`, is produced by `git show HEAD:Snakefile` at the m3-04b en
 commit `3e7a01a`. m3-04b's plan lists a clean full-workflow dry run as an acceptance
 criterion; that criterion is unsatisfiable independently of this plan's work, and is
 m3-04c's (panel reachability) to discharge.
+
+## LOW-1 DEFERRED — denominator redefinition (files vs distinct traits) needs Carter
+
+**Logged:** 2026-08-04 (quick-260804-rtc, Task 3). **Status: DEFERRED, not fixed.**
+
+The present-rate scan scope resolves **9 FILES but only 8 DISTINCT TRAITS**: both
+`stroke.AFR.tsv.bgz` and `stroke.AFR.GIGASTROKE.2022.GRCh37.tsv.bgz` report the trait
+`stroke`. Confirmed on the real corpus by
+`.planning/quick/260804-rtc-.../measure_present_rate_kn.json`
+(`stats.duplicate_traits == ["stroke"]`, `n_files_scanned == 9`,
+`n_distinct_traits_scanned == 8`).
+
+**What quick-260804-rtc DID do:** made it VISIBLE. `scan_present_rate` now records
+`n_distinct_traits_scanned` / `duplicate_traits` in its `stats` out-param and emits one
+loud STDERR note stating plainly that `n_traits_scanned` is a **FILE** rate and not a
+trait rate.
+
+**What it deliberately did NOT do:** change the denominator. The project record and
+the pre-registration (osf.io/az52u, amendment-update POSTED 2026-07-10T13:32:22Z,
+recorded `ac4c990`) publish *"rs182965575 is present in 7 of 9 AFR **sumstats**"* — a
+FILE rate. Redefining it to distinct traits would move a PRE-REGISTERED number, and
+that is **Carter's call, not an executor's**.
+
+**The fork, stated neutrally:**
+
+| Option | k/n for rs182965575 | Argument |
+|---|---|---|
+| **A — keep the FILE rate (shipped today)** | 7 of 9 | Matches what is already pre-registered and quoted in four module docstrings + `m3_occlusion_lockstep.smk`. No amendment needed. But `stroke` contributes twice to the denominator while contributing one trait's worth of evidence. |
+| **B — switch to a DISTINCT-TRAIT rate** | would become 7 of 8 (`stroke` carries the variant in neither file) | Arguably the more honest scientific denominator — the claim is about how many TRAITS carry the variant. Requires an OSF amendment and a sweep of every quoted "7 of 9" in the repo. |
+
+**Recommendation if asked:** B is the more defensible denominator, but it is a
+pre-registration amendment, not a code change, and must be decided before the catalog
+is published — not after.
+
+**Not blocking:** nothing downstream depends on the choice today; the drop key is
+unaffected (present-rate is reporting, never a filter).

@@ -1,0 +1,125 @@
+{
+  "variant": "rs182965575",
+  "chr": 1,
+  "pos_grch37": 5982778,
+  "n_traits_present": 7,
+  "n_traits_scanned": 9,
+  "present_rate": 0.7777777777777778,
+  "traits_present": [
+    "asthma",
+    "bmi",
+    "hdl",
+    "ldl",
+    "t2d",
+    "tc",
+    "tg"
+  ],
+  "stats": {
+    "n_files_scanned": 9,
+    "n_distinct_traits_scanned": 8,
+    "duplicate_traits": [
+      "stroke"
+    ],
+    "n_rows_seen": 151223963,
+    "n_rows_parsed": 151223963,
+    "n_unparseable": 0,
+    "n_truncated": 0,
+    "n_files_empty": 0,
+    "per_file": [
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz",
+        "trait": "asthma",
+        "n_rows_seen": 19695660,
+        "n_rows_parsed": 19695660,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 1
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/bmi.AFR.PAGE.2019.GRCh37.tsv.bgz",
+        "trait": "bmi",
+        "n_rows_seen": 17195956,
+        "n_rows_parsed": 17195956,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 1
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/hdl.AFR.GLGC.2021.GRCh37.tsv.bgz",
+        "trait": "hdl",
+        "n_rows_seen": 19760540,
+        "n_rows_parsed": 19760540,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 1
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/ldl.AFR.GLGC.2021.GRCh37.tsv.bgz",
+        "trait": "ldl",
+        "n_rows_seen": 19751105,
+        "n_rows_parsed": 19751105,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 1
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/stroke.AFR.GIGASTROKE.2022.GRCh37.tsv.bgz",
+        "trait": "stroke",
+        "n_rows_seen": 10802081,
+        "n_rows_parsed": 10802081,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 0
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz",
+        "trait": "stroke",
+        "n_rows_seen": 5259724,
+        "n_rows_parsed": 5259724,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 0
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz",
+        "trait": "t2d",
+        "n_rows_seen": 19257160,
+        "n_rows_parsed": 19257160,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 1
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/tc.AFR.GLGC.2021.GRCh37.tsv.bgz",
+        "trait": "tc",
+        "n_rows_seen": 19752232,
+        "n_rows_parsed": 19752232,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 1
+      },
+      {
+        "path": "/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/processed/sumstats_harmonized/tg.AFR.GLGC.2021.GRCh37.tsv.bgz",
+        "trait": "tg",
+        "n_rows_seen": 19749505,
+        "n_rows_parsed": 19749505,
+        "n_unparseable": 0,
+        "n_truncated": 0,
+        "n_hits": 1
+      }
+    ]
+  },
+  "files": [
+    "data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz",
+    "data/processed/sumstats_harmonized/bmi.AFR.PAGE.2019.GRCh37.tsv.bgz",
+    "data/processed/sumstats_harmonized/hdl.AFR.GLGC.2021.GRCh37.tsv.bgz",
+    "data/processed/sumstats_harmonized/ldl.AFR.GLGC.2021.GRCh37.tsv.bgz",
+    "data/processed/sumstats_harmonized/stroke.AFR.GIGASTROKE.2022.GRCh37.tsv.bgz",
+    "data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz",
+    "data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz",
+    "data/processed/sumstats_harmonized/tc.AFR.GLGC.2021.GRCh37.tsv.bgz",
+    "data/processed/sumstats_harmonized/tg.AFR.GLGC.2021.GRCh37.tsv.bgz"
+  ],
+  "elapsed_seconds": 300.3,
+  "note": "n_traits_scanned is a FILE rate over the 9 GRCh37 AFR harmonized sumstats \u2014 the denominator the pre-registration (osf.io/az52u) publishes. It is NOT a distinct-trait rate: the scope resolves 9 files but only 8 distinct traits (stroke.AFR and stroke.AFR.GIGASTROKE.2022.GRCh37 both report 'stroke'). See LOW-1 \u2014 the double-count is REPORTED in stats.duplicate_traits, never silently folded into the denominator."
+}

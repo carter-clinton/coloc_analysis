@@ -59,6 +59,7 @@ sumstats is never materialized in memory). No Hail.
 from __future__ import annotations
 
 import gzip
+import sys
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -281,9 +282,27 @@ def scan_present_rate(variants_grch37: Iterable[Sequence],
 
     n_scanned = len(paths)
 
+    labels = [rec["trait"] for rec in per_file]
+    duplicate_traits = sorted({t for t in labels if labels.count(t) > 1})
+    if duplicate_traits:
+        # LOW-1, VISIBILITY ONLY. The production glob resolves 9 FILES but only 8
+        # DISTINCT TRAITS (stroke.AFR and stroke.AFR.GIGASTROKE.2022.GRCh37 both
+        # report `stroke`). The denominator is DELIBERATELY NOT changed: the project
+        # record and the pre-registration publish "present in k of 9 AFR SUMSTATS" —
+        # a FILE rate. Redefining it to distinct traits would MOVE a pre-registered
+        # number, which is not an executor's call. Reported here so a reader can see
+        # the double-count instead of inheriting it silently.
+        print(
+            f"[occlusion_present_rate_scan] NOTE: scanned {n_scanned} file(s) but "
+            f"only {len(set(labels))} DISTINCT trait(s) — duplicated: "
+            f"{', '.join(duplicate_traits)}. `n_traits_scanned` is therefore a FILE "
+            "rate, NOT a trait rate. That is the published denominator "
+            "(osf.io/az52u) and is left UNCHANGED here; the double-count is reported, "
+            "never silently folded in.",
+            file=sys.stderr,
+        )
+
     if stats is not None:
-        labels = [rec["trait"] for rec in per_file]
-        duplicate_traits = sorted({t for t in labels if labels.count(t) > 1})
         stats.update({
             "n_files_scanned": n_scanned,
             "n_distinct_traits_scanned": len(set(labels)),
