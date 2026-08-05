@@ -265,6 +265,27 @@ occlusion_lockstep:
   # It must be an explicit, recorded act, never a silent fallback.
   allow_degraded: false
 
+# M3 ld_read_path: the ancestry allow-list for the DECLARED-LD read path (m3-04c
+# blast-radius BLOCKER-B). m3-04c Task 1b removed a pin that had been SILENTLY
+# holding every EUR fit at {ld_dir}/EUR/{region}.rds. Un-pinned, an EUR fit moves
+# the moment data/processed/ld_reference/EUR_ukbb_pub/ exists -- proven: r[1,2]
+# 0.1 -> 0.9, credible sets 3 -> 10, nonzero PIPs 200 -> 78, while ld_status and
+# ld_overlap_fraction stayed BYTE-IDENTICAL. Track A is in submission.
+#
+# For every ancestry NOT listed here:
+#   * the curated->M2 crosswalk is NOT applied (input.ld_matrix resolves exactly
+#     as it did at 3f431ab), and
+#   * run_susie_rss.R IGNORES the declared-LD argument entirely
+#     (--ld-authoritative false), so the loader's candidate list is
+#     character-for-character the legacy one.
+# Same shape as occlusion_lockstep above, for the same reason.
+#
+# THIS IS ALSO THE KILL SWITCH for the authoritative-declared-panel semantics:
+# `enabled: false` or `ancestries: []` restores today's behaviour everywhere.
+ld_read_path:
+  enabled: true
+  ancestries: [AFR]
+
 multitrait:
   methods: [mashr, susie]
   window_kb: 500

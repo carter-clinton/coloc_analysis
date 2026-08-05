@@ -280,6 +280,17 @@ option_list <- list(
   make_option("--ld-file", type = "character", default = NULL,
               help = paste("Resolved LD .rds declared by Snakemake as input.ld_matrix.",
                            "Authoritative when readable; --ld-dir is the fallback.")),
+  # 260805-23d Task 1 (m3-04c blast radius, BLOCKER-B): the ancestry allow-list
+  # verdict, computed by src/python/ld_read_path.py and rendered by
+  # finemap.smk's params.ld_authoritative. NOT named --ld-file-authoritative:
+  # neither --ld-file nor --ld-dir may be a prefix of it or optparse's long-option
+  # matching goes ambiguous.
+  make_option("--ld-authoritative", type = "character", default = "true",
+              help = paste("'true' | 'false'. When true the declared LD panel is the",
+                           "SOLE candidate and any rejection is a hard stop(). When",
+                           "false the declared panel is IGNORED and the loader behaves",
+                           "exactly as it did at 3f431ab. Set from config",
+                           "ld_read_path.ancestries.")),
   make_option("--variant-list", type = "character", help = "Optional TSV restricting variants (CHR,POS,REF,ALT)"),
   make_option("--credible-set", type = "double", default = 0.95, help = "Credible set probability"),
   make_option("--policy", type = "character", default = "config/susie_policy.yaml",
@@ -296,6 +307,22 @@ policy <- yaml::read_yaml(opt$policy)
 MIN_LD_OVERLAP       <- policy$susie$min_ld_overlap       %||% 50L
 MIN_LD_COVERAGE      <- policy$susie$min_ld_coverage      %||% 0.5
 MIN_LD_MIN_USE       <- policy$susie$min_ld_min_use       %||% 10L
+
+# 260805-23d Task 1 (BLOCKER-B): parse --ld-authoritative STRICTLY. An
+# unrecognised value stop()s rather than silently defaulting: this flag decides
+# whether the declared LD panel or the --ld-dir reconstruction supplies the bytes
+# a fit is computed on, and a typo that quietly meant "true" would re-open exactly
+# the silent read-path substitution this whole change set exists to close.
+# ⚠ Task 1 lands the DECLARATION and the PARSE only, so the new shell argument is
+# never an unknown flag between commits. load_ld_matrix does not consume
+# `ld_authoritative` until Task 2 of 260805-23d; until then the declared panel is
+# still tried first for every ancestry.
+ld_authoritative <- local({
+  v <- tolower(trimws(opt$`ld-authoritative` %||% "true"))
+  if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
+  if (v %in% c("false", "f", "0", "no"))  return(FALSE)
+  stop(sprintf("--ld-authoritative must be true|false, got %s", opt$`ld-authoritative`))
+})
 L_DEFAULT            <- policy$susie$L                    %||% 10L
 COVERAGE             <- policy$susie$coverage             %||% 0.95
 MAX_ITER_PRIMARY     <- policy$susie$max_iter_primary     %||% 100L

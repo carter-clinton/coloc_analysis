@@ -374,4 +374,28 @@ properties:
         type: boolean
         description: "Authorise an excludelist-derived catalog, which permanently loses the ref-span / occluding-deletion attribution"
 
+  # M3 ld_read_path: the ancestry allow-list for the DECLARED-LD read path
+  # (260805-23d Task 1; m3-04c blast radius BLOCKER-B). Consumed by
+  # src/python/ld_read_path.py, wired into finemap.smk's input.ld_matrix and
+  # params.ld_authoritative.
+  #
+  # Added under a Rule-3 (blocking issue) deviation, exactly mirroring the
+  # m3-04b precedent recorded directly above for `occlusion_lockstep`: the
+  # schema's top-level `additionalProperties: false` rejects any config key it
+  # does not declare, so without this entry EVERY Snakemake invocation fails at
+  # validate() the moment the ld_read_path block exists in config/pipeline.yaml.
+  # Caught by `snakemake --list`, which no unit test exercises.
+  ld_read_path:
+    type: object
+    description: "Ancestry allow-list for the declared-LD read path (BLOCKER-B containment)"
+    properties:
+      enabled:
+        type: boolean
+        description: "Kill switch: false restores the pre-m3-04c LD read path for every ancestry"
+      ancestries:
+        type: array
+        description: "Ancestries for which the curated->M2 crosswalk is applied and the declared LD panel is authoritative (AFR only; off the list the resolved path and the loader's candidate list are byte-identical to 3f431ab, so Track-A numerics cannot move)"
+        items:
+          type: string
+
 additionalProperties: false

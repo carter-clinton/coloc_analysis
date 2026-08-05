@@ -51,7 +51,9 @@ from __future__ import annotations
 import gzip
 import json
 import os
+import re
 import stat
+import subprocess
 import sys
 from pathlib import Path
 
@@ -416,6 +418,81 @@ def test_absent_config_block_is_fail_safe_legacy():
 # T2.7 the m3-04c guard rail: params.region_id is NOT this plan's to touch     #
 # --------------------------------------------------------------------------- #
 
+def _code_only(text: str) -> str:
+    """``text`` with ``#`` COMMENT LINES REMOVED.
+
+    Every assertion below is made on this, never on the raw source, so that
+    PROSE DESCRIBING the wiring can never satisfy an assertion about the wiring.
+    That exact defect — a comment satisfying its own regex — is one of the five
+    structurally-incapable-of-failing assertions catalogued in
+    ``m3-04c-BLAST-RADIUS.md``.
+    """
+    return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
+
+
+def _paren_call(text: str, anchor: str) -> str:
+    """``anchor`` plus its balanced ``(...)`` body."""
+    idx = text.find(anchor)
+    assert idx != -1, f"anchor not found: {anchor!r}"
+    open_idx = text.index("(", idx)
+    depth = 0
+    for k in range(open_idx, len(text)):
+        if text[k] == "(":
+            depth += 1
+        elif text[k] == ")":
+            depth -= 1
+            if depth == 0:
+                return text[idx:k + 1]
+    raise AssertionError(f"unbalanced parens after {anchor!r}")
+
+
+def _assert_ld_matrix_region_id_is_ancestry_gated(src: str) -> None:
+    """The T2.7 post-condition, factored out so it can be RUN AGAINST FOREIGN
+    SOURCE TEXT — which is what makes its negative controls possible.
+
+    Pins that ``run_finemap.input.ld_matrix``'s ``resolve_ld_path(region_id=...)``
+    argument routes through the ANCESTRY-GATED helper, and that the ungated inline
+    crosswalk is gone. Fails if someone reverts to the ungated form, if the gate is
+    dropped, or if the call stops being ancestry-scoped.
+    """
+    code = _code_only(src)
+
+    # (i) the resolver argument routes through the gate helper
+    assert "region_id=ld_matrix_region_id(" in code, (
+        "run_finemap.input.ld_matrix's resolve_ld_path(region_id=...) argument must "
+        "route through ld_read_path.ld_matrix_region_id, which applies the "
+        "curated->M2 crosswalk ONLY for config ld_read_path.ancestries"
+    )
+
+    # (ii) ...and the call is genuinely ANCESTRY-SCOPED. A gate that never sees the
+    # ancestry is not a gate; blast-radius finding F was precisely a crosswalk
+    # applied for every ancestry.
+    call = _paren_call(code, "region_id=ld_matrix_region_id(")
+    for needed in ("wildcards.region", "wildcards.ancestry", "config",
+                   "CURATED_TO_M2", "REGION_SAFE_TO_ID"):
+        assert needed in call, (
+            f"ld_matrix_region_id(...) must receive {needed}; the call was:\n{call}"
+        )
+
+    # (iii) the UNGATED inline crosswalk is GONE from code. This is the assertion
+    # that fails on a revert to m3-04c Task 1a's expression.
+    assert code.count("CURATED_TO_M2.get(") == 0, (
+        "the inline, UNGATED CURATED_TO_M2.get(...) crosswalk must not survive: it "
+        "reached EUR (ld_panel.EUR[1]) and the TRANS chain HEAD, both of which "
+        "template on {region_id}, while the crosswalk is AFR-only by construction "
+        "(build_curated_m2_crosswalk.py:145). BLOCKER-B, Track A is in submission."
+    )
+
+    # (iv) the helper comes from the gate module, not a local shadow
+    imported = re.search(r"from ld_read_path import\s*\(([^)]*)\)", code)
+    assert imported is not None, (
+        "finemap.smk must import the gate from src/python/ld_read_path.py"
+    )
+    assert "ld_matrix_region_id" in imported.group(1), (
+        f"the ld_read_path import must name ld_matrix_region_id; got {imported.group(1)!r}"
+    )
+
+
 def test_params_region_id_is_untouched():
     """``run_finemap.params.region_id`` still resolves through ``REGION_SAFE_TO_ID``.
 
@@ -432,6 +509,27 @@ def test_params_region_id_is_untouched():
     post-condition (see the inline note); the ``params.region_id`` assertion is
     unchanged, character-for-character.
 
+    RE-DISPOSED AGAIN 2026-08-05 (260805-23d Task 1, m3-04c blast radius
+    BLOCKER-B) — the THIRD time this test has been the landmine on a mandated
+    edit, which is itself worth recording. m3-04c Task 1a applied the crosswalk
+    for EVERY ancestry; the crosswalk is AFR-only by construction
+    (``build_curated_m2_crosswalk.py:145``) while ``ld_panel.EUR[1]`` and the
+    ``ld_panel.TRANS`` chain HEAD both template on ``{region_id}``, so it reached
+    straight into EUR and TRANS. The remediation gates it behind
+    ``ld_read_path.ld_matrix_region_id``. That made the m3-04c literal pin below
+    UNSATISFIABLE: it required ``region_id=CURATED_TO_M2.get(...)`` verbatim, and
+    no honest gated form can contain that string (the pin needs ``,`` immediately
+    after ``])``). The ONLY other way to satisfy it was to plant the literal in a
+    comment — the "comment satisfying its own regex" defect this very blast radius
+    catalogued — so it was re-disposed under the same replace-don't-relax
+    precedent it invoked for itself.
+
+    The ``params.region_id`` guard rail is again UNCHANGED, character-for-character.
+    The replacement is STRICTLY STRONGER: it fails on a revert to the ungated
+    crosswalk, on the gate being dropped, AND on the call ceasing to be
+    ancestry-scoped — and it carries its own negative controls, one of which runs
+    against the real pre-change source recovered with ``git show``.
+
     Asserted at SOURCE level rather than as a pure-function check: ``params.region_id``
     is a Snakemake rule directive with no importable callable, and instantiating a
     workflow here would drag in the whole DAG (which currently cannot resolve an AFR
@@ -445,36 +543,66 @@ def test_params_region_id_is_untouched():
         "REGION_SAFE_TO_ID"
     )
 
-    # REPLACED, NOT RELAXED (m3-04c). The previous assertion pinned the exact
-    # PRE-crosswalk literal that m3-04c is required to replace, so it forbade what
-    # its own docstring documents as m3-04c's job. The replacement pins the STRONGER
-    # post-condition: the resolver argument now routes through the curated->M2
-    # crosswalk, with REGION_SAFE_TO_ID as the documented unmapped-region fallback.
-    # Precedent for replace-don't-relax: 1a9d170, and m3-04b's own
-    # test_production_boundary_documented.
-    assert (
-        "region_id=CURATED_TO_M2.get(wildcards.region, "
-        "REGION_SAFE_TO_ID[wildcards.region])," in src
-    ), (
-        "run_finemap.input.ld_matrix's resolve_ld_path(region_id=...) argument must "
-        "route through the curated->M2 crosswalk, falling back to REGION_SAFE_TO_ID "
-        "for curated regions with no M2 counterpart"
+    # REPLACED, NOT RELAXED (260805-23d Task 1). The m3-04c assertion pinned the
+    # exact UNGATED literal that BLOCKER-B is required to replace, so it forbade the
+    # containment its own suite exists to protect. Same precedent it invoked for
+    # itself: 1a9d170, and m3-04b's test_production_boundary_documented.
+    _assert_ld_matrix_region_id_is_ancestry_gated(src)
+
+    # RE-DERIVED (260805-23d Task 1), and re-derived HONESTLY. m3-04c counted the
+    # SUBSCRIPTED form REGION_SAFE_TO_ID[wildcards.region]; that count is 2 BEFORE
+    # the gate and 1 AFTER it (the gated call passes the MAP, not a subscript), so
+    # it is NOT invariant across this edit and was NOT tuned down to 1 to make the
+    # suite green. It is replaced by the count of the BARE NAME, which carries the
+    # same intent — "exactly two code-level uses: the LD read path, and
+    # params.region_id; a third cannot sneak in" — and which MEASURES 2 on BOTH
+    # sides of the edit:
+    #     5ec33bd (pre-gate) : REGION_SAFE_TO_ID == 2   (subscripted form == 2)
+    #     post-gate          : REGION_SAFE_TO_ID == 2   (subscripted form == 1)
+    # Counted on CODE lines only, so prose cannot move it.
+    code = _code_only(src)
+    assert code.count("REGION_SAFE_TO_ID") == 2, (
+        "expected exactly 2 CODE uses of REGION_SAFE_TO_ID: the map handed to "
+        "ld_matrix_region_id(...) for the LD read path, and params.region_id"
     )
 
-    # RE-DERIVED (m3-04c). The previous assertion was a brittle WHOLE-FILE
-    # src.count("REGION_SAFE_TO_ID") == 3 that any comment rewrite moves. Counted on
-    # CODE lines only and on the SUBSCRIPTED form, so prose cannot break it and a
-    # third code-level use cannot sneak in. VERIFIED: this count is 2 both BEFORE
-    # and AFTER m3-04c's edit, so it is a genuine invariant rather than a number
-    # tuned to make the suite green.
-    code = "\n".join(
-        ln for ln in src.splitlines() if not ln.lstrip().startswith("#")
+
+def test_ld_matrix_region_id_gate_assertion_is_not_vacuous():
+    """NEGATIVE CONTROL for ``_assert_ld_matrix_region_id_is_ancestry_gated``.
+
+    Given this test's history — three mandated edits have now collided with it, and
+    ``m3-04c-BLAST-RADIUS.md`` catalogues five assertions in this change set that
+    were structurally incapable of failing — an unfalsifiable assertion HERE would
+    be the sixth. So the post-condition is exercised against two sources that
+    violate it, and both must go RED.
+    """
+    # CONTROL 1 -- the REAL pre-change source. Recovered with `git show`, not
+    # synthesized, so this proves the assertion fails on the actual ungated tree
+    # that shipped (the inline CURATED_TO_M2.get(...) crosswalk, no gate at all).
+    pre = subprocess.run(
+        ["git", "show", "5ec33bd:src/snakemake/rules/finemap.smk"],
+        cwd=PROJECT_ROOT, capture_output=True, text=True, check=True,
+    ).stdout
+    assert "CURATED_TO_M2.get(" in _code_only(pre), (
+        "fixture broken: 5ec33bd must carry the UNGATED inline crosswalk"
     )
-    assert code.count("REGION_SAFE_TO_ID[wildcards.region]") == 2, (
-        "expected exactly 2 CODE uses of REGION_SAFE_TO_ID[wildcards.region]: the "
-        "crosswalk's unmapped-region fallback inside resolve_ld_path(region_id=...), "
-        "and params.region_id"
-    )
+    with pytest.raises(AssertionError):
+        _assert_ld_matrix_region_id_is_ancestry_gated(pre)
+
+    # CONTROL 2 -- the gate is PRESENT but no longer ANCESTRY-SCOPED. Guards the
+    # case a literal-substring pin would miss: ld_matrix_region_id(...) is still
+    # called, so (i), (iii) and (iv) all pass, but the crosswalk would once more
+    # apply to every ancestry. Only the sliced-call check in (ii) can see this.
+    src = _FINEMAP_SMK.read_text()
+    call = _paren_call(src, "region_id=ld_matrix_region_id(")
+    degated = src.replace(call, call.replace("wildcards.ancestry,", "wildcards.region,"), 1)
+    assert degated != src, "fixture broken: the de-gating mutation was a no-op"
+    with pytest.raises(AssertionError):
+        _assert_ld_matrix_region_id_is_ancestry_gated(degated)
+
+    # ...and the real source PASSES, so the controls above are not simply
+    # asserting that the function always raises.
+    _assert_ld_matrix_region_id_is_ancestry_gated(src)
 
 
 def test_finemap_smk_routes_both_inputs_through_the_lockstep_seam():

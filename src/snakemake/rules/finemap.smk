@@ -67,6 +67,16 @@ from occlusion_lockstep_cli import (  # noqa: E402 -- same sys.path rationale
     lockstep_variants_path,
 )
 
+# 260805-23d Task 1 (m3-04c blast radius, BLOCKER-B): the ANCESTRY ALLOW-LIST for
+# the declared-LD read path. Pure stdlib, no I/O -- importing it cannot change a
+# resolved path by itself. OFF the allow-list both helpers reproduce 3f431ab's
+# behaviour character-for-character, which is what keeps Track-A / EUR numerics
+# from moving. Same sys.path rationale as above.
+from ld_read_path import (  # noqa: E402
+    ld_file_authoritative,
+    ld_matrix_region_id,
+)
+
 # m3-04c Task 1a: the curated -> M2 region crosswalk (Layer A of AoU panel
 # reachability). ``load_curated_to_m2`` is a pure TSV read -- it does NOT import
 # pyliftover (the lift happens once, inside the builder), so this module-scope
@@ -94,6 +104,19 @@ PYTHON_BIN = sys.executable
 # This crosswalk is what makes the AoU AFR panel REACHABLE at all. Reachability
 # is not a plumbing detail: it moves published numbers. Recorded here rather
 # than absorbed silently.
+#
+#   ⚠ THE CROSSWALK IS ANCESTRY-GATED (260805-23d Task 1, BLOCKER-B). It is
+#   applied ONLY for the ancestries listed in `config/pipeline.yaml
+#   ld_read_path.ancestries` (AFR today), via
+#   src/python/ld_read_path.py::ld_matrix_region_id. m3-04c Task 1a applied it
+#   for EVERY ancestry, which reached straight into EUR and TRANS: the crosswalk
+#   is AFR-only by construction (build_curated_m2_crosswalk.py:145), yet
+#   ld_panel.EUR[1] (EUR_aou) and the ld_panel.TRANS chain HEAD both template on
+#   {region_id}. Off the allow-list ld_matrix_region_id returns 3f431ab's
+#   expression character-for-character, so the resolved input.ld_matrix string
+#   for EUR / TRANS cannot move. This is NOT merely a params.region_id vs
+#   input.ld_matrix collision concern -- it is a frozen-numerics containment for
+#   a manuscript in submission.
 #
 #   THE CHANGE. The FIRST curated AFR region for which an AFR_aou/<m2_id>.rds
 #   actually exists switches its LD source from AFR_1kg
@@ -277,9 +300,21 @@ rule run_finemap:
         # gates on REALIZED variant overlap/coverage, not bp, so the region-1
         # gate must check that explicitly rather than assume the arithmetic
         # carries over.
+        #
+        # ⚠ ANCESTRY GATE (260805-23d Task 1, BLOCKER-B). ld_matrix_region_id
+        # applies CURATED_TO_M2 only for config ld_read_path.ancestries (AFR).
+        # For EUR / TRANS it returns REGION_SAFE_TO_ID[region] -- 3f431ab's
+        # expression, character for character -- so this whole call reproduces
+        # the pre-m3-04c resolution and Track-A numerics cannot move.
         ld_matrix=lambda wildcards: str(
             resolve_ld_path(
-                region_id=CURATED_TO_M2.get(wildcards.region, REGION_SAFE_TO_ID[wildcards.region]),
+                region_id=ld_matrix_region_id(
+                    wildcards.region,
+                    wildcards.ancestry,
+                    config,
+                    CURATED_TO_M2,
+                    REGION_SAFE_TO_ID,
+                ),
                 ancestry=wildcards.ancestry,
                 config=config,
                 region_safe=wildcards.region,
@@ -323,6 +358,15 @@ rule run_finemap:
         susie_max_variants=config.get("finemap", {}).get(
             "susie_max_variants", 16000
         ),
+        # 260805-23d Task 1 (BLOCKER-B): "true" only for the ancestries in config
+        # ld_read_path.ancestries. "false" makes run_susie_rss.R IGNORE the
+        # declared LD argument entirely, so its candidate list is the legacy one
+        # and the two extra argv tokens are inert BY CONSTRUCTION. The literal
+        # value is a string because it is parsed by the R script, which stop()s
+        # on anything it does not recognise rather than silently defaulting.
+        ld_authoritative=lambda wildcards: ld_file_authoritative(
+            wildcards.ancestry, config
+        ),
     shell:
         r"""
         export SUSIE_MAX_VARIANTS={params.susie_max_variants}
@@ -334,6 +378,15 @@ rule run_finemap:
         # reach AFR_aou/, and fell silently to an identity matrix. --ld-dir
         # stays as the back-compat fallback. DO NOT remove --ld-file without
         # re-opening the declare-vs-read split.
+        #
+        # 260805-23d Task 1 (BLOCKER-B): --ld-authoritative carries the ancestry
+        # allow-list verdict into the R script. "false" (every ancestry outside
+        # config ld_read_path.ancestries) makes the loader IGNORE the declared-LD
+        # argument entirely, so its candidate list is the legacy one and these two
+        # extra tokens are inert BY CONSTRUCTION -- the containment that keeps a
+        # Track-A EUR fit from moving when EUR_ukbb_pub/ lands. The flag is NOT
+        # named --ld-file-authoritative on purpose: neither --ld-file nor --ld-dir
+        # may be a prefix of it, or R optparse long-option matching goes ambiguous.
         Rscript src/legacy/region_analysis/scripts/run_susie_rss.R \
           --sumstats {input.sumstats} \
           --trait {wildcards.trait} \
@@ -343,6 +396,7 @@ rule run_finemap:
           --regions-csv {params.regions_csv} \
           --ld-dir {params.ld_dir} \
           --ld-file {input.ld_matrix} \
+          --ld-authoritative {params.ld_authoritative} \
           --variant-list {input.variants} \
           --credible-set {params.credible_set} \
           --policy {input.policy} \
