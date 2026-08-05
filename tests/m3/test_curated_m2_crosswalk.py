@@ -324,10 +324,31 @@ def test_selected_window_physically_overlaps_the_curated_interval(region_safe):
     A test that re-implements the selection cannot catch a wrong selection rule --
     that is exactly how the prior "12/12 independent reproduction" reproduced the
     ``__sub00`` defect instead of finding it.
+
+    ⚠ DELIBERATELY NO ``pytest.skip`` FOR THE NON-CONTAINED ROW. Skipping on
+    ``status != "contained"`` would mean a row that silently degraded from
+    ``contained`` to ``partial`` SKIPPED this geometry check instead of failing
+    it -- a guard that hides the bug rather than catching it. The one expected
+    non-contained row is asserted by name instead.
     """
     row = _row_for(region_safe)
-    if row["status"] != "contained":
-        pytest.skip(f"{region_safe} is status={row['status']}; geometry pinned elsewhere")
+    expected_id, expected_status, _n = RE_DERIVED_ORACLE[region_safe]
+    if expected_status != "contained":
+        assert row["status"] == expected_status, (
+            f"{region_safe} was expected to be {expected_status}; a row that "
+            f"changes status must FAIL here, never skip"
+        )
+        assert region_safe == "BMI_Xq24", (
+            "BMI_Xq24 (chrX; M2 is autosomes-only per D-M2-09) is the ONLY curated "
+            f"region allowed to be non-contained; {region_safe} is not"
+        )
+        assert row["m2_region_id"] == ""
+        assert row["m2_window_start_grch37"] == ""
+        return
+    assert row["status"] == "contained", (
+        f"{region_safe} degraded from contained to {row['status']!r} -- a partial "
+        "match must never be promoted, and must never be skipped past"
+    )
 
     curated = _curated_regions()[region_safe]
     m2_id = row["m2_region_id"]
