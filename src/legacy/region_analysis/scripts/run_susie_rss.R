@@ -684,6 +684,22 @@ option_list <- list(
                            "false the declared panel is IGNORED and the loader behaves",
                            "exactly as it did at 3f431ab. Set from config",
                            "ld_read_path.ancestries.")),
+  # 260805-o7o (m3-04c blast radius, FINDING H): the allele-aware-join verdict,
+  # computed by src/python/ld_read_path.py::ld_allele_aware and rendered by
+  # finemap.smk's params.ld_allele_aware. Same anti-ambiguity note as
+  # --ld-authoritative above: neither --ld-file, --ld-dir nor --ld-authoritative
+  # may be a prefix of this name or optparse's long-option matching goes
+  # ambiguous. Default "false" -- the caller-relative fail-safe is CHANGE
+  # NOTHING, because this flag decides which LD ROW a z is bound to and whether
+  # that z is NEGATED.
+  make_option("--ld-allele-aware", type = "character", default = "false",
+              help = paste("'true' | 'false'. When true the sumstats<->panel join",
+                           "matches on chr:pos:REF:ALT, negates z for a transposed",
+                           "orientation, and DROPS palindromic / mismatched /",
+                           "ambiguous / allele-less variants (all counted). When",
+                           "false the legacy CHR:POS match() runs, first hit,",
+                           "REF/ALT ignored. Set from config",
+                           "ld_read_path.allele_aware.")),
   make_option("--variant-list", type = "character", help = "Optional TSV restricting variants (CHR,POS,REF,ALT)"),
   make_option("--credible-set", type = "double", default = 0.95, help = "Credible set probability"),
   make_option("--policy", type = "character", default = "config/susie_policy.yaml",
@@ -715,6 +731,18 @@ ld_authoritative <- local({
   if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
   if (v %in% c("false", "f", "0", "no"))  return(FALSE)
   stop(sprintf("--ld-authoritative must be true|false, got %s", opt$`ld-authoritative`))
+})
+# 260805-o7o (FINDING H): parse --ld-allele-aware with the IDENTICAL strict
+# shape. An unrecognised value stop()s rather than silently defaulting: this
+# flag decides which LD ROW each z is bound to and whether that z is NEGATED, so
+# a typo that quietly meant "false" would re-open finding H for a run whose
+# operator believed it closed -- and one that quietly meant "true" would move
+# numbers for an ancestry nobody put on the allow-list.
+ld_allele_aware <- local({
+  v <- tolower(trimws(opt$`ld-allele-aware` %||% "false"))
+  if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
+  if (v %in% c("false", "f", "0", "no"))  return(FALSE)
+  stop(sprintf("--ld-allele-aware must be true|false, got %s", opt$`ld-allele-aware`))
 })
 L_DEFAULT            <- policy$susie$L                    %||% 10L
 COVERAGE             <- policy$susie$coverage             %||% 0.95
@@ -758,12 +786,75 @@ used_variant_catalog <- FALSE
 variant_catalog_attempted <- FALSE
 variant_catalog_fallback <- FALSE
 ld_overlap_zero_fallback <- FALSE  # m3-04c HIGH-2: set only by the Path-2 (ld_overlap==0) revert
+# 260805-o7o (FINDING H): WHICH regime restricted `subset` to the variant
+# catalog. One of allele_key / snp_id / chr_pos / skipped_alleles_unusable /
+# none. Emitted to the region JSON so the join's behaviour is readable without
+# opening the source.
+allele_catalog_join <- "none"
 
 if (!is.null(opt$`variant-list`) && opt$`variant-list` != "" && file.exists(opt$`variant-list`)) {
   variant_dt <- tryCatch(fread(opt$`variant-list`), error = function(e) NULL)
   if (!is.null(variant_dt) && nrow(variant_dt) > 0) {
     variant_catalog_attempted <- TRUE
-    use_snp_id <- ("SNP_ID" %in% names(variant_dt) && "SNP_ID" %in% names(subset))
+    # 260805-o7o (FINDING H), THE SECOND JOIN SITE. The variant-catalog join was
+    # allele-blind for exactly the same reason the panel join was: a SNP_ID key
+    # neither side reliably shares, falling back to a CHR/POS setkey join that
+    # ignores REF/ALT. Under --ld-allele-aware this NEW FIRST BRANCH takes
+    # precedence and keys on CHR/POS/REF/ALT.
+    .cj_up <- function(x) toupper(trimws(as.character(x)))
+    .cj_usable <- function(x) {
+      x <- .cj_up(x)
+      !is.na(x) & nzchar(x) & x != "N"
+    }
+    .cj_ok <- function(dt) {
+      if (!all(c("CHR", "POS", "REF", "ALT") %in% names(dt))) return(0L)
+      sum(.cj_usable(dt$REF) & .cj_usable(dt$ALT))
+    }
+    use_allele_key <- isTRUE(ld_allele_aware) &&
+      .cj_ok(variant_dt) >= 10 && .cj_ok(subset) >= 10
+    # THE GATE IS `!isTRUE(ld_allele_aware)`, NOT `!use_allele_key`. Gating on
+    # use_allele_key would mean that when ld_allele_aware is ON but the alleles
+    # are unusable, the SNP_ID branch runs anyway -- i.e. it degrades to a
+    # position/id-only join in EXACTLY the case the allele check just declared
+    # unverifiable. That is finding H, applied to the catalog, one line later.
+    # Caught by test_unusable_catalog_alleles_skip_the_restriction_rather_than_degrade,
+    # which observed ld_allele_catalog_join == "snp_id" before this line changed.
+    use_snp_id <- (!isTRUE(ld_allele_aware) &&
+      "SNP_ID" %in% names(variant_dt) && "SNP_ID" %in% names(subset))
+
+    if (use_allele_key) {
+      variant_dt[, CHR := .cj_up(CHR)]
+      variant_dt[, POS := as.integer(POS)]
+      variant_dt[, REF := .cj_up(REF)]
+      variant_dt[, ALT := .cj_up(ALT)]
+      subset[, CHR := .cj_up(CHR)]
+      subset[, POS := as.integer(POS)]
+      subset[, REF := .cj_up(REF)]
+      subset[, ALT := .cj_up(ALT)]
+      variant_dt[, idx := .I]
+      subset <- subset[variant_dt, on = c("CHR", "POS", "REF", "ALT"),
+                       nomatch = 0][order(idx)]
+      subset[, idx := NULL]
+      used_variant_catalog <- nrow(subset) > 0
+      allele_catalog_join <- "allele_key"
+    } else if (isTRUE(ld_allele_aware)) {
+      # ld_allele_aware is ON but one side has fewer than 10 usable REF/ALT
+      # pairs -- collect_region_variants.py:86-88 fills "N" when a trait lacks
+      # alleles, so this is a live shape. Do NOT fall back to the SNP_ID /
+      # CHR:POS branches: that is finding H's defect applied to the catalog.
+      # The catalog is an OPTIONAL RESTRICTION and the panel join now does the
+      # real allele-aware work, so NOT restricting is the conservative
+      # direction. Skip it entirely, loudly.
+      warning(sprintf(paste0("LD_ALLELE_CATALOG_SKIPPED: region=%s ancestry=%s ",
+                             "catalog_usable=%d subset_usable=%d -- the variant ",
+                             "catalog carries no usable REF/ALT, so the catalog ",
+                             "restriction is SKIPPED rather than degraded to a ",
+                             "position-only join"),
+                     opt$region, opt$ancestry, .cj_ok(variant_dt), .cj_ok(subset)),
+              call. = FALSE)
+      used_variant_catalog <- FALSE
+      allele_catalog_join <- "skipped_alleles_unusable"
+    }
     if (use_snp_id) {
       variant_dt[, SNP_ID := as.character(SNP_ID)]
       subset[, SNP_ID := as.character(SNP_ID)]
@@ -775,11 +866,18 @@ if (!is.null(opt$`variant-list`) && opt$`variant-list` != "" && file.exists(opt$
       }
     }
 
+    # 260805-o7o: both legacy branches are VERBATIM 0378ec8 apart from the
+    # `!isTRUE(ld_allele_aware) &&` guard on the CHR/POS one and the regime
+    # record. The guard matters: without it a run that took the allele-key
+    # branch (use_snp_id FALSE) would fall straight into the position-only join
+    # and CLOBBER the allele-keyed subset -- finding H, re-opened one line
+    # later.
     if (use_snp_id) {
       variant_dt[, idx := .I]
       subset <- subset[variant_dt, on = "SNP_ID", nomatch = 0][order(idx)]
       subset[, idx := NULL]
       used_variant_catalog <- nrow(subset) > 0
+      allele_catalog_join <- "snp_id"
       if ("i.CHR" %in% names(subset)) {
         subset[!is.na(`i.CHR`), CHR := as.character(`i.CHR`)]
         subset[, `i.CHR` := NULL]
@@ -788,7 +886,8 @@ if (!is.null(opt$`variant-list`) && opt$`variant-list` != "" && file.exists(opt$
         subset[!is.na(`i.POS`), POS := as.integer(`i.POS`)]
         subset[, `i.POS` := NULL]
       }
-    } else if (all(c("CHR", "POS") %in% names(variant_dt))) {
+    } else if (!isTRUE(ld_allele_aware) &&
+               all(c("CHR", "POS") %in% names(variant_dt))) {
       variant_dt[, CHR := as.character(CHR)]
       variant_dt[, POS := as.integer(POS)]
       variant_dt[, idx := .I]
@@ -797,6 +896,7 @@ if (!is.null(opt$`variant-list`) && opt$`variant-list` != "" && file.exists(opt$
       subset <- subset[variant_dt, nomatch = 0][order(idx)]
       subset[, idx := NULL]
       used_variant_catalog <- nrow(subset) > 0
+      allele_catalog_join <- "chr_pos"
     }
   }
 }
@@ -898,7 +998,7 @@ repeat {
   # ONE LINE, and `ld_file = opt$`ld-file`` stays LAST: the pre-existing
   # tests/m3/test_ld_read_path.py::T2.2 matches the call site with a
   # single-line regex ending in that argument.
-  ld_result <- load_ld_matrix(opt$`ld-dir`, opt$ancestry, opt$region, subset, authoritative = ld_authoritative, ld_file = opt$`ld-file`)
+  ld_result <- load_ld_matrix(opt$`ld-dir`, opt$ancestry, opt$region, subset, authoritative = ld_authoritative, allele_aware = ld_allele_aware, ld_file = opt$`ld-file`)
   ld_overlap <- ld_result$overlap %||% 0
   if (ld_overlap == 0 && used_variant_catalog && attempt == 1) {
     message("No LD overlap after applying variant catalog filter; retrying without catalog restriction.")
@@ -960,11 +1060,43 @@ if (!is.null(ld_result$variants) &&
 }
 
 subset[, z := BETA / SE]
+# 260805-o7o (m3-04c blast-radius FINDING H). THE ORIENTATION FLIP.
+#
+# The panel's LD is signed on ALT (plink --keep-allele-order => .bim A1 == ALT;
+# src/python/plink_ld_to_npz.py:29-35) and the sumstats BETA is signed on ALT
+# (harmonize_sumstats.py:255-262 sets ALT from RISK_ALLELE; harmonize_mvp.py:96-98
+# maps REF->OA, ALT->EA). When the two ALTs are TRANSPOSED, z and R disagree in
+# sign and SuSiE fits a MIRRORED LD structure with NO error and NO flag.
+#
+# Flipping z -- not dropping the variant -- is correct and free: a transposed row
+# is legitimate data whose only defect is bookkeeping, and SuSiE's PIP is
+# invariant to the coding of any single variant.
+#
+# BETA/SE IN `credible_sets` ARE DELIBERATELY NOT FLIPPED. They stay in sumstats
+# effect-allele orientation, so no REPORTED direction of effect moves. Flipping
+# them in the output would silently change a published effect direction.
+#
+# PLACEMENT IS LOAD-BEARING: AFTER the `subset <- subset[ld_result$subset_idx]`
+# shrink above (so indices align) and AFTER `z` exists, but BEFORE the retry
+# ladder below.
+if (isTRUE(ld_allele_aware) && !is.null(ld_result$allele_orient)) {
+  if (length(ld_result$allele_orient) != nrow(subset)) {
+    stop(sprintf(paste0("LD_ALLELE_ORIENT_LENGTH_MISMATCH: orient=%d subset=%d ",
+                        "region=%s ancestry=%s -- the orientation vector is out of ",
+                        "step with the subset shrink; refusing to fit"),
+                 length(ld_result$allele_orient), nrow(subset), opt$region, opt$ancestry),
+         call. = FALSE)
+  }
+  subset[, z := z * ld_result$allele_orient]
+}
 mean_n <- suppressWarnings(mean(as.numeric(subset$N), na.rm = TRUE))
 if (is.nan(mean_n) || is.infinite(mean_n)) {
   mean_n <- NA
 }
 ld_overlap_fraction <- ld_result$coverage %||% 0
+# 260805-o7o (FINDING H): NULL whenever the allele-aware join did not run, which
+# is what makes every counter render as JSON null rather than a misleading 0.
+ld_allele_counts <- ld_result$allele_counts
 if (is.null(ld_result$R)) {
   message(sprintf("No LD matrix found for %s (%s). Falling back to identity.", opt$region, opt$ancestry))
   R <- diag(nrow(subset))
@@ -1051,6 +1183,21 @@ result <- list(
     # allow-list, so the field would be structurally incapable of ever being
     # non-null -- the same vacuous-assertion shape this sweep exists to remove.
     ld_authoritative = ld_authoritative,
+    # 260805-o7o (FINDING H): the join's disposition counters. NA -- NOT 0 --
+    # when allele_aware is FALSE: toJSON(na = "null") below renders NA as JSON
+    # null -> Python None -> an EMPTY TSV cell, so a reader can tell "not
+    # measured" (EUR / TRANS, off the allow-list) from "measured, and the join
+    # was clean" (AFR, all zeros). A field that can only ever hold one value is
+    # not observability -- the same anti-vacuity discipline that kept
+    # ld_reject_reason out of this list above.
+    ld_allele_aware               = ld_allele_aware,
+    ld_allele_exact               = ld_allele_counts$exact %||% NA_integer_,
+    ld_allele_flipped             = ld_allele_counts$flipped %||% NA_integer_,
+    ld_allele_dropped_ambiguous   = ld_allele_counts$dropped_ambiguous %||% NA_integer_,
+    ld_allele_dropped_palindromic = ld_allele_counts$dropped_palindromic %||% NA_integer_,
+    ld_allele_dropped_mismatch    = ld_allele_counts$dropped_mismatch %||% NA_integer_,
+    ld_allele_dropped_unusable    = ld_allele_counts$dropped_unusable %||% NA_integer_,
+    ld_allele_catalog_join        = allele_catalog_join %||% NA_character_,
     ld_status = ld_status,
     ld_overlap = ld_overlap,
     ld_overlap_fraction = ld_overlap_fraction,

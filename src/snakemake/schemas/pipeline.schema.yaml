@@ -397,6 +397,15 @@ properties:
         description: "Ancestries for which the curated->M2 crosswalk is applied and the declared LD panel is authoritative (AFR only; off the list the resolved path and the loader's candidate list are byte-identical to 3f431ab, so Track-A numerics cannot move)"
         items:
           type: string
+      # 260805-o7o (m3-04c blast-radius FINDING H). Same Rule-3 (blocking issue)
+      # rationale as the block itself: the top-level `additionalProperties: false`
+      # rejects any config key it does not declare, so without this entry EVERY
+      # snakemake invocation dies at validate() the moment `allele_aware` exists
+      # in config/pipeline.yaml. No unit test exercises validate() -- only
+      # `snakemake --list` catches it, which is why that is an automated verify.
+      allele_aware:
+        type: boolean
+        description: "Arm the allele-aware sumstats<->panel join (blast-radius finding H) for the allow-listed ancestries. Absent or false => the legacy CHR:POS match() runs, first hit, REF/ALT ignored."
 
   # M3 .npz -> .rds converter sizing (260805-23d Task 5; m3-04c blast radius
   # BLOCKER-D). Consumed by src/snakemake/rules/m3_convert_npz_rds.smk.

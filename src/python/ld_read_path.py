@@ -51,7 +51,12 @@ instantiating a workflow (``tests/m3/test_ld_read_path_ancestry_gate.py``).
 """
 from __future__ import annotations
 
-__all__ = ["ld_read_path_applies", "ld_matrix_region_id", "ld_file_authoritative"]
+__all__ = [
+    "ld_read_path_applies",
+    "ld_matrix_region_id",
+    "ld_file_authoritative",
+    "ld_allele_aware",
+]
 
 #: Ancestries the declared-LD read path applies to when the block lists none.
 #: AFR only: the AoU native-plink panel is the AFR chain head, and it is the one
@@ -115,3 +120,33 @@ def ld_file_authoritative(ancestry, config) -> str:
     does not recognise rather than silently defaulting.
     """
     return "true" if ld_read_path_applies(ancestry, config) else "false"
+
+
+def ld_allele_aware(ancestry, config) -> str:
+    """The literal value rendered into ``--ld-allele-aware``: ``"true"`` or
+    ``"false"``.
+
+    260805-o7o (m3-04c blast radius, **FINDING H**). ``"true"`` ONLY when the
+    ``ld_read_path`` block is enabled, ``ancestry`` is on the SAME allow-list
+    that already contains AFR (and not EUR / TRANS), AND ``allele_aware`` is
+    explicitly truthy. Two independently-flippable levers, deliberately: the
+    allow-list contains the change to an ancestry, and ``allele_aware`` turns
+    finding H's fix off on its own without disturbing 260805-23d's
+    authoritative-declared-panel mandate.
+
+    Every uncertain answer -- block absent, block malformed, ``enabled: false``,
+    ancestry unlisted, ``allele_aware`` sub-key ABSENT, ``allele_aware: false``
+    -- is ``"false"``. The caller-relative fail-safe is CHANGE NOTHING
+    (``[[feedback_failsafe_default_is_caller_relative]]``): this flag decides
+    which LD ROW a z-score is bound to and whether that z is NEGATED, so
+    "unspecified -> assume the new join" would silently move published numbers.
+    The shipped ``config/pipeline.yaml`` carries the key explicitly and
+    ``tests/m3/test_ld_allele_aware_wiring.py`` pins that it does.
+
+    A STRING for the same reason as :func:`ld_file_authoritative`: it is
+    interpolated into ``run_finemap``'s shell and parsed by ``run_susie_rss.R``,
+    which ``stop()``s on any value it does not recognise.
+    """
+    if not ld_read_path_applies(ancestry, config):
+        return "false"
+    return "true" if _ld_read_path_block(config).get("allele_aware") is True else "false"

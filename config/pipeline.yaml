@@ -282,9 +282,34 @@ occlusion_lockstep:
 #
 # THIS IS ALSO THE KILL SWITCH for the authoritative-declared-panel semantics:
 # `enabled: false` or `ancestries: []` restores today's behaviour everywhere.
+#
+# 260805-o7o (m3-04c blast-radius FINDING H): `allele_aware` arms the 4-key
+# (chr:pos:REF:ALT) sumstats<->panel join for the ancestries listed above.
+#
+# WHAT IT ARMS. Without it the join is ALLELE-BLIND: the panel's SNP_ID is
+# chr:pos:REF:ALT while the AFR sumstats carry an rsid or chr:pos, so the SNP_ID
+# branch matches ZERO rows and 100% of every AFR join falls to a CHR:POS
+# match() that takes the FIRST panel row at a position and ignores REF/ALT. With
+# it: multiallelics bind to the row they actually match; a TRANSPOSED row is
+# KEPT with its z NEGATED (both sides code on ALT, so a swap is a bookkeeping
+# defect, not bad data); and every unresolvable row is DROPPED and COUNTED.
+#
+# THE PALINDROMIC CONSEQUENCE, stated rather than buried. A/T and C/G variants
+# are DROPPED, not kept. src/scripts/ld_npz_to_rds.R:348-361 (liftover_one)
+# lifts GRCh38->GRCh37 carrying `ref`/`alt` through VERBATIM -- it does NOT
+# complement them -- so a strand-inverted chain block yields a panel REF/ALT
+# reverse-complemented relative to GRCh37. For a NON-palindromic variant that
+# surfaces as a detectable allele MISMATCH; for a PALINDROMIC one it surfaces as
+# an EXACT match that is silently sign-wrong. Dropping palindromes removes the
+# only invisible failure mode. Deliberately NOT its own config knob.
+#
+# SETTING IT false disables FINDING H's fix ONLY. 260805-23d's
+# authoritative-declared-panel mandate (ld_read_path.ancestries above ->
+# --ld-authoritative) is untouched and still applies.
 ld_read_path:
   enabled: true
   ancestries: [AFR]
+  allele_aware: true
 
 # M3 .npz -> .rds converter sizing (260805-23d Task 5; m3-04c blast-radius
 # BLOCKER-D). Consumed by src/snakemake/rules/m3_convert_npz_rds.smk

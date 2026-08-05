@@ -51,6 +51,8 @@ import shlex
 import subprocess
 from pathlib import Path
 
+import yaml
+
 from ld_panel import resolve_ld_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -60,14 +62,43 @@ FINEMAP_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
 #: it stood before m3-04c Task 1b threaded ``--ld-file`` into the shell.
 BASELINE_REV = "3f431ab"
 
-#: The four tokens the design is allowed to add to ``run_finemap``'s Rscript
+#: The SIX tokens the design is allowed to add to ``run_finemap``'s Rscript
 #: invocation, in this order, and nothing else.
+#:
+#: ⚠ THIS LIST IS A PROXY, NOT THE CONTRACT. The real contract -- stated in
+#: ``test_rendered_argv_delta_vs_3f431ab_is_exactly_four_tokens``'s docstring --
+#: is that the delta stays confined to flags whose EUR/TRANS value is INERT BY
+#: CONSTRUCTION. Being a closed literal, this list trips on any additional
+#: token regardless of whether that token is inert, which is exactly what it
+#: did when 260805-o7o added ``--ld-allele-aware``. WIDENED UNDER AUTH-o7o-01
+#: (Carter, 2026-08-05), which required the widening be paid for by
+#: ``test_params_ld_allele_aware_values`` below -- a DIRECT assertion of the
+#: inertness property for EUR / TRANS / EAS / HIS and every degraded config
+#: shape. The list got longer; the containment got STRICTER.
+#:
+#: Measured at HEAD against the shipped config/pipeline.yaml
+#: ({enabled: true, ancestries: [AFR], allele_aware: true}):
+#:     AFR    allele_aware=true    authoritative=true
+#:     EUR    allele_aware=false   authoritative=false
+#:     TRANS  allele_aware=false   authoritative=false
+#:     EAS    allele_aware=false   authoritative=false
+#:     HIS    allele_aware=false   authoritative=false
+#:
+#: DO NOT append a seventh/eighth token without landing the matching direct
+#: inertness assertion. An entry here that nothing else pins is a widening for
+#: free.
 EXPECTED_ADDED_TOKENS = [
     "--ld-file",
     "{input.ld_matrix}",
     "--ld-authoritative",
     "{params.ld_authoritative}",
+    "--ld-allele-aware",
+    "{params.ld_allele_aware}",
 ]
+
+#: Every ancestry that MUST stay off the declared-LD read path. EUR and TRANS
+#: carry Track A (in submission); EAS and HIS have no AoU panel at all.
+INERT_ANCESTRIES = ("EUR", "TRANS", "EAS", "HIS")
 
 # The curated anchor used throughout. SH2B3_12q24 is Track A's anchor locus and
 # the ONE curated region whose crosswalk target is a split subregion, so a
@@ -449,5 +480,103 @@ def test_params_ld_authoritative_values():
     params = _directive_block(_rule_block(FINEMAP_SMK.read_text(), "run_finemap"), "params")
     assert "ld_file_authoritative(" in params, (
         "params.ld_authoritative must come from ld_read_path.ld_file_authoritative, "
+        f"not be hardcoded; params block was:\n{params}"
+    )
+
+
+# ==========================================================================
+# T1.6 -- the value handed to --ld-allele-aware (260805-o7o, AUTH-o7o-01)
+# ==========================================================================
+def _cfg_aware(ancestries=("AFR",), enabled=True, allele_aware=True) -> dict:
+    """``_cfg`` plus the ``allele_aware`` sub-key. Separate helper so ``_cfg``
+    stays byte-identical for the pre-existing tests that call it."""
+    block = {"enabled": enabled, "ancestries": list(ancestries)}
+    if allele_aware is not None:
+        block["allele_aware"] = allele_aware
+    return {"ld_read_path": block}
+
+
+def test_params_ld_allele_aware_values():
+    """T1.6. ``--ld-allele-aware`` is ``"true"`` for AFR and ``"false"`` for
+    EVERY other ancestry, including every degraded config shape.
+
+    ⚠ THIS TEST IS THE PRICE OF WIDENING ``EXPECTED_ADDED_TOKENS``, and it is
+    why AUTH-o7o-01 authorized that widening. ``EXPECTED_ADDED_TOKENS`` is a
+    PROXY for the real contract -- "the argv delta is confined to flags whose
+    EUR/TRANS value is inert BY CONSTRUCTION"
+    (``test_rendered_argv_delta_vs_3f431ab_is_exactly_four_tokens``, T1.4). As a
+    closed literal it trips on ANY additional token whether or not that token is
+    inert, so lengthening it alone would trade a real guarantee for a stale
+    count. This asserts the inertness DIRECTLY, for a wider ancestry set than
+    T1.5 covers, so the containment ends up STRICTER than before the widening.
+
+    Why these four ancestries: EUR and TRANS carry Track A, which is in
+    submission; EAS and HIS have no AoU panel at all, so a leak there would
+    point a fit at a panel nothing declares.
+
+    NEGATIVE CONTROL (in-test): put EUR on the allow-list and the SAME assertion
+    must render ``"true"``. Without it a ``return "false"`` stub would satisfy
+    every inertness assert above -- the unfalsifiable-proxy failure this arc has
+    now hit three times.
+    """
+    g = _gate()
+    cfg = _cfg_aware()
+
+    # THE ARMED CASE
+    assert g.ld_allele_aware("AFR", cfg) == "true"
+
+    # THE INERT CASES -- the property T1.4's docstring actually names
+    for anc in INERT_ANCESTRIES:
+        assert g.ld_allele_aware(anc, cfg) == "false", (
+            f"--ld-allele-aware renders {g.ld_allele_aware(anc, cfg)!r} for "
+            f"{anc}; it must be 'false' so the allele-aware join is inert BY "
+            f"CONSTRUCTION off the allow-list. EUR/TRANS carry Track A, which "
+            f"is in submission."
+        )
+
+    # ...and against the REAL shipped config, not only a synthetic one, so the
+    # shipped file cannot drift EUR onto the read path unnoticed.
+    shipped = yaml.safe_load((PROJECT_ROOT / "config" / "pipeline.yaml").read_text())
+    assert g.ld_allele_aware("AFR", shipped) == "true"
+    for anc in INERT_ANCESTRIES:
+        assert g.ld_allele_aware(anc, shipped) == "false", (
+            f"the SHIPPED config/pipeline.yaml arms the allele-aware join for "
+            f"{anc}"
+        )
+
+    # every degraded config shape T1.5 enumerates, plus the two new ones
+    assert g.ld_allele_aware("AFR", {}) == "false", (
+        "an absent block must render 'false' -- legacy behaviour everywhere"
+    )
+    assert g.ld_allele_aware("AFR", {"ld_read_path": "not-a-dict"}) == "false", (
+        "a malformed block must render 'false'"
+    )
+    assert g.ld_allele_aware("AFR", _cfg_aware(enabled=False)) == "false"
+    assert g.ld_allele_aware("AFR", _cfg_aware(ancestries=())) == "false"
+    assert g.ld_allele_aware("AFR", _cfg_aware(allele_aware=None)) == "false", (
+        "an ABSENT allele_aware sub-key must render 'false' -- the fail-safe is "
+        "CHANGE NOTHING, and this flag decides which LD row each z binds to"
+    )
+    assert g.ld_allele_aware("AFR", _cfg_aware(allele_aware=False)) == "false"
+
+    # the two levers are INDEPENDENT: disarming the join must not disarm
+    # 260805-23d's authoritative-declared-panel mandate
+    assert g.ld_file_authoritative("AFR", _cfg_aware(allele_aware=False)) == "true"
+
+    # NEGATIVE CONTROL -- the value tracks the allow-list rather than being a
+    # constant. Without this, a `return "false"` stub passes everything above.
+    assert g.ld_allele_aware("EUR", _cfg_aware(ancestries=("AFR", "EUR"))) == "true", (
+        "putting EUR on the allow-list did NOT arm the flag -- every inertness "
+        "assertion above is vacuous"
+    )
+
+    # the rendered shell reads this param, and it is not hardcoded
+    shell = _shell_command_block(FINEMAP_SMK.read_text())
+    assert re.search(r"--ld-allele-aware\s+\{params\.ld_allele_aware\}", shell), (
+        "run_finemap's shell: must pass --ld-allele-aware {params.ld_allele_aware}"
+    )
+    params = _directive_block(_rule_block(FINEMAP_SMK.read_text(), "run_finemap"), "params")
+    assert "ld_allele_aware(" in params, (
+        "params.ld_allele_aware must come from ld_read_path.ld_allele_aware, "
         f"not be hardcoded; params block was:\n{params}"
     )

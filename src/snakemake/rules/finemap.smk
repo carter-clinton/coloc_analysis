@@ -73,6 +73,7 @@ from occlusion_lockstep_cli import (  # noqa: E402 -- same sys.path rationale
 # behaviour character-for-character, which is what keeps Track-A / EUR numerics
 # from moving. Same sys.path rationale as above.
 from ld_read_path import (  # noqa: E402
+    ld_allele_aware,
     ld_file_authoritative,
     ld_matrix_region_id,
 )
@@ -367,6 +368,16 @@ rule run_finemap:
         ld_authoritative=lambda wildcards: ld_file_authoritative(
             wildcards.ancestry, config
         ),
+        # 260805-o7o (m3-04c blast-radius FINDING H): "true" only for the
+        # ancestries in config ld_read_path.ancestries AND only when
+        # ld_read_path.allele_aware is explicitly true. "false" makes
+        # run_susie_rss.R run the legacy CHR:POS match() character-for-character,
+        # so EUR / TRANS cannot move. A string for the same reason as
+        # ld_authoritative: the R script stop()s on anything it does not
+        # recognise rather than silently defaulting.
+        ld_allele_aware=lambda wildcards: ld_allele_aware(
+            wildcards.ancestry, config
+        ),
     shell:
         r"""
         export SUSIE_MAX_VARIANTS={params.susie_max_variants}
@@ -397,6 +408,7 @@ rule run_finemap:
           --ld-dir {params.ld_dir} \
           --ld-file {input.ld_matrix} \
           --ld-authoritative {params.ld_authoritative} \
+          --ld-allele-aware {params.ld_allele_aware} \
           --variant-list {input.variants} \
           --credible-set {params.credible_set} \
           --policy {input.policy} \
@@ -419,7 +431,14 @@ rule run_finemap:
         # EXPECTED to differ from the declared path -- that difference is the
         # EUR/TRANS containment working, not a regression -- so a reader that
         # cannot see the regime would raise a false alarm on every EUR row.
-        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'ld_z_consistency_s', d.get('d3b_ld_z_consistency_s'), 'ld_source_mismatch_flag', d.get('ld_source_mismatch_flag'), 'ld_matrix', d.get('ld_matrix'), 'ld_file_declared', d.get('ld_file_declared'), 'ld_authoritative', d.get('ld_authoritative'), 'variant_catalog_fallback', d.get('variant_catalog_fallback'), 'ld_overlap_zero_fallback', d.get('ld_overlap_zero_fallback'))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
+        #
+        # 260805-o7o (FINDING H): the eight allele-join fields are read HERE for
+        # the same reason -- a write-only counter is not observability, which is
+        # the project rule this file already states above. ld_allele_aware makes
+        # the counters interpretable (null = not measured, i.e. EUR/TRANS;
+        # 0 = measured and clean), and ld_allele_catalog_join records which
+        # variant-catalog regime produced the subset.
+        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'ld_z_consistency_s', d.get('d3b_ld_z_consistency_s'), 'ld_source_mismatch_flag', d.get('ld_source_mismatch_flag'), 'ld_matrix', d.get('ld_matrix'), 'ld_file_declared', d.get('ld_file_declared'), 'ld_authoritative', d.get('ld_authoritative'), 'variant_catalog_fallback', d.get('variant_catalog_fallback'), 'ld_overlap_zero_fallback', d.get('ld_overlap_zero_fallback'), 'ld_allele_aware', d.get('ld_allele_aware'), 'ld_allele_exact', d.get('ld_allele_exact'), 'ld_allele_flipped', d.get('ld_allele_flipped'), 'ld_allele_dropped_palindromic', d.get('ld_allele_dropped_palindromic'), 'ld_allele_dropped_mismatch', d.get('ld_allele_dropped_mismatch'), 'ld_allele_dropped_ambiguous', d.get('ld_allele_dropped_ambiguous'), 'ld_allele_dropped_unusable', d.get('ld_allele_dropped_unusable'), 'ld_allele_catalog_join', d.get('ld_allele_catalog_join'))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
         """
 
 
