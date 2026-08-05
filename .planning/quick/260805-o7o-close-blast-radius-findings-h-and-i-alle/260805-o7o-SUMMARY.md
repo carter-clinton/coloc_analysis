@@ -65,7 +65,7 @@ allow-list, plus a panel-visible `finemap_summary.tsv` — discharging the
 |---|---|---|
 | 1 | `10c14f2` | allele-aware matcher inside `load_ld_matrix`, gated OFF by default (loader half) |
 | 2 | `64f420a` | allow-list gate, argv thread, z flip, allele-keyed catalog join, counted JSON (wiring half) |
-| 3 | *this commit* | panel-visible `finemap_summary.tsv`, full-suite gate, freeze re-pin |
+| 3 | `dc4bbd2` | panel-visible `finemap_summary.tsv`, full-suite gate, freeze re-pin |
 
 ---
 
@@ -394,10 +394,10 @@ rejection** — so it cannot return a `subset_idx` without an orient at all. Ass
 
 ## Freeze re-pin
 
-> **`src/legacy/region_analysis/scripts/run_susie_rss.R` is RE-FROZEN** as of the Task 3
-> commit SHA recorded in the commit trailer below.
+> **`src/legacy/region_analysis/scripts/run_susie_rss.R` is RE-FROZEN** as of **`dc4bbd2`**
+> (the Task 3 commit).
 > The forward gate is
-> `git diff --exit-code <final SHA> -- src/legacy/region_analysis/scripts/run_susie_rss.R`.
+> `git diff --exit-code dc4bbd2 -- src/legacy/region_analysis/scripts/run_susie_rss.R`.
 > **The unfreeze granted by Carter on 2026-08-05 is SPENT.**
 
 The only source files touched since `0378ec8` are this plan's `files_modified` plus
