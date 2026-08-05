@@ -96,3 +96,35 @@ is published — not after.
 
 **Not blocking:** nothing downstream depends on the choice today; the drop key is
 unaffected (present-rate is reporting, never a filter).
+
+---
+
+# Deferred items — discovered during m3-04c Task 2 execution (2026-08-05)
+
+Out of Task 2's scope (its `<action>` enumerates exactly three ROADMAP edits).
+Logged, NOT fixed.
+
+## D-04c-T2-01 — ROADMAP "Live progress 2026-05-21" line still cites the dead `m3_dev_complete.flag` gate
+
+**Found:** applying Task 2 step 7's three ROADMAP edits (lines 200 / 211 / 212).
+
+`.planning/ROADMAP.md:218` still reads:
+
+> **Live progress 2026-05-21:** … m3-04 W4 + m3-05 W5 blocked on
+> `m3_dev_complete.flag` existing.
+
+That gate is one of the nine staleness axes the replanned line 211 now names as
+UNREACHABLE — the dev-10 Hail fire it gated was killed as intractable
+(Wave-2 re-scope) and never produced the flag. The line therefore advertises a
+blocker that can never clear, next to a plan entry that says so.
+
+**Why not fixed here:** Task 2 step 7 enumerates exactly three ROADMAP edits
+(the `**Plans**` count line, the m3-04 entry, the m3-05 entry). Line 218 is a
+phase-status narrative line owned by the STATE/HANDOFF surface, and the executor
+instruction for this task is explicit that handoff-adjacent files are Carter's.
+
+**Cost of leaving it:** documentation only. No rule, test or DAG reads it.
+
+**Suggested fix:** fold it into the m3-05 replan, or into whichever quick task
+next refreshes the M3 phase status block, replacing the flag clause with the
+real gate (Task 3's in-perimeter fire + egress).
