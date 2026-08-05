@@ -55,4 +55,14 @@ dependencies:
   - pandas>=2.2
   - pip
   - pip:
+      # m3-04c Task 1a: NAMED CONSUMERS of this entry, so a future edit cannot
+      # drop it without seeing what breaks --
+      #   src/python/build_ld_region_manifest.py   (GRCh37 -> GRCh38 manifest)
+      #   src/python/build_curated_m2_crosswalk.py (M2 GRCh38 windows -> GRCh37,
+      #     via data/external/liftover/hg38ToHg19.over.chain.gz, the ONLY chain
+      #     the repo ships). The crosswalk decides WHICH LD panel each curated
+      #     Track-A locus reads, so losing pyliftover silently un-builds a config
+      #     artifact the fine-mapping DAG depends on. That module imports it
+      #     LAZILY and raises a named ImportError pointing back here, and its
+      #     finemap.smk-facing loader never touches it at all.
       - pyliftover
