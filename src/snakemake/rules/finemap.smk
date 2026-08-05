@@ -67,9 +67,43 @@ from occlusion_lockstep_cli import (  # noqa: E402 -- same sys.path rationale
     lockstep_variants_path,
 )
 
+# m3-04c Task 1a: the curated -> M2 region crosswalk (Layer A of AoU panel
+# reachability). ``load_curated_to_m2`` is a pure TSV read -- it does NOT import
+# pyliftover (the lift happens once, inside the builder), so this module-scope
+# import cannot make ``snakemake --list`` depend on a liftover toolchain.
+from build_curated_m2_crosswalk import load_curated_to_m2  # noqa: E402 -- same rationale
+
 FINEMAP_DIR = config["finemap"]["output_dir"]
 FINEMAP_METHODS = config["finemap"]["methods"]
 PYTHON_BIN = sys.executable
+
+# m3-04c Task 1a: load the curated -> M2 crosswalk ONCE at module scope.
+# ``REGION_SAFE_TO_ID`` (Snakefile:45-62) is built ONLY from
+# config/regions_curated.csv, whose ``region_id`` column IS the curated slug, so
+# it is essentially the IDENTITY for curated regions and can never yield an M2
+# id. The AFR_aou chain head in config/pipeline.yaml templates on
+# ``{region_id}``, so without this map the resolver asks for
+# ``AFR_aou/FTO_16q12.rds`` -- a filename the producer never writes.
+# Rows with status=unmapped are skipped by the loader, so ``.get(...)`` falls
+# through to today's legacy value character-for-character. A MISSING artifact
+# yields {} rather than an error: the DAG must still build on a fresh clone,
+# before the crosswalk has been generated.
+_CURATED_TO_M2_TSV = Path(
+    config.get("paths", {}).get(
+        "curated_to_m2_map",
+        str(_FINEMAP_BASE / "config" / "curated_to_m2_region_map.tsv"),
+    )
+)
+CURATED_TO_M2 = load_curated_to_m2(_CURATED_TO_M2_TSV)
+if not CURATED_TO_M2:
+    print(
+        "[finemap.smk] WARN: curated->M2 crosswalk not loaded from "
+        f"{_CURATED_TO_M2_TSV}; every curated region falls back to the legacy "
+        "region-safe id (today's behaviour, and the AoU AFR panel stays "
+        "unreachable). Regenerate with "
+        "`python src/python/build_curated_m2_crosswalk.py`.",
+        file=sys.stderr,
+    )
 
 
 def finemap_output(path_method, trait, ancestry, region):
@@ -162,16 +196,45 @@ rule run_finemap:
         #          w.ancestry,
         #          f"{w.region}.rds",
         #      ),
-        # m3-W3-T2 + CR-001 fix (2026-05-01): wildcards.region is the
-        # filesystem-safe slug (e.g., FTO_16q12), but the AoU chain head in
-        # config/pipeline.yaml uses {region_id} (e.g., m2_region_00067).
-        # Translate via REGION_SAFE_TO_ID and pass BOTH placeholders so the
-        # resolver substitutes them independently. Without this, the AoU
-        # panel path (which uses {region_id}) silently falls through to the
-        # 1kg/HGDP/UKBB fallback (which use {region_safe}).
+        # m3-W3-T2 + CR-001 (2026-05-01), CORRECTED by m3-04c Task 1a
+        # (2026-08-05). wildcards.region is the filesystem-safe curated slug
+        # (e.g., FTO_16q12); the AoU chain head in config/pipeline.yaml uses
+        # {region_id} (e.g., m2_region_00067). BOTH placeholders are still
+        # passed so the resolver substitutes them independently -- without
+        # region_safe= the 1kg/HGDP/UKBB tails regress to the same-value
+        # substitution bug CR-001 fixed.
+        #
+        # WHAT CR-001 GOT WRONG: it claimed the safe-slug -> M2-id translation
+        # was performed here. It never was. Snakefile:45-62 builds that map
+        # ONLY from config/regions_curated.csv, whose region_id column IS the
+        # slug, so the map is the identity for curated regions and cannot
+        # emit m2_region_00067. The AoU panel path was therefore UNREACHABLE:
+        # the resolver asked for AFR_aou/FTO_16q12.rds, which the producer
+        # never writes, and fell silently through to the 1kg tail.
+        # config/curated_to_m2_region_map.tsv performs the real translation;
+        # a curated region with no M2 counterpart (BMI_Xq24 is chrX, and M2 is
+        # autosomes-only per D-M2-09) falls back to the legacy value, so its
+        # resolved path string is byte-identical to today's.
+        #
+        # HOW THE CROSSWALK SELECTS -- and why it does NOT read the manifest's
+        # start_grch37/end_grch37: for a SPLIT parent those columns hold the
+        # PARENT's ~89 Mb bounding box copied verbatim into every subregion row
+        # (build_ld_region_manifest.py:585-587,650-653), so all 18 subregions of
+        # m2_region_00040 tie exactly and a lexicographic tie-break returns
+        # __sub00 -- ZERO bp of overlap with SH2B3, ~66 Mb away. Selection is
+        # instead done on the *_grch38 window/core columns LIFTED back to GRCh37
+        # (hg38ToHg19, the only chain the repo ships), ranked on CORE overlap.
+        #
+        # ⚠ DISCLOSED (m3-04c, T-m3-04c-13): SH2B3_12q24 straddles a core
+        # boundary. __sub14's core owns 523,169 bp of the 600,000 bp locus
+        # (87.2%); the remaining 12.8% lives in __sub15's core, so __sub14's
+        # panel covers those variants only through its BUFFER. run_susie_rss.R
+        # gates on REALIZED variant overlap/coverage, not bp, so the region-1
+        # gate must check that explicitly rather than assume the arithmetic
+        # carries over.
         ld_matrix=lambda wildcards: str(
             resolve_ld_path(
-                region_id=REGION_SAFE_TO_ID[wildcards.region],
+                region_id=CURATED_TO_M2.get(wildcards.region, REGION_SAFE_TO_ID[wildcards.region]),
                 ancestry=wildcards.ancestry,
                 config=config,
                 region_safe=wildcards.region,

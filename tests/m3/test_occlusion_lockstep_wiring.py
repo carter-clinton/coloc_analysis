@@ -421,9 +421,16 @@ def test_params_region_id_is_untouched():
 
     It feeds ``run_susie_rss.R --region``, which looks the id up in
     ``config/regions_curated.csv`` — swapping it would break the R script's region
-    lookup. m3-04c DOES change the sibling ``resolve_ld_path(region_id=...)``
-    argument (the panel-reachability crosswalk); this pin is the guard rail that
-    keeps the two edits from being conflated.
+    lookup.
+
+    UPDATED 2026-08-05 (m3-04c Task 1a). m3-04c HAS NOW changed the sibling
+    ``resolve_ld_path(region_id=...)`` argument to route through the curated->M2
+    crosswalk. This pin remains the guard rail that keeps the two edits from being
+    conflated: the two arguments sit ~30 lines apart, they are spelled almost
+    identically, and only ONE of them was ever in scope. The assertion below that
+    used to forbid m3-04c's change is REPLACED by its strictly stronger
+    post-condition (see the inline note); the ``params.region_id`` assertion is
+    unchanged, character-for-character.
 
     Asserted at SOURCE level rather than as a pure-function check: ``params.region_id``
     is a Snakemake rule directive with no importable callable, and instantiating a
@@ -432,17 +439,41 @@ def test_params_region_id_is_untouched():
     """
     src = _FINEMAP_SMK.read_text()
 
+    # SURVIVES VERBATIM. This is the guard rail. Do not weaken, do not delete.
     assert "region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region]," in src, (
         "run_finemap.params.region_id must still translate the safe slug via "
         "REGION_SAFE_TO_ID"
     )
-    assert "region_id=REGION_SAFE_TO_ID[wildcards.region]," in src, (
-        "run_finemap.input.ld_matrix's resolve_ld_path(region_id=...) argument is "
-        "m3-04c's to change, not m3-04b's"
+
+    # REPLACED, NOT RELAXED (m3-04c). The previous assertion pinned the exact
+    # PRE-crosswalk literal that m3-04c is required to replace, so it forbade what
+    # its own docstring documents as m3-04c's job. The replacement pins the STRONGER
+    # post-condition: the resolver argument now routes through the curated->M2
+    # crosswalk, with REGION_SAFE_TO_ID as the documented unmapped-region fallback.
+    # Precedent for replace-don't-relax: 1a9d170, and m3-04b's own
+    # test_production_boundary_documented.
+    assert (
+        "region_id=CURATED_TO_M2.get(wildcards.region, "
+        "REGION_SAFE_TO_ID[wildcards.region])," in src
+    ), (
+        "run_finemap.input.ld_matrix's resolve_ld_path(region_id=...) argument must "
+        "route through the curated->M2 crosswalk, falling back to REGION_SAFE_TO_ID "
+        "for curated regions with no M2 counterpart"
     )
-    assert src.count("REGION_SAFE_TO_ID") == 3, (
-        "REGION_SAFE_TO_ID occurrences in finemap.smk changed (expected 3: the "
-        "explanatory comment, the resolve_ld_path argument, and params.region_id)"
+
+    # RE-DERIVED (m3-04c). The previous assertion was a brittle WHOLE-FILE
+    # src.count("REGION_SAFE_TO_ID") == 3 that any comment rewrite moves. Counted on
+    # CODE lines only and on the SUBSCRIPTED form, so prose cannot break it and a
+    # third code-level use cannot sneak in. VERIFIED: this count is 2 both BEFORE
+    # and AFTER m3-04c's edit, so it is a genuine invariant rather than a number
+    # tuned to make the suite green.
+    code = "\n".join(
+        ln for ln in src.splitlines() if not ln.lstrip().startswith("#")
+    )
+    assert code.count("REGION_SAFE_TO_ID[wildcards.region]") == 2, (
+        "expected exactly 2 CODE uses of REGION_SAFE_TO_ID[wildcards.region]: the "
+        "crosswalk's unmapped-region fallback inside resolve_ld_path(region_id=...), "
+        "and params.region_id"
     )
 
 

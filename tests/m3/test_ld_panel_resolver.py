@@ -332,6 +332,40 @@ def test_resolver_distinct_region_id_and_region_safe_1kg_fallback(tmp_path):
     )
 
 
+def _resolve_ld_path_call_args(text):
+    """Return the balanced-paren argument blocks of every real
+    ``resolve_ld_path(...)`` CALL in *text*.
+
+    The module docstring mentions ``resolve_ld_path()`` with EMPTY parens twice, so
+    a plain regex scan starts there and can match a ``region_id=`` belonging to a
+    different directive entirely (params.region_id). Walking balanced parens and
+    keeping only NON-EMPTY blocks isolates the one true call site, and tolerates
+    the nested parens the m3-04c crosswalk introduces.
+    """
+    blocks = []
+    for m in re.finditer(r"resolve_ld_path\s*\(", text):
+        i = m.end() - 1
+        depth = 0
+        for j in range(i, len(text)):
+            if text[j] == "(":
+                depth += 1
+            elif text[j] == ")":
+                depth -= 1
+                if depth == 0:
+                    inner = text[i + 1:j]
+                    if inner.strip():
+                        blocks.append(inner)
+                    break
+    return blocks
+
+
+def _finemap_smk_text():
+    project_root = Path(__file__).resolve().parents[2]
+    smk_path = project_root / "src" / "snakemake" / "rules" / "finemap.smk"
+    assert smk_path.exists(), f"finemap.smk not at {smk_path}"
+    return smk_path.read_text()
+
+
 def test_finemap_smk_calls_resolver_with_both_kwargs():
     """Static contract: finemap.smk must pass region_id= AND region_safe=.
 
@@ -341,30 +375,112 @@ def test_finemap_smk_calls_resolver_with_both_kwargs():
     silently re-introduce the same-value substitution bug per the
     back-compat default in resolve_ld_path) is caught here, before any
     pipeline run.
+
+    REWRITTEN 2026-08-05 (m3-04c Task 1a). The previous assertions used
+    ``resolve_ld_path\\s*\\([^)]*<kw>\\s*=``. That worked only while the argument
+    list contained NO nested parentheses; m3-04c's crosswalk introduces
+    ``CURATED_TO_M2.get(...)``, whose ``)`` the ``[^)]*`` class cannot cross, so
+    the ``region_safe`` assertion broke (True at HEAD, False post-crosswalk).
+
+    ⚠ THE OBVIOUS FIX IS WRONG. The old comment suggested broadening to a
+    non-greedy ``[\\s\\S]*?``. Broadening ALONE makes the ``region_id`` assertion
+    VACUOUS: ``finemap.smk``'s module docstring mentions ``resolve_ld_path()``
+    twice, so a non-greedy scan begins in the docstring — not at the real call
+    site — and runs to the nearest subsequent ``region_id\\s*=`` anywhere in the
+    file, which includes ``params.region_id`` ~30 lines below. Proved by
+    sabotage: with BOTH kwargs stripped from the real call site, the broadened
+    ``region_id`` pattern still returns True. The "explicit closing-paren
+    anchoring" half of the old comment was the load-bearing half.
+
+    So the assertions are anchored to a BALANCED-PAREN extraction of the real
+    call site instead. ``test_kwarg_assertion_is_not_vacuous`` below makes "this
+    check can still fail" a CI-enforced property rather than a claim.
     """
-    project_root = Path(__file__).resolve().parents[2]
-    smk_path = project_root / "src" / "snakemake" / "rules" / "finemap.smk"
-    assert smk_path.exists(), f"finemap.smk not at {smk_path}"
-    text = smk_path.read_text()
+    text = _finemap_smk_text()
 
     # Sanity: the resolver is referenced.
     assert re.search(r"resolve_ld_path\s*\(", text), (
         "finemap.smk no longer calls resolve_ld_path()"
     )
 
-    # Both kwargs must appear in the resolve_ld_path(...) call. We use
-    # `[^)]*` because the call's argument list contains no nested parens
-    # in the current production code; if that ever changes, broaden to
-    # a non-greedy `[\s\S]*?` with explicit closing-paren anchoring.
-    assert re.search(
-        r"resolve_ld_path\s*\([^)]*region_id\s*=", text, re.DOTALL
-    ), "finemap.smk's resolve_ld_path call is missing region_id= kwarg"
+    blocks = _resolve_ld_path_call_args(text)
+    assert len(blocks) == 1, (
+        f"expected exactly ONE resolve_ld_path(...) call site in finemap.smk, "
+        f"found {len(blocks)}"
+    )
+    args = blocks[0]
 
-    assert re.search(
-        r"resolve_ld_path\s*\([^)]*region_safe\s*=", text, re.DOTALL
-    ), (
-        "finemap.smk's resolve_ld_path call is missing region_safe= "
-        "kwarg — CR-001 regression risk: without region_safe=, the "
-        "resolver's back-compat default re-introduces the same-value "
-        "substitution bug for the 1kg/HGDP/UKBB tails of the chain."
+    assert re.search(r"\bregion_id\s*=", args), (
+        "finemap.smk's resolve_ld_path call is missing the region_id= kwarg"
+    )
+    assert re.search(r"\bregion_safe\s*=", args), (
+        "finemap.smk's resolve_ld_path call is missing region_safe= kwarg — CR-001 "
+        "regression risk: without it the resolver's back-compat default re-introduces "
+        "the same-value substitution bug for the 1kg/HGDP/UKBB tails of the chain."
+    )
+
+
+def test_kwarg_assertion_is_not_vacuous():
+    """NEGATIVE CONTROL for ``test_finemap_smk_calls_resolver_with_both_kwargs``.
+
+    ⛔ Do not ship a pattern whose only evidence is that it returns True. A
+    broadened regex would have satisfied the sibling test on a call site with
+    BOTH kwargs deleted, because it would have matched the module docstring's
+    ``resolve_ld_path()`` mention and then found ``params.region_id``.
+
+    Sabotages the REAL call site in memory (leaving the docstring mentions and
+    ``params.region_id`` intact) and asserts the extraction genuinely stops
+    matching. Validated during planning on four inputs::
+
+        input                        n_blocks  region_id  region_safe
+        HEAD                            1        True       True
+        post-crosswalk                  1        True       True
+        sabotaged (both stripped)       1        False      False
+        sabotaged (region_safe only)    1        True       False
+    """
+    text = _finemap_smk_text()
+
+    # The real call site's two kwarg NAMES, as they appear inside the
+    # resolve_ld_path(...) argument block only.
+    blocks = _resolve_ld_path_call_args(text)
+    assert len(blocks) == 1, "precondition: exactly one real call site"
+    original_args = blocks[0]
+    assert "region_id=" in original_args and "region_safe=" in original_args
+
+    def _sabotage(drop_region_id: bool) -> str:
+        sabotaged_args = original_args.replace("region_safe=", "")
+        if drop_region_id:
+            sabotaged_args = sabotaged_args.replace("region_id=", "")
+        # Replace ONLY the call-site block, so the docstring mentions of
+        # ``resolve_ld_path()`` and ``params.region_id`` survive untouched.
+        return text.replace(original_args, sabotaged_args, 1)
+
+    # Variant 1: BOTH kwargs stripped from the real call site.
+    both_stripped = _sabotage(drop_region_id=True)
+    assert "resolve_ld_path()" in both_stripped, (
+        "the docstring mentions must survive the sabotage, or the control is not "
+        "reproducing the trap it exists to guard"
+    )
+    assert "region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region]," in both_stripped, (
+        "params.region_id must survive the sabotage -- it is the decoy the broadened "
+        "regex would have matched"
+    )
+    sab_blocks = _resolve_ld_path_call_args(both_stripped)
+    assert len(sab_blocks) == 1
+    assert not re.search(r"\bregion_id\s*=", sab_blocks[0]), (
+        "VACUOUS ASSERTION: the region_id= check still passes on a call site that "
+        "has no region_id= kwarg"
+    )
+    assert not re.search(r"\bregion_safe\s*=", sab_blocks[0]), (
+        "VACUOUS ASSERTION: the region_safe= check still passes on a call site that "
+        "has no region_safe= kwarg"
+    )
+
+    # Variant 2: only region_safe= stripped. region_id= must still be found.
+    safe_only = _sabotage(drop_region_id=False)
+    safe_blocks = _resolve_ld_path_call_args(safe_only)
+    assert len(safe_blocks) == 1
+    assert re.search(r"\bregion_id\s*=", safe_blocks[0])
+    assert not re.search(r"\bregion_safe\s*=", safe_blocks[0]), (
+        "VACUOUS ASSERTION: the region_safe= check does not detect its own removal"
     )
