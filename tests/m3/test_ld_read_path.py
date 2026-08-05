@@ -100,6 +100,20 @@ def _directive_block(rule_text: str, directive: str) -> str:
     return "\n".join(lines[start:end])
 
 
+def _shell_command_block(smk_text: str, rule_name: str = "run_finemap") -> str:
+    """The rule's ``shell:`` body with ``#`` COMMENT LINES REMOVED.
+
+    Deliberately stricter than the raw directive text: prose describing
+    ``--ld-file`` must not be able to satisfy an assertion about the command
+    that is actually executed. BLOCKER-1 was precisely a case where the
+    documentation was right and the invocation was not.
+    """
+    block = _directive_block(_rule_block(smk_text, rule_name), "shell")
+    return "\n".join(
+        line for line in block.splitlines() if not line.lstrip().startswith("#")
+    )
+
+
 def _brace_block(text: str, anchor: str) -> str:
     """Return ``anchor`` plus its balanced ``{...}`` body (R source)."""
     idx = text.find(anchor)
@@ -243,7 +257,7 @@ def test_run_finemap_shell_passes_the_declared_ld_matrix():
     exactly ``{input.ld_matrix}`` -- not ``{params.ld_dir}``, not a rebuilt
     string. Anything else re-opens the declare-vs-read split.
     """
-    shell_block = _directive_block(_rule_block(FINEMAP_SMK.read_text(), "run_finemap"), "shell")
+    shell_block = _shell_command_block(FINEMAP_SMK.read_text())
     assert re.search(r"--ld-file\s+\{input\.ld_matrix\}", shell_block), (
         "run_finemap's shell: must pass the DECLARED LD artifact as "
         "--ld-file {input.ld_matrix}; a declared input absent from shell: is a "
@@ -454,7 +468,7 @@ def test_path2_ld_overlap_zero_fallback_is_observable_and_read():
     )
 
     # ...and something actually READS them (write-only flags are not observability)
-    smk_shell = _directive_block(_rule_block(FINEMAP_SMK.read_text(), "run_finemap"), "shell")
+    smk_shell = _shell_command_block(FINEMAP_SMK.read_text())
     assert "ld_overlap_zero_fallback" in smk_shell, (
         "the per-region estimate_s log must READ ld_overlap_zero_fallback; a "
         "flag nothing consumes is not observability"
@@ -479,7 +493,7 @@ def test_declared_and_opened_paths_are_both_recorded_in_the_output_json():
         "beside ld_matrix (the OPENED path)"
     )
     # the log one-liner surfaces the pair per region
-    smk_shell = _directive_block(_rule_block(FINEMAP_SMK.read_text(), "run_finemap"), "shell")
+    smk_shell = _shell_command_block(FINEMAP_SMK.read_text())
     assert "ld_file_declared" in smk_shell and "'ld_matrix'" in smk_shell, (
         "the estimate_s log must print BOTH ld_matrix and ld_file_declared so "
         "each region's log is a resolved==opened receipt"

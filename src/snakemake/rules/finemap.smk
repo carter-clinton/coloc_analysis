@@ -281,6 +281,14 @@ rule run_finemap:
     shell:
         r"""
         export SUSIE_MAX_VARIANTS={params.susie_max_variants}
+        # m3-04c Task 1b (DEC-2026-08-05-m3-ld-read-path): --ld-file passes the
+        # DECLARED input.ld_matrix -- i.e. resolve_ld_path's answer -- straight
+        # into the R script, which tries it FIRST. Its ABSENCE was BLOCKER-1:
+        # the input was declared to the DAG but never handed to the consumer, so
+        # run_susie_rss.R rebuilt ld_dir/ancestry/region_id.rds, could never
+        # reach AFR_aou/, and fell silently to an identity matrix. --ld-dir
+        # stays as the back-compat fallback. DO NOT remove --ld-file without
+        # re-opening the declare-vs-read split.
         Rscript src/legacy/region_analysis/scripts/run_susie_rss.R \
           --sumstats {input.sumstats} \
           --trait {wildcards.trait} \
@@ -289,6 +297,7 @@ rule run_finemap:
           --region {params.region_id} \
           --regions-csv {params.regions_csv} \
           --ld-dir {params.ld_dir} \
+          --ld-file {input.ld_matrix} \
           --variant-list {input.variants} \
           --credible-set {params.credible_set} \
           --policy {input.policy} \
@@ -296,7 +305,16 @@ rule run_finemap:
         # m3-02e Move 3: surface the per-region estimate_s z-vs-LD consistency
         # scalar (Zou 2022) to a log artifact. No f-string braces here -- only
         # Snakemake's intended {{}} placeholders -- so the rule shell stays valid.
-        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'ld_z_consistency_s', d.get('d3b_ld_z_consistency_s'), 'ld_source_mismatch_flag', d.get('ld_source_mismatch_flag'))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
+        #
+        # m3-04c Task 1b: this one-liner is also the per-region RECEIPT for
+        # `resolved == what-the-script-opens` -- ld_matrix is the path opened,
+        # ld_file_declared is the path resolved and declared; a mismatch (or an
+        # 'identity' ld_matrix) means the read path regressed. It ALSO reads the
+        # two Path-1/Path-2 revert flags (HIGH-2): variant_catalog_fallback is
+        # set by BOTH reverts, ld_overlap_zero_fallback only by the
+        # ld_overlap==0 one, so the pair distinguishes them. Write-only flags
+        # are not observability, which is why they are consumed here.
+        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'ld_z_consistency_s', d.get('d3b_ld_z_consistency_s'), 'ld_source_mismatch_flag', d.get('ld_source_mismatch_flag'), 'ld_matrix', d.get('ld_matrix'), 'ld_file_declared', d.get('ld_file_declared'), 'variant_catalog_fallback', d.get('variant_catalog_fallback'), 'ld_overlap_zero_fallback', d.get('ld_overlap_zero_fallback'))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
         """
 
 

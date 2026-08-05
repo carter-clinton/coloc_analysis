@@ -70,8 +70,31 @@ safe_region_id <- function(region_id) {
   gsub("[^A-Za-z0-9_]", "_", region_id)
 }
 
-load_ld_matrix <- function(ld_dir, ancestry, region_id, subset) {
-  if (is.null(ld_dir) || ld_dir == "" || !file.exists(ld_dir)) {
+# m3-04c Task 1b (DEC-2026-08-05-m3-ld-read-path): `ld_file` is the LD .rds that
+# Snakemake DECLARED as run_finemap's `input.ld_matrix`, i.e. whatever
+# src/python/ld_panel.py::resolve_ld_path selected. It is AUTHORITATIVE when
+# readable; the `ld_dir` reconstruction below survives strictly as the
+# back-compat fallback for callers that pass no --ld-file.
+#
+# WHY: before this, the declared input was never passed to this script, so a
+# declared `input:` absent from the rule's `shell:` was a DAG DECLARATION ONLY
+# (BLOCKER-1). This function rebuilt its own path as
+# file.path(ld_dir, ancestry, region_id + ".rds") -- where `ancestry` is "AFR"
+# and never "AFR_aou" -- so the AoU panel was UNREACHABLE and every AFR fit fell
+# silently through to the identity matrix below. `ld_file` is placed FIRST in
+# the candidate list so resolve_ld_path is the single source of truth.
+#
+# `ld_file` is the LAST formal and defaults to NULL, so every existing
+# positional caller is unaffected.
+load_ld_matrix <- function(ld_dir, ancestry, region_id, subset, ld_file = NULL) {
+  # THE TRAP (m3-04c Task 1b): the pre-change guard tested ld_dir ALONE, so a
+  # naive --ld-file addition would still bail here whenever ld_dir was absent --
+  # i.e. it would do nothing in exactly the case it exists for. Bail only when
+  # NEITHER source is usable. The status string stays byte-identical for the
+  # both-absent case so nothing downstream moves.
+  have_ld_file <- !is.null(ld_file) && nzchar(ld_file) && file.exists(ld_file)
+  have_ld_dir  <- !is.null(ld_dir) && ld_dir != "" && file.exists(ld_dir)
+  if (!have_ld_file && !have_ld_dir) {
     return(list(R = NULL, source = NULL, status = "ld_dir_missing"))
   }
 
@@ -121,9 +144,18 @@ load_ld_matrix <- function(ld_dir, ancestry, region_id, subset) {
   }
 
   safe_id <- safe_region_id(region_id)
-  candidates <- unique(c(
+  # Build the ld_dir reconstruction ONLY when ld_dir is usable: R's
+  # file.path(NULL, "AFR", "x.rds") returns character(0) and
+  # file.path("", "AFR", "x.rds") returns an absolute "/AFR/x.rds" -- both wrong.
+  dir_candidates <- if (have_ld_dir) unique(c(
     file.path(ld_dir, ancestry, paste0(region_id, ".rds")),
     file.path(ld_dir, ancestry, paste0(safe_id, ".rds"))
+  )) else character(0)
+  # The DECLARED file goes FIRST: that is what makes resolve_ld_path the single
+  # source of truth for which LD matrix a fit reads (m3-04c Task 1b).
+  candidates <- unique(c(
+    if (have_ld_file) ld_file else character(0),
+    dir_candidates
   ))
 
   n_subset <- nrow(subset)
@@ -239,6 +271,15 @@ option_list <- list(
   make_option("--region", type = "character", help = "Region ID"),
   make_option("--regions-csv", type = "character", help = "CSV defining regions"),
   make_option("--ld-dir", type = "character", help = "Directory containing ancestry-specific LD (optional)"),
+  # m3-04c Task 1b (DEC-2026-08-05-m3-ld-read-path): the resolved LD .rds that
+  # Snakemake declared as run_finemap's input.ld_matrix (i.e. resolve_ld_path's
+  # answer). AUTHORITATIVE when readable -- it is tried FIRST -- and the
+  # --ld-dir reconstruction is the back-compat fallback for callers that omit
+  # it. Without this the declared input was a DAG declaration only and the
+  # AFR_aou panel was unreachable (BLOCKER-1).
+  make_option("--ld-file", type = "character", default = NULL,
+              help = paste("Resolved LD .rds declared by Snakemake as input.ld_matrix.",
+                           "Authoritative when readable; --ld-dir is the fallback.")),
   make_option("--variant-list", type = "character", help = "Optional TSV restricting variants (CHR,POS,REF,ALT)"),
   make_option("--credible-set", type = "double", default = 0.95, help = "Credible set probability"),
   make_option("--policy", type = "character", default = "config/susie_policy.yaml",
@@ -296,6 +337,7 @@ ancestry_upper <- toupper(opt$ancestry)
 used_variant_catalog <- FALSE
 variant_catalog_attempted <- FALSE
 variant_catalog_fallback <- FALSE
+ld_overlap_zero_fallback <- FALSE  # m3-04c HIGH-2: set only by the Path-2 (ld_overlap==0) revert
 
 if (!is.null(opt$`variant-list`) && opt$`variant-list` != "" && file.exists(opt$`variant-list`)) {
   variant_dt <- tryCatch(fread(opt$`variant-list`), error = function(e) NULL)
@@ -418,12 +460,24 @@ if (nrow(subset) > SUSIE_MAX_VARIANTS) {
 
 attempt <- 1
 repeat {
-  ld_result <- load_ld_matrix(opt$`ld-dir`, opt$ancestry, opt$region, subset)
+  # m3-04c Task 1b: --ld-file (the artifact Snakemake DECLARED, via
+  # resolve_ld_path) is threaded through and wins over the --ld-dir
+  # reconstruction. opt$`ld-dir` at :368/:400/the result list stays as-is: it is
+  # provenance, not the read path.
+  ld_result <- load_ld_matrix(opt$`ld-dir`, opt$ancestry, opt$region, subset, ld_file = opt$`ld-file`)
   ld_overlap <- ld_result$overlap %||% 0
   if (ld_overlap == 0 && used_variant_catalog && attempt == 1) {
     message("No LD overlap after applying variant catalog filter; retrying without catalog restriction.")
     subset <- copy(subset_base)
     used_variant_catalog <- FALSE
+    # m3-04c Task 1b / HIGH-2: this revert used to leave NO distinguishing
+    # signal -- used_variant_catalog went FALSE exactly as it does on the Path-1
+    # (AFR empty-filtered-subset) revert, and variant_catalog_fallback was never
+    # set. Both flags are now recorded and both are read by the per-region
+    # estimate_s log. Science behaviour is UNCHANGED: still one retry against
+    # subset_base. Only observability changes.
+    variant_catalog_fallback <- TRUE
+    ld_overlap_zero_fallback <- TRUE
     attempt <- attempt + 1
     next
   }
@@ -536,6 +590,13 @@ result <- list(
     sumstats = opt$sumstats,
     ld_dir = opt$`ld-dir`,
     ld_matrix = ld_source,
+    # m3-04c Task 1b: DECLARED beside OPENED. ld_matrix is the path this script
+    # actually opened; ld_file_declared is the path Snakemake resolved and
+    # passed. Their equality is the per-region receipt for
+    # `resolved == what-the-script-opens` AFTER the fire (plan verification 11).
+    # Additive JSON keys are safe: summarize_finemap_results.py reads with
+    # .get() against a fixed FIELDNAMES list.
+    ld_file_declared = opt$`ld-file`,
     ld_status = ld_status,
     ld_overlap = ld_overlap,
     ld_overlap_fraction = ld_overlap_fraction,
@@ -544,6 +605,7 @@ result <- list(
     variant_catalog_attempted = variant_catalog_attempted,
     variant_catalog_used = used_variant_catalog,
     variant_catalog_fallback = variant_catalog_fallback,
+    ld_overlap_zero_fallback = ld_overlap_zero_fallback,
     credible_sets = credible_sets,
     pip = fit$pip[fit$pip > 0]
 )
