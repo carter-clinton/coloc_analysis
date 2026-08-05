@@ -88,6 +88,51 @@ PYTHON_BIN = sys.executable
 # through to today's legacy value character-for-character. A MISSING artifact
 # yields {} rather than an error: the DAG must still build on a fresh clone,
 # before the crosswalk has been generated.
+#
+# ⚠ DISCLOSED ANALYSIS CHANGE (m3-04c Task 1c) -- READ BEFORE THE FIRST FIRE.
+#
+# This crosswalk is what makes the AoU AFR panel REACHABLE at all. Reachability
+# is not a plumbing detail: it moves published numbers. Recorded here rather
+# than absorbed silently.
+#
+#   THE CHANGE. The FIRST curated AFR region for which an AFR_aou/<m2_id>.rds
+#   actually exists switches its LD source from AFR_1kg
+#   (data/processed/ld_reference/AFR/<region_safe>.rds -- 1000G AFR, n=661) to
+#   the AoU AFR panel, and that region's fine-mapping numerics WILL change:
+#   PIPs, credible-set membership, credible-set size, and the estimate_s
+#   z-vs-LD consistency scalar. Until such an .rds exists, every AFR region
+#   still falls through to the same tail it uses today, so this crosswalk moves
+#   nothing on its own.
+#
+#   IT IS INTENDED, AND IT IS STILL DISCLOSABLE. The n=661 1000G AFR reference
+#   IS the miscalibration M3 exists to correct, so the switch is the whole point
+#   of this phase -- not a regression. But it means any AFR figure/table
+#   regenerated after the first AFR_aou artifact lands is NOT comparable to the
+#   same figure/table produced before it. State the switch in the
+#   manuscript/OSF record; do not let a reader discover it by diffing versions.
+#
+#   THE HOLD SWITCH IS `config/pipeline.yaml ld_panel.pin.AFR`. Set it to a
+#   source name (e.g. "AFR_1kg") to pin the AFR chain to that entry ONLY, which
+#   holds a fit at a known panel while the change is being disclosed or while a
+#   before/after comparison is produced. It is null by default -- the default is
+#   the chain, and the chain now reaches AFR_aou. (`strict_aou_only: true` is
+#   the opposite lever: fail loudly instead of falling back.)
+#
+# ⚠ SH2B3 CORE-STRADDLE CAVEAT (T-m3-04c-13). SH2B3_12q24 -- the ANCHOR locus --
+#   is the only curated region mapping to a SPLIT parent, and it maps to
+#   m2_region_00040__sub14. That subregion's CORE owns 523,169 bp of the
+#   600,000 bp locus (87.2%); the remaining 12.8% sits inside __sub15's core and
+#   is covered by __sub14's panel only through its BUFFER -- the region where a
+#   stitched parent's core-ownership de-dup would have assigned those variants
+#   to __sub15 instead. Both windows fully CONTAIN the locus, so containment
+#   cannot decide; maximum core overlap selects __sub14 and the independent
+#   window-edge-distance criterion agrees. NEITHER core fully contains SH2B3.
+#   The bp arithmetic is NOT the acceptance test: run_susie_rss.R gates on
+#   REALIZED variant overlap/coverage. The region-1 gate (m3-04c Task 3 STEP A)
+#   is where that realized overlap/coverage is measured for SH2B3 explicitly,
+#   off the newly-logged declared-LD value. Do not assume 87.2% of the bp
+#   carries over to the variant axis.
+#
 _CURATED_TO_M2_TSV = Path(
     config.get("paths", {}).get(
         "curated_to_m2_map",
