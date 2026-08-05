@@ -1010,3 +1010,26 @@ Once cache-staleness is refuted, the rigor-correct disposition (per `feedback_ri
 - Provenance sidecars record the RESOLVED (discovered, prefixed) aux paths, so the exact files used are captured per fire.
 - Adjudicated adversarial-review dispositions (2 rounds) recorded in `.planning/quick/260601-cca-env-derive-aux-base-close-check-c/SUMMARY.md`.
 - Reopen only if a future CDR fails to expose WGS/AUX at AOU-0 (same trigger as the prior keep-pin lock).
+
+## 2026-08-05 — DEC-2026-08-05-m3-ld-read-path: BLOCKER-1 remedy locked at threading `{input.ld_matrix}` into `run_susie_rss.R` behind a new `--ld-file`
+
+**Decision:** Fix the AFR_aou LD-panel unreachability by **passing `{input.ld_matrix}` into `run_susie_rss.R` through a new `--ld-file` argument**, making `resolve_ld_path` the single source of truth for which LD matrix a fit reads. The `--ld-dir`-based reconstruction stays as a fallback so no existing caller breaks. Carter's call, taken at a `/gsd-resume-work` on 2026-08-04/05; the two alternatives were rejected (below). **This is the gate on the ~11-day / $385–1,084 AoU fire** and the premise m3-04c must be REPLANNED around — the existing m3-04c plan's Task 1 cannot deliver its headline `must_have` as written.
+
+**Context (re-verified firsthand this session, not inherited from the handoff):**
+- `run_finemap`'s `shell:` block passes only `--ld-dir {params.ld_dir}` and `--region {params.region_id}`. It **never passes `{input.ld_matrix}`** — that input is a **DAG declaration only**. Repo-wide, the sole `shell:` block consuming that variable is `qtl_coloc.smk:316`, a different rule.
+- `run_susie_rss.R:125-127` **rebuilds its own path** as `file.path(ld_dir, ancestry, paste0(region_id, ".rds"))`, where `ancestry` is `AFR` and never `AFR_aou`; no rule anywhere promotes `AFR_aou/*.rds` into `AFR/`. On a miss it falls **silently to an identity matrix** (`:472-474`).
+- ⇒ The m3-04c curated→M2 crosswalk is **NECESSARY BUT NOT SUFFICIENT**. Proven by simulating the post-fire world: with the panel present, `resolve_ld_path` returns `…/AFR_aou/m2_region_00067.rds` (exists) while SuSiE opens `…/AFR/FTO_16q12.rds` (absent). The 2026-08-03 diagnosis was right but **one layer too shallow** — it verified three ways, all at the declaration layer.
+- ⚠ `run_finemap.params.region_id` is now at **`finemap.smk:206`**, not the `:158` the m3-04c plan and older docs cite. m3-04b inserted +48 lines above `params:`, so **every `finemap.smk` line number in the m3-04c plan is stale** and its do-not-touch guard now points at the block the executor must edit. Re-anchor to `2bda675`.
+
+**Alternatives considered:**
+- **A promote/symlink rule** materializing `AFR_aou/*.rds` into the `AFR/` directory the R script already reads (rejected — leaves the declare-vs-read split alive, mixes two provenances inside one directory, and adds a materialization step that can go stale silently; it papers over the defect instead of removing it).
+- **A per-ancestry `ld_dir`** so `params.ld_dir` already points at `AFR_aou` for AFR fits (rejected — smallest diff and no R edit, but the resolver and the dir logic would then encode the same `AFR → AFR_aou` mapping in two places, worsening the existing duplicated-path-defaults problem the blast radius logged as MEDIUM-4).
+
+**Why:** The chosen remedy kills the declare-vs-read split **permanently** rather than routing around it, and makes the artifact Snakemake declares provably identical to the artifact the script opens. Both alternatives leave a second, independent place where the mapping can drift — the precise failure mode that produced this blocker. It does touch a frozen-adjacent R script, which is why it required Carter's authorization rather than an agent's judgment. Consistent with [[feedback_declared_input_is_not_the_read_path]] and [[feedback_rigor_over_speed]].
+
+**How to apply:**
+- **Do NOT fire the loop until this lands.** Otherwise the ~$385–1,084 buys a panel that the fine-mapping DAG silently ignores — the exact outcome the m3-04 replan existed to prevent.
+- **REPLAN m3-04c around this decision**: re-anchor every `finemap.smk` line number to `2bda675`; fold the BLOCKER-2 test rewrite in as an **explicit reviewed task** (`test_occlusion_lockstep_wiring.py:410` asserts the exact string m3-04c must replace, and the real `params.region_id` pin sits immediately above it at `:406` — so "just make tests/m3 pass" baits an executor at the one line that must never change); strike the `snakemake --dry-run --quiet` acceptance criterion as unsatisfiable pre-fire, citing D-04b-03.
+- **Only the `resolve_ld_path(region_id=)` argument may change.** `run_finemap.params.region_id` stays untouched.
+- Acceptance test for the remedy: prove `resolved == what-the-script-opens` — grep the rule's `shell:` for `{input.ld_matrix}`, then assert the R script opens that exact path. A green DAG is not evidence.
+- Cross-refs: `.planning/phases/m3-aou-afr-ld-panel-build/m3-04b-BLAST-RADIUS.md` §4 (recommended sequence) and §3 (gate binding).
