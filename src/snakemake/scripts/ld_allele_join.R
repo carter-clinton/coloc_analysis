@@ -30,11 +30,14 @@
 #
 # (b) THE FROZEN-FILE REASON IT IS NOT AN EXTRACTION.
 # --------------------------------------------------------------------------
-# `run_susie_rss.R` is RE-FROZEN at `dc4bbd2` and the unfreeze granted
-# 2026-08-05 is SPENT. A pure-move extraction is still a frozen-file edit, and
-# would need its own `identical()`-on-the-whole-`load_ld_matrix`-result proof at
-# `allele_aware` TRUE **and** FALSE. That is a reviewed task of its own, not a
-# rider on this one.
+# `run_susie_rss.R` is RE-FROZEN at `bf04199` (re-pinned 2026-08-06 by
+# `quick-260806-pd3` for blast-radius finding K-1; `AUTH-K1-UNFREEZE` is SPENT,
+# as is the unfreeze granted 2026-08-05). A pure-move extraction is still a
+# frozen-file edit, and would need its own
+# `identical()`-on-the-whole-`load_ld_matrix`-result proof at `allele_aware`
+# TRUE **and** FALSE. That is a reviewed task of its own, not a rider on this
+# one -- and see (d): it was EVALUATED against an OPEN window and still
+# DEFERRED.
 #
 # (c) AGREEMENT IS MACHINE-CHECKED, NOT PROMISED.
 # --------------------------------------------------------------------------
@@ -49,17 +52,57 @@
 # therefore a test failure on every suite run rather than a discipline anyone
 # has to maintain.
 #
-# (d) THE NAMED FOLLOW-UP.
+# (d) THE NAMED FOLLOW-UP -- EVALUATED 2026-08-06 AND **DEFERRED**.
 # --------------------------------------------------------------------------
-#     `run_susie_rss.R:220-323` should be REPLACED by
-#     `source("src/snakemake/scripts/ld_allele_join.R")` the next time the freeze
-#     is opened for an independent reason. Requires: a named unfreeze
-#     authorization; an `identical()`-on-the-whole-`load_ld_matrix`-result proof
-#     at `allele_aware` TRUE and FALSE against `dc4bbd2`; and a RE-FREEZE re-pin
-#     at the new SHA, after which
-#     `git diff --exit-code <new-sha> -- run_susie_rss.R` becomes the forward
-#     gate. This file is deliberately shaped as a drop-in `source()` target so
-#     that change is a delete-and-source, not a rewrite.
+#     The proposal: replace `run_susie_rss.R:220-323` with
+#     `source("src/snakemake/scripts/ld_allele_join.R")`.
+#
+#     `quick-260806-pd3` opened a freeze window on `run_susie_rss.R` for an
+#     INDEPENDENT reason (blast-radius finding K-1) and deliberately did NOT
+#     take this rider, so the "next time the freeze is opened" trigger has now
+#     fired once and been declined on the merits. Four findings, all measured:
+#
+#     1. DECISIVE. `run_susie_rss.R` contains **ZERO `source()` calls today**
+#        (`grep -c "source(" -> 0`). The extraction would introduce a
+#        FIRST-OF-ITS-KIND runtime file dependency on the exact code path the
+#        ~11-day / $385-1,084 AoU fire exercises. A failed `source()` at fire
+#        time is a catastrophic, expensive failure mode THAT DOES NOT EXIST
+#        TODAY.
+#     2. The duplication is ALREADY drift-guarded on EVERY suite run by
+#        `tests/m3/test_qtl_coloc_allele_join.py`'s differential agreement test
+#        plus NC-2f / NC-2g, which body-walk the SHIPPED closure out of the real
+#        source. The benefit is STYLE, not SAFETY.
+#     3. THE PATH MECHANISM IS WIDER THAN ASSUMED. `run_qtl_coloc.R` does NOT
+#        resolve this file via a CLI argument: `--ld-allele-join`
+#        (`run_qtl_coloc.R:62`) is a BOOLEAN flag, and the PATH is resolved
+#        SCRIPT-RELATIVELY at `run_qtl_coloc.R:153`
+#        (`file.path(.script_dir(), "ld_allele_join.R")`). `run_susie_rss.R`
+#        lives in `src/legacy/region_analysis/scripts/`, so `.script_dir()`
+#        would NOT find this file -- a genuinely NEW path mechanism (a new CLI
+#        argument threaded from `finemap.smk`, or a repo-root walk) would be
+#        required.
+#     4. Technically feasible: `.up`, `.usable`, `.allele_counts0`
+#        (`run_susie_rss.R:210-218`) are referenced ONLY at `:223` and
+#        `:237-249`, all inside the closure's own body, whose sole call site is
+#        `:332`. Nothing else in `load_ld_matrix` uses them. This removes an
+#        objection but supplies no justification.
+#
+#     **FREEZE ECONOMY IS NOT SUFFICIENT JUSTIFICATION TO ACCEPT FIRE-PATH
+#     RISK.** Points 1 and 3 stand regardless of how cheap the window is.
+#
+#     ANY FUTURE ATTEMPT MUST SATISFY ALL THREE:
+#       (i)   a FAIL-CLOSED-AND-LOUD design -- a missing or unsourceable shared
+#             file must STOP with a named error and must NEVER degrade to a
+#             position-only match. That degradation **IS finding H**.
+#       (ii)  an `identical()`-on-the-whole-`load_ld_matrix`-result proof at
+#             `allele_aware` TRUE **and** FALSE against the then-current pin
+#             (`bf04199` as of 2026-08-06).
+#       (iii) a RE-FREEZE re-pin at the new SHA, after which
+#             `git diff --exit-code <new-sha> -- run_susie_rss.R` becomes the
+#             forward gate.
+#
+#     This file stays deliberately shaped as a drop-in `source()` target so the
+#     change remains a delete-and-source, not a rewrite, if it is ever taken.
 #
 # --------------------------------------------------------------------------
 # THE ORIENTATION CONTRACT (carried over verbatim in substance from the shipped

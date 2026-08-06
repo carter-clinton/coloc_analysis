@@ -461,10 +461,13 @@ rule run_finemap:
         # `resolved == what-the-script-opens` -- ld_matrix is the path opened,
         # ld_file_declared is the path resolved and declared; a mismatch (or an
         # 'identity' ld_matrix) means the read path regressed. It ALSO reads the
-        # two Path-1/Path-2 revert flags (HIGH-2): variant_catalog_fallback is
-        # set by BOTH reverts, ld_overlap_zero_fallback only by the
-        # ld_overlap==0 one, so the pair distinguishes them. Write-only flags
-        # are not observability, which is why they are consumed here.
+        # two Path-1/Path-2 revert flags (HIGH-2). SINCE K-1 (quick-260806-pd3)
+        # THE PAIR IS NO LONGER OVERLOADED: variant_catalog_fallback is set by
+        # PATH 1 ONLY (the AFR variant-catalog empty-subset revert -- the
+        # pre-existing key's one meaning), and ld_overlap_zero_fallback is the
+        # PATH-2 (ld_overlap==0) discriminator. Reading both still separates the
+        # two reverts. Write-only flags are not observability, which is why they
+        # are consumed here.
         #
         # 260805-23d Task 3: ld_authoritative is read too, because it is what
         # makes the receipt INTERPRETABLE. Off the allow-list ld_matrix is
@@ -494,8 +497,11 @@ rule run_finemap:
         # was firing on REAL INPUTS TODAY, and it is the exact defect class
         # BLOCKER-1 was.
         #
-        # THE FIX IS ENTIRELY ON THIS SIDE OF THE PAIR. run_susie_rss.R is
-        # RE-FROZEN at dc4bbd2 and is NOT touched: every LD field is now wrapped
+        # THE FIX IS ENTIRELY ON THIS SIDE OF THE PAIR. run_susie_rss.R was NOT
+        # touched by finding J's fix -- that claim is historical and stands. (It
+        # was RE-FROZEN at dc4bbd2 then; the live pin is now bf04199, re-set by
+        # quick-260806-pd3 for finding K-1, whose unfreeze is SPENT.) Every LD
+        # field is now wrapped
         # as (d.get(KEY) if KEY in d else na), where `na` is
         #   NA_EARLY_EXIT  when status is no_variants / too_many_variants
         #   ABSENT         otherwise -- i.e. a REAL regression
@@ -511,33 +517,48 @@ rule run_finemap:
         # tests/m3/test_ld_read_path.py assert on it, and both are pre-existing.
         #
         # ============================================================
-        # THE DECODER RING FOR variant_catalog_fallback (FINDING K -- DEFERRED,
-        # see K-1 in .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md)
+        # THE DECODER RING FOR variant_catalog_fallback (FINDING K -- CLOSED by
+        # quick-260806-pd3; see K-1 in
+        # .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md)
         # ============================================================
-        # variant_catalog_fallback is a MUTATED PRE-EXISTING key, not an
-        # additive one. All 1,957 legacy region JSONs carry
-        # variant_catalog_fallback: false and NO ld_overlap_zero_fallback key at
-        # all, and the m3-04c Path-2 parity change makes it flip to true with NO
-        # NUMERIC CAUSE. Anyone diffing before-and-after WILL chase that flip.
-        # Read the pair, not the flag:
-        #   fallback=true  AND overlap_zero=true   -> the PATH-2 revert
-        #                                             (ld_overlap == 0, retry
-        #                                             once against subset_base).
-        #                                             REPORTING ONLY. No numeric
-        #                                             cause. This is the flip.
-        #   fallback=true  AND overlap_zero=false  -> the legacy PATH-1 revert
-        #                                             (AFR variant-catalog
-        #                                             empty-subset), the key's
-        #                                             ORIGINAL meaning.
-        # That reading is emitted as a RUNTIME TOKEN, variant_catalog_fallback_cause,
-        # so a reader who is diffing JSONs meets the explanation where they are
-        # actually looking instead of only in this comment.
-        # THIS IS A MITIGATION OF K, NOT ITS CLOSURE. Restoring the key's
-        # additive contract means deleting one line from the FROZEN
-        # run_susie_rss.R, which needs an unfreeze AND an authorization to edit
-        # the pre-existing test that mandates that very line. Both are recorded
-        # in K-1; neither is spent here.
-        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); st=d.get('status'); EARLY=('no_variants','too_many_variants'); na=('NA_EARLY_EXIT' if st in EARLY else 'ABSENT'); vd=('early_exit:'+str(st) if st in EARLY else ('ld_fields_present' if 'ld_matrix' in d else 'ALARM_LD_FIELDS_MISSING')); vcp=('variant_catalog_fallback' in d); vcv=d.get('variant_catalog_fallback'); ozv=d.get('ld_overlap_zero_fallback'); cause=('key_absent' if not vcp else ('none' if not vcv else ('path2_ld_overlap_zero_NO_NUMERIC_CAUSE' if ozv else 'path1_variant_catalog_empty_subset'))); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'status', st, 'ld_receipt_verdict', vd, 'ld_z_consistency_s', (d.get('d3b_ld_z_consistency_s') if 'd3b_ld_z_consistency_s' in d else na), 'ld_source_mismatch_flag', (d.get('ld_source_mismatch_flag') if 'ld_source_mismatch_flag' in d else na), 'ld_matrix', (d.get('ld_matrix') if 'ld_matrix' in d else na), 'ld_file_declared', (d.get('ld_file_declared') if 'ld_file_declared' in d else na), 'ld_authoritative', (d.get('ld_authoritative') if 'ld_authoritative' in d else na), 'variant_catalog_fallback', (d.get('variant_catalog_fallback') if 'variant_catalog_fallback' in d else na), 'ld_overlap_zero_fallback', (d.get('ld_overlap_zero_fallback') if 'ld_overlap_zero_fallback' in d else na), 'variant_catalog_fallback_cause', cause, 'ld_allele_aware', (d.get('ld_allele_aware') if 'ld_allele_aware' in d else na), 'ld_allele_exact', (d.get('ld_allele_exact') if 'ld_allele_exact' in d else na), 'ld_allele_flipped', (d.get('ld_allele_flipped') if 'ld_allele_flipped' in d else na), 'ld_allele_dropped_palindromic', (d.get('ld_allele_dropped_palindromic') if 'ld_allele_dropped_palindromic' in d else na), 'ld_allele_dropped_mismatch', (d.get('ld_allele_dropped_mismatch') if 'ld_allele_dropped_mismatch' in d else na), 'ld_allele_dropped_ambiguous', (d.get('ld_allele_dropped_ambiguous') if 'ld_allele_dropped_ambiguous' in d else na), 'ld_allele_dropped_unusable', (d.get('ld_allele_dropped_unusable') if 'ld_allele_dropped_unusable' in d else na), 'ld_allele_catalog_join', (d.get('ld_allele_catalog_join') if 'ld_allele_catalog_join' in d else na))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
+        # variant_catalog_fallback is a PRE-EXISTING key. m3-04c briefly MUTATED
+        # it -- the Path-2 (ld_overlap==0) retry set it too, with NO NUMERIC
+        # CAUSE -- so a before/after JSON diff showed a causeless false -> true
+        # flip. K-1 CLOSED that by deleting the Path-2 assignment, restoring the
+        # key's single legacy meaning: the PATH-1 AFR variant-catalog
+        # empty-subset revert.
+        #
+        # variant_catalog_fallback_cause is the RUNTIME TOKEN that renders the
+        # PAIR, so a reader diffing JSONs meets the explanation where they are
+        # actually looking. FIVE outcomes, and the token set is EXTRACTED from
+        # this very line by tests/m3/test_finemap_receipt_early_exit.py -- never
+        # hand-copied, so a rename here turns that test RED:
+        #
+        #   key absent            -> key_absent
+        #        a JSON older than the key itself. Real: 687 of the 2,596 region
+        #        JSONs under results/legacy/region_analysis (measured 2026-08-06).
+        #   false + false/absent  -> none
+        #        neither revert fired. This is what 1,935 of the 1,944 legacy
+        #        JSONs carrying the key render.
+        #   false + true          -> path2_ld_overlap_zero_RETRY
+        #        THE POST-K-1 CANONICAL PATH-2 SIGNATURE. Before K-1 this pair
+        #        rendered `none`, which was FALSE: Path 2 DID fire.
+        #   true  + true          -> path2_ld_overlap_zero_NO_NUMERIC_CAUSE
+        #        UNREACHABLE from any tree at or after bf04199. Retained as a
+        #        FORENSIC MARKER: it dates an artifact to the m3-04c window.
+        #        0 such artifacts exist on this node (0 JSONs carry
+        #        ld_overlap_zero_fallback at all).
+        #   true  + false         -> path1_variant_catalog_empty_subset
+        #        the key's restored, and now ONLY, meaning. Real: the 9 AFR
+        #        JSONs measured 2026-08-06 (RAD50_peak__tile1 and 8
+        #        PYHIN1_1q23 tiles), none carrying ld_overlap_zero_fallback.
+        #
+        # ⚠ PREFIX-COLLISION TRAP. `path2_ld_overlap_zero` is a prefix of BOTH
+        # path2_* tokens, so a substring match cannot separate them. The tokens
+        # are deliberately named so neither is a prefix of the other, AND the
+        # test matches on a trailing delimiter. Both properties are asserted
+        # permanently (NC-K6).
+        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); st=d.get('status'); EARLY=('no_variants','too_many_variants'); na=('NA_EARLY_EXIT' if st in EARLY else 'ABSENT'); vd=('early_exit:'+str(st) if st in EARLY else ('ld_fields_present' if 'ld_matrix' in d else 'ALARM_LD_FIELDS_MISSING')); vcp=('variant_catalog_fallback' in d); vcv=d.get('variant_catalog_fallback'); ozv=d.get('ld_overlap_zero_fallback'); cause=('key_absent' if not vcp else ('path1_variant_catalog_empty_subset' if (vcv and not ozv) else ('path2_ld_overlap_zero_NO_NUMERIC_CAUSE' if (vcv and ozv) else ('path2_ld_overlap_zero_RETRY' if ozv else 'none')))); print('region', sys.argv[2], 'ancestry', sys.argv[3], 'status', st, 'ld_receipt_verdict', vd, 'ld_z_consistency_s', (d.get('d3b_ld_z_consistency_s') if 'd3b_ld_z_consistency_s' in d else na), 'ld_source_mismatch_flag', (d.get('ld_source_mismatch_flag') if 'ld_source_mismatch_flag' in d else na), 'ld_matrix', (d.get('ld_matrix') if 'ld_matrix' in d else na), 'ld_file_declared', (d.get('ld_file_declared') if 'ld_file_declared' in d else na), 'ld_authoritative', (d.get('ld_authoritative') if 'ld_authoritative' in d else na), 'variant_catalog_fallback', (d.get('variant_catalog_fallback') if 'variant_catalog_fallback' in d else na), 'ld_overlap_zero_fallback', (d.get('ld_overlap_zero_fallback') if 'ld_overlap_zero_fallback' in d else na), 'variant_catalog_fallback_cause', cause, 'ld_allele_aware', (d.get('ld_allele_aware') if 'ld_allele_aware' in d else na), 'ld_allele_exact', (d.get('ld_allele_exact') if 'ld_allele_exact' in d else na), 'ld_allele_flipped', (d.get('ld_allele_flipped') if 'ld_allele_flipped' in d else na), 'ld_allele_dropped_palindromic', (d.get('ld_allele_dropped_palindromic') if 'ld_allele_dropped_palindromic' in d else na), 'ld_allele_dropped_mismatch', (d.get('ld_allele_dropped_mismatch') if 'ld_allele_dropped_mismatch' in d else na), 'ld_allele_dropped_ambiguous', (d.get('ld_allele_dropped_ambiguous') if 'ld_allele_dropped_ambiguous' in d else na), 'ld_allele_dropped_unusable', (d.get('ld_allele_dropped_unusable') if 'ld_allele_dropped_unusable' in d else na), 'ld_allele_catalog_join', (d.get('ld_allele_catalog_join') if 'ld_allele_catalog_join' in d else na))" {output.json} {wildcards.region} {wildcards.ancestry} > {log.ld_z_consistency} || true
         """
 
 

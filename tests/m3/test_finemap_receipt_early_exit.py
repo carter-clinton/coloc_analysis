@@ -11,8 +11,11 @@ inputs today.
 
 **The fix is entirely on the non-frozen half of the pair.**
 ``src/legacy/region_analysis/scripts/run_susie_rss.R`` is RE-FROZEN at
-``dc4bbd2`` and is NOT touched by this module or by the change it tests; the
-freeze is re-asserted MID-TEST.
+``bf04199`` and is NOT touched by this module or by the change it tests; the
+freeze is re-asserted MID-TEST. (The pin was ``dc4bbd2`` until 2026-08-06, when
+``quick-260806-pd3`` spent ``AUTH-K1-UNFREEZE`` on finding **K-1** -- one line
+deleted from the Path-2 branch -- and re-pinned at ``bf04199``. That unfreeze is
+SPENT; there is no open window on this file.)
 
 WHAT IS LOAD-BEARING HERE
 -------------------------
@@ -51,8 +54,17 @@ RUN_SUSIE_R = (
 #: The commit this task started from -- the permanent differential substrate.
 PRE_CHANGE_REF = "6b427bc"
 
-#: ``run_susie_rss.R``'s re-freeze pin (260805-o7o; the unfreeze is SPENT).
-FROZEN_R_REV = "dc4bbd2"
+#: ``run_susie_rss.R``'s re-freeze pin. A FREEZE PIN: it MOVES on every
+#: authorized unfreeze. Re-set from ``dc4bbd2`` by ``quick-260806-pd3`` after
+#: finding K-1; ``AUTH-K1-UNFREEZE`` is SPENT and no window is open.
+FROZEN_R_REV = "bf04199"
+
+#: ``finemap.smk`` BEFORE the K-1 decoder fix. A DIFFERENTIAL SUBSTRATE, not a
+#: freeze pin: it MUST stay ``63453db`` forever. Never re-pin it. NC-K5 drives
+#: the receipt program extracted from THIS revision over the post-K-1
+#: ``(false, true)`` fixture and reproduces the incoherence the fix closes;
+#: bumping it in a re-pin sweep would silently kill that control.
+PRE_K1_SMK_REF = "63453db"
 
 #: The tokens finding J's closure introduces. They must never be equal.
 EARLY_EXIT_TOKEN = "NA_EARLY_EXIT"
@@ -480,23 +492,90 @@ def test_nc_j2_the_receipt_program_actually_changed():
 
 
 # ==========================================================================
-# K's decoder ring -- the $0, non-frozen PARTIAL mitigation (K stays DEFERRED)
+# K's decoder ring -- K-1 CLOSED by quick-260806-pd3, and the decoder had to
+# gain a FIFTH outcome to stay truthful after the closure
 # ==========================================================================
+#: DOCUMENTATION ONLY. The load-bearing set is RECOVERED from the live
+#: ``finemap.smk`` by ``_recovered_cause_tokens()``; this literal survives only
+#: so a reader can see the five without running the extractor, and is asserted
+#: EQUAL to the recovered set. A hand-copy used as the subject would be a test
+#: that agrees with itself -- the class this module's own docstring forbids.
+CAUSE_TOKENS = (
+    "key_absent",
+    "none",
+    "path2_ld_overlap_zero_RETRY",
+    "path2_ld_overlap_zero_NO_NUMERIC_CAUSE",
+    "path1_variant_catalog_empty_subset",
+)
+
+
+def _cause_expression(smk_text: str) -> str:
+    """The ``cause=(...)`` sub-expression, sliced out of the LIVE receipt."""
+    prog = _receipt_program(smk_text)
+    start = prog.index("cause=(")
+    end = prog.index(";", start)
+    expr = prog[start:end]
+    assert expr.strip(), "the cause= slice is EMPTY -- the extraction is wrong"
+    return expr
+
+
+def _recovered_cause_tokens(smk_text: str) -> set:
+    """Every quoted token inside the live ``cause=(...)`` expression.
+
+    ⚠ THE CHARACTER CLASS MUST ADMIT ``A-Z``. Two of the five tokens carry
+    uppercase runs (``..._NO_NUMERIC_CAUSE``, ``..._RETRY``); a lowercase-only
+    class silently recovers THREE, and the cheapest local repair -- relaxing the
+    exactly-5 guard -- would drop precisely the two tokens the no-prefix
+    property exists for, re-introducing the vacuity NC-K6 prevents.
+    """
+    recovered = set(re.findall(r"'([A-Za-z0-9_]+)'", _cause_expression(smk_text)))
+    assert len(recovered) == 5, (
+        f"expected exactly 5 cause tokens in the live receipt, recovered "
+        f"{len(recovered)}: {sorted(recovered)}"
+    )
+    return recovered
+
+
+def _assert_cause_is(out: str, expected: str) -> None:
+    """Delimiter-aware match. ⚠ A plain ``in`` test cannot separate
+    ``path2_ld_overlap_zero_RETRY`` from
+    ``path2_ld_overlap_zero_NO_NUMERIC_CAUSE`` when the expected value is the
+    shared prefix ``path2_ld_overlap_zero``. NC-K6 pins that this matters.
+    """
+    assert re.search(
+        rf"variant_catalog_fallback_cause {re.escape(expected)}(\s|$)", out
+    ), f"expected cause {expected!r} with a delimiter; got:\n{out}"
+
+
 @pytest.mark.parametrize(
     "vcf,ozf,expected",
     [
-        (None, None, "key_absent"),                              # all 1,957 legacy JSONs pre-date it
+        # MEASURED 2026-08-06: 687 of the 2,596 region JSONs under
+        # results/legacy/region_analysis carry NO variant_catalog_fallback key.
+        # (The old comment here claimed "all 1,957 legacy JSONs pre-date it",
+        # which was FALSE -- the ones that carry it render `none`, below.)
+        (None, None, "key_absent"),
+        # 1,935 of the 1,944 legacy JSONs that DO carry the key render this.
         (False, False, "none"),
-        (True, True, "path2_ld_overlap_zero_NO_NUMERIC_CAUSE"),  # THE PHANTOM FLIP
-        (True, False, "path1_variant_catalog_empty_subset"),     # the key's ORIGINAL meaning
+        # NEW, and the reason K-1 forced a decoder change: after K-1 a real
+        # Path-2 revert emits variant_catalog_fallback false + overlap_zero
+        # true. The pre-K-1 decoder rendered that as `none` -- FALSE, because
+        # Path 2 DID fire. NC-K5 reproduces that lie permanently.
+        (False, True, "path2_ld_overlap_zero_RETRY"),
+        # FORENSIC MARKER ONLY. Unreachable from any tree at or after bf04199;
+        # its presence dates an artifact to the m3-04c window. 0 on this node.
+        (True, True, "path2_ld_overlap_zero_NO_NUMERIC_CAUSE"),
+        # the key's restored, and now ONLY, meaning. 9 real AFR JSONs measured.
+        (True, False, "path1_variant_catalog_empty_subset"),
     ],
 )
 def test_the_variant_catalog_fallback_cause_token_explains_the_phantom(
     tmp_path, vcf, ozf, expected
 ):
-    """K is DEFERRED, not closed. This does NOT restore the key's additive
-    contract -- only the frozen emission site can -- but it makes the phantom
-    SELF-EXPLAINING at the place a reader diffing JSONs is actually looking.
+    """K-1 is CLOSED (quick-260806-pd3). The decoder still renders the PAIR, and
+    it had to gain a fifth outcome to keep telling the truth: the post-K-1
+    Path-2 signature is (false, true), which the four-outcome decoder called
+    ``none``.
     """
     payload = _full_success_payload()
     if vcf is None:
@@ -510,7 +589,93 @@ def test_the_variant_catalog_fallback_cause_token_explains_the_phantom(
     out = _run_receipt(
         prog, _write(tmp_path, "cause.json", payload), "SH2B3_12q24", "AFR"
     )
-    assert f"variant_catalog_fallback_cause {expected}" in out, out
+    _assert_cause_is(out, expected)
+
+
+def test_the_cause_tokens_are_distinct_and_none_is_a_prefix_of_another():
+    """The tokens are RECOVERED from the live ``finemap.smk``, never trusted
+    from the literal above -- so renaming one in the ``.smk`` turns this RED."""
+    recovered = _recovered_cause_tokens(FINEMAP_SMK.read_text())
+    assert set(CAUSE_TOKENS) == recovered, (
+        "the documentation literal CAUSE_TOKENS no longer matches the tokens "
+        f"actually shipped in finemap.smk.\nliteral:   {sorted(CAUSE_TOKENS)}\n"
+        f"recovered: {sorted(recovered)}"
+    )
+    assert len(CAUSE_TOKENS) == len(set(CAUSE_TOKENS)), "duplicate cause token"
+    for a in recovered:
+        for b in recovered:
+            if a == b:
+                continue
+            assert not a.startswith(b), (
+                f"cause token {a!r} starts with {b!r}; a substring match on "
+                f"{b!r} would also match {a!r} -- the prefix-collision trap"
+            )
+
+
+def test_nc_k5_the_pre_k1_decoder_called_a_real_path2_revert_none(tmp_path):
+    """NC-K5 -- PERMANENT, DIFFERENTIAL. The decoder fix is LOAD-BEARING.
+
+    The ``PRE_K1_SMK_REF`` receipt, extracted by the SAME extractor and driven
+    over the SAME post-K-1 ``(false, true)`` fixture, renders ``none`` -- i.e. it
+    reports that neither revert fired, on a payload where Path 2 DID fire. The
+    live receipt renders ``path2_ld_overlap_zero_RETRY``. Reproducing the
+    incoherence beats arguing it, needs no revert, and is ``.pyc``-safe.
+    """
+    payload = _full_success_payload()
+    payload["variant_catalog_fallback"] = False
+    payload["ld_overlap_zero_fallback"] = True
+    path = _write(tmp_path, "post_k1_path2.json", payload)
+
+    old_prog = _receipt_program(
+        _git_show(f"{PRE_K1_SMK_REF}:src/snakemake/rules/finemap.smk")
+    )
+    new_prog = _receipt_program(FINEMAP_SMK.read_text())
+    assert old_prog != new_prog, (
+        f"the receipt is byte-identical to {PRE_K1_SMK_REF}'s -- the extractor "
+        "is reading the wrong thing, or the decoder was never fixed"
+    )
+
+    old_out = _run_receipt(old_prog, path, "SH2B3_12q24", "AFR")
+    new_out = _run_receipt(new_prog, path, "SH2B3_12q24", "AFR")
+
+    _assert_cause_is(old_out, "none")
+    _assert_cause_is(new_out, "path2_ld_overlap_zero_RETRY")
+
+
+def test_nc_k6_a_naive_substring_match_cannot_separate_the_two_path2_tokens(
+    tmp_path,
+):
+    """NC-K6 -- PERMANENT. The prefix trap is closed as a PROPERTY, not a claim.
+
+    ``"variant_catalog_fallback_cause path2_ld_overlap_zero" in out`` matches
+    BOTH path2 outputs; the delimiter-aware matcher separates them. If a future
+    edit renamed a token so one became a prefix of the other, the sibling
+    no-prefix test goes RED and this one documents why it matters.
+    """
+    prog = _receipt_program(FINEMAP_SMK.read_text())
+    outs = {}
+    for name, (vcf, ozf) in {
+        "true_true": (True, True),
+        "false_true": (False, True),
+    }.items():
+        payload = _full_success_payload()
+        payload["variant_catalog_fallback"] = vcf
+        payload["ld_overlap_zero_fallback"] = ozf
+        outs[name] = _run_receipt(
+            prog, _write(tmp_path, f"{name}.json", payload), "SH2B3_12q24", "AFR"
+        )
+
+    naive = "variant_catalog_fallback_cause path2_ld_overlap_zero"
+    assert naive in outs["true_true"], outs["true_true"]
+    assert naive in outs["false_true"], outs["false_true"]
+
+    # ...and the delimiter-aware matcher does NOT conflate them
+    _assert_cause_is(outs["true_true"], "path2_ld_overlap_zero_NO_NUMERIC_CAUSE")
+    _assert_cause_is(outs["false_true"], "path2_ld_overlap_zero_RETRY")
+    with pytest.raises(AssertionError):
+        _assert_cause_is(outs["false_true"], "path2_ld_overlap_zero_NO_NUMERIC_CAUSE")
+    with pytest.raises(AssertionError):
+        _assert_cause_is(outs["true_true"], "path2_ld_overlap_zero_RETRY")
 
 
 # ==========================================================================

@@ -54,7 +54,9 @@ extracted FIRST. A hand-transcription here would produce a test that agrees
 **with itself** -- a vacuous assertion wearing a green check, the class this arc
 has caught six times. ``NC-2g`` proves the extractor tracks the source by turning
 the agreement test RED against a deliberately ALTERED copy; the real
-``run_susie_rss.R`` stays 0-diff vs ``dc4bbd2`` throughout, including mid-control.
+``run_susie_rss.R`` stays 0-diff vs ``bf04199`` throughout, including mid-control.
+(That pin was ``dc4bbd2`` until 2026-08-06; ``quick-260806-pd3`` spent
+``AUTH-K1-UNFREEZE`` on finding K-1 and re-pinned. The unfreeze is SPENT.)
 
 THRESHOLDS are READ from ``config/susie_policy.yaml`` (50 / 0.5 / 10), never
 hardcoded permissive values -- ``tests/m3/test_ld_read_path.py``'s 8
@@ -102,8 +104,10 @@ FINEMAP_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
 #: sparse-matrix-passing coloc path. The permanent differential substrate.
 PRE_CHANGE_REF = "7b1025d"
 #: ``run_susie_rss.R``'s FREEZE pin. Asserted 0-diff by this module, including
-#: while NC-2g's altered-source control is running.
-FREEZE_REF = "dc4bbd2"
+#: while NC-2g's altered-source control is running. A FREEZE PIN: it MOVES on
+#: every authorized unfreeze. Re-set from ``dc4bbd2`` by ``quick-260806-pd3``
+#: after finding K-1; ``AUTH-K1-UNFREEZE`` is SPENT.
+FREEZE_REF = "bf04199"
 
 _POLICY = yaml.safe_load(
     (PROJECT_ROOT / "config" / "susie_policy.yaml").read_text()
@@ -1294,6 +1298,11 @@ def test_params_region_id_is_not_declared_here():
     quick-260806-b77's blast-radius **FINDING J** fix — the per-region receipt —
     which has nowhere else to live, because the other half of that pair is
     ``run_susie_rss.R``, RE-FROZEN at ``dc4bbd2`` with its unfreeze SPENT.
+    (``dc4bbd2`` is the pin that was IN FORCE AT THAT TIME and is left as-is
+    deliberately: this paragraph is a HISTORICAL record of why AUTH-b77-01 was
+    needed, and re-pinning it would falsify history. The live pin is now
+    ``bf04199`` — see ``FREEZE_REF`` — re-set by ``quick-260806-pd3`` on
+    2026-08-06 after finding K-1.)
 
     The pin is REPLACED BY ITS OWN SUBJECT, not relaxed: no hunk of a
     ``finemap.smk`` diff may mention ``region_id`` at all. That is **STRICTLY

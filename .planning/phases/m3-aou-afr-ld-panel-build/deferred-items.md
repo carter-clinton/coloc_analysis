@@ -300,12 +300,97 @@ defensible with disclosure; B is defensible on rigor; silently shipping A
 and nothing in the DAG changes. The closure of G is what makes this decision
 possible to take on evidence instead of by accident.
 
-## K-1 DEFERRED — `variant_catalog_fallback` is a MUTATED pre-existing key, and restoring its meaning needs TWO words from Carter
+## ✅ K-1 CLOSED — `variant_catalog_fallback`'s legacy semantics are RESTORED
 
-**Logged:** 2026-08-06 (quick-260806-b77). **Status: DEFERRED — PREPARED, not
-executed.** Not blocking. This entry carries the exact diff, the blast radius,
-the re-freeze obligation and both authorizations, so the work is ready to run
-the moment it is authorized.
+**Logged:** 2026-08-06 (quick-260806-b77). **CLOSED:** 2026-08-06
+(`quick-260806-pd3`), applied in commit **`bf04199`**. Carter authorized
+**option B** on 2026-08-06.
+
+**What landed.** ONE line — `variant_catalog_fallback <- TRUE` — deleted from
+the Path-2 (`ld_overlap == 0`) brace block of
+`src/legacy/region_analysis/scripts/run_susie_rss.R`, plus the comment above it
+reworded. The key is now assigned at **exactly one site**, the Path-1 AFR
+variant-catalog empty-subset revert, which is its original and only meaning.
+Science behaviour is unchanged: the branch still reverts to `subset_base`, still
+retries exactly once, and still records itself via `ld_overlap_zero_fallback`,
+which is still emitted in the success JSON and still read by the `finemap.smk`
+receipt. **Nothing became invisible.**
+
+**Both authorizations: GRANTED and SPENT.**
+
+* **AUTH-K1-UNFREEZE** — single-use unfreeze of `run_susie_rss.R` off `dc4bbd2`,
+  scoped to that one deleted line plus the comment reword. **SPENT.**
+* **AUTH-K1-TEST** — edit of the pre-existing
+  `tests/m3/test_ld_read_path.py::test_path2_ld_overlap_zero_fallback_is_observable_and_read`
+  parity assertion, in the STRENGTHENING direction. The assertion was
+  **INVERTED, not deleted**, so the semantics are pinned in both directions.
+  **SPENT.**
+
+**The new freeze pin is `bf04199`.** The forward gate is
+
+```
+git diff --exit-code bf04199 -- src/legacy/region_analysis/scripts/run_susie_rss.R
+```
+
+Re-pinned code-side in commit 2 of `quick-260806-pd3`:
+`tests/m3/test_finemap_receipt_early_exit.py::FROZEN_R_REV`,
+`tests/m3/test_qtl_coloc_allele_join.py::FREEZE_REF`,
+`src/snakemake/scripts/ld_allele_join.R:33` and `:58`, and the live prose in
+`src/snakemake/rules/finemap.smk`. ⚠ **`PRE_K1_REF` (`dc4bbd2`) in
+`tests/m3/test_variant_catalog_fallback_legacy_semantics.py`, `PRE_K1_SMK_REF`
+(`63453db`), and both `PRE_CHANGE_REF` constants are DIFFERENTIAL SUBSTRATES,
+not pins — they must NEVER be re-pinned.** `test_qtl_coloc_allele_join.py:1296`
+keeps `dc4bbd2` because it is a HISTORICAL record of the pin in force when
+AUTH-b77-01 was granted; it was annotated, not rewritten.
+
+**Gate row effect.** `m3-04c-BLAST-RADIUS.md:133-144` row **"Publishing the
+panel provenance" (I, J, K) moves PARTIAL → CLEARED.** This is the only gate row
+affected. No PIP, credible set, `ld_overlap`, `ld_status` or
+`d3b_ld_z_consistency_s` moves, and that is asserted mechanically rather than
+assumed. Track A is untouched.
+
+**What was proven, and what was NOT.** The closure is proven on **source text
+and receipt fixtures** by
+`tests/m3/test_variant_catalog_fallback_legacy_semantics.py` (11 tests, 0 skips:
+one-assignment-site, whole-block containment, five byte-identical
+MUST-NOT-MOVE regions, a symbol-scoped diff shape, plus permanent negative
+controls NC-K1/NC-K2). **NO before/after region-JSON diff was performed**, and
+none was possible: **0** JSONs on this node carry `ld_overlap_zero_fallback`, so
+no artifact here was ever produced from an m3-04c-window tree. The change is
+INERT on today's artifacts.
+
+⚠ **CENSUS CORRECTION.** The "1,957" figure below was never reproducible as
+written, and a planning-time re-count of "44" was also wrong — it used a
+`grep -r`, which does **not** follow the `results/legacy/region_analysis`
+symlink. Measured 2026-08-06 with `grep -R`: **1,944** region JSONs carry
+`variant_catalog_fallback` — **1,935 `false`** and **9 `true`**. All 9 `true`
+ones are AFR (`RAD50_peak__tile1` and eight `PYHIN1_1q23` tiles) and **none**
+carries `ld_overlap_zero_fallback`, i.e. every one of them is a genuine
+**Path-1** revert. A further **687** of the 2,596 JSONs under
+`results/legacy/region_analysis` carry the key not at all. So `true` already
+meant Path-1 on real artifacts, which is precisely why the Path-2 overload had
+to go.
+
+**Decoder-ring coherence, fixed in the same closure.** After K-1 a real Path-2
+revert emits `variant_catalog_fallback: false` + `ld_overlap_zero_fallback:
+true`, which the four-outcome `variant_catalog_fallback_cause` decoder rendered
+as `none` — false, because Path 2 *did* fire. The decoder gained a **fifth**
+token, `path2_ld_overlap_zero_RETRY`;
+`path2_ld_overlap_zero_NO_NUMERIC_CAUSE` is retained as a **forensic marker**
+for the m3-04c window and is unreachable from any tree at or after `bf04199`.
+
+---
+
+### THE ORIGINAL DEFERRAL, PRESERVED
+
+The surfaced-then-authorized record is kept below in full, deliberately: the
+STOP was correct, and the record of WHY two authorizations were needed is the
+durable part.
+
+**Logged:** 2026-08-06 (quick-260806-b77). **Status at the time: DEFERRED —
+PREPARED, not executed.** Not blocking. This entry carries the exact diff, the
+blast radius, the re-freeze obligation and both authorizations, so the work is
+ready to run the moment it is authorized.
 
 **The finding (`m3-04c-BLAST-RADIUS.md` row K).** `variant_catalog_fallback` is
 a **pre-existing** key. All **1,957** legacy region JSONs carry
@@ -440,6 +525,62 @@ twice. Until then A is honest — the decoder ring is landed and tested
 4 parametrised cases) — but it is a **mitigation of K, not its closure**.
 
 **This needs one decision from Carter and is otherwise ready to execute.**
+
+## K-2 DEFERRED (STILL OPEN) — the `ld_allele_join.R` extraction was evaluated against an OPEN freeze window and declined
+
+**Logged:** 2026-08-06 (`quick-260806-pd3`). **Status: DEFERRED — evaluated on
+the merits, not deferred by default.** Not blocking.
+
+**The proposal.** Replace the nested closure `match_indices_allele_aware`
+(`run_susie_rss.R:220-323`) with
+`source("src/snakemake/scripts/ld_allele_join.R")`, eliminating a deliberate
+second implementation of the allele-aware join. It was recorded in
+`260805-w7u-SUMMARY.md` and in `ld_allele_join.R` section (d) as something to
+bundle into "the next time the freeze is opened for an independent reason", on
+**freeze-economy** grounds.
+
+**That trigger fired on 2026-08-06** — `quick-260806-pd3` opened a window on
+`run_susie_rss.R` for K-1 — **and the rider was declined.** Four findings, all
+measured during planning and re-verified at execution:
+
+1. **VERIFIED, and decisive.** `run_susie_rss.R` contains **ZERO `source()`
+   calls today** (`grep -c "source(" → 0`). The extraction would introduce a
+   **first-of-its-kind runtime file dependency** on the exact code path the
+   ~11-day / $385–1,084 AoU fire exercises. A failed `source()` at fire time is
+   a catastrophic, expensive failure mode **that does not exist today**.
+2. **VERIFIED.** The duplication is **already** drift-guarded on **every suite
+   run** by `tests/m3/test_qtl_coloc_allele_join.py`'s differential agreement
+   test plus NC-2f / NC-2g, which body-walk the SHIPPED closure out of the real
+   source. **The benefit is style, not safety.**
+3. **VERIFIED — and the original brief's premise was WRONG.** The brief stated
+   that `run_qtl_coloc.R:164` solves path resolution "with a `--ld-allele-join`
+   CLI arg threaded from `qtl_coloc.smk`". It does not. `--ld-allele-join`
+   (`run_qtl_coloc.R:62`) is a **boolean flag**; the PATH is resolved
+   **script-relatively** at `run_qtl_coloc.R:153`
+   (`file.path(.script_dir(), "ld_allele_join.R")`). `run_susie_rss.R` lives in
+   `src/legacy/region_analysis/scripts/`, so `.script_dir()` would **not** find
+   the shared file — a genuinely **new** path mechanism (a new CLI argument
+   threaded from `finemap.smk`, or a repo-root walk) would be required. **That
+   is wider than the brief assumed, not narrower.**
+4. **ANSWERED.** `.up`, `.usable`, `.allele_counts0`
+   (`run_susie_rss.R:210-218`) are referenced ONLY at `:223` and `:237-249`, all
+   inside the closure's own body, whose sole call site is `:332`. **Nothing else
+   in `load_ld_matrix` uses them**, so removal is technically feasible. This
+   removes an objection but supplies no justification.
+
+**Verdict: DEFER.** Point 4 clears an obstacle; points 1 and 3 stand.
+**Freeze economy is NOT sufficient justification to accept fire-path risk.**
+
+**Any future attempt must satisfy all three conditions:**
+
+* **(i) a FAIL-CLOSED-AND-LOUD design.** A missing or unsourceable shared file
+  must STOP with a named error and must **never** degrade to a position-only
+  match — that degradation **IS finding H**.
+* **(ii) an `identical()`-on-the-whole-`load_ld_matrix`-result proof** at
+  `allele_aware` **TRUE and FALSE** against the then-current pin (`bf04199` as
+  of 2026-08-06).
+* **(iii) a re-freeze re-pin** at the new SHA, after which
+  `git diff --exit-code <new-sha> -- run_susie_rss.R` becomes the forward gate.
 
 ## ✅ AUTH-b77-01 GRANTED AND APPLIED — a PRE-EXISTING test pinned `finemap.smk` at `7b1025d` FOREVER
 
