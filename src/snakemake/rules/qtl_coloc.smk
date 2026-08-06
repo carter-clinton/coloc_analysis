@@ -10,6 +10,22 @@ traversal (same pattern as T-1-03).
 Must be included AFTER qtl_download.smk and finemap.smk in the top-level
 Snakefile so QTL_RAW_DIR, QTL_HARMONIZED_DIR, FINEMAP_DIR, and
 finemap_output() are in scope.
+
+Modified 2026-08-06 (260805-w7u, m3-04c blast-radius FINDING E) -- the gate row
+``m3-04c-BLAST-RADIUS.md:141`` "Any GWAS x QTL colocalization".
+``_qtl_coloc_ld_input`` is now routed through
+``src/python/ld_panel.py::resolve_ld_path()`` using the SAME crosswalk object
+``run_finemap`` uses. Before this, ``grep -cE
+"CURATED_TO_M2|resolve_ld_path|ld_read_path" qtl_coloc.smk`` was **0**: this was
+the one LD consumer that was never crosswalked, so an AFR GWAS fit produced on
+the AoU panel would have been colocalized against the *1kG* LD matrix inside a
+single ``coloc.susie`` posterior, with nothing in the output to say so.
+
+ANCESTRY-GATED, on ONE lever: ``ld_read_path.{enabled,ancestries,coloc}`` via
+``src/python/ld_read_path.py::ld_coloc_applies``. Off the allow-list -- which is
+EUR, TRANS, EAS and HIS today -- the resolution expression is the pre-change one
+character for character, so Track-A's 1,957 legacy coloc JSONs and today's 32/32
+EUR successes cannot move.
 """
 
 import os
@@ -17,6 +33,46 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+
+# 260805-w7u (FINDING E): the M3 LD-panel resolver + the allow-list gate, so the
+# coloc LD path is decided by the SAME resolver run_finemap uses instead of a
+# second constructed string. Same sys.path idiom as finemap.smk:42-79.
+# ``workflow.basedir`` resolves to the project root under standard Snakemake
+# invocation; walk up defensively if ``src/python`` is not directly under it.
+try:
+    _QTL_COLOC_BASE = Path(workflow.basedir)  # type: ignore[name-defined]
+except NameError:
+    _QTL_COLOC_BASE = Path(os.getcwd())
+
+_QTL_SRC_PYTHON = str(_QTL_COLOC_BASE / "src" / "python")
+if _QTL_SRC_PYTHON not in sys.path:
+    sys.path.insert(0, _QTL_SRC_PYTHON)
+
+from ld_panel import resolve_ld_path  # noqa: E402 -- intentional after sys.path mutation
+
+# ⚠ THE CURATED->M2 CROSSWALK LOADER IS DELIBERATELY *NOT* IMPORTED HERE.
+# Snakemake includes share one global namespace (Snakefile:113 includes
+# finemap.smk, :138 includes this file) and qtl_coloc.smk already hard-depends on
+# finemap.smk -- ``_qtl_coloc_gwas_fit_input`` calls ``finemap_output()`` eagerly
+# as a .get() default. So ``CURATED_TO_M2`` (built once at finemap.smk:166) and
+# ``REGION_SAFE_TO_ID`` (Snakefile:45-62) are already in scope and are REUSED.
+# Loading the crosswalk a second time would create a second source of truth that
+# can silently drift from the one run_finemap walks (T-w7u-07); the drift would
+# be invisible precisely because both loads read the same file TODAY. The
+# forward gate is the literal `grep -c` for that loader's name over this file,
+# which must stay 0 -- so the name is deliberately not spelled out above.
+from ld_read_path import (  # noqa: E402 -- same sys.path rationale
+    ld_coloc_ancestries,
+    ld_coloc_applies,
+    ld_coloc_join,
+    ld_matrix_region_id,
+)
+
+# 260805-w7u: the region variant catalog is the panel<->fit BRIDGE (see
+# run_qtl_coloc.R). It is already run_finemap.input.variants, and it is resolved
+# through the same lockstep-aware helper so the coloc job and the fine-map job
+# read the SAME catalog file rather than two files that merely look alike.
+from occlusion_lockstep_cli import lockstep_variants_path  # noqa: E402
 
 PYTHON_BIN = sys.executable
 QTL_COLOC_DIR = os.path.join(config["paths"]["results_root"], "qtl_coloc")
@@ -200,13 +256,72 @@ def _qtl_coloc_gwas_fit_input(wildcards):
     )
 
 
+# ⚠ DISCLOSED ANALYSIS CHANGE (260805-w7u, FINDING E) -- READ BEFORE THE FIRST
+#   FIRE. Recorded here rather than absorbed silently, in the register of
+#   finemap.smk:103-158.
+#
+#   THE CHANGE. On the allow-list this input function stops constructing
+#   {ld_reference}/{ancestry}/{region}.rds and asks resolve_ld_path() instead.
+#   The FIRST curated AFR region for which an AFR_aou/<m2_id>.rds actually
+#   exists therefore switches its COLOC LD source from AFR_1kg (1000G AFR,
+#   n=661) to the AoU AFR panel, and that pair's colocalization numerics WILL
+#   move: PP.H4, credible-set membership, and which variants enter at all.
+#   Until such an .rds exists nothing on this path moves -- but the day it lands
+#   it moves without a flag unless this note is carried into the record. Any AFR
+#   coloc figure or table regenerated after that point is NOT comparable to one
+#   produced before it. It is INTENDED (the n=661 reference IS the
+#   miscalibration M3 exists to correct) and it is still DISCLOSABLE.
+#
+#   ONE CROSSWALK OBJECT. CURATED_TO_M2 (finemap.smk:166) and REGION_SAFE_TO_ID
+#   (Snakefile:45-62) are REUSED from the shared include namespace, never
+#   re-loaded here. run_finemap and run_qtl_coloc must not be able to disagree
+#   about which artifact a region maps to; two loads of the same TSV agree today
+#   and are free to diverge tomorrow (T-w7u-07).
+#
+#   THE RAISE IS INTENDED. With the gate ON and no panel anywhere,
+#   resolve_ld_path raises FileNotFoundError at DAG-BUILD time -- the same
+#   property finemap.smk already has. Falling back to the legacy path here would
+#   add a FIFTH silent layer to the four exit-0 layers already traced on this
+#   path (empty LD intersection -> "too_few_snps" at rc 0; a sparse dsCMatrix
+#   rejected by runsusie inside a tryCatch -> "qtl_susie_failed" at rc 0;
+#   use_identity fitting coloc.susie on diag(n) with only a cat(); and Snakemake
+#   seeing rc 0 for all of them). Loud beats a fifth layer.
+#
+#   OFF THE ALLOW-LIST THE RETURN EXPRESSION BELOW IS 7b1025d's, CHARACTER FOR
+#   CHARACTER. That is the Track-A containment -- 1,957 legacy coloc JSONs, and
+#   today's coloc successes are 32/32 EUR. Do not "tidy" it; it is pinned
+#   differentially against the real 7b1025d function in
+#   tests/m3/test_qtl_coloc_ld_resolution.py.
 def _qtl_coloc_ld_input(wildcards):
-    """Input function: resolve LD matrix path from the manifest row."""
+    """Input function: resolve LD matrix path from the manifest row.
+
+    ON the allow-list (ld_read_path.{enabled,ancestries,coloc}) the answer comes
+    from resolve_ld_path() through ld_matrix_region_id() -- the same call
+    run_finemap.input.ld_matrix makes -- so the LD reaching coloc::runsusie is
+    the SAME artifact the GWAS fit was produced on. OFF it, the manifest column
+    (or the legacy constructed path) is returned exactly as before.
+    """
     row = _qtl_coloc_manifest_row(wildcards.qtl_coloc_id)
     if row is None:
         return os.path.join(
             QTL_COLOC_DIR,
             f"_MISSING_MANIFEST_{wildcards.qtl_coloc_id}.ld.rds",
+        )
+    ancestry = row["ancestry"]
+    if ld_coloc_applies(ancestry, config):
+        return str(
+            resolve_ld_path(
+                region_id=ld_matrix_region_id(
+                    row["region"],
+                    ancestry,
+                    config,
+                    CURATED_TO_M2,
+                    REGION_SAFE_TO_ID,
+                ),
+                ancestry=ancestry,
+                config=config,
+                region_safe=row["region"],
+            )
         )
     return row.get(
         "ld_matrix_path",
@@ -263,6 +378,17 @@ rule build_qtl_coloc_manifest:
         results_root=config["paths"]["results_root"],
         ld_reference=config["paths"]["ld_reference"],
         harmonized_dir=QTL_HARMONIZED_DIR,
+        # 260805-w7u (FINDING E): the SAME allow-list _qtl_coloc_ld_input gates
+        # on, read from the SAME config block, filtered by the SAME predicate.
+        # An ancestry whose LD path the resolver decides must not also have a
+        # competing path written into the manifest column -- the sentinel makes
+        # that impossible to take silently. Empty string (today's default off
+        # the allow-list) reproduces 7b1025d's manifest byte for byte.
+        # ⚠ THE SHELL TOKEN BELOW IS QUOTED, AND THAT IS NOT COSMETIC. Off the
+        # allow-list this value is the EMPTY STRING; unquoted it would collapse
+        # and argparse would consume the NEXT flag as its value ("--output"),
+        # failing the manifest build in exactly the default configuration.
+        resolver_ancestries=",".join(ld_coloc_ancestries(config)),
     conda:
         str(Path(workflow.basedir) / "envs" / "qtl_processing.yml")
     shell:
@@ -275,6 +401,7 @@ rule build_qtl_coloc_manifest:
             --results-root {params.results_root} \
             --ld-reference {params.ld_reference} \
             --harmonized-dir {params.harmonized_dir} \
+            --resolver-ancestries "{params.resolver_ancestries}" \
             --output {output.manifest}
         """
 

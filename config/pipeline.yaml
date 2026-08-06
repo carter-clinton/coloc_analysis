@@ -306,10 +306,42 @@ occlusion_lockstep:
 # SETTING IT false disables FINDING H's fix ONLY. 260805-23d's
 # authoritative-declared-panel mandate (ld_read_path.ancestries above ->
 # --ld-authoritative) is untouched and still applies.
+#
+# 260805-w7u (m3-04c blast-radius FINDING E, gate row "Any GWAS x QTL
+# colocalization"): `coloc` arms the GWAS x QTL colocalization LD read path for
+# the ancestries listed above.
+#
+# WHAT IT ARMS. qtl_coloc.smk was the ONE LD consumer that was never
+# crosswalked -- at 7b1025d it built the legacy
+# {ld_reference}/{ancestry}/{region}.rds and handed THAT to coloc::runsusie
+# while the GWAS fit it colocalizes had been produced on the AoU panel: two
+# different LD panels inside a single coloc.susie posterior, with nothing in the
+# output to say so. With `coloc: true` the coloc path routes through the SAME
+# resolve_ld_path + curated->M2 crosswalk object run_finemap uses, AND keys the
+# panel<->fit bridge through the region variant catalog with the same
+# allele-aware 4-key join.
+#
+# IT IS ONE LEVER FOR BOTH HALVES, DELIBERATELY. Two independent switches would
+# permit "resolution ON / join OFF" -- the job opens the AoU panel and then
+# cannot key against it, trading silently-WRONG LD for silently-NO LD. Closing
+# finding E is not allowed to substitute that. src/python/ld_read_path.py
+# ::ld_coloc_applies is the single predicate; both qtl_coloc.smk and the
+# manifest builder's --resolver-ancestries allow-list read it.
+#
+# WHAT IT ALSO ARMS: LOUDNESS. Under the gate an unbridgeable or sub-threshold
+# panel<->fit overlap EXITS NON-ZERO with a named reason and the measured
+# per-key-space overlaps, instead of writing a "too_few_snps" status JSON at
+# rc 0 (four such exit-0 layers were traced at 7b1025d; in bulk they are
+# indistinguishable from biology).
+#
+# SETTING IT false disables FINDING E's fix ONLY, for every ancestry, and the
+# whole coloc path reverts to 7b1025d byte-for-byte. `enabled: false` and
+# `ancestries: []` remain the broader kill switches.
 ld_read_path:
   enabled: true
   ancestries: [AFR]
   allele_aware: true
+  coloc: true
 
 # M3 .npz -> .rds converter sizing (260805-23d Task 5; m3-04c blast-radius
 # BLOCKER-D). Consumed by src/snakemake/rules/m3_convert_npz_rds.smk

@@ -406,6 +406,31 @@ properties:
       allele_aware:
         type: boolean
         description: "Arm the allele-aware sumstats<->panel join (blast-radius finding H) for the allow-listed ancestries. Absent or false => the legacy CHR:POS match() runs, first hit, REF/ALT ignored."
+      # 260805-w7u (m3-04c blast-radius FINDING E, gate row "Any GWAS x QTL
+      # colocalization").
+      #
+      # ⚠ THIS ENTRY *TYPES* THE KEY. IT IS **NOT** WHAT KEEPS validate() ALIVE.
+      # The two comments above (the block's own, and allele_aware's) state the
+      # opposite, and that claim was MEASURED FALSE in 260805-o7o (Deviation 1):
+      # `additionalProperties: false` is set at the TOP LEVEL of this schema
+      # ONLY, and the `ld_read_path` object declares none of its own, so
+      # JSON-Schema's permissive default already covers its sub-keys -- a new
+      # sub-key here yields rc 0 with or without a declaration. Verified there
+      # that validate() IS reached and DOES reject a genuinely undeclared
+      # TOP-LEVEL key. The pre-existing comments are left as-is (out of this
+      # task's scope, logged in deferred-items.md); do not read them as fact,
+      # and do not write a negative control that depends on the false version.
+      #
+      # What the entry buys is real but narrower: WITH it a non-boolean value is
+      # rejected (ValidationError ... is not of type 'boolean', rc=1); WITHOUT
+      # it the same bad value is silently accepted (rc=0). Since this key is the
+      # single lever deciding which LD bytes a published coloc posterior is
+      # computed from, "coloc: yes" quietly meaning nothing is not acceptable.
+      # (ld_coloc_applies also requires `is True`, so a mistyped value fails
+      # SAFE in the code path; the schema makes it fail LOUD as well.)
+      coloc:
+        type: boolean
+        description: "Arm the GWAS x QTL colocalization LD read path (blast-radius finding E) for the allow-listed ancestries: route qtl_coloc's LD through the same resolve_ld_path + curated->M2 crosswalk run_finemap uses, key the panel<->fit bridge with the allele-aware 4-key join, and exit NON-ZERO when the bridge cannot be built. Absent or false => the whole coloc path is byte-identical to 7b1025d for every ancestry."
 
   # M3 .npz -> .rds converter sizing (260805-23d Task 5; m3-04c blast radius
   # BLOCKER-D). Consumed by src/snakemake/rules/m3_convert_npz_rds.smk.

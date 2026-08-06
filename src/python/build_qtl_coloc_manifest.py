@@ -102,6 +102,25 @@ GENE_SYMBOL_TO_ENSEMBL = {
 # per note above.
 SOURCES_REQUIRING_ENSEMBL = {"gtex_eqtl", "gtex_sqtl", "onek1k_sceqtl"}
 
+# 260805-w7u (m3-04c blast-radius FINDING E). The value written into
+# `ld_matrix_path` for an ancestry whose coloc LD path is decided by
+# src/python/ld_panel.py::resolve_ld_path (i.e. one on the
+# `ld_read_path.ancestries` allow-list with `ld_read_path.coloc: true`).
+#
+# WHY A SENTINEL RATHER THAN AN EMPTY STRING OR THE OLD PATH. Under the gate
+# `qtl_coloc.smk::_qtl_coloc_ld_input` never reads this column at all -- the
+# resolver's answer wins even against a DIFFERENT file that exists (T-w7u-01).
+# But three OTHER readers of the column remain: plan_ld_builds.py:238,
+# fine_mapping_gap_reports.py:91 and sample_null_loci.py:378. Leaving a
+# plausible-looking legacy path there would let one of them silently open the
+# 1kG panel and report it as "the" coloc LD -- exactly the second-source-of-
+# truth that finding E is. The sentinel is DELIBERATELY NOT PATH-SHAPED: no
+# separator, no `.rds` suffix, cannot exist on disk. It is the 260805-23d
+# discipline "a fallback that is never CONSTRUCTED cannot be silently taken",
+# applied to a column instead of a candidate list -- a reader that assumes this
+# is a path fails visibly, immediately, and names this constant in the error.
+LD_PATH_RESOLVER_SENTINEL = "RESOLVED_BY_LD_PANEL_RESOLVER"
+
 
 def _normalize_trait(short_code: str) -> str:
     """Resolve trait short code to canonical long name per TRAIT_ALIASES.
@@ -157,6 +176,17 @@ def parse_args():
                         help="Harmonized QTL data directory")
     parser.add_argument("--output", required=True,
                         help="Output manifest TSV path")
+    # 260805-w7u (FINDING E). Comma-separated; default "" = none, which
+    # reproduces 7b1025d's output byte for byte. qtl_coloc.smk derives the value
+    # from the SAME config allow-list its input function gates on
+    # (ld_read_path.ancestries filtered by ld_coloc_applies), so the column and
+    # the resolver can never disagree about which ancestries are gated.
+    parser.add_argument("--resolver-ancestries", default="",
+                        help="Comma-separated ancestries whose coloc LD path is "
+                             "decided by ld_panel.resolve_ld_path; their "
+                             "ld_matrix_path becomes the non-path sentinel "
+                             f"{LD_PATH_RESOLVER_SENTINEL!r} so no other reader "
+                             "can silently open a stale panel. Default: none.")
     return parser.parse_args()
 
 
@@ -227,8 +257,29 @@ def _ancestry_for_region(region):
 
 
 def build_manifest(regions, qtl_sources, tissue_n_lookup,
-                   results_root, ld_reference, harmonized_dir):
-    """Build manifest rows by cross-joining regions x sources x tissues x genes."""
+                   results_root, ld_reference, harmonized_dir,
+                   resolver_ancestries=None):
+    """Build manifest rows by cross-joining regions x sources x tissues x genes.
+
+    Args:
+        resolver_ancestries: set of ancestry codes whose coloc LD path is
+            decided by ``resolve_ld_path`` rather than by this column
+            (260805-w7u, FINDING E). Those rows get
+            ``LD_PATH_RESOLVER_SENTINEL`` instead of a constructed path. The
+            DEFAULT ``None`` (and the empty set) reproduce ``7b1025d``'s output
+            byte for byte -- the caller-relative fail-safe here is CHANGE
+            NOTHING, and it is pinned differentially against the real
+            pre-change builder in
+            ``tests/m3/test_qtl_coloc_ld_resolution.py``.
+
+            ⚠ MEASURED, and load-bearing for anyone reading this later:
+            ``_ancestry_for_region`` (above) returns ``"EUR"`` UNCONDITIONALLY,
+            so with the shipped allow-list (``AFR``) NO row currently takes the
+            sentinel branch. This argument is therefore armed but INERT today,
+            and goes live the moment ``_ancestry_for_region`` learns about AFR.
+            That is stated rather than hidden: an inert branch nobody knows is
+            inert is how "the fix is wired" becomes an unfalsifiable claim.
+    """
     rows = []
 
     for source_name, source_cfg in qtl_sources.items():
@@ -294,10 +345,14 @@ def build_manifest(regions, qtl_sources, tissue_n_lookup,
                         results_root, "fine_mapping", "susie",
                         f"{gwas_trait}.{ancestry}.{region_id}.fit.rds"
                     )
-                    ld_matrix_path = os.path.join(
-                        ld_reference, ancestry,
-                        f"{region_id}.rds"
-                    )
+                    # 260805-w7u (FINDING E). See LD_PATH_RESOLVER_SENTINEL.
+                    if resolver_ancestries and ancestry in resolver_ancestries:
+                        ld_matrix_path = LD_PATH_RESOLVER_SENTINEL
+                    else:
+                        ld_matrix_path = os.path.join(
+                            ld_reference, ancestry,
+                            f"{region_id}.rds"
+                        )
                     dataset_id = tissue  # dataset_id varies by source
                     harmonized_qtl_path = os.path.join(
                         harmonized_dir, data_type_dir,
@@ -340,9 +395,21 @@ def main():
     tissue_n_lookup = load_tissue_n(args.tissue_n_lookup)
     logger.info("Loaded %d tissue N entries from %s", len(tissue_n_lookup), args.tissue_n_lookup)
 
+    resolver_ancestries = {
+        a.strip() for a in (args.resolver_ancestries or "").split(",") if a.strip()
+    }
+    if resolver_ancestries:
+        logger.info(
+            "ld_matrix_path is the NON-PATH sentinel %r for ancestries %s "
+            "(their coloc LD path is decided by ld_panel.resolve_ld_path; "
+            "260805-w7u FINDING E)",
+            LD_PATH_RESOLVER_SENTINEL, sorted(resolver_ancestries),
+        )
+
     rows = build_manifest(
         regions, qtl_sources, tissue_n_lookup,
         args.results_root, args.ld_reference, args.harmonized_dir,
+        resolver_ancestries=resolver_ancestries or None,
     )
 
     # Write output

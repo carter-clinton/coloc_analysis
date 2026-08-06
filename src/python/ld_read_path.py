@@ -56,6 +56,9 @@ __all__ = [
     "ld_matrix_region_id",
     "ld_file_authoritative",
     "ld_allele_aware",
+    "ld_coloc_applies",
+    "ld_coloc_join",
+    "ld_coloc_ancestries",
 ]
 
 #: Ancestries the declared-LD read path applies to when the block lists none.
@@ -150,3 +153,88 @@ def ld_allele_aware(ancestry, config) -> str:
     if not ld_read_path_applies(ancestry, config):
         return "false"
     return "true" if _ld_read_path_block(config).get("allele_aware") is True else "false"
+
+
+def ld_coloc_applies(ancestry, config) -> bool:
+    """The SINGLE gate for the GWAS x QTL colocalization LD read path.
+
+    260805-w7u (m3-04c blast-radius, **FINDING E**, gate row
+    ``m3-04c-BLAST-RADIUS.md:141`` "Any GWAS x QTL colocalization").
+    ``qtl_coloc.smk`` is the one LD consumer that was never crosswalked
+    (``grep -cE "CURATED_TO_M2|resolve_ld_path|ld_read_path" qtl_coloc.smk`` was
+    **0** at ``7b1025d``), so an AFR GWAS fit produced on the AoU panel would be
+    colocalized against the *1kG* LD matrix inside one ``coloc.susie``.
+
+    (a) IT IS DELIBERATELY **ONE** LEVER FOR **BOTH** HALVES of the remedy -- the
+    resolver route (``_qtl_coloc_ld_input``) and the allele-aware panel<->fit
+    join (``run_qtl_coloc.R --ld-allele-join``). Two independently flippable
+    levers would permit the state *resolution ON / join OFF*: the coloc job would
+    open the AoU panel and then fail to key against it, i.e. it would trade
+    silently-WRONG LD for silently-NO LD. That is the same defect wearing a
+    different mask, and closing E is not allowed to substitute it. Whoever wants
+    to disarm one half must disarm both.
+
+    (b) THE FAIL-SAFE DIRECTION IS **CHANGE NOTHING**. Block absent, block
+    malformed, ``enabled: false``, ancestry unlisted, ``coloc`` sub-key absent,
+    ``coloc: false``, ``coloc: "true"`` (a YAML string), ``coloc: 1`` -- every
+    uncertain answer is ``False`` and the entire coloc path stays byte-identical
+    to ``7b1025d`` for EVERY ancestry including AFR (finding E simply stays
+    open). ``is True`` rather than truthiness, mirroring :func:`ld_allele_aware`:
+    this flag decides which LD **bytes** a published posterior is computed from,
+    and Track A is in submission with 1,957 legacy coloc JSONs on disk
+    (``[[feedback_failsafe_default_is_caller_relative]]``).
+
+    (c) IT RETURNS A ``bool``, unlike :func:`ld_allele_aware` and
+    :func:`ld_file_authoritative`, because BOTH of its consumers are Python --
+    ``qtl_coloc.smk``'s input function and the manifest builder's allow-list.
+    The R script receives a separately-rendered ``"true"`` / ``"false"`` string
+    from :func:`ld_coloc_join`.
+
+    ``ld_read_path.enabled: false``, ``ancestries: []`` and ``coloc: false`` are
+    each a one-line kill switch.
+    """
+    if not ld_read_path_applies(ancestry, config):
+        return False
+    return _ld_read_path_block(config).get("coloc") is True
+
+
+def ld_coloc_join(ancestry, config) -> str:
+    """The literal value rendered into ``--ld-allele-join``: ``"true"`` / ``"false"``.
+
+    A STRING for the same reason as :func:`ld_file_authoritative`: it is
+    interpolated straight into ``run_qtl_coloc``'s shell and parsed by
+    ``run_qtl_coloc.R``, which ``stop()``s on any value it does not recognise
+    rather than silently defaulting. Derived from :func:`ld_coloc_applies` so
+    there is exactly ONE predicate, not two that can drift.
+    """
+    return "true" if ld_coloc_applies(ancestry, config) else "false"
+
+
+def ld_coloc_ancestries(config) -> list:
+    """Every ancestry whose coloc LD path the resolver decides, in config order.
+
+    260805-w7u. The ``--resolver-ancestries`` allow-list handed to
+    ``build_qtl_coloc_manifest.py``, so the manifest column and
+    ``_qtl_coloc_ld_input`` can never disagree about which ancestries are gated.
+
+    ⚠ WHY THIS LIVES HERE AND NOT IN ``qtl_coloc.smk``. The plan's STEP 6 spelled
+    this as ``",".join(a for a in config.get("ld_read_path", {}).get(
+    "ancestries", []) if ld_coloc_applies(a, config))`` inline in the rule --
+    which would have made ``qtl_coloc.smk`` read the ``ld_read_path`` block
+    directly, contradicting that same plan's requirement that the ``.smk`` hold
+    no second reading of the block (T-w7u-07: a second reader of a config shape
+    is a second thing to keep in step, and it agrees TODAY precisely because
+    nobody has changed the shape yet). Keeping the enumeration in the module
+    that already owns the block satisfies both: the ``.smk`` names no sub-key at
+    all, and the DECISION is still exactly one predicate.
+
+    The enumeration is filtered THROUGH :func:`ld_coloc_applies`, so it is not an
+    independent answer: with ``enabled: false`` or ``coloc`` absent/false this
+    returns ``[]`` even though ``ancestries`` is non-empty.
+    """
+    block = _ld_read_path_block(config)
+    try:
+        listed = list(block.get("ancestries", _DEFAULT_ANCESTRIES))
+    except TypeError:
+        return []
+    return [str(a) for a in listed if ld_coloc_applies(str(a), config)]
