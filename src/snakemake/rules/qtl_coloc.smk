@@ -333,6 +333,32 @@ def _qtl_coloc_ld_input(wildcards):
     )
 
 
+def _qtl_coloc_variants_path(wildcards):
+    """The region variant catalog that BRIDGES the panel to the GWAS fit.
+
+    260805-w7u (FINDING E). ``{ld_reference}/variants/{region}.tsv`` --
+    ``CHR, POS, REF, ALT, SNP_ID``, GRCh37, already ``run_finemap.input.variants``
+    -- resolved through the SAME lockstep-aware helper ``finemap.smk`` uses, so
+    the coloc job and the fine-map job read the same file rather than two files
+    that merely look alike.
+
+    Returns ``None`` off the allow-list. That is what makes EUR's DAG gain NO
+    new edge: ``input.variants`` is then ``[]`` and the shell emits no
+    ``--variant-list`` token at all.
+    """
+    row = _qtl_coloc_manifest_row(wildcards.qtl_coloc_id)
+    if row is None or not ld_coloc_applies(row["ancestry"], config):
+        return None
+    return lockstep_variants_path(
+        row["region"], row["ancestry"], config, config["paths"]["ld_reference"]
+    )
+
+
+def _qtl_coloc_variants_input(wildcards):
+    path = _qtl_coloc_variants_path(wildcards)
+    return [path] if path else []
+
+
 def _qtl_coloc_harmonized_input(wildcards):
     """Input function: resolve harmonized QTL TSV path from the manifest row."""
     row = _qtl_coloc_manifest_row(wildcards.qtl_coloc_id)
@@ -417,10 +443,18 @@ rule run_qtl_coloc:
         gwas_fit=_qtl_coloc_gwas_fit_input,
         qtl_sumstats=_qtl_coloc_harmonized_input,
         ld_matrix=_qtl_coloc_ld_input,
+        # 260805-w7u (FINDING E): [] off the allow-list, so EUR's DAG gains no
+        # new edge and Track A's 1,957 legacy coloc JSONs stay reproducible.
+        variants=_qtl_coloc_variants_input,
         policy="config/susie_policy.yaml",
         script="src/snakemake/scripts/run_qtl_coloc.R",
+        join_script="src/snakemake/scripts/ld_allele_join.R",
     output:
         json=os.path.join(QTL_COLOC_DIR, "{qtl_coloc_id}.json"),
+    log:
+        # 260805-w7u: the per-pair LD receipt, in the exact register of
+        # finemap.smk:441. A write-only counter is not observability.
+        ld_receipt=os.path.join(QTL_COLOC_DIR, "{qtl_coloc_id}.ld_join.log"),
     params:
         qtl_source=lambda wc: _qtl_manifest_field(wc, "qtl_source"),
         tissue=lambda wc: _qtl_manifest_field(wc, "tissue"),
@@ -429,6 +463,21 @@ rule run_qtl_coloc:
         ancestry=lambda wc: _qtl_manifest_field(wc, "ancestry"),
         sdy=lambda wc: _qtl_manifest_field(wc, "sdy"),
         sample_size=lambda wc: _qtl_manifest_field(wc, "tissue_n"),
+        # 260805-w7u (FINDING E). ONE gate, rendered as a string because
+        # run_qtl_coloc.R stop()s on any value it does not recognise rather than
+        # silently defaulting.
+        ld_allele_join=lambda wc: ld_coloc_join(
+            _qtl_manifest_field(wc, "ancestry"), config
+        ),
+        # ⚠ THE FLAG IS A PARAM, NOT A LITERAL IN THE SHELL. Off the allow-list
+        # input.variants is [] and `--variant-list {input.variants}` would render
+        # a bare flag whose value becomes the NEXT token -- the same argparse/
+        # optparse trap the manifest builder's empty allow-list hit. Emitting the
+        # flag itself only when the input list is non-empty makes the token
+        # unconstructible in the ungated case, which is stronger than quoting it.
+        variant_list_flag=lambda wc: (
+            "--variant-list" if _qtl_coloc_variants_path(wc) else ""
+        ),
     conda:
         str(Path(workflow.basedir) / "envs" / "r_coloc.yml")
     threads: 1
@@ -449,7 +498,17 @@ rule run_qtl_coloc:
             --sdy {params.sdy} \
             --sample-size {params.sample_size} \
             --policy {input.policy} \
+            --ld-allele-join {params.ld_allele_join} \
+            {params.variant_list_flag} {input.variants} \
             --output {output.json}
+        # 260805-w7u: the per-pair LD RECEIPT, in the exact register of
+        # finemap.smk:441. ld_matrix is the panel actually OPENED; ld_key_space
+        # records which bridge won; ld_panel_overlap is the realized overlap; and
+        # the six counters make every disposition class -- including the
+        # orientation counter that measures deferred E-2's magnitude -- visible
+        # per pair. `|| true` so a receipt failure can never mask the job's own
+        # exit status, which under the gate is the thing that must be trusted.
+        {PYTHON_BIN} -c "import json,sys; d=json.load(open(sys.argv[1])); print('qtl_coloc_id', sys.argv[2], 'region', sys.argv[3], 'ancestry', sys.argv[4], 'status', d.get('status'), 'ld_matrix', d.get('ld_matrix'), 'ld_allele_join', d.get('ld_allele_join'), 'ld_key_space', d.get('ld_key_space'), 'ld_panel_overlap', d.get('ld_panel_overlap'), 'ld_allele_exact', d.get('ld_allele_exact'), 'ld_allele_flipped', d.get('ld_allele_flipped'), 'ld_allele_dropped_palindromic', d.get('ld_allele_dropped_palindromic'), 'ld_allele_dropped_mismatch', d.get('ld_allele_dropped_mismatch'), 'ld_allele_dropped_ambiguous', d.get('ld_allele_dropped_ambiguous'), 'ld_allele_dropped_unusable', d.get('ld_allele_dropped_unusable'))" {output.json} {wildcards.qtl_coloc_id} {params.region} {params.ancestry} > {log.ld_receipt} || true
         """
 
 

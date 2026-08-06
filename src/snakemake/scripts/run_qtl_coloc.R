@@ -49,6 +49,29 @@ option_list <- list(
               help = "Integer N for QTL dataset"),
   make_option("--policy",        type = "character", default = "config/susie_policy.yaml",
               help = "Path to config/susie_policy.yaml"),
+  # ------------------------------------------------------------------
+  # 260805-w7u -- m3-04c blast-radius FINDING E, gate row
+  # "Any GWAS x QTL colocalization". BOTH default to the LEGACY behaviour so
+  # that a caller which never passes them is INERT. That is not hypothetical:
+  # src/python/sample_null_loci.py:369-384 is a SECOND caller of this script and
+  # will never pass either flag (its rows are ancestry="EUR" with
+  # ld_matrix_path: ""). It is the live proof that the default direction is the
+  # right one, and tests/m3/test_qtl_coloc_allele_join.py asserts it against
+  # that exact argv.
+  # ------------------------------------------------------------------
+  make_option("--ld-allele-join", dest = "ld_allele_join", type = "character",
+              default = "false",
+              help = paste("'true' or 'false'. When true, bridge the LD panel to",
+                           "the GWAS fit through the region variant catalog with",
+                           "the allele-aware 4-key join, and FAIL NON-ZERO when",
+                           "that bridge cannot be built. Any other value is a",
+                           "hard error -- never a silent default.")),
+  make_option("--variant-list",  dest = "variant_list",   type = "character",
+              default = NULL,
+              help = paste("Region variant catalog TSV (CHR/POS/REF/ALT/SNP_ID),",
+                           "i.e. {ld_reference}/variants/{region}.tsv -- the same",
+                           "artifact run_finemap.input.variants consumes. Required",
+                           "when --ld-allele-join is true.")),
   make_option("--output",        type = "character",
               help = "Output JSON path")
 )
@@ -66,6 +89,136 @@ for (arg_name in required_args) {
 stopifnot(file.exists(opt$gwas_fit))
 stopifnot(file.exists(opt$qtl_sumstats))
 stopifnot(file.exists(opt$ld_matrix))
+
+# =========================================================================
+# 260805-w7u -- FINDING E. THE GATE, THE SHARED JOIN, AND THE LOUD FAILURE.
+# =========================================================================
+# ⚠ WHY THIS EXISTS AT ALL, stated once, plainly.
+#
+# At 7b1025d qtl_coloc.smk built the legacy {ld_reference}/{ancestry}/{region}.rds
+# and handed THAT to coloc::runsusie while the GWAS fit it colocalizes had been
+# produced on the AoU panel -- two different LD panels inside one coloc.susie
+# posterior. Task 1 of 260805-w7u routes the PATH through resolve_ld_path.
+# Fixing only the path substitutes a DIFFERENT silent failure, because the AoU
+# panel's key space is not the fit's:
+#
+#   * ld_npz_to_rds.R:440 writes R as a dsCMatrix WITH dimnames = the GRCh37
+#     chr:pos:ref:alt ids. `ld_snp_names <- rownames(ld_full) %||% ...` (below)
+#     short-circuits on the FIRST non-NULL, so those panel-space ids ARE
+#     ld_snp_names and build_ld_rownames() never runs. (The legacy 1kG .rds is
+#     the opposite shape -- plink_ld_to_rds.R:88 sets dimnames(R) <- NULL and its
+#     R is a base matrix from as.matrix(ld_dt) -- which is exactly why EUR coloc
+#     works today, and why nothing below may touch the ungated path.)
+#   * GWAS fit names are SUMSTATS-space: either an rsid or "chr:pos". Neither can
+#     ever equal "chr:pos:ref:alt", so the LD intersection would be EMPTY.
+#   * An empty intersection at 7b1025d wrote too_few_snps and EXITED 0. So did a
+#     sparse dsCMatrix rejected by runsusie inside a tryCatch, and so did an
+#     un-intersected use_identity fit on diag(n). In bulk, "no colocalization
+#     found" at rc 0 reads as a scientific result.
+#
+# THE BRIDGE. {ld_reference}/variants/{region}.tsv -- CHR/POS/REF/ALT/SNP_ID,
+# GRCh37, already run_finemap.input.variants. Panel = ld_obj$variants,
+# catalog = subset_dt: the shared matcher's contract IS satisfiable here.
+#
+# EVERYTHING BELOW IS BEHIND ONE FLAG. With --ld-allele-join false (the default,
+# and what every ancestry off the allow-list renders) this file behaves exactly
+# as it did at 7b1025d, byte for byte, for every input.
+# =========================================================================
+LD_ALLELE_JOIN_FLAG <- opt$ld_allele_join %||% "false"
+if (!identical(LD_ALLELE_JOIN_FLAG, "true") &&
+    !identical(LD_ALLELE_JOIN_FLAG, "false")) {
+  # Never silently default: this flag decides which LD ROW a variant binds to.
+  stop(sprintf("--ld-allele-join must be exactly 'true' or 'false', got '%s'",
+               LD_ALLELE_JOIN_FLAG), call. = FALSE)
+}
+LD_ALLELE_JOIN <- identical(LD_ALLELE_JOIN_FLAG, "true")
+
+# The realized-overlap floor. Deliberately the SAME literal 50 the two
+# pre-existing gates use (:183 and the post-LD-intersection gate below), so this
+# change invents no new fatal threshold -- it only changes whether falling below
+# the existing one is LOUD. config/susie_policy.yaml `susie.min_ld_overlap` is 50
+# and tests/m3/test_qtl_coloc_allele_join.py reads the policy and pins that the
+# two agree, so a policy edit that diverges from this constant is a test failure
+# rather than a silent drift.
+MIN_COLOC_LD_OVERLAP <- 50L
+
+.script_dir <- function() {
+  a <- commandArgs(trailingOnly = FALSE)
+  f <- sub("^--file=", "", a[grepl("^--file=", a)])
+  if (length(f) > 0) return(dirname(normalizePath(f[1], mustWork = FALSE)))
+  of <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
+  if (!is.null(of)) return(dirname(normalizePath(of, mustWork = FALSE)))
+  "src/snakemake/scripts"
+}
+LD_ALLELE_JOIN_R <- file.path(.script_dir(), "ld_allele_join.R")
+if (LD_ALLELE_JOIN) {
+  # Sourced ONLY under the gate: a missing file must not be able to change the
+  # return code of the ungated path, which is what keeps EUR byte-identical even
+  # in a partial checkout.
+  if (!file.exists(LD_ALLELE_JOIN_R)) {
+    stop(sprintf(paste("[run_qtl_coloc] LD_JOIN_FATAL reason=join_source_missing",
+                       "region=%s ancestry=%s expected=%s"),
+                 opt$region %||% "?", opt$ancestry %||% "?", LD_ALLELE_JOIN_R),
+         call. = FALSE)
+  }
+  source(LD_ALLELE_JOIN_R)
+}
+
+# ---- provenance, filled in as it is MEASURED; NULL means "not measured" ----
+# NULL (not 0, not "") is the discipline inherited from 260805-o7o: a counter
+# that is 0 says "measured and clean", a counter that is absent says "never ran".
+# Conflating them is how a disarmed gate comes to look like a clean result.
+LD_KEY_SPACE <- NULL
+LD_PANEL_OVERLAP <- NULL
+LD_CANDIDATE_OVERLAPS <- NULL
+LD_JOIN_COUNTS <- NULL
+
+ld_provenance <- function() {
+  # ⚠ RETURNS AN EMPTY LIST OFF THE GATE, AND THAT IS LOAD-BEARING. In R
+  # `list(k = NULL)` CREATES a named NULL element (unlike `x$k <- NULL`, which
+  # deletes), so building this unconditionally would make the ungated result
+  # STRUCTURALLY different from 7b1025d's and break the byte-identical EUR
+  # proof. This exact trap cost 260805-o7o a rewrite; NC-2e re-observes it.
+  if (!LD_ALLELE_JOIN) return(list())
+  cnt <- LD_JOIN_COUNTS
+  g <- function(nm) if (is.null(cnt)) NA_integer_ else as.integer(cnt[[nm]])
+  list(
+    ld_matrix                     = opt$ld_matrix %||% NA_character_,
+    ld_allele_join                = LD_ALLELE_JOIN_FLAG,
+    ld_key_space                  = LD_KEY_SPACE %||% NA_character_,
+    ld_panel_overlap              = if (is.null(LD_PANEL_OVERLAP)) NA_integer_
+                                    else as.integer(LD_PANEL_OVERLAP),
+    ld_allele_exact               = g("exact"),
+    ld_allele_flipped             = g("flipped"),
+    ld_allele_dropped_palindromic = g("dropped_palindromic"),
+    ld_allele_dropped_mismatch    = g("dropped_mismatch"),
+    ld_allele_dropped_ambiguous   = g("dropped_ambiguous"),
+    ld_allele_dropped_unusable    = g("dropped_unusable")
+  )
+}
+
+attach_ld_provenance <- function(result) {
+  extra <- ld_provenance()
+  for (nm in names(extra)) result[[nm]] <- extra[[nm]]
+  result
+}
+
+ld_join_stop <- function(reason, detail = "") {
+  # ONE structured, non-zero exit. Names the reason, the region, the ancestry,
+  # the realized overlap, the threshold, and EVERY measured candidate key-space
+  # overlap -- because "0 overlap" without knowing which key spaces were tried is
+  # the same non-diagnosis the four exit-0 layers already produce.
+  cand <- if (is.null(LD_CANDIDATE_OVERLAPS)) "not measured" else
+    paste(sprintf("%s=%d", names(LD_CANDIDATE_OVERLAPS),
+                  as.integer(LD_CANDIDATE_OVERLAPS)), collapse = ", ")
+  stop(sprintf(paste0(
+    "[run_qtl_coloc] LD_JOIN_FATAL reason=%s region=%s ancestry=%s ",
+    "ld_matrix=%s realized_overlap=%s threshold=%d candidate_overlaps=[%s] %s"),
+    reason, opt$region %||% "?", opt$ancestry %||% "?",
+    opt$ld_matrix %||% "?",
+    if (is.null(LD_PANEL_OVERLAP)) "NA" else as.character(LD_PANEL_OVERLAP),
+    MIN_COLOC_LD_OVERLAP, cand, detail), call. = FALSE)
+}
 
 # -------------------------------------------------------------------------
 # Helper: write status JSON and exit cleanly
@@ -87,6 +240,7 @@ write_status_json <- function(status_code, message = NULL) {
     n_cs_gwas     = NA_integer_,
     n_cs_qtl      = NA_integer_
   )
+  result <- attach_ld_provenance(result)
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
   write_json(result, opt$output, auto_unbox = TRUE, pretty = TRUE, na = "null")
   cat(sprintf("[run_qtl_coloc] %s for %s/%s/%s -- wrote %s\n",
@@ -220,6 +374,17 @@ build_ld_rownames <- function(obj) {
 
 if (is.list(ld_obj) && !is.matrix(ld_obj)) {
   use_identity <- isTRUE(ld_obj$use_identity) || is.null(ld_obj$R)
+  if (use_identity && LD_ALLELE_JOIN) {
+    # THE use_identity BYPASS (m3-04c-BLAST-RADIUS:38). At 7b1025d this branch
+    # built diag(n) over the FIT keys, never intersected the panel at all, and
+    # ran coloc.susie on it with only a cat() -- the emitted JSON recorded
+    # NOTHING about which LD was used. Under an armed gate that is not a
+    # fallback, it is a silent substitution of "no LD" for "the LD we routed
+    # this job through the resolver to obtain". Non-zero, named.
+    ld_join_stop("use_identity_under_gate",
+                 sprintf("panel status=%s; the .rds carries no usable R",
+                         ld_obj$status %||% "unknown"))
+  }
   if (use_identity) {
     # Identity fallback: build a named identity over overlap_snps.
     ld_matrix_subset <- diag(length(overlap_snps))
@@ -246,7 +411,12 @@ if (is.list(ld_obj) && !is.matrix(ld_obj)) {
     }
   }
 } else if (is.matrix(ld_obj) || inherits(ld_obj, "Matrix")) {
-  ld_full <- as.matrix(ld_obj)
+  # T-w7u-04. Under the gate the coercion is DEFERRED to the SUBSET: as.matrix()
+  # on a full n_var x n_var panel is the BLOCKER-D dense-materialisation hazard
+  # (n_var 75,497 at SH2B3 __sub14 -> ~45 GB;
+  # [[feedback_dense_matrix_verify_memory_bounded]]). Off the gate the legacy
+  # eager coercion is retained character-for-character.
+  ld_full <- if (LD_ALLELE_JOIN) ld_obj else as.matrix(ld_obj)
   ld_snp_names <- rownames(ld_full) %||% colnames(ld_full)
   if (is.null(ld_snp_names)) {
     write_status_json("too_few_snps", "LD matrix has no row/col names")
@@ -259,17 +429,136 @@ if (is.list(ld_obj) && !is.matrix(ld_obj)) {
   quit(status = 0)
 }
 
+# -------------------------------------------------------------------------
+# 4b. 260805-w7u -- THE PANEL <-> CATALOG <-> FIT BRIDGE (gated)
+# -------------------------------------------------------------------------
+# ld_row_index maps a FIT-SPACE name to an INTEGER panel row, so the subset can
+# be taken by index on the sparse matrix and coerced afterwards.
+ld_row_index <- NULL
+if (LD_ALLELE_JOIN && (!exists("use_identity") || !isTRUE(use_identity))) {
+
+  # ---- the catalog: the ONLY artifact that speaks both key spaces ----
+  if (is.null(opt$variant_list) || !nzchar(opt$variant_list)) {
+    ld_join_stop("variant_catalog_absent",
+                 "no --variant-list supplied; the panel<->fit bridge cannot be built")
+  }
+  if (!file.exists(opt$variant_list)) {
+    ld_join_stop("variant_catalog_missing",
+                 sprintf("--variant-list %s does not exist", opt$variant_list))
+  }
+  catalog <- tryCatch(as.data.frame(fread(opt$variant_list)),
+                      error = function(e) NULL)
+  if (is.null(catalog) || nrow(catalog) == 0) {
+    ld_join_stop("variant_catalog_unreadable",
+                 sprintf("--variant-list %s is unreadable or empty", opt$variant_list))
+  }
+
+  # ---- the panel side ----
+  panel_variants <- if (is.list(ld_obj) && !is.matrix(ld_obj)) ld_obj$variants else NULL
+  if (is.null(panel_variants) || !is.data.frame(panel_variants)) {
+    ld_join_stop("panel_variants_absent",
+                 "the LD .rds carries no `variants` frame, so its rows cannot be allele-keyed")
+  }
+  if (nrow(panel_variants) != nrow(ld_full)) {
+    # A variants frame out of step with R would silently bind every z to the
+    # wrong row -- the exact error class this join exists to remove.
+    ld_join_stop("panel_variants_out_of_step",
+                 sprintf("variants rows=%d but R rows=%d",
+                         nrow(panel_variants), nrow(ld_full)))
+  }
+
+  # ---- the shared allele-aware 4-key join ----
+  join <- ld_allele_join_indices(catalog, panel_variants)
+  LD_JOIN_COUNTS <- join$counts
+  if (!is.null(join$counts$reject)) {
+    ld_join_stop(join$counts$reject,
+                 "verification is impossible: one side carries no usable REF/ALT")
+  }
+
+  # ⚠ `join$orient` IS MEASURED AND REPORTED, AND DELIBERATELY NOT APPLIED.
+  # This closes the ROW-BINDING half only. Signing the QTL beta against the
+  # panel's ALT (E-2) is pre-existing on the legacy 1kG/EUR path, is not named by
+  # finding E, and correcting it would move Track-A EUR numbers that are in
+  # submission. What the counters buy is that E-2's magnitude becomes MEASURABLE
+  # (ld_allele_flipped) instead of invisible. See
+  # .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md.
+
+  # ---- MEASURE the candidate key spaces; do not assume one ----
+  # The same best-overlap discipline this script already uses on the QTL side.
+  bound_cat <- join$keep
+  bound_pan <- join$ld
+  cat_snp_id <- if ("SNP_ID" %in% names(catalog))
+    as.character(catalog$SNP_ID)[bound_cat] else rep(NA_character_, length(bound_cat))
+  cat_chrpos <- paste(toupper(trimws(as.character(catalog$CHR)))[bound_cat],
+                      suppressWarnings(as.integer(catalog$POS))[bound_cat], sep = ":")
+  pan_chrpos <- paste(toupper(trimws(as.character(panel_variants$CHR))),
+                      suppressWarnings(as.integer(panel_variants$POS)), sep = ":")
+  pan_k4 <- paste(pan_chrpos,
+                  toupper(trimws(as.character(panel_variants$REF))),
+                  toupper(trimws(as.character(panel_variants$ALT))), sep = ":")
+
+  diagnostic_spaces <- list(
+    panel_rownames = rownames(ld_full) %||% character(0),
+    panel_chrpos = pan_chrpos,
+    panel_chrpos_ref_alt = pan_k4
+  )
+  bridged_spaces <- list(
+    catalog_snp_id = cat_snp_id,
+    catalog_chrpos = cat_chrpos
+  )
+  all_spaces <- c(diagnostic_spaces, bridged_spaces)
+  LD_CANDIDATE_OVERLAPS <- vapply(
+    all_spaces, function(v) length(intersect(overlap_snps, v[!is.na(v)])), integer(1))
+  cat(sprintf("[run_qtl_coloc] LD candidate key-space overlaps: %s\n",
+              paste(sprintf("%s=%d", names(LD_CANDIDATE_OVERLAPS),
+                            LD_CANDIDATE_OVERLAPS), collapse = ", ")))
+
+  bridged_overlaps <- LD_CANDIDATE_OVERLAPS[names(bridged_spaces)]
+  LD_KEY_SPACE <- names(which.max(bridged_overlaps))
+  chosen <- bridged_spaces[[LD_KEY_SPACE]]
+
+  # A bridged name that appears twice cannot bind to ONE panel row, so it is
+  # removed from the lookup ENTIRELY rather than resolved by first-hit -- the
+  # 260805-23d "a fallback that is never constructed cannot be silently taken"
+  # discipline, applied to the bridge as well as to the 4-key.
+  usable <- !is.na(chosen) & nzchar(chosen)
+  dup <- duplicated(chosen) | duplicated(chosen, fromLast = TRUE)
+  keep_bridge <- usable & !dup
+  ld_row_index <- bound_pan[keep_bridge]
+  names(ld_row_index) <- chosen[keep_bridge]
+  ld_snp_names <- names(ld_row_index)
+  LD_PANEL_OVERLAP <- length(intersect(overlap_snps, ld_snp_names))
+}
+
 # Final overlap must include the LD matrix's named variants (unless identity
 # fallback, in which case we already built LD over overlap_snps).
 if (!exists("use_identity") || !isTRUE(use_identity)) {
   overlap_snps <- intersect(overlap_snps, ld_snp_names)
   n_snps_overlap <- length(overlap_snps)
-  if (n_snps_overlap < 50) {
-    write_status_json("too_few_snps",
-                      sprintf("Only %d SNPs after LD intersection (need >= 50)", n_snps_overlap))
-    quit(status = 0)
+  if (LD_ALLELE_JOIN) {
+    LD_PANEL_OVERLAP <- n_snps_overlap
+    if (n_snps_overlap < MIN_COLOC_LD_OVERLAP) {
+      # F3: at 7b1025d this wrote too_few_snps and EXITED 0, which in bulk is
+      # indistinguishable from biology. Under the gate it is a DAG failure.
+      ld_join_stop("panel_bridge_below_threshold",
+                   sprintf("key_space=%s; the bridged panel<->fit overlap is below the floor",
+                           LD_KEY_SPACE %||% "none"))
+    }
+    # BOUNDED COERCION. Subset the SPARSE matrix by INTEGER panel row indices
+    # FIRST, coerce the SUBSET, then attach FIT-SPACE dimnames. Never
+    # as.matrix(ld_full): T-w7u-04.
+    idx <- as.integer(ld_row_index[overlap_snps])
+    ld_matrix_subset <- as.matrix(ld_full[idx, idx, drop = FALSE])
+    dimnames(ld_matrix_subset) <- list(overlap_snps, overlap_snps)
+    storage.mode(ld_matrix_subset) <- "double"
+  } else {
+    if (n_snps_overlap < 50) {
+      write_status_json("too_few_snps",
+                        sprintf("Only %d SNPs after LD intersection (need >= 50)", n_snps_overlap))
+      quit(status = 0)
+    }
+    ld_matrix_subset <- ld_full[overlap_snps, overlap_snps, drop = FALSE]
   }
-  ld_matrix_subset <- ld_full[overlap_snps, overlap_snps, drop = FALSE]
 }
 
 # Subset QTL data to overlap SNPs (in same order as LD matrix rows).
@@ -345,6 +634,7 @@ if (n_cs_qtl == 0) {
     n_cs_gwas     = n_cs_gwas,
     n_cs_qtl      = 0L
   )
+  result <- attach_ld_provenance(result)
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
   write_json(result, opt$output, auto_unbox = TRUE, pretty = TRUE, na = "null")
   cat(sprintf("[run_qtl_coloc] no_qtl_cs for %s/%s -- wrote %s\n",
@@ -369,6 +659,7 @@ if (n_cs_gwas == 0) {
     n_cs_gwas     = 0L,
     n_cs_qtl      = n_cs_qtl
   )
+  result <- attach_ld_provenance(result)
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
   write_json(result, opt$output, auto_unbox = TRUE, pretty = TRUE, na = "null")
   cat(sprintf("[run_qtl_coloc] no_gwas_cs for %s/%s -- wrote %s\n",
@@ -422,6 +713,7 @@ output <- list(
   n_cs_gwas      = n_cs_gwas,
   n_cs_qtl       = n_cs_qtl
 )
+output <- attach_ld_provenance(output)
 
 # -------------------------------------------------------------------------
 # 11. Write output JSON
