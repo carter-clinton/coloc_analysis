@@ -25,7 +25,44 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-08-05 (★★ RESUME HERE — LATEST ★★) — ★ **m3-04c EXECUTED, BLAST-RADIUS SWEPT, and all four blockers REMEDIATED. The FIRE is unblocked; the CONCLUSIONS are not.**
+## 2026-08-06 (★★ RESUME HERE — LATEST ★★) — ★ **THE m3-04c BLAST RADIUS IS REMEDIATED. Every gate row is CLEAR except ONE PARTIAL.**
+
+**Nothing running. `$0`. ZERO perimeter contact all session. The AoU fire was NOT triggered.** `origin == local == 9b1b997` on `m3-W2-aou-deltas`; tracked tree clean; no LSF jobs. Suites: **`tests/m3` 807 passed / 31 skipped / 0 failed** and **`tests/phase2` 136 passed / 1 skipped / 0 failed** — each independently re-run by the orchestrator AND the verifier, three agreeing measurements apiece.
+
+**THREE quick tasks, all `--validate`** (planner → plan-checker → executor → verifier → independent suite runs): `260805-o7o` (H + I, verifier 7/7, suite 584→641), `260805-w7u` (E, 8/8, 641→745), `260806-b77` (G/J/L/M, 19/19, 745→807).
+
+**THE GATE LEDGER, reconciled against `m3-04c-BLAST-RADIUS.md`'s own table:**
+
+| Gate row | Status |
+|---|---|
+| Nothing (already merged) | CLEAR |
+| Re-running any EUR fit / rebuilding `EUR_ukbb_pub` | CLEAR (BLOCKER-B, `260805-23d`) |
+| The ~11-day billed fire | CLEAR on A/B/C — ⚠ **BLOCKER-D still PARTIAL** |
+| Trusting any AFR fine-map result | **CLEAR** (H+I) |
+| Any GWAS × QTL colocalization | **CLEAR AS WIRING** (E) — see the inertness note |
+| Any TRANS fit | **CLEAR** (G) — see the inertness note |
+| Publishing the panel provenance | ⚠ **PARTIAL** — I and J closed, **K DEFERRED** |
+| Growing the curated region set | **CLEAR** (L+M) |
+
+**⚠⚠ A DISCLOSABLE ANALYSIS CHANGE — FOR THE MANUSCRIPT AND OSF RECORD.** Any AFR figure or table regenerated after `260805-o7o` lands is **NOT comparable** to one produced before it: PIPs and credible sets **move**. That is the correction the phase exists to make. Reported **BETA and SE do NOT move**, so no published direction of effect changes. **State it; do not let a reader discover it by diffing versions.**
+
+**⚠ TWO CLOSURES ARE CORRECT BUT INERT TODAY — both disclosed deliberately, do not let a summary flatten them into "closed".**
+- **E** — the coloc gate is safe today only because **ZERO AFR QTL-coloc jobs exist at all**, a pre-existing and unrelated condition (**E-4**: `_ancestry_for_region` returns `"EUR"` unconditionally). What landed is machine-verified **WIRING**, not a production-exercised fix.
+- **G** — makes TRANS's failure **VISIBLE, not working**. TRANS still resolves to the 1kG EUR panel; `strict_aou_only: false` keeps the strict half inert. L's WARN and M's allow-list are likewise inert on today's data. **The J receipt is the only behavioural change `b77` makes.**
+
+**▶ TWO DECISIONS WAITING ON CARTER — both one-word, both with exact diffs already prepared in the phase `deferred-items.md`:**
+1. **E-2** — the QTL-beta ↔ panel-ALT orientation. Pre-existing on the legacy EUR path; fixing it **MOVES Track A numbers**, which are in submission. Now **measurable**: `ld_allele_flipped/(exact+flipped)` = **46/182 = 25.3%** on the acceptance fixture — large enough that **deciding E-2 should gate publishing ANY AFR coloc number**.
+2. **K-1** — `variant_catalog_fallback` is a MUTATED pre-existing key (all 1,957 legacy JSONs carry `false`; the parity change flips it TRUE with no numeric cause). Needs **BOTH** an unfreeze of `run_susie_rss.R` (re-frozen at `dc4bbd2`, unfreeze SPENT) **AND** an authorization for `test_ld_read_path.py:451`, a pre-existing test that mandates the exact line the fix deletes. ⚠ Six `variant_catalog_fallback` sites, not three; `:916` must stay.
+
+**⚠ ONE AUTHORIZATION WAS MINE, NOT CARTER'S — disclosed on purpose.** `AUTH-b77-01` narrowed a whole-file `finemap.smk` pin against the fixed SHA `7b1025d` to `assert "region_id" not in diff_text`. Taken under Carter's standing "proceed autonomously", after verifying firsthand that the 128-line diff contained **zero** `region_id` occurrences, `params.region_id` was byte-unchanged, and the **primary** guard rail was green and untouched. The narrowed form is **strictly stronger** on the test's own stated subject. A one-line revert if Carter disagrees — but reverting re-blocks finding J.
+
+**⚠ PROCESS FINDING, worth more than any single fix:** **SEVEN** assertions in this arc turned out **structurally incapable of doing their stated job** — and the seventh was one **we wrote ourselves one task earlier**. Freshly-authored guards get *less* scrutiny than inherited ones because they feel owned, yet they have been exercised less, so they deserve *more*. New memories: `[[feedback_fixed_sha_whole_file_pin_is_a_timebomb]]`, `[[feedback_negative_control_defeated_by_bytecode_cache]]`.
+
+**▶ NEXT:** (a) Carter decides **E-2** and **K-1**; (b) **m3-04c Task 3** — the terminal Carter gate: PRE-FIRE checklist, the `allow_degraded` decision, the region-1 gate, the ~11-day / $385–1,084 billed fire, egress. **AN AGENT MUST NEVER FIRE IT.** Liveness arbiter = the GCS `.npz` listing climbing to 276, NOT the kernel light, NOT `_SUCCESS`. `.npz` currently **0/276**; the AoU VM is STOPPED-not-deleted.
+
+---
+
+## 2026-08-05 (SUPERSEDED by the 2026-08-06 block above) — ★ **m3-04c EXECUTED, BLAST-RADIUS SWEPT, and all four blockers REMEDIATED. The FIRE is unblocked; the CONCLUSIONS are not.**
 
 > **Nothing running. $0. NO perimeter contact this entire session** (everything NC-State, code-only).
 > `origin == local == e5738e2`; tracked tree clean. No AoU fire, no cluster, no LSF job, no stray
