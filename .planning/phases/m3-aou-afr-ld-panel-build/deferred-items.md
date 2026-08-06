@@ -445,7 +445,7 @@ twice. Until then A is honest — the decoder ring is landed and tested
 
 **Logged:** 2026-08-06 (quick-260806-b77). **Status: ✅ GRANTED 2026-08-06 by
 the coordinator under Carter's standing "proceed autonomously" instruction, and
-APPLIED in commit `c278e25`.** The surfaced-then-authorized sequence is preserved
+APPLIED in commit `13b82ef`.** The surfaced-then-authorized sequence is preserved
 below in full, deliberately: the STOP was correct and the record of WHY the
 authorization was needed is the durable part.
 
@@ -571,7 +571,7 @@ full-suite gate for `quick-260806-b77` is reported as NOT MET.** Nothing else in
 either suite is red: `tests/phase2` is `136 passed / 1 skipped / 0 failed`, and
 the 31 `tests/m3` skips are unchanged and pre-existing.
 
-### WHAT WAS ACTUALLY APPLIED (2026-08-06, `c278e25`)
+### WHAT WAS ACTUALLY APPLIED (2026-08-06, `13b82ef`)
 
 Exactly the authorized change, in `tests/m3/test_qtl_coloc_allele_join.py`, and
 nothing else in that file:
