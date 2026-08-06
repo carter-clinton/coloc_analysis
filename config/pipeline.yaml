@@ -218,11 +218,40 @@ ld_panel:
     - {source: "AFR_aou",   path: "data/processed/ld_reference/AFR_aou/{region_id}.rds"}
     - {source: "AFR_hgdp",  path: "data/processed/ld_reference/AFR_hgdp_1kg/{region_safe}.rds"}
     - {source: "AFR_1kg",   path: "data/processed/ld_reference/AFR/{region_safe}.rds"}
+  # ⚠ THE TRANS CHAIN HEAD IS AN ORPHAN, AND IT IS STAYING (m3-04c blast-radius
+  # FINDING G, closed by quick-260806-b77). READ THIS BEFORE EDITING THE BLOCK.
+  #
+  # * `EUR_aou/*.rds` HAS NO PRODUCER. `build_ld_rds_aou_eur` was retired
+  #   2026-08-05 (see the retirement note in
+  #   src/snakemake/rules/m3_convert_npz_rds.smk), because m3-02e Move 2 made
+  #   the PUBLIC UKBB 337k panel the EUR chain head and NO EUR LD is computed
+  #   inside the AoU perimeter at all -- so data/interim/aou_ld_exports/EUR_aou/
+  #   is never populated, before or after the ~11-day AoU fire.
+  # * CONSEQUENCE: every TRANS resolution walks past this head and lands on
+  #   `EUR_1kg` -- the legacy 1kG EUR panel -- on every run today AND after the
+  #   fire. A TRANS fit is fitted on 1kG EUR LD, not on anything AoU.
+  # * `strict_aou_only: true` is now the lever that converts that silence into a
+  #   raise. The guard used to test `source.endswith("_aou")`, which is False for
+  #   `TRANS_aou_eur` (ancestry-of-panel LAST), so strict mode was PROVABLY BLIND
+  #   here. It now uses `ld_panel.is_aou_source()` -- an exact `aou` TOKEN.
+  # * ⛔ DO NOT "FIX" THIS BY DELETING THE `TRANS_aou_eur` ENTRY. That would
+  #   leave TRANS with no AoU entry at all, making `strict_aou_only`
+  #   structurally unable to ever flag TRANS again -- deletion DEEPENS the
+  #   silence. The entry stays; the guard learned to see it.
+  # * ⛔ DO NOT SET `pin.TRANS` AS A CONTAINMENT. `pin` short-circuits the chain
+  #   AHEAD of strict mode (src/python/ld_panel.py), so pinning re-hides exactly
+  #   what this fix exposes.
+  # * The SCIENTIFIC question -- may a TRANS fit be reported on a 1kG EUR panel
+  #   at all -- is Carter's, and is registered as G-2 in
+  #   .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md.
   TRANS:
     - {source: "TRANS_aou_eur", path: "data/processed/ld_reference/EUR_aou/{region_id}.rds"}
     - {source: "EUR_1kg",       path: "data/processed/ld_reference/EUR/{region_safe}.rds"}
   # Strict mode: if true, any missing AoU-source entry raises FileNotFoundError
   # rather than walking the fallback chain. Used at manuscript-freeze time.
+  # "AoU-source" = ld_panel.is_aou_source(): an exact `aou` TOKEN anywhere in the
+  # source name (so TRANS_aou_eur counts), NOT an `_aou` suffix -- see FINDING G
+  # above.
   strict_aou_only: false
   # Optional pin override: pin a specific source for one ancestry to force the
   # resolver to that entry only (e.g., "EUR_1kg" to keep Track A real-LD

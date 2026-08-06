@@ -234,3 +234,68 @@ analysis decision, not a plumbing fix.
 production until AFR rows exist. It is proven on fixtures, and it goes live the
 moment this function learns about AFR — which is the same moment the AFR coloc
 work would begin anyway.
+
+---
+
+# Deferred items — discovered during quick-260806-b77 execution (2026-08-06)
+
+Closing blast-radius findings **G, J, L, M** (`m3-04c-BLAST-RADIUS.md:133-144`,
+gate rows "Any TRANS fit" and "Growing the curated region set") and registering
+**K** as a prepared deferral. Logged, NOT fixed.
+
+## G-2 — TRANS has no AoU panel and never will; is a TRANS fit on a 1kG EUR panel reportable?
+
+**Logged:** 2026-08-06 (quick-260806-b77). **Status: DEFERRED — Carter's
+scientific call, not an executor's.** Not blocking.
+
+Finding **G** is CLOSED in the engineering sense: `strict_aou_only` can now see
+the orphaned TRANS chain head. That closure makes the situation **VISIBLE**. It
+does not make TRANS **WORK**, and the difference is the whole of this entry.
+
+**The measured facts.**
+
+1. `config/pipeline.yaml`'s TRANS chain HEAD is
+   `TRANS_aou_eur -> data/processed/ld_reference/EUR_aou/{region_id}.rds`.
+2. **Nothing produces that artifact.** `build_ld_rds_aou_eur` was retired
+   2026-08-05 (`src/snakemake/rules/m3_convert_npz_rds.smk` retirement note)
+   because m3-02e Move 2 made the PUBLIC UKBB 337k panel the EUR chain head, and
+   **no EUR LD is computed inside the AoU perimeter at all** — so
+   `data/interim/aou_ld_exports/EUR_aou/` is never populated, before OR after the
+   ~11-day fire. Pinned in-suite:
+   `test_no_non_comment_line_declares_the_eur_aou_artifact_path`.
+3. **Therefore every TRANS resolution lands on `EUR_1kg`** — the legacy 1kG EUR
+   panel — on every run today and after the fire. A TRANS fit is fitted on 1kG
+   EUR LD.
+4. `strict_aou_only` (shipped `false`) is now the lever that converts that
+   silence into a `FileNotFoundError`. Before quick-260806-b77 the guard tested
+   `source.endswith("_aou")`, which is `False` for `TRANS_aou_eur`, so strict
+   mode was **provably blind** and TRANS walked to 1kG *even with strict mode
+   ON*.
+5. ⛔ **`pin.TRANS` is NOT a remedy.** `pin` short-circuits the chain **ahead of**
+   strict mode (`src/python/ld_panel.py::resolve_ld_path`), so pinning TRANS to
+   `EUR_1kg` would RE-HIDE exactly what the fix exposes.
+6. ⛔ **Deleting the orphan is NOT a remedy either.** Removing `TRANS_aou_eur`
+   leaves TRANS with no AoU entry at all, making `strict_aou_only` structurally
+   unable to ever flag TRANS again — deletion DEEPENS the silence. Pinned by
+   `test_the_trans_orphan_is_still_in_the_shipped_chain`.
+
+**The question this leaves open, which is scientific and not mechanical:** the
+project's TRANS ancestry exists to describe a trans-ancestry meta-analysis. Its
+LD is, and will remain, a **European** reference. Is a TRANS fine-mapping result
+on a EUR LD panel reportable at all, and under what disclosure?
+
+**The fork, stated neutrally:**
+
+| Option | Effect | Argument |
+|---|---|---|
+| **A — report TRANS fits on the 1kG EUR panel, disclosed** | Nothing moves. TRANS results keep flowing exactly as today. | It is what every TRANS number in the repo already rests on, so A is the *status quo made honest* rather than a change. Requires an explicit manuscript/OSF sentence: "trans-ancestry fine-mapping used a European (1000G EUR) LD reference; LD mis-specification is expected and is a stated limitation." |
+| **B — stop producing TRANS fine-mapping results until a trans-ancestry LD reference exists** | TRANS rows disappear from the fine-map outputs; `strict_aou_only: true` (or an ancestry gate) enforces it. | LD mis-specification is precisely the miscalibration M3 exists to correct; using EUR LD for a trans-ancestry statistic is the same class of error, one ancestry over. Costs every TRANS result and needs a decision about what replaces them (an AFR+EUR meta of per-ancestry fits, or nothing). |
+
+**Recommendation if asked:** decide it **before** any TRANS figure or table is
+published, and record the decision in the OSF amendment either way. A is
+defensible with disclosure; B is defensible on rigor; silently shipping A
+*without* the disclosure is the only option that is not.
+
+**Not blocking.** `strict_aou_only` ships `false`, so the guard is INERT today
+and nothing in the DAG changes. The closure of G is what makes this decision
+possible to take on evidence instead of by accident.

@@ -17,7 +17,37 @@ from __future__ import annotations
 
 from pathlib import Path
 
-__all__ = ["resolve_ld_path"]
+__all__ = ["is_aou_source", "resolve_ld_path"]
+
+#: Token that marks a chain source as AoU-derived.
+_AOU_SOURCE_TOKEN = "aou"
+
+
+def is_aou_source(source: str) -> bool:
+    """True when *source* names an AoU-derived panel, ANYWHERE in the name.
+
+    DELIBERATELY NOT ``endswith("_aou")``. The TRANS chain head is
+    ``TRANS_aou_eur`` -- ancestry-of-panel LAST -- so the suffix test returned
+    False and ``strict_aou_only`` was PROVABLY BLIND to it (m3-04c blast
+    radius, finding G). The removal note for ``build_ld_rds_aou_eur`` verified
+    that the RULE NAME had no references; it never checked the ARTIFACT PATH,
+    so the TRANS head outlived its producer.
+
+    Split on ``_`` and test for the EXACT token, so this cannot widen
+    accidentally onto a source that merely CONTAINS the letters (``EUR_aoudad``).
+
+    Verdicts on the shipped chains (config/pipeline.yaml ``ld_panel`` block)::
+
+        EUR_ukbb_pub  False | EUR_aou        True
+        EUR_ukbb      False | AFR_aou        True
+        EUR_1kg       False | TRANS_aou_eur  True   <- was False before finding G
+        AFR_hgdp      False | AFR_1kg        False
+
+    Pinned by ``tests/m3/test_ld_panel_aou_orphan_and_strict.py``, which
+    asserts the True-set as an EQUALITY over the REAL shipped chains (a widened
+    predicate fails) and carries the orphan registry.
+    """
+    return _AOU_SOURCE_TOKEN in str(source).split("_")
 
 
 def resolve_ld_path(
@@ -39,8 +69,13 @@ def resolve_ld_path(
 
     Precedence: ``pin`` > ``strict_aou_only`` > fallback walk. When ``pin``
     is set, only the pinned chain entry is considered; ``strict_aou_only``
-    fires only when the (un-pinned) walk encounters a missing ``_aou``
-    entry.
+    fires only when the (un-pinned) walk encounters a missing AoU-sourced
+    entry (see :func:`is_aou_source` -- an exact ``aou`` TOKEN anywhere in the
+    source name, NOT an ``_aou`` suffix; ``TRANS_aou_eur`` is AoU-sourced).
+
+    ⚠ ``pin`` short-circuits AHEAD of ``strict_aou_only``: a pinned chain has
+    the other entries filtered out before the walk, so pinning an ancestry to
+    a non-AoU source RE-HIDES exactly what strict mode exists to expose.
 
     Returns the first existing path. Raises:
 
@@ -86,7 +121,7 @@ def resolve_ld_path(
         path = Path(path_str)
         if path.exists():
             return path
-        if panel_cfg.get("strict_aou_only", False) and entry["source"].endswith("_aou"):
+        if panel_cfg.get("strict_aou_only", False) and is_aou_source(entry["source"]):
             raise FileNotFoundError(
                 f"strict_aou_only: {ancestry} AoU panel missing for {region_id} "
                 f"(expected at {path})"
