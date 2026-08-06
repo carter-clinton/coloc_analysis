@@ -299,3 +299,144 @@ defensible with disclosure; B is defensible on rigor; silently shipping A
 **Not blocking.** `strict_aou_only` ships `false`, so the guard is INERT today
 and nothing in the DAG changes. The closure of G is what makes this decision
 possible to take on evidence instead of by accident.
+
+## K-1 DEFERRED — `variant_catalog_fallback` is a MUTATED pre-existing key, and restoring its meaning needs TWO words from Carter
+
+**Logged:** 2026-08-06 (quick-260806-b77). **Status: DEFERRED — PREPARED, not
+executed.** Not blocking. This entry carries the exact diff, the blast radius,
+the re-freeze obligation and both authorizations, so the work is ready to run
+the moment it is authorized.
+
+**The finding (`m3-04c-BLAST-RADIUS.md` row K).** `variant_catalog_fallback` is
+a **pre-existing** key. All **1,957** legacy region JSONs carry
+`variant_catalog_fallback: false` and **no** `ld_overlap_zero_fallback` key at
+all. m3-04c's Path-2 parity change made the `ld_overlap == 0` retry set
+`variant_catalog_fallback <- TRUE` **with no numeric cause**, so a before/after
+diff of those 1,957 JSONs shows a `false -> true` flip that a reader will chase.
+(`ld_overlap_zero_fallback` **is** genuinely additive and is fine.)
+
+**WHY IT COULD NOT BE CLOSED BY `quick-260806-b77` — two independent blockers,
+both re-derived at HEAD during execution:**
+
+1. **Every assignment site is inside a FROZEN file.** All six
+   `variant_catalog_fallback` sites live in
+   `src/legacy/region_analysis/scripts/run_susie_rss.R`:
+   `:787` (init `FALSE`), `:916` (the **Path-1** AFR empty-subset revert, `TRUE`),
+   `:936` / `:968` (the `no_variants` / `too_many_variants` early-exit emits),
+   `:1013` (the **Path-2** mutation, `TRUE`), `:1208` (the success-JSON emit).
+   That file is **RE-FROZEN at `dc4bbd2`** and the `260805-o7o` unfreeze is
+   **SPENT**.
+2. **A PRE-EXISTING test MANDATES the exact line the fix deletes.**
+   `tests/m3/test_ld_read_path.py:451-453`, inside
+   `test_path2_ld_overlap_zero_fallback_is_observable_and_read`, asserts
+   `"variant_catalog_fallback <- TRUE" in branch` for the Path-2 brace block.
+   Deleting the line makes that test RED, and no pre-existing test may be
+   edited without a named authorization (`AUTH-o7o-01` was **not** inherited).
+
+So K needs **two** authorizations, not one. Landing the edit anyway would have
+violated two freezes at once.
+
+### 1. The exact minimal diff (against `dc4bbd2`)
+
+```diff
+--- a/src/legacy/region_analysis/scripts/run_susie_rss.R
++++ b/src/legacy/region_analysis/scripts/run_susie_rss.R
+@@ -1005,10 +1005,9 @@
+     subset <- copy(subset_base)
+     used_variant_catalog <- FALSE
+     # m3-04c Task 1b / HIGH-2: this revert used to leave NO distinguishing
+     # signal -- used_variant_catalog went FALSE exactly as it does on the Path-1
+     # (AFR empty-filtered-subset) revert, and variant_catalog_fallback was never
+     # set. Both flags are now recorded and both are read by the per-region
+     # estimate_s log. Science behaviour is UNCHANGED: still one retry against
+     # subset_base. Only observability changes.
+-    variant_catalog_fallback <- TRUE
+     ld_overlap_zero_fallback <- TRUE
+     attempt <- attempt + 1
+     next
+```
+
+**ONE line deleted.** `:787` (init), `:916` (the Path-1 mutation), `:936` /
+`:968` (the early-exit emits) and `:1208` (the success emit) **do not move**.
+`ld_overlap_zero_fallback <- TRUE` at `:1014` stays, as do
+`subset <- copy(subset_base)` and `attempt <- attempt + 1`. The comment above
+the deleted line should be reworded in the same edit (it currently narrates the
+parity that is being withdrawn).
+
+### 2. The blast radius of applying it
+
+* **Science is UNCHANGED.** The Path-2 branch still reverts to `subset_base` and
+  still retries exactly once. Only a **reporting flag** moves.
+* `variant_catalog_fallback` recovers its **legacy meaning** — "the AFR
+  variant-catalog empty-subset revert (Path 1) fired" — so a before/after diff
+  of the 1,957 legacy JSONs no longer shows a causeless `false -> true` flip.
+* **Nothing becomes invisible.** `ld_overlap_zero_fallback` remains the Path-2
+  discriminator, is emitted in the success JSON (`:1209`), and is read by the
+  per-region receipt in `finemap.smk`. The pair still distinguishes the two
+  reverts; only the *legacy* half of the pair stops being overloaded.
+* **No number moves.** No PIP, credible set, `ld_overlap`, `ld_status` or
+  `d3b_ld_z_consistency_s` depends on this flag. Track A is untouched.
+
+### 3. What re-freezing means afterward
+
+The unfreeze is **single-use**. After the edit, re-pin `run_susie_rss.R` at the
+new SHA and the forward gate becomes
+
+```
+git diff --exit-code <new-sha> -- src/legacy/region_analysis/scripts/run_susie_rss.R
+```
+
+replacing the current `dc4bbd2` gate everywhere it is asserted (the task plans,
+`tests/m3/test_finemap_receipt_early_exit.py::FROZEN_R_REV`, and the standing
+verification checklist).
+
+⚠ **Spend the window once.** The still-outstanding `ld_allele_join.R` extraction
+follow-up recorded in `260805-w7u-SUMMARY.md` — replacing
+`run_susie_rss.R:220-323` with
+`source("src/snakemake/scripts/ld_allele_join.R")` — should be considered for
+the **same** unfreeze window rather than spending a second one. That follow-up
+carries its own containment requirement (an `identical()`-on-the-whole-
+`load_ld_matrix`-result proof at `allele_aware` TRUE **and** FALSE), so pairing
+them means one unfreeze, one re-pin, two containment proofs.
+
+### 4. The two authorizations, named
+
+**(a) An unfreeze of `src/legacy/region_analysis/scripts/run_susie_rss.R`** off
+`dc4bbd2`, scoped to the single-line deletion above (plus the comment reword),
+with a re-pin obligation at the new SHA.
+
+**(b) An `AUTH`-style authorization to edit the pre-existing test**
+`tests/m3/test_ld_read_path.py::test_path2_ld_overlap_zero_fallback_is_observable_and_read`,
+whose `:451-453` parity assertion **mandates the very line being deleted**.
+
+The authorization must require that the edit **STRENGTHENS** rather than
+weakens the assertion — mirroring the two-part shape of `AUTH-o7o-01`. Concretely,
+inside the Path-2 brace block:
+
+```python
+assert "ld_overlap_zero_fallback <- TRUE" in branch          # unchanged
+assert "variant_catalog_fallback <- TRUE" not in branch, (   # NEW, replaces :451-453
+    "Path 2 must NOT set the legacy variant_catalog_fallback key (K-1): it is a "
+    "pre-existing key whose meaning is the Path-1 AFR empty-subset revert"
+)
+```
+
+so the NEW semantics are pinned in **both** directions — Path 2 still records
+itself, and it no longer overloads the legacy key. The `:449-450` docstring and
+the Path-1 half of the test (`:419-420`, `:916`) stay as they are, because Path
+1 legitimately sets both.
+
+### The fork, stated neutrally
+
+| Option | Effect | Argument |
+|---|---|---|
+| **A — leave it (shipped today), documented** | The `false -> true` flip stays. It is explained by the decoder ring landed in `finemap.smk`'s receipt comment AND emitted at runtime as `variant_catalog_fallback_cause` (`path2_ld_overlap_zero_NO_NUMERIC_CAUSE` vs `path1_variant_catalog_empty_subset` vs `key_absent`). | Zero freeze spend, zero risk, and the phantom is now **self-explaining at the place a reader diffing JSONs actually looks**. Costs: the key remains overloaded, so any future automated before/after comparison must special-case it. |
+| **B — restore the legacy semantics** | One line deleted; the key means what all 1,957 legacy JSONs mean by it. | Correct. A pre-existing key should not silently change meaning. Costs: an unfreeze **and** a pre-existing-test authorization, and the re-pin obligation above. |
+
+**Recommendation if asked:** **B**, bundled with the `ld_allele_join.R`
+extraction into one unfreeze window, so the freeze is opened once rather than
+twice. Until then A is honest — the decoder ring is landed and tested
+(`tests/m3/test_finemap_receipt_early_exit.py::test_the_variant_catalog_fallback_cause_token_explains_the_phantom`,
+4 parametrised cases) — but it is a **mitigation of K, not its closure**.
+
+**This needs one decision from Carter and is otherwise ready to execute.**
