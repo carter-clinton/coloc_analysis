@@ -465,12 +465,43 @@ def build_curated_m2_crosswalk(
 # ---------------------------------------------------------------------------
 # the consumer-side loader (imported at module scope by finemap.smk)
 # ---------------------------------------------------------------------------
-def load_curated_to_m2(path=DEFAULT_OUT_TSV) -> dict:
-    """Load ``region_safe -> m2_region_id`` for the MAPPED curated regions only.
+#: The ONLY statuses ``load_curated_to_m2`` will hand to ``resolve_ld_path``.
+#:
+#: An ALLOW-LIST, not a deny-list (m3-04c blast radius, FINDING M). Before
+#: quick-260806-b77 this was ``if status == "unmapped": continue`` -- a deny-list
+#: of ONE -- so a ``partial`` row (a candidate whose lifted window merely
+#: INTERSECTS the curated interval, ``overlap_frac`` possibly 0.30) would be
+#: handed over exactly like a ``contained`` one, contradicting this module's own
+#: promise: "A partial match is NEVER promoted to a containment" (see the
+#: selection rule in the module docstring, and ``select_m2_candidate``, where
+#: ``"partial"`` is a really-emitted status).
+_LOADABLE_STATUSES = ("contained",)
 
-    Rows whose ``status`` is ``unmapped`` — or whose ``m2_region_id`` is empty —
-    are SKIPPED, so a ``dict.get(region, REGION_SAFE_TO_ID[region])`` at the call
-    site falls through to today's legacy value character-for-character.
+
+def load_curated_to_m2(path=DEFAULT_OUT_TSV) -> dict:
+    """Load ``region_safe -> m2_region_id`` for the CONTAINED curated regions only.
+
+    ONLY rows whose ``status`` is in :data:`_LOADABLE_STATUSES` (``contained``)
+    are returned. Rows whose ``status`` is ``unmapped`` — or whose
+    ``m2_region_id`` is empty — are SKIPPED SILENTLY (today's behaviour, and the
+    byte-identity ``260805-23d`` relies on). **Any OTHER status is refused and
+    named on stderr**, because a silent refusal is how finding M would have come
+    back.
+
+    ⚠ A ``partial`` ROW IS NOT PROMOTED. ``select_m2_candidate`` emits
+    ``status="partial"`` when no candidate CONTAINS the curated interval and it
+    falls back to the largest intersection, recording ``window_overlap_bp`` /
+    ``overlap_frac``. Handing such a row to ``resolve_ld_path`` would fine-map a
+    locus on a panel that covers only PART of it, silently — the builder's own
+    promise ("A partial match is NEVER promoted to a containment") enforced at
+    the point of consumption rather than only at the point of construction.
+
+    A refused row falls through to ``REGION_SAFE_TO_ID`` at the call site
+    exactly as an ``unmapped`` one does — ``dict.get(region,
+    REGION_SAFE_TO_ID[region])`` — which is **the fail-safe direction for this
+    caller**: the DAG keeps today's legacy 1kG path instead of silently
+    fine-mapping on a panel that covers only part of the locus.
+    (``[[feedback_failsafe_default_is_caller_relative]]``.)
 
     A MISSING file returns ``{}`` (not an error): the DAG must still build on a
     fresh clone before the crosswalk has been generated. No ``pyliftover`` is
@@ -480,15 +511,81 @@ def load_curated_to_m2(path=DEFAULT_OUT_TSV) -> dict:
     if not path.exists():
         return {}
     mapping = {}
+    refused = []
     with path.open(newline="") as fh:
         for row in csv.DictReader(fh, delimiter="\t"):
-            if row.get("status") == "unmapped":
+            status = row.get("status")
+            if status in _LOADABLE_STATUSES:
+                m2_id = (row.get("m2_region_id") or "").strip()
+                if not m2_id:
+                    continue
+                mapping[row["region_safe"]] = m2_id
                 continue
-            m2_id = (row.get("m2_region_id") or "").strip()
-            if not m2_id:
+            if status == "unmapped":
+                # a DECISION was recorded: no candidate overlapped at all.
                 continue
-            mapping[row["region_safe"]] = m2_id
+            refused.append((row.get("region_safe", ""), status))
+    if refused:
+        detail = "; ".join(f"{rs} (status={st!r})" for rs, st in sorted(refused))
+        print(
+            f"[build_curated_m2_crosswalk] WARN load_curated_to_m2 REFUSED "
+            f"{len(refused)} crosswalk row(s) whose status is not "
+            f"{list(_LOADABLE_STATUSES)}: {detail}. A partial match is NEVER "
+            f"promoted to a containment, so these regions fall through to the "
+            f"legacy region-safe id and keep today's LD panel.",
+            file=sys.stderr,
+        )
     return mapping
+
+
+# ---------------------------------------------------------------------------
+# the DRIFT / COVERAGE readers (m3-04c blast radius, FINDING L)
+# ---------------------------------------------------------------------------
+def crosswalk_covered_region_safes(path=DEFAULT_OUT_TSV) -> set:
+    """Every ``region_safe`` the crosswalk has a ROW for, mapped or not.
+
+    Distinct from :func:`load_curated_to_m2`, which returns only the USABLE
+    rows. An ``unmapped`` row is COVERAGE — a decision was recorded for that
+    region. An ABSENT row is DRIFT: the artifact predates the region.
+
+    FINDING L: ``finemap.smk``'s WARN fired only on a FULLY EMPTY dict, so a
+    13th curated region added without rebuilding the crosswalk was silently
+    legacy-routed — the AoU AFR panel simply stayed unreachable for it, with no
+    message anywhere. Returns ``set()`` when the artifact is absent so a fresh
+    clone still builds a DAG.
+    """
+    path = Path(path)
+    if not path.exists():
+        return set()
+    with path.open(newline="") as fh:
+        return {
+            row["region_safe"]
+            for row in csv.DictReader(fh, delimiter="\t")
+            if row.get("region_safe")
+        }
+
+
+def crosswalk_missing_region_safes(
+    regions_curated_csv=DEFAULT_REGIONS_CURATED, path=DEFAULT_OUT_TSV
+) -> list:
+    """Curated slugs with NO crosswalk row at all, sorted. Empty == in sync.
+
+    Reuses the same ``region_id`` column and the same :func:`_safe_slug` the
+    builder itself writes into the ``region_safe`` column, so the comparison
+    cannot drift from the artifact's own key space.
+
+    When the CROSSWALK is absent every curated slug is returned (it is entirely
+    uncovered). When the CURATED CSV is absent ``[]`` is returned: the caller is
+    ``finemap.smk`` at DAG-parse time and the fail-safe direction there is not
+    to manufacture a warning out of a missing input it does not own.
+    """
+    curated_path = Path(regions_curated_csv)
+    if not curated_path.exists():
+        return []
+    covered = crosswalk_covered_region_safes(path)
+    with curated_path.open(newline="") as fh:
+        curated = {_safe_slug(row["region_id"]) for row in csv.DictReader(fh)}
+    return sorted(curated - covered)
 
 
 def main(argv=None) -> int:

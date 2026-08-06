@@ -440,3 +440,100 @@ twice. Until then A is honest — the decoder ring is landed and tested
 4 parametrised cases) — but it is a **mitigation of K, not its closure**.
 
 **This needs one decision from Carter and is otherwise ready to execute.**
+
+## ⛔ AUTH-b77-01 REQUESTED — a PRE-EXISTING test pins `finemap.smk` at `7b1025d` FOREVER, and it is now RED
+
+**Logged:** 2026-08-06 (quick-260806-b77). **Status: BLOCKER SURFACED, NOT
+FIXED.** No pre-existing test was edited. `tests/m3` is **805 passed / 1 failed
+/ 31 skipped** on this tree, and the one failure is this.
+
+**The failing test:**
+`tests/m3/test_qtl_coloc_allele_join.py::test_params_region_id_is_not_declared_here`
+(`:1280-1290`), created by `260805-w7u` Task 2 (commit `1815bfd`) — i.e. **before**
+this task's baseline `6b427bc`.
+
+```python
+def test_params_region_id_is_not_declared_here():
+    """``finemap.smk:349-350`` is out of scope and must not be shadowed."""
+    text = QTL_COLOC_SMK.read_text()
+    assert "region_id=lambda" not in text
+    diff = subprocess.run(
+        ["git", "diff", PRE_CHANGE_REF, "HEAD", "--",
+         "src/snakemake/rules/finemap.smk"],
+        cwd=PROJECT_ROOT, capture_output=True, text=True,
+    )
+    assert diff.stdout.strip() == ""        # <-- PRE_CHANGE_REF == "7b1025d"
+```
+
+**What it actually asserts vs what it means to assert.** Its docstring and its
+name say the subject is `finemap.smk`'s `params.region_id` — that
+`260805-w7u`'s *coloc* work must not shadow it. Its **implementation** asserts
+that `src/snakemake/rules/finemap.smk` is **byte-identical to `7b1025d`
+forever**, for every future task. That is a TASK-SCOPE guard baked into the
+permanent suite: exactly the "a coverage assertion can be a false invariant"
+shape this arc keeps catching, one level up.
+
+**Attribution, measured — `git diff 7b1025d <rev> -- src/snakemake/rules/finemap.smk`:**
+
+| rev | diff lines | this test |
+|---|---|---|
+| `6b427bc` (b77 baseline) | 0 | GREEN |
+| `9b2d431` (b77 plan doc) | 0 | GREEN |
+| `9c0c67b` (b77 T1 — did not touch `finemap.smk`) | 0 | GREEN |
+| `d8cfa53` (b77 T2 — the FINDING J receipt edit) | 72 | **RED** |
+
+**Why this is unavoidable for findings J and L.** Finding **J** lives in the
+pair (frozen `run_susie_rss.R` early-exit writers) x (the `finemap.smk`
+receipt). The R half is RE-FROZEN at `dc4bbd2` with its unfreeze SPENT, so **J
+can only be closed by editing `finemap.smk`** — which is precisely what the
+`quick-260806-b77` plan mandates and lists in its `files_modified`. Finding
+**L**'s coverage WARN lives at `finemap.smk` module scope for the same reason.
+**Reverting would not avoid this test; it would only discard J and L and leave
+the same authorization needed to ever close them.**
+
+**⛔ NOT FIXED HERE.** `AUTH-o7o-01` was not inherited and no pre-existing test
+may be edited without a named authorization. The plan's `<verified_anchors>`
+enumerated four pre-existing tests that constrain these fixes and **did not name
+this one** — recorded as a plan-fact gap in `260806-b77-SUMMARY.md`, not worked
+around.
+
+### The authorization requested, and the exact minimal STRENGTHENING edit
+
+**AUTH-b77-01:** authorize editing
+`tests/m3/test_qtl_coloc_allele_join.py::test_params_region_id_is_not_declared_here`
+so its assertion matches its own stated subject. The edit must **STRENGTHEN**,
+not weaken — mirroring the two-part shape of `AUTH-o7o-01`:
+
+```diff
+     diff = subprocess.run(
+         ["git", "diff", PRE_CHANGE_REF, "HEAD", "--",
+          "src/snakemake/rules/finemap.smk"],
+         cwd=PROJECT_ROOT, capture_output=True, text=True,
+     )
+-    assert diff.stdout.strip() == ""
++    # The SUBJECT is params.region_id, not the whole file. A whole-file pin was
++    # a TASK-SCOPE guard for 260805-w7u and made every later finemap.smk change
++    # -- including the FINDING J receipt fix, which CANNOT live anywhere else
++    # because run_susie_rss.R is frozen -- unlandable. Pin the thing named.
++    assert "region_id" not in diff.stdout, (
++        "a finemap.smk change touched params.region_id, which is out of scope "
++        f"for every task since {PRE_CHANGE_REF}:\n{diff.stdout}"
++    )
+```
+
+**Why the replacement is STRICTLY STRONGER on its own subject.** The whole-file
+pin could only ever say "something changed"; the replacement says **which**
+change is forbidden and would fail on a `params.region_id` edit *even in a
+commit that also legitimately changed the receipt* — a case the old assertion
+could not distinguish. It is also the exact check the `quick-260806-b77` plan
+already specifies as an acceptance criterion
+(`git diff 6b427bc HEAD -- src/snakemake/rules/finemap.smk | grep -c region_id`
+must be `0`; **measured `0` on this tree**), so the two agree by construction.
+
+The first assertion (`"region_id=lambda" not in qtl_coloc.smk`) and the whole of
+`test_run_susie_rss_is_zero_diff_vs_the_freeze` are **untouched**.
+
+**Until AUTH-b77-01 is granted, `tests/m3` does not reach `0 failed`, and the
+full-suite gate for `quick-260806-b77` is reported as NOT MET.** Nothing else in
+either suite is red: `tests/phase2` is `136 passed / 1 skipped / 0 failed`, and
+the 31 `tests/m3` skips are unchanged and pre-existing.

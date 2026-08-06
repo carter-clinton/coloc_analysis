@@ -82,7 +82,10 @@ from ld_read_path import (  # noqa: E402
 # reachability). ``load_curated_to_m2`` is a pure TSV read -- it does NOT import
 # pyliftover (the lift happens once, inside the builder), so this module-scope
 # import cannot make ``snakemake --list`` depend on a liftover toolchain.
-from build_curated_m2_crosswalk import load_curated_to_m2  # noqa: E402 -- same rationale
+from build_curated_m2_crosswalk import (  # noqa: E402 -- same rationale
+    crosswalk_missing_region_safes,
+    load_curated_to_m2,
+)
 
 FINEMAP_DIR = config["finemap"]["output_dir"]
 FINEMAP_METHODS = config["finemap"]["methods"]
@@ -173,6 +176,43 @@ if not CURATED_TO_M2:
         "`python src/python/build_curated_m2_crosswalk.py`.",
         file=sys.stderr,
     )
+else:
+    # quick-260806-b77 (m3-04c blast radius, FINDING L): the WARN above fires
+    # ONLY on a FULLY EMPTY dict. The crosswalk is a HAND-RUN, DAG-ABSENT
+    # artifact -- no rule produces config/curated_to_m2_region_map.tsv -- so a
+    # 13th curated region added to config/regions_curated.csv WITHOUT rerunning
+    # the builder was silently legacy-routed: the AoU AFR panel simply stayed
+    # unreachable for it, with no message anywhere. PARTIAL coverage needs its
+    # own, NAMED warning.
+    #
+    # The curated set is derived from config["paths"]["regions_curated"], NOT
+    # from REGION_SAFE_TO_ID: that name is built in Snakefile:45-62 and is
+    # currently referenced only from inside DEFERRED lambdas, so its
+    # availability at finemap.smk PARSE time is not proven. The config path has
+    # no include-order dependency.
+    #
+    # Deliberately a WARN and not a raise: a raise at DAG-parse time would
+    # change `--list` behaviour for every caller and risks tripping pre-existing
+    # DAG-building tests. The actual gate is
+    # tests/m3/test_curated_m2_crosswalk_drift.py, which compares the COMMITTED
+    # artifact against a fresh rebuild -- the first test in this repo to read the
+    # committed file at all.
+    _CURATED_MISSING = crosswalk_missing_region_safes(
+        config.get("paths", {}).get("regions_curated", "config/regions_curated.csv"),
+        _CURATED_TO_M2_TSV,
+    )
+    if _CURATED_MISSING:
+        print(
+            f"[finemap.smk] WARN: the curated->M2 crosswalk at "
+            f"{_CURATED_TO_M2_TSV} has NO ROW AT ALL for "
+            f"{len(_CURATED_MISSING)} curated region(s): "
+            f"{', '.join(_CURATED_MISSING)}. Those regions are SILENTLY "
+            "legacy-routed -- the AoU AFR panel stays unreachable for them and "
+            "nothing else will say so. The crosswalk is hand-run and DAG-absent, "
+            "so it does not rebuild itself. Regenerate with "
+            "`python src/python/build_curated_m2_crosswalk.py`.",
+            file=sys.stderr,
+        )
 
 
 def finemap_output(path_method, trait, ancestry, region):
