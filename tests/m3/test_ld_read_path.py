@@ -423,6 +423,24 @@ def test_path2_ld_overlap_zero_fallback_is_observable_and_read():
     NEW LD source with different varid provenance RAISES the probability of
     ``ld_overlap == 0``, so the blind spot had to close before the fire.
 
+    K-1 (2026-08-06, quick-260806-pd3, under **AUTH-K1-TEST**). The Path-2
+    PARITY this test originally mandated is **WITHDRAWN**, and the assertion
+    below is INVERTED rather than deleted. ``variant_catalog_fallback`` is a
+    PRE-EXISTING key whose meaning is the **Path-1** AFR variant-catalog
+    empty-subset revert; m3-04c's parity change overloaded it, making a
+    pre-existing key silently acquire a second meaning. ``AUTH-K1-UNFREEZE``
+    (now SPENT) deleted the Path-2 assignment, so **ld_overlap_zero_fallback is
+    now the SOLE Path-2 discriminator** -- and it is still asserted present,
+    still asserted in the success JSON, and still asserted READ by the receipt,
+    so nothing became invisible. The semantics are pinned in **BOTH** directions
+    (Path 2 records itself; Path 2 does not touch the legacy key), and the
+    companion module
+    ``tests/m3/test_variant_catalog_fallback_legacy_semantics.py`` carries the
+    containment proofs plus two PERMANENT negative controls.
+
+    NOTE the init parity at ``:787-788`` is **NOT** withdrawn: both flags are
+    still initialized ``FALSE`` together, and ``init_gap`` still asserts it.
+
     HONEST LIMITATION: exercising Path 2 end-to-end requires the WHOLE script
     (sumstats + regions csv + policy + variant list + a real region), so this
     family is pinned at SOURCE level. That is the same documented rationale the
@@ -446,11 +464,11 @@ def test_path2_ld_overlap_zero_fallback_is_observable_and_read():
         f"but they are {init_gap} chars apart"
     )
 
-    # the Path-2 branch sets BOTH
+    # the Path-2 branch records itself with ld_overlap_zero_fallback ONLY (K-1)
     branch = _brace_block(src, "if (ld_overlap == 0 && used_variant_catalog && attempt == 1)")
-    assert "variant_catalog_fallback <- TRUE" in branch, (
-        "Path 2 must set variant_catalog_fallback (parity with Path 1); today "
-        f"the branch is:\n{branch}"
+    assert "variant_catalog_fallback <- TRUE" not in branch, (
+        "Path 2 must NOT set the legacy variant_catalog_fallback key (K-1): it is a "
+        "pre-existing key whose meaning is the Path-1 AFR empty-subset revert"
     )
     assert "ld_overlap_zero_fallback <- TRUE" in branch, (
         "Path 2 must set ld_overlap_zero_fallback so it is DISTINGUISHABLE "

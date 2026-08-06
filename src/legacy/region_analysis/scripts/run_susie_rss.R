@@ -1006,11 +1006,24 @@ repeat {
     used_variant_catalog <- FALSE
     # m3-04c Task 1b / HIGH-2: this revert used to leave NO distinguishing
     # signal -- used_variant_catalog went FALSE exactly as it does on the Path-1
-    # (AFR empty-filtered-subset) revert, and variant_catalog_fallback was never
-    # set. Both flags are now recorded and both are read by the per-region
-    # estimate_s log. Science behaviour is UNCHANGED: still one retry against
-    # subset_base. Only observability changes.
-    variant_catalog_fallback <- TRUE
+    # (AFR empty-filtered-subset) revert. It now records itself, and is READ by
+    # the per-region estimate_s log, through ld_overlap_zero_fallback ALONE.
+    #
+    # quick-260806-pd3 (blast-radius FINDING K-1, AUTH-K1-UNFREEZE -- now SPENT;
+    # see .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md): this
+    # branch deliberately does NOT set variant_catalog_fallback. That key is
+    # PRE-EXISTING and its meaning is the PATH-1 AFR variant-catalog
+    # empty-subset revert above (:904-917). m3-04c briefly overloaded it here
+    # for "parity", which made a pre-existing key silently acquire a second
+    # meaning: every legacy region JSON on this node carries it (1,944 measured
+    # 2026-08-06 -- 1,935 false, and the 9 true ones are all AFR Path-1 reverts
+    # with NO ld_overlap_zero_fallback key at all), so the overload would have
+    # produced a causeless false -> true flip in any before/after comparison.
+    # ld_overlap_zero_fallback is the Path-2 discriminator; the pair still
+    # separates the two reverts, only the LEGACY half stops being overloaded.
+    #
+    # SCIENCE BEHAVIOUR IS UNCHANGED: still exactly one retry against
+    # subset_base. Only a reporting flag moved.
     ld_overlap_zero_fallback <- TRUE
     attempt <- attempt + 1
     next
