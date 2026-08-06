@@ -37,7 +37,9 @@ Exact argv byte-identity with ``3f431ab`` is UNREACHABLE by design: the
 pre-existing ``test_ld_read_path.py::T2.1`` requires ``--ld-file
 {input.ld_matrix}`` to survive in the comment-stripped ``shell:`` block exactly
 once file-wide, so the flag cannot be dropped for EUR. T1.4 therefore pins the
-delta to EXACTLY the four tokens the design adds, and nothing else.
+delta to EXACTLY the tokens the design is authorized to add, and nothing else
+(four at 260805-23d; six since 260805-o7o added ``--ld-allele-aware`` under
+AUTH-o7o-01). The authoritative count lives in ``EXPECTED_ADDED_TOKENS``.
 
 NO R, NO SNAKEMAKE, NO NETWORK. Every test here is pure Python over the source
 tree plus ``git show``; there is no toolchain that could make one of them SKIP.
@@ -66,8 +68,8 @@ BASELINE_REV = "3f431ab"
 #: invocation, in this order, and nothing else.
 #:
 #: ⚠ THIS LIST IS A PROXY, NOT THE CONTRACT. The real contract -- stated in
-#: ``test_rendered_argv_delta_vs_3f431ab_is_exactly_four_tokens``'s docstring --
-#: is that the delta stays confined to flags whose EUR/TRANS value is INERT BY
+#: ``test_rendered_argv_delta_vs_3f431ab_is_exactly_the_authorized_tokens``'s
+#: docstring -- is that the delta stays confined to flags whose EUR/TRANS value is INERT BY
 #: CONSTRUCTION. Being a closed literal, this list trips on any additional
 #: token regardless of whether that token is inert, which is exactly what it
 #: did when 260805-o7o added ``--ld-allele-aware``. WIDENED UNDER AUTH-o7o-01
@@ -321,7 +323,7 @@ def test_declared_path_is_byte_identical_to_3f431ab_for_eur_and_trans(tmp_path):
 
 
 # ==========================================================================
-# T1.4 -- the rendered argv delta vs 3f431ab is EXACTLY four tokens
+# T1.4 -- the rendered argv delta vs 3f431ab is EXACTLY the authorized tokens
 # ==========================================================================
 def _rule_block(text: str, rule_name: str) -> str:
     """COPIED from tests/m3/test_ld_read_path.py (not imported: that module is
@@ -413,15 +415,23 @@ def _baseline_finemap_smk() -> str:
     ).stdout
 
 
-def test_rendered_argv_delta_vs_3f431ab_is_exactly_four_tokens():
-    """T1.4. ``run_finemap``'s Rscript argv gained EXACTLY the four design
-    tokens versus 3f431ab, and lost or reordered nothing.
+def test_rendered_argv_delta_vs_3f431ab_is_exactly_the_authorized_tokens():
+    """T1.4. ``run_finemap``'s Rscript argv gained EXACTLY the tokens the design
+    is authorized to add versus 3f431ab, and lost or reordered nothing.
 
     ⚠ THIS IS NOT A BEHAVIOURAL CONTAINMENT PROOF. It pins that the argv delta
-    is confined to the two flags whose EUR/TRANS value is inert BY CONSTRUCTION
-    once ``load_ld_matrix`` honours ``--ld-authoritative`` (Task 2). Byte-identical
-    argv is unreachable here because the pre-existing T2.1 forbids removing
+    is confined to flags whose EUR/TRANS value is inert BY CONSTRUCTION once
+    ``load_ld_matrix`` honours ``--ld-authoritative``. Byte-identical argv is
+    unreachable here because the pre-existing T2.1 forbids removing
     ``--ld-file`` from the shell; this is the strictly-bounded alternative.
+
+    ⚠ RENAMED under AUTH-o7o-01 (260805-o7o). This was
+    ``test_rendered_argv_delta_vs_3f431ab_is_exactly_four_tokens`` when the list
+    held four tokens -- the name it is cited under in 260805-23d's PLAN and
+    SUMMARY. It went stale the moment ``--ld-allele-aware`` was authorized, so
+    the count came out of the name entirely rather than being bumped to six and
+    left to go stale again on the next authorization. The count now lives in
+    ``EXPECTED_ADDED_TOKENS`` alone, where it is checked rather than described.
     """
     old = _rscript_argv(_baseline_finemap_smk())
     new = _rscript_argv(FINEMAP_SMK.read_text())
@@ -504,7 +514,8 @@ def test_params_ld_allele_aware_values():
     why AUTH-o7o-01 authorized that widening. ``EXPECTED_ADDED_TOKENS`` is a
     PROXY for the real contract -- "the argv delta is confined to flags whose
     EUR/TRANS value is inert BY CONSTRUCTION"
-    (``test_rendered_argv_delta_vs_3f431ab_is_exactly_four_tokens``, T1.4). As a
+    (``test_rendered_argv_delta_vs_3f431ab_is_exactly_the_authorized_tokens``,
+    T1.4). As a
     closed literal it trips on ANY additional token whether or not that token is
     inert, so lengthening it alone would trade a real guarantee for a stale
     count. This asserts the inertness DIRECTLY, for a wider ancestry set than
