@@ -441,11 +441,44 @@ twice. Until then A is honest — the decoder ring is landed and tested
 
 **This needs one decision from Carter and is otherwise ready to execute.**
 
-## ⛔ AUTH-b77-01 REQUESTED — a PRE-EXISTING test pins `finemap.smk` at `7b1025d` FOREVER, and it is now RED
+## ✅ AUTH-b77-01 GRANTED AND APPLIED — a PRE-EXISTING test pinned `finemap.smk` at `7b1025d` FOREVER
 
-**Logged:** 2026-08-06 (quick-260806-b77). **Status: BLOCKER SURFACED, NOT
-FIXED.** No pre-existing test was edited. `tests/m3` is **805 passed / 1 failed
-/ 31 skipped** on this tree, and the one failure is this.
+**Logged:** 2026-08-06 (quick-260806-b77). **Status: ✅ GRANTED 2026-08-06 by
+the coordinator under Carter's standing "proceed autonomously" instruction, and
+APPLIED in commit `c278e25`.** The surfaced-then-authorized sequence is preserved
+below in full, deliberately: the STOP was correct and the record of WHY the
+authorization was needed is the durable part.
+
+⚠ **SCOPE OF THE GRANT: ONE assertion in ONE file.** It does NOT reopen the
+no-pre-existing-test-edits rule for anything else, it does NOT unfreeze
+`run_susie_rss.R`, and it does NOT authorize editing
+`tests/m3/test_ld_read_path.py:451` (K-1's second authorization, still
+OUTSTANDING). Any other pre-existing test going red remains a STOP-and-surface.
+
+**Verified before the grant** (independently re-run by both the coordinator and
+the executor):
+
+```
+git diff 7b1025d HEAD -- src/snakemake/rules/finemap.smk | grep -c region_id   -> 0
+git diff 7b1025d HEAD -- src/snakemake/rules/finemap.smk | wc -l              -> 128
+git diff 6b427bc HEAD -- finemap.smk | grep -c "region_id=lambda"             -> 0
+pytest tests/m3/test_occlusion_lockstep_wiring.py -q                          -> 16 passed
+```
+
+i.e. the 128-line diff mentions `region_id` nowhere, `params.region_id` is
+byte-unchanged, and the **PRIMARY guard rail is intact and green**:
+`test_occlusion_lockstep_wiring.py::test_params_region_id_is_untouched`, which
+asserts `region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region],`
+character-for-character. The assertion that was edited is a redundant SECONDARY
+pin.
+
+---
+
+### THE ORIGINAL SURFACE, PRESERVED
+
+At the time of surfacing: no pre-existing test had been edited, and `tests/m3`
+was **805 passed / 1 failed / 31 skipped** on this tree, the one failure being
+this.
 
 **The failing test:**
 `tests/m3/test_qtl_coloc_allele_join.py::test_params_region_id_is_not_declared_here`
@@ -537,3 +570,55 @@ The first assertion (`"region_id=lambda" not in qtl_coloc.smk`) and the whole of
 full-suite gate for `quick-260806-b77` is reported as NOT MET.** Nothing else in
 either suite is red: `tests/phase2` is `136 passed / 1 skipped / 0 failed`, and
 the 31 `tests/m3` skips are unchanged and pre-existing.
+
+### WHAT WAS ACTUALLY APPLIED (2026-08-06, `c278e25`)
+
+Exactly the authorized change, in `tests/m3/test_qtl_coloc_allele_join.py`, and
+nothing else in that file:
+
+* **KEPT verbatim:** `assert "region_id=lambda" not in text` (over `qtl_coloc.smk`)
+  — this test's original subject.
+* **REPLACED:** `assert diff.stdout.strip() == ""` →
+  `_assert_finemap_diff_leaves_region_id_alone(diff.stdout)`, whose body is
+  `assert "region_id" not in diff_text` with a message naming the guard, the
+  reason `params.region_id` is out of scope, and the offending diff.
+* **DOCSTRING UPDATED** to state what the assertion now enforces, to record
+  `AUTH-b77-01` and its one-line reason (a fixed-SHA whole-file pin cannot
+  distinguish a regression from a legitimate edit, so it was narrowed to the
+  stated subject and thereby made STRONGER on it), and to point at the PRIMARY
+  guard rail in `test_occlusion_lockstep_wiring.py`.
+* **ADDED:** `FINEMAP_SMK` (read-only) and the permanent in-suite negative
+  control `test_nc_auth_b77_01_the_narrowed_pin_still_catches_a_region_id_edit`.
+
+**THE NEGATIVE CONTROL — OBSERVED RED. This was the price of the edit.** The
+control builds a throwaway git repo from a COPY of `finemap.smk`, shadows the
+directive (`REGION_SAFE_TO_ID[wildcards.region]` → `wildcards.region`), and
+drives the narrowed assertion with the resulting real `git diff`. With
+`pytest.raises` temporarily removed so the failure surfaces raw:
+
+```
+E  AssertionError: a finemap.smk change touched region_id.
+   run_finemap.params.region_id has been out of scope for every task since
+   7b1025d ... Offending diff:
+E    @@ -387,7 +387,7 @@ rule run_finemap:
+E    -        region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region],
+E    +        region_id=lambda wildcards: wildcards.region,
+E  assert 'region_id' not in 'diff --git ...rd default\n'
+```
+
+The control additionally asserts, in the same run, that the REAL diff still
+passes AND is **non-empty** (so that half is not vacuous), and that
+`src/snakemake/rules/finemap.smk` in the working tree is byte-unchanged
+MID-CONTROL — the same discipline `260805-w7u`'s NC-2g used against the frozen R
+source. Verified after: `git status --short -- src/snakemake/rules/finemap.smk`
+empty; `test_occlusion_lockstep_wiring.py` 16 passed.
+
+**Both suites after the edit:** `tests/m3` **806 passed / 0 failed / 31 skipped**;
+`tests/phase2` **136 passed / 1 skipped / 0 failed**. Gate MET.
+
+⚠ **This is the SEVENTH assertion in this arc found structurally incapable of
+doing its stated job — and unlike the other six, WE WROTE IT, one task ago
+(`260805-w7u`, `1815bfd`, 2026-08-05).** The lesson generalises past this file: a
+scope assertion must name its SUBJECT, not its blast radius. `diff == ""` against
+a fixed SHA is never a contract about correctness; it is a countdown to the next
+legitimate edit.

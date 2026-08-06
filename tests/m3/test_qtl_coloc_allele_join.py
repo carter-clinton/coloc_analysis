@@ -94,6 +94,9 @@ SUSIE_R = PROJECT_ROOT / SUSIE_R_REL
 NEW_JOIN_R = PROJECT_ROOT / "src" / "snakemake" / "scripts" / "ld_allele_join.R"
 QTL_COLOC_R = PROJECT_ROOT / "src" / "snakemake" / "scripts" / "run_qtl_coloc.R"
 QTL_COLOC_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "qtl_coloc.smk"
+#: Read ONLY by AUTH-b77-01's narrowed params.region_id pin and its negative
+#: control. This module never writes it.
+FINEMAP_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
 
 #: The commit this plan started from -- the un-crosswalked, allele-blind,
 #: sparse-matrix-passing coloc path. The permanent differential substrate.
@@ -1279,7 +1282,37 @@ def test_the_overlap_floor_agrees_with_the_shipped_policy():
 
 
 def test_params_region_id_is_not_declared_here():
-    """``finemap.smk:349-350`` is out of scope and must not be shadowed."""
+    """``run_finemap.params.region_id`` is out of scope and must not be shadowed.
+
+    NARROWED 2026-08-06 under **AUTH-b77-01** (quick-260806-b77). The second
+    assertion used to be ``diff.stdout.strip() == ""`` — a WHOLE-FILE pin of
+    ``src/snakemake/rules/finemap.smk`` against the FIXED SHA ``7b1025d``. That
+    is a **false invariant by construction**: it cannot distinguish a
+    ``params.region_id`` regression from a legitimate edit, so it was guaranteed
+    to fail on the NEXT change to that file whatever the change was
+    (``[[feedback_coverage_assertion_can_be_false_invariant]]``). It fired on
+    quick-260806-b77's blast-radius **FINDING J** fix — the per-region receipt —
+    which has nowhere else to live, because the other half of that pair is
+    ``run_susie_rss.R``, RE-FROZEN at ``dc4bbd2`` with its unfreeze SPENT.
+
+    The pin is REPLACED BY ITS OWN SUBJECT, not relaxed: no hunk of a
+    ``finemap.smk`` diff may mention ``region_id`` at all. That is **STRICTLY
+    STRONGER on the thing this test names** — it says WHICH change is forbidden,
+    and it still fails on a ``params.region_id`` edit that arrives inside a
+    commit which also legitimately changes something else, a case the whole-file
+    pin could not tell apart. Measured at the time of the edit:
+    ``git diff 7b1025d HEAD -- src/snakemake/rules/finemap.smk`` is 128 lines
+    and contains ``region_id`` **0** times.
+
+    ⚠ THIS IS THE SECONDARY GUARD. The PRIMARY guard rail is
+    ``tests/m3/test_occlusion_lockstep_wiring.py::test_params_region_id_is_untouched``,
+    which asserts the directive still reads
+    ``region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region],``
+    character-for-character. It is UNTOUCHED by AUTH-b77-01 and green.
+
+    The FIRST assertion below (``qtl_coloc.smk`` declares no ``region_id=lambda``
+    of its own) is this test's original subject and is unchanged, verbatim.
+    """
     text = QTL_COLOC_SMK.read_text()
     assert "region_id=lambda" not in text
     diff = subprocess.run(
@@ -1287,7 +1320,84 @@ def test_params_region_id_is_not_declared_here():
          "src/snakemake/rules/finemap.smk"],
         cwd=PROJECT_ROOT, capture_output=True, text=True,
     )
-    assert diff.stdout.strip() == ""
+    _assert_finemap_diff_leaves_region_id_alone(diff.stdout)
+
+
+def _assert_finemap_diff_leaves_region_id_alone(diff_text: str) -> None:
+    """AUTH-b77-01's narrowed assertion, factored out so a NEGATIVE CONTROL can
+    drive it with a diff in which ``params.region_id`` IS touched.
+
+    A green assertion is evidence only if you have seen it fail, and the
+    whole-file pin this replaces was never once exercised against the defect it
+    claimed to guard. See
+    ``test_nc_auth_b77_01_the_narrowed_pin_still_catches_a_region_id_edit``.
+    """
+    assert "region_id" not in diff_text, (
+        "a finemap.smk change touched region_id. run_finemap.params.region_id "
+        f"has been out of scope for every task since {PRE_CHANGE_REF}: it feeds "
+        "run_susie_rss.R --region, which looks the id up in "
+        "config/regions_curated.csv, and its sibling resolve_ld_path(region_id=...) "
+        "argument sits ~30 lines away and is spelled almost identically. "
+        f"Offending diff:\n{diff_text}"
+    )
+
+
+def test_nc_auth_b77_01_the_narrowed_pin_still_catches_a_region_id_edit(tmp_path):
+    """NC-AUTH-b77-01 — PERMANENT AND IN-SUITE. The price of AUTH-b77-01.
+
+    Prove the NARROWED assertion still catches what it claims by driving it with
+    a real ``git diff`` in which ``params.region_id`` IS edited. The edit is made
+    on a TEMP COPY inside a throwaway repo; ``src/snakemake/rules/finemap.smk``
+    in the working tree is asserted 0-diff MID-CONTROL, the same discipline
+    ``260805-w7u``'s NC-2g used against the frozen R source.
+    """
+    real = FINEMAP_SMK.read_text()
+    anchor = "region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region],"
+    assert real.count(anchor) == 1, (
+        "the params.region_id directive is not where this control expects it; "
+        "the control could be perturbing nothing"
+    )
+
+    repo = tmp_path / "repo"
+    (repo / "src" / "snakemake" / "rules").mkdir(parents=True)
+    target = repo / "src" / "snakemake" / "rules" / "finemap.smk"
+    for cmd in (
+        ["git", "init", "-q"],
+        ["git", "config", "user.email", "nc@example.invalid"],
+        ["git", "config", "user.name", "nc"],
+    ):
+        subprocess.run(cmd, cwd=repo, check=True, capture_output=True)
+    target.write_text(real)
+    subprocess.run(["git", "add", "-f", str(target.relative_to(repo))],
+                   cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-qm", "base"], cwd=repo, check=True,
+                   capture_output=True)
+
+    # THE PERTURBATION: shadow params.region_id, exactly the defect this guards.
+    target.write_text(real.replace(anchor, "region_id=lambda wildcards: wildcards.region,"))
+    perturbed = subprocess.run(
+        ["git", "diff", "HEAD", "--", "src/snakemake/rules/finemap.smk"],
+        cwd=repo, capture_output=True, text=True,
+    ).stdout
+    assert "region_id" in perturbed, "the control produced no region_id hunk"
+
+    with pytest.raises(AssertionError, match="touched region_id"):
+        _assert_finemap_diff_leaves_region_id_alone(perturbed)
+
+    # ...and the REAL diff still passes, so the control is not merely noisy.
+    real_diff = subprocess.run(
+        ["git", "diff", PRE_CHANGE_REF, "HEAD", "--",
+         "src/snakemake/rules/finemap.smk"],
+        cwd=PROJECT_ROOT, capture_output=True, text=True,
+    ).stdout
+    _assert_finemap_diff_leaves_region_id_alone(real_diff)
+    assert real_diff.strip(), (
+        "the real diff is EMPTY, so the assertion above proved nothing -- this "
+        "control is only meaningful while finemap.smk has legitimately changed"
+    )
+
+    # MID-CONTROL: the working tree was never written.
+    assert FINEMAP_SMK.read_text() == real
 
 
 # ==========================================================================
