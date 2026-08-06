@@ -128,3 +128,109 @@ instruction for this task is explicit that handoff-adjacent files are Carter's.
 **Suggested fix:** fold it into the m3-05 replan, or into whichever quick task
 next refreshes the M3 phase status block, replacing the flag clause with the
 real gate (Task 3's in-perimeter fire + egress).
+
+---
+
+# Deferred items — discovered during quick-260805-w7u execution (2026-08-06)
+
+Closing blast-radius finding **E** (`m3-04c-BLAST-RADIUS.md:141`, gate row
+"Any GWAS×QTL colocalization"). Logged, NOT fixed.
+
+## E-2 DEFERRED — the QTL-beta ↔ panel-ALT orientation needs Carter
+
+**Logged:** 2026-08-06 (quick-260805-w7u). **Status: DEFERRED, not fixed.**
+Named in the plan's `<explicitly_deferred>` so nobody discovers it by diffing.
+
+`qtl_data$LD` is signed on the **panel's ALT** (plink `--keep-allele-order` is
+hardcoded on every LD call, `aou_ld_panel.py:2905`; `plink --r` signs the
+correlation on A1 == ALT). `qtl_data$beta` is signed on the **QTL's effect
+allele**. When the two are transposed, the QTL SuSiE fit is mis-signed against
+its own LD — finding **H**'s family, relocated to the QTL side.
+
+**Why it is deferred rather than fixed:**
+
+1. **It is PRE-EXISTING on the legacy 1kG/EUR path and unaddressed there today.**
+   It is not created by 260805-w7u; closing finding E merely makes it reachable
+   on a second panel.
+2. **Fixing it would MOVE Track-A numbers.** Today's coloc successes are
+   **32/32 EUR**, `1,957` legacy coloc JSONs exist, and Track A is **in
+   submission**. A sign correction on the QTL beta changes PP.H4 for EUR pairs
+   with no error and no flag — the same class of silent movement BLOCKER-B
+   documented for the fine-map path.
+3. **It is not named by finding E.** E is "the colocalization would mix LD
+   panels". Orientation is a separate defect that happens to live next door.
+4. **It needs a GRCh38↔GRCh37 allele reconciliation that is its own task.** The
+   QTL side is GRCh38 (`variant_id = chr12_110962202_G_A`); the panel and the
+   region variant catalog are GRCh37. There is therefore no position join
+   available on the QTL side at all — the panel↔catalog join this task landed
+   works precisely because BOTH of its sides are GRCh37. Reconciling the QTL
+   side requires a lift plus an allele-compatibility decision (and the lift
+   carries `ld_npz_to_rds.R:348-361`'s non-complementing REF/ALT hazard, which
+   is why palindromes are dropped rather than kept).
+
+**What quick-260805-w7u DID do — and this is the part that makes E-2
+actionable rather than rhetorical.** The panel↔catalog join emits
+`ld_allele_flipped` (and the five sibling counters) into **every per-pair JSON
+and a per-pair log receipt**. `ld_allele_flipped` is the count of rows whose
+REF/ALT are transposed between the catalog and the panel at the same position —
+i.e. **the population in which an orientation error can occur at all**. So E-2's
+magnitude is now **MEASURABLE per region** instead of invisible. Carter can
+decide on evidence rather than on argument: run the gated path, read
+`ld_allele_flipped / (ld_allele_exact + ld_allele_flipped)` off the receipts,
+and see whether the exposed fraction is 0.1% or 40%.
+
+It also closed the **row-binding half**, which is independent of sign: a
+multiallelic site binding to an arbitrary ALT's LD **ROW** is a wrong-row error
+whether or not the sign is right, and that is fixed for the gated path.
+
+**The fork, stated neutrally:**
+
+| Option | Effect | Argument |
+|---|---|---|
+| **A — leave it (shipped today)** | EUR/Track-A numbers frozen; AFR coloc carries the same pre-existing orientation exposure the EUR path already carries | Nothing in submission moves. The exposure is now COUNTED, so it is disclosable rather than unknown. Reviewer-visible as a stated limitation. |
+| **B — correct the QTL beta orientation** | PP.H4 moves for any pair with transposed variants, **including EUR** | Scientifically the right sign convention. Requires: a GRCh38↔GRCh37 reconciliation for the QTL side; an ancestry gate if Track A must not move; a before/after comparison; and a disclosure in the manuscript/OSF record. |
+
+**Recommendation if asked:** B is correct, but it is a Track-A-moving change on
+a manuscript in submission, so it must be scoped as its own task with its own
+`identical()`-style containment proof — exactly as `260805-23d` scoped BLOCKER-B
+— and **not** as a rider on finding E. Decide it before any AFR coloc figure is
+published, using the counters this task emits.
+
+**Not blocking:** the counters are reporting, never a filter. Nothing downstream
+reads them today except the per-pair receipt.
+
+## E-3 (minor) — two stale schema comments assert a measured-false claim
+
+`src/snakemake/schemas/pipeline.schema.yaml` carries two comments (on the
+`ld_read_path` block itself and on `allele_aware`) stating that without their
+entry "EVERY Snakemake invocation fails at `validate()`". That was **measured
+FALSE** in 260805-o7o Deviation 1: `additionalProperties: false` is TOP LEVEL
+only, so `ld_read_path` sub-keys are permitted by JSON-Schema's default with or
+without a declaration (re-measured here: rc 0 without the entry).
+
+**Why not fixed here:** pre-existing, and editing prose in two unrelated comment
+blocks is outside this task's scope boundary. The NEW `coloc` entry's comment
+states the correction explicitly and points at this entry, so a reader is not
+left with only the false version.
+
+**Cost of leaving it:** documentation only; no rule, test or DAG reads it.
+
+## E-4 — `build_qtl_coloc_manifest.py::_ancestry_for_region` is hardcoded to `"EUR"`
+
+`src/python/build_qtl_coloc_manifest.py:245` returns `"EUR"` unconditionally,
+ignoring the region entirely. Consequence, **measured** and pinned by
+`tests/m3/test_qtl_coloc_ld_resolution.py::test_ancestry_for_region_is_hardcoded_eur_today`:
+with the shipped allow-list (`AFR`) **no manifest row takes the new
+`RESOLVED_BY_LD_PANEL_RESOLVER` sentinel branch**, and no manifest row reaches
+`_qtl_coloc_ld_input`'s resolver branch either. The manifest half of finding E's
+remedy is wired and correct but **INERT today**.
+
+**Why not fixed here:** teaching `_ancestry_for_region` about AFR CHANGES THE
+MANIFEST — new rows, new `qtl_coloc_id`s, a different DAG — for a pipeline whose
+current coloc outputs are 32/32 EUR and feed Track A. That is a scope and
+analysis decision, not a plumbing fix.
+
+**Cost of leaving it:** finding E's remedy cannot be exercised end-to-end in
+production until AFR rows exist. It is proven on fixtures, and it goes live the
+moment this function learns about AFR — which is the same moment the AFR coloc
+work would begin anyway.
