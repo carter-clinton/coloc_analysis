@@ -199,6 +199,80 @@ published, using the counters this task emits.
 **Not blocking:** the counters are reporting, never a filter. Nothing downstream
 reads them today except the per-pair receipt.
 
+### ▶ E-2 EVIDENCE UPDATE (2026-08-07) — measured on the real corpus, not a fixture
+
+**Why this exists.** The entry above says Carter should "decide on evidence
+rather than on argument" by reading `ld_allele_flipped / (exact + flipped)` off
+the per-pair receipts. **Those receipts cannot exist yet** — the shipped counter
+path is gated to AFR (`ld_read_path.ancestries`), AFR has **zero** QTL-coloc jobs
+(E-4), and the AoU panel is 0/276. So the quoted **46/182 = 25.3%** is a
+**synthetic acceptance fixture**, not a measurement of anything real.
+
+**What was measured instead ($0, read-only, NC-State, nothing written to the
+repo tree).** The catalog↔panel allele join was run directly over the **207 real
+region variant catalogs** in
+`data/processed/region_analysis/ld_reference/variants/` against the `variants`
+frames of the panels in the sibling ancestry directories, using the **SHIPPED**
+`ld_allele_join_indices()` from `src/snakemake/scripts/ld_allele_join.R` — never
+a reimplementation (the `260805-w7u` body-walk rule).
+
+| Statistic (per region, EUR arm) | Value |
+|---|---|
+| regions measured | **206** |
+| regions with ≥1 transposed row | **195 / 206** |
+| **median** flipped ratio | **17.82%** |
+| mean | 12.49% |
+| max (`RAD50_peak__tile1`) | **38.68%** |
+| min | 0.00% |
+| pooled across all rows | 4.18% (31,152 / 745,534) |
+
+⚠ **The pooled 4.18% is MISLEADING and must not be quoted alone.** It is dragged
+down by a few very large zero-flip regions (`SH2B3_12q24__tile1/2` contribute
+10,521 exact rows with **zero** flips). **A fit is per-region, so the per-region
+median (17.8%) is the decision-relevant number** — and it is *worse* than the
+fixture's 25.3% suggested for the typical region only in the sense that it is
+pervasive: 195 of 206 regions are affected.
+
+**The transposition is real, not an artifact.** Example from
+`RAD50_peak__tile1`, where 1,388 of 3,474 catalog rows bind swapped:
+
+| side | CHR | POS | REF | ALT | SNP_ID |
+|---|---|---|---|---|---|
+| catalog | 5 | 131306363 | C | A | `5:131306363` |
+| panel | 5 | 131306363 | **A** | **C** | `rs147814714` |
+
+The catalog and the panel `variants` frame are **different vintages** (positional
+IDs vs rsIDs) with opposite allele orientation at the same coordinate.
+
+**★ THE TRACK-A-RELEVANT RESULT — SH2B3, the anchor, is essentially unexposed:**
+
+| region | exact | flipped | ratio |
+|---|---|---|---|
+| `SH2B3_12q24__tile1` | 5,407 | **0** | **0.00%** |
+| `SH2B3_12q24__tile2` | 5,114 | **0** | **0.00%** |
+| `SH2B3_12q24__tile3` | 1,305 | 333 | 0.20% |
+
+**The worst-exposed regions are AFR-relevant ones** — `RAD50_peak__tile1`
+(38.7%), `FTO_16q12` (34.1%), `IRS1_2q36__tile1` (28.1%). Note `RAD50_peak__tile1`
+is also one of the nine `variant_catalog_fallback: true` Path-1 artifacts found
+by K-1, and `FTO` is a BLOCKER-D large region.
+
+⚠⚠ **THE CAVEAT THAT BOUNDS ALL OF THE ABOVE.** Every panel in that tree is an
+**identity-LD stub**: `use_identity = TRUE`, `R` is **NULL**,
+`status = "variants_exceed_threshold"`, and the `EUR/`, `AFR/` and `TRANS/`
+directories are **byte-identical** (md5-verified on two regions). The allele
+question does not depend on `R`, so the transposition counts are meaningful **for
+the variant bookkeeping** — but it is **NOT verified** that a real (non-identity)
+panel carries these same `variants` frames. Do not report these as the real-LD
+exposure; report them as the catalog↔panel-frame transposition rate.
+
+**What this changes for the decision.** Track A's anchor is at ~0% exposure, so
+option **B gated to AFR** would leave Track A numerically untouched *and* lose
+almost nothing at SH2B3 — but it would be **INERT today** because of E-4
+(`_ancestry_for_region` returns `"EUR"` unconditionally, so no AFR QTL-coloc job
+exists to exercise it). **E-2 and E-4 are therefore coupled: fixing E-2 alone
+buys a correct-but-unexercised path, the same shape as findings E and G.**
+
 ## E-3 (minor) — two stale schema comments assert a measured-false claim
 
 `src/snakemake/schemas/pipeline.schema.yaml` carries two comments (on the
