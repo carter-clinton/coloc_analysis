@@ -392,8 +392,13 @@ def test_every_pin_constant_declares_its_bucket():
 def test_the_bucket_scan_is_non_vacuous():
     """"Everything is annotated" is evidence only if the scan finds anything."""
     constants = _pin_constants()
+    # 16 after quick-260806-sr4 (17 before it: FROZEN_R_REV and FREEZE_REF
+    # became import aliases of R_CODE_REF, and K3_PRE_FIX_REF was added). The
+    # threshold is a floor, not an equality: the population legitimately changes,
+    # and pinning it exactly would be a false invariant of the kind this suite
+    # exists to catch.
     assert len(constants) >= 15, (
-        f"the bucket scan found only {len(constants)} revision constants; 17 "
+        f"the bucket scan found only {len(constants)} revision constants; 16 "
         "were measured on 2026-08-06. The walk has stopped resolving them and "
         "the gate above is passing for free"
     )
