@@ -555,7 +555,10 @@ def _assert_cause_is(out: str, expected: str) -> None:
         # (The old comment here claimed "all 1,957 legacy JSONs pre-date it",
         # which was FALSE -- the ones that carry it render `none`, below.)
         (None, None, "key_absent"),
-        # 1,935 of the 1,944 legacy JSONs that DO carry the key render this.
+        # 1,900 of the 1,909 legacy JSONs that DO carry the key render this.
+        # (1,909 carry it + 687 key-absent = the 2,596 region JSONs. A wider
+        # census reporting 1,944 also swept .planning/debug fits and
+        # results_lsweep_*.bak siblings -- 35 non-region files.)
         (False, False, "none"),
         # NEW, and the reason K-1 forced a decoder change: after K-1 a real
         # Path-2 revert emits variant_catalog_fallback false + overlap_zero

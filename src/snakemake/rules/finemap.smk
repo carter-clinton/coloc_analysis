@@ -538,8 +538,8 @@ rule run_finemap:
         #        a JSON older than the key itself. Real: 687 of the 2,596 region
         #        JSONs under results/legacy/region_analysis (measured 2026-08-06).
         #   false + false/absent  -> none
-        #        neither revert fired. This is what 1,935 of the 1,944 legacy
-        #        JSONs carrying the key render.
+        #        neither revert fired. This is what 1,900 of the 1,909 legacy
+        #        JSONs carrying the key render. (1,909 + 687 key-absent = 2,596.)
         #   false + true          -> path2_ld_overlap_zero_RETRY
         #        THE POST-K-1 CANONICAL PATH-2 SIGNATURE. Before K-1 this pair
         #        rendered `none`, which was FALSE: Path 2 DID fire.
