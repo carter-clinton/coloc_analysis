@@ -362,8 +362,13 @@ INERT on today's artifacts.
 ⚠ **CENSUS CORRECTION.** The "1,957" figure below was never reproducible as
 written, and a planning-time re-count of "44" was also wrong — it used a
 `grep -r`, which does **not** follow the `results/legacy/region_analysis`
-symlink. Measured 2026-08-06 with `grep -R`: **1,944** region JSONs carry
-`variant_catalog_fallback` — **1,935 `false`** and **9 `true`**. All 9 `true`
+symlink. A first `grep -R` re-count of "1,944" was ALSO wrong — it swept the
+whole repo, picking up 35 non-region files (17 under
+`.planning/debug/stage2_narrow_validation/`, 18 under `results_lsweep_*.bak/`)
+plus `.planning/HANDOFF.json`. **Measured 2026-08-06, scoped to the region tree:
+1,909** region JSONs carry `variant_catalog_fallback` — **1,900 `false`** and
+**9 `true`**. This reconciles: `1,909 + 687 key-absent = 2,596` total region
+JSONs, and `1,909 + 35 + 1 = 1,945` for the unscoped sweep. All 9 `true`
 ones are AFR (`RAD50_peak__tile1` and eight `PYHIN1_1q23` tiles) and **none**
 carries `ld_overlap_zero_fallback`, i.e. every one of them is a genuine
 **Path-1** revert. A further **687** of the 2,596 JSONs under
@@ -581,6 +586,59 @@ measured during planning and re-verified at execution:
   of 2026-08-06).
 * **(iii) a re-freeze re-pin** at the new SHA, after which
   `git diff --exit-code <new-sha> -- run_susie_rss.R` becomes the forward gate.
+
+## K-3 DEFERRED (STILL OPEN) — a WRONG CENSUS NUMBER is shipped inside the re-frozen `run_susie_rss.R` comment
+
+**Logged:** 2026-08-06 (quick-260806-pd3, found by the verifier AFTER commit 2 had
+landed and the file was already re-frozen at `bf04199`). **Status: DEFERRED —
+disclosed, NOT fixed. Cosmetic; no behaviour and no number depends on it.**
+
+**The defect.** `src/legacy/region_analysis/scripts/run_susie_rss.R:1018-1019`
+states the legacy census as **"1,944 measured 2026-08-06 -- 1,935 false"**. That
+count is **35 too high**: it came from an unscoped `grep -R` over the whole repo,
+which also swept 17 fit JSONs under `.planning/debug/stage2_narrow_validation/`
+and 18 under `results_lsweep_*.bak/`, plus `.planning/HANDOFF.json`.
+
+**The correct figures**, scoped to the region tree and reconciled three ways:
+
+| Quantity | Correct | Shipped in the R comment |
+|---|---|---|
+| region JSONs carrying `variant_catalog_fallback` | **1,909** | 1,944 ✗ |
+| — of which `false` | **1,900** | 1,935 ✗ |
+| — of which `true` | **9** | 9 ✓ |
+| region JSONs with the key absent | **687** | 687 ✓ (elsewhere) |
+| total region JSONs | **2,596** | 2,596 ✓ (elsewhere) |
+| carrying `ld_overlap_zero_fallback` | **0** | 0 ✓ |
+
+Reconciliation: `1,909 + 687 = 2,596`; `1,909 + 35 + 1 = 1,945` (the unscoped
+sweep). The R comment is additionally **self-inconsistent** with the `2,596` and
+`687` it cites in the same breath, since `2,596 − 687 = 1,909`, not 1,944.
+
+**Every qualitative conclusion is UNAFFECTED.** All 9 `true` artifacts are still
+AFR (`RAD50_peak__tile1` + eight `PYHIN1_1q23` tiles), still carry **zero**
+`ld_overlap_zero_fallback`, and are therefore still genuine **Path-1** reverts —
+which is the entire argument for why the Path-2 overload had to go. The K-1
+closure stands.
+
+**THE THREE NON-FROZEN SITES WERE CORRECTED IN THE SAME SESSION** (the docs
+commit): `src/snakemake/rules/finemap.smk:541`,
+`tests/m3/test_finemap_receipt_early_exit.py:558`, and the census paragraph in
+this file. **Only the frozen R comment still carries the wrong figure**, so the
+repository is now internally inconsistent at exactly one place, deliberately and
+on the record rather than silently.
+
+**Why it was not fixed.** `run_susie_rss.R` was RE-FROZEN at `bf04199` by commit
+2 and **AUTH-K1-UNFREEZE is SPENT**. Correcting a comment is not a licence to
+re-open a freeze; doing so would also force a second re-pin cascade across
+`FROZEN_R_REV`, `FREEZE_REF`, `ld_allele_join.R`, `finemap.smk` and this file for
+a cosmetic gain.
+
+**The remedy, when a freeze window next opens for an independent reason** (bundle
+it with [[K-2]] and any future K-1-class work — one window, one re-pin):
+change `1,944` → `1,909` and `1,935` → `1,900` at `:1018-1019`. Two numbers, one
+line each, no logic. Requires: a named unfreeze, the standing re-pin obligation,
+and nothing else — there is no containment proof to construct because no
+executable assertion reads these digits.
 
 ## ✅ AUTH-b77-01 GRANTED AND APPLIED — a PRE-EXISTING test pinned `finemap.smk` at `7b1025d` FOREVER
 
