@@ -136,9 +136,38 @@ real gate (Task 3's in-perimeter fire + egress).
 Closing blast-radius finding **E** (`m3-04c-BLAST-RADIUS.md:141`, gate row
 "Any GWAS×QTL colocalization"). Logged, NOT fixed.
 
-## E-2 DEFERRED — the QTL-beta ↔ panel-ALT orientation needs Carter
+## E-2 — ✅ DECIDED 2026-08-07 as option A (leave the code, DISCLOSE a MATERIAL exposure)
 
-**Logged:** 2026-08-06 (quick-260805-w7u). **Status: DEFERRED, not fixed.**
+> **✅ DISPOSED — `DEC-2026-08-07-e2-orientation-disposition`.** Carter chose
+> **A** on measured evidence: the code is **NOT** changed; the exposure is
+> disclosed as a stated limitation. **B is not "wrong", it is PREMATURE** — it is
+> inert without **E-4**, it moves Track A numbers mid-submission, and the only
+> substrate available to validate it is an identity-LD stub tree.
+>
+> ⚠ **THE EXPOSURE IS MATERIAL IN 2 OF THE 5 TRACK-A COLOC REGIONS** —
+> `APOL1_22q12` **18.41%** and `FTO_16q12` **23.80%**; `SH2B3_12q24` tile 3 is
+> **20.33%** while its anchor tiles 1–2 are **0.00%**; `CXADR_F2RL1_6p21` and
+> `MC4R_18q21` are clean at ~0.06%. **Do not quote the 5.29% pooled figure
+> alone** — it is dragged down by the two clean large regions.
+>
+> ⚠ **CORRECTION TO THE RECORD:** an interim report gave SH2B3 tile 3 as
+> "0.20%". It is **20.33%** (a ratio of `0.2033` misread as a percent) — a 100×
+> error in the reassuring direction.
+>
+> **THREE OBLIGATIONS SURVIVE, none discharged:** (1) a manuscript limitation
+> paragraph naming `APOL1_22q12` and `FTO_16q12` explicitly; (2) an OSF record
+> entry; (3) ⚠ **an OPEN question above executor authority — is this a
+> LIMITATION or a CORRECTION?** Two of five coloc regions at ~18–24% is large
+> enough that a reviewer may read it as the latter.
+>
+> **B becomes right** bundled with **E-4**, after the AoU panel exists, with a
+> real-LD re-measurement + before/after + OSF disclosure. **E-2 and E-4 are
+> COUPLED.**
+>
+> The original entry is preserved below unchanged.
+
+**Logged:** 2026-08-06 (quick-260805-w7u). **Status: SUPERSEDED — DECIDED as A
+on 2026-08-07; preserved verbatim for the record.**
 Named in the plan's `<explicitly_deferred>` so nobody discovers it by diffing.
 
 `qtl_data$LD` is signed on the **panel's ALT** (plink `--keep-allele-order` is
@@ -244,18 +273,39 @@ pervasive: 195 of 206 regions are affected.
 The catalog and the panel `variants` frame are **different vintages** (positional
 IDs vs rsIDs) with opposite allele orientation at the same coordinate.
 
-**★ THE TRACK-A-RELEVANT RESULT — SH2B3, the anchor, is essentially unexposed:**
+**★ THE TRACK-A-RELEVANT RESULT — measured 2026-08-07 over the FIVE regions
+Track A's coloc numbers actually depend on** (parsed from the `pair_id` column of
+`results/multitrait/coloc_summary.tsv`).
 
-| region | exact | flipped | ratio |
+⚠⚠ **THIS TABLE CORRECTS AN EARLIER VERSION OF THIS ENTRY.** The first draft
+reported only SH2B3 and gave its tile 3 as **"0.20%"**. That was a **100× error**
+— a ratio of `0.2033` misread as a percentage — and it ran in the *reassuring*
+direction, in the exact claim option A was first proposed on. It also generalised
+from the anchor alone to "Track A", which the full five-region sweep does not
+support.
+
+| Track A region | exact | flipped | ratio |
 |---|---|---|---|
-| `SH2B3_12q24__tile1` | 5,407 | **0** | **0.00%** |
-| `SH2B3_12q24__tile2` | 5,114 | **0** | **0.00%** |
-| `SH2B3_12q24__tile3` | 1,305 | 333 | 0.20% |
+| `CXADR_F2RL1_6p21` (5 tiles) | 28,415 | 18 | **0.06%** |
+| `MC4R_18q21` (2 tiles) | 14,141 | 10 | **0.07%** |
+| `SH2B3_12q24` (3 tiles) | 11,826 | 333 | **2.74%** |
+| — `__tile1` / `__tile2` (the **anchor**) | 10,521 | **0** | **0.00%** |
+| — `__tile3` | 1,305 | 333 | **20.33%** |
+| `APOL1_22q12` (2 tiles) | 4,910 | 1,108 | **18.41%** |
+| `FTO_16q12` (3 cells) | 7,188 | 2,245 | **23.80%** |
+| **pooled over the Track A set** | 66,480 | 3,714 | **5.29%** |
 
-**The worst-exposed regions are AFR-relevant ones** — `RAD50_peak__tile1`
-(38.7%), `FTO_16q12` (34.1%), `IRS1_2q36__tile1` (28.1%). Note `RAD50_peak__tile1`
-is also one of the nine `variant_catalog_fallback: true` Path-1 artifacts found
-by K-1, and `FTO` is a BLOCKER-D large region.
+**⚠ TWO OF THE FIVE ARE MATERIALLY EXPOSED** (`APOL1_22q12`, `FTO_16q12`), and a
+third has one exposed tile. **Do NOT quote the 5.29% pooled figure alone** — it
+is dragged down by the two clean large regions (`CXADR`, `MC4R`) and hides that
+two regions sit near 20%. The md5-pinned **anchor** tiles are genuinely 0.00%,
+which is real but is **not** a statement about Track A as a whole.
+
+**The worst-exposed regions corpus-wide** are `RAD50_peak__tile1` (38.7%),
+`FTO_16q12` (34.1% on its untiled cell), `IRS1_2q36__tile1` (28.1%). Note
+`RAD50_peak__tile1` is also one of the nine `variant_catalog_fallback: true`
+Path-1 artifacts found by K-1, and `FTO` is both a BLOCKER-D large region **and**
+a Track A coloc region.
 
 ⚠⚠ **THE CAVEAT THAT BOUNDS ALL OF THE ABOVE.** Every panel in that tree is an
 **identity-LD stub**: `use_identity = TRUE`, `R` is **NULL**,

@@ -1169,3 +1169,82 @@ wrong. It pinned BYTES when what needs protecting is NUMERIC BEHAVIOUR.
   `[[feedback_fixing_a_split_unpins_what_it_pinned]]`; K-3 in
   `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`;
   `DEC-2026-08-05-m3-ld-read-path` (BLOCKER-1 — the reason a guard exists).
+
+## 2026-08-07 — DEC-2026-08-07-e2-orientation-disposition: E-2 disposed as option A (leave the code, DISCLOSE a MATERIAL exposure)
+
+**Decision:** Adopt **option A** for blast-radius item **E-2** (the QTL-beta ↔
+panel-ALT orientation). The code is **NOT** changed. The exposure is **disclosed
+as a stated limitation** in the manuscript and the OSF record. Carter's call,
+2026-08-07, on measured evidence.
+
+**Why A and not B, on the evidence:**
+
+1. **B is currently unexercisable.** `build_qtl_coloc_manifest.py::_ancestry_for_region`
+   returns `"EUR"` unconditionally (**E-4**), so **zero** AFR QTL-coloc jobs exist.
+   A fix gated to AFR would be the **third** correct-but-inert closure in this arc
+   after findings **E** and **G**.
+2. **B moves Track A numbers**, and Track A is **in submission**.
+3. **The only substrate available to validate B is an identity-LD stub tree**
+   (`use_identity = TRUE`, `R` NULL, EUR/AFR/TRANS byte-identical). Making a
+   Track-A-moving correction validated against stubs would be worse than the
+   defect.
+
+**⚠ THE EXPOSURE IS MATERIAL, NOT MINOR — DO NOT SOFTEN THIS IN THE WRITE-UP.**
+Measured 2026-08-07 with the shipped `ld_allele_join_indices()` over the 207 real
+region variant catalogs (`e2-exposure-measure.R`, `e2-exposure-real-corpus.tsv`).
+Across the **five regions Track A's coloc numbers actually depend on**:
+
+| Track A region | exact | flipped | ratio |
+|---|---|---|---|
+| `CXADR_F2RL1_6p21` | 28,415 | 18 | **0.06%** |
+| `MC4R_18q21` | 14,141 | 10 | **0.07%** |
+| `SH2B3_12q24` | 11,826 | 333 | **2.74%** (tiles 1–2 = **0.00%**; **tile 3 = 20.33%**) |
+| `APOL1_22q12` | 4,910 | 1,108 | **18.41%** |
+| `FTO_16q12` | 7,188 | 2,245 | **23.80%** |
+| **pooled** | 66,480 | 3,714 | **5.29%** |
+
+Whole corpus: per-region **median 17.82%**, max 38.68%, **195 of 206** regions
+affected.
+
+**⚠ A CORRECTION TO THE RECORD.** An interim report stated SH2B3 tile 3 was
+"0.20%". It is **20.33%** — a ratio of `0.2033` misread as a percentage, a 100×
+error in the reassuring direction, in the very claim this decision was first
+proposed on. The corrected numbers are the ones above. **The anchor tiles (1, 2)
+are genuinely 0.00%; tile 3 is not.**
+
+**What the number means, precisely.** It is the share of bindable variants whose
+REF/ALT are **transposed between the region variant catalog and the panel's
+`variants` frame at the same coordinate** — i.e. the **population in which an
+orientation error can occur**, not a count of realized sign errors. It does not
+by itself demonstrate that any published `PP.H4` is wrong. It does mean **"we
+checked and it is immaterial" is NOT a defensible statement** for `APOL1_22q12`
+or `FTO_16q12`.
+
+**Obligations this decision creates (none discharged yet):**
+
+1. A manuscript **limitation** paragraph carrying the real per-region numbers —
+   naming `APOL1_22q12` (18.41%) and `FTO_16q12` (23.80%) explicitly rather than
+   quoting only the flattering 5.29% pooled figure.
+2. An **OSF record** entry, consistent with the standing "state it, do not let a
+   reader find it by diffing" discipline.
+3. ⚠ **An open question that is above an executor's authority and is NOT settled
+   by this decision: is this a LIMITATION or a CORRECTION?** Two of five coloc
+   regions carrying ~18–24% transposed variants is large enough that a reviewer
+   may reasonably read it as the latter. Registered for Carter.
+
+**Rejected alternatives:**
+- **B now (correct the orientation)** — rejected: inert without E-4, moves
+  Track A numbers mid-submission, and validatable only against stub panels.
+- **Quote the pooled 5.29% alone** — rejected: it is dragged down by the two
+  clean large regions and hides that two regions sit near 20%. A fit is
+  per-region; the per-region figures are the honest unit.
+
+**When B becomes right:** bundled with **E-4**, after the AoU panel exists, with
+a real-LD re-measurement, a before/after comparison and the OSF disclosure the
+E-2 entry already specifies. **E-2 and E-4 are coupled; neither alone is a
+complete change.**
+
+**Cross-refs:** `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`
+(E-2, E-4 and the 2026-08-07 evidence update);
+`.planning/amendments/TRACK-A-FROZEN-NUMBERS.md` (untouched by this decision);
+`[[feedback_a_count_is_a_claim_scope_and_reconcile]]`.
