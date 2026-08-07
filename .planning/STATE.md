@@ -25,7 +25,34 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-08-06 (★★ RESUME HERE — LATEST ★★) — ★ **THE m3-04c BLAST RADIUS IS REMEDIATED. Every gate row is CLEAR except ONE PARTIAL.**
+## 2026-08-07 (★★ RESUME HERE — LATEST ★★) — ★ **K-1 + K-3 CLOSED, THE FREEZE RESCOPED BYTES→CODE, AND E-2 DECIDED. ZERO Carter decisions outstanding.**
+
+**Nothing running. `$0`. ZERO perimeter contact this entire session. The AoU fire was NOT triggered. No LSF jobs.** `origin == local == 8d5806d` on `m3-W2-aou-deltas`, tracked tree clean. **`tests/m3` 902 passed / 31 skipped / 0 failed** and **`tests/phase2` 136 / 1 / 0** — both re-run **independently by the orchestrator**, twice, not taken on an executor's report. Skips held at exactly 31 and 1.
+
+**THREE THINGS LANDED, IN ORDER.**
+1. **`quick-260806-pd3` — finding K-1 CLOSED** (`bf04199` → `9538af0` → `672ee27`). One line deleted from the Path-2 block of `run_susie_rss.R`, restoring `variant_catalog_fallback` to its legacy meaning; the pre-existing test that mandated that exact line was **STRENGTHENED** to forbid it. This cleared the **last PARTIAL gate row** — every row in `m3-04c-BLAST-RADIUS.md` is now CLEAR.
+2. **`quick-260806-sr4` — the source freeze RESCOPED from BYTES to CODE** (`98e0ee9` → `656529a` → `c04e672` → `5f0520b`), triggered by Carter asking *"why is anything frozen?"*. **K-3 CLOSED** as the acceptance proof.
+3. **E-2 DECIDED as option A** (`eed750e` → `b72b22a` → `b02707a` → `8d5806d`), `DEC-2026-08-07-e2-orientation-disposition`.
+
+**★ WHY THE FREEZE CHANGED.** Two different things were called "frozen" and **only one was Carter's**: Track A's frozen **NUMBERS** (`TRACK-A-FROZEN-NUMBERS.md`, `DEC-2026-05-03-vcl-Item2`, the three SH2B3 `.fit.rds` md5s) are a **recorded decision** — UNTOUCHED and asserted mechanically. The whole-file `git diff --exit-code` on `run_susie_rss.R` appeared in **NO** decision entry and froze **BYTES** when the property that matters is **NUMERIC BEHAVIOUR** — which is exactly what made shipping a known-false number **cheaper** than correcting a comment. Now enforced by `tests/m3/source_freeze.py` (comment-insensitive, string-literal-aware; whole-file code-only **FLOOR** + 5 R / 22 Python symbol pins). **A comment edit is FREE; a CODE edit still goes RED.** Rationale: `DEC-2026-08-06-sr4-freeze-scope`.
+
+**⚠⚠ A CLAIM IN OUR OWN HANDOFF WAS FALSE AND IS RETRACTED.** *"All 7 pinned files 0-line diff vs `bf16289`"* — `bf16289` appears in **ZERO** places across `src/`, `tests/`, `config/`, `Snakefile`: **nothing ever enforced it**, and **5 of the 8 had MOVED** (`occlusion_manifest.py` +46/−8, `occlusion_present_rate_scan.py` +154/−21, `drop_occluded_from_sumstats.py` +97/−24, `ld_npz_to_rds.R` +313/−62, `pipeline.schema.yaml` +119/−0). The three genuinely 0-diff files are **now gated for real**. Whether the other five were *frozen-and-drifted* or *never frozen* is **SR4-OPEN**, a question for Carter; nothing is blocked on it.
+
+**⚠ E-2 — DECIDED AS A, AND THE EXPOSURE IS MATERIAL.** The record told Carter to decide by reading `ld_allele_flipped/(exact+flipped)` off the per-pair receipts. **Those receipts cannot exist yet** (the counter path is AFR-gated, AFR has **zero** QTL-coloc jobs per **E-4**, panel is 0/276), so the long-quoted **46/182 = 25.3% was a SYNTHETIC FIXTURE**. Measured instead with the **SHIPPED** `ld_allele_join_indices()` over the 207 real catalogs: corpus per-region **median 17.82%**, max 38.68%, **195/206** regions affected. Over the **five regions Track A's coloc numbers actually depend on**: `CXADR_F2RL1_6p21` **0.06%**, `MC4R_18q21` **0.07%**, `SH2B3_12q24` **2.74%** (md5-pinned anchor tiles 1–2 = **0.00%**, tile 3 = **20.33%**), `APOL1_22q12` **18.41%**, `FTO_16q12` **23.80%**; pooled 5.29%. **TWO OF FIVE ARE MATERIALLY EXPOSED. Do NOT quote the 5.29% pooled figure alone** — it is dragged down by the two clean large regions.
+
+**⚠⚠ AN ERROR I MADE AND CORRECTED IN-SESSION, KEPT ON THE RECORD DELIBERATELY.** An interim report gave SH2B3 tile 3 as **"0.20%"**. It is **20.33%** — a ratio of `0.2033` misread as a percentage: a **100× error in the REASSURING direction**, inside the exact claim option A was first proposed on. It also generalised from the anchor alone to "Track A", which the five-region sweep does not support. Corrected in `deferred-items.md`, the DECISIONS entry and the commit message.
+
+**⚠ CAVEAT BOUNDING THE WHOLE E-2 MEASUREMENT.** Every panel measured is an **IDENTITY-LD STUB** — `use_identity = TRUE`, `R` is **NULL**, `status = "variants_exceed_threshold"`, and `EUR/`, `AFR/`, `TRANS/` are **byte-identical** (md5-verified). The allele question does not depend on `R`, so the counts stand **for the variant bookkeeping**, but it is **NOT verified** that a real non-identity panel carries the same `variants` frames. Cite as the catalog↔panel-frame transposition rate, **never** as the real-LD exposure.
+
+**▶ ZERO CARTER DECISIONS OUTSTANDING. What remains is work and one question:**
+- **THREE E-2 obligations, none discharged:** (1) a manuscript **limitation paragraph** naming `APOL1_22q12` (18.41%) and `FTO_16q12` (23.80%) explicitly; (2) an **OSF record** entry; (3) ⚠ **an OPEN question above executor authority — is this a LIMITATION or a CORRECTION?**
+- **SR4-OPEN** — were those five drifted files frozen-and-drifted, or never frozen?
+- **K-2** — the `ld_allele_join.R` extraction, **DECLINED** on fire-path risk (it would put a first-of-its-kind runtime `source()` dependency on the ~11-day fire path). Freeze economy is not sufficient justification.
+- **m3-04c Task 3** — the terminal Carter gate: PRE-FIRE checklist, `allow_degraded`, region-1, the ~11-day / $385–1,084 billed fire, egress. **AN AGENT MUST NEVER FIRE IT.** Liveness arbiter = the GCS `.npz` listing climbing to 276, **NOT** the kernel light, **NOT** `_SUCCESS`. `.npz` 0/276; AoU VM **STOPPED-not-deleted**.
+
+**Standing caveats UNCHANGED:** E and G are correct **WIRING that is INERT today**; any AFR figure regenerated after `o7o` is **NOT comparable** to one produced before it (PIPs/credible sets move, BETA/SE do not); `TRANS_aou_eur` and `EUR_aou` must **NOT** be deleted from config; BLOCKER-D stays PARTIAL (only SH2B3 `__sub14` at 22.8 GB convertible).
+
+## 2026-08-06 (SUPERSEDED by the 2026-08-07 block above) — ★ **THE m3-04c BLAST RADIUS IS REMEDIATED. Every gate row is CLEAR except ONE PARTIAL.**
 
 **Nothing running. `$0`. ZERO perimeter contact all session. The AoU fire was NOT triggered.** `origin == local == 9b1b997` on `m3-W2-aou-deltas`; tracked tree clean; no LSF jobs. Suites: **`tests/m3` 807 passed / 31 skipped / 0 failed** and **`tests/phase2` 136 passed / 1 skipped / 0 failed** — each independently re-run by the orchestrator AND the verifier, three agreeing measurements apiece.
 
