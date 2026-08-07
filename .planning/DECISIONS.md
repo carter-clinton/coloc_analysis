@@ -1033,3 +1033,139 @@ Once cache-staleness is refuted, the rigor-correct disposition (per `feedback_ri
 - **Only the `resolve_ld_path(region_id=)` argument may change.** `run_finemap.params.region_id` stays untouched.
 - Acceptance test for the remedy: prove `resolved == what-the-script-opens` — grep the rule's `shell:` for `{input.ld_matrix}`, then assert the R script opens that exact path. A green DAG is not evidence.
 - Cross-refs: `.planning/phases/m3-aou-afr-ld-panel-build/m3-04b-BLAST-RADIUS.md` §4 (recommended sequence) and §3 (gate binding).
+
+---
+
+## 2026-08-06 — DEC-2026-08-06-sr4-freeze-scope: the source freeze is a CODE pin, not a byte pin; comments are deliberately FREE
+
+**Decision:** The **source-file** freeze in this repository pins **CODE**, not
+bytes. Comments, Python docstrings, blank lines and trailing whitespace are
+**deliberately outside** every freeze gate. Landed by `quick-260806-sr4` under
+`AUTH-SR4-RESCOPE`, `AUTH-SR4-K3` and `AUTH-SR4-EXTEND` (Carter, 2026-08-06).
+
+**What is pinned:**
+
+- The **CODE** of `src/legacy/region_analysis/scripts/run_susie_rss.R` at
+  `bf04199` — a whole-file code-only **floor** plus five named numeric-bearing
+  symbols (`regularize_ld`, `run_susie_with_ladder`, `safe_region_id`,
+  `load_ld_matrix`, `assert_declared_ld_authoritative`). The symbol pins are
+  **diagnostics** (they name *which* block moved); **the floor is the safety
+  net**, and it is not optional: `:659-1357` — roughly 700 lines including the
+  fitting flow and all three `toJSON` emits — lives inside **no function at
+  all**.
+- The **CODE** of `src/python/plink_ld_to_npz.py`,
+  `src/python/condition_ld_matrix.py` and `src/python/occlusion_span_filter.py`
+  at `bf16289` — whole-file plus all **22** top-level symbols (13 + 3 + 6),
+  **derived from the source at the pin, never hand-transcribed**. Before this,
+  `bf16289` was enforced by **zero** tests anywhere in the repository.
+
+**What is deliberately FREE:** comments, docstrings, blank lines, trailing
+whitespace. **Fixing a wrong comment in a frozen file now costs nothing** — no
+unfreeze, no re-pin, no decision.
+
+**Why a guard exists at all:** `BLOCKER-1` proved this pipeline can move Track A
+numbers **silently** — fixing the LD read path moved EUR `r[1,2]` 0.1 → 0.9,
+credible sets 3 → 10, nonzero PIPs 200 → 78, while `ld_status` and
+`ld_overlap_fraction` (the two fields anyone would check to argue nothing moved)
+stayed **byte-identical**. And there is no cheap regression oracle: re-checking
+the AFR side needs the AoU perimeter and the ~11-day billed fire. **Silent
+numeric drift with no cheap oracle is the threat.** The guard is not weakened
+here; it is aimed at the right target.
+
+**Context — the cost of the old scope was concrete.** The byte pin
+(`git diff --exit-code <SHA> -- <file>`) appeared in **no** `DECISIONS.md` entry;
+it grew up downstream as a proxy for Track A's frozen NUMBERS. It made shipping a
+**known-false** census figure the *cheaper* option: finding **K-3** shipped
+`1,944` (correct `1,909`) inside a comment at `run_susie_rss.R:1018-1019` because
+correcting a comment would have "cost an unfreeze". **A rule that makes shipping
+a falsehood cheaper than fixing it is mis-scoped.** K-3 is closed in the same
+window as the proof that the new mechanism permits it: the correction landed and
+**the pin did not move**.
+
+**What this is NOT.** This does **not** touch
+`.planning/amendments/TRACK-A-FROZEN-NUMBERS.md`, the aggregator md5 lock
+recorded in `DEC-2026-05-03-vcl-Item2`, or the three SH2B3 EUR `.fit.rds` md5
+pins. (Those md5 literals are deliberately NOT restated here: they are recorded
+in exactly the two places that own them, and a copy in a third entry is a second
+source of truth waiting to drift.) Those are frozen **NUMBERS** — Carter's recorded decisions — and they are a
+**different thing that happens to share a word**. Conflating the two either
+breaks a recorded decision or manufactures one.
+
+**Alternatives considered:**
+
+- (a) **Keep whole-file byte pins** — rejected. It makes shipping a known
+  falsehood the cheaper option, which is *how K-3 happened*, and
+  `[[feedback_fixed_sha_whole_file_pin_is_a_timebomb]]` names the failure mode
+  (a fixed-SHA whole-file pin is green once and red forever after; b77's stalled
+  a task one day after the pin was written).
+- (b) **Symbol pins only, no whole-file floor** — rejected. ~700 lines of
+  `run_susie_rss.R`, including all three `toJSON` emits, live inside no function,
+  so an enumerate-the-symbols design has a silent hole. **Proven by NC-SR4, not
+  argued:** perturbing the `:1357` emit goes RED on the floor while all five
+  symbol pins stay GREEN.
+- (c) **A naive `#`-to-end-of-line stripper** — rejected. It makes a code change
+  concealed after an in-string `#` **invisible**. **Proven by NC-SR3, not
+  argued:** the same synthetic fixture is RED under the utility and *identical*
+  under the naive stripper, in **both** languages. That would have converted the
+  guard into the structurally-incapable-assertion class this project has been
+  bitten by eight times.
+- (d) **Gate all 8 files `HANDOFF.json` calls frozen** — rejected. **Five have
+  demonstrably moved** and declaring a moving file frozen is a **decision**, not
+  an inference.
+
+**Why:** The guard's justification is real and is preserved; only its *aim* was
+wrong. It pinned BYTES when what needs protecting is NUMERIC BEHAVIOUR.
+
+**How to apply:**
+
+- The forward gate is `pytest tests/m3/test_source_freeze_pins.py`. The utility
+  is `tests/m3/source_freeze.py`. `git diff --exit-code` on `run_susie_rss.R`
+  survives nowhere in `tests/`.
+- **THE RE-PIN PROTOCOL, IN ONE SENTENCE:** an authorized **code** change updates
+  **exactly one constant per FROZEN SUBJECT** — `R_CODE_REF` for
+  `run_susie_rss.R`, `PY_CODE_REF` for the three Python modules — to the landing
+  commit's SHA, **and nothing else**. `FROZEN_R_CODE_REV` and `FREEZE_CODE_REF`
+  are **import aliases** of `R_CODE_REF`, so they follow automatically.
+  **Comment and docstring changes update nothing.**
+- **THE NEVER-RE-PIN RULE, as a DERIVED GATE rather than a hand-written list.**
+  Differential substrates are not pins, and a sweep that bumps one silently
+  destroys a control (`[[feedback_fixing_a_split_unpins_what_it_pinned]]`). A
+  hand-enumeration is the wrong shape — there are **eight** `PRE_CHANGE_REF`s
+  plus `BASE_COMMIT` and two `BASELINE_REV`s across `tests/m3/`, and any omission
+  *licenses* a sweeper to bump the ones left out. So: **every `*_REF` / `*_REV` /
+  `BASE_COMMIT` / `BASELINE_REV` constant in `tests/m3/` must carry a `#:` bucket
+  annotation from {CODE PIN | DIFFERENTIAL SUBSTRATE | HISTORICAL NARRATIVE}, and
+  only CODE PINs ever move.** Enforced permanently by
+  `test_source_freeze_pins.py::test_every_pin_constant_declares_its_bucket` (17
+  constants found on 2026-08-06), not by this prose.
+- `K3_PRE_FIX_REF` is a **DIFFERENTIAL SUBSTRATE** by name: it is what makes the
+  acceptance proof survive the first re-pin. Today it and `R_CODE_REF` both hold
+  `bf04199` — a **coincidence of this window** — and they diverge **by design**
+  the moment a code change moves `R_CODE_REF`.
+- **Extending the freeze to a new file** is a one-line addition to the pin table
+  **plus a recorded decision that the file is frozen.**
+- **The stripper inventory — this is not the first stripper.** **NINE** ad-hoc
+  comment-strippers already existed when `source_freeze.py` was written
+  (`strip_py_comments`, `r_code_only`, `code_only`, `_code_lines`,
+  `_strip_py_comments`, `_strip_r_comments`, `_code_only`, `_strip_comments`,
+  `_strip_hash_comments`), and `_code_lines` in
+  `test_variant_catalog_fallback_legacy_semantics.py` is a hand-rolled instance
+  of this very utility. They are **registered and superseded going forward**;
+  **none is refactored**, because each backs a different assertion with
+  deliberate semantics (`strip_py_comments` KEEPS triple-quoted strings because a
+  Snakemake `shell:` body IS one; `code_only` DELETES them) and rewiring them is
+  unauthorized and carries real regression risk. `r_code_only` is deliberately
+  **kept** and consumed as an **independent R cross-check** of the new mask.
+  What existed **nowhere** was the **FREEZE convention** itself — no
+  `DECISIONS.md` entry, and `bf16289` enforced by zero tests.
+- **What this does NOT cover, stated as a limit rather than sold as coverage:**
+  the pins are over **source text** only. They detect *that code moved*, never
+  *whether a number moved*. No fit is run and no `.rds`, `.npz` or region JSON is
+  produced or compared. YAML support was deliberately **not** built.
+- Cross-refs: `[[feedback_extract_reusable_utilities]]`,
+  `[[feedback_fixed_sha_whole_file_pin_is_a_timebomb]]`,
+  `[[feedback_green_assertion_needs_a_negative_control]]`,
+  `[[feedback_negative_control_defeated_by_bytecode_cache]]`,
+  `[[feedback_fixing_a_split_unpins_what_it_pinned]]`; K-3 in
+  `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`;
+  `DEC-2026-08-05-m3-ld-read-path` (BLOCKER-1 — the reason a guard exists).

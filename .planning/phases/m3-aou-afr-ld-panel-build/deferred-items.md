@@ -332,6 +332,8 @@ receipt. **Nothing became invisible.**
 git diff --exit-code bf04199 -- src/legacy/region_analysis/scripts/run_susie_rss.R
 ```
 
+⚠ **SUPERSEDED 2026-08-06 by `quick-260806-sr4`** (`AUTH-SR4-RESCOPE`): the forward gate is now `pytest tests/m3/test_source_freeze_pins.py` — a **CODE** pin, not a byte pin — and the constants are `FROZEN_R_CODE_REV` / `FREEZE_CODE_REF`, both **import aliases** of the single `R_CODE_REF` in `tests/m3/test_source_freeze_pins.py`. The historical sentences around this note are left exactly as written. See `DEC-2026-08-06-sr4-freeze-scope`.
+
 Re-pinned code-side in commit 2 of `quick-260806-pd3`:
 `tests/m3/test_finemap_receipt_early_exit.py::FROZEN_R_REV`,
 `tests/m3/test_qtl_coloc_allele_join.py::FREEZE_REF`,
@@ -476,6 +478,8 @@ new SHA and the forward gate becomes
 git diff --exit-code <new-sha> -- src/legacy/region_analysis/scripts/run_susie_rss.R
 ```
 
+⚠ **SUPERSEDED 2026-08-06 by `quick-260806-sr4`** (`AUTH-SR4-RESCOPE`): the forward gate is now `pytest tests/m3/test_source_freeze_pins.py` — a **CODE** pin, not a byte pin — and the constants are `FROZEN_R_CODE_REV` / `FREEZE_CODE_REF`, both **import aliases** of the single `R_CODE_REF` in `tests/m3/test_source_freeze_pins.py`. The historical sentences around this note are left exactly as written. See `DEC-2026-08-06-sr4-freeze-scope`.
+
 replacing the current `dc4bbd2` gate everywhere it is asserted (the task plans,
 `tests/m3/test_finemap_receipt_early_exit.py::FROZEN_R_REV`, and the standing
 verification checklist).
@@ -586,6 +590,42 @@ measured during planning and re-verified at execution:
   of 2026-08-06).
 * **(iii) a re-freeze re-pin** at the new SHA, after which
   `git diff --exit-code <new-sha> -- run_susie_rss.R` becomes the forward gate.
+
+⚠ **SUPERSEDED 2026-08-06 by `quick-260806-sr4`** (`AUTH-SR4-RESCOPE`): the forward gate is now `pytest tests/m3/test_source_freeze_pins.py` — a **CODE** pin, not a byte pin — and the constants are `FROZEN_R_CODE_REV` / `FREEZE_CODE_REF`, both **import aliases** of the single `R_CODE_REF` in `tests/m3/test_source_freeze_pins.py`. The historical sentences around this note are left exactly as written. See `DEC-2026-08-06-sr4-freeze-scope`.
+
+## ✅ K-3 CLOSED — the wrong census number is CORRECTED; the comment fix cost NO re-pin
+
+**Closed:** 2026-08-06 by `quick-260806-sr4`, commit `656529a`.
+**Status: ✅ CLOSED. `AUTH-SR4-K3` GRANTED (Carter, 2026-08-06) and SPENT.**
+
+`src/legacy/region_analysis/scripts/run_susie_rss.R:1018-1019` now reads
+**`1,909`** and **`1,900`** in place of `1,944` and `1,935`. The diff vs
+`bf04199` is **one hunk, two `-`/`+` pairs, all four lines comments**, differing
+only in those digits; `Rscript -e 'parse(...)'` returns `PARSE_OK`. Containment
+is re-asserted permanently in-suite by
+`tests/m3/test_source_freeze_pins.py::test_the_k3_edit_touched_only_two_comment_lines`,
+so a widened unfreeze could not be discovered only by reading a summary.
+
+⚠ **THE ONE LINE THAT MATTERS.** The remedy below says this "requires: a named
+unfreeze, the standing re-pin obligation". **It now requires NEITHER.**
+`quick-260806-sr4` rescoped the `run_susie_rss.R` freeze from **bytes** to
+**CODE** under `AUTH-SR4-RESCOPE`, so **the freeze no longer covers comments at
+all**. The pin **was not moved** — `bf04199` remains valid *across* the
+correction, and keeps its stronger meaning ("no CODE has moved since the K-1
+closure") rather than degrading to "nothing has moved since yesterday's typo
+fix". Observed on one tree: the OLD gate
+`git diff --exit-code bf04199 -- run_susie_rss.R` is **RED**, the NEW gate
+`pytest tests/m3/test_source_freeze_pins.py -k k3` is **GREEN**.
+
+**The deferral's own reasoning was the bug, not the excuse.** K-3 exists because
+a byte-scoped freeze made shipping a **known falsehood** cheaper than correcting
+a comment. That is now recorded as `DEC-2026-08-06-sr4-freeze-scope`, with the
+byte pin rejected by name.
+
+**Nothing about the underlying science moved.** Every qualitative conclusion in
+the preserved entry below stands unchanged; only the two census digits changed.
+
+### THE ORIGINAL DEFERRAL, PRESERVED
 
 ## K-3 DEFERRED (STILL OPEN) — a WRONG CENSUS NUMBER is shipped inside the re-frozen `run_susie_rss.R` comment
 
@@ -821,3 +861,49 @@ doing its stated job — and unlike the other six, WE WROTE IT, one task ago
 scope assertion must name its SUBJECT, not its blast radius. `diff == ""` against
 a fixed SHA is never a contract about correctness; it is a countdown to the next
 legitimate edit.
+
+## ⚠ SR4-OPEN — FIVE files `HANDOFF.json` calls "frozen at `bf16289`" have MOVED. A QUESTION FOR CARTER, deliberately NOT answered.
+
+**Logged:** 2026-08-06 (`quick-260806-sr4`). **Status: OPEN — registered, NOT
+resolved either way.**
+
+`.planning/HANDOFF.json:14` states *"All 7 pinned files 0-line diff vs
+`bf16289`"*. **That claim is FALSE for 5 of 8 files.** MEASURED at `1b5b8c6`
+with `git diff --numstat bf16289 HEAD`:
+
+| File | Diff vs `bf16289` | Last touched | Handled |
+|---|---|---|---|
+| `src/python/plink_ld_to_npz.py` | **0** | 2026-07-03 | ✅ **GATED** |
+| `src/python/condition_ld_matrix.py` | **0** | 2026-07-07 | ✅ **GATED** |
+| `src/python/occlusion_span_filter.py` | **0** | 2026-07-15 | ✅ **GATED** |
+| `src/python/occlusion_manifest.py` | +46 / −8 | 2026-08-04 (`bf963df`) | ⚠ **MOVED — not gated** |
+| `src/python/occlusion_present_rate_scan.py` | +154 / −21 | 2026-08-04 (`fac9a93`) | ⚠ **MOVED — not gated** |
+| `src/python/drop_occluded_from_sumstats.py` | +97 / −24 | 2026-08-04 (`bf963df`) | ⚠ **MOVED — not gated** |
+| `src/scripts/ld_npz_to_rds.R` | +313 / −62 | 2026-08-05 (`57b381f`) | ⚠ **MOVED — not gated** |
+| `src/snakemake/schemas/pipeline.schema.yaml` | +119 / −0 | 2026-08-06 (`2563451`) | ⚠ **MOVED — not gated** |
+
+**It is worse than it looks.** `bf16289` appears **nowhere** in `src/`, `tests/`,
+`config/`, `Snakefile` or `scripts/` — until `quick-260806-sr4` there was
+**literally zero enforcement** of any of these. The "freeze" was a per-task hand
+check, and that ritual had been **reporting a claim that is false for five of
+eight files**.
+
+**Why three were gated and five were not.** `AUTH-SR4-EXTEND` covers only files
+that are **measured 0-diff** against the pin. Gating a file that changed three
+times in the last three days would manufacture exactly the nuisance-repin
+timebomb the rescope exists to remove, and **declaring a moving file frozen is a
+DECISION, not an inference.** So the three genuinely-unmoved modules became real
+gates and the other five were deliberately left alone. A permanent test
+(`test_the_handoff_frozen_claim_is_recorded_as_partly_false`) asserts the five
+are **out** of the pinned set, so a future sweep cannot "helpfully" add them back
+without a decision.
+
+**THE QUESTION FOR CARTER — not answered here.** For each of the five: were they
+**frozen and have since drifted** (in which case something was changed that
+should not have been, and the drift needs review), or were they **never actually
+frozen** (in which case `HANDOFF.json:14` should be corrected and they should
+stop being described as pinned)? These are different problems with different
+remedies, and choosing between them is a call about intent that no agent can
+make from the diff alone.
+
+**Nothing is blocked on the answer.** The three real gates are live either way.
