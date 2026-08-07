@@ -32,7 +32,7 @@ for (anc in c("EUR","AFR","TRANS")) {
   }
 }
 d <- do.call(rbind, rows)
-write.table(d, ".planning/phases/m3-aou-afr-ld-panel-build/e2_exposure_real_corpus.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(d, ".planning/phases/m3-aou-afr-ld-panel-build/e2-exposure-real-corpus.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 cat("\n================ E-2 EXPOSURE ON THE REAL CORPUS ================\n")
 cat(sprintf("regions measured: %d across %d ancestries\n", nrow(d), length(unique(d$ancestry))))
 for (anc in unique(d$ancestry)) {
