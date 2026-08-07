@@ -72,6 +72,8 @@ SHIPPED_CONFIG = PROJECT_ROOT / "config" / "pipeline.yaml"
 
 #: The commit this plan started from -- the tree carrying the un-crosswalked
 #: coloc LD path. The permanent differential substrate for the OFF branch.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. See
+#: DEC-2026-08-06-sr4-freeze-scope.
 PRE_CHANGE_REF = "7b1025d"
 
 #: Every ancestry that MUST stay off the coloc read path. EUR and TRANS carry

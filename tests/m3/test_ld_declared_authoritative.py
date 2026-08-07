@@ -67,6 +67,8 @@ SUSIE_R = PROJECT_ROOT / SUSIE_R_REL
 
 # The commit this remediation started from -- the source that carries BOTH
 # defects. Used as the permanent negative control below.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. See
+#: DEC-2026-08-06-sr4-freeze-scope.
 PRE_CHANGE_REF = "5ec33bd"
 
 

@@ -62,6 +62,9 @@ FINEMAP_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
 
 #: The commit that is the FROZEN reference for EUR/TRANS behaviour: the tree as
 #: it stood before m3-04c Task 1b threaded ``--ld-file`` into the shell.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. It is the frozen EUR/TRANS
+#: behavioural reference, not a freeze pin over a file, so no authorized
+#: unfreeze ever moves it. See DEC-2026-08-06-sr4-freeze-scope.
 BASELINE_REV = "3f431ab"
 
 #: The SIX tokens the design is allowed to add to ``run_finemap``'s Rscript

@@ -10,12 +10,24 @@ are NAMED ``too_many_variants`` regions, so the ambiguity was firing on real
 inputs today.
 
 **The fix is entirely on the non-frozen half of the pair.**
-``src/legacy/region_analysis/scripts/run_susie_rss.R`` is RE-FROZEN at
+``src/legacy/region_analysis/scripts/run_susie_rss.R`` is **CODE-FROZEN** at
 ``bf04199`` and is NOT touched by this module or by the change it tests; the
 freeze is re-asserted MID-TEST. (The pin was ``dc4bbd2`` until 2026-08-06, when
 ``quick-260806-pd3`` spent ``AUTH-K1-UNFREEZE`` on finding **K-1** -- one line
 deleted from the Path-2 branch -- and re-pinned at ``bf04199``. That unfreeze is
 SPENT; there is no open window on this file.)
+
+``quick-260806-sr4`` RESCOPED that freeze from **bytes** to **CODE** under
+``AUTH-SR4-RESCOPE``: comments, blank lines and trailing whitespace are now
+deliberately FREE, and the gate below runs through
+``source_freeze.assert_code_frozen`` instead of ``git diff --exit-code``. The
+same session spent ``AUTH-SR4-K3`` on a COMMENT-ONLY correction (the K-3 census
+figures at ``:1018-1019``) which did **NOT move the pin** -- that is the
+acceptance demonstration for the rescope, and it is asserted permanently by
+``test_source_freeze_pins.py::test_the_k3_comment_fix_did_not_move_the_code_pin``.
+The pin itself is declared in exactly ONE place, ``R_CODE_REF``, and imported
+here. Why a guard exists at all, and what it deliberately does NOT cover, is
+``DEC-2026-08-06-sr4-freeze-scope``.
 
 WHAT IS LOAD-BEARING HERE
 -------------------------
@@ -45,19 +57,33 @@ from pathlib import Path
 
 import pytest
 
+_THIS_DIR = Path(__file__).resolve().parent
+if str(_THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_THIS_DIR))
+
+from source_freeze import LANG_R, assert_code_frozen  # noqa: E402
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FINEMAP_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
+SUSIE_R_REL = "src/legacy/region_analysis/scripts/run_susie_rss.R"
 RUN_SUSIE_R = (
     PROJECT_ROOT / "src" / "legacy" / "region_analysis" / "scripts" / "run_susie_rss.R"
 )
 
-#: The commit this task started from -- the permanent differential substrate.
+#: DIFFERENTIAL SUBSTRATE. The commit this task started from. It MUST NEVER be
+#: re-pinned: NC-J1/NC-J2 extract the ``6b427bc`` receipt with the SAME extractor
+#: and reproduce the ambiguity finding J closes. Bumping it in a re-pin sweep
+#: would silently kill both controls.
 PRE_CHANGE_REF = "6b427bc"
 
-#: ``run_susie_rss.R``'s re-freeze pin. A FREEZE PIN: it MOVES on every
-#: authorized unfreeze. Re-set from ``dc4bbd2`` by ``quick-260806-pd3`` after
-#: finding K-1; ``AUTH-K1-UNFREEZE`` is SPENT and no window is open.
-FROZEN_R_REV = "bf04199"
+#: CODE PIN. ``run_susie_rss.R``'s freeze, IMPORTED rather than re-declared:
+#: ``R_CODE_REF`` in ``test_source_freeze_pins.py`` is the ONLY place the R pin
+#: is spelled, so a re-pinner who obeys "update exactly one constant per frozen
+#: subject" cannot leave this gate red. ``quick-260806-sr4`` rescoped it from
+#: BYTES to CODE under AUTH-SR4-RESCOPE: a comment-only edit no longer moves it
+#: (the K-3 correction is the proof), a CODE edit still does.
+#: See DEC-2026-08-06-sr4-freeze-scope.
+from test_source_freeze_pins import R_CODE_REF as FROZEN_R_CODE_REV  # noqa: E402
 
 #: ``finemap.smk`` BEFORE the K-1 decoder fix. A DIFFERENTIAL SUBSTRATE, not a
 #: freeze pin: it MUST stay ``63453db`` forever. Never re-pin it. NC-K5 drives
@@ -342,15 +368,13 @@ def test_the_frozen_early_exits_still_emit_no_ld_field(anchor):
 
 
 def _assert_r_freeze_clean() -> None:
-    res = subprocess.run(
-        ["git", "diff", "--exit-code", FROZEN_R_REV, "--",
-         "src/legacy/region_analysis/scripts/run_susie_rss.R"],
-        cwd=PROJECT_ROOT, capture_output=True, text=True,
-    )
-    assert res.returncode == 0, (
-        f"run_susie_rss.R has drifted off its re-freeze pin {FROZEN_R_REV}:\n"
-        f"{res.stdout[:2000]}"
-    )
+    """JOB A -- THE FREEZE GATE, rescoped from bytes to CODE by quick-260806-sr4.
+
+    The ACTUAL side is the WORKING TREE, deliberately: this is called MID-TEST
+    (``:341``/``:357``) to catch an uncommitted write, so a ``git show HEAD:``
+    read here would go blind with nothing turning red.
+    """
+    assert_code_frozen(SUSIE_R_REL, FROZEN_R_CODE_REV, LANG_R)
 
 
 def test_run_susie_rss_r_is_still_frozen_at_its_pin():

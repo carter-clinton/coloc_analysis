@@ -54,6 +54,8 @@ FINEMAP_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
 
 #: The commit this task started from -- the permanent differential substrate for
 #: finding M's "the OLD loader admits a partial row" half.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. See
+#: DEC-2026-08-06-sr4-freeze-scope.
 PRE_CHANGE_REF = "6b427bc"
 
 #: The committed artifact today: 12 data rows, 11 ``contained`` + 1 ``unmapped``.

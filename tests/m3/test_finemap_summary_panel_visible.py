@@ -39,6 +39,8 @@ FILTER_SCRIPT = (
 
 #: The commit this plan started from -- the source whose FIELDNAMES is
 #: panel-blind. The permanent negative-control substrate.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. See
+#: DEC-2026-08-06-sr4-freeze-scope.
 PRE_CHANGE_REF = "0378ec8"
 
 #: The 17 columns that existed at 0378ec8, in order. Recovered from git rather

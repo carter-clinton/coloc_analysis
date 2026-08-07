@@ -51,6 +51,7 @@ from source_freeze import (  # noqa: E402
     LANG_R,
     PROJECT_ROOT,
     assert_code_frozen,
+    assert_unchanged_on_disk,
     code_lines,
     git_show,
     py_identifier_multiset,
@@ -552,6 +553,45 @@ def test_no_production_call_site_supplies_the_control_seam():
         "a PRODUCTION call site supplies the test-control seam, so its assertion "
         "no longer reads the working tree: " + "; ".join(offenders)
     )
+
+
+# ==========================================================================
+# NC-SR9 -- the rewired JOB B leak check can still FAIL
+# ==========================================================================
+# Lands HERE, not in test_qtl_coloc_allele_join.py, so no assertion count moves
+# in a pre-existing module.
+def test_nc_sr9_the_job_b_leak_check_detects_a_leak():
+    """JOB B replaced ``git diff --exit-code <SHA>`` with a SHA-free byte
+    comparison. That is only a strengthening if it can still go RED."""
+    real = SUSIE_R.read_text()
+
+    # a leaked CODE line
+    with pytest.raises(AssertionError, match="LEAKED"):
+        assert_unchanged_on_disk(
+            SUSIE_R, real, actual_text=real + "\nZZZ_SR4_LEAK <- 1\n"
+        )
+    # ...and a leaked COMMENT, which the code-only JOB A gate would deliberately
+    # let through. This is exactly why JOB B was NOT made comment-insensitive.
+    with pytest.raises(AssertionError, match="LEAKED"):
+        assert_unchanged_on_disk(SUSIE_R, real, actual_text=real + "\n# leaked\n")
+
+    # non-vacuity: the unleaked case passes
+    assert_unchanged_on_disk(SUSIE_R, real)
+    assert SUSIE_R.read_text() == real
+
+
+def test_nc_sr9_the_capture_guards_are_present_at_both_job_b_sites():
+    """Without a capture guard, JOB B is a coverage REDUCTION.
+
+    For a leak that occurred BEFORE ``real = SUSIE_R.read_text()``, ``real``
+    holds the already-leaked bytes and the byte comparison passes where the old
+    fixed-SHA diff went red. Both guards are asserted present, mechanically.
+    """
+    source = (_THIS_DIR / "test_qtl_coloc_allele_join.py").read_text()
+    guards = source.count('git_show("HEAD", SUSIE_R_REL)')
+    leak_checks = source.count("assert_unchanged_on_disk(SUSIE_R, real)")
+    assert guards == 2, f"expected 2 capture guards, found {guards}"
+    assert leak_checks == 2, f"expected 2 JOB B leak checks, found {leak_checks}"
 
 
 def test_a_non_sha_ref_is_rejected():

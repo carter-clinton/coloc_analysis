@@ -95,6 +95,8 @@ CONVERTER_REL = "src/scripts/ld_npz_to_rds.R"
 # The pre-change tree. ld_npz_to_rds.R is byte-identical at 5ec33bd and at the
 # 260805-23d Task 4 tip: Tasks 1-4 touched finemap.smk, run_susie_rss.R,
 # ld_read_path.py, pipeline.yaml and m3_convert_npz_rds.smk -- never this script.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. See
+#: DEC-2026-08-06-sr4-freeze-scope.
 PRE_CHANGE_REF = "5ec33bd"
 
 GNU_TIME = Path("/usr/bin/time")

@@ -58,6 +58,8 @@ SNAKEFILE = PROJECT_ROOT / "Snakefile"
 
 #: The commit this task started from -- the permanent differential substrate for
 #: the "Track A cannot move" half.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. See
+#: DEC-2026-08-06-sr4-freeze-scope.
 BASELINE_REV = "6b427bc"
 
 #: The three ancestries the shipped ``ld_panel`` block defines chains for.

@@ -62,6 +62,9 @@ INGEST_AGGREGATE_RULE = "m3_ingest_aou_export_arrives_all"
 
 # The pre-change tree. m3_convert_npz_rds.smk is byte-identical at 5ec33bd and
 # at the Task 3 tip, so this really is the "before" text for THIS task.
+#: DIFFERENTIAL SUBSTRATE. Never re-pinned: this is the "before" text the
+#: differential controls in this module read. Bumping it in a re-pin sweep
+#: would silently destroy them (DEC-2026-08-06-sr4-freeze-scope).
 BASE_COMMIT = "5ec33bd"
 
 # The manifest oracle. Derived below from config/ld_regions.tsv; these numbers

@@ -54,7 +54,8 @@ extracted FIRST. A hand-transcription here would produce a test that agrees
 **with itself** -- a vacuous assertion wearing a green check, the class this arc
 has caught six times. ``NC-2g`` proves the extractor tracks the source by turning
 the agreement test RED against a deliberately ALTERED copy; the real
-``run_susie_rss.R`` stays 0-diff vs ``bf04199`` throughout, including mid-control.
+``run_susie_rss.R`` stays **code**-identical to ``bf04199`` throughout, and
+**byte-unchanged on disk mid-control**.
 (That pin was ``dc4bbd2`` until 2026-08-06; ``quick-260806-pd3`` spent
 ``AUTH-K1-UNFREEZE`` on finding K-1 and re-pinned. The unfreeze is SPENT.)
 
@@ -85,10 +86,29 @@ from test_stitch_subregions_to_rds import (  # noqa: E402
     _loader_functions_only,
     _require_m3_r_toolchain,
 )
+#: ⚠ THIS MODULE HOLDS THREE COMMENT-STRIPPERS WITH DELIBERATELY DIFFERENT
+#: SEMANTICS, and they are REGISTERED here rather than merged. Do NOT rewire
+#: them and do NOT add a fourth: each backs a different pre-existing assertion.
+#:   * ``code_only`` (imported, below) DELETES triple-quoted strings -- right for
+#:     a docstring, wrong for a Snakemake ``shell:`` body.
+#:   * ``strip_py_comments`` (:this module) KEEPS them, because a ``shell:`` body
+#:     IS a triple-quoted string.
+#:   * ``r_code_only`` (:this module) is the R stripper, and it is deliberately
+#:     KEPT: ``test_source_freeze.py`` consumes it as an INDEPENDENT cross-check
+#:     against ``source_freeze``'s R mask. Two implementations, one answer.
+#: ``tests/m3/source_freeze.py`` is the forward default for NEW code-identity
+#: work (nine such strippers already existed repo-wide when it was written --
+#: see DEC-2026-08-06-sr4-freeze-scope).
 # ONE comment-stripper, shared with the Task 1 module. An absence claim about
 # CODE must be evaluated against code -- the comments in both edited files
 # legitimately quote the very tokens the tests assert are absent.
 from test_qtl_coloc_ld_resolution import code_only  # noqa: E402
+from source_freeze import (  # noqa: E402
+    LANG_R,
+    assert_code_frozen,
+    assert_unchanged_on_disk,
+    git_show,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SUSIE_R_REL = "src/legacy/region_analysis/scripts/run_susie_rss.R"
@@ -100,14 +120,21 @@ QTL_COLOC_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "qtl_coloc.smk"
 #: control. This module never writes it.
 FINEMAP_SMK = PROJECT_ROOT / "src" / "snakemake" / "rules" / "finemap.smk"
 
-#: The commit this plan started from -- the un-crosswalked, allele-blind,
-#: sparse-matrix-passing coloc path. The permanent differential substrate.
+#: DIFFERENTIAL SUBSTRATE. The commit this plan started from -- the
+#: un-crosswalked, allele-blind, sparse-matrix-passing coloc path. It MUST NEVER
+#: be re-pinned: it is the permanent OFF-branch control, and bumping it in a
+#: re-pin sweep would silently destroy it.
 PRE_CHANGE_REF = "7b1025d"
-#: ``run_susie_rss.R``'s FREEZE pin. Asserted 0-diff by this module, including
-#: while NC-2g's altered-source control is running. A FREEZE PIN: it MOVES on
-#: every authorized unfreeze. Re-set from ``dc4bbd2`` by ``quick-260806-pd3``
-#: after finding K-1; ``AUTH-K1-UNFREEZE`` is SPENT.
-FREEZE_REF = "bf04199"
+
+#: CODE PIN. ``run_susie_rss.R``'s freeze, asserted by this module including
+#: while NC-2g's altered-source control is running. IMPORTED, never re-declared:
+#: ``R_CODE_REF`` in ``test_source_freeze_pins.py`` is the ONLY place the R pin
+#: is spelled. ``quick-260806-sr4`` rescoped it from BYTES to CODE under
+#: AUTH-SR4-RESCOPE -- a comment-only edit no longer moves it (the K-3
+#: correction is the proof), a CODE edit still does. Re-set from ``dc4bbd2`` by
+#: ``quick-260806-pd3`` after finding K-1; ``AUTH-K1-UNFREEZE`` is SPENT.
+#: See DEC-2026-08-06-sr4-freeze-scope.
+from test_source_freeze_pins import R_CODE_REF as FREEZE_CODE_REF  # noqa: E402
 
 _POLICY = yaml.safe_load(
     (PROJECT_ROOT / "config" / "susie_policy.yaml").read_text()
@@ -700,6 +727,15 @@ def test_nc2g_extractor_tracks_the_shipped_source(r_toolchain, tmp_path, alterat
     rscript, env = r_toolchain
     old, new = ALTERATIONS[alteration]
     real = SUSIE_R.read_text()
+    # ⚠ THE CAPTURE GUARD. Without it the leak check below is a coverage
+    # REDUCTION, not a strengthening: for a leak that occurred BEFORE this line,
+    # `real` captures the already-leaked bytes and the comparison passes where
+    # the old fixed-SHA byte diff went red. `HEAD` is symbolic, so no timebomb.
+    assert real == git_show("HEAD", SUSIE_R_REL), (
+        "run_susie_rss.R was already modified in the working tree BEFORE this "
+        "control captured it -- the leak guard below would be comparing against "
+        "leaked bytes"
+    )
     assert real.count(old) == 1, (
         f"the NC-2g anchor {old!r} is not uniquely present in the frozen source; "
         f"the control would be altering nothing"
@@ -727,18 +763,23 @@ def test_nc2g_extractor_tracks_the_shipped_source(r_toolchain, tmp_path, alterat
         f"{SUSIE_R_REL}"
     )
 
-    # ⚠ MID-CONTROL: the real frozen file must be untouched RIGHT NOW.
-    diff = subprocess.run(
-        ["git", "diff", "--exit-code", FREEZE_REF, "--", SUSIE_R_REL],
-        cwd=PROJECT_ROOT, capture_output=True, text=True,
-    )
-    assert diff.returncode == 0, "the alteration leaked onto the frozen file"
+    # ⚠ MID-CONTROL, JOB B: the real frozen file must be untouched RIGHT NOW.
+    # A SHA-FREE BYTE comparison against the bytes this control itself read, so
+    # it still catches a leaked COMMENT -- which the code-only freeze gate
+    # (JOB A) would deliberately let through. Byte-exact and timebomb-free.
+    assert_unchanged_on_disk(SUSIE_R, real)
 
 
 def test_nc2g_deleting_the_assignment_raises_the_named_stop(r_toolchain, tmp_path):
     """...rather than silently returning NULL."""
     rscript, env = r_toolchain
     real = SUSIE_R.read_text()
+    # ⚠ THE CAPTURE GUARD -- see the twin at the top of NC-2g above.
+    assert real == git_show("HEAD", SUSIE_R_REL), (
+        "run_susie_rss.R was already modified in the working tree BEFORE this "
+        "control captured it -- the leak guard below would be comparing against "
+        "leaked bytes"
+    )
     anchor = "  match_indices_allele_aware <- function(subset_dt, variants_dt) {"
     assert real.count(anchor) == 1
     altered = real.replace(anchor, "  .w7u_nc2g_renamed <- function(subset_dt, variants_dt) {")
@@ -752,11 +793,8 @@ cat("MSG:", r, "\\n")
     res = _run_r(rscript, env, code, tmp_path, "nc2g_deleted.R")
     assert res.returncode == 0, res.stderr
     assert "STOP-and-surface: could not extract match_indices_allele_aware" in res.stdout
-    diff = subprocess.run(
-        ["git", "diff", "--exit-code", FREEZE_REF, "--", SUSIE_R_REL],
-        cwd=PROJECT_ROOT, capture_output=True, text=True,
-    )
-    assert diff.returncode == 0
+    # JOB B again: SHA-free, byte-exact, and still sensitive to a leaked comment.
+    assert_unchanged_on_disk(SUSIE_R, real)
 
 
 # ==========================================================================
@@ -1301,8 +1339,9 @@ def test_params_region_id_is_not_declared_here():
     (``dc4bbd2`` is the pin that was IN FORCE AT THAT TIME and is left as-is
     deliberately: this paragraph is a HISTORICAL record of why AUTH-b77-01 was
     needed, and re-pinning it would falsify history. The live pin is now
-    ``bf04199`` — see ``FREEZE_REF`` — re-set by ``quick-260806-pd3`` on
-    2026-08-06 after finding K-1.)
+    ``bf04199`` — see ``FREEZE_CODE_REF`` — re-set by ``quick-260806-pd3`` on
+    2026-08-06 after finding K-1, and RESCOPED from a byte freeze to a CODE
+    freeze by ``quick-260806-sr4`` on the same day under ``AUTH-SR4-RESCOPE``.)
 
     The pin is REPLACED BY ITS OWN SUBJECT, not relaxed: no hunk of a
     ``finemap.smk`` diff may mention ``region_id`` at all. That is **STRICTLY
@@ -1412,12 +1451,10 @@ def test_nc_auth_b77_01_the_narrowed_pin_still_catches_a_region_id_edit(tmp_path
 # ==========================================================================
 # T2.3 -- freeze + scope, asserted continuously
 # ==========================================================================
-def test_run_susie_rss_is_zero_diff_vs_the_freeze():
-    res = subprocess.run(
-        ["git", "diff", "--exit-code", FREEZE_REF, "--", SUSIE_R_REL],
-        cwd=PROJECT_ROOT, capture_output=True, text=True,
-    )
-    assert res.returncode == 0, f"run_susie_rss.R moved off {FREEZE_REF}:\n{res.stdout}"
+def test_run_susie_rss_code_is_frozen():
+    """JOB A -- THE FREEZE GATE. Rescoped from bytes to CODE by quick-260806-sr4
+    under AUTH-SR4-RESCOPE; the pin itself did not move."""
+    assert_code_frozen(SUSIE_R_REL, FREEZE_CODE_REF, LANG_R)
 
 
 def r_code_only(text: str) -> str:

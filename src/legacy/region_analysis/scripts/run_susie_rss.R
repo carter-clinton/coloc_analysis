@@ -1015,8 +1015,8 @@ repeat {
     # PRE-EXISTING and its meaning is the PATH-1 AFR variant-catalog
     # empty-subset revert above (:904-917). m3-04c briefly overloaded it here
     # for "parity", which made a pre-existing key silently acquire a second
-    # meaning: every legacy region JSON on this node carries it (1,944 measured
-    # 2026-08-06 -- 1,935 false, and the 9 true ones are all AFR Path-1 reverts
+    # meaning: every legacy region JSON on this node carries it (1,909 measured
+    # 2026-08-06 -- 1,900 false, and the 9 true ones are all AFR Path-1 reverts
     # with NO ld_overlap_zero_fallback key at all), so the overload would have
     # produced a causeless false -> true flip in any before/after comparison.
     # ld_overlap_zero_fallback is the Path-2 discriminator; the pair still

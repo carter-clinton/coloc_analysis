@@ -63,6 +63,8 @@ SUSIE_R = PROJECT_ROOT / SUSIE_R_REL
 
 #: The commit this plan started from -- the source carrying the allele-blind
 #: join. The permanent negative-control substrate.
+#: DIFFERENTIAL SUBSTRATE -- never re-pinned. See
+#: DEC-2026-08-06-sr4-freeze-scope.
 PRE_CHANGE_REF = "0378ec8"
 
 # --------------------------------------------------------------------------
