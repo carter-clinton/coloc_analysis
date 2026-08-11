@@ -26,7 +26,7 @@ must_haves:
     - "Every deliverable states that the previously-quoted 46/182 = 25.3% was a SYNTHETIC FIXTURE, not a measurement, and that the shipped ld_allele_join_indices() over 207 real region variant catalogs (206 regions measured per arm) is the measurement basis."
     - "Every deliverable carries the one-sentence honest mechanism (pre-o7o CHR:POS join with REF/ALT ignored -> a transposed pair entered LD with an unflipped z; the o7o fix makes the join allele-aware, flipping z rather than dropping, palindromes dropped) AND the two consequences: reported BETA/SE do not move, but PIPs and credible sets regenerated after the fix are not comparable to earlier ones."
     - "Every deliverable states the E-2/E-4 coupling: option B (the code change) becomes right only bundled with E-4, after a real panel exists, with a real-LD re-measurement, a before/after comparison and an OSF disclosure."
-    - "A checker script exists that FAILS on a fixture carrying the wrong numbers and on a fixture quoting the pooled figure alone, has been OBSERVED failing on both, and exits 0 on the three shipped deliverables."
+    - "A checker script exists that FAILS on a fixture carrying a WRONG number, on a fixture OMITTING the SH2B3 anchor 0.00% figure, and on a fixture quoting the pooled figure alone — has been OBSERVED failing on all three — and exits 0 on the three shipped deliverables."
     - "The decision surface states, for each framing: what a reviewer likely concludes, what the framing obligates (CORRECTION -> regenerate/re-report affected AFR results once a real panel exists; LIMITATION -> prominent disclosure, no re-analysis), the E-4 coupling, and a recommendation with reasoning - while stating in terms that the choice is Carter's."
     - "Nothing is claimed discharged. The deliverables are DRAFTS; obligations (1) and (2) discharge only when Carter selects a framing and posts, and the files say so on their face."
     - "The change set is exactly the four new files under the quick directory plus one appended dated line in the BODY of STATE.md. No source, no test, no manuscript file, no Track A artifact, no .planning/amendments/ body, no DECISIONS.md and no HANDOFF.json edit; STATE.md's (unparseable, pre-existing) YAML frontmatter is untouched."
@@ -239,15 +239,27 @@ Word count = `wc -w` of the block with the two marker lines removed.
 
 `ms` (over the manuscript drafts file):
 - MS-01 both blocks `ms-limitation` and `ms-correction` exist, exactly once each.
-- MS-02 each block is 120 <= words <= 200. **FEASIBILITY MEASURED DURING
-  PLANNING: a paragraph carrying every block-level required item came to 178
-  words, so the 200-word cap has ~22 words of headroom and is satisfiable.** If a
-  block runs over, trim prose — never a required number.
+- MS-02 each block is 120 <= words <= 200. **FEASIBILITY RE-MEASURED DURING
+  PLANNING AGAINST THE TIGHTENED CONTRACT (the one below, including `0.00`,
+  `195` AND `206`): a paragraph carrying every block-level required item came to
+  178 words and satisfied all 16 required patterns — so the 200-word cap has ~22
+  words of headroom and adding the anchor figure cost ZERO words** (the
+  anchor-vs-tile3 contrast is naturally expressed inside the SH2B3 parenthetical
+  that MS-04 already required). If a block runs over, trim prose — never a
+  required number.
 - MS-03 no line inside a block starts with `#` and no line contains `|`
   (journal-ready prose, no markdown headers, no tables inside the paragraph).
-- MS-04 each block contains all of: `0.06`, `0.07`, `2.74`, `20.33`, `18.41`,
-  `23.80`, and the literal region names `APOL1_22q12` and `FTO_16q12`.
-- MS-05 each block contains `17.82` and `38.68` and `195` (corpus context).
+- MS-04 each block contains all of: `0.06`, `0.07`, `2.74`, `\b0\.00\b`,
+  `20.33`, `18.41`, `23.80`, and the literal region names `APOL1_22q12` and
+  `FTO_16q12`. **`0.00` and `20.33` together are the SH2B3 anchor-vs-tile3
+  contrast and are BOTH mandatory** — the anchor tiles are genuinely clean and
+  tile 3 is not, and that split is the exact number class this project has
+  already erred on once (the 100x `0.20%` -> `20.33%` correction). A block that
+  reported SH2B3 as `2.74%` alone would be true-but-flattening.
+- MS-05 each block contains `17.82`, `38.68`, `\b195\b` AND `\b206\b` (corpus
+  context). **`206` is required alongside `195`** so a block cannot write
+  "195 of 207", conflating the 206 measured regions with the 207 catalogs of
+  MS-10.
 - MS-06 each block contains the identity-stub caveat: matches
   `identity` AND `use_identity` AND `byte-identical`, and matches
   `bookkeeping`.
@@ -258,9 +270,9 @@ Word count = `wc -w` of the block with the two marker lines removed.
   must also contain `18.41` and `23.80`.
 - MS-09 framing guard: the file contains zero case-insensitive occurrences of
   the standalone words `revision`, `revisions`, `salvage`, `cleanup`.
-- MS-10 file-level: contains `46/182`, `25.3`, `fixture`; contains `CHR:POS`
-  and `palindrom`; contains `BETA` and (`not comparable` or `NOT comparable`);
-  contains `E-4`; contains `207`.
+- MS-10 file-level: contains `46/182`, `25.3`, `fixture`; contains `CHR:POS`,
+  `flip` (the flip-not-drop mechanism, by name) and `palindrom`; contains `BETA`
+  and (`not comparable` or `NOT comparable`); contains `E-4`; contains `207`.
 - MS-11 the file states on its face that it is a DRAFT and that the obligation
   is not discharged until Carter selects a framing: matches `DRAFT` and
   `not discharged`.
@@ -282,27 +294,46 @@ file-level items are additionally required INSIDE each block. Plus:
   (`choice` or `call` or `decision`).
 - SURF-03 contains `re-analys` or `regenerat` (the CORRECTION obligation) and
   `no re-analysis` or `without re-analysis` (the LIMITATION obligation).
-- SURF-04 contains `E-4`, `18.41`, `23.80`, `17.82`, `identity`.
+- SURF-04 contains the FULL per-region set exactly as Task 3's action text
+  commits to it — `0.06`, `0.07`, `2.74`, `\b0\.00\b`, `20.33`, `18.41`,
+  `23.80`, `APOL1_22q12`, `FTO_16q12` — plus the corpus stats `17.82`, `38.68`,
+  `\b195\b`, `\b206\b`, plus `E-4` and `identity`.
 - SURF-05 the MS-08 pooled-alone guard and the MS-09 framing guard, verbatim.
 
-**Negative controls, all four OBSERVED red before the real drafts are written:**
+**Negative controls, all FIVE OBSERVED red before the real drafts are written:**
 - NC-1 a fixture identical to a real block but with `18.41` changed to `1.841`
   -> MS-04 FAIL.
 - NC-2 a fixture quoting only `5.29` with the per-region numbers deleted ->
   MS-08 FAIL.
 - NC-3 a fixture with the identity-stub sentence deleted -> MS-06 FAIL.
 - NC-4 a 240-word block -> MS-02 FAIL.
-`--self-test` builds these four fixtures in a temp dir, asserts each fails on the
+- **NC-5 a fixture with the SH2B3 anchor figure `0.00%` deleted (everything else
+  intact, SH2B3 still reported as `2.74%` with tile 3 at `20.33%`) -> MS-04
+  FAIL.** Without this control, MS-04's new `0.00` clause is unexercised: NC-1
+  only corrupts `18.41`, so a draft could omit the anchor contrast and still go
+  green.
+`--self-test` builds these five fixtures in a temp dir, asserts each fails on the
 clause named above (and ONLY on that clause where practical), and exits non-zero
 if any of them PASSES. `--self-test` must be runnable with no deliverable files
 present at all.
+
+⚠ **GREP DIALECT — MEASURED ON THIS NODE, DO NOT ASSUME GNU.** `grep` here is
+**ugrep 7.5.0**, not GNU grep. The idiom `grep -E '(^|[^0-9])0\.00([^0-9]|$)'`
+**NOMATCHES** on a line containing `0.00%` under ugrep (measured during
+planning) — an anchor inside an alternation group does not behave as it does
+under GNU grep. Use `grep -E '\b0\.00\b'`, which was measured correct in both
+directions: MATCHES `anchor tiles 0.00% and`, `0.00 at line start` and
+`ends with 0.00`; does NOT match `20.33`, `10.005` or `20.00%`. Apply the same
+`\b` form to `\b195\b` and `\b206\b`. If you change the dialect, re-measure
+both directions before trusting it — a boundary pattern that silently never
+matches is a clause structurally incapable of its job.
   </behavior>
   <action>
 1. Write `260811-oku-check-drafts.sh` implementing the contract above. Make it
    executable (`chmod +x`). Pure bash + grep + wc; no python, no new deps. Use
    `mktemp -d` under `$TMPDIR` for `--self-test` fixtures and clean up.
 2. RUN `./260811-oku-check-drafts.sh --self-test` and PASTE THE OUTPUT into the
-   task record. All four negative controls must be OBSERVED red. If a control
+   task record. All FIVE negative controls must be OBSERVED red. If a control
    passes, the clause is structurally incapable of its job — fix the clause, not
    the fixture.
 3. RUN `./260811-oku-check-drafts.sh --only ms` with no draft file present and
@@ -338,7 +369,7 @@ present at all.
     <automated>cd .planning/quick/260811-oku-discharge-e-2-disclosure-obligations-dra && ./260811-oku-check-drafts.sh --self-test && ./260811-oku-check-drafts.sh --only ms</automated>
   </verify>
   <done>
-`--self-test` exits 0 having OBSERVED all four negative controls red (output
+`--self-test` exits 0 having OBSERVED all five negative controls red (output
 pasted into the task record); `--only ms` exits 0 against the real drafts file;
 both paste blocks are 120-200 words with no `#` or `|` lines inside; every
 locked number in the file was re-derived from the TSV during this task.
@@ -528,7 +559,7 @@ line in STATE.md; the commit lists explicit paths.
 
 | Threat ID | Category | Component | Disposition | Mitigation Plan |
 |-----------|----------|-----------|-------------|-----------------|
-| T-oku-01 | Tampering (integrity of a reported number) | the locked numbers inside all four paste blocks | mitigate | `260811-oku-check-drafts.sh` clauses MS-04/05/07 + OSF-04/05, each proven able to fail (NC-1); numbers re-derived from `e2-exposure-track-a-regions.tsv`, not retyped from prose |
+| T-oku-01 | Tampering (integrity of a reported number) | the locked numbers inside all four paste blocks | mitigate | `260811-oku-check-drafts.sh` clauses MS-04/05/07 + OSF-04/05, proven able to fail on a corrupted figure (NC-1) **and on a silently OMITTED one — the SH2B3 anchor `0.00%` (NC-5)**; numbers re-derived from `e2-exposure-track-a-regions.tsv`, not retyped from prose |
 | T-oku-02 | Information disclosure (misleading-by-omission) | the pooled 5.29% quoted without per-region context | mitigate | MS-08/SURF-05 pooled-alone guard, proven able to fail (NC-2); `HANDOFF.json` `do_not` carries the same prohibition |
 | T-oku-03 | Information disclosure (over-claim) | reporting stub-panel counts as real-LD exposure | mitigate | MS-06/OSF-06 identity-stub caveat required in EVERY block, proven able to fail (NC-3) |
 | T-oku-04 | Information disclosure (controlled tier) | AoU perimeter data in an OSF paste body | accept | the measured numbers are variant-bookkeeping counts over GRCh37 region catalogs and panel `variants` frames on the NC-State tree (identity stubs, `R` NULL) — no genotypes, no per-participant data, no LD values; `$0`, zero perimeter contact this plan |
@@ -539,8 +570,9 @@ line in STATE.md; the commit lists explicit paths.
 </threat_model>
 
 <verification>
-1. `./260811-oku-check-drafts.sh --self-test` — four negative controls OBSERVED
-   red; output pasted into the SUMMARY, not summarized as "passed".
+1. `./260811-oku-check-drafts.sh --self-test` — FIVE negative controls OBSERVED
+   red, including NC-5 (the omitted SH2B3 anchor `0.00%`); output pasted into
+   the SUMMARY, not summarized as "passed".
 2. `./260811-oku-check-drafts.sh` — exit 0 over all three deliverables.
 3. The Track A numbers in the drafts were RE-DERIVED from
    `e2-exposure-track-a-regions.tsv` during Task 1, and the re-derivation is
@@ -585,7 +617,7 @@ line in STATE.md; the commit lists explicit paths.
 After completion, create
 `.planning/quick/260811-oku-discharge-e-2-disclosure-obligations-dra/260811-oku-SUMMARY.md`.
 
-The SUMMARY must carry: the `--self-test` output showing all four negative
+The SUMMARY must carry: the `--self-test` output showing all five negative
 controls red; the per-region and pooled re-derivation from the TSV; the word
 count of each manuscript paste block; and an explicit statement that the three
 E-2 obligations remain **UNDISCHARGED** pending Carter's framing choice, the
