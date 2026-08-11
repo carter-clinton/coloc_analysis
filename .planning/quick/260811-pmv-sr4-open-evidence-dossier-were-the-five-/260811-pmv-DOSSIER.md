@@ -157,7 +157,7 @@ Provenance (EVIDENCE.md STEP 4):
   → SHA named **1×** in `260804-rtc-SUMMARY.md:64`. **TRACEABLE.**
 - `3bb8783` → same artifact → SHA named **1×** in `260804-rtc-SUMMARY.md:63`. **TRACEABLE.**
 
-**No ⚠ UNTRACEABLE commit. 2/2 traceable.**
+**No untraceable commit. 2/2 traceable.**
 
 **3. Freeze declaration.** `grep -c 'occlusion_manifest.py' .planning/DECISIONS.md`
 → **`0`** (`rc=1`). **A measured zero, not an assumption.** The register's only
@@ -201,7 +201,7 @@ reviewed SUMMARY that names their SHAs.
 
 All three → token `260804-rtc` → the same artifact dir; SHAs named at
 `260804-rtc-SUMMARY.md:65`, `:64`, `:63` respectively (1 hit each).
-**No ⚠ UNTRACEABLE commit. 3/3 traceable.**
+**No untraceable commit. 3/3 traceable.**
 
 **3. Freeze declaration.** `grep -c` in `DECISIONS.md` → **`0`**. Narrative:
 same `2bda675` COLLECTIVE roster, 2026-08-03 (⚠ **LOWER BOUND**).
@@ -232,7 +232,7 @@ declaration, zero enforcement at drift time, 3/3 drift commits traceable.
 | `3bb8783` | 2026-08-04 | `fix(260804-rtc-T1)`: ONE shared integral-position coercion + canonical key (D-04b-01) |
 
 Both → `260804-rtc` artifact; SHAs named at `260804-rtc-SUMMARY.md:64` and `:63`.
-**No ⚠ UNTRACEABLE commit. 2/2 traceable.**
+**No untraceable commit. 2/2 traceable.**
 
 **3. Freeze declaration.** `grep -c` in `DECISIONS.md` → **`0`**. Narrative:
 same `2bda675` COLLECTIVE roster, 2026-08-03 (⚠ **LOWER BOUND**).
@@ -262,7 +262,7 @@ Provenance: token `260805-23d` →
 **2×** in `260805-23d-SUMMARY.md` (`:147` the per-task table, `:345` an explicit
 "all 8 referenced commits resolve" check). **TRACEABLE.**
 
-**No ⚠ UNTRACEABLE commit. 1/1 traceable.** ⚠ Note the asymmetry: this is the
+**No untraceable commit. 1/1 traceable.** ⚠ Note the asymmetry: this is the
 **biggest** drift of the five and the **best**-documented — one commit, named
 twice, in a SUMMARY that independently re-verified its own commit references.
 
@@ -307,7 +307,7 @@ Provenance (all named in a reviewed artifact):
 - `d7dfa67` → `.planning/phases/m3-aou-afr-ld-panel-build/` → **6 hits** across
   `m3-04b-W4-SUMMARY.md`, `.continue-here.md`, `m3-04b-BLAST-RADIUS.md`.
 
-**No ⚠ UNTRACEABLE commit. 5/5 traceable.**
+**No untraceable commit. 5/5 traceable.**
 
 **3. Freeze declaration.** `grep -c 'pipeline.schema.yaml' .planning/DECISIONS.md`
 → **`0`**.
@@ -350,7 +350,7 @@ pinned was never an act of freezing; it was a bookmark.
 **2. The freeze convention did not exist in the register until after all the
 drift.** `DEC-2026-08-06-sr4-freeze-scope` (2026-08-06) is the **only** freeze
 entry in `DECISIONS.md` other than the unrelated 2026-05-03 aggregator lock
-(`grep -n '^## .*freeze\|^## .*pin'` → 3 headings, EVIDENCE.md STEP 5a). That
+(`grep -n '^## .*freeze\|^## .*froz\|^## .*pin\|^## .*Freeze\|^## .*Pin' .planning/DECISIONS.md` → 3 headings, EVIDENCE.md STEP 5a). That
 entry says so about itself, and our own measurements confirm both of its claims:
 
 > Before this, `bf16289` was enforced by **zero** tests anywhere in the repository.
@@ -367,7 +367,7 @@ Checked independently, **at the drift commits themselves** rather than inferred:
 **3. Every drift commit is reviewed work.** All 8 distinct commits satisfy both
 halves of traceability: the task token resolves to a real artifact directory
 **and** the commit's short SHA is named inside that artifact (13 grep hits
-total, EVIDENCE.md STEP 4). **There are no ⚠ UNTRACEABLE commits, so no file is
+total, EVIDENCE.md STEP 4). **There are no untraceable commits, so no file is
 forced to `DRIFT-NEEDS-REVIEW`.** Every one of these changes landed under a
 planned, executed and summarised GSD task — `260804-rtc`, `260805-23d`,
 `260805-o7o`, `260805-w7u`, `m3-04b` — each closing a named blast-radius finding.
@@ -528,3 +528,145 @@ independent of the SR4-OPEN answer.
   false positives were read and discarded individually (§4 F2, F4), but a freeze
   claim split across two lines of a narrative file could have been missed.
 - **This dossier records no disposition.** SR4-OPEN remains open.
+
+---
+
+## Reproduction log
+
+`[[feedback_a_count_is_a_claim_scope_and_reconcile]]` was baked by a figure that
+shipped a count wrong **three times** and was self-inconsistent with numbers in
+its own paragraph. This section is the guard against repeating that here: every
+number above was re-derived from a freshly re-run command, not re-read.
+
+**Re-run date:** 2026-08-11. **HEAD at re-run:** `399c50f`.
+
+⚠ **HEAD MOVED since the T1 measurement** (`b945c595` → `f78bbc1` (T1) →
+`399c50f` (T2)). Both are docs-only commits inside this quick directory. Rather
+than reconcile to a stale tree, **every value below was RE-MEASURED at the
+current HEAD.** They all reproduce, which is the expected result — none of the
+measured quantities is a function of a docs commit — but it was checked, not
+assumed.
+
+### Re-run table
+
+| claim | command | T1 value | T3 re-run value | match? |
+|---|---|---|---|---|
+| F1 drift | `git diff --numstat bf16289 HEAD -- src/python/occlusion_manifest.py` | `+46 / -8` | `+46 / -8` | ✅ |
+| F2 drift | `git diff --numstat bf16289 HEAD -- src/python/occlusion_present_rate_scan.py` | `+154 / -21` | `+154 / -21` | ✅ |
+| F3 drift | `git diff --numstat bf16289 HEAD -- src/python/drop_occluded_from_sumstats.py` | `+97 / -24` | `+97 / -24` | ✅ |
+| F4 drift | `git diff --numstat bf16289 HEAD -- src/scripts/ld_npz_to_rds.R` | `+313 / -62` | `+313 / -62` | ✅ |
+| F5 drift | `git diff --numstat bf16289 HEAD -- src/snakemake/schemas/pipeline.schema.yaml` | `+119 / -0` | `+119 / -0` | ✅ |
+| C1 control | `git diff --numstat bf16289 HEAD -- src/python/plink_ld_to_npz.py` | empty | empty | ✅ |
+| C2 control | `git diff --numstat bf16289 HEAD -- src/python/condition_ld_matrix.py` | empty | empty | ✅ |
+| C3 control | `git diff --numstat bf16289 HEAD -- src/python/occlusion_span_filter.py` | empty | empty | ✅ |
+| F1 commits | `git log --oneline bf16289..HEAD -- <path>` | 2, `rc=0` | 2, `rc=0` | ✅ |
+| F2 commits | `git log --oneline bf16289..HEAD -- <path>` | 3, `rc=0` | 3, `rc=0` | ✅ |
+| F3 commits | `git log --oneline bf16289..HEAD -- <path>` | 2, `rc=0` | 2, `rc=0` | ✅ |
+| F4 commits | `git log --oneline bf16289..HEAD -- <path>` | 1, `rc=0` | 1, `rc=0` | ✅ |
+| F5 commits | `git log --oneline bf16289..HEAD -- <path>` | 5, `rc=0` | 5, `rc=0` | ✅ |
+| F1–F5 declaration | `grep -c '<basename>' .planning/DECISIONS.md` | 0 (all five) | 0 (all five) | ✅ |
+| live gate | `pytest tests/m3/test_source_freeze_pins.py -q` | 39 passed | 39 passed | ✅ |
+| distinct drift commits | union of the TSV `commit_shas` column | 8 | 8 | ✅ |
+
+**Cross-artifact agreement:** all 5 rows of `260811-pmv-evidence.tsv` agree with
+the §2 summary table on every shared column (file, `+ADD / -DEL` pair, commit
+count, recommendation), and each file's §4 commit table has exactly as many rows
+as its TSV `n_commits_since_bf16289` cell. **5/5 AGREE.**
+
+**Command coverage:** 21 distinct command strings are quoted in this dossier;
+**0 are absent from `260811-pmv-EVIDENCE.md`.**
+
+**Internal arithmetic:** TSV rows with `all_traceable=no` = **0**; ⚠ UNTRACEABLE
+callouts in this dossier = **0**; match. TSV rows with `gated_today=yes` among
+F1–F5 = **0**, which is what the live gate supports (it passes *while* asserting
+all five are out of `PY_FROZEN_RELS`).
+
+### Discrepancies found: **3. All three were defects, all three were fixed. None was a number.**
+
+**1. A command quoted here did not exist as quoted.** §5 abbreviated the
+freeze-heading search to `grep -n '^## .*freeze\|^## .*pin'`. The command
+actually run was
+`grep -n '^## .*freeze\|^## .*froz\|^## .*pin\|^## .*Freeze\|^## .*Pin' .planning/DECISIONS.md`.
+A quoted command that was never run is a number with no provenance, even when
+the number is right. **Resolved by correcting the dossier to the exact command**
+— not by relaxing the check.
+
+**2. My own coverage probe was wrong, and would have failed a correct
+artifact.** The probe *deleted* the `<path>` operand from placeholder commands,
+producing strings like `git log --format='%h' bf16289..HEAD | wc -l` that never
+existed anywhere. That is a defect in the **check**, not the artifact.
+**Resolved by substituting a concrete instance** for `<path>` / `<commit>`
+instead of deleting the operand. Reported rather than quietly re-run, because a
+check that fails a correct artifact is exactly as dangerous as one that passes a
+wrong one.
+
+**3. The ⚠ UNTRACEABLE flag token was being used inside its own negation.** Five
+per-file sections and §5 read *"No ⚠ UNTRACEABLE commit"*, so a `grep -c` for the
+flag returned **6** while the true callout count was **0** — a reserved flag
+token that appears in negations makes every grep-based audit of this file wrong.
+**Resolved by reserving the token for real callouts** (the negations now read
+"No untraceable commit"), so the count is meaningful to any future reader. The
+arithmetic then reconciled at 0 = 0.
+
+**After the fixes: 0 discrepancies.**
+
+### Object-store miss counts, restated
+
+So a reader of this dossier alone still learns why the first-appearance dates are
+lower bounds (full SHA lists in EVIDENCE.md's `OBJECT-STORE CENSUS`):
+
+| narrative file | total revisions | readable | **unreadable** |
+|---|---|---|---|
+| `.planning/HANDOFF.json` | 76 | 59 | **17** |
+| `.planning/STATE.md` | 304 | 275 | **29** |
+| `.planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md` | 64 | 42 | **22** |
+
+⚠ **The unreadable set skews OLD, which is exactly where an earlier freeze label
+would live.** Every first-appearance date in §4 is therefore a **LOWER BOUND**,
+and an earlier label may exist and be unrecoverable. No object recovery was
+attempted — that is a repo-repair task, not this one.
+
+### Containment, proven by set difference
+
+```
+$ git status --porcelain | grep -v '^??'
+(empty — zero modified tracked files)
+
+$ BASE=${TMPDIR:-/tmp}/260811-pmv-untracked-baseline.txt   # 20 paths, taken at T1 STEP 0
+$ comm -13 <(sort -u "$BASE") <(git status --porcelain | grep '^??' | cut -c4- | sort -u)
+(empty)
+```
+
+⚠ **Empty is the correct result here, and the plan's literal expectation of
+"exactly the three deliverables" is unsatisfiable at this point — say so rather
+than paper over it.** T1 and T2 **committed** the deliverables (the execution
+protocol requires a commit per task), so they are tracked and can no longer
+appear as `??`. The untracked check therefore proves only that **nothing new was
+left lying around**. The half it can no longer see is proven directly, and the
+pair is **strictly stronger** than the untracked check alone:
+
+```
+$ git diff --name-only b945c595 HEAD
+.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-/260811-pmv-DOSSIER.md
+.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-/260811-pmv-EVIDENCE.md
+.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-/260811-pmv-evidence.tsv
+
+CONTAINMENT PROVEN: the tracked delta is EXACTLY the 3 deliverables (n=3)
+```
+
+Nothing under `src/`, `tests/`, `config/`, `.planning/DECISIONS.md`,
+`.planning/HANDOFF.json` or `.planning/STATE.md` was written. **The baseline was
+taken before any deliverable existed and lives OUTSIDE the repo** — the measuring
+instrument is not a member of the set it measures.
+
+### What this reconciliation did NOT do
+
+It re-derived every **number**. It did **not** re-verify the 13 provenance grep
+hits by re-reading each artifact's prose, and it did **not** re-walk the 444
+narrative revisions of the object-store census — those remain as measured in
+EVIDENCE.md at `b945c595`.
+
+---
+
+**SR4-OPEN remains OPEN. No disposition is recorded in this document, and none
+was written to `.planning/DECISIONS.md`. The call is Carter's.**
