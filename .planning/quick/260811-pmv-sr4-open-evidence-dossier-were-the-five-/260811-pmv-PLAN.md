@@ -186,16 +186,34 @@ file	diff_add_today	diff_del_today	diff_sr4era	moved_since_sr4	n_commits_since_b
 ```
 
 `recommendation` uses a CLOSED vocabulary — exactly one of:
-`NEVER-FROZEN` | `FROZEN-AND-DRIFTED` | `DRIFT-NEEDS-REVIEW`.
+`NEVER-FROZEN` | `NEVER-FROZEN-UNTIL-DECLARED` | `FROZEN-AND-DRIFTED` |
+`DRIFT-NEEDS-REVIEW`. (`NEVER-FROZEN-UNTIL-DECLARED` exists so STEP 7's
+date-order branch has a label it is allowed to emit; a mandated label the verify
+rejects is an unsatisfiable spec — `[[feedback_check_plan_against_red_before_executing]]`.)
 Use `-` for a genuinely empty cell; never leave a cell blank.
 
 ---
 
 **STEP 0 — the frame.** Record, in this order:
-`date -u`; `git rev-parse HEAD`; `git status --porcelain` (⚠ save this list
-verbatim — it is the PRE-EXISTING untracked baseline T3 diffs against; the tree
-already carries ~15 untracked paths that are NOT yours);
+`date -u`; `git rev-parse HEAD`; `git status --porcelain`;
 `git cat-file -t bf16289` (must print `commit`).
+
+⚠ **The untracked baseline must be PERSISTED, not just pasted.** The tree
+already carries ~15 untracked paths that are **NOT yours**, so "only my files are
+new" is unprovable without a before-picture. Write it to a **fixed, repo-EXTERNAL
+path**, and paste the same list verbatim into EVIDENCE.md:
+
+```bash
+BASE=${TMPDIR:-/tmp}/260811-pmv-untracked-baseline.txt
+git status --porcelain | grep '^??' | cut -c4- | sort -u > "$BASE"
+wc -l "$BASE"          # record this count in EVIDENCE.md
+```
+
+⚠ **It lives OUTSIDE the repo deliberately: the measuring instrument must not
+be a member of the set it measures.** A baseline file inside the working tree
+would itself show up as a new untracked path and make T3's containment assertion
+either wrong or self-excusing. Record the absolute `$BASE` path and its line
+count in EVIDENCE.md so a reader can tell the baseline was taken at all.
 
 **STEP 1 — what `bf16289` actually IS.** This is evidence, not trivia:
 ```
@@ -325,14 +343,32 @@ and record the derivation in EVIDENCE.md so T2 transcribes rather than invents:
 - ELSE no DECISIONS.md declaration for that file (5a = 0) **AND** `bf16289`
   enforced by zero tests at the time of the drift (STEP 6 + the sr4 finding)
   **AND** all drift traceable → **`NEVER-FROZEN`**.
-- ELSE a declaration predating the drift exists → **`FROZEN-AND-DRIFTED`**, and
-  list the post-declaration commits as the review set.
+- ELSE a declaration for that file exists → ⚠ **CHECK THE DATE ORDER BEFORE
+  LABELLING IT.** A declaration is **not retroactive**. Compare the declaration's
+  date (the `DECISIONS.md` entry heading, corroborated by the commit that landed
+  it) against **every** commit date from STEP 3:
+    * commits dated **BEFORE** the declaration are **NOT freeze violations** —
+      **exclude them from the review set** and note the exclusion with both
+      dates, so the exclusion is auditable rather than invisible;
+    * if some drift **postdates** the declaration → **`FROZEN-AND-DRIFTED`**, and
+      the review set is **only** the post-declaration commits;
+    * if **100%** of that file's drift **predates** its only declaration → the
+      honest label is **`NEVER-FROZEN-UNTIL-DECLARED`**, **NOT**
+      `FROZEN-AND-DRIFTED`, and the dossier **must say so explicitly**: the file
+      was declared frozen only after it stopped moving, so **there is nothing to
+      review**.
+  Labelling pre-declaration drift a violation would manufacture a review set out
+  of work that was legitimate when it landed — a false finding, which costs more
+  than a missing one here.
 
 **Let the evidence decide.** If a declaration turns up that nobody expected, the
-verdict changes — that is the point of running the protocol.
+verdict changes — that is the point of running the protocol. ⚠ On the evidence
+measured at planning time this branch will **not** fire (STEP 5a returns 0 for
+all five). It is written to be **self-correcting anyway**: a rule that is only
+right because its hard branch never executes is not a rule.
   </action>
   <verify>
-    <automated>D=.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-; test -s $D/260811-pmv-EVIDENCE.md && test -s $D/260811-pmv-evidence.tsv && [ "$(awk 'END{print NR}' $D/260811-pmv-evidence.tsv)" = "6" ] && [ "$(head -1 $D/260811-pmv-evidence.tsv | awk -F'\t' '{print NF}')" = "14" ] && [ "$(awk -F'\t' 'NR>1{print NF}' $D/260811-pmv-evidence.tsv | sort -u)" = "14" ] && grep -q "OBJECT-STORE CENSUS" $D/260811-pmv-EVIDENCE.md && for p in src/python/occlusion_manifest.py src/python/occlusion_present_rate_scan.py src/python/drop_occluded_from_sumstats.py src/scripts/ld_npz_to_rds.R src/snakemake/schemas/pipeline.schema.yaml src/python/plink_ld_to_npz.py; do grep -q "$p" $D/260811-pmv-EVIDENCE.md || exit 1; done && awk -F'\t' 'NR>1 && $14 !~ /^(NEVER-FROZEN|FROZEN-AND-DRIFTED|DRIFT-NEEDS-REVIEW)$/{exit 1}' $D/260811-pmv-evidence.tsv && echo T1_OK</automated>
+    <automated>D=.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-; test -s $D/260811-pmv-EVIDENCE.md && test -s $D/260811-pmv-evidence.tsv && [ "$(awk 'END{print NR}' $D/260811-pmv-evidence.tsv)" = "6" ] && [ "$(head -1 $D/260811-pmv-evidence.tsv | awk -F'\t' '{print NF}')" = "14" ] && [ "$(awk -F'\t' 'NR>1{print NF}' $D/260811-pmv-evidence.tsv | sort -u)" = "14" ] && grep -q "OBJECT-STORE CENSUS" $D/260811-pmv-EVIDENCE.md && for p in src/python/occlusion_manifest.py src/python/occlusion_present_rate_scan.py src/python/drop_occluded_from_sumstats.py src/scripts/ld_npz_to_rds.R src/snakemake/schemas/pipeline.schema.yaml src/python/plink_ld_to_npz.py; do grep -q "$p" $D/260811-pmv-EVIDENCE.md || exit 1; done && awk -F'\t' 'NR>1 && $14 !~ /^(NEVER-FROZEN|NEVER-FROZEN-UNTIL-DECLARED|FROZEN-AND-DRIFTED|DRIFT-NEEDS-REVIEW)$/{exit 1}' $D/260811-pmv-evidence.tsv && echo T1_OK</automated>
   </verify>
   <done>
 EVIDENCE.md contains a verbatim command+output+rc block for every step of the
@@ -405,7 +441,9 @@ returns empty for three files and non-empty for five.
      collective "All 7 pinned files" phrase, and the ⚠ LOWER BOUND caveat with
      that narrative file's unreadable-revision count.
   4. **Gated today** — yes/no, and if no, the test that asserts it OUT.
-  5. **Recommendation** — one of the three tokens + **one line** of reasoning.
+  5. **Recommendation** — one of the four closed-vocabulary tokens + **one
+     line** of reasoning. If the token is `NEVER-FROZEN-UNTIL-DECLARED`, state
+     the declaration date and the latest drift date that precedes it.
 
 **§5 — WHAT THE EVIDENCE SUPPORTS.** The honest overall answer, derived from §4
 and nothing else. Address explicitly:
@@ -458,7 +496,7 @@ must be traceable to a command in EVIDENCE.md. Use ⚠ for anything that would
 change the answer if wrong.
   </action>
   <verify>
-    <automated>D=.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-; test -s $D/260811-pmv-DOSSIER.md && [ "$(wc -l < $D/260811-pmv-DOSSIER.md)" -ge 150 ] && grep -q "SCOPE" $D/260811-pmv-DOSSIER.md && grep -qi "Carter's decision" $D/260811-pmv-DOSSIER.md && grep -q "SR4-OPEN" $D/260811-pmv-DOSSIER.md && grep -q "EVIDENCE.md" $D/260811-pmv-DOSSIER.md && grep -q "bf16289" $D/260811-pmv-DOSSIER.md && grep -q "LOWER BOUND" $D/260811-pmv-DOSSIER.md && grep -q "test_source_freeze_pins" $D/260811-pmv-DOSSIER.md && for p in occlusion_manifest.py occlusion_present_rate_scan.py drop_occluded_from_sumstats.py ld_npz_to_rds.R pipeline.schema.yaml plink_ld_to_npz.py; do grep -q "$p" $D/260811-pmv-DOSSIER.md || exit 1; done && [ "$(grep -coE 'NEVER-FROZEN|FROZEN-AND-DRIFTED|DRIFT-NEEDS-REVIEW' $D/260811-pmv-DOSSIER.md)" -ge 5 ] && echo T2_OK</automated>
+    <automated>D=.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-; test -s $D/260811-pmv-DOSSIER.md && [ "$(wc -l < $D/260811-pmv-DOSSIER.md)" -ge 150 ] && grep -q "SCOPE" $D/260811-pmv-DOSSIER.md && grep -qi "Carter's decision" $D/260811-pmv-DOSSIER.md && grep -q "SR4-OPEN" $D/260811-pmv-DOSSIER.md && grep -q "EVIDENCE.md" $D/260811-pmv-DOSSIER.md && grep -q "bf16289" $D/260811-pmv-DOSSIER.md && grep -q "LOWER BOUND" $D/260811-pmv-DOSSIER.md && grep -q "test_source_freeze_pins" $D/260811-pmv-DOSSIER.md && for p in occlusion_manifest.py occlusion_present_rate_scan.py drop_occluded_from_sumstats.py ld_npz_to_rds.R pipeline.schema.yaml plink_ld_to_npz.py; do grep -q "$p" $D/260811-pmv-DOSSIER.md || exit 1; done && [ "$(grep -coE 'NEVER-FROZEN-UNTIL-DECLARED|NEVER-FROZEN|FROZEN-AND-DRIFTED|DRIFT-NEEDS-REVIEW' $D/260811-pmv-DOSSIER.md)" -ge 5 ] && echo T2_OK</automated>
   </verify>
   <done>
 DOSSIER.md exists with §0 scope statement first, the verbatim SR4-OPEN question,
@@ -514,25 +552,43 @@ supports. Reconcile any disagreement **arithmetically before shipping**.
   - the object-store miss counts restated, so a reader of the dossier alone
     still learns the first-appearance dates are lower bounds.
 
-**STEP 6 — Containment.** Confirm `git status --porcelain | grep -v '^??'` is
-empty (zero modified tracked files) and that the only NEW untracked paths versus
-the T1 STEP 0 baseline are the three deliverables in this quick directory. If
-anything else changed, **report it loudly in the reproduction log** — do not
+**STEP 6 — Containment, PROVEN BY SET DIFFERENCE.** Confirm
+`git status --porcelain | grep -v '^??'` is empty (zero modified tracked files),
+then prove the untracked side rather than asserting it:
+
+```bash
+BASE=${TMPDIR:-/tmp}/260811-pmv-untracked-baseline.txt
+comm -13 <(sort -u "$BASE") \
+         <(git status --porcelain | grep '^??' | cut -c4- | sort -u)
+```
+
+This must print **EXACTLY** the three deliverable paths and nothing else. Record
+the command and its output in the reproduction log.
+
+⚠ If `$BASE` does not exist, containment is **UNPROVEN** — **FAIL LOUDLY and
+say so**; do NOT fall back to eyeballing `git status`, and do NOT reconstruct the
+baseline from the current tree (that assumes the answer). A skipped check
+reported as a pass is the exact failure class
+`[[feedback_skip_guard_masks_not_fixes]]` names.
+
+If any extra path appears, **report it loudly in the reproduction log** — do not
 revert silently.
 
 ⚠ Do **not** "fix" a disagreement by editing the number to match. Re-derive it,
 then correct whichever artifact is wrong, and record both values.
   </action>
   <verify>
-    <automated>D=.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-; grep -q "## Reproduction log" $D/260811-pmv-DOSSIER.md && grep -qiE "discrepanc" $D/260811-pmv-DOSSIER.md && [ -z "$(git status --porcelain | grep -v '^??')" ] && [ "$(git status --porcelain | grep '^??' | grep -c '260811-pmv')" -ge 1 ] && for p in src/python/occlusion_manifest.py src/python/occlusion_present_rate_scan.py src/python/drop_occluded_from_sumstats.py src/scripts/ld_npz_to_rds.R src/snakemake/schemas/pipeline.schema.yaml; do pair=$(git diff --numstat bf16289 HEAD -- $p | awk '{printf "+%s / -%s", $1, $2}'); grep -qF "$pair" $D/260811-pmv-DOSSIER.md || { echo "MISSING $p -> $pair"; exit 1; }; done && [ -z "$(git diff --numstat bf16289 HEAD -- src/python/plink_ld_to_npz.py src/python/condition_ld_matrix.py src/python/occlusion_span_filter.py)" ] && echo T3_OK</automated>
+    <automated>D=.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-; grep -q "## Reproduction log" $D/260811-pmv-DOSSIER.md && grep -qiE "discrepanc" $D/260811-pmv-DOSSIER.md && [ -z "$(git status --porcelain | grep -v '^??')" ] && BASE=${TMPDIR:-/tmp}/260811-pmv-untracked-baseline.txt; { test -s "$BASE" || { echo "BASELINE MISSING at $BASE -- containment UNPROVEN, NOT passed"; exit 1; }; } && [ "$(comm -13 <(sort -u "$BASE") <(git status --porcelain | grep '^??' | cut -c4- | sort -u))" = "$(printf '%s\n' $D/260811-pmv-DOSSIER.md $D/260811-pmv-EVIDENCE.md $D/260811-pmv-evidence.tsv | sort -u)" ] && for p in src/python/occlusion_manifest.py src/python/occlusion_present_rate_scan.py src/python/drop_occluded_from_sumstats.py src/scripts/ld_npz_to_rds.R src/snakemake/schemas/pipeline.schema.yaml; do pair=$(git diff --numstat bf16289 HEAD -- $p | awk '{printf "+%s / -%s", $1, $2}'); grep -qF "$pair" $D/260811-pmv-DOSSIER.md || { echo "MISSING $p -> $pair"; exit 1; }; done && [ -z "$(git diff --numstat bf16289 HEAD -- src/python/plink_ld_to_npz.py src/python/condition_ld_matrix.py src/python/occlusion_span_filter.py)" ] && echo T3_OK</automated>
   </verify>
   <done>
 Every diffstat, commit count and grep count in the dossier reproduced by a
 freshly re-run command; dossier and TSV agree row-for-row; every command quoted
 in the dossier exists in EVIDENCE.md; a `## Reproduction log` section records
-the re-run table, an explicit discrepancy count (0 or the list), and the
-object-store miss counts. `git status --porcelain | grep -v '^??'` is empty and
-the only new untracked paths are the three deliverables.
+the re-run table, an explicit discrepancy count (0 or the list), the
+object-store miss counts, and the containment `comm` command with its output.
+`git status --porcelain | grep -v '^??'` is empty, and the set difference of
+untracked paths against the T1 STEP 0 baseline is EXACTLY the three
+deliverables — proven by `comm`, not asserted.
   </done>
 </task>
 
