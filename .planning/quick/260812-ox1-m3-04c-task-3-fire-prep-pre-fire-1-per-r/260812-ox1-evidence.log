@@ -1,0 +1,1523 @@
+task_start_sha=b17de1c1e601eafdf3974a3865fa06dc83d620b6
+# 260812-ox1 evidence log — L-01..L-20 re-anchor at post-Task-1 HEAD + PRE-FIRE 3 settle + RED/GREEN transcripts
+# evidence_date: 2026-08-12. Schema mirrors 260811-rcw-evidence.log (##### blocks, verbatim command + output).
+# task_start_sha above = the pre-Task-1 HEAD (parent of the Task-1 feat commit) — the rcw-untouched gate anchor.
+
+##### L-01 | anchor: HEAD commit + author date -- this evidence set's as-of point
+$ git log -1 --date=iso --format='%H %ad'
+5284505f5b7410fe3775e96f3ac3eb1adf668f40 2026-08-12 18:48:19 -0400
+--- exit: 0
+
+##### L-02 | anchor: no source/test/config drift BEFORE the evidence run (Task 1 already committed)
+$ git status --porcelain -- src tests config Snakefile
+--- exit: 0
+
+##### L-03 | suite: tests/m3 -- ran EXACTLY ONCE in this quick task (serves Task-1 suite verification AND this row)
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3 -q
+........................................................................ [  7%]
+..........sssssssssss.ss.....................sss.s.................ss... [ 15%]
+.....sssssssss..........s............................................... [ 23%]
+........................................................................ [ 30%]
+........................................................................ [ 38%]
+...................s.................................................... [ 46%]
+........................................................................ [ 53%]
+........................................................................ [ 61%]
+...........s............................................................ [ 69%]
+........................................................................ [ 76%]
+........................................................................ [ 84%]
+........................................................................ [ 92%]
+........................................................................ [ 99%]
+..                                                                       [100%]
+=============================== warnings summary ===============================
+tests/m3/test_ld_allele_aware_wiring.py::test_schema_entry_is_what_rejects_a_non_boolean_allele_aware
+tests/m3/test_ld_allele_aware_wiring.py::test_schema_entry_is_what_rejects_a_non_boolean_allele_aware
+tests/m3/test_ld_allele_aware_wiring.py::test_schema_entry_is_what_rejects_a_non_boolean_allele_aware
+tests/m3/test_ld_allele_aware_wiring.py::test_schema_entry_is_what_rejects_a_non_boolean_allele_aware
+  /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/lib/python3.11/site-packages/snakemake/utils.py:50: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+    from jsonschema import validators, RefResolver
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+907 passed, 31 skipped, 4 warnings in 866.18s (0:14:26)
+--- exit: 0
+
+##### L-04 | suite: tests/phase2 -- ran EXACTLY ONCE
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/phase2 -q
+..............................................................s......... [ 52%]
+.................................................................        [100%]
+136 passed, 1 skipped in 2.05s
+--- exit: 0
+
+##### L-05 | DAG: the TARGETED m3_convert_aou_afr_rds_all dry-run (BLOCKER-C) -- satisfiable, unlike the struck full-workflow dry-run
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake --snakefile Snakefile m3_convert_aou_afr_rds_all -n --quiet
+Building DAG of jobs...
+Job stats:
+job                             count
+----------------------------  -------
+build_ld_rds_aou_afr              276
+m3_aou_npz_arrives                276
+m3_convert_aou_afr_rds_all          1
+m3_ingest_aou_export_arrives       22
+total                             575
+
+--- exit: 0
+
+##### L-06 | DAG: snakemake --list -- the D-04b-03 / MEDIUM-7 substitute for the STRUCK full-workflow --dry-run
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake --snakefile Snakefile --list
+aggregate_pathway_results
+    Cross-method aggregation of all Phase 5 pathway results.
+
+    Reads MAGMA FDR, g:Profiler enrichment, LDSC h2, LDSC-SEG, HESS,
+    and negative control validation results. Produces:
+      A. pathway_enrichment_summary.tsv (per-pathway consensus ranking)
+      B. phase5_overview.tsv (one row per analytical component)
+    T-05-24: validates expected columns in each input file.
+aggregate_per_cohort_combined
+    Concatenate per-cohort effect_size/{cohort}.tsv into a single long
+    TSV consumed by IVW meta (aggregate_replication_meta.R) and by the
+    leave-one-cohort-out hold-out (build_replication_holdout.py).
+
+    The cohort list is pulled from config['panels'] (EUR + AFR + BBJ EAS
+    for completeness; downstream IVW excludes is_generalization=TRUE
+    rows per T-09-17).
+aggregate_qtl_coloc
+    Aggregate all per-pair QTL coloc JSON outputs into a summary TSV.
+
+    Reads all JSON files in QTL_COLOC_DIR matching *.json, extracts the
+    summary row (best PP.H4.abf pairwise comparison), and writes a flat TSV
+    for downstream filtering and tiering.
+
+    Note: per-id JSONs are NOT declared as inputs of this rule. Doing so
+    would transitively propagate into rule all_pathway (via
+    extract_tier_ab_genes → assign_tiers → aggregate_qtl_coloc), which
+    would force all_pathway to require all 1243 QTL coloc jobs before it
+    can run — breaking the Launch10-15 pathway drain pattern.
+
+    Instead, rule all_qtl_coloc (in the top-level Snakefile) explicitly
+    lists QTL_COLOC_PER_ID_JSONS so that invoking all_qtl_coloc correctly
+    expands to all 1243 per-id coloc jobs. Invoking qtl_coloc_summary.tsv
+    directly will NOT backward-chain to per-id jobs — this is intentional
+    for Phase 5 compatibility. Phase 2 first-production fires via
+    all_qtl_coloc.
+all
+all_matched_n
+all_pathway
+    Top-level target collecting all Phase 5 pathway outputs.
+
+    Run with: snakemake all_pathway
+    This collects all final outputs from the 6 analytical components:
+    MAGMA, g:Profiler, LDSC partitioned, LDSC-SEG, HESS, permutation null,
+    negative controls, and the cross-method aggregation.
+all_qtl_coloc
+all_replication
+apply_rg_fdr
+    D-04c: BH-FDR q<0.05 across all 35 r_g tests jointly.
+
+    Also flags SE>0.3 as unreliable_se per research A-2 minimum-deviation.
+    Output is D-06d supplementary table (rg_matrix.tsv).
+assemble_cojo_sensitivity_supplementary
+    Aggregate all .jma.cojo outputs across (signal × cohort) into the
+    cojo_sensitivity.tsv supplementary table (D-04c). Missing / skipped loci
+    are silently omitted — COJO is TIER-2 SENSITIVITY, not a hard gate.
+assemble_cross_ancestry_generalization_bbj
+    Assemble the Tier A+B × BBJ-EAS cross-ancestry generalization panel
+    per D-05c. No credible_set_SNP rows. is_generalization=True always.
+assemble_master_replication_table
+    Assemble the canonical replication matrix per RESEARCH §16.
+
+    Merges: manifest + FIQT discovery corrections + per-cohort effect/coloc
+    + IVW meta (I-2: merge on (signal_id, discovery_ancestry)). Emits
+    per-cohort sample_overlap_flag columns (I-3) + low_maf_founder_flag.
+assemble_replication_holdout_supplementary
+    Leave-one-cohort-out IVW meta per signal (RESEARCH §16 recommendation).
+    Complements the primary IVW meta with a jack-knife sensitivity that
+    surfaces cohort-driven outlier effects.
+assemble_table2
+    D-06a: Final Table 2 (10 cols, 1 row/trait) + D-06b Jaccard Table 2b.
+
+    Merges tier_a_retention (D-02a), jaccard (D-02b), detection_probability
+    (D-05b), and rg_matrix (D-04d) into the publishable Table 2 with H7
+    verdict per D-02d (20pp threshold from config).
+assign_tiers
+    Assign Tier A/B/C confidence levels (D-02c, QTL-source-agnostic).
+
+    Combines GWAS-GWAS coloc results (trait-trait PP.H4) with QTL coloc
+    results to produce mechanistic tier assignments. Also produces the
+    PP.H4 threshold sweep table (REQ-3).
+
+    Per REQ-7 negative-control strategy (2026-04-20 scope reconciliation):
+    primary HLA-immune coverage comes from HLA-trait rows already embedded
+    in the main qtl_coloc_summary.tsv (HLA_6p21 is a curated region; 113
+    rows × asthma trait). Cosmetic + blood-group negative controls require
+    Phase 1 fits for regions outside the curated 12 and are therefore
+    delivered through Phase 5's MAGMA / LDSC-SEG / HESS / g:Profiler
+    negative-control pipeline (all 3 curated sets). The dedicated Phase 2
+    `run_curated_negative_controls` rule is wired-but-partial (manifest
+    rows lack gwas_fit paths); its output, when present, contributes
+    Tier-A-surveillance rows with tier="negative_control" but is treated
+    as an optional input here: assign_tiers.py tolerates missing
+    neg_ctrl_results per its CLI contract
+    (`if args.neg_ctrl_results and os.path.exists(...)`).
+
+    Implementation: `neg_ctrl_results` is declared as a `params:` path
+    (not `input:`) so the rule can fire before `run_curated_negative_controls`
+    produces (or gracefully skips producing) its TSV. The script applies
+    its own existence check.
+augment_coloc_summary
+build_1kg_sample_lists
+build_coloc_clean_sets
+build_coloc_h4_reports
+build_coloc_manifest
+build_coloc_top_hits_table
+build_finemap_manifest
+build_gene_tissue_matrix
+    Build gene x tissue x cell-type matrix from all QTL coloc results.
+
+    Produces both wide-format (heatmap-ready) and long-format (analysis-ready)
+    tables. Columns combine tissue/cell_type with QTL source for unambiguous
+    identification.
+build_gprofiler_background
+    Build discoverability-matched background gene list per D-03a (Reimand 2019).
+
+    Input: harmonized sumstats for all 5 traits (EUR), NCBI37.3.gene.loc.
+    Output: background_genes.txt (one gene symbol per line).
+    Uses 500 kb window around each GWS SNP (P < 5e-8), union across traits.
+build_hgdp_1kg_ld
+build_hyprcoloc_manifest
+build_ld_rds
+build_ld_rds_1kg_eur
+    Build a real LD matrix RDS for one EUR autosomal region from 1000G
+    Phase 3 plink files and write it at the canonical LD-reference path that
+    finemap.smk::run_finemap consumes. HLA is excluded (stays on the UKBB-LD
+    tiled panel); chrX/BMI_Xq24 is excluded (not in LDSC 1000G QC plink).
+build_ld_rds_aou_afr
+    Convert AoU AFR LD .npz -> .rds with GRCh38 -> GRCh37 variant ID liftover.
+
+    Input:
+        npz   = data/interim/aou_ld_exports/AFR_aou/{region_id}.npz
+        chain = data/external/liftover/hg38ToHg19.over.chain.gz
+    Output:
+        rds   = data/processed/ld_reference/AFR_aou/{region_id}.rds
+
+    Conda env: envs/m3-r-ld.yml.
+
+    Wildcard constraints:
+        region_id matches the M2 manifest convention, INCLUDING the m3-02b
+        subregion splits: "m2_region_NNNNN" or "m2_region_NNNNN__subKK".
+build_magma_set_file
+    Combine standard MSigDB GMTs + custom + negative controls into all_pathways.set.
+
+    Calls build_magma_geneset.py to merge all GMT files and convert to MAGMA .set format.
+build_matched_n_manifest
+    Build the matched-N bootstrap manifest from Phase 2 Tier A assignments.
+
+    Cross-joins Tier A AFR loci x config traits x bootstrap indices (1..100).
+    Handles bmi.AFR specially: if harmonized sumstats missing, emits rows with
+    bmi_afr_status=unavailable flag (downstream rules skip bmi bootstrap and
+    emit 'AFR-unavailable' sentinel in table2 per CONTEXT deferred-fallback-d).
+build_mr_manifest
+build_multitrait_manifest
+build_neg_ctrl_manifest
+    Build negative control coloc manifest from curated gene sets.
+
+    Reads config/negative_controls.yaml and generates manifest rows in the
+    same format as qtl_coloc_manifest.tsv, one row per (neg_ctrl_set x gene x
+    region x qtl_source). This manifest is then consumed by the existing
+    run_qtl_coloc rule from qtl_coloc.smk -- no separate dispatch script needed.
+build_pgs_manifest
+build_public_eur_ld
+    Download + extract the public UKBB 337k EUR LD into EUR_ukbb_pub/{region_safe}.rds.
+
+    $0 compute: anonymous S3 download (boto3 UNSIGNED) + per-region extract via
+    download_ukbb_ld_tiles.py (reuses the Tile/overlap/extract scaffold). The
+    hg19 public-panel .rds drops into the loader contract used by run_finemap's
+    resolver (EUR_ukbb_pub is the ld_panel.EUR chain head, m3-02e Task 3).
+build_public_eur_manifest
+    Map each M2 EUR region to the overlapping public UKBB 337k tile(s).
+build_qtl_coloc_manifest
+    Build the QTL coloc manifest by cross-joining regions x QTL sources x tissues x genes.
+
+    IMPORTANT: The manifest builder iterates ALL sources defined in
+    qtl_sources.yaml (gtex_eqtl, gtex_sqtl, ukbppp_pqtl, onek1k_sceqtl),
+    not just eQTL. Plans 02-03 and 02-04 add harmonization scripts for
+    new source types, but the manifest already includes rows for all sources
+    because it reads from config. sQTL/pQTL/OneK1K rows will appear once
+    their harmonized files exist on disk.
+
+    Columns: qtl_coloc_id, qtl_source, tissue, gene_id, region, ancestry,
+    gwas_trait, dataset_id, chr, start_grch38, end_grch38, tissue_n, sdy,
+    gwas_fit_path, ld_matrix_path, harmonized_qtl_path.
+build_region_trait_qc
+build_replication_manifest
+    Build the Phase 9 replication manifest — signal × cohort × ancestry
+    crossmap. Consumes Phase 1 credible-set summary + Phase 2 tier
+    assignments; emits one row per (signal, cohort) target pair.
+
+    Honors D-02b (Tier C excluded), D-05 (ancestry-matched routing),
+    D-05c (BBJ tier_ab_only generalization), D-08 (LD panel routing).
+build_susie_qc_dashboard
+    Render the Phase 1 SuSiE QC dashboard (Quarto HTML with DT tables).
+
+    Falls back to rmarkdown::render if quarto CLI is unavailable in the
+    active environment.
+build_sweep_complex_regions_table
+    Produce standalone REQ-2 supplementary sensitivity table.
+
+    Two row-groups: 'known_complex' (4 pre-specified regions from
+    config/susie_policy.yaml) and 'data_flagged' (L_saturated or
+    n_CS_macor_0.5 >= 3). Cite directly in Phase 11 methods / OSF.
+build_tissue_n_lookup
+    Build tissue -> N sample size lookup JSON.
+check_region_overlap
+collect_region_variants
+collect_replication_effect_sizes
+    Plan 09-04 Task 2 Step 1b (I-5 revision producer): read the manifest +
+    Wave-2 harmonized sumstats for this cohort and emit one (beta, se, p, eaf,
+    N) row per signal_id routed to this cohort. Consumed by
+    compute_per_cohort_effect_size_test.
+collect_rg_logs
+    Parse LDSC .log files into a single TSV for downstream FDR (D-04c).
+
+    Parses all 35 r_g test logs (30 cross-trait + 5 same-trait EUR-AFR
+    benchmarks) via munge_trait_pair_rg.py.
+compute_detection_probability
+    D-05a/b/d: Per-locus detection probability under empirical NCP null.
+
+    ORIGINAL-RESEARCH CONSTRUCTION (per RESEARCH B-2 resolution 2026-04-15).
+    Computes NCP from empirical beta_hat/SE, then trait-level expected
+    concordance via arithmetic mean (D-05d). NOT Hou 2023 parametric prior
+    (D-05c).
+compute_jaccard_and_sign
+    D-02b: Per-trait credible-set Jaccard at PP.H4 >= 0.5 relaxed threshold.
+
+    D-02c: Lead-variant sign agreement (tertiary sanity check).
+    WARN to stderr if frac_sign_agree < 0.98 (flags pipeline bug).
+compute_per_cohort_effect_size_test
+    Plan 09-04 Task 2 — per-cohort Bonferroni + same-direction + post-hoc
+    power + joint criterion (D-03a + pitfalls #4, #5). Output is per-cohort
+    (one TSV per cohort, not per-signal) to keep the Bonferroni denominator
+    computation single-source.
+compute_tier_a_retention
+    D-02a: Per-trait Tier A retention with 95% CI from 100 bootstraps.
+
+    D-02e EXPLICITLY NOT REUSED: Phase 9 joint criterion.
+    Also produces D-02c sign agreement and D-02d unmatched baseline.
+download_1kg_panel
+download_1kg_vcf
+download_bbj_hum0197_v3
+    Fetch the NBDC hum0197.v3 zip for a single trait code. BBJ trait
+    codes come from config['cohorts']['bbj_hum0197_v3']['traits'] (T2D,
+    BMI, As, IS, SBP).
+
+    NOTE (WR-03): NBDC may require a data-transfer-agreement click-through
+    for some hum0197 files. If curl 404s or redirects to a login page,
+    follow `.planning/data_access.md` for the DTA workflow.
+download_eqtl_catalogue
+    Download a single eQTL Catalogue allpairs file + tabix index.
+
+    T-02-04: validates downloaded file is non-empty.
+    T-02-06: full local download avoids remote tabix rate limiting.
+
+    URL scheme updated 2026-04-20: eQTL Catalogue r8 (2023-04) moved from
+    `{ftp_base}{tissue}/{tissue}.all.tsv.gz` to
+    `{ftp_base}{study_id}/{qtd_id}/{qtd_id}.cc.tsv.gz`. File is saved locally
+    under the legacy `{tissue}.all.tsv.gz` name to avoid re-downloading the
+    3.6 GB-per-tissue eQTL files that were pre-staged from eQTL Catalogue r7
+    (2020) using the old URL scheme. Schema is r7<->r8 compatible.
+download_finngen_r12
+    Fetch FinnGen R12 per-endpoint sumstats + tabix index from the
+    public GCS HTTP mirror. URL shape:
+        {http_mirror}/finngen_R12_{endpoint}.gz[.tbi]
+download_gbmi
+    Download the per-trait GBMI all-ancestry meta file. Per-ancestry
+    strata are extracted downstream by harmonize_gbmi via the prefix map
+    (see src/python/harmonize_gbmi.py). One download serves all ancestries
+    for a trait, so {ancestry} is captured into the filename only as a
+    record of intent; the same source URL is used.
+
+    NOTE (WR-03): The GBMI portal does NOT serve files at the templated
+    `{portal}/{trait}/all_ancestries.tsv.gz` path — real flagship files
+    use names like `GBMI_flagship_<endpoint>_<ancestry>_<release>.tsv.gz`
+    behind a Google Forms gate. This rule WILL 404 in practice; the
+    operator should manually download from
+    https://www.globalbiobankmeta.org/resources and place the file at
+    `{output}`. See .planning/data_access.md for concrete URL + filename.
+download_hess_panel
+    Download HESS LD reference panel and partition files.
+
+    HESS (Shi et al. 2017) requires its own LD reference panel based on
+    1000 Genomes EUR. Downloaded from the HESS GitHub/UCLA Box.
+    T-05-03 mitigation: validates file size (>1GB for full panel).
+download_ldsc_afr_frq
+    Generate 1000G Phase 3 AFR per-chromosome allele-frequency files.
+
+    Context (Launch11/Launch12 architecture, Bug 3):
+    S-LDSC's enrichment computation requires per-ancestry MAF weights that
+    match the sumstats ancestry — passing EUR ``--frqfile-chr`` to AFR
+    sumstats biases the ``Prop._h2 / Prop._SNPs`` ratio (and the
+    --overlap-annot proportional-h² accounting depends on MAF-weighted
+    annotation overlap). Even when both runs succeed numerically, the
+    AFR enrichment estimates are not interpretable without AFR-derived
+    MAF weights. This rule generates them.
+
+    NOTE: An earlier diagnosis attributed the partitioned-h² condition-
+    number error (``ValueError: ERROR: LD Score matrix condition number
+    is {1e20}.``) to AFR-vs-EUR frq mismatch. Launch12 evidence proved
+    that wrong: ``hypertension_EUR_pathway_h2`` ALSO fails with cond
+    2.9e20 using EUR frq. The condition-number rejection is intrinsic to
+    the joint baselineLD (97 cols) + custom_pathway annotation matrix and
+    affects all ancestries. The actual fix lives in
+    ``run_ldsc_partitioned.py:run_partitioned_h2`` (now passes
+    ``--invert-anyway``). This rule remains correct as a per-ancestry MAF
+    weight generator; see .planning/debug/t1-launch10-residual-failures.md
+    §2026-04-18T13:00Z "Bug 5" for the full post-mortem.
+
+    Strategy:
+    No alkesgroup distribution ships per-ancestry frq files for AFR. We
+    generate them locally from the 1000 Genomes Phase 3 VCFs already on
+    disk (GRCh37/b37), filtering to the LDSC EUR-plink SNP set so the
+    per-chromosome variant IDs match the LD scores built on the same
+    panel.
+
+    Procedure (per chromosome 1..22):
+      1. ``plink --vcf data/raw/1kg/vcf/chr{N}.vcf.gz --double-id
+         --keep data/raw/1kg/AFR.samples --extract <EUR LDSC bim>
+         --make-bed --out <tmp>`` — 504 AFR samples, SNP set matched.
+      2. ``plink --bfile <tmp> --freq --out <frq_dir>/1000G.AFR.QC.{N}``.
+    Uses plink 1.9 (``envs/plink.yml``).
+
+    Output: sentinel ``.afr_frq_done`` flag + 22 ``1000G.AFR.QC.{N}.frq``.
+    The LDSC h2 / SEG rules depend on this sentinel when ``ancestry == AFR``.
+download_ldsc_baseline
+    Download LDSC baseline model v2.2 + weights + frequency files + plink files.
+
+    Downloads from the Broad Institute LDSC resource page.
+    T-05-02 mitigation: validates total size > 1 GB for baseline tgz.
+    T-05-06 mitigation: wget --max-redirect=3 --timeout=300.
+download_ldsc_seg
+    Download LDSC-SEG tissue-specific annotation files.
+
+    Multi_tissue_gene_expr and Multi_tissue_chromatin from Finucane 2018.
+    T-05-02 mitigation: validates download sizes.
+download_magma_binary
+    Download MAGMA v1.10 Linux static binary from CNCR.
+
+    T-05-01 mitigation: SHA256 checksum verification after download.
+    T-05-06 mitigation: wget --max-redirect=3 --timeout=300.
+    Expected SHA256: computed on first download and recorded below.
+download_magma_ref
+    Download MAGMA reference files: g1000_eur, gene.loc, SNP synonyms.
+
+    T-05-02 mitigation: file size validation on each download.
+download_msigdb
+    Download MSigDB gene sets via msigdbr R package.
+
+    Uses the msigdbr R package (NOT web download) to avoid registration
+    requirements per Pitfall 6 from 05-RESEARCH.md. Downloads KEGG,
+    Reactome, GO BP, and Hallmark collections as GMT files.
+download_mvp_phs001672
+    Fetch a single MVP phs001672 analysis file from the dbGaP FTP.
+    The {pha_id} wildcard carries the dbGaP ID (e.g., 'pha004945.1' or
+    'pha004945') — downloaded as phs001672.{pha_id}.txt.gz.
+
+    NOTE (WR-03): The real dbGaP layout nests files under
+    `phs001672.v12.p1/analyses/<AnalysisGroup>/<pha_id>/` and filenames
+    embed `.MULTI.txt.gz`. This flat template will 404 for real releases;
+    the operator should follow `.planning/data_access.md` to hand-populate
+    the output path from the authenticated dbGaP download area.
+download_onek1k_cell_type
+    Download OneK1K sc-eQTL data for a single cell type.
+
+    Primary: eQTL Catalogue (QTS000038, GRCh38).
+    Fallback: onek1k.org S3 (GRCh37, needs liftover).
+    T-02-12: prefers eQTL Catalogue for known provenance.
+    T-02-13: validates non-empty download.
+download_sqtl_catalogue
+    Download a single eQTL Catalogue sQTL allpairs file + tabix index.
+
+    Same upstream as eQTL (eQTL Catalogue r8 QTS000015), different QTD ids
+    (sqtl_qtd = leafcutter quant method).  URL resolved via
+    config/eqtl_catalogue_qtd_map.yaml + _resolve_eqtlcat_url helper.
+
+    The upstream file is named `{qtd_id}.cc.tsv.gz` (r8 convention);
+    saved locally under `{tissue}.all.tsv.gz` to keep filesystem names
+    tissue-addressable and consistent with the manifest's dataset_id column.
+
+    T-02-04: validates downloaded file is non-empty.
+download_sumstats
+download_ukbb_ld_tiles
+download_ukbppp_protein
+    Download UKB-PPP per-protein summary stats from Synapse.
+
+    Auth via SYNAPSE_AUTH_TOKEN env var (T-02-08: never committed).
+    T-02-10: per-protein per-chromosome download (not bulk tar).
+effect_scale_qc
+extract_bbj_zip
+    Extract the sumstats TSV payload from a BBJ zip. Skips README.*
+    entries. Output filename is normalized to 'sumstats.tsv' so the
+    harmonize step has a stable path independent of the zip's internal
+    layout.
+extract_tier_ab_genes
+    Extract Tier A + Tier B gene symbols from Phase 2 tier assignments.
+
+    Input: tier_assignments.tsv from Phase 2.
+    Output: tier_ab_genes.txt (unique gene symbols with PP.H4 >= 0.5 per Tier B).
+    Tier A: gwas PP.H4 >= 0.8 AND qtl PP.H4 >= 0.8
+    Tier B: gwas PP.H4 >= 0.8 AND qtl PP.H4 >= 0.5
+filter_finemap_summary
+fit_replication_susie
+    Re-fit SuSiE-RSS on the replication cohort at a single (signal_id, cohort)
+    pair. Reuses Phase-1 config/susie_policy.yaml (D-08 reuse, not fork) and
+    per-cohort LD panel routed by manifest.
+
+    WR-01/WR-02 fix: forwards `type`, `case_n`, `ctrl_n`, `n` from the
+    manifest (when present) so case-control traits get the correct
+    effective-N at the SuSiE stage. Manifest fields default to "MISSING"
+    via `_manifest_lookup`; the R-side guard treats NA/MISSING identically
+    to NULL/0 and falls back to raw median-N only when counts are
+    unavailable.
+fix_ldcts_paths
+    Fix downloaded .ldcts files to use local annotation paths.
+
+    One-time fix: rewrites absolute paths from Broad download to local
+    relative paths. Validates each referenced LD score file exists.
+    T-05-13: validates and rewrites .ldcts paths.
+generate_null_loci
+    Generate distance-matched null loci via bedtools shuffle (REQ-7, D-04c).
+
+    Produces n_draws sets of null loci BED files, each matched on region size
+    and gene density to real loci in regions_curated_grch38.csv. Seeds are
+    deterministic: seed_base + draw_id (T-02-18 mitigation).
+
+    The sample_null_loci.py script writes its summary to
+    `{output_dir}/null_loci_summary.tsv` alongside the per-draw BED files.
+    The rule's declared output lives one directory up (NEG_CTRL_DIR root)
+    to keep it addressable as a pipeline target. The shell trailer copies
+    the summary up after the script completes.
+gprofiler_enrichment
+    g:Profiler functional enrichment of coloc-nominated genes.
+
+    Uses run_gprofiler.py with R gprofiler2 fallback (--use-r) because HPC
+    compute nodes lack outbound HTTPS to biit.cs.ut.ee.  R fallback uses
+    gprofiler2::gost() locally with identical parameters.
+    evcodes=TRUE per D-03b to exclude electronic GO annotations.
+    Sources: GO:BP, KEGG, REAC.
+gprofiler_negative_controls
+    Run g:Profiler enrichment on each negative control gene set separately.
+
+    Tests that negative control gene sets (HLA immune, cosmetic, blood group)
+    produce q > 0.05 for cardiometabolic pathways (REQ-7 / D-06b).
+    Concatenates results for all negative control sets.
+    Uses R gprofiler2 fallback (no outbound HTTPS on compute nodes).
+    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
+harmonize_bbj
+    Harmonize a BBJ hum0197-v3 extracted TSV to canonical schema.
+    BBJ is always GRCh38 -> liftover required (chain file dependency).
+harmonize_eqtl_region
+    Harmonize eQTL Catalogue data for a single (tissue, gene, region) triple.
+harmonize_finngen
+    Rename FinnGen R12 raw schema to canonical, liftover GRCh38->37,
+    and drop palindromic ambiguous SNPs (RESEARCH pitfalls #1 + #2).
+harmonize_gbmi
+    Extract a per-ancestry stratum from the GBMI all-ancestry meta file
+    and rename to the canonical schema. B-2 guard: fails loudly if the
+    requested ancestry's prefix columns are absent (no silent empty output).
+
+    Output pattern intentionally mirrors the download step — one harmonized
+    file per (trait, ancestry) pair so the panel definitions in
+    config['panels'] can refer to them directly.
+harmonize_mvp
+    Harmonize an MVP phs001672 analysis file -- dispatches on detected
+    schema (dbGaP GWAS-central or REGENIE-style). Phase 9 real data is
+    GRCh38 (Wave-1 correction) so --genome-build GRCh38 + chain file.
+harmonize_onek1k_region
+    Harmonize OneK1K sc-eQTL data for a single (cell_type, gene, region) triple.
+
+    Reuses harmonize_eqtl core logic via harmonize_onek1k.py since eQTL
+    Catalogue OneK1K files have the same column schema as GTEx eQTL.
+    Cell type goes into the "tissue" column of the common intermediate TSV.
+harmonize_pqtl_region
+    Harmonize UKB-PPP pQTL data for a single (tissue, gene_id, region) triple.
+
+    Reads REGENIE output, converts LOG10P to pvalue, constructs variant_id,
+    estimates sdY from summary statistics (Open Question 1: NPX may not be
+    unit-variance).
+
+    Output-path structure matches the 4-segment manifest path
+    `pqtl/{tissue}/{gene_id}/{region}.harmonized.tsv.gz` (e.g.
+    `pqtl/plasma/FTO/FTO_16q12.harmonized.tsv.gz`), consistent with
+    sQTL/sceQTL 3-segment conventions. Prior 2-segment form
+    (`pqtl/{protein}/{region}`) did not match the path emitted by
+    build_qtl_coloc_manifest.py.
+
+    Input resolves chrom from the manifest via an input function, mirroring
+    the `_qtl_manifest_field(wc, "chr")` pattern in harmonize_onek1k_region.
+harmonize_sqtl_region
+    Harmonize eQTL Catalogue sQTL data for a single (tissue, gene, region) triple.
+
+    Uses harmonize_sqtl.py which wraps harmonize_eqtl core logic. Molecular
+    trait IDs (splice junctions) are preserved; gene_id column uses Ensembl IDs.
+harmonize_sumstats
+hess_aggregate
+    Aggregate all pleiotropic vs background comparison results.
+
+    Combines pleio_vs_bg.tsv from all trait pairs x ancestries into a
+    single summary table.
+    Output columns: trait1, trait2, ancestry, mean_pleio, mean_bg, ratio,
+    z_score, p_value.
+hess_combine
+    Combine per-chromosome rho-HESS results for a trait pair x ancestry.
+
+    Dispatches HESS's ``local_rhog_step2`` via the full argument set required
+    at tools/hess/hess.py:83-87 (``--pheno-cor``, ``--num-shared``, AND
+    ``--local-hsqg-est`` all non-None). The two per-trait hsqg inputs come
+    from the sibling hess_hsqg_step2 rule. ``--pheno-cor 0 --num-shared 0``
+    is correct for non-overlapping public GWAS cohorts (the default coloc_analysis
+    trait ancestry design — see sample_overlap documentation in .planning/DECISIONS.md).
+hess_compare_pleio
+    Compare local covariance at pleiotropic loci vs genome-wide average (D-02c).
+
+    Per trait pair x ancestry. Z-score test of enrichment at pleiotropic loci.
+    Uses Python 3 (magma env) since this is pure Python analysis.
+hess_format_sumstats
+    Convert harmonized sumstats to HESS format (SNP, CHR, BP, A1, A2, Z, N).
+
+    Per trait x ancestry. Z computed as BETA/SE. Binary traits use effective N.
+    chr:pos SNP IDs are remapped to rsIDs via 1000G bim files.
+    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
+hess_hsqg_step2
+    Per-trait local SNP-heritability step 2 for one trait within a pair.
+
+    rho-HESS step 2 (hess_combine) requires per-trait local h2 estimates via
+    HESS's ``--local-hsqg-est`` flag (two files, nargs=2 at
+    tools/hess/hess.py:176-177). rho-HESS step 1 (hess_local_rhog) already
+    writes per-trait step 1 outputs as
+    ``{pair_prefix}_trait{1,2}_chr{N}.{info,eig,prjsq}.gz`` — those are the
+    exact input format HESS's ``local_hsqg_step2`` expects when given
+    ``--prefix {pair_prefix}_trait{1,2}``.
+
+    We therefore run this rule once per (pair, trait_slot) rather than once
+    per trait globally: each trait's local h2 is re-estimated within the
+    SNP intersection used by its own pair's step 1. This produces 14 jobs
+    (7 EUR pairs x 2 traits) per Launch with zero additional step 1 work.
+
+    Output ``{pair_prefix}_{trait_slot}.local.tsv`` (the HESS script writes
+    ``{out}.txt`` — we declare a .tsv-suffixed output that the rule copies to,
+    so Snakemake tracks a stable output path.)
+hess_local_rhog
+    HESS rho-HESS local genetic covariance per trait pair x ancestry x chromosome.
+
+    Runs HESS via Python 2.7 subprocess. Requires hess_py27 conda env.
+    Input: HESS-formatted sumstats for both traits, LD panel bfile, partition BED.
+    D-02a/D-02b: per trait pair x ancestry x chromosome.
+    T-05-18: subprocess list args only (no shell=True).
+    T-05-20: mem_mb=4000 for eigendecomposition.
+hess_negative_controls
+    Run HESS compare on negative control gene sets (REQ-7 / D-06b).
+
+    For each trait pair x ancestry, compares local covariance at negative
+    control loci (HLA, cosmetic, blood group) vs genome-wide average. Maps
+    each GMT row to genomic coordinates via NCBI37.3.gene.loc, writes a
+    temporary regions CSV per set, and invokes compare_pleiotropic_vs_background.
+    Negative controls should produce non-significant enrichment by design.
+    Note: no conda directive -- run: blocks execute in host env (Snakemake 7.32.4).
+hess_validate_panel
+    One-time validation that HESS LD reference panel is on GRCh37 (T-05-17).
+
+    Reads the .bim file for chr1 and checks SNP positions against hardcoded
+    GRCh37 reference. Must run before any HESS analysis.
+ivw_meta_aggregate
+    Plan 09-04 Task 2 — IVW fixed-effect meta-analysis across ancestry-matched
+    replication cohorts per signal (D-06b, T-09-17). Uses metafor::rma.uni(FE).
+    Consumes per_cohort_combined.tsv which is a Plan 09-05 Task 2 aggregator
+    over the per-cohort tables; that aggregator concatenates the per-cohort
+    effect_size/{cohort}.tsv outputs into a single long TSV.
+l2g_concordance
+    Compute Open Targets L2G concordance for Tier A loci (D-05a/D-05b).
+
+    L2G is independent corroboration, NOT a filter gate. Disagreements are
+    flagged as findings (potential distal enhancer-driven assignments).
+ldsc_aggregate_h2
+    Aggregate all per-trait LDSC partitioned h2 .results into a summary TSV.
+
+    Columns: trait, ancestry, annotation, prop_snps, prop_h2, enrichment,
+    enrichment_p, enrichment_se.
+ldsc_build_custom_annotations
+    Build custom pathway annotations for LDSC partitioned h2.
+
+    Runs once per genome build. Creates per-chromosome binary annotation files
+    from custom cardiometabolic gene sets + negative controls using 100 kb
+    gene windows (D-04c). Produces 22 .annot.gz files.
+ldsc_compute_custom_ld_scores
+    Compute LD scores for custom pathway annotations.
+
+    Per chromosome. Input: custom annotations from ldsc_build_custom_annotations,
+    1000G Phase 3 plink files. Output: per-chromosome .l2.ldscore.gz files.
+    T-05-15: mem_mb=8000 for baseline LD computation.
+ldsc_munge
+    LDSC sumstats munging: convert harmonized sumstats to LDSC format.
+
+    Per trait x ancestry. Calls run_ldsc_partitioned.py --step munge.
+    Pre-formats via munge_sumstats_ldsc.py then runs official LDSC munging
+    with HapMap3 merge. Post-munge validation warns if < 500K SNPs (Pitfall 2).
+ldsc_partitioned_h2
+    LDSC partitioned heritability with baseline v2.2 + custom annotations.
+
+    Per trait x ancestry. Always includes --overlap-annot flag (anti-pattern).
+    Baseline v2.2 always first in --ref-ld-chr (D-04a).
+    T-05-15: mem_mb=8000 for baseline model.
+
+    Ancestry-specific frqfile (Launch12 Bug 3): AFR sumstats route to
+    ``1000G.AFR.QC.`` prefix generated by ``download_ldsc_afr_frq``; EUR
+    stays on the alkesgroup-distributed ``1000G.EUR.QC.`` prefix. This is
+    correct for unbiased AFR enrichment estimates; it is NOT what fixed
+    the condition-number error.
+
+    Condition-number resolution (Launch13 Bug 5 RE-DIAGNOSIS, Carter
+    Option 1): the joint baselineLD (97 annotations) + custom_pathway
+    matrix is NOT intrinsically near-singular. The cond=1.16e20 was
+    caused by ``NEGCTRL_HLA_IMMUNE`` (chr6 26-34 Mb, MHC-only) × the
+    standard ``weights.hm3_noMHC`` weight file (Finucane 2015 MHC
+    exclusion). The inner-join in ``read_ld_and_sumstats`` zeroed the
+    NEGCTRL_HLA_IMMUNE column on the regression-eligible SNP set →
+    rank-1 deficiency → singular X^T X. ``run_partitioned_h2`` now
+    builds an ephemeral filtered copy of the custom LD scores in a
+    per-job temp dir with NEGCTRL_HLA_IMMUNE dropped, points
+    ``--ref-ld-chr`` at the filtered prefix, and cleans up after LDSC
+    completes. This is partitioned-h2-specific: the canonical
+    ``custom_pathway.{N}.l2.ldscore.gz`` files are NOT modified, so
+    LDSC-SEG and any other consumer continues to see all 11 annotations
+    including NEGCTRL_HLA_IMMUNE.
+
+    Methods note (OSF amendment, minor): NEGCTRL_HLA_IMMUNE is excluded
+    from the partitioned-h2 step because it is HLA-region-specific by
+    construction and the canonical Finucane-2015 weight file excludes
+    MHC by design. The other two negative controls (NEGCTRL_COSMETIC,
+    NEGCTRL_BLOOD_GROUP) and all 8 hypothesis-driving CUSTOM annotations
+    remain in the partitioned-h2 model. See debug session
+    ``.planning/debug/t1-launch10-residual-failures.md`` § Bug 5
+    RE-DIAGNOSIS for the SVD evidence (cond drops from 1.16e20 → 5e3
+    after the drop, full rank).
+ldsc_rg
+    D-04a: Single LDSC r_g test for (trait1, trait2, ancestry_pair).
+
+    Reuses Phase 5 LDSC infrastructure (D-04d): munged sumstats + 1000G LD
+    scores + ldsc_py3 env. For EUR-AFR cross-ancestry tests, ref-ld-chr and
+    w-ld-chr both use EUR ldscores (LDSC default for cross-ancestry per
+    Bulik-Sullivan 2015 FAQ). SE>0.3 flag applied downstream by apply_fdr.py
+    (research A-2 minimum-deviation).
+ldsc_seg_chromatin
+    LDSC-SEG tissue-specific enrichment: Roadmap Epigenomics chromatin.
+
+    Per trait x ancestry. Uses pre-built Multi_tissue_chromatin.ldcts.
+
+    Note on AFR gating: same as ldsc_seg_gene_expr -- ``--h2-cts`` does not
+    take ``--frqfile-chr``, so the ancestry-specific frq files are not
+    consumed here today. The ``frq_flag`` input gates AFR runs behind
+    ``download_ldsc_afr_frq`` so the ancestry dispatch is consistent with
+    ldsc_partitioned_h2.
+ldsc_seg_gene_expr
+    LDSC-SEG tissue-specific enrichment: GTEx 53-tissue gene expression.
+
+    Per trait x ancestry. Uses pre-built Multi_tissue_gene_expr.ldcts from
+    Finucane 2018. Calls run_ldsc_seg.py with --h2-cts (NOT --h2).
+
+    Note on AFR gating: ``--h2-cts`` does not consume ``--frqfile-chr`` in
+    current LDSC (see run_ldsc_seg.py -- the cmd list omits the flag), so
+    no ancestry-specific frqfile is passed here today. The ``frq_flag``
+    input still gates the rule behind ``download_ldsc_afr_frq`` for AFR
+    traits so that (a) the ancestry-specific reference data is available
+    if/when a future change threads ``--frqfile-chr`` through the SEG
+    wrapper, and (b) the Launch12 fix batch ships a single ancestry
+    dispatch point consistent across all LDSC rules.
+ldsc_seg_shared_tissues
+    Aggregate LDSC-SEG results and identify tissues shared between trait pairs.
+
+    Input: all gene_expr and chromatin .cell_type_results.txt files.
+    Output: shared tissue summary per D-05b.
+m3_aou_npz_arrives
+    Per-region .npz arrival sentinel; depends on per-chr export flag.
+
+    Snakemake will not run this rule unless invoked manually with
+    ``--touch`` or with the .npz already present on disk; its purpose is to
+    let the DAG plan from .rds back to the chromosome flag without a
+    MissingInputException. Carter's manual ``gsutil -m cp`` of the egressed
+    object group is the actual file-producer.
+
+    Wildcard constraints:
+        ancestry  == AFR
+        region_id matches the M2 manifest convention, INCLUDING the m3-02b
+                  subregion splits: ``m2_region_NNNNN`` or
+                  ``m2_region_NNNNN__subKK`` (123 of the 276 ids are splits;
+                  ``m2_region_00040__sub14`` is SH2B3_12q24's panel).
+m3_assemble_occlusion_catalog
+    Assemble the genome-wide enriched reference-occlusion catalog.
+
+    Calls, in order, the four m3-07b/07c functions that shipped with ZERO callers:
+    ``aggregate_manifests`` -> ``add_grch37_positions`` -> ``scan_present_rate`` ->
+    ``enrich_occlusion_manifest``, then re-asserts the full catalog schema so the
+    artifact is usable EVEN WHEN EMPTY.
+
+    Input:
+        chain      = data/external/liftover/hg38ToHg19.over.chain.gz
+        sumstats   = the 9 public AFR harmonized sumstats (present-rate scan scope)
+        manifests / excludelists = glob-derived, EMPTY on today's tree
+        regions_tsv = config/ld_regions.tsv — the BLOCKER-4 region-coverage check.
+            Passed as --regions-tsv so the check is LIVE in production, not merely
+            available. With it the assembler REFUSES to stamp
+            provenance_source=stage_a_manifest on a rollup that does not cover every
+            region carrying an excludelist (those regions' occluded variants would
+            otherwise never be dropped from the sumstats = ORPHANED VARIANTS), and it
+            reports n_regions_expected / n_regions_missing. ⚠ The expected set is
+            nunique(region_id) filtered to the ancestry = 276, NEVER the file's 552
+            data rows.
+    Output:
+        catalog   = config occlusion_lockstep.catalog
+                    (+ a sibling {catalog}.README.md written by the assembler)
+
+    Conda env: envs/m3-r-ld.yml (python 3.11 + pandas + pyliftover).
+m3_convert_aou_afr_rds_all
+    Aggregate marker: every AFR AoU .npz converted to its canonical .rds.
+
+    Not in ALL_TARGETS by design -- see the banner above. Invoke explicitly
+    after the egress arrival flags and before `snakemake all`.
+m3_ingest_aou_export_arrives
+    Verify the per-chromosome AFR .npz group is complete and stamp flag.
+
+    Output:
+        flag = data/interim/aou_ld_exports/.aou_export_complete.AFR.{chr}
+
+    The flag is the ARRIVAL gate consumed by downstream conversion rules
+    (Wave 4 production fire). Until the flag exists, snakemake will not
+    attempt to convert that chromosome. It stays per-chromosome on purpose:
+    egress lands over multiple weeks, so partial arrival must still let
+    partial conversion proceed.
+
+    Wildcard constraints:
+        ancestry == AFR   (m3-02e Move 2: EUR is the public UKBB 337k panel)
+        chr      in {1..22}
+m3_ingest_aou_export_arrives_all
+    Aggregate marker: every per-chromosome AFR export flag present.
+magma_annotate
+    MAGMA Step 1: Annotate SNPs to genes using gene.loc and SNP locations.
+
+    Runs once per genome build. Input: MAGMA binary, g1000_eur.bim, NCBI37.3.gene.loc.
+    Output: gene_annotation.genes.annot
+    Shell calls run_magma.py --step annotate.
+magma_fdr
+    Post-processing: Apply Benjamini-Hochberg FDR across all gene sets per trait.
+
+    Reads .gsa.out file for a trait x ancestry, applies FDR correction jointly
+    across ALL gene sets (standard + custom + negative controls) per D-01a/D-01b.
+    Outputs a TSV with added FDR_Q column.
+
+    WR-07 fix: previously used a `run:` block which cannot attach a conda env
+    in Snakemake 7.x, forcing statsmodels/scipy to live in the host interpreter.
+    Now shells out to src/python/magma_fdr.py inside envs/magma.yml, where the
+    dependencies are properly pinned.
+magma_gene_analysis
+    MAGMA Step 2: Gene-level analysis using summary statistics.
+
+    Per trait x ancestry. Wildcard: {trait}_{ancestry}.
+    Shell calls run_magma.py --step gene with appropriate N calculation.
+    Critical: binary traits use effective N = 4/(1/n_case + 1/n_ctrl) per Pitfall 4.
+magma_geneset_analysis
+    MAGMA Step 3: Gene-set (competitive) analysis.
+
+    Per trait x ancestry. Input: .genes.raw, all_pathways.set.
+    Output: {trait}_{ancestry}_geneset.gsa.out
+    Shell calls run_magma.py --step geneset.
+make_regions_from_loci
+occlusion_filter_sumstats
+    The occlusion-filtered AFR harmonized sumstats mirror, bgzipped + tabixed.
+
+    Input:  {harmonized_sumstats}/{stem}.tsv.bgz  +  the occlusion catalog
+    Output: {occlusion_lockstep.sumstats_dir}/{stem}.tsv.bgz  (+ .tbi)
+
+    The output directory MUST differ from the input directory
+    (``sumstats_harmonized_occl`` vs ``sumstats_harmonized``): a same-directory
+    wildcard would make this rule its own input and produce a DAG cycle.
+
+    The ``{stem}`` constraint ends in ``.AFR`` so this rule can NEVER match a EUR
+    stem. That is belt-and-braces on top of the ancestry gate in
+    ``lockstep_sumstats_path``: Track-A / EUR numerics are frozen, and two
+    independent barriers is the right number for a filter that deletes rows from
+    scientific data.
+
+    TWO LOGS. ``{stem}.counts.json`` is the durable audit ({n_in, n_dropped,
+    n_out}, with n_in - n_dropped == n_out); ``{stem}.drops.log`` captures the
+    module's per-drop STDERR, which is the IN-RUN WITNESS the pre-registration
+    relies on (the catalog is the durable record, the log is the witness).
+
+    ``tabix -f -S 1 -s 1 -b 2 -e 2`` reproduces ``sumstats.smk:157`` exactly, so
+    the mirror keeps full parity with the source it shadows.
+
+    Conda env: envs/python_stats.yml -- the ONLY env carrying bgzip + tabix.
+occlusion_filter_variants
+    The occlusion-filtered per-region variant list. Plain TSV in, plain TSV out.
+
+    Input:  {ld_reference}/variants/{region}.tsv  +  the occlusion catalog
+    Output: {ld_reference}/{variants_dir_name}/{region}.tsv
+
+    THE SECOND LEAK. ``ld_reference.smk::collect_region_variants`` pools ALL
+    harmonized files ancestry-agnostically (OrderedDict dedup over every trait and
+    ancestry), so the occluded coordinate survives in the variant list even after
+    the AFR sumstats mirror has dropped it. Filtering only the sumstats is not a
+    lockstep.
+
+    The variant list is NOT re-filtered per ancestry and is NOT itself
+    ancestry-scoped -- ``lockstep_variants_path`` is what decides, per fine-map
+    job, whether a given ancestry reads the filtered or the unfiltered list. That
+    is deliberate: filtering ``collect_region_variants``'s own INPUTS would drag
+    the EUR sumstats through the AFR occlusion filter and move Track-A numerics.
+
+    Same function, same catalog, same (CHR,POS) key as the sumstats drop. No
+    second implementation, no second chance to disagree with the panel.
+permutation_aggregate
+    Aggregate 1000 permutation MAGMA results to compute empirical p-value.
+
+    Compares the real gene set's MAGMA beta to the distribution of betas
+    from 1000 permutation null gene sets. Empirical p = fraction of
+    permutations with beta >= real beta.
+    Output: empirical_pvalues.tsv with per-pathway empirical significance.
+permutation_magma
+    Run MAGMA gene-set analysis on each permutation null gene set.
+
+    For each of the 1000 null gene sets, run MAGMA gene-set analysis
+    using the .genes.raw from the real analysis. Uses Snakemake wildcard
+    for permutation index. Output: per-perm .gsa.out files.
+permutation_null_genesets
+    Generate 1000 permutation null gene sets matched for length, LD, MAF (D-06c).
+
+    Input: Tier A+B gene list, NCBI37.3.gene.loc, MAF reference, LD score reference.
+    Output: 1000 null gene set files + summary TSV.
+    Calls extend_null_genesets.py with --n-permutations from config.
+    Deterministic seeds: seed_base (42) + permutation_index (T-02-18).
+plot_violin
+    D-06c: Bootstrap concordance violin per trait with overlay lines.
+
+    One panel per trait via facet_wrap. Overlaid: dashed horizontal line at
+    unmatched concordance %, dotted line at Hou expected null %.
+pph4_threshold_sweep
+    Compute tier counts at each PP.H4 threshold (REQ-3).
+
+    Runs assign_tiers.py in sweep mode to produce a table of tier counts
+    (Tier A, B, C) at each of {0.5, 0.7, 0.8, 0.9}, per ancestry.
+prepare_cojo_ma
+    Extract a single locus from the canonical harmonized sumstats and emit
+    GCTA .ma (8-column: SNP A1 A2 freq b se p N). Consumed by run_cojo_slct.
+
+    {locus} is derived from the region string chr:start-end as chrN_start_end
+    (see build_cojo_sensitivity_table._region_to_filename_stub).
+run_cojo_slct
+    GCTA 1.94.1 --cojo-slct wrapper at a single (cohort, trait, locus) with
+    1000G Phase 3 {EUR|AFR} LD reference. Consumes the LDSC download flag
+    (download_ldsc_baseline in pathway.smk) to guarantee PLINK files exist.
+
+    Flag file path `data/reference/ldsc/.baseline_download_done` is the
+    touched output of pathway.smk rule `download_ldsc_baseline` (RO7 DAG
+    wiring convention).
+run_coloc_susie
+run_curated_negative_controls
+    Run QTL coloc on curated negative control gene sets.
+
+    Uses the existing run_qtl_coloc.R via the neg_ctrl_coloc_manifest.tsv.
+    Each manifest row dispatches to a separate run_qtl_coloc invocation,
+    reusing the same pipeline as real loci. Results are aggregated into a
+    single TSV for downstream comparison against the primary_threshold.
+run_finemap
+run_fiqt_on_discovery
+    Apply FIQT (Bigdeli 2016) winner's-curse correction to discovery β̂.
+
+    Input is a TSV assembled from the Phase-1 credible-set lead SNPs + Phase-2
+    Tier A+B triples with columns (rsid, beta, se, n). Output adds beta_FIQT
+    and se_FIQT columns; row order follows winnerscurse's descending-|z|
+    contract.
+
+    Plan 09-04 Task 2 produces the discovery_signals.tsv input; this rule
+    consumes it verbatim. Plan 09-03 makes the wrapper real so 09-04 only
+    needs to assemble the signal list.
+run_hyprcoloc_group
+run_matched_bootstrap
+    D-01b: Per-bootstrap Z resampling + SuSiE refit via Phase 1 script.
+run_matched_coloc
+    D-01c: coloc.susie per bootstrap; AFR discovery .fit.rds held fixed.
+run_mr_placeholder
+run_multitrait_placeholder
+run_pgs_placeholder
+run_qtl_coloc
+    Run GWAS-vs-QTL coloc.susie for a single manifest row.
+
+    This is the main dispatch rule. Each qtl_coloc_id corresponds to a
+    unique (region x tissue x gene x qtl_source x ancestry) combination.
+run_replication_coloc_susie
+    Plan 09-04 Task 1 — coloc.susie(disc_fit, rep_fit) re-estimation for a
+    single (signal_id × cohort) pair. Emits PP.H4 sweep JSON per D-03b.
+
+    Discovery fit path is resolved from the manifest (not templated from the
+    {signal_id} wildcard) because Plan 09-03's manifest-builder encodes the
+    full Phase-1 fit layout `{trait}_{ancestry}_{region}.fit.rds` and we
+    honor that as the single source of truth (T-09-05 mitigation).
+smoke_pilot_bootstrap
+    A-1: Run 5 bootstraps for a single trait x region (pilot calibration).
+
+    This is the gate before the full 300k-fit production launch.
+    Wall-clock, memory, SuSiE convergence, and PP.H4 stability are measured.
+stroke_afr_coloc_sweep
+summarize_coloc_results
+summarize_finemap_results
+summarize_harmonized_sumstats
+summarize_hyprcoloc
+susie_qc_aggregate
+    Aggregate all run_finemap JSON outputs into a single flat TSV.
+
+    Scans {FINEMAP_DIR}/susie/ recursively for *.json and flattens D1/D2/D3
+    diagnostic fields + ld_source + L_saturated + min_abs_corr_sweep D4 counts
+    into one row per (trait x ancestry x region_id).
+validate_harmonized_sumstats
+    Canonical-schema + liftover-QC gate. Looks up the matching .qc.json
+    when present (harmonizers always emit one); FinnGen, MVP, and BBJ all
+    produce QC JSON, GBMI produces none (no liftover step).
+validate_negative_controls
+    Aggregate negative control results from ALL methods into validation table.
+
+    Input: MAGMA FDR results, g:Profiler neg ctrl results, LDSC h2 summary,
+           LDSC-SEG shared tissue summary, HESS neg ctrl comparisons.
+    Output: validation_summary.tsv with per-method, per-set pass/fail.
+    T-05-21: hard fail (exit 1) if any row has passes_threshold=FALSE.
+validate_sumstats
+    Check that harmonized sumstats contain required columns.
+
+    Stub validation rule -- confirms the harmonized output has the expected
+    column schema before downstream rules consume it.
+--- exit: 0
+
+##### L-07 | config: ld_read_path as shipped -- the BLOCKER-B ancestry allow-list that contains Track-A EUR
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c 'import yaml; print(yaml.safe_load(open("config/pipeline.yaml"))["ld_read_path"])'
+{'enabled': True, 'ancestries': ['AFR'], 'allele_aware': True, 'coloc': True}
+--- exit: 0
+
+##### L-08 | config: ld_panel.strict_aou_only
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c 'import yaml; d=yaml.safe_load(open("config/pipeline.yaml")); print("ld_panel.strict_aou_only =", repr(d["ld_panel"]["strict_aou_only"]))'
+ld_panel.strict_aou_only = False
+--- exit: 0
+
+##### L-09 | config: m3_convert_max_n_var -- the BLOCKER-D ceiling. CONFIG-VALUE READ ONLY (rcw B-LOW-3 label): proves the VALUE is shipped, NOT that anything enforces it; the enforcement chain (m3_convert_npz_rds.smk:132/:163/:180 -> ld_npz_to_rds.R:272) is not measured by the L-set
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c 'import yaml; d=yaml.safe_load(open("config/pipeline.yaml")); print("m3_convert_max_n_var =", repr(d["m3_convert_max_n_var"]))'
+m3_convert_max_n_var = 120000
+--- exit: 0
+
+##### L-10 | config: allow_degraded value, and whether allow_partial_manifest exists as a config key at all
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c 'import yaml
+d=yaml.safe_load(open("config/pipeline.yaml"))
+hits=[]
+def walk(node,path):
+    if isinstance(node,dict):
+        for k,v in node.items():
+            p=path+[str(k)]
+            if k in ("allow_degraded","allow_partial_manifest"): hits.append((".".join(p),v))
+            walk(v,p)
+    elif isinstance(node,list):
+        for i,v in enumerate(node): walk(v,path+[str(i)])
+walk(d,[])
+for p,v in hits: print("CONFIG KEY:", p, "=", repr(v))
+if not any(p.endswith("allow_partial_manifest") for p,_ in hits):
+    print("CONFIG KEY: allow_partial_manifest = ABSENT (not a config key anywhere in config/pipeline.yaml)")' ; grep -n 'allow_partial_manifest: bool' src/python/assemble_occlusion_catalog.py ; grep -n 'if orphaned and not allow_partial_manifest' src/python/assemble_occlusion_catalog.py
+CONFIG KEY: occlusion_lockstep.allow_degraded = False
+CONFIG KEY: allow_partial_manifest = ABSENT (not a config key anywhere in config/pipeline.yaml)
+345:    allow_partial_manifest: bool = False,
+415:            if orphaned and not allow_partial_manifest:
+--- exit: 0
+
+##### L-11 | BLOCKER-1: --ld-file {input.ld_matrix} PRESENT in finemap.smk. FILE-WIDE PRESENCE ONLY (rcw B-LOW-3 label): proves the token occurs once in the FILE, not that it sits inside run_finemap's shell:; the SCOPED proof is L-13's test_run_finemap_shell_passes_the_declared_ld_matrix
+$ grep -c -- '--ld-file {input.ld_matrix}' src/snakemake/rules/finemap.smk
+1
+--- exit: 0
+
+##### L-12 | BLOCKER-1 guard rail: the params.region_id line survives character-for-character
+$ grep -cF 'region_id=lambda wildcards: REGION_SAFE_TO_ID[wildcards.region],' src/snakemake/rules/finemap.smk
+1
+--- exit: 0
+
+##### L-13 | BLOCKER-1 acceptance suite: test_ld_read_path.py, the four BEHAVIOURAL tests must RUN not skip
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3/test_ld_read_path.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python
+cachedir: .pytest_cache
+rootdir: /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
+collecting ... collected 8 items
+
+tests/m3/test_ld_read_path.py::test_run_finemap_shell_passes_the_declared_ld_matrix PASSED [ 12%]
+tests/m3/test_ld_read_path.py::test_ld_file_option_is_declared PASSED    [ 25%]
+tests/m3/test_ld_read_path.py::test_loader_opens_the_declared_file_not_the_reconstructed_path PASSED [ 37%]
+tests/m3/test_ld_read_path.py::test_absent_ld_file_still_reconstructs_from_ld_dir PASSED [ 50%]
+tests/m3/test_ld_read_path.py::test_ld_file_works_when_ld_dir_is_absent PASSED [ 62%]
+tests/m3/test_ld_read_path.py::test_both_absent_returns_the_byte_identical_legacy_status PASSED [ 75%]
+tests/m3/test_ld_read_path.py::test_path2_ld_overlap_zero_fallback_is_observable_and_read PASSED [ 87%]
+tests/m3/test_ld_read_path.py::test_declared_and_opened_paths_are_both_recorded_in_the_output_json PASSED [100%]
+
+============================== 8 passed in 14.42s ==============================
+--- exit: 0
+
+##### L-14 | BLOCKER-A production-threshold suite: test_ld_declared_authoritative.py (expect 0 skipped)
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3/test_ld_declared_authoritative.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python
+cachedir: .pytest_cache
+rootdir: /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis
+collecting ... collected 22 items
+
+tests/m3/test_ld_declared_authoritative.py::test_assert_stops_on_every_rejection_reason[unreadable-0-0] PASSED [  4%]
+tests/m3/test_ld_declared_authoritative.py::test_assert_stops_on_every_rejection_reason[no_matrix-0-0] PASSED [  9%]
+tests/m3/test_ld_declared_authoritative.py::test_assert_stops_on_every_rejection_reason[use_identity-0-0] PASSED [ 13%]
+tests/m3/test_ld_declared_authoritative.py::test_assert_stops_on_every_rejection_reason[overlap_below_min_use-3-0.01] PASSED [ 18%]
+tests/m3/test_ld_declared_authoritative.py::test_assert_is_silent_on_an_accepted_result PASSED [ 22%]
+tests/m3/test_ld_declared_authoritative.py::test_assert_does_not_false_trip_on_legitimate_results PASSED [ 27%]
+tests/m3/test_ld_declared_authoritative.py::test_assert_does_fire_on_the_one_case_that_should PASSED [ 31%]
+tests/m3/test_ld_declared_authoritative.py::test_main_script_calls_the_assert_after_the_retry_loop PASSED [ 36%]
+tests/m3/test_ld_declared_authoritative.py::test_end_to_end_declared_rejection_aborts_the_region PASSED [ 40%]
+tests/m3/test_ld_declared_authoritative.py::test_end_to_end_eur_ignores_the_declared_panel_and_afr_opens_it PASSED [ 45%]
+tests/m3/test_ld_declared_authoritative.py::test_end_to_end_absent_declared_panel_does_not_abort_the_region PASSED [ 50%]
+tests/m3/test_ld_declared_authoritative.py::test_thresholds_under_test_are_the_production_thresholds PASSED [ 54%]
+tests/m3/test_ld_declared_authoritative.py::test_declared_panel_is_not_abandoned_for_a_dir_candidate PASSED [ 59%]
+tests/m3/test_ld_declared_authoritative.py::test_negative_control_pre_change_loader_substitutes_the_dir_panel PASSED [ 63%]
+tests/m3/test_ld_declared_authoritative.py::test_best_partial_keeps_the_best_overlap_not_the_last PASSED [ 68%]
+tests/m3/test_ld_declared_authoritative.py::test_negative_control_pre_change_best_partial_takes_the_last PASSED [ 72%]
+tests/m3/test_ld_declared_authoritative.py::test_declared_use_identity_is_not_silently_honoured PASSED [ 77%]
+tests/m3/test_ld_declared_authoritative.py::test_corrupt_declared_panel_is_not_silence PASSED [ 81%]
+tests/m3/test_ld_declared_authoritative.py::test_declared_below_min_use_is_a_rejection_not_an_identity_fallback PASSED [ 86%]
+tests/m3/test_ld_declared_authoritative.py::test_declared_absent_still_returns_the_legacy_guard PASSED [ 90%]
+tests/m3/test_ld_declared_authoritative.py::test_authoritative_false_is_byte_identical_to_3f431ab PASSED [ 95%]
+tests/m3/test_ld_declared_authoritative.py::test_negative_control_pre_change_loader_moves_eur PASSED [100%]
+
+============================= 22 passed in 59.96s ==============================
+--- exit: 0
+
+##### L-15 | data: data/processed/ld_reference is absent pre-fire (resolve_ld_path would RAISE)
+$ test ! -e data/processed/ld_reference && echo ABSENT
+ABSENT
+--- exit: 0
+
+##### L-16 | data: banked AFR .npz on the NC-State side -- run WITHOUT 2>/dev/null blindness (rcw B-LOW-4): test -d FIRST so a 0 is disambiguated (dir-absent vs dir-empty)
+$ test -d data/interim/aou_ld_exports/AFR_aou; echo dir_exists=$?; ls data/interim/aou_ld_exports/AFR_aou/*.npz | wc -l
+dir_exists=1
+ls: cannot access 'data/interim/aou_ld_exports/AFR_aou/*.npz': No such file or directory
+0
+--- exit: 0
+
+##### L-17 | manifest: region ids in config/ld_regions.tsv, read BY HEADER NAME, scoped and arithmetically reconciled
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c 'import csv, collections
+rows=list(csv.DictReader(open("config/ld_regions.tsv"), delimiter="\t"))
+ids=[r["region_id"] for r in rows]
+uniq=sorted(set(ids))
+sub=[i for i in uniq if "__sub" in i]
+whole=[i for i in uniq if "__sub" not in i]
+print("scope: config/ld_regions.tsv, all rows, region_id column read by header name")
+print("data_rows                =", len(rows))
+print("unique_region_id         =", len(uniq))
+print("unique_with___sub        =", len(sub))
+print("unique_whole (no __sub)  =", len(whole))
+print("arithmetic check         :", len(whole), "+", len(sub), "=", len(whole)+len(sub), "==", len(uniq), bool(len(whole)+len(sub)==len(uniq)))
+print("ancestry column tally    =", dict(collections.Counter(r["ancestry"] for r in rows)))
+print("unique region_id per ancestry =", {a: len({r["region_id"] for r in rows if r["ancestry"]==a}) for a in sorted({r["ancestry"] for r in rows})})'
+scope: config/ld_regions.tsv, all rows, region_id column read by header name
+data_rows                = 552
+unique_region_id         = 276
+unique_with___sub        = 123
+unique_whole (no __sub)  = 153
+arithmetic check         : 153 + 123 = 276 == 276 True
+ancestry column tally    = {'AFR': 276, 'EUR': 276}
+unique region_id per ancestry = {'AFR': 276, 'EUR': 276}
+--- exit: 0
+
+##### L-18 | crosswalk: Layer-A curated -> m2 region map, row count and the two anchor rows
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -c 'import csv
+rows=list(csv.DictReader(open("config/curated_to_m2_region_map.tsv"), delimiter="\t"))
+print("data_rows =", len(rows))
+for r in rows:
+    if r["region_safe"] in ("SH2B3_12q24","BMI_Xq24"):
+        print(r["region_safe"], "-> m2_region_id=", repr(r["m2_region_id"]), " status=", repr(r["status"]), " overlap_frac=", repr(r["overlap_frac"]))
+print("status tally =", {s: sum(1 for r in rows if r["status"]==s) for s in sorted({r["status"] for r in rows})})'
+data_rows = 12
+BMI_Xq24 -> m2_region_id= ''  status= 'unmapped'  overlap_frac= '0.000000'
+SH2B3_12q24 -> m2_region_id= 'm2_region_00040__sub14'  status= 'contained'  overlap_frac= '1.000000'
+status tally = {'contained': 11, 'unmapped': 1}
+--- exit: 0
+
+##### L-19 | validation: the pre-registered 4-check protocol has produced zero artifacts
+$ find .planning/phases/m3-aou-afr-ld-panel-build/validation -type f ! -name .gitkeep | wc -l
+0
+--- exit: 0
+
+##### L-20 | hygiene: restore the known-jitter benchmark file, then prove the evidence run left ZERO source drift
+$ git checkout -- tests/m3/sparse_parent_benchmark.tsv 2>/dev/null; git status --porcelain -- src tests config Snakefile
+--- exit: 0
+
+##### CONTEXT-P3a-1 | PRE-FIRE 3 facts re-anchored at THIS HEAD: the oracle constant + its 0-based note (do not trust cited lines)
+$ grep -n '_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES' tests/m3/test_occlusion_span_filter.py
+186:_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES: set[int] = {10328, 44784, 46714, 59097, 66730}
+507:            f"occluded_row_indices={sorted(_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES)} "
+521:    assert got_row_indices == _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES
+--- exit: 0
+
+##### CONTEXT-P3a-2 | the 0-based note, in place
+$ grep -n '0-based is assumed' tests/m3/test_occlusion_span_filter.py
+182:# the equality — the source doc does not state the base explicitly. 0-based is assumed
+--- exit: 0
+
+##### CONTEXT-P3a-3 | the gated test computes ITS side with enumerate(rows) -- same 0-based space as the oracle
+$ grep -n 'enumerate(rows)' tests/m3/test_occlusion_span_filter.py; grep -n 'def test_region1_real_window_known_answer_gated' tests/m3/test_occlusion_span_filter.py
+183:# here (the natural `enumerate(rows)` index). If the real `.bim` shows 1-based, add 1.
+520:    got_row_indices = {i for i, r in enumerate(rows) if r[1] in occluded_set}
+492:def test_region1_real_window_known_answer_gated():
+--- exit: 0
+
+##### CONTEXT-P3a-4 | the gated test's SKIP message, verbatim (proves the gate + the held oracle)
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_known_answer_gated" -rs -q
+s                                                                        [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/m3/test_occlusion_span_filter.py:504: GATED real-`.bim` validation: no AoU perimeter access this phase (/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/data/aou/region1_window.bim absent). SETTLED oracle held for the gated run — occluded_row_indices=[10328, 44784, 46714, 59097, 66730] (0-based; confirm origin vs the real .bim header), ref_span_inventory=[60, 29, 7, 31, 31, 17, 29] bp, same_position=0.
+1 skipped in 0.09s
+--- exit: 0
+
+##### CONTEXT-P3b-1 | provenance trace of the oracle constant: the index-adjacency language in the source doc (.planning/amendments -- READ ONLY, untouched)
+$ grep -n 'index-adjacent\|chains two pairs' .planning/amendments/m3_nan_conditioning_scientific_review.md
+41:- pairs are **index-adjacent** (10327/10328, 46713/46714/46715, …);
+43:- one variant (46714) **chains two pairs** — a run of co-located records.
+--- exit: 0
+
+##### CONTEXT-P3b-2 | the full source sentences, verbatim (doc lines 41-45)
+$ sed -n '41,45p' .planning/amendments/m3_nan_conditioning_scientific_review.md
+- pairs are **index-adjacent** (10327/10328, 46713/46714/46715, …);
+- within **8–52 bp** (five bp clusters; spans 52/13/8/14/28 bp, median 14 bp);
+- one variant (46714) **chains two pairs** — a run of co-located records.
+
+Index-adjacency is the strong signal here (consecutive `.bim` records); the bp spans are
+--- exit: 0
+
+##### CONTEXT-P3b-VERDICT | which base does the source doc fix?
+The source doc (.planning/amendments/m3_nan_conditioning_scientific_review.md) says:
+"pairs are index-adjacent (10327/10328, 46713/46714/46715, ...)"; "one variant (46714)
+chains two pairs -- a run of co-located records"; "Index-adjacency is the strong signal
+here (consecutive .bim records)". VERDICT: the base is UNRECOVERABLE from the doc.
+Adjacency language is BASE-INVARIANT -- a uniform +1/-1 shift of every index preserves
+"index-adjacent", "consecutive", and "chains two pairs" exactly, so nothing in the doc
+distinguishes 0-based from 1-based. No certainty is manufactured that the doc does not
+contain. The gated test's loud-fail property (CONTEXT-P3c) is therefore the decision
+instrument, exactly as the test file's own note anticipates (:180-183).
+
+##### CONTEXT-P3c | the origin-safety argument, stated as measured
+The gated test test_region1_real_window_known_answer_gated (:492) computes BOTH sides
+of its equality in the SAME 0-based space:
+  * the oracle side: _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES (:186), documented
+    0-based (:182-183 note);
+  * the measured side: got_row_indices = {i for i, r in enumerate(rows) if r[1] in
+    occluded_set} (:520) -- Python enumerate() is 0-based by construction.
+Therefore a mis-based oracle CANNOT false-pass: if the true convention were 1-based,
+every element of the oracle set would sit exactly one row off the enumerate() indices,
+the set equality at :521 would fail LOUDLY with a uniformly +/-1-shifted observed set,
+and the failure mode is diagnosable at a glance (the interpretation table in
+260812-ox1-READY-TO-FIRE.md names it). The review's §4-row-4 off-by-one risk ("an
+off-by-one validates the wrong rows and would look like a pass") belongs ONLY to a
+MANUAL line-number comparison against the real .bim (line numbers are 1-based in every
+editor/awk/sed surface, the oracle is 0-based) -- which is why the runbook FORBIDS
+manual comparison and names the gated test as the ONLY instrument. PRE-FIRE 3 is
+thereby settled code-side: Carter's sole in-perimeter action is to place the real
+region-1 window .bim at data/aou/region1_window.bim and run the gated test by name.
+
+##### CONTEXT-RED-0 | Task-1 TDD: the FIRST RED run and the (c)-recipe deviation it exposed
+The five tests were written BEFORE any src change. The first RED run (same -k command
+as CONTEXT-RED below) observed (a)/(b)/(c) FAIL and (d)/(e) PASS -- but (c) failed on
+its FIRST assertion: the plan's corrupt_regions={"m2_region_00001"} recipe produced
+  status == "error: square LD diagonal is not ~1.0 for .../m2_region_00001.ld.bin; ..."
+NOT "verify_failed": the FROZEN reader in plink_ld_to_npz raises on the corrupt
+matrix's defect classes (NaN/diagonal/symmetry) BEFORE content_verify_npz ever runs
+(which is also why the pre-existing test_one_bad_region_does_not_abort_loop accepts
+EITHER status). Deviation [Rule 3 - blocking]: test (c) was corrected to force
+verify_failed at the driver's OWN verify seam (monkeypatch drv.content_verify_npz to
+return (False, ...)), which drives the exact status="verify_failed" stamp and the
+`if ok:` upload gate the must-have truth pins -- with a real converted .npz in
+scratch. No upload assertion was weakened. The definitive RED was then re-observed:
+
+##### CONTEXT-RED | Task-1 definitive RED run (pre-implementation), verbatim
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3/test_run_native_ld_panel.py -k per_region_occlusion_manifest -q
+FFF..                                                                    [100%]
+=================================== FAILURES ===================================
+______ test_gs_per_region_occlusion_manifest_uploaded_for_occluded_region ______
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2879891110>
+
+    def test_gs_per_region_occlusion_manifest_uploaded_for_occluded_region(tmp_path, monkeypatch):
+        """(a) gs:// mode, region WITH occlusions: {region_id}.occlusion_manifest.tsv
+        is uploaded alongside the excludelist, and the uploaded BYTES are exactly the
+        Stage-A records (header == STAGE_A_COLUMNS in order; 5 data rows carrying the
+        5 occluded variant ids under m2_region_00001). The byte-level content
+        assertion is the stricter direct assertion that pays for widening the upload
+        set (AUTH-o7o-01 precedent)."""
+        import occlusion_manifest as ocm
+    
+        bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+        manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+        gs_out = "gs://test-bucket/ld/AFR_aou"
+    
+        monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+        mock_gs = _MockGsutil()
+        monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    
+        res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                      scratch_dir=tmp_path / "scratch")
+        assert res[0]["status"] == "ok"
+    
+        cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+        manifest_uri = f"{gs_out}/m2_region_00001.occlusion_manifest.tsv"
+>       assert manifest_uri in cp_dsts, "per-region occlusion manifest was not uploaded"
+E       AssertionError: per-region occlusion manifest was not uploaded
+E       assert 'gs://test-bucket/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv' in ['gs://test-bucket/ld/AFR_aou/m2_region_00001.npz', 'gs://test-bucket/ld/AFR_aou/m2_region_00001.occluded.excludelist', 'gs://test-bucket/ld/AFR_aou/m3-W2-native-plink-panel.tsv']
+
+tests/m3/test_run_native_ld_panel.py:1921: AssertionError
+----------------------------- Captured stdout call -----------------------------
+WARNING: no --allele-freq sidecar for region 'm2_region_00001'; writing all-NaN AF. Supply the per-region .afreq sidecar to carry allele frequencies into obj$variants$AF.
+WROTE /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m0/scratch/m2_region_00001.npz (mode=square, 6 x 6, lower_triangular=False)
+----------------------------- Captured stderr call -----------------------------
+region m2_region_00001: EXCLUDING 5 reference-occluded variant(s) before --r (11 in-window; overlapping-deletion REF span -> structurally undefined LD; excluded in lockstep with provenance, never zeroed — osf.io/az52u)
+_______ test_gs_per_region_occlusion_manifest_only_for_occluded_regions ________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2879e3b650>
+
+    def test_gs_per_region_occlusion_manifest_only_for_occluded_regions(tmp_path, monkeypatch):
+        """(b) One region WITH occlusions + one with ZERO occlusions against ONE
+        shared _MockGsutil bucket (two driver calls — a single mixed bfile is
+        impractical): the occluded region's manifest IS uploaded; the clean region
+        uploads NO manifest and raises NO error (absent => skipped, never an
+        error); both regions finish status == "ok"."""
+        gs_out = "gs://test-bucket/ld/AFR_aou"
+        mock_gs = _MockGsutil()  # ONE shared bucket across both runs
+        monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    
+        # run 1: region-1 topology (5 occluded)
+        r1_dir = tmp_path / "r1"
+        r1_dir.mkdir()
+        bfile1, bim1, (chrom1, from1, to1), occluded_ids, _ = _setup_region1_cohort(r1_dir)
+        man1 = _region1_manifest(r1_dir / "regions.tsv", chrom1, from1, to1)
+        monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim1, nan_snps=occluded_ids))
+        res1 = drv.run_native_ld_panel(man1, bfile1, gs_out, mode="square",
+                                       scratch_dir=tmp_path / "s1")
+    
+        # run 2: zero-occlusion cohort (plain SNPs, no deletions)
+        c_dir = tmp_path / "clean"
+        c_dir.mkdir()
+        bfile2, bim2, (chrom2, from2, to2) = _setup_cohort(c_dir)
+        man2 = c_dir / "regions.tsv"
+        _write_manifest(man2, [
+            {"region_id": "m2_region_00002", "chr": chrom2, "ancestry": "AFR",
+             "window_start_grch38": from2, "window_end_grch38": to2},
+        ])
+        monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim2))
+        res2 = drv.run_native_ld_panel(man2, bfile2, gs_out, mode="square",
+                                       scratch_dir=tmp_path / "s2")
+    
+        assert res1[0]["status"] == "ok"
+        assert res2[0]["status"] == "ok"  # zero occlusions is NOT an error
+        cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+>       assert f"{gs_out}/m2_region_00001.occlusion_manifest.tsv" in cp_dsts
+E       AssertionError: assert 'gs://test-bucket/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv' in ['gs://test-bucket/ld/AFR_aou/m2_region_00001.npz', 'gs://test-bucket/ld/AFR_aou/m2_region_00001.occluded.excludelist'...s_per_region_occlusion_m1/s2/m3-W2-native-plink-panel.tsv', 'gs://test-bucket/ld/AFR_aou/m3-W2-native-plink-panel.tsv']
+
+tests/m3/test_run_native_ld_panel.py:1973: AssertionError
+----------------------------- Captured stdout call -----------------------------
+WARNING: no --allele-freq sidecar for region 'm2_region_00001'; writing all-NaN AF. Supply the per-region .afreq sidecar to carry allele frequencies into obj$variants$AF.
+WROTE /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m1/s1/m2_region_00001.npz (mode=square, 6 x 6, lower_triangular=False)
+WARNING: no --allele-freq sidecar for region 'm2_region_00002'; writing all-NaN AF. Supply the per-region .afreq sidecar to carry allele frequencies into obj$variants$AF.
+WROTE /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m1/s2/m2_region_00002.npz (mode=square, 20 x 20, lower_triangular=False)
+----------------------------- Captured stderr call -----------------------------
+region m2_region_00001: EXCLUDING 5 reference-occluded variant(s) before --r (11 in-window; overlapping-deletion REF span -> structurally undefined LD; excluded in lockstep with provenance, never zeroed — osf.io/az52u)
+____ test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed _____
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f287987d5d0>
+
+    def test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed(tmp_path, monkeypatch):
+        """(c) verify_failed region: NO REGION ARTIFACT is uploaded — the per-region
+        manifest (written pre-plink, so it EXISTS in local scratch) stays gated
+        inside `if ok:` together with the .npz/.afreq/.occluded.excludelist.
+    
+        WHY a panel-TSV cp IS still expected here (do NOT assert zero cp calls —
+        that is unsatisfiable): ``append_panel_row`` runs UNCONDITIONALLY after the
+        per-region try/except (~:947 at authoring time — for ok / verify_failed /
+        error alike), and in gs mode the default panel TSV URI
+        (``_gs_join(gs_out_dir, _DEFAULT_PANEL_NAME)``, ~:734) is uploaded via cp at
+        the tail of append_panel_row's gs branch. This is the fire-path-faithful
+        default panel behavior the review §4 row 3 documents ("prior fires appended
+        status=error rows unconditionally"). The panel-TSV status row is therefore
+        the ONLY permitted cp destination on a verify_failed region.
+    
+        HOW verify_failed is forced (measured, 260812-ox1 RED run): a corrupt
+        ``.ld.bin`` (``corrupt_regions``) CANNOT reach this state — the FROZEN
+        reader in plink_ld_to_npz raises on the same defect classes
+        (NaN/diagonal/symmetry) BEFORE content_verify_npz runs, yielding
+        ``status == "error: ..."`` (which is why test_one_bad_region_does_not_abort_loop
+        accepts either status). The authentic route is the driver's OWN verify seam:
+        patch ``drv.content_verify_npz`` to return (False, ...), which drives the
+        exact ``status = "verify_failed"`` stamp and the ``if ok:`` upload gate this
+        test pins — with a real converted .npz in scratch."""
+        bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+        manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+        gs_out = "gs://test-bucket/ld/AFR_aou"
+        scratch = tmp_path / "scratch"
+    
+        monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+        monkeypatch.setattr(
+            drv, "content_verify_npz",
+            lambda npz_path, *, mode="square": (False, "forced verify failure (test seam)"),
+        )
+        mock_gs = _MockGsutil()
+        monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    
+        res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                      scratch_dir=scratch)
+        assert res[0]["status"] == "verify_failed"
+    
+        # the per-region manifest WAS written to local scratch (pre-plink) and
+        # survives (no reclaim on verify_failed) ...
+>       assert (scratch / "m2_region_00001.occlusion_manifest.tsv").is_file()
+E       AssertionError: assert False
+E        +  where False = is_file()
+E        +    where is_file = (PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m2/scratch') / 'm2_region_00001.occlusion_manifest.tsv').is_file
+
+tests/m3/test_run_native_ld_panel.py:2021: AssertionError
+----------------------------- Captured stdout call -----------------------------
+WARNING: no --allele-freq sidecar for region 'm2_region_00001'; writing all-NaN AF. Supply the per-region .afreq sidecar to carry allele frequencies into obj$variants$AF.
+WROTE /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-788/test_gs_per_region_occlusion_m2/scratch/m2_region_00001.npz (mode=square, 6 x 6, lower_triangular=False)
+----------------------------- Captured stderr call -----------------------------
+region m2_region_00001: EXCLUDING 5 reference-occluded variant(s) before --r (11 in-window; overlapping-deletion REF span -> structurally undefined LD; excluded in lockstep with provenance, never zeroed — osf.io/az52u)
+VERIFY-FAILED m2_region_00001: forced verify failure (test seam)
+=========================== short test summary info ============================
+FAILED tests/m3/test_run_native_ld_panel.py::test_gs_per_region_occlusion_manifest_uploaded_for_occluded_region
+FAILED tests/m3/test_run_native_ld_panel.py::test_gs_per_region_occlusion_manifest_only_for_occluded_regions
+FAILED tests/m3/test_run_native_ld_panel.py::test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed
+3 failed, 2 passed, 58 deselected in 1.22s
+--- exit: 1 (3 failed = the three NEW-behavior tests; 2 passed = the contract/unchanged pins (d)/(e))
+
+##### CONTEXT-MUT-D | failability proof for (d): deliberate one-edit mutation (positive fnmatch given the wrong name), observed FAIL, then REVERTED
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3/test_run_native_ld_panel.py::test_per_region_occlusion_manifest_name_matches_lockstep_glob -q   # with the mutation in place
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_per_region_occlusion_manifest_name_matches_lockstep_glob _________
+
+    def test_per_region_occlusion_manifest_name_matches_lockstep_glob():
+        """(d) Contract: the per-region filename {region_id}.occlusion_manifest.tsv
+        matches the aggregation glob literals read out of
+        src/snakemake/rules/m3_occlusion_lockstep.smk SOURCE TEXT (not restated
+        here). Fails loudly if the literals move. In-test NEGATIVE control: a name
+        that must NOT match asserts False, so the fnmatch is not vacuous."""
+        import fnmatch
+        import re
+    
+        smk = PROJECT_ROOT / "src" / "snakemake" / "rules" / "m3_occlusion_lockstep.smk"
+        src = smk.read_text()
+        pats = [m for m in re.findall(r'"([^"\n]+)"', src)
+                if "occlusion_manifest" in m and "*" in m]
+        assert pats, (
+            "no *occlusion_manifest*.tsv glob literal found in "
+            "m3_occlusion_lockstep.smk — the aggregation contract moved; re-anchor"
+        )
+        for pat in pats:
+>           assert fnmatch.fnmatch("m2_region_00001.occl.tsv", pat), pat  # MUTATION: wrong name
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: *occlusion_manifest*.tsv
+E           assert False
+E            +  where False = <function fnmatch at 0x7fbd189faac0>('m2_region_00001.occl.tsv', '*occlusion_manifest*.tsv')
+E            +    where <function fnmatch at 0x7fbd189faac0> = <module 'fnmatch' from '/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/lib/python3.11/fnmatch.py'>.fnmatch
+
+tests/m3/test_run_native_ld_panel.py:2053: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_run_native_ld_panel.py::test_per_region_occlusion_manifest_name_matches_lockstep_glob
+1 failed in 0.55s
+--- exit: 1 (the mutation was then REVERTED; __pycache__ cleared against the same-second .pyc staleness trap)
+
+##### CONTEXT-MUT-E | failability proof for (e): deliberate one-edit mutation (expected bytes perturbed by +1 byte), observed FAIL, then REVERTED
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3/test_run_native_ld_panel.py::test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchanged -q   # with the mutation in place
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchanged _
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-789/test_per_region_occlusion_mani0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f81d20612d0>
+
+    def test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchanged(tmp_path, monkeypatch):
+        """(e) LOCAL (non-gs) mode: the SHARED {out_dir}/occlusion_manifest.tsv is
+        byte-identical to an INDEPENDENTLY constructed expectation
+        (ocm.build_region_records + ocm.append_region_manifest onto a separate tmp
+        path) — the per-region addition must not perturb the existing shared append.
+        The expectation is asserted non-empty (5 records) so the byte comparison
+        cannot pass vacuously."""
+        import occlusion_manifest as ocm
+    
+        bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+        manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+        out_dir = tmp_path / "out"
+    
+        monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+        res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+        assert res[0]["status"] == "ok"
+    
+        # independently construct the expected shared-manifest bytes from the same
+        # in-window rows the driver saw (chr match + from_bp <= bp <= to_bp)
+        raw_rows = [
+            ln.split()[:6]
+            for ln in bim.read_text().splitlines()
+            if ln.strip()
+            and str(ln.split()[0]) == str(chrom)
+            and from_bp <= int(ln.split()[3]) <= to_bp
+        ]
+        records = ocm.build_region_records("m2_region_00001", raw_rows)
+        assert len(records) == 5  # non-vacuous: the expectation carries the 5 drops
+        expected = tmp_path / "expected_manifest.tsv"
+        ocm.append_region_manifest(expected, records)
+        expected.write_bytes(expected.read_bytes() + b"X")  # MUTATION: perturb expected bytes
+    
+        shared = out_dir / "occlusion_manifest.tsv"
+        assert shared.is_file()
+>       assert shared.read_bytes() == expected.read_bytes()
+E       AssertionError: assert b'region_id\t...-LD\tdirect\n' == b'region_id\t...LD\tdirect\nX'
+E         
+E         Use -v to get more diff
+
+tests/m3/test_run_native_ld_panel.py:2092: AssertionError
+----------------------------- Captured stdout call -----------------------------
+WARNING: no --allele-freq sidecar for region 'm2_region_00001'; writing all-NaN AF. Supply the per-region .afreq sidecar to carry allele frequencies into obj$variants$AF.
+WROTE /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-789/test_per_region_occlusion_mani0/out/m2_region_00001.npz (mode=square, 6 x 6, lower_triangular=False)
+----------------------------- Captured stderr call -----------------------------
+region m2_region_00001: EXCLUDING 5 reference-occluded variant(s) before --r (11 in-window; overlapping-deletion REF span -> structurally undefined LD; excluded in lockstep with provenance, never zeroed — osf.io/az52u)
+=========================== short test summary info ============================
+FAILED tests/m3/test_run_native_ld_panel.py::test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchanged
+1 failed in 0.64s
+--- exit: 1 (the mutation was then REVERTED; __pycache__ cleared against the same-second .pyc staleness trap)
+
+##### CONTEXT-MUT-REVERTED | (d) and (e) green again after both reverts, pre-implementation
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest "tests/m3/test_run_native_ld_panel.py::test_per_region_occlusion_manifest_name_matches_lockstep_glob" "tests/m3/test_run_native_ld_panel.py::test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchanged" -q
+..                                                                       [100%]
+2 passed in 0.88s
+--- exit: 0
+
+##### CONTEXT-GREEN | Task-1 GREEN run (post-implementation), verbatim
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3/test_run_native_ld_panel.py -k per_region_occlusion_manifest -q
+.....                                                                    [100%]
+5 passed, 58 deselected in 1.09s
+--- exit: 0
+
+##### CONTEXT-GREEN-CONTAINMENT | whole test file green (no existing gs/local/occlusion test regressed)
+$ /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3/test_run_native_ld_panel.py -q
+...............................................................          [100%]
+63 passed in 1.18s
+--- exit: 0
+
+##### CONTEXT-ZP | zero-perimeter proof: real perimeter-tool invocations recorded as command lines in THIS log
+Command (run over this log after every block above was appended; shown INDENTED, not
+as a "$ "-prefixed line, so the proof cannot poison its own count -- the rcw log uses
+the same discipline):
+  grep -cE '^\$ .*(gsutil|gcloud|bq |wb )' 260812-ox1-evidence.log
+result: 0
+Zero perimeter contact across the whole quick task: no gsutil, no gcloud, no bq, no
+wb -- not even read-only. The only "gsutil" anywhere in this task is the _MockGsutil
+in-memory harness inside pytest. $0 spent; nothing fired; nothing started.
