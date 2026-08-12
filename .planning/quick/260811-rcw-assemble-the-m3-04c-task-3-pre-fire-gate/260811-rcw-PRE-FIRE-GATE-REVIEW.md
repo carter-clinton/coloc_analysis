@@ -59,9 +59,9 @@ and its date, or the check id measured today.
 | **BLOCKER-D** — `.npz`→`.rds` converter sizing | ◐ **PARTIAL — and this is the item that bounds what the money buys.** Only SH2B3 `__sub14` (22.8 GB) is convertible, on a big-memory node; MC4R (67.3 GB) and FTO/HLA (~553 GB) **fail fast** at the ceiling instead of OOM-killing | HANDOFF `gates.blocker_d_converter_oom` + `resume_on_reconnect` #3 (2026-08-07); ceiling re-read today: `L-09` `m3_convert_max_n_var = 120000` | A **sparse `.npz`** — i.e. a producer-side change to a frozen file (`plink_ld_to_npz.py`), which is exactly why it is not closed. See §6 |
 | **Occlusion catalog refusal gate 1** — `allow_partial_manifest` | ✅ **ARMED, default-refuse.** **Not a config key at all**; the default is in code | `L-10`: absent from `config/pipeline.yaml`; code default `src/python/assemble_occlusion_catalog.py:345` `allow_partial_manifest: bool = False`; the GATE-1 raise at `:415` | Passing `--allow-partial-manifest` / `allow_partial_manifest=True` at STEP E |
 | **Occlusion catalog refusal gate 2** — `allow_degraded` | ✅ **ARMED, default-refuse.** `occlusion_lockstep.allow_degraded = False` | `L-10` (measured 2026-08-11; the key is at `config/pipeline.yaml:295`, **not** the `:266` the m3-04c PLAN cites — see §2.1(7)); raise at `assemble_occlusion_catalog.py:460` | The PRE-FIRE 1b branch (iii) decision, which sets it `true` **in the same act** as a dated non-publication note |
-| **Egress classification** (skill GATE 0) | ✅ **RULED PASS 2026-04-28** — institutional basis; aggregate stats over n≥60k AFR clear the n≥20 floor → standard per-file egress review at export time, not a per-data-class letter | `.claude/skills/aou-ld-pipeline/SKILL.md` §Wave 2 gate sequence; `.planning/amendments/aou-egress-audit-log.md` | Nothing pending. **This row survives the skill's staleness — see §2.1(3)** |
-| **CDR pin + cost/credit** (skill GATE 1) | ✅ **CLEARED 2026-06-12** (CDR v8) | same record | A CDR version change; `_resolve_aux_base` makes v8→v9 a no-op for path resolution |
-| **Cohort rebuild** (skill GATE 1.5) | ✅ **DONE + verified** (3 MTs, `cohort_summary` 3 rows) | same record | Deleting the AoU VM or the cohort MTs |
+| **Egress classification** (skill GATE 0) | ✅ **RULED PASS 2026-04-28** — institutional basis; aggregate stats over n≥60k AFR clear the n≥20 floor → standard per-file egress review at export time, not a per-data-class letter. ⚠ **LAST-KNOWN (dated record; not re-verifiable from NC State)** | `.claude/skills/aou-ld-pipeline/SKILL.md` §Wave 2 gate sequence; `.planning/amendments/aou-egress-audit-log.md` | Nothing pending. **This row survives the skill's staleness — see §2.1(3)**. **Fire-time re-verification NOT required:** it is an institutional ruling on a data class, not a mutable resource; nothing a fire does can change it, and STEP D re-enters per-file egress review anyway |
+| **CDR pin + cost/credit** (skill GATE 1) | ✅ **CLEARED 2026-06-12** (CDR v8). ⚠ **LAST-KNOWN (dated record; not re-verifiable from NC State)** | same record | A CDR version change; `_resolve_aux_base` makes v8→v9 a no-op for path resolution. **Fire-time re-verification NOT required** for path resolution for that reason; the **cost/credit half is a live balance** and Carter should eyeball it in the Workbench billing panel before a $385–1,084 commit |
+| **Cohort rebuild** (skill GATE 1.5) | ✅ **DONE + verified** (3 MTs, `cohort_summary` 3 rows). ⚠ **LAST-KNOWN (dated record; not re-verifiable from NC State)** | same record | Deleting the AoU VM or the cohort MTs. ⚠ **THIS ONE DOES NEED A GATE-TIME RECHECK** — the MTs are mutable perimeter state and the fire reads them. See the new §4 row 5 (added 2026-08-12, B-MEDIUM-4) |
 | **Pre-registered 4-check validation protocol** | ⛔ **NEVER RUN.** Zero artifacts in all four `validation/check_*/` dirs. Check 2 was **REDEFINED** under an operator override | `L-19` = 0 (measured 2026-08-11); HANDOFF `gates.validation_4check`; `gates.osf_pre_registration` | Running it post-fire — and, for citation, the OSF amendment-update at STEP F |
 | **Stale `gs://` panel TSV** (PRE-FIRE 2) | ❓ **PERIMETER-ONLY — UNKNOWN from here** | §4 row 3 | Carter's `gsutil stat` at gate time |
 | **Manifest-egress gap** (PRE-FIRE 1) | ⛔ **OPEN, a Carter decision** — the manifest has no path out of the perimeter | §5 PRE-FIRE 1; m3-04c PLAN :1322-1352 | Landing the per-region manifest upload as its own reviewed quick task, or accepting branch (iii) |
@@ -163,16 +163,49 @@ written down.** The corrections:
 
 | Cited by | Record's line | Measured today at `c4dc410` | Why it matters |
 |---|---|---|---|
-| the SuSiE quality gate `overlap >= MIN_LD_OVERLAP && coverage >= MIN_LD_COVERAGE` | m3-04c PLAN `:184`; blast radius `:216` | **`run_susie_rss.R:500`** (thresholds loaded `:713-716`) | **STEP A sends Carter to read this gate.** Both prior pointers land on unrelated lines |
+| the SuSiE quality gate `overlap >= MIN_LD_OVERLAP && coverage >= MIN_LD_COVERAGE` | m3-04c PLAN `:184`; blast radius `:216` | **`run_susie_rss.R:500`** (thresholds assigned at **`:716-718`**; the policy YAML is read at `:715`) | **STEP A sends Carter to read this gate.** Both prior pointers land on unrelated lines |
 | `provenance_source` assigned as a scalar | m3-04c PLAN `:202` | **`assemble_occlusion_catalog.py:230`** | It is the guarantee that a MIXED provenance stamp is impossible |
-| production varids are `chr:pos:ref:alt` on GRCh38 | m3-04c PLAN `:391-400` | **`run_native_ld_panel.py:507`** | It is what makes the degraded reconstruction recoverable at all |
+| production varids are `chr:pos:ref:alt` on GRCh38 | m3-04c PLAN `:391-400` | **`run_native_ld_panel.py:507` — and that line is INSIDE A DOCSTRING** (the block runs `:498-511`) | It is what makes the degraded reconstruction recoverable at all. ⚠ **There is no code line in that file asserting the format**: `grep -n 'chr:pos:ref:alt' src/python/run_native_ld_panel.py` returns exactly one hit, `:507`, and it is prose. The varids are produced upstream by `hl.export_plink`, so the in-repo statement of this fact is documentation, not an enforced invariant. Cite it that way |
 | the `gs://` upload set | m3-04c PLAN `:922-938` | `:922` (`if ok:`), uploads at **`:925-926`** / **`:929`** / **`:935-937`** | It is the proof the manifest is NOT uploaded |
 | `allow_degraded` config key | m3-04c PLAN `:266` | **`config/pipeline.yaml:295`** | §2.1(7) |
+| **CORRECTED 2026-08-12 (B-LOW-1):** the `occlusion_manifest.tsv` WRITE | **this review's own earlier text: `occlusion_manifest.py:203-208`** | **`append_region_manifest`: the append path is `:195-196` (`with manifest_path.open("a")` → `fresh.to_csv(fh, …, header=False)`); the fresh-file path is `:181` (`new.to_csv(manifest_path, …)`).** `:200-214` is `append_occlusion_rows`, whose `:203` is a keyword-argument default and whose `:204-212` are its DOCSTRING — the earlier `:203-208` pointed at documentation, not at a write | PRE-FIRE 1's whole argument is *"this file is written to local scratch and never uploaded"*. A reader following `:203-208` to check that claim lands in a docstring and cannot confirm it |
+| **CORRECTED 2026-08-12 (B-LOW-1):** the `MIN_LD_*` threshold loads | **this review's own earlier text: `run_susie_rss.R:713-716`** | **`:716-718`** — `MIN_LD_OVERLAP` `:716`, `MIN_LD_COVERAGE` `:717`, `MIN_LD_MIN_USE` `:718`; `:715` is `policy <- yaml::read_yaml(opt$policy)` and `:713-714` are comments | The cited `:713-716` **excluded two of the three thresholds**, including `MIN_LD_COVERAGE`, which is half of the gate STEP A sends Carter to reason about |
 
 → **WINNER: the measured tree at `c4dc410`, in every row.** The underlying FACTS all survived —
 the gate exists, the scalar assignment exists, the varid format is as described, the manifest
 still is not uploaded. **Only the pointers were wrong.** Treat any line number quoted from a
 record older than this review as needing re-anchoring before it is acted on.
+
+**(9) ⚠ ADDED 2026-08-12 (B-MEDIUM-5) — the m3-04c PLAN CONTRADICTS ITSELF on which branch
+admits `provenance_source == excludelist_degraded`, and a post-fire auditor would otherwise meet
+it cold at STEP E.**
+
+* PLAN `:1395` (inside PRE-FIRE 1b) says the acceptance criteria admit
+  `provenance_source == excludelist_degraded` **ONLY under branch (iii)**; under (i)/(ii) it must
+  be `stage_a_manifest`.
+* PLAN `:1508` (inside the Task-3 acceptance criteria) says `excludelist_degraded` **under branch
+  (ii) with `allow_degraded: true` visible in `config/pipeline.yaml`.**
+
+These cannot both be true, and they name different flags. → **WINNER: `:1395`, the branch-(iii)
+reading — because it is the one the CODE implements, re-measured at HEAD 2026-08-12:**
+
+* `assemble_occlusion_catalog.py:230` — `df["provenance_source"] = provenance` is a **scalar**
+  assignment, so a MIXED stamp is impossible by construction.
+* **GATE 1** — `:415` `if orphaned and not allow_partial_manifest:` raising at `:416`. This is
+  the **branch (ii)** state: a NON-EMPTY Stage-A rollup with some regions carrying an excludelist
+  and no manifest. Its remedy flag is **`allow_partial_manifest`**, and the catalog it then emits
+  is still stamped **`stage_a_manifest`** — `excludelist_degraded` is not reachable here.
+* **GATE 2** — `:460` `if not allow_degraded:` raising at `:462`, reached only where
+  `source = PROVENANCE_EXCLUDELIST_DEGRADED` has already been chosen at `:456` because the
+  Stage-A manifests are **absent or empty entirely**. This is **branch (iii)**, and
+  `allow_degraded` is its flag.
+
+**The code-correct reading, to be applied at STEP E:** `excludelist_degraded` + `allow_degraded:
+true` belongs to **branch (iii)** only. Under branch (ii) the correct flag is
+**`allow_partial_manifest`** and the correct stamp remains **`stage_a_manifest`** with
+`n_regions_excludelist_only` reported. **Read PLAN `:1508`'s "(ii)" as a typo for "(iii)"** — do
+not let it license `allow_degraded` for a partial-manifest state, which would discard recoverable
+provenance the OSF amendment-update commits to publishing.
 
 ---
 
@@ -191,14 +224,14 @@ Rendered from `260811-rcw-evidence.tsv`; every command's real output is in
 | `L-06` | `--list`, the MEDIUM-7 substitute | `… snakemake --snakefile Snakefile --list` | exit 0 | exit 0; full rule list — **926** output lines, of which **148** are rule names (the rest are indented docstrings); verbatim in the log | **PASS** |
 | `L-07` | `ld_read_path` as shipped | `python -c '… print(…["ld_read_path"])'` | `enabled/AFR/allele_aware/coloc` all set | `{'enabled': True, 'ancestries': ['AFR'], 'allele_aware': True, 'coloc': True}` | **PASS** |
 | `L-08` | `strict_aou_only` | same load | `False` | `ld_panel.strict_aou_only = False` | **PASS** |
-| `L-09` | BLOCKER-D ceiling | same load | `120000` | `m3_convert_max_n_var = 120000` | **PASS** |
+| `L-09` | BLOCKER-D ceiling — ⚠ **A CONFIG-VALUE READ ONLY** (annotated 2026-08-12, B-LOW-3) | same load | `120000` | `m3_convert_max_n_var = 120000` | **PASS** — ⚠ **this proves the VALUE is shipped, not that anything ENFORCES it.** The fail-fast enforcement lives at `src/snakemake/rules/m3_convert_npz_rds.smk:132` (read) → `:163` (`max_n_var=` param) → `:180` (passed as the R script's 4th argv) and `src/scripts/ld_npz_to_rds.R:272` (`if (n_input > max_n_var) stop(…LD_CONVERT_N_VAR_CEILING…)`). **The L-set does not measure any of that** |
 | `L-10` | both refusal gates | same load + `grep` on the assembler | `allow_degraded False`; `allow_partial_manifest` **absent** ⇒ record the code default | `occlusion_lockstep.allow_degraded = False`; `allow_partial_manifest = ABSENT`; code default `assemble_occlusion_catalog.py:345`; GATE-1 raise `:415` | **PASS** |
-| `L-11` | `--ld-file {input.ld_matrix}` in the rule's `shell:` | `grep -c` on `finemap.smk` | exactly `1` | `1` | **PASS** |
+| `L-11` | `--ld-file {input.ld_matrix}` **somewhere in `finemap.smk`** — ⚠ **A FILE-WIDE GREP, NOT A RULE-SCOPED ONE** (label corrected 2026-08-12, B-LOW-3) | `grep -c` on `finemap.smk` | exactly `1` | `1` | **PASS** — ⚠ the command proves the token occurs **once in the file**; it does **not** prove it sits inside `run_finemap`'s `shell:`. **The SCOPED proof is `L-13`'s `test_run_finemap_shell_passes_the_declared_ld_matrix` (`tests/m3/test_ld_read_path.py:251`)**, which parses the rule. Cite `L-13` for the property; cite `L-11` only for presence |
 | `L-12` | the `params.region_id` guard rail, character-for-character | `grep -cF` on `finemap.smk` | exactly `1` | `1` | **PASS** |
 | `L-13` | DEC-2026-08-05 acceptance suite | `… -m pytest tests/m3/test_ld_read_path.py -v` | 8 P / **0 S**, four behavioural tests RUN | `8 passed in 15.32s`, 0 skipped (roll-call below) | **PASS** |
 | `L-14` | **production-threshold** acceptance suite | `… -m pytest tests/m3/test_ld_declared_authoritative.py -v` | all pass, **0 skipped** | `22 passed in 63.18s`, 0 skipped | **PASS** |
 | `L-15` | `data/processed/ld_reference` | `test ! -e … && echo ABSENT` | `ABSENT` | `ABSENT` | **PASS** |
-| `L-16` | banked AFR `.npz` locally | `ls …/AFR_aou/*.npz \| wc -l` | `0` | `0` | **PASS** |
+| `L-16` | banked AFR `.npz` locally — ⚠ **BLIND TO A MISSING DIRECTORY** (annotated 2026-08-12, B-LOW-4) | `ls data/interim/aou_ld_exports/AFR_aou/*.npz 2>/dev/null \| wc -l` | `0` | `0` | **PASS** — ⚠ **the `2>/dev/null` makes "the directory does not exist" and "the directory exists and is empty" print the SAME `0`.** For a pre-fire row expecting 0 that is harmless; **post-fire it is not** — after STEP D a `0` here could mean the exports landed somewhere else entirely. Re-run it without `2>/dev/null`, or `test -d` first, before reading a post-fire `0` as "nothing banked" |
 | `L-17` | region ids, by header name | `python -c '… csv.DictReader …'` | 276 unique, 123 `__sub` | `552 rows; 276 unique; 123 __sub; 153 whole; 153 + 123 = 276 True; {'AFR': 276, 'EUR': 276}` | **PASS** |
 | `L-18` | curated→M2 crosswalk | `python -c '… csv.DictReader …'` | 12 rows; SH2B3→`__sub14`/contained; `BMI_Xq24` unmapped | `12`; `m2_region_00040__sub14` / `contained` / `1.000000`; `unmapped` / `0.000000` | **PASS** |
 | `L-19` | 4-check validation artifacts | `find …/validation -type f ! -name .gitkeep \| wc -l` | `0` | `0` | **PASS** |
@@ -251,9 +284,10 @@ prove.** The property, verbatim from `DEC-2026-08-05-m3-ld-read-path`:
   thresholds — `min_ld_overlap: 50`, `min_ld_coverage: 0.5`, `min_ld_min_use: 10` — from
   `config/susie_policy.yaml` at `:78-83` (*"read, never hardcoded"*), exercises
   `assert_declared_ld_authoritative()`, and carries its own guard,
-  `test_thresholds_under_test_are_the_production_thresholds`, plus four
-  `test_negative_control_pre_change_*` tests that recover the pre-change loader and assert the
-  **defective** outcome. It is the BLOCKER-A remediation (quick-260805-23d, `51a60ca`+`ab19186`).
+  `test_thresholds_under_test_are_the_production_thresholds`, plus **three**
+  `test_negative_control_pre_change_*` tests (`:935`, `:1018`, `:1296` — **corrected 2026-08-12,
+  B-LOW-2**; this review earlier said "four", and `grep -c` on the file measures **3**) that
+  recover the pre-change loader and assert the **defective** outcome. It is the BLOCKER-A remediation (quick-260805-23d, `51a60ca`+`ab19186`).
   It ran green with **0 skipped** today.
 * ⚠ One precision the records blur: `test_ld_read_path.py:181-182` delegates thresholds to
   `test_finemap_loader_contract.py`, while the suite that actually owns the **blast-radius**
@@ -278,15 +312,16 @@ Carter**, to be run **in-perimeter**. No agent ran any of them; none may.
 
 | Fact | Last known (+ date + source) | Carter's gate-time command (in-perimeter) | Expected result |
 |---|---|---|---|
-| Bucket `.npz` count | **0/276** — 2026-08-07, HANDOFF `data_state` (*"AoU AFR native-plink LD panel does NOT exist: bucket .npz = 0/276"*) | `gsutil ls gs://${WORKSPACE_BUCKET}/ld/AFR_aou/*.npz \| wc -l` | **0** pre-fire. Anything > 0 means a prior fire banked regions — reconcile before re-firing (`force_fresh=False` on resume) |
+| Bucket `.npz` count | **0/276** — 2026-08-07, HANDOFF `data_state` (*"AoU AFR native-plink LD panel does NOT exist: bucket .npz = 0/276"*) | **PRIMARY (literal bucket):** `gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/*.npz \| wc -l` — **alternate (env form, quoted):** `gsutil ls "${WORKSPACE_BUCKET}/ld/AFR_aou/"*.npz \| wc -l`. ⚠ **`WORKSPACE_BUCKET` ALREADY CONTAINS `gs://` — NEVER PREFIX IT.** `gs://${WORKSPACE_BUCKET}/…` double-prefixes: gsutil errors to **stderr**, stdout is **empty**, and `wc -l` prints **0** — which would FALSE-PASS this very row and read a healthy fire as dead. Corrected 2026-08-12, B-BLOCKER-1 | **0** pre-fire. Anything > 0 means a prior fire banked regions — reconcile before re-firing (`force_fresh=False` on resume). ⚠ **Post-fire, 276 is NOT a pass bar** — see the liveness-arbiter block below |
 | VM state | **STOPPED, not deleted**; `n1-standard-32`; holds `/home/jupyter/afr_cohort` — 2026-08-07, HANDOFF `cluster` | Read the **AoU environment panel** in the Workbench UI (do not shell out) | Environment present, stopped, disk intact. ⚠ **READ THE DISK-TYPE LABEL BEFORE ANY DESTRUCTIVE ENV ACTION** — an AoU env on a **STANDARD** disk loses everything on delete; this project's rule is **Reattachable persistent disk** |
-| The stale `gs://` panel TSV (PRE-FIRE 2) | **UNKNOWN** — never measured; the last relevant record is that the June/July fires appended `status=error` rows unconditionally (m3-04c PLAN `:1400-1406`) | `gsutil stat <panel-uri>`; if present, `gsutil cat <uri> \| head -1` | **9 tab-separated columns**, with `n_dropped_occluded` at `_PANEL_COLUMNS` **index 7** (re-derived today with `ast` — log block `CONTEXT-C`; a naive comma-split on that source is WRONG, the list carries commas inside comments). Otherwise `gsutil rm`. ⚠ **"0/276 banked" does NOT evidence the TSV's absence**: the `.npz`, not the TSV, gates the resume skip, and prior fires appended `status=error` rows unconditionally |
-| The real-`.bim` validation (PRE-FIRE 3) | **UNKNOWN** — never run | Byte-check the occlusion exclude list computed on the **REAL cohort `.bim`** | Exactly the five expected region-1 ids at **1980475, 5733487, 5922718, 7492693, 8375822**. ⚠ **OPEN AND UNRESOLVED: the 0- vs 1-based index origin of `_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES`.** Settle it against the real `.bim` first — **an off-by-one validates the wrong rows** and would look like a pass |
+| The stale `gs://` panel TSV (PRE-FIRE 2) | **UNKNOWN** — never measured; the last relevant record is that the June/July fires appended `status=error` rows unconditionally (m3-04c PLAN `:1400-1406`) | `gsutil stat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv`; if present, `gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv \| head -1`. ⚠ Same never-prefix rule as row 1 if you use `${WORKSPACE_BUCKET}` instead. **URI derived at HEAD 2026-08-12, not guessed:** `run_native_ld_panel.py:122` `_DEFAULT_PANEL_NAME = "m3-W2-native-plink-panel.tsv"`, joined at `:734` as `_gs_join(gs_out_dir, _DEFAULT_PANEL_NAME)` with `gs_out_dir = str(out_dir)` (`:732`) = the `--out-dir` value, which the module docstring `:69,:72` gives as `gs://<bucket>/ld/AFR_aou`; the bucket is `SKILL.md:12,:43` | **9 tab-separated columns**, with `n_dropped_occluded` at `_PANEL_COLUMNS` **index 7** (re-derived today with `ast` — log block `CONTEXT-C`; a naive comma-split on that source is WRONG, the list carries commas inside comments). Otherwise `gsutil rm`. ⚠ **"0/276 banked" does NOT evidence the TSV's absence**: the `.npz`, not the TSV, gates the resume skip, and prior fires appended `status=error` rows unconditionally |
+| The real-`.bim` validation (PRE-FIRE 3) | **UNKNOWN** — never run | ⚠ **NO RUNNABLE COMMAND IS GIVEN HERE, AND THAT IS THE HONEST STATE** (corrected 2026-08-12, B-MEDIUM-3). The earlier "Byte-check …" wording wore the shape of an instruction without being one. The exact command **cannot be written from NC State**, because it must name the real cohort `.bim` produced in-perimeter, whose path is fixed at cluster build time and is not recorded on this side. **Determine it in-perimeter**, then compare the ids the span filter drops against the expected set. ⚠ **AND SETTLE THE OPEN QUESTION FIRST** | Exactly the five expected region-1 ids at **1980475, 5733487, 5922718, 7492693, 8375822**. ⚠ **OPEN AND UNRESOLVED: the 0- vs 1-based index origin of `_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES`** (see the m3-07 / m3-16 record). Settle it against the real `.bim` **before** running the comparison — **an off-by-one validates the wrong rows** and would look like a pass |
 | Region-1 re-run result (STEP A) | **NOT RUN** | See §5 STEP A | `.npz` 0 → 1; `status == ok`; `n_var` slightly under 102,421; `n_dropped_occluded` ≈ 5; no *"not symmetric"*, no *"Killed"*, no dmesg OOM |
+| **Row 5 (ADDED 2026-08-12, B-MEDIUM-4) — the cohort MTs still hold DATA** | **DONE + verified, 2026-06 record** (3 MTs, `cohort_summary` 3 rows) — **last-known, and it is MUTABLE perimeter state the fire reads** | Per the skill's **invariant 1**, at the DATA layer and not on a marker: `gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_AFR_qc.mt/entries/rows/parts/` **and** `count_cols()` / `count_rows()` off the MT itself. ⚠ Canonical path has **no `/mt/` subdirectory**; a wrong `…/ld/mt/…` path mimics the empty-final catastrophe | `du` **≫ 1 GB** and non-zero cols/rows. ⚠ **A `_SUCCESS` marker is NOT evidence of data** — the 2026-05-21 empty-MT ($2,100) and the 2026-06-10 empty-final catastrophes both passed a `_SUCCESS` check over 0 bytes. Firing 263 VM-h against an emptied MT is exactly that failure mode with a bigger bill |
 
 > ### ⚠ THE LIVENESS ARBITER FOR THE FIRE
 >
-> **Liveness is the GCS `.npz` OBJECT LISTING climbing to 276.**
+> **Liveness is the GCS `.npz` OBJECT LISTING climbing toward 276.**
 >
 > **NOT the kernel light. NOT a `_SUCCESS` marker. NOT the log.**
 >
@@ -294,6 +329,41 @@ Carter**, to be run **in-perimeter**. No agent ran any of them; none may.
 > accounting, not on contents validation** — a `_SUCCESS` over empty output is a state this
 > project has actually produced. A lit kernel proves a process is attached, not that work is
 > landing. Poll the object listing.
+>
+> **THE POLL COMMAND (corrected 2026-08-12, B-BLOCKER-1). PRIMARY FORM — literal bucket:**
+>
+> ```
+> gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/*.npz | wc -l
+> ```
+>
+> **Alternate, env-variable form — note where the quotes go:**
+>
+> ```
+> gsutil ls "${WORKSPACE_BUCKET}/ld/AFR_aou/"*.npz | wc -l
+> ```
+>
+> ⚠⚠ **`WORKSPACE_BUCKET` ALREADY CONTAINS `gs://` — NEVER PREFIX IT.**
+> `SKILL.md:43` requires `echo $WORKSPACE_BUCKET` to print `gs://rw-migration-aou-rw-476cdac2`.
+> So `gsutil ls gs://${WORKSPACE_BUCKET}/…` expands to `gs://gs://…`: gsutil writes a usage
+> error to **stderr**, prints **nothing** to stdout, and `wc -l` returns **0**. That zero is
+> indistinguishable from "no objects" — it FALSE-PASSES the pre-fire "expected: 0" row above,
+> and during STEP B it reads a **healthy fire as dead**. This is the same defect class the
+> project already fixed once, in **quick-260611-tbw** (`fix-aou-2-workspace-bucket-double-prefix`,
+> gap C3). The producer path itself is verified correct: `run_native_ld_panel.py:925-926`
+> uploads to `{gs_out_dir}/{region_id}.npz` with `gs_out_dir` = the `--out-dir` value
+> (`:732`), i.e. `gs://<bucket>/ld/AFR_aou/`.
+>
+> ⚠ **276 IS NOT A PASS BAR.** The m3-04c PLAN says so in as many words (`:1503-1504`):
+> *"Do NOT hardcode 276 as a pass bar before the fire has run: a partial bank is a real,
+> reportable outcome, not a failure to be papered over."* The producer makes a partial bank
+> the EXPECTED shape of a bad region, not an exception: a region whose content verification
+> fails is stamped `status="verify_failed"` (`run_native_ld_panel.py:917`) and the upload block
+> is gated on `if ok:` (`:922`), so **a verify-failed region NEVER uploads** and the `.npz`
+> listing simply does not advance for it (`:939-940` leaves it in scratch); and any exception
+> is caught per region at `:943-945`, recorded as `status="error: …"`, and **the loop
+> continues**. A count below 276 is therefore a RESULT TO REPORT with its per-region statuses,
+> not automatically a failure — and a count that stops climbing is the signal to investigate,
+> not a number to wait out.
 
 ---
 
@@ -313,7 +383,10 @@ read. (`L-11`/`L-12`/`L-13`/`L-14` are the local evidence that they have.)
 ### PRE-FIRE 1 — the occlusion manifest has NO PATH OUT of the perimeter (HIGH; decide before firing)
 
 `run_native_ld_panel.py:822` calls `ocm.append_occlusion_rows(...)`, which writes
-`{compute_dir}/occlusion_manifest.tsv` (the write itself is `occlusion_manifest.py:203-208`); in
+`{compute_dir}/occlusion_manifest.tsv` (the write itself is `occlusion_manifest.py:195-196` on the
+append path and `:181` on the fresh-file path, both inside `append_region_manifest`, which
+`append_occlusion_rows` tail-calls at `:214` — **corrected 2026-08-12, B-LOW-1**; the previously
+cited `:203-208` is that function's keyword default plus its docstring, not a write); in
 `gs://` mode `compute_dir` is **LOCAL SCRATCH** (`:733`), and the upload set — inside the
 `if ok:` at `:922`, with the three uploads at `:925-926` (`.npz`), `:929` (`.afreq`) and
 `:935-937` (`.occluded.excludelist`) — is **only** those three. **The manifest is never uploaded
@@ -395,8 +468,10 @@ OOM. **FAIL → stop and report; do not proceed to 276.**
 (87.2%); the remaining 12.8% lies in `__sub15`'s core and is covered only through `__sub14`'s
 buffer. **But** `run_susie_rss.R:500` gates on **VARIANT**
 `overlap >= MIN_LD_OVERLAP && coverage >= MIN_LD_COVERAGE` (**50** and **0.5**, loaded from
-`config/susie_policy.yaml` at `:713-716`) — a realized variant-membership property, **NOT** a bp
-property. ⚠ **Both older records point at the wrong line for this gate** — the m3-04c PLAN says
+`config/susie_policy.yaml`; the three assignments are at **`:716-718`**, the policy read at
+`:715` — **corrected 2026-08-12, B-LOW-1**; the previously cited `:713-716` excluded
+`MIN_LD_COVERAGE` `:717` and `MIN_LD_MIN_USE` `:718`) — a realized variant-membership property,
+**NOT** a bp property. ⚠ **Both older records point at the wrong line for this gate** — the m3-04c PLAN says
 `:184` and the blast radius says `:216`; measured today it is `:500`. See §2.1(8).
 
 Once `m2_region_00040__sub14` is banked, run one `run_finemap` for an AFR trait at `SH2B3_12q24`
@@ -416,10 +491,36 @@ window_start_grch38` for all 552 manifest rows, and the crosswalk's own `overlap
 
 `nohup` plus `timeout 312h` (a 13-day wall-cap above the ~11-day estimate), **server-side**, on
 the STOPPED-not-deleted Cloud Analysis VM. **Liveness is the GCS `.npz` object listing climbing
-to 276 — not the kernel light, not a `_SUCCESS` marker, not the log.** **Do NOT restart the
+toward 276 — not the kernel light, not a `_SUCCESS` marker, not the log.** **Do NOT restart the
 kernel.** Check in **every 2–3 days**. **Teardown is UI-only** (the in-perimeter pet SA has
 list-only Dataproc permissions), so there is no self-delete; the `timeout` wall-cap is the
 backstop.
+
+**THE POLL COMMAND, at the point you will actually run it (corrected 2026-08-12, B-BLOCKER-1).
+PRIMARY FORM — literal bucket:**
+
+```
+gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/*.npz | wc -l
+```
+
+**Alternate, env-variable form — note where the quotes go:**
+
+```
+gsutil ls "${WORKSPACE_BUCKET}/ld/AFR_aou/"*.npz | wc -l
+```
+
+⚠⚠ **`WORKSPACE_BUCKET` ALREADY CONTAINS `gs://` — NEVER PREFIX IT.** `gs://${WORKSPACE_BUCKET}/…`
+expands to `gs://gs://…`; gsutil errors to stderr, stdout is empty, `wc -l` prints **0**, and a
+**healthy fire reads as dead**. Same defect class as quick-260611-tbw gap C3. If a poll ever
+returns 0 after the fire has been running, **re-run it in the literal-bucket form before
+concluding anything** — and check stderr, which `| wc -l` discards.
+
+⚠ **276 IS NOT A PASS BAR** (m3-04c PLAN `:1503-1504`). A `status="verify_failed"` region never
+uploads (`run_native_ld_panel.py:917` stamps it, `:922`'s `if ok:` gates the upload, `:939-940`
+leaves the file in scratch), and the per-region `except` at `:943-945` records
+`status="error: …"` and **continues the loop**. So a final count under 276 is **a partial bank —
+a real, reportable outcome** to be reported with its per-region statuses, not a failure to paper
+over and not a reason to re-fire blindly (`force_fresh=False` on resume).
 
 ### STEP C — SIZE AND PLAN THE EGRESS
 
@@ -473,8 +574,8 @@ that distinction is the point of this table.
 | Item | State | BLOCKS THE FIRE? | What it BOUNDS | Where it lives |
 |---|---|---|---|---|
 | **BLOCKER-D — converter sizing** | ◐ **PARTIAL** | **NO.** The producer writes `.npz`; the OOM is on the **CONSUMER**. STEP B is unaffected | ⚠ **MATERIALLY BOUNDS THE DELIVERABLE.** Only SH2B3 `__sub14` (**22.8 GB**) is convertible, on a big-memory node. **MC4R (67.3 GB)** and **FTO/HLA (~553 GB)** **FAIL FAST** at `m3_convert_max_n_var=120000` (`L-09`) rather than OOM-killing. A sparse `.npz` is a **producer-side change to a FROZEN file**. **Consequence, stated plainly: the fire banks `.npz` that CANNOT be converted for the large regions, so STEP E and the STEP G read-path proof are demonstrable only on the convertible subset.** | HANDOFF `gates.blocker_d_converter_oom` + `resume_on_reconnect` #3 (2026-08-07) |
-| **The three E-2 disclosure obligations** | **DECIDED as option A** (`DEC-2026-08-07-e2-orientation-disposition`); **obligations UNDISCHARGED** | **NO** | **BOUNDS publication of any AFR coloc number.** (1) a manuscript limitation paragraph naming **`APOL1_22q12` 18.41%** and **`FTO_16q12` 23.80%**; (2) an OSF record entry; (3) ⚠ **an OPEN framing question ABOVE EXECUTOR AUTHORITY — LIMITATION or CORRECTION?** ⚠ **Do NOT quote the pooled 5.29% alone** — it is dragged down by the two clean large regions (`CXADR` 0.06%, `MC4R` 0.07%) and hides that two regions sit near 20%; `SH2B3_12q24` tile 3 is **20.33%** while its md5-pinned **anchor** tiles are **0.00%** | Drafts (both framings) exist at `.planning/quick/260811-oku-…/`; entry in `deferred-items.md` E-2 |
-| **SR4-OPEN** | **OPEN — a QUESTION, not a blocker.** The dossier's evidence supports **NEVER-FROZEN for all five** files | **NO** | **BOUNDS any claim that a file is "frozen".** The disposition is Carter's and was deliberately **not** recorded | `.planning/quick/260811-pmv-…/260811-pmv-DOSSIER.md` (2026-08-11) |
+| **The three E-2 disclosure obligations** — **ROW REFRESHED 2026-08-12** | **DECIDED as option A** (`DEC-2026-08-07-e2-orientation-disposition`). **Obligation (3) is ✅ DISCHARGED** — `DEC-2026-08-11-e2-framing-correction` chose framing **B, CORRECTION**. **Obligations (1) and (2) remain ⛔ UNDISCHARGED and are CARTER'S EXTERNAL ACTIONS** | **NO** | **BOUNDS publication of any AFR coloc number.** (1) the manuscript paragraph, placed by Carter; (2) the OSF record entry, posted by Carter **and** its URL + timestamp recorded in `.planning/osf_deviations.md`; (3) ✅ settled — framing B. ⚠ **Do NOT quote the pooled 5.29% alone** — it is dragged down by the two clean large regions (`CXADR` 0.06%, `MC4R` 0.07%) and hides that two loci sit near 20%; `SH2B3_12q24` tile 3 is **20.33%** while its md5-pinned **anchor** tiles are **0.00%**. ⚠ **And do not quote a corpus figure without its unit** — 17.82% is the **tile-row** median; the **locus** median is 0.4234% | ⚠ **CURRENT OUTGOING TEXT = the v2 pair** at `.planning/quick/260812-09a-adversarial-review-remediation-v2-disclo/260812-09a-SELECTED-PAIR-correction-v2.md`, gated by `260812-09a-check-v2-pair.sh`. The `260811-oku` drafts and the `260811-tf3` v1 pair are **superseded history — do not place or post them.** Entry in `deferred-items.md` E-2 |
+| **SR4-OPEN** — **ROW REFRESHED 2026-08-12** | ✅ **DECIDED, no longer open** — `DEC-2026-08-11-sr4-disposition`: **NEVER-FROZEN for all five** files, which is what the dossier's evidence supported | **NO** | **BOUNDS any claim that a file is "frozen".** The five are never-frozen; the only genuinely gated files are the three named by `tests/m3/test_source_freeze_pins.py` (see §7). Any surface still calling one of the five "frozen" or "byte-unchanged" is stale — the canonical list of such sites is the `DEC-2026-08-12` stale-site table | `.planning/DECISIONS.md` `DEC-2026-08-11-sr4-disposition`; dossier at `.planning/quick/260811-pmv-…/260811-pmv-DOSSIER.md` (2026-08-11) |
 | **The OSF Check-2 amendment-update** | **NOT POSTED** | **NO** | **BOUNDS CITATION.** No redefined Check-2 result may be cited as **PASSED** until it is posted and its GUID recorded in-repo. STEP F routes it | HANDOFF `gates.osf_pre_registration`; §5 STEP F |
 | **The pre-registered 4-check validation protocol** | **NEVER RUN** — zero artifacts (`L-19`) | **NO** | **BOUNDS dev→production promotion and publication.** AOU-LD-PIPELINE.md §9 calls it *"a hard gate for promoting the pipeline from dev to production"* | `L-19`; HANDOFF `gates.validation_4check` |
 | **K-2 — the `ld_allele_join.R` extraction** | **DECLINED**, on the merits | **NO — and it is NOT an open risk against the fire** | ⚠ **State it correctly: the decline PROTECTS the fire path.** It was declined **on fire-path-risk grounds** — it would introduce a **first-of-its-kind runtime `source()` dependency** on the exact code path the ~11-day fire exercises (`run_susie_rss.R` has **zero** `source()` calls today). Freeze economy is not sufficient justification to accept fire-path risk | `deferred-items.md` K-2 |
@@ -553,6 +654,12 @@ corpus pooled 4.18%; the `L-06` output-line count; and the commit-range count).
   Cited as `run_susie_rss.R:184` (from the m3-04c PLAN; the blast radius says `:216`) → now
   **`:500`**, with the thresholds loaded at `:713-716`. Both older pointers land on unrelated
   lines. Recorded as a new divergence §2.1(8). (source: measured at `c4dc410`)
+  — ⚠ **ITSELF CORRECTED 2026-08-12 (B-LOW-1): the threshold range in this 2026-08-11 entry is
+  wrong.** The three assignments are at **`:716-718`** (`MIN_LD_OVERLAP` `:716`,
+  `MIN_LD_COVERAGE` `:717`, `MIN_LD_MIN_USE` `:718`); `:715` is the `yaml::read_yaml` call. The
+  `:713-716` written here excluded two of the three. **The entry is left in place as the record
+  of the 2026-08-11 pass; this note supersedes its range.** (source: re-measured at HEAD
+  2026-08-12)
 - 2026-08-11 — **FIXED: `provenance_source` scalar-assignment line.** `assemble_occlusion_catalog.py:202`
   (m3-04c PLAN) → **`:230`** (`df["provenance_source"] = provenance`). `:202` is a string fragment
   inside an unrelated message. (source: measured at `c4dc410`)
@@ -566,6 +673,12 @@ corpus pooled 4.18%; the `L-06` output-line count; and the commit-range count).
   `{compute_dir}/occlusion_manifest.tsv`" → **`:822` CALLS `ocm.append_occlusion_rows(...)`
   (inside the best-effort `try:` at `:821`); the write itself is `occlusion_manifest.py:203-208`**.
   (source: measured at `c4dc410`)
+  — ⚠ **ITSELF CORRECTED 2026-08-12 (B-LOW-1): the write anchor in this 2026-08-11 entry is
+  wrong.** `:203-208` is `append_occlusion_rows`'s keyword default (`:203`) plus its docstring
+  (`:204-212`). The WRITE is in `append_region_manifest`: **`:195-196`** on the append path
+  (`with manifest_path.open("a")` → `fresh.to_csv(fh, …, header=False)`) and **`:181`** on the
+  fresh-file path. **The entry is left in place as the record of the 2026-08-11 pass; this note
+  supersedes its anchor.** (source: re-measured at HEAD 2026-08-12)
 - 2026-08-11 — **FIXED: an off-by-one in a citation I introduced.** The identity-LD-stub caveat was
   cited as HANDOFF `verified_this_session_firsthand[7]` → **`[8]`**; `[7]` is the 100×-error entry.
   Verified by parsing the JSON array rather than by eye. (source: `.planning/HANDOFF.json`)
@@ -587,3 +700,44 @@ every `L-NN` cited resolves to a real TSV row (20 of 20, no unknown ids); every 
 names its enforcing test or is written as unenforced; `bf16289` appears **twice and only as the
 retraction**; no divergence is presented as a merged status without its seam; and
 `grep -cE '^\$ .*(gsutil|gcloud|bq |wb )' 260811-rcw-evidence.log` = **0**.
+
+---
+
+## Corrections (2026-08-12)
+
+**What this section is, and what it is NOT.** It is a **corrections layer over a dated
+measurement**, not a re-measurement. **The 2026-08-11 anchor (`c4dc410`), the L-01..L-20 evidence
+rows, `260811-rcw-evidence.log` and `260811-rcw-evidence.tsv` are UNCHANGED** and were not re-run.
+Every correction below is a defect in this document's own text or a status that moved after
+2026-08-11; each was **re-anchored against the tree at HEAD on 2026-08-12** before being written
+down, per this document's own §2.1(8) discipline — and where a re-anchoring disagreed with the
+finding that ordered it, **the measured value won and the disagreement is recorded here.**
+
+Source: the 2026-08-11/12 five-way adversarial review of `7d575a5..42c060e` (Codex CLI v0.141.0
++ four blind read-only investigators). Remediation task: `quick-260812-09a`. Acceptance harness:
+`.planning/quick/260812-09a-…/260812-09a-check-review.sh`.
+
+⛔ **Still true of this document after the corrections:** zero perimeter contact was made in
+producing them (**no `gsutil`, `gcloud`, `bq` or `wb` was invoked** — every command in §4 and §5
+remains an instruction **for Carter**), nothing was fired, and no file outside this review and
+the `260812-09a` quick directory was touched by this pass.
+
+| # | Finding | What changed | Where | Evidence |
+|---|---|---|---|---|
+| 1 | **B-BLOCKER-1** | The liveness-poll command `gsutil ls gs://${WORKSPACE_BUCKET}/…` **double-prefixed** and would have FALSE-PASSED the pre-fire "expected 0" row and read a healthy fire as dead. Replaced at **all three points of use** with a **literal-bucket primary form**, a correctly-quoted env alternate, and an explicit **never-prefix** warning at each site | §4 row 1 (bucket `.npz` count); the **⚠ THE LIVENESS ARBITER** block (command added — it previously had none); **§5 STEP B** (command added — it previously had none) | `SKILL.md:43` (the variable must print `gs://rw-migration-aou-rw-476cdac2`, i.e. it already carries the scheme); producer path re-verified at HEAD: `run_native_ld_panel.py:925-926` uploads `{gs_out_dir}/{region_id}.npz`, `gs_out_dir = str(out_dir)` at `:732`. Same defect class as **quick-260611-tbw** (`fix-aou-2-workspace-bucket-double-prefix`, gap C3) |
+| 2 | **B-HIGH-1** | Added the m3-04c PLAN's **"276 is NOT a pass bar"** caveat — a partial bank is a real, reportable outcome — to the liveness-arbiter block **and** to STEP B, plus a pointer from §4 row 1. Also softened "climbing **to** 276" to "climbing **toward** 276" at both sites | liveness-arbiter block; §5 STEP B; §4 row 1 | m3-04c PLAN `:1503-1504` (verbatim caveat). ⚠ **Re-anchored, and the finding's pointers moved:** the review order cited PLAN `:1494-1497` (measured: `:1503-1504`), producer `:920-926` for the never-upload path (measured: `:917` stamps `verify_failed`, `:922`'s `if ok:` gates the upload, `:939-940` leaves it in scratch) and `:942` for the continue-on-error (measured: the `except Exception` is `:943-945`; `:942` is an unrelated assignment). **The measured values are the ones written down.** |
+| 3 | **B-MEDIUM-1** | §6 open-items table: the **E-2 row** now records obligation **(3) DISCHARGED** (`DEC-2026-08-11-e2-framing-correction`, framing B) with **(1) and (2) still open as Carter's external actions**, and points at the **v2 pair** as the current outgoing text; the **SR4-OPEN row** is now **DECIDED** (`DEC-2026-08-11-sr4-disposition`, never-frozen). Both rows carry the refresh date | §6 rows 2 and 3 | `.planning/DECISIONS.md` `DEC-2026-08-11-e2-framing-correction`, `DEC-2026-08-11-sr4-disposition` |
+| 4 | **B-MEDIUM-2** | `<panel-uri>` placeholder replaced with the **actual URI**, `gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv`, with the derivation recorded inline | §4 row 3 | **Derived from the producer at HEAD, not taken from the reviewer's guess:** `run_native_ld_panel.py:122` `_DEFAULT_PANEL_NAME = "m3-W2-native-plink-panel.tsv"`; `:734` `panel_tsv = panel_tsv or _gs_join(gs_out_dir, _DEFAULT_PANEL_NAME)`; `:732` `gs_out_dir = str(out_dir)`; module docstring `:69,:72` gives `--out-dir gs://<bucket>/ld/AFR_aou`; bucket from `SKILL.md:12,:43`. The independently-derived string **agrees** with Codex's — agreement, not confirmation-by-repetition |
+| 5 | **B-MEDIUM-3** | The real-`.bim` row's un-runnable "Byte-check…" instruction replaced with an **honest statement**: the exact command is determined in-perimeter (the real cohort `.bim` path is fixed at cluster build time and is not recorded on this side), and the **0-vs-1-based index-origin question is OPEN** and must be settled first | §4 row 4 | m3-07 / m3-16 record; the expected id set is unchanged |
+| 6 | **B-MEDIUM-4** | The egress-ruling, CDR-pin and cohort-rebuild rows now carry **"LAST-KNOWN (dated record; not re-verifiable from NC State)"** labels, each with an explicit ruling on whether fire-time re-verification is required. **A new §4 row 5 was ADDED** for the cohort MTs, because they are mutable state the fire reads | §2 rows for GATE 0 / GATE 1 / GATE 1.5; new §4 row 5 | Skill **invariant 1** (`SKILL.md:19`): `_SUCCESS` is not evidence of data — verify `gsutil du -s …/entries/rows/parts/` **and** `count_cols`/`count_rows`. Canonical MT path carries **no `/mt/` subdirectory** |
+| 7 | **B-MEDIUM-5** | New **§2.1(9)**: the m3-04c PLAN contradicts itself on which branch admits `provenance_source == excludelist_degraded` (`:1395` says branch (iii); `:1508` says branch (ii)). The **code-correct reading** is stated so a post-fire auditor is not hit cold at STEP E | §2.1, new item (9) | Re-measured at HEAD: `assemble_occlusion_catalog.py:230` scalar provenance; **GATE 1** `:415` (`if orphaned and not allow_partial_manifest:`) raising at `:416` = branch (ii), flag `allow_partial_manifest`, stamp stays `stage_a_manifest`; **GATE 2** `:456` chooses `PROVENANCE_EXCLUDELIST_DEGRADED`, `:460` (`if not allow_degraded:`) raises at `:462` = branch (iii). ⚠ The finding cited the GATE-1 raise as `:415`; measured, `:415` is the condition and `:416` is the `raise` — both are recorded |
+| 8 | **B-LOW-1** | Three wrong line corrections fixed **and their echoes chased**: (a) the `occlusion_manifest.tsv` write is `append_region_manifest` `:195-196` (fresh-file `:181`), **not** `:203-208` — which is a keyword default plus a docstring; (b) `run_native_ld_panel.py:507` is **inside a docstring** (`:498-511`) and there is **no code line** in that file asserting the varid format, so it is now cited as documentation rather than as an enforced invariant; (c) the `MIN_LD_*` thresholds are `:716-718` (policy read at `:715`), **not** `:713-716`, which excluded two of the three | §2.1(8) table (two new rows + one row amended); §5 PRE-FIRE 1 paragraph; §5 STEP A paragraph | Measured at HEAD 2026-08-12. ⚠ The finding gave the threshold range as `:715-718`; measured, `:715` is the `yaml::read_yaml` call and the three assignments are `:716-718`. **Both are stated** rather than one silently adopted |
+| 9 | **B-LOW-2** | *"four `test_negative_control_pre_change_*` tests"* → **three** (`:935`, `:1018`, `:1296`) | §3, the BLOCKER-1 two-suites bullet | `grep -c 'def test_negative_control_pre_change' tests/m3/test_ld_declared_authoritative.py` = **3** |
+| 10 | **B-LOW-3** | `L-11`'s and `L-09`'s labels rescoped to claim exactly what their commands prove. **L-11** is a **file-wide grep**, not a rule-scoped one — the scoped proof is `L-13`'s `test_run_finemap_shell_passes_the_declared_ld_matrix`. **L-09** reads a **config value only** — the fail-fast enforcement is not measured by the L-set | §3 table, rows `L-09` and `L-11` | `tests/m3/test_ld_read_path.py:251`; enforcement chain `src/snakemake/rules/m3_convert_npz_rds.smk:132` → `:163` → `:180` and `src/scripts/ld_npz_to_rds.R:272`. ⚠ Note the R script lives at **`src/scripts/`**, not `src/snakemake/scripts/` |
+| 11 | **B-LOW-4** | `L-16` annotated for its **`2>/dev/null` missing-directory blindness**: an absent directory and an empty one both print `0`. Harmless for the pre-fire expectation, **not harmless post-fire** | §3 table, row `L-16` | The command as run, from `260811-rcw-evidence.log` `##### L-16`: `ls data/interim/aou_ld_exports/AFR_aou/*.npz 2>/dev/null \| wc -l` |
+
+**Nothing in §1's verdict changed.** The verdict covered agent-verifiable preconditions at
+`c4dc410`; none of the corrections above touches an `L-NN` result. What changed is that two of
+the fire-time instructions this document hands Carter were **wrong in a direction that reads as
+success** — a poll that returns 0 on a usage error, and a count treated as a pass bar — and both
+now say what they mean at the point the reader meets them.
