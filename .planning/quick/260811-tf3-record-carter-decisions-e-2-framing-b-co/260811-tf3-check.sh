@@ -361,7 +361,13 @@ PYEOF
   # HJ-03 -- entry [2] is the SR4 disposition, not the open question.
   p=""
   if [ "$entries_ok" -eq 1 ]; then
-    head -c 30 "$d/c2.txt" | grep -qF -- '✅ SR4-OPEN — DECIDED 2026-08-11' \
+    # ⚠ Anchored with ^ on the whole one-line entry, NOT `head -c N`. The first
+    # draft of this clause used `head -c 30`, which is 30 BYTES: the required
+    # prefix is 35 bytes because ✅ and — are 3 bytes each in UTF-8, so the
+    # clause truncated its own needle and was RED against correct data. A
+    # byte-count prefix test on UTF-8 prose is structurally incapable of its
+    # job. NC-H6 proves the replacement can still go red.
+    grep -q '^✅ SR4-OPEN — DECIDED 2026-08-11' "$d/c2.txt" \
       || p="$p [entry [2] does not START with '✅ SR4-OPEN — DECIDED 2026-08-11']"
     p="$p$(missing_patterns "$d/c2.txt" \
           'NEVER ACTUALLY FROZEN' 'DEC-2026-08-11-sr4-disposition' '260811-pmv' \
@@ -655,6 +661,21 @@ PYEOF
   ' "$d/cur.md" > "$d/h5.md"
   check_control "NC-H5" "HJ-07" no \
     "$(group_handoff "$d/base.json" "$d/cur.json" "$d/base.md" "$d/h5.md" 2>&1)"
+
+  # NC-H6 -- entry [2] no longer STARTS with the disposition. This control
+  # exists because HJ-03's first draft used a byte-count prefix test that was
+  # red against correct data; a repaired clause needs its own observed red
+  # before it is trusted. The junk prefix keeps every required token present,
+  # so only the anchoring can be what fires.
+  "$PY" - "$d/cur.json" "$d/h6.json" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+a = d["carter_decisions_outstanding"]
+a[2] = "▶ STILL OPEN? " + a[2]
+json.dump(d, open(sys.argv[2], "w"), ensure_ascii=False, indent=2)
+PYEOF
+  check_control "NC-H6" "HJ-03" yes \
+    "$(group_handoff "$d/base.json" "$d/h6.json" "$d/base.md" "$d/cur.md" 2>&1)"
 
   rm -rf "$d"
 }

@@ -160,6 +160,14 @@ Closing blast-radius finding **E** (`m3-04c-BLAST-RADIUS.md:141`, gate row
 > LIMITATION or a CORRECTION?** Two of five coloc regions at ~18–24% is large
 > enough that a reviewer may read it as the latter.
 >
+> **▶ UPDATE 2026-08-11 — OBLIGATION (3) IS DISCHARGED.** Framing **B
+> (CORRECTION)** is chosen — `DEC-2026-08-11-e2-framing-correction` — selecting
+> the matched pair `ms-correction` + `osf-correction`. **(1) and (2) remain
+> OPEN** and are **Carter's external actions**. ⚠ Framing B is **NOT**
+> disposition option B: the code is still not changed. See the
+> **▶ E-2 FRAMING DECIDED (2026-08-11)** section at the end of this E-2 material
+> for the full record.
+>
 > **B becomes right** bundled with **E-4**, after the AoU panel exists, with a
 > real-LD re-measurement + before/after + OSF disclosure. **E-2 and E-4 are
 > COUPLED.**
@@ -322,6 +330,65 @@ almost nothing at SH2B3 — but it would be **INERT today** because of E-4
 (`_ancestry_for_region` returns `"EUR"` unconditionally, so no AFR QTL-coloc job
 exists to exercise it). **E-2 and E-4 are therefore coupled: fixing E-2 alone
 buys a correct-but-unexercised path, the same shape as findings E and G.**
+
+### ▶ E-2 FRAMING DECIDED (2026-08-11) — B (CORRECTION)
+
+**Obligation (3) of `DEC-2026-08-07-e2-orientation-disposition` is DISCHARGED**,
+recorded as `DEC-2026-08-11-e2-framing-correction`. Carter delegated the choice
+to the standing recommendation on the `260811-oku` decision surface:
+
+> "Based on your recommendation, choose the pair for E-2, and for SR4-OPEN,
+> correct the handoff language"
+
+**The selected pair.** `ms-correction` → the Track A (`id-vs-ref-LD`)
+manuscript, as a methods correction-and-disclosure note. `osf-correction` → a
+**new supplementary file** on `osf.io/az52u`. Both are paste-ready, and
+byte-identical to their oku sources, at
+`.planning/quick/260811-tf3-record-carter-decisions-e-2-framing-b-co/260811-tf3-SELECTED-PAIR-correction.md`.
+The unselected `ms-limitation` / `osf-limitation` halves stay in the oku
+directory as the record of what was considered and are **not** to be posted.
+
+**Why B, compressed.** A limitation is something the data cannot do; this is
+something the pipeline **did wrongly** — coordinate matching that ignored the
+alleles — so filing it under Limitations describes it inaccurately, and
+inaccuracy in the reassuring direction is the class of error this arc has
+already committed twice. The magnitude claim is bounded identically by both
+bodies (same identity-LD-stub caveat, same "population, not realised errors"
+sentence), so B corrects the convention without over-claiming the size. B's
+extra obligation — real-LD re-measurement, before/after, a further OSF update —
+is one the **E-4** bundle already carries. And the asymmetry favours B:
+over-correcting costs a paragraph, while under-calling a measured 18–24%
+exposure that a real panel later confirms costs the record showing the softer
+word was chosen **after** measuring 18.41% and 23.80%.
+
+**⚠ PRE-PLACEMENT CHECK — Carter's, before placement.** The target journal's
+policy is the one input to this decision that is not in this repository. If the
+journal reads a "correction" framing on an **in-submission** manuscript as a
+formal post-publication correction notice, keep **B's CONTENT** and use **A's
+PLACEMENT** (the Limitations section). Placement only: it reopens no framing,
+changes no number, and changes no sentence of either body.
+
+**⚠ THE AXIS GUARD.** Framing B is **NOT** disposition option B. E-2 remains
+disposed as **option A** — the code is still not changed — and only the framing
+axis moved here.
+
+| Obligation | Status |
+|---|---|
+| **(3)** LIMITATION vs CORRECTION | ✅ **DISCHARGED** 2026-08-11 (`DEC-2026-08-11-e2-framing-correction`) |
+| **(1)** manuscript paragraph | ⛔ **OPEN** — Carter places `ms-correction` in the Track A manuscript |
+| **(2)** OSF record entry | ⛔ **OPEN** — Carter posts `osf-correction` as a NEW supplementary file on `osf.io/az52u` **and** records its URL + timestamp in `.planning/osf_deviations.md` |
+
+⛔ **No agent posts to OSF, edits a manuscript file, or edits the body of a
+posted amendment.** OSF bodies are append-only, and (1) and (2) discharge only
+by Carter's external actions.
+
+⚠ **Posting makes a currently-internal commitment PUBLIC.** The `osf-correction`
+body closes by committing to an allele-aware join, a real-panel re-measurement,
+and affected African-ancestry results **regenerated and re-reported** with a
+before-and-after comparison, posted as a further update whether or not the
+reported conclusions change. That is an internal **E-4** obligation today; on
+posting it must be registered as a tracked obligation of the E-4 work so it
+cannot be lost.
 
 ## E-3 (minor) — two stale schema comments assert a measured-false claim
 
@@ -987,6 +1054,38 @@ a fixed SHA is never a contract about correctness; it is a countdown to the next
 legitimate edit.
 
 ## ⚠ SR4-OPEN — FIVE files `HANDOFF.json` calls "frozen at `bf16289`" have MOVED. A QUESTION FOR CARTER, deliberately NOT answered.
+
+> **✅ DISPOSED 2026-08-11 — NEVER ACTUALLY FROZEN.**
+> `DEC-2026-08-11-sr4-disposition`. Carter's call: the handoff's
+> "frozen/pinned at `bf16289`" language for the five files was **wrong** and is
+> **corrected, not defended**. **No drift review is required.**
+>
+> ⚠ **The `Status: OPEN` line immediately below is SUPERSEDED**, as is
+> *"THE QUESTION FOR CARTER — not answered here"*. Both are **preserved
+> verbatim for the record**, along with the rest of this entry.
+>
+> **Evidence:** `.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-/260811-pmv-DOSSIER.md`
+> (`f78bbc1`, `399c50f`, `2b13dce`) — `bf16289` is a `docs(handoff)`
+> session-close commit that touched **none** of the eight, so it was a bookmark
+> rather than an act of freezing; there are zero register declarations for any
+> of the five and zero `bf16289` enforcement at **every one** of the 8 drift
+> commits; all 8 drift commits are traceable to a reviewed task SUMMARY; and the
+> label was COLLECTIVE — a **status report**, not a prohibition.
+>
+> ⚠ **Both contrary facts stand, stated rather than smoothed.** For **F1–F4**
+> that collective label (`2bda675`, 2026-08-03) **did predate** the drift —
+> genuine contrary evidence, bounded by three things: it is a status report and
+> not a freeze instruction, it lives in a handoff narrative and not in the
+> decision register, and it was enforced by measured zero at each drift commit.
+> **F5** (`pipeline.schema.yaml`) was **never in the "7 pinned files" roster**
+> and its only label postdates all of its drift, so there is nothing to review.
+>
+> **Consequences:** no drift review; the three genuinely 0-diff files stay gated
+> by `tests/m3/source_freeze.py`; and **NO NEW PIN** is created — none of the
+> five is added to `PY_FROZEN_RELS`. ⚠ The residual live sites
+> `.planning/STATE.md:15` and `.planning/ROADMAP.md:1077` are a registered
+> follow-up, out of the write scope of the task that landed this banner; the
+> dated historical `>` blocks are **NOT** correction sites.
 
 **Logged:** 2026-08-06 (`quick-260806-sr4`). **Status: OPEN — registered, NOT
 resolved either way.**
