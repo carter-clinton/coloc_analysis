@@ -1739,3 +1739,83 @@ pair, the three harnesses, the sweep TSV, `260812-09a-REVIEW-FINDINGS.md`);
 `[[feedback_a_claimed_invariant_needs_a_named_enforcer]]`,
 `[[feedback_green_assertion_needs_a_negative_control]]`,
 `[[feedback_scope_a_guard_to_the_property_not_a_proxy]]`.
+
+---
+
+## 2026-08-12 — DEC-2026-08-12-e2-obligation1-venue-and-obligation2-skip: obligation (1) prepped placement-ready with a Nature-first venue ladder; obligation (2) SKIPPED by direction (deferred, not discharged)
+
+**The directive, verbatim (Carter, 2026-08-12, 17:48 EDT):**
+
+> "For E-2 obligation (1), we will write a draft and then determine the
+> best/most rigorous/reputable journal to submit to (we will aim for nature
+> but we can adjust for others). skip this E-2 obligation (2)."
+
+**Directive 1 — obligation (1) prepped placement-ready; venue re-targeted
+Nature-first.** The placement SPEC
+`.planning/quick/260812-ot2-e-2-obligation-1-placement-draft-and-jou/260812-ot2-placement-draft-ms-correction-v2.md`
+carries the `ms-correction-v2` block **byte-verified** against the v2 pair
+file (machine extraction + recorded `cmp`, with the negative control observed
+red first), the exact manuscript anchors (after the `### Ethics Statement`
+body, before `## Results`; new heading `### Correction and Disclosure:
+Variant-Orientation Exposure`), and the Limitations pointer sentence (item
+(7)). Venue selection is re-targeted **Nature-first** per
+`.planning/quick/260812-ot2-e-2-obligation-1-placement-draft-and-jou/260812-ot2-journal-selection-memo.md`
+(Nature flagship with the formal transfer cascade → optional Nature Genetics
+→ Nature Communications → AJHG / Genome Biology → Genome Medicine → PLOS
+Genetics / HGG Advances; honest top-3 recorded), **superseding the manuscript
+header's incumbent *Genome Medicine* line as ADVICE** — the header itself is
+untouched, and updating it is Carter's own edit. **Obligation (1) remains
+OPEN** — it discharges only at Carter's placement; this entry records
+preparation, not discharge.
+
+**Directive 2 — obligation (2) SKIPPED by direction.** No OSF drafting, no
+posting prep, no `.planning/osf_deviations.md` work was performed. Status:
+skipped-by-direction = **DEFERRED, NOT DISCHARGED** — the v2 file §4 row for
+(2) stays **UNDISCHARGED**, and its discharge condition (posting as a NEW
+supplementary file on `osf.io/az52u` **and** the URL + timestamp record in
+`.planning/osf_deviations.md`) is unchanged. The **E-4 public-commitment
+obligation is NOT registered** by this entry — its trigger is posting, which
+is skipped.
+
+**The coherence consequence, and the P-1/P-2 fork.** The v2 block's final
+sentence claims a posted supplementary entry on `osf.io/az52u`; with (2)
+skipped, that claim is **false at placement time**. The fork is recorded in
+the SPEC's section 5 — Carter chooses at placement:
+
+- **P-1 (pair-coherent — RECOMMENDED):** place the block byte-intact and
+  treat (2) as **deferred-to-submission** — the OSF entry must exist by the
+  time the manuscript is submitted. Grounds: the rigor-over-speed standing
+  rule, and the v2 file §3 item 4 pair-matching check assumes the two halves
+  of the pair agree.
+- **P-2 (skip-permanent):** replace ONLY the final sentence with the marked
+  variant in the SPEC ("P-2 VARIANT — NOT part of the gated v2 pair;
+  Carter-directed deviation"). After P-2 the placed text is **no longer "the
+  v2 pair half"**; the deviation is Carter-directed and recorded here.
+
+**Discharge status (statuses restated for the record; none moves in this
+entry):**
+
+| Obligation | Status |
+|---|---|
+| **(3)** LIMITATION vs CORRECTION | ✅ **DISCHARGED** — `DEC-2026-08-11-e2-framing-correction` |
+| **(1)** manuscript paragraph | ⛔ **OPEN** — placement-ready per the ot2 SPEC; discharges at Carter's placement |
+| **(2)** OSF record entry | ⛔ **OPEN** — deferred by direction; discharge condition unchanged |
+
+**How to apply:**
+
+- Carter places `ms-correction-v2` per the SPEC (a <=2-minute action),
+  choosing **P-1 or P-2** at placement; venue actions follow the memo's
+  ladder.
+- ⛔ No agent edits `docs/manuscript/id-vs-ref-LD.md`, posts to OSF, or edits
+  the body of a posted amendment. Obligations (1) and (2) discharge only by
+  Carter's external actions.
+- The standing number rules of the v2 file §4 bind anything quoted out of the
+  pair bodies; this entry quotes no figures.
+
+**Cross-refs:** `DEC-2026-08-11-e2-framing-correction`;
+`DEC-2026-08-07-e2-orientation-disposition`; the v2 pair file
+`.planning/quick/260812-09a-adversarial-review-remediation-v2-disclo/260812-09a-SELECTED-PAIR-correction-v2.md`;
+the two ot2 deliverables
+(`260812-ot2-placement-draft-ms-correction-v2.md`,
+`260812-ot2-journal-selection-memo.md`);
+`260812-ot2-CONTEXT.md` / `260812-ot2-RESEARCH.md`.
