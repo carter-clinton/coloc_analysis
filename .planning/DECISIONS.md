@@ -1248,3 +1248,255 @@ complete change.**
 (E-2, E-4 and the 2026-08-07 evidence update);
 `.planning/amendments/TRACK-A-FROZEN-NUMBERS.md` (untouched by this decision);
 `[[feedback_a_count_is_a_claim_scope_and_reconcile]]`.
+
+## 2026-08-11 — DEC-2026-08-11-e2-framing-correction: E-2 is framed as a CORRECTION (framing B); the matched pair ms-correction + osf-correction is selected
+
+**Decision:** E-2's disclosure is framed as **B — CORRECTION**. The complete
+matched pair `ms-correction` (the manuscript paragraph) + `osf-correction` (the
+OSF record entry) from the `260811-oku` drafts is **selected**. Carter's call,
+**2026-08-11**, delegated to the standing recommendation on the oku decision
+surface:
+
+> "Based on your recommendation, choose the pair for E-2, and for SR4-OPEN,
+> correct the handoff language"
+
+This **resolves obligation (3)** of `DEC-2026-08-07-e2-orientation-disposition`
+— *"is this a LIMITATION or a CORRECTION?"* — which that entry registered as an
+open question above executor authority. Obligation (3) is **DISCHARGED**.
+
+**⚠ THE AXIS GUARD — framing B is NOT disposition option B.**
+`DEC-2026-08-07-e2-orientation-disposition` disposed E-2 as **option A**, and
+that disposition stands unmoved: the code is still not changed, no Track A
+number moves, and nothing here reopens it. Only the **framing** axis moved. The
+two Bs sit on different axes, and an entry that let them blur would read as an
+undeclared reversal of a Carter decision.
+
+**Why B — the four grounds, as recorded on the decision surface:**
+
+1. **Accuracy.** A limitation is something the data cannot do; this is something
+   the pipeline **did wrongly** — matching on coordinates while ignoring the
+   alleles. Filing it under Limitations describes it inaccurately, and inaccuracy
+   in the **reassuring** direction is exactly the class of error this arc has
+   already committed twice (the 100× tile-3 misread; the `46/182` fixture quoted
+   as a measurement).
+2. **The magnitude claim is bounded either way.** Both bodies carry the same
+   identity-LD-stub caveat and the same "population, not realised errors"
+   sentence. B corrects the **convention** — provable in code, substrate-
+   independent — while **bounding** the magnitude, which is stub-bound. It does
+   not over-claim the size of anything.
+3. **B's extra obligation is one the E-4 bundle already carries.** The real-LD
+   re-measurement, the before/after comparison and the further OSF update are
+   already the stated conditions under which the code change becomes right. B
+   puts them on the public record instead of in a planning file.
+4. **The asymmetry favours B.** Over-correcting costs a paragraph. Under-calling
+   a measured 18–24% exposure that a real panel later confirms costs the record
+   showing the softer word was chosen **after** measuring 18.41% and 23.80%.
+   Standing posture: rigor over speed in any gray-area trade-off.
+
+**⚠ PRE-PLACEMENT VERIFICATION STEP — Carter's, and it happens before placement.**
+It is a step, not an unresolved question, and it is not a reason to reopen the
+framing. The target journal's policy is the one input to this decision that is
+not in this repository. Before the paragraph is placed, check whether the
+journal's process reads a "correction" framing on a manuscript **in submission**
+as a formal **post-publication correction notice**. If it does, keep **B's
+CONTENT** and use **A's PLACEMENT** — the Limitations section — per the flip
+condition recorded on the oku decision surface. That is a **placement** change
+only: it does not reopen the framing, does not change a number, and does not
+change a sentence of either selected body.
+
+**What becomes PUBLIC on posting.** The `osf-correction` body closes with a
+commitment: the join is made allele-aware; the exposure is re-measured on the
+real panel; the affected African-ancestry results are **regenerated and
+re-reported** with a before-and-after comparison; and both are posted as a
+further update **whether or not the reported conclusions change**. Today that is
+an **internal** E-4 obligation. **Posting converts it into a public commitment**,
+and at that point it must be registered as a tracked obligation of the E-4 work
+(oku post-paste checklist item 6) so it cannot be lost.
+
+**Discharge status:**
+
+| Obligation | Status | Discharges when |
+|---|---|---|
+| **(3)** LIMITATION vs CORRECTION | ✅ **DISCHARGED** by this entry | the framing is chosen **and** recorded in `.planning/DECISIONS.md` — done here |
+| **(1)** manuscript paragraph | ⛔ **OPEN** — Carter's external action | `ms-correction` is placed in the Track A (`id-vs-ref-LD`) manuscript, after the pre-placement journal-policy check above |
+| **(2)** OSF record entry | ⛔ **OPEN** — Carter's external action | `osf-correction` is posted as a **NEW supplementary file** on `osf.io/az52u` — never a new version of `trsx5` or `tcujq` — **and** its URL + timestamp are recorded in `.planning/osf_deviations.md` |
+
+⚠ **The oku OSF draft's post-paste checklist item 3 does NOT conflict with this,
+and must not be reported as conflicting.** That checklist sequences the same
+recording *after* posting and asks it to cite the entry's URL. Obligation (3)
+discharges **here**, per the discharge table on the oku decision surface — the
+framing is chosen and recorded. The URL cross-reference is an addition made when
+**(2)** discharges, and it does not un-discharge (3).
+
+**How to apply:**
+
+- The paste-ready selected pair is
+  `.planning/quick/260811-tf3-record-carter-decisions-e-2-framing-b-co/260811-tf3-SELECTED-PAIR-correction.md`.
+  Its two bodies are **byte-identical** to their oku source blocks, proven by
+  `cmp` against a machine extraction rather than by inspection.
+- ⛔ **No agent posts to OSF, edits a manuscript file, or edits the body of a
+  posted amendment.** OSF bodies are append-only. Obligations (1) and (2)
+  discharge only by Carter's external actions.
+- ⛔ **Never quote the pooled 5.29% alone.** It is **dragged** down by the two
+  clean large regions; name 18.41% (`APOL1_22q12`) and 23.80% (`FTO_16q12`) in
+  the same breath.
+- ⛔ **Never cite these as the real-LD exposure.** Every panel measured is an
+  identity-LD stub, so they are catalog↔panel-frame transposition rates for
+  variant bookkeeping and nothing more.
+- The unselected `ms-limitation` / `osf-limitation` texts stay in the oku
+  directory as the record of what was considered, and are **not** to be posted.
+- The oku harness `260811-oku-check-drafts.sh` was **green at selection time**,
+  and the tf3 extraction is byte-identical to its blocks, so the extraction
+  inherits that clause evidence by identity instead of re-asserting it.
+
+**Alternatives considered:**
+
+- (a) **Framing A — LIMITATION.** Rejected on grounds 1 and 4. It is not a wrong
+  description of the *magnitude* — both bodies bound that identically — it is a
+  wrong description of the *defect*.
+- (b) **Defer the framing until a real panel exists.** Rejected. Obligations (1)
+  and (2) cannot be written in no framing at all, Track A is in submission now,
+  and the one future fact that would have argued for A — a near-0% real-panel
+  measurement — is already covered as a further OSF update rather than as a
+  retraction.
+- (c) **B's content with A's placement.** **NOT rejected.** It is held as the
+  conditional outcome of the pre-placement journal-policy check above.
+
+**Cross-refs:** `DEC-2026-08-07-e2-orientation-disposition` (obligation (3));
+the three oku deliverables —
+`.planning/quick/260811-oku-discharge-e-2-disclosure-obligations-dra/260811-oku-e2-framing-decision-surface.md`,
+`…/260811-oku-e2-manuscript-limitation-drafts.md`,
+`…/260811-oku-e2-osf-entry-drafts.md`;
+`.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md` (E-2 and E-4);
+`[[feedback_a_count_is_a_claim_scope_and_reconcile]]`,
+`[[feedback_rigor_over_speed]]`.
+
+## 2026-08-11 — DEC-2026-08-11-sr4-disposition: SR4-OPEN is answered NEVER ACTUALLY FROZEN; the handoff language was wrong and is corrected
+
+**Decision:** the five files were **NEVER ACTUALLY FROZEN**. The handoff's
+"frozen/pinned at `bf16289`" language for them was **wrong**, and it is
+**corrected, not defended**. **No drift review is required.** Carter's call,
+**2026-08-11**:
+
+> "Based on your recommendation, choose the pair for E-2, and for SR4-OPEN,
+> correct the handoff language"
+
+The five, with their measured drift vs `bf16289`:
+`src/python/occlusion_manifest.py` **+46 / −8** ·
+`src/python/occlusion_present_rate_scan.py` **+154 / −21** ·
+`src/python/drop_occluded_from_sumstats.py` **+97 / −24** ·
+`src/scripts/ld_npz_to_rds.R` **+313 / −62** ·
+`src/snakemake/schemas/pipeline.schema.yaml` **+119 / −0**.
+
+**Evidence.** The dossier at
+`.planning/quick/260811-pmv-sr4-open-evidence-dossier-were-the-five-/260811-pmv-DOSSIER.md`,
+landed by `f78bbc1` (T1), `399c50f` (T2) and `2b13dce`. Four independent
+measurements agree, and none contradicts:
+
+1. **`bf16289` is not a freeze commit.** It is a `docs(handoff)` session-close
+   commit that changed **one** file — `.continue-here.md`, +19 / −3 — and touched
+   **none** of the eight. A pin that never touched what it pinned was a
+   **bookmark**, not an act of freezing.
+2. **The freeze convention did not exist in the register until after all the
+   drift.** `DEC-2026-08-06-sr4-freeze-scope` is the only freeze entry;
+   `grep -c '<basename>' .planning/DECISIONS.md` returned **0** for all five;
+   and `bf16289` matched **zero** files under `tests/ src/ config/ Snakefile` at
+   **every one of the 8 drift commits** — measured at the drift commits
+   themselves rather than inferred from today.
+3. **All 8 distinct drift commits are traceable.** For each, the task token
+   resolves to a real artifact directory **and** the commit's short SHA is named
+   inside that artifact (13 grep hits). There is no untraceable commit, so
+   nothing is forced to `DRIFT-NEEDS-REVIEW`; every one landed under a planned,
+   executed and summarised GSD task.
+4. **The label was COLLECTIVE, and it was a status report, not a prohibition.**
+   The five were never declared frozen individually. Four of them appear only
+   inside one sentence — *"All 7 pinned files 0-line diff vs `bf16289`"* — whose
+   grammatical content is an observation that they were currently unchanged, not
+   an instruction that they must not change.
+
+**⚠ The two facts that cut the other way — stated, not buried:**
+
+- **F1–F4: that collective label PREDATED the drift.** `2bda675` is dated
+  **2026-08-03**, and `git merge-base --is-ancestor` confirms it precedes
+  `3bb8783`, `bf963df`, `fac9a93` and `57b381f`. Something *had* been written
+  about these files before they moved, and they moved anyway. This is **genuine
+  contrary evidence** and is weighed rather than dismissed. Three things bound
+  how much it carries: it is a **status report** (*"0-line diff"*), not a freeze
+  instruction; it lives in a **handoff narrative** rather than in the decision
+  register, and this project has already baked the rule that an invariant with
+  no named enforcer is a belief; and it was enforced by **measured zero** at each
+  drift commit.
+- **F5 (`src/snakemake/schemas/pipeline.schema.yaml`) was NEVER in the "7 pinned
+  files" roster at all** — that roster is 4 m3-07 modules + 3 frozen contracts —
+  and its only individual label (`HANDOFF.json` `freeze_state` at `63453db`,
+  2026-08-06) **postdates all of its drift**. It was called frozen only after it
+  had stopped moving, so **there is nothing to review**.
+
+**Stated limits.** `NEVER ACTUALLY FROZEN` is a statement about **process and
+intent**, and it is **not a code review**: nobody read the `+46 / −8` or the
+`+313 / −62` to judge whether the changes were right. The narrative
+first-appearance dates are **LOWER BOUNDS** — 17 `HANDOFF.json`, 29 `STATE.md`
+and 22 `.continue-here.md` history objects could not be read (missing loose git
+objects, a known recurring GPFS failure), and the unreadable set skews **old**,
+which is exactly where an earlier freeze label would live. ⚠ **Recovering an
+earlier label would not move this disposition**, because nothing enforced it at
+any drift commit and every drift commit is traceable to a reviewed SUMMARY.
+
+**Consequences:**
+
+- **No drift review.** The set that is deliberately *not* being reviewed is named
+  so it is explicit: `3bb8783`, `bf963df`, `fac9a93`, `aeed8c0`, `57b381f`,
+  `64f420a`, `2563451`, `d7dfa67` — 8 commits across the tasks `260804-rtc`,
+  `260805-23d`, `260805-o7o`, `260805-w7u` and `m3-04b`.
+- **The three genuinely 0-diff files stay gated.** `src/python/plink_ld_to_npz.py`,
+  `src/python/condition_ld_matrix.py` and `src/python/occlusion_span_filter.py`
+  remain gated by `tests/m3/source_freeze.py` at `PY_CODE_REF`, unchanged by this
+  entry.
+- **NO NEW PIN is created by this decision.** None of the five is added to
+  `PY_FROZEN_RELS`, and
+  `test_the_handoff_frozen_claim_is_recorded_as_partly_false` stays green
+  asserting that they are **out** of the pinned set.
+- **Any future pin is its own task**, and it costs: a recorded decision that the
+  file is frozen; a `#:` bucket annotation on the new constant; a **negative
+  control** OBSERVED red; a change to the handoff-claim test, which goes RED the
+  moment a file is added; and — for F5 only — a YAML code-stripper that
+  `tests/m3/source_freeze.py` does not have, since it supports `LANG_R` and
+  `LANG_PY` only.
+- ⚠ **An honest note on what a pin would buy.** A pin at `bf16289` is **not
+  available** for these five: they have moved, so it would be red at birth. Any
+  pin would therefore be the weaker claim *"these must not change from here"*
+  rather than *"these have not changed since the freeze."* That is legitimate to
+  want and legitimate to decline.
+
+**How to apply:**
+
+- `HANDOFF.json` and `.planning/STATE.md:39` already carry the explicit
+  retraction of *"All 7 pinned files 0-line diff vs `bf16289`"*. **Do not repeat
+  the retracted claim.**
+- ⚠ **Residual live sites, OUT of the write scope of the task that landed this
+  entry and registered here as the follow-up:** `.planning/STATE.md:15` and
+  `.planning/ROADMAP.md:1077` both still assert `ld_npz_to_rds.R` is
+  frozen/unchanged when it is **+313 / −62**. Correcting them is a separate task.
+- ⚠ **The dated historical `>` blocks are NOT correction sites**
+  (`STATE.md:266`, `:278`, `:297`, `:301`, `:311`, `:349`, `:362`;
+  `.continue-here.md:57`, `:113`, `:205`, `:217`, `:233`, `:249`, `:252`). They
+  correctly describe what was believed when they were written, and rewriting them
+  would destroy the record this disposition rests on.
+
+**Alternatives considered:**
+
+- (a) **FROZEN-AND-DRIFTED**, i.e. review the 8 commits — rejected on the
+  evidence. F5 would be its least defensible member: never in the roster, and its
+  label postdates its drift, so there is no window in which changing it violated
+  anything.
+- (b) **Answer NEVER-FROZEN and pin the five at today's HEAD in the same breath**
+  — rejected as a bundled decision. Declining today forecloses nothing: the pin
+  question is independent of the SR4-OPEN answer and can be taken up whenever it
+  is worth its own recorded decision and its own observed-red control.
+
+**Cross-refs:** `DEC-2026-08-06-sr4-freeze-scope`;
+`.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md` (SR4-OPEN);
+the `260811-pmv` dossier;
+`[[feedback_a_claimed_invariant_needs_a_named_enforcer]]`,
+`[[feedback_green_assertion_needs_a_negative_control]]`,
+`[[feedback_fixed_sha_whole_file_pin_is_a_timebomb]]`.
