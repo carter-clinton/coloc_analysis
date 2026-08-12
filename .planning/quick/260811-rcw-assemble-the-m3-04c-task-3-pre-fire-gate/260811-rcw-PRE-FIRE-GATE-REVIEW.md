@@ -154,6 +154,26 @@ It cites `allow_degraded` at `config/pipeline.yaml:266`; measured today (`L-10`)
 `occlusion_lockstep.allow_degraded` at **`:295`**. **The value is unchanged (`False`)** — only
 the pointer moved. Named so nobody edits line 266.
 
+**(8) ⚠⚠ FOUND BY THIS RECONCILIATION — THE OLDER RECORDS' LINE NUMBERS HAVE DRIFTED AS A CLASS,
+including for the one gate STEP A asks Carter to reason about.** This is not a cosmetic
+complaint: DEC-2026-08-05 already recorded that *"every `finemap.smk` line number in the m3-04c
+plan is stale"* after m3-04b inserted 48 lines. The same rot has since reached other files.
+**Every line number in this review was re-anchored against the tree at `c4dc410` before it was
+written down.** The corrections:
+
+| Cited by | Record's line | Measured today at `c4dc410` | Why it matters |
+|---|---|---|---|
+| the SuSiE quality gate `overlap >= MIN_LD_OVERLAP && coverage >= MIN_LD_COVERAGE` | m3-04c PLAN `:184`; blast radius `:216` | **`run_susie_rss.R:500`** (thresholds loaded `:713-716`) | **STEP A sends Carter to read this gate.** Both prior pointers land on unrelated lines |
+| `provenance_source` assigned as a scalar | m3-04c PLAN `:202` | **`assemble_occlusion_catalog.py:230`** | It is the guarantee that a MIXED provenance stamp is impossible |
+| production varids are `chr:pos:ref:alt` on GRCh38 | m3-04c PLAN `:391-400` | **`run_native_ld_panel.py:507`** | It is what makes the degraded reconstruction recoverable at all |
+| the `gs://` upload set | m3-04c PLAN `:922-938` | `:922` (`if ok:`), uploads at **`:925-926`** / **`:929`** / **`:935-937`** | It is the proof the manifest is NOT uploaded |
+| `allow_degraded` config key | m3-04c PLAN `:266` | **`config/pipeline.yaml:295`** | §2.1(7) |
+
+→ **WINNER: the measured tree at `c4dc410`, in every row.** The underlying FACTS all survived —
+the gate exists, the scalar assignment exists, the varid format is as described, the manifest
+still is not uploaded. **Only the pointers were wrong.** Treat any line number quoted from a
+record older than this review as needing re-anchoring before it is acted on.
+
 ---
 
 ## §3 — LOCAL RE-VERIFICATION (agent-verifiable, $0, NC State)
@@ -168,7 +188,7 @@ Rendered from `260811-rcw-evidence.tsv`; every command's real output is in
 | `L-03` | `tests/m3` — ran **exactly once** | `… -m pytest tests/m3 -q` | 902 P / **31 S** / 0 F | `902 passed, 31 skipped, 4 warnings in 927.71s (0:15:27)` | **PASS** |
 | `L-04` | `tests/phase2` | `… -m pytest tests/phase2 -q` | 136 P / **1 S** / 0 F | `136 passed, 1 skipped in 1.85s` | **PASS** |
 | `L-05` | targeted convert DAG (BLOCKER-C) | `… snakemake --snakefile Snakefile m3_convert_aou_afr_rds_all -n --quiet` | exit 0, **575 jobs** | `build_ld_rds_aou_afr 276; m3_aou_npz_arrives 276; m3_convert_aou_afr_rds_all 1; m3_ingest_aou_export_arrives 22; total 575` | **PASS** |
-| `L-06` | `--list`, the MEDIUM-7 substitute | `… snakemake --snakefile Snakefile --list` | exit 0 | exit 0; full rule list (928 lines, verbatim in the log) | **PASS** |
+| `L-06` | `--list`, the MEDIUM-7 substitute | `… snakemake --snakefile Snakefile --list` | exit 0 | exit 0; full rule list — **926** output lines, of which **148** are rule names (the rest are indented docstrings); verbatim in the log | **PASS** |
 | `L-07` | `ld_read_path` as shipped | `python -c '… print(…["ld_read_path"])'` | `enabled/AFR/allele_aware/coloc` all set | `{'enabled': True, 'ancestries': ['AFR'], 'allele_aware': True, 'coloc': True}` | **PASS** |
 | `L-08` | `strict_aou_only` | same load | `False` | `ld_panel.strict_aou_only = False` | **PASS** |
 | `L-09` | BLOCKER-D ceiling | same load | `120000` | `m3_convert_max_n_var = 120000` | **PASS** |
@@ -292,13 +312,15 @@ read. (`L-11`/`L-12`/`L-13`/`L-14` are the local evidence that they have.)
 
 ### PRE-FIRE 1 — the occlusion manifest has NO PATH OUT of the perimeter (HIGH; decide before firing)
 
-`run_native_ld_panel.py:822` writes `{compute_dir}/occlusion_manifest.tsv`; in `gs://` mode
-`compute_dir` is **LOCAL SCRATCH** (`:733`), and the upload set (`:922-938`) is **only** `.npz`,
-`.afreq` and `.occluded.excludelist`. **The manifest is never uploaded and dies with the scratch
-/ VM.**
+`run_native_ld_panel.py:822` calls `ocm.append_occlusion_rows(...)`, which writes
+`{compute_dir}/occlusion_manifest.tsv` (the write itself is `occlusion_manifest.py:203-208`); in
+`gs://` mode `compute_dir` is **LOCAL SCRATCH** (`:733`), and the upload set — inside the
+`if ok:` at `:922`, with the three uploads at `:925-926` (`.npz`), `:929` (`.afreq`) and
+`:935-937` (`.occluded.excludelist`) — is **only** those three. **The manifest is never uploaded
+and dies with the scratch / VM.**
 
 *What IS and is NOT lost without it.* The **lockstep still works**: production varids are
-`chr:pos:ref:alt` on GRCh38 (`:391-400`), so `chr` and `pos_grch38` are recoverable from the
+`chr:pos:ref:alt` on GRCh38 (`:507`), so `chr` and `pos_grch38` are recoverable from the
 excludelists, which **are** uploaded — that is what m3-04b's degraded reconstruction path is for.
 What is **NOT** recoverable: the **occluder attribution, the REF spans,
 `occluding_deletion_ref_len`, and the reason/order labels** — precisely the per-drop provenance
@@ -349,7 +371,8 @@ fallback.** What is required is a RECORDED decision covering **THREE** reachable
 be diagnosed after the fire**, so the gate must be re-entered rather than assumed settled.
 `provenance_source == excludelist_degraded` is admissible **only** under branch (iii); under
 (i)/(ii) it must be `stage_a_manifest`. Mixed is impossible by construction
-(`assemble_occlusion_catalog.py:202` assigns it as a scalar) and must never be silently accepted.
+(`assemble_occlusion_catalog.py:230` assigns `df["provenance_source"] = provenance` as a scalar
+— the m3-04c PLAN's `:202` is stale, see §2.1(8)) and must never be silently accepted.
 
 ### PRE-FIRE 2 — rotate the stale `gs://` panel TSV (zero risk, zero compute cost)
 
@@ -370,9 +393,11 @@ OOM. **FAIL → stop and report; do not proceed to 276.**
 **`m2_region_00040__sub14`** (`L-18`; the earlier `__sub00` was 66 Mb off target — §2.1(6)).
 `__sub14`'s WINDOW fully contains the curated interval and its CORE owns 523,169 of 600,000 bp
 (87.2%); the remaining 12.8% lies in `__sub15`'s core and is covered only through `__sub14`'s
-buffer. **But** `run_susie_rss.R:184` gates on **VARIANT** `overlap >= MIN_LD_OVERLAP && coverage
->= MIN_LD_COVERAGE` (**50** and **0.5**, `config/susie_policy.yaml`) — a realized
-variant-membership property, **NOT** a bp property.
+buffer. **But** `run_susie_rss.R:500` gates on **VARIANT**
+`overlap >= MIN_LD_OVERLAP && coverage >= MIN_LD_COVERAGE` (**50** and **0.5**, loaded from
+`config/susie_policy.yaml` at `:713-716`) — a realized variant-membership property, **NOT** a bp
+property. ⚠ **Both older records point at the wrong line for this gate** — the m3-04c PLAN says
+`:184` and the blast radius says `:216`; measured today it is `:500`. See §2.1(8).
 
 Once `m2_region_00040__sub14` is banked, run one `run_finemap` for an AFR trait at `SH2B3_12q24`
 and read the `estimate_s` log line: it prints `ld_matrix` (the path **OPENED**) and
@@ -453,7 +478,7 @@ that distinction is the point of this table.
 | **The OSF Check-2 amendment-update** | **NOT POSTED** | **NO** | **BOUNDS CITATION.** No redefined Check-2 result may be cited as **PASSED** until it is posted and its GUID recorded in-repo. STEP F routes it | HANDOFF `gates.osf_pre_registration`; §5 STEP F |
 | **The pre-registered 4-check validation protocol** | **NEVER RUN** — zero artifacts (`L-19`) | **NO** | **BOUNDS dev→production promotion and publication.** AOU-LD-PIPELINE.md §9 calls it *"a hard gate for promoting the pipeline from dev to production"* | `L-19`; HANDOFF `gates.validation_4check` |
 | **K-2 — the `ld_allele_join.R` extraction** | **DECLINED**, on the merits | **NO — and it is NOT an open risk against the fire** | ⚠ **State it correctly: the decline PROTECTS the fire path.** It was declined **on fire-path-risk grounds** — it would introduce a **first-of-its-kind runtime `source()` dependency** on the exact code path the ~11-day fire exercises (`run_susie_rss.R` has **zero** `source()` calls today). Freeze economy is not sufficient justification to accept fire-path risk | `deferred-items.md` K-2 |
-| **The identity-LD caveat on every E-2 number** | **STANDING** | **NO** | **BOUNDS how E-2's numbers may be cited.** Every panel behind them is an **identity-LD stub** (`use_identity` TRUE, `R` NULL, EUR/AFR/TRANS byte-identical, md5-verified on two regions). The numbers are the **catalog↔panel-frame transposition rate and nothing more** until a real panel exists — **not** the real-LD exposure | HANDOFF `verified_this_session_firsthand[7]`; `deferred-items.md` E-2 evidence update |
+| **The identity-LD caveat on every E-2 number** | **STANDING** | **NO** | **BOUNDS how E-2's numbers may be cited.** Every panel behind them is an **identity-LD stub** (`use_identity` TRUE, `R` NULL, EUR/AFR/TRANS byte-identical, md5-verified on two regions). The numbers are the **catalog↔panel-frame transposition rate and nothing more** until a real panel exists — **not** the real-LD exposure | HANDOFF `verified_this_session_firsthand[8]`; `deferred-items.md` E-2 evidence update |
 | **Findings E and G — INERT BUT CORRECT** | **CLOSED AS WIRING** | **NO** | **BOUNDS what may be claimed closed.** **E** is safe today **only** because **ZERO AFR QTL-coloc jobs exist at all** (E-4: `_ancestry_for_region` returns `"EUR"` unconditionally) — machine-verified wiring, **not** a production-exercised fix. **G** makes TRANS's failure **VISIBLE**; it does **not** make TRANS work (TRANS still resolves to the 1kG EUR panel). Neither may be cited as *"production-exercised"* | HANDOFF `inert_but_correct` (2026-08-07) |
 | **Manifest-egress gap (PRE-FIRE 1)** | **OPEN — Carter's decision** | **NO** for the compute; **YES** for pre-registration compliance if declined without recording branch (iii) | **BOUNDS the per-drop provenance the OSF amendment-update commits to publishing** | §5 PRE-FIRE 1 |
 
@@ -496,3 +521,69 @@ drifted. **It is not repeated as fact anywhere in this review.**
 **No other freeze or invariant is asserted in this document.** Any statement about the fire's
 perimeter state in §4 is labelled **last-known**, is **UNENFORCED by anything on this side of the
 boundary**, and is re-checkable only by Carter's gate-time command.
+
+---
+
+## Reconciliation log (Task 3)
+
+Every numeric and proper-noun claim above was walked top-to-bottom and traced to (a) a `check_id`
+in `260811-rcw-evidence.tsv`, (b) a named in-repo record with a date, or (c) an arithmetic
+derivation **re-performed here rather than copied**.
+
+⚠ **SCOPE OF THE ENUMERATION, stated so it can be reproduced: §0 through §7 only — i.e. this
+file UP TO the `## Reconciliation log (Task 3)` heading.** This section is the *record of* the
+enumeration, not a subject of it, and it necessarily adds numbers of its own; counting the whole
+file instead gives 961 / 189 / 68 / 83 and would look like a contradiction. Under that scope:
+**831 numeric literal occurrences (174 distinct)**, **65 distinct proper-noun claims** (file
+paths, test names, decision ids), **80 `L-NN` citations**, and **26 arithmetic claims
+re-performed** (the eight E-2
+per-region ratios plus four column-sum checks; the 153/123/276 and 276×2=552 region arithmetic;
+the 575-job DAG sum; six BLOCKER-D size derivations plus the ceiling comparisons and the
+float64/float32 factor; the cost-band and wall-clock divisions; the SH2B3 87.2%/12.8% split; the
+corpus pooled 4.18%; the `L-06` output-line count; and the commit-range count).
+
+**Seven defects found and fixed. This pass was not a formality.**
+
+- 2026-08-11 — **FIXED: a wrong number shipped into the reader-facing table.** `L-06`'s observed
+  value said the `--list` output was "928 lines" → now **"926 output lines, of which 148 are rule
+  names"**. The 928 came from an off-by-one in my own throwaway `awk` (`NR-start-2`); re-measured
+  by indexing the log between the `$ ` line and the `--- exit:` line. Corrected in **both** the
+  review and `260811-rcw-evidence.tsv`. (source: `L-06`, re-derived)
+- 2026-08-11 — **FIXED: the SuSiE quality-gate line number, the one STEP A sends Carter to read.**
+  Cited as `run_susie_rss.R:184` (from the m3-04c PLAN; the blast radius says `:216`) → now
+  **`:500`**, with the thresholds loaded at `:713-716`. Both older pointers land on unrelated
+  lines. Recorded as a new divergence §2.1(8). (source: measured at `c4dc410`)
+- 2026-08-11 — **FIXED: `provenance_source` scalar-assignment line.** `assemble_occlusion_catalog.py:202`
+  (m3-04c PLAN) → **`:230`** (`df["provenance_source"] = provenance`). `:202` is a string fragment
+  inside an unrelated message. (source: measured at `c4dc410`)
+- 2026-08-11 — **FIXED: the GRCh38 varid-format citation**, which is what makes the degraded
+  reconstruction recoverable at all. `run_native_ld_panel.py:391-400` (m3-04c PLAN) → **`:507`**.
+  `:391-394` is a docstring about `.bim` row order. (source: measured at `c4dc410`)
+- 2026-08-11 — **FIXED: the `gs://` upload-set citation**, the proof the manifest is not uploaded.
+  `:922-938` → **`:922` (`if ok:`) with the three uploads at `:925-926` (`.npz`), `:929`
+  (`.afreq`), `:935-937` (`.occluded.excludelist`)**. (source: measured at `c4dc410`)
+- 2026-08-11 — **FIXED: the manifest-write attribution.** "`run_native_ld_panel.py:822` writes
+  `{compute_dir}/occlusion_manifest.tsv`" → **`:822` CALLS `ocm.append_occlusion_rows(...)`
+  (inside the best-effort `try:` at `:821`); the write itself is `occlusion_manifest.py:203-208`**.
+  (source: measured at `c4dc410`)
+- 2026-08-11 — **FIXED: an off-by-one in a citation I introduced.** The identity-LD-stub caveat was
+  cited as HANDOFF `verified_this_session_firsthand[7]` → **`[8]`**; `[7]` is the 100×-error entry.
+  Verified by parsing the JSON array rather than by eye. (source: `.planning/HANDOFF.json`)
+
+**Checked and found CORRECT (no change needed):** all eight E-2 percentages and their two column
+sums (`66,480` exact / `3,714` flipped both reconcile, and the 20.33%-vs-0.20% ratio-versus-percent
+trap is re-derived explicitly); `153 + 123 = 276`; `276 × 2 = 552`; `276+276+1+22 = 575`; the
+BLOCKER-D float64↔float32 factor of exactly 2 and the `120000` ceiling admitting SH2B3 (75,497)
+while excluding MC4R (n ≈ 129,711) and FTO/HLA (363k–372k); `263 h ÷ 24 ≈ 11 days` and
+`312 h = 13 days`; `523,169 ÷ 600,000 = 87.2%`; the corpus pooled `31,152 / 745,534 = 4.18%`;
+the panel TSV's **9** columns with `n_dropped_occluded` at index **7** (re-parsed with `ast` after
+a naive comma-split gave a wrong 12 — log block `CONTEXT-C`); the 15-commit docs-only range
+touching **0** files under `src/`/`tests/`/`config/`/`Snakefile` (`CONTEXT-A`, `CONTEXT-B`); and
+`HANDOFF do_not[0]` as the never-fire rule.
+
+**Guard rails, re-checked after the fixes:** the verdict is mechanically consistent with the
+evidence (20/20 `PASS` ⇒ the GREEN form; exactly **1** verdict line, **0** NOT-READY lines);
+every `L-NN` cited resolves to a real TSV row (20 of 20, no unknown ids); every asserted freeze
+names its enforcing test or is written as unenforced; `bf16289` appears **twice and only as the
+retraction**; no divergence is presented as a merged status without its seam; and
+`grep -cE '^\$ .*(gsutil|gcloud|bq |wb )' 260811-rcw-evidence.log` = **0**.
