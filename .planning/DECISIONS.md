@@ -1500,3 +1500,242 @@ the `260811-pmv` dossier;
 `[[feedback_a_claimed_invariant_needs_a_named_enforcer]]`,
 `[[feedback_green_assertion_needs_a_negative_control]]`,
 `[[feedback_fixed_sha_whole_file_pin_is_a_timebomb]]`.
+
+
+---
+
+## 2026-08-12 — DEC-2026-08-12-adversarial-review-remediation: the five-way review is remediated; ONE canonical stale-site table supersedes the three divergent lists
+
+**Decision:** the 2026-08-11/12 five-way adversarial review of commit range
+`7d575a5..42c060e` is **remediated in three parts** — a **v2** E-2 outgoing
+disclosure pair, the **260811-rcw PRE-FIRE gate review corrected in place**, and
+a **claim-level sweep** of the record surfaces. This entry is the register of
+what was found, what was fixed, and what was **deliberately left**. Carter's
+call, **2026-08-11**: *"Run it"* (following *"100% certain we have all our bases
+covered ... comprehensive adversarial review using codex and
+/assess-blast-radius"*).
+
+**⛔ THE TWO 2026-08-11 DECISIONS STAND UNCHANGED AND ARE NOT REOPENED.**
+`DEC-2026-08-11-e2-framing-correction` (E-2 framing = **B, CORRECTION**) and
+`DEC-2026-08-11-sr4-disposition` (**never actually frozen**). The review found no
+reason to revisit either. **This work fixes texts and surfaces, never decisions.**
+
+### The review, including what it CLEARED
+
+Reviewers: **Codex CLI v0.141.0** (external, read-only sandbox) plus **four blind
+parallel read-only investigators** (D1 record-surface consistency, D2 fire-surface
+fidelity, D3 disclosure content, D4 guard integrity + repo health). Every finding
+was evidence-cited by at least one reviewer; the blockers were independently
+confirmed by two.
+
+**What it CLEARED is load-bearing and is recorded so it is not re-litigated:**
+all eleven outgoing figures re-derive to the digit from the two `e2-exposure`
+TSVs (three independent re-derivations); the pooled 5.29% never appears alone;
+the identity-LD-stub caveat is present in both outgoing bodies; the
+46/182 = 25.3% synthetic-fixture and the 100× misread are correctly labelled and
+were never externally reported; **no posted OSF body was contradicted or
+touched**; no frozen number moved; the word "revision" appears nowhere; the
+`260811-pmv` SR4 dossier's evidence chain held under attack; DECISIONS.md was
+provably append-only (252/0) and HANDOFF.json parsed; §5 of the rcw review is
+faithful to m3-04c PLAN Task 3; **zero perimeter contact proven by log grep**;
+no source/test/config drift in the whole range; `origin == 42c060e`; the standing
+`test_source_freeze_pins.py` gate untouched with 39 passed; and STATE.md's
+frontmatter byte-identical with its pre-existing unparseability **not aggravated**.
+
+### What it FOUND, and what was done (by part and finding ID)
+
+**PART A — the outgoing E-2 disclosure pair. A **v2** pair now supersedes v1.**
+
+| ID | Finding | Fix |
+|---|---|---|
+| **A-BLOCKER-1** | v1 said the catalog↔panel join *"matched on coordinates alone and ignored the alleles"*. **False of that join.** `src/snakemake/scripts/ld_allele_join.R:205-270` is a 4-key allele-aware matcher (`k4_exact` + `k4_swap`, palindromes dropped at `:232-239`, duplicated 4-keys removed from the match table at `:211-219`) and **its own `flipped` counter PRODUCED every disclosed percentage** | v2 attributes the numbers to the shipped matcher; names the disclosed property as the orientation **measured and reported but deliberately NOT APPLIED** to the QTL beta at `run_qtl_coloc.R:478-479` (a recorded decision, `DEC-2026-08-07-e2-orientation-disposition` option A); and confines the allele-blind CHR:POS description to the **fine-map-side** join, **fixed for AFR only and still position-only on EUR today** because `config/pipeline.yaml`'s `ld_read_path` is ancestry-scoped |
+| **A-BLOCKER-2** | v1 committed to *"the join is made allele-aware"* — **already shipped** — and to regenerating *"the affected African-ancestry results"* — an ancestry with **zero** coloc jobs (E-4: `_ancestry_for_region` returns `"EUR"` unconditionally) | v2 names the **real** three-part remedy (apply the measured orientation to the QTL beta; a GRCh38→GRCh37 allele reconciliation on the QTL side; an ancestry gate if Track A must not move) and scopes the re-report to **every affected ancestry that HAS results at remediation time, explicitly including EUR**. Condition-bounded on E-4 + a real non-identity panel; **no schedule** |
+| **A-BLOCKER-3** | the ms paragraph had lost its bounding and nowhere said the code was unchanged — a Methods reader could infer a fix had been made and results regenerated | v2 restores all three: population-**not**-realised-errors; **the analysis code is unchanged by this disclosure**; and no PP.H4 is shown wrong. (Framing B is **not** disposition option B) |
+| **A-HIGH-1** | unit equivocation: the **tile-row** median was labelled per-region | v2 states **both** units, labelled: per TILE-ROW **195 of 206**, median **17.82%**, max **38.68%**; per LOCUS **49 of 51**, median **0.4234%**, max **38.6824%**; the five-region table is labelled LOCUS-unit |
+| **A-MEDIUM** | missing measurement basis + provenance pointer; "published" → "**reported**" direction of effect; the trsx5 interaction merely **asserted** unaffected; no original-research framing sentence; `(3 cells)` | all five fixed. The trsx5 interaction is now **reasoned**: the posted 2026-07-10 body premises a **position-based** join (`:47`) and lockstep exclusion (`:57`), and palindrome-dropping is a **new one-sided drop class** relative to that premise — recorded as a **premise update**, bounded at **144,176** palindromic drops = **19.34%** of the bindable set, and **counted** in `dropped_palindromic`, therefore auditable |
+| **A-HARNESS** | the v1 harness could not have caught any of it: token-presence not number↔label fidelity; a file-scoped pooled guard; no word boundaries on (UN)DISCHARGED; `expect_red` hard-wired to the `ms` group | `260812-09a-check-v2-pair.sh` — 45 clauses, 3 groups, **16 controls all OBSERVED RED**, including an APOL1↔CXADR label swap, a block-scoped pooled-alone isolator with an out-of-block companion, and an UNDISCHARGED→DISCHARGED flip |
+
+**PART B — the PRE-FIRE gate review. It FALSE-PASSED its own check.**
+
+**B-BLOCKER-1** is the one that could have cost money. The document Carter reads
+immediately before a ~11-day / **$385–1,084** fire told him to poll with
+`gsutil ls gs://${WORKSPACE_BUCKET}/ld/AFR_aou/*.npz | wc -l`. `WORKSPACE_BUCKET`
+**already carries `gs://`** (`SKILL.md:43`), so that double-prefixes: gsutil errors
+to **stderr**, stdout is **empty**, `wc -l` prints **0** — which is exactly what
+the pre-fire *"expected: 0"* row EXPECTS, and which during STEP B polling reads a
+**healthy fire as dead**. Same defect class the project already fixed once in
+**quick-260611-tbw** (gap C3). Corrected **at all three points of use** (§4 row 1,
+the liveness-arbiter block and STEP B — the latter two previously carried **no
+command at all**), in the literal-bucket primary form, with a correctly-quoted env
+alternate and a never-prefix warning at each site.
+
+**B-HIGH-1**: **276 is not a pass bar** — restored to both the liveness paragraph
+and STEP B. **B-MEDIUM 1–5**: the open-items table refreshed and dated; the
+`<panel-uri>` placeholder replaced by a URI **derived from the producer**
+(`run_native_ld_panel.py:122/:732/:734` + `SKILL.md:12`) rather than from the
+reviewer's guess; the real-`.bim` row now says honestly that no runnable command
+can be written from NC State and that the 0-vs-1-based index origin is **OPEN**;
+three §2 rows labelled last-known with an explicit re-verification ruling each,
+plus a **new §4 row 5** for the cohort MTs; and a new **§2.1(9)** recording the
+m3-04c PLAN's branch (ii)/(iii) self-contradiction with the **code-correct**
+reading. **B-LOW 1–4**: three wrong line anchors fixed and their echoes chased,
+"four" negative-control tests → **three**, and `L-11` / `L-09` / `L-16` rescoped
+to claim exactly what their commands prove. A dated
+`## Corrections (2026-08-12)` changelog names every finding ID.
+
+⚠ **Three of the review order's own anchors were wrong at HEAD** (`:1494-1497`,
+`:920-926`, `:942`) and one range was short (`:715-718` vs the measured
+`:716-718`). **The measured values were used and the disagreements are recorded**
+in the changelog rather than propagated.
+
+### The scoped SR4 grep restatement (Codex #4) — the evidence, honestly bounded
+
+The `260811-pmv` dossier reported **0 hits** for each of the five basenames in
+`.planning/DECISIONS.md`. That measurement was taken at **`0e7e309`**
+(`git cat-file -t 0e7e309` → commit), **before `DEC-2026-08-11-sr4-disposition`
+itself named those basenames**. Re-measured **at HEAD, 2026-08-12**, the same
+`grep -c` now counts:
+
+| basename | @ `0e7e309` | @ HEAD |
+|---|---|---|
+| `occlusion_manifest.py` | 0 | **1** |
+| `occlusion_present_rate_scan.py` | 0 | **1** |
+| `drop_occluded_from_sumstats.py` | 0 | **1** |
+| `ld_npz_to_rds.R` | 0 | **2** |
+| `pipeline.schema.yaml` | 0 | **2** |
+
+Every hit at HEAD is **self-reference by the disposition entry**. **This does not weaken the disposition** — the finding it supported was that *nothing in
+`src/`, `tests/`, `config/` or `Snakefile` ever enforced the `bf16289` pin*, which
+is unchanged. It scopes the **evidence** honestly, so that no future reader re-runs the grep, gets a non-zero count, and concludes the dossier was wrong.
+
+### The oku harness caveat (D4-10) — what "enforced by" actually bought
+
+Two surfaces read `260811-oku-check-drafts.sh` as **standing enforcement of 29
+control-backed clauses**. The measured figure is **4 observed-red of 29 clauses,
+and all six of its controls target the `ms` group alone**; the other 25 clauses
+were **never observed failing**, so they are green without a negative control.
+The harness is also **task-local and was never in CI**. Both STATE.md surfaces are
+rescoped to **"gated at selection time by (task-local, not CI)"**. The
+defeat-resistant replacement is `260812-09a-check-v2-pair.sh`.
+⛔ **The closed `260811-oku` SUMMARY and VERIFICATION are deliberately NOT
+edited** — a closed task's record stands; the caveat is recorded here instead.
+
+### ★ THE ONE CANONICAL RESIDUAL / STALE-SITE TABLE
+
+**This table SUPERSEDES the three divergent lists that had grown across
+`DECISIONS.md`, `HANDOFF.json` and `STATE.md`.** There is now one list, and it is
+**RENDERED FROM** `.planning/quick/260812-09a-adversarial-review-remediation-v2-disclo/260812-09a-stale-claim-sweep.tsv`
+— never retyped — so the register and its evidence cannot diverge into a fourth.
+
+⚠ **Scope, stated so the counts reproduce.** `grep -r` does **not** follow
+symlinks on this GPFS tree (it silently **under**-counts) and recursing from the
+repo root silently **over**-counts, so the sweep used an **explicit file list**:
+`.planning/*.md`, `.planning/*.json`,
+`.planning/phases/m3-aou-afr-ld-panel-build/*.md` **plus `.continue-here.md`**
+(which the glob misses), and `.claude/skills/*/SKILL.md` — **83 files**.
+⚠ The TSV is **tab-separated and not CSV-quoted**: its excerpts contain quote
+characters, and a `QUOTE_MINIMAL` csv reader merges rows (it read 130 back as 118
+during authoring). Split on TAB.
+⚠ **One scope exclusion, and it is not a convenience.** `DECISIONS.md` is swept
+**up to this very heading**. This entry is the **record of** the enumeration, not a
+subject of it — it necessarily *quotes* every stale claim in order to register it,
+so counting itself would make the sweep circular and self-inflating. That is the
+same scoping discipline the `260811-rcw` review states for its own Reconciliation
+log. **Everything before this heading IS swept** — and it contributes 9 of the 86
+left rows (C1 ×3, C4 ×1, C5 ×5). The generator and
+`260812-09a-check-sweep.sh` apply the **identical** cut, or the residual assertion
+would be meaningless.
+
+| Claim | The stale claim | fixed | left | elim. | Where it is LEFT, and why |
+|---|---|---|---|---|---|
+| **C1** | the RETRACTED "all 7 pinned files 0-line diff vs `bf16289`" freeze claim | 3 | 38 | 0 | `STATE.md` ×12; `.continue-here.md` ×6; `m3-04b-W4-occlusion-catalog-and-consume-seam-PLAN.md` ×5; `m3-04b-W4-SUMMARY.md` ×4; `DECISIONS.md` ×3; `m3-07a-UAT.md` ×2; `HANDOFF.json` ×1; `deferred-items.md` ×1; `m3-04b-BLAST-RADIUS.md` ×1; `m3-04c-W4-panel-reachability-egress-and-fire-PLAN.md` ×1; `m3-07c-W7-present-rate-and-lockstep-PLAN.md` ×1; `m3-07c-W7-present-rate-and-lockstep-SUMMARY.md` ×1 — DECISIONS.md is STRICTLY APPEND-ONLY / INSIDE THE FRONTMATTER FENCE (measured: lines 1-24). The frontmatter must stay byte-identical and its YAML is pre-existing-unparseable / dated deferred-items entry that already carries the correct disposition inline; superseded by DEC-2026-08-12 / dated historical block or quick-task ledger row / dated phase record (PLAN/SUMMARY/REVIEW/BLAST-RADIUS/UAT/CONTEXT/RESEARCH/VALIDATION) stating what that plan asserted on its own date; rewriting it would falsify the historical record / explicitly DATED key (headline_2026_08_0X) / inside a dated historical '>' block |
+| **C2** | "ZERO Carter decisions outstanding" carrying a stale outstanding-list | 8 | 0 | 0 | **none** — no surviving un-annotated hit anywhere in scope |
+| **C3** | "THREE E-2 obligations / all UNDISCHARGED" after (3) was discharged | 3 | 0 | 0 | **none** — no surviving un-annotated hit anywhere in scope |
+| **C4** | the LIMITATION-vs-CORRECTION framing question presented as OPEN | 3 | 3 | 0 | `DECISIONS.md` ×1; `STATE.md` ×1; `deferred-items.md` ×1 — DECISIONS.md is STRICTLY APPEND-ONLY / dated deferred-items entry that already carries the correct disposition inline; superseded by DEC-2026-08-12 / dated historical block or quick-task ledger row |
+| **C5** | SR4-OPEN presented as an open question after it was decided | 13 | 11 | 0 | `DECISIONS.md` ×5; `STATE.md` ×2; `.continue-here.md` ×2; `deferred-items.md` ×2 — DECISIONS.md is STRICTLY APPEND-ONLY / dated deferred-items entry that already carries the correct disposition inline; superseded by DEC-2026-08-12 / dated historical block or quick-task ledger row / inside a dated historical '>' block |
+| **C6** | `ld_npz_to_rds.R` asserted frozen / unchanged / byte-unchanged | 4 | 32 | 0 | `STATE.md` ×7; `m3-06-W6-ld-nan-psd-conditioning-PLAN.md` ×5; `m3-07b-W7-span-filter-and-manifest-PLAN.md` ×4; `m3-06-W6-ld-nan-psd-conditioning-SUMMARY.md` ×3; `m3-07c-W7-present-rate-and-lockstep-PLAN.md` ×3; `.continue-here.md` ×2; `m3-04c-W4-panel-reachability-egress-and-fire-PLAN.md` ×2; `m3-04b-W4-SUMMARY.md` ×1; `m3-04b-W4-occlusion-catalog-and-consume-seam-PLAN.md` ×1; `m3-07-CONTEXT.md` ×1; `m3-07-RESEARCH.md` ×1; `m3-07-VALIDATION.md` ×1; `m3-07c-W7-present-rate-and-lockstep-SUMMARY.md` ×1 — INSIDE THE FRONTMATTER FENCE (measured: lines 1-24). The frontmatter must stay byte-identical and its YAML is pre-existing-unparseable / dated historical block or quick-task ledger row / dated phase record (PLAN/SUMMARY/REVIEW/BLAST-RADIUS/UAT/CONTEXT/RESEARCH/VALIDATION) stating what that plan asserted on its own date; rewriting it would falsify the historical record / inside a dated historical '>' block |
+| **C7** | the superseded suite figure 548P/31S/0F quoted as current | 3 | 1 | 0 | `m3-04c-BLAST-RADIUS.md` ×1 — dated phase record (PLAN/SUMMARY/REVIEW/BLAST-RADIUS/UAT/CONTEXT/RESEARCH/VALIDATION) stating what that plan asserted on its own date; rewriting it would falsify the historical record |
+| **C8** | the TILE-ROW median 17.82% mislabelled as a per-region median | 2 | 0 | 0 | **none** — no surviving un-annotated hit anywhere in scope |
+| **C9** | superseded gate narratives (panel_reachability / blocker1_ld_read_path / aou_loop_refire) | 3 | 1 | 0 | `STATE.md` ×1 — dated historical block or quick-task ledger row |
+| **C10** | the 260811-oku harness read as standing 29-clause enforcement | 0 | 0 | 2 | **none** — no surviving un-annotated hit anywhere in scope |
+| **TOTAL** | 10 claims, **130** recorded hits over **83** scanned surfaces | **42** | **86** | **2** | |
+
+**`fixed`** = a dated 2026-08-12 supersession note sits within ±6 lines of the
+hit. **`left`** = deliberately untouched, reason recorded. **`eliminated`** = the
+wording was rewritten, so the pattern no longer matches anywhere in scope.
+
+**The classes of site deliberately LEFT, and why:**
+
+1. **Dated phase records** (`m3-*-PLAN.md`, `-SUMMARY.md`, `-BLAST-RADIUS.md`,
+   `-UAT.md`, `-CONTEXT.md`, `-RESEARCH.md`, `-VALIDATION.md`) — each states what
+   that plan asserted **on its own date**. Rewriting them would falsify the record.
+2. **The dated historical `>` blocks** in `STATE.md` (`:266`, `:278`, `:297`,
+   `:301`, `:311`, `:349`, `:362`) and `.continue-here.md` (`:57`, `:113`, `:205`,
+   `:217`, `:233`, `:249`, `:252`) — **explicitly protected by
+   `DEC-2026-08-11-sr4-disposition`**: *"rewriting them would destroy the record
+   this disposition rests on."* Verified before editing that **none** of this
+   task's STATE.md targets (`:47`, `:48`, `:49`, `:55`, the oku ledger row, Session
+   Continuity) is in that set, and that all seven protected lines begin with `>`
+   while no target does. For `.continue-here.md` **the fix IS the prepend+demote**.
+3. **`STATE.md:233` and the `:1625/:1626` quick-task ledger rows** — dated ledger
+   entries, **no action needed**, listed here so their absence from the fix set is
+   deliberate rather than an omission.
+4. **`DECISIONS.md` itself** — strictly append-only, and every hit is a
+   retraction or decision entry *stating* the claim in order to retract or answer
+   it. Correct as written.
+5. **`STATE.md`'s frontmatter** — see the reported item below.
+6. **`HANDOFF.json`'s explicitly dated keys** (`headline_2026_08_05`,
+   `headline_2026_08_05c`) — snapshots of their own date, not live status fields.
+   ⚠ The **undated** `headline` key **was** corrected, because it is live.
+7. **The `HANDOFF.json` entry-[0] double-✅ skim risk** — cosmetic; **no action**.
+
+### ⚠ ONE ITEM REPORTED RATHER THAN FIXED
+
+**`STATE.md:15` — the false *"Frozen contracts byte-unchanged (… `ld_npz_to_rds.R`
+…)"* claim was NOT edited, and it cannot be as specified.** Measured at HEAD,
+STATE.md's frontmatter runs **lines 1–24** (`---` at `:1` and `:24`), so `:15`
+sits **inside** the fence, as does `:17` `last_activity`. Editing it would break
+the **frontmatter byte-identity** requirement this task is bound by, in a
+frontmatter whose YAML is already pre-existing-unparseable. It is therefore
+recorded as a **body-side note** in STATE.md's Session Continuity, in
+`HANDOFF.json` `carter_decisions_outstanding[2]`, and here. The claim is false:
+`ld_npz_to_rds.R` is **+313 / −62** and **never-frozen** per
+`DEC-2026-08-11-sr4-disposition`. ⚠ The remediation plan had treated `:15` as an
+ordinary comment block outside the frontmatter; **it is not**.
+
+### What the claim-level sweep caught that a file-by-file one would not
+
+Sweeping by **claim** rather than by **file** found five live sites the
+file-by-file scope had not named: **`ROADMAP.md:213`** (a second
+`ld_npz_to_rds.R … UNCHANGED` assertion), **`STATE.md:28`** (the live
+RESUME-HERE heading still self-labelling 2026-08-07 as LATEST), and three live
+`HANDOFF.json` fields — **`headline`** (asserting three undischarged obligations,
+an open question, and the per-region unit error), and
+**`carter_decisions_outstanding[0]`** and **`[2]`** (the first still routing a
+reader to the **superseded v1 paste-ready pair**, which is the one that could
+have caused a wrong posting). All five are corrected.
+
+### Standing facts about this remediation
+
+⛔ **Nothing was posted to OSF. No manuscript file was touched. No posted
+amendment body was edited. No file under `src/`, `tests/`, `config/`, `Snakefile`
+or `results/` moved. ZERO perimeter contact** — no `gsutil`, `gcloud`, `bq` or
+`wb`, not even read-only control-plane. **Nothing was fired.** The v1 artifacts in
+`260811-oku` and `260811-tf3` are **byte-untouched**, proven by
+`git diff --exit-code` with that gate itself observed red on a deliberate v1
+mutation. `HANDOFF.json` parses after every edit and its changes are confined by a
+containment walker to exactly the intended paths. `DECISIONS.md` remains
+append-only, byte-prefix-identical to `42c060e`. STATE.md's frontmatter is
+byte-identical, with a negative control proving the gate can fail.
+
+**Cross-refs:** `DEC-2026-08-11-e2-framing-correction`;
+`DEC-2026-08-11-sr4-disposition`; `DEC-2026-08-07-e2-orientation-disposition`;
+`DEC-2026-08-06-sr4-freeze-scope`;
+`.planning/quick/260812-09a-adversarial-review-remediation-v2-disclo/` (the v2
+pair, the three harnesses, the sweep TSV, `260812-09a-REVIEW-FINDINGS.md`);
+`.planning/quick/260811-rcw-…/260811-rcw-PRE-FIRE-GATE-REVIEW.md`
+`## Corrections (2026-08-12)`;
+`[[feedback_a_count_is_a_claim_scope_and_reconcile]]`,
+`[[feedback_a_claimed_invariant_needs_a_named_enforcer]]`,
+`[[feedback_green_assertion_needs_a_negative_control]]`,
+`[[feedback_scope_a_guard_to_the_property_not_a_proxy]]`.
