@@ -822,6 +822,14 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                     ocm.append_occlusion_rows(
                         compute_dir, region_id, raw_rows, edges=occlusion_edges,
                     )
+                    # PRE-FIRE 1 (260812-ox1): ALSO bank a per-region Stage-A manifest —
+                    # per-region names upload without ever overwriting a bucket object
+                    # (review §5 PRE-FIRE 1: P3 lesson ff8cc47; a shared-object upload
+                    # would race under any future sharded fan-out). Fresh path => header.
+                    ocm.append_region_manifest(
+                        Path(f"{out_prefix}.occlusion_manifest.tsv"),
+                        ocm.build_region_records(region_id, raw_rows),
+                    )
                 except Exception as manifest_exc:  # noqa: BLE001 — provenance is best-effort
                     print(
                         f"WARN {region_id}: occlusion manifest append failed "
@@ -935,6 +943,16 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                     _gsutil_upload(
                         exclude_path,
                         _gs_join(gs_out_dir, f"{region_id}.occluded.excludelist"),
+                    )
+                # PRE-FIRE 1 (260812-ox1): the per-region Stage-A occlusion manifest is
+                # the same egress class as the excludelist above (coordinate/id-only:
+                # variant ids + REF-span geometry, no genotypes, no per-person counts).
+                # Existence-gated: a zero-occlusion region writes no manifest.
+                region_manifest = Path(f"{out_prefix}.occlusion_manifest.tsv")
+                if region_manifest.is_file():
+                    _gsutil_upload(
+                        region_manifest,
+                        _gs_join(gs_out_dir, f"{region_id}.occlusion_manifest.tsv"),
                     )
             else:
                 result["out"] = str(out_npz)  # left in scratch for inspection

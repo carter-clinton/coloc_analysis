@@ -1878,3 +1878,214 @@ def test_append_panel_row_local_appends_under_a_matching_header(tmp_path):
     drv._append_panel_row_local(panel, second)
     df2 = pd.read_csv(panel, sep="\t")
     assert sorted(df2["region_id"].tolist()) == ["regA", "regB"]
+
+
+# --------------------------------------------------------------------------- #
+# 18. PRE-FIRE 1 (quick-260812-ox1): per-region occlusion-manifest upload      #
+# --------------------------------------------------------------------------- #
+#
+# The 260811-rcw PRE-FIRE GATE REVIEW (§5 PRE-FIRE 1) records that in gs:// mode
+# the shared occlusion_manifest.tsv is written to LOCAL SCRATCH ONLY and never
+# uploaded — the per-drop provenance the OSF amendment-update (osf.io/az52u)
+# commits to publishing dies with the VM. The remedy is the review's PREFERRED
+# lower-risk option: ALSO write a per-region {region_id}.occlusion_manifest.tsv
+# and upload it inside the existing `if ok:` block alongside the excludelist
+# (per-region names are unique, so no bucket object is ever overwritten).
+# All five test names carry the substring `per_region_occlusion_manifest` so one
+# `-k` selects exactly this suite.
+
+
+def test_gs_per_region_occlusion_manifest_uploaded_for_occluded_region(tmp_path, monkeypatch):
+    """(a) gs:// mode, region WITH occlusions: {region_id}.occlusion_manifest.tsv
+    is uploaded alongside the excludelist, and the uploaded BYTES are exactly the
+    Stage-A records (header == STAGE_A_COLUMNS in order; 5 data rows carrying the
+    5 occluded variant ids under m2_region_00001). The byte-level content
+    assertion is the stricter direct assertion that pays for widening the upload
+    set (AUTH-o7o-01 precedent)."""
+    import occlusion_manifest as ocm
+
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=tmp_path / "scratch")
+    assert res[0]["status"] == "ok"
+
+    cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+    manifest_uri = f"{gs_out}/m2_region_00001.occlusion_manifest.tsv"
+    assert manifest_uri in cp_dsts, "per-region occlusion manifest was not uploaded"
+    # unchanged property: the excludelist upload is STILL present
+    assert f"{gs_out}/m2_region_00001.occluded.excludelist" in cp_dsts
+
+    # the uploaded BYTES are the Stage-A records (banked at cp time by the mock,
+    # so this assertion survives the post-success scratch reclaim)
+    lines = mock_gs.contents[manifest_uri].decode().strip().splitlines()
+    header = lines[0].split("\t")
+    assert header == ocm.STAGE_A_COLUMNS
+    data = [ln.split("\t") for ln in lines[1:]]
+    assert len(data) == 5
+    vid_col = header.index("variant_id")
+    rid_col = header.index("region_id")
+    assert {r[vid_col] for r in data} == occluded_ids
+    assert all(r[rid_col] == "m2_region_00001" for r in data)
+
+
+def test_gs_per_region_occlusion_manifest_only_for_occluded_regions(tmp_path, monkeypatch):
+    """(b) One region WITH occlusions + one with ZERO occlusions against ONE
+    shared _MockGsutil bucket (two driver calls — a single mixed bfile is
+    impractical): the occluded region's manifest IS uploaded; the clean region
+    uploads NO manifest and raises NO error (absent => skipped, never an
+    error); both regions finish status == "ok"."""
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    mock_gs = _MockGsutil()  # ONE shared bucket across both runs
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    # run 1: region-1 topology (5 occluded)
+    r1_dir = tmp_path / "r1"
+    r1_dir.mkdir()
+    bfile1, bim1, (chrom1, from1, to1), occluded_ids, _ = _setup_region1_cohort(r1_dir)
+    man1 = _region1_manifest(r1_dir / "regions.tsv", chrom1, from1, to1)
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim1, nan_snps=occluded_ids))
+    res1 = drv.run_native_ld_panel(man1, bfile1, gs_out, mode="square",
+                                   scratch_dir=tmp_path / "s1")
+
+    # run 2: zero-occlusion cohort (plain SNPs, no deletions)
+    c_dir = tmp_path / "clean"
+    c_dir.mkdir()
+    bfile2, bim2, (chrom2, from2, to2) = _setup_cohort(c_dir)
+    man2 = c_dir / "regions.tsv"
+    _write_manifest(man2, [
+        {"region_id": "m2_region_00002", "chr": chrom2, "ancestry": "AFR",
+         "window_start_grch38": from2, "window_end_grch38": to2},
+    ])
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim2))
+    res2 = drv.run_native_ld_panel(man2, bfile2, gs_out, mode="square",
+                                   scratch_dir=tmp_path / "s2")
+
+    assert res1[0]["status"] == "ok"
+    assert res2[0]["status"] == "ok"  # zero occlusions is NOT an error
+    cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+    assert f"{gs_out}/m2_region_00001.occlusion_manifest.tsv" in cp_dsts
+    assert not any(d.endswith("m2_region_00002.occlusion_manifest.tsv") for d in cp_dsts), \
+        "a zero-occlusion region must upload NO occlusion manifest"
+
+
+def test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed(tmp_path, monkeypatch):
+    """(c) verify_failed region: NO REGION ARTIFACT is uploaded — the per-region
+    manifest (written pre-plink, so it EXISTS in local scratch) stays gated
+    inside `if ok:` together with the .npz/.afreq/.occluded.excludelist.
+
+    WHY a panel-TSV cp IS still expected here (do NOT assert zero cp calls —
+    that is unsatisfiable): ``append_panel_row`` runs UNCONDITIONALLY after the
+    per-region try/except (~:947 at authoring time — for ok / verify_failed /
+    error alike), and in gs mode the default panel TSV URI
+    (``_gs_join(gs_out_dir, _DEFAULT_PANEL_NAME)``, ~:734) is uploaded via cp at
+    the tail of append_panel_row's gs branch. This is the fire-path-faithful
+    default panel behavior the review §4 row 3 documents ("prior fires appended
+    status=error rows unconditionally"). The panel-TSV status row is therefore
+    the ONLY permitted cp destination on a verify_failed region.
+
+    HOW verify_failed is forced (measured, 260812-ox1 RED run): a corrupt
+    ``.ld.bin`` (``corrupt_regions``) CANNOT reach this state — the FROZEN
+    reader in plink_ld_to_npz raises on the same defect classes
+    (NaN/diagonal/symmetry) BEFORE content_verify_npz runs, yielding
+    ``status == "error: ..."`` (which is why test_one_bad_region_does_not_abort_loop
+    accepts either status). The authentic route is the driver's OWN verify seam:
+    patch ``drv.content_verify_npz`` to return (False, ...), which drives the
+    exact ``status = "verify_failed"`` stamp and the ``if ok:`` upload gate this
+    test pins — with a real converted .npz in scratch."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    scratch = tmp_path / "scratch"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    monkeypatch.setattr(
+        drv, "content_verify_npz",
+        lambda npz_path, *, mode="square": (False, "forced verify failure (test seam)"),
+    )
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=scratch)
+    assert res[0]["status"] == "verify_failed"
+
+    # the per-region manifest WAS written to local scratch (pre-plink) and
+    # survives (no reclaim on verify_failed) ...
+    assert (scratch / "m2_region_00001.occlusion_manifest.tsv").is_file()
+
+    # ... but NO region artifact crossed to the bucket
+    cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+    for dst in cp_dsts:
+        assert not dst.endswith((".npz", ".afreq", ".occluded.excludelist",
+                                 ".occlusion_manifest.tsv")), \
+            f"region artifact uploaded on verify_failed: {dst}"
+    # the ONLY permitted cp destination is the panel-TSV status row
+    panel_uri = drv._gs_join(gs_out, drv._DEFAULT_PANEL_NAME)
+    assert cp_dsts, "the unconditional panel status row should still upload"
+    assert all(d == panel_uri for d in cp_dsts), cp_dsts
+
+
+def test_per_region_occlusion_manifest_name_matches_lockstep_glob():
+    """(d) Contract: the per-region filename {region_id}.occlusion_manifest.tsv
+    matches the aggregation glob literals read out of
+    src/snakemake/rules/m3_occlusion_lockstep.smk SOURCE TEXT (not restated
+    here). Fails loudly if the literals move. In-test NEGATIVE control: a name
+    that must NOT match asserts False, so the fnmatch is not vacuous."""
+    import fnmatch
+    import re
+
+    smk = PROJECT_ROOT / "src" / "snakemake" / "rules" / "m3_occlusion_lockstep.smk"
+    src = smk.read_text()
+    pats = [m for m in re.findall(r'"([^"\n]+)"', src)
+            if "occlusion_manifest" in m and "*" in m]
+    assert pats, (
+        "no *occlusion_manifest*.tsv glob literal found in "
+        "m3_occlusion_lockstep.smk — the aggregation contract moved; re-anchor"
+    )
+    for pat in pats:
+        assert fnmatch.fnmatch("m2_region_00001.occlusion_manifest.tsv", pat), pat
+        # negative control: a non-manifest name must NOT match
+        assert not fnmatch.fnmatch("m2_region_00001.occl.tsv", pat), pat
+
+
+def test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchanged(tmp_path, monkeypatch):
+    """(e) LOCAL (non-gs) mode: the SHARED {out_dir}/occlusion_manifest.tsv is
+    byte-identical to an INDEPENDENTLY constructed expectation
+    (ocm.build_region_records + ocm.append_region_manifest onto a separate tmp
+    path) — the per-region addition must not perturb the existing shared append.
+    The expectation is asserted non-empty (5 records) so the byte comparison
+    cannot pass vacuously."""
+    import occlusion_manifest as ocm
+
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+    assert res[0]["status"] == "ok"
+
+    # independently construct the expected shared-manifest bytes from the same
+    # in-window rows the driver saw (chr match + from_bp <= bp <= to_bp)
+    raw_rows = [
+        ln.split()[:6]
+        for ln in bim.read_text().splitlines()
+        if ln.strip()
+        and str(ln.split()[0]) == str(chrom)
+        and from_bp <= int(ln.split()[3]) <= to_bp
+    ]
+    records = ocm.build_region_records("m2_region_00001", raw_rows)
+    assert len(records) == 5  # non-vacuous: the expectation carries the 5 drops
+    expected = tmp_path / "expected_manifest.tsv"
+    ocm.append_region_manifest(expected, records)
+
+    shared = out_dir / "occlusion_manifest.tsv"
+    assert shared.is_file()
+    assert shared.read_bytes() == expected.read_bytes()
