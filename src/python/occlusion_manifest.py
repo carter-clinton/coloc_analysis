@@ -203,8 +203,10 @@ def append_occlusion_rows(out_dir: "str | Path", region_id: str,
                           manifest_name: str = "occlusion_manifest.tsv") -> Path:
     """Driver-facing Stage-A hook: build + append this region's records.
 
-    The one call ``run_native_ld_panel.process_region`` makes, right where the
-    span filter's occluded ids/edges are known. Writes
+    Since 260812-thz ``run_native_ld_panel.process_region`` no longer calls this
+    (it calls :func:`build_region_records` once and feeds both the shared and the
+    per-region manifest through :func:`append_region_manifest` directly — this
+    function IS that composition, kept as the stable public hook). Writes
     ``{out_dir}/occlusion_manifest.tsv`` (resume-safe). ``edges`` is accepted for
     call-site symmetry with the detector's return value but is not required —
     :func:`build_region_records` re-derives the attribution from ``rows`` so the

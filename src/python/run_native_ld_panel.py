@@ -819,16 +819,22 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                 # manifest write must never abort a region (one bad region never
                 # aborts the loop) — the excludelist above is the redundant record.
                 try:
-                    ocm.append_occlusion_rows(
-                        compute_dir, region_id, raw_rows, edges=occlusion_edges,
+                    # One build_region_records pass feeds BOTH manifests (260812-thz:
+                    # the detector inside it is O(n_var x n_deletions); a second pass
+                    # cost ~25-100 s per occluded region at fire scale). Writing the
+                    # shared manifest via append_region_manifest directly is exactly
+                    # append_occlusion_rows' own tail call, so resume-safe dedup
+                    # semantics are unchanged.
+                    region_records = ocm.build_region_records(region_id, raw_rows)
+                    ocm.append_region_manifest(
+                        Path(compute_dir) / "occlusion_manifest.tsv", region_records,
                     )
                     # PRE-FIRE 1 (260812-ox1): ALSO bank a per-region Stage-A manifest —
                     # per-region names upload without ever overwriting a bucket object
                     # (review §5 PRE-FIRE 1: P3 lesson ff8cc47; a shared-object upload
                     # would race under any future sharded fan-out). Fresh path => header.
                     ocm.append_region_manifest(
-                        Path(f"{out_prefix}.occlusion_manifest.tsv"),
-                        ocm.build_region_records(region_id, raw_rows),
+                        Path(f"{out_prefix}.occlusion_manifest.tsv"), region_records,
                     )
                 except Exception as manifest_exc:  # noqa: BLE001 — provenance is best-effort
                     print(
