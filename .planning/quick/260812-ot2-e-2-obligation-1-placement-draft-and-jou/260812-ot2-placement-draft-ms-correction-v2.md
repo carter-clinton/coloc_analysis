@@ -35,11 +35,32 @@ post-publication correction notice.
   and use framing A's PLACEMENT (the Limitations section) per the v2 file's
   pre-placement check. That is a placement change and nothing more.
 - This SPEC asserts **nothing** about whether a pending submission exists.
+- **⚠ Note for the v2 file's §3 pre-paste checklist, item 3** *(added
+  2026-08-12 EVENING)*: `git log --oneline 7d575a5..HEAD -- src/` is **no
+  longer empty** — it now shows `5284505` (+ its `260812-thz` follow-up), the
+  m3-04c PRE-FIRE 1 per-region occlusion-manifest upload in
+  `src/python/run_native_ld_panel.py`. That is **fire-prep plumbing, not an
+  E-2 code change**: the E-2 disposition (option A, code unchanged) concerns
+  `ld_allele_join.R` / `run_qtl_coloc.R` / the fine-map join, none of which
+  moved (verified in the 2026-08-12 blast-radius sweep: the only src file
+  touched in `76dd7cd..HEAD` is `run_native_ld_panel.py`). The checklist item
+  fails safe — it blocks until judged — and this note is the pre-judged
+  answer, on record so posting day does not have to re-derive it.
 
 ## 3. Placement instructions (the <=2-minute action)
 
 Anchor by **heading text**; line numbers are as-of-2026-08-12 courtesy
 pointers only.
+
+**Step 0 — CHOOSE THE CLOSING SENTENCE FIRST (section 5; do not skip).**
+The block's final sentence references an OSF supplementary entry that does
+**not exist** while obligation (2) stays skipped. Before pasting anything,
+pick **P-1** (keep the block byte-intact and commit to posting the OSF entry
+before/at submission) or **P-2** (swap in the marked variant sentence of
+section 5). Pasting the block without making this choice places a sentence
+that is false at placement time. *(Step added 2026-08-12 EVENING per the
+blast-radius sweep — the fork existed in section 5 but the step list did not
+force it.)*
 
 **Step 1 — the Methods note.** In `docs/manuscript/id-vs-ref-LD.md`, find the
 `### Ethics Statement` heading (:130) and its one-paragraph body (:132). After

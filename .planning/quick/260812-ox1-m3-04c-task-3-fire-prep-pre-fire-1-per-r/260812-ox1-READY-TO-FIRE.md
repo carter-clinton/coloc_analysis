@@ -213,7 +213,8 @@ to wait out.
 - **D — egress per group:** per-group AoU egress review → `gsutil -m cp` into
   `data/interim/aou_ld_exports/AFR_aou/`; ALSO fetch the excludelists, `.afreq`
   sidecars, the panel TSV, **and the per-region occlusion manifests (PRE-FIRE 1
-  landed — they now exist in the bucket)**; audit-log row + SHA-256 sub-manifest per
+  landed — post-fire the bucket holds one per occluded region that PASSED verify;
+  zero-occlusion and verify-failed regions have none, by design)**; audit-log row + SHA-256 sub-manifest per
   group; commit token `(m3-04c-T3-chr{N}-AFR)`.
 - **E — hand back to the DAG:** re-run m3-04b's catalog rule **under the branch
   RECORDED at item 7 (re-read the 1b template NOW — branch (ii) is diagnosable only

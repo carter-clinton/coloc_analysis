@@ -378,6 +378,18 @@ axis moved here.
 | **(1)** manuscript paragraph | ⛔ **OPEN** — Carter places `ms-correction` in the Track A manuscript |
 | **(2)** OSF record entry | ⛔ **OPEN** — Carter posts `osf-correction` as a NEW supplementary file on `osf.io/az52u` **and** records its URL + timestamp in `.planning/osf_deviations.md` |
 
+> ⚠ **ANNOTATED 2026-08-12 EVENING (quick-260812-thz; rows above preserved, not
+> rewritten).** Two updates the table predates: **(a)** the body names are now the
+> **v2** pair (`260812-09a-SELECTED-PAIR-correction-v2.md`) — the `ms-correction` /
+> `osf-correction` v1 names above are superseded history and must not be placed or
+> posted (`DEC-2026-08-12-adversarial-review-remediation`); the placement-ready
+> surface for (1) is the ot2 SPEC
+> (`.planning/quick/260812-ot2-e-2-obligation-1-placement-draft-and-jou/260812-ot2-placement-draft-ms-correction-v2.md`).
+> **(b)** Obligation **(2) is SKIPPED BY CARTER'S DIRECTION = DEFERRED, NOT
+> DISCHARGED** (`DEC-2026-08-12-e2-obligation1-venue-and-obligation2-skip`); its
+> discharge condition is unchanged, and if placement uses the P-1 (byte-intact)
+> closing sentence it must be revisited before submission.
+
 ⛔ **No agent posts to OSF, edits a manuscript file, or edits the body of a
 posted amendment.** OSF bodies are append-only, and (1) and (2) discharge only
 by Carter's external actions.

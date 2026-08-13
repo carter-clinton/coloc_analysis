@@ -1,0 +1,18 @@
+# PRE-CHANGE suite baseline at 76dd7cd — banked 2026-08-12 EVENING (quick-260812-thz)
+#
+# Provenance: run by the ORCHESTRATOR (not an executor) at HEAD 76dd7cd, BEFORE any
+# edit of the 2026-08-12 evening arc, as a background job started 17:49 EDT:
+#   /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python -m pytest tests/m3 -q
+# The tail below is the verbatim captured output (the run predates commit 5284505,
+# so this is the 902-passed PRE-change anchor that STATE.md's EVENING block cites;
+# tests/phase2 was run in the same window: "136 passed, 1 skipped in 1.26s").
+# Banked into the repo by the blast-radius remediation because a resume-surface
+# count with its only evidence in a session scratchpad is a belief, not a record
+# ([[feedback_a_count_is_a_claim_scope_and_reconcile]]).
+#
+# --- verbatim tail of the captured run output ---
+  /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/lib/python3.11/site-packages/snakemake/utils.py:50: DeprecationWarning: jsonschema.RefResolver is deprecated as of v4.18.0, in favor of the https://github.com/python-jsonschema/referencing library, which provides more compliant referencing behavior as well as more flexible APIs for customization. A future release will remove RefResolver. Please file a feature request (on referencing) if you are missing an API for the kind of customization you need.
+    from jsonschema import validators, RefResolver
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+902 passed, 31 skipped, 4 warnings in 889.58s (0:14:49)
