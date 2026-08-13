@@ -1819,3 +1819,42 @@ the two ot2 deliverables
 (`260812-ot2-placement-draft-ms-correction-v2.md`,
 `260812-ot2-journal-selection-memo.md`);
 `260812-ot2-CONTEXT.md` / `260812-ot2-RESEARCH.md`.
+
+## 2026-08-12 — DEC-2026-08-12-e2-venue-ladder-adopted: Carter adopted the recommended ladder — Nature first (format-flexible, no restructuring), pre-committed transfer to Nature Communications, AJHG anchor
+
+**Decision (CARTER, 2026-08-12 21:36 EDT):** *"what's your recommendation for
+venue? let's go with that recommendation."* The recommendation adopted, from
+`260812-ot2-journal-selection-memo.md` §3:
+
+1. **Rung 1 — Nature (flagship),** submitted format-flexible as the manuscript
+   stands (~15.4k words; Nature Portfolio accepts format-neutral initial
+   submissions, so this rung costs a fast desk decision — days to ~2 weeks —
+   and NO restructuring work). Satisfies the Nature-first directive at
+   near-zero cost.
+2. **On decline — accept the formal Manuscript Transfer Service referral to
+   Nature Communications** (referee reports travel if gathered). The realistic
+   Nature-brand landing for corrective/benchmark genomics at this scale.
+3. **If the Nature-brand path exhausts — AJHG** (anchor; best
+   reputation-per-realistic-odds; ancestry equity is a core editorial theme;
+   $0 subscription route), with **Genome Biology** beside it. Genome Medicine
+   and PLOS Genetics / HGG Advances remain the memo's lower rungs, unchanged.
+
+**Placement interaction:** `ms-correction-v2` placement stays the §1 default
+(Methods correction-and-disclosure note + Limitations pointer). The
+pre-placement check answered NO-MACHINERY at every surveyed venue; Nature's
+Methods word cap binds only at accepted-format stage, which would trigger a
+full reformat anyway.
+
+**Standing condition (stated once, not asserted either way):** the ladder is
+valid only if NO submission of this manuscript is pending anywhere — dual
+submission is prohibited at every venue. If a prior submission (e.g. the
+2026-05-12 package) is under review, the ladder waits on withdrawal/decision.
+
+**At placement (Carter's edits, per the SPEC):** update the manuscript Status
+header's target-venue line (SPEC §8 — it still names *Genome Medicine*); run
+the SPEC §3 steps INCLUDING Step 0 (the P-1/P-2 closing-sentence fork).
+
+**Cross-refs:** `DEC-2026-08-12-e2-obligation1-venue-and-obligation2-skip`
+(the Nature-first re-target + obligation-(2) skip this refines);
+`260812-ot2-journal-selection-memo.md` (facts + flags);
+`260812-ot2-RESEARCH.md` (per-venue verification trail).
