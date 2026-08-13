@@ -1858,3 +1858,71 @@ the SPEC §3 steps INCLUDING Step 0 (the P-1/P-2 closing-sentence fork).
 (the Nature-first re-target + obligation-(2) skip this refines);
 `260812-ot2-journal-selection-memo.md` (facts + flags);
 `260812-ot2-RESEARCH.md` (per-venue verification trail).
+
+## 2026-08-12 — DEC-2026-08-12-e2-p1-closing-sentence: Step 0 fork CHOSEN — P-1, the v2 block placed byte-intact; obligation (2) becomes post-by-submission-day
+
+**Decision (CARTER, 2026-08-12, interactive choice at the Step 0 fork):** **P-1**
+— the `ms-correction-v2` paste block is placed **byte-intact**, including its
+closing sentence referencing the osf.io/az52u supplementary entry.
+
+**Consequence, stated plainly:** obligation (2) is no longer skipped-indefinitely;
+it is **deferred WITH A DEADLINE = submission day**. Before/at submitting the
+manuscript anywhere (rung 1 = Nature per
+`DEC-2026-08-12-e2-venue-ladder-adopted`), Carter posts `osf-correction-v2` as a
+NEW supplementary file on osf.io/az52u AND records its URL + timestamp in
+`.planning/osf_deviations.md` — so the placed closing sentence is true at
+submission. At that posting, the E-4 public commitment the osf body carries gets
+registered as a tracked obligation (v2 pair §4). ⛔ No agent posts to OSF; the
+posting and the record are Carter's external actions.
+
+**Not chosen:** P-2 (the marked variant sentence) — remains in the SPEC §5 as the
+record of what was considered; not to be placed.
+
+**Pair coherence preserved:** the placed manuscript half is exactly the gated v2
+pair's §1 body; the framing-B pair-matching check (v2 §3 item 4) holds.
+
+**Cross-refs:** `DEC-2026-08-12-e2-obligation1-venue-and-obligation2-skip` (the
+skip this converts to a dated deferral); `DEC-2026-08-11-e2-framing-correction`
+(framing B, unmoved); the ot2 placement SPEC §3 Step 0 / §5.
+
+## 2026-08-12 — DEC-2026-08-12-e2-obligation1-placed: ms-correction-v2 PLACED — obligation (1) DISCHARGED; placement executed by the agent under Carter's explicit directive
+
+**Authorization, recorded because it overrides a standing rule:** Carter's
+mid-turn directive *"complete these steps with --auto --chain"* (2026-08-12
+~21:40 EDT), issued immediately after adopting the venue ladder and choosing
+P-1, explicitly authorized agent execution of the ot2 SPEC §3 placement steps
+and the §8 header update. This is a Carter-authorized exception to the standing
+*"no agent edits a manuscript file"* rule, scoped to exactly these edits. The
+rule otherwise STANDS: no agent posts to OSF, edits a posted amendment body, or
+submits a manuscript anywhere — those remain Carter's external actions.
+
+**What was placed (commit carries the diff):**
+1. **Methods note** — new subsection `### Correction and Disclosure:
+   Variant-Orientation Exposure` between §Ethics Statement and `## Results`,
+   containing the `ms-correction-v2` paste block **byte-intact** (P-1 per
+   `DEC-2026-08-12-e2-p1-closing-sentence`). **Gate run at point of placement:**
+   the placed 13 content lines are cmp-identical to the v2 pair's
+   PASTE-BEGIN/END content (sha256 `302fa89cc936…` both sides).
+2. **Limitations pointer** — the SPEC §6 sentence appended as item **(7)**;
+   present exactly once (grep = 1).
+3. **Header venue lines** (SPEC §8) — Status (:3) and Target-venue (:7) now
+   carry the adopted ladder (`DEC-2026-08-12-e2-venue-ladder-adopted`),
+   superseding the *Genome Medicine* primary.
+
+**Consequence: E-2 obligation (1) is DISCHARGED 2026-08-12.** The v2 pair's
+discharge condition — the paragraph placed in the Track A manuscript — is met;
+its "Carter's external action / no agent performs it" agency clause was
+overridden by the directive above, on the record here. The v2 file's §4 status
+table and the SPEC's §1/§4 framing predate this discharge and stay byte-intact
+as dated records (the v2 file is a harness-gated artifact; the ledger is the
+canonical status).
+
+**Still open, with its deadline:** obligation **(2)** — post `osf-correction-v2`
+on osf.io/az52u + record URL/timestamp in `.planning/osf_deviations.md` —
+**before/at submission day** (P-1 makes the placed closing sentence true only
+then). The E-4 public commitment registers at that posting. ⛔ Agent never posts.
+
+**Cross-refs:** `DEC-2026-08-12-e2-p1-closing-sentence`;
+`DEC-2026-08-12-e2-venue-ladder-adopted`; `DEC-2026-08-11-e2-framing-correction`
+(framing B, unmoved); `DEC-2026-08-07-e2-orientation-disposition` (option A,
+code unchanged — still true: this is a docs-only placement).

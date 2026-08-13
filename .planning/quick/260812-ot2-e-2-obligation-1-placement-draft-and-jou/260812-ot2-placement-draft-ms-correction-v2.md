@@ -53,6 +53,11 @@ Anchor by **heading text**; line numbers are as-of-2026-08-12 courtesy
 pointers only.
 
 **Step 0 — CHOOSE THE CLOSING SENTENCE FIRST (section 5; do not skip).**
+> ✅ **CHOSEN 2026-08-12: P-1** (`DEC-2026-08-12-e2-p1-closing-sentence`) — paste
+> the block **byte-intact**. Consequence now on the clock: post
+> `osf-correction-v2` + record URL/timestamp in `osf_deviations.md`
+> **before/at submission day** so the closing sentence is true. P-2 stays below
+> as the record of what was considered; do not place it.
 The block's final sentence references an OSF supplementary entry that does
 **not exist** while obligation (2) stays skipped. Before pasting anything,
 pick **P-1** (keep the block byte-intact and commit to posting the OSF entry
