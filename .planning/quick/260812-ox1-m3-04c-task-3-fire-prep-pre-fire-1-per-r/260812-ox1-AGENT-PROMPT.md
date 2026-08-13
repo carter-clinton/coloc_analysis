@@ -87,6 +87,21 @@ nothing). Note: the MT path has NO /mt/ subdirectory.
 STEP 6 — GATE: Carter eyeballs the billing balance in the Workbench UI against
 the $385–1,084 total commitment.
 
+
+STEP 6b — GATE: the trsx5 byte check (OSF browser tab, Carter logged in; added
+2026-08-13, methodologist recommendation #1 — this now GATES THE FIRE, because
+trsx5 is the pre-registration the fire executes and a truncated posted body is
+unanswerable after output is banked). Carter downloads
+https://osf.io/az52u/files/trsx5 (the file itself, not the page), then in any
+terminal: wc -c on it and md5sum on it. Compare the md5:
+  28ecdb3160833da80cfa25952f76415b (9,758 bytes)  = repo canonical paste block
+      -> posted body matches our record: gate PASSES, proceed.
+  425d925a88ab474ec2396cbea25e665c (9,907 bytes)  = the methodologist's
+      complete lineage -> STOP: reconcile lineages before firing.
+  c19e8b2ad7cd6a45fee1d668d8a9cf9 (or any short/other body) -> STOP: the
+      posted pre-registration is truncated; the fire is HELD until a complete
+      body is re-posted and recorded. Report bytes+md5 verbatim either way.
+
 STEP 7 — the gated .bim test (index-origin validation). RUN:
   mkdir -p data/aou
   awk '($1=="1" || $1=="chr1") && $4>=10000 && $4<=13506933' /home/jupyter/afr_cohort.bim > data/aou/region1_window.bim
@@ -110,13 +125,26 @@ n_var slightly under 102421, n_dropped_occluded near 5; re-run the STEP 2 count
 -> 1. FAIL indicators: "not symmetric", "Killed", OOM in dmesg, status other
 than ok -> STOP, report. PASS -> report the full JSON line to Carter.
 
+NOTE on what a Stage-A PASS proves (added 2026-08-13): status "ok" is also a
+MECHANISM falsification — the .npz converter raises on ANY NaN before upload
+(plink_ld_to_npz.read_square_bin, NaN check first) and the content verifier
+re-scans, so a banked region 1 PROVES the occlusion exclusion accounted for
+100% of the NaN. If occlusion were NOT the sole NaN mechanism, Stage A lands
+as status error and --fail-fast halts: that is a HARD STOP and a scientific
+finding, not a retry. ALSO RUN after PASS (data-layer manifest check):
+  gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv | wc -l
+  gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv
+EXPECT: 6 lines (header + exactly 5 records), region_id m2_region_00001 on
+every record row. This is the one region with a known ground truth — the only
+chance to validate the manifest writer against it.
+
 STEP 9 — GATE: STAGE B, the de-risk batch (4 regions: the two smallest, the
 SH2B3/Track-A anchor m2_region_00040__sub14, and DELIBERATELY the largest
-region m2_region_00149 at 48.5 Mb — its job is to measure the worst case
+region m2_region_00071 at 20.8 Mb (the largest SQUARE-FEASIBLE region) — its job is to measure the worst case
 cheaply; a disk/RAM failure there is a REPORTABLE BOUND on the 28-region large
 class, not a reason to abandon the other 248 regions). On Carter's go, RUN:
   head -1 config/ld_regions.tsv > /tmp/stageB.tsv
-  awk -F'\t' '$7=="AFR" && ($1=="m2_region_00017" || $1=="m2_region_00040__sub14" || $1=="m2_region_00057" || $1=="m2_region_00149")' config/ld_regions.tsv >> /tmp/stageB.tsv
+  awk -F'\t' '$7=="AFR" && ($1=="m2_region_00017" || $1=="m2_region_00040__sub14" || $1=="m2_region_00057" || $1=="m2_region_00071")' config/ld_regions.tsv >> /tmp/stageB.tsv
   wc -l /tmp/stageB.tsv
   python3 src/python/run_native_ld_panel.py --manifest /tmp/stageB.tsv --bfile-prefix /home/jupyter/afr_cohort --out-dir gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou --scratch-dir /home/jupyter/native_ld_scratch --mode square --ancestry AFR --fail-fast
 EXPECT: wc = 5; regions complete smallest-first. After it ends (or halts), RUN
@@ -128,6 +156,16 @@ takes these wall_min/peak_ram numbers back to his planning side for the
 measured cost extrapolation (45 small / 203 medium / 28 large) BEFORE Stage C.
 Recommend he STOPS the environment in the UI if there will be a gap (idle VM
 bills hourly). Banked regions are permanent; nothing recomputes.
+
+
+⚠ STAGE C IS ADDITIONALLY HELD (2026-08-13) pending two producer-side gates on
+Carter's planning side: (1) the pre-registered per-region anomaly gate (trsx5
+clause (d), 0.0005 x n_var, defer-not-exclude) is NOT yet wired in the shipped
+driver; (2) the driver has NO n_var feasibility ceiling, and ~29 regions above
+~23 Mb cannot fit the VM's RAM in square mode (each would grind hours before
+dying). Stages A and B are unaffected (all their regions are feasible and far
+below the anomaly ceiling). Do not accept a Stage C go until Carter confirms
+both gates landed (a repo update will arrive via git pull).
 
 STEP 10 — GATE: STAGE C, THE FULL FIRE (~11 days, $385–1,084). Preconditions
 Carter must confirm: the PRE-FIRE 1b signature lines in

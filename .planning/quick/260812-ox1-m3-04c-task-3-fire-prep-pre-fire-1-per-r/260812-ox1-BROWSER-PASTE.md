@@ -104,6 +104,18 @@ Expect non-zero both, on the order of the SKILL's recorded shape (~73,122 ×
 
 Live balance in the Workbench billing panel vs the **$385–1,084** commit.
 
+## 6b — the trsx5 byte check (GATES THE FIRE; added 2026-08-13, Seth's #1)
+
+In the logged-in OSF browser tab: download https://osf.io/az52u/files/trsx5, then
+`wc -c` + `md5sum` it. **28ecdb3160833da80cfa25952f76415b / 9,758 bytes** (the repo
+canonical paste block at the posting-day revision `ac4c990`) = PASS. **Anything
+else = STOP** — either the methodologist lineage was posted (425d925a…, 9,907 B:
+reconcile lineages first) or the posted body is truncated (c19e8b2… or any short
+body: the fire is HELD until a complete body is re-posted + recorded). Rationale:
+trsx5 IS the pre-registration the fire executes; the clauses at truncation risk
+(lockstep, mandatory manifest, anomaly gate) are the ones the fire exercises, and
+the question is unanswerable after output is banked.
+
 ## 7 — sign PRE-FIRE 1b, branch (i) [RUNBOOK item 7]
 
 Fill the **Date / Signature** lines of the decision record in
@@ -164,6 +176,20 @@ line. **PASS** [RUNBOOK]: `.npz` count 0 → 1 (re-run the item-2 poll); panel
 "not symmetric", no "Killed", no dmesg OOM. **FAIL → stop and report; do not proceed
 to 276.**
 
+**What a PASS proves (added 2026-08-13, Seth's #2 — already embedded, now explicit):**
+`status == "ok"` is a MECHANISM falsification, not just a code gate — the converter
+raises on ANY NaN before upload and the verifier re-scans, so a banked region 1
+proves occlusion accounted for 100% of the NaN. A residual-NaN mechanism lands as
+`status error` under `--fail-fast` = HARD STOP + scientific finding. After PASS,
+also verify the per-region manifest at the data layer (ground truth = 5 records):
+
+```
+gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv | wc -l
+gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv
+```
+
+Expect 6 lines (header + 5 records), all rows `m2_region_00001`.
+
 (The SH2B3 `__sub14` `estimate_s` follow-up of runbook item 9 fires LATER — once
 `m2_region_00040__sub14` is banked mid-fire — it does not gate STEP B.)
 
@@ -179,7 +205,7 @@ between stages** (an idle `n1-standard-32` bills by the hour).
 
 ```
 head -1 config/ld_regions.tsv > /tmp/stageB.tsv
-awk -F'\t' '$7=="AFR" && ($1=="m2_region_00017" || $1=="m2_region_00040__sub14" || $1=="m2_region_00057" || $1=="m2_region_00149")' config/ld_regions.tsv >> /tmp/stageB.tsv
+awk -F'\t' '$7=="AFR" && ($1=="m2_region_00017" || $1=="m2_region_00040__sub14" || $1=="m2_region_00057" || $1=="m2_region_00071")' config/ld_regions.tsv >> /tmp/stageB.tsv
 wc -l /tmp/stageB.tsv    # expect 5 (header + 4)
 
 python3 src/python/run_native_ld_panel.py \
@@ -198,7 +224,7 @@ What each was picked to prove (AFR mix is 45 small / 203 medium / 28 large):
   `__sub` row (~75k vars): banks the one region the science gate needs, so the
   `estimate_s` identity-check (runbook item 9) can run BEFORE the big commit
   instead of mid-fire.
-- `m2_region_00149` — **the LARGEST region (48.5 Mb window)**: the least-proven leg
+- `m2_region_00071` — **the largest SQUARE-FEASIBLE region (20.8 Mb window)**: the least-proven leg
   of the producer is the large class (square-mode output scales n²; disk/RAM at
   ~300k+ vars has never been measured on this VM). Running the WORST CASE now
   converts a day-9 mid-fire surprise into an early, cheap, recorded measurement
@@ -252,6 +278,14 @@ banked auto-skips.
 
    Expect the documented keys (incl. the triangle flag) and an n_var × n_var
    float32 `ld`.
+
+## ⚠ STAGE C HOLD (added 2026-08-13)
+
+Stage C is HELD pending two producer gates on the NCSU side: the pre-registered
+anomaly gate (trsx5 clause (d), `0.0005 × n_var`, defer-not-exclude) is NOT yet
+wired in the driver, and the driver has NO n_var feasibility ceiling while ~29
+regions above ~23 Mb cannot fit 120 GB RAM in square mode. Stages A/B are
+unaffected. Wait for the repo update (git pull) before any Stage C go.
 
 ## 10 — STEP B: THE FIRE [caveats RUNBOOK item 10; invocation DERIVED @HEAD]
 
