@@ -1,10 +1,10 @@
 # Track A — First-pass pivot draft
 
-> **Status:** Research article ready for submission — venue per `DEC-2026-08-12-e2-venue-ladder-adopted`: *Nature* first (format-flexible initial), *Nature Communications* transfer on decline, *AJHG*/*Genome Biology* anchors (original research article format; 5-figure main roster + Figs S1–S7 supplementary; supplementary data at `results/track_a_aggregations/`). Numeric placeholders filled from `results/` per quick-260427-e8n; full numbered bibliography compiled per quick-260503-vcl (32 cited references, Vancouver style; standalone copy at `docs/manuscript/refs/track_a_bibliography.md`). bioRxiv preprint Day 1 regardless.
+> **Status:** Research article ready for submission — venue per `DEC-2026-08-12-e2-venue-ladder-adopted`: *Nature* first (format-flexible initial), *Nature Communications* transfer on decline, *AJHG*/*Genome Biology* anchors (original research article format; 5-figure main roster + Figs S1–S7 supplementary; supplementary data at `results/track_a_aggregations/`). Numeric placeholders filled from `results/` per quick-260427-e8n; full numbered bibliography compiled per quick-260503-vcl (32 cited references, Vancouver style; standalone copy at `docs/manuscript/refs/track_a_bibliography.md`). NO preprint — bioRxiv posting is ruled out by Carter directive 2026-08-12 (`DEC-2026-08-12-no-preprint`).
 >
 > **Pivot direction (2026-04-22):** FROM "identified 28 pleiotropic signals" TO "quantify which published cross-trait pleiotropy claims survive real-LD re-analysis".
 >
-> **Target venue (primary):** *Nature* (flagship; format-flexible initial submission, no restructuring), with the formal Manuscript Transfer Service referral to *Nature Communications* pre-committed on decline; anchors: *AJHG*, *Genome Biology* (`DEC-2026-08-12-e2-venue-ladder-adopted`, 2026-08-12 — supersedes the *Genome Medicine* primary and the earlier fallback line). bioRxiv preprint Day 1 regardless.
+> **Target venue (primary):** *Nature* (flagship; format-flexible initial submission, no restructuring), with the formal Manuscript Transfer Service referral to *Nature Communications* pre-committed on decline; anchors: *AJHG*, *Genome Biology* (`DEC-2026-08-12-e2-venue-ladder-adopted`, 2026-08-12 — supersedes the *Genome Medicine* primary and the earlier fallback line). NO preprint — bioRxiv posting is ruled out by Carter directive 2026-08-12 (`DEC-2026-08-12-no-preprint`).
 
 ---
 

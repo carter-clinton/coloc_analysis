@@ -1926,3 +1926,24 @@ then). The E-4 public commitment registers at that posting. ⛔ Agent never post
 `DEC-2026-08-12-e2-venue-ladder-adopted`; `DEC-2026-08-11-e2-framing-correction`
 (framing B, unmoved); `DEC-2026-08-07-e2-orientation-disposition` (option A,
 code unchanged — still true: this is a docs-only placement).
+
+## 2026-08-12 — DEC-2026-08-12-no-preprint: NO bioRxiv preprint — the standing "Day 1 regardless" plan is REVOKED
+
+**Decision (CARTER, 2026-08-12 22:37 EDT, verbatim):** *"No we aer not making a
+bioRxiv preprint. hell no!"*
+
+**Effect:** the manuscript header's standing *"bioRxiv preprint Day 1
+regardless"* plan (present since the 2026-04 pivot draft) is REVOKED; both
+header tails in `docs/manuscript/id-vs-ref-LD.md` (:3, :7) now state NO
+preprint. No preprint is posted at any rung of the adopted venue ladder.
+**Ladder interaction:** none of the adopted rungs requires a preprint (Nature /
+Nature Communications / AJHG / Genome Biology all merely PERMIT one); the only
+venue that REQUIRES a preprint is eLife, which was already a non-rung
+"parallel-philosophy option" in the memo — it is now additionally EXCLUDED by
+this directive. The `§Pre-bioRxiv placeholder-fill` citations elsewhere in the
+manuscript are the NAME of a frozen-record section in
+`TRACK-A-FROZEN-NUMBERS.md` (historical), not a preprint plan — untouched.
+
+**Cross-refs:** `DEC-2026-08-12-e2-venue-ladder-adopted` (unchanged);
+`260812-ot2-journal-selection-memo.md` (its per-venue preprint-policy column is
+FACT research and stands; its Day-1-compatibility framing is now moot).
