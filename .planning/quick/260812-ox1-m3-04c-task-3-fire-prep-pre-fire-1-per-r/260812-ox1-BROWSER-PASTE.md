@@ -167,6 +167,92 @@ to 276.**
 (The SH2B3 `__sub14` `estimate_s` follow-up of runbook item 9 fires LATER — once
 `m2_region_00040__sub14` is banked mid-fire — it does not gate STEP B.)
 
+## 9b — STAGED RAMP (RECOMMENDED; added 2026-08-13 on Carter's ask) [DERIVED @HEAD]
+
+**Why staging is free:** the driver is resume-safe BY REGION — any `.npz` already in
+the bucket is skipped on the next run (bucket-stat check before compute). Every
+region banked in a subset run is banked forever; the final full run fills in the
+rest. The ONLY staging overhead is VM idle time — **STOP the environment in the UI
+between stages** (an idle `n1-standard-32` bills by the hour).
+
+**Stage B — the de-risk batch (4 regions, deliberately diverse), right after STEP A:**
+
+```
+head -1 config/ld_regions.tsv > /tmp/stageB.tsv
+awk -F'\t' '$7=="AFR" && ($1=="m2_region_00017" || $1=="m2_region_00040__sub14" || $1=="m2_region_00057" || $1=="m2_region_00149")' config/ld_regions.tsv >> /tmp/stageB.tsv
+wc -l /tmp/stageB.tsv    # expect 5 (header + 4)
+
+python3 src/python/run_native_ld_panel.py \
+  --manifest /tmp/stageB.tsv \
+  --bfile-prefix /home/jupyter/afr_cohort \
+  --out-dir gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou \
+  --scratch-dir /home/jupyter/native_ld_scratch \
+  --mode square --ancestry AFR \
+  --fail-fast
+```
+
+What each was picked to prove (AFR mix is 45 small / 203 medium / 28 large):
+- `m2_region_00017`, `m2_region_00057` — the two SMALLEST regions (~1.05–1.18 Mb):
+  fast first feedback on the whole path.
+- `m2_region_00040__sub14` — **the SH2B3 / Track A anchor** and a split-parent
+  `__sub` row (~75k vars): banks the one region the science gate needs, so the
+  `estimate_s` identity-check (runbook item 9) can run BEFORE the big commit
+  instead of mid-fire.
+- `m2_region_00149` — **the LARGEST region (48.5 Mb window)**: the least-proven leg
+  of the producer is the large class (square-mode output scales n²; disk/RAM at
+  ~300k+ vars has never been measured on this VM). Running the WORST CASE now
+  converts a day-9 mid-fire surprise into an early, cheap, recorded measurement
+  (`wall_min` / `peak_ram_gib` land in the panel TSV either way). ⚠ If it FAILS
+  (disk/RAM), that is a FINDING that bounds the deliverable for the 28-region
+  large class — it does NOT block firing the other 248 regions; bring it back for
+  a decision rather than papering over.
+
+**Cost-refinement gate (after Stage B, before Stage C):** per-class average
+`wall_min` from the panel TSV × the class mix (45/203/28) refines the $385–1,084
+band with measured numbers. Decide the full fire on THAT estimate:
+
+```
+gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv | awk -F'\t' 'NR>1{print $1"\t"$3"\t"$4"\t"$5"\t"$7}'
+```
+
+(columns printed: region_id, n_var, wall_min, peak_ram_gib, status)
+
+**Stage C — the remainder:** exactly STEP B below, unchanged — everything already
+banked auto-skips.
+
+## 9c — MONITORING: what "successful" looks like, live [DERIVED @HEAD + RUNBOOK]
+
+1. **Liveness** — the `.npz` count poll (item 2's command) CLIMBING. A count that
+   stops climbing for ~a region-scale interval is the investigate signal.
+2. **Quality feed** — the panel TSV is APPENDED PER REGION as the loop runs (it is
+   the live per-region status feed). Status rollup — want every row `ok`:
+
+   ```
+   gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv | awk -F'\t' 'NR>1{c[$7]++} END{for(k in c) print k, c[k]}'
+   ```
+
+   Any `verify_failed` / `error: …` row: the region's artifacts stay in scratch for
+   inspection; the loop continues. Investigate before Stage C; do not re-fire
+   blindly.
+3. **The log** — `tail -20 /home/jupyter/native_ld_fire.log` and
+   `grep -cE "VERIFY-FAILED|^ERROR" /home/jupyter/native_ld_fire.log` (want 0).
+4. **Built-in content gate (the reason bucket presence ≈ success):** every `.npz`
+   is content-verified BEFORE upload (`content_verify_npz`: symmetry, unit
+   diagonal, NaN scan) and uploads only inside `if ok:` — a bucket `.npz` is
+   verified by construction. The per-region occlusion manifest + `.afreq` +
+   excludelist ride the same gate.
+5. **Optional in-perimeter spot-check ($0)** — after Stage B, on the VM:
+
+   ```
+   gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00017.npz /tmp/ && python3 -c "
+   import numpy as np
+   z = np.load('/tmp/m2_region_00017.npz', allow_pickle=False)
+   print(sorted(z.files)); print(z['ld'].shape, z['ld'].dtype)"
+   ```
+
+   Expect the documented keys (incl. the triangle flag) and an n_var × n_var
+   float32 `ld`.
+
 ## 10 — STEP B: THE FIRE [caveats RUNBOOK item 10; invocation DERIVED @HEAD]
 
 ```
