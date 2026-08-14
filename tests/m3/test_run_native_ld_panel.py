@@ -1661,6 +1661,9 @@ def test_driver_writes_occluded_excludelist_with_exactly_the_occluded_ids(tmp_pa
     out_dir = tmp_path / "out"
 
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     excl = out_dir / "m2_region_00001.occluded.excludelist"
@@ -1681,6 +1684,9 @@ def test_exclude_reaches_the_plink_argv(tmp_path, monkeypatch):
 
     mock = _MockPlink(bim, nan_snps=occluded_ids)
     monkeypatch.setattr(drv, "_run_plink", mock)
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     assert len(mock.calls) == 1
@@ -1700,6 +1706,9 @@ def test_keep_allele_order_still_present_alongside_exclude(tmp_path, monkeypatch
 
     mock = _MockPlink(bim, nan_snps=occluded_ids)
     monkeypatch.setattr(drv, "_run_plink", mock)
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     for argv in mock.calls:
@@ -1725,6 +1734,9 @@ def test_occlusion_filtered_npz_has_no_nan_and_verifies(tmp_path, monkeypatch):
     out_dir = tmp_path / "out"
 
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     assert res[0]["status"] == "ok"
@@ -1764,6 +1776,9 @@ def test_n_dropped_occluded_is_separated_from_n_dropped_monomorphic(tmp_path, mo
         drv, "_run_plink",
         _MockPlink(bim, mono_snps={mono_id}, nan_snps=occluded_ids),
     )
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     r0 = res[0]
@@ -1909,6 +1924,9 @@ def test_gs_per_region_occlusion_manifest_uploaded_for_occluded_region(tmp_path,
     gs_out = "gs://test-bucket/ld/AFR_aou"
 
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     mock_gs = _MockGsutil()
     monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
 
@@ -1950,6 +1968,9 @@ def test_gs_per_region_occlusion_manifest_only_for_occluded_regions(tmp_path, mo
     r1_dir.mkdir()
     bfile1, bim1, (chrom1, from1, to1), occluded_ids, _ = _setup_region1_cohort(r1_dir)
     man1 = _region1_manifest(r1_dir / "regions.tsv", chrom1, from1, to1)
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim1, nan_snps=occluded_ids))
     res1 = drv.run_native_ld_panel(man1, bfile1, gs_out, mode="square",
                                    scratch_dir=tmp_path / "s1")
@@ -2005,6 +2026,9 @@ def test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed(tmp_pa
     scratch = tmp_path / "scratch"
 
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     monkeypatch.setattr(
         drv, "content_verify_npz",
         lambda npz_path, *, mode="square": (False, "forced verify failure (test seam)"),
@@ -2069,6 +2093,9 @@ def test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchang
     out_dir = tmp_path / "out"
 
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+    # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
+    # gate's own tests live in section 19
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
     res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
     assert res[0]["status"] == "ok"
 

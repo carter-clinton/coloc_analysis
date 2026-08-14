@@ -121,6 +121,27 @@ _PANEL_COLUMNS = [
 ]
 _DEFAULT_PANEL_NAME = "m3-W2-native-plink-panel.tsv"
 
+# trsx5 clause (d) — the pre-registered per-region ANOMALY GATE fraction
+# (.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md:61,
+# PASTE block "(d) Anomaly gate (per region)"): an occluded count EXCEEDING
+# _OCCLUSION_ANOMALY_FRACTION * n_var marks the region a SUBSTRATE ANOMALY — it is
+# DEFERRED for re-diagnosis and disclosed as a deviation, NEVER auto-excluded.
+# Pre-registered, therefore deliberately NOT CLI-tunable: a knob would invite
+# silent deviation from the public commitment. The gate reads this name as a
+# MODULE-GLOBAL at evaluation time (never bound as a default argument), so the
+# topology-dense synthetic test fixtures can pin the gate open.
+_OCCLUSION_ANOMALY_FRACTION = 0.0005
+
+# Feasibility ceiling for SQUARE mode (quick-260813-t21): the dense n_var^2
+# float32 matrix must fit ONE process's RAM, and the downstream converter refuses
+# anything above m3_convert_max_n_var (config/pipeline.yaml:393, the 2026-08-05
+# blast-radius D remediation). This default MUST equal that consumer ceiling —
+# the equality is PINNED by test_max_n_var_default_pins_consumer_ceiling, which
+# READS the YAML (never two hardcoded literals). Standing diagnosis:
+# .planning/debug/m3-producer-unbounded-dense-read.md ("nobody carried the number
+# back to the producer"; the 2026-06-28 fire OOM-killed at region 1).
+_DEFAULT_MAX_N_VAR = 120000
+
 # m3-02e-T4 transient short-read guard (260630-rn4): a one-off short read of the
 # cohort .bim by _window_bim_n_var's read_text() at the instant plink finishes
 # writing the 42 GB .ld.bin can return 0 in-window rows against a NON-empty
@@ -701,7 +722,8 @@ def _reclaim_region_scratch(compute_dir: "str | Path", region_id: str,
 
 def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                    mode: str = "square", panel_tsv: "str | Path | None" = None,
-                   scratch_dir: "str | Path | None" = None) -> dict:
+                   scratch_dir: "str | Path | None" = None,
+                   max_n_var: int = _DEFAULT_MAX_N_VAR) -> dict:
     """Process ONE manifest region: skip-if-banked, else plink -> .npz -> verify
     -> (durable) land in the destination.
 
@@ -793,12 +815,50 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             pre_window_n_var, pre_window_bim = _window_bim_n_var(
                 bim_path, chrom, from_bp, to_bp,
             )
+            # GATE 1 (quick-260813-t21): n_var FEASIBILITY CEILING — evaluated
+            # FIRST (it needs only the count; no occlusion detect runs on an
+            # infeasible region). Square mode materializes a dense n_var^2
+            # float32 in ONE process's RAM; the 2026-06-28 fire OOM-killed at
+            # region 1 doing exactly this
+            # (.planning/debug/m3-producer-unbounded-dense-read.md). Over-ceiling
+            # regions are DEFERRED, mirroring the skipped_idempotent early-return
+            # shape: panel row appended, loop continues. n_var / n_dropped_* stay
+            # None — the observed count lives in the status string (the
+            # "error: ..." detail-in-status precedent). The early return skips
+            # the tail append below — correct: the row is already appended, and
+            # append_panel_row dedups by region_id regardless.
+            if pre_window_n_var > max_n_var:
+                result["status"] = (f"deferred_infeasible_square: n_var={pre_window_n_var} "
+                                    f"> ceiling={max_n_var}")
+                print(f"region {region_id}: DEFERRED (infeasible square) — {result['status']}",
+                      file=sys.stderr, flush=True)
+                append_panel_row(panel_tsv, result, scratch_dir=compute_dir)
+                return result
             raw_rows = [
                 ln.split()[:6]
                 for ln in Path(pre_window_bim).read_text().splitlines()
                 if ln.strip()
             ]
             occluded_ids, occlusion_edges = detect_occluded_variants(raw_rows)
+            # GATE 2 (quick-260813-t21): trsx5 clause (d) ANOMALY GATE — BEFORE
+            # the excludelist write / manifests / plink, which must NEVER run on
+            # an anomaly region (clause (d): "NOT auto-excluded" — defer for
+            # re-diagnosis + disclose as a deviation). STRICT >: clause (d) says
+            # "exceeds", so count == ceiling stays on the exclude-in-lockstep
+            # path. Real region-1 headroom: 5/102,421 = 4.9e-5 vs ceiling
+            # 51 = int(0.0005 * 102,421) — 10x headroom; the gate must not fire
+            # there. _OCCLUSION_ANOMALY_FRACTION is read as a MODULE-GLOBAL at
+            # evaluation time (never bound as a default argument) so the
+            # topology-dense test fixtures can pin the gate open.
+            if len(occluded_ids) > _OCCLUSION_ANOMALY_FRACTION * pre_window_n_var:
+                result["status"] = (
+                    f"deferred_occlusion_anomaly: {len(occluded_ids)} occluded of "
+                    f"{pre_window_n_var} (ceiling "
+                    f"{int(_OCCLUSION_ANOMALY_FRACTION * pre_window_n_var)})")
+                print(f"region {region_id}: DEFERRED (occlusion anomaly, trsx5 clause (d)) — "
+                      f"{result['status']}", file=sys.stderr, flush=True)
+                append_panel_row(panel_tsv, result, scratch_dir=compute_dir)
+                return result
             if occluded_ids:
                 # Durable provenance, not a scratch temp: the excludelist is the
                 # exact argv input plink saw, kept next to the region's outputs so a
@@ -1053,7 +1113,8 @@ def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
                         ancestry: str = "AFR",
                         num_shards: int = 1, shard_index: int = 0,
                         scratch_dir: "str | Path | None" = None,
-                        fail_fast: bool = False) -> list[dict]:
+                        fail_fast: bool = False,
+                        max_n_var: int = _DEFAULT_MAX_N_VAR) -> list[dict]:
     """Drive the native-plink LD loop over the ``ancestry`` rows of the manifest.
 
     Reads the manifest (``aou_ld_panel._read_manifest``), filters to
@@ -1094,6 +1155,7 @@ def run_native_ld_panel(manifest_path: "str | Path", bfile_prefix: str,
         res = process_region(
             row, bfile_prefix=bfile_prefix, out_dir=out_dir_arg,
             mode=mode, panel_tsv=panel_tsv, scratch_dir=scratch_dir,
+            max_n_var=max_n_var,
         )
         results.append(res)
         if fail_fast and str(res.get("status")) != "ok":
@@ -1131,10 +1193,22 @@ def main(argv: "list[str] | None" = None) -> int:
     p.add_argument("--shard-index", dest="shard_index", type=int, default=0,
                    help="0-based index of THIS shard (0 <= shard_index < num_shards). "
                         "For the 8-VM fan-out: 0..7, each with its own --panel-tsv.")
+    p.add_argument("--max-n-var", dest="max_n_var", type=int,
+                   default=_DEFAULT_MAX_N_VAR,
+                   help="Feasibility ceiling for square mode: the dense n_var^2 "
+                        "float32 matrix must fit ONE process's RAM. The default "
+                        "MUST equal the consumer's m3_convert_max_n_var "
+                        "(config/pipeline.yaml). A region whose in-window variant "
+                        "count exceeds the ceiling records status "
+                        "deferred_infeasible_square and the loop continues.")
     p.add_argument("--fail-fast", dest="fail_fast", action="store_true",
                    help="Halt the loop (raise RegionGateError) on the FIRST region "
                         "whose status != 'ok'. Use to GATE region 1 before committing "
-                        "to a full 276-region fire. Default off = resume-safe continue.")
+                        "to a full 276-region fire. Default off = resume-safe continue. "
+                        "Deferrals (deferred_infeasible_square / "
+                        "deferred_occlusion_anomaly) also halt — deliberate: Stages "
+                        "A/B contain only feasible, far-below-ceiling regions; Stage "
+                        "C runs without --fail-fast so deferrals continue the loop.")
     args = p.parse_args(argv)
 
     results = run_native_ld_panel(
@@ -1142,6 +1216,7 @@ def main(argv: "list[str] | None" = None) -> int:
         mode=args.mode, panel_tsv=args.panel_tsv, ancestry=args.ancestry,
         num_shards=args.num_shards, shard_index=args.shard_index,
         scratch_dir=args.scratch_dir, fail_fast=args.fail_fast,
+        max_n_var=args.max_n_var,
     )
     for res in results:
         print(json.dumps(res), flush=True)
