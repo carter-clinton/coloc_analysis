@@ -2089,3 +2089,304 @@ def test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchang
     shared = out_dir / "occlusion_manifest.tsv"
     assert shared.is_file()
     assert shared.read_bytes() == expected.read_bytes()
+
+
+# --------------------------------------------------------------------------- #
+# 19. the two PRE-FIRE producer gates (quick-260813-t21)                       #
+# --------------------------------------------------------------------------- #
+#
+# The ~11-day / $385-1,084 Stage-C fire is HELD on exactly these two gates:
+#
+# (1) trsx5 clause (d) ANOMALY GATE (the canonical PASTE block of
+#     .planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md,
+#     "(d) Anomaly gate (per region)"): an occluded count EXCEEDING
+#     0.0005 x n_var marks a SUBSTRATE ANOMALY — the region is DEFERRED for
+#     re-diagnosis and disclosed as a deviation, NEVER auto-excluded. Before
+#     this section landed, the driver excluded unconditionally at ANY count,
+#     which the pre-registration prohibits.
+# (2) the n_var FEASIBILITY CEILING (--max-n-var, default = the consumer's
+#     m3_convert_max_n_var): the standing diagnosis
+#     .planning/debug/m3-producer-unbounded-dense-read.md proved the producer
+#     materializes dense n_var^2 float32 with NO bound (52/276 AFR cells exceed
+#     the 120,000 consumer ceiling; the 2026-06-28 fire OOM-killed at region 1).
+#
+# Test names carry the shared -k substrings anomaly_gate / feasibility_ceiling /
+# max_n_var_default / fail_fast_halts_on_deferral so one -k selects the suite.
+# The region-1 TEST fixture is topology-dense (5 occluded / 11 = 45%; the REAL
+# region 1 is 5/102,421 = 4.9e-5), so the section-16/18 fixture tests pin the
+# clause-(d) gate OPEN via monkeypatch of _OCCLUSION_ANOMALY_FRACTION; the
+# gate's OWN tests live here.
+
+
+def _one_occlusion_cohort(tmp_path: Path, n_plain: int):
+    """A cohort of ``n_plain`` plain SNPs (chr12, 100-bp spacing) + ONE deletion at
+    bp0+50 whose REF spans 60 bases — footprint (bp0+50, bp0+109] occludes EXACTLY
+    the one SNP at bp0+100 (rs1001). Returns (bfile_prefix, bim, window,
+    occluded_id). Used by the sub-ceiling + boundary anomaly-gate tests, where the
+    occluded fraction 1/(n_plain+1) must sit AT or BELOW 0.0005 x n_var."""
+    bp0 = 53_000_000
+    rows = _default_bim_rows(n_plain, chrom=12, bp0=bp0)
+    # A1=ALT is the single left-anchor base; A2=REF spans 60 bases (a deletion).
+    deletion = (12, "del1", 0, bp0 + 50, "T", "T" * 60)
+    rows = rows[:1] + [deletion] + rows[1:]  # ascending bp order preserved
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, rows)
+    _write_af(tmp_path / "cohort.afreq", len(rows))
+    window = (12, bp0, bp0 + (n_plain - 1) * 100)
+    return str(tmp_path / "cohort"), bim, window, "rs1001"
+
+
+def test_occlusion_anomaly_gate_defers_never_excludes(tmp_path, monkeypatch):
+    """(1) trsx5 clause (d), REAL constant, gs mode (the fire-faithful surface): a
+    region whose occluded count EXCEEDS 0.0005 x n_var (5 of 11 here) is DEFERRED —
+    NOTHING is excluded (no excludelist, no manifests), plink NEVER runs for it, no
+    region artifact crosses to the bucket — and the loop CONTINUES to the next
+    region. The panel TSV carries BOTH rows under the unchanged 9-column header,
+    the deferred row's detail living in the status string (the "error: ..."
+    precedent). Negative control: this test was OBSERVED RED pre-implementation
+    (the driver excluded and returned "ok")."""
+    fx = _region1_fixture_module()
+    r1_rows = list(fx._REGION1_BIM_ROWS)                      # chr1, 11 rows, 5 occluded
+    plain_rows = _default_bim_rows(20, chrom=1, bp0=30_000_000)
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, r1_rows + plain_rows)
+    _write_af(tmp_path / "cohort.afreq", len(r1_rows) + len(plain_rows))
+    bfile = str(tmp_path / "cohort")
+    occluded_ids = {r[1] for r in r1_rows
+                    if int(r[3]) in fx._REGION1_EXPECTED_OCCLUDED_POS}
+    assert len(occluded_ids) == 5
+
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        # row 1: the anomaly window — 11 in-window, 5 occluded; 5 > 0.0005*11 fires
+        {"region_id": "m2_region_00001", "chr": 1, "ancestry": "AFR",
+         "window_start_grch38": 1_980_000, "window_end_grch38": 8_400_000},
+        # row 2: a clean window — 20 plain rows, zero occlusions -> ok
+        {"region_id": "m2_region_00002", "chr": 1, "ancestry": "AFR",
+         "window_start_grch38": 30_000_000, "window_end_grch38": 30_001_900},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+
+    mock = _MockPlink(bim, nan_snps=occluded_ids)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=tmp_path)
+
+    # DEFERRED, with the observed counts in the status string
+    assert res[0]["status"].startswith("deferred_occlusion_anomaly")
+    assert "5 occluded of 11" in res[0]["status"]
+    # nothing dropped, nothing computed: detail lives in the status string
+    assert res[0]["n_dropped_occluded"] is None
+    assert res[0]["n_var"] is None
+    # clause (d): defer, NOT auto-exclude — no excludelist, no manifests, anywhere
+    assert list(tmp_path.rglob("*.occluded.excludelist")) == []
+    assert list(tmp_path.rglob("*occlusion_manifest.tsv")) == []
+    # plink NEVER ran for region 1
+    assert len(mock.calls) == 1
+    out_arg = mock.calls[0][mock.calls[0].index("--out") + 1]
+    assert out_arg.endswith("m2_region_00002")
+    # NO cp of any region-1 artifact; permitted destinations are ONLY the
+    # panel-TSV URI + region-2 artifacts (the section-18 verify_failed pattern)
+    cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+    assert not any("m2_region_00001" in d for d in cp_dsts), cp_dsts
+    panel_uri = drv._gs_join(gs_out, drv._DEFAULT_PANEL_NAME)
+    assert all(d == panel_uri or "m2_region_00002" in d for d in cp_dsts), cp_dsts
+    # the loop CONTINUED: region 2 completed and its .npz was uploaded
+    assert res[1]["status"] == "ok"
+    assert f"{gs_out}/m2_region_00002.npz" in cp_dsts
+    # panel TSV: unchanged 9-column header; both rows; deferred status in-column
+    lines = mock_gs.contents[panel_uri].decode().strip().splitlines()
+    assert len(drv._PANEL_COLUMNS) == 9
+    assert lines[0] == "\t".join(drv._PANEL_COLUMNS)
+    rows_by_id = {ln.split("\t")[0]: ln.split("\t") for ln in lines[1:]}
+    assert set(rows_by_id) == {"m2_region_00001", "m2_region_00002"}
+    status_col = drv._PANEL_COLUMNS.index("status")
+    assert rows_by_id["m2_region_00001"][status_col].startswith(
+        "deferred_occlusion_anomaly")
+
+
+def test_occlusion_anomaly_gate_open_at_subceiling_rate(tmp_path, monkeypatch):
+    """(2) REAL constant, sub-ceiling rate: 1 occluded of 2,001 (ceiling
+    0.0005*2001 = 1.0005; 1 > 1.0005 is False) keeps the FULL existing
+    exclude-in-lockstep behavior — excludelist + --exclude argv + counted drop +
+    verified .npz, status ok. This is a NO-CHANGE pin (structurally GREEN before
+    the gate existed); its failability is MUTATION-PROVEN (fraction -> 1e-9 makes
+    the gate fire on 1/2001 and this test go RED — observed on the clean tree)."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_id = _one_occlusion_cohort(
+        tmp_path, n_plain=2000)          # n_var = 2001, occluded = 1
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "m2_region_00001", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+
+    mock = _MockPlink(bim, nan_snps={occluded_id})
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert res[0]["status"] == "ok"
+    excl = out_dir / "m2_region_00001.occluded.excludelist"
+    assert excl.is_file()
+    listed = {ln.strip() for ln in excl.read_text().splitlines() if ln.strip()}
+    assert listed == {occluded_id}
+    assert "--exclude" in mock.calls[0]
+    assert res[0]["n_dropped_occluded"] == 1
+    npz = out_dir / "m2_region_00001.npz"
+    assert npz.is_file()
+    ok, reason = drv.content_verify_npz(npz, mode="square")
+    assert ok is True, reason
+
+
+def test_occlusion_anomaly_gate_boundary_strict_greater(tmp_path, monkeypatch):
+    """(3) BOUNDARY: 1 occluded of 2,000 -> ceiling 0.0005*2000 = 1.0 EXACTLY.
+    Clause (d) says "exceeds" -> STRICT >; count == ceiling does NOT defer (status
+    ok, excludelist written). NO-CHANGE pin; failability MUTATION-PROVEN (gate
+    comparison > -> >= fires at count == ceiling and this test goes RED —
+    observed on the clean tree)."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_id = _one_occlusion_cohort(
+        tmp_path, n_plain=1999)          # n_var = 2000, occluded = 1
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "m2_region_00001", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+    ])
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps={occluded_id}))
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert res[0]["status"] == "ok"
+    assert (out_dir / "m2_region_00001.occluded.excludelist").is_file()
+
+
+def test_feasibility_ceiling_defers_infeasible_region(tmp_path, monkeypatch):
+    """(4) A square-mode region whose pre-window count exceeds --max-n-var is
+    DEFERRED with the LOCKED status format — no plink, no artifacts — and the loop
+    continues to the next (feasible) region. The panel TSV carries the deferred
+    row under the unchanged 9-column header. Negative control: OBSERVED RED
+    pre-implementation (TypeError: unexpected kwarg max_n_var)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)   # 20 rows
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        # row 1: the full window — 20 in-window > ceiling 10 -> defer
+        {"region_id": "m2_region_00001", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+        # row 2: a sub-window covering rows 0-4 only (5 in-window) -> feasible
+        {"region_id": "m2_region_00002", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": from_bp + 400},
+    ])
+    out_dir = tmp_path / "out"
+
+    mock = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square",
+                                  max_n_var=10)
+
+    assert res[0]["status"] == "deferred_infeasible_square: n_var=20 > ceiling=10"
+    assert res[0]["n_var"] is None
+    # plink ran ONCE, for region 2 only; region 1 left no artifacts
+    assert len(mock.calls) == 1
+    out_arg = mock.calls[0][mock.calls[0].index("--out") + 1]
+    assert out_arg.endswith("m2_region_00002")
+    assert not (out_dir / "m2_region_00001.npz").exists()
+    assert not (out_dir / "m2_region_00001.occluded.excludelist").exists()
+    # the loop CONTINUED
+    assert res[1]["status"] == "ok"
+    # panel TSV: 9-col header, deferred row present
+    panel = out_dir / drv._DEFAULT_PANEL_NAME
+    lines = panel.read_text().strip().splitlines()
+    assert lines[0] == "\t".join(drv._PANEL_COLUMNS)
+    assert len(drv._PANEL_COLUMNS) == 9
+    deferred = [ln for ln in lines[1:] if ln.startswith("m2_region_00001\t")]
+    assert len(deferred) == 1
+    assert "deferred_infeasible_square: n_var=20 > ceiling=10" in deferred[0]
+
+
+def test_feasibility_ceiling_runs_before_occlusion_detect(tmp_path, monkeypatch):
+    """(5) LOCKED ordering: the feasibility ceiling runs FIRST — it needs only the
+    count, so NO occlusion detection runs on an infeasible region. A spy wraps
+    drv.detect_occluded_variants; the second run (feasible ceiling, anomaly gate
+    pinned open) is the BUILT-IN control proving the spy can detect a call.
+    raising=False on the pin is the ONE permitted use (pre-implementation the
+    constant does not exist; it self-heals at GREEN)."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid_at = \
+        _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
+
+    calls = {"n": 0}
+    real_detect = drv.detect_occluded_variants
+
+    def spy(rows):
+        calls["n"] += 1
+        return real_detect(rows)
+
+    monkeypatch.setattr(drv, "detect_occluded_variants", spy)
+
+    # infeasible: 11 > 5 -> deferred BEFORE detect ever runs
+    res = drv.run_native_ld_panel(manifest, bfile, tmp_path / "out1",
+                                  mode="square", max_n_var=5)
+    assert res[0]["status"].startswith("deferred_infeasible_square")
+    assert calls["n"] == 0
+
+    # BUILT-IN control: feasible ceiling + clause-(d) gate pinned OPEN (the
+    # fixture is topology-dense, 5/11) -> detect IS called exactly once.
+    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 1.0, raising=False)
+    drv.run_native_ld_panel(manifest, bfile, tmp_path / "out2",
+                            mode="square", max_n_var=120000)
+    assert calls["n"] == 1
+
+
+def test_max_n_var_default_pins_consumer_ceiling(tmp_path, monkeypatch):
+    """(6) THE CARRIED-BACK-NUMBER PIN — the debug file's thesis ("nobody carried
+    the number back to the producer") made enforceable: the argparse default for
+    --max-n-var EQUALS m3_convert_max_n_var read out of config/pipeline.yaml. The
+    YAML read IS the test — never two hardcoded literals, so producer/consumer
+    drift fails the suite. Negative control: OBSERVED RED pre-implementation
+    (max_n_var absent from the captured kwargs)."""
+    import yaml
+
+    captured = {}
+
+    def stub(manifest, bfile_prefix, out_dir, **kwargs):
+        captured.update(kwargs)
+        return []
+
+    monkeypatch.setattr(drv, "run_native_ld_panel", stub)
+    rc = drv.main(["--bfile-prefix", "x", "--out-dir", str(tmp_path)])
+    assert rc == 0
+
+    cfg = yaml.safe_load(
+        (PROJECT_ROOT / "config" / "pipeline.yaml").read_text())
+    assert isinstance(cfg["m3_convert_max_n_var"], int)   # loud if the key moves
+    assert captured["max_n_var"] == cfg["m3_convert_max_n_var"]
+
+
+def test_fail_fast_halts_on_deferral(tmp_path, monkeypatch):
+    """(7) LOCKED semantics, documented: --fail-fast halts (RegionGateError) on ANY
+    status != 'ok', which now includes deferrals — never special-cased. Deliberate:
+    Stages A/B contain only feasible, far-below-ceiling regions; Stage C therefore
+    runs WITHOUT --fail-fast so deferrals continue the loop. Negative control:
+    OBSERVED RED pre-implementation (TypeError: unexpected kwarg max_n_var)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)   # 20 rows
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        # infeasible FIRST (20 > 10), feasible second — never reached
+        {"region_id": "m2_region_00001", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+        {"region_id": "m2_region_00002", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": from_bp + 400},
+    ])
+
+    mock = _MockPlink(bim)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    with pytest.raises(drv.RegionGateError) as ei:
+        drv.run_native_ld_panel(manifest, bfile, tmp_path / "out", mode="square",
+                                fail_fast=True, max_n_var=10)
+    assert ei.value.status.startswith("deferred_infeasible_square")
+    assert ei.value.region_id == "m2_region_00001"
+    assert mock.calls == []   # the deferred region ran no plink; region 2 never reached
