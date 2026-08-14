@@ -1142,3 +1142,56 @@ remedies, and choosing between them is a call about intent that no agent can
 make from the diff alone.
 
 **Nothing is blocked on the answer.** The three real gates are live either way.
+
+# Deferred items — discovered during quick-260814-guk execution (2026-08-14)
+
+## R4-COVERAGE — the square-mode deferral set is an ancestry-specific COVERAGE GAP requiring methods/limitations disclosure
+
+**Logged:** 2026-08-14 (`quick-260814-guk`, from Seth's 2026-08-14 R4).
+**Status: REGISTERED as a DISCLOSURE OBLIGATION — not blocking the fire.**
+
+**The gap.** With the `--max-n-var` feasibility ceiling wired at the pinned
+default of 120,000 (`quick-260813-t21`, `d9fbc63`), regions above the ceiling
+**defer** rather than compute:
+
+| Quantity | Estimate |
+|---|---|
+| regions deferring at the 120k cap | **29 / 276 = 10.5%** |
+| bankable target | **~247 regions** |
+| largest deferred span | **48.5 Mb** |
+
+⚠ **These are Seth's estimates, not measurements.** The ACTUAL numbers emerge at
+fire time from the panel TSV's `deferred_infeasible_square` rows and **MUST
+replace them before anything is published.** No deferral count is a pre-committed
+expectation.
+
+**The obligation.** Disclose this as a **methods/limitations** item alongside the
+occlusion disclosure — not merely as an internal deferral status — in the form
+*"N regions exceeding n_var X were not converted in square mode; affected span
+M Mb"*, with the actual post-fire numbers.
+
+⚠ **The framing "nothing scientific is lost" is RETIRED — do not repeat it.** It
+is true as a statement about *this pipeline as currently built* (the consumer
+could neither convert nor egress those regions anyway) and **FALSE as a statement
+about the science**: those regions carry real loci with real association signal,
+and a genome-wide AFR scan that silently covers ~247/276 regions has a ~10.5%
+**ancestry-specific coverage hole**. Undisclosed, that becomes the reviewer
+question we cannot answer later — *"why does your AFR panel omit the largest
+regions?"* This paragraph is the one and only place the retired wording is
+quoted; `260814-guk-verify.sh fire` asserts it appears **zero** times across the
+three runbook files.
+
+**The remedy path — so the gap is bounded, not permanent.** The frozen producer
+**already supports banded mode** (`--r gz` with an `--ld-window-*` bound), and
+large regions can be split into **overlapping sub-windows**. **NEITHER happens
+before this fire.** Recording the path is what makes the deferral honest; it is
+explicitly **not** a commitment to run either one now.
+
+**Not blocking.** The fire proceeds; the deferrals are the gates working. What is
+owed is the disclosure at STEP E/F time with measured numbers.
+
+**Cross-references:** `260812-ox1-READY-TO-FIRE.md` §10's post-fire disclosure
+note (extended in the same task); the Stage-B cost gate, which now reads
+**cost-per-BANKABLE-region**, never cost-per-region-of-276, at all three sites
+that state it (`AGENT-PROMPT` STEP 9, `READY-TO-FIRE` item 11-C, `BROWSER-PASTE`
+cost-refinement gate).

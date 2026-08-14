@@ -1,0 +1,5 @@
+# 260814-guk containment baseline - captured BEFORE any Task 2 edit.
+entry_sha 28294aaee80785fefe119fef83b19d6463ac67dc
+state_frontmatter_1_24_md5 fe245157bb7a442431898c26229e7fb9
+state_line34_md5 52039be7fec342eba1ce9c29630c0ed7
+handoff_resume0_md5 bde46bdc247187b09a7c77f926090084
