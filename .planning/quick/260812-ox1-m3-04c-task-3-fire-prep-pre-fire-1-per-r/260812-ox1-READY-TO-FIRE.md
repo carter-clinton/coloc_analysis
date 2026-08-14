@@ -16,6 +16,9 @@
 **Contents: ONLY Carter's remaining items, in fire order.** Everything an agent could
 close is closed: PRE-FIRE 1 LANDED (commit `5284505`, per-region manifest upload, TDD),
 PRE-FIRE 3 is settled code-side (item 8), the L-checks are re-anchored green.
+⚠ **Item 6b was ADDED 2026-08-14** — the fire-blocking trsx5 byte check was missing from
+this list while this line claimed the list was complete. Items 7–11 are **unrenumbered**;
+cross-references to "item 7" elsewhere in the 260812-ox1 package still resolve.
 
 ---
 
@@ -104,6 +107,66 @@ failure mode with a bigger bill.
 Read the **live balance in the Workbench billing panel** before the $385–1,084 commit.
 (The CDR-pin half needs NO re-verification: `_resolve_aux_base` makes v8→v9 a path
 no-op.)
+
+## 6b. THE trsx5 BYTE CHECK — GATES THE FIRE (added 2026-08-14, Seth escalation)
+
+⛔ **This gate BLOCKS THE FIRE and blocks obligation-(2) posting.** trsx5 IS the
+pre-registration the fire executes; a truncated posted body is unanswerable after
+output is banked.
+
+**1 — download.** In a logged-in OSF browser tab, download
+https://osf.io/az52u/files/trsx5 — the **file**, not the page. Then:
+
+```
+wc -c   <the downloaded file>
+md5sum  <the downloaded file>
+```
+
+Report **both, verbatim**, whatever they say.
+
+**2 — ⚠ ADJUDICATE ON THE BYTE COUNT FIRST.** A byte count cannot be
+mistranscribed into a false pass; a hash can. **Any size other than 9,758 or
+9,907 is a STOP by itself** — no hash comparison is required, and none may
+overrule it.
+
+**3 — the hashes then confirm which known body it is:**
+
+| Observed | Expected md5 | Meaning | Action |
+|---|---|---|---|
+| **9,758 B** | `28ecdb3160833da80cfa25952f76415b` | the repo-canonical paste block | **gate PASSES** — proceed |
+| 9,758 B | anything else | same size, different content — its own anomaly | **STOP**; report verbatim |
+| **9,907 B** | `425d925a88ab474ec2396cbea25e665c` | the methodologist's complete lineage (Seth-reported; **we do not hold this body**) | **STOP** — reconcile the lineages before firing |
+| any other size | — | truncated / anomalous posted body | **STOP** — the fire is **HELD** until a complete body is re-posted and recorded |
+
+**Provenance of the 9,758 anchor** — re-derived firsthand 2026-08-14 on the
+working tree **and** at `ac4c990`, both identical; the extraction **excludes**
+both marker lines:
+
+```
+F=.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md
+awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | wc -c
+awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | md5sum
+```
+
+**4 — advisory only, ⚠ NEVER an adjudication anchor.** The truncated body's md5
+is reported as `c19be8b2ad7cd6a45fee1d668d8a9cf9` by Seth, read from the OSF API
+and unverified by us (the file sits behind a sign-in wall). Do **not** adjudicate
+on it. The version of this card shipped 2026-08-13 carried a **31-character**
+transcription of that value — an md5 is 32 characters, so that comparison could
+never fire the STOP-truncated branch. It was counted firsthand on 2026-08-14 and
+every copy of the card rewritten size-first for exactly that reason.
+
+⚠ **The ledger's trsx5 entry stays UN-ANNOTATED toward either lineage until this
+download adjudicates.** Report the bytes and md5 verbatim either way.
+
+> **Why a third copy of this card exists despite the drift risk** (the card also
+> lives in `260812-ox1-AGENT-PROMPT.md` STEP 6b and `260812-ox1-BROWSER-PASTE.md`
+> §6b): the size-first design removes the false-pass mode that made duplicate
+> copies dangerous — a mistranscribed hash can no longer produce a PASS, because
+> the byte count adjudicates first. Against that, a fire-blocking gate **absent
+> from Carter's only checklist** is the divergence class `DEC-2026-08-12`
+> consolidated against. All three copies are checked mechanically by
+> `.planning/quick/260814-guk-seth-update-2-reply-remediation-fix-inva/260814-guk-verify.sh fire`.
 
 ## 7. PRE-FIRE 1b — the recorded branch decision (sign BEFORE STEP B; re-read at STEP E)
 
@@ -213,15 +276,44 @@ regions above the ceiling. The bankable target is **276 minus deferrals**; no
 deferral count is a pre-committed expectation (the count emerges at fire time).
 The monitoring rollup reports the four status classes SEPARATELY: `ok` /
 `deferred_infeasible_square` / `deferred_occlusion_anomaly` / `error`.
-Post-fire disclosure duty (note only — not implemented here): per clause (d),
-the measured deferral list is disclosed as a deviation at STEP E/F time.
+
+**Clause-(d) ceiling figures (per Seth's 2026-08-14 review):** the anomaly
+threshold is **`0.0005 × n_var`** with a **STRICT `>`** — a region defers only when
+its occluded count strictly **exceeds** the threshold. At the pinned **120,000**
+cap that is **60.0** variants; at region 1's `n_var` of **102,421** it is **51.2**.
+Region 1's expected **~5** occlusions sit roughly **10× under** the ceiling, so a
+deferral there would itself be the finding.
+
+**Post-fire disclosure duty (note only — not implemented here).** Per clause (d)
+the measured deferral list is disclosed as a deviation at STEP E/F time — **and,
+per Seth's 2026-08-14 R4, that is not sufficient on its own.** The square-mode
+deferral set is ALSO a **methods/limitations** disclosure: an ancestry-specific
+**COVERAGE GAP**, not merely an internal deferral status. Disclose it alongside
+the occlusion disclosure in the form *"N regions exceeding n_var X were not
+converted in square mode; affected span M Mb"*, using the **ACTUAL post-fire
+numbers** from the panel TSV's `deferred_infeasible_square` rows. Record the
+**remedy path** so the gap reads as bounded, not permanent: the frozen producer
+already supports **banded mode** (`--r gz` with an `--ld-window-*` bound), and
+large regions can be split into **overlapping sub-windows** — **NEITHER happens
+before this fire.** Registered as **`R4-COVERAGE`** in
+`.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`.
+⚠ **The "no-loss" framing for these deferrals is RETIRED — do not reintroduce it
+here.** It is true of this pipeline as currently built and FALSE as a statement
+about the science. The exact retired wording, and why, is quoted once and only
+once in the `R4-COVERAGE` entry; `260814-guk-verify.sh fire` asserts it appears
+ZERO times across all three runbook files, so restating it here would fail the
+checker by design.
 
 ## 11. STEP C/D/E/F/G — one line each (full text lives in review §5)
 
 - **C — size/plan the egress:** `gsutil ls -l` over the banked `.npz` →
   `plan_ld_egress.py` → `m3_egress_plan_AFR.tsv`; expect ≤ 22 chromosome groups plus
   size splits; ⚠ confirm the REAL AoU egress threshold on the FIRST request (50 GB is
-  OUR working ceiling, not AoU's documented cap).
+  OUR working ceiling, not AoU's documented cap). ⚠ **The egress plan and its
+  size/cost extrapolation cover the BANKED (square-feasible) set, not 276** —
+  read every per-region figure here as **cost-per-bankable-region, never
+  cost-per-region-of-276** (relabelled 2026-08-14 per Seth's review); the regions
+  above the `--max-n-var` ceiling defer, produce no `.npz`, and egress nothing.
 - **D — egress per group:** per-group AoU egress review → `gsutil -m cp` into
   `data/interim/aou_ld_exports/AFR_aou/`; ALSO fetch the excludelists, `.afreq`
   sidecars, the panel TSV, **and the per-region occlusion manifests (PRE-FIRE 1

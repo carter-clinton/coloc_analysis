@@ -89,18 +89,45 @@ the $385–1,084 total commitment.
 
 
 STEP 6b — GATE: the trsx5 byte check (OSF browser tab, Carter logged in; added
-2026-08-13, methodologist recommendation #1 — this now GATES THE FIRE, because
-trsx5 is the pre-registration the fire executes and a truncated posted body is
-unanswerable after output is banked). Carter downloads
-https://osf.io/az52u/files/trsx5 (the file itself, not the page), then in any
-terminal: wc -c on it and md5sum on it. Compare the md5:
-  28ecdb3160833da80cfa25952f76415b (9,758 bytes)  = repo canonical paste block
-      -> posted body matches our record: gate PASSES, proceed.
-  425d925a88ab474ec2396cbea25e665c (9,907 bytes)  = the methodologist's
-      complete lineage -> STOP: reconcile lineages before firing.
-  c19e8b2ad7cd6a45fee1d668d8a9cf9 (or any short/other body) -> STOP: the
-      posted pre-registration is truncated; the fire is HELD until a complete
-      body is re-posted and recorded. Report bytes+md5 verbatim either way.
+2026-08-13, methodologist recommendation #1; REWRITTEN SIZE-FIRST 2026-08-14 on
+Seth's escalation). This GATES THE FIRE, because trsx5 is the pre-registration
+the fire executes and a truncated posted body is unanswerable after output is
+banked.
+
+  1. DOWNLOAD. Carter downloads https://osf.io/az52u/files/trsx5 (the FILE
+     itself, not the page), then in any terminal runs wc -c on it and md5sum on
+     it, and reports BOTH verbatim — whatever they say.
+
+  2. ADJUDICATE ON THE BYTE COUNT FIRST. A byte count cannot be mistranscribed
+     into a false pass; a hash can. ANY size other than 9,758 or 9,907 is a
+     STOP BY ITSELF — no hash comparison is required, and none may overrule it.
+     In that case the posted body is truncated or otherwise anomalous and the
+     fire is HELD until a complete body is re-posted and recorded.
+
+  3. THE HASHES THEN CONFIRM WHICH KNOWN BODY IT IS.
+     9,758 bytes -> expect md5 28ecdb3160833da80cfa25952f76415b = the
+         repo-canonical paste block -> the gate PASSES, proceed.
+         If it IS 9,758 bytes but the md5 DIFFERS: STOP — same size with
+         different content is its own anomaly. Report verbatim.
+     9,907 bytes -> expect md5 425d925a88ab474ec2396cbea25e665c = the
+         methodologist's complete lineage -> STOP and reconcile the lineages
+         before firing. That body is Seth-reported; we do NOT hold it.
+     PROVENANCE of the 9,758 anchor, re-derived firsthand 2026-08-14 on the
+     working tree AND at ac4c990, both identical (the extraction EXCLUDES both
+     marker lines):
+       F=.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md
+       awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | wc -c
+       awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | md5sum
+
+  4. ADVISORY ONLY — NEVER an adjudication anchor. The truncated body's md5 is
+     reported as c19be8b2ad7cd6a45fee1d668d8a9cf9 by Seth, read from the OSF
+     API and unverified by us (the file sits behind a sign-in wall). Do NOT
+     adjudicate on it. The version of this card shipped 2026-08-13 carried a
+     31-character transcription of that value; an md5 is 32 characters, so that
+     comparison could never fire the STOP-truncated branch. It was counted
+     firsthand 2026-08-14 and the card rewritten size-first for exactly that
+     reason. The ledger stays UN-ANNOTATED toward either lineage until this
+     download adjudicates.
 
 STEP 7 — the gated .bim test (index-origin validation). RUN:
   mkdir -p data/aou
@@ -154,6 +181,12 @@ the monitoring rollup and show Carter:
 (columns: region_id, n_var, wall_min, peak_ram_gib, status.) Then GATE: Carter
 takes these wall_min/peak_ram numbers back to his planning side for the
 measured cost extrapolation (45 small / 203 medium / 28 large) BEFORE Stage C.
+⚠ READ THAT EXTRAPOLATION AS COST-PER-BANKABLE-REGION, NEVER
+cost-per-region-of-276 (relabelled 2026-08-14 per Seth's review): Stage B's
+worst case is m2_region_00071, the largest SQUARE-FEASIBLE region, so wall-time
+extrapolated from Stage B covers ONLY the square-feasible class — the regions
+above the --max-n-var ceiling defer instead of computing, and they are not in
+the denominator.
 Recommend he STOPS the environment in the UI if there will be a gap (idle VM
 bills hourly). Banked regions are permanent; nothing recomputes.
 
@@ -171,6 +204,12 @@ deferred_infeasible_square / deferred_occlusion_anomaly / error counts
 SEPARATELY. The fire invocation is unchanged (no new flag needed; the default
 ceiling is the gate) and Stage C still runs WITHOUT --fail-fast — with it,
 the first deferral would halt the loop.
+CLAUSE-(d) CEILING FIGURES, for reading the anomaly rows (per Seth's 2026-08-14
+review): the anomaly threshold is 0.0005 x n_var with a STRICT > — a region
+defers only when its occluded count strictly EXCEEDS the threshold. At the
+pinned 120,000 cap that is 60.0 variants; at region 1's n_var of 102,421 it is
+51.2. Region 1's expected ~5 occlusions therefore sit about 10x under the
+ceiling, so a deferral there would itself be the finding.
 
 STEP 10 — GATE: STAGE C, THE FULL FIRE (~11 days, $385–1,084). Preconditions
 Carter must confirm: the PRE-FIRE 1b signature lines in

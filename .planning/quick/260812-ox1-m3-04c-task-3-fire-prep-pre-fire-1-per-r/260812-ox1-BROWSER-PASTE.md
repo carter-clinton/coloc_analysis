@@ -104,17 +104,56 @@ Expect non-zero both, on the order of the SKILL's recorded shape (~73,122 ×
 
 Live balance in the Workbench billing panel vs the **$385–1,084** commit.
 
-## 6b — the trsx5 byte check (GATES THE FIRE; added 2026-08-13, Seth's #1)
+## 6b — the trsx5 byte check (GATES THE FIRE; added 2026-08-13, Seth's #1 — REWRITTEN SIZE-FIRST 2026-08-14) [RUNBOOK]
 
-In the logged-in OSF browser tab: download https://osf.io/az52u/files/trsx5, then
-`wc -c` + `md5sum` it. **28ecdb3160833da80cfa25952f76415b / 9,758 bytes** (the repo
-canonical paste block at the posting-day revision `ac4c990`) = PASS. **Anything
-else = STOP** — either the methodologist lineage was posted (425d925a…, 9,907 B:
-reconcile lineages first) or the posted body is truncated (c19e8b2… or any short
-body: the fire is HELD until a complete body is re-posted + recorded). Rationale:
-trsx5 IS the pre-registration the fire executes; the clauses at truncation risk
-(lockstep, mandatory manifest, anomaly gate) are the ones the fire exercises, and
-the question is unanswerable after output is banked.
+**1 — download.** In the logged-in OSF browser tab, download
+https://osf.io/az52u/files/trsx5 (the **file**, not the page), then:
+
+```
+wc -c   <the downloaded file>
+md5sum  <the downloaded file>
+```
+
+Report **both, verbatim**, whatever they say.
+
+**2 — ⚠ ADJUDICATE ON THE BYTE COUNT FIRST.** A byte count cannot be
+mistranscribed into a false pass; a hash can. **Any size other than 9,758 or
+9,907 is a STOP by itself** — no hash comparison is required and none may
+overrule it; the posted body is truncated or otherwise anomalous and the fire is
+**HELD** until a complete body is re-posted and recorded.
+
+**3 — the hashes then confirm which known body it is.**
+
+| Size | Expected md5 | Meaning | Action |
+|---|---|---|---|
+| **9,758 B** | `28ecdb3160833da80cfa25952f76415b` | the repo-canonical paste block | **gate PASSES** — proceed |
+| 9,758 B | anything else | same size, different content — its own anomaly | **STOP**; report verbatim |
+| **9,907 B** | `425d925a88ab474ec2396cbea25e665c` | the methodologist's complete lineage (Seth-reported; **we do not hold this body**) | **STOP** — reconcile lineages first |
+| any other size | — | truncated / anomalous | **STOP** — see step 2 |
+
+**Provenance of the 9,758 anchor** [DERIVED @HEAD, re-derived firsthand
+2026-08-14 on the working tree **and** at `ac4c990`, both identical; the
+extraction **excludes** both marker lines]:
+
+```
+F=.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md
+awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | wc -c
+awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | md5sum
+```
+
+**4 — advisory only, ⚠ never an adjudication anchor.** The truncated body's md5
+is reported as `c19be8b2ad7cd6a45fee1d668d8a9cf9` by Seth, read from the OSF API
+and unverified by us (the file sits behind a sign-in wall). Do **not** adjudicate
+on it. The version of this card shipped 2026-08-13 carried a **31-character**
+transcription of that value — an md5 is 32 characters, so that comparison could
+never fire the STOP-truncated branch. It was counted firsthand on 2026-08-14 and
+the card rewritten size-first for exactly that reason.
+
+Rationale for the gate itself: trsx5 IS the pre-registration the fire executes;
+the clauses at truncation risk (lockstep, mandatory manifest, anomaly gate) are
+the ones the fire exercises, and the question is unanswerable after output is
+banked. The ledger stays **un-annotated** toward either lineage until this
+download adjudicates.
 
 ## 7 — sign PRE-FIRE 1b, branch (i) [RUNBOOK item 7]
 
@@ -235,7 +274,12 @@ What each was picked to prove (AFR mix is 45 small / 203 medium / 28 large):
 
 **Cost-refinement gate (after Stage B, before Stage C):** per-class average
 `wall_min` from the panel TSV × the class mix (45/203/28) refines the $385–1,084
-band with measured numbers. Decide the full fire on THAT estimate:
+band with measured numbers. Decide the full fire on THAT estimate. ⚠ **Read it as
+cost-per-BANKABLE-region, never cost-per-region-of-276** (relabelled 2026-08-14
+per Seth's review): Stage B's worst case `m2_region_00071` is the largest
+**square-FEASIBLE** region, so the extrapolation covers only the square-feasible
+class — regions above the `--max-n-var` ceiling defer instead of computing and
+are not in the denominator.
 
 ```
 gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv | awk -F'\t' 'NR>1{print $1"\t"$3"\t"$4"\t"$5"\t"$7}'
