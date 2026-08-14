@@ -158,14 +158,19 @@ Recommend he STOPS the environment in the UI if there will be a gap (idle VM
 bills hourly). Banked regions are permanent; nothing recomputes.
 
 
-⚠ STAGE C IS ADDITIONALLY HELD (2026-08-13) pending two producer-side gates on
-Carter's planning side: (1) the pre-registered per-region anomaly gate (trsx5
-clause (d), 0.0005 x n_var, defer-not-exclude) is NOT yet wired in the shipped
-driver; (2) the driver has NO n_var feasibility ceiling, and ~29 regions above
-~23 Mb cannot fit the VM's RAM in square mode (each would grind hours before
-dying). Stages A and B are unaffected (all their regions are feasible and far
-below the anomaly ceiling). Do not accept a Stage C go until Carter confirms
-both gates landed (a repo update will arrive via git pull).
+✅ STAGE C HOLD LIFTED (2026-08-13, commit d9fbc63): both producer gates are
+wired in run_native_ld_panel.py — the pre-registered clause-(d) anomaly gate
+(0.0005 x n_var, defer-not-exclude) and the --max-n-var feasibility ceiling
+(default 120000 = the consumer's m3_convert_max_n_var). `git pull` on the VM
+before Stage C. In the panel TSV, `deferred_infeasible_square` and
+`deferred_occlusion_anomaly` rows are THE GATES WORKING — expected for ~29+
+regions above the ceiling; the bankable target is 276 MINUS deferrals, and no
+deferral count is a pre-committed expectation (the count emerges at fire time).
+The STEP-10 monitoring rollup already keys by status: report ok /
+deferred_infeasible_square / deferred_occlusion_anomaly / error counts
+SEPARATELY. The fire invocation is unchanged (no new flag needed; the default
+ceiling is the gate) and Stage C still runs WITHOUT --fail-fast — with it,
+the first deferral would halt the loop.
 
 STEP 10 — GATE: STAGE C, THE FULL FIRE (~11 days, $385–1,084). Preconditions
 Carter must confirm: the PRE-FIRE 1b signature lines in

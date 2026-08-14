@@ -204,6 +204,18 @@ not a failure to paper over and not a reason to re-fire blindly (`force_fresh=Fa
 on resume). **A count that stops climbing is the signal to investigate**, not a number
 to wait out.
 
+**Deferral vocabulary (added 2026-08-13, commit d9fbc63 — both producer gates
+landed):** in the panel TSV, `deferred_infeasible_square` (n_var above the
+`--max-n-var` ceiling, default 120000 = the consumer's `m3_convert_max_n_var`)
+and `deferred_occlusion_anomaly` (trsx5 clause (d), occluded count > 0.0005 ×
+n_var, defer-not-exclude) rows are **THE GATES WORKING** — expected for ~29+
+regions above the ceiling. The bankable target is **276 minus deferrals**; no
+deferral count is a pre-committed expectation (the count emerges at fire time).
+The monitoring rollup reports the four status classes SEPARATELY: `ok` /
+`deferred_infeasible_square` / `deferred_occlusion_anomaly` / `error`.
+Post-fire disclosure duty (note only — not implemented here): per clause (d),
+the measured deferral list is disclosed as a deviation at STEP E/F time.
+
 ## 11. STEP C/D/E/F/G — one line each (full text lives in review §5)
 
 - **C — size/plan the egress:** `gsutil ls -l` over the banked `.npz` →

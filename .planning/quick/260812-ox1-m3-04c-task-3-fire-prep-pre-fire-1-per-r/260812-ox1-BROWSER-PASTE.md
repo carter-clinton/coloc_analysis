@@ -279,13 +279,21 @@ banked auto-skips.
    Expect the documented keys (incl. the triangle flag) and an n_var × n_var
    float32 `ld`.
 
-## ⚠ STAGE C HOLD (added 2026-08-13)
+## ✅ STAGE C HOLD LIFTED (2026-08-13)
 
-Stage C is HELD pending two producer gates on the NCSU side: the pre-registered
-anomaly gate (trsx5 clause (d), `0.0005 × n_var`, defer-not-exclude) is NOT yet
-wired in the driver, and the driver has NO n_var feasibility ceiling while ~29
-regions above ~23 Mb cannot fit 120 GB RAM in square mode. Stages A/B are
-unaffected. Wait for the repo update (git pull) before any Stage C go.
+✅ Lifted 2026-08-13, commit d9fbc63: both producer gates are
+wired in run_native_ld_panel.py — the pre-registered clause-(d) anomaly gate
+(0.0005 x n_var, defer-not-exclude) and the --max-n-var feasibility ceiling
+(default 120000 = the consumer's m3_convert_max_n_var). `git pull` on the VM
+before Stage C. In the panel TSV, `deferred_infeasible_square` and
+`deferred_occlusion_anomaly` rows are THE GATES WORKING — expected for ~29+
+regions above the ceiling; the bankable target is 276 MINUS deferrals, and no
+deferral count is a pre-committed expectation (the count emerges at fire time).
+The STEP-10 monitoring rollup already keys by status: report ok /
+deferred_infeasible_square / deferred_occlusion_anomaly / error counts
+SEPARATELY. The fire invocation is unchanged (no new flag needed; the default
+ceiling is the gate) and Stage C still runs WITHOUT --fail-fast — with it,
+the first deferral would halt the loop.
 
 ## 10 — STEP B: THE FIRE [caveats RUNBOOK item 10; invocation DERIVED @HEAD]
 
