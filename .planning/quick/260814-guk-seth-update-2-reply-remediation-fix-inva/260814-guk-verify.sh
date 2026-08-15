@@ -28,6 +28,35 @@
 # control exercises the REAL code path rather than a re-implementation of it.
 # A green here is evidence ONLY because `_hexlen` has been SEEN to go red on a
 # one-character deletion. See the SUMMARY for the observed failure text.
+#
+# ---------------------------------------------------------------------------
+# CHANGELOG
+# ---------------------------------------------------------------------------
+# WIDENED 2026-08-14 (`quick-260814-u9p`) per Seth's correction — the accepted
+# hex-run lengths are now {32, 64}, not {32} alone. A 64-character sha256
+# anchor is LEGITIMATE, and the pre-widening invariant would have rejected one:
+# observed firsthand before the edit, a file carrying a single 64-char run went
+# RED through this very `_hexlen` sub-mode. Rejecting real anchors is not
+# strictness, it is a false positive that pressures the wrong repair.
+#
+# ⛔ FORBIDDEN REPAIR: truncating a sha256 to 32 characters to satisfy the old
+# rule. That manufactures the EXACT silent-mismatch class this invariant exists
+# to catch — a digest that is structurally incapable of matching anything, in a
+# card read before an irreversible spend. Widen the invariant; never shorten the
+# anchor.
+#
+# Paid for with negative controls, run through the shipped `_hexlen` path (never
+# a re-implementation): 31-char RED, 63-char RED, 32-char GREEN, 64-char GREEN,
+# with the pre-edit 64-char RED captured first so the greens are evidence rather
+# than assertion. Re-runnable at any time via
+# `.planning/quick/260814-u9p-bank-seth-prefix-test-reply-third-body-e/260814-u9p-verify.sh controls`.
+#
+# NOT CHANGED by this widening: `P6` in section `reply` carries its own inline
+# allow-list (32 or 40, plus the narrow labelled 31-char exemption) scoped to the
+# guk-era reply document, whose contents are fixed and known. It is DELIBERATELY
+# untouched — its exemption is a statement about one specific document, not a
+# general length rule, and widening it would loosen a guard that has nothing to
+# do with sha256 anchors.
 # ============================================================================
 set -uo pipefail
 
@@ -62,9 +91,10 @@ block() {
   awk -v s="$2" -v e="$3" 'BEGIN{p=0} (p && $0 ~ e){exit} ($0 ~ s){p=1} p{print}' "$1"
 }
 
-# hexlen_bad : stdin -> one line per hex run (>=20 chars) whose length is NOT 32
+# hexlen_bad : stdin -> one line per hex run (>=20 chars) whose length is
+#              NEITHER 32 (md5) NOR 64 (sha256).   [widened 2026-08-14, see CHANGELOG]
 hexlen_bad() {
-  grep -oE '[0-9a-f]{20,}' | awk '{ if (length($0) != 32) printf "  len=%d  %s\n", length($0), $0 }'
+  grep -oE '[0-9a-f]{20,}' | awk '{ if (length($0) != 32 && length($0) != 64) printf "  len=%d  %s\n", length($0), $0 }'
 }
 
 has() { grep -qF -- "$2" <<<"$1"; }
@@ -79,11 +109,11 @@ if [ "${1:-}" = "_hexlen" ]; then
   bad="$(hexlen_bad <"$tgt")"
   nrun="$(grep -coE '[0-9a-f]{20,}' "$tgt" || true)"
   if [ -n "$bad" ]; then
-    echo "FAIL  _hexlen($tgt): hex run(s) present that are not 32 chars:"
+    echo "FAIL  _hexlen($tgt): hex run(s) present that are neither 32 (md5) nor 64 (sha256):"
     echo "$bad"
     exit 1
   fi
-  echo "PASS  _hexlen($tgt): every hex run >=20 chars is exactly 32 (lines with runs: $nrun)"
+  echo "PASS  _hexlen($tgt): every hex run >=20 chars is 32 (md5) or 64 (sha256) (lines with runs: $nrun)"
   exit 0
 fi
 
@@ -115,12 +145,12 @@ section_fire() {
     fi
     bad="$(printf '%s\n' "$blk" | hexlen_bad)"
     if [ -n "$bad" ]; then
-      fail "F1 [$name] hex run(s) in the card block are not 32 chars:"
+      fail "F1 [$name] hex run(s) in the card block are neither 32 (md5) nor 64 (sha256):"
       printf '%s\n' "$bad"
       f1=1
     fi
   done
-  [ $f1 -eq 0 ] && pass "F1  every hex run >=20 chars inside all three card blocks is exactly 32 (generic invariant)"
+  [ $f1 -eq 0 ] && pass "F1  every hex run >=20 chars inside all three card blocks is 32 (md5) or 64 (sha256) (generic invariant)"
 
   # -- F2: the three expected literals are present in each card block --------
   local f2=0
