@@ -194,7 +194,7 @@ green). **Branch (i) is therefore the default.**
 > `stage_a_manifest`**. `excludelist_degraded` + `allow_degraded: true` belongs to
 > **branch (iii) ONLY** (review §2.1(9) — read PLAN `:1508`'s "(ii)" as a typo).
 >
-> Date: ______________  Signature: ______________
+> Date: August 14, 2026  Signature: Carter Clinton
 
 ## 8. PRE-FIRE 3 — the gated real-`.bim` validation (settled code-side; ONE in-perimeter action)
 
