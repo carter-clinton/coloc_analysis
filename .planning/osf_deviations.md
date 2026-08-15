@@ -187,6 +187,70 @@ The decision is a Cowork-side editorial decision, not an HPC-side compute decisi
 - **Amends:** osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J) via osf.io/az52u file tcujq. Sibling
   of osf-amendment-afr-native-ld-nan-psd-2026-07-03.md.
 
+### ADJUDICATED 2026-08-14 — the posted trsx5 body is TRUNCATED (step 6b gate FIRED → STOP)
+
+**STATUS: the posted body is the TRUNCATED lineage. The fire is HELD. Obligation-(2)
+posting is HELD (same gate). This entry is no longer un-annotated toward either lineage.**
+
+- **The measurement.** Carter downloaded https://osf.io/az52u/files/trsx5 — the **file**,
+  not the page — from a logged-in OSF session on his own machine `cc-m4-mbp`, on
+  2026-08-14 ~21:07 EDT:
+
+  ```
+  wc -c    ->  9695
+  md5sum   ->  c19be8b2ad7cd6a45fee1d668d8a9cf9
+  ```
+
+- **The verdict, BY SIZE ALONE.** 9,695 is neither 9,758 nor 9,907, so the card's last row
+  — *"any other size → STOP — the fire is HELD until a complete body is re-posted and
+  recorded"* — fired on the byte count. **No hash comparison was required, none was used to
+  adjudicate, and none could have overruled it.** Verdict: **STOP-truncated**. The gate is
+  section **6b** of
+  `.planning/quick/260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r/260812-ox1-READY-TO-FIRE.md`
+  and its two paste copies (`260812-ox1-AGENT-PROMPT.md` STEP 6b,
+  `260812-ox1-BROWSER-PASTE.md` §6b), all three unedited by this entry.
+- **Corroboration only.** The observed md5 equals Seth's API-read advisory value
+  (`c19be8b2ad7cd6a45fee1d668d8a9cf9`) exactly. ⚠ That is corroboration and nothing more —
+  the advisory value never adjudicates, and it did not here. The size did.
+- **Seth's contest is CONFIRMED to the byte.** 9,907 - 9,695 = **212**, exactly his
+  "212 bytes short" claim. His 2026-08-14 escalation was correct.
+- **⚠ The prefix test is NEGATIVE — the posted body is NOT a truncation of OUR block.**
+  Run in-repo by the orchestrator, `$0`, read-only, 2026-08-14 evening. The repo-canonical
+  paste block was re-derived from
+  `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` via the
+  card's awk extraction (**exclusive of both marker lines**) = **9,758 B /
+  `28ecdb3160833da80cfa25952f76415b`**, matching the card's anchor. Then:
+
+  ```
+  head -c 9695 <the 9,758-byte canonical block> | md5sum
+    ->  6b75e660e52413e4cbec116f315590b6
+  ```
+
+  `6b75e660e52413e4cbec116f315590b6` ≠ `c19be8b2ad7cd6a45fee1d668d8a9cf9`. **Therefore the
+  posted body is NOT a tail-truncation of the repo-canonical block.** *Reading — labelled a
+  reading, not a finding:* the posted body most plausibly belongs to Seth's 9,907-byte
+  lineage (whether it is a clean tail-truncation of HIS body is verifiable only by Seth),
+  and the 2026-07-10 hand-paste source was evidently not byte-identical to the
+  repo-canonical block.
+- **The central open question.** The **149-byte** delta between the two "complete"
+  lineages (9,907 vs 9,758) is **UNRECONCILED**.
+- **Consequences in force.** The **fire is HELD**. **Obligation-(2) posting is HELD** (same
+  gate). This ledger entry is no longer neutral: it is **ADJUDICATED — posted body =
+  truncated lineage**. The 2026-07-10 / 2026-07-15 statements above were true when written
+  and stand unaltered; this sub-entry is what makes the "un-annotated until adjudicated"
+  standing position historical.
+- **Remediation path — ⚠ RECOMMENDATION ONLY, NOT A DECISION. Carter has not decided.**
+  Ordered: (1) reconcile the two lineages with Seth → (2) adjudicate the true complete body
+  → (3) re-post it as a **NEW OSF version** — OSF file versioning preserves the truncated v1
+  in history; **disclose, never silently replace** → (4) record URL / timestamp / bytes /
+  md5 in this ledger → (5) only then does the fire unhold. None of (1)-(5) has been
+  actioned.
+- **Provenance.** Banked by `quick-260814-tgf` on 2026-08-14. The measurement is Carter's
+  (authenticated OSF session, his own machine); the prefix test is the orchestrator's
+  (`$0`, read-only, in-repo). **No agent contacted OSF.** Zero perimeter contact — the AoU
+  browser agent stood down at the Step 3 GATE and the VM was never started. Appended, never
+  rewritten: every pre-existing line of this section survives unchanged.
+
 ---
 
 ### REQ-AOU-LD-VALIDATION Check 2 redefined without prior OSF amendment posting (operator override 2026-08-03)
