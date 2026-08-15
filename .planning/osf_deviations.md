@@ -251,6 +251,96 @@ posting is HELD (same gate). This entry is no longer un-annotated toward either 
   browser agent stood down at the Step 3 GATE and the VM was never started. Appended, never
   rewritten: every pre-existing line of this section survives unchanged.
 
+### RECHARACTERIZED 2026-08-14 — the posted trsx5 body is an UNEXPLAINED THIRD BODY (both lineages falsified)
+
+**STATUS: the STOP verdict of the ADJUDICATED sub-entry above stands UNCHANGED.** That
+verdict was reached **by size alone** — 9,695 is in neither {9,758, 9,907} — and nothing
+recorded below disturbs it. What changes here is the **characterization** of the posted
+body, not the verdict on it. **The fire remains HELD. Obligation-(2) posting remains HELD**
+(same gate). This sub-entry is an append: it deletes, softens and rewords nothing above it.
+
+- **F-1 — Seth's ask-#1 answer is NO.** The 2026-08-14 courier addendum asked whether the
+  posted body is a clean tail-truncation of Seth's 9,907-byte lineage. He ran the test
+  against his own file, re-verifying that file's own md5 first:
+
+  ```
+  <Seth's complete 9,907-byte body>   md5sum
+    ->  425d925a88ab474ec2396cbea25e665c
+
+  head -c 9695 <that 9,907-byte body> | md5sum
+    ->  a81c22d95e7b83488c015357445f3482
+
+  posted body (9,695 B)               md5sum
+    ->  c19be8b2ad7cd6a45fee1d668d8a9cf9        NOT EQUAL
+  ```
+
+  `a81c22d95e7b83488c015357445f3482` ≠ `c19be8b2ad7cd6a45fee1d668d8a9cf9`. **The posted body
+  is NOT a tail-truncation of Seth's lineage either.**
+- **F-2 — both prefix tests are now negative.** Ours, recorded above against the
+  repo-canonical 9,758-byte block (`28ecdb3160833da80cfa25952f76415b`):
+  `6b75e660e52413e4cbec116f315590b6` ≠ `c19be8b2ad7cd6a45fee1d668d8a9cf9`. His:
+  `a81c22d95e7b83488c015357445f3482` ≠ `c19be8b2ad7cd6a45fee1d668d8a9cf9`. **Neither lineage
+  yields the posted body by tail-truncation.**
+- **F-3 — Seth's exhaustive derivation sweep against his own lineage, every result
+  negative.** He established "a third body" rather than assuming it. Tested and refuted:
+  - byte-prefix at **every** length from **9,600** through **9,919** — no match at any
+    length (this rules out a size mis-report combined with truncation);
+  - line-prefix at all **51** line boundaries — no match;
+  - whitespace normalizations at full length — CRLF conversion, trailing-whitespace strip,
+    blank-run collapse, trailing-newline add/remove — no match;
+  - single-line deletion, i.e. a paste that dropped one line — no match;
+  - contiguous block deletion of **1-25** lines at every offset — **not one such candidate
+    even produces a 9,695-byte body**, let alone matches the hash;
+  - his earlier draft version (the **9,912**-byte paste region) and its placeholder-fill
+    variants across three plausible gate/date combinations (**5fd58a5** / **0f3c68b** ×
+    **2026-07-10** / **2026-07-04**) — no match.
+
+  **Finding — stated as a finding, not a reading: the posted body is an UNEXPLAINED THIRD
+  BODY.** It is not derivable from either lineage by truncation, line loss, whitespace
+  normalization, or placeholder substitution. The **212**-byte delta (9,907 − 9,695) is
+  therefore **unexplained, not mislocated**.
+- **⚠ FALSIFICATION, explicit and dated 2026-08-14.** The reading recorded in the
+  ADJUDICATED sub-entry above — *"the posted body most plausibly belongs to Seth's
+  9,907-byte lineage"* — is **FALSIFIED as of 2026-08-14**, by Seth, against his own side,
+  which is the honest direction for a falsification to travel. **The original wording is
+  preserved unaltered** in the ADJUDICATED sub-entry (landed at `50dc51d`); this entry does
+  not edit, soften or remove it. It was explicitly labelled *a reading, not a finding* when
+  it was written — the label held, and this is precisely what that label is for.
+- **What is now open.** The **149**-byte delta between the two "complete" lineages (9,907
+  vs 9,758) remains **UNRECONCILED**, and it is no longer the only open question. A body
+  that **neither party holds** was posted to the public record, and **no mechanism explains
+  it**. We are recording that as *unexplained* rather than offering a mechanism that neither
+  side can support.
+- **The decisive artifact.** Carter's downloaded **9,695**-byte posted body. Seth holds both
+  lineages and can diff it against both — which neither of us can do alone — and we
+  replicate independently once the 9,695-byte body **and** a re-sent copy of the 9,907-byte
+  body are both in-repo. **Size-first on arrival:** 9,695 first,
+  `c19be8b2ad7cd6a45fee1d668d8a9cf9` only afterwards, and only to confirm which known body
+  it is.
+- **Next step — ⚠ RECOMMENDATION ONLY, NOT A DECISION. Carter has not decided.** Ordered:
+  (1) **read the posted body first** → (2) both sides characterize it **independently**, so
+  the two characterizations are a real cross-check rather than one opinion echoed twice →
+  (3) adjudicate the true complete body → (4) re-post it as a **NEW OSF VERSION**, never a
+  silent swap — OSF file versioning preserves the currently-posted body in history and the
+  deviation is disclosed → (5) record URL / timestamp / bytes / md5 in this ledger → (6)
+  only then does the fire unhold. None of (1)-(6) has been actioned. This **supersedes** the
+  ADJUDICATED sub-entry's step (1) ("reconcile the two lineages with Seth") as the *first*
+  move: reconciling before reading the posted body would mean choosing a body without
+  knowing what was publicly claimed.
+- **Vocabulary correction.** **"The truncated post" is RETIRED** as a description of the
+  posted body — it presumed a truncation the evidence no longer supports. The phrasing from
+  here is **"unexplained third body"**, mirroring Seth's own correction of his earlier
+  framing. The ADJUDICATED heading above retains the word "TRUNCATED" as it was written; it
+  is historical, and it stays.
+- **Provenance.** Banked by `quick-260814-u9p` on 2026-08-14 from Seth's couriered reply
+  (verbatim courier-in record at
+  `.planning/quick/260814-u9p-bank-seth-prefix-test-reply-third-body-e/260814-u9p-SETH-REPLY-VERBATIM.md`).
+  **Seth's measurements are HIS, and are unreproduced by us** — we do not hold his
+  9,907-byte body, so F-1 and F-3 stand on his report rather than on our replication, and
+  are recorded that way deliberately. **No agent contacted OSF.** Zero perimeter contact.
+  `$0`. Nothing fired. Appended, never rewritten: every pre-existing line of this section
+  survives unchanged.
+
 ---
 
 ### REQ-AOU-LD-VALIDATION Check 2 redefined without prior OSF amendment posting (operator override 2026-08-03)
