@@ -1947,3 +1947,80 @@ manuscript are the NAME of a frozen-record section in
 **Cross-refs:** `DEC-2026-08-12-e2-venue-ladder-adopted` (unchanged);
 `260812-ot2-journal-selection-memo.md` (its per-venue preprint-policy column is
 FACT research and stands; its Day-1-compatibility framing is now moot).
+
+## 2026-08-16 — DEC-2026-08-16-aou-credit-request-denied: AoU DENIES the compute-credit request (final) — and in denying it, CONFIRMS our `_SUCCESS` root cause
+
+**Source:** All of Us support ticket **57144**, Kyera Actkins (AoU), **2026-07-24
+16:35 CDT**; relayed by Carter 2026-08-16. Covers the **2026-05-21 empty-MT
+catastrophe** (~$2,100 of compute against a `_SUCCESS`-stamped, 0-byte MT).
+
+**Outcome: DENIED, final.** No credits or refunds are issued for compute charges
+associated with user-run analyses. There is no further appeal path and none will
+be pursued. **The money is spent.**
+
+### THEIR POSITION (the vendor's account — recorded, not adopted)
+
+1. ★ **Verbatim, and this is the load-bearing sentence:** *"Hail's mt.checkpoint()
+   will still write a dataset and produce _SUCCESS markers even if the underlying
+   MatrixTable being checkpointed is empty."* They recommend verifying the MT
+   contained data prior to checkpoint (e.g. `mt.count()` before the write).
+2. **Job configuration / scale.** A large job on relatively few workers plus a
+   "highly customized Spark configuration (spark.executor.cores=1,
+   spark.executor.memory=5g)" can affect execution and "introduce unintended side
+   effects that are difficult to diagnose or reproduce."
+3. **Paused/resumed environment.** The job may not have completed as expected, or
+   logs may have been lost; without a complete log or a reproducible run they
+   cannot isolate a root cause.
+4. **Forward recommendation:** *"validate workflows on smaller subsets of data and
+   with default configurations before scaling up to long-running, high-cost jobs."*
+5. **Offer:** they will review a smaller reproducible example (notebook/script),
+   and point to the Hail community (discuss.hail.is / hail.zulipchat.com).
+
+### OUR READING (ours, not theirs — what we accept and what we do not)
+
+1. ★ **ACCEPTED, and it is the valuable part.** Their (1) **independently
+   corroborates the root cause we reached forensically on 2026-05-21**, before we
+   ever filed this ticket. Two standing project rules already encode it —
+   `[[feedback_aou_success_marker_not_evidence_of_data]]` (`_SUCCESS` is NOT
+   evidence of data) and `[[feedback_hail_checkpoint_contract_violation]]` (Hail
+   writes `_SUCCESS` on driver-side task accounting, not contents validation).
+   Those rules are hereby upgraded from **"our forensics"** to **"our forensics,
+   confirmed by the platform team."** Recorded in the `aou-ld-pipeline` skill so
+   the operational invariant can cite vendor confirmation.
+2. ⚠ **UNACCEPTED — their two explanations are in tension.** If `checkpoint()`
+   stamps `_SUCCESS` over empty contents **by design** — their own words — then
+   the pause/resume + lost-logs story in their (3) is **superfluous** to explaining
+   what we observed. Their (1) already fully accounts for it.
+3. ⚠ **UNACCEPTED — the custom-Spark-config critique is soft.**
+   `hl.init(spark_conf=...)` is **silently overridden on YARN**
+   (`[[feedback_aou_dataproc_pyspark_submit_args]]`), which is precisely why the
+   `PYSPARK_SUBMIT_ARGS` route existed. That was a documented workaround for real
+   platform behavior, not gratuitous tuning. Now moot — the Hail producer is dead,
+   superseded by the native-plink path.
+4. **Their framing is NOT the accepted account of the catastrophe.** It is recorded
+   here as the vendor's position, set beside ours, with the corroborated part called
+   out as corroborated and the remainder as unaccepted.
+5. **Their forward recommendation (4) is ALREADY IMPLEMENTED.** The staged ramp —
+   Stage A region-1 → Stage B 4-region de-risk (including the deliberate worst case
+   `m2_region_00071`) → measured cost gate → Stage C full 276 — is exactly
+   "validate on smaller subsets before scaling to long-running, high-cost jobs."
+   Independent corroboration of a design Carter asked for.
+
+**Their repro-example offer: DECLINED-BY-LAPSE.** The offer targets the **killed
+Hail producer**, superseded by the native-plink path. Building a reproducible
+example for a code path we will never run again spends real time off the critical
+path for no recoverable benefit (the refund is final either way). Recorded here so
+the decline is a decision and not a silent omission. If the Hail producer is ever
+revived, this offer is the first thing to re-open.
+
+**Operational consequence — carried into the fire runbook.** With refunds denied,
+there is **no credit backstop** behind GATE 1. Stage B's **measured** cost
+extrapolation is what must carry the Stage-C go/no-go — an overrun is
+unrecoverable, not reimbursable. Noted at item 6 of
+`260812-ox1-READY-TO-FIRE.md`.
+
+**Cross-refs:** `[[feedback_aou_success_marker_not_evidence_of_data]]`;
+`[[feedback_hail_checkpoint_contract_violation]]`;
+`[[feedback_aou_dataproc_pyspark_submit_args]]`;
+`.claude/skills/aou-ld-pipeline/SKILL.md` (invariant 1, vendor-confirmed line);
+`260812-ox1-READY-TO-FIRE.md` §6 (GATE 1).
