@@ -108,6 +108,11 @@ Read the **live balance in the Workbench billing panel** before the $385–1,084
 (The CDR-pin half needs NO re-verification: `_resolve_aux_base` makes v8→v9 a path
 no-op.)
 
+⚠ **NO CREDIT BACKSTOP behind this gate** (`DEC-2026-08-16-aou-credit-request-denied`):
+AoU support has ruled that compute charges from user-run analyses are **not
+refundable** — final. An overrun past this gate is unrecoverable, not reimbursable,
+so **Stage B's measured extrapolation is what must carry the Stage-C go/no-go.**
+
 ## 6b. THE trsx5 BYTE CHECK — GATES THE FIRE (added 2026-08-14, Seth escalation)
 
 ⛔ **This gate BLOCKS THE FIRE and blocks obligation-(2) posting.** trsx5 IS the
