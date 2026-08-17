@@ -17,6 +17,12 @@ The single source of truth for running the AoU cohort + LD pipeline without repe
 ## The invariants (these are the mistakes — do not repeat them)
 
 1. **`_SUCCESS` is NOT evidence of data.** Hail writes `_SUCCESS` on driver-side task accounting, not contents. ALWAYS verify a written MT at the data layer: `gsutil du -s …/<mt>/entries/rows/parts/` (≫ 1 GB) **and** `count_cols`/`count_rows` off the MT. The 2026-05-21 empty-MT catastrophe ($2,100) and the 2026-06-10 empty-final catastrophe both passed a `_SUCCESS` check over 0 bytes. (`[[feedback_aou_success_marker_not_evidence_of_data]]`, `[[feedback_hail_checkpoint_contract_violation]]`)
+   - ★ **Platform-team CONFIRMED 2026-07-24** (AoU support ticket 57144, K. Actkins),
+     verbatim: *"Hail's mt.checkpoint() will still write a dataset and produce
+     _SUCCESS markers even if the underlying MatrixTable being checkpointed is
+     empty."* Their own recommendation matches ours — verify the MT held data
+     **before** the write (`mt.count()`). This invariant is now vendor-confirmed,
+     not only our 2026-05-21 forensics. (`DEC-2026-08-16-aou-credit-request-denied`)
 2. **Liveness = GCS object listing / Spark stage advancing, NOT the kernel light or jstack.** For the per-chrom fan-out, poll `gsutil ls …/intermediate/ | grep …post_variant_qc` for chrom deltas. For a finalize, watch the Spark/YARN ResourceManager stage id + completed-tasks climbing. A quiet driver + flat CPU during an I/O/plan phase looks identical to a wedge — don't kill on the kernel light alone. (`[[feedback_aou_fanout_gcs_listing_arbiter]]`, `[[feedback_aou_hail_driver_quiet_vs_wedge]]`)
 3. **A clean disconnect does NOT kill the server-side job.** The Dataproc job runs on the master; going home / a websocket drop is survivable (AFR-primary + EUR built across overnight disconnects). On reconnect, `ps`-confirm the kernel + JVM and reattach — **never a reflexive kernel restart.** What DID kill a finalize was a **stray browser navigation** away from the tab mid-write — keep the tab foregrounded during any finalize. (`[[feedback_aou_websocket_drop_zombie_pattern]]`)
 4. **`force_fresh=False` on any resume.** `force_fresh=True` re-runs the whole genome from RAW (~15 h + cost). The auto-resume state machine validates intermediates with `_validate_checkpoint_populated` (contents, not marker) and resumes cheaply. Only pass `force_fresh=True` to overwrite known-contaminated checkpoints.
