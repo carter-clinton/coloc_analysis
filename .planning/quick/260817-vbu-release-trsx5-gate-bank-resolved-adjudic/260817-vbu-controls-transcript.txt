@@ -1,0 +1,129 @@
+260817-vbu — NEGATIVE CONTROLS TRANSCRIPT (verbatim, captured 2026-08-17)
+=========================================================================
+A green assertion is evidence ONLY after the same check has been SEEN to go
+red. Every control below is driven through the SHIPPED sub-modes of
+260817-vbu-verify.sh (`_card` / `_artifact`) so the control exercises the real
+code path, not a re-implementation of it. All mutated copies live in the
+session scratchpad; NOTHING under .planning/ was mutated at any point.
+
+NC-0  GREEN differential : unmutated copy            -> expect PASS
+NC-1  V3  one hex char deleted from the card's md5   -> expect FAIL, len=31
+NC-2  V1  the 9,695 line moved AFTER the md5 line    -> expect FAIL (hash-first)
+NC-3  V4  'ADJUDICATED-RESOLVED 2026-08-17' deleted  -> expect FAIL
+NC-4  V0  block collapsed by a bogus end regex       -> expect FAIL (vacuity)
+NC-4b V0  block emptied by a non-matching start regex-> expect FAIL (vacuity)
+NC-5  V6  one byte flipped, SIZE UNCHANGED at 9695   -> expect FAIL on DIGEST
+
+=====================================================================
+NC-0  GREEN DIFFERENTIAL — unmutated copy of AGENT-PROMPT.md (expect PASS)
+=====================================================================
+
+$ bash /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh _card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc0.md ^STEP 6b ^STEP 7
+PASS  V0 [nc0.md] card block is non-vacuous (51 non-empty lines)
+PASS  V1 [nc0.md] adjudicates SIZE-FIRST (9,695 on block line 11 precedes the md5 on 20)
+PASS  V2 [nc0.md] card block carries BOTH verified digests (md5 32-char + sha256 64-char)
+PASS  V3 [nc0.md] every hex run >=20 chars in the card block is 32 (md5) or 64 (sha256)
+PASS  V4 [nc0.md] card block carries ADJUDICATED-RESOLVED 2026-08-17 + the decision id
+PASS  V5 [nc0.md] historical anchors 9,758 / 9,907 retained AND labelled SUPERSEDED
+
+RESULT: ALL CHECKS PASSED (_card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc0.md)
+EXIT=0
+
+=====================================================================
+NC-1  V3 — delete ONE hex character from the md5 inside the card (expect FAIL, len=31)
+=====================================================================
+  mutation: c19be8b2ad7cd6a45fee1d668d8a9cf9 (32) -> c19be8b2ad7cd6a45fee1d668d8a9cf (31), first occurrence only
+
+$ bash /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh _card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc1.md ^STEP 6b ^STEP 7
+PASS  V0 [nc1.md] card block is non-vacuous (51 non-empty lines)
+PASS  V1 [nc1.md] adjudicates SIZE-FIRST (9,695 on block line 11 precedes the md5 on 34)
+PASS  V2 [nc1.md] card block carries BOTH verified digests (md5 32-char + sha256 64-char)
+FAIL  V3 [nc1.md] hex run(s) in the card block are neither 32 (md5) nor 64 (sha256):
+  len=31  c19be8b2ad7cd6a45fee1d668d8a9cf
+PASS  V4 [nc1.md] card block carries ADJUDICATED-RESOLVED 2026-08-17 + the decision id
+PASS  V5 [nc1.md] historical anchors 9,758 / 9,907 retained AND labelled SUPERSEDED
+
+RESULT: FAILURES PRESENT (_card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc1.md)
+EXIT=1
+
+=====================================================================
+NC-2  V1 — move every pre-md5 '9,695' line to AFTER the md5 line (expect FAIL, hash-first)
+=====================================================================
+  moved 1 line(s) carrying 9,695 from before the md5 to after it
+
+$ bash /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh _card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc2.md ^STEP 6b ^STEP 7
+PASS  V0 [nc2.md] card block is non-vacuous (51 non-empty lines)
+FAIL  V1 [nc2.md] card is HASH-FIRST: 9,695 first appears on block line 20, c19be8b2ad7cd6a45fee1d668d8a9cf9 on 19 (need strictly before)
+PASS  V2 [nc2.md] card block carries BOTH verified digests (md5 32-char + sha256 64-char)
+PASS  V3 [nc2.md] every hex run >=20 chars in the card block is 32 (md5) or 64 (sha256)
+PASS  V4 [nc2.md] card block carries ADJUDICATED-RESOLVED 2026-08-17 + the decision id
+PASS  V5 [nc2.md] historical anchors 9,758 / 9,907 retained AND labelled SUPERSEDED
+
+RESULT: FAILURES PRESENT (_card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc2.md)
+EXIT=1
+
+=====================================================================
+NC-3  V4 — delete the dated string 'ADJUDICATED-RESOLVED 2026-08-17' (expect FAIL)
+=====================================================================
+  deleted 2 occurrence(s) of 'ADJUDICATED-RESOLVED 2026-08-17'
+
+$ bash /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh _card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc3.md ^STEP 6b ^STEP 7
+PASS  V0 [nc3.md] card block is non-vacuous (51 non-empty lines)
+PASS  V1 [nc3.md] adjudicates SIZE-FIRST (9,695 on block line 11 precedes the md5 on 20)
+PASS  V2 [nc3.md] card block carries BOTH verified digests (md5 32-char + sha256 64-char)
+PASS  V3 [nc3.md] every hex run >=20 chars in the card block is 32 (md5) or 64 (sha256)
+FAIL  V4 [nc3.md] card block is missing the dated string 'ADJUDICATED-RESOLVED 2026-08-17'
+PASS  V5 [nc3.md] historical anchors 9,758 / 9,907 retained AND labelled SUPERSEDED
+
+RESULT: FAILURES PRESENT (_card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc3.md)
+EXIT=1
+
+=====================================================================
+NC-4  V0 — bogus END-heading regex collapses the block (expect FAIL, vacuity)
+=====================================================================
+  (end regex '^.' matches the first non-blank line after the heading, so the
+   extractor returns a degenerate 1-line block — the silent-vacuity class)
+
+$ bash /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh _card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc0.md ^STEP 6b ^.
+FAIL  V0 [nc0.md] card block has 1 non-empty line(s) (need >= 8) — heading not found or card gutted; every check below would be VACUOUS
+
+RESULT: FAILURES PRESENT (_card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc0.md)
+EXIT=1
+
+=====================================================================
+NC-4b V0 — non-matching START regex yields a genuinely EMPTY block (expect FAIL)
+=====================================================================
+
+$ bash /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh _card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc0.md ^ZZZ_NO_SUCH_HEADING ^STEP 7
+FAIL  V0 [nc0.md] card block has 0 non-empty line(s) (need >= 8) — heading not found or card gutted; every check below would be VACUOUS
+
+RESULT: FAILURES PRESENT (_card /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc0.md)
+EXIT=1
+
+=====================================================================
+NC-5  V6 — flip ONE byte in the banked body, SIZE UNCHANGED (expect FAIL on the DIGEST)
+=====================================================================
+1+0 records in
+1+0 records out
+1 byte copied, 0.000137805 s, 7.3 kB/s
+  size after mutation: 9695 bytes (unchanged) ; md5 855cf5208af95fbe1bb54a0b706b0add
+
+$ bash /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh _artifact /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/controls/nc5.txt
+FAIL  V6 md5 MISMATCH: 855cf5208af95fbe1bb54a0b706b0add (want c19be8b2ad7cd6a45fee1d668d8a9cf9)
+FAIL  V6 sha256 MISMATCH: a63e05d0c8d6cba467d0a5b0ce1ce3aec9d3ff2b7fc3141cd592eeed3090ddc1 (want 1ba83e4e633cd11c7f0896969cd6a419dada7b442365a5a0a3ea7307a342aab4)
+
+RESULT: FAILURES PRESENT (_artifact)
+EXIT=1
+
+=====================================================================
+CONTROL SUMMARY
+=====================================================================
+NC-0  PASS observed (green differential — the reds below are differential, not universal)
+NC-1  FAIL observed on V3, and the failure text prints len=31
+NC-2  FAIL observed on V1 (hash-first)
+NC-3  FAIL observed on V4
+NC-4  FAIL observed on V0 (collapsed block)
+NC-4b FAIL observed on V0 (empty block)
+NC-5  FAIL observed on V6 from the DIGEST at an UNCHANGED size — V6 is not size-only
+
+No check in 260817-vbu-verify.sh is trusted on a green it has not been seen to lose.

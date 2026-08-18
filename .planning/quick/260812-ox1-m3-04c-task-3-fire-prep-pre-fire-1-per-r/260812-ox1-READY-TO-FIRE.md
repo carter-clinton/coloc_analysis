@@ -113,11 +113,13 @@ AoU support has ruled that compute charges from user-run analyses are **not
 refundable** — final. An overrun past this gate is unrecoverable, not reimbursable,
 so **Stage B's measured extrapolation is what must carry the Stage-C go/no-go.**
 
-## 6b. THE trsx5 BYTE CHECK — GATES THE FIRE (added 2026-08-14, Seth escalation)
+## 6b. THE trsx5 BYTE CHECK — GATES THE FIRE (added 2026-08-14, Seth escalation; ADJUDICATED-RESOLVED 2026-08-17)
 
-⛔ **This gate BLOCKS THE FIRE and blocks obligation-(2) posting.** trsx5 IS the
-pre-registration the fire executes; a truncated posted body is unanswerable after
-output is banked.
+⛔ **This gate BLOCKS THE FIRE.** trsx5 IS the pre-registration the fire executes;
+a posted body that has CHANGED since adjudication is unanswerable after output is
+banked. (It no longer blocks obligation-(2) posting — that is freed by
+`DEC-2026-08-17-trsx5-gate-released` but still deferred to manuscript submission
+day per `DEC-2026-08-12-e2-p1-closing-sentence`.)
 
 **1 — download.** In a logged-in OSF browser tab, download
 https://osf.io/az52u/files/trsx5 — the **file**, not the page. Then:
@@ -129,19 +131,45 @@ md5sum  <the downloaded file>
 
 Report **both, verbatim**, whatever they say.
 
-**2 — ⚠ ADJUDICATE ON THE BYTE COUNT FIRST.** A byte count cannot be
-mistranscribed into a false pass; a hash can. **Any size other than 9,758 or
-9,907 is a STOP by itself** — no hash comparison is required, and none may
-overrule it.
+**2 — ⚠ ADJUDICATE ON THE BYTE COUNT FIRST. Expected: 9,695 bytes.** A byte
+count cannot be mistranscribed into a false pass; a hash can. **ANY other size is
+a STOP by itself** — no hash comparison is required, and none may overrule it.
+Another size means **the posted record has CHANGED** since the 2026-08-17
+adjudication, and the fire is **HELD** until that is explained and recorded.
+⚠ **9,758 or 9,907 observed at download time is NOW ITSELF A STOP**, not a pass —
+those two were the expectations of the **SUPERSEDED** two-body card.
 
-**3 — the hashes then confirm which known body it is:**
+**3 — the hashes then confirm:**
 
-| Observed | Expected md5 | Meaning | Action |
+| Observed | md5 | Meaning | Action |
 |---|---|---|---|
-| **9,758 B** | `28ecdb3160833da80cfa25952f76415b` | the repo-canonical paste block | **gate PASSES** — proceed |
-| 9,758 B | anything else | same size, different content — its own anomaly | **STOP**; report verbatim |
-| **9,907 B** | `425d925a88ab474ec2396cbea25e665c` | the methodologist's complete lineage (Seth-reported; **we do not hold this body**) | **STOP** — reconcile the lineages before firing |
-| any other size | — | truncated / anomalous posted body | **STOP** — the fire is **HELD** until a complete body is re-posted and recorded |
+| **9,695 B** | `c19be8b2ad7cd6a45fee1d668d8a9cf9` | the adjudicated posted body | **gate PASSES** — proceed |
+| 9,695 B | anything else | same size, different content — its own anomaly | **STOP**; report verbatim |
+| any other size | — | the posted record changed since the 2026-08-17 adjudication | **STOP** — the fire is **HELD** until it is explained and recorded |
+
+Optional second confirm on the 9,695-B body:
+`sha256 1ba83e4e633cd11c7f0896969cd6a419dada7b442365a5a0a3ea7307a342aab4`
+
+**4 — `ADJUDICATED-RESOLVED 2026-08-17`**, per
+`DEC-2026-08-17-trsx5-gate-released`. The 9,695-B body is the **verified
+byte-exact plain-text rendering of the COMPLETE 9,907-B lineage** — a 6-step
+transform (strip bold / italic / backticks / bullet markers, blank-line re-flow,
+no trailing newline; net **−212 B**, every byte assigned). **Replicated
+firsthand** from the git object store at `3684413`, implemented from Seth's prose
+spec alone, **first attempt, no fitting** — and the md5 it lands on is the one
+**Carter measured himself** on his authenticated OSF download at this very gate on
+2026-08-16, which is what makes this a closed chain rather than a claim about
+someone else's file. ⚠ `c19be8b2ad7cd6a45fee1d668d8a9cf9` is **NO LONGER
+"advisory, Seth-reported, unverified"** — it is a **VERIFIED anchor**, measured
+independently on both sides. **The old `{9,758, 9,907}` two-body card is
+SUPERSEDED.**
+
+**5 — HISTORICAL REFERENCE, keep — neither is a live pass condition any more.**
+
+| Historical anchor | md5 | What it is now |
+|---|---|---|
+| 9,758 B | `28ecdb3160833da80cfa25952f76415b` | the repo-canonical paste block — **historical reference only** |
+| 9,907 B | `425d925a88ab474ec2396cbea25e665c` | the methodologist's complete lineage — retained as the **source-of-rendering** anchor for the 9,695-B body |
 
 **Provenance of the 9,758 anchor** — re-derived firsthand 2026-08-14 on the
 working tree **and** at `ac4c990`, both identical; the extraction **excludes**
@@ -153,16 +181,10 @@ awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE --
 awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | md5sum
 ```
 
-**4 — advisory only, ⚠ NEVER an adjudication anchor.** The truncated body's md5
-is reported as `c19be8b2ad7cd6a45fee1d668d8a9cf9` by Seth, read from the OSF API
-and unverified by us (the file sits behind a sign-in wall). Do **not** adjudicate
-on it. The version of this card shipped 2026-08-13 carried a **31-character**
-transcription of that value — an md5 is 32 characters, so that comparison could
-never fire the STOP-truncated branch. It was counted firsthand on 2026-08-14 and
-every copy of the card rewritten size-first for exactly that reason.
-
-⚠ **The ledger's trsx5 entry stays UN-ANNOTATED toward either lineage until this
-download adjudicates.** Report the bytes and md5 verbatim either way.
+⚠ **Report the bytes and the md5 verbatim either way.** The ledger's trsx5 entry
+is **append-only**: it now carries three dated sub-entries
+(`BYTE-LEVEL-CONTESTED 2026-08-13`, `CORRECTED 2026-08-14`,
+`RESOLVED 2026-08-17`) and the falsified readings stay visible.
 
 > **Why a third copy of this card exists despite the drift risk** (the card also
 > lives in `260812-ox1-AGENT-PROMPT.md` STEP 6b and `260812-ox1-BROWSER-PASTE.md`
@@ -171,7 +193,10 @@ download adjudicates.** Report the bytes and md5 verbatim either way.
 > the byte count adjudicates first. Against that, a fire-blocking gate **absent
 > from Carter's only checklist** is the divergence class `DEC-2026-08-12`
 > consolidated against. All three copies are checked mechanically by
-> `.planning/quick/260814-guk-seth-update-2-reply-remediation-fix-inva/260814-guk-verify.sh fire`.
+> `.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh`
+> (V0-V7, every check seen red through its own shipped sub-mode). The older
+> `260814-guk-verify.sh fire` section enforced the **superseded** two-body card;
+> a RED there against this card is **expected and is not a defect**.
 
 ## 7. PRE-FIRE 1b — the recorded branch decision (sign BEFORE STEP B; re-read at STEP E)
 

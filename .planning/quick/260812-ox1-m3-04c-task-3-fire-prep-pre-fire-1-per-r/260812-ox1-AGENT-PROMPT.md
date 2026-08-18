@@ -89,45 +89,62 @@ the $385–1,084 total commitment.
 
 
 STEP 6b — GATE: the trsx5 byte check (OSF browser tab, Carter logged in; added
-2026-08-13, methodologist recommendation #1; REWRITTEN SIZE-FIRST 2026-08-14 on
-Seth's escalation). This GATES THE FIRE, because trsx5 is the pre-registration
-the fire executes and a truncated posted body is unanswerable after output is
-banked.
+2026-08-13, methodologist recommendation #1; REWRITTEN SIZE-FIRST 2026-08-14;
+ADJUDICATED-RESOLVED 2026-08-17). This GATES THE FIRE, because trsx5 is the
+pre-registration the fire executes and a posted body that has CHANGED since
+adjudication is unanswerable after output is banked.
 
   1. DOWNLOAD. Carter downloads https://osf.io/az52u/files/trsx5 (the FILE
      itself, not the page), then in any terminal runs wc -c on it and md5sum on
      it, and reports BOTH verbatim — whatever they say.
 
-  2. ADJUDICATE ON THE BYTE COUNT FIRST. A byte count cannot be mistranscribed
-     into a false pass; a hash can. ANY size other than 9,758 or 9,907 is a
-     STOP BY ITSELF — no hash comparison is required, and none may overrule it.
-     In that case the posted body is truncated or otherwise anomalous and the
-     fire is HELD until a complete body is re-posted and recorded.
+  2. ⚠ ADJUDICATE ON THE BYTE COUNT FIRST. EXPECTED: 9,695 bytes. A byte count
+     cannot be mistranscribed into a false pass; a hash can. ANY OTHER SIZE IS
+     A STOP BY ITSELF — no hash comparison is required, and none may overrule
+     it. Another size means THE POSTED RECORD HAS CHANGED since the 2026-08-17
+     adjudication, and the fire is HELD until that is explained and recorded.
+     ⚠ 9,758 or 9,907 observed at download time is NOW ITSELF A STOP, not a
+     pass. Those two were the expectations of the SUPERSEDED two-body card.
 
-  3. THE HASHES THEN CONFIRM WHICH KNOWN BODY IT IS.
-     9,758 bytes -> expect md5 28ecdb3160833da80cfa25952f76415b = the
-         repo-canonical paste block -> the gate PASSES, proceed.
-         If it IS 9,758 bytes but the md5 DIFFERS: STOP — same size with
-         different content is its own anomaly. Report verbatim.
-     9,907 bytes -> expect md5 425d925a88ab474ec2396cbea25e665c = the
-         methodologist's complete lineage -> STOP and reconcile the lineages
-         before firing. That body is Seth-reported; we do NOT hold it.
-     PROVENANCE of the 9,758 anchor, re-derived firsthand 2026-08-14 on the
-     working tree AND at ac4c990, both identical (the extraction EXCLUDES both
-     marker lines):
-       F=.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md
-       awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | wc -c
-       awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | md5sum
+  3. THE HASHES THEN CONFIRM.
+     md5 c19be8b2ad7cd6a45fee1d668d8a9cf9 confirms -> the gate PASSES, proceed.
+     Optional second confirm:
+       sha256 1ba83e4e633cd11c7f0896969cd6a419dada7b442365a5a0a3ea7307a342aab4
+     SAME SIZE + DIFFERENT md5 = STOP. Same size with different content is its
+     own anomaly. Report verbatim.
 
-  4. ADVISORY ONLY — NEVER an adjudication anchor. The truncated body's md5 is
-     reported as c19be8b2ad7cd6a45fee1d668d8a9cf9 by Seth, read from the OSF
-     API and unverified by us (the file sits behind a sign-in wall). Do NOT
-     adjudicate on it. The version of this card shipped 2026-08-13 carried a
-     31-character transcription of that value; an md5 is 32 characters, so that
-     comparison could never fire the STOP-truncated branch. It was counted
-     firsthand 2026-08-14 and the card rewritten size-first for exactly that
-     reason. The ledger stays UN-ANNOTATED toward either lineage until this
-     download adjudicates.
+  4. ADJUDICATED-RESOLVED 2026-08-17, per DEC-2026-08-17-trsx5-gate-released.
+     The 9,695-B body is the VERIFIED byte-exact plain-text rendering of the
+     COMPLETE 9,907-B lineage. 6-step transform: strip bold, strip italic,
+     strip backticks, strip bullet markers, blank-line re-flow, no trailing
+     newline; net -212 B. Replicated FIRSTHAND from the git object store at
+     3684413, implemented from Seth's prose spec alone, first attempt, no
+     fitting — and the md5 it lands on is the one Carter measured HIMSELF on
+     his authenticated OSF download at THIS VERY GATE on 2026-08-16.
+     ⚠ c19be8b2ad7cd6a45fee1d668d8a9cf9 IS NO LONGER
+     "advisory, Seth-reported, unverified" — it is a VERIFIED anchor, measured
+     independently on both sides. The old {9,758, 9,907} two-body card is
+     SUPERSEDED.
+
+  5. HISTORICAL REFERENCE — keep, do not delete. NEITHER anchor below is a live
+     pass condition any more.
+     9,758 B / md5 28ecdb3160833da80cfa25952f76415b = the repo-canonical paste
+       block. PROVENANCE, re-derived firsthand 2026-08-14 on the working tree
+       AND at ac4c990, both identical (the extraction EXCLUDES both marker
+       lines):
+         F=.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md
+         awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | wc -c
+         awk '/^--- PASTE ENDS HERE ---$/{p=0} p{print} /^--- PASTE INTO OSF FROM HERE ---$/{p=1}' "$F" | md5sum
+     9,907 B / md5 425d925a88ab474ec2396cbea25e665c = the methodologist's
+       complete lineage. RETAINED as the SOURCE-OF-RENDERING anchor: the
+       9,695-B posted body is this body rendered as plain text.
+
+  6. ENFORCER. All three copies of this card are checked mechanically by
+     .planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh
+     (V0-V7; each check was SEEN red through its own shipped sub-mode before it
+     was trusted). The older 260814-guk-verify.sh `fire` section enforced the
+     SUPERSEDED two-body card semantics — a RED there against this card is
+     EXPECTED and IS NOT A DEFECT.
 
 STEP 7 — the gated .bim test (index-origin validation). RUN:
   mkdir -p data/aou

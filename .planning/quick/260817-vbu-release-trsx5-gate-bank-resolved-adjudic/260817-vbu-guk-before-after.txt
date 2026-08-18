@@ -1,0 +1,170 @@
+=== BEFORE (HEAD 7afa48e) — bash 260814-guk-verify.sh all ===
+--- section: fire -------------------------------------------------
+PASS  F1  every hex run >=20 chars inside all three card blocks is 32 (md5) or 64 (sha256) (generic invariant)
+PASS  F2  all three card blocks carry 28ecdb31 / 425d925a / c19be8b2
+PASS  F3  every advisory-hash line is attributed (Seth + unverified) within a 4-line window
+PASS  F4  every card adjudicates SIZE-FIRST (9,758 precedes 28ecdb31 on an earlier line)
+PASS  F5  the 31-char literal AND the bare prefix c19e8b2 are GONE from all three runbook files (0 / 0)
+PASS  F6  anchor re-derived: 9758 / 28ecdb3160833da80cfa25952f76415b on the working tree AND at ac4c990
+PASS  F7  READY-TO-FIRE order is 6 -> 6b -> 7 -> 8 -> 9 -> 10 -> 11 with NO renumbering
+PASS  F8  both deferral-vocabulary blocks carry Seth's R3 ceilings (0.0005 / 60.0 / 51.2 / 102,421)
+PASS  F9  cost-per-bankable-region appears in AGENT-PROMPT STEP 9, READY-TO-FIRE 11-C and BROWSER-PASTE's cost gate
+PASS  F10 the retired framing ('nothing scientific is lost' / 'nothing is lost') appears 0 times in the runbooks
+
+--- section: record -----------------------------------------------
+PASS  R1  HANDOFF.json is valid JSON
+PASS  R2  gates.trsx5_posted_body is size-first, dated, and free of c19e8b2
+FAIL  R3  status must START with '⚠ CORRECTED 2026-08-14' and still contain 'SESSION CLOSE 2026-08-14.'
+FAIL  R4  resume_on_reconnect[0] CHANGED: baseline=bde46bdc247187b09a7c77f926090084 now=d0fd2139ab74cedba65d3aaedc596ad4 (D4 says do not touch it)
+PASS  R5  STATE.md lines 1-24 are byte-identical to the pinned baseline (fe245157bb7a442431898c26229e7fb9)
+PASS  R6  STATE.md line 34 DID change and no diff hunk targets a line <= 24 (R5 is non-vacuous)
+PASS  R7  STATE.md carries the corrected advisory value + dated clause; line 34 is free of c19e8b2
+PASS  R8  R4-COVERAGE registered with 10.5% / 48.5 Mb / --ld-window remedy; retired framing survives only inside its retirement
+
+--- section: reply ------------------------------------------------
+PASS  P1  REPLY-TO-SETH.md exists and is 192 lines (>= 60)
+PASS  P2  reply answers BLOCKING / R1 / R3 / R4
+PASS  P3  reply carries the verbatim anchor re-derivation (awk / 9758 / 28ecdb31 / ac4c990)
+PASS  P4  request (a) produces trsx5-canonical-9758 under $HOME, never inside .planning/
+PASS  P5  reply states plainly that we do not hold the 9,907 body and cannot compute the diff
+PASS  P6  every hex run is 32 or 40 chars, except the invalid literal quoted only where labelled 31
+PASS  P7  reply carries the cost-per-bankable-region relabel
+PASS  P8  reply states the trsx5 ledger stays un-annotated/neutral until the download adjudicates
+
+RESULT: FAILURES PRESENT (section: all)
+EXIT=1
+
+=== AFTER (card rewritten) — bash 260814-guk-verify.sh all ===
+--- section: fire -------------------------------------------------
+PASS  F1  every hex run >=20 chars inside all three card blocks is 32 (md5) or 64 (sha256) (generic invariant)
+PASS  F2  all three card blocks carry 28ecdb31 / 425d925a / c19be8b2
+FAIL  F3 [260812-ox1-AGENT-PROMPT.md:110] advisory hash is not attributed to Seth + marked unverified within 4 lines
+FAIL  F3 [260812-ox1-BROWSER-PASTE.md:131] advisory hash is not attributed to Seth + marked unverified within 4 lines
+FAIL  F3 [260812-ox1-READY-TO-FIRE.md:146] advisory hash is not attributed to Seth + marked unverified within 4 lines
+PASS  F4  every card adjudicates SIZE-FIRST (9,758 precedes 28ecdb31 on an earlier line)
+PASS  F5  the 31-char literal AND the bare prefix c19e8b2 are GONE from all three runbook files (0 / 0)
+PASS  F6  anchor re-derived: 9758 / 28ecdb3160833da80cfa25952f76415b on the working tree AND at ac4c990
+PASS  F7  READY-TO-FIRE order is 6 -> 6b -> 7 -> 8 -> 9 -> 10 -> 11 with NO renumbering
+PASS  F8  both deferral-vocabulary blocks carry Seth's R3 ceilings (0.0005 / 60.0 / 51.2 / 102,421)
+PASS  F9  cost-per-bankable-region appears in AGENT-PROMPT STEP 9, READY-TO-FIRE 11-C and BROWSER-PASTE's cost gate
+PASS  F10 the retired framing ('nothing scientific is lost' / 'nothing is lost') appears 0 times in the runbooks
+
+--- section: record -----------------------------------------------
+PASS  R1  HANDOFF.json is valid JSON
+PASS  R2  gates.trsx5_posted_body is size-first, dated, and free of c19e8b2
+FAIL  R3  status must START with '⚠ CORRECTED 2026-08-14' and still contain 'SESSION CLOSE 2026-08-14.'
+FAIL  R4  resume_on_reconnect[0] CHANGED: baseline=bde46bdc247187b09a7c77f926090084 now=06ec0b140cd5d4ebe9f67914c3adc20f (D4 says do not touch it)
+PASS  R5  STATE.md lines 1-24 are byte-identical to the pinned baseline (fe245157bb7a442431898c26229e7fb9)
+PASS  R6  STATE.md line 34 DID change and no diff hunk targets a line <= 24 (R5 is non-vacuous)
+PASS  R7  STATE.md carries the corrected advisory value + dated clause; line 34 is free of c19e8b2
+PASS  R8  R4-COVERAGE registered with 10.5% / 48.5 Mb / --ld-window remedy; retired framing survives only inside its retirement
+
+--- section: reply ------------------------------------------------
+PASS  P1  REPLY-TO-SETH.md exists and is 192 lines (>= 60)
+PASS  P2  reply answers BLOCKING / R1 / R3 / R4
+PASS  P3  reply carries the verbatim anchor re-derivation (awk / 9758 / 28ecdb31 / ac4c990)
+PASS  P4  request (a) produces trsx5-canonical-9758 under $HOME, never inside .planning/
+PASS  P5  reply states plainly that we do not hold the 9,907 body and cannot compute the diff
+PASS  P6  every hex run is 32 or 40 chars, except the invalid literal quoted only where labelled 31
+PASS  P7  reply carries the cost-per-bankable-region relabel
+PASS  P8  reply states the trsx5 ledger stays un-annotated/neutral until the download adjudicates
+
+RESULT: FAILURES PRESENT (section: all)
+EXIT=1
+
+=== ATTRIBUTION ===
+
+Ground rule (from the plan): an unexplained red is a DEFECT, not a supersession.
+Every verdict that CHANGED between BEFORE and AFTER is named below with its
+reason. Newly-red checks are acceptable ONLY inside the `fire` section and ONLY
+where the red is the intended semantic supersession. A newly-red check in
+`record` or `reply` would be a defect of this task, to be fixed rather than
+explained.
+
+VERDICT TABLE  (BEFORE = HEAD 7afa48e, pre-edit ; AFTER = post-Task-2 worktree)
+
+  section fire
+    F1   PASS -> PASS    unchanged
+    F2   PASS -> PASS    unchanged  (all three historical anchors deliberately retained)
+    F3   PASS -> FAIL    ** CHANGED — INTENDED SUPERSESSION, 3 sites **
+    F4   PASS -> PASS    unchanged
+    F5   PASS -> PASS    unchanged
+    F6   PASS -> PASS    unchanged
+    F7   PASS -> PASS    unchanged
+    F8   PASS -> PASS    unchanged
+    F9   PASS -> PASS    unchanged
+    F10  PASS -> PASS    unchanged
+
+  section record
+    R1   PASS -> PASS    unchanged
+    R2   PASS -> PASS    unchanged  ** the append-only enforcer: still green after
+                                       the third dated sub-entry was APPENDED **
+    R3   FAIL -> FAIL    PRE-EXISTING red, unchanged reason
+    R4   FAIL -> FAIL    PRE-EXISTING red, unchanged reason (value moved, see note)
+    R5   PASS -> PASS    unchanged  (STATE.md lines 1-24 still fe245157bb7a442431898c26229e7fb9)
+    R6   PASS -> PASS    unchanged
+    R7   PASS -> PASS    unchanged
+    R8   PASS -> PASS    unchanged
+
+  section reply
+    P1..P8  PASS -> PASS  all unchanged (this task did not touch the guk-era reply)
+
+THE ONE CHANGED VERDICT, ATTRIBUTED
+
+F3  PASS -> FAIL at 260812-ox1-AGENT-PROMPT.md:110, 260812-ox1-BROWSER-PASTE.md:131,
+    260812-ox1-READY-TO-FIRE.md:146.
+
+    What F3 enforces: every line carrying c19be8b2ad7cd6a45fee1d668d8a9cf9 must
+    sit in a 4-line window that names "Seth" AND contains "nverified". That is a
+    correct requirement for the SUPERSEDED two-body card, where the value was a
+    Seth-reported OSF-API read that we could not check behind the sign-in wall.
+
+    Why it is now red BY DESIGN: the 2026-08-17 adjudication makes that value a
+    VERIFIED anchor. Carter measured it firsthand on his own authenticated OSF
+    download at STEP 6b on 2026-08-16, and our replication of Seth's transform
+    from the git object store at 3684413 lands on it independently. The new card
+    therefore states the OPPOSITE of what F3 pins — it says the value is verified
+    on both sides and no longer advisory. A card that still said "Seth-reported,
+    unverified" next to the pass condition would be FALSE.
+
+    The three flagged lines are exactly the three "gate PASSES" rows/lines of the
+    new card — one per runbook copy — i.e. the very lines whose semantics the
+    adjudication changed. No other F3 site flipped.
+
+    This is a supersession, not a regression: it is dated and named in the guk
+    header ("SUPERSEDED 2026-08-17"), it names its successor, and the live
+    enforcer 260817-vbu-verify.sh is GREEN over the same three card blocks with
+    every one of its checks seen red first (260817-vbu-controls-transcript.txt).
+
+NOTE ON R4 (still red, same pre-existing reason)
+
+    R4 pins md5(resume_on_reconnect[0]) against the guk baseline
+    bde46bdc247187b09a7c77f926090084. It was ALREADY red before this task
+    (measured d0fd2139ab74cedba65d3aaedc596ad4) because the 2026-08-16 NIGHT
+    close had already prepended a new #0. Task 1 prepended the 2026-08-17 #0, so
+    the observed value moved again (06ec0b140cd5d4ebe9f67914c3adc20f). The
+    VERDICT did not change and the reason class did not change: the pin is
+    against a 2026-08-14 baseline that two later dated closes have deliberately
+    superseded. It is NOT to be "fixed" — doing so would mean deleting the
+    current resume entry.
+
+NOTE ON R3 (still red, same pre-existing reason)
+
+    R3 requires status to START with "⚠ CORRECTED 2026-08-14". The 2026-08-16
+    close already replaced that headline; Task 1 replaced it again with the
+    2026-08-17 RELEASED headline while PRESERVING the predecessor text after a
+    "~ PRIOR (2026-08-16 NIGHT CLOSE, superseded but kept):" marker. Verdict
+    unchanged, reason unchanged, deliberately not satisfied.
+
+NO NEW REDS IN `record` OR `reply`
+
+    R1/R2/R5/R6/R7/R8 and P1-P8 are all still green. In particular R2 — the
+    append-only enforcer on gates.trsx5_posted_body — is green AFTER the third
+    dated sub-entry was appended, which is the mechanical proof that the
+    2026-08-13 and 2026-08-14 readings were not deleted or reordered.
+
+LIVE ENFORCER, SAME WORKTREE
+
+    $ bash .planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh all
+      V0-V5 PASS x 3 runbook copies ; V6 PASS (9695 B / c19be8b2... / 1ba83e4e...) ; V7 PASS
+      RESULT: ALL CHECKS PASSED (section: all)   EXIT=0

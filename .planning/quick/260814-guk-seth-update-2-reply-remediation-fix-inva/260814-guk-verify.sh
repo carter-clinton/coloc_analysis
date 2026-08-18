@@ -57,6 +57,26 @@
 # untouched — its exemption is a statement about one specific document, not a
 # general length rule, and widening it would loosen a guard that has nothing to
 # do with sha256 anchors.
+#
+# SUPERSEDED 2026-08-17 (quick-260817-vbu, DEC-2026-08-17-trsx5-gate-released) —
+# the `fire` section encodes the OLD two-body card semantics ({9,758, 9,907}, with
+# c19be8b2... as a Seth-reported ADVISORY value). That adjudication is RESOLVED:
+# the posted 9,695-B body is a byte-exact plain-text rendering of the complete
+# 9,907-B lineage, and c19be8b2... is now a VERIFIED anchor. The live card is
+# enforced by
+# .planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-verify.sh
+# A RED `fire` section against the NEW card is EXPECTED and IS NOT A DEFECT.
+# The `record` and `reply` sections remain valid for their historical artifacts and
+# are still worth running: R2 in particular is the append-only enforcer on
+# gates.trsx5_posted_body. (R3/R4 were ALREADY red before this task — the
+# 2026-08-16 close replaced `status` and prepended resume_on_reconnect[0], which is
+# exactly what they pin. Do not "fix" them.)
+# Superseding checker + its negative controls: 260817-vbu-verify.sh /
+# 260817-vbu-controls-transcript.txt ; BEFORE/AFTER evidence:
+# 260817-vbu-guk-before-after.txt
+#
+# NOTHING BELOW THIS LINE WAS CHANGED BY 260817-vbu — the check LOGIC of every
+# section is byte-untouched; this task edited the header comment block only.
 # ============================================================================
 set -uo pipefail
 
