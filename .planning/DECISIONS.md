@@ -2024,3 +2024,120 @@ unrecoverable, not reimbursable. Noted at item 6 of
 `[[feedback_aou_dataproc_pyspark_submit_args]]`;
 `.claude/skills/aou-ld-pipeline/SKILL.md` (invariant 1, vendor-confirmed line);
 `260812-ox1-READY-TO-FIRE.md` §6 (GATE 1).
+
+---
+
+## 2026-08-17 — DEC-2026-08-17-trsx5-gate-released: the trsx5 adjudication is RESOLVED and the fire gate is RELEASED on substance
+
+**Decision (CARTER, 2026-08-17 22:32 EDT, verbatim):** "yes release the trsx5
+gate and yes run the /gsd-quick that banks all of this. I'm ready to fire.
+let's go"
+
+The trsx5 fire gate — which has HELD the $385-1,084 irreversible AoU LD fire since
+2026-08-13 — is **RELEASED on substance**. The adjudication of the posted trsx5
+body is **RESOLVED**: the 9,695-byte body on OSF is a **byte-exact plain-text
+rendering of the COMPLETE 9,907-byte lineage**. It is not a truncation, and it is
+not a third body. The phrase "unexplained third body" is **RETIRED** — by the
+person who coined it and by our own independent replication.
+
+**The transform, and the byte accounting.** Six steps: remove `**` bold (58
+pairs); remove single-asterisk italic pairs (2); remove all backticks (74); remove
+the leading `- ` from each bullet (13 × 2 = 26 B); insert a blank line before each
+de-bulleted item that follows non-blank content (paragraph re-flow, +8 B / +8
+lines); no trailing newline. 120 of the 121 asterisks are markup — one literal
+asterisk survives. Total removed 220 B, blank lines added 8 B, **net −212 B =
+9,907 − 9,695, exactly**.
+
+### Basis — three independent legs
+
+1. **Seth's byte-exact reconstruction**, published **BEFORE** receiving our
+   reading. The independence constraint held: Carter shipped him the 9,695-B
+   download on 2026-08-15 and he formed and sent his characterization without
+   seeing ours. He states the transform explicitly so it can be re-run, and he
+   assigns every byte.
+2. **Our firsthand replication**, from the **git object store** at `3684413`
+   (source 9,907 B / `425d925a88ab474ec2396cbea25e665c` / sha256
+   `40831cdebcc71de21cd536fa67f0e29873877864c78f455acfe4776708f46045`) — not from
+   the worktree. Implemented **from his prose spec alone**, run **once**, **no
+   iteration and no fitting toward the target digests**. First attempt matched:
+   9,695 B / `c19be8b2ad7cd6a45fee1d668d8a9cf9` / sha256
+   `1ba83e4e633cd11c7f0896969cd6a419dada7b442365a5a0a3ea7307a342aab4`, with every
+   intermediate count equal to his accounting table. Transcript:
+   `260817-vbu-replication-transcript.txt`; script:
+   `260817-vbu-verify_seth_transform.py`.
+3. **Carter's own authenticated OSF download at STEP 6b on 2026-08-16**, which
+   measured `wc -c` 9,695 and md5 `c19be8b2ad7cd6a45fee1d668d8a9cf9` firsthand —
+   *before* the reconstruction arrived. **Leg (3) is what makes this a closed
+   chain rather than a claim about someone else's file:** banked 9,907 lineage
+   (arrival-verified, object-store re-derived) → stated transform (implemented by
+   us) → exactly the bytes Carter measured himself. No leg rests on the other
+   side's report.
+
+Why our 72-candidate formatting-strip sweep missed it, for the record: the sweep
+varied asterisks, backticks, bullets and the trailing newline — all **subtractive**.
+It never varied **internal blank-line insertion**, which is step 5 and worth +8
+bytes. A subtractive-only sweep cannot land on a transform that both subtracts and
+adds; our closest candidate (9,686 B) was short by exactly those 8 bytes plus one.
+
+### Scope of the release
+
+- The **fire is UNBLOCKED at the Step 3 GATE**. PRE-FIRE 1b is ALREADY SIGNED
+  (`2f0b607`) and must not be re-signed. The staged ramp is unchanged: Stage A
+  region-1 → Stage B 4-region → **measured** cost gate → Stage C 276. There is
+  **no credit backstop** behind runbook GATE 1
+  (`DEC-2026-08-16-aou-credit-request-denied`), so Stage B's measured
+  extrapolation must carry the Stage-C go/no-go.
+- **Obligation-(2) posting is FREED by the gate release but REMAINS DEFERRED** to
+  **manuscript submission day** per `DEC-2026-08-12-e2-p1-closing-sentence`. The
+  gate was one of two things holding it; the deferral deadline is the other, and
+  **this decision does not change it**.
+
+### Not taken — the re-post
+
+Seth's earlier "re-post required" was correct **under the truncation hypothesis**
+and he has **withdrawn** it. A re-post is a **legibility improvement, not a
+correction**: every load-bearing commitment is present on the public record
+(exclude, lockstep, manifest, 0.0005, "0.05 percent", the three BRANCH_AFR_OCC_*
+tokens, gate `5fd58a5`, Date 2026-07-10, ORCID, rs182965575, tcujq,
+psd_regularize_eigclip, the raw-panel NaN-raise contract, present-rate reporting),
+and nothing on it is scientifically wrong or absent. **The re-post is NOT taken.**
+If it is ever revisited it remains a NEW OSF VERSION, never a silent swap.
+
+### What the gate proves about gates
+
+Record this explicitly so the **next** gate is not argued down on cost: this gate
+held a **$385-1,084 irreversible spend** against a pre-registration **nobody had
+actually read** for four days, and the verification came back **clean**. A clean
+verification is a gate **succeeding**, not a false alarm. The correct reading is
+that the four days bought certainty about the public record at the exact moment
+the spend became unrecoverable — the cheapest four days in the arc. "It came back
+clean, so the gate was unnecessary" is the survivorship error this paragraph
+exists to pre-empt.
+
+### Ledger discipline
+
+The resolution is **appended**, never substituted. `gates.trsx5_posted_body` now
+carries **three** dated sub-entries — `⚠ BYTE-LEVEL-CONTESTED 2026-08-13`,
+`⚠ CORRECTED 2026-08-14`, `✅ RESOLVED 2026-08-17` — in that order, with the first
+two byte-intact. They were the honest state of knowledge at their dates and stay
+visible. This is **enforced, not merely intended**: `260814-guk-verify.sh record`
+check **R2** fails if `c19be8b2…`, `9,758`, `9,907` or `CORRECTED 2026-08-14` ever
+leave that field.
+
+### Consequence for the STEP 6b card
+
+All three copies of the card now adjudicate **SIZE-FIRST against 9,695**, and
+**9,758 or 9,907 observed at download time is ITSELF a STOP** — it would mean the
+posted record changed since this adjudication. `c19be8b2ad7cd6a45fee1d668d8a9cf9`
+is no longer "advisory, Seth-reported, unverified"; it is a **verified anchor**
+measured on both sides. The old `{9,758, 9,907}` two-body card is **SUPERSEDED**,
+and its enforcer (`260814-guk-verify.sh fire`) is superseded with it — the live
+enforcer is `260817-vbu-verify.sh`, whose every check has been **seen red** through
+its own shipped sub-modes before being trusted.
+
+**Cross-refs:** `DEC-2026-08-12-e2-p1-closing-sentence`;
+`DEC-2026-08-16-aou-credit-request-denied`;
+`.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-SETH-COURIER-reconstruction-as-received.md`;
+`…/260817-vbu-replication-transcript.txt`;
+`…/260817-vbu-trsx5-posted-9695-reconstructed.txt`;
+`…/260817-vbu-verify.sh`.

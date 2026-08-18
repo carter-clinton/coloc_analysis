@@ -1,0 +1,63 @@
+# 260817-vbu replication transcript — firsthand, 2026-08-17 ~22:25-22:30 EDT
+# NCSU node, $0, read-only, zero perimeter contact, zero network.
+# Run by the orchestrator session BEFORE Carter's gate-release direction,
+# in response to Seth's recommendation #3 ("Verify me independently").
+#
+# Implementation note (independence): the transform was implemented from
+# Seth's PROSE spec alone (his six numbered steps), run ONCE, no iteration,
+# no fitting toward the target digests. First attempt matched.
+
+## 1. Source extraction — from the git OBJECT STORE, not the worktree
+
+$ git log --oneline -- .planning/quick/260814-u9p-bank-seth-prefix-test-reply-third-body-e/260814-u9p-seth-lineage-9907.txt
+3684413 docs(260814-u9p): 149-byte lineage delta RECONCILED (prose byte-identical) + Seth's 9,907-B body banked verified; our formatting-strip hypothesis REFUTED (72-candidate sweep, zero hits) — posted body still an unexplained third body; fire HELD
+  (note: git also printed "fatal: unable to read tree (978258f...)" — the known
+   GPFS object-store damage in OLDER history; the banking commit and blob are intact)
+
+$ git show 3684413:.planning/quick/260814-u9p-bank-seth-prefix-test-reply-third-body-e/260814-u9p-seth-lineage-9907.txt > seth9907.objstore.txt
+$ wc -c seth9907.objstore.txt
+9907
+$ md5sum seth9907.objstore.txt
+425d925a88ab474ec2396cbea25e665c
+$ sha256sum seth9907.objstore.txt
+40831cdebcc71de21cd536fa67f0e29873877864c78f455acfe4776708f46045
+  => source anchors MATCH the banked arrival anchors exactly.
+
+## 2. Transform replication (script: 260817-vbu-verify_seth_transform.py)
+
+$ python3 verify_seth_transform.py seth9907.objstore.txt
+src_bytes: 9907
+src_ends_with_newline: False
+src_asterisks: 121
+src_backticks: 74
+bold_pairs_removed: 58
+italic_pairs_removed: 2
+asterisks_surviving: 1
+backticks_removed: 74
+bullets_debulleted: 13
+blank_lines_inserted: 8
+trailing_newlines_stripped: 0
+out_bytes: 9695
+out_lines: 59
+out_md5: c19be8b2ad7cd6a45fee1d668d8a9cf9
+out_sha256: 1ba83e4e633cd11c7f0896969cd6a419dada7b442365a5a0a3ea7307a342aab4
+
+SIZE  : MATCH
+MD5   : MATCH
+SHA256: MATCH
+
+## 3. Adjudication chain — why this is independent confirmation
+
+- Target md5 c19be8b2ad7cd6a45fee1d668d8a9cf9 is NOT Seth-only hearsay: Carter
+  measured it FIRSTHAND on his own authenticated OSF download at STEP 6b on
+  2026-08-16 (wc -c 9695 + md5sum, reported verbatim).
+- Chain: banked 9,907 lineage (Carter-verified arrival, object-store re-derived)
+  -> Seth's stated 6-step transform (implemented by us from prose, first try)
+  -> exactly the bytes Carter measured from OSF.
+- Every intermediate count matches Seth's byte accounting table:
+  58 bold pairs / 2 italic pairs / 1 literal asterisk surviving (120 of 121
+  removed) / 74 backticks / 13 bullets (-26 B) / 8 blank lines inserted (+8 B) /
+  no trailing newline in source (step 6 no-op). Net -212 = 9,907 - 9,695.
+- CONSEQUENCE: the "unexplained third body" is DEAD. The posted trsx5 body is
+  the complete 9,907-B lineage rendered as plain text. All three bodies carry
+  the same pre-registration prose; the 212 B and 149 B deltas are pure markup.
