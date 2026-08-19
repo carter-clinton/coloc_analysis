@@ -251,6 +251,45 @@ gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusio
 
 Expect 6 lines (header + 5 records), all rows `m2_region_00001`.
 
+**MECHANICAL STAGE-A GATE (AGENT-PROMPT R8; `src/python/fire_verifier.py`, landed
+2026-08-18 / `quick-260818-sml`).** `git pull` first — the gate did not exist when
+§1's clone instructions were written. Size the download BEFORE making it:
+
+```
+cd ~/coloc_analysis && git pull
+gsutil du -h gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.npz
+df -h /home/jupyter
+```
+
+Proceed only if free space is **comfortably above** the object size (it is tens of
+GB). Then copy the three inputs the gate reads and run it:
+
+```
+gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.npz /home/jupyter/native_ld_scratch/
+gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv /home/jupyter/native_ld_scratch/
+gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
+python3 src/python/fire_verifier.py stage-a \
+  --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
+  --region-id m2_region_00001 \
+  --manifest /home/jupyter/native_ld_scratch/m2_region_00001.occlusion_manifest.tsv \
+  --npz /home/jupyter/native_ld_scratch/m2_region_00001.npz \
+  --report /home/jupyter/fire_gate_stageA.json
+echo "gate exit: $?"
+```
+
+Expect five checks — `stage_a_nan_falsification`, `stage_a_manifest_rows`,
+`occlusion_anomaly_ceiling`, `region1_status`, `status_classification` — all PASS
+and `gate exit: 0`. ⚠ **The re-read loads a ~42 GB dense float32 array and can
+take many minutes. THAT IS NOT A HANG** — do not interrupt, do not restart the
+kernel. **Exit 0 is required to proceed; NEVER chain past a red.** `--npz` is
+REQUIRED on purpose: a falsification that did not run is not a falsification.
+Then reclaim the space (the only deletion R6 authorizes):
+
+```
+rm -f /home/jupyter/native_ld_scratch/m2_region_00001.npz
+df -h /home/jupyter
+```
+
 (The SH2B3 `__sub14` `estimate_s` follow-up of runbook item 9 fires LATER — once
 `m2_region_00040__sub14` is banked mid-fire — it does not gate STEP B.)
 
@@ -309,6 +348,34 @@ gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel
 
 (columns printed: region_id, n_var, wall_min, peak_ram_gib, status)
 
+**MECHANICAL STAGE-B GATE (AGENT-PROMPT R8).** Snapshot the panel TSV and run:
+
+```
+gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
+python3 src/python/fire_verifier.py stage-b \
+  --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
+  --vm-gib 120 --n-total 276 \
+  --report /home/jupyter/fire_gate_stageB.json
+echo "gate exit: $?"
+```
+
+Expect one `stage_b_peak_ram[<region_id>]` check per COMPUTED (`status == ok`)
+row, all PASS; `status_classification` PASS; `cost_gate_denominator` PASS;
+`gate exit: 0`. The bound is 15% headroom on the 120 GiB `n1-standard-32` =
+**102.0 GiB**; above it, do NOT extrapolate to larger regions. A missing
+`peak_ram_gib` FAILS CLOSED (unmeasurable is never ok), and ZERO computed rows
+also FAILS (a check with no input must not pass vacuously). `--n-total` is a
+REQUIRED argument — 276 is correct today, and a default is how a count goes
+silently stale. **Exit 0 required; never chain past a red.**
+
+⚠ **NOT WIRED — do not improvise it (A-12).** The gate also implements a
+MAF-depression DIRECTION check (occluded variants should show depressed panel MAF
+vs sumstats MAF; absent depression WEAKENS the occlusion attribution and is a
+FINDING, not a hard stop). It is deliberately not wired into `stage-b`: it needs
+`(panel_maf, sumstats_maf)` pairs from the per-region occlusion manifests JOINED
+to the harmonized sumstats, and that join does not exist yet. Producing it is
+Carter's planning-side work, not the agent's.
+
 **Stage C — the remainder:** exactly STEP B below, unchanged — everything already
 banked auto-skips.
 
@@ -326,6 +393,31 @@ banked auto-skips.
    Any `verify_failed` / `error: …` row: the region's artifacts stay in scratch for
    inspection; the loop continues. Investigate before Stage C; do not re-fire
    blindly.
+
+   **MECHANICAL STAGE-C GATE (AGENT-PROMPT R8)** — run this at EVERY 2–3-day
+   check-in alongside the rollup, and paste its full output:
+
+   ```
+   gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
+   python3 src/python/fire_verifier.py stage-c \
+     --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
+     --report /home/jupyter/fire_gate_stageC_$(date +%Y%m%d).json
+   echo "gate exit: $?"
+   ```
+
+   How to read it — this is the whole point of the gate:
+   - `deferred_infeasible_square: …` / `deferred_occlusion_anomaly: …` rows
+     **PASS**. They are THE GATES WORKING; never "fix" one mid-fire. (The gate
+     matches these by PREFIX: the real statuses carry a detail suffix such as
+     `deferred_infeasible_square: n_var=181004 > ceiling=120000`.)
+   - `verify_failed` / `error: …` rows **FAIL at FINDING** — those regions banked
+     NOTHING. The loop continues by design (no `--fail-fast` at Stage C); report
+     them with their per-region statuses, do not re-fire blindly.
+   - An **UNRECOGNIZED or EMPTY** status **FAILS at HARD_STOP** — the producer
+     emitted something the gate does not know, or the panel TSV is corrupt. Stop
+     and report immediately.
+
+   Exit 0 = nothing to report beyond the counts. **Never chain past a red.**
 3. **The log** — `tail -20 /home/jupyter/native_ld_fire.log` and
    `grep -cE "VERIFY-FAILED|^ERROR" /home/jupyter/native_ld_fire.log` (want 0).
 4. **Built-in content gate (the reason bucket presence ≈ success):** every `.npz`

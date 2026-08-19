@@ -257,6 +257,15 @@ Re-run **region 1 ONLY**. **PASS** = `.npz` count 0 → 1; panel `status == ok`;
 slightly under 102,421; `n_dropped_occluded` ≈ 5 logged; no "not symmetric", no
 "Killed", no dmesg OOM. **FAIL → stop and report; do not proceed to 276.**
 
+**MECHANICAL GATE for this stage (added 2026-08-18, `quick-260818-sml`):**
+`src/python/fire_verifier.py stage-a` — it re-reads the BANKED `.npz` through the
+SHIPPED `content_verify_npz`, checks the manifest at the data layer (count, field
+parseability AND `region_id` on every record row), evaluates the clause-(d)
+occlusion ceiling from the panel TSV, and asserts region 1's status is exactly
+`ok`. **`git pull` on the VM first; exit 0 is required to proceed.** Full
+invocation in `AGENT-PROMPT` STEP 8-GATE / `BROWSER-PASTE` §9. ⚠ The re-read loads
+a ~42 GB dense array and takes many minutes — that is not a hang.
+
 **SH2B3 `__sub14` follow-up (MEDIUM-6):** once `m2_region_00040__sub14` is banked, run
 one AFR `run_finemap` at `SH2B3_12q24` and read the `estimate_s` log line (it prints
 `ld_matrix` = the path OPENED and `ld_file_declared` = the path DECLARED). **If
@@ -272,6 +281,15 @@ is built, or lower `min_ld_coverage` — are **scientific calls, not executor ca
 STOPPED-not-deleted Cloud Analysis VM. **Do NOT restart the kernel.** Check in every
 **2–3 days**. **Teardown is UI-only** (the pet SA is list-only; `timeout` is the
 backstop).
+
+**MECHANICAL GATES for this stage (added 2026-08-18, `quick-260818-sml`):**
+`src/python/fire_verifier.py stage-b` before the fire (per-region peak-RAM
+headroom on the 120 GiB VM + the cost-per-BANKABLE-region denominator) and
+`… stage-c` at EVERY 2–3-day check-in (the status rollup, with `deferred_*` rows
+PASSING as the gates working, `verify_failed`/`error:` rows failing at FINDING,
+and an unrecognized status a HARD_STOP). **Exit 0 is required to proceed; a red is
+a STOP, never a licence to retry or repair.** Full invocations in `AGENT-PROMPT`
+STEP 9-GATE / STEP 10 and `BROWSER-PASTE` §9b / §9c.
 
 **Liveness is the GCS `.npz` object listing climbing toward 276 — NOT the kernel
 light, NOT a `_SUCCESS` marker, NOT the log.** THE POLL COMMAND, both corrected forms:
@@ -327,6 +345,16 @@ already supports **banded mode** (`--r gz` with an `--ld-window-*` bound), and
 large regions can be split into **overlapping sub-windows** — **NEITHER happens
 before this fire.** Registered as **`R4-COVERAGE`** in
 `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`.
+**NAMED ENFORCER (added 2026-08-18, `quick-260818-sml`):** the obligation is no
+longer belief-only. `fire_verifier.check_coverage_disclosure_resolved` reads that
+file and FAILS while the pre-fire estimate sentinels are still in it, or if the
+warning is deleted without a `MEASURED:` provenance line, or if the heading is
+renamed (an empty block is vacuous, not green). `python3
+src/python/fire_verifier.py disclosure --file <that file>` exits **1 today, by
+design**. Its pytest,
+`tests/m3/test_fire_verifier.py::test_coverage_disclosure_live_gate_against_the_repo_file`,
+SKIPS while no measured `m3-W2-native-plink-panel.tsv` exists in-repo and goes RED
+the moment one lands — which is why the pinned `tests/m3` skip count moved 31 → 32.
 ⚠ **The "no-loss" framing for these deferrals is RETIRED — do not reintroduce it
 here.** It is true of this pipeline as currently built and FALSE as a statement
 about the science. The exact retired wording, and why, is quoted once and only

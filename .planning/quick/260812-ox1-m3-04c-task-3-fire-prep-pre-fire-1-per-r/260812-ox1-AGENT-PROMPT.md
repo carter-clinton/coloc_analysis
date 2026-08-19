@@ -31,11 +31,26 @@ R5. UI-only actions (environment start/stop, disk-type label, billing panel)
     are CARTER's — tell him what to check, do not attempt them via CLI.
 R6. The only files you may create: /tmp/region1_only.tsv, /tmp/stageB.tsv,
     data/aou/region1_window.bim, /home/jupyter/native_ld_scratch/,
-    /home/jupyter/native_ld_fire.log. You may not edit repo files. You may not
-    fill the PRE-FIRE 1b signature lines (Carter's alone).
+    /home/jupyter/native_ld_fire.log, plus the MECHANICAL GATE artifacts of R8:
+    /home/jupyter/fire_gate_stageA.json, /home/jupyter/fire_gate_stageB.json,
+    /home/jupyter/fire_gate_stageC_<date>.json, and the gate's working copies
+    inside /home/jupyter/native_ld_scratch/ (the panel-TSV snapshot, the
+    per-region occlusion-manifest copy, and the downloaded region-1 .npz).
+    You may not edit repo files. You may not fill the PRE-FIRE 1b signature
+    lines (Carter's alone).
+    ONE NARROW DELETION EXCEPTION (the only one that exists): you may delete
+    ONLY the .npz copy you yourself downloaded into native_ld_scratch/, to
+    reclaim the tens of GB — nothing else, and never anything in the bucket.
 R7. Costs are Carter's: Stage A ≈ an hour-plus of VM time; Stage B = multiple
     hours including a deliberately-worst-case region; Stage C ≈ 11 days /
     $385–1,084. Each has its own GATE.
+R8. Every GATE below now has a MECHANICAL gate
+    (src/python/fire_verifier.py, landed 2026-08-18, quick-260818-sml). Run it,
+    paste its FULL output to Carter, and NEVER chain past a red — a red is a
+    STOP under R1/R3 regardless of how the raw numbers look. Exit 0 is required
+    to proceed; exit 1 means STOP and report. The gate makes the evidence
+    mechanical; it never makes the decision. Do not "fix", re-run with modified
+    arguments, or reinterpret a red.
 
 STEP 1 — clone and branch. RUN:
   git clone https://github.com/carter-clinton/coloc_analysis.git
@@ -182,6 +197,38 @@ EXPECT: 6 lines (header + exactly 5 records), region_id m2_region_00001 on
 every record row. This is the one region with a known ground truth — the only
 chance to validate the manifest writer against it.
 
+STEP 8-GATE — MECHANICAL STAGE-A GATE (R8). After the manifest check above,
+`git pull` first (fire_verifier.py landed 2026-08-18, after the clone
+instructions in STEP 1 were written), then size the download before making it:
+  cd ~/coloc_analysis && git pull
+  gsutil du -h gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.npz
+  df -h /home/jupyter
+EXPECT: an object in the tens of GB, and FREE SPACE COMFORTABLY ABOVE the object
+size. If free space is not comfortably above it: STOP and report — do not
+download. Then copy the three inputs the gate reads:
+  gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.npz /home/jupyter/native_ld_scratch/
+  gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv /home/jupyter/native_ld_scratch/
+  gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
+Then RUN the gate:
+  python3 src/python/fire_verifier.py stage-a \
+    --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
+    --region-id m2_region_00001 \
+    --manifest /home/jupyter/native_ld_scratch/m2_region_00001.occlusion_manifest.tsv \
+    --npz /home/jupyter/native_ld_scratch/m2_region_00001.npz \
+    --report /home/jupyter/fire_gate_stageA.json
+  echo "gate exit: $?"
+EXPECT: five checks — stage_a_nan_falsification, stage_a_manifest_rows,
+occlusion_anomaly_ceiling, region1_status, status_classification — all PASS, and
+"gate exit: 0". ⚠ THE RE-READ LOADS A ~42 GB DENSE float32 ARRAY AND CAN TAKE
+MANY MINUTES. THAT IS NOT A HANG — do not interrupt it, do not restart the
+kernel. Exit 0 is REQUIRED to proceed to STEP 9; any red is a STOP under R8:
+paste the whole block to Carter and wait. Then reclaim the space (the ONLY
+deletion R6 authorizes):
+  rm -f /home/jupyter/native_ld_scratch/m2_region_00001.npz
+  df -h /home/jupyter
+NOTE: --npz is REQUIRED by the gate on purpose. A falsification that did not run
+is not a falsification; there is no skip on the fire path.
+
 STEP 9 — GATE: STAGE B, the de-risk batch (4 regions: the two smallest, the
 SH2B3/Track-A anchor m2_region_00040__sub14, and DELIBERATELY the largest
 region m2_region_00071 at 20.8 Mb (the largest SQUARE-FEASIBLE region) — its job is to measure the worst case
@@ -204,6 +251,31 @@ worst case is m2_region_00071, the largest SQUARE-FEASIBLE region, so wall-time
 extrapolated from Stage B covers ONLY the square-feasible class — the regions
 above the --max-n-var ceiling defer instead of computing, and they are not in
 the denominator.
+
+STEP 9-GATE — MECHANICAL STAGE-B GATE (R8). After the rollup above, snapshot the
+panel TSV and run the gate:
+  gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
+  python3 src/python/fire_verifier.py stage-b \
+    --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
+    --vm-gib 120 --n-total 276 \
+    --report /home/jupyter/fire_gate_stageB.json
+  echo "gate exit: $?"
+EXPECT: one stage_b_peak_ram[<region_id>] check per COMPUTED (status ok) row, all
+PASS; status_classification PASS; cost_gate_denominator PASS; "gate exit: 0".
+The peak-RAM bound is 15% headroom on the 120 GiB VM (n1-standard-32) = 102.0
+GiB; a peak above it means DO NOT extrapolate to larger regions. A row whose
+peak_ram_gib is missing FAILS CLOSED — unmeasurable is never ok. Zero computed
+rows also FAILS: a check with no input must not pass vacuously. Exit 0 required;
+any red is a STOP under R8 — paste and wait.
+
+NOTE (A-12, not wired — do not attempt it): the gate also implements a
+MAF-DEPRESSION DIRECTION check (occluded variants should show depressed panel MAF
+vs sumstats MAF; absent depression WEAKENS the occlusion attribution and is a
+FINDING, not a hard stop). It is NOT wired into stage-b because it needs
+(panel_maf, sumstats_maf) pairs from the per-region occlusion manifests JOINED to
+the harmonized sumstats — that join does not exist yet, and building it is
+Carter's planning-side work, not yours. Do not improvise it.
+
 Recommend he STOPS the environment in the UI if there will be a gap (idle VM
 bills hourly). Banked regions are permanent; nothing recomputes.
 
@@ -241,6 +313,24 @@ days, each reported to Carter:
   gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/*.npz | wc -l
   gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv | awk -F'\t' 'NR>1{c[$7]++} END{for(k in c) print k, c[k]}'
   tail -20 /home/jupyter/native_ld_fire.log
+MECHANICAL STAGE-C GATE (R8) — run this at EVERY check-in, alongside the three
+commands above, and paste its full output:
+  gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
+  python3 src/python/fire_verifier.py stage-c \
+    --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
+    --report /home/jupyter/fire_gate_stageC_$(date +%Y%m%d).json
+  echo "gate exit: $?"
+HOW TO READ IT — this is the whole point of the gate:
+  * `deferred_infeasible_square: …` and `deferred_occlusion_anomaly: …` rows
+    PASS. They are THE GATES WORKING. Never "fix" one mid-fire.
+  * `verify_failed` and `error: …` rows FAIL at FINDING. Those regions banked
+    NOTHING. The loop continues by design (Stage C runs without --fail-fast) —
+    report them to Carter with their per-region statuses; do NOT re-fire blindly.
+  * An UNRECOGNIZED or EMPTY status FAILS at HARD_STOP. That means the producer
+    emitted something the gate does not know, or the panel TSV is corrupt.
+    STOP and report immediately.
+Exit 0 = nothing to report beyond the counts. Any red = STOP under R8; never
+chain past it.
 Liveness = the .npz count CLIMBING toward 276 — not the kernel light, not
 _SUCCESS markers, not the log. 276 IS NOT A PASS BAR: verify_failed regions
 never upload (their artifacts stay in scratch, recorded in the panel TSV) and
