@@ -371,10 +371,24 @@ silently stale. **Exit 0 required; never chain past a red.**
 ⚠ **NOT WIRED — do not improvise it (A-12).** The gate also implements a
 MAF-depression DIRECTION check (occluded variants should show depressed panel MAF
 vs sumstats MAF; absent depression WEAKENS the occlusion attribution and is a
-FINDING, not a hard stop). It is deliberately not wired into `stage-b`: it needs
-`(panel_maf, sumstats_maf)` pairs from the per-region occlusion manifests JOINED
-to the harmonized sumstats, and that join does not exist yet. Producing it is
-Carter's planning-side work, not the agent's.
+FINDING, not a hard stop). It stays **implemented, tested, and NOT WIRED** into
+`stage-b`, and nothing in this fire changes that.
+
+⛔ **DECIDED 2026-08-18, on Seth's recommendation: the cross-cohort
+`(panel_maf, sumstats_maf)` join it would need is NOT TO BE BUILT.** It is
+nobody's work item — the earlier wording calling it "Carter's planning-side work"
+is retired. His courier is banked at
+`.planning/quick/260818-uoi-bank-seth-d-acceptance-courier-register-/260818-uoi-SETH-COURIER-d-acceptance-as-received.md`
+
+✅ **The registered replacement is `MISS-1`**, in
+`.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md` — a
+**within-panel, post-fire** missingness test (per region: `F_MISS` of the
+occlusion-excluded variants against that region's own `F_MISS` distribution). If
+the MAF question comes up at all, point Carter at `MISS-1` and build nothing.
+
+**None of this blocks or changes the fire** — no new flag, no producer change, no
+extra command at Stage B. If a red or a question arises here: **paste and wait —
+do not improvise.**
 
 **Stage C — the remainder:** exactly STEP B below, unchanged — everything already
 banked auto-skips.
