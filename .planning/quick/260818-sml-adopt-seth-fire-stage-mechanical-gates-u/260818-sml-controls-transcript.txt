@@ -55,6 +55,1662 @@ ERROR tests/m3/test_fire_verifier.py
 !!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
 1 error in 0.53s
 
---------------------------------------------------------------------------------
-(Entries NC-01 .. NC-NN — one per CHECK — are appended in Task 2, after the module
-exists and each control has been driven red against it.)
+================================================================================
+NC-01 — parse_panel_tsv — the refusals are load-bearing
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '        raise FileNotFoundError(f"panel TSV not found: {p}")'
+    -> '        return []  # PERTURBED: fail-open instead of raising'
+  - '    if header != expected:'
+    -> '    if False:  # PERTURBED: accept a renamed header'
+  - '        if len(row) != len(header):'
+    -> '        if False:  # PERTURBED: accept a ragged row'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'parse_panel_tsv'
+Controls fired (grouped, one perturbation per check):
+  test_RED_parse_panel_tsv_renamed_header_column_refuses, test_RED_parse_panel_tsv_missing_file, test_RED_parse_panel_tsv_ragged_row
+
+--- OBSERVED RED (verbatim) ---
+...FFF                                                                   [100%]
+=================================== FAILURES ===================================
+____________ test_RED_parse_panel_tsv_renamed_header_column_refuses ____________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-826/test_RED_parse_panel_tsv_renam0')
+
+    def test_RED_parse_panel_tsv_renamed_header_column_refuses(tmp_path):
+        bad = "\t".join(["region_id", "chrom"] + list(rnlp._PANEL_COLUMNS[2:]))
+        p = _write_panel(tmp_path, [_panel_row("m2_region_00001")], header=bad)
+>       with pytest.raises(ValueError) as e:
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/m3/test_fire_verifier.py:261: Failed
+____________________ test_RED_parse_panel_tsv_missing_file _____________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-826/test_RED_parse_panel_tsv_missi0')
+
+    def test_RED_parse_panel_tsv_missing_file(tmp_path):
+>       with pytest.raises(Exception):
+E       Failed: DID NOT RAISE <class 'Exception'>
+
+tests/m3/test_fire_verifier.py:267: Failed
+_____________________ test_RED_parse_panel_tsv_ragged_row ______________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-826/test_RED_parse_panel_tsv_ragge0')
+
+    def test_RED_parse_panel_tsv_ragged_row(tmp_path):
+        p = _write_panel(tmp_path, [_panel_row("m2_region_00001"), "m2_region_00002\t1\t5"])
+        with pytest.raises(ValueError) as e:
+>           fv.parse_panel_tsv(p)
+
+tests/m3/test_fire_verifier.py:274: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-826/test_RED_parse_panel_tsv_ragge0/panel_fixture.tsv')
+
+    def parse_panel_tsv(path: "str | Path") -> List[Dict[str, Any]]:
+        """Read the per-region panel TSV -> ``list[dict]``.
+    
+        THE single parser: no check anywhere in this module does ad-hoc column
+        indexing (a positional ``$5`` in one place and ``$7`` in another is how a
+        schema change falsifies provenance silently).
+    
+        Contract, mirroring the shipped ``_append_panel_row_local``:
+          * the header must be EXACTLY the imported ``_PANEL_COLUMNS`` — REFUSE, never
+            repair (a guard that silently repairs HIDES the bug);
+          * a ragged row RAISES rather than being coerced;
+          * numeric columns are coerced to number-or-None (an empty field is how
+            ``pandas.to_csv`` renders ``None``);
+          * ``status`` is kept as a RAW string — the real statuses carry detail
+            suffixes with spaces, ``=`` and ``>`` inside the field.
+        """
+        p = Path(path)
+        if not p.is_file():
+            return []  # PERTURBED: fail-open instead of raising
+        with p.open(newline="") as fh:
+            rows = list(csv.reader(fh, delimiter="\t", quoting=csv.QUOTE_NONE))
+        if not rows:
+            raise ValueError(f"panel TSV {p} is EMPTY (not even a header) -> refuse")
+    
+        header = rows[0]
+        expected = list(rnlp._PANEL_COLUMNS)
+        if False:  # PERTURBED: accept a renamed header
+            raise ValueError(
+                f"panel TSV {p} has an UNEXPECTED header and cannot be parsed.\n"
+                f"  found:    {header}\n"
+                f"  expected: {expected}\n"
+                "REFUSE, never repair: parsing under a mismatched header either "
+                "aborts or silently shifts every column."
+            )
+    
+        out: List[Dict[str, Any]] = []
+        for lineno, row in enumerate(rows[1:], start=2):
+            if not row or all(c.strip() == "" for c in row):
+                continue
+            if False:  # PERTURBED: accept a ragged row
+                raise ValueError(
+                    f"panel TSV {p} line {lineno} is RAGGED: {len(row)} field(s), "
+                    f"expected {len(header)} -> refuse (a ragged row is how a stale "
+                    f"header falsifies every downstream count)"
+                )
+            rec: Dict[str, Any] = dict(zip(header, row))
+            for col in _INT_COLUMNS:
+>               rec[col] = _num_or_none(rec[col], int)
+                                        ^^^^^^^^
+E               KeyError: 'n_dropped_occluded'
+
+src/python/fire_verifier.py:259: KeyError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_parse_panel_tsv_renamed_header_column_refuses
+FAILED tests/m3/test_fire_verifier.py::test_RED_parse_panel_tsv_missing_file
+FAILED tests/m3/test_fire_verifier.py::test_RED_parse_panel_tsv_ragged_row - ...
+3 failed, 3 passed, 73 deselected in 1.12s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+6 passed, 73 deselected in 0.44s
+
+================================================================================
+NC-02 — _status_class — the allow-list + the AST drift enforcer
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '    s = ("" if status is None else str(status)).strip()'
+    -> '    return STATUS_OK  # PERTURBED: nothing is ever unrecognized'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'status_vocabulary or classify_statuses'
+Controls fired (grouped, one perturbation per check):
+  test_RED_status_vocabulary_guard_catches_a_new_shipped_status, test_RED_classify_statuses_unknown_token, test_RED_classify_statuses_empty_status, test_RED_classify_statuses_unknown_deferral_reason, test_classify_statuses_unknown_outranks_finding, test_status_vocabulary_covers_the_measured_seven_sites
+
+--- OBSERVED RED (verbatim) ---
+..FFF.FFFFFF                                                             [100%]
+=================================== FAILURES ===================================
+________ test_RED_status_vocabulary_guard_catches_a_new_shipped_status _________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-828/test_RED_status_vocabulary_gua0')
+
+    def test_RED_status_vocabulary_guard_catches_a_new_shipped_status(tmp_path):
+        """The SAME extractor + the SAME coverage assertion over a fixture producer
+        carrying an unrecognized status must FAIL (the guard is not vacuous)."""
+        fixture = tmp_path / "fake_producer.py"
+        fixture.write_text(
+            "def process_region(result):\n"
+            "    result['status'] = 'skipped_idempotent'\n"
+            "    result[\"status\"] = \"banana\"\n"
+            "    return result\n"
+        )
+        found = _extract_status_prefixes(fixture.read_text())
+        assert "banana" in found
+        uncovered = sorted(p for p in found if fv._status_class(p) == fv.STATUS_UNKNOWN)
+>       assert uncovered == ["banana"], (
+            "the coverage assertion did NOT flag an unrecognized shipped status -> "
+            "the drift guard is vacuous")
+E       AssertionError: the coverage assertion did NOT flag an unrecognized shipped status -> the drift guard is vacuous
+E       assert [] == ['banana']
+E         
+E         Right contains one more item: 'banana'
+E         Use -v to get more diff
+
+tests/m3/test_fire_verifier.py:346: AssertionError
+____________ test_status_vocabulary_covers_the_measured_seven_sites ____________
+
+    def test_status_vocabulary_covers_the_measured_seven_sites():
+        """The M2 table, pinned: every measured emission prefix classifies."""
+        for prefix, want in [
+            ("skipped_idempotent", fv.STATUS_OK),
+            ("ok", fv.STATUS_OK),
+            ("error", fv.STATUS_FAILURE),
+            ("error: ", fv.STATUS_FAILURE),
+            ("verify_failed", fv.STATUS_FAILURE),
+            ("deferred_infeasible_square: n_var=", fv.STATUS_DEFERRAL),
+            ("deferred_occlusion_anomaly: ", fv.STATUS_DEFERRAL),
+        ]:
+>           assert fv._status_class(prefix) == want, prefix
+E           AssertionError: error
+E           assert 'ok_class' == 'failure_class'
+E             
+E             - failure_class
+E             + ok_class
+
+tests/m3/test_fire_verifier.py:362: AssertionError
+__________ test_classify_statuses_green_real_detail_bearing_deferrals __________
+
+    def test_classify_statuses_green_real_detail_bearing_deferrals():
+        """THE regression pin: a REAL deferral carries a detail suffix. Exact
+        membership (the prototype) would flag every one as unrecognized."""
+        rows = ([{"status": "ok"}] * 5
+                + [{"status": REAL_INFEASIBLE}] * 29
+                + [{"status": REAL_OCCLUSION_ANOMALY}] * 2)
+        c = fv.classify_statuses(rows)
+        assert c.ok, c.detail
+>       assert c.measured["n_deferred"] == 31
+E       assert 0 == 31
+
+tests/m3/test_fire_verifier.py:377: AssertionError
+___________________ test_RED_classify_statuses_unknown_token ___________________
+
+    def test_RED_classify_statuses_unknown_token():
+        c = fv.classify_statuses([{"status": "banana"}])
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       assert (not True)
+E        +  where True = Check(name='status_classification', status='PASS', detail="1 ok-class + 0 deferred row(s) of 1, ALL recognized (the ga...HARD_STOP', measured={'counts': {'banana': 1}, 'n_rows': 1, 'n_ok': 1, 'n_deferred': 0, 'n_failed': 0, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:389: AssertionError
+___________________ test_RED_classify_statuses_empty_status ____________________
+
+    def test_RED_classify_statuses_empty_status():
+        c = fv.classify_statuses([{"status": ""}])
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       assert (not True)
+E        +  where True = Check(name='status_classification', status='PASS', detail="1 ok-class + 0 deferred row(s) of 1, ALL recognized (the ga...P', measured={'counts': {'<empty status>': 1}, 'n_rows': 1, 'n_ok': 1, 'n_deferred': 0, 'n_failed': 0, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:395: AssertionError
+______________ test_RED_classify_statuses_unknown_deferral_reason ______________
+
+    def test_RED_classify_statuses_unknown_deferral_reason():
+        c = fv.classify_statuses([{"status": "deferred_mystery_reason"}])
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       assert (not True)
+E        +  where True = Check(name='status_classification', status='PASS', detail="1 ok-class + 0 deferred row(s) of 1, ALL recognized (the ga...red={'counts': {'deferred_mystery_reason': 1}, 'n_rows': 1, 'n_ok': 1, 'n_deferred': 0, 'n_failed': 0, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:400: AssertionError
+____________ test_RED_classify_statuses_verify_failed_is_a_finding _____________
+
+    def test_RED_classify_statuses_verify_failed_is_a_finding():
+        c = fv.classify_statuses([{"status": "ok"}, {"status": "verify_failed"}])
+>       assert not c.ok
+E       assert not True
+E        +  where True = Check(name='status_classification', status='PASS', detail="2 ok-class + 0 deferred row(s) of 2, ALL recognized (the ga...ured={'counts': {'ok': 1, 'verify_failed': 1}, 'n_rows': 2, 'n_ok': 2, 'n_deferred': 0, 'n_failed': 0, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:406: AssertionError
+____________ test_RED_classify_statuses_real_error_row_is_a_finding ____________
+
+    def test_RED_classify_statuses_real_error_row_is_a_finding():
+        c = fv.classify_statuses([{"status": "ok"}, {"status": REAL_ERROR}])
+>       assert not c.ok and c.severity == fv.FINDING
+E       assert (not True)
+E        +  where True = Check(name='status_classification', status='PASS', detail="2 ok-class + 0 deferred row(s) of 2, ALL recognized (the ga...ch for m2_region_00001: 102421 != 102420': 1}, 'n_rows': 2, 'n_ok': 2, 'n_deferred': 0, 'n_failed': 0, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:415: AssertionError
+_______________ test_classify_statuses_unknown_outranks_finding ________________
+
+    def test_classify_statuses_unknown_outranks_finding():
+        c = fv.classify_statuses([{"status": "verify_failed"}, {"status": "banana"}])
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       assert (not True)
+E        +  where True = Check(name='status_classification', status='PASS', detail="2 ok-class + 0 deferred row(s) of 2, ALL recognized (the ga...={'counts': {'verify_failed': 1, 'banana': 1}, 'n_rows': 2, 'n_ok': 2, 'n_deferred': 0, 'n_failed': 0, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:421: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_status_vocabulary_guard_catches_a_new_shipped_status
+FAILED tests/m3/test_fire_verifier.py::test_status_vocabulary_covers_the_measured_seven_sites
+FAILED tests/m3/test_fire_verifier.py::test_classify_statuses_green_real_detail_bearing_deferrals
+FAILED tests/m3/test_fire_verifier.py::test_RED_classify_statuses_unknown_token
+FAILED tests/m3/test_fire_verifier.py::test_RED_classify_statuses_empty_status
+FAILED tests/m3/test_fire_verifier.py::test_RED_classify_statuses_unknown_deferral_reason
+FAILED tests/m3/test_fire_verifier.py::test_RED_classify_statuses_verify_failed_is_a_finding
+FAILED tests/m3/test_fire_verifier.py::test_RED_classify_statuses_real_error_row_is_a_finding
+FAILED tests/m3/test_fire_verifier.py::test_classify_statuses_unknown_outranks_finding
+9 failed, 3 passed, 67 deselected in 0.82s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+12 passed, 67 deselected in 0.45s
+
+================================================================================
+NC-03 — classify_statuses — verify_failed / error: are FINDINGS, not PASS
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '        if failures:'
+    -> '        if False and failures:  # PERTURBED: failures pass silently'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'classify_statuses'
+Controls fired (grouped, one perturbation per check):
+  test_RED_classify_statuses_verify_failed_is_a_finding, test_RED_classify_statuses_real_error_row_is_a_finding
+
+--- OBSERVED RED (verbatim) ---
+.....FF.                                                                 [100%]
+=================================== FAILURES ===================================
+____________ test_RED_classify_statuses_verify_failed_is_a_finding _____________
+
+    def test_RED_classify_statuses_verify_failed_is_a_finding():
+        c = fv.classify_statuses([{"status": "ok"}, {"status": "verify_failed"}])
+>       assert not c.ok
+E       assert not True
+E        +  where True = Check(name='status_classification', status='PASS', detail="1 ok-class + 0 deferred row(s) of 2, ALL recognized (the ga...ured={'counts': {'ok': 1, 'verify_failed': 1}, 'n_rows': 2, 'n_ok': 1, 'n_deferred': 0, 'n_failed': 1, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:406: AssertionError
+____________ test_RED_classify_statuses_real_error_row_is_a_finding ____________
+
+    def test_RED_classify_statuses_real_error_row_is_a_finding():
+        c = fv.classify_statuses([{"status": "ok"}, {"status": REAL_ERROR}])
+>       assert not c.ok and c.severity == fv.FINDING
+E       assert (not True)
+E        +  where True = Check(name='status_classification', status='PASS', detail="1 ok-class + 0 deferred row(s) of 2, ALL recognized (the ga...ch for m2_region_00001: 102421 != 102420': 1}, 'n_rows': 2, 'n_ok': 1, 'n_deferred': 0, 'n_failed': 1, 'n_unknown': 0}).ok
+
+tests/m3/test_fire_verifier.py:415: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_classify_statuses_verify_failed_is_a_finding
+FAILED tests/m3/test_fire_verifier.py::test_RED_classify_statuses_real_error_row_is_a_finding
+2 failed, 6 passed, 71 deselected in 0.50s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+8 passed, 71 deselected in 0.43s
+
+================================================================================
+NC-04a — check_nan_falsification — the shipped ok=False verdict is load-bearing
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '        if ok:'
+    -> '        if True:  # PERTURBED: ignore the shipped verdict'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'nan_falsification'
+Controls fired (grouped, one perturbation per check):
+  test_RED_nan_falsification_nan_on_the_diagonal, test_RED_nan_falsification_whole_row_nan_with_unit_diagonal, test_RED_nan_falsification_corrupt_bytes_does_not_claim_nan
+
+--- OBSERVED RED (verbatim) ---
+.FF..F...                                                                [100%]
+=================================== FAILURES ===================================
+________________ test_RED_nan_falsification_nan_on_the_diagonal ________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-830/test_RED_nan_falsification_nan0')
+
+    def test_RED_nan_falsification_nan_on_the_diagonal(tmp_path):
+        c = fv.check_nan_falsification(_nan_diagonal_npz(tmp_path))
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='the SHIPPED content verification re-read the banked .np...0% of the region-1 NaN (shipped reason: diagonal != 1.0 (atol 1e-3))', severity='HARD_STOP', measured={'bytes': 13416}).ok
+
+tests/m3/test_fire_verifier.py:447: AssertionError
+_________ test_RED_nan_falsification_whole_row_nan_with_unit_diagonal __________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-830/test_RED_nan_falsification_who0')
+
+    def test_RED_nan_falsification_whole_row_nan_with_unit_diagonal(tmp_path):
+        """The fire-#3 fingerprint: the shipped verifier calls it an asymmetry; the
+        gate must name it a NaN and rank the SOURCE row."""
+        c = fv.check_nan_falsification(_whole_row_nan_npz(tmp_path, row=7))
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='the SHIPPED content verification re-read the banked .np...100% of the region-1 NaN (shipped reason: not symmetric (atol 1e-4))', severity='HARD_STOP', measured={'bytes': 13175}).ok
+
+tests/m3/test_fire_verifier.py:456: AssertionError
+_________ test_RED_nan_falsification_corrupt_bytes_does_not_claim_nan __________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-830/test_RED_nan_falsification_cor0')
+
+    def test_RED_nan_falsification_corrupt_bytes_does_not_claim_nan(tmp_path):
+        p = tmp_path / "corrupt.npz"
+        p.write_bytes(b"x" * 4096)
+        c = fv.check_nan_falsification(p)
+>       assert not c.ok
+E       assert not True
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail="the SHIPPED content verification re-read the banked .np.../pytest-830/test_RED_nan_falsification_cor0/corrupt.npz' as a pickle)", severity='HARD_STOP', measured={'bytes': 4096}).ok
+
+tests/m3/test_fire_verifier.py:482: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_nan_on_the_diagonal
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_whole_row_nan_with_unit_diagonal
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_corrupt_bytes_does_not_claim_nan
+3 failed, 6 passed, 70 deselected in 0.54s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+9 passed, 70 deselected in 0.47s
+
+================================================================================
+NC-04b — check_nan_falsification — the fail-closed preconditions
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - INSERTED as the first statement of check_nan_falsification.run(), after
+    '        n = "stage_a_nan_falsification"':
+    -> '        return Check(n, PASS, "PERTURBED: unconditional pass", HARD_STOP)'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'nan_falsification'
+Controls fired (grouped, one perturbation per check):
+  test_RED_nan_falsification_missing_file_fails_closed, test_RED_nan_falsification_below_min_bytes_fails_closed, test_RED_nan_falsification_verifier_raising_oserror_fails_closed (+ the three NC-04a controls)
+
+--- OBSERVED RED (verbatim) ---
+.FFFFFF..                                                                [100%]
+=================================== FAILURES ===================================
+________________ test_RED_nan_falsification_nan_on_the_diagonal ________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-832/test_RED_nan_falsification_nan0')
+
+    def test_RED_nan_falsification_nan_on_the_diagonal(tmp_path):
+        c = fv.check_nan_falsification(_nan_diagonal_npz(tmp_path))
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:447: AssertionError
+_________ test_RED_nan_falsification_whole_row_nan_with_unit_diagonal __________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-832/test_RED_nan_falsification_who0')
+
+    def test_RED_nan_falsification_whole_row_nan_with_unit_diagonal(tmp_path):
+        """The fire-#3 fingerprint: the shipped verifier calls it an asymmetry; the
+        gate must name it a NaN and rank the SOURCE row."""
+        c = fv.check_nan_falsification(_whole_row_nan_npz(tmp_path, row=7))
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:456: AssertionError
+_____________ test_RED_nan_falsification_missing_file_fails_closed _____________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-832/test_RED_nan_falsification_mis0')
+
+    def test_RED_nan_falsification_missing_file_fails_closed(tmp_path):
+        c = fv.check_nan_falsification(tmp_path / "absent.npz")
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:465: AssertionError
+___________ test_RED_nan_falsification_below_min_bytes_fails_closed ____________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-832/test_RED_nan_falsification_bel0')
+
+    def test_RED_nan_falsification_below_min_bytes_fails_closed(tmp_path):
+        p = tmp_path / "tiny.npz"
+        p.write_bytes(b"x" * (alp._MIN_REGION_NPZ_BYTES - 1))
+        c = fv.check_nan_falsification(p)
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:473: AssertionError
+_________ test_RED_nan_falsification_corrupt_bytes_does_not_claim_nan __________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-832/test_RED_nan_falsification_cor0')
+
+    def test_RED_nan_falsification_corrupt_bytes_does_not_claim_nan(tmp_path):
+        p = tmp_path / "corrupt.npz"
+        p.write_bytes(b"x" * 4096)
+        c = fv.check_nan_falsification(p)
+>       assert not c.ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:482: AssertionError
+_______ test_RED_nan_falsification_verifier_raising_oserror_fails_closed _______
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-832/test_RED_nan_falsification_ver0')
+
+    def test_RED_nan_falsification_verifier_raising_oserror_fails_closed(tmp_path):
+        def broken(_path, **_kw):
+            raise OSError("disk gone")
+        c = fv.check_nan_falsification(_good_npz(tmp_path), verifier=broken)
+>       assert not c.ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='stage_a_nan_falsification', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:492: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_nan_on_the_diagonal
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_whole_row_nan_with_unit_diagonal
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_missing_file_fails_closed
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_below_min_bytes_fails_closed
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_corrupt_bytes_does_not_claim_nan
+FAILED tests/m3/test_fire_verifier.py::test_RED_nan_falsification_verifier_raising_oserror_fails_closed
+6 failed, 3 passed, 70 deselected in 0.55s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+9 passed, 70 deselected in 0.45s
+
+================================================================================
+NC-05 — check_manifest_rows — count, field-parseability AND region_id
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - INSERTED as the first statement of check_manifest_rows.run(), after
+    '        n = "stage_a_manifest_rows"':
+    -> '        return Check(n, PASS, "PERTURBED: unconditional pass", HARD_STOP, {"records": 5})'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'manifest_rows'
+Controls fired (grouped, one perturbation per check):
+  test_RED_manifest_rows_wrong_line_count, test_RED_manifest_rows_success_placeholders_at_the_right_count, test_RED_manifest_rows_missing_file, test_RED_manifest_rows_wrong_region_id
+
+--- OBSERVED RED (verbatim) ---
+.FFFF                                                                    [100%]
+=================================== FAILURES ===================================
+___________________ test_RED_manifest_rows_wrong_line_count ____________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-834/test_RED_manifest_rows_wrong_l0')
+
+    def test_RED_manifest_rows_wrong_line_count(tmp_path):
+        c = fv.check_manifest_rows(_manifest(tmp_path, n_records=3), expected_records=5,
+                                   region_id="m2_region_00001")
+>       assert not c.ok and "expected 6" in c.detail
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_manifest_rows', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={'records': 5}).ok
+
+tests/m3/test_fire_verifier.py:522: AssertionError
+________ test_RED_manifest_rows_success_placeholders_at_the_right_count ________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-834/test_RED_manifest_rows_success0')
+
+    def test_RED_manifest_rows_success_placeholders_at_the_right_count(tmp_path):
+        """The $2,140 defect class: right line count, wrong content."""
+        p = tmp_path / "marker_manifest.tsv"
+        p.write_text("header\n" + "_SUCCESS\n" * 5)
+        c = fv.check_manifest_rows(p, expected_records=5, region_id="m2_region_00001")
+>       assert not c.ok and "placeholder" in c.detail
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_manifest_rows', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={'records': 5}).ok
+
+tests/m3/test_fire_verifier.py:530: AssertionError
+_____________________ test_RED_manifest_rows_missing_file ______________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-834/test_RED_manifest_rows_missing0')
+
+    def test_RED_manifest_rows_missing_file(tmp_path):
+        c = fv.check_manifest_rows(tmp_path / "nope.tsv", expected_records=5,
+                                   region_id="m2_region_00001")
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_a_manifest_rows', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={'records': 5}).ok
+
+tests/m3/test_fire_verifier.py:536: AssertionError
+____________________ test_RED_manifest_rows_wrong_region_id ____________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-834/test_RED_manifest_rows_wrong_r0')
+
+    def test_RED_manifest_rows_wrong_region_id(tmp_path):
+        p = _manifest(tmp_path, region_id="m2_region_00099")
+        c = fv.check_manifest_rows(p, expected_records=5, region_id="m2_region_00001")
+>       assert not c.ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='stage_a_manifest_rows', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={'records': 5}).ok
+
+tests/m3/test_fire_verifier.py:542: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_manifest_rows_wrong_line_count
+FAILED tests/m3/test_fire_verifier.py::test_RED_manifest_rows_success_placeholders_at_the_right_count
+FAILED tests/m3/test_fire_verifier.py::test_RED_manifest_rows_missing_file - ...
+FAILED tests/m3/test_fire_verifier.py::test_RED_manifest_rows_wrong_region_id
+4 failed, 1 passed, 74 deselected in 0.51s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+5 passed, 74 deselected in 0.43s
+
+================================================================================
+NC-06 — check_occlusion_ceiling — the STRICT > clause-(d) comparison
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '        if n_occluded > ceiling:'
+    -> '        if False and n_occluded > ceiling:  # PERTURBED: never defer'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'occlusion_ceiling or occlusion_fraction'
+Controls fired (grouped, one perturbation per check):
+  test_RED_occlusion_ceiling_exceeded, test_occlusion_ceiling_boundary_is_strictly_greater, test_RED_occlusion_ceiling_missing_count_fails_closed, test_occlusion_fraction_is_the_shipped_module_global (its red half)
+
+--- OBSERVED RED (verbatim) ---
+.FF.F                                                                    [100%]
+=================================== FAILURES ===================================
+_____________________ test_RED_occlusion_ceiling_exceeded ______________________
+
+    def test_RED_occlusion_ceiling_exceeded():
+        c = fv.check_occlusion_ceiling(n_occluded=52, n_var=102421)
+>       assert not c.ok and "DEFER" in c.detail
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='occlusion_anomaly_ceiling', status='PASS', detail='n_occluded=52 <= ceiling=51.2 (1x headroom)', severity='HARD_STOP', measured={'n_occluded': 52, 'ceiling': 51.2105, 'n_var': 102421, 'frac': 0.0005}).ok
+
+tests/m3/test_fire_verifier.py:558: AssertionError
+_____________ test_occlusion_ceiling_boundary_is_strictly_greater ______________
+
+    def test_occlusion_ceiling_boundary_is_strictly_greater():
+        """Clause (d) says 'exceeds' -> count == ceiling stays on the lockstep path."""
+        assert fv.check_occlusion_ceiling(n_occluded=60, n_var=120000).ok
+>       assert not fv.check_occlusion_ceiling(n_occluded=61, n_var=120000).ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='occlusion_anomaly_ceiling', status='PASS', detail='n_occluded=61 <= ceiling=60.0 (1x headroom)', severity='HARD_STOP', measured={'n_occluded': 61, 'ceiling': 60.0, 'n_var': 120000, 'frac': 0.0005}).ok
+E        +    where Check(name='occlusion_anomaly_ceiling', status='PASS', detail='n_occluded=61 <= ceiling=60.0 (1x headroom)', severity='HARD_STOP', measured={'n_occluded': 61, 'ceiling': 60.0, 'n_var': 120000, 'frac': 0.0005}) = <function check_occlusion_ceiling at 0x7fb00e4d84a0>(n_occluded=61, n_var=120000)
+E        +      where <function check_occlusion_ceiling at 0x7fb00e4d84a0> = fv.check_occlusion_ceiling
+
+tests/m3/test_fire_verifier.py:564: AssertionError
+_____________ test_occlusion_fraction_is_the_shipped_module_global _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb00e2c84d0>
+
+    def test_occlusion_fraction_is_the_shipped_module_global(monkeypatch):
+        """IDENTITY, not a literal: the default fraction is READ from the shipped
+        module global at evaluation time, exactly as the producer reads it."""
+        assert fv._default_occlusion_fraction() == rnlp._OCCLUSION_ANOMALY_FRACTION
+        monkeypatch.setattr(rnlp, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+        assert fv._default_occlusion_fraction() == 0.5
+        # 5 of 100 is under a 0.5 ceiling of 50 -> the gate must follow the global
+        assert fv.check_occlusion_ceiling(n_occluded=5, n_var=100).ok
+>       assert not fv.check_occlusion_ceiling(n_occluded=51, n_var=100).ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='occlusion_anomaly_ceiling', status='PASS', detail='n_occluded=51 <= ceiling=50.0 (1x headroom)', severity='HARD_STOP', measured={'n_occluded': 51, 'ceiling': 50.0, 'n_var': 100, 'frac': 0.5}).ok
+E        +    where Check(name='occlusion_anomaly_ceiling', status='PASS', detail='n_occluded=51 <= ceiling=50.0 (1x headroom)', severity='HARD_STOP', measured={'n_occluded': 51, 'ceiling': 50.0, 'n_var': 100, 'frac': 0.5}) = <function check_occlusion_ceiling at 0x7fb00e4d84a0>(n_occluded=51, n_var=100)
+E        +      where <function check_occlusion_ceiling at 0x7fb00e4d84a0> = fv.check_occlusion_ceiling
+
+tests/m3/test_fire_verifier.py:580: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_occlusion_ceiling_exceeded - ...
+FAILED tests/m3/test_fire_verifier.py::test_occlusion_ceiling_boundary_is_strictly_greater
+FAILED tests/m3/test_fire_verifier.py::test_occlusion_fraction_is_the_shipped_module_global
+3 failed, 2 passed, 74 deselected in 0.49s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+5 passed, 74 deselected in 0.43s
+
+================================================================================
+NC-07 — check_region1_status — the A-04 widening to ANY non-'ok'
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '        if s == "ok":'
+    -> '        if True:  # PERTURBED: every status passes'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'region1_status'
+Controls fired (grouped, one perturbation per check):
+  test_RED_region1_status_real_deferral_is_a_finding, test_RED_region1_status_verify_failed_is_the_widening_pin, test_RED_region1_status_empty
+
+--- OBSERVED RED (verbatim) ---
+.FFF                                                                     [100%]
+=================================== FAILURES ===================================
+______________ test_RED_region1_status_real_deferral_is_a_finding ______________
+
+    def test_RED_region1_status_real_deferral_is_a_finding():
+        c = fv.check_region1_status(REAL_INFEASIBLE)
+>       assert not c.ok and c.severity == fv.FINDING
+E       assert (not True)
+E        +  where True = Check(name='region1_status', status='PASS', detail="region 1 status='ok'", severity='FINDING', measured={'status': 'deferred_infeasible_square: n_var=102421 > ceiling=120000'}).ok
+
+tests/m3/test_fire_verifier.py:603: AssertionError
+__________ test_RED_region1_status_verify_failed_is_the_widening_pin ___________
+
+    def test_RED_region1_status_verify_failed_is_the_widening_pin():
+        """Region 1 runs under ``--fail-fast``, where ``RegionGateError`` fires on ANY
+        status != 'ok' (run_native_ld_panel.py:1161) — not just a deferral."""
+        c = fv.check_region1_status("verify_failed")
+>       assert not c.ok and c.severity == fv.FINDING
+E       assert (not True)
+E        +  where True = Check(name='region1_status', status='PASS', detail="region 1 status='ok'", severity='FINDING', measured={'status': 'verify_failed'}).ok
+
+tests/m3/test_fire_verifier.py:611: AssertionError
+________________________ test_RED_region1_status_empty _________________________
+
+    def test_RED_region1_status_empty():
+>       assert not fv.check_region1_status("").ok
+E       assert not True
+E        +  where True = Check(name='region1_status', status='PASS', detail="region 1 status='ok'", severity='FINDING', measured={'status': ''}).ok
+E        +    where Check(name='region1_status', status='PASS', detail="region 1 status='ok'", severity='FINDING', measured={'status': ''}) = <function check_region1_status at 0x7f770feac540>('')
+E        +      where <function check_region1_status at 0x7f770feac540> = fv.check_region1_status
+
+tests/m3/test_fire_verifier.py:615: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_region1_status_real_deferral_is_a_finding
+FAILED tests/m3/test_fire_verifier.py::test_RED_region1_status_verify_failed_is_the_widening_pin
+FAILED tests/m3/test_fire_verifier.py::test_RED_region1_status_empty - assert...
+3 failed, 1 passed, 75 deselected in 0.49s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+4 passed, 75 deselected in 0.43s
+
+================================================================================
+NC-08 — check_peak_ram — the headroom bound + the unmeasured FAIL CLOSED
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - INSERTED as the first statement of check_peak_ram.run(), after
+    '        n = "stage_b_peak_ram"':
+    -> '        return Check(n, PASS, "PERTURBED: unconditional pass", HARD_STOP)'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'peak_ram'
+Controls fired (grouped, one perturbation per check):
+  test_RED_peak_ram_over_limit, test_RED_peak_ram_unreported_fails_closed
+
+--- OBSERVED RED (verbatim) ---
+.FFF                                                                     [100%]
+=================================== FAILURES ===================================
+_________________________ test_RED_peak_ram_over_limit _________________________
+
+    def test_RED_peak_ram_over_limit():
+        c = fv.check_peak_ram(110.0)
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_b_peak_ram', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:628: AssertionError
+__________________ test_RED_peak_ram_unreported_fails_closed ___________________
+
+    def test_RED_peak_ram_unreported_fails_closed():
+        c = fv.check_peak_ram(None)
+>       assert not c.ok and "FAIL CLOSED" in c.detail
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_b_peak_ram', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:633: AssertionError
+___________________ test_RED_cli_stage_b_peak_ram_over_limit ___________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-836/test_RED_cli_stage_b_peak_ram_0')
+
+    def test_RED_cli_stage_b_peak_ram_over_limit(tmp_path):
+        rows = [_panel_row("m2_region_00001", n_var=102421, wall_min=41.3,
+                           peak_ram_gib=110.0, output_gib=39.1, status="ok",
+                           n_dropped_occluded=5, n_dropped_monomorphic=0)]
+        p = _write_panel(tmp_path, rows)
+>       assert fv.main(["stage-b", "--panel-tsv", str(p), "--n-total", "276"]) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <function main at 0x7fe7a6f48d60>(['stage-b', '--panel-tsv', '/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-836/test_RED_cli_stage_b_peak_ram_0/panel_fixture.tsv', '--n-total', '276'])
+E        +    where <function main at 0x7fe7a6f48d60> = fv.main
+
+tests/m3/test_fire_verifier.py:883: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-b ===
+PASS  HARD_STOP  stage_b_peak_ram[m2_region_00001]: PERTURBED: unconditional pass
+PASS  HARD_STOP  status_classification: 1 ok-class + 0 deferred row(s) of 1, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+PASS  HARD_STOP  cost_gate_denominator: cost computed on 1 bankable region(s) of 276 total
+
+hard_stops: []
+findings:   []
+exit_code:  0
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_peak_ram_over_limit - Asserti...
+FAILED tests/m3/test_fire_verifier.py::test_RED_peak_ram_unreported_fails_closed
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_stage_b_peak_ram_over_limit
+3 failed, 1 passed, 75 deselected in 0.49s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+4 passed, 75 deselected in 0.43s
+
+================================================================================
+NC-09 — check_maf_depression — the direction threshold + empty-input FAIL
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - INSERTED as the first statement of check_maf_depression.run(), after
+    '        n = "stage_b_maf_depression"':
+    -> '        return Check(n, PASS, "PERTURBED: unconditional pass", FINDING)'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'maf_depression'
+Controls fired (grouped, one perturbation per check):
+  test_RED_maf_depression_no_systematic_depression, test_RED_maf_depression_empty_pairs_fails_closed
+
+--- OBSERVED RED (verbatim) ---
+.FF                                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_RED_maf_depression_no_systematic_depression _______________
+
+    def test_RED_maf_depression_no_systematic_depression():
+        pairs = ([{"panel_maf": 0.02, "sumstats_maf": 0.014}] * 4
+                 + [{"panel_maf": 0.007, "sumstats_maf": 0.014}])
+        c = fv.check_maf_depression(pairs)
+>       assert not c.ok and c.severity == fv.FINDING and "WEAKENS" in c.detail
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_b_maf_depression', status='PASS', detail='PERTURBED: unconditional pass', severity='FINDING', measured={}).ok
+
+tests/m3/test_fire_verifier.py:654: AssertionError
+_______________ test_RED_maf_depression_empty_pairs_fails_closed _______________
+
+    def test_RED_maf_depression_empty_pairs_fails_closed():
+        c = fv.check_maf_depression([])
+>       assert not c.ok and c.severity == fv.FINDING
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='stage_b_maf_depression', status='PASS', detail='PERTURBED: unconditional pass', severity='FINDING', measured={}).ok
+
+tests/m3/test_fire_verifier.py:659: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_maf_depression_no_systematic_depression
+FAILED tests/m3/test_fire_verifier.py::test_RED_maf_depression_empty_pairs_fails_closed
+2 failed, 1 passed, 76 deselected in 0.48s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+3 passed, 76 deselected in 0.42s
+
+================================================================================
+NC-10 — check_cost_denominator — the denominator logic AND the required n_total
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '                           n_total: int) -> Check:'
+    -> '                           n_total: int = 276) -> Check:  # PERTURBED'
+  - INSERTED as the first statement of check_cost_denominator.run(), after
+    '        n = "cost_gate_denominator"':
+    -> '        return Check(n, PASS, "PERTURBED: unconditional pass", HARD_STOP)'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'cost_denominator'
+Controls fired (grouped, one perturbation per check):
+  test_RED_cost_denominator_uses_all_276, test_RED_cost_denominator_used_not_equal_bankable, test_cost_denominator_n_total_has_no_default
+
+--- OBSERVED RED (verbatim) ---
+.FFF                                                                     [100%]
+=================================== FAILURES ===================================
+____________________ test_RED_cost_denominator_uses_all_276 ____________________
+
+    def test_RED_cost_denominator_uses_all_276():
+        c = fv.check_cost_denominator(n_regions_used=276, n_bankable=247, n_total=276)
+>       assert not c.ok and "understates" in c.detail
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='cost_gate_denominator', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:672: AssertionError
+______________ test_RED_cost_denominator_used_not_equal_bankable _______________
+
+    def test_RED_cost_denominator_used_not_equal_bankable():
+        c = fv.check_cost_denominator(n_regions_used=250, n_bankable=247, n_total=276)
+>       assert not c.ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='cost_gate_denominator', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:677: AssertionError
+_________________ test_cost_denominator_n_total_has_no_default _________________
+
+    def test_cost_denominator_n_total_has_no_default():
+        """276 is correct today (M9) — a default is how a count goes silently stale."""
+>       with pytest.raises(TypeError):
+E       Failed: DID NOT RAISE <class 'TypeError'>
+
+tests/m3/test_fire_verifier.py:682: Failed
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_cost_denominator_uses_all_276
+FAILED tests/m3/test_fire_verifier.py::test_RED_cost_denominator_used_not_equal_bankable
+FAILED tests/m3/test_fire_verifier.py::test_cost_denominator_n_total_has_no_default
+3 failed, 1 passed, 75 deselected in 0.49s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+4 passed, 75 deselected in 0.42s
+
+================================================================================
+NC-11 — check_coverage_disclosure_resolved — sentinels, vacuity and provenance
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - INSERTED as the first statement of check_coverage_disclosure_resolved.run(), after
+    '        n = "publication_coverage_disclosure"':
+    -> '        return Check(n, PASS, "PERTURBED: unconditional pass", HARD_STOP)'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'coverage_disclosure or cli_disclosure'
+Controls fired (grouped, one perturbation per check):
+  test_RED_coverage_disclosure_current_text_still_carries_estimates, test_RED_coverage_disclosure_empty_file, test_RED_coverage_disclosure_missing_file, test_RED_coverage_disclosure_renamed_heading_is_vacuity_not_green, test_RED_coverage_disclosure_sentinels_removed_but_no_provenance, test_RED_cli_disclosure_against_the_live_repo_file
+
+--- OBSERVED RED (verbatim) ---
+F.FFFF..sF                                                               [100%]
+=================================== FAILURES ===================================
+______ test_RED_coverage_disclosure_current_text_still_carries_estimates _______
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-838/test_RED_coverage_disclosure_c0')
+
+    def test_RED_coverage_disclosure_current_text_still_carries_estimates(tmp_path):
+        p = _disclosure_file(tmp_path, _CURRENT_DISCLOSURE)
+        c = fv.check_coverage_disclosure_resolved(p)
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='publication_coverage_disclosure', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:693: AssertionError
+___________________ test_RED_coverage_disclosure_empty_file ____________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-838/test_RED_coverage_disclosure_e0')
+
+    def test_RED_coverage_disclosure_empty_file(tmp_path):
+        p = tmp_path / "empty.md"
+        p.write_text("")
+        c = fv.check_coverage_disclosure_resolved(p)
+>       assert not c.ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='publication_coverage_disclosure', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:708: AssertionError
+__________________ test_RED_coverage_disclosure_missing_file ___________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-838/test_RED_coverage_disclosure_m0')
+
+    def test_RED_coverage_disclosure_missing_file(tmp_path):
+        c = fv.check_coverage_disclosure_resolved(tmp_path / "nope.md")
+>       assert not c.ok and c.severity == fv.HARD_STOP
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='publication_coverage_disclosure', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:713: AssertionError
+______ test_RED_coverage_disclosure_renamed_heading_is_vacuity_not_green _______
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-838/test_RED_coverage_disclosure_r0')
+
+    def test_RED_coverage_disclosure_renamed_heading_is_vacuity_not_green(tmp_path):
+        """T-sml-07: a renamed heading empties the extracted block; an empty block
+        satisfies every content assertion TRIVIALLY. Vacuity is a FAIL."""
+        p = _disclosure_file(tmp_path, _GOOD_DISCLOSURE.replace("## R4-COVERAGE",
+                                                                "## R4-COVERAGE-RENAMED"))
+        c = fv.check_coverage_disclosure_resolved(p)
+>       assert not c.ok
+E       AssertionError: assert not True
+E        +  where True = Check(name='publication_coverage_disclosure', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:722: AssertionError
+_______ test_RED_coverage_disclosure_sentinels_removed_but_no_provenance _______
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-838/test_RED_coverage_disclosure_s0')
+
+    def test_RED_coverage_disclosure_sentinels_removed_but_no_provenance(tmp_path):
+        """Deleting the warning must not discharge the obligation."""
+        text = _GOOD_DISCLOSURE.replace(
+            "MEASURED: derived from the panel TSV's deferred_infeasible_square rows\n"
+            "(m3-W2-native-plink-panel.tsv, 2026-09-XX rollup).\n", "")
+        p = _disclosure_file(tmp_path, text)
+        c = fv.check_coverage_disclosure_resolved(p)
+>       assert not c.ok and "MEASURED:" in c.detail
+E       AssertionError: assert (not True)
+E        +  where True = Check(name='publication_coverage_disclosure', status='PASS', detail='PERTURBED: unconditional pass', severity='HARD_STOP', measured={}).ok
+
+tests/m3/test_fire_verifier.py:733: AssertionError
+______________ test_RED_cli_disclosure_against_the_live_repo_file ______________
+
+    def test_RED_cli_disclosure_against_the_live_repo_file():
+        """The disclosure subcommand, run against the REAL file, is red today."""
+        disclosure = (PROJECT_ROOT / ".planning" / "phases" / "m3-aou-afr-ld-panel-build"
+                      / "deferred-items.md")
+>       assert fv.main(["disclosure", "--file", str(disclosure)]) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <function main at 0x7f1a7edb4e00>(['disclosure', '--file', '/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md'])
+E        +    where <function main at 0x7f1a7edb4e00> = fv.main
+
+tests/m3/test_fire_verifier.py:897: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier disclosure ===
+PASS  HARD_STOP  publication_coverage_disclosure: PERTURBED: unconditional pass
+
+hard_stops: []
+findings:   []
+exit_code:  0
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_coverage_disclosure_current_text_still_carries_estimates
+FAILED tests/m3/test_fire_verifier.py::test_RED_coverage_disclosure_empty_file
+FAILED tests/m3/test_fire_verifier.py::test_RED_coverage_disclosure_missing_file
+FAILED tests/m3/test_fire_verifier.py::test_RED_coverage_disclosure_renamed_heading_is_vacuity_not_green
+FAILED tests/m3/test_fire_verifier.py::test_RED_coverage_disclosure_sentinels_removed_but_no_provenance
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_disclosure_against_the_live_repo_file
+6 failed, 3 passed, 1 skipped, 69 deselected in 2.57s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+9 passed, 1 skipped, 69 deselected in 2.50s
+
+================================================================================
+NC-12 — find_measured_panel_tsvs — the SKIP CONDITION of the live R4 gate
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '    hits: List[Path] = []'
+    -> '    hits: List[Path] = [Path(root) / name]  # PERTURBED: always reports a hit'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'panel_finder or live_gate'
+Controls fired (grouped, one perturbation per check):
+  test_measured_panel_finder_is_shown_valid, test_coverage_disclosure_live_gate_against_the_repo_file (STOPS SKIPPING and goes RED -- the deferred obligation is real, not permanent)
+
+--- OBSERVED RED (verbatim) ---
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________________ test_measured_panel_finder_is_shown_valid ___________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-840/test_measured_panel_finder_is_0')
+
+    def test_measured_panel_finder_is_shown_valid(tmp_path):
+        """Guard (b): the SKIP CONDITION itself is proven able to distinguish.
+        A skip-guard hides the bug unless the skipped check is shown valid."""
+        empty_tree = tmp_path / "empty"
+        (empty_tree / "sub").mkdir(parents=True)
+        (empty_tree / "sub" / "unrelated.tsv").write_text("x\n")
+>       assert fv.find_measured_panel_tsvs(empty_tree) == []
+E       AssertionError: assert [PosixPath('/...k-panel.tsv')] == []
+E         
+E         Left contains one more item: PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-840/test_measured_panel_finder_is_0/empty/m3-W2-native-plink-panel.tsv')
+E         Use -v to get more diff
+
+tests/m3/test_fire_verifier.py:761: AssertionError
+___________ test_coverage_disclosure_live_gate_against_the_repo_file ___________
+
+    def test_coverage_disclosure_live_gate_against_the_repo_file():
+        """Guard (c): this SKIP is the named enforcer of the R4-COVERAGE disclosure
+        obligation. It stops skipping the moment a measured panel TSV lands in-repo,
+        and then stays RED until the disclosure carries measured numbers."""
+        panels = fv.find_measured_panel_tsvs(PROJECT_ROOT)
+        if not panels:
+            pytest.skip(
+                f"no measured panel TSV ({rnlp._DEFAULT_PANEL_NAME}) in-repo yet — the "
+                f"R4-COVERAGE disclosure cannot carry measured numbers before the fire. "
+                f"This skip IS the enforcer: it fires the moment the artifact lands.")
+        disclosure = (PROJECT_ROOT / ".planning" / "phases" / "m3-aou-afr-ld-panel-build"
+                      / "deferred-items.md")
+        c = fv.check_coverage_disclosure_resolved(disclosure)
+>       assert c.ok, (
+            f"a measured panel TSV exists ({[str(p) for p in panels]}) but the "
+            f"R4-COVERAGE disclosure has not been updated: {c.detail}")
+E       AssertionError: a measured panel TSV exists (['/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/m3-W2-native-plink-panel.tsv']) but the R4-COVERAGE disclosure has not been updated: the R4-COVERAGE disclosure still carries pre-fire estimate sentinel(s): 29 / 276 = 10.5%; Seth's estimates, not measurements; ~247 regions; 48.5 Mb; ~10.5% -> replace with MEASURED deferred_infeasible_square counts + the affected span from the panel TSV (the n_var ceiling is 120000) before anything is published
+E       assert False
+E        +  where False = Check(name='publication_coverage_disclosure', status='FAIL', detail="the R4-COVERAGE disclosure still carries pre-fire...es': 41, 'sentinels': ['29 / 276 = 10.5%', "Seth's estimates, not measurements", '~247 regions', '48.5 Mb', '~10.5%']}).ok
+
+tests/m3/test_fire_verifier.py:785: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_measured_panel_finder_is_shown_valid
+FAILED tests/m3/test_fire_verifier.py::test_coverage_disclosure_live_gate_against_the_repo_file
+2 failed, 77 deselected in 2.57s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+1 passed, 1 skipped, 77 deselected in 2.38s
+
+================================================================================
+NC-13 — summarize — a red must produce exit_code 1
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '        "exit_code": 0 if not failed else 1,'
+    -> '        "exit_code": 0,  # PERTURBED: always green'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'summarize or cli_stage or cli_disclosure'
+Controls fired (grouped, one perturbation per check):
+  test_summarize_buckets_hard_stops_and_findings_separately, test_RED_cli_stage_c_unknown_status_exit_one, test_RED_cli_stage_b_peak_ram_over_limit, test_RED_cli_stage_b_no_computed_rows_is_vacuity, test_RED_cli_stage_a_unknown_region_fails_closed, test_RED_cli_disclosure_against_the_live_repo_file
+
+--- OBSERVED RED (verbatim) ---
+.F.F..F.FFF                                                              [100%]
+=================================== FAILURES ===================================
+__________ test_summarize_buckets_hard_stops_and_findings_separately ___________
+
+    def test_summarize_buckets_hard_stops_and_findings_separately():
+        checks = [fv.check_occlusion_ceiling(5, 102421),
+                  fv.check_occlusion_ceiling(52, 102421),
+                  fv.check_region1_status(REAL_INFEASIBLE)]
+        s = fv.summarize(checks)
+>       assert s["exit_code"] == 1
+E       assert 0 == 1
+
+tests/m3/test_fire_verifier.py:805: AssertionError
+_________________ test_RED_cli_stage_c_unknown_status_exit_one _________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_c_unknown_s0')
+
+    def test_RED_cli_stage_c_unknown_status_exit_one(tmp_path):
+        p = _write_panel(tmp_path, [_panel_row("m2_region_00001", status="banana")])
+>       assert fv.main(["stage-c", "--panel-tsv", str(p)]) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <function main at 0x7f9630728ea0>(['stage-c', '--panel-tsv', '/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_c_unknown_s0/panel_fixture.tsv'])
+E        +    where <function main at 0x7f9630728ea0> = fv.main
+
+tests/m3/test_fire_verifier.py:828: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-c ===
+FAIL  HARD_STOP  status_classification: UNRECOGNIZED status value(s) ['banana'] in 1 row(s) -> an unknown status must NEVER be treated as ok. Either the producer gained a status the gate does not know, or the panel TSV is corrupt. HARD STOP.
+
+hard_stops: ['status_classification']
+findings:   []
+exit_code:  0
+_______________ test_RED_cli_stage_a_unknown_region_fails_closed _______________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_a_unknown_r0')
+
+    def test_RED_cli_stage_a_unknown_region_fails_closed(tmp_path):
+        panel = _region1_panel(tmp_path)
+        manifest = _manifest(tmp_path)
+        npz = _good_npz(tmp_path)
+        rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_99999",
+                      "--manifest", str(manifest), "--npz", str(npz)])
+>       assert rc == 1
+E       assert 0 == 1
+
+tests/m3/test_fire_verifier.py:865: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-a ===
+PASS  HARD_STOP  stage_a_nan_falsification: the SHIPPED content verification re-read the banked .npz (13413 B) and returned ok -> the region carries no NaN; occlusion accounted for 100% of the region-1 NaN (shipped reason: ok (n=64))
+FAIL  HARD_STOP  stage_a_manifest_rows: manifest record rows carry region_id(s) ['m2_region_00001'], expected every row to be 'm2_region_99999' -> the manifest does not belong to the region under test
+FAIL  HARD_STOP  occlusion_anomaly_ceiling: region 'm2_region_99999' has NO row in /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_a_unknown_r0/panel_fixture.tsv -> the gate cannot measure n_var / n_dropped_occluded, FAIL CLOSED (never take these from a number a human typed)
+FAIL  FINDING  region1_status: region 'm2_region_99999' has NO row in /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_a_unknown_r0/panel_fixture.tsv -> the gate cannot measure n_var / n_dropped_occluded, FAIL CLOSED (never take these from a number a human typed)
+PASS  HARD_STOP  status_classification: 1 ok-class + 0 deferred row(s) of 1, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+
+hard_stops: ['stage_a_manifest_rows', 'occlusion_anomaly_ceiling']
+findings:   ['region1_status']
+exit_code:  0
+___________________ test_RED_cli_stage_b_peak_ram_over_limit ___________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_b_peak_ram_0')
+
+    def test_RED_cli_stage_b_peak_ram_over_limit(tmp_path):
+        rows = [_panel_row("m2_region_00001", n_var=102421, wall_min=41.3,
+                           peak_ram_gib=110.0, output_gib=39.1, status="ok",
+                           n_dropped_occluded=5, n_dropped_monomorphic=0)]
+        p = _write_panel(tmp_path, rows)
+>       assert fv.main(["stage-b", "--panel-tsv", str(p), "--n-total", "276"]) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <function main at 0x7f9630728ea0>(['stage-b', '--panel-tsv', '/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_b_peak_ram_0/panel_fixture.tsv', '--n-total', '276'])
+E        +    where <function main at 0x7f9630728ea0> = fv.main
+
+tests/m3/test_fire_verifier.py:883: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-b ===
+FAIL  HARD_STOP  stage_b_peak_ram[m2_region_00001]: peak 110.0 GiB > 102.0 GiB (15% headroom on 120 GiB) -> do NOT extrapolate to larger regions
+PASS  HARD_STOP  status_classification: 1 ok-class + 0 deferred row(s) of 1, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+PASS  HARD_STOP  cost_gate_denominator: cost computed on 1 bankable region(s) of 276 total
+
+hard_stops: ['stage_b_peak_ram[m2_region_00001]']
+findings:   []
+exit_code:  0
+_______________ test_RED_cli_stage_b_no_computed_rows_is_vacuity _______________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_b_no_comput0')
+
+    def test_RED_cli_stage_b_no_computed_rows_is_vacuity(tmp_path):
+        """Nothing to measure must FAIL, not pass vacuously."""
+        p = _write_panel(tmp_path, [_panel_row("m2_region_00001",
+                                               status="skipped_idempotent")])
+>       assert fv.main(["stage-b", "--panel-tsv", str(p), "--n-total", "276"]) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <function main at 0x7f9630728ea0>(['stage-b', '--panel-tsv', '/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_b_no_comput0/panel_fixture.tsv', '--n-total', '276'])
+E        +    where <function main at 0x7f9630728ea0> = fv.main
+
+tests/m3/test_fire_verifier.py:890: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-b ===
+FAIL  HARD_STOP  stage_b_peak_ram: no computed rows (status == 'ok') in /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-842/test_RED_cli_stage_b_no_comput0/panel_fixture.tsv -> there is NOTHING to measure a peak against; a check with no input must FAIL, not pass vacuously
+PASS  HARD_STOP  status_classification: 1 ok-class + 0 deferred row(s) of 1, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+PASS  HARD_STOP  cost_gate_denominator: cost computed on 1 bankable region(s) of 276 total
+
+hard_stops: ['stage_b_peak_ram']
+findings:   []
+exit_code:  0
+______________ test_RED_cli_disclosure_against_the_live_repo_file ______________
+
+    def test_RED_cli_disclosure_against_the_live_repo_file():
+        """The disclosure subcommand, run against the REAL file, is red today."""
+        disclosure = (PROJECT_ROOT / ".planning" / "phases" / "m3-aou-afr-ld-panel-build"
+                      / "deferred-items.md")
+>       assert fv.main(["disclosure", "--file", str(disclosure)]) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <function main at 0x7f9630728ea0>(['disclosure', '--file', '/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md'])
+E        +    where <function main at 0x7f9630728ea0> = fv.main
+
+tests/m3/test_fire_verifier.py:897: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier disclosure ===
+FAIL  HARD_STOP  publication_coverage_disclosure: the R4-COVERAGE disclosure still carries pre-fire estimate sentinel(s): 29 / 276 = 10.5%; Seth's estimates, not measurements; ~247 regions; 48.5 Mb; ~10.5% -> replace with MEASURED deferred_infeasible_square counts + the affected span from the panel TSV (the n_var ceiling is 120000) before anything is published
+
+hard_stops: ['publication_coverage_disclosure']
+findings:   []
+exit_code:  0
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_summarize_buckets_hard_stops_and_findings_separately
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_stage_c_unknown_status_exit_one
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_stage_a_unknown_region_fails_closed
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_stage_b_peak_ram_over_limit
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_stage_b_no_computed_rows_is_vacuity
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_disclosure_against_the_live_repo_file
+6 failed, 5 passed, 68 deselected in 0.64s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+11 passed, 68 deselected in 0.49s
+
+================================================================================
+NC-14 — argparse — --npz is REQUIRED on stage-a
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '    a.add_argument("--npz", required=True,'
+    -> '    a.add_argument("--npz", required=False, default=None,  # PERTURBED'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'stage_a_requires_npz'
+Controls fired (grouped, one perturbation per check):
+  test_RED_cli_stage_a_requires_npz
+
+--- OBSERVED RED (verbatim) ---
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________________ test_RED_cli_stage_a_requires_npz _______________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-844/test_RED_cli_stage_a_requires_0')
+
+    def test_RED_cli_stage_a_requires_npz(tmp_path):
+        panel = _region1_panel(tmp_path)
+        manifest = _manifest(tmp_path)
+>       with pytest.raises(SystemExit) as e:
+E       Failed: DID NOT RAISE <class 'SystemExit'>
+
+tests/m3/test_fire_verifier.py:853: Failed
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-a ===
+FAIL  HARD_STOP  stage_a_nan_falsification: banked panel absent: None -> cannot falsify (a falsification that did not run is not a falsification)
+PASS  HARD_STOP  stage_a_manifest_rows: manifest carries 5 real record(s) + header, fields parseable, every record row region_id='m2_region_00001'
+PASS  HARD_STOP  occlusion_anomaly_ceiling: n_occluded=5 <= ceiling=51.2 (10x headroom)
+PASS  FINDING  region1_status: region 1 status='ok'
+PASS  HARD_STOP  status_classification: 1 ok-class + 0 deferred row(s) of 1, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+
+hard_stops: ['stage_a_nan_falsification']
+findings:   []
+exit_code:  1
+A RED IS A STOP. Paste this block to Carter and wait — never chain past a red, and never retry or 'repair' on your own.
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_RED_cli_stage_a_requires_npz - Fa...
+1 failed, 78 deselected in 0.48s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+1 passed, 78 deselected in 0.44s
+
+================================================================================
+NC-15 — no hand-transcribed shipped constants
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - 'if __name__ == "__main__":'
+    -> '_PERTURBED_LITERAL = 0.0005  # PERTURBED: a hand-copied shipped constant'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'no_hardcoded'
+Controls fired (grouped, one perturbation per check):
+  test_no_hardcoded_shipped_constants_in_the_module
+
+--- OBSERVED RED (verbatim) ---
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_no_hardcoded_shipped_constants_in_the_module _______________
+
+    def test_no_hardcoded_shipped_constants_in_the_module():
+        """Hard rule 4: a literal 0.0005 / 120000 / re-declared 256 is a defect."""
+        src = (PROJECT_ROOT / "src" / "python" / "fire_verifier.py").read_text()
+        code = "\n".join(ln.split("#", 1)[0] for ln in src.splitlines())
+        for banned in ("0.0005", "120000", "= 256"):
+>           assert banned not in code, (
+                f"fire_verifier.py hardcodes {banned!r}; import the shipped constant "
+                f"instead (a hand-transcribed constant is a silent divergence)")
+E           AssertionError: fire_verifier.py hardcodes '0.0005'; import the shipped constant instead (a hand-transcribed constant is a silent divergence)
+E           assert '0.0005' not in '"""Fire-sta...exit(main())'
+E             
+E             '0.0005' is contained here:
+E               LITERAL = 0.0005  
+E             ?           ++++++
+E               
+E               
+E               if __name__ == "__main__":
+E                   sys.exit(main())
+
+tests/m3/test_fire_verifier.py:588: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_no_hardcoded_shipped_constants_in_the_module
+1 failed, 78 deselected in 0.47s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+1 passed, 78 deselected in 0.43s
+
+================================================================================
+NC-16 — the shipped-constant accessors are IDENTITIES, not copies
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '    return rnlp._OCCLUSION_ANOMALY_FRACTION'
+    -> '    return 5e-4  # PERTURBED: an import-time copy, not the live global'
+  - '    return rnlp._DEFAULT_MAX_N_VAR'
+    -> '    return 120_000  # PERTURBED: a hand-copied ceiling'
+  - '    return alp._MIN_REGION_NPZ_BYTES'
+    -> '    return 255  # PERTURBED: a hand-copied floor'
+  - '    return rnlp._DEFAULT_PANEL_NAME'
+    -> '    return "" + rnlp._DEFAULT_PANEL_NAME  # PERTURBED: a fresh object'
+  - '    return pln._has_any_nan_blocked'
+    -> '    return lambda m, block=1024: False  # PERTURBED: a forked scanner'
+  - '_VM_TOTAL_GIB = 120.0'
+    -> '_VM_TOTAL_GIB = 128.0  # PERTURBED'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'occlusion_fraction or infeasible_ceiling or min_npz_bytes or panel_artifact_name or shipped_verifier_by_default or vm_total_gib'
+Controls fired (grouped, one perturbation per check):
+  test_occlusion_fraction_is_the_shipped_module_global, test_coverage_disclosure_infeasible_ceiling_is_the_shipped_constant, test_nan_falsification_min_bytes_default_is_the_shipped_floor, test_panel_artifact_name_is_imported_from_the_producer, test_nan_falsification_uses_the_shipped_verifier_by_default, test_vm_total_gib_is_the_repo_documented_value
+
+--- OBSERVED RED (verbatim) ---
+FFFF.                                                                    [100%]
+=================================== FAILURES ===================================
+_________ test_nan_falsification_uses_the_shipped_verifier_by_default __________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-846/test_nan_falsification_uses_th0')
+
+    def test_nan_falsification_uses_the_shipped_verifier_by_default(tmp_path):
+        """Identity: the default verifier IS ``run_native_ld_panel.content_verify_npz``
+        (never a re-implementation)."""
+        assert fv._default_npz_verifier() is rnlp.content_verify_npz
+>       assert fv._default_nan_scanner() is pln._has_any_nan_blocked
+E       assert <function _default_nan_scanner.<locals>.<lambda> at 0x7f41c3418860> is <function _has_any_nan_blocked at 0x7f41d4788cc0>
+E        +  where <function _default_nan_scanner.<locals>.<lambda> at 0x7f41c3418860> = <function _default_nan_scanner at 0x7f41c33fbb00>()
+E        +    where <function _default_nan_scanner at 0x7f41c33fbb00> = fv._default_nan_scanner
+E        +  and   <function _has_any_nan_blocked at 0x7f41d4788cc0> = pln._has_any_nan_blocked
+
+tests/m3/test_fire_verifier.py:500: AssertionError
+_____________ test_occlusion_fraction_is_the_shipped_module_global _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f41c3254350>
+
+    def test_occlusion_fraction_is_the_shipped_module_global(monkeypatch):
+        """IDENTITY, not a literal: the default fraction is READ from the shipped
+        module global at evaluation time, exactly as the producer reads it."""
+        assert fv._default_occlusion_fraction() == rnlp._OCCLUSION_ANOMALY_FRACTION
+        monkeypatch.setattr(rnlp, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+>       assert fv._default_occlusion_fraction() == 0.5
+E       assert 0.0005 == 0.5
+E        +  where 0.0005 = <function _default_occlusion_fraction at 0x7f41d47828e0>()
+E        +    where <function _default_occlusion_fraction at 0x7f41d47828e0> = fv._default_occlusion_fraction
+
+tests/m3/test_fire_verifier.py:577: AssertionError
+________________ test_vm_total_gib_is_the_repo_documented_value ________________
+
+    def test_vm_total_gib_is_the_repo_documented_value():
+>       assert fv._VM_TOTAL_GIB == 120.0
+E       assert 128.0 == 120.0
+E        +  where 128.0 = fv._VM_TOTAL_GIB
+
+tests/m3/test_fire_verifier.py:637: AssertionError
+_____ test_coverage_disclosure_infeasible_ceiling_is_the_shipped_constant ______
+
+    def test_coverage_disclosure_infeasible_ceiling_is_the_shipped_constant():
+>       assert fv._infeasible_ceiling() is rnlp._DEFAULT_MAX_N_VAR
+E       assert 120000 is 120000
+E        +  where 120000 = <function _infeasible_ceiling at 0x7f41d47896c0>()
+E        +    where <function _infeasible_ceiling at 0x7f41d47896c0> = fv._infeasible_ceiling
+E        +  and   120000 = rnlp._DEFAULT_MAX_N_VAR
+
+tests/m3/test_fire_verifier.py:744: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_nan_falsification_uses_the_shipped_verifier_by_default
+FAILED tests/m3/test_fire_verifier.py::test_occlusion_fraction_is_the_shipped_module_global
+FAILED tests/m3/test_fire_verifier.py::test_vm_total_gib_is_the_repo_documented_value
+FAILED tests/m3/test_fire_verifier.py::test_coverage_disclosure_infeasible_ceiling_is_the_shipped_constant
+4 failed, 1 passed, 74 deselected in 0.52s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+5 passed, 74 deselected in 0.44s
+
+================================================================================
+NC-17 — Check.status is PASS or FAIL only
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '        return Check(n, PASS, f"peak {peak_gib:.1f} GiB within {limit:.1f} GiB",'
+    -> '        return Check(n, "WARN", f"peak {peak_gib:.1f} GiB within {limit:.1f} GiB",  # PERTURBED'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'status_is_pass_or_fail'
+Controls fired (grouped, one perturbation per check):
+  test_check_status_is_pass_or_fail_only
+
+--- OBSERVED RED (verbatim) ---
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_check_status_is_pass_or_fail_only ____________________
+
+    def test_check_status_is_pass_or_fail_only():
+        for c in [fv.check_peak_ram(78.2), fv.check_peak_ram(None),
+                  fv.check_occlusion_ceiling(5, 102421)]:
+>           assert c.status in (fv.PASS, fv.FAIL)
+E           AssertionError: assert 'WARN' in ('PASS', 'FAIL')
+E            +  where 'WARN' = Check(name='stage_b_peak_ram', status='WARN', detail='peak 78.2 GiB within 102.0 GiB', severity='HARD_STOP', measured={'peak_gib': 78.2, 'limit_gib': 102.0, 'vm_gib': 120.0}).status
+
+tests/m3/test_fire_verifier.py:814: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_check_status_is_pass_or_fail_only
+1 failed, 78 deselected in 0.47s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+1 passed, 78 deselected in 0.42s
+
+================================================================================
+NC-18 — T-sml-01 EGRESS — the report carries no float arrays
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '                          "nan_source_rows": src_rows})'
+    -> '                          "nan_source_rows": [float(i) for i in src_rows]})  # PERTURBED'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'no_float_arrays'
+Controls fired (grouped, one perturbation per check):
+  test_report_json_carries_no_float_arrays
+
+--- OBSERVED RED (verbatim) ---
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_report_json_carries_no_float_arrays ___________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-848/test_report_json_carries_no_fl0')
+
+    def test_report_json_carries_no_float_arrays(tmp_path):
+        """T-sml-01: the report leaves the perimeter as text. Counts, booleans, byte
+        sizes, row indices and policy labels only — never LD values."""
+        panel = _region1_panel(tmp_path)
+        manifest = _manifest(tmp_path)
+        npz = _whole_row_nan_npz(tmp_path)
+        report = tmp_path / "stage_a.json"
+        fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                 "--manifest", str(manifest), "--npz", str(npz), "--report", str(report)])
+        data = json.loads(report.read_text())
+    
+        def walk(node, path="report"):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    walk(v, f"{path}.{k}")
+            elif isinstance(node, list):
+                for v in node:
+                    assert not isinstance(v, float), (
+                        f"{path} carries a float array element {v!r} — the gate must "
+                        f"emit counts/indices/labels, never LD values")
+                    walk(v, f"{path}[]")
+    
+        for entry in data["report"]:
+>           walk(entry["measured"], f"report[{entry['name']}].measured")
+
+tests/m3/test_fire_verifier.py:923: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/m3/test_fire_verifier.py:914: in walk
+    walk(v, f"{path}.{k}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+node = [7.0, 0.0, 1.0, 2.0, 3.0, 4.0, ...]
+path = 'report[stage_a_nan_falsification].measured.nan_source_rows'
+
+    def walk(node, path="report"):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                walk(v, f"{path}.{k}")
+        elif isinstance(node, list):
+            for v in node:
+>               assert not isinstance(v, float), (
+                    f"{path} carries a float array element {v!r} — the gate must "
+                    f"emit counts/indices/labels, never LD values")
+E               AssertionError: report[stage_a_nan_falsification].measured.nan_source_rows carries a float array element 7.0 — the gate must emit counts/indices/labels, never LD values
+E               assert not True
+E                +  where True = isinstance(7.0, float)
+
+tests/m3/test_fire_verifier.py:917: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-a ===
+FAIL  HARD_STOP  stage_a_nan_falsification: the banked panel STILL CARRIES NaN after occlusion filtering: likely source variant row(s) ranked worst-first [7, 0, 1, 2, 3, 4, 5, 6, 8, 9]. occlusion is NOT the sole NaN mechanism -> HARD STOP. Do not fire the remaining regions; an unexplained defect class would be banked. (The shipped verifier reported this as 'not symmetric (atol 1e-4)' — it detects NaN only indirectly.)
+PASS  HARD_STOP  stage_a_manifest_rows: manifest carries 5 real record(s) + header, fields parseable, every record row region_id='m2_region_00001'
+PASS  HARD_STOP  occlusion_anomaly_ceiling: n_occluded=5 <= ceiling=51.2 (10x headroom)
+PASS  FINDING  region1_status: region 1 status='ok'
+PASS  HARD_STOP  status_classification: 1 ok-class + 0 deferred row(s) of 1, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+
+hard_stops: ['stage_a_nan_falsification']
+findings:   []
+exit_code:  1
+A RED IS A STOP. Paste this block to Carter and wait — never chain past a red, and never retry or 'repair' on your own.
+report written: /gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-848/test_report_json_carries_no_fl0/stage_a.json
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_report_json_carries_no_float_arrays
+1 failed, 78 deselected in 0.50s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+1 passed, 78 deselected in 0.44s
+
+================================================================================
+NC-19 — --report actually writes the JSON
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - '    if args.report:'
+    -> '    if False and args.report:  # PERTURBED: silently skip the report'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'report_json_round_trips'
+Controls fired (grouped, one perturbation per check):
+  test_cli_report_json_round_trips
+
+--- OBSERVED RED (verbatim) ---
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________________ test_cli_report_json_round_trips _______________________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-850/test_cli_report_json_round_tri0')
+
+    def test_cli_report_json_round_trips(tmp_path):
+        p = _write_panel(tmp_path, [_panel_row("m2_region_00001", status="ok")])
+        report = tmp_path / "gate.json"
+        fv.main(["stage-c", "--panel-tsv", str(p), "--report", str(report)])
+>       data = json.loads(report.read_text())
+                          ^^^^^^^^^^^^^^^^^^
+
+tests/m3/test_fire_verifier.py:835: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/lib/python3.11/pathlib.py:1058: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-850/test_cli_report_json_round_tri0/gate.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-850/test_cli_report_json_round_tri0/gate.json'
+
+/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/lib/python3.11/pathlib.py:1044: FileNotFoundError
+----------------------------- Captured stdout call -----------------------------
+=== fire_verifier stage-c ===
+PASS  HARD_STOP  status_classification: 1 ok-class + 0 deferred row(s) of 1, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+
+hard_stops: []
+findings:   []
+exit_code:  0
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_cli_report_json_round_trips - Fil...
+1 failed, 78 deselected in 0.54s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+1 passed, 78 deselected in 0.44s
+
+================================================================================
+NC-20 — the AST extractor is NON-VACUOUS (test-side helper)
+================================================================================
+Target      : tests/m3/test_fire_verifier.py
+Perturbation:
+  - '    found: set = set()'
+    -> '    return set()  # PERTURBED: an extractor that finds nothing'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'status_vocabulary'
+Controls fired (grouped, one perturbation per check):
+  test_status_vocabulary_extractor_is_not_vacuous, test_RED_status_vocabulary_guard_catches_a_new_shipped_status
+
+--- OBSERVED RED (verbatim) ---
+F.F.                                                                     [100%]
+=================================== FAILURES ===================================
+_______________ test_status_vocabulary_extractor_is_not_vacuous ________________
+
+    def test_status_vocabulary_extractor_is_not_vacuous():
+        src = (PROJECT_ROOT / "src" / "python" / "run_native_ld_panel.py").read_text()
+        found = _extract_status_prefixes(src)
+>       assert found, ("the AST extractor found ZERO status emission sites in the "
+                       "shipped producer -> the drift guard below would be VACUOUS")
+E       AssertionError: the AST extractor found ZERO status emission sites in the shipped producer -> the drift guard below would be VACUOUS
+E       assert set()
+
+tests/m3/test_fire_verifier.py:317: AssertionError
+________ test_RED_status_vocabulary_guard_catches_a_new_shipped_status _________
+
+tmp_path = PosixPath('/gpfs_common/share01/clintonlab/ckclinto/tmp/pytest-of-ckclinto/pytest-852/test_RED_status_vocabulary_gua0')
+
+    def test_RED_status_vocabulary_guard_catches_a_new_shipped_status(tmp_path):
+        """The SAME extractor + the SAME coverage assertion over a fixture producer
+        carrying an unrecognized status must FAIL (the guard is not vacuous)."""
+        fixture = tmp_path / "fake_producer.py"
+        fixture.write_text(
+            "def process_region(result):\n"
+            "    result['status'] = 'skipped_idempotent'\n"
+            "    result[\"status\"] = \"banana\"\n"
+            "    return result\n"
+        )
+        found = _extract_status_prefixes(fixture.read_text())
+>       assert "banana" in found
+E       AssertionError: assert 'banana' in set()
+
+tests/m3/test_fire_verifier.py:345: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_status_vocabulary_extractor_is_not_vacuous
+FAILED tests/m3/test_fire_verifier.py::test_RED_status_vocabulary_guard_catches_a_new_shipped_status
+2 failed, 2 passed, 75 deselected in 0.50s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+4 passed, 75 deselected in 0.45s
+
+================================================================================
+NC-16b — the two identity accessors NC-16 missed
+================================================================================
+Target      : src/python/fire_verifier.py
+Perturbation:
+  - 'return alp._MIN_REGION_NPZ_BYTES'
+    -> 'return 255  # PERTURBED: a hand-copied floor, one byte off'
+  - 'return rnlp._DEFAULT_PANEL_NAME'
+    -> 'return "".join(rnlp._DEFAULT_PANEL_NAME)  # PERTURBED: a fresh copy, not the shipped object'
+Selection   : pytest tests/m3/test_fire_verifier.py -q -k 'min_bytes_default or panel_artifact_name'
+Controls fired:
+  test_nan_falsification_min_bytes_default_is_the_shipped_floor, test_panel_artifact_name_is_imported_from_the_producer
+
+WHY THIS ENTRY EXISTS: NC-16 used `"" + rnlp._DEFAULT_PANEL_NAME`, which
+CPython returns UNCHANGED (`"" + s is s`), so that control was NOT observed
+red; and the min-bytes test was never selected (its name carries `min_bytes`,
+not `min_npz_bytes`). Both were caught by reconciling NC-16's selected-vs-failed
+counts (5 selected, 4 failed) instead of trusting the aggregate line -- the
+[[feedback_aggregate_agreement_hides_component_errors]] discipline applied to
+this transcript itself.
+
+--- OBSERVED RED (verbatim) ---
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_nan_falsification_min_bytes_default_is_the_shipped_floor _________
+
+    def test_nan_falsification_min_bytes_default_is_the_shipped_floor():
+>       assert fv._default_min_npz_bytes() is alp._MIN_REGION_NPZ_BYTES
+E       assert 255 is 256
+E        +  where 255 = <function _default_min_npz_bytes at 0x7f28d0cdb9c0>()
+E        +    where <function _default_min_npz_bytes at 0x7f28d0cdb9c0> = fv._default_min_npz_bytes
+E        +  and   256 = alp._MIN_REGION_NPZ_BYTES
+
+tests/m3/test_fire_verifier.py:505: AssertionError
+____________ test_panel_artifact_name_is_imported_from_the_producer ____________
+
+    def test_panel_artifact_name_is_imported_from_the_producer():
+>       assert fv._panel_artifact_name() is rnlp._DEFAULT_PANEL_NAME
+E       AssertionError: assert 'm3-W2-native-plink-panel.tsv' is 'm3-W2-native-plink-panel.tsv'
+E        +  where 'm3-W2-native-plink-panel.tsv' = <function _panel_artifact_name at 0x7f28d0cdbc40>()
+E        +    where <function _panel_artifact_name at 0x7f28d0cdbc40> = fv._panel_artifact_name
+E        +  and   'm3-W2-native-plink-panel.tsv' = rnlp._DEFAULT_PANEL_NAME
+
+tests/m3/test_fire_verifier.py:752: AssertionError
+=========================== short test summary info ============================
+FAILED tests/m3/test_fire_verifier.py::test_nan_falsification_min_bytes_default_is_the_shipped_floor
+FAILED tests/m3/test_fire_verifier.py::test_panel_artifact_name_is_imported_from_the_producer
+2 failed, 77 deselected in 1.00s
+
+--- REVERTED, bytecode cache cleared, SAME selection re-run (proves the revert took) ---
+2 passed, 77 deselected in 0.43s
+
+================================================================================
+CLI SMOKE — the shipped exit codes, run locally ($0, no perimeter contact)
+================================================================================
+This is not a negative control; it is the end-to-end proof that the SUBCOMMANDS
+carry the verdict out to the shell, and that the single most consequential
+adjudication (D-02) holds on a REAL detail-bearing deferral row.
+
+$ python3 src/python/fire_verifier.py stage-c --panel-tsv <fixture> --report <tmp>.json
+=== fire_verifier stage-c ===
+PASS  HARD_STOP  status_classification: 1 ok-class + 1 deferred row(s) of 2, ALL recognized (the gates working; do NOT 'fix' a deferral mid-fire — a region above the n_var ceiling of 120000 defers by design)
+
+hard_stops: []
+findings:   []
+exit_code:  0
+report written: .../smoke_stagec.json
+exit: 0
+
+  ^ the fixture's second row is a REAL producer string:
+    "deferred_infeasible_square: n_var=181004 > ceiling=120000"
+    Seth's exact-membership classify_deferrals would have called this
+    UNRECOGNIZED and HARD_STOPped the fire on the gates working, at every Stage-C
+    check-in. Prefix matching is the adjudication (D-02).
+
+$ python3 src/python/fire_verifier.py stage-c --panel-tsv <fixture with a 'banana' row>
+=== fire_verifier stage-c ===
+FAIL  HARD_STOP  status_classification: UNRECOGNIZED status value(s) ['banana'] in 3 row(s) -> an unknown status must NEVER be treated as ok. Either the producer gained a status the gate does not know, or the panel TSV is corrupt. HARD STOP.
+
+hard_stops: ['status_classification']
+findings:   []
+exit_code:  1
+A RED IS A STOP. Paste this block to Carter and wait — never chain past a red, and never retry or 'repair' on your own.
+exit: 1
+
+$ python3 src/python/fire_verifier.py disclosure --file .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md
+=== fire_verifier disclosure ===
+FAIL  HARD_STOP  publication_coverage_disclosure: the R4-COVERAGE disclosure still carries pre-fire estimate sentinel(s): 29 / 276 = 10.5%; Seth's estimates, not measurements; ~247 regions; 48.5 Mb; ~10.5% -> replace with MEASURED deferred_infeasible_square counts + the affected span from the panel TSV (the n_var ceiling is 120000) before anything is published
+
+hard_stops: ['publication_coverage_disclosure']
+findings:   []
+exit_code:  1
+exit: 1
+
+  ^ RED TODAY BY DESIGN. All five measured sentinels are still present in the
+    live file. This is the R4-COVERAGE obligation refusing to lapse quietly.
+
+The stage-c --report JSON round-trips through json.load and carries only counts,
+booleans and policy labels (T-sml-01):
+  {"all_pass": true, "exit_code": 0, "n_checks": 1,
+   "report": [{"name": "status_classification", "status": "PASS", ...,
+               "measured": {"counts": {"ok": 1,
+                            "deferred_infeasible_square: n_var=181004 > ceiling=120000": 1},
+                            "n_rows": 2, "n_ok": 1, "n_deferred": 1,
+                            "n_failed": 0, "n_unknown": 0}}]}
+
+================================================================================
+FULL-SUITE BASELINE MOVE — the exact triples, measured
+================================================================================
+PRE  (before any file in this task existed):
+    /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest tests/m3 -q
+    -> 914 passed, 31 skipped, 4 warnings in 783.22s (0:13:03)      [0 failed]
+
+POST (module + tests landed, module restored byte-exact after every control):
+    /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest tests/m3 -q
+    -> 992 passed, 32 skipped, 4 warnings in 795.87s (0:13:15)      [0 failed]
+
+RECONCILIATION (components, not the aggregate):
+    passed  914 -> 992   = +78  == exactly the 78 passing tests in
+                                   tests/m3/test_fire_verifier.py
+    skipped  31 ->  32   = +1   == exactly test_coverage_disclosure_live_gate_
+                                   against_the_repo_file (the A-07 R4-COVERAGE
+                                   enforcer), which reports
+                                   "78 passed, 1 skipped" in isolation
+    failed    0 ->   0   = 0
+NOTHING ELSE MOVED. No previously-passing test began failing or skipping.
