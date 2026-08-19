@@ -1195,3 +1195,156 @@ note (extended in the same task); the Stage-B cost gate, which now reads
 **cost-per-BANKABLE-region**, never cost-per-region-of-276, at all three sites
 that state it (`AGENT-PROMPT` STEP 9, `READY-TO-FIRE` item 11-C, `BROWSER-PASTE`
 cost-refinement gate).
+
+## MISS-1 — the MAF-depression follow-up is REDIRECTED to a WITHIN-PANEL missingness test (registered during quick-260818-uoi, 2026-08-18)
+
+**Logged:** 2026-08-18 (`quick-260818-uoi`, from Seth's 2026-08-18 D-01…D-13
+acceptance courier, banked as-received at
+`.planning/quick/260818-uoi-bank-seth-d-acceptance-courier-register-/260818-uoi-SETH-COURIER-d-acceptance-as-received.md`).
+**Status: REGISTERED as a POST-FIRE follow-up — not blocking the fire, no
+producer change now.**
+
+### The decision: the cross-cohort join is NOT to be built
+
+The cross-cohort `(panel_maf, sumstats_maf)` join that `check_maf_depression`
+(A-12) would need is **NOT to be built.** This is a decision, not a scheduling
+deferral. It is nobody's work item — if you came here from a runbook that once
+called it "Carter's planning-side work", that sentence was retired on 2026-08-18.
+
+Seth's reasoning, preserved as reasoning and not merely as its conclusion: **the
+GWAS AFR cohort is not the AoU AFR cohort.** Region 1's ratio is
+0.0078 / 0.014 = 0.557 — the direction the mechanism predicts, but ordinary
+between-cohort allele-frequency differences at MAF ≈ 0.01 are easily that large
+on their own. A red from such a check would therefore be **ambiguous**, and **an
+ambiguous gate is one people learn to ignore.** A check that trains its operators
+to disregard it is worse than no check at all.
+
+### The replacement: a within-panel missingness test
+
+The mechanism's direct prediction is about **callability, not MAF**. A variant
+covered by a deletion's REF span is uncallable on the deletion haplotype, so its
+per-variant missingness should be **elevated** relative to the region-wide
+`F_MISS` distribution.
+
+Specification — precise enough to implement months from now without Seth in the
+room:
+
+- **Per region**, compare the `F_MISS` of the **occlusion-excluded** variants
+  against **that region's own `F_MISS` distribution** — a rank-based test, or
+  simply **the fraction of excluded variants above the region's 90th percentile
+  of `F_MISS`**.
+- **Elevated ⇒ mechanism-consistent. Not elevated ⇒ a genuine FINDING**, and a
+  cleaner one than a MAF ratio, because **there is no second cohort to blame.**
+- Severity on a red: **FINDING**, never a hard stop. This is a post-fire
+  attribution diagnostic, not a fire gate.
+
+Why it is better evidence than the join it replaces:
+
+1. **Single-cohort.** The panel is compared only against itself, so the
+   cross-cohort confound that makes the MAF ratio ambiguous does not arise.
+2. **Egress-safe.** The inputs are **per-variant aggregate missingness rates
+   only** — never genotypes, never individual-level records. Whoever implements
+   this must keep it aggregate; that is part of the registered item, not an
+   afterthought.
+
+### Corroboration — ATTRIBUTED TO SETH, NOT MEASURED BY US
+
+Seth reports that the region-1 2×2 showed occluder carriers ~100% missing at the
+partner variant — **`fAmB` = 1.0 in 5 of 6 pairs** — and offers it as the same
+signal measured directly.
+
+⚠ **That figure is SETH'S REPORTED NUMBER from the banked courier. It is NOT
+independently recorded anywhere in this repository as a measurement of ours.**
+Measured 2026-08-18: the token `fAmB` occurs in this repo **only** inside Seth's
+banked courier and inside the `quick-260818-uoi` planning documents that quote
+him — in no result file, no log, no table, no notebook. Anyone who cites it
+downstream must carry that attribution with it. Do not restate it as a
+measurement we made.
+
+### Timing: nothing is owed before the fire
+
+**MEASURED 2026-08-18 (re-verified at execution time, not copied forward):**
+
+- **`plink --missing` / `.lmiss` is NOT currently emitted by the fire.** A
+  recursive search of `src/` for `lmiss` and for the `--missing` flag returns
+  **zero hits**, and `aou_ld_panel.build_plink_ld_command` builds the
+  square-mode argv as `--r square bin4` + `--keep-allele-order` +
+  `--mac 1 --nonfounders --write-snplist`, windowed via
+  `--chr/--from-bp/--to-bp`. No missingness pass exists anywhere on the fire
+  path.
+- **That blocks nothing.** The missingness is computable afterwards, in a cheap
+  VM session, from the same bfile (`/home/jupyter/afr_cohort`) that the stopped
+  `n1-standard-32` holds. `HANDOFF.json.cluster` records that VM as "STOPPED,
+  not deleted — preserved for the fire", and the runbooks instruct Carter to
+  **STOP** the environment rather than delete it
+  (`260812-ox1-AGENT-PROMPT.md:279`, `260812-ox1-BROWSER-PASTE.md:301`).
+- ⚠ **The honest caveat: that premise is CONSISTENT, not GUARANTEED.** No
+  runbook step *commits* to preserving the VM after STEP G — teardown is UI-only
+  and unscripted, so nothing enforces the environment's survival — and an AoU
+  environment on a STANDARD disk loses its disk when it is deleted. State the
+  premise precisely: *"the bfile survives as long as the environment is not
+  deleted"*, **not** *"the bfile is guaranteed available"*. If the environment is
+  ever deleted, computing `.lmiss` costs a **bfile rebuild** — it does **not**
+  cost a re-fire of the LD panel. That bounded fallback price is exactly why
+  this is a follow-up and not a blocker.
+- **Therefore NO producer change is made now.** Adding `--missing` to the
+  producer would put **new behaviour onto the $385–1,084 fire path in order to
+  buy a post-fire diagnostic.** Under the freeze-economy rule — an open window
+  is a process saving, never a safety argument — that trade is **refused**. The
+  producer is untouched by this item.
+
+### ⚠ IF someone builds the cross-cohort version anyway — Seth's two constraints, VERBATIM
+
+These bind **only** in the counterfactual where the join gets built despite the
+decision above. Reproduced word for word from the banked courier — do not
+paraphrase, do not compress, do not "improve" them:
+
+> 1. Join on (CHR, POS) only, per snp_id_bridge.R — and note the panel is
+>    GRCh38 while the sumstats are GRCh37, so the lift-over is part of the key.
+>    Do NOT add alleles to the key: this is the E-2 orientation exposure, and a
+>    chr:pos:REF:ALT key silently drops flipped records.
+> 2. Use MAF = min(EAF, 1-EAF), never EAF directly. I checked the arithmetic:
+>    EAF 0.014 and 0.986 both give MAF 0.0140, so MAF is invariant to which
+>    allele is called the effect allele — it is immune to the orientation flip
+>    that E-2 documents. Comparing raw EAF across the join would manufacture
+>    spurious "elevation" on every flipped record.
+
+That constraint pair is why the join is not to be built under time pressure — it
+is the exact surface E-2 is about.
+
+### The code state — so nobody re-litigates it
+
+`check_maf_depression` (`src/python/fire_verifier.py:632`, with its
+`⚠ A-12: IMPLEMENTED BUT NOT WIRED` docstring at `:640` and its tests at
+`tests/m3/test_fire_verifier.py:641+`) stays **implemented, tested, and
+DELIBERATELY UNWIRED**. **This item does not authorise wiring it.** Nothing was
+deleted and nothing was added: `quick-260818-uoi` changed **no** file under
+`src/`, `tests/`, `config/`, and no Snakefile.
+
+### D-11 CONCURRENCE (record only)
+
+Seth accepted **all thirteen** adjudications from `quick-260818-sml` with **zero
+contested**, and on **D-11** explicitly requested **no change**: region-1
+severity **stays `FINDING`**. His stated grounds: the runbook wording already
+frames it as the finding, `exit_code` is non-zero either way, and nothing
+operational rides on the tier.
+
+**NO CODE WAS EDITED FOR D-11.** There is no commit to go looking for. The
+concurrence lives here and in the `quick-260818-uoi` SUMMARY, and nowhere else.
+
+### Cross-references
+
+- **Runbook sites retargeted by this task** — both now name `MISS-1` and state
+  that the cross-cohort join is not to be built:
+  `260812-ox1-AGENT-PROMPT.md` (the STEP 9-GATE A-12 note) and
+  `260812-ox1-BROWSER-PASTE.md` (the §9b Stage-B gate block). Measured
+  2026-08-18: `260812-ox1-READY-TO-FIRE.md` never carried this note, and none
+  was added to it.
+- **`E-2`** in this file (decided 2026-08-07 as option A) — the orientation
+  exposure that Seth's two constraints are navigating.
+- **R4-COVERAGE** in this file — a *sibling* post-fire obligation, referenced
+  here in prose only. The two are independent: that item owes a **disclosure**
+  with measured numbers at STEP E/F; this item owes a **diagnostic**. Neither
+  blocks the fire.
+- Seth's banked courier (as-received, no byte anchors supplied):
+  `.planning/quick/260818-uoi-bank-seth-d-acceptance-courier-register-/260818-uoi-SETH-COURIER-d-acceptance-as-received.md`
