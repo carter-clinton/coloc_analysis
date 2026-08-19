@@ -1,0 +1,60 @@
+================================================================================
+260818-sml — CONTROLS TRANSCRIPT for src/python/fire_verifier.py
+================================================================================
+
+WHY THIS FILE EXISTS
+--------------------
+A green that has never been observed red is not a result. Every negative control
+in tests/m3/test_fire_verifier.py was DRIVEN RED against the SHIPPED module (never
+a re-implementation) and its verbatim output is banked below. Before trusting a
+green from `fire_verifier.py`, read this file.
+
+METHOD (and its two traps, both handled)
+----------------------------------------
+1. Each control is fired by PERTURBING the shipped `src/python/fire_verifier.py`
+   just enough to break the property that control asserts, capturing the verbatim
+   pytest output, reverting, and re-confirming GREEN.
+2. Trap A — the bytecode cache. `importlib` validates cached bytecode on
+   (mtime_seconds, size), so a byte-length-identical edit reverted within the same
+   second runs STALE bytecode and the "revert" is a lie
+   ([[feedback_negative_control_defeated_by_bytecode_cache]]). Every
+   perturb/revert cycle below is followed by
+   `find . -name '__pycache__' -prune -exec rm -rf {} +` and a re-run that SHOWS
+   the control green again.
+3. Trap B — grouping. Where a single perturbation fires several controls of the
+   SAME check at once, that is stated explicitly under the entry. No check is
+   trusted without at least one observed red of its own.
+
+Baseline suite state, measured before any file in this task was written:
+    /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest tests/m3 -q
+    -> 914 passed, 31 skipped, 4 warnings in 783.22s (0:13:03)      [0 failed]
+
+================================================================================
+NC-00 — THE MODULE DOES NOT EXIST YET (the TDD RED for Task 1)
+================================================================================
+Control:  the entire tests/m3/test_fire_verifier.py surface
+Asserts:  the tests are pinned to a REAL module, not to a stub they define
+Command:  /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/pytest \
+              tests/m3/test_fire_verifier.py -q
+Observed 2026-08-18, verbatim:
+
+==================================== ERRORS ====================================
+_______________ ERROR collecting tests/m3/test_fire_verifier.py ________________
+ImportError while importing test module '/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/tests/m3/test_fire_verifier.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/m3/test_fire_verifier.py:58: in <module>
+    import fire_verifier as fv        # noqa: E402  (the module under test)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'fire_verifier'
+=========================== short test summary info ============================
+ERROR tests/m3/test_fire_verifier.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.53s
+
+--------------------------------------------------------------------------------
+(Entries NC-01 .. NC-NN — one per CHECK — are appended in Task 2, after the module
+exists and each control has been driven red against it.)
