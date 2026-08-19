@@ -84,7 +84,7 @@ evidence the TSV's absence — prior fires appended `status=error` rows uncondit
 ## 5 — cohort-MT data layer [RUNBOOK item 5; counts DERIVED from SKILL expected shapes]
 
 ```
-gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_AFR_qc.mt/entries/rows/parts/
+gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt/entries/rows/parts/
 ```
 
 Expect **≫ 1 GB**. ⚠ NO `/mt/` subdirectory in the path; ⚠ `_SUCCESS` is NOT evidence
@@ -93,7 +93,7 @@ of data. AND, in a Jupyter notebook on the env (Hail kernel):
 ```python
 import hail as hl
 hl.init()
-mt = hl.read_matrix_table("gs://rw-migration-aou-rw-476cdac2/ld/mt_AFR_qc.mt")
+mt = hl.read_matrix_table("gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt")
 print(mt.count_cols(), mt.count_rows())
 ```
 

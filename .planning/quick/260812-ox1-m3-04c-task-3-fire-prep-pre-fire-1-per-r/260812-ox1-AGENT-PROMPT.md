@@ -88,12 +88,12 @@ If the header does NOT match that: GATE — show Carter, and on his go RUN:
 regions in; note that 0 banked .npz does NOT imply the TSV is absent.)
 
 STEP 5 — cohort data layer. RUN:
-  gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_AFR_qc.mt/entries/rows/parts/
+  gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt/entries/rows/parts/
 EXPECT: far more than 1 GB. Then GATE: in a Jupyter notebook (Hail kernel),
 Carter or you (on his go) run:
   import hail as hl
   hl.init()
-  mt = hl.read_matrix_table("gs://rw-migration-aou-rw-476cdac2/ld/mt_AFR_qc.mt")
+  mt = hl.read_matrix_table("gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt")
   print(mt.count_cols(), mt.count_rows())
 EXPECT: roughly 73,122 x 20,767,864. Zero or wildly off -> STOP EVERYTHING
 (that is the empty-cohort catastrophe signature; _SUCCESS markers prove

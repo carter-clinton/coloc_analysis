@@ -92,7 +92,7 @@ compute; a stale 7/8-column TSV would abort the fire after ~2 regions of compute
 ## 5. §4 row 5 — cohort-MT data-layer re-verify (mutable state the fire READS)
 
 ```
-gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_AFR_qc.mt/entries/rows/parts/
+gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt/entries/rows/parts/
 ```
 
 **AND** `count_cols()` / `count_rows()` off the MT itself. Expected: `du` **≫ 1 GB**
