@@ -1,0 +1,311 @@
+GUARD CONTROLS TRANSCRIPT — 260819-u8d-placeholder-guard.sh
+Recorded 2026-08-19 (quick-260819-u8d), NCSU node, verbatim command / output / exit code.
+
+WHY THIS FILE EXISTS
+  A green assertion is evidence ONLY if it has been seen fail. Every check in the guard was
+  executed against a deliberately broken input and observed RED before its PASS was trusted.
+  Nothing below is transcribed from memory or paraphrased; each block is the captured stdout
+  of the command shown above it, and each exit code is the process's actual status.
+
+SHELL BINDINGS USED BELOW (run from the repo root
+/gpfs_common/share01/clintonlab/ckclinto/coloc_analysis)
+  G    = .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh
+  A    = .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+  CTRL = /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/u8d-controls
+
+CONTROL-COPY DISCIPLINE (this matters more than it looks)
+  Every broken copy and the fully instantiated copy live ONLY under $CTRL, in the session
+  scratchpad. None of them is ever written under .planning/ and none is ever committed — a
+  file full of plausible-looking invented numbers sitting beside the real draft is a real
+  hazard, not a hypothetical one. The instantiated copy's first line is the shouting banner
+  "FAKE NUMBERS - GUARD CONTROL ONLY - NEVER POST" (with the stop glyph), and its values are
+  arithmetically self-consistent purely so that `arith` can pass HONESTLY rather than by a
+  loosened tolerance: 0.1000 / 0.1300 / 0.2500 / 0.0300, derived 0.2200 / 0.2500 / 0.2600 /
+  0.5000, ceiling 0.3900, margin 1.56x (= 0.3900 / 0.2500), inflation 1.45x, date 2026-08-21,
+  commit 0000000. They are SHAPES, not measurements. The real values come from PENDING PASTE #3
+  and from nowhere else.
+
+EXPECTED STEADY STATE TODAY
+  draft GREEN, quote GREEN, paste-ready RED, arith RED. The two reds are the guard working.
+
+
+==============================================================================
+SEEN RED — eight controls, every one re-executed here
+==============================================================================
+
+------------------------------------------------------------------------------
+R1 [RED] — paste-ready against the REAL uninstantiated draft
+------------------------------------------------------------------------------
+$ bash $G paste-ready $A
+== section: paste-ready ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+FAIL: paste-ready: 29 opening and 29 closing sentinel delimiters remain — the body is UNINSTANTIATED and MUST NOT be pasted
+FAIL: paste-ready: basename still carries the XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+FAIL: paste-ready: ledger line SITE_MIN_PCT does not match its filled-value pattern (^  SITE_MIN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_MEDIAN_PCT does not match its filled-value pattern (^  SITE_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_MAX_PCT does not match its filled-value pattern (^  SITE_MAX_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT does not match its filled-value pattern (^  SITE_ROBUST_SIGMA_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MEAN_ROW_SITE_INFLATION does not match its filled-value pattern (^  MEAN_ROW_SITE_INFLATION = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MED_PLUS_3SIG_PCT does not match its filled-value pattern (^  MED_PLUS_3SIG_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MED_PLUS_4SIG_PCT does not match its filled-value pattern (^  MED_PLUS_4SIG_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line TWO_X_MEDIAN_PCT does not match its filled-value pattern (^  TWO_X_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line TWO_X_MAX_PCT does not match its filled-value pattern (^  TWO_X_MAX_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line CEILING_3X_MEDIAN_PCT does not match its filled-value pattern (^  CEILING_3X_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line CEILING_MARGIN_X does not match its filled-value pattern (^  CEILING_MARGIN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line POSTING_DATE does not match its filled-value pattern (^  POSTING_DATE = 20[0-9]{2}-[0-9]{2}-[0-9]{2}$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line PRE_EXECUTE_COMMIT does not match its filled-value pattern (^  PRE_EXECUTE_COMMIT = [0-9a-f]{7,40}$) — filled wrongly, or DELETED instead of filled
+GUARD paste-ready: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: the headline red: the state the guard exists for. A body carrying slot sentinels cannot be declared paste-ready.
+
+------------------------------------------------------------------------------
+R2 [RED] — arith against the REAL uninstantiated draft
+------------------------------------------------------------------------------
+$ bash $G arith $A
+== section: arith ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+FAIL: arith: cannot verify — draft not instantiated; these ledger values are still sentinels or blank: SITE_MIN_PCT, SITE_MEDIAN_PCT, SITE_MAX_PCT, SITE_ROBUST_SIGMA_PCT, MEAN_ROW_SITE_INFLATION, MED_PLUS_3SIG_PCT, MED_PLUS_4SIG_PCT, TWO_X_MEDIAN_PCT, TWO_X_MAX_PCT, CEILING_3X_MEDIAN_PCT, CEILING_MARGIN_X, POSTING_DATE, PRE_EXECUTE_COMMIT
+GUARD arith: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: arith FAILS LOUDLY rather than skipping when the values are sentinels. A guard that skips below a threshold hides the bug it exists to find.
+
+------------------------------------------------------------------------------
+R3 [RED] — draft and paste-ready against an EMPTY file
+------------------------------------------------------------------------------
+$ bash $G draft $CTRL/ctrl-R3-empty.md
+== section: draft ==
+FAIL: vacuity: file under byte floor (0 B < 6000 B): /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/u8d-controls/ctrl-R3-empty.md
+GUARD draft: RED
+EXIT: 1   (expected 1)  MATCH
+
+$ bash $G paste-ready $CTRL/ctrl-R3-empty.md
+== section: paste-ready ==
+FAIL: vacuity: file under byte floor (0 B < 6000 B): /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/u8d-controls/ctrl-R3-empty.md
+GUARD paste-ready: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: the vacuity floor fires: the guard cannot go green on a deleted, renamed or emptied amendment.
+
+------------------------------------------------------------------------------
+R4 [RED] — draft against a copy whose paste block is gutted to a few bytes (both markers intact)
+------------------------------------------------------------------------------
+$ bash $G draft $CTRL/ctrl-R4-gutted-block.md
+== section: draft ==
+PASS: vacuity: file present, 12101 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 102)
+FAIL: vacuity: paste block under byte floor (58 B < 3000 B)
+GUARD draft: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: an emptied paste block is not silently green — every content assertion would pass trivially on it.
+
+------------------------------------------------------------------------------
+R5 [RED] — paste-ready against an instantiated copy with ONE slot DELETED rather than filled
+------------------------------------------------------------------------------
+$ bash $G paste-ready $CTRL/ctrl-R5-deleted-sentinel-2026-08-21.md
+== section: paste-ready ==
+PASS: vacuity: file present, 27995 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 102) before exactly one closer (line 340)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: ctrl-R5-deleted-sentinel-2026-08-21.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+FAIL: paste-ready: ledger line SITE_MAX_PCT does not match its filled-value pattern (^  SITE_MAX_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+GUARD paste-ready: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: deletion is not a valid instantiation: the ledger line survives and matches no anchored filled-value pattern.
+
+------------------------------------------------------------------------------
+R6 [RED] — arith against an instantiated copy with CEILING_3X_MEDIAN_PCT perturbed off 3 x median
+------------------------------------------------------------------------------
+$ bash $G arith $CTRL/ctrl-R6-perturbed-arith-2026-08-21.md
+== section: arith ==
+PASS: vacuity: file present, 28002 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 102) before exactly one closer (line 340)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.45x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2200 vs 0.2200%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2500 vs 0.2500%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.2600 vs 0.2600%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5000 vs 0.5000%, |d|=0.0000 <= tol 0.0010)
+FAIL: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT BROKEN (0.4500 vs 0.3900%, |d|=0.0600 > tol 0.0010)
+FAIL: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT BROKEN (1.5600 vs 1.8000x, |d|=0.2400 > tol 0.0200)
+PASS: arith: ordering holds (min 0.1000% <= median 0.1300% <= max 0.2500%)
+GUARD arith: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: the derived ceiling is verified by a must-be-identity relation, not by eyeball. Two identities break and both are named.
+
+------------------------------------------------------------------------------
+R7 [RED] — quote against a copy with ONE WORD altered inside the verbatim provenance blockquote
+------------------------------------------------------------------------------
+$ bash $G quote $CTRL/ctrl-R7-altered-quote.md
+== section: quote ==
+PASS: vacuity: file present, 28341 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16298 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+FAIL: quote: source line NOT carried verbatim: 'The re-purposing is the deepest error: the amendment says "the same fractional gate as the withdrawn ceiling, ...'
+FAIL: quote: count identity FAILS: 3/4 source lines carried verbatim
+GUARD quote: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: the provenance cannot be softened, trimmed or paraphrased in transit; the count identity misses.
+
+------------------------------------------------------------------------------
+R8 [RED] — paste-ready against the fully instantiated copy renamed so its basename still carries the XX date placeholder
+------------------------------------------------------------------------------
+$ bash $G paste-ready $CTRL/osf-amendment-occlusion-gate-recalibration-2026-08-XX.CONTROL.md
+== section: paste-ready ==
+PASS: vacuity: file present, 28002 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 102) before exactly one closer (line 340)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+FAIL: paste-ready: basename still carries the XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-XX.CONTROL.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+GUARD paste-ready: RED
+EXIT: 1   (expected 1)  MATCH
+
+PROVES: the filename placeholder is gated too — instantiated CONTENT is not sufficient.
+
+==============================================================================
+SEEN GREEN — three controls
+==============================================================================
+
+------------------------------------------------------------------------------
+G1 [GREEN] — draft against the REAL draft
+------------------------------------------------------------------------------
+$ bash $G draft $A
+== section: draft ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+PASS: draft: all 13 roster names present
+PASS: draft: SLOT_LEDGER block present
+PASS: draft: SLOT_LEDGER carries exactly 13 ledger lines
+PASS: draft: '(site basis)' labelled 5 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 4 times in the paste block (floor 3)
+GUARD draft: GREEN
+EXIT: 0   (expected 0)  MATCH
+
+PROVES: the draft-state checks (markers, block size, roster, 13-line ledger, basis labels) are satisfied by the artifact as committed.
+
+------------------------------------------------------------------------------
+G2 [GREEN] — quote against the REAL draft
+------------------------------------------------------------------------------
+$ bash $G quote $A
+== section: quote ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD quote: GREEN
+EXIT: 0   (expected 0)  MATCH
+
+PROVES: all four non-blank source lines of the provenance paragraph are carried verbatim, by count identity.
+
+------------------------------------------------------------------------------
+G3 [GREEN] — paste-ready and arith against the FULLY INSTANTIATED control copy
+------------------------------------------------------------------------------
+$ bash $G paste-ready $CTRL/osf-amendment-occlusion-gate-recalibration-2026-08-21.CONTROL.md
+== section: paste-ready ==
+PASS: vacuity: file present, 28002 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 102) before exactly one closer (line 340)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-21.CONTROL.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+GUARD paste-ready: GREEN
+EXIT: 0   (expected 0)  MATCH
+
+$ bash $G arith $CTRL/osf-amendment-occlusion-gate-recalibration-2026-08-21.CONTROL.md
+== section: arith ==
+PASS: vacuity: file present, 28002 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 102) before exactly one closer (line 340)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.45x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2200 vs 0.2200%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2500 vs 0.2500%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.2600 vs 0.2600%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5000 vs 0.5000%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.3900 vs 0.3900%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.5600 vs 1.5600x, |d|=0.0000 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1000% <= median 0.1300% <= max 0.2500%)
+GUARD arith: GREEN
+EXIT: 0   (expected 0)  MATCH
+
+PROVES: the two sections that are red today go green on a correctly instantiated body — so their red is a measurement, not a permanent failure.
+
+==============================================================================
+SUMMARY OF OBSERVATIONS
+==============================================================================
+  R1  paste-ready  REAL draft                      exit 1   RED
+  R2  arith        REAL draft                      exit 1   RED   (loud, not a skip)
+  R3  draft        EMPTY file                      exit 1   RED   (vacuity floor)
+  R3  paste-ready  EMPTY file                      exit 1   RED   (vacuity floor)
+  R4  draft        gutted paste block              exit 1   RED   (vacuity floor)
+  R5  paste-ready  slot DELETED not filled         exit 1   RED
+  R6  arith        ceiling perturbed off 3x median exit 1   RED
+  R7  quote        one word altered in the quote   exit 1   RED   (count identity 3/4)
+  R8  paste-ready  instantiated, basename has XX   exit 1   RED
+  G1  draft        REAL draft                      exit 0   GREEN
+  G2  quote        REAL draft                      exit 0   GREEN
+  G3  paste-ready  fully instantiated control      exit 0   GREEN
+  G3  arith        fully instantiated control      exit 0   GREEN
+
+  11/11 controls behaved as specified. No exit code was assumed; each was measured, and the
+  whole set was re-executed after the final edit to the amendment so these byte counts are
+  the committed artifact's, not a stale run's.
+
+FORBIDDEN REPAIR — repeated here because this file is where someone will look when the
+guard goes red at posting time: NEVER go green by deleting a slot sentinel instead of
+filling it, by loosening an anchored filled-value pattern, by widening the arithmetic
+tolerance, or by trimming the verbatim provenance quote. If a CHECK is wrong, fix the check
+and re-run its control until it is seen red again.
+

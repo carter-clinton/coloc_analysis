@@ -7,6 +7,13 @@
 > enforcer `260819-u8d-placeholder-guard.sh` (section `all`) is the gate that must be GREEN
 > before any paste; it is RED today by design, and its red is the guard working.
 
+> **ENFORCER — exact invocation, run from the repo root** (recorded here so a future session
+> finds the check from this artifact rather than from memory; the amendment argument follows
+> this file when it is renamed at posting):
+> `bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md`
+> Its checks were seen red eight ways and green three, verbatim, in the sibling file
+> `.planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-guard-controls-transcript.txt`.
+
 # OSF Amendment-Update — Paste-Ready Text (AFR native-plink LD panel: factual correction to the 2026-07-10 record, and recalibration of the clause-(d) occlusion anomaly gate)
 
 > **What this is.** A methods correction plus a gate recalibration against measurement. It
