@@ -2141,3 +2141,162 @@ its own shipped sub-modes before being trusted.
 `…/260817-vbu-replication-transcript.txt`;
 `…/260817-vbu-trsx5-posted-9695-reconstructed.txt`;
 `…/260817-vbu-verify.sh`.
+
+## 2026-08-19 — DEC-2026-08-19-occlusion-recalibration-adopted: the CALIBRATION branch is ADOPTED — the gate moves to occluded SITES with ROWS accounting, the ceiling is re-derived as 3x the measured site-basis median, and the correction goes to OSF as a new version
+
+**Decision (CARTER, 2026-08-19 21:45 EDT, verbatim):** "adopt"
+
+That one word is the formal branch adoption Seth's C1/C2/C3 convergence note was
+explicitly awaiting ("Awaiting only Carter's formal branch adoption"). Every
+adjudication branch had converged; nothing was open but the decision. It is taken
+here so that a future session reads this entry instead of re-deriving the
+adjudication from five banked chat transcripts.
+
+### What was adopted — five commitments
+
+1. **The CALIBRATION branch. The NORMALIZATION branch is WITHDRAWN by Seth (C1).**
+   A plink `.bim` row is biallelic *by construction*, so a correctly-normalized
+   split-multiallelic callset **necessarily** renders one k-allelic site as k
+   same-position rows. Split-biallelic same-position rows are therefore the
+   *obligatory* representation for this substrate, not a defect; `bcftools norm -m +`
+   would merge them back into multiallelic records plink cannot represent — the wrong
+   direction. Seth: "I withdraw the normalization branch."
+
+2. **The anomaly GATE is re-defined on occluded SITES; the exclusion ACCOUNTING stays
+   on ROWS; BOTH numbers are reported (C2).** Site-basis is representation-invariant —
+   the same deletion over the same site counts 3 at multiplicity 3 and 18 at
+   multiplicity 18, so a row-basis gate fires differently on identical biology
+   depending on how the caller split multiallelics, which is not measuring the
+   substrate. But rows are what leave the panel: the manifest records rows and the
+   lockstep sumstats drop is row-keyed on (CHR,POS), so reporting exclusions in sites
+   would understate what left the panel and break the manifest's audit purpose. Gate on
+   sites, exclude and report rows, state both.
+
+3. **The ceiling = 3x the measured SITE-BASIS median**, purpose-anchored per Seth's C3
+   derivation, carrying an explicit **never-calibrate-to-pass** clause. The multiplier
+   is anchored on a location statistic rather than on where the sample happened to
+   stop, so extending the sample moves it only if the population's centre moves; it
+   still fires on anything >= 3x typical. x8 and x10 also pass 21/21 and are REJECTED
+   precisely because they would have been chosen for clearing the data — the original
+   error inverted. That 3x-median happens to pass 21/21 must be a *consequence* of the
+   derivation, never its justification.
+
+4. **The site-basis re-measurement (PENDING PASTE #3) instantiates the numbers ONCE**,
+   before Seth's brief-blind review of the draft. Derivation and purpose text are
+   basis-agnostic and are drafted now; the numbers are substituted later, from one
+   measurement pass. Never draft against row basis and then re-do it (C3 §5).
+
+5. **The amendment states a CORRECTED EMPIRICAL CLAIM, not a threshold tweak**, and
+   posts as a **NEW OSF version / new supplementary file — never a silent swap**. Seth's
+   framing, adopted as the amendment's headline: *we did not discover that our policy
+   was wrong; we discovered that our estimate of how often the policy applies was wrong
+   by a factor of 38.* Only the second claim is true, and it is the one that goes on the
+   record.
+
+### The measured basis — every literal carries its basis label
+
+- **STEP 7, first real-data contact (region 1, row basis).** **231** occluded rows
+  against the settled 5-member oracle; `oracle_subset_of_observed: True` with
+  `oracle_missing_from_observed: []` — the oracle sits at **exact** indices inside the
+  observed set, so index-origin validation (STEP 7's actual purpose) **PASSED**. The
+  window inventory is **7,951** multi-base-REF rows against the oracle's asserted 7. The
+  clause-(d) ceiling of **51.2** rows was exceeded **4.5x**.
+- **Pre-committed systematic-by-span 21-region sample, ROW basis:** min **0.1323%**,
+  median **0.1888%**, max **0.3527%**, robust sigma (1.4826*MAD) **0.0393%**;
+  **21/21 defer** at the pre-registered 0.0005; flat across small / medium / large with
+  no size trend. **Harness cross-check:** m2_region_00001 had to reproduce **231**
+  exactly or all 21 results were to be discarded — it did, so all 21 are trusted.
+  Detector = the frozen `occlusion_span_filter` via its own `load_bim_rows`, the
+  identical code path as the failed gated test.
+- **Same-position composition, measured LARGE everywhere.** Duplicate-position rows are
+  **~7-11%** of `n_rows` in all 21 sampled regions, per-site multiplicities up to **21**;
+  region-1 mean multiplicity **3.16** (8,358 dup rows at 2,645 dup sites). "Same-position
+  = 0" was a fixture-scope claim promoted to window scope and is window-FALSE
+  everywhere sampled — a representation convention, not a defect.
+- **§4, region 1:** **span-dominant 37/39** single-occluder runs (2 chain, 37 span).
+  Seth's chain prediction is REFUTED; his own §5 result explains why — a same-position
+  stack has zero bp extent, so local density is effectively unbounded exactly where
+  occlusion happens, and one deletion span over a stack yields a long consecutive-index
+  run with a single occluder.
+
+### The §8 provenance, as Seth stated it
+
+0.0005 was **Seth's** figure, derived in July as "~10x headroom over the observed 6 NaN
+pairs at n_var 102,421" — i.e. **calibrated against observed NaN count**, on **one
+region** (n=1), for a policy that then got **re-purposed to geometric exclusions without
+re-derivation**. The premise (~6 per 100,000 = 0.0059%) is low by **~38x** against the
+measured 231 per 102,421 = 0.2255% (row basis). Seth calls the re-purposing "the deepest
+error." This goes into the amendment **VERBATIM**, not paraphrased — the confession is
+the amendment's ethical core and softening it in transit is exactly the failure the
+`quote` guard section exists to prevent.
+
+### The false sentence in the POSTED record
+
+`.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md:45` —
+*"Region 1 alone contains 7 distinct overlapping deletions (60/29/7/31/31/17/29 bp)"* —
+is the inventory of the deletions implicated in the **six NaN pairs**, written as if it
+were the **window** inventory. The measured window inventory is **7,951** multi-base-REF
+rows in 102,421 records (7.76%), the ordinary WGS figure. The asserted 7-in-102,421 is
+0.0068% — ~1,140x below the measured value and three orders of magnitude below any
+published WGS callset. **The correction is REQUIRED regardless of which branch was
+adopted.** Note that the *same bullet's* other claim — *"Zero pairs are same-position
+multiallelic records"* — was correctly scoped to the six NaN pairs and **SURVIVES**;
+what does not survive is any window-scale reading of it.
+
+### What is NOT changed, and why each stays untouched
+
+- **Clause (a), the occlusion CRITERION** (`[POS, POS+len(REF)-1]` covers a neighbour's
+  POS) — untouched. `:77` fences *changing the criterion to obtain a result*;
+  recalibrating the GATE (clause d) is a different object and is not fenced. Keeping that
+  distinction crisp is what keeps the action defensible.
+- **Clause (b), exclude-in-lockstep** across panel and harmonized sumstats; panel-only
+  exclusion and NaN->0 both still prohibited.
+- **Clause (c), the mandatory per-variant provenance manifest** — a lockstep exclusion
+  without a manifest entry stays prohibited.
+- **The defer-not-exclude protocol** — it fired on first real-data contact and stopped the
+  fire before a banked byte. That is the machinery working and it must not be touched.
+- **Clause (e), genome-wide present-rate reporting.**
+- **The three outcome tokens** `BRANCH_AFR_OCC_NONE` / `BRANCH_AFR_OCC_EXCLUDED` /
+  `BRANCH_AFR_OCC_DEFERRED`.
+- **PSD regularization and lambda** (eigclip lambda_floor=1e-6 primary; ridge lambda in
+  {0.001, 0.01, 0.1} robustness), the fully-NaN-row drop rule, and the **raw-panel
+  NaN-raise contract**.
+
+### The honest limitation, recorded rather than buried
+
+n=21 of 276. The sample was pre-committed and systematic-by-span and the distribution is
+flat across size classes, but **the upper tail is unmeasured**. A full 276-region sweep is
+~39 h of VM time (8.6 min/region measured) and is **deliberately not spent** ahead of the
+amendment; every region computes its own count during the actual fire, so the full
+distribution folds in at closeout and is reported there. The ceiling's margin over the
+observed maximum is the instrument that respects the unmeasured tail.
+
+### The §6 caveat is recorded SEPARATELY
+
+Seth's new §6 — same-position rows are alternate ALTs at one site, so their dosages are
+structurally anti-correlated and the panel carries a substantial population of
+near-deterministic off-diagonals, which is a fine-mapping (near-collinearity) consideration
+rather than an occlusion problem — is recorded in its own note file at Seth's own
+preference: "If you think it belongs in a separate note rather than this amendment, I
+agree — I would rather it be recorded somewhere than folded in awkwardly."
+
+### Gate posture set by this decision
+
+The shipped constant `_OCCLUSION_ANOMALY_FRACTION` = 0.0005 is **row basis** and its
+calibration premise is **dead**. It is **NOT** to be edited in code until the recalibrated
+amendment is **POSTED** — silent modification is excluded by `:81`, by `:98`, and by the
+shipped source's own comment at `run_native_ld_panel.py:129-130`. Stage A stays
+unreachable. The amendment draft is UNINSTANTIATED until PENDING PASTE #3 lands, and that
+is enforced by a named check, not by intention:
+`bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all <amendment>`.
+
+**Cross-refs:** `.planning/debug/260819-SETH-C1C2C3-convergence-as-received.md`;
+`.planning/debug/260819-SETH-VERDICT-adjudication-confirmed-as-received.md`;
+`.planning/debug/260819-occ-measure-sweep-results-as-received.md`;
+`.planning/debug/260819-supplement-results-as-received.md`;
+`.planning/debug/260819-PENDING-PASTE-3-site-basis-sweep.md`;
+`.planning/debug/fire-morning-occlusion-oracle-vs-geometry.md`;
+`DEC-2026-08-17-trsx5-gate-released` (the "NEW OSF VERSION, never a silent swap"
+commitment this decision inherits);
+`.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md`;
+`.planning/amendments/note-same-position-collinearity-2026-08-19.md`.
