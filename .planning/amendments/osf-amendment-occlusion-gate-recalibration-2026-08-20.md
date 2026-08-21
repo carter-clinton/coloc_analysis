@@ -22,6 +22,20 @@
 > Its checks were seen red eight ways and green three, verbatim, in the sibling file
 > `.planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-guard-controls-transcript.txt`.
 
+> **REVISION — 2026-08-20.** The body below was REVISED after instantiation, against the
+> adversarial attack banked at
+> `.planning/debug/260820-SETH-ATTACK-instantiated-amendment-as-received.md`. Four passages
+> moved: the basis-conventions paragraph, the no-calibrate-to-pass paragraph, the clause-(d)
+> ceiling (which gained a companion condition), and the limitation paragraph. The revised
+> body was re-instantiated by the SAME engine in `--second-pass` mode — every number below
+> still entered by script from a banked record and none was hand-typed — and re-verified by
+> the extended enforcer, whose green and whose sixteen reds are transcribed verbatim in
+> `.planning/quick/260820-u6i-revise-the-instantiated-amendment-per-se/260820-u6i-guard-transcript.txt`.
+> The s2x transcript referenced above is RETAINED: it is the history of the FIRST
+> instantiation, not a stale claim about this one.
+> Status line for the record, in the reviewer's own words:
+> measurement banked; amendment drafted, not posted; code constant unchanged; fire HELD; an agent never posts and never fires
+
 # OSF Amendment-Update — Paste-Ready Text (AFR native-plink LD panel: factual correction to the 2026-07-10 record, and recalibration of the clause-(d) occlusion anomaly gate)
 
 > **What this is.** A methods correction plus a gate recalibration against measurement. It
@@ -41,12 +55,12 @@
 | Amendment kind | Methods correction (factual) + anomaly-gate recalibration. It does NOT withdraw a policy; it corrects a false factual sentence and re-derives one constant. |
 | Prior record being corrected | `osf.io/az52u` file `trsx5` (AFR native-plink LD panel: withdraw NaN→0, adopt occlusion exclude-in-lockstep + provenance manifest), posted 2026-07-10T13:32:22Z. |
 | Original pre-registration | `osf.io/pvb5j` (DOI `10.17605/OSF.IO/PVB5J`), posted 2026-04-10. |
-| What changes | (1) the factual sentence at `trsx5`'s line 45 about region-1 deletion inventory; (2) the clause-(d) anomaly-gate metric (rows → sites) and its ceiling (0.0005 of rows → 3x the measured site-basis median). |
+| What changes | (1) the factual sentence at `trsx5`'s line 45 about region-1 deletion inventory; (2) the clause-(d) anomaly-gate metric (rows → sites) and its ceiling (0.0005 of rows → 3x the measured site-basis median); (3) the clause-(d) gate gains a COMPANION condition on the occluded-site row/site inflation ratio, so a region that is anomalous in multiplicity alone is no longer invisible to it. |
 | What does NOT change | Clause (a) the occlusion criterion; clause (b) exclude-in-lockstep; clause (c) the mandatory provenance manifest; the defer-not-exclude protocol; clause (e) present-rate reporting; the three `BRANCH_AFR_OCC_*` outcome tokens; PSD regularization and λ; the fully-NaN-row drop rule; the raw-panel NaN-raise contract. |
 | **NOT a re-version of `trsx5`** | This posts as a NEW dated file in the chain. After posting, `trsx5` must STILL show **exactly 1 revision** (2026-07-10 13:32) — the same append-only check that cleared the July record. "New OSF version, never a silent swap" means a new dated record, never an in-place edit of a posted body. |
 | Posting gate | BEFORE the shipped `_OCCLUSION_ANOMALY_FRACTION` constant is changed in code, and before any recalibrated-gate output is banked. The pre-registered correction must precede the corrected execution. |
 | Substrate | All of Us AFR WGS native-plink LD panel (`gs://…/ld/afr_native_panel/`, 276 regions). Controlled-tier: aggregate counts and coordinate geometry only; no raw genotypes, no LD matrices. |
-| Pre-execute commit gate | `8638ed37c1431ea73566fd03ad1541ba95416fe4` — the HEAD of `m3-W2-aou-deltas` at INSTANTIATION time, captured before the first commit of the instantiating task. RE-CONFIRMED AT POSTING: re-read HEAD, confirm no `_OCCLUSION_ANOMALY_FRACTION` or gate-constant change has landed since, and update this value if the branch has advanced. |
+| Pre-execute commit gate | `2689cae0c0c0666012bf451fcdd10924661bcf02` — the HEAD of `m3-W2-aou-deltas` captured before the first commit of the REVISING task. It SUPERSEDED the first instantiation's value when the branch advanced, on the standing authority of the next sentence. RE-CONFIRMED AT POSTING: re-read HEAD, confirm no `_OCCLUSION_ANOMALY_FRACTION` or gate-constant change has landed since, and update this value if the branch has advanced. |
 | Expected posting date | `2026-08-21` — **PROVISIONAL**. If posting slips this is a one-token edit at each of its three occurrences (this row, its SLOT_LEDGER line, and the paste block's **Date:** line) plus a `guard all` re-run. The BASENAME does not change: the `2026-08-20` in the filename records the INSTANTIATION date, which is a different quantity from the posting date. A mismatch between the two is expected, not an error. |
 
 **SLOT_LEDGER** — the machine-readable record of what was substituted. Post-instantiation
@@ -66,8 +80,16 @@ SLOT_LEDGER
   TWO_X_MAX_PCT = 0.5396%
   CEILING_3X_MEDIAN_PCT = 0.5056%
   CEILING_MARGIN_X = 1.87x
+  ROW_MEDIAN_PCT = 0.1888%
+  FRACTION_RATIO_X = 1.12x
+  INFLATION_MIN_X = 1.04x
+  INFLATION_MEDIAN_X = 1.14x
+  INFLATION_MAX_X = 1.79x
+  INFLATION_ROBUST_SIGMA_X = 0.0890x
+  INFLATION_CEILING_3X_X = 3.42x
+  INFLATION_MARGIN_X = 1.91x
   POSTING_DATE = 2026-08-21
-  PRE_EXECUTE_COMMIT = 8638ed37c1431ea73566fd03ad1541ba95416fe4
+  PRE_EXECUTE_COMMIT = 2689cae0c0c0666012bf451fcdd10924661bcf02
 ```
 
 **Instantiation record — what was PERFORMED (do NOT paste this block).**
@@ -77,15 +99,19 @@ SLOT_LEDGER
    `.planning/debug/260820-site-basis-sweep-results-as-received.md`. The harness cross-check
    HELD: region 1 reproduced `n_occluded_rows == 231` exactly, with the assert preceding the
    summary, so no result was discarded.
-2. The eleven Class-M values were read off that banked record BY SCRIPT. Seven came directly
-   from the printed `SITE-BASIS SUMMARY`, `CANDIDATE CEILING`, `margin over observed
-   site-basis max` and `mean row/site inflation` lines; four were DERIVED by these formulas:
+2. The nineteen Class-M values were read off the banked records BY SCRIPT. Seven came
+   directly from the printed `SITE-BASIS SUMMARY`, `CANDIDATE CEILING`, `margin over
+   observed site-basis max` and `mean row/site inflation` lines; the rest were DERIVED, or
+   computed as column statistics, by these formulas:
 
 ```
 MED_PLUS_3SIG_PCT     = SITE_MEDIAN_PCT + 3 * SITE_ROBUST_SIGMA_PCT
 MED_PLUS_4SIG_PCT     = SITE_MEDIAN_PCT + 4 * SITE_ROBUST_SIGMA_PCT
 TWO_X_MEDIAN_PCT      = 2 * SITE_MEDIAN_PCT
 TWO_X_MAX_PCT         = 2 * SITE_MAX_PCT
+INFLATION_CEILING_3X_X = 3 * INFLATION_MEDIAN_X
+INFLATION_MARGIN_X     = INFLATION_CEILING_3X_X / INFLATION_MAX_X
+FRACTION_RATIO_X       = ROW_MEDIAN_PCT / SITE_MEDIAN_PCT
 ```
 
    The same script re-derived min / median / robust sigma / max and the mean row/site
@@ -94,13 +120,29 @@ TWO_X_MAX_PCT         = 2 * SITE_MAX_PCT
    components are wrong. `CEILING_3X_MEDIAN_PCT` is carried AS PRINTED, because it was
    computed upstream from the unrounded median; three times the 4-decimal median differs from
    it by 0.0001 percentage points, inside the guard's tolerance.
+
+   `INFLATION_MIN_X`, `INFLATION_MEDIAN_X`, `INFLATION_MAX_X` and `INFLATION_ROBUST_SIGMA_X`
+   (1.4826 x MAD) are computed by the same script from that banked table's OWN eighth
+   column, the per-region row/site inflation at occluded sites. `ROW_MEDIAN_PCT` comes from
+   the SECOND banked record — the row-basis sweep at
+   `.planning/debug/260819-occ-measure-sweep-results-as-received.md` — whose printed summary
+   is itself reconciled against that file's own 21 per-region fractions before anything is
+   written, on the same principle. Those four column statistics have NO printed upstream
+   aggregate to reconcile against, so they are checked instead against PRE-REGISTERED
+   RENDERED STRINGS, fixed in the revising task's plan before the code that computes them
+   was written — a must-be-identity string comparison, chosen deliberately over a
+   must-be-close numeric one.
 3. Each Class-M slot was substituted **ONCE, everywhere it occurred**, including its
    SLOT_LEDGER line, and the script asserted that the number of replacements equalled the
    file's pre-substitution slot-sentinel count and that none survived. Percentage slots render
-   as `0.1234%`; the two ratio slots render as `1.23x`.
-4. The two Class-P slots were filled at instantiation, not at posting: `POSTING_DATE`
-   provisionally, and `PRE_EXECUTE_COMMIT` as the full 40-hex HEAD captured before the
-   instantiating task's first commit. Both are re-confirmed at posting.
+   as `0.1234%`; ratio slots render as `1.23x`, with one deliberate exception — `INFLATION_ROBUST_SIGMA_X` renders at FOUR decimals, because at two its value collapses to `0.09x` and the quantity is destroyed.
+4. The two Class-P slots are argv-sourced rather than measured, and are DEFINED to move:
+   `POSTING_DATE` is provisional, and `PRE_EXECUTE_COMMIT` is the full 40-hex HEAD captured
+   before the REVISING task's first commit — it advanced from the first instantiation's
+   value when the branch advanced, which is exactly what the pre-paste table's standing
+   RE-CONFIRMED-AT-POSTING instruction requires. Both are re-confirmed at posting. The
+   re-instantiation engine force-substitutes them at EVERY occurrence, so the SLOT_LEDGER
+   line and the pre-paste table row cannot drift apart.
 5. This file was renamed with `git mv`, so its basename no longer contains the `XX` date
    placeholder and its history follows the rename — the guard FAILS while `XX` remains in the
    basename, and that failure was re-observed on the pre-rename copy as a negative control.
@@ -112,8 +154,10 @@ TWO_X_MAX_PCT         = 2 * SITE_MAX_PCT
 1. `paste-ready` GREEN, `arith` GREEN, `quote` GREEN, `draft` GREEN — i.e. section `all` exits 0.
 2. Confirm no change to `_OCCLUSION_ANOMALY_FRACTION` (or to the occlusion criterion) has
    landed in code: `git log --oneline` since this draft shows docs-only.
-3. Confirm the five supporting records are committed: the two Seth transcripts, the 21-region
-   sweep, the §5/§4 supplement, and the site-basis sweep results.
+3. Confirm the six supporting records are committed: the two Seth transcripts, the 21-region
+   sweep, the §5/§4 supplement, the site-basis sweep results, and the banked attack on the
+   instantiated draft
+   (`.planning/debug/260820-SETH-ATTACK-instantiated-amendment-as-received.md`).
 4. Post as a NEW supplementary file on `osf.io/az52u`. Do NOT upload as a new version of
    `trsx5`.
 
@@ -131,17 +175,36 @@ against measurement. The occlusion detection criterion, the exclude-in-lockstep 
 mandatory provenance manifest, the defer-not-exclude protocol, the genome-wide present-rate
 reporting and the three pre-registered outcome branches are UNCHANGED. Nothing about how an
 occluded variant is treated moves; what moves is the numerical gate that decides when a
-region's occlusion count is anomalous, and one factual sentence that was wrong.
+region's occlusion count is anomalous — its metric, its ceiling, and the addition of a
+companion condition on occluded-site multiplicity, so the gate is not blind to a region that
+excludes a pathological number of rows at an ordinary number of sites — and one factual
+sentence that was wrong.
 
 **Basis conventions (read this before any percentage below).** Two different denominators
 appear in this document and they are not interchangeable. A quantity labelled **(row
 basis)** is a fraction of the region's plink `.bim` variant ROWS. A quantity labelled
 **(site basis)** is a fraction of the region's distinct genomic SITES (unique `(CHR, POS)`
 pairs). Because a `.bim` row is biallelic by construction, one k-allelic site is rendered as
-k same-position rows, so row-basis counts exceed site-basis counts by a
-representation-dependent factor — measured here as 1.18x on average across the sample. Every
-percentage in this document carries its basis label explicitly. Mixing them is the single
-easiest way to misread this amendment.
+k same-position rows, so row-basis COUNTS exceed site-basis COUNTS.
+
+The measured size of that excess is 1.18x: the mean across the sample
+of occluded ROWS divided by occluded SITES. It is a COUNT ratio and nothing else. **It does
+NOT convert between the two percentages.** Both fractions carry denominators that also
+differ — a region's `n_rows` exceeds its `n_sites` — so applying a count ratio to a fraction
+OVERSHOOTS. The measured ratio of the two medians is 1.12x: row-basis median
+0.1888% (row basis) over site-basis median 0.1685% (site basis). The mechanism is
+one line —
+
+    fraction ratio = count ratio x (n_sites / n_rows)
+
+— and in region 1, n_rows / n_sites = 102,421 / 96,708 = 1.059. Asserting the count ratio of
+a fraction is a quantity measured on one object asserted about another: the same defect class
+as the error this amendment corrects, and it is fixed here rather than left for a reader to
+trip over.
+
+The standing practice removes the need to convert at all: every percentage in this document
+carries its basis label explicitly, and both figures are restated wherever both matter.
+Mixing them is the single easiest way to misread this amendment.
 
 **(a) Factual correction to the 2026-07-10 record.**
 
@@ -242,15 +305,62 @@ convention is not measuring the substrate.
 *Accounting.* The exclusion ACCOUNTING remains on **ROWS**. Rows are what leave the panel;
 the manifest records rows; the lockstep sumstats drop is row-keyed on `(CHR, POS)`.
 Reporting exclusions in sites would understate what left the panel and would break the
-manifest's audit purpose. **Both numbers are reported for every region**, together with the
-measured mean row/site inflation of 1.18x across the sample.
+manifest's audit purpose. **Three numbers are reported for every region**: its occluded-SITE
+fraction (site basis), its occluded-ROW count (row basis), and that region's OWN row/site
+inflation at occluded sites — the third being the quantity the companion condition below
+tests.
 
-*Ceiling.* `n_occluded_sites <= 0.5056% x n_sites` — that is, **3x the measured site-basis
-median** of 0.1685% (site basis), or 0.005056 expressed as a bare fraction, since the
-withdrawn ceiling was written as a fraction and this one is written as a percentage. It
-gives 1.87x margin over the observed site-basis maximum of 0.2698% (site basis). The
-measured site-basis minimum is 0.1345% (site basis) and the robust sigma is 0.0274% (site
-basis).
+Mean and median are different anchors here, and the distinction is worth stating outright.
+The SAMPLE MEAN inflation across the 21 sampled regions is 1.18x, and
+that is the reported summary figure. The companion gate is NOT anchored on it. The gate's
+anchor is the MEDIAN, 1.14x, chosen because the site-fraction ceiling is
+anchored on a median too and the two ceilings must be derived by the same rule.
+
+*Ceiling.* A region is DEFERRED when EITHER condition holds:
+
+    (i)   n_occluded_sites  >  0.5056% x n_sites
+    (ii)  n_occluded_rows / n_occluded_sites  >  3.42x
+
+Condition (i) is the site-fraction ceiling: `n_occluded_sites <= 0.5056% x n_sites` — that
+is, **3x the measured site-basis median** of 0.1685% (site basis), or 0.005056 expressed as
+a bare fraction, since the withdrawn ceiling was written as a fraction and this one is
+written as a percentage. It gives 1.87x margin over the observed site-basis
+maximum of 0.2698% (site basis). The measured site-basis minimum is 0.1345% (site basis) and
+the robust sigma is 0.0274% (site basis). Condition (ii) is the companion condition on
+multiplicity, derived by the same rule and stated in full immediately below.
+
+*Companion condition on multiplicity (why a site gate needs one).* Site basis was chosen
+BECAUSE it is multiplicity-invariant — a row-basis gate fires differently on identical
+biology depending only on how the caller split multiallelics. But invariance cuts both ways:
+invariant means BLIND. A region can sit at a perfectly normal site-basis rate while excluding
+a pathological number of rows.
+
+The illustration, with both bases labelled. A region occluding approximately 0.17% of its
+sites (site basis) — near the measured median — whose occluded sites happen to sit at the
+observed maximum multiplicity of 21 would exclude approximately 3.4% of its rows (row basis),
+and would sail through a site-only gate reading an entirely ordinary number. A region whose
+occluded sites are systematically high-multiplicity IS a representation anomaly, which is
+precisely the class clause (d) exists to catch.
+
+The companion ceiling is derived by the SAME rule as the main one. Across the 21 sampled
+regions the measured row/site inflation at occluded sites is min 1.04x, median
+1.14x, max 1.79x, robust sigma (1.4826 x MAD)
+0.0890x. The companion ceiling is three times the MEDIAN,
+3.42x — anchored on a location statistic rather than on a sample edge,
+exactly as the site-fraction ceiling is — leaving 1.91x margin over the
+observed maximum.
+
+No-calibrate-to-pass applies to the companion in full. The multiplier was fixed by the rule,
+not chosen for what it clears. That the companion also defers 0 of the 21 sampled regions is
+a CONSEQUENCE of the derivation and is stated here as one; it was not a reason for the
+multiplier and was not used as one. Re-widening the companion ceiling in response to a firing
+region is prohibited without a further amendment, exactly as for the site-fraction ceiling.
+
+Provenance, stated plainly rather than buried: this blind spot was raised by the project's
+external methodological reviewer, as a correction to his OWN earlier recommendation of the
+site-basis metric. It is closed here rather than disclosed as a limitation, because a
+disclosed blind spot still ships a detector that cannot see the anomaly class it exists to
+catch.
 
 *Derivation, including what was rejected and why.*
 
@@ -285,12 +395,32 @@ legitimately sits above the ceiling, the gate should fire and the region should 
 investigated, not the gate widened. Re-widening this ceiling in response to a firing region
 is prohibited without a further amendment.
 
+Note, before a reader finds it: the adopted ceiling is numerically slightly MORE permissive
+than the rejected 10x-withdrawn candidate. Compared row against row, the adopted ceiling's
+row-basis restatement is 0.5664% (row basis) against 0.5% of rows (row basis) for 10x the
+withdrawn constant. The objection to 8x and 10x is not that they are too loose; it is that
+they would have been SELECTED for clearing the sample. The adopted value being more
+permissive while still rejecting them is exactly the point: the derivation is independent of
+what passes.
+
 *Limitation, stated rather than buried.* n=21 of 276. The sample was pre-committed and
 systematic-by-span and the distribution is flat across size classes, but the upper tail is
+unmeasured. That caveat applies to BOTH conditions: the inflation distribution behind the
+companion ceiling was measured on the same 21 regions, and its upper tail is likewise
 unmeasured. A full 276-region sweep is approximately 39 hours of virtual-machine time (8.6
 minutes per region, measured) and is deliberately NOT spent ahead of this amendment. Every
-region computes its own occlusion count during the production run, so the complete
-distribution folds in at closeout and is reported there against this ceiling.
+region computes its own occlusion count AND its own occluded-site inflation during the
+production run, so both complete distributions fold in at closeout and are reported there
+against both conditions.
+
+*Limitation — near-collinearity at same-position rows.* Fine-mapping at multiallelic sites
+carries near-collinear predictors. A `.bim` row is biallelic by construction, so one
+k-allelic site renders as k same-position rows whose dosages are structurally
+anti-correlated; this is a known property of split-multiallelic representation, not a defect
+of this pipeline. A credible set whose members share a `(CHR, POS)` should therefore be read
+as ONE site with unresolved allele identity, not as k independent signals. The caveat is
+recorded as a separate dated methods note in the project record and is carried into the
+manuscript's limitations.
 
 *Unchanged within clause (d).* Deferral remains NOT auto-exclusion. A region over the ceiling
 is deferred for re-diagnosis and disclosed as a deviation, exactly as pre-registered. Nothing
@@ -346,7 +476,10 @@ or consulted.
   re-diagnosis and disclosed as a deviation, never auto-excluded.
 - **Clause (e), genome-wide present-rate reporting** per ancestry.
 - **The three pre-registered outcome branches**, reproduced unchanged:
-  BRANCH_AFR_OCC_NONE, BRANCH_AFR_OCC_EXCLUDED, BRANCH_AFR_OCC_DEFERRED.
+  BRANCH_AFR_OCC_NONE, BRANCH_AFR_OCC_EXCLUDED, BRANCH_AFR_OCC_DEFERRED. The companion
+  condition introduces NO fourth branch and NO new token: a region deferred by EITHER the
+  site-fraction ceiling or the multiplicity companion routes to the SAME
+  `BRANCH_AFR_OCC_DEFERRED`, and the defer-not-exclude protocol is untouched.
 - **PSD regularization and λ**: eigenvalue-clip with λ_floor = 1e-6 (primary) and the ridge
   sweep λ ∈ {0.001, 0.01, 0.1} (robustness companion).
 - **The fully-NaN-row → drop rule** and **the raw-panel NaN-raise contract** (the raw
@@ -378,7 +511,11 @@ corrected gate executes rather than after.
 4. Append the prepared entry below to `.planning/osf_deviations.md`.
 5. Tag the record commit.
 6. ONLY THEN may `_OCCLUSION_ANOMALY_FRACTION` be changed in code, and only to the
-   site-basis metric and ceiling pre-registered above.
+   TWO-CONDITION gate pre-registered above: BOTH the site-basis metric with its
+   0.5056% ceiling AND the companion condition on the occluded-site
+   row/site inflation ratio at 3.42x. Shipping the site-basis condition
+   alone is NOT authorised by this amendment — that is the single-metric gate this
+   revision replaced, and it is multiplicity-blind.
 
 **Rollback:** Do not delete this file. OSF amendments are append-only; this file corrects
 `trsx5` by superseding two of its statements in a new dated record, never by editing it.
@@ -425,7 +562,14 @@ not knowable from the site-basis sweep.
   / robust sigma 0.0393%, 21/21 deferring at 0.0005, plus the site-basis re-measurement of
   the same 21 regions: site basis min 0.1345% / median 0.1685% / max 0.2698% / robust sigma
   0.0274% (site basis). The gate's own ceiling is 3x that site-basis median = 0.5056% (site
-  basis), 1.87x the observed site-basis maximum. Provenance of the withdrawn constant
+  basis), 1.87x the observed site-basis maximum. The gate ALSO gains a COMPANION condition
+  on the occluded-site row/site inflation ratio, because a site-basis metric is
+  multiplicity-invariant and therefore multiplicity-BLIND: measured across the same 21
+  regions, inflation min 1.04x / median 1.14x / max
+  1.79x / robust sigma 0.0890x; companion ceiling = 3x the
+  median = 3.42x, leaving 1.91x margin over the observed
+  maximum. A region deferring on EITHER condition routes to the same BRANCH_AFR_OCC_DEFERRED
+  token — no fourth branch. Provenance of the withdrawn constant
   carried VERBATIM from the reviewer who derived it (calibrated on 6 NaN pairs at n=1,
   re-purposed to geometric exclusions without re-derivation; premise low by ~38x).
 - **What it RETAINS unchanged:** clause (a) occlusion criterion; clause (b)
@@ -434,6 +578,13 @@ not knowable from the site-basis sweep.
   reporting; BRANCH_AFR_OCC_{NONE,EXCLUDED,DEFERRED}; PSD regularization + λ (eigclip
   λ_floor=1e-6 primary, ridge λ∈{0.001,0.01,0.1} robustness); fully-NaN-row → drop;
   raw-panel NaN-raise contract.
+- **Known limitation recorded alongside:** same-position collinearity caveat recorded at
+  .planning/amendments/note-same-position-collinearity-2026-08-19.md; fine-mapping at
+  multiallelic sites carries near-collinear predictors; known split-representation property,
+  not a defect. That note is an INTERNAL RECORD — not part of any OSF amendment and not
+  posted. Its SUBSTANCE is disclosed inside the posted text's limitation paragraph; only its
+  repo PATH lives here, because a posted OSF record must be self-contained and a public
+  reader cannot resolve a `.planning/` path.
 - **Amends:** osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J) via osf.io/az52u file trsx5. Sibling
   of osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md, which it corrects rather than
   withdraws.

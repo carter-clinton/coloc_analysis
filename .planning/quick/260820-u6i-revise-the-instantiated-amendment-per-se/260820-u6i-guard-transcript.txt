@@ -670,3 +670,225 @@ FAIL: quote: count identity FAILS: 3/4 source lines carried verbatim
 GUARD quote: RED
 EXIT=1
 
+### SECOND-PASS — engine --second-pass on the revised amendment          EXIT=0
+
+  The 11 pre-existing Class-M slots are VERIFIED-IN-PLACE (byte-identical to the values
+  the engine just recomputed from the two banked records — a drifted or hand-edited
+  measured value ABORTS here). The 8 new slots are SUBSTITUTED from their sentinels.
+  The 2 Class-P slots are FORCE-SUBSTITUTED document-wide, because they are argv-sourced
+  and DEFINED to move; PRE_EXECUTE_COMMIT advances 8638ed3 -> 2689cae at BOTH of its
+  occurrences by construction. Output transcribed verbatim from the run itself.
+
+$ python3 .planning/quick/260820-s2x-instantiate-the-occlusion-recalibration-/260820-s2x-instantiate.py \
+        --second-pass \
+        .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md \
+        --pre-execute-commit 2689cae0c0c0666012bf451fcdd10924661bcf02 --posting-date 2026-08-21
+RECONCILIATION — printed summary vs recomputed from the 21-row table
+  source: .planning/debug/260820-site-basis-sweep-results-as-received.md
+  STATISTIC                     PRINTED   RECOMPUTED      DELTA      TOL VERDICT
+  SITE_MIN_PCT                 0.134500     0.134500   0.000000   0.0001 OK
+  SITE_MEDIAN_PCT              0.168500     0.168500   0.000000   0.0001 OK
+  SITE_MAX_PCT                 0.269800     0.269800   0.000000   0.0001 OK
+  SITE_ROBUST_SIGMA_PCT        0.027400     0.027428   0.000028   0.0001 OK
+  MEAN_ROW_SITE_INFLATION      1.180000     1.180476   0.000476   0.0050 OK
+  CEILING_3X_MEDIAN_PCT        0.505600     0.505500   0.000100   0.0010 OK (printed value kept)
+  CEILING_MARGIN_X             1.870000     1.873981   0.003981   0.0200 OK
+RECONCILIATION: OK — every printed aggregate re-derives from its components
+
+ROW-BASIS RECONCILIATION — printed summary vs recomputed from the 21 `frac=` values
+  source: .planning/debug/260819-occ-measure-sweep-results-as-received.md
+  STATISTIC                     PRINTED   RECOMPUTED      DELTA      TOL VERDICT
+  ROW_MIN_PCT                  0.132300     0.132300   0.000000   0.0001 OK
+  ROW_MEDIAN_PCT               0.188800     0.188800   0.000000   0.0001 OK
+  ROW_MAX_PCT                  0.352700     0.352700   0.000000   0.0001 OK
+ROW-BASIS RECONCILIATION: OK — the row median re-derives from its own components
+
+PRE-REGISTERED RENDER EXPECTATIONS (260820-u6i-PLAN.md)
+  FRACTION_RATIO_X         computed 1.12x      expected 1.12x      OK
+  INFLATION_CEILING_3X_X   computed 3.42x      expected 3.42x      OK
+  INFLATION_MARGIN_X       computed 1.91x      expected 1.91x      OK
+  INFLATION_MAX_X          computed 1.79x      expected 1.79x      OK
+  INFLATION_MEDIAN_X       computed 1.14x      expected 1.14x      OK
+  INFLATION_MIN_X          computed 1.04x      expected 1.04x      OK
+  INFLATION_ROBUST_SIGMA_X computed 0.0890x    expected 0.0890x    OK
+  ROW_MEDIAN_PCT           computed 0.1888%    expected 0.1888%    OK
+PRE-REGISTERED EXPECTATIONS: OK — all 8 rendered strings byte-identical
+
+RENDER CHECK: OK — 21 of 21 rendered ledger lines match their guard patterns
+
+CLASS-M DRIFT VERIFY — every already-filled ledger value must be byte-identical to the value just computed from the banked records
+  VERIFIED-IN-PLACE  SITE_MIN_PCT             = 0.1345%
+  VERIFIED-IN-PLACE  SITE_MEDIAN_PCT          = 0.1685%
+  VERIFIED-IN-PLACE  SITE_MAX_PCT             = 0.2698%
+  VERIFIED-IN-PLACE  SITE_ROBUST_SIGMA_PCT    = 0.0274%
+  VERIFIED-IN-PLACE  MEAN_ROW_SITE_INFLATION  = 1.18x
+  VERIFIED-IN-PLACE  MED_PLUS_3SIG_PCT        = 0.2507%
+  VERIFIED-IN-PLACE  MED_PLUS_4SIG_PCT        = 0.2781%
+  VERIFIED-IN-PLACE  TWO_X_MEDIAN_PCT         = 0.3370%
+  VERIFIED-IN-PLACE  TWO_X_MAX_PCT            = 0.5396%
+  VERIFIED-IN-PLACE  CEILING_3X_MEDIAN_PCT    = 0.5056%
+  VERIFIED-IN-PLACE  CEILING_MARGIN_X         = 1.87x
+CLASS-M DRIFT VERIFY: OK — 11 already-filled measured value(s) unmoved
+
+CLASS-P FORCE-SUBSTITUTION — argv-sourced slots, replaced at EVERY occurrence (they are DEFINED to move; the pre-paste table commits to re-confirming both at posting)
+  FORCE-SUBSTITUTED POSTING_DATE         2026-08-21 -> 2026-08-21  (3 occurrence(s); '2026-08-20' count 4 unchanged across the replace)
+  FORCE-SUBSTITUTED PRE_EXECUTE_COMMIT   8638ed3… -> 2689cae…  (2 occurrence(s); '2026-08-20' count 4 unchanged across the replace)
+
+SUBSTITUTION LEDGER — .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+  SLOT                     | VALUE                                      | OCCURRENCES | SOURCE
+  SITE_MIN_PCT             | 0.1345%                                    |           0 | parsed (site sweep) [VERIFIED-IN-PLACE]
+  SITE_MEDIAN_PCT          | 0.1685%                                    |           0 | parsed (site sweep) [VERIFIED-IN-PLACE]
+  SITE_MAX_PCT             | 0.2698%                                    |           0 | parsed (site sweep) [VERIFIED-IN-PLACE]
+  SITE_ROBUST_SIGMA_PCT    | 0.0274%                                    |           0 | parsed (site sweep) [VERIFIED-IN-PLACE]
+  MEAN_ROW_SITE_INFLATION  | 1.18x                                      |           2 | parsed (site sweep) [VERIFIED-IN-PLACE+SUBSTITUTED]
+  MED_PLUS_3SIG_PCT        | 0.2507%                                    |           0 | derived [VERIFIED-IN-PLACE]
+  MED_PLUS_4SIG_PCT        | 0.2781%                                    |           0 | derived [VERIFIED-IN-PLACE]
+  TWO_X_MEDIAN_PCT         | 0.3370%                                    |           0 | derived [VERIFIED-IN-PLACE]
+  TWO_X_MAX_PCT            | 0.5396%                                    |           0 | derived [VERIFIED-IN-PLACE]
+  CEILING_3X_MEDIAN_PCT    | 0.5056%                                    |           2 | parsed (site sweep) [VERIFIED-IN-PLACE+SUBSTITUTED]
+  CEILING_MARGIN_X         | 1.87x                                      |           1 | parsed (site sweep) [VERIFIED-IN-PLACE+SUBSTITUTED]
+  ROW_MEDIAN_PCT           | 0.1888%                                    |           5 | parsed (row sweep) [SUBSTITUTED]
+  FRACTION_RATIO_X         | 1.12x                                      |           2 | derived (cross-basis) [SUBSTITUTED]
+  INFLATION_MIN_X          | 1.04x                                      |           3 | column stat (site sweep) [SUBSTITUTED]
+  INFLATION_MEDIAN_X       | 1.14x                                      |           4 | column stat (site sweep) [SUBSTITUTED]
+  INFLATION_MAX_X          | 1.79x                                      |           3 | column stat (site sweep) [SUBSTITUTED]
+  INFLATION_ROBUST_SIGMA_X | 0.0890x                                    |           3 | column stat (site sweep) [SUBSTITUTED]
+  INFLATION_CEILING_3X_X   | 3.42x                                      |           5 | derived [SUBSTITUTED]
+  INFLATION_MARGIN_X       | 1.91x                                      |           3 | derived [SUBSTITUTED]
+  POSTING_DATE             | 2026-08-21                                 |           0 | argv [FORCE-SUBSTITUTED (argv)]
+  PRE_EXECUTE_COMMIT       | 2689cae0c0c0666012bf451fcdd10924661bcf02   |           0 | argv [FORCE-SUBSTITUTED (argv)]
+  TOTALS                   | 21 slots                                   |          33 | pre-count '{{'=33 '}}'=33, post-count 0/0
+EXIT=0
+
+### MATRIX-B    — PRE-EXTENSION guard (git show $PRE:<guard>) on the REVISED file   EXIT=1
+
+  EXPECTED RED, and the red is the point: the stale 13-slot guard counts 21 ledger lines
+  and fails 'draft'. It CANNOT bless the revised document, so a future session cannot
+  validate this file with the wrong enforcer.
+
+$ bash $SCRATCH/u6i/oldroot/.planning/quick/u8d/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+== section: draft ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: draft: all 13 roster names present
+PASS: draft: SLOT_LEDGER block present
+FAIL: draft: SLOT_LEDGER carries 21 ledger lines, want 13
+PASS: draft: '(site basis)' labelled 11 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 10 times in the paste block (floor 3)
+== section: paste-ready ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+== section: arith ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+== section: quote ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD all: RED
+EXIT=1
+
+### MATRIX-C    — extended guard `all` on the REVISED file                EXIT=0
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+== section: draft ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: draft: all 21 roster names present
+PASS: draft: SLOT_LEDGER block present
+PASS: draft: SLOT_LEDGER carries exactly 21 ledger lines
+PASS: draft: '(site basis)' labelled 11 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 10 times in the paste block (floor 3)
+== section: paste-ready ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MEDIAN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MAX_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_ROBUST_SIGMA_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_CEILING_3X_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line FRACTION_RATIO_X matches its filled-value pattern
+PASS: paste-ready: ledger line ROW_MEDIAN_PCT matches its filled-value pattern
+== section: arith ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 21 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+PASS: arith: INFLATION_ROBUST_SIGMA_X parsed as 0.0890x (reported dispersion; no identity)
+PASS: arith: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X holds (3.4200 vs 3.4200x, |d|=0.0000 <= tol 0.0100)
+PASS: arith: INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X holds (1.9100 vs 1.9106x, |d|=0.0006 <= tol 0.0100)
+PASS: arith: FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT holds (1.1200 vs 1.1205x, |d|=0.0005 <= tol 0.0100)
+PASS: arith: inflation ordering holds (min 1.04x <= median 1.14x <= max 1.79x)
+== section: quote ==
+PASS: vacuity: file present, 42213 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 164) before exactly one closer (line 498)
+PASS: vacuity: paste block 23001 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD all: GREEN
+EXIT=0
+
+=== COMPLETED 2x2 GUARD/DOCUMENT MATRIX ===
+
+                        PRE-REVISION file (13 slots)   REVISED file (21 slots)
+  PRE-EXTENSION guard   GREEN  (MATRIX-A)              RED    (MATRIX-B)
+  EXTENDED guard        RED    (NC-0)                  GREEN  (MATRIX-C)
+
+  Only the diagonal is green, and that is the correct shape: each enforcer blesses only
+  the document generation it was written for. "The pre-revision version is still GREEN"
+  is true ONLY under the pre-extension guard.
