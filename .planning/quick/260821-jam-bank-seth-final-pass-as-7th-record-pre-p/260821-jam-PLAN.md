@@ -31,14 +31,14 @@ must_haves:
     - "The body Seth cleared is byte-identical after the task: the paste block extracted strictly between the two marker lines is 22,945 B / md5 422f1f28d6a3b76c7657fadec05a0237 at HEAD, exactly as it was before the task touched the file."
     - "The pre-execute commit gate now pins the branch tip Seth's final pass was banked against: the full 40-hex literal 241515b5023b2fae52c0ff3a137f566ac4566a5d occurs exactly TWICE in the amendment (the pre-paste table row and its SLOT_LEDGER line), and the superseded 40-hex literal 2689cae0c0c0666012bf451fcdd10924661bcf02 occurs ZERO times."
     - "Both Class-P occurrences moved together BY THE ENGINE, not by hand: the run's SUBSTITUTION LEDGER stdout is transcribed in the SUMMARY showing PRE_EXECUTE_COMMIT FORCE-SUBSTITUTED at 2 occurrences and POSTING_DATE force-substituted to the same string it already held."
-    - "Seth's final pass is banked verbatim: the body of .planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md below its provenance header has md5 6ddb3fb56c269303f1478c976a6d6509 — byte-identical to the staged transcription, no paraphrase."
+    - "Seth's final pass is banked as the seventh supporting record with its substance verbatim: the NON-BLANK content below the record's `---` separator has md5 972fbac405a9a5073ea0bd366da2dc34 — identical in content AND in order to the staged transcription, no paraphrase. The two renderings differ ONLY in blank-line placement (both 54 lines / 6,665 B; identical line multiset), and the committed artifact is left byte-untouched."
     - "The amendment is paste-gated GREEN at HEAD: the guard's `all` section exits 0 and zero `{{` slot sentinels remain."
     - "Nothing was posted and nothing was fired: _OCCLUSION_ANOMALY_FRACTION is still 0.0005 at src/python/run_native_ld_panel.py:133, git diff --stat 2689cae..HEAD -- src/ tests/ config/ is empty, and no OSF or VM contact of any kind occurred."
     - "The pre-paste checklist's record count is now TRUE: it says SEVEN supporting records and all seven paths are tracked by git."
     - "Everything is on origin: git status -sb reports no `ahead` marker after the push."
   artifacts:
     - path: ".planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md"
-      provides: "The SEVENTH supporting record — Seth's final pass, no blocking objection, banked verbatim under a house-style provenance header"
+      provides: "The SEVENTH supporting record — Seth's final pass, no blocking objection, banked verbatim under a house-style provenance header. ALREADY COMMITTED at d45db42 by a parallel terminal; this plan VERIFIES and RECONCILES it, it does not re-create it."
       contains: "No blocking objection remains"
       min_lines: 60
     - path: ".planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md"
@@ -106,7 +106,20 @@ DOCS-ONLY. No code change. AN AGENT NEVER POSTS TO OSF AND NEVER FIRES.
 <!-- All verified read-only at planning time, 2026-08-21 ~13:50 EDT. Do not re-derive from -->
 <!-- memory; re-measure with the commands below and REQUIRE these values.                  -->
 
-HEAD at task start   = 241515b5023b2fae52c0ff3a137f566ac4566a5d (branch m3-W2-aou-deltas, == origin)
+PRE_EXECUTE_COMMIT to write = 241515b5023b2fae52c0ff3a137f566ac4566a5d
+  This is HEAD *immediately before the first commit of this posting-prep task* — which is the
+  quantity the pre-paste table row is defined to carry. It is NOT current HEAD: while this plan
+  was being written a parallel terminal committed d45db42 (banking Seth's final pass) and this
+  plan itself committed 36006c5, so HEAD has advanced past it. Do NOT "correct" the value to
+  current HEAD — 241515b is the tree Seth's clearance was given against, and the banked record
+  says so in its own header ("the amendment he read is the 42,213 B / e1b4a11d... file at commit
+  241515b"). Both later commits are docs-only; re-prove that, do not assume it.
+PRE-EMPTED WORK: .planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md
+  ALREADY EXISTS and is committed (d45db42, 70 lines / 7,770 B / md5 20921ab9426c2169a2753749d3800934,
+  `---` separator at line 15). Its body is NOT byte-identical to the staged transcription, but its
+  NON-BLANK content is identical in content and order (md5 972fbac405a9a5073ea0bd366da2dc34, both
+  54 lines / 6,665 B, identical line multiset) — the two differ ONLY in blank-line placement.
+  Task 1 is therefore a VERIFY-AND-RECONCILE task, not a write.
 AMEND                = .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
 AMEND whole-file     = 42,213 B / 591 lines / md5 e1b4a11d18ad2907af4f0a93fd5747d2
 PASTE block          = 22,945 B / md5 422f1f28d6a3b76c7657fadec05a0237
@@ -173,91 +186,77 @@ and exits 0, or `RED` and exits non-zero.
 <tasks>
 
 <task type="auto">
-  <name>Task 1: Bank Seth's final pass as the seventh supporting record</name>
+  <name>Task 1: Verify and reconcile the already-banked seventh supporting record</name>
   <files>.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md</files>
   <action>
-Bank Seth's verdict VERBATIM under a house-style provenance header. Verbatim means byte-exact: the
-proof below is an md5 of the appended region, not a reading.
+PRE-EMPTED — READ THIS FIRST. While this plan was being written, a parallel terminal banked Seth's
+final pass and committed it as `d45db42`. The record EXISTS and is TRACKED. This task therefore
+VERIFIES and RECONCILES it. It does NOT re-create it, and it does NOT rewrite it. Re-banking a
+committed record to satisfy a plan's md5 would be repairing the check instead of the artifact.
 
-STEP 1 — verify the staged transcription BEFORE using it:
+The reconciliation is already characterized (do not take this on trust — re-run it): the committed
+body and the staged transcription have IDENTICAL NON-BLANK CONTENT IN IDENTICAL ORDER and an
+identical multiset of lines; both are 54 lines / 6,665 B; they differ ONLY in blank-line placement.
+So the substantive invariant is a non-blank-content identity, not a whole-file md5.
 
 ```
+F=.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md
 SCRATCH=/gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad
 SETH="$SCRATCH/seth-final-pass-verbatim.md"
-wc -c -l "$SETH"; md5sum "$SETH"
+SEP=$(awk '/^---$/{print NR; exit}' "$F")            # the provenance-header separator; expect 15
+BODY() { tail -n +$((SEP+1)) "$F" | grep -v '^[[:space:]]*$'; }
+NB()   { grep -v '^[[:space:]]*$' "$1"; }
 ```
 
-REQUIRE 6665 bytes / 54 lines / md5 `6ddb3fb56c269303f1478c976a6d6509`. Any mismatch means STOP,
-write nothing, report. A transcription you did not anchor is a transcription you cannot bank.
+(a) PROVENANCE — `git ls-files --error-unmatch "$F"`; `git log --oneline -1 -- "$F"` (expect
+    `d45db42`); `wc -c -l "$F"`; `md5sum "$F"`. Record all four. Expect 70 lines / 7,770 B /
+    `20921ab9426c2169a2753749d3800934` and `SEP=15`; if `SEP` is not the provenance separator,
+    STOP — the file's shape changed and the checks below would be measuring the wrong region.
 
-STEP 2 — compose the header. Imitate the provenance style of
-`.planning/debug/260820-SETH-ATTACK-instantiated-amendment-as-received.md` lines 1-11: an H1 title
-line, a blank line, then a single `>` blockquote. The header MUST carry:
+(b) STAGED SOURCE — `wc -c -l "$SETH"; md5sum "$SETH"` -> 6,665 B / 54 lines /
+    `6ddb3fb56c269303f1478c976a6d6509`. If the staged file is gone or moved, say so plainly and
+    fall back to (c)'s absolute md5 alone; do NOT invent a substitute source.
 
-  * received 2026-08-21 ~13:42 EDT, pasted by Carter into the NCSU session;
-  * that it answers the revision-reply courier
-    `.planning/debug/260820-COURIER-TO-SETH-revision-reply.md` (3,629 B / md5
-    `6724c59289450399ef5d1900220440d4`) on the revised amendment (42,213 B / md5
-    `e1b4a11d18ad2907af4f0a93fd5747d2`);
-  * the fact that distinguishes this pass from every earlier one: Seth verified BOTH anchors
-    HIMSELF by reading Carter's local Mac copy of the repo rather than through the paste channel,
-    so this pass carries NO TRANSFER RISK — a first on this thread;
-  * `AS-RECEIVED transcription; Seth supplied no byte anchors of his own.`;
-  * net state: section 2 (count-vs-fraction) CLEARED — he recomputed 0.1888/0.1685 = 1.1205 and
-    1.18 x (96,708/102,421) = 1.1142; section 3 (permissiveness pre-emption) CLEARED —
-    3 x 0.1888 = 0.5664; section 6 (the collinearity note's home) CLEARED — the path string occurs
-    once and sits after `--- PASTE ENDS HERE ---`; section 4 (companion inflation gate) ADOPTED and
-    independently verified — 3 x 1.14 = 3.42x, 3.42/1.79 = 1.91x, med+3sigma = 1.407 and
-    med+4sigma = 1.496 both below the observed max 1.79 (the SAME rejection pattern as the site
-    basis), and a mean-anchored ceiling would have been LOOSER at 3.54x;
-  * NO BLOCKING OBJECTION REMAINS;
-  * his explicit ask that the section-4 self-attribution — that this corrects his OWN earlier
-    recommendation — NOT be softened;
-  * his PRE_EXECUTE_COMMIT check (8638ed3 -> 2689cae verified at 2 occurrences / 0 stale) and his
-    standing instruction "same discipline needed at posting: re-read HEAD, and if the branch has
-    advanced again, move both" — noting that quick-260821-jam Task 2 IS that instruction executing;
-  * the guard 2x2 accepted;
-  * the TWO items he explicitly does NOT assert are done: (1) Carter posts — an agent never posts,
-    the pre-paste checklist is the gate; (2) POSTING_DATE slip handling;
-  * his closing authorization: after posting, the code constant change is authorized ONLY as the
-    TWO-PART change (the pre-registered site-basis metric AND the companion inflation condition),
-    never the ceiling alone;
-  * his status line VERBATIM: `measurement banked; amendment drafted, NOT posted;
-    _OCCLUSION_ANOMALY_FRACTION still 0.0005 in code; fire HELD; an agent never posts and never
-    fires.`
+(c) SUBSTANCE IDENTITY — the decisive check:
+    `BODY | md5sum` MUST be `972fbac405a9a5073ea0bd366da2dc34`, and
+    `NB "$SETH" | md5sum` MUST be the same value. A must-be-identity comparison, chosen over a
+    must-look-similar reading.
 
-STEP 3 — build the file so the body is provably untouched. Write ONLY the header first (ending with
-a blank line, then a `---` separator line, then a blank line), count its lines, then append the
-staged file with `cat`:
+(d) CHARACTERIZE THE DELTA, do not hide it. Run and transcribe:
+    * `diff <(NB "$SETH") <(BODY)` -> EMPTY (identical content, identical order)
+    * `diff <(sort "$SETH") <(tail -n +$((SEP+1)) "$F" | sort)` -> report the result; the only
+      permissible difference is blank lines
+    * `diff "$SETH" <(tail -n +$((SEP+1)) "$F")` -> NON-empty; quote it, and state in the SUMMARY
+      that every hunk is a blank line moving position (plus the one-position move of the
+      `fraction ratio = count ratio x (n_sites / n_rows)` line relative to its blank neighbours),
+      with net zero lines and net zero bytes.
+    Conclusion to record: the committed record is substantively verbatim; the whole-file md5 differs
+    from the staged copy for whitespace-layout reasons only. Neither rendering is privileged —
+    Seth supplied no byte anchors — so the COMMITTED one stands and is not disturbed.
 
-```
-OUT=.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md
-# ... write header + blank + '---' + blank into "$OUT" (quoted heredoc) ...
-N=$(wc -l < "$OUT")            # header line count, INCLUDING the --- separator and blanks
-cat "$SETH" >> "$OUT"
-echo "header lines: $N"
-tail -n +$((N+1)) "$OUT" | md5sum      # MUST be 6ddb3fb56c269303f1478c976a6d6509
-```
+(e) COMPLETENESS — confirm by `grep -c -F` that the record carries, in header or body:
+    `measurement banked; amendment drafted, NOT posted` (his verbatim status line);
+    `never posts and never fires`; `two-part change`; `1.1205`; `3.42x`; `1.91x`;
+    `I would not have it softened` (his ask that the section-4 self-attribution stand);
+    `Seventh supporting record`. Report each count.
+    If and ONLY if something required is genuinely absent, append it to the PROVENANCE HEADER
+    (above the `---`) — never to the body — and commit by explicit path with
+    `docs(quick-260821-jam): complete the provenance header on the seventh record`. Otherwise this
+    task produces NO commit, and that is the correct outcome.
 
-If the tail md5 differs, the body was mangled — restore and redo. Do NOT "fix" it by editing the
-body. Record `$N` in the SUMMARY so the proof is reproducible.
-
-STEP 4 — commit, explicit path only (GPFS: NEVER `git add -A` or `git add .`):
-
-```
-git add .planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md
-git commit -m "docs(quick-260821-jam): bank Seth FINAL PASS — no blocking objection, 7th supporting record"
-```
+(f) Confirm the working tree is untouched by this task: `git diff --quiet HEAD -- "$F"` exits 0.
   </action>
   <verify>
-    <automated>OUT=.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md; SEP=$(awk '/^---$/{print NR; exit}' "$OUT"); tail -n +$((SEP+2)) "$OUT" | md5sum | grep -q '^6ddb3fb56c269303f1478c976a6d6509' && git ls-files --error-unmatch "$OUT" >/dev/null && git diff --quiet HEAD -- "$OUT" && echo PASS</automated>
+    <automated>F=.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md; SCRATCH=/gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad; SEP=$(awk '/^---$/{print NR; exit}' "$F"); git ls-files --error-unmatch "$F" >/dev/null && test "$(tail -n +$((SEP+1)) "$F" | grep -v '^[[:space:]]*$' | md5sum | cut -d' ' -f1)" = 972fbac405a9a5073ea0bd366da2dc34 && diff <(grep -v '^[[:space:]]*$' "$SCRATCH/seth-final-pass-verbatim.md") <(tail -n +$((SEP+1)) "$F" | grep -v '^[[:space:]]*$') >/dev/null && grep -q -F 'measurement banked; amendment drafted, NOT posted' "$F" && grep -q -F 'I would not have it softened' "$F" && git diff --quiet HEAD -- "$F" && echo PASS</automated>
   </verify>
   <done>
-`.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md` is committed; the
-region below its `---` separator has md5 `6ddb3fb56c269303f1478c976a6d6509`; the header states the
-no-transfer-risk provenance, the four section dispositions, the two NOT-asserted-done items, the
-two-part-change authorization, and Seth's verbatim status line; the SUMMARY records the header line
-count. Working tree otherwise untouched.
+`.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md` is confirmed tracked at
+`d45db42`; the non-blank content below its `---` separator has md5
+`972fbac405a9a5073ea0bd366da2dc34` and diffs EMPTY in content and order against the staged
+transcription; the whole-file delta is characterized in the SUMMARY as blank-line placement only,
+with the three diffs quoted; the completeness greps are recorded; the record carries Seth's verbatim
+status line and his "I would not have it softened" ask. The committed artifact was NOT rewritten and
+the working tree is clean for that path.
   </done>
 </task>
 
@@ -282,10 +281,16 @@ Run everything from the repo root — the guard's `quote` section resolves a rep
 
 (b) PRE-PASTE CHECKLIST, items 1-3:
     1. `bash "$GUARD" all "$AMEND"; echo "EXIT=$?"` -> GREEN / EXIT=0.
-    2. `git log --oneline 2689cae..HEAD` (expect the four docs-only commits b4263e7, a364d19,
-       cd0cdfd, 241515b — list them); `git diff --stat 2689cae HEAD -- src/ tests/ config/ | wc -l`
+    2. `git log --oneline 2689cae..HEAD` — LIST whatever is there rather than pinning a count: at
+       planning time it was b4263e7, a364d19, cd0cdfd, 241515b (the four that superseded `2689cae`),
+       plus d45db42 (the banked seventh record) and 36006c5 (this plan). Every one must be docs-only.
+       Prove it, do not assume it: `git diff --stat 2689cae HEAD -- src/ tests/ config/ | wc -l`
        -> 0; `grep -n '_OCCLUSION_ANOMALY_FRACTION = 0.0005' src/python/run_native_ld_panel.py`
        -> hit at line 133.
+       NOTE for step (e)(i): the phrase "advanced by four docs-only commits" describes the span
+       `2689cae`..`241515b` specifically, and is exactly true. Do not "update" it to the current
+       total — the pre-paste row records why `2689cae` was superseded BY `241515b`, not how far the
+       branch has run since.
     3. `git ls-files` must return all SEVEN record paths (the six listed in <facts> plus Task 1's
        file). Run one `git ls-files --error-unmatch` per path and show each resolved; a missing
        path means STOP.
@@ -584,8 +589,9 @@ git status -sb | head -1                                       # no 'ahead'
 python3 -m json.tool .planning/HANDOFF.json > /dev/null; echo "EXIT=$?"                                                                # 0
 ```
 
-Plus, per Task 1's proof: the region of the banked record below its `---` separator has md5
-`6ddb3fb56c269303f1478c976a6d6509`.
+Plus, per Task 1's proof: the NON-BLANK content of the banked record below its `---` separator has
+md5 `972fbac405a9a5073ea0bd366da2dc34` and diffs EMPTY against the staged transcription's non-blank
+content, in order.
 
 Every green above must be paired with a red seen this session: NC-1 (the guard catches a sentinel),
 NC-2 (the Class-P replace really moves exactly 2 occurrences), NC-3 (the paste-block md5 really
@@ -593,10 +599,11 @@ changes when a byte inside the block changes). A green with no observed red is n
 </verification>
 
 <success_criteria>
-- Seth's final pass is the SEVENTH committed supporting record, its body byte-identical to the
-  staged transcription (md5 `6ddb3fb5...`), under a house-style provenance header recording the
-  no-transfer-risk provenance, the four dispositions, his two NOT-asserted-done items and his
-  verbatim status line.
+- Seth's final pass is the SEVENTH committed supporting record (landed `d45db42`), verified rather
+  than re-created: its non-blank content is identical in content and order to the staged
+  transcription (md5 `972fbac4...`), the whole-file delta is characterized as blank-line placement
+  only, and the record carries the no-transfer-risk provenance, the four dispositions, his two
+  NOT-asserted-done items, his "I would not have it softened" ask and his verbatim status line.
 - The amendment's own standing pre-paste instruction has been executed: `PRE_EXECUTE_COMMIT` pins
   `241515b5023b2fae52c0ff3a137f566ac4566a5d` at both occurrences, moved by the engine; the
   superseded 40-hex literal is gone; `POSTING_DATE` re-confirmed to 2026-08-21.
@@ -615,7 +622,8 @@ changes when a byte inside the block changes). A green with no observed red is n
 After completion, create
 `.planning/quick/260821-jam-bank-seth-final-pass-as-7th-record-pre-p/260821-jam-SUMMARY.md`
 carrying, at minimum:
-- Task 1's header line count and the tail-md5 proof.
+- Task 1's reconciliation: the three diffs, the `972fbac4...` substance identity, the
+  completeness greps, and the explicit statement that the committed record was not rewritten.
 - Task 2's before / after-engine / after-prose anchor triples (whole-file and paste-block).
 - The engine's dry-run and real SUBSTITUTION LEDGER stdout, verbatim, including the CLASS-P block.
 - NC-1 / NC-2 / NC-3: command, output, exit code, and the quoted failing line for each.
