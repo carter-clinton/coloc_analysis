@@ -133,9 +133,12 @@ occurrences (the pre-paste table row, its `SLOT_LEDGER` line, and the paste bloc
 line) move together by construction, because Class-P force-substitutes at every occurrence. Then
 `guard all` is re-run and fresh anchors are re-issued to you.
 
-A hand edit would change the paste block and destroy the `422f1f28d6a3b76c7657fadec05a0237`
-byte-identity this entire card is built on — the one property that proves you posted what Seth
-reviewed. The engine route preserves it by construction; your hand does not.
+Either route changes the paste block — the `**Date:**` line sits INSIDE the markers — so a
+date change necessarily retires the `422f1f28d6a3b76c7657fadec05a0237` anchor; do not expect it
+to survive a slip. The engine route moves all three occurrences together, re-runs `guard all`,
+and re-issues fresh anchors whose only delta from the body Seth verified is that one date
+token (re-anchored, disclosed, and checkable). A hand edit can leave the three occurrences
+disagreeing and hands you a body whose anchor nobody has re-issued.
 
 The date token appears **only** in those three machine-substituted slots. Today's re-confirmation
 deliberately kept it out of the surrounding prose, so a future date change cannot silently rewrite

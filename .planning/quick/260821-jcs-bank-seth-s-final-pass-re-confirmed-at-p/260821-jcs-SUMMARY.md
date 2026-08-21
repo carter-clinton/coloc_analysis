@@ -400,3 +400,12 @@ All 4 claimed files exist on disk; all 4 claimed commits resolve in `git log --a
 the engine appendix, both RED transcripts, the final HEAD and the status line are present in this
 SUMMARY. Every anchor in section 2 was re-measured at the final pushed HEAD, not carried forward
 from an earlier step.
+
+## Post-close correction (orchestrator, 2026-08-21 15:15 EDT)
+
+Posting card §(vi) stated that the engine route "preserves [the 422f1f28… byte-identity] by
+construction" on a posting-date slip. That was FALSE: the paste block's `**Date:**` line is inside
+the markers, so ANY date change — engine or hand — retires the paste-block anchor. Corrected to say
+so: the engine's advantage is that all three occurrences move together and fresh anchors are
+re-issued with a one-token, disclosed delta; a hand edit offers neither. Amendment untouched
+(paste block still 22,945 B / 422f1f28d6a3b76c7657fadec05a0237).
