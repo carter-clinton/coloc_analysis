@@ -1,0 +1,172 @@
+260820-s2x — GUARD TRANSCRIPT for the instantiated occlusion-gate recalibration amendment
+=======================================================================================
+
+Amendment under test : .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+Guard (NOT edited)   : .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh
+PRE_EXECUTE_COMMIT   : 8638ed37c1431ea73566fd03ad1541ba95416fe4  (8638ed3)  <- HEAD captured BEFORE this task's first commit;
+                       it is both the Class-P slot value AND the NC-1 'git show' source.
+Control copies       : session scratchpad only, first line 'FAKE NUMBERS - GUARD CONTROL ONLY - NEVER POST'
+                       (NC-1 excepted: it is real historical content, not invented numbers).
+
+Green is evidence ONLY because red was seen. Last night's controls were against a
+different file, so this file's green needed its own reds: NC-1 (the pre-instantiation
+version of THIS file), NC-2 (a perturbed arithmetic identity), NC-3 (a value deleted
+rather than filled). Each section below carries its own signature failure message; a
+whole-file 'grep EXIT=1' cannot tell the controls apart and is not accepted as evidence.
+
+### GREEN — guard all on the instantiated file
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+== section: draft ==
+PASS: vacuity: file present, 28012 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: draft: all 13 roster names present
+PASS: draft: SLOT_LEDGER block present
+PASS: draft: SLOT_LEDGER carries exactly 13 ledger lines
+PASS: draft: '(site basis)' labelled 5 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 4 times in the paste block (floor 3)
+== section: paste-ready ==
+PASS: vacuity: file present, 28012 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+== section: arith ==
+PASS: vacuity: file present, 28012 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+== section: quote ==
+PASS: vacuity: file present, 28012 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD all: GREEN
+EXIT=0
+
+### NC-1 — pre-instantiation version at its XX basename (paste-ready + arith)
+
+Reconstructed from git at PRE_EXECUTE_COMMIT, PRESERVING the XX basename so BOTH failure
+modes reproduce: the surviving sentinel delimiters AND the XX date placeholder. No fake
+banner on this copy — it holds real historical content, not invented numbers.
+
+$ git show 8638ed37c1431ea73566fd03ad1541ba95416fe4:.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md > $SCRATCH/negctl/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+  (reconstructed: 28342 bytes, 29 slot sentinels)
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh paste-ready $SCRATCH/negctl/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+== section: paste-ready ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+FAIL: paste-ready: 29 opening and 29 closing sentinel delimiters remain — the body is UNINSTANTIATED and MUST NOT be pasted
+FAIL: paste-ready: basename still carries the XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+FAIL: paste-ready: ledger line SITE_MIN_PCT does not match its filled-value pattern (^  SITE_MIN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_MEDIAN_PCT does not match its filled-value pattern (^  SITE_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_MAX_PCT does not match its filled-value pattern (^  SITE_MAX_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT does not match its filled-value pattern (^  SITE_ROBUST_SIGMA_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MEAN_ROW_SITE_INFLATION does not match its filled-value pattern (^  MEAN_ROW_SITE_INFLATION = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MED_PLUS_3SIG_PCT does not match its filled-value pattern (^  MED_PLUS_3SIG_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MED_PLUS_4SIG_PCT does not match its filled-value pattern (^  MED_PLUS_4SIG_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line TWO_X_MEDIAN_PCT does not match its filled-value pattern (^  TWO_X_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line TWO_X_MAX_PCT does not match its filled-value pattern (^  TWO_X_MAX_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line CEILING_3X_MEDIAN_PCT does not match its filled-value pattern (^  CEILING_3X_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line CEILING_MARGIN_X does not match its filled-value pattern (^  CEILING_MARGIN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line POSTING_DATE does not match its filled-value pattern (^  POSTING_DATE = 20[0-9]{2}-[0-9]{2}-[0-9]{2}$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line PRE_EXECUTE_COMMIT does not match its filled-value pattern (^  PRE_EXECUTE_COMMIT = [0-9a-f]{7,40}$) — filled wrongly, or DELETED instead of filled
+GUARD paste-ready: RED
+EXIT=1
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/negctl/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+== section: arith ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+FAIL: arith: cannot verify — draft not instantiated; these ledger values are still sentinels or blank: SITE_MIN_PCT, SITE_MEDIAN_PCT, SITE_MAX_PCT, SITE_ROBUST_SIGMA_PCT, MEAN_ROW_SITE_INFLATION, MED_PLUS_3SIG_PCT, MED_PLUS_4SIG_PCT, TWO_X_MEDIAN_PCT, TWO_X_MAX_PCT, CEILING_3X_MEDIAN_PCT, CEILING_MARGIN_X, POSTING_DATE, PRE_EXECUTE_COMMIT
+GUARD arith: RED
+EXIT=1
+
+### NC-2 — instantiated copy with the ledger's SITE_MAX_PCT perturbed to 0.2500% (arith)
+
+Proves THIS file's arith green is load-bearing. 2 x 0.2500 = 0.5000 vs the ledger's
+0.5396%, and 0.5056/0.2500 = 2.02x vs the ledger's 1.87x — both outside tolerance, while
+min <= median <= max still holds, so exactly two identities move and no others.
+
+$ { echo 'FAKE NUMBERS - GUARD CONTROL ONLY - NEVER POST'; cat .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md; } > $SCRATCH/negctl/nc2.md
+$ sed -i 's/^  SITE_MAX_PCT = 0.2698%$/  SITE_MAX_PCT = 0.2500%/' $SCRATCH/negctl/nc2.md
+  (perturbed ledger line now reads: '  SITE_MAX_PCT = 0.2500%')
+  (first line of the control copy: 'FAKE NUMBERS - GUARD CONTROL ONLY - NEVER POST')
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/negctl/nc2.md
+== section: arith ==
+PASS: vacuity: file present, 28059 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 101) before exactly one closer (line 339)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+FAIL: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT BROKEN (0.5396 vs 0.5000%, |d|=0.0396 > tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+FAIL: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT BROKEN (1.8700 vs 2.0224x, |d|=0.1524 > tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2500%)
+GUARD arith: RED
+EXIT=1
+
+### NC-3 — instantiated copy with the SITE_MIN_PCT ledger VALUE blanked (paste-ready)
+
+Deletion is not instantiation. The ledger line survives so the 'draft' 13-line count is
+untouched; only the anchored filled-value pattern fails, and for exactly one slot.
+
+$ { echo 'FAKE NUMBERS - GUARD CONTROL ONLY - NEVER POST'; cat .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md; } > $SCRATCH/negctl/nc3.md
+$ sed -i 's/^  SITE_MIN_PCT = 0.1345%$/  SITE_MIN_PCT = /' $SCRATCH/negctl/nc3.md
+  (blanked ledger line now reads: '  SITE_MIN_PCT = ')
+  (ledger lines still counted by 'draft': 13)
+  (first line of the control copy: 'FAKE NUMBERS - GUARD CONTROL ONLY - NEVER POST')
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh paste-ready $SCRATCH/negctl/nc3.md
+== section: paste-ready ==
+PASS: vacuity: file present, 28052 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 101) before exactly one closer (line 339)
+PASS: vacuity: paste block 16099 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: nc3-osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+FAIL: paste-ready: ledger line SITE_MIN_PCT does not match its filled-value pattern (^  SITE_MIN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+GUARD paste-ready: RED
+EXIT=1

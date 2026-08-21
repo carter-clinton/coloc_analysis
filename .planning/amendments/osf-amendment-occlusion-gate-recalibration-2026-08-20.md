@@ -38,8 +38,8 @@
 | **NOT a re-version of `trsx5`** | This posts as a NEW dated file in the chain. After posting, `trsx5` must STILL show **exactly 1 revision** (2026-07-10 13:32) — the same append-only check that cleared the July record. "New OSF version, never a silent swap" means a new dated record, never an in-place edit of a posted body. |
 | Posting gate | BEFORE the shipped `_OCCLUSION_ANOMALY_FRACTION` constant is changed in code, and before any recalibrated-gate output is banked. The pre-registered correction must precede the corrected execution. |
 | Substrate | All of Us AFR WGS native-plink LD panel (`gs://…/ld/afr_native_panel/`, 276 regions). Controlled-tier: aggregate counts and coordinate geometry only; no raw genotypes, no LD matrices. |
-| Pre-execute commit gate | `{{PRE_EXECUTE_COMMIT}}` — fill with the HEAD of `m3-W2-aou-deltas` at posting time, and confirm no gate-constant change has landed. |
-| Expected posting date | `{{POSTING_DATE}}` |
+| Pre-execute commit gate | `8638ed37c1431ea73566fd03ad1541ba95416fe4` — fill with the HEAD of `m3-W2-aou-deltas` at posting time, and confirm no gate-constant change has landed. |
+| Expected posting date | `2026-08-21` |
 
 **SLOT_LEDGER** — the machine-readable record of what was substituted. Post-instantiation
 each line must carry a filled value; a slot that was DELETED rather than FILLED leaves a
@@ -47,19 +47,19 @@ ledger line matching no filled-value pattern, which is exactly how deletion is c
 
 ```
 SLOT_LEDGER
-  SITE_MIN_PCT = {{SITE_MIN_PCT}}
-  SITE_MEDIAN_PCT = {{SITE_MEDIAN_PCT}}
-  SITE_MAX_PCT = {{SITE_MAX_PCT}}
-  SITE_ROBUST_SIGMA_PCT = {{SITE_ROBUST_SIGMA_PCT}}
-  MEAN_ROW_SITE_INFLATION = {{MEAN_ROW_SITE_INFLATION}}
-  MED_PLUS_3SIG_PCT = {{MED_PLUS_3SIG_PCT}}
-  MED_PLUS_4SIG_PCT = {{MED_PLUS_4SIG_PCT}}
-  TWO_X_MEDIAN_PCT = {{TWO_X_MEDIAN_PCT}}
-  TWO_X_MAX_PCT = {{TWO_X_MAX_PCT}}
-  CEILING_3X_MEDIAN_PCT = {{CEILING_3X_MEDIAN_PCT}}
-  CEILING_MARGIN_X = {{CEILING_MARGIN_X}}
-  POSTING_DATE = {{POSTING_DATE}}
-  PRE_EXECUTE_COMMIT = {{PRE_EXECUTE_COMMIT}}
+  SITE_MIN_PCT = 0.1345%
+  SITE_MEDIAN_PCT = 0.1685%
+  SITE_MAX_PCT = 0.2698%
+  SITE_ROBUST_SIGMA_PCT = 0.0274%
+  MEAN_ROW_SITE_INFLATION = 1.18x
+  MED_PLUS_3SIG_PCT = 0.2507%
+  MED_PLUS_4SIG_PCT = 0.2781%
+  TWO_X_MEDIAN_PCT = 0.3370%
+  TWO_X_MAX_PCT = 0.5396%
+  CEILING_3X_MEDIAN_PCT = 0.5056%
+  CEILING_MARGIN_X = 1.87x
+  POSTING_DATE = 2026-08-21
+  PRE_EXECUTE_COMMIT = 8638ed37c1431ea73566fd03ad1541ba95416fe4
 ```
 
 **Instantiation instructions (do NOT paste this block).**
@@ -101,7 +101,7 @@ TWO_X_MAX_PCT         = 2 * SITE_MAX_PCT
 
 **Amendment-update to pre-registration osf.io/pvb5j (correcting and recalibrating osf.io/az52u file trsx5): AFR native-plink LD panel — factual correction to the region-1 deletion inventory, and recalibration of the clause-(d) occlusion anomaly gate onto occluded sites**
 
-**Date:** {{POSTING_DATE}}
+**Date:** 2026-08-21
 
 **Investigator:** Carter K. Clinton, NCSU ASHES Lab, ORCID 0000-0003-2669-8200.
 
@@ -119,7 +119,7 @@ is a fraction of the region's plink `.bim` variant ROWS. A quantity labelled **(
 is a fraction of the region's distinct genomic SITES (unique `(CHR, POS)` pairs). Because a
 `.bim` row is biallelic by construction, one k-allelic site is rendered as k same-position
 rows, so row-basis counts exceed site-basis counts by a representation-dependent factor —
-measured here as {{MEAN_ROW_SITE_INFLATION}} on average across the sample. Every percentage
+measured here as 1.18x on average across the sample. Every percentage
 in this document carries its basis label explicitly. Mixing them is the single easiest way to
 misread this amendment.
 
@@ -223,23 +223,23 @@ convention is not measuring the substrate.
 manifest records rows; the lockstep sumstats drop is row-keyed on `(CHR, POS)`. Reporting
 exclusions in sites would understate what left the panel and would break the manifest's audit
 purpose. **Both numbers are reported for every region**, together with the measured mean
-row/site inflation of {{MEAN_ROW_SITE_INFLATION}} across the sample.
+row/site inflation of 1.18x across the sample.
 
-*Ceiling.* `n_occluded_sites <= {{CEILING_3X_MEDIAN_PCT}} x n_sites` — that is, **3x the
-measured site-basis median** of {{SITE_MEDIAN_PCT}} (site basis) — giving
-{{CEILING_MARGIN_X}} margin over the observed site-basis maximum of {{SITE_MAX_PCT}} (site
-basis). The measured site-basis minimum is {{SITE_MIN_PCT}} (site basis) and the robust sigma
-is {{SITE_ROBUST_SIGMA_PCT}} (site basis).
+*Ceiling.* `n_occluded_sites <= 0.5056% x n_sites` — that is, **3x the
+measured site-basis median** of 0.1685% (site basis) — giving
+1.87x margin over the observed site-basis maximum of 0.2698% (site
+basis). The measured site-basis minimum is 0.1345% (site basis) and the robust sigma
+is 0.0274% (site basis).
 
 *Derivation, including what was rejected and why.*
 
 | Candidate | Value (site basis) | Disposition |
 |---|---|---|
-| median + 3 sigma_rob | {{MED_PLUS_3SIG_PCT}} | REJECT — at or below the observed maximum; a normal region would defer. |
-| median + 4 sigma_rob | {{MED_PLUS_4SIG_PCT}} | REJECT — still calibrated to the sample's spread, not to the purpose. |
-| 2x median | {{TWO_X_MEDIAN_PCT}} | REJECT — too tight for n=21; leaves no room for an unmeasured upper tail. |
-| 2x observed max | {{TWO_X_MAX_PCT}} | CANDIDATE — but anchored on where the sample happened to stop. |
-| **3x median** | **{{CEILING_3X_MEDIAN_PCT}}** | **ADOPTED.** |
+| median + 3 sigma_rob | 0.2507% | REJECT — at or below the observed maximum; a normal region would defer. |
+| median + 4 sigma_rob | 0.2781% | REJECT — still calibrated to the sample's spread, not to the purpose. |
+| 2x median | 0.3370% | REJECT — too tight for n=21; leaves no room for an unmeasured upper tail. |
+| 2x observed max | 0.5396% | CANDIDATE — but anchored on where the sample happened to stop. |
+| **3x median** | **0.5056%** | **ADOPTED.** |
 
 The reasoning: 3x median is anchored on a LOCATION statistic rather than on a sample edge, so
 extending the sample moves the ceiling only if the population's centre moves; the resulting
