@@ -2,15 +2,23 @@
 > file has been sent to OSF, and nothing in it authorizes a code change: the shipped constant
 > `_OCCLUSION_ANOMALY_FRACTION` = 0.0005 stays exactly as it is until this amendment is POSTED.
 
-> **The body below is UNINSTANTIATED.** Every quantity that the site-basis re-measurement
-> (PENDING PASTE #3) must supply is a named double-brace slot sentinel, not a number. The
-> enforcer `260819-u8d-placeholder-guard.sh` (section `all`) is the gate that must be GREEN
-> before any paste; it is RED today by design, and its red is the guard working.
+> **The body below is INSTANTIATED.** Every quantity the site-basis re-measurement had to
+> supply was substituted from the banked sweep record
+> `.planning/debug/260820-site-basis-sweep-results-as-received.md` by
+> `.planning/quick/260820-s2x-instantiate-the-occlusion-recalibration-/260820-s2x-instantiate.py`,
+> which PARSES that record rather than taking the numbers as arguments; no value was
+> hand-typed. The enforcer `260819-u8d-placeholder-guard.sh` (section `all`) is the gate that
+> must be GREEN before any paste, and it is GREEN on this file. That green is evidence only
+> because this file's own reds were re-observed: the pre-instantiation version, a perturbed
+> arithmetic identity, and a ledger value deleted rather than filled, all at exit 1 and
+> transcribed verbatim in
+> `.planning/quick/260820-s2x-instantiate-the-occlusion-recalibration-/260820-s2x-guard-transcript.txt`.
+> INSTANTIATED IS NOT POSTED — the banner above still governs.
 
 > **ENFORCER — exact invocation, run from the repo root** (recorded here so a future session
-> finds the check from this artifact rather than from memory; the amendment argument follows
-> this file when it is renamed at posting):
-> `bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md`
+> finds the check from this artifact rather than from memory; the rename off the `XX`
+> placeholder has happened, so the argument below is this file's own current path):
+> `bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md`
 > Its checks were seen red eight ways and green three, verbatim, in the sibling file
 > `.planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-guard-controls-transcript.txt`.
 
@@ -38,8 +46,8 @@
 | **NOT a re-version of `trsx5`** | This posts as a NEW dated file in the chain. After posting, `trsx5` must STILL show **exactly 1 revision** (2026-07-10 13:32) — the same append-only check that cleared the July record. "New OSF version, never a silent swap" means a new dated record, never an in-place edit of a posted body. |
 | Posting gate | BEFORE the shipped `_OCCLUSION_ANOMALY_FRACTION` constant is changed in code, and before any recalibrated-gate output is banked. The pre-registered correction must precede the corrected execution. |
 | Substrate | All of Us AFR WGS native-plink LD panel (`gs://…/ld/afr_native_panel/`, 276 regions). Controlled-tier: aggregate counts and coordinate geometry only; no raw genotypes, no LD matrices. |
-| Pre-execute commit gate | `8638ed37c1431ea73566fd03ad1541ba95416fe4` — fill with the HEAD of `m3-W2-aou-deltas` at posting time, and confirm no gate-constant change has landed. |
-| Expected posting date | `2026-08-21` |
+| Pre-execute commit gate | `8638ed37c1431ea73566fd03ad1541ba95416fe4` — the HEAD of `m3-W2-aou-deltas` at INSTANTIATION time, captured before the first commit of the instantiating task. RE-CONFIRMED AT POSTING: re-read HEAD, confirm no `_OCCLUSION_ANOMALY_FRACTION` or gate-constant change has landed since, and update this value if the branch has advanced. |
+| Expected posting date | `2026-08-21` — **PROVISIONAL**. If posting slips this is a one-token edit at each of its three occurrences (this row, its SLOT_LEDGER line, and the paste block's **Date:** line) plus a `guard all` re-run. The BASENAME does not change: the `2026-08-20` in the filename records the INSTANTIATION date, which is a different quantity from the posting date. A mismatch between the two is expected, not an error. |
 
 **SLOT_LEDGER** — the machine-readable record of what was substituted. Post-instantiation
 each line must carry a filled value; a slot that was DELETED rather than FILLED leaves a
@@ -62,14 +70,16 @@ SLOT_LEDGER
   PRE_EXECUTE_COMMIT = 8638ed37c1431ea73566fd03ad1541ba95416fe4
 ```
 
-**Instantiation instructions (do NOT paste this block).**
+**Instantiation record — what was PERFORMED (do NOT paste this block).**
 
-1. Run PENDING PASTE #3 (`.planning/debug/260819-PENDING-PASTE-3-site-basis-sweep.md`) on the
-   VM and paste its stdout verbatim. The harness cross-check must hold: region 1 must
-   reproduce `n_occluded_rows == 231` exactly, or all results are discarded.
-2. Read the eleven Class-M values off that stdout. Seven come directly from the printed
-   `SITE-BASIS SUMMARY`, `CANDIDATE CEILING`, `margin over observed site-basis max` and
-   `mean row/site inflation` lines; four are DERIVED by these formulas:
+1. PENDING PASTE #3 (`.planning/debug/260819-PENDING-PASTE-3-site-basis-sweep.md`) was run on
+   the VM and its stdout banked verbatim at
+   `.planning/debug/260820-site-basis-sweep-results-as-received.md`. The harness cross-check
+   HELD: region 1 reproduced `n_occluded_rows == 231` exactly, with the assert preceding the
+   summary, so no result was discarded.
+2. The eleven Class-M values were read off that banked record BY SCRIPT. Seven came directly
+   from the printed `SITE-BASIS SUMMARY`, `CANDIDATE CEILING`, `margin over observed
+   site-basis max` and `mean row/site inflation` lines; four were DERIVED by these formulas:
 
 ```
 MED_PLUS_3SIG_PCT     = SITE_MEDIAN_PCT + 3 * SITE_ROBUST_SIGMA_PCT
@@ -78,14 +88,24 @@ TWO_X_MEDIAN_PCT      = 2 * SITE_MEDIAN_PCT
 TWO_X_MAX_PCT         = 2 * SITE_MAX_PCT
 ```
 
-3. Substitute each Class-M slot **ONCE, everywhere it occurs**, including its SLOT_LEDGER
-   line. Percentage slots render as `0.1234%`; the two ratio slots render as `1.23x`.
-4. Fill the two Class-P slots at posting time: `POSTING_DATE` as `2026-08-21` shape,
-   `PRE_EXECUTE_COMMIT` as the 7-40 hex-character HEAD.
-5. Rename this file so its basename no longer contains the `XX` date placeholder — the guard
-   FAILS while `XX` remains in the basename.
-6. Run the guard's `paste-ready` and `arith` sections and require GREEN on both. Do not paste
-   otherwise.
+   The same script re-derived min / median / robust sigma / max and the mean row/site
+   inflation from the banked record's own 21-row per-region table and required each to agree
+   with the printed summary BEFORE writing anything — an aggregate can agree while its
+   components are wrong. `CEILING_3X_MEDIAN_PCT` is carried AS PRINTED, because it was
+   computed upstream from the unrounded median; three times the 4-decimal median differs from
+   it by 0.0001 percentage points, inside the guard's tolerance.
+3. Each Class-M slot was substituted **ONCE, everywhere it occurred**, including its
+   SLOT_LEDGER line, and the script asserted that the number of replacements equalled the
+   file's pre-substitution slot-sentinel count and that none survived. Percentage slots render
+   as `0.1234%`; the two ratio slots render as `1.23x`.
+4. The two Class-P slots were filled at instantiation, not at posting: `POSTING_DATE`
+   provisionally, and `PRE_EXECUTE_COMMIT` as the full 40-hex HEAD captured before the
+   instantiating task's first commit. Both are re-confirmed at posting.
+5. This file was renamed with `git mv`, so its basename no longer contains the `XX` date
+   placeholder and its history follows the rename — the guard FAILS while `XX` remains in the
+   basename, and that failure was re-observed on the pre-rename copy as a negative control.
+6. The guard's `paste-ready` and `arith` sections were run and are GREEN, as are `draft` and
+   `quote`; section `all` exits 0. Do not paste otherwise.
 
 **Pre-paste checklist (top-to-bottom before submitting the OSF form):**
 
@@ -114,14 +134,14 @@ occluded variant is treated moves; what moves is the numerical gate that decides
 region's occlusion count is anomalous, and one factual sentence that was wrong.
 
 **Basis conventions (read this before any percentage below).** Two different denominators
-appear in this document and they are not interchangeable. A quantity labelled **(row basis)**
-is a fraction of the region's plink `.bim` variant ROWS. A quantity labelled **(site basis)**
-is a fraction of the region's distinct genomic SITES (unique `(CHR, POS)` pairs). Because a
-`.bim` row is biallelic by construction, one k-allelic site is rendered as k same-position
-rows, so row-basis counts exceed site-basis counts by a representation-dependent factor —
-measured here as 1.18x on average across the sample. Every percentage
-in this document carries its basis label explicitly. Mixing them is the single easiest way to
-misread this amendment.
+appear in this document and they are not interchangeable. A quantity labelled **(row
+basis)** is a fraction of the region's plink `.bim` variant ROWS. A quantity labelled
+**(site basis)** is a fraction of the region's distinct genomic SITES (unique `(CHR, POS)`
+pairs). Because a `.bim` row is biallelic by construction, one k-allelic site is rendered as
+k same-position rows, so row-basis counts exceed site-basis counts by a
+representation-dependent factor — measured here as 1.18x on average across the sample. Every
+percentage in this document carries its basis label explicitly. Mixing them is the single
+easiest way to misread this amendment.
 
 **(a) Factual correction to the 2026-07-10 record.**
 
@@ -219,44 +239,51 @@ biology depending on how the caller split multiallelics, counting 3 occluded rec
 multiplicity 3 and 18 at multiplicity 18. A gate whose threshold moves with a representation
 convention is not measuring the substrate.
 
-*Accounting.* The exclusion ACCOUNTING remains on **ROWS**. Rows are what leave the panel; the
-manifest records rows; the lockstep sumstats drop is row-keyed on `(CHR, POS)`. Reporting
-exclusions in sites would understate what left the panel and would break the manifest's audit
-purpose. **Both numbers are reported for every region**, together with the measured mean
-row/site inflation of 1.18x across the sample.
+*Accounting.* The exclusion ACCOUNTING remains on **ROWS**. Rows are what leave the panel;
+the manifest records rows; the lockstep sumstats drop is row-keyed on `(CHR, POS)`.
+Reporting exclusions in sites would understate what left the panel and would break the
+manifest's audit purpose. **Both numbers are reported for every region**, together with the
+measured mean row/site inflation of 1.18x across the sample.
 
-*Ceiling.* `n_occluded_sites <= 0.5056% x n_sites` — that is, **3x the
-measured site-basis median** of 0.1685% (site basis) — giving
-1.87x margin over the observed site-basis maximum of 0.2698% (site
-basis). The measured site-basis minimum is 0.1345% (site basis) and the robust sigma
-is 0.0274% (site basis).
+*Ceiling.* `n_occluded_sites <= 0.5056% x n_sites` — that is, **3x the measured site-basis
+median** of 0.1685% (site basis), or 0.005056 expressed as a bare fraction, since the
+withdrawn ceiling was written as a fraction and this one is written as a percentage. It
+gives 1.87x margin over the observed site-basis maximum of 0.2698% (site basis). The
+measured site-basis minimum is 0.1345% (site basis) and the robust sigma is 0.0274% (site
+basis).
 
 *Derivation, including what was rejected and why.*
 
 | Candidate | Value (site basis) | Disposition |
 |---|---|---|
-| median + 3 sigma_rob | 0.2507% | REJECT — at or below the observed maximum; a normal region would defer. |
-| median + 4 sigma_rob | 0.2781% | REJECT — still calibrated to the sample's spread, not to the purpose. |
-| 2x median | 0.3370% | REJECT — too tight for n=21; leaves no room for an unmeasured upper tail. |
-| 2x observed max | 0.5396% | CANDIDATE — but anchored on where the sample happened to stop. |
-| **3x median** | **0.5056%** | **ADOPTED.** |
+| median + 3 sigma_rob | 0.2507% | REJECT — 0.93x of the observed site-basis maximum, i.e. BELOW it; a normal region would defer. |
+| median + 4 sigma_rob | 0.2781% | REJECT — 1.03x the observed site-basis maximum, so it hugs the sample edge: calibrated to the sample's spread and to where this sample happened to stop, not to the gate's purpose, and leaving nothing for an unmeasured upper tail. |
+| 2x median | 0.3370% | REJECT — too tight for n=21; leaves no room for an unmeasured upper tail. Its margin on site basis is 1.25x the observed site-basis maximum, NOT the 1.07x of the row-basis derivation. |
+| 2x observed max | 0.5396% | CANDIDATE — 2.00x the observed site-basis maximum by construction, but anchored on where the sample happened to stop. |
+| **3x median** | **0.5056%** | **ADOPTED** — 1.87x the observed site-basis maximum, anchored on a location statistic rather than on a sample edge. |
 
-The reasoning: 3x median is anchored on a LOCATION statistic rather than on a sample edge, so
-extending the sample moves the ceiling only if the population's centre moves; the resulting
-margin over the observed maximum respects an upper tail that has not been measured; and it
-still fires on anything at or above 3x typical, which is the regime where "a variant
-representation problem beyond isolated occlusion" actually lives. For reconcilability, the
-same derivation applied to the row-basis distribution gives 3 x 0.1888% = **0.5664% (row
-basis)**; the site-basis figure above is the one the gate uses, and the row-basis figure is
-reported only so a reader can move between the two conventions.
+The reasoning: 3x median is anchored on a LOCATION statistic rather than on a sample edge,
+so extending the sample moves the ceiling only if the population's centre moves; the
+resulting 1.87x margin over the observed site-basis maximum respects an upper tail that has
+not been measured; and it still fires on anything at or above 3x typical, which is the
+regime where "a variant representation problem beyond isolated occlusion" actually lives.
+For reconcilability, the same derivation applied to the row-basis distribution gives 3 x
+0.1888% = **0.5664% (row basis)**; the site-basis figure above is the one the gate uses, and
+the row-basis figure is reported only so a reader can move between the two conventions.
 
-*No-calibrate-to-pass, on the public record.* The multiplier was NOT chosen because it clears
-the sample. A ceiling at 8x or 10x the withdrawn constant also passes 21/21, and both are
-REJECTED precisely because they would have been chosen for clearing the data — the original
-error inverted. That 3x-median happens to pass 21/21 is a CONSEQUENCE of the derivation and
-never its justification. If a future region legitimately sits above the ceiling, the gate
-should fire and the region should be investigated, not the gate widened. Re-widening this
-ceiling in response to a firing region is prohibited without a further amendment.
+*No-calibrate-to-pass, on the public record.* The multiplier was NOT chosen because it
+clears the sample. A ceiling at 8x or 10x the withdrawn constant — that is 0.4% or 0.5% of
+rows (row basis), the withdrawn 0.0005 being a row-basis fraction — also clears every region
+in the row-basis distribution reported in (c), and both are REJECTED precisely because they
+would have been chosen for clearing the data — the original error inverted. That 3x-median
+happens to pass 21/21 is a CONSEQUENCE of the derivation and never its justification; the
+same is true on site basis, where the adopted ceiling of 0.5056% (site basis) sits above the
+observed site-basis maximum of 0.2698% (site basis) and so would spuriously defer 0 of the
+21 sampled regions. That 0/21 is a consequence of the derivation, and is stated here as one;
+it is not a reason for the multiplier and was not used as one. If a future region
+legitimately sits above the ceiling, the gate should fire and the region should be
+investigated, not the gate widened. Re-widening this ceiling in response to a firing region
+is prohibited without a further amendment.
 
 *Limitation, stated rather than buried.* n=21 of 276. The sample was pre-committed and
 systematic-by-span and the distribution is flat across size classes, but the upper tail is
@@ -380,7 +407,7 @@ not knowable from the site-basis sweep.
 - **OSF timestamp (authoritative, UTC):** `<TO BE FILLED AT POSTING>` (from the OSF Recent
   Activity entry). The file page's "Date created" is the PARENT RECORD's creation date
   (2026-04-10, osf.io/pvb5j), NOT this file's upload date.
-- **Project-side copy:** `.planning/amendments/osf-amendment-occlusion-gate-recalibration-<TO BE FILLED AT POSTING>.md`.
+- **Project-side copy:** `.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md` (knowable now; the instantiation-dated basename does not move at posting).
 - **Pre-execute gate commit:** `<TO BE FILLED AT POSTING>`. At OSF post time NO change to
   `_OCCLUSION_ANOMALY_FRACTION` and NO recalibrated-gate output had landed.
 - **What it CORRECTS:** the factual sentence at trsx5's line 45 — "Region 1 alone contains 7
@@ -395,10 +422,12 @@ not knowable from the site-basis sweep.
   stay ROW-keyed and both numbers are reported; ceiling moves from 0.0005 x n_var (row
   basis) to 3x the measured site-basis median. Basis for the recalibration: a pre-committed
   systematic-by-span 21-region sample, row basis min 0.1323% / median 0.1888% / max 0.3527%
-  / robust sigma 0.0393%, 21/21 deferring at 0.0005, with the site-basis re-measurement
-  supplying the gate's own number. Provenance of the withdrawn constant carried VERBATIM
-  from the reviewer who derived it (calibrated on 6 NaN pairs at n=1, re-purposed to
-  geometric exclusions without re-derivation; premise low by ~38x).
+  / robust sigma 0.0393%, 21/21 deferring at 0.0005, plus the site-basis re-measurement of
+  the same 21 regions: site basis min 0.1345% / median 0.1685% / max 0.2698% / robust sigma
+  0.0274% (site basis). The gate's own ceiling is 3x that site-basis median = 0.5056% (site
+  basis), 1.87x the observed site-basis maximum. Provenance of the withdrawn constant
+  carried VERBATIM from the reviewer who derived it (calibrated on 6 NaN pairs at n=1,
+  re-purposed to geometric exclusions without re-derivation; premise low by ~38x).
 - **What it RETAINS unchanged:** clause (a) occlusion criterion; clause (b)
   exclude-in-lockstep (panel-only exclusion and NaN→0 still prohibited); clause (c)
   mandatory provenance manifest; the defer-not-exclude protocol; clause (e) present-rate

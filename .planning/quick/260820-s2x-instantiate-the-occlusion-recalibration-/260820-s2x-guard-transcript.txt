@@ -170,3 +170,62 @@ PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
 PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
 GUARD paste-ready: RED
 EXIT=1
+
+### POST-AUDIT — guard all re-run after the Task 2 narrative audit
+
+The audit moved relation words onto the site-basis relations (median+4sigma now sits
+ABOVE the observed maximum; 2x-median's margin is 1.25x, not the row-basis 1.07x), de-staled
+the self-referential status claims, and rewrapped six paragraphs under a content-identity
+assertion. Section header deliberately does NOT carry the GREEN / NC tokens, so the
+signature extraction above still finds exactly one section per control.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+== section: draft ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: draft: all 13 roster names present
+PASS: draft: SLOT_LEDGER block present
+PASS: draft: SLOT_LEDGER carries exactly 13 ledger lines
+PASS: draft: '(site basis)' labelled 7 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 5 times in the paste block (floor 3)
+== section: paste-ready ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+== section: arith ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+== section: quote ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD all: GREEN
+EXIT=0
