@@ -1,0 +1,672 @@
+260820-u6i — GUARD TRANSCRIPT for the REVISED occlusion-gate recalibration amendment
+====================================================================================
+
+Amendment under revision : .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+Guard (EXTENDED here)    : .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh
+Engine (EXTENDED here)   : .planning/quick/260820-s2x-instantiate-the-occlusion-recalibration-/260820-s2x-instantiate.py
+PRE (HEAD before Task 1) : 154de167a025ebb2c347b564c5970e3d63e76ca5  (154de16)
+Guard commit             : 9a9f51f — guard-only, `git diff --numstat` = "64	0" (deletions field literally 0)
+
+WHY THIS FILE EXISTS. The guard now decides whether a 21-slot document may be pasted,
+and an extension to the enforcer is a change to the thing that decides whether everything
+else is trustworthy. Green is evidence ONLY because red was seen: each of the three new
+identities and the new ordering check is exercised in ISOLATION on a perturbed scratch
+copy, the new *_X pattern arm and the roster growth are each shown load-bearing, the
+engine's pre-registered rendered-string expectations are shown falsifiable, and every
+pre-existing control (u8d R1-R8 classes, s2x NC-1..NC-3) is RE-RUN against the extended
+guard and reproduces its signature strings.
+
+SCRATCH DISCIPLINE. Every control copy lives in the session scratchpad and NEVER in the
+repo tree. Copies carrying invented numbers carry the first line
+'FAKE NUMBERS - GUARD CONTROL ONLY - NEVER POST'; the 21-slot pre-revision fixture carries
+real numbers in a provisional document state and so carries the distinct first line
+'GUARD FIXTURE - SCRATCH ONLY - NEVER POST'. REG-1 is excepted from both: it is real
+historical content (the uninstantiated XX draft at 8638ed3), not invented numbers.
+
+THE 2x2 MATRIX. Two guards x two document versions. Task 1 fills the PRE-REVISION column
+(MATRIX-A green under the old guard, NC-0 red under the new one); Task 2 fills the REVISED
+column (MATRIX-B, MATRIX-C). The brief's phrase "the pre-revision version still GREEN too"
+is true ONLY under the PRE-EXTENSION guard; under the extended guard the pre-revision file
+is correctly RED, and that red is NC-0.
+
+TWO EXPECTED, DOCUMENTED BEHAVIOUR CHANGES — neither hidden, neither "fixed":
+  1. REG-2 and REG-3 are REBASED onto the 21-slot fixture, not run on the tracked 13-slot
+     file. Against the extended guard a 13-slot file fails 'arith' at "SLOT_LEDGER is
+     missing lines: INFLATION_*" and exits BEFORE the identity checks, so the old
+     signatures could not appear at all. Rebasing is what makes "identical behaviour" a
+     meaningful claim rather than a coincidence.
+  2. REG-1's 'arith' MESSAGE changes from "cannot verify — draft not instantiated" to
+     "SLOT_LEDGER is missing lines: ..." — a 13-slot file is missing 8 roster lines before
+     it can be judged uninstantiated. Same exit code, different message. KNOWN CHANGE.
+
+Each section below carries its own command, its FULL output verbatim, and an EXIT= line
+per invocation. A whole-file 'grep EXIT=1' cannot tell the controls apart and is not
+accepted as evidence; every verify extracts its own section by token.
+
+### DRY-RUN  — extended engine --dry-run: 21 renders vs pre-registered expectations   EXIT=0
+
+$ python3 .planning/quick/260820-s2x-instantiate-the-occlusion-recalibration-/260820-s2x-instantiate.py --dry-run
+RECONCILIATION — printed summary vs recomputed from the 21-row table
+  source: .planning/debug/260820-site-basis-sweep-results-as-received.md
+  STATISTIC                     PRINTED   RECOMPUTED      DELTA      TOL VERDICT
+  SITE_MIN_PCT                 0.134500     0.134500   0.000000   0.0001 OK
+  SITE_MEDIAN_PCT              0.168500     0.168500   0.000000   0.0001 OK
+  SITE_MAX_PCT                 0.269800     0.269800   0.000000   0.0001 OK
+  SITE_ROBUST_SIGMA_PCT        0.027400     0.027428   0.000028   0.0001 OK
+  MEAN_ROW_SITE_INFLATION      1.180000     1.180476   0.000476   0.0050 OK
+  CEILING_3X_MEDIAN_PCT        0.505600     0.505500   0.000100   0.0010 OK (printed value kept)
+  CEILING_MARGIN_X             1.870000     1.873981   0.003981   0.0200 OK
+RECONCILIATION: OK — every printed aggregate re-derives from its components
+
+ROW-BASIS RECONCILIATION — printed summary vs recomputed from the 21 `frac=` values
+  source: .planning/debug/260819-occ-measure-sweep-results-as-received.md
+  STATISTIC                     PRINTED   RECOMPUTED      DELTA      TOL VERDICT
+  ROW_MIN_PCT                  0.132300     0.132300   0.000000   0.0001 OK
+  ROW_MEDIAN_PCT               0.188800     0.188800   0.000000   0.0001 OK
+  ROW_MAX_PCT                  0.352700     0.352700   0.000000   0.0001 OK
+ROW-BASIS RECONCILIATION: OK — the row median re-derives from its own components
+
+PRE-REGISTERED RENDER EXPECTATIONS (260820-u6i-PLAN.md)
+  FRACTION_RATIO_X         computed 1.12x      expected 1.12x      OK
+  INFLATION_CEILING_3X_X   computed 3.42x      expected 3.42x      OK
+  INFLATION_MARGIN_X       computed 1.91x      expected 1.91x      OK
+  INFLATION_MAX_X          computed 1.79x      expected 1.79x      OK
+  INFLATION_MEDIAN_X       computed 1.14x      expected 1.14x      OK
+  INFLATION_MIN_X          computed 1.04x      expected 1.04x      OK
+  INFLATION_ROBUST_SIGMA_X computed 0.0890x    expected 0.0890x    OK
+  ROW_MEDIAN_PCT           computed 0.1888%    expected 0.1888%    OK
+PRE-REGISTERED EXPECTATIONS: OK — all 8 rendered strings byte-identical
+
+RENDER CHECK: OK — 19 of 21 rendered ledger lines match their guard patterns (2 Class-P placeholder(s) skipped under --dry-run)
+
+SUBSTITUTION LEDGER — (dry run, no document)
+  SLOT                     | VALUE                                      | OCCURRENCES | SOURCE
+  SITE_MIN_PCT             | 0.1345%                                    |           0 | parsed (site sweep) [DRY-RUN (no document read)]
+  SITE_MEDIAN_PCT          | 0.1685%                                    |           0 | parsed (site sweep) [DRY-RUN (no document read)]
+  SITE_MAX_PCT             | 0.2698%                                    |           0 | parsed (site sweep) [DRY-RUN (no document read)]
+  SITE_ROBUST_SIGMA_PCT    | 0.0274%                                    |           0 | parsed (site sweep) [DRY-RUN (no document read)]
+  MEAN_ROW_SITE_INFLATION  | 1.18x                                      |           0 | parsed (site sweep) [DRY-RUN (no document read)]
+  MED_PLUS_3SIG_PCT        | 0.2507%                                    |           0 | derived [DRY-RUN (no document read)]
+  MED_PLUS_4SIG_PCT        | 0.2781%                                    |           0 | derived [DRY-RUN (no document read)]
+  TWO_X_MEDIAN_PCT         | 0.3370%                                    |           0 | derived [DRY-RUN (no document read)]
+  TWO_X_MAX_PCT            | 0.5396%                                    |           0 | derived [DRY-RUN (no document read)]
+  CEILING_3X_MEDIAN_PCT    | 0.5056%                                    |           0 | parsed (site sweep) [DRY-RUN (no document read)]
+  CEILING_MARGIN_X         | 1.87x                                      |           0 | parsed (site sweep) [DRY-RUN (no document read)]
+  ROW_MEDIAN_PCT           | 0.1888%                                    |           0 | parsed (row sweep) [DRY-RUN (no document read)]
+  FRACTION_RATIO_X         | 1.12x                                      |           0 | derived (cross-basis) [DRY-RUN (no document read)]
+  INFLATION_MIN_X          | 1.04x                                      |           0 | column stat (site sweep) [DRY-RUN (no document read)]
+  INFLATION_MEDIAN_X       | 1.14x                                      |           0 | column stat (site sweep) [DRY-RUN (no document read)]
+  INFLATION_MAX_X          | 1.79x                                      |           0 | column stat (site sweep) [DRY-RUN (no document read)]
+  INFLATION_ROBUST_SIGMA_X | 0.0890x                                    |           0 | column stat (site sweep) [DRY-RUN (no document read)]
+  INFLATION_CEILING_3X_X   | 3.42x                                      |           0 | derived [DRY-RUN (no document read)]
+  INFLATION_MARGIN_X       | 1.91x                                      |           0 | derived [DRY-RUN (no document read)]
+  POSTING_DATE             | <DRY-RUN PLACEHOLDER — argv not supplied>  |           0 | argv (NOT SUPPLIED — dry run) [DRY-RUN (no document read)]
+  PRE_EXECUTE_COMMIT       | <DRY-RUN PLACEHOLDER — argv not supplied>  |           0 | argv (NOT SUPPLIED — dry run) [DRY-RUN (no document read)]
+  TOTALS                   | 21 slots                                   |           0 | pre-count '{{'=0 '}}'=0, post-count 0/0
+EXIT=0
+
+### G-NEW    — extended guard `all` on the 21-slot fixture                            EXIT=0
+
+  fixture = tracked amendment + the 8 new SLOT_LEDGER lines, values COPIED from the
+  DRY-RUN ledger above (not retyped). This is the positive control and the base for
+  every perturbation below.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all $SCRATCH/u6i/fixture.md
+== section: draft ==
+PASS: vacuity: file present, 31961 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: draft: all 21 roster names present
+PASS: draft: SLOT_LEDGER block present
+PASS: draft: SLOT_LEDGER carries exactly 21 ledger lines
+PASS: draft: '(site basis)' labelled 7 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 5 times in the paste block (floor 3)
+== section: paste-ready ==
+PASS: vacuity: file present, 31961 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: fixture.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MEDIAN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MAX_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_ROBUST_SIGMA_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_CEILING_3X_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line FRACTION_RATIO_X matches its filled-value pattern
+PASS: paste-ready: ledger line ROW_MEDIAN_PCT matches its filled-value pattern
+== section: arith ==
+PASS: vacuity: file present, 31961 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 21 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+PASS: arith: INFLATION_ROBUST_SIGMA_X parsed as 0.0890x (reported dispersion; no identity)
+PASS: arith: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X holds (3.4200 vs 3.4200x, |d|=0.0000 <= tol 0.0100)
+PASS: arith: INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X holds (1.9100 vs 1.9106x, |d|=0.0006 <= tol 0.0100)
+PASS: arith: FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT holds (1.1200 vs 1.1205x, |d|=0.0005 <= tol 0.0100)
+PASS: arith: inflation ordering holds (min 1.04x <= median 1.14x <= max 1.79x)
+== section: quote ==
+PASS: vacuity: file present, 31961 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD all: GREEN
+EXIT=0
+
+### MATRIX-A — PRE-EXTENSION guard (git show $PRE:<guard>) on the PRE-REVISION file    EXIT=0
+
+  The pre-extension guard is materialised at $SCRATCH/u6i/oldroot/.planning/quick/u8d/
+  so its own SCRIPT_DIR/../../.. REPO_ROOT resolution finds a .planning/debug/ carrying
+  the verbatim-quote source. Content is byte-identical to git show 154de16:<guard>.
+
+$ bash $SCRATCH/u6i/oldroot/.planning/quick/u8d/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+== section: draft ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: draft: all 13 roster names present
+PASS: draft: SLOT_LEDGER block present
+PASS: draft: SLOT_LEDGER carries exactly 13 ledger lines
+PASS: draft: '(site basis)' labelled 7 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 5 times in the paste block (floor 3)
+== section: paste-ready ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+== section: arith ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 13 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+== section: quote ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD all: GREEN
+EXIT=0
+
+### NC-0     — extended guard `all` on the tracked 13-slot amendment                   EXIT=1
+
+  The new guard must REFUSE the old document. This is the cell the brief's phrasing
+  would have got wrong.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh all .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+== section: draft ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+FAIL: draft: roster name absent from file: INFLATION_MIN_X
+FAIL: draft: roster name absent from file: INFLATION_MEDIAN_X
+FAIL: draft: roster name absent from file: INFLATION_MAX_X
+FAIL: draft: roster name absent from file: INFLATION_ROBUST_SIGMA_X
+FAIL: draft: roster name absent from file: INFLATION_CEILING_3X_X
+FAIL: draft: roster name absent from file: INFLATION_MARGIN_X
+FAIL: draft: roster name absent from file: FRACTION_RATIO_X
+FAIL: draft: roster name absent from file: ROW_MEDIAN_PCT
+PASS: draft: SLOT_LEDGER block present
+FAIL: draft: SLOT_LEDGER carries 13 ledger lines, want 21
+PASS: draft: '(site basis)' labelled 7 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 5 times in the paste block (floor 3)
+== section: paste-ready ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+FAIL: paste-ready: ledger line INFLATION_MIN_X does not match its filled-value pattern (^  INFLATION_MIN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_MEDIAN_X does not match its filled-value pattern (^  INFLATION_MEDIAN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_MAX_X does not match its filled-value pattern (^  INFLATION_MAX_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_ROBUST_SIGMA_X does not match its filled-value pattern (^  INFLATION_ROBUST_SIGMA_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_CEILING_3X_X does not match its filled-value pattern (^  INFLATION_CEILING_3X_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_MARGIN_X does not match its filled-value pattern (^  INFLATION_MARGIN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line FRACTION_RATIO_X does not match its filled-value pattern (^  FRACTION_RATIO_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line ROW_MEDIAN_PCT does not match its filled-value pattern (^  ROW_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+== section: arith ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+FAIL: arith: SLOT_LEDGER is missing lines: INFLATION_MIN_X, INFLATION_MEDIAN_X, INFLATION_MAX_X, INFLATION_ROBUST_SIGMA_X, INFLATION_CEILING_3X_X, INFLATION_MARGIN_X, FRACTION_RATIO_X, ROW_MEDIAN_PCT
+== section: quote ==
+PASS: vacuity: file present, 31685 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 120) before exactly one closer (line 365)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+PASS: quote: count identity holds: 4/4 source lines carried verbatim
+GUARD all: RED
+EXIT=1
+
+### NC-A     — fixture, INFLATION_MEDIAN_X -> 1.50x, section arith                     EXIT=1
+
+  Expect: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X BROKEN, and the ordering
+  check must still PASS (1.04 <= 1.50 <= 1.79) — the control is isolated to one identity.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/u6i/nc_a.md
+== section: arith ==
+PASS: vacuity: file present, 31966 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 21 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+PASS: arith: INFLATION_ROBUST_SIGMA_X parsed as 0.0890x (reported dispersion; no identity)
+FAIL: arith: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X BROKEN (3.4200 vs 4.5000x, |d|=1.0800 > tol 0.0100)
+PASS: arith: INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X holds (1.9100 vs 1.9106x, |d|=0.0006 <= tol 0.0100)
+PASS: arith: FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT holds (1.1200 vs 1.1205x, |d|=0.0005 <= tol 0.0100)
+PASS: arith: inflation ordering holds (min 1.04x <= median 1.50x <= max 1.79x)
+GUARD arith: RED
+EXIT=1
+
+### NC-B     — fixture, INFLATION_MAX_X    -> 2.50x, section arith                     EXIT=1
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/u6i/nc_b.md
+== section: arith ==
+PASS: vacuity: file present, 31966 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 21 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+PASS: arith: INFLATION_ROBUST_SIGMA_X parsed as 0.0890x (reported dispersion; no identity)
+PASS: arith: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X holds (3.4200 vs 3.4200x, |d|=0.0000 <= tol 0.0100)
+FAIL: arith: INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X BROKEN (1.9100 vs 1.3680x, |d|=0.5420 > tol 0.0100)
+PASS: arith: FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT holds (1.1200 vs 1.1205x, |d|=0.0005 <= tol 0.0100)
+PASS: arith: inflation ordering holds (min 1.04x <= median 1.14x <= max 2.50x)
+GUARD arith: RED
+EXIT=1
+
+### NC-C     — fixture, ROW_MEDIAN_PCT     -> 0.2500%, section arith                   EXIT=1
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/u6i/nc_c.md
+== section: arith ==
+PASS: vacuity: file present, 31966 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 21 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+PASS: arith: INFLATION_ROBUST_SIGMA_X parsed as 0.0890x (reported dispersion; no identity)
+PASS: arith: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X holds (3.4200 vs 3.4200x, |d|=0.0000 <= tol 0.0100)
+PASS: arith: INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X holds (1.9100 vs 1.9106x, |d|=0.0006 <= tol 0.0100)
+FAIL: arith: FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT BROKEN (1.1200 vs 1.4837x, |d|=0.3637 > tol 0.0100)
+PASS: arith: inflation ordering holds (min 1.04x <= median 1.14x <= max 1.79x)
+GUARD arith: RED
+EXIT=1
+
+### NC-D     — fixture, INFLATION_MIN_X    -> 1.50x, section arith                     EXIT=1
+
+  No identity uses the minimum, so the ordering check is the SOLE failure here.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/u6i/nc_d.md
+== section: arith ==
+PASS: vacuity: file present, 31966 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 21 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT holds (0.5396 vs 0.5396%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+PASS: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT holds (1.8700 vs 1.8740x, |d|=0.0040 <= tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2698%)
+PASS: arith: INFLATION_ROBUST_SIGMA_X parsed as 0.0890x (reported dispersion; no identity)
+PASS: arith: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X holds (3.4200 vs 3.4200x, |d|=0.0000 <= tol 0.0100)
+PASS: arith: INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X holds (1.9100 vs 1.9106x, |d|=0.0006 <= tol 0.0100)
+PASS: arith: FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT holds (1.1200 vs 1.1205x, |d|=0.0005 <= tol 0.0100)
+FAIL: arith: inflation ordering BROKEN (min 1.50x, median 1.14x, max 1.79x)
+GUARD arith: RED
+EXIT=1
+
+### NC-E     — fixture, INFLATION_CEILING_3X_X value blanked, section paste-ready      EXIT=1
+
+  Proves the new *_X) filled-value arm is LOAD-BEARING rather than decorative: exactly
+  one slot fails its pattern, and it is the blanked one.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh paste-ready $SCRATCH/u6i/nc_e.md
+== section: paste-ready ==
+PASS: vacuity: file present, 31961 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: nc_e.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MEDIAN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MAX_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_ROBUST_SIGMA_X matches its filled-value pattern
+FAIL: paste-ready: ledger line INFLATION_CEILING_3X_X does not match its filled-value pattern (^  INFLATION_CEILING_3X_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+PASS: paste-ready: ledger line INFLATION_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line FRACTION_RATIO_X matches its filled-value pattern
+PASS: paste-ready: ledger line ROW_MEDIAN_PCT matches its filled-value pattern
+GUARD paste-ready: RED
+EXIT=1
+
+### NC-F     — fixture, FRACTION_RATIO_X ledger LINE deleted, sections draft+paste-ready  EXIT=1 x2
+
+  Proves the roster growth is load-bearing: sec_draft's EXISTING count check now
+  demands 21 with no edit to sec_draft.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh draft $SCRATCH/u6i/nc_f.md
+== section: draft ==
+PASS: vacuity: file present, 31934 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 128) before exactly one closer (line 373)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+FAIL: draft: roster name absent from file: FRACTION_RATIO_X
+PASS: draft: SLOT_LEDGER block present
+FAIL: draft: SLOT_LEDGER carries 20 ledger lines, want 21
+PASS: draft: '(site basis)' labelled 7 times in the paste block (floor 3)
+PASS: draft: '(row basis)' labelled 5 times in the paste block (floor 3)
+GUARD draft: RED
+EXIT=1
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh paste-ready $SCRATCH/u6i/nc_f.md
+== section: paste-ready ==
+PASS: vacuity: file present, 31934 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 128) before exactly one closer (line 373)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: nc_f.md
+PASS: paste-ready: ledger line SITE_MIN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MEDIAN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MAX_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_ROBUST_SIGMA_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_CEILING_3X_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MARGIN_X matches its filled-value pattern
+FAIL: paste-ready: ledger line FRACTION_RATIO_X does not match its filled-value pattern (^  FRACTION_RATIO_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+PASS: paste-ready: ledger line ROW_MEDIAN_PCT matches its filled-value pattern
+GUARD paste-ready: RED
+EXIT=1
+
+### NC-G     — engine --control-source with one inflation cell perturbed               EXIT=1
+
+  Banked site-basis record copied to scratch with m2_region_00088__sub01's inflation
+  cell 1.04 -> 1.02. Chosen deliberately: the sample MEAN moves by 0.02/21 = 0.00095,
+  INSIDE TOL_RECON_INFL (0.005), so reconcile() still passes and the PRE-REGISTERED
+  RENDER expectation is the check that fires. The median and the MAD are unmoved, so
+  exactly one expectation breaks.
+
+$ python3 .planning/quick/260820-s2x-instantiate-the-occlusion-recalibration-/260820-s2x-instantiate.py --dry-run --control-source $SCRATCH/u6i/nc_g_source.md
+ABORT: PRE-REGISTERED EXPECTATION FAILED for INFLATION_MIN_X — nothing written
+*** NEGATIVE CONTROL MODE — WRITE PATH DISABLED ***
+*** site-basis source : /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/u6i/nc_g_source.md
+*** row-basis source  : .planning/debug/260819-occ-measure-sweep-results-as-received.md
+
+RECONCILIATION — printed summary vs recomputed from the 21-row table
+  source: /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/u6i/nc_g_source.md
+  STATISTIC                     PRINTED   RECOMPUTED      DELTA      TOL VERDICT
+  SITE_MIN_PCT                 0.134500     0.134500   0.000000   0.0001 OK
+  SITE_MEDIAN_PCT              0.168500     0.168500   0.000000   0.0001 OK
+  SITE_MAX_PCT                 0.269800     0.269800   0.000000   0.0001 OK
+  SITE_ROBUST_SIGMA_PCT        0.027400     0.027428   0.000028   0.0001 OK
+  MEAN_ROW_SITE_INFLATION      1.180000     1.179524   0.000476   0.0050 OK
+  CEILING_3X_MEDIAN_PCT        0.505600     0.505500   0.000100   0.0010 OK (printed value kept)
+  CEILING_MARGIN_X             1.870000     1.873981   0.003981   0.0200 OK
+RECONCILIATION: OK — every printed aggregate re-derives from its components
+
+ROW-BASIS RECONCILIATION — printed summary vs recomputed from the 21 `frac=` values
+  source: .planning/debug/260819-occ-measure-sweep-results-as-received.md
+  STATISTIC                     PRINTED   RECOMPUTED      DELTA      TOL VERDICT
+  ROW_MIN_PCT                  0.132300     0.132300   0.000000   0.0001 OK
+  ROW_MEDIAN_PCT               0.188800     0.188800   0.000000   0.0001 OK
+  ROW_MAX_PCT                  0.352700     0.352700   0.000000   0.0001 OK
+ROW-BASIS RECONCILIATION: OK — the row median re-derives from its own components
+
+PRE-REGISTERED RENDER EXPECTATIONS (260820-u6i-PLAN.md)
+  FRACTION_RATIO_X         computed 1.12x      expected 1.12x      OK
+  INFLATION_CEILING_3X_X   computed 3.42x      expected 3.42x      OK
+  INFLATION_MARGIN_X       computed 1.91x      expected 1.91x      OK
+  INFLATION_MAX_X          computed 1.79x      expected 1.79x      OK
+  INFLATION_MEDIAN_X       computed 1.14x      expected 1.14x      OK
+  INFLATION_MIN_X          computed 1.02x      expected 1.04x      MISMATCH
+  INFLATION_ROBUST_SIGMA_X computed 0.0890x    expected 0.0890x    OK
+  ROW_MEDIAN_PCT           computed 0.1888%    expected 0.1888%    OK
+FAIL: PRE-REGISTERED EXPECTATION FAILED for INFLATION_MIN_X: computed 1.02x, expected 1.04x
+EXIT=1
+
+### REG-1    — pre-instantiation XX version, sections paste-ready + arith              EXIT=1 x2
+
+  git show 8638ed3:.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+  written to scratch with the XX basename PRESERVED. The s2x NC-1 control, re-run
+  against the extended guard. KNOWN CHANGE: the arith MESSAGE differs (see header).
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh paste-ready $SCRATCH/u6i/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+== section: paste-ready ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+FAIL: paste-ready: 29 opening and 29 closing sentinel delimiters remain — the body is UNINSTANTIATED and MUST NOT be pasted
+FAIL: paste-ready: basename still carries the XX date placeholder: osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+FAIL: paste-ready: ledger line SITE_MIN_PCT does not match its filled-value pattern (^  SITE_MIN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_MEDIAN_PCT does not match its filled-value pattern (^  SITE_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_MAX_PCT does not match its filled-value pattern (^  SITE_MAX_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT does not match its filled-value pattern (^  SITE_ROBUST_SIGMA_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MEAN_ROW_SITE_INFLATION does not match its filled-value pattern (^  MEAN_ROW_SITE_INFLATION = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MED_PLUS_3SIG_PCT does not match its filled-value pattern (^  MED_PLUS_3SIG_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line MED_PLUS_4SIG_PCT does not match its filled-value pattern (^  MED_PLUS_4SIG_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line TWO_X_MEDIAN_PCT does not match its filled-value pattern (^  TWO_X_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line TWO_X_MAX_PCT does not match its filled-value pattern (^  TWO_X_MAX_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line CEILING_3X_MEDIAN_PCT does not match its filled-value pattern (^  CEILING_3X_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line CEILING_MARGIN_X does not match its filled-value pattern (^  CEILING_MARGIN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line POSTING_DATE does not match its filled-value pattern (^  POSTING_DATE = 20[0-9]{2}-[0-9]{2}-[0-9]{2}$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line PRE_EXECUTE_COMMIT does not match its filled-value pattern (^  PRE_EXECUTE_COMMIT = [0-9a-f]{7,40}$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_MIN_X does not match its filled-value pattern (^  INFLATION_MIN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_MEDIAN_X does not match its filled-value pattern (^  INFLATION_MEDIAN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_MAX_X does not match its filled-value pattern (^  INFLATION_MAX_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_ROBUST_SIGMA_X does not match its filled-value pattern (^  INFLATION_ROBUST_SIGMA_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_CEILING_3X_X does not match its filled-value pattern (^  INFLATION_CEILING_3X_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line INFLATION_MARGIN_X does not match its filled-value pattern (^  INFLATION_MARGIN_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line FRACTION_RATIO_X does not match its filled-value pattern (^  FRACTION_RATIO_X = [0-9]+\.[0-9]+x$) — filled wrongly, or DELETED instead of filled
+FAIL: paste-ready: ledger line ROW_MEDIAN_PCT does not match its filled-value pattern (^  ROW_MEDIAN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+GUARD paste-ready: RED
+EXIT=1
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/u6i/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md
+== section: arith ==
+PASS: vacuity: file present, 28342 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 100) before exactly one closer (line 338)
+PASS: vacuity: paste block 16299 B (floor 3000 B)
+FAIL: arith: SLOT_LEDGER is missing lines: INFLATION_MIN_X, INFLATION_MEDIAN_X, INFLATION_MAX_X, INFLATION_ROBUST_SIGMA_X, INFLATION_CEILING_3X_X, INFLATION_MARGIN_X, FRACTION_RATIO_X, ROW_MEDIAN_PCT
+GUARD arith: RED
+EXIT=1
+
+### REG-2    — fixture, SITE_MAX_PCT -> 0.2500%, section arith                         EXIT=1
+
+  The s2x NC-2 control, REBASED onto the 21-slot fixture. Both original signature
+  strings must reproduce against the extended guard.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh arith $SCRATCH/u6i/reg_2.md
+== section: arith ==
+PASS: vacuity: file present, 31966 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: arith: SLOT_LEDGER parsed, all 21 roster lines present
+PASS: arith: MEAN_ROW_SITE_INFLATION parsed as 1.18x (no identity; reported quantity)
+PASS: arith: MED_PLUS_3SIG_PCT == SITE_MEDIAN_PCT + 3*SITE_ROBUST_SIGMA_PCT holds (0.2507 vs 0.2507%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: MED_PLUS_4SIG_PCT == SITE_MEDIAN_PCT + 4*SITE_ROBUST_SIGMA_PCT holds (0.2781 vs 0.2781%, |d|=0.0000 <= tol 0.0010)
+PASS: arith: TWO_X_MEDIAN_PCT == 2*SITE_MEDIAN_PCT holds (0.3370 vs 0.3370%, |d|=0.0000 <= tol 0.0010)
+FAIL: arith: TWO_X_MAX_PCT == 2*SITE_MAX_PCT BROKEN (0.5396 vs 0.5000%, |d|=0.0396 > tol 0.0010)
+PASS: arith: CEILING_3X_MEDIAN_PCT == 3*SITE_MEDIAN_PCT holds (0.5056 vs 0.5055%, |d|=0.0001 <= tol 0.0010)
+FAIL: arith: CEILING_MARGIN_X == CEILING_3X_MEDIAN_PCT / SITE_MAX_PCT BROKEN (1.8700 vs 2.0224x, |d|=0.1524 > tol 0.0200)
+PASS: arith: ordering holds (min 0.1345% <= median 0.1685% <= max 0.2500%)
+PASS: arith: INFLATION_ROBUST_SIGMA_X parsed as 0.0890x (reported dispersion; no identity)
+PASS: arith: INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X holds (3.4200 vs 3.4200x, |d|=0.0000 <= tol 0.0100)
+PASS: arith: INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X holds (1.9100 vs 1.9106x, |d|=0.0006 <= tol 0.0100)
+PASS: arith: FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT holds (1.1200 vs 1.1205x, |d|=0.0005 <= tol 0.0100)
+PASS: arith: inflation ordering holds (min 1.04x <= median 1.14x <= max 1.79x)
+GUARD arith: RED
+EXIT=1
+
+### REG-3    — fixture, SITE_MIN_PCT value blanked, section paste-ready                EXIT=1
+
+  The s2x NC-3 control, REBASED. Exactly one slot must fail its pattern.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh paste-ready $SCRATCH/u6i/reg_3.md
+== section: paste-ready ==
+PASS: vacuity: file present, 31959 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: paste-ready: zero slot-sentinel delimiters remain
+PASS: paste-ready: basename carries no XX date placeholder: reg_3.md
+FAIL: paste-ready: ledger line SITE_MIN_PCT does not match its filled-value pattern (^  SITE_MIN_PCT = [0-9]+\.[0-9]+%$) — filled wrongly, or DELETED instead of filled
+PASS: paste-ready: ledger line SITE_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line SITE_ROBUST_SIGMA_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MEAN_ROW_SITE_INFLATION matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_3SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line MED_PLUS_4SIG_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line TWO_X_MAX_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_3X_MEDIAN_PCT matches its filled-value pattern
+PASS: paste-ready: ledger line CEILING_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line POSTING_DATE matches its filled-value pattern
+PASS: paste-ready: ledger line PRE_EXECUTE_COMMIT matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MEDIAN_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MAX_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_ROBUST_SIGMA_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_CEILING_3X_X matches its filled-value pattern
+PASS: paste-ready: ledger line INFLATION_MARGIN_X matches its filled-value pattern
+PASS: paste-ready: ledger line FRACTION_RATIO_X matches its filled-value pattern
+PASS: paste-ready: ledger line ROW_MEDIAN_PCT matches its filled-value pattern
+GUARD paste-ready: RED
+EXIT=1
+
+### REG-4    — empty file, section draft                                               EXIT=1
+
+  The u8d vacuity floor, unweakened by the extension.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh draft $SCRATCH/u6i/reg_4_empty.md
+== section: draft ==
+FAIL: vacuity: file under byte floor (0 B < 6000 B): /gpfs_common/share01/clintonlab/ckclinto/tmp/claude-410819/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/19c6a323-a3ca-4c18-bffc-bfcb052f7fe3/scratchpad/u6i/reg_4_empty.md
+GUARD draft: RED
+EXIT=1
+
+### REG-5    — fixture, PASTE opener deleted, section draft                            EXIT=1
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh draft $SCRATCH/u6i/reg_5.md
+== section: draft ==
+PASS: vacuity: file present, 31928 B (floor 6000 B)
+FAIL: vacuity: PASTE opener occurs 0 time(s), want exactly 1
+GUARD draft: RED
+EXIT=1
+
+### REG-6    — fixture, one verbatim §8 quote line trimmed, section quote              EXIT=1
+
+  'premise low by ~38x' -> '~39x' in the carried §8 block. The count-identity quote
+  check must notice.
+
+$ bash .planning/quick/260819-u8d-record-occlusion-recalibration-adoption-/260819-u8d-placeholder-guard.sh quote $SCRATCH/u6i/reg_6.md
+== section: quote ==
+PASS: vacuity: file present, 31966 B (floor 6000 B)
+PASS: vacuity: exactly one opener (line 129) before exactly one closer (line 374)
+PASS: vacuity: paste block 17200 B (floor 3000 B)
+PASS: quote: source range 260819-SETH-VERDICT-adjudication-confirmed-as-received.md:102-107 yields 4 non-blank lines
+FAIL: quote: source line NOT carried verbatim: 'measured : 231 per 102,421 = 0.2255%    -> premise low by ~38x'
+FAIL: quote: count identity FAILS: 3/4 source lines carried verbatim
+GUARD quote: RED
+EXIT=1
+
