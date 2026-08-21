@@ -30,6 +30,25 @@
 #    or by trimming the verbatim provenance quote. If a check is itself wrong, fix the
 #    CHECK and re-run its control until it is seen red again.
 #
+#
+# 5. CHANGELOG.
+#    2026-08-20, quick-260820-u6i — EXTENSION, STRICTLY ADDITIVE. It adds 8 roster slots
+#    (ROW_MEDIAN_PCT plus the seven companion-gate x-ratios), exactly ONE new `*_X)`
+#    filled-value pattern arm in `paste-ready`, THREE new arithmetic identities and ONE new
+#    ordering check in `arith`, at an explicitly stated x-ratio tolerance TOL_X = 0.01
+#    (an unstated tolerance is an unfalsifiable check, so it is stated).
+#    NO existing check was removed, renamed, loosened or given a wider tolerance: TOL_PCT
+#    stays 0.001, TOL_RATIO stays 0.02, the fail-closed `*)` arm stays, the verbatim quote
+#    range stays. The roster grew by `ROSTER+=` and NEEDED by `NEEDED +=`, and the new
+#    identities were INSERTED before `sys.exit(rc)`, precisely so this file's own commit
+#    diff carries ZERO deleted lines — that `git diff --numstat` field is the enforceable
+#    form of "strictly additive", and it was MEASURED rather than asserted.
+#    Growing the roster to 21 automatically requires 21 SLOT_LEDGER lines through
+#    sec_draft's EXISTING count check; no new code was needed for that.
+#    Each new identity was seen RED in isolation on a perturbed scratch copy, and every
+#    pre-existing control (u8d R1-R8, s2x NC-1..NC-3) was re-run against THIS extended
+#    guard. All of it — command, full output, exit code — is transcribed verbatim in
+#    .planning/quick/260820-u6i-revise-the-instantiated-amendment-per-se/260820-u6i-guard-transcript.txt
 # Usage: bash 260819-u8d-placeholder-guard.sh {draft|paste-ready|arith|quote|all} <amendment_path>
 # Exit 0 = every check in the requested section PASSED. Exit 1 = at least one FAILED.
 #
@@ -50,6 +69,12 @@ ROSTER=(SITE_MIN_PCT SITE_MEDIAN_PCT SITE_MAX_PCT SITE_ROBUST_SIGMA_PCT
         MEAN_ROW_SITE_INFLATION MED_PLUS_3SIG_PCT MED_PLUS_4SIG_PCT TWO_X_MEDIAN_PCT
         TWO_X_MAX_PCT CEILING_3X_MEDIAN_PCT CEILING_MARGIN_X POSTING_DATE
         PRE_EXECUTE_COMMIT)
+
+# quick-260820-u6i — the companion-gate slots, APPENDED so the literal above is not
+# rewritten (zero-deletion extension). sec_draft's ledger-line count check now demands 21
+# ledger lines automatically, with no edit to sec_draft.
+ROSTER+=(INFLATION_MIN_X INFLATION_MEDIAN_X INFLATION_MAX_X INFLATION_ROBUST_SIGMA_X
+         INFLATION_CEILING_3X_X INFLATION_MARGIN_X FRACTION_RATIO_X ROW_MEDIAN_PCT)
 
 RC=0
 BLOCK=""
@@ -157,6 +182,11 @@ sec_paste_ready() {
       MEAN_ROW_SITE_INFLATION|CEILING_MARGIN_X) pat="^  ${s} = [0-9]+\.[0-9]+x$" ;;
       POSTING_DATE)       pat="^  POSTING_DATE = 20[0-9]{2}-[0-9]{2}-[0-9]{2}$" ;;
       PRE_EXECUTE_COMMIT) pat="^  PRE_EXECUTE_COMMIT = [0-9a-f]{7,40}$" ;;
+      # quick-260820-u6i: the six inflation/ratio slots. INSERTED BEFORE *_PCT) and AFTER
+      # the explicit MEAN_ROW_SITE_INFLATION|CEILING_MARGIN_X arm, so first-match-wins
+      # leaves CEILING_MARGIN_X's behaviour bit-identical. Accepts both the 2 dp and the
+      # 4 dp render width (INFLATION_ROBUST_SIGMA_X renders at 4 dp, deliberately).
+      *_X)                pat="^  ${s} = [0-9]+\.[0-9]+x$" ;;
       *_PCT)              pat="^  ${s} = [0-9]+\.[0-9]+%$" ;;
       *)                  fail_ "paste-ready: no filled-value pattern defined for $s"; continue ;;
     esac
@@ -187,6 +217,15 @@ NEEDED = ["SITE_MIN_PCT","SITE_MEDIAN_PCT","SITE_MAX_PCT","SITE_ROBUST_SIGMA_PCT
           "MEAN_ROW_SITE_INFLATION","MED_PLUS_3SIG_PCT","MED_PLUS_4SIG_PCT",
           "TWO_X_MEDIAN_PCT","TWO_X_MAX_PCT","CEILING_3X_MEDIAN_PCT","CEILING_MARGIN_X",
           "POSTING_DATE","PRE_EXECUTE_COMMIT"]
+
+# quick-260820-u6i — APPENDED, not rewritten. TOL_X is a NEW constant for the x-ratio
+# identities added below; TOL_RATIO above is UNTOUCHED and is not widened by this
+# extension. 0.01 because every operand renders at 2 dp, so worst-case propagated rounding
+# on a ratio of order 3.4/1.8 is about 0.004 — comfortably inside it.
+NEEDED += ["INFLATION_MIN_X","INFLATION_MEDIAN_X","INFLATION_MAX_X",
+           "INFLATION_ROBUST_SIGMA_X","INFLATION_CEILING_3X_X","INFLATION_MARGIN_X",
+           "FRACTION_RATIO_X","ROW_MEDIAN_PCT"]
+TOL_X = 0.01
 
 rc = 0
 def ok(m):   print("PASS: arith: " + m)
@@ -252,6 +291,31 @@ if mn <= med <= mx:
     ok("ordering holds (min %.4f%% <= median %.4f%% <= max %.4f%%)" % (mn, med, mx))
 else:
     bad("ordering BROKEN (min %.4f%%, median %.4f%%, max %.4f%%)" % (mn, med, mx))
+
+# quick-260820-u6i — the multiplicity companion gate's three identities plus the
+# inflation ordering check. Inserted immediately before sys.exit(rc); nothing above moved.
+imn   = num("INFLATION_MIN_X", "x")
+imed  = num("INFLATION_MEDIAN_X", "x")
+imx   = num("INFLATION_MAX_X", "x")
+isig  = num("INFLATION_ROBUST_SIGMA_X", "x")
+ic3   = num("INFLATION_CEILING_3X_X", "x")
+imarg = num("INFLATION_MARGIN_X", "x")
+fr    = num("FRACTION_RATIO_X", "x")
+rmed  = num("ROW_MEDIAN_PCT", "%")
+ok("INFLATION_ROBUST_SIGMA_X parsed as %.4fx (reported dispersion; no identity)" % isig)
+ident("INFLATION_CEILING_3X_X == 3*INFLATION_MEDIAN_X", ic3, 3*imed, TOL_X, "x")
+if imx == 0:
+    bad("INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X undefined (INFLATION_MAX_X is 0)")
+else:
+    ident("INFLATION_MARGIN_X == INFLATION_CEILING_3X_X / INFLATION_MAX_X", imarg, ic3/imx, TOL_X, "x")
+if med == 0:
+    bad("FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT undefined (SITE_MEDIAN_PCT is 0)")
+else:
+    ident("FRACTION_RATIO_X == ROW_MEDIAN_PCT / SITE_MEDIAN_PCT", fr, rmed/med, TOL_X, "x")
+if imn <= imed <= imx:
+    ok("inflation ordering holds (min %.2fx <= median %.2fx <= max %.2fx)" % (imn, imed, imx))
+else:
+    bad("inflation ordering BROKEN (min %.2fx, median %.2fx, max %.2fx)" % (imn, imed, imx))
 
 sys.exit(rc)
 PY
