@@ -91,3 +91,33 @@ NC-B sentinel reintroduced ({{ count = 1): guard all exit=1  first FAIL: FAIL: p
 HANDOFF.json: valid
 HANDOFF #0 mentions d45db42: True | 422f1f28: True | AFTERNOON: True
 ```
+
+## Addendum — gsd-verifier agent pass (independent of the inline pass above; 2026-08-21 14:52-15:03 EDT, at `da7f86e`)
+
+The first orchestrator's verifier agent completed all of its checks before it found this file already
+written and was stopped; its table is recorded here because it covers two things the inline pass did
+not: the PROSE-TRUTH reading (11a-c) and an independent re-run of NC-1 on a fresh scratch copy.
+
+| # | Check | Observed | Verdict |
+|---|-------|----------|---------|
+| 1 | guard `all` | `GUARD all: GREEN`, exit 0 | VERIFIED |
+| 2 | paste block | 22945 B / 422f1f28d6a3b76c7657fadec05a0237 | VERIFIED |
+| 3 | counts: 2689cae / d45db42… / `{{` / 2026-08-21 / `\bsix\b` | 0 / 2 / 0 / 3 / 3 (lines 218, 233, 558 — all NaN-pair context) | VERIFIED |
+| 4 | whole file | 42715 B / 45453596402874bf6c52ae490241eb86 / 594 lines | VERIFIED |
+| 5 | banked record `cmp` vs scratchpad source; tracked | silent, exit 0; tracked | VERIFIED |
+| 6 | `git diff --stat 2689cae HEAD -- src/ tests/ config/`; constant | empty; `:133 _OCCLUSION_ANOMALY_FRACTION = 0.0005` | VERIFIED |
+| 7 | `osf_deviations.md` | dd3806312977513a8727463ec3a032df (unchanged) | VERIFIED |
+| 8a | SUMMARY shows NC-1 and NC-2 commands with non-zero exits | both present (`NC1-RED EXIT=1`, `NC2-RED EXIT=1`) | VERIFIED |
+| 8b | NC-1 re-run on a fresh scratch copy (line 81 → `{{CEILING_3X_MEDIAN_PCT}}`) | `GUARD all: RED`, exit 1 (paste-ready sentinel + arith uninstantiated) | VERIFIED (independently reproduced) |
+| 9 | posting card tracked + complete (scp login/dest, awk → `…-2026-08-21.md`, 22945/422f1f28, macOS `md5`, NEW file, trsx5 prohibition, Recent Activity UTC, 1 revision, if-it-slips, status line) | all present | VERIFIED |
+| 10 | STATE top block + HANDOFF #0 = 2026-08-21 AFTERNOON, d45db42, CARTER POSTS; `git status -sb` no ahead/behind | as required | VERIFIED |
+| 11a | line-63 row prose TRUE of d45db42 (captured at the 21 Aug 2026 posting-prep re-confirmation, after the banking commit; commits after the revising task's value enumerated and docs-only) | TRUE | VERIFIED |
+| 11b | instantiation-record item 4 prose TRUE | TRUE | VERIFIED |
+| 11c | checklist item 3: seven records, all seven paths tracked | TRUE, 7/7 | VERIFIED |
+
+Score 11/11. Note (10d): the "two long-standing untracked files" phrasing in the check prompt undercounted
+the pre-existing untracked debris (~19 paths, byte-identical to the session-start `gitStatus` snapshot);
+none of it was introduced by this task.
+
+Post-close: the posting card's §(vi) was corrected at `fb1f600` (a date slip retires the paste-block
+anchor by EITHER route; see the SUMMARY's post-close correction). Amendment untouched.
