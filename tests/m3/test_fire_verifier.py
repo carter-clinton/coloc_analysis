@@ -68,8 +68,14 @@ import run_native_ld_panel as rnlp  # noqa: E402  (the shipped producer)
 #: (``run_native_ld_panel.py:831``). The prototype this module supersedes would
 #: have classified this as UNRECOGNIZED -> HARD_STOP on the gates working.
 REAL_INFEASIBLE = "deferred_infeasible_square: n_var=102421 > ceiling=120000"
-#: ``run_native_ld_panel.py:854``
-REAL_OCCLUSION_ANOMALY = "deferred_occlusion_anomaly: 812 occluded of 102421 (ceiling 51)"
+#: A REAL two-condition deferral in the shape the producer emits it TODAY (the
+#: constant head plus the three reported numbers and which condition fired). Copied
+#: from the shipped f-string in ``run_native_ld_panel.process_region``, not from
+#: memory; the ast status-vocabulary enforcer below pins the constant head.
+REAL_OCCLUSION_ANOMALY = (
+    "deferred_occlusion_anomaly: 812 occluded rows at 700 sites of 96708 "
+    "(site_fraction 0.7238% > ceiling 0.5056%; inflation 1.16x <= ceiling 3.42x; "
+    "fired=site_fraction)")
 #: ``run_native_ld_panel.py:1028``
 REAL_ERROR = "error: n_var mismatch for m2_region_00001: 102421 != 102420"
 
@@ -98,11 +104,42 @@ def _write_panel(tmp_path: Path, rows, name="panel_fixture.tsv",
 
 
 def _region1_panel(tmp_path: Path, **kw) -> Path:
-    """The Stage-A panel: region 1 computed ok, 5 occluded of 102,421."""
+    """The Stage-A panel: region 1 computed ok with 231 occluded ROWS of 102,421.
+
+    231 is MEASURED (2026-08-19/20 — 231 occluded rows at 196 sites of 96,708 sites;
+    ``.planning/debug/260820-site-basis-sweep-results-as-received.md``), not derived.
+    ``n_dropped_occluded`` is and stays a ROW count.
+    """
     row = _panel_row("m2_region_00001", chrom=1, n_var=102421, wall_min=41.3,
                      peak_ram_gib=78.2, output_gib=39.1, status="ok",
-                     n_dropped_occluded=5, n_dropped_monomorphic=0)
+                     n_dropped_occluded=231, n_dropped_monomorphic=0)
     return _write_panel(tmp_path, [row], **kw)
+
+
+def _gate_json(tmp_path: Path, *, region_id="m2_region_00001", occ_rows=231,
+               occ_sites=196, n_sites=96708, n_rows=102421,
+               name=None, **overrides) -> Path:
+    """A producer-shaped ``{region_id}.occlusion_gate.json`` in the region-1
+    MEASURED shape (231 occluded rows at 196 of 96,708 sites -> 0.2027% / 1.18x).
+
+    The ceilings are read off the SHIPPED producer, never typed here."""
+    data = {
+        "region_id": region_id,
+        "n_rows": n_rows,
+        "n_sites": n_sites,
+        "occ_rows": occ_rows,
+        "occ_sites": occ_sites,
+        "site_fraction": (occ_sites / n_sites) if n_sites else 0.0,
+        "inflation": (occ_rows / occ_sites) if occ_sites else None,
+        "site_fraction_ceiling": rnlp._OCCLUSION_SITE_FRACTION_CEILING,
+        "inflation_ceiling": rnlp._OCCLUSION_INFLATION_CEILING,
+        "fired": [],
+        "verdict": "ok",
+    }
+    data.update(overrides)
+    path = tmp_path / (name or f"{region_id}.occlusion_gate.json")
+    path.write_text(json.dumps(data, indent=2) + "\n")
+    return path
 
 
 def _symmetric_unit_diag(n: int, seed: int = 0) -> np.ndarray:
@@ -236,7 +273,7 @@ def test_parse_panel_tsv_green_nine_columns(tmp_path):
     assert r["region_id"] == "m2_region_00001"
     assert r["n_var"] == 102421
     assert r["peak_ram_gib"] == pytest.approx(78.2)
-    assert r["n_dropped_occluded"] == 5
+    assert r["n_dropped_occluded"] == 231     # a ROW count, MEASURED 2026-08-19/20
     assert r["status"] == "ok"
 
 
@@ -544,47 +581,110 @@ def test_RED_manifest_rows_wrong_region_id(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
-# check_occlusion_ceiling (M5 / clause (d))                                   #
+# check_occlusion_gate (the POSTED two-condition clause (d), mk7ze)           #
 # --------------------------------------------------------------------------- #
 
-def test_occlusion_ceiling_green_region1():
-    c = fv.check_occlusion_ceiling(n_occluded=5, n_var=102421)
+def test_occlusion_gate_green_region1_measured():
+    """Region 1 as MEASURED 2026-08-19/20 — 231 occluded ROWS at 196 SITES of
+    96,708 sites -> a 0.2027% site fraction and 1.18x inflation, under BOTH posted
+    ceilings, so the gate must not fire there."""
+    c = fv.check_occlusion_gate(occ_rows=231, occ_sites=196, n_sites=96708)
     assert c.ok, c.detail
-    assert c.measured["ceiling"] == pytest.approx(51.2105, abs=1e-3)
+    assert c.measured["fired"] == []
+    assert c.measured["site_fraction"] == pytest.approx(196 / 96708)
+    assert c.measured["inflation"] == pytest.approx(231 / 196)
 
 
-def test_RED_occlusion_ceiling_exceeded():
-    c = fv.check_occlusion_ceiling(n_occluded=52, n_var=102421)
+def test_RED_occlusion_gate_site_fraction_exceeded():
+    c = fv.check_occlusion_gate(occ_rows=700, occ_sites=600, n_sites=96708)
     assert not c.ok and "DEFER" in c.detail
+    assert c.measured["fired"] == ["site_fraction"]
 
 
-def test_occlusion_ceiling_boundary_is_strictly_greater():
-    """Clause (d) says 'exceeds' -> count == ceiling stays on the lockstep path."""
-    assert fv.check_occlusion_ceiling(n_occluded=60, n_var=120000).ok
-    assert not fv.check_occlusion_ceiling(n_occluded=61, n_var=120000).ok
-
-
-def test_RED_occlusion_ceiling_missing_count_fails_closed():
-    c = fv.check_occlusion_ceiling(n_occluded=None, n_var=102421)
+def test_RED_occlusion_gate_inflation_exceeded_with_site_fraction_under():
+    """The COMPANION condition alone — the region the withdrawn single-condition
+    ceiling could never have caught: 1 occluded site of 100,000 (a 0.001% site
+    fraction, far under) carrying 8 occluded rows -> inflation 8.0, over."""
+    c = fv.check_occlusion_gate(occ_rows=8, occ_sites=1, n_sites=100000)
     assert not c.ok
+    assert c.measured["fired"] == ["inflation"]
+    assert c.measured["site_fraction"] < c.measured["site_fraction_ceiling"]
 
 
-def test_occlusion_fraction_is_the_shipped_module_global(monkeypatch):
-    """IDENTITY, not a literal: the default fraction is READ from the shipped
-    module global at evaluation time, exactly as the producer reads it."""
-    assert fv._default_occlusion_fraction() == rnlp._OCCLUSION_ANOMALY_FRACTION
-    monkeypatch.setattr(rnlp, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
-    assert fv._default_occlusion_fraction() == 0.5
-    # 5 of 100 is under a 0.5 ceiling of 50 -> the gate must follow the global
-    assert fv.check_occlusion_ceiling(n_occluded=5, n_var=100).ok
-    assert not fv.check_occlusion_ceiling(n_occluded=51, n_var=100).ok
+def test_occlusion_gate_boundary_is_strictly_greater_on_both_conditions():
+    """The posted rule says "exceeds" -> STRICT ``>`` on EACH condition; a value
+    equal to its ceiling stays on the exclude-in-lockstep path."""
+    tie = fv.check_occlusion_gate(occ_rows=1, occ_sites=1, n_sites=2000,
+                                  site_ceiling=1 / 2000, inflation_ceiling=2.0)
+    assert tie.ok and tie.measured["fired"] == []
+    over = fv.check_occlusion_gate(occ_rows=1, occ_sites=2, n_sites=2000,
+                                   site_ceiling=1 / 2000, inflation_ceiling=2.0)
+    assert not over.ok and over.measured["fired"] == ["site_fraction"]
+
+    tie2 = fv.check_occlusion_gate(occ_rows=8, occ_sites=1, n_sites=100000,
+                                   inflation_ceiling=8.0)
+    assert tie2.ok and tie2.measured["fired"] == []
+    over2 = fv.check_occlusion_gate(occ_rows=9, occ_sites=1, n_sites=100000,
+                                    inflation_ceiling=8.0)
+    assert not over2.ok and over2.measured["fired"] == ["inflation"]
+
+
+def test_occlusion_gate_zero_occlusion_reports_no_inflation():
+    """0/0 is not a number: a region with no occluded site has NO inflation, and
+    reporting 0.0 there would invent a measurement."""
+    c = fv.check_occlusion_gate(occ_rows=0, occ_sites=0, n_sites=96708)
+    assert c.ok and c.measured["inflation"] is None
+    assert c.measured["fired"] == []
+
+
+@pytest.mark.parametrize("missing", ["occ_rows", "occ_sites", "n_sites"])
+def test_RED_occlusion_gate_missing_input_fails_closed(missing):
+    args = {"occ_rows": 231, "occ_sites": 196, "n_sites": 96708}
+    args[missing] = None
+    c = fv.check_occlusion_gate(**args)
+    assert not c.ok and "FAIL CLOSED" in c.detail
+
+
+def test_occlusion_ceilings_are_the_shipped_module_globals(monkeypatch):
+    """IDENTITY, not a literal: BOTH ceilings are READ from the shipped producer's
+    module globals at EVALUATION time, exactly as the producer reads them."""
+    assert (fv._default_site_fraction_ceiling()
+            == rnlp._OCCLUSION_SITE_FRACTION_CEILING)
+    assert fv._default_inflation_ceiling() == rnlp._OCCLUSION_INFLATION_CEILING
+    monkeypatch.setattr(rnlp, "_OCCLUSION_SITE_FRACTION_CEILING", 0.5)
+    monkeypatch.setattr(rnlp, "_OCCLUSION_INFLATION_CEILING", 100.0)
+    assert fv._default_site_fraction_ceiling() == 0.5
+    assert fv._default_inflation_ceiling() == 100.0
+    # the gate must FOLLOW the globals, never a snapshot taken at import
+    assert fv.check_occlusion_gate(occ_rows=5, occ_sites=5, n_sites=100).ok
+    assert not fv.check_occlusion_gate(occ_rows=51, occ_sites=51, n_sites=100).ok
+
+
+def test_producer_ceilings_come_from_the_one_pinned_constants_module():
+    """The chain the whole batch rests on, asserted end to end: pinned module ->
+    producer module globals -> the verifier's evaluation-time accessors."""
+    import occlusion_gate_constants as ogc
+
+    assert (rnlp._OCCLUSION_SITE_FRACTION_CEILING
+            == ogc.OCCLUSION_SITE_FRACTION_CEILING)
+    assert rnlp._OCCLUSION_INFLATION_CEILING == ogc.OCCLUSION_INFLATION_CEILING
+    assert (fv._default_site_fraction_ceiling()
+            == ogc.OCCLUSION_SITE_FRACTION_CEILING)
+    assert fv._default_inflation_ceiling() == ogc.OCCLUSION_INFLATION_CEILING
 
 
 def test_no_hardcoded_shipped_constants_in_the_module():
-    """Hard rule 4: a literal 0.0005 / 120000 / re-declared 256 is a defect."""
+    """Hard rule 4: a hand-typed 0.0005 / 0.005056 / 0.5056 / 3.42 / 120000 / a
+    re-declared 256 is a defect.
+
+    ⚠ THE SCAN STRIPS ``#`` COMMENTS ONLY — a docstring or an f-string detail is
+    CODE and IS scanned. That is deliberate: a ceiling typed into a user-facing
+    detail string is exactly as unpinned as one typed into an expression. Render it
+    from ``_default_site_fraction_ceiling()`` / ``_default_inflation_ceiling()``
+    instead — identity, not a copy."""
     src = (PROJECT_ROOT / "src" / "python" / "fire_verifier.py").read_text()
     code = "\n".join(ln.split("#", 1)[0] for ln in src.splitlines())
-    for banned in ("0.0005", "120000", "= 256"):
+    for banned in ("0.0005", "0.005056", "0.5056", "3.42", "120000", "= 256"):
         assert banned not in code, (
             f"fire_verifier.py hardcodes {banned!r}; import the shipped constant "
             f"instead (a hand-transcribed constant is a silent divergence)")
@@ -792,25 +892,26 @@ def test_coverage_disclosure_live_gate_against_the_repo_file():
 # --------------------------------------------------------------------------- #
 
 def test_summarize_all_pass_exit_zero():
-    s = fv.summarize([fv.check_occlusion_ceiling(5, 102421), fv.check_peak_ram(78.2)])
+    s = fv.summarize([fv.check_occlusion_gate(231, 196, 96708),
+                      fv.check_peak_ram(78.2)])
     assert s["all_pass"] is True and s["exit_code"] == 0 and s["n_checks"] == 2
     assert s["hard_stops"] == [] and s["findings"] == []
 
 
 def test_summarize_buckets_hard_stops_and_findings_separately():
-    checks = [fv.check_occlusion_ceiling(5, 102421),
-              fv.check_occlusion_ceiling(52, 102421),
+    checks = [fv.check_occlusion_gate(231, 196, 96708),
+              fv.check_occlusion_gate(700, 600, 96708),
               fv.check_region1_status(REAL_INFEASIBLE)]
     s = fv.summarize(checks)
     assert s["exit_code"] == 1
-    assert "occlusion_anomaly_ceiling" in s["hard_stops"]
+    assert "occlusion_gate" in s["hard_stops"]
     assert "region1_status" in s["findings"]
     assert "region1_status" not in s["hard_stops"]
 
 
 def test_check_status_is_pass_or_fail_only():
     for c in [fv.check_peak_ram(78.2), fv.check_peak_ram(None),
-              fv.check_occlusion_ceiling(5, 102421)]:
+              fv.check_occlusion_gate(231, 196, 96708)]:
         assert c.status in (fv.PASS, fv.FAIL)
 
 
@@ -842,9 +943,34 @@ def test_cli_stage_a_green(tmp_path):
     panel = _region1_panel(tmp_path)
     manifest = _manifest(tmp_path)
     npz = _good_npz(tmp_path)
+    gate = _gate_json(tmp_path)
     rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
-                  "--manifest", str(manifest), "--npz", str(npz)])
+                  "--manifest", str(manifest), "--npz", str(npz),
+                  "--gate-json", str(gate)])
     assert rc == 0
+
+
+def test_RED_cli_stage_a_requires_gate_json(tmp_path):
+    """The sidecar is the shipped gate's OWN measurement; without it the verifier
+    could only re-assert a number a human typed. REQUIRED, no skip."""
+    panel = _region1_panel(tmp_path)
+    manifest = _manifest(tmp_path)
+    npz = _good_npz(tmp_path)
+    with pytest.raises(SystemExit) as e:
+        fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                 "--manifest", str(manifest), "--npz", str(npz)])
+    assert e.value.code == 2
+
+
+def test_RED_cli_stage_a_absent_gate_json_fails_closed(tmp_path):
+    """A sidecar that is not there is not evidence -> FAIL CLOSED, not a pass."""
+    panel = _region1_panel(tmp_path)
+    manifest = _manifest(tmp_path)
+    npz = _good_npz(tmp_path)
+    rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                 "--manifest", str(manifest), "--npz", str(npz),
+                 "--gate-json", str(tmp_path / "nope.occlusion_gate.json")])
+    assert rc == 1
 
 
 def test_RED_cli_stage_a_requires_npz(tmp_path):
@@ -852,7 +978,8 @@ def test_RED_cli_stage_a_requires_npz(tmp_path):
     manifest = _manifest(tmp_path)
     with pytest.raises(SystemExit) as e:
         fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
-                 "--manifest", str(manifest)])
+                 "--manifest", str(manifest),
+                 "--gate-json", str(_gate_json(tmp_path))])
     assert e.value.code == 2, "a falsification that did not run is not a falsification"
 
 
@@ -861,7 +988,8 @@ def test_RED_cli_stage_a_unknown_region_fails_closed(tmp_path):
     manifest = _manifest(tmp_path)
     npz = _good_npz(tmp_path)
     rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_99999",
-                  "--manifest", str(manifest), "--npz", str(npz)])
+                  "--manifest", str(manifest), "--npz", str(npz),
+                  "--gate-json", str(_gate_json(tmp_path))])
     assert rc == 1
 
 
@@ -878,7 +1006,7 @@ def test_cli_stage_b_green(tmp_path):
 def test_RED_cli_stage_b_peak_ram_over_limit(tmp_path):
     rows = [_panel_row("m2_region_00001", n_var=102421, wall_min=41.3,
                        peak_ram_gib=110.0, output_gib=39.1, status="ok",
-                       n_dropped_occluded=5, n_dropped_monomorphic=0)]
+                       n_dropped_occluded=231, n_dropped_monomorphic=0)]
     p = _write_panel(tmp_path, rows)
     assert fv.main(["stage-b", "--panel-tsv", str(p), "--n-total", "276"]) == 1
 
@@ -905,7 +1033,8 @@ def test_report_json_carries_no_float_arrays(tmp_path):
     npz = _whole_row_nan_npz(tmp_path)
     report = tmp_path / "stage_a.json"
     fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
-             "--manifest", str(manifest), "--npz", str(npz), "--report", str(report)])
+             "--manifest", str(manifest), "--npz", str(npz),
+             "--gate-json", str(_gate_json(tmp_path)), "--report", str(report)])
     data = json.loads(report.read_text())
 
     def walk(node, path="report"):

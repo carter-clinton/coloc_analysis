@@ -97,6 +97,11 @@ import aou_ld_panel as alp  # hail-free at module scope; reused for the guard + 
 import plink_ld_to_npz as pln  # hail-free .ld.bin/.ld.gz -> egress-clean .npz
 import occlusion_manifest as ocm  # Stage-A (coordinate-only) occlusion provenance
 from occlusion_span_filter import detect_occluded_variants  # m3-07b span filter
+import occlusion_span_filter as osf  # its OWN .bim column indices (never a 2nd copy)
+from occlusion_gate_constants import (  # THE one pinned place for the posted ceilings
+    OCCLUSION_INFLATION_CEILING,
+    OCCLUSION_SITE_FRACTION_CEILING,
+)
 
 _PANEL_COLUMNS = [
     "region_id", "chr", "n_var", "wall_min", "peak_ram_gib", "output_gib", "status",
@@ -121,16 +126,39 @@ _PANEL_COLUMNS = [
 ]
 _DEFAULT_PANEL_NAME = "m3-W2-native-plink-panel.tsv"
 
-# trsx5 clause (d) — the pre-registered per-region ANOMALY GATE fraction
-# (.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md:61,
-# PASTE block "(d) Anomaly gate (per region)"): an occluded count EXCEEDING
-# _OCCLUSION_ANOMALY_FRACTION * n_var marks the region a SUBSTRATE ANOMALY — it is
-# DEFERRED for re-diagnosis and disclosed as a deviation, NEVER auto-excluded.
-# Pre-registered, therefore deliberately NOT CLI-tunable: a knob would invite
-# silent deviation from the public commitment. The gate reads this name as a
-# MODULE-GLOBAL at evaluation time (never bound as a default argument), so the
-# topology-dense synthetic test fixtures can pin the gate open.
-_OCCLUSION_ANOMALY_FRACTION = 0.0005
+# THE POSTED TWO-CONDITION OCCLUSION GATE — clause (d) of the recalibration
+# amendment (OSF file `mk7ze`, https://osf.io/mk7ze, posted 2026-08-22T02:58:55Z on
+# the parent record `az52u`; project copy
+# .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md).
+# A region is DEFERRED for re-diagnosis and disclosed as a deviation — NEVER
+# auto-excluded — when EITHER
+#   (i)  its occluded-SITE fraction  occ_sites / n_sites  STRICTLY EXCEEDS
+#        _OCCLUSION_SITE_FRACTION_CEILING (three times the measured 21-region
+#        site-basis MEDIAN), or
+#   (ii) its OWN row/site inflation at occluded sites  occ_rows / occ_sites
+#        STRICTLY EXCEEDS _OCCLUSION_INFLATION_CEILING (three times the measured
+#        inflation MEDIAN — the amendment anchors the companion condition on the
+#        median, explicitly NOT on the reported sample mean, so that both ceilings
+#        are derived by one rule).
+# "Exceeds" is STRICT `>` on BOTH conditions: equality stays on the
+# exclude-in-lockstep path. ACCOUNTING STAYS ROW-KEYED — `n_dropped_occluded` is a
+# ROW count and `_PANEL_COLUMNS` is unchanged — while the GATE is evaluated on
+# SITES; the amendment is explicit that reporting exclusions in sites would
+# understate what left the panel and break the manifest's audit purpose. Both
+# routes emit the SAME `deferred_occlusion_anomaly:` status prefix, so the
+# fire_verifier status vocabulary needs no fourth branch.
+#
+# THE VALUES LIVE IN `occlusion_gate_constants` AND NOWHERE ELSE, because changing
+# either one requires a NEW posted OSF amendment FIRST — pre-registration precedes
+# execution, and the executed rule must be the pre-registered rule.
+# tests/m3/test_occlusion_gate_constants.py is the named enforcer: it holds both
+# constants to the amendment's own SLOT_LEDGER by rendered-string identity. They
+# are pre-registered and therefore deliberately NOT CLI-tunable: a knob would
+# invite silent deviation from the public commitment. Both names below are read as
+# MODULE GLOBALS at EVALUATION TIME inside process_region (never bound as default
+# arguments), so the topology-dense synthetic fixtures can pin the gate open.
+_OCCLUSION_SITE_FRACTION_CEILING = OCCLUSION_SITE_FRACTION_CEILING
+_OCCLUSION_INFLATION_CEILING = OCCLUSION_INFLATION_CEILING
 
 # Feasibility ceiling for SQUARE mode (quick-260813-t21): the dense n_var^2
 # float32 matrix must fit ONE process's RAM, and the downstream converter refuses
@@ -708,9 +736,17 @@ def _reclaim_region_scratch(compute_dir: "str | Path", region_id: str,
     In ``gs://`` mode the local scratch is fully reclaimed as before (the bucket
     holds the deliverable); the excludelist is uploaded alongside the verified
     ``.npz`` before this runs, so the provenance still lands durably.
+
+    quick-260821-x91: ``{region_id}.occlusion_gate.json`` is durable provenance for
+    the same reason — it is the shipped two-condition gate's OWN measurement for
+    this region (occluded rows/sites, the site fraction, the inflation, the two
+    ceilings in force, and the verdict), and it is what ``fire_verifier`` Stage A
+    reads instead of trusting a human-typed count. Tiny, and KEPT wherever the
+    ``.npz`` is kept; in ``gs://`` mode it is uploaded before this runs.
     """
     compute_dir = Path(compute_dir)
-    _keep_names = {f"{region_id}.npz", f"{region_id}.occluded.excludelist"}
+    _keep_names = {f"{region_id}.npz", f"{region_id}.occluded.excludelist",
+                   f"{region_id}.occlusion_gate.json"}
     for p in compute_dir.glob(f"{region_id}.*"):
         if keep_npz and p.name in _keep_names:
             continue
@@ -840,23 +876,93 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                 if ln.strip()
             ]
             occluded_ids, occlusion_edges = detect_occluded_variants(raw_rows)
-            # GATE 2 (quick-260813-t21): trsx5 clause (d) ANOMALY GATE — BEFORE
-            # the excludelist write / manifests / plink, which must NEVER run on
-            # an anomaly region (clause (d): "NOT auto-excluded" — defer for
-            # re-diagnosis + disclose as a deviation). STRICT >: clause (d) says
-            # "exceeds", so count == ceiling stays on the exclude-in-lockstep
-            # path. Real region-1 headroom: 5/102,421 = 4.9e-5 vs ceiling
-            # 51 = int(0.0005 * 102,421) — 10x headroom; the gate must not fire
-            # there. _OCCLUSION_ANOMALY_FRACTION is read as a MODULE-GLOBAL at
-            # evaluation time (never bound as a default argument) so the
-            # topology-dense test fixtures can pin the gate open.
-            if len(occluded_ids) > _OCCLUSION_ANOMALY_FRACTION * pre_window_n_var:
+            # GATE 2 — THE POSTED TWO-CONDITION OCCLUSION GATE (clause (d) of
+            # `mk7ze`; see the constants block at the top of this module). Runs
+            # BEFORE the excludelist write / manifests / plink, none of which may
+            # run on an anomaly region (clause (d): "NOT auto-excluded" — defer for
+            # re-diagnosis + disclose as a deviation).
+            #
+            # The site arithmetic uses the FROZEN detector's OWN column indices. A
+            # local second copy of those indices would be a silent divergence the
+            # day the .bim layout moved.
+            occ = set(occluded_ids)
+
+            def _site(r):
+                return (r[osf._COL_CHR], r[osf._COL_BP])
+
+            n_sites = len({_site(r) for r in raw_rows})
+            occ_sites = len({_site(r) for r in raw_rows if r[osf._COL_ID] in occ})
+            occ_rows = len(occluded_ids)
+            site_fraction = (occ_sites / n_sites) if n_sites else 0.0  # guard anyway
+            # 0/0 is not a number. A region with no occluded site has NO inflation,
+            # and reporting 0.0 there would invent a measurement that was not made.
+            inflation = (occ_rows / occ_sites) if occ_sites else None
+            # READ the module globals ONCE, HERE (evaluation time) — these two names
+            # are the ONLY ceiling references from here down, in both `fired` and
+            # the status f-string. Never a default argument; never a second read.
+            site_ceiling = _OCCLUSION_SITE_FRACTION_CEILING
+            inflation_ceiling = _OCCLUSION_INFLATION_CEILING
+            fired = [c for c, hit in (
+                        ("site_fraction", site_fraction > site_ceiling),
+                        ("inflation", inflation is not None
+                                      and inflation > inflation_ceiling),
+                     ) if hit]
+
+            # THE PER-REGION GATE SIDECAR — machine-readable evidence for this
+            # region's gate decision, written on ALL THREE square outcomes (zero
+            # occlusion, deferral, ok) and BEFORE any branch. fire_verifier's Stage
+            # A reads it: the panel row carries a ROW count and NO site counts, so
+            # without this the verifier could not reproduce the shipped comparison
+            # at all — it could only re-assert a number a human typed.
+            #
+            # DELIBERATELY NOT wrapped in the manifest write's best-effort
+            # try/except. On a DEFERRING region this file is the ONLY evidence that
+            # outlives the region, so an unwritable sidecar is an evidence loss: it
+            # must surface as `error:` through the outer handler rather than be
+            # swallowed into a silent deferral.
+            gate_sidecar = Path(f"{out_prefix}.occlusion_gate.json")
+            gate_sidecar.parent.mkdir(parents=True, exist_ok=True)
+            with open(gate_sidecar, "w") as gate_fh:
+                json.dump({
+                    "region_id": region_id,
+                    "n_rows": pre_window_n_var,
+                    "n_sites": n_sites,
+                    "occ_rows": occ_rows,
+                    "occ_sites": occ_sites,
+                    "site_fraction": site_fraction,
+                    "inflation": inflation,
+                    "site_fraction_ceiling": site_ceiling,
+                    "inflation_ceiling": inflation_ceiling,
+                    "fired": fired,
+                    "verdict": "deferred" if fired else "ok",
+                }, gate_fh, indent=2, sort_keys=False)
+                gate_fh.write("\n")
+
+            if fired:
+                # ONE status prefix for BOTH routes (the fire_verifier status
+                # vocabulary and its ast enforcer read this constant head), with
+                # all three reported numbers plus which condition(s) fired.
                 result["status"] = (
-                    f"deferred_occlusion_anomaly: {len(occluded_ids)} occluded of "
-                    f"{pre_window_n_var} (ceiling "
-                    f"{int(_OCCLUSION_ANOMALY_FRACTION * pre_window_n_var)})")
-                print(f"region {region_id}: DEFERRED (occlusion anomaly, trsx5 clause (d)) — "
-                      f"{result['status']}", file=sys.stderr, flush=True)
+                    f"deferred_occlusion_anomaly: {occ_rows} occluded rows at "
+                    f"{occ_sites} sites of {n_sites} (site_fraction "
+                    f"{site_fraction:.4%} "
+                    f"{'>' if 'site_fraction' in fired else '<='} ceiling "
+                    f"{site_ceiling:.4%}; inflation "
+                    f"{'n/a' if inflation is None else format(inflation, '.2f') + 'x'} "
+                    f"{'>' if 'inflation' in fired else '<='} ceiling "
+                    f"{inflation_ceiling:.2f}x; fired={'+'.join(fired)})")
+                print(f"region {region_id}: DEFERRED (occlusion anomaly, posted "
+                      f"clause (d)) — {result['status']}",
+                      file=sys.stderr, flush=True)
+                # A deferred region ships exactly ONE object: its gate evidence.
+                # Nothing else crosses because nothing else ran — no .npz, no
+                # .afreq, no excludelist, no occlusion manifest. Same egress class
+                # as those artifacts (counts, fractions and policy labels only).
+                if gs_mode:
+                    _gsutil_upload(
+                        gate_sidecar,
+                        _gs_join(gs_out_dir, f"{region_id}.occlusion_gate.json"),
+                    )
                 append_panel_row(panel_tsv, result, scratch_dir=compute_dir)
                 return result
             if occluded_ids:
@@ -1019,6 +1125,17 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                     _gsutil_upload(
                         region_manifest,
                         _gs_join(gs_out_dir, f"{region_id}.occlusion_manifest.tsv"),
+                    )
+                # quick-260821-x91: the per-region occlusion GATE SIDECAR — the
+                # shipped two-condition gate's own measurement for this region.
+                # Same egress class as the two artifacts above (counts, fractions
+                # and policy labels; no genotypes, no per-person data, no LD
+                # values). Existence-gated: banded mode writes no sidecar.
+                gate_json = Path(f"{out_prefix}.occlusion_gate.json")
+                if gate_json.is_file():
+                    _gsutil_upload(
+                        gate_json,
+                        _gs_join(gs_out_dir, f"{region_id}.occlusion_gate.json"),
                     )
             else:
                 result["out"] = str(out_npz)  # left in scratch for inspection

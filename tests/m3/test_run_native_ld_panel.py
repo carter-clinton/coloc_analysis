@@ -1663,7 +1663,10 @@ def test_driver_writes_occluded_excludelist_with_exactly_the_occluded_ids(tmp_pa
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     excl = out_dir / "m2_region_00001.occluded.excludelist"
@@ -1686,7 +1689,10 @@ def test_exclude_reaches_the_plink_argv(tmp_path, monkeypatch):
     monkeypatch.setattr(drv, "_run_plink", mock)
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     assert len(mock.calls) == 1
@@ -1708,7 +1714,10 @@ def test_keep_allele_order_still_present_alongside_exclude(tmp_path, monkeypatch
     monkeypatch.setattr(drv, "_run_plink", mock)
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     for argv in mock.calls:
@@ -1736,7 +1745,10 @@ def test_occlusion_filtered_npz_has_no_nan_and_verifies(tmp_path, monkeypatch):
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     assert res[0]["status"] == "ok"
@@ -1778,7 +1790,10 @@ def test_n_dropped_occluded_is_separated_from_n_dropped_monomorphic(tmp_path, mo
     )
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     r0 = res[0]
@@ -1926,7 +1941,10 @@ def test_gs_per_region_occlusion_manifest_uploaded_for_occluded_region(tmp_path,
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     mock_gs = _MockGsutil()
     monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
 
@@ -1970,7 +1988,10 @@ def test_gs_per_region_occlusion_manifest_only_for_occluded_regions(tmp_path, mo
     man1 = _region1_manifest(r1_dir / "regions.tsv", chrom1, from1, to1)
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim1, nan_snps=occluded_ids))
     res1 = drv.run_native_ld_panel(man1, bfile1, gs_out, mode="square",
                                    scratch_dir=tmp_path / "s1")
@@ -2028,7 +2049,10 @@ def test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed(tmp_pa
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     monkeypatch.setattr(
         drv, "content_verify_npz",
         lambda npz_path, *, mode="square": (False, "forced verify failure (test seam)"),
@@ -2095,7 +2119,10 @@ def test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchang
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=occluded_ids))
     # fixture is topology-dense (5/11); pin the clause-(d) gate OPEN — the
     # gate's own tests live in section 19
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 0.5)
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: this fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
     res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
     assert res[0]["status"] == "ok"
 
@@ -2119,38 +2146,58 @@ def test_per_region_occlusion_manifest_leaves_shared_local_manifest_byte_unchang
 
 
 # --------------------------------------------------------------------------- #
-# 19. the two PRE-FIRE producer gates (quick-260813-t21)                       #
+# 19. the two PRE-FIRE producer gates (quick-260813-t21 / quick-260821-x91)    #
 # --------------------------------------------------------------------------- #
 #
 # The ~11-day / $385-1,084 Stage-C fire is HELD on exactly these two gates:
 #
-# (1) trsx5 clause (d) ANOMALY GATE (the canonical PASTE block of
-#     .planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md,
-#     "(d) Anomaly gate (per region)"): an occluded count EXCEEDING
-#     0.0005 x n_var marks a SUBSTRATE ANOMALY — the region is DEFERRED for
-#     re-diagnosis and disclosed as a deviation, NEVER auto-excluded. Before
-#     this section landed, the driver excluded unconditionally at ANY count,
-#     which the pre-registration prohibits.
+# (1) THE POSTED TWO-CONDITION OCCLUSION GATE — OSF file `mk7ze`,
+#     https://osf.io/mk7ze, posted 2026-08-22T02:58:55Z on the parent record
+#     `az52u`; project copy
+#     .planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md
+#     (paste block 22,945 B / md5 13a49f54). A region is DEFERRED when EITHER
+#         (i)  occluded-SITE fraction  occ_sites / n_sites  > the site ceiling
+#              (3x the 21-region site-basis MEDIAN), or
+#         (ii) row/site inflation at occluded sites  occ_rows / occ_sites
+#              > the inflation ceiling (3x the inflation MEDIAN — NOT the mean).
+#     STRICT `>` on BOTH ("exceeds"), so equality on either condition stays on the
+#     exclude-in-lockstep path. Accounting stays ROW-keyed (`n_dropped_occluded`
+#     remains a ROW count and `_PANEL_COLUMNS` is unchanged at 9), and BOTH routes
+#     emit the same `deferred_occlusion_anomaly:` status prefix so fire_verifier's
+#     status vocabulary needs no fourth branch. The two values live in
+#     src/python/occlusion_gate_constants.py — THE one pinned place — and are held
+#     to the posted SLOT_LEDGER by tests/m3/test_occlusion_gate_constants.py.
+#     This SUPERSEDES the withdrawn single-condition trsx5 ceiling (a bare ROW
+#     fraction of n_var), whose region-1 premise was measured FALSE on 2026-08-19.
 # (2) the n_var FEASIBILITY CEILING (--max-n-var, default = the consumer's
 #     m3_convert_max_n_var): the standing diagnosis
 #     .planning/debug/m3-producer-unbounded-dense-read.md proved the producer
 #     materializes dense n_var^2 float32 with NO bound (52/276 AFR cells exceed
 #     the 120,000 consumer ceiling; the 2026-06-28 fire OOM-killed at region 1).
 #
-# Test names carry the shared -k substrings anomaly_gate / feasibility_ceiling /
+# Test names carry the shared -k substrings occlusion_gate / feasibility_ceiling /
 # max_n_var_default / fail_fast_halts_on_deferral so one -k selects the suite.
-# The region-1 TEST fixture is topology-dense (5 occluded / 11 = 45%; the REAL
-# region 1 is 5/102,421 = 4.9e-5), so the section-16/18 fixture tests pin the
-# clause-(d) gate OPEN via monkeypatch of _OCCLUSION_ANOMALY_FRACTION; the
-# gate's OWN tests live here.
+#
+# THE REGION-1 TEST FIXTURE IS TOPOLOGY-DENSE, THE REAL REGION 1 IS NOT: the
+# fixture is 5 occluded rows at 5 sites of 11 (a 45.45% site fraction), whereas the
+# REAL region 1 is 231/102,421 rows = 0.2255%, 196/96,708 sites = 0.2027%, and
+# inflation 1.18x — MEASURED 2026-08-19/20
+# (.planning/debug/260820-site-basis-sweep-results-as-received.md), i.e. UNDER BOTH
+# ceilings, so the shipped gate must not fire there. That is why the section-16/18
+# fixture tests pin the gate open by monkeypatching BOTH module globals; the gate's
+# OWN tests live here.
 
 
 def _one_occlusion_cohort(tmp_path: Path, n_plain: int):
     """A cohort of ``n_plain`` plain SNPs (chr12, 100-bp spacing) + ONE deletion at
     bp0+50 whose REF spans 60 bases — footprint (bp0+50, bp0+109] occludes EXACTLY
     the one SNP at bp0+100 (rs1001). Returns (bfile_prefix, bim, window,
-    occluded_id). Used by the sub-ceiling + boundary anomaly-gate tests, where the
-    occluded fraction 1/(n_plain+1) must sit AT or BELOW 0.0005 x n_var."""
+    occluded_id).
+
+    Every row sits at its OWN position, so n_sites == n_rows == n_plain + 1 and the
+    occluded-SITE fraction is 1/(n_plain+1) with inflation 1.0 — both comfortably
+    under the posted ceilings. Used by the both-under and site-fraction-boundary
+    tests."""
     bp0 = 53_000_000
     rows = _default_bim_rows(n_plain, chrom=12, bp0=bp0)
     # A1=ALT is the single left-anchor base; A2=REF spans 60 bases (a deletion).
@@ -2163,15 +2210,104 @@ def _one_occlusion_cohort(tmp_path: Path, n_plain: int):
     return str(tmp_path / "cohort"), bim, window, "rs1001"
 
 
-def test_occlusion_anomaly_gate_defers_never_excludes(tmp_path, monkeypatch):
-    """(1) trsx5 clause (d), REAL constant, gs mode (the fire-faithful surface): a
-    region whose occluded count EXCEEDS 0.0005 x n_var (5 of 11 here) is DEFERRED —
-    NOTHING is excluded (no excludelist, no manifests), plink NEVER runs for it, no
-    region artifact crosses to the bucket — and the loop CONTINUES to the next
-    region. The panel TSV carries BOTH rows under the unchanged 9-column header,
-    the deferred row's detail living in the status string (the "error: ..."
-    precedent). Negative control: this test was OBSERVED RED pre-implementation
-    (the driver excluded and returned "ok")."""
+def _stacked_occlusion_cohort(tmp_path: Path, n_plain: int = 1000, stack: int = 8):
+    """THE INFLATION FIXTURE — the shape the single-condition ceiling could not see.
+
+    ``n_plain`` plain SNPs at distinct positions (chr12, 100-bp spacing) + ONE
+    deletion at bp0+50 with a 30-base REF (footprint (bp0+50, bp0+79]) + a
+    SAME-POSITION STACK of ``stack`` rows at bp0+60 (one shared bp, ``stack``
+    distinct ALTs -> ``stack`` distinct variant ids), all inside that footprint.
+
+    So: n_rows = n_plain + 1 + stack, n_sites = n_plain + 2, occ_rows = stack,
+    occ_sites = 1. With the defaults that is a 1/1002 = 0.0998% SITE fraction
+    (UNDER the posted site ceiling) and an inflation of 8.0 (OVER the posted
+    inflation ceiling) — the region only a two-condition gate defers.
+
+    Returns (bfile_prefix, bim, window, stack_ids).
+    """
+    bp0 = 53_000_000
+    rows = _default_bim_rows(n_plain, chrom=12, bp0=bp0)
+    deletion = (12, "del1", 0, bp0 + 50, "T", "T" * 30)
+    stack_bp = bp0 + 60
+    alts = ["A", "C", "G", "AA", "AC", "AG", "AT", "CA", "CC", "CG"][:stack]
+    assert len(alts) == stack and len(set(alts)) == stack
+    stack_rows = [(12, f"stack{k}", 0, stack_bp, alt, "T") for k, alt in enumerate(alts)]
+    rows = rows[:1] + [deletion] + stack_rows + rows[1:]  # ascending bp order
+    bim = tmp_path / "cohort.bim"
+    _write_bim(bim, rows)
+    _write_af(tmp_path / "cohort.afreq", len(rows))
+    window = (12, bp0, bp0 + (n_plain - 1) * 100)
+    return str(tmp_path / "cohort"), bim, window, {r[1] for r in stack_rows}
+
+
+def _all_plain_cohort(tmp_path: Path, n: int = 20):
+    """A cohort with NO multi-base REF at all -> zero occlusion, the third square
+    outcome the sidecar must still document."""
+    return _setup_cohort(tmp_path, n=n)
+
+
+def _read_gate_sidecar(path: Path) -> dict:
+    """Read + shape-check one ``{out_prefix}.occlusion_gate.json``."""
+    import json as _json
+    assert Path(path).is_file(), f"gate sidecar absent: {path}"
+    data = _json.loads(Path(path).read_text())
+    assert set(data) == {
+        "region_id", "n_rows", "n_sites", "occ_rows", "occ_sites", "site_fraction",
+        "inflation", "site_fraction_ceiling", "inflation_ceiling", "fired", "verdict",
+    }, sorted(data)
+    return data
+
+
+def _independently_recomputed_gate_numbers(bim_path, chrom, from_bp, to_bp) -> dict:
+    """A SECOND computation of the gate's numbers straight off the fixture ``.bim``,
+    with this test's OWN set arithmetic and its OWN restatement of the occlusion
+    rule (``len(REF) > 1`` occludes ``POS_D < POS_V <= POS_D + len(REF) - 1``).
+
+    Deliberately NOT a re-read of anything the producer computed: an oracle that
+    calls the code under test agrees with it by construction.
+    """
+    rows = [ln.split() for ln in Path(bim_path).read_text().splitlines() if ln.strip()]
+    win = [r for r in rows
+           if str(r[0]) == str(chrom) and from_bp <= int(r[3]) <= to_bp]
+    occ_ids: set[str] = set()
+    for d in win:
+        if len(d[5]) <= 1:
+            continue
+        lo, hi = int(d[3]) + 1, int(d[3]) + len(d[5]) - 1
+        for v in win:
+            if v[1] != d[1] and lo <= int(v[3]) <= hi:
+                occ_ids.add(v[1])
+    n_rows = len(win)
+    n_sites = len({(r[0], r[3]) for r in win})
+    occ_rows = sum(1 for r in win if r[1] in occ_ids)
+    occ_sites = len({(r[0], r[3]) for r in win if r[1] in occ_ids})
+    return {
+        "n_rows": n_rows,
+        "n_sites": n_sites,
+        "occ_rows": occ_rows,
+        "occ_sites": occ_sites,
+        "site_fraction": (occ_sites / n_sites) if n_sites else 0.0,
+        "inflation": (occ_rows / occ_sites) if occ_sites else None,
+    }
+
+
+def test_occlusion_gate_site_fraction_fires(tmp_path, monkeypatch):
+    """(1) CONDITION (i), REAL constants, gs mode (the fire-faithful surface): a
+    region whose occluded-SITE fraction EXCEEDS the posted ceiling (5 sites of 11 =
+    45.45% here) is DEFERRED — NOTHING is excluded (no excludelist, no occlusion
+    manifests), plink NEVER runs for it — and the loop CONTINUES to the next region.
+    Its inflation is 1.0, so condition (ii) does NOT fire: ``fired`` is exactly
+    ``["site_fraction"]``.
+
+    CONTRACT CHANGE (quick-260821-x91, deliberate): a deferred region now ships ONE
+    object — its ``.occlusion_gate.json`` gate evidence. The predecessor test
+    asserted the blanket ``not any("m2_region_00001" in d ...)``; that assertion was
+    correct for the old contract and is replaced here by an EXACT one-object
+    allow-list plus explicit negatives, so "ships nothing else" is still pinned.
+
+    The panel TSV carries BOTH rows under the unchanged 9-column header, the
+    deferred row's detail living in the status string (the "error: ..." precedent).
+    """
     fx = _region1_fixture_module()
     r1_rows = list(fx._REGION1_BIM_ROWS)                      # chr1, 11 rows, 5 occluded
     plain_rows = _default_bim_rows(20, chrom=1, bp0=30_000_000)
@@ -2185,7 +2321,7 @@ def test_occlusion_anomaly_gate_defers_never_excludes(tmp_path, monkeypatch):
 
     manifest = tmp_path / "regions.tsv"
     _write_manifest(manifest, [
-        # row 1: the anomaly window — 11 in-window, 5 occluded; 5 > 0.0005*11 fires
+        # row 1: the anomaly window — 11 in-window rows at 11 sites, 5 occluded
         {"region_id": "m2_region_00001", "chr": 1, "ancestry": "AFR",
          "window_start_grch38": 1_980_000, "window_end_grch38": 8_400_000},
         # row 2: a clean window — 20 plain rows, zero occlusions -> ok
@@ -2202,25 +2338,40 @@ def test_occlusion_anomaly_gate_defers_never_excludes(tmp_path, monkeypatch):
     res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
                                   scratch_dir=tmp_path)
 
-    # DEFERRED, with the observed counts in the status string
+    # DEFERRED, with all three reported numbers in the status string
     assert res[0]["status"].startswith("deferred_occlusion_anomaly")
-    assert "5 occluded of 11" in res[0]["status"]
+    assert "5 occluded rows at 5 sites of 11" in res[0]["status"]
+    assert "fired=site_fraction" in res[0]["status"]
     # nothing dropped, nothing computed: detail lives in the status string
     assert res[0]["n_dropped_occluded"] is None
     assert res[0]["n_var"] is None
-    # clause (d): defer, NOT auto-exclude — no excludelist, no manifests, anywhere
+    # clause (d): defer, NOT auto-exclude — no excludelist, no occlusion manifests
     assert list(tmp_path.rglob("*.occluded.excludelist")) == []
     assert list(tmp_path.rglob("*occlusion_manifest.tsv")) == []
     # plink NEVER ran for region 1
     assert len(mock.calls) == 1
     out_arg = mock.calls[0][mock.calls[0].index("--out") + 1]
     assert out_arg.endswith("m2_region_00002")
-    # NO cp of any region-1 artifact; permitted destinations are ONLY the
-    # panel-TSV URI + region-2 artifacts (the section-18 verify_failed pattern)
+
+    # the gate sidecar: written, and condition (i) alone fired
+    sidecar = _read_gate_sidecar(tmp_path / "m2_region_00001.occlusion_gate.json")
+    assert sidecar["fired"] == ["site_fraction"]
+    assert sidecar["verdict"] == "deferred"
+    assert (sidecar["occ_rows"], sidecar["occ_sites"], sidecar["n_sites"]) == (5, 5, 11)
+    assert sidecar["inflation"] == 1.0
+
+    # EXACT allow-list: the ONLY region-1 object that crossed is its gate sidecar
     cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
-    assert not any("m2_region_00001" in d for d in cp_dsts), cp_dsts
+    r1 = [d for d in cp_dsts if "m2_region_00001" in d]
+    assert r1 == [f"{gs_out}/m2_region_00001.occlusion_gate.json"], r1
+    for suffix in (".npz", ".afreq", ".occluded.excludelist",
+                   ".occlusion_manifest.tsv"):
+        assert f"{gs_out}/m2_region_00001{suffix}" not in cp_dsts, (suffix, cp_dsts)
     panel_uri = drv._gs_join(gs_out, drv._DEFAULT_PANEL_NAME)
-    assert all(d == panel_uri or "m2_region_00002" in d for d in cp_dsts), cp_dsts
+    assert all(d == panel_uri
+               or d == f"{gs_out}/m2_region_00001.occlusion_gate.json"
+               or "m2_region_00002" in d
+               for d in cp_dsts), cp_dsts
     # the loop CONTINUED: region 2 completed and its .npz was uploaded
     assert res[1]["status"] == "ok"
     assert f"{gs_out}/m2_region_00002.npz" in cp_dsts
@@ -2235,15 +2386,50 @@ def test_occlusion_anomaly_gate_defers_never_excludes(tmp_path, monkeypatch):
         "deferred_occlusion_anomaly")
 
 
-def test_occlusion_anomaly_gate_open_at_subceiling_rate(tmp_path, monkeypatch):
-    """(2) REAL constant, sub-ceiling rate: 1 occluded of 2,001 (ceiling
-    0.0005*2001 = 1.0005; 1 > 1.0005 is False) keeps the FULL existing
-    exclude-in-lockstep behavior — excludelist + --exclude argv + counted drop +
-    verified .npz, status ok. This is a NO-CHANGE pin (structurally GREEN before
-    the gate existed); its failability is MUTATION-PROVEN (fraction -> 1e-9 makes
-    the gate fire on 1/2001 and this test go RED — observed on the clean tree)."""
+def test_occlusion_gate_inflation_fires_with_site_fraction_under(tmp_path, monkeypatch):
+    """(2) CONDITION (ii) ALONE — the region the withdrawn single-condition ceiling
+    could never have caught, and the reason the companion condition was
+    pre-registered.
+
+    1,000 plain SNPs + one deletion + an 8-row SAME-POSITION stack inside its
+    footprint: 1,009 rows over 1,002 sites, 8 occluded ROWS at 1 occluded SITE. The
+    site fraction is 1/1002 = 0.0998%, comfortably UNDER the posted ceiling; the
+    row/site inflation is 8.0, comfortably OVER it. REAL constants, no monkeypatch.
+    """
+    bfile, bim, (chrom, from_bp, to_bp), stack_ids = _stacked_occlusion_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    mock = _MockPlink(bim, nan_snps=stack_ids)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert res[0]["status"].startswith("deferred_occlusion_anomaly")
+    assert "8 occluded rows at 1 sites of 1002" in res[0]["status"]
+    assert "fired=inflation" in res[0]["status"]
+    assert res[0]["n_dropped_occluded"] is None and res[0]["n_var"] is None
+    assert mock.calls == []                       # plink NEVER ran
+    assert list(tmp_path.rglob("*.occluded.excludelist")) == []
+
+    sidecar = _read_gate_sidecar(out_dir / "m2_region_00001.occlusion_gate.json")
+    assert sidecar["fired"] == ["inflation"], sidecar
+    assert sidecar["verdict"] == "deferred"
+    assert sidecar["occ_rows"] == 8 and sidecar["occ_sites"] == 1
+    assert sidecar["n_rows"] == 1009 and sidecar["n_sites"] == 1002
+    assert sidecar["inflation"] == 8.0
+    # the site condition really was UNDER — this is not a two-condition tie
+    assert sidecar["site_fraction"] < sidecar["site_fraction_ceiling"]
+    assert sidecar["inflation"] > sidecar["inflation_ceiling"]
+
+
+def test_occlusion_gate_both_under_proceeds(tmp_path, monkeypatch):
+    """(3) BOTH conditions under, REAL constants: 1 occluded row at 1 site of 2,001
+    (site fraction 0.04998%, inflation 1.0) keeps the FULL existing
+    exclude-in-lockstep behaviour — excludelist + --exclude argv + counted ROW drop
+    + verified .npz, status ok. Accounting did NOT move to sites:
+    ``n_dropped_occluded`` is still a ROW count."""
     bfile, bim, (chrom, from_bp, to_bp), occluded_id = _one_occlusion_cohort(
-        tmp_path, n_plain=2000)          # n_var = 2001, occluded = 1
+        tmp_path, n_plain=2000)          # n_var = 2001 rows over 2001 sites
     manifest = tmp_path / "regions.tsv"
     _write_manifest(manifest, [
         {"region_id": "m2_region_00001", "chr": chrom, "ancestry": "AFR",
@@ -2267,15 +2453,23 @@ def test_occlusion_anomaly_gate_open_at_subceiling_rate(tmp_path, monkeypatch):
     ok, reason = drv.content_verify_npz(npz, mode="square")
     assert ok is True, reason
 
+    sidecar = _read_gate_sidecar(out_dir / "m2_region_00001.occlusion_gate.json")
+    assert sidecar["fired"] == [] and sidecar["verdict"] == "ok"
+    assert sidecar["occ_rows"] == 1 and sidecar["occ_sites"] == 1
 
-def test_occlusion_anomaly_gate_boundary_strict_greater(tmp_path, monkeypatch):
-    """(3) BOUNDARY: 1 occluded of 2,000 -> ceiling 0.0005*2000 = 1.0 EXACTLY.
-    Clause (d) says "exceeds" -> STRICT >; count == ceiling does NOT defer (status
-    ok, excludelist written). NO-CHANGE pin; failability MUTATION-PROVEN (gate
-    comparison > -> >= fires at count == ceiling and this test goes RED —
-    observed on the clean tree)."""
+
+def test_occlusion_gate_site_fraction_boundary_is_strictly_greater(tmp_path, monkeypatch):
+    """(4) BOUNDARY on condition (i): with the site ceiling pinned to EXACTLY the
+    fixture's own site fraction (1/2001), ``occ_sites / n_sites == ceiling`` and the
+    region does NOT defer — the posted rule says "exceeds", i.e. STRICT ``>``.
+
+    The property under test is the OPERATOR, so it is the CEILING that is
+    monkeypatched, never the data. The ceilings' VALUES are pinned separately, and
+    to the public record, by
+    tests/m3/test_occlusion_gate_constants.py::test_ceilings_render_identically_to_the_posted_slot_ledger.
+    """
     bfile, bim, (chrom, from_bp, to_bp), occluded_id = _one_occlusion_cohort(
-        tmp_path, n_plain=1999)          # n_var = 2000, occluded = 1
+        tmp_path, n_plain=2000)          # 1 occluded site of 2001
     manifest = tmp_path / "regions.tsv"
     _write_manifest(manifest, [
         {"region_id": "m2_region_00001", "chr": chrom, "ancestry": "AFR",
@@ -2283,11 +2477,120 @@ def test_occlusion_anomaly_gate_boundary_strict_greater(tmp_path, monkeypatch):
     ])
     out_dir = tmp_path / "out"
 
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1 / 2001)
     monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps={occluded_id}))
     res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
 
     assert res[0]["status"] == "ok"
     assert (out_dir / "m2_region_00001.occluded.excludelist").is_file()
+    sidecar = _read_gate_sidecar(out_dir / "m2_region_00001.occlusion_gate.json")
+    assert sidecar["site_fraction"] == sidecar["site_fraction_ceiling"]  # EXACT tie
+    assert sidecar["fired"] == []
+
+
+def test_occlusion_gate_inflation_boundary_is_strictly_greater(tmp_path, monkeypatch):
+    """(5) BOUNDARY on condition (ii): with the inflation ceiling pinned to EXACTLY
+    the stack fixture's own inflation (8.0), ``occ_rows / occ_sites == ceiling`` and
+    the region does NOT defer — STRICT ``>`` on this condition too.
+
+    Same discipline as (4): the CEILING is monkeypatched because the OPERATOR is the
+    property under test; the constants' values are pinned by the enforcer test."""
+    bfile, bim, (chrom, from_bp, to_bp), stack_ids = _stacked_occlusion_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 8.0)
+    mock = _MockPlink(bim, nan_snps=stack_ids)
+    monkeypatch.setattr(drv, "_run_plink", mock)
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert res[0]["status"] == "ok", res[0]["status"]
+    assert res[0]["n_dropped_occluded"] == 8       # ROW count, in lockstep
+    sidecar = _read_gate_sidecar(out_dir / "m2_region_00001.occlusion_gate.json")
+    assert sidecar["inflation"] == sidecar["inflation_ceiling"]           # EXACT tie
+    assert sidecar["fired"] == []
+
+
+def test_occlusion_gate_sidecar_zero_occlusion(tmp_path, monkeypatch):
+    """(6) The THIRD square outcome: a cohort with no multi-base REF at all still
+    banks gate evidence. ``occ_rows``/``occ_sites`` are 0, ``inflation`` is None
+    (0/0 is not a number and must not be faked as 0.0), ``fired`` is empty, the
+    verdict is ok — and NO excludelist is written."""
+    bfile, bim, (chrom, from_bp, to_bp) = _all_plain_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    res = drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    assert res[0]["status"] == "ok"
+    sidecar = _read_gate_sidecar(out_dir / "m2_region_00001.occlusion_gate.json")
+    assert sidecar["occ_rows"] == 0 and sidecar["occ_sites"] == 0
+    assert sidecar["inflation"] is None
+    assert sidecar["fired"] == [] and sidecar["verdict"] == "ok"
+    assert not (out_dir / "m2_region_00001.occluded.excludelist").exists()
+
+
+def test_occlusion_gate_sidecar_numbers_are_independently_recomputed(tmp_path, monkeypatch):
+    """(7) Every number in the sidecar is reproduced by a SECOND, independent
+    computation over the same fixture ``.bim`` — the test restates the occlusion
+    rule and does its own set arithmetic rather than re-reading the producer's
+    result. Right-shape / wrong-content is the defect class this guards."""
+    bfile, bim, (chrom, from_bp, to_bp), stack_ids = _stacked_occlusion_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    out_dir = tmp_path / "out"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=stack_ids))
+    drv.run_native_ld_panel(manifest, bfile, out_dir, mode="square")
+
+    sidecar = _read_gate_sidecar(out_dir / "m2_region_00001.occlusion_gate.json")
+    want = _independently_recomputed_gate_numbers(bim, chrom, from_bp, to_bp)
+    # non-vacuity: the independent oracle must have found the stack
+    assert want["occ_rows"] == len(stack_ids) and want["occ_sites"] == 1
+    for key, expected in want.items():
+        assert sidecar[key] == expected, (key, sidecar[key], expected)
+    assert sidecar["region_id"] == "m2_region_00001"
+    assert sidecar["site_fraction_ceiling"] == drv._OCCLUSION_SITE_FRACTION_CEILING
+    assert sidecar["inflation_ceiling"] == drv._OCCLUSION_INFLATION_CEILING
+
+
+def test_occlusion_gate_deferred_region_ships_only_its_sidecar(tmp_path, monkeypatch):
+    """(8) THE EGRESS CONTRACT for a deferred region, stated as an EXACT allow-list.
+
+    DELIBERATE CONTRACT CHANGE (quick-260821-x91): before this batch a deferred
+    region shipped NOTHING but its panel row, so its gate evidence existed only in
+    a status string that the local scratch would outlive. Now it ships exactly ONE
+    object — ``{region_id}.occlusion_gate.json`` — and still nothing else. This test
+    was RED before the change (the region-1 destination set was empty) and green
+    after; that red is a contract change being recorded, not an edit-to-green.
+
+    The ``verify_failed`` path is untouched and still crosses nothing but the panel
+    row (pinned by section 18's
+    test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed).
+    """
+    bfile, bim, (chrom, from_bp, to_bp), stack_ids = _stacked_occlusion_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps=stack_ids))
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=tmp_path)
+    assert res[0]["status"].startswith("deferred_occlusion_anomaly")
+
+    cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
+    r1 = [d for d in cp_dsts if "m2_region_00001" in d]
+    assert r1 == [f"{gs_out}/m2_region_00001.occlusion_gate.json"], r1
+    for suffix in (".npz", ".afreq", ".occluded.excludelist",
+                   ".occlusion_manifest.tsv"):
+        assert f"{gs_out}/m2_region_00001{suffix}" not in cp_dsts, (suffix, cp_dsts)
+    # and the object that DID cross carries the gate's own measurement
+    import json as _json
+    banked = _json.loads(
+        mock_gs.contents[f"{gs_out}/m2_region_00001.occlusion_gate.json"].decode())
+    assert banked["fired"] == ["inflation"] and banked["verdict"] == "deferred"
 
 
 def test_feasibility_ceiling_defers_infeasible_region(tmp_path, monkeypatch):
@@ -2362,7 +2665,8 @@ def test_feasibility_ceiling_runs_before_occlusion_detect(tmp_path, monkeypatch)
 
     # BUILT-IN control: feasible ceiling + clause-(d) gate pinned OPEN (the
     # fixture is topology-dense, 5/11) -> detect IS called exactly once.
-    monkeypatch.setattr(drv, "_OCCLUSION_ANOMALY_FRACTION", 1.0, raising=False)
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0, raising=False)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9, raising=False)
     drv.run_native_ld_panel(manifest, bfile, tmp_path / "out2",
                             mode="square", max_n_var=120000)
     assert calls["n"] == 1

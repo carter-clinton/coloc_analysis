@@ -210,3 +210,59 @@ def test_NEGATIVE_CONTROL_one_byte_flip_moves_the_paste_block_md5(tmp_path):
     assert hashlib.md5(flipped).hexdigest() != _PASTE_BLOCK_MD5, (
         "a one-byte flip inside the paste block did NOT move the md5 -> the pin "
         "cannot detect tampering and is decoration")
+
+
+# --------------------------------------------------------------------------- #
+# C — banned literals: the consumers IMPORT the ceilings, never re-type them  #
+# --------------------------------------------------------------------------- #
+
+#: The WITHDRAWN single-condition global, assembled from pieces ON PURPOSE. The
+#: batch invariant is that a repo-wide grep for that symbol returns ZERO hits over
+#: ``src/`` and ``tests/``; spelling it out here — even inside the very test that
+#: bans it — would defeat that grep. Concatenation keeps the assertion honest and
+#: the grep clean.
+_WITHDRAWN_GLOBAL = "_OCCLUSION_" + "ANOMALY_FRACTION"
+
+#: Every literal spelling of a POSTED ceiling (plus the withdrawn 0.0005 row
+#: fraction). A consumer that types one of these has made a hand-transcribed COPY
+#: of a public commitment, with no enforcer tying the copy to the record.
+_BANNED_CEILING_LITERALS = ("0.0005", "0.005056", "0.5056", "3.42")
+
+
+def _comment_stripped(path: Path) -> str:
+    """Source with ``#`` comments removed — the SAME strip
+    ``test_fire_verifier.test_no_hardcoded_shipped_constants_in_the_module`` uses.
+
+    ⚠ A DOCSTRING OR AN F-STRING IS CODE, NOT A COMMENT, and IS scanned. That is
+    deliberate: a ceiling typed into a user-facing detail string is exactly as
+    unpinned as one typed into an expression. Render it from the shipped
+    constant/accessor instead — identity, not a copy.
+    """
+    return "\n".join(ln.split("#", 1)[0] for ln in path.read_text().splitlines())
+
+
+def test_producer_has_no_hand_typed_ceiling_and_no_withdrawn_fraction():
+    """``run_native_ld_panel.py`` imports the ceilings from the pinned module and
+    no longer carries the withdrawn single-condition row fraction."""
+    code = _comment_stripped(PROJECT_ROOT / "src" / "python" / "run_native_ld_panel.py")
+    assert _WITHDRAWN_GLOBAL not in code, (
+        f"run_native_ld_panel.py still declares/reads {_WITHDRAWN_GLOBAL} — the "
+        f"withdrawn single-condition gate must be GONE, not merely superseded")
+    for banned in _BANNED_CEILING_LITERALS:
+        assert banned not in code, (
+            f"run_native_ld_panel.py hardcodes {banned!r}; import it from "
+            f"occlusion_gate_constants instead (a hand-transcribed copy of a "
+            f"POSTED number is a silent divergence with no enforcer)")
+
+
+def test_fire_verifier_has_no_hand_typed_ceiling_and_no_withdrawn_fraction():
+    """``fire_verifier.py`` reads the producer's module globals at evaluation time;
+    it must not carry a second copy of either posted ceiling."""
+    code = _comment_stripped(PROJECT_ROOT / "src" / "python" / "fire_verifier.py")
+    assert _WITHDRAWN_GLOBAL not in code, (
+        f"fire_verifier.py still reads {_WITHDRAWN_GLOBAL} — that global no longer "
+        f"exists on the producer")
+    for banned in _BANNED_CEILING_LITERALS:
+        assert banned not in code, (
+            f"fire_verifier.py hardcodes {banned!r}; read it through "
+            f"_default_site_fraction_ceiling() / _default_inflation_ceiling()")

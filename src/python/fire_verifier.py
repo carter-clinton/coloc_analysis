@@ -5,7 +5,8 @@ the Stage-A / Stage-B / Stage-C invariants and exits non-zero if any of them is
 red::
 
     python3 src/python/fire_verifier.py stage-a --panel-tsv ... --region-id ... \\
-        --manifest ... --npz ... --report /home/jupyter/fire_gate_stageA.json
+        --manifest ... --npz ... --gate-json ...occlusion_gate.json \\
+        --report /home/jupyter/fire_gate_stageA.json
     python3 src/python/fire_verifier.py stage-b --panel-tsv ... --n-total 276
     python3 src/python/fire_verifier.py stage-c --panel-tsv ...
     python3 src/python/fire_verifier.py disclosure --file ...
@@ -35,10 +36,15 @@ IT NEVER MAKES THE DECISION. The go/no-go is Carter's; an agent never fires the
 loop. These gates make the EVIDENCE for that decision mechanical and fail-closed.
 A red is a STOP; it is not a licence to retry or repair.
 
-NO HAND-TRANSCRIBED SHIPPED CONSTANTS. ``_PANEL_COLUMNS``, the clause-(d) anomaly
-fraction, the ``--max-n-var`` feasibility ceiling, the default panel-TSV name and
-the MED-6 ``.npz`` byte floor are all IMPORTED from the shipped modules and read
-at evaluation time. A re-declared copy is a silent divergence with no enforcer.
+NO HAND-TRANSCRIBED SHIPPED CONSTANTS. ``_PANEL_COLUMNS``, BOTH posted clause-(d)
+ceilings (through ``_default_site_fraction_ceiling`` and
+``_default_inflation_ceiling``, which read the producer's module globals — and so,
+transitively, ``occlusion_gate_constants``, the one pinned place), the
+``--max-n-var`` feasibility ceiling, the default panel-TSV name and the MED-6
+``.npz`` byte floor are all IMPORTED from the shipped modules and read at
+evaluation time. A re-declared copy is a silent divergence with no enforcer, and
+``test_no_hardcoded_shipped_constants_in_the_module`` bans every literal spelling
+of them — note that a DOCSTRING or an F-STRING is code to that scan, not a comment.
 The only literals in this module are ``_VM_TOTAL_GIB`` (below) and the peak-RAM
 headroom fraction.
 
@@ -111,15 +117,28 @@ _DEFAULT_HEADROOM_FRAC = 0.15
 # Shipped-constant accessors — read at EVALUATION TIME, never copied           #
 # --------------------------------------------------------------------------- #
 
-def _default_occlusion_fraction() -> float:
-    """The pre-registered trsx5 clause-(d) anomaly fraction.
+def _default_site_fraction_ceiling() -> float:
+    """Condition (i) of the POSTED clause (d): the occluded-SITE fraction ceiling.
 
     Read as a MODULE GLOBAL off the shipped producer at evaluation time, exactly
     as ``run_native_ld_panel.process_region`` reads it (it is deliberately NOT
     CLI-tunable there: "a knob would invite silent deviation from the public
     commitment"). Never bound as a default argument, never re-declared.
+
+    The producer in turn binds it from ``occlusion_gate_constants`` — THE one
+    pinned place, held to the posted OSF SLOT_LEDGER by
+    ``tests/m3/test_occlusion_gate_constants.py``. So this function is the third
+    link of an identity chain, not a copy anywhere along it.
     """
-    return rnlp._OCCLUSION_ANOMALY_FRACTION
+    return rnlp._OCCLUSION_SITE_FRACTION_CEILING
+
+
+def _default_inflation_ceiling() -> float:
+    """Condition (ii) of the POSTED clause (d): the occluded-site row/site
+    inflation ceiling. Same evaluation-time module-global read, same pinned source
+    (``occlusion_gate_constants``), same enforcer.
+    """
+    return rnlp._OCCLUSION_INFLATION_CEILING
 
 
 def _infeasible_ceiling() -> int:
@@ -487,8 +506,14 @@ def check_manifest_rows(manifest_path: "str | Path", expected_records: int = 5,
                         expect_header: bool = True) -> Check:
     """Region-1 occlusion-manifest ground truth: real rows, never an upload marker.
 
-    Region 1 is the ONLY region with a known answer (5 occluded), so it is the one
-    chance to validate the manifest writer against ground truth.
+    Region 1's record count is 231 — MEASURED 2026-08-19/20 (231 occluded ROWS at
+    196 sites, of 96,708 sites / 102,421 rows;
+    ``.planning/debug/260820-site-basis-sweep-results-as-received.md``). It is a
+    measurement, not the "known answer" the withdrawn premise asserted, and it is
+    not typed by a human here either: the caller DERIVES ``expected_records`` from
+    the region's ``.occluded.excludelist`` LINE COUNT and cross-checks that against
+    the producer's own gate sidecar, so this check measures the manifest against
+    the very drop set plink was handed.
 
     A-10: the row COUNT is not sufficient. The shipped writer emits a ``region_id``
     column (``occlusion_manifest.STAGE_A_COLUMNS[0]``), and the runbook's own
@@ -544,35 +569,86 @@ def check_manifest_rows(manifest_path: "str | Path", expected_records: int = 5,
     return _guard("stage_a_manifest_rows", HARD_STOP, run)
 
 
-def check_occlusion_ceiling(n_occluded: Optional[int], n_var: Optional[int],
-                            frac: Optional[float] = None) -> Check:
-    """Pre-registered trsx5 clause (d): defer when the occluded count STRICTLY
-    EXCEEDS ``frac * n_var``.
+def _load_gate_sidecar(path: "str | Path"):
+    """Read one producer ``{region_id}.occlusion_gate.json``.
 
-    Reproduces the shipped comparison exactly — FLOAT ceiling, STRICT ``>`` (clause
-    (d) says "exceeds", so count == ceiling stays on the exclude-in-lockstep path)
-    — and reads the fraction from the shipped module global at evaluation time.
+    Returns ``(data, None)`` on success or ``(None, reason)`` on any failure —
+    absent, unreadable, not an object, or missing any of the three counts the gate
+    needs. NEVER raises and NEVER guesses: the caller turns ``reason`` into a FAIL.
+    """
+    p = Path(path)
+    if not p.is_file():
+        return None, f"gate sidecar absent: {p}"
+    try:
+        data = json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001 — unreadable is FAIL, not an exception
+        return None, f"gate sidecar unreadable ({type(e).__name__}: {e}): {p}"
+    if not isinstance(data, dict):
+        return None, f"gate sidecar is not a JSON object: {p}"
+    missing = [k for k in ("occ_rows", "occ_sites", "n_sites") if data.get(k) is None]
+    if missing:
+        return None, f"gate sidecar {p} carries no {'/'.join(missing)}"
+    return data, None
+
+
+def check_occlusion_gate(occ_rows: Optional[int], occ_sites: Optional[int],
+                         n_sites: Optional[int], *,
+                         site_ceiling: Optional[float] = None,
+                         inflation_ceiling: Optional[float] = None) -> Check:
+    """The POSTED two-condition clause (d): defer when EITHER condition holds.
+
+      (i)  ``occ_sites / n_sites``  STRICTLY EXCEEDS the site-fraction ceiling
+      (ii) ``occ_rows / occ_sites`` STRICTLY EXCEEDS the inflation ceiling
+
+    Reproduces the SHIPPED comparison rather than a copy of it: strict ``>`` on
+    both (the amendment says "exceeds", so equality stays on the
+    exclude-in-lockstep path), ``inflation is None`` when ``occ_sites == 0``
+    (0/0 is not a number and must not be faked as 0.0), and BOTH ceilings read from
+    the producer's module globals at EVALUATION time.
+
+    FAILS CLOSED on any unmeasured input: a gate that cannot measure must never
+    pass. The inputs come from the producer's own gate sidecar, never from the
+    panel row (which carries a ROW count and no site counts) and never from a
+    number a human typed.
     """
     def run() -> Check:
-        n = "occlusion_anomaly_ceiling"
-        f = _default_occlusion_fraction() if frac is None else frac
-        ceiling = f * n_var
-        measured = {"n_occluded": n_occluded, "ceiling": ceiling, "n_var": n_var,
-                    "frac": f}
-        if n_occluded > ceiling:
+        n = "occlusion_gate"
+        if occ_rows is None or occ_sites is None or n_sites is None:
             return Check(n, FAIL,
-                         f"n_occluded={n_occluded} > ceiling={ceiling:.1f} "
-                         f"({f:g} x n_var={n_var}) -> the region must DEFER "
-                         f"(deferred_occlusion_anomaly), never auto-exclude; "
-                         f"disclose as a deviation",
+                         f"the gate inputs are not all measured (occ_rows="
+                         f"{occ_rows!r}, occ_sites={occ_sites!r}, n_sites="
+                         f"{n_sites!r}) -> FAIL CLOSED; absence of evidence is FAIL",
+                         HARD_STOP,
+                         {"occ_rows": occ_rows, "occ_sites": occ_sites,
+                          "n_sites": n_sites})
+        sc = _default_site_fraction_ceiling() if site_ceiling is None else site_ceiling
+        ic = (_default_inflation_ceiling() if inflation_ceiling is None
+              else inflation_ceiling)
+        site_fraction = (occ_sites / n_sites) if n_sites else 0.0
+        inflation = (occ_rows / occ_sites) if occ_sites else None
+        fired = [c for c, hit in (
+                    ("site_fraction", site_fraction > sc),
+                    ("inflation", inflation is not None and inflation > ic),
+                 ) if hit]
+        measured = {"occ_rows": occ_rows, "occ_sites": occ_sites,
+                    "n_sites": n_sites, "site_fraction": site_fraction,
+                    "inflation": inflation, "site_fraction_ceiling": sc,
+                    "inflation_ceiling": ic, "fired": fired}
+        rendered = (
+            f"{occ_rows} occluded row(s) at {occ_sites} of {n_sites} site(s) -> "
+            f"site_fraction {site_fraction:.4%} vs ceiling {sc:.4%}; inflation "
+            f"{'n/a' if inflation is None else format(inflation, '.2f') + 'x'} vs "
+            f"ceiling {ic:.2f}x")
+        if fired:
+            return Check(n, FAIL,
+                         f"{rendered} -> condition(s) {'+'.join(fired)} EXCEEDED: "
+                         f"the region must DEFER (deferred_occlusion_anomaly), "
+                         f"never auto-exclude; disclose as a deviation",
                          HARD_STOP, measured)
-        headroom = ceiling / max(n_occluded, 1)
-        return Check(n, PASS,
-                     f"n_occluded={n_occluded} <= ceiling={ceiling:.1f} "
-                     f"({headroom:.0f}x headroom)",
+        return Check(n, PASS, f"{rendered} -> under BOTH posted ceilings",
                      HARD_STOP, measured)
 
-    return _guard("occlusion_anomaly_ceiling", HARD_STOP, run)
+    return _guard("occlusion_gate", HARD_STOP, run)
 
 
 def check_region1_status(status: Any) -> Check:
@@ -591,11 +667,16 @@ def check_region1_status(status: Any) -> Check:
             return Check(n, PASS, "region 1 status='ok'", _REGION1_SEVERITY,
                          {"status": s})
         return Check(n, FAIL,
-                     f"region 1 returned status={s!r}. Region 1 is the known-answer "
-                     f"region (5 occluded, ~51 ceiling, 10x headroom) and runs under "
+                     f"region 1 returned status={s!r}. Region 1 is the "
+                     f"measured-answer region "
+                     f"(MEASURED 2026-08-19/20: 231 occluded rows at 196 of 96,708 "
+                     f"sites -> 0.2027% and 1.18x, under the posted "
+                     f"{_default_site_fraction_ceiling() * 100:.4f}% / "
+                     f"{_default_inflation_ceiling():.2f}x) and runs under "
                      f"--fail-fast, which raises on ANY non-'ok' status — so this "
-                     f"means the gate or the substrate disagrees with ground truth. "
-                     f"This is a FINDING requiring diagnosis, not a retry.",
+                     f"means the gate or the substrate disagrees with what was "
+                     f"measured. This is a FINDING requiring diagnosis, not a "
+                     f"retry.",
                      _REGION1_SEVERITY, {"status": s})
 
     return _guard("region1_status", _REGION1_SEVERITY, run)
@@ -889,11 +970,14 @@ def _stage_a(args) -> List[Check]:
               check_manifest_rows(args.manifest,
                                   expected_records=args.expected_records,
                                   region_id=args.region_id)]
+    # The POSTED gate is evaluated on SITES, and the panel row carries only a ROW
+    # count -> the producer's own sidecar is the only place the three inputs exist.
+    gate, gate_err = _load_gate_sidecar(args.gate_json)
     try:
         rows = parse_panel_tsv(args.panel_tsv)
     except Exception as e:  # noqa: BLE001 — fail closed, do not guess
         detail = (f"panel TSV unreadable ({type(e).__name__}: {e}) -> FAIL CLOSED")
-        checks.append(Check("occlusion_anomaly_ceiling", FAIL, detail, HARD_STOP))
+        checks.append(Check("occlusion_gate", FAIL, detail, HARD_STOP))
         checks.append(Check("region1_status", FAIL, detail, _REGION1_SEVERITY))
         checks.append(Check("status_classification", FAIL, detail, HARD_STOP))
         return checks
@@ -903,11 +987,18 @@ def _stage_a(args) -> List[Check]:
         detail = (f"region {args.region_id!r} has NO row in {args.panel_tsv} -> the "
                   f"gate cannot measure n_var / n_dropped_occluded, FAIL CLOSED "
                   f"(never take these from a number a human typed)")
-        checks.append(Check("occlusion_anomaly_ceiling", FAIL, detail, HARD_STOP))
+        checks.append(Check("occlusion_gate", FAIL, detail, HARD_STOP))
         checks.append(Check("region1_status", FAIL, detail, _REGION1_SEVERITY))
     else:
-        checks.append(check_occlusion_ceiling(row["n_dropped_occluded"],
-                                              row["n_var"]))
+        if gate is None:
+            checks.append(Check(
+                "occlusion_gate", FAIL,
+                f"{gate_err} -> FAIL CLOSED. The shipped gate writes this sidecar "
+                f"on every square region; without it the verifier cannot reproduce "
+                f"the posted comparison and must not pass.", HARD_STOP))
+        else:
+            checks.append(check_occlusion_gate(gate["occ_rows"], gate["occ_sites"],
+                                               gate["n_sites"]))
         checks.append(check_region1_status(row["status"]))
     checks.append(classify_statuses(rows))
     return checks
@@ -961,6 +1052,13 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="the BANKED region .npz, copied locally. REQUIRED: there is "
                         "no skip on the fire path — a falsification that did not "
                         "run is not a falsification.")
+    a.add_argument("--gate-json", required=True,
+                   help="the region's .occlusion_gate.json sidecar — the shipped "
+                        "gate's OWN measurement (occluded rows/sites, site count, "
+                        "the two ceilings in force, the verdict). REQUIRED: absent "
+                        "=> FAIL CLOSED, because the panel row carries a ROW count "
+                        "and no site counts, so there is nothing else to measure "
+                        "the posted two-condition rule against.")
     a.add_argument("--expected-records", type=int, default=5)
     a.set_defaults(_run=_stage_a)
 
