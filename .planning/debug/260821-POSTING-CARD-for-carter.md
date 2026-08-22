@@ -1,10 +1,10 @@
-# POSTING CARD — OSF amendment (occlusion gate recalibration), 2026-08-21
+# POSTING CARD — OSF amendment (occlusion gate recalibration) — REFRESHED 22 Aug 2026 UTC after the date move
 
 > **For Carter, driving a browser and a Mac terminal. No agent is in the loop for any step on
 > this card.** An agent never posts and never fires. Everything below is yours to execute; the
 > session's job was to make the bytes correct and to hand you the numbers that prove they are.
 >
-> Prepared by quick task `260821-jcs` at repo commit `4487a18` on branch `m3-W2-aou-deltas`.
+> Prepared by quick task `260821-jcs` at repo commit `4487a18`; **REFRESHED by the gsd-fast date move (22 Aug 2026 ~02:55 UTC)**: the upload had not happened before the 21-August UTC day ended, so `POSTING_DATE` moved `2026-08-21 → 2026-08-22` by the engine's Class-P pass (three occurrences together) and `PRE_EXECUTE_COMMIT` was re-read to `07df11e…`. The **body changed by exactly one line** (`**Date:** 2026-08-21` → `**Date:** 2026-08-22`; `diff` = `4c4`). Every anchor below is the CURRENT one.
 > Seth's final pass (no blocking objection) is banked at
 > `.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md` — the seventh
 > supporting record.
@@ -15,27 +15,28 @@
 
 | Quantity | Value |
 | --- | --- |
-| Repo file (whole) | **42,715 B** / `45453596402874bf6c52ae490241eb86` / **594 lines** |
-| Repo file, at commit | `4487a18` (branch `m3-W2-aou-deltas`) |
-| **What actually gets posted — the paste block** | **22,945 B** / `422f1f28d6a3b76c7657fadec05a0237` |
-| `PRE_EXECUTE_COMMIT` | `d45db429b3fa6c1f08989c418de911a1fe15fbf2` |
-| `POSTING_DATE` | `2026-08-21` |
+| Repo file (whole) | **43,042 B** / `c7f9dee26d3070ea83d6899dfc2c90d3` / **594 lines** |
+| Repo file, at commit | the date-move commit — first commit after `07df11e` on `m3-W2-aou-deltas` |
+| **What actually gets posted — the paste block** | **22,945 B** / `13a49f543cabcc27ce9f1e589783c060` |
+| `PRE_EXECUTE_COMMIT` | `07df11e44f2d56536ef4ef0753c8d2f8fdb55ae8` |
+| `POSTING_DATE` | `2026-08-22` |
 
-**The paste-block line is the one that matters.** `22,945 B / 422f1f28d6a3b76c7657fadec05a0237`
-is the byte-identity **Seth verified himself**, reading the repo copy on your Mac directly. The
-re-confirmation performed today advanced the gate commit hash and corrected three prose
-statements — **all of them OUTSIDE the paste markers**. The posted body **did not move**. That is
-the whole point of the exercise.
+**The paste-block line is the one that matters.** The body **Seth verified himself** (reading the
+repo copy on your Mac directly) was `22,945 B / 422f1f28d6a3b76c7657fadec05a0237`. The body you post is
+`22,945 B / 13a49f543cabcc27ce9f1e589783c060` — and the complete difference between the two is ONE line,
+the machine-substituted Date slot (`**Date:** 2026-08-21` → `**Date:** 2026-08-22`; `diff` output
+`4c4`). Nothing Seth reviewed for substance changed; his clearance stands. Everything else the
+re-confirmations touched (gate commit hash, prose corrections) is **OUTSIDE the paste markers**.
 
 > ⛔ **If the Mac-side extraction in step (ii) does not print exactly `22945` and exactly
-> `422f1f28d6a3b76c7657fadec05a0237`, STOP. Do not upload.** Paste the two numbers you actually
+> `13a49f543cabcc27ce9f1e589783c060`, STOP. Do not upload.** Paste the two numbers you actually
 > got back into the NCSU session and let it diagnose. A mismatch means the file in your hands is
 > not the file Seth reviewed, and posting it would put an unreviewed body into a permanent public
 > record.
 
-Note the whole-file anchor **did** change today (it was `42,213 B / e1b4a11d…` when Seth read it)
-— that is expected and correct: the prose outside the markers changed, the posted body did not.
-Seth reviewed the *body*, and the body's anchor is unchanged.
+Note the whole-file anchor has changed twice since Seth read it (`42,213 B / e1b4a11d…` → `42,715 B /
+45453596…` → `43,042 B / c7f9dee2…`): prose outside the markers, plus the one-line Date move. Seth
+reviewed the *body*; the body's only change is that Date line.
 
 ---
 
@@ -52,10 +53,10 @@ cd /Users/cc/Documents/NCSU/1.ASHES_Lab_Research/Analyses/coloc_analysis/
 
 awk '/^--- PASTE INTO OSF FROM HERE ---$/{f=1;next} /^--- PASTE ENDS HERE ---$/{f=0} f' \
     osf-amendment-occlusion-gate-recalibration-2026-08-20.md \
-    > osf-amendment-occlusion-gate-recalibration-2026-08-21.md
+    > osf-amendment-occlusion-gate-recalibration-2026-08-22.md
 
-wc -c osf-amendment-occlusion-gate-recalibration-2026-08-21.md    # must read 22945
-md5   osf-amendment-occlusion-gate-recalibration-2026-08-21.md    # must read 422f1f28d6a3b76c7657fadec05a0237
+wc -c osf-amendment-occlusion-gate-recalibration-2026-08-22.md    # must read 22945
+md5   osf-amendment-occlusion-gate-recalibration-2026-08-22.md    # must read 13a49f543cabcc27ce9f1e589783c060
 ```
 
 The `awk` excludes both marker lines by construction, so what lands in the new file is exactly
@@ -68,7 +69,7 @@ This is the easy mistake, so it is spelled out:
 | File | Basename | Which date it records |
 | --- | --- | --- |
 | Repo source you `scp` down | `osf-amendment-occlusion-gate-recalibration-2026-08-20.md` | the **INSTANTIATION** date |
-| File you UPLOAD to OSF | `osf-amendment-occlusion-gate-recalibration-2026-08-21.md` | the **POSTING** date |
+| File you UPLOAD to OSF | `osf-amendment-occlusion-gate-recalibration-2026-08-22.md` | the **POSTING** date |
 
 The uploaded name matches the template in the prepared (not-yet-appended) deviation entry. A
 mismatch between the two basenames is **expected, not an error** — they are different quantities.
@@ -78,7 +79,7 @@ mismatch between the two basenames is **expected, not an error** — they are di
 ## (iii) THE OSF PROCEDURE
 
 1. Go to **`osf.io/az52u`** → **Files**.
-2. **UPLOAD** `osf-amendment-occlusion-gate-recalibration-2026-08-21.md` as a **NEW file**.
+2. **UPLOAD** `osf-amendment-occlusion-gate-recalibration-2026-08-22.md` as a **NEW file**.
 
 > ⛔ **NEVER use "upload new version" on `trsx5`.** This posts as a new dated record in the chain,
 > append-only. After you are done, `trsx5` must **still show exactly 1 revision (2026-07-10
@@ -100,7 +101,7 @@ The prepared deviation entry needs exactly these. Capture them before you close 
    > ⚠ **NOT** the file page's "Date created." That field shows the PARENT record's creation
    > date (2026-04-10, `osf.io/pvb5j`) and will silently give you a date four months wrong.
 3. **Re-download the posted file and hash it.** The digest must read
-   `422f1f28d6a3b76c7657fadec05a0237`. This closes the loop: what OSF actually stores == what
+   `13a49f543cabcc27ce9f1e589783c060`. This closes the loop: what OSF actually stores == what
    Seth actually verified.
 4. **Confirm `trsx5` still shows exactly 1 revision.**
 
@@ -124,7 +125,7 @@ None of that runs until your four captures arrive. The gate does not move on an 
 
 ## (vi) IF IT SLIPS — do NOT hand-edit the date
 
-If posting does not happen on 2026-08-21:
+If posting does not happen within the 2026-08-22 UTC day (OSF stamps in UTC; 8 PM EDT = midnight UTC):
 
 > ⛔ **Do not edit the date by hand, anywhere, for any reason.**
 
@@ -134,7 +135,7 @@ line) move together by construction, because Class-P force-substitutes at every 
 `guard all` is re-run and fresh anchors are re-issued to you.
 
 Either route changes the paste block — the `**Date:**` line sits INSIDE the markers — so a
-date change necessarily retires the `422f1f28d6a3b76c7657fadec05a0237` anchor; do not expect it
+date change necessarily retires the `13a49f543cabcc27ce9f1e589783c060` anchor; do not expect it
 to survive a slip. The engine route moves all three occurrences together, re-runs `guard all`,
 and re-issues fresh anchors whose only delta from the body Seth verified is that one date
 token (re-anchored, disclosed, and checkable). A hand edit can leave the three occurrences

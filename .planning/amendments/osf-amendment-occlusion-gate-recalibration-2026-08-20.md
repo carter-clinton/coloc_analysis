@@ -60,8 +60,8 @@
 | **NOT a re-version of `trsx5`** | This posts as a NEW dated file in the chain. After posting, `trsx5` must STILL show **exactly 1 revision** (2026-07-10 13:32) — the same append-only check that cleared the July record. "New OSF version, never a silent swap" means a new dated record, never an in-place edit of a posted body. |
 | Posting gate | BEFORE the shipped `_OCCLUSION_ANOMALY_FRACTION` constant is changed in code, and before any recalibrated-gate output is banked. The pre-registered correction must precede the corrected execution. |
 | Substrate | All of Us AFR WGS native-plink LD panel (`gs://…/ld/afr_native_panel/`, 276 regions). Controlled-tier: aggregate counts and coordinate geometry only; no raw genotypes, no LD matrices. |
-| Pre-execute commit gate | `d45db429b3fa6c1f08989c418de911a1fe15fbf2` — the HEAD of `m3-W2-aou-deltas` re-read at the posting-prep re-confirmation of 21 August 2026, immediately after Seth's final pass was banked. It SUPERSEDED the revising task's value under the standing authority of the next sentence: every commit from that value up to and including this one is docs-only (`b4263e7`, `a364d19`, `cd0cdfd`, `241515b`, `d45db42`), the `src/ tests/ config/` diff across that span is empty, and the shipped `_OCCLUSION_ANOMALY_FRACTION` is unchanged. RE-CONFIRMED AT POSTING: re-read HEAD, confirm no `_OCCLUSION_ANOMALY_FRACTION` or gate-constant change has landed since, and update this value if the branch has advanced. |
-| Expected posting date | `2026-08-21` — **PROVISIONAL**. If posting slips this is a one-token edit at each of its three occurrences (this row, its SLOT_LEDGER line, and the paste block's **Date:** line) plus a `guard all` re-run. The BASENAME does not change: the `2026-08-20` in the filename records the INSTANTIATION date, which is a different quantity from the posting date. A mismatch between the two is expected, not an error. |
+| Pre-execute commit gate | `07df11e44f2d56536ef4ef0753c8d2f8fdb55ae8` — the HEAD of `m3-W2-aou-deltas` re-read at the posting-date re-confirmation of 22 August 2026 UTC (late evening 21 August EDT), performed because the upload had not happened by the end of the 21-August UTC day and the Expected-posting-date row below therefore moved. It SUPERSEDED the 21-August posting-prep value (`d45db42`), which had superseded the revising task's value, under the standing authority of the next sentence: every commit from the revising task's value up to and including this one is docs-only (`b4263e7`, `a364d19`, `cd0cdfd`, `241515b`, `d45db42`, `36006c5`, `4487a18`, `41349e2`, `4307278`, `996797d`, `da7f86e`, `ff32ab7`, `b2ed7da`, `07df11e`), the `src/ tests/ config/` diff across that span is empty, and the shipped `_OCCLUSION_ANOMALY_FRACTION` is unchanged. RE-CONFIRMED AT POSTING: re-read HEAD, confirm no `_OCCLUSION_ANOMALY_FRACTION` or gate-constant change has landed since, and update this value if the branch has advanced. |
+| Expected posting date | `2026-08-22` — **PROVISIONAL**. If posting slips this is a one-token edit at each of its three occurrences (this row, its SLOT_LEDGER line, and the paste block's **Date:** line) plus a `guard all` re-run. The BASENAME does not change: the `2026-08-20` in the filename records the INSTANTIATION date, which is a different quantity from the posting date. A mismatch between the two is expected, not an error. |
 
 **SLOT_LEDGER** — the machine-readable record of what was substituted. Post-instantiation
 each line must carry a filled value; a slot that was DELETED rather than FILLED leaves a
@@ -88,8 +88,8 @@ SLOT_LEDGER
   INFLATION_ROBUST_SIGMA_X = 0.0890x
   INFLATION_CEILING_3X_X = 3.42x
   INFLATION_MARGIN_X = 1.91x
-  POSTING_DATE = 2026-08-21
-  PRE_EXECUTE_COMMIT = d45db429b3fa6c1f08989c418de911a1fe15fbf2
+  POSTING_DATE = 2026-08-22
+  PRE_EXECUTE_COMMIT = 07df11e44f2d56536ef4ef0753c8d2f8fdb55ae8
 ```
 
 **Instantiation record — what was PERFORMED (do NOT paste this block).**
@@ -138,8 +138,8 @@ FRACTION_RATIO_X       = ROW_MEDIAN_PCT / SITE_MEDIAN_PCT
    as `0.1234%`; ratio slots render as `1.23x`, with one deliberate exception — `INFLATION_ROBUST_SIGMA_X` renders at FOUR decimals, because at two its value collapses to `0.09x` and the quantity is destroyed.
 4. The two Class-P slots are argv-sourced rather than measured, and are DEFINED to move:
    `POSTING_DATE` is provisional, and `PRE_EXECUTE_COMMIT` is the full 40-hex HEAD re-read at each
-   re-confirmation — most recently at the posting-prep pass of 21 August 2026, after Seth's final pass was
-   banked; it advanced from the first instantiation's value, and again from the revising task's,
+   re-confirmation — most recently at the posting-date move of 22 August 2026 UTC, after the upload
+   slipped past the 21-August UTC day; it advanced from the first instantiation's value, and again from the revising task's,
    each time the branch advanced, which is exactly what the pre-paste table's standing
    RE-CONFIRMED-AT-POSTING instruction requires. Both are re-confirmed at posting. The
    re-instantiation engine force-substitutes them at EVERY occurrence, so the SLOT_LEDGER
@@ -168,7 +168,7 @@ FRACTION_RATIO_X       = ROW_MEDIAN_PCT / SITE_MEDIAN_PCT
 
 **Amendment-update to pre-registration osf.io/pvb5j (correcting and recalibrating osf.io/az52u file trsx5): AFR native-plink LD panel — factual correction to the region-1 deletion inventory, and recalibration of the clause-(d) occlusion anomaly gate onto occluded sites**
 
-**Date:** 2026-08-21
+**Date:** 2026-08-22
 
 **Investigator:** Carter K. Clinton, NCSU ASHES Lab, ORCID 0000-0003-2669-8200.
 
