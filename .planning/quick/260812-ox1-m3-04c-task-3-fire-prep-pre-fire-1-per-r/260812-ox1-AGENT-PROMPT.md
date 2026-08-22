@@ -165,12 +165,23 @@ STEP 7 — the gated .bim test (index-origin validation). RUN:
   mkdir -p data/aou
   awk '($1=="1" || $1=="chr1") && $4>=10000 && $4<=13506933' /home/jupyter/afr_cohort.bim > data/aou/region1_window.bim
   wc -l data/aou/region1_window.bim
-  pip install -q pytest 2>/dev/null; pytest "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_known_answer_gated" -rs -q
-EXPECT: row count around 102,421; test PASSES. If it FAILS with the observed
-index set uniformly shifted by exactly 1 from the expected set: report to
-Carter (a one-line constant fix in the TEST file is the remedy; NEVER touch
-src/python/occlusion_span_filter.py — it is frozen). Any other failure: STOP,
-verbatim output to Carter. NEVER hand-compare line numbers yourself.
+  pip install -q pytest 2>/dev/null; pytest "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_known_answer_gated" "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_substrate_totals_MEASURED_NOT_DERIVED" "tests/m3/test_occlusion_span_filter.py::test_containment_assertions_discriminate_a_wrong_answer" -rs -q
+EXPECT: row count 102,421; all three tests PASS.
+  LAYER 1 (DERIVED, `..._known_answer_gated`) asserts CONTAINMENT, not equality:
+  the settled-5 occluded ROW INDICES and the 7 settled REF spans must be PRESENT.
+  The real window legitimately carries far more of both — 231 occluded rows over
+  7,951 multi-base-REF rows, max span 170 bp, MEASURED 2026-08-19.
+  LAYER 2 (`..._substrate_totals_MEASURED_NOT_DERIVED`) pins the measured
+  substrate: n_rows 102421 / n_deletion_rows 7951 / n_occluded_rows 231 /
+  max_span 170 / n_sites 96708 / occ_sites 196.
+  The third test is the unconditional control proving containment can still fail.
+IF LAYER 1 FAILS on a uniform ±1 index shift: report to Carter (a one-line
+constant fix in the TEST file is the remedy; NEVER touch
+src/python/occlusion_span_filter.py — it is frozen). IF LAYER 2 FAILS, the
+SUBSTRATE moved (a CDR refresh will do this): RE-MEASURE AND RECORD with fresh
+provenance and re-check every consumer of the number — NEVER edit it to green.
+Any other failure: STOP, verbatim output to Carter. NEVER hand-compare line
+numbers yourself.
 
 STEP 8 — GATE: STAGE A, the region-1 gate (~an hour-plus of VM time). On
 Carter's explicit go, RUN:
@@ -180,8 +191,16 @@ Carter's explicit go, RUN:
   mkdir -p /home/jupyter/native_ld_scratch
   python3 src/python/run_native_ld_panel.py --manifest /tmp/region1_only.tsv --bfile-prefix /home/jupyter/afr_cohort --out-dir gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou --scratch-dir /home/jupyter/native_ld_scratch --mode square --ancestry AFR --fail-fast
 EXPECT (wc = 2 first): on completion, the emitted JSON line shows status "ok",
-n_var slightly under 102421, n_dropped_occluded near 5; re-run the STEP 2 count
--> 1. FAIL indicators: "not symmetric", "Killed", OOM in dmesg, status other
+n_var slightly under 102421, and n_dropped_occluded == 231 — MEASURED 2026-08-19/20
+(231 occluded ROWS at 196 sites, of 96,708 sites / 102,421 rows; source
+.planning/debug/260820-site-basis-sweep-results-as-received.md). Re-run the STEP 2
+count -> 1.
+THE ARBITER RULE: if the observed count differs from 231, the per-region sidecar
+gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_gate.json
+is the ARBITER — it is the shipped gate's own measurement. A disagreement STOPS
+the run for re-measurement. Never edit-to-green, never "close enough", never
+average the two.
+FAIL indicators: "not symmetric", "Killed", OOM in dmesg, status other
 than ok -> STOP, report. PASS -> report the full JSON line to Carter.
 
 NOTE on what a Stage-A PASS proves (added 2026-08-13): status "ok" is also a
@@ -193,9 +212,16 @@ as status error and --fail-fast halts: that is a HARD STOP and a scientific
 finding, not a retry. ALSO RUN after PASS (data-layer manifest check):
   gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv | wc -l
   gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv
-EXPECT: 6 lines (header + exactly 5 records), region_id m2_region_00001 on
-every record row. This is the one region with a known ground truth — the only
-chance to validate the manifest writer against it.
+EXPECT: 232 lines (header + 231 records), region_id m2_region_00001 on every
+record row.
+ALSO READ THE GATE SIDECAR — the shipped two-condition gate's own measurement for
+this region, and the arbiter named above:
+  gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_gate.json
+EXPECT: occ_rows 231, occ_sites 196, n_sites 96708, site_fraction ~ 0.2027%
+(the JSON carries the BARE FRACTION, ~0.002027), inflation ~ 1.18x, fired [],
+verdict "ok". The manifest line count, the panel row's n_dropped_occluded and the
+sidecar's occ_rows are three records of ONE drop set: any disagreement STOPS the
+run for re-measurement.
 
 STEP 8-GATE — MECHANICAL STAGE-A GATE (R8). After the manifest check above,
 `git pull` first (fire_verifier.py landed 2026-08-18, after the clone
@@ -208,6 +234,8 @@ size. If free space is not comfortably above it: STOP and report — do not
 download. Then copy the three inputs the gate reads:
   gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.npz /home/jupyter/native_ld_scratch/
   gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv /home/jupyter/native_ld_scratch/
+  gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_gate.json /home/jupyter/native_ld_scratch/
+  gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occluded.excludelist /home/jupyter/native_ld_scratch/
   gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
 Then RUN the gate:
   python3 src/python/fire_verifier.py stage-a \
@@ -215,11 +243,16 @@ Then RUN the gate:
     --region-id m2_region_00001 \
     --manifest /home/jupyter/native_ld_scratch/m2_region_00001.occlusion_manifest.tsv \
     --npz /home/jupyter/native_ld_scratch/m2_region_00001.npz \
+    --gate-json /home/jupyter/native_ld_scratch/m2_region_00001.occlusion_gate.json \
+    --excludelist /home/jupyter/native_ld_scratch/m2_region_00001.occluded.excludelist \
     --report /home/jupyter/fire_gate_stageA.json
   echo "gate exit: $?"
-EXPECT: five checks — stage_a_nan_falsification, stage_a_manifest_rows,
-occlusion_anomaly_ceiling, region1_status, status_classification — all PASS, and
-"gate exit: 0". ⚠ THE RE-READ LOADS A ~42 GB DENSE float32 ARRAY AND CAN TAKE
+EXPECT: six checks — stage_a_nan_falsification, expected_records_derivation,
+stage_a_manifest_rows, occlusion_gate, region1_status, status_classification —
+all PASS, and "gate exit: 0". DO NOT PASS --expected-records: the gate DERIVES
+the expected manifest record count from the excludelist line count and
+cross-checks it against the sidecar's occ_rows. That flag now exists only as an
+override, it is logged as one, and there is no reason to use it here. ⚠ THE RE-READ LOADS A ~42 GB DENSE float32 ARRAY AND CAN TAKE
 MANY MINUTES. THAT IS NOT A HANG — do not interrupt it, do not restart the
 kernel. Exit 0 is REQUIRED to proceed to STEP 9; any red is a STOP under R8:
 paste the whole block to Carter and wait. Then reclaim the space (the ONLY
@@ -295,8 +328,9 @@ bills hourly). Banked regions are permanent; nothing recomputes.
 
 
 ✅ STAGE C HOLD LIFTED (2026-08-13, commit d9fbc63): both producer gates are
-wired in run_native_ld_panel.py — the pre-registered clause-(d) anomaly gate
-(0.0005 x n_var, defer-not-exclude) and the --max-n-var feasibility ceiling
+wired in run_native_ld_panel.py — the pre-registered clause-(d) occlusion gate
+(RECALIBRATED 2026-08-22 to the POSTED TWO-condition rule; defer-not-exclude)
+and the --max-n-var feasibility ceiling
 (default 120000 = the consumer's m3_convert_max_n_var). `git pull` on the VM
 before Stage C. In the panel TSV, `deferred_infeasible_square` and
 `deferred_occlusion_anomaly` rows are THE GATES WORKING — expected for ~29+
@@ -307,12 +341,24 @@ deferred_infeasible_square / deferred_occlusion_anomaly / error counts
 SEPARATELY. The fire invocation is unchanged (no new flag needed; the default
 ceiling is the gate) and Stage C still runs WITHOUT --fail-fast — with it,
 the first deferral would halt the loop.
-CLAUSE-(d) CEILING FIGURES, for reading the anomaly rows (per Seth's 2026-08-14
-review): the anomaly threshold is 0.0005 x n_var with a STRICT > — a region
-defers only when its occluded count strictly EXCEEDS the threshold. At the
-pinned 120,000 cap that is 60.0 variants; at region 1's n_var of 102,421 it is
-51.2. Region 1's expected ~5 occlusions therefore sit about 10x under the
-ceiling, so a deferral there would itself be the finding.
+CLAUSE-(d) FIGURES, for reading the anomaly rows — THE POSTED TWO-CONDITION RULE
+(OSF file mk7ze, https://osf.io/mk7ze, posted 2026-08-22T02:58:55Z on az52u; this
+SUPERSEDES the withdrawn single-condition row-fraction ceiling, whose region-1
+premise was measured FALSE on 2026-08-19). A region DEFERS when EITHER
+  (i)  its occluded-SITE fraction  occ_sites / n_sites  EXCEEDS 0.5056%
+       (3x the measured 21-region site-basis MEDIAN of 0.1685%), OR
+  (ii) its OWN row/site inflation at occluded sites  occ_rows / occ_sites
+       EXCEEDS 3.42x (3x the inflation MEDIAN of 1.14x — the amendment anchors
+       on the median, NOT on the 1.18x sample mean).
+STRICT > on BOTH: equality on either condition stays on the exclude-in-lockstep
+path. Accounting stays ROW-keyed — n_dropped_occluded is a ROW count — while the
+gate is evaluated on SITES. Both routes emit the same deferred_occlusion_anomaly:
+prefix, and every square region banks a {region_id}.occlusion_gate.json sidecar
+carrying occ_rows / occ_sites / n_sites / site_fraction / inflation / the two
+ceilings in force / fired / verdict.
+REGION 1 sits at 0.2027% (196 of 96,708 sites) and 1.18x (231 rows / 196 sites) —
+UNDER BOTH ceilings, MEASURED 2026-08-19/20. A deferral there would itself be the
+finding.
 
 STEP 10 — GATE: STAGE C, THE FULL FIRE (~11 days, $385–1,084). Preconditions
 Carter must confirm: the PRE-FIRE 1b signature lines in

@@ -194,16 +194,35 @@ bounds the driver uses (`run_native_ld_panel.py:727-728`).
 mkdir -p data/aou
 awk '($1=="1" || $1=="chr1") && $4>=10000 && $4<=13506933' /home/jupyter/afr_cohort.bim > data/aou/region1_window.bim
 wc -l data/aou/region1_window.bim
-pytest "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_known_answer_gated" -rs -q
+pytest "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_known_answer_gated" \
+       "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_substrate_totals_MEASURED_NOT_DERIVED" \
+       "tests/m3/test_occlusion_span_filter.py::test_containment_assertions_discriminate_a_wrong_answer" \
+       -rs -q
 ```
 
-(`pip install pytest` first if absent.) Expect the row count in the ~102,421 class.
+(`pip install pytest` first if absent.) Expect the row count **102,421**.
+
+**Two layers, deliberately separate (re-derived 2026-08-21):**
+
+* **LAYER 1 — DERIVED** (`..._known_answer_gated`): asserts **CONTAINMENT**, not
+  equality. The settled-5 occluded **row indices** and the 7 settled REF spans must be
+  **PRESENT**. The real window legitimately carries far more of both — **231 occluded
+  rows** over **7,951 multi-base-REF rows**, max span **170 bp**, MEASURED 2026-08-19.
+  The old `==` was false about the window while true only about the June-2026 NaN-pair
+  forensics.
+* **LAYER 2 — MEASURED** (`..._substrate_totals_MEASURED_NOT_DERIVED`): pins
+  `n_rows 102421 / n_deletion_rows 7951 / n_occluded_rows 231 / max_span 170 /
+  n_sites 96708 / occ_sites 196`.
+* the third selector is the unconditional control proving containment can still fail.
+
 ⚠ **MANUAL LINE-NUMBER COMPARISON IS FORBIDDEN** — the gated test computes both sides
 in the same 0-based space and cannot false-pass on an origin error. Interpretation
-[RUNBOOK]: **PASS** → PRE-FIRE 3 CLOSED, proceed. **FAIL with a uniformly ±1-shifted
-set** → the oracle's base was off by one: one-line constant fix in the TEST file only
-(never `occlusion_span_filter.py` — frozen), re-run. **Any other FAIL** → STOP; do not
-fire; report.
+[RUNBOOK]: **PASS** → PRE-FIRE 3 CLOSED, proceed. **LAYER 1 FAIL with a uniformly
+±1-shifted set** → the oracle's base was off by one: one-line constant fix in the TEST
+file only (never `occlusion_span_filter.py` — frozen), re-run. **LAYER 2 FAIL** → the
+SUBSTRATE moved (a CDR refresh does this): **RE-MEASURE AND RECORD** with fresh
+provenance and re-check every consumer — never edit the number to green. **Any other
+FAIL** → STOP; do not fire; report.
 
 ## 9 — STEP A: region-1 gate [PASS criteria RUNBOOK item 9; invocation DERIVED @HEAD]
 
@@ -233,23 +252,42 @@ python3 src/python/run_native_ld_panel.py \
 Rough wall expectation: the 276-region fire averages ~0.95 VM-h/region; region 1 is a
 medium multi-segment window (~102k vars) — expect an hour-plus; watch the emitted JSON
 line. **PASS** [RUNBOOK]: `.npz` count 0 → 1 (re-run the item-2 poll); panel
-`status == "ok"`; `n_var` slightly under 102,421; `n_dropped_occluded` ≈ 5 logged; no
+`status == "ok"`; `n_var` slightly under 102,421; **`n_dropped_occluded == 231`**
+(MEASURED 2026-08-19/20 — 231 occluded ROWS at 196 sites, of 96,708 sites / 102,421
+rows; source `.planning/debug/260820-site-basis-sweep-results-as-received.md`); no
 "not symmetric", no "Killed", no dmesg OOM. **FAIL → stop and report; do not proceed
 to 276.**
+
+**THE ARBITER RULE.** If the observed count differs from 231, the per-region sidecar
+`m2_region_00001.occlusion_gate.json` is the **arbiter** — it is the shipped gate's own
+measurement — and the run **STOPS for re-measurement**. Never edit-to-green, never
+"close enough", never split the difference.
 
 **What a PASS proves (added 2026-08-13, Seth's #2 — already embedded, now explicit):**
 `status == "ok"` is a MECHANISM falsification, not just a code gate — the converter
 raises on ANY NaN before upload and the verifier re-scans, so a banked region 1
 proves occlusion accounted for 100% of the NaN. A residual-NaN mechanism lands as
 `status error` under `--fail-fast` = HARD STOP + scientific finding. After PASS,
-also verify the per-region manifest at the data layer (ground truth = 5 records):
+also verify the per-region manifest at the data layer (MEASURED = 231 records):
 
 ```
 gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv | wc -l
-gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv
+gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv | head -20
 ```
 
-Expect 6 lines (header + 5 records), all rows `m2_region_00001`.
+Expect **232 lines (header + 231 records)**, all rows `m2_region_00001`.
+
+**THE GATE SIDECAR — read it, it is the arbiter:**
+
+```
+gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_gate.json
+```
+
+EXPECT: `occ_rows 231`, `occ_sites 196`, `n_sites 96708`, `site_fraction ≈ 0.2027%`
+(the JSON carries the BARE FRACTION, ≈ 0.002027), `inflation ≈ 1.18x`, `fired []`,
+`verdict "ok"`. The manifest line count, the panel row's `n_dropped_occluded` and the
+sidecar's `occ_rows` are three records of ONE drop set — any disagreement **STOPS the
+run for re-measurement**.
 
 **MECHANICAL STAGE-A GATE (AGENT-PROMPT R8; `src/python/fire_verifier.py`, landed
 2026-08-18 / `quick-260818-sml`).** `git pull` first — the gate did not exist when
@@ -267,19 +305,26 @@ GB). Then copy the three inputs the gate reads and run it:
 ```
 gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.npz /home/jupyter/native_ld_scratch/
 gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_manifest.tsv /home/jupyter/native_ld_scratch/
+gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occlusion_gate.json /home/jupyter/native_ld_scratch/
+gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m2_region_00001.occluded.excludelist /home/jupyter/native_ld_scratch/
 gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
 python3 src/python/fire_verifier.py stage-a \
   --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
   --region-id m2_region_00001 \
   --manifest /home/jupyter/native_ld_scratch/m2_region_00001.occlusion_manifest.tsv \
   --npz /home/jupyter/native_ld_scratch/m2_region_00001.npz \
+  --gate-json /home/jupyter/native_ld_scratch/m2_region_00001.occlusion_gate.json \
+  --excludelist /home/jupyter/native_ld_scratch/m2_region_00001.occluded.excludelist \
   --report /home/jupyter/fire_gate_stageA.json
 echo "gate exit: $?"
 ```
 
-Expect five checks — `stage_a_nan_falsification`, `stage_a_manifest_rows`,
-`occlusion_anomaly_ceiling`, `region1_status`, `status_classification` — all PASS
-and `gate exit: 0`. ⚠ **The re-read loads a ~42 GB dense float32 array and can
+Expect **six** checks — `stage_a_nan_falsification`, `expected_records_derivation`,
+`stage_a_manifest_rows`, `occlusion_gate`, `region1_status`, `status_classification` —
+all PASS and `gate exit: 0`. **Do NOT pass `--expected-records`:** the gate DERIVES the
+expected manifest record count from the excludelist's line count and cross-checks it
+against the sidecar's `occ_rows`. The flag survives only as an override, is logged as
+one, and has no use here. ⚠ **The re-read loads a ~42 GB dense float32 array and can
 take many minutes. THAT IS NOT A HANG** — do not interrupt, do not restart the
 kernel. **Exit 0 is required to proceed; NEVER chain past a red.** `--npz` is
 REQUIRED on purpose: a falsification that did not run is not a falsification.
@@ -454,10 +499,14 @@ banked auto-skips.
 ## ✅ STAGE C HOLD LIFTED (2026-08-13)
 
 ✅ Lifted 2026-08-13, commit d9fbc63: both producer gates are
-wired in run_native_ld_panel.py — the pre-registered clause-(d) anomaly gate
-(0.0005 x n_var, defer-not-exclude) and the --max-n-var feasibility ceiling
+wired in run_native_ld_panel.py — the pre-registered clause-(d) occlusion gate
+(RECALIBRATED 2026-08-22 to the POSTED TWO-condition rule, defer-not-exclude:
+DEFER when EITHER the occluded-SITE fraction exceeds 0.5056% OR the occluded-site
+row/site inflation exceeds 3.42x, STRICT `>` on both — OSF file mk7ze,
+https://osf.io/mk7ze) and the --max-n-var feasibility ceiling
 (default 120000 = the consumer's m3_convert_max_n_var). `git pull` on the VM
-before Stage C. In the panel TSV, `deferred_infeasible_square` and
+before Stage C. Region 1 sits at 0.2027% and 1.18x — under BOTH — so a deferral
+there would itself be the finding. In the panel TSV, `deferred_infeasible_square` and
 `deferred_occlusion_anomaly` rows are THE GATES WORKING — expected for ~29+
 regions above the ceiling; the bankable target is 276 MINUS deferrals, and no
 deferral count is a pre-committed expectation (the count emerges at fire time).

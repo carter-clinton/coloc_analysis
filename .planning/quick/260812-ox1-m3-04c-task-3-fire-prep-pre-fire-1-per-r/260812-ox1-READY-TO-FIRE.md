@@ -233,8 +233,19 @@ Carter's in-perimeter action: place the real region-1 window `.bim` at
 name**:
 
 ```
-pytest "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_known_answer_gated" -rs -q
+pytest "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_known_answer_gated" \
+       "tests/m3/test_occlusion_span_filter.py::test_region1_real_window_substrate_totals_MEASURED_NOT_DERIVED" \
+       "tests/m3/test_occlusion_span_filter.py::test_containment_assertions_discriminate_a_wrong_answer" \
+       -rs -q
 ```
+
+**TWO LAYERS, deliberately separate (re-derived 2026-08-21).** LAYER 1 (DERIVED,
+`..._known_answer_gated`) asserts **CONTAINMENT**: the settled-5 occluded row indices
+and the 7 settled REF spans must be **PRESENT**. LAYER 2
+(`..._substrate_totals_MEASURED_NOT_DERIVED`) pins the MEASURED substrate —
+`n_rows 102421 / n_deletion_rows 7951 / n_occluded_rows 231 / max_span 170 /
+n_sites 96708 / occ_sites 196`. The third selector is the unconditional control
+showing containment can still fail.
 
 ⚠ **MANUAL LINE-NUMBER COMPARISON IS FORBIDDEN.** The §4-row-4 off-by-one risk lives
 ONLY there (editor/awk/sed line numbers are 1-based; the oracle is 0-based). The gated
@@ -247,23 +258,54 @@ instrument. Interpretation:
 
 | Outcome | Meaning | Action |
 |---|---|---|
-| PASS | origin settled (0-based); **PRE-FIRE 3 CLOSED** | proceed |
-| FAIL, observed set == expected shifted uniformly ±1 | the oracle's base was off by one | report; a one-line constant fix in the TEST file (not freeze-gated) + re-run; do **NOT** touch `occlusion_span_filter.py` (frozen) |
+| PASS (both layers) | origin settled (0-based); **PRE-FIRE 3 CLOSED** | proceed |
+| LAYER 1 FAIL, a settled index MISSING from the detected set | CONTAINMENT broke — the frozen detector no longer reproduces a settled finding | **STOP; do not fire; report** |
+| LAYER 1 FAIL, observed indices == the settled set shifted uniformly ±1 | the oracle's base was off by one | report; a one-line constant fix in the TEST file (not freeze-gated) + re-run; do **NOT** touch `occlusion_span_filter.py` (frozen) |
+| LAYER 1 FAIL, a settled REF span short in the window multiset | same class as the index case | report; TEST-file constant only; never the frozen module |
+| LAYER 2 FAIL | the SUBSTRATE moved (e.g. a CDR refresh) | **RE-MEASURE AND RECORD** with fresh provenance, then re-check every consumer (the region-1 EXPECT below, the amendment's Class-M slots). **NEVER edit the number to green** |
 | any other FAIL | detector/window mismatch — a real finding | **STOP; do not fire; report** |
+
+⚠ The window legitimately carries MORE than the settled sets — 231 occluded rows over
+7,951 multi-base-REF rows, max span 170 bp (MEASURED 2026-08-19). An **extra** member
+is expected and is NOT a failure; only a **MISSING** settled member is.
 
 ## 9. STEP A — region-1 re-run gate (the gate immediately before the money)
 
 Re-run **region 1 ONLY**. **PASS** = `.npz` count 0 → 1; panel `status == ok`; `n_var`
-slightly under 102,421; `n_dropped_occluded` ≈ 5 logged; no "not symmetric", no
-"Killed", no dmesg OOM. **FAIL → stop and report; do not proceed to 276.**
+slightly under 102,421; **`n_dropped_occluded == 231`** — MEASURED 2026-08-19/20 (231
+occluded ROWS at 196 sites, of 96,708 sites / 102,421 rows; source
+`.planning/debug/260820-site-basis-sweep-results-as-received.md`); no "not symmetric",
+no "Killed", no dmesg OOM. **FAIL → stop and report; do not proceed to 276.**
+
+**Manifest EXPECT:** `232 lines (header + 231 records)`, `region_id m2_region_00001`
+on every record row.
+
+**Sidecar EXPECT** (`gsutil cat gs://…/m2_region_00001.occlusion_gate.json`):
+`occ_rows 231`, `occ_sites 196`, `n_sites 96708`, `site_fraction ≈ 0.2027%` (the JSON
+carries the bare fraction, ≈ 0.002027), `inflation ≈ 1.18x`, `fired []`,
+`verdict "ok"`.
+
+**THE ARBITER RULE.** The manifest line count, the panel row's `n_dropped_occluded`
+and the sidecar's `occ_rows` are three records of ONE drop set. If they disagree — or
+if the count is not 231 — the **sidecar is the arbiter** (it is the shipped gate's own
+measurement) and the run **STOPS for re-measurement**. Never edit-to-green, never
+"close enough", never split the difference.
 
 **MECHANICAL GATE for this stage (added 2026-08-18, `quick-260818-sml`):**
 `src/python/fire_verifier.py stage-a` — it re-reads the BANKED `.npz` through the
-SHIPPED `content_verify_npz`, checks the manifest at the data layer (count, field
-parseability AND `region_id` on every record row), evaluates the clause-(d)
-occlusion ceiling from the panel TSV, and asserts region 1's status is exactly
-`ok`. **`git pull` on the VM first; exit 0 is required to proceed.** Full
-invocation in `AGENT-PROMPT` STEP 8-GATE / `BROWSER-PASTE` §9. ⚠ The re-read loads
+SHIPPED `content_verify_npz`; DERIVES the expected manifest record count from the
+region's `.occluded.excludelist` line count and CROSS-CHECKS it against the gate
+sidecar's `occ_rows` (a mismatch FAILS closed); checks the manifest at the data
+layer (count, field parseability AND `region_id` on every record row); evaluates
+the POSTED TWO-condition clause-(d) gate from the sidecar
+(`m2_region_00001.occlusion_gate.json`, not from a human-typed number); and asserts
+region 1's status is exactly `ok`. Six checks:
+`stage_a_nan_falsification`, `expected_records_derivation`, `stage_a_manifest_rows`,
+`occlusion_gate`, `region1_status`, `status_classification`. It now requires
+`--gate-json` and `--excludelist`; **do not pass `--expected-records`** (it survives
+only as an override and is logged as one). **`git pull` on the VM first; exit 0 is
+required to proceed.** Full invocation in `AGENT-PROMPT` STEP 8-GATE /
+`BROWSER-PASTE` §9. ⚠ The re-read loads
 a ~42 GB dense array and takes many minutes — that is not a hang.
 
 **SH2B3 `__sub14` follow-up (MEDIUM-6):** once `m2_region_00040__sub14` is banked, run
@@ -318,19 +360,34 @@ to wait out.
 **Deferral vocabulary (added 2026-08-13, commit d9fbc63 — both producer gates
 landed):** in the panel TSV, `deferred_infeasible_square` (n_var above the
 `--max-n-var` ceiling, default 120000 = the consumer's `m3_convert_max_n_var`)
-and `deferred_occlusion_anomaly` (trsx5 clause (d), occluded count > 0.0005 ×
-n_var, defer-not-exclude) rows are **THE GATES WORKING** — expected for ~29+
+and `deferred_occlusion_anomaly` (the POSTED clause (d), TWO conditions,
+defer-not-exclude) rows are **THE GATES WORKING** — expected for ~29+
 regions above the ceiling. The bankable target is **276 minus deferrals**; no
 deferral count is a pre-committed expectation (the count emerges at fire time).
 The monitoring rollup reports the four status classes SEPARATELY: `ok` /
 `deferred_infeasible_square` / `deferred_occlusion_anomaly` / `error`.
 
-**Clause-(d) ceiling figures (per Seth's 2026-08-14 review):** the anomaly
-threshold is **`0.0005 × n_var`** with a **STRICT `>`** — a region defers only when
-its occluded count strictly **exceeds** the threshold. At the pinned **120,000**
-cap that is **60.0** variants; at region 1's `n_var` of **102,421** it is **51.2**.
-Region 1's expected **~5** occlusions sit roughly **10× under** the ceiling, so a
-deferral there would itself be the finding.
+**Clause-(d) figures — THE POSTED TWO-CONDITION RULE** (OSF file `mk7ze`,
+https://osf.io/mk7ze, posted 2026-08-22T02:58:55Z on `az52u`). This SUPERSEDES the
+withdrawn single-condition row-fraction ceiling, whose region-1 premise was measured
+FALSE on 2026-08-19. A region **DEFERS** when **EITHER**
+
+* **(i)** its occluded-**SITE** fraction `occ_sites / n_sites` **exceeds 0.5056%**
+  (3× the measured 21-region site-basis **MEDIAN** of 0.1685%), **or**
+* **(ii)** its own row/site **inflation** at occluded sites `occ_rows / occ_sites`
+  **exceeds 3.42x** (3× the inflation **MEDIAN** of 1.14x — the amendment anchors on
+  the median, explicitly **not** on the 1.18x sample mean).
+
+**STRICT `>` on both**: equality on either condition stays on the exclude-in-lockstep
+path. **Accounting stays ROW-keyed** (`n_dropped_occluded` is a ROW count) while the
+gate is evaluated on **sites**; both routes emit the same `deferred_occlusion_anomaly:`
+prefix; and every square region banks a `{region_id}.occlusion_gate.json` sidecar with
+`occ_rows / occ_sites / n_sites / site_fraction / inflation / the two ceilings in
+force / fired / verdict`.
+
+**Region 1 sits at 0.2027% (196 of 96,708 sites) and 1.18x (231 rows / 196 sites) —
+under BOTH ceilings**, MEASURED 2026-08-19/20. A deferral there would itself be the
+finding.
 
 **Post-fire disclosure duty (note only — not implemented here).** Per clause (d)
 the measured deferral list is disclosed as a deviation at STEP E/F time — **and,
