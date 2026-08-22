@@ -2300,3 +2300,112 @@ is enforced by a named check, not by intention:
 commitment this decision inherits);
 `.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-XX.md`;
 `.planning/amendments/note-same-position-collinearity-2026-08-19.md`.
+
+## 2026-08-22 — DEC-2026-08-22-occlusion-recalibration-posted: the recalibration amendment is POSTED (mk7ze, 2026-08-22T02:58:55Z) — the m3-07 OSF gate for clause (d) is CLEARED; the code-constant change is AUTHORISED, and ONLY as the TWO-condition gate
+
+**Decision (CARTER, 2026-08-21 22:51–23:07 EDT):** Carter uploaded the extracted amendment
+body to the OSF project as a NEW file — not as a new version of anything — and captured the
+four record items an agent is forbidden to go and fetch. No agent contacted OSF at any point,
+before, during or after; the captures below are the sole OSF-side source of truth for this
+entry and for the deviation record it accompanies.
+
+### The four captures, quoted exactly
+
+- **GUID `mk7ze`**, `https://osf.io/mk7ze`, on parent record `az52u`. It sits on the
+  project's OSF Storage ROOT as its own file (breadcrumb Az52u / Files / Mk7ze) — a SIBLING
+  of `trsx5`, not a child of it. Stored filename, exact lowercase:
+  `osf-amendment-occlusion-gate-recalibration-2026-08-22.md`.
+- **Authoritative UTC stamp `2026-08-22T02:58:55Z`**, from the Recent Activity log entry
+  "Carter Clinton added file osf-amendment-occlusion-gate-recalibration-2026-08-22.md to OSF
+  Storage" (rendered "Aug 21, 2026 10:58 PM" ET). The file page's "Date created" read
+  `2026-08-22T02:58:53Z` — the object's own creation, 2 s earlier. The prepared template had
+  predicted the PARENT RECORD's 2026-04-10 date there; **that expectation was NOT borne out**
+  and the observed value is recorded rather than smoothed over.
+- **OSF-stored md5 `13a49f543cabcc27ce9f1e589783c060`**, 22,945 bytes, version 1 — equal to
+  the repo's paste block.
+- **`trsx5` still shows exactly 1 revision** ("1. Jul 10, 2026 09:32 AM" ET; the API confirms
+  one version created `2026-07-10T13:32:21Z`). The append-only commitment holds.
+
+### Two caveats carried forward, not compressed away
+
+- **The posted body is the reviewed body up to ONE line.** Seth's final pass cleared
+  22,945 B / `422f1f28d6a3b76c7657fadec05a0237`; the body actually posted is 22,945 B /
+  `13a49f543cabcc27ce9f1e589783c060`. `diff` between them reports exactly `4c4` — the
+  `**Date:**` line and nothing else, moved 2026-08-21 → 2026-08-22 by the instantiation
+  engine's Class-P pass (commit `c61d179`) when the UTC day rolled before Carter uploaded.
+  No scientific statement, number or commitment differs.
+- **The integrity hash is OSF's, but it is API-reported and not a re-download.** A scripted
+  byte-for-byte re-download from inside the OSF page was REFUSED by OSF's file server (private
+  project; cross-origin authenticated fetch rejected), so the md5 above was read from the
+  file's API record after upload rather than recomputed from a downloaded byte stream. A local
+  md5 of a manually re-downloaded copy was NOT performed. That check is an OPTIONAL,
+  NON-BLOCKING follow-up — "it matches" here means OSF's own computation over the stored
+  object equals the repo paste block, which is strong, but it is not a re-download and must
+  not be written up as one.
+
+### Alternatives considered and REJECTED
+
+- **Not posting, and changing the constant anyway.** Rejected. The false 0.0005 premise would
+  remain the LIVE pre-registration while the code silently ran a different gate — exactly the
+  post-hoc-calibration failure the pre-registration exists to prevent, and precisely the
+  silent modification excluded by `:81` and `:98`.
+- **Uploading as a new VERSION of `trsx5`.** Rejected. That is a silent swap: it alters the
+  record being corrected and destroys the append-only property that cleared the July posting.
+  `trsx5` must — and does — still show exactly 1 revision; the correction lives at a second,
+  distinct GUID.
+- **Hand-editing the posting date when the UTC day rolled.** Rejected. `POSTING_DATE` appears
+  three times in lockstep and the engine's anchors are computed over them, so a hand edit
+  breaks the lockstep and de-anchors the document. The engine's Class-P pass moved all three
+  at once (`c61d179`), leaving a `4c4` one-line diff that can be stated exactly.
+
+### Why
+
+The posted body is the reviewed body up to one date line; the correction of the false trsx5
+sentence and the recalibration of clause (d) are on the public record BEFORE the corrected
+gate ever executes rather than after; and precedence is MEASURED, not asserted — HEAD
+`c61d179` was committed `2026-08-22T02:48:03Z`, ten minutes before the OSF stamp, with
+`src/python/run_native_ld_panel.py:133` still reading `_OCCLUSION_ANOMALY_FRACTION = 0.0005`,
+`git diff --stat 2689cae HEAD -- src/ tests/ config/` empty, and no recalibrated-gate output
+anywhere.
+
+### Consequences — the operative part
+
+The m3-07 clause-(d) OSF gate is **CLEARED**. The remediation batch is **AUTHORISED**, with
+its scope fixed here so a later session cannot widen it:
+
+- **The producer gate becomes a TWO-condition rule.** DEFER if the occluded-**site** fraction
+  is **> 0.5056%** **OR** the occluded-site **row/site inflation ratio is > 3.42x**. BOTH
+  conditions ship. **The ceiling alone is NOT authorised** — a site-basis metric is
+  multiplicity-invariant and therefore multiplicity-BLIND, and the multiplicity-blind
+  single-metric gate is exactly what this revision replaced.
+- **Exclusion accounting stays ROW-keyed**, and **both** numbers are emitted — occluded
+  sites, occluded rows, and the inflation ratio. Either condition routes to the same
+  `BRANCH_AFR_OCC_DEFERRED` token; there is **no fourth branch**.
+- **Order of work**, as a `/gsd-quick --validate` TDD task with RED tests first: producer gate
+  (`_OCCLUSION_ANOMALY_FRACTION` at `run_native_ld_panel.py:133` and its comparison ~line 853,
+  constants in ONE pinned place) → test oracle in `tests/m3/test_occlusion_span_filter.py`
+  (settled-5 as a SUBSET at exact indices; the measured 231 / 7,951 pins labelled
+  MEASURED-NOT-DERIVED) → `src/python/fire_verifier.py` `expected_records` → runbook EXPECT
+  retirement outside the pinned 6b ranges → suite re-baseline from 992/32/0, reconciled
+  component-exact.
+- **Stage A stays HELD** until the remediation lands and STEP 7 passes in-perimeter.
+  **AN AGENT NEVER FIRES.**
+- **The posted body is now PUBLIC and FROZEN.** The paste block between the two PASTE markers
+  (22,945 B / `13a49f543cabcc27ce9f1e589783c060`) must never change again, for any reason,
+  including a typo. If an error is found inside it, the remedy is a further OSF record, never
+  a repo edit.
+
+**Cross-refs:** the deviation entry `## 2026-08-22 — AFR native-panel occlusion anomaly-gate
+RECALIBRATION …` in `.planning/osf_deviations.md`; git tag
+`AFR-OCCLUSION-GATE-RECALIBRATION-OSF-POSTED-2026-08-22` on the record commit (July sibling
+`AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`);
+`DEC-2026-08-19-occlusion-recalibration-adopted` (the branch adoption this posting discharges);
+the seven supporting records `.planning/debug/260819-SETH-VERDICT-adjudication-confirmed-as-received.md`,
+`.planning/debug/260819-SETH-C1C2C3-convergence-as-received.md`,
+`.planning/debug/260819-occ-measure-sweep-results-as-received.md`,
+`.planning/debug/260819-supplement-results-as-received.md`,
+`.planning/debug/260820-site-basis-sweep-results-as-received.md`,
+`.planning/debug/260820-SETH-ATTACK-instantiated-amendment-as-received.md`,
+`.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md`;
+Carter's posting procedure `.planning/debug/260821-POSTING-CARD-for-carter.md`;
+`.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md`.

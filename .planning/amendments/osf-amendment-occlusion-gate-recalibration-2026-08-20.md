@@ -504,6 +504,8 @@ corrected gate executes rather than after.
 
 **Verification checklist after OSF posting:**
 
+**STATUS 2026-08-22 — items 1-5 DONE:** (1) precedence SATISFIED — `c61d179` at 02:48:03Z precedes the 02:58:55Z OSF stamp, `_OCCLUSION_ANOMALY_FRACTION` still 0.0005, no recalibrated-gate output; (2) GUID `mk7ze` + authoritative UTC captured; (3) `trsx5` still exactly 1 revision; (4) the prepared entry is APPENDED to `.planning/osf_deviations.md`; (5) the record commit is TAGGED `AFR-OCCLUSION-GATE-RECALIBRATION-OSF-POSTED-2026-08-22`. **Item 6 is therefore now AUTHORISED — and ONLY as the TWO-condition gate (site-basis fraction > 0.5056% OR occluded-site row/site inflation > 3.42x); the ceiling condition alone remains NOT authorised.**
+
 1. Confirm the OSF timestamp PRECEDES any commit containing recalibrated-gate outputs or any
    change to `_OCCLUSION_ANOMALY_FRACTION`. If precedence is violated, log a deviation in
    `.planning/osf_deviations.md` immediately.
@@ -523,7 +525,9 @@ corrected gate executes rather than after.
 **Rollback:** Do not delete this file. OSF amendments are append-only; this file corrects
 `trsx5` by superseding two of its statements in a new dated record, never by editing it.
 
-## PREPARED `.planning/osf_deviations.md` ENTRY — ⚠ NOT-YET-APPENDED
+## PREPARED `.planning/osf_deviations.md` ENTRY — ✅ APPENDED 2026-08-22
+
+Appended to `.planning/osf_deviations.md` at the record commit (tag `AFR-OCCLUSION-GATE-RECALIBRATION-OSF-POSTED-2026-08-22`) with GUID `mk7ze` / `2026-08-22T02:58:55Z`; the fenced template below is kept as drafted, for provenance.
 
 **This block is TEXT ONLY. It appends to `.planning/osf_deviations.md` ONLY when Carter has
 posted and the file URL, GUID and authoritative UTC timestamp are in hand. Until then
