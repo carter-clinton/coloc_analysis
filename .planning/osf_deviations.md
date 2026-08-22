@@ -418,3 +418,113 @@ gate; a compliance gap, not a mechanics blocker.
 - All four `.planning/phases/m3-aou-afr-ld-panel-build/validation/check_*/` directories EMPTY
   (0 files each) — no check has been run or cited under either the original or redefined form.
 - No OSF file GUID exists for a Check-2 amendment-update as of this entry.
+
+## 2026-08-22 — AFR native-panel occlusion anomaly-gate RECALIBRATION + factual correction to trsx5 (m3-07 OSF gate, second record)
+
+- **Posted:** OSF file `mk7ze` on parent record az52u —
+  `https://osf.io/mk7ze` — filename
+  `osf-amendment-occlusion-gate-recalibration-2026-08-22.md` (append-only;
+  M1/r3/tcujq/trsx5 pattern). Posted as a NEW supplementary file, NOT as a new version of
+  trsx5.
+- **APPEND-ONLY COMMITMENT:** verified at the OSF file pages after posting — `trsx5` still
+  shows exactly 1 revision (2026-07-10 13:32, unmodified). Two distinct GUIDs, each
+  single-version, so the corrected record was never altered and the correction is in
+  CONTENT terms, not in OSF's version-tracking sense.
+- **OSF timestamp (authoritative, UTC):** `2026-08-22T02:58:55Z` — the Recent Activity log
+  entry "Carter Clinton added file
+  osf-amendment-occlusion-gate-recalibration-2026-08-22.md to OSF Storage" (the widget
+  renders that instant as "Aug 21, 2026 10:58 PM" ET). ⚠ **The prepared template predicted
+  that this file page's "Date created" would show the PARENT RECORD's creation date
+  (2026-04-10, osf.io/pvb5j) — as `trsx5`'s page does. That expectation was NOT borne out
+  here.** The observed "Date created" read `2026-08-22T02:58:53Z`: this object's own
+  creation, 2 s before the activity-log entry. The Recent Activity entry remains the
+  authoritative stamp of record; the 2 s gap is upload-then-index, not a discrepancy, and
+  it is written down here so a future reader is not surprised by it.
+- **Project-side copy:** `.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md` (knowable now; the instantiation-dated basename does not move at posting).
+- **Pre-execute gate commit:** `07df11e44f2d56536ef4ef0753c8d2f8fdb55ae8`. At OSF post time NO change to
+  `_OCCLUSION_ANOMALY_FRACTION` and NO recalibrated-gate output had landed.
+- **What it CORRECTS:** the factual sentence at trsx5's line 45 — "Region 1 alone contains 7
+  distinct overlapping deletions (60/29/7/31/31/17/29 bp)" — which stated the NaN-pair
+  deletion subset as the window inventory. Measured window inventory: 7,951 multi-base-REF
+  rows in 102,421 records (7.76%), the ordinary WGS figure; the asserted 7 is 0.0068%,
+  ~1,140x low. The same bullet's "Zero pairs are same-position multiallelic records" was
+  correctly scoped to the six NaN pairs and STANDS; its window-scale reading does not
+  (same-position rows are ~7-11% of rows).
+- **What it RECALIBRATES:** clause (d), the per-region occlusion anomaly gate. Metric moves
+  from occluded ROWS to occluded SITES (representation-invariant); accounting and manifest
+  stay ROW-keyed and both numbers are reported; ceiling moves from 0.0005 x n_var (row
+  basis) to 3x the measured site-basis median. Basis for the recalibration: a pre-committed
+  systematic-by-span 21-region sample, row basis min 0.1323% / median 0.1888% / max 0.3527%
+  / robust sigma 0.0393%, 21/21 deferring at 0.0005, plus the site-basis re-measurement of
+  the same 21 regions: site basis min 0.1345% / median 0.1685% / max 0.2698% / robust sigma
+  0.0274% (site basis). The gate's own ceiling is 3x that site-basis median = 0.5056% (site
+  basis), 1.87x the observed site-basis maximum. The gate ALSO gains a COMPANION condition
+  on the occluded-site row/site inflation ratio, because a site-basis metric is
+  multiplicity-invariant and therefore multiplicity-BLIND: measured across the same 21
+  regions, inflation min 1.04x / median 1.14x / max
+  1.79x / robust sigma 0.0890x; companion ceiling = 3x the
+  median = 3.42x, leaving 1.91x margin over the observed
+  maximum. A region deferring on EITHER condition routes to the same BRANCH_AFR_OCC_DEFERRED
+  token — no fourth branch. Provenance of the withdrawn constant
+  carried VERBATIM from the reviewer who derived it (calibrated on 6 NaN pairs at n=1,
+  re-purposed to geometric exclusions without re-derivation; premise low by ~38x).
+- **What it RETAINS unchanged:** clause (a) occlusion criterion; clause (b)
+  exclude-in-lockstep (panel-only exclusion and NaN→0 still prohibited); clause (c)
+  mandatory provenance manifest; the defer-not-exclude protocol; clause (e) present-rate
+  reporting; BRANCH_AFR_OCC_{NONE,EXCLUDED,DEFERRED}; PSD regularization + λ (eigclip
+  λ_floor=1e-6 primary, ridge λ∈{0.001,0.01,0.1} robustness); fully-NaN-row → drop;
+  raw-panel NaN-raise contract.
+- **Known limitation recorded alongside:** same-position collinearity caveat recorded at
+  .planning/amendments/note-same-position-collinearity-2026-08-19.md; fine-mapping at
+  multiallelic sites carries near-collinear predictors; known split-representation property,
+  not a defect. That note is an INTERNAL RECORD — not part of any OSF amendment and not
+  posted. Its SUBSTANCE is disclosed inside the posted text's limitation paragraph; only its
+  repo PATH lives here, because a posted OSF record must be self-contained and a public
+  reader cannot resolve a `.planning/` path.
+- **Amends:** osf.io/pvb5j (DOI 10.17605/OSF.IO/PVB5J) via osf.io/az52u file trsx5. Sibling
+  of osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md, which it corrects rather than
+  withdraws.
+
+### Recorded at posting (2026-08-22)
+
+- **Posting-date disclosure.** The amendment carried a PROVISIONAL posting date of 2026-08-21.
+  Carter had not uploaded when the UTC day rolled, so `POSTING_DATE` moved 2026-08-21 →
+  2026-08-22 through the instantiation engine's Class-P pass (commit `c61d179`), never by hand.
+  The body Seth's final pass cleared was 22,945 B / `422f1f28d6a3b76c7657fadec05a0237`; the body
+  actually posted is 22,945 B / `13a49f543cabcc27ce9f1e589783c060`; the COMPLETE difference is
+  the `**Date:**` line — `diff` reports exactly `4c4`, one line changed, nothing else. No
+  scientific statement, number or commitment differs between the reviewed and the posted body.
+- **Integrity.** The repo's paste block (the region between the two PASTE markers, exclusive of
+  both) is 22,945 B / `13a49f543cabcc27ce9f1e589783c060`, equal to the md5 OSF Storage itself
+  computed and stores for `mk7ze` version 1 (22,945 bytes) — so what OSF serves IS the repo body.
+  ⚠ **Method caveat, recorded rather than smoothed over:** a scripted byte-for-byte re-download
+  from inside the OSF page was REFUSED by OSF's file server (the project is private; the
+  cross-origin authenticated fetch was rejected), so this hash was READ FROM THE FILE'S API
+  RECORD after upload rather than recomputed from a downloaded byte stream. A local md5 of a
+  manually re-downloaded copy was NOT performed; that belt-and-suspenders check is an OPTIONAL,
+  NON-BLOCKING follow-up. The hash is OSF's own computation over the stored object — not a repo
+  echo, and not a re-download.
+- **Append-only.** `trsx5` still shows exactly **1 revision** — the Revisions panel lists a single
+  entry "1. Jul 10, 2026 09:32 AM" (ET) and the API confirms one version created
+  `2026-07-10T13:32:21Z`. Nothing was added to it as a new version. `mk7ze` is its own
+  single-version file on the project's OSF Storage ROOT (breadcrumb Az52u / Files / Mk7ze), a
+  SIBLING of `trsx5`, not a child of it; the stored filename is the exact lowercase
+  `osf-amendment-occlusion-gate-recalibration-2026-08-22.md` (the OSF page heading title-cases it
+  visually, but the file list, the API and the activity log all show the lowercase name). Two
+  distinct GUIDs, each one version → no silent swap.
+- **Precedence (Post-Paste checklist item 1) — SATISFIED, no deviation.** HEAD `c61d179` was
+  committed `2026-08-22T02:48:03Z`, ten minutes BEFORE the OSF stamp `2026-08-22T02:58:55Z`.
+  `src/python/run_native_ld_panel.py:133` still reads `_OCCLUSION_ANOMALY_FRACTION = 0.0005`,
+  last changed in `d9fbc63` (2026-08-13, before this recalibration existed);
+  `git diff --stat 2689cae HEAD -- src/ tests/ config/` is EMPTY; no recalibrated-gate output
+  exists anywhere. The pre-registration precedes the analysis it governs.
+- **Record.** Decision: `DEC-2026-08-22-occlusion-recalibration-posted` in
+  `.planning/DECISIONS.md`. Git tag on the record commit:
+  `AFR-OCCLUSION-GATE-RECALIBRATION-OSF-POSTED-2026-08-22` (July sibling:
+  `AFR-OCCLUSION-EXCLUDE-OSF-UPDATE-POSTED-2026-07-10`). The seven supporting records the
+  amendment's pre-paste checklist counts live in `.planning/debug/`: the four `260819-…`
+  (SETH-VERDICT-adjudication-confirmed, SETH-C1C2C3-convergence, occ-measure-sweep-results,
+  supplement-results), the two `260820-…` (site-basis-sweep-results,
+  SETH-ATTACK-instantiated-amendment) and
+  `260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md`. Carter's posting procedure:
+  `.planning/debug/260821-POSTING-CARD-for-carter.md`.
