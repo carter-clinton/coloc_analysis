@@ -152,40 +152,82 @@ _REGION1_EXPECTED_OCCLUDED_POS: set[int] = {
 _REGION1_DELETION_REF_SPANS: list[int] = [60, 29, 7, 31, 31, 17, 29]
 
 # --------------------------------------------------------------------------- #
-# SETTLED REAL-WINDOW ORACLE — for the GATED real-`.bim` validation ONLY       #
+# REGION-1 REAL-WINDOW ORACLE — TWO LAYERS, DELIBERATELY KEPT APART            #
 # --------------------------------------------------------------------------- #
 #
-# The synthetic fixture above pins the RULE. The constants below pin the ANSWER
-# the detector must reproduce when it is finally run against the REAL region-1
-# window `.bim` inside the AoU perimeter (out of scope for this synthetic unit;
-# no perimeter access this phase — see the gated stub at the bottom of the file).
+# The synthetic fixture above pins the RULE. Everything below concerns the REAL
+# region-1 window `.bim` inside the AoU perimeter, and it comes in two kinds that
+# were conflated once already, at cost (re-derived 2026-08-19/21, see
+# .planning/debug/fire-morning-occlusion-oracle-vs-geometry.md):
 #
-# SETTLED (Seth 5/5 vs the geometry verdict `4543dcf4…`):
-#   * occluded set                 = {10328, 44784, 46714, 59097, 66730}
-#       These are 0-based .bim ROW INDICES, NOT bp positions and NOT window offsets.
-#       RECONCILED 2026-07-15 (blast-radius HIGH): the prior comment mislabelled them
-#       "window-relative offsets" and the gated assertion compared them against `_pos_of`
-#       = absolute bp (`int(r[3])`). Region-1's variants span ~1.98M–8.38M bp, so that
-#       comparison can NEVER hold for a correct detector — it would fail a good impl at
-#       the gated run, inviting someone to weaken the one oracle that validates the
-#       genome-wide panel. The scientific review fixes the space unambiguously as row
-#       indices: `m3_nan_conditioning_scientific_review.md` — "pairs are index-adjacent
-#       (10327/10328, 46713/46714/46715, …); one variant (46714) chains two pairs (a run
-#       of co-located records)". Consecutive integers + "index-adjacent" + "co-located
-#       records" describe .bim row ordering, not bp.
-#   * 7-deletion REF-span inventory = 60/29/7/31/31/17/29 bp
-#   * same-position variants        = 0  (`bcftools norm -m` fixes none)
-# This gives the gated 276-region Nyquist check a CONCRETE expected answer.
+# ── LAYER 1 — DERIVED. Assert CONTAINMENT, never equality. ──────────────────
 #
-# ⚠ ONE reconciliation item for the gated run (harmless while skipped): confirm the
-# index ORIGIN (0- vs 1-based) against the real region-1 `.bim` header before trusting
-# the equality — the source doc does not state the base explicitly. 0-based is assumed
-# here (the natural `enumerate(rows)` index). If the real `.bim` shows 1-based, add 1.
+#   * the SETTLED-5 occluded variants, at 0-based .bim ROW INDICES
+#         {10328, 44784, 46714, 59097, 66730}
+#     NOT bp positions and NOT window offsets. RECONCILED 2026-07-15
+#     (blast-radius HIGH): the prior comment mislabelled them "window-relative
+#     offsets" and the gated assertion compared them against absolute bp
+#     (`int(r[3])`). Region-1's variants span ~1.98M–8.38M bp, so that comparison
+#     can NEVER hold for a correct detector. The scientific review fixes the space
+#     unambiguously as row indices: `m3_nan_conditioning_scientific_review.md` —
+#     "pairs are index-adjacent (10327/10328, 46713/46714/46715, …); one variant
+#     (46714) chains two pairs (a run of co-located records)". Consecutive integers
+#     + "index-adjacent" + "co-located records" describe .bim row ordering, not bp.
+#   * the 7 deletion REF spans implicated in those 6 June-2026 NaN pairs:
+#         60/29/7/31/31/17/29 bp
+#
+#   WHY CONTAINMENT REPLACED EQUALITY (2026-08-21). Probe 2 (2026-08-19,
+#   in-perimeter) ran the FROZEN detector over the real window and measured 231
+#   occluded variants with the settled 5 a strict SUBSET
+#   (`oracle_subset_of_observed: True`, `oracle_missing_from_observed: []`) —
+#   nothing missing, no index shift — over 7,951 multi-base-REF rows with a max
+#   span of 170 bp. The two `==` assertions were therefore FALSE ABOUT THE WINDOW
+#   while being TRUE ABOUT THE FORENSICS: the 5 and the 7 were the NaN-pair
+#   forensics' scope, and the scope was lost in transcription. Containment asserts
+#   exactly what was established — the detector must still reproduce every settled
+#   finding — and asserts nothing the evidence does not support.
+#
+#   NOT IN SCOPE, AND DELIBERATELY NOT ASSERTED: the index->bp mapping of the five
+#   indices, and the five attribution EDGES (which deletion occludes which
+#   variant). Neither has been directly observed. Asserting either would
+#   manufacture an oracle out of an inference.
+#
+# ── LAYER 2 — MEASURED. Substrate totals, in their own gated test. ──────────
+#
+#   The window's totals (rows, deletion rows, occluded rows/sites, max span, site
+#   count) are MEASUREMENTS OF A DATA SUBSTRATE, not derived science. They live in
+#   `test_region1_real_window_substrate_totals_MEASURED_NOT_DERIVED` below, kept
+#   physically apart so that a CDR refresh moving them cannot take the derived
+#   science down with it — and so that nobody mistakes a measurement for a
+#   conclusion twice.
 
-#: 0-based .bim row indices of the occluded variants in the REAL region-1 window.
+#: LAYER 1 (DERIVED). 0-based .bim ROW INDICES of the SETTLED-5 occluded variants.
+#: The real window contains MANY more; assert CONTAINMENT, never equality.
 _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES: set[int] = {10328, 44784, 46714, 59097, 66730}
-_REGION1_REAL_DELETION_REF_SPANS: list[int] = [60, 29, 7, 31, 31, 17, 29]
-_REGION1_REAL_SAME_POSITION_COUNT: int = 0
+
+#: LAYER 1 (DERIVED). The 7 deletion REF spans implicated in the 6 NaN pairs. This
+#: is NOT a window inventory — the real window carries 7,951 multi-base-REF rows
+#: with a max span of 170 bp — it is a MULTISET that must be PRESENT in the window.
+_REGION1_SETTLED_DELETION_REF_SPANS: list[int] = [60, 29, 7, 31, 31, 17, 29]
+
+#: LAYER 1 (DERIVED), RE-SCOPED 2026-08-21. The June-2026 forensics found ZERO
+#: same-position variants AMONG THE 6 NaN PAIRS. That scope was lost at HOP 2 and
+#: the number went on to read as a window-wide claim, which is FALSE (the real
+#: window's occluded set includes consecutive-index runs of co-located records).
+#: The name now carries the scope, and it is never asserted window-wide.
+_REGION1_NAN_PAIRS_SAME_POSITION_COUNT: int = 0
+
+#: LAYER 2 (MEASURED, NOT DERIVED). See the gated test of the same name below for
+#: the provenance and the re-measure rule; the dict lives here only so the Layer-1
+#: skip message can stay short.
+_REGION1_MEASURED_SUBSTRATE: dict[str, int] = {
+    "n_rows": 102421,
+    "n_deletion_rows": 7951,
+    "n_occluded_rows": 231,
+    "max_span": 170,
+    "n_sites": 96708,
+    "occ_sites": 196,
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -198,7 +240,9 @@ def test_region1_fixture_encodes_the_settled_deletion_inventory():
     (T-m3-07a-02: a mis-encoded fixture would let a WRONG 07b impl pass)."""
     spans = [len(r[5]) for r in _REGION1_BIM_ROWS if len(r[5]) > 1]
     assert spans == _REGION1_DELETION_REF_SPANS
-    assert spans == _REGION1_REAL_DELETION_REF_SPANS  # synthetic mirrors the real window
+    # The synthetic mirrors the RULE and the 7 SETTLED spans — NOT the real
+    # window's inventory (that is 7,951 multi-base-REF rows, max span 170 bp).
+    assert spans == _REGION1_SETTLED_DELETION_REF_SPANS
     assert len(spans) == 7
 
 
@@ -490,25 +534,35 @@ def test_distinct_variant_at_the_deletion_position_is_not_occluded():
 # --------------------------------------------------------------------------- #
 
 def test_region1_real_window_known_answer_gated():
-    """GATED: the SETTLED real-window oracle the detector must reproduce when run
-    against the REAL region-1 window `.bim` inside the AoU perimeter.
+    """GATED — LAYER 1 (DERIVED): the SETTLED findings the frozen detector must
+    still reproduce against the REAL region-1 window `.bim` in the AoU perimeter.
 
-    Occluded set {10328, 44784, 46714, 59097, 66730} as 0-based .bim ROW INDICES
-    (NOT bp — see the constant's note); 7-deletion REF-span inventory
-    60/29/7/31/31/17/29 bp; 0 same-position variants. NC-State has no perimeter
-    access this phase, so the real `.bim` is absent and this SKIPS — it stands as
-    the concrete expected answer for the gated 276-region check.
+    CONTAINMENT on both halves, never equality (see the LAYER 1 block above): the
+    settled-5 row indices must all be PRESENT among the detected occluded rows, and
+    the 7 settled REF spans must all be PRESENT in the window's span multiset. The
+    window legitimately carries far more of both — 231 occluded rows over 7,951
+    multi-base-REF rows, measured 2026-08-19 — and an equality here was false about
+    the window while true only about the June-2026 NaN-pair forensics.
+
+    NC-State has no perimeter access this phase, so the real `.bim` is absent and
+    this SKIPS. `test_containment_assertions_discriminate_a_wrong_answer` below is
+    its unconditional negative control.
     """
     real_bim = PROJECT_ROOT / "data" / "aou" / "region1_window.bim"
     if not real_bim.exists():
         pytest.skip(
             "GATED real-`.bim` validation: no AoU perimeter access this phase "
-            f"({real_bim} absent). SETTLED oracle held for the gated run — "
-            f"occluded_row_indices={sorted(_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES)} "
-            "(0-based; confirm origin vs the real .bim header), "
-            f"ref_span_inventory={_REGION1_REAL_DELETION_REF_SPANS} bp, "
-            f"same_position={_REGION1_REAL_SAME_POSITION_COUNT}."
+            f"({real_bim} absent). LAYER 1 (DERIVED) held for the gated run, as "
+            "CONTAINMENT — settled occluded_row_indices="
+            f"{sorted(_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES)} (0-based) must be "
+            "PRESENT among the detected rows, and settled ref_spans="
+            f"{_REGION1_SETTLED_DELETION_REF_SPANS} bp must be PRESENT in the "
+            "window multiset. Same-position count "
+            f"{_REGION1_NAN_PAIRS_SAME_POSITION_COUNT} is scoped to the 6 NaN pairs "
+            "ONLY and is deliberately NOT asserted window-wide."
         )
+
+    from collections import Counter
 
     import occlusion_span_filter as osf
 
@@ -518,6 +572,115 @@ def test_region1_real_window_known_answer_gated():
     # (the oracle is index-adjacent row indices, not bp — see the constant's note).
     occluded_set = set(occluded)
     got_row_indices = {i for i, r in enumerate(rows) if r[1] in occluded_set}
-    assert got_row_indices == _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES
-    spans = sorted(len(r[5]) for r in rows if len(r[5]) > 1)
-    assert spans == sorted(_REGION1_REAL_DELETION_REF_SPANS)
+    assert got_row_indices, "the frozen detector returned an EMPTY occluded set"
+    missing = _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES - got_row_indices
+    assert not missing, (
+        f"the SETTLED-5 occluded row indices are no longer all present: missing "
+        f"{sorted(missing)}. The frozen detector and the June-2026 forensics "
+        f"disagree — REPORT AND DIAGNOSE; never widen this assertion to make it "
+        f"pass.")
+
+    window_spans = [len(r[5]) for r in rows if len(r[5]) > 1]
+    have = Counter(window_spans)
+    want = Counter(_REGION1_SETTLED_DELETION_REF_SPANS)
+    # Multiset containment, written as the explicit per-key form rather than
+    # `want <= have`. PORTABILITY: Counter.__le__ means multiset containment only on
+    # Python 3.10+, and raises TypeError on 3.9. This test RUNS (does not skip)
+    # inside the AoU perimeter, where a TypeError would read as a detector failure.
+    short = {span: (n, have[span]) for span, n in want.items() if have[span] < n}
+    assert not short, (
+        f"the 7 settled REF spans are not all present in the window: {short} "
+        f"(span -> (settled_count, observed_count))")
+
+
+def test_containment_assertions_discriminate_a_wrong_answer():
+    """CONTROL for the two gated LAYER-1 assertions above.
+
+    Containment is WEAKER than the equality it replaced, so it has to be shown able
+    to fail before it can be trusted — and the gated test that uses it SKIPS
+    outside the perimeter, so it can never demonstrate that itself. This runs the
+    SAME two assertion shapes over deliberately wrong inputs and asserts they
+    detect the defect."""
+    from collections import Counter
+
+    # (a) a detector that lost three of the settled five
+    got = {10328, 44784}
+    missing = _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES - got
+    assert missing == {46714, 59097, 66730}, missing   # -> the gated assert FAILS
+
+    # (b) a window one 31-bp span short of the settled multiset
+    have = Counter([60, 29, 7, 31, 17, 29, 170, 4, 4])
+    want = Counter(_REGION1_SETTLED_DELETION_REF_SPANS)
+    short = {span: (n, have[span]) for span, n in want.items() if have[span] < n}
+    assert short == {31: (2, 1)}, short                # -> the gated assert FAILS
+
+    # and the same shapes are SILENT on a superset (the real-window case)
+    superset = _REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES | {1, 2, 3}
+    assert not (_REGION1_REAL_WINDOW_OCCLUDED_ROW_INDICES - superset)
+    rich = Counter(_REGION1_SETTLED_DELETION_REF_SPANS + [170] * 7944)
+    assert not {s: n for s, n in want.items() if rich[s] < n}
+
+
+def test_region1_real_window_substrate_totals_MEASURED_NOT_DERIVED():
+    """GATED — LAYER 2: MEASURED_NOT_DERIVED substrate totals of the real region-1
+    window.
+
+    THESE ARE MEASUREMENTS, NOT DERIVED SCIENCE. Nothing here was reasoned to; every
+    number was read off the substrate:
+
+      n_rows=102421, n_deletion_rows=7951, n_occluded_rows=231, max_span=170,
+      n_sites=96708, occ_sites=196
+
+    PROVENANCE. Probe 2, 2026-08-19, in-perimeter, read-only, mirroring this test's
+    own loading (`osf.load_bim_rows` + `detect_occluded_variants`) over
+    `data/aou/region1_window.bim` — the `awk '($1=="1"||$1=="chr1") && $4>=10000 &&
+    $4<=13506933'` window of `/home/jupyter/afr_cohort.bim`. The site-basis pair
+    (n_sites, occ_sites) came from PENDING PASTE #3, 2026-08-20, the ruled
+    site-basis sweep on VM 20260626b. Both banked verbatim at
+    `.planning/debug/260820-site-basis-sweep-results-as-received.md` and
+    `.planning/debug/fire-morning-occlusion-oracle-vs-geometry.md`.
+
+    THE RULE WHEN THIS BREAKS: RE-MEASURE AND RECORD, never edit-to-green. A CDR
+    refresh WILL move these numbers, and that is precisely the event this test
+    exists to surface — the substrate changed, so the recorded measurement must be
+    retaken and re-banked with its own provenance, and every consumer of it (the
+    runbooks' region-1 EXPECT, the amendment's Class-M slots) re-checked. Editing a
+    number here to restore green would silently re-create the exact defect this
+    batch repaired.
+
+    It is kept SEPARATE from the LAYER-1 derived test on purpose: substrate drift
+    must not be able to take the derived science down with it.
+
+    SKIPS on the same `data/aou/region1_window.bim` gate as LAYER 1 (no NC-State
+    perimeter access), which is why it adds exactly one skip to the tests/m3 count.
+    """
+    real_bim = PROJECT_ROOT / "data" / "aou" / "region1_window.bim"
+    if not real_bim.exists():
+        pytest.skip(
+            "GATED MEASURED_NOT_DERIVED substrate totals: no AoU perimeter access "
+            f"this phase ({real_bim} absent). Held for the gated run — "
+            f"{_REGION1_MEASURED_SUBSTRATE} (probe 2, 2026-08-19; site basis from "
+            "PENDING PASTE #3, 2026-08-20). On a break: RE-MEASURE AND RECORD, "
+            "never edit-to-green."
+        )
+
+    import occlusion_span_filter as osf
+
+    rows = osf.load_bim_rows(real_bim)
+    occluded, _edges = osf.detect_occluded_variants(rows)
+    occluded_set = set(occluded)
+    deletion_spans = [len(r[5]) for r in rows if len(r[5]) > 1]
+    got = {
+        "n_rows": len(rows),
+        "n_deletion_rows": len(deletion_spans),
+        "n_occluded_rows": len(occluded_set),
+        "max_span": max(deletion_spans) if deletion_spans else 0,
+        "n_sites": len({(r[0], r[3]) for r in rows}),
+        "occ_sites": len({(r[0], r[3]) for r in rows if r[1] in occluded_set}),
+    }
+    assert got == _REGION1_MEASURED_SUBSTRATE, (
+        f"the measured substrate moved: {got} vs recorded "
+        f"{_REGION1_MEASURED_SUBSTRATE}. RE-MEASURE AND RECORD (with fresh "
+        f"provenance), and re-check every consumer of these numbers — the runbooks' "
+        f"region-1 EXPECT and the posted amendment's Class-M slots. NEVER edit a "
+        f"number here to restore green.")

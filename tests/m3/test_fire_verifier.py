@@ -142,6 +142,16 @@ def _gate_json(tmp_path: Path, *, region_id="m2_region_00001", occ_rows=231,
     return path
 
 
+def _excludelist(tmp_path: Path, n_ids: int = 231,
+                 region_id="m2_region_00001") -> Path:
+    """The region's ``.occluded.excludelist`` — one variant id per line, exactly as
+    the producer writes it and exactly as plink ``--exclude`` consumed it. Its LINE
+    COUNT is what Stage A derives ``expected_records`` from."""
+    path = tmp_path / f"{region_id}.occluded.excludelist"
+    path.write_text("".join(f"chr1:{1980475 + i}:G:A\n" for i in range(n_ids)))
+    return path
+
+
 def _symmetric_unit_diag(n: int, seed: int = 0) -> np.ndarray:
     rng = np.random.default_rng(seed)
     a = rng.standard_normal((n, n)).astype("float32")
@@ -546,6 +556,17 @@ def test_nan_falsification_min_bytes_default_is_the_shipped_floor():
 # check_manifest_rows (A-10)                                                  #
 # --------------------------------------------------------------------------- #
 
+def test_check_manifest_rows_has_no_default_expected_records():
+    """A DEFAULT record count is a human-typed number wearing an API's clothes: it
+    made ``expected_records=5`` the silent fallback for every caller that forgot to
+    pass one, which is how the withdrawn "5 occluded" premise reached the fire
+    runbook. Every caller must now state the count, and Stage A DERIVES it."""
+    import inspect
+
+    param = inspect.signature(fv.check_manifest_rows).parameters["expected_records"]
+    assert param.default is inspect.Parameter.empty
+
+
 def test_manifest_rows_green(tmp_path):
     c = fv.check_manifest_rows(_manifest(tmp_path), expected_records=5,
                                region_id="m2_region_00001")
@@ -940,13 +961,101 @@ def test_cli_report_json_round_trips(tmp_path):
 
 
 def test_cli_stage_a_green(tmp_path):
+    """The whole Stage-A chain green on the MEASURED region-1 shape: a 231-record
+    manifest, a 231-id excludelist, and a sidecar reporting occ_rows=231."""
     panel = _region1_panel(tmp_path)
-    manifest = _manifest(tmp_path)
+    manifest = _manifest(tmp_path, n_records=231)
     npz = _good_npz(tmp_path)
     gate = _gate_json(tmp_path)
+    excl = _excludelist(tmp_path)
     rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
                   "--manifest", str(manifest), "--npz", str(npz),
-                  "--gate-json", str(gate)])
+                  "--gate-json", str(gate), "--excludelist", str(excl)])
+    assert rc == 0
+
+
+def test_cli_stage_a_derives_expected_records_from_the_excludelist(tmp_path, capsys):
+    """expected_records is DERIVED from the excludelist LINE COUNT and cross-checked
+    against the sidecar's occ_rows — never typed. Shown non-vacuous by using a
+    count (7) that appears nowhere as a default."""
+    panel = _region1_panel(tmp_path)
+    manifest = _manifest(tmp_path, n_records=7)
+    npz = _good_npz(tmp_path)
+    gate = _gate_json(tmp_path, occ_rows=7, occ_sites=7)
+    excl = _excludelist(tmp_path, n_ids=7)
+    rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                  "--manifest", str(manifest), "--npz", str(npz),
+                  "--gate-json", str(gate), "--excludelist", str(excl)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "expected_records_derivation" in out
+    assert "DERIVED" in out and "occ_rows=7" in out
+
+
+def test_RED_cli_stage_a_excludelist_sidecar_mismatch_fails_closed(tmp_path, capsys):
+    """THE CROSS-CHECK CONTROL, and the entire point of the derivation: the sidecar
+    says 230 while the excludelist carries 231. Two records of the SAME drop set
+    disagree -> STOP and re-measure. Picking either one would be the defect.
+
+    The ONLY difference from ``test_cli_stage_a_green`` (which is 231/231 and exits
+    0) is the sidecar's occ_rows, so the red is attributable to the cross-check and
+    to nothing else — asserted on the detail text, not merely on the exit code."""
+    panel = _region1_panel(tmp_path)
+    manifest = _manifest(tmp_path, n_records=231)
+    npz = _good_npz(tmp_path)
+    gate = _gate_json(tmp_path, occ_rows=230)
+    excl = _excludelist(tmp_path, n_ids=231)
+    rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                  "--manifest", str(manifest), "--npz", str(npz),
+                  "--gate-json", str(gate), "--excludelist", str(excl)])
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "CROSS-CHECK FAILED" in out
+    assert "231 variant id(s)" in out and "occ_rows=230" in out
+    assert "expected_records_derivation" in out
+
+
+def test_RED_cli_stage_a_requires_excludelist(tmp_path):
+    """No excludelist -> nothing to DERIVE from -> argparse refuses. There is no
+    silent fallback to a human's number any more."""
+    panel = _region1_panel(tmp_path)
+    with pytest.raises(SystemExit) as e:
+        fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                 "--manifest", str(_manifest(tmp_path)), "--npz", str(_good_npz(tmp_path)),
+                 "--gate-json", str(_gate_json(tmp_path))])
+    assert e.value.code == 2
+
+
+def test_RED_cli_stage_a_absent_excludelist_fails_closed(tmp_path):
+    """A named-but-missing excludelist is unmeasurable -> FAIL CLOSED."""
+    panel = _region1_panel(tmp_path)
+    rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                  "--manifest", str(_manifest(tmp_path, n_records=231)),
+                  "--npz", str(_good_npz(tmp_path)),
+                  "--gate-json", str(_gate_json(tmp_path)),
+                  "--excludelist", str(tmp_path / "nope.occluded.excludelist")])
+    assert rc == 1
+
+
+def test_cli_stage_a_expected_records_override_is_logged_as_an_override(tmp_path, capsys):
+    """--expected-records is an OVERRIDE, not the source of truth, and it says so in
+    the check detail alongside the value it displaced."""
+    panel = _region1_panel(tmp_path)
+    manifest = _manifest(tmp_path, n_records=3)
+    npz = _good_npz(tmp_path)
+    gate = _gate_json(tmp_path, occ_rows=231)
+    excl = _excludelist(tmp_path, n_ids=231)
+    rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
+                  "--manifest", str(manifest), "--npz", str(npz),
+                  "--gate-json", str(gate), "--excludelist", str(excl),
+                  "--expected-records", "3"])
+    out = capsys.readouterr().out
+    # the derivation itself still SUCCEEDED (231 from the excludelist, cross-checked
+    # against the sidecar) and the override is recorded next to the value it
+    # displaced, so the report can never be read as "231 was measured to be 3".
+    assert "OVERRIDDEN" in out and "derived value was 231" in out
+    # the manifest check used the OVERRIDE (3 records + header parsed clean)
+    assert "manifest carries 3 real record(s)" in out
     assert rc == 0
 
 
@@ -958,7 +1067,8 @@ def test_RED_cli_stage_a_requires_gate_json(tmp_path):
     npz = _good_npz(tmp_path)
     with pytest.raises(SystemExit) as e:
         fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
-                 "--manifest", str(manifest), "--npz", str(npz)])
+                 "--manifest", str(manifest), "--npz", str(npz),
+                 "--excludelist", str(_excludelist(tmp_path))])
     assert e.value.code == 2
 
 
@@ -969,7 +1079,8 @@ def test_RED_cli_stage_a_absent_gate_json_fails_closed(tmp_path):
     npz = _good_npz(tmp_path)
     rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
                  "--manifest", str(manifest), "--npz", str(npz),
-                 "--gate-json", str(tmp_path / "nope.occlusion_gate.json")])
+                 "--gate-json", str(tmp_path / "nope.occlusion_gate.json"),
+                 "--excludelist", str(_excludelist(tmp_path))])
     assert rc == 1
 
 
@@ -979,7 +1090,8 @@ def test_RED_cli_stage_a_requires_npz(tmp_path):
     with pytest.raises(SystemExit) as e:
         fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
                  "--manifest", str(manifest),
-                 "--gate-json", str(_gate_json(tmp_path))])
+                 "--gate-json", str(_gate_json(tmp_path)),
+                 "--excludelist", str(_excludelist(tmp_path))])
     assert e.value.code == 2, "a falsification that did not run is not a falsification"
 
 
@@ -989,7 +1101,8 @@ def test_RED_cli_stage_a_unknown_region_fails_closed(tmp_path):
     npz = _good_npz(tmp_path)
     rc = fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_99999",
                   "--manifest", str(manifest), "--npz", str(npz),
-                  "--gate-json", str(_gate_json(tmp_path))])
+                  "--gate-json", str(_gate_json(tmp_path)),
+                  "--excludelist", str(_excludelist(tmp_path))])
     assert rc == 1
 
 
@@ -1029,12 +1142,13 @@ def test_report_json_carries_no_float_arrays(tmp_path):
     """T-sml-01: the report leaves the perimeter as text. Counts, booleans, byte
     sizes, row indices and policy labels only — never LD values."""
     panel = _region1_panel(tmp_path)
-    manifest = _manifest(tmp_path)
+    manifest = _manifest(tmp_path, n_records=231)
     npz = _whole_row_nan_npz(tmp_path)
     report = tmp_path / "stage_a.json"
     fv.main(["stage-a", "--panel-tsv", str(panel), "--region-id", "m2_region_00001",
              "--manifest", str(manifest), "--npz", str(npz),
-             "--gate-json", str(_gate_json(tmp_path)), "--report", str(report)])
+             "--gate-json", str(_gate_json(tmp_path)),
+             "--excludelist", str(_excludelist(tmp_path)), "--report", str(report)])
     data = json.loads(report.read_text())
 
     def walk(node, path="report"):

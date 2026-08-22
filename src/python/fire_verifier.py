@@ -6,6 +6,7 @@ red::
 
     python3 src/python/fire_verifier.py stage-a --panel-tsv ... --region-id ... \\
         --manifest ... --npz ... --gate-json ...occlusion_gate.json \\
+        --excludelist ...occluded.excludelist \\
         --report /home/jupyter/fire_gate_stageA.json
     python3 src/python/fire_verifier.py stage-b --panel-tsv ... --n-total 276
     python3 src/python/fire_verifier.py stage-c --panel-tsv ...
@@ -501,7 +502,7 @@ def check_nan_falsification(npz_path: "str | Path", *,
     return _guard("stage_a_nan_falsification", HARD_STOP, run)
 
 
-def check_manifest_rows(manifest_path: "str | Path", expected_records: int = 5,
+def check_manifest_rows(manifest_path: "str | Path", expected_records: int,
                         *, region_id: Optional[str] = None,
                         expect_header: bool = True) -> Check:
     """Region-1 occlusion-manifest ground truth: real rows, never an upload marker.
@@ -589,6 +590,49 @@ def _load_gate_sidecar(path: "str | Path"):
     if missing:
         return None, f"gate sidecar {p} carries no {'/'.join(missing)}"
     return data, None
+
+
+def derive_expected_records(excludelist_path: "str | Path", gate, gate_err):
+    """DERIVE the manifest's expected record count, then CROSS-CHECK it.
+
+    ``expected_records`` used to be a number a human typed (and, worse, an argparse
+    DEFAULT). It is now derived from the region's ``.occluded.excludelist`` LINE
+    COUNT — the exact drop set plink ``--exclude`` was handed — and cross-checked
+    against the producer's own gate sidecar ``occ_rows``.
+
+    Fails closed on a missing/unreadable excludelist, on a missing sidecar (nothing
+    to cross-check against), and on a MISMATCH. A mismatch means two records of the
+    same drop set disagree: the correct response is to STOP and re-measure, never
+    to pick whichever number makes the gate green.
+
+    Returns ``(derived_or_None, detail, ok)``; never raises.
+    """
+    p = Path(excludelist_path)
+    if not p.is_file():
+        return None, (f"excludelist absent: {p} -> FAIL CLOSED. expected_records is "
+                      f"DERIVED from the drop set plink was handed; it is never "
+                      f"typed and no longer has a default."), False
+    try:
+        lines = [ln for ln in p.read_text().splitlines() if ln.strip() != ""]
+    except Exception as e:  # noqa: BLE001 — unreadable is FAIL, not an exception
+        return None, (f"excludelist unreadable ({type(e).__name__}: {e}): {p} -> "
+                      f"FAIL CLOSED"), False
+    derived = len(lines)
+    if gate is None:
+        return derived, (f"expected_records={derived} derived from {p.name}, but the "
+                         f"cross-check could NOT run ({gate_err}) -> FAIL CLOSED; a "
+                         f"derivation with nothing to corroborate it is one record, "
+                         f"not two"), False
+    occ_rows = gate["occ_rows"]
+    if derived != occ_rows:
+        return derived, (
+            f"CROSS-CHECK FAILED: {p.name} carries {derived} variant id(s) but the "
+            f"producer's gate sidecar reports occ_rows={occ_rows}. Two records of "
+            f"the SAME drop set disagree -> STOP and re-measure. Do not pick one."
+        ), False
+    return derived, (f"expected_records={derived} DERIVED from {p.name} ({derived} "
+                     f"non-empty line(s)) and cross-checked against the gate "
+                     f"sidecar's occ_rows={occ_rows}"), True
 
 
 def check_occlusion_gate(occ_rows: Optional[int], occ_sites: Optional[int],
@@ -966,13 +1010,36 @@ def _lookup_region(rows: List[Dict[str, Any]], region_id: str
 
 
 def _stage_a(args) -> List[Check]:
-    checks = [check_nan_falsification(args.npz),
-              check_manifest_rows(args.manifest,
-                                  expected_records=args.expected_records,
-                                  region_id=args.region_id)]
+    checks = [check_nan_falsification(args.npz)]
+
     # The POSTED gate is evaluated on SITES, and the panel row carries only a ROW
     # count -> the producer's own sidecar is the only place the three inputs exist.
     gate, gate_err = _load_gate_sidecar(args.gate_json)
+
+    # expected_records is DERIVED (excludelist line count) and CROSS-CHECKED
+    # (sidecar occ_rows) before the manifest is measured against it.
+    derived, derive_detail, derive_ok = derive_expected_records(
+        args.excludelist, gate, gate_err)
+    expected = derived
+    if args.expected_records is not None:
+        expected = args.expected_records
+        derive_detail += (
+            f" | expected_records OVERRIDDEN by --expected-records="
+            f"{args.expected_records}; derived value was {derived}. The manifest "
+            f"below was measured against the OVERRIDE, not against the derivation.")
+    checks.append(Check("expected_records_derivation",
+                        PASS if derive_ok else FAIL, derive_detail, HARD_STOP,
+                        {"derived": derived, "used": expected,
+                         "overridden": args.expected_records is not None}))
+    if expected is None:
+        checks.append(Check(
+            "stage_a_manifest_rows", FAIL,
+            "expected_records could not be derived and no override was given -> "
+            "FAIL CLOSED; the manifest cannot be measured against nothing",
+            HARD_STOP))
+    else:
+        checks.append(check_manifest_rows(args.manifest, expected,
+                                          region_id=args.region_id))
     try:
         rows = parse_panel_tsv(args.panel_tsv)
     except Exception as e:  # noqa: BLE001 — fail closed, do not guess
@@ -1059,7 +1126,14 @@ def _build_parser() -> argparse.ArgumentParser:
                         "=> FAIL CLOSED, because the panel row carries a ROW count "
                         "and no site counts, so there is nothing else to measure "
                         "the posted two-condition rule against.")
-    a.add_argument("--expected-records", type=int, default=5)
+    a.add_argument("--excludelist", required=True,
+                   help="the region's .occluded.excludelist — expected_records is "
+                        "DERIVED from its line count, never typed by a human, and "
+                        "cross-checked against the gate sidecar's occ_rows")
+    a.add_argument("--expected-records", type=int, default=None,
+                   help="OPTIONAL OVERRIDE of the DERIVED expected_records. Absent "
+                        "(the normal case) => derive. When given it is LOGGED as an "
+                        "override, alongside the derived value it displaced.")
     a.set_defaults(_run=_stage_a)
 
     b = sub.add_parser("stage-b", help="de-risk batch: scaling + cost denominator")
