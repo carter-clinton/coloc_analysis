@@ -72,10 +72,21 @@ STEP 3 — GATE: environment + inputs. Ask Carter to confirm in the UI: the
 environment exists, is STOPPED, disk type is Reattachable, then START it. When
 the terminal is live, RUN:
   ls -lh /home/jupyter/afr_cohort.bed /home/jupyter/afr_cohort.bim /home/jupyter/afr_cohort.fam
-  which plink || which plink1.9
+  which plink1.9 && plink1.9 --version
   df -h /home/jupyter
-EXPECT: the ~354 GiB-class .bed present with .bim/.fam; a plink binary; tens of
-GiB free. Report all three to Carter.
+EXPECT: the ~354 GiB-class .bed present with .bim/.fam; `plink1.9` ON PATH printing
+`PLINK v1.90b7.2 64-bit (11 Dec 2023)` — the producer's argv names the literal
+`plink1.9` (aou_ld_panel.build_plink_ld_command) and the pilot + fire brief pin
+that build; tens of GiB free. Report all three to Carter.
+IF `plink1.9` IS ABSENT (the Cloud Analysis VM image ships only `plink` under
+/opt/workbench-tools — Stage A stopped on exactly this 2026-08-22, Errno 2): install
+the PINNED build into ~/bin and put it on PATH IN THE SAME SHELL that will run
+STEP 8 (re-check `which plink1.9` immediately before STEP 8):
+  mkdir -p ~/bin && cd ~/bin && wget -q https://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20231211.zip && unzip -o plink_linux_x86_64_20231211.zip plink && mv -f plink plink1.9 && chmod +x plink1.9 && cd ~/coloc_analysis
+  export PATH="$HOME/bin:$PATH"; which plink1.9; plink1.9 --version
+EXPECT the version line above. If the download is blocked: STOP and report
+`plink --version` of the workbench binary — a shim is ruled by Carter ONLY for a
+PLINK v1.90 build (PLINK 2.x has different `--r` semantics; never shim it).
 
 STEP 4 — stale panel TSV. RUN:
   gsutil stat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv
@@ -86,6 +97,17 @@ If the header does NOT match that: GATE — show Carter, and on his go RUN:
   gsutil rm gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv
 (Only this one rm is ever authorized. A stale TSV would abort the fire ~2
 regions in; note that 0 banked .npz does NOT imply the TSV is absent.)
+STEP 4b — the LOCAL scratch mirror of the same TSV (added 2026-08-22: Stage A
+stopped on a June-era 7-column leftover here that STEP 4's bucket check cannot
+see; the producer seeds its mirror from this path when the bucket copy is absent
+and fail-closes on a stale header). RUN:
+  ls -la /home/jupyter/native_ld_scratch/ 2>/dev/null
+  test -f /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv && { head -1 /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv; wc -l /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv; } || echo "no local mirror"
+EXPECT: no local mirror, OR a header with the same 9 columns as STEP 4. If the
+header differs: GATE — show Carter, and on his go ROTATE it (never delete —
+nothing in scratch is ever deleted except the STEP 8-GATE .npz reclaim):
+  mv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv.STALE.$(date -u +%Y%m%dT%H%MZ)
+List scratch again and touch nothing else in it.
 
 STEP 5 — cohort data layer. RUN:
   gsutil du -s gs://rw-migration-aou-rw-476cdac2/ld/mt_afr_qc.mt/entries/rows/parts/

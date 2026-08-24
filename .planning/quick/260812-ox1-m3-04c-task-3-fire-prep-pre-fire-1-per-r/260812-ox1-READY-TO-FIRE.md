@@ -89,6 +89,14 @@ compute; a stale 7/8-column TSV would abort the fire after ~2 regions of compute
 ⚠ **"0/276 banked" does NOT evidence the TSV's absence** — prior fires appended
 `status=error` rows unconditionally.
 
+**Added 2026-08-22 — two env landmines Stage A actually hit:** (a) the Cloud Analysis VM
+image ships only `plink`; the producer's argv names the literal `plink1.9` and the pilot /
+fire brief pin **PLINK v1.90b7.2 (2023-12-11)** — STEP 3 now requires `plink1.9 --version`
+to print that line (pinned-build install into `~/bin` + `PATH` in the fire shell; never a
+PLINK 2.x shim). (b) The LOCAL scratch mirror `/home/jupyter/native_ld_scratch/
+m3-W2-native-plink-panel.tsv` can be a stale 7-column leftover the bucket check cannot
+see; the producer fail-closes on it — check its header too and ROTATE (never delete).
+
 ## 5. §4 row 5 — cohort-MT data-layer re-verify (mutable state the fire READS)
 
 ```
