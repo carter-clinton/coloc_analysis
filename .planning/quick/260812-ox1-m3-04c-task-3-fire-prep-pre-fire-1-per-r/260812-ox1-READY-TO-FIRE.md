@@ -89,7 +89,7 @@ compute; a stale 7/8-column TSV would abort the fire after ~2 regions of compute
 ⚠ **"0/276 banked" does NOT evidence the TSV's absence** — prior fires appended
 `status=error` rows unconditionally.
 
-**Added 2026-08-22 — two env landmines Stage A actually hit:** (a) the Cloud Analysis VM
+**Added 2026-08-24 — two env landmines Stage A actually hit:** (a) the Cloud Analysis VM
 image ships only `plink`; the producer's argv names the literal `plink1.9` and the pilot /
 fire brief pin **PLINK v1.90b7.2 (2023-12-11)** — STEP 3 now requires `plink1.9 --version`
 to print that line (pinned-build install into `~/bin` + `PATH` in the fire shell; never a

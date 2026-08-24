@@ -63,7 +63,7 @@ df -h /home/jupyter
 Expect: the ~354 GiB-class `.bed` plus `.bim`/`.fam` present (the fire's DIRECT
 input); **`plink1.9` on PATH printing `PLINK v1.90b7.2 64-bit (11 Dec 2023)`** — the
 producer's argv names the literal `plink1.9` and the pilot/fire brief pin that build
-(2026-08-22: the VM image ships only `plink`; Stage A stopped on Errno 2 — the old
+(2026-08-24: the VM image ships only `plink`; Stage A stopped on Errno 2 — the old
 `which plink || which plink1.9` passed on the wrong binary); tens of GiB free for
 scratch. If `plink1.9` is absent, install the pinned build into `~/bin` and export
 `PATH="$HOME/bin:$PATH"` in the SAME shell that runs STEP 8 (recipe in the
@@ -71,7 +71,7 @@ AGENT-PROMPT STEP 3); never shim a PLINK 2.x binary.
 
 ## 4 — stale panel TSV (PRE-FIRE 2) [RUNBOOK item 4] — bucket copy AND the local scratch mirror
 
-⚠ Added 2026-08-22: also check `/home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv`
+⚠ Added 2026-08-24: also check `/home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv`
 (`head -1`, `wc -l`). The producer seeds its mirror from that local file when the bucket
 copy is absent and fail-closes on a stale header — Stage A stopped on a June-era 7-column
 leftover there. A stale local mirror is ROTATED (`mv … .STALE.<UTC>`), never deleted.

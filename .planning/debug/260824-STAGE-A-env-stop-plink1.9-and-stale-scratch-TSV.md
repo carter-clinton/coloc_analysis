@@ -1,4 +1,4 @@
-# Stage A env STOP — `plink1.9` absent + stale LOCAL scratch panel TSV (2026-08-22 15:40 EDT)
+# Stage A env STOP — `plink1.9` absent + stale LOCAL scratch panel TSV (2026-08-24 15:40 EDT)
 
 > Provenance: AoU browser agent's verbatim STOP report, pasted by Carter 15:40 EDT, after Carter's
 > "go" for STEP 8 (Stage A) at ~15:30 EDT. Resume pass earlier the same afternoon: repo pin `7c310e5`
@@ -27,7 +27,7 @@ Two independent failures, both BEFORE any banking; the second is the fail-closed
 ## Failure 1 — `plink1.9` not on PATH
 
 - The producer's argv executable is the hardcoded literal `"plink1.9"` (`src/python/aou_ld_panel.py::build_plink_ld_command`, ~:2903; no flag; `run_native_ld_panel._run_plink` is the sole subprocess seam).
-- The Cloud Analysis VM image ships only `plink` (`/opt/workbench-tools/binaries/bin/plink`). STEP 3's check was `which plink || which plink1.9`, which passes on either — it passed on the WRONG binary on 2026-08-19 and again on the 2026-08-22 resume.
+- The Cloud Analysis VM image ships only `plink` (`/opt/workbench-tools/binaries/bin/plink`). STEP 3's check was `which plink || which plink1.9`, which passes on either — it passed on the WRONG binary on 2026-08-19 and again on the 2026-08-24 resume.
 - The 2026-06-24 pilot and the m3-02e fire brief pin **PLINK v1.90b7.2 64-bit (11 Dec 2023)** (`plink_linux_x86_64_20231211.zip`); the June/July fires ran on the Dataproc master where that build resolved as `plink1.9`. That provisioning never reached the Cloud Analysis VM recipe — a prep landmine.
 - **Ruling (Carter, via this session, 15:43 EDT):** install the PINNED build into `~/bin/plink1.9`, `export PATH="$HOME/bin:$PATH"` in the fire shell, verify `plink1.9 --version`; a shim of the workbench `plink` only if it is a PLINK v1.90 build (PLINK 2.x `--r` semantics differ — never shim it). No code change on the fire path.
 

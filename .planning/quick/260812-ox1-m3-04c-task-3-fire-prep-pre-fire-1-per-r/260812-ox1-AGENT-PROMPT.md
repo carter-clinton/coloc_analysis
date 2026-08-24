@@ -79,7 +79,7 @@ EXPECT: the ~354 GiB-class .bed present with .bim/.fam; `plink1.9` ON PATH print
 `plink1.9` (aou_ld_panel.build_plink_ld_command) and the pilot + fire brief pin
 that build; tens of GiB free. Report all three to Carter.
 IF `plink1.9` IS ABSENT (the Cloud Analysis VM image ships only `plink` under
-/opt/workbench-tools — Stage A stopped on exactly this 2026-08-22, Errno 2): install
+/opt/workbench-tools — Stage A stopped on exactly this 2026-08-24, Errno 2): install
 the PINNED build into ~/bin and put it on PATH IN THE SAME SHELL that will run
 STEP 8 (re-check `which plink1.9` immediately before STEP 8):
   mkdir -p ~/bin && cd ~/bin && wget -q https://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20231211.zip && unzip -o plink_linux_x86_64_20231211.zip plink && mv -f plink plink1.9 && chmod +x plink1.9 && cd ~/coloc_analysis
@@ -97,7 +97,7 @@ If the header does NOT match that: GATE — show Carter, and on his go RUN:
   gsutil rm gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv
 (Only this one rm is ever authorized. A stale TSV would abort the fire ~2
 regions in; note that 0 banked .npz does NOT imply the TSV is absent.)
-STEP 4b — the LOCAL scratch mirror of the same TSV (added 2026-08-22: Stage A
+STEP 4b — the LOCAL scratch mirror of the same TSV (added 2026-08-24: Stage A
 stopped on a June-era 7-column leftover here that STEP 4's bucket check cannot
 see; the producer seeds its mirror from this path when the bucket copy is absent
 and fail-closes on a stale header). RUN:
