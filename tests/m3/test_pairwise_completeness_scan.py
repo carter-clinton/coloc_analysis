@@ -1347,11 +1347,13 @@ def test_tsv_columns_exact_tuple_equality():
         "del_carriers_lost",
         "del_carriers_lost_frac",
         "del_maf_marginal",
+        "del_minor_allele_tie",
         "partner_carriers_marginal",
         "partner_carriers_retained",
         "partner_carriers_lost",
         "partner_carriers_lost_frac",
         "partner_maf_marginal",
+        "partner_minor_allele_tie",
         "confounding_pattern",
     )
 
@@ -1473,9 +1475,11 @@ def _fake_result(pcs, **overrides):
         undefined=False, invariant_member="none", del_carriers_marginal=10,
         del_carriers_retained=10, del_carriers_lost=0,
         del_carriers_lost_frac=0.0, del_maf_marginal=0.05,
+        del_minor_allele_tie=False,
         partner_carriers_marginal=8, partner_carriers_retained=8,
         partner_carriers_lost=0, partner_carriers_lost_frac=0.0,
-        partner_maf_marginal=0.04, confounding_pattern="none",
+        partner_maf_marginal=0.04, partner_minor_allele_tie=False,
+        confounding_pattern="none",
     )
     base.update(overrides)
     return pcs.PairResult(**base)
@@ -1848,3 +1852,254 @@ def test_cli_help_mentions_measurement_window(capsys):
     text = capsys.readouterr().out
     assert "MEASUREMENT window" in text
     assert "not a threshold" in text
+
+
+# =========================================================================== #
+# quick-260825-qpf — REMEDIATION of the Codex adversarial review              #
+#                                                                             #
+# T1: F6 the normalised seek index · F4 the index-based pair key ·            #
+#     F5 the exact af_a1 == 0.5 minor-allele tie                              #
+# Every assertion below was SEEN RED against the shipped module first.        #
+# =========================================================================== #
+
+#: The module's own source file, read TEXTUALLY by the named enforcers. A SYMBOL
+#: pin, never a fixed-SHA whole-file pin
+#: (``feedback_fixed_sha_whole_file_pin_is_a_timebomb``).
+_PCS_SOURCE = _SRC_PYTHON / "pairwise_completeness_scan.py"
+
+
+def _codes(dosage_strings) -> list[int]:
+    """``--recode A`` dosage strings -> .bed 2-bit codes, in sample order."""
+    return [_DOSAGE_STR_TO_CODE[s] for s in dosage_strings]
+
+
+# --------------------------------------------------------------------------- #
+# F6 — the seek offset must use the BOUNDS-CHECKED index, not the raw argument #
+# --------------------------------------------------------------------------- #
+
+def test_read_variant_accepts_a_coercible_index(tmp_path):
+    """``"1"`` and ``1.0`` must read the SAME block as ``1``.
+
+    RED against the shipped module: bounds were checked on ``idx = int(index)``
+    but the seek was computed from the RAW ``index``, so ``3 + "1" * bpv`` is a
+    ``str`` (``int + str`` -> ``TypeError``) and ``3 + 1.0 * bpv`` is a ``float``
+    (``seek(float)`` -> ``TypeError``).
+
+    Each coercion is read on its OWN reader. Sharing one reader would let the
+    LRU decode cache (keyed on the NORMALISED index) serve the answer without
+    ever computing an offset, which would mask the defect entirely.
+    """
+    import pairwise_completeness_scan as pcs
+
+    n_samples = 8
+    base = _write_bfile(
+        tmp_path,
+        codes_per_variant=[_distinguishable_codes(i, n_samples) for i in range(3)],
+        n_samples=n_samples,
+        prefix="coercible",
+    )
+
+    with pcs.BedReader(base) as reader_int:
+        expected = np.array(reader_int.read_variant(1).dosage)
+        other = np.array(reader_int.read_variant(0).dosage)
+    # the fixture must actually be able to tell the blocks apart
+    assert not np.array_equal(expected, other)
+
+    with pcs.BedReader(base) as reader_str:
+        got_str = np.array(reader_str.read_variant("1").dosage)
+    with pcs.BedReader(base) as reader_float:
+        got_float = np.array(reader_float.read_variant(1.0).dosage)
+
+    assert np.array_equal(got_str, expected)
+    assert np.array_equal(got_float, expected)
+
+
+def test_read_variant_rejects_a_non_integral_index(tmp_path):
+    """A NON-INTEGRAL index must RAISE ``ValueError`` naming it — never truncate.
+
+    This is the one that matters. Once F6 is fixed, a bare ``int(1.5) == 1``
+    would seek to variant 1 and return a perfectly well-formed dosage array for
+    the WRONG VARIANT, with no error anywhere — exactly the failure class the
+    module's GLOBAL-INDEX rule exists to prevent
+    (cf. ``test_window_relative_index_reads_the_wrong_block``).
+
+    RED against the shipped module for the RIGHT reason: it raises a ``TypeError``
+    from deep inside ``file.seek()`` as an ACCIDENT of the very defect F6 fixes,
+    not as a deliberate, named rejection. Pinning the TYPE and the MESSAGE is what
+    makes the rejection survive the fix.
+    """
+    import pairwise_completeness_scan as pcs
+
+    base = _write_bfile(
+        tmp_path,
+        codes_per_variant=[_distinguishable_codes(i, 8) for i in range(3)],
+        n_samples=8,
+        prefix="nonintegral",
+    )
+    with pcs.BedReader(base) as reader:
+        with pytest.raises(ValueError, match="non-integral"):
+            reader.read_variant(1.5)
+
+
+def test_seek_offset_uses_the_normalised_index():
+    """NAMED TEXTUAL ENFORCER: the bounds-checked quantity IS the addressed one.
+
+    ``feedback_a_claimed_invariant_needs_a_named_enforcer`` — an invariant with
+    no enforcer is a belief. Comment-insensitive on the SYMBOL.
+    """
+    src = _PCS_SOURCE.read_text()
+    assert src.count("3 + idx * self.bytes_per_variant") == 1, (
+        "the .bed seek offset must be computed from the NORMALISED index `idx`"
+    )
+    assert "3 + index * self.bytes_per_variant" not in src, (
+        "the raw `index` argument must never reach the seek arithmetic"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# F4 — the pair key must be the GLOBALLY-UNIQUE .bim row indices               #
+# --------------------------------------------------------------------------- #
+
+def _duplicate_id_bfile(tmp_path: Path, prefix: str = "dupid") -> Path:
+    """One deletion + TWO distinct partner rows that BOTH carry the id ``.``.
+
+    A bare ``.`` in the id column is a real, common ``.bim`` occurrence. The two
+    partners sit at DIFFERENT positions, and exactly one of the two pairs is
+    UNDEFINED, so a key that collapses them is visible in the counts.
+
+      idx 0  1:1000 REF ``AT`` ALT ``A``  -> a 1 bp deletion, span_end 1001
+      idx 1  1:1003 id ``.``              -> no-called at BOTH deletion carriers
+                                             => the deletion is invariant in the
+                                             intersection => UNDEFINED
+      idx 2  1:1005 id ``.``              -> fully called, both members variable
+                                             => DEFINED
+    """
+    deletion = ["0", "0", "0", "0", "1", "1", "0", "0"]
+    partner_a = ["0", "1", "0", "1", "NA", "NA", "0", "1"]
+    partner_b = ["0", "1", "0", "1", "1", "0", "1", "0"]
+    return _write_bfile(
+        tmp_path,
+        codes_per_variant=[_codes(deletion), _codes(partner_a), _codes(partner_b)],
+        n_samples=8,
+        prefix=prefix,
+        bim_rows=[
+            ["1", "1:1000:AT:A", "0", "1000", "A", "AT"],
+            ["1", ".", "0", "1003", "C", "T"],
+            ["1", ".", "0", "1005", "G", "A"],
+        ],
+    )
+
+
+def _scan_duplicate_id_fixture(pcs, tmp_path: Path, prefix: str = "dupid"):
+    base = _duplicate_id_bfile(tmp_path, prefix=prefix)
+    rows = pcs.load_bim_rows(base.with_suffix(".bim"))
+    reader = pcs.BedReader(base)
+    try:
+        return pcs.scan_region(reader, "R", list(enumerate(rows)), window_bp=5)
+    finally:
+        reader.close()
+
+
+def test_duplicate_variant_ids_do_not_collapse_distinct_pairs(tmp_path):
+    """TWO partner rows sharing the id ``.`` are TWO pairs, not one.
+
+    RED against the shipped vid-keyed implementation, which reported
+    ``n_distinct_pairs == 1`` — an UNDERCOUNT, which is the dangerous direction:
+    it makes the instrument report FEWER distinct pairs than exist and would
+    deflate any denominator derived from it.
+    """
+    import pairwise_completeness_scan as pcs
+
+    results = _scan_duplicate_id_fixture(pcs, tmp_path)
+    assert len(results) == 2
+    assert sum(1 for r in results if r.undefined) == 1
+
+    summary = pcs.summarize("R", results)
+    assert summary["n_candidate_rows"] == 2
+    assert summary["n_distinct_pairs"] == 2
+    assert summary["n_undefined_distinct_pairs"] == 1
+    assert summary["n_undefined_not_already_occluded"] == 1
+
+
+def test_pair_key_names_the_rows_it_keys(tmp_path):
+    """MUST-BE-IDENTITY: the key IS the two row indices it is derived from.
+
+    Not a "looks right" check — the key is decomposed and compared to the row's
+    own ``del_index``/``partner_index``.
+    """
+    import pairwise_completeness_scan as pcs
+
+    results = _scan_duplicate_id_fixture(pcs, tmp_path, prefix="dupidkey")
+    assert results, "fixture emitted no rows"
+    for r in results:
+        assert sorted(int(x) for x in r.pair_key.split("|")) == sorted(
+            [r.del_index, r.partner_index]
+        )
+
+
+# --------------------------------------------------------------------------- #
+# F5 — the EXACT af_a1 == 0.5 tie must report the LARGER carrier loss          #
+# --------------------------------------------------------------------------- #
+
+#: THE TAIL-HIDING FIXTURE. 8 samples; the deletion's A1 dosages are
+#: ``[2, 2, 2, 2, 0, 0, 0, 0]`` so ``af_a1 = 8 / (2 * 8) = 0.5`` EXACTLY — 0.5 is
+#: exactly representable in binary floating point, so this is an equality, not a
+#: near-miss. The partner is no-called at 3 of the 4 A2-carriers and called at all
+#: four A1-carriers, and stays VARIABLE inside the intersection so the pair is
+#: DEFINED (there is no NaN here for anything downstream to catch).
+#:
+#:   A1-carriers (dosage >= 1) = samples 0-3, lost 0  -> lost_frac 0.00  (OLD)
+#:   A2-carriers (dosage <= 1) = samples 4-7, lost 3  -> lost_frac 0.75  (NEW)
+_EXACT_TIE_CELLS = {
+    ("2", "0"): 2,
+    ("2", "1"): 2,
+    ("0", "NA"): 3,
+    ("0", "0"): 1,
+}
+
+
+def test_exact_allele_frequency_tie_reports_the_larger_carrier_loss(tmp_path):
+    """At ``af_a1 == 0.5`` the gradient must track the DEPLETED allele.
+
+    RED against the shipped ``if af_a1 <= 0.5`` rule, which picked A1 by fiat and
+    reported ``del_carriers_lost_frac == 0.0`` — a REASSURING number for a member
+    whose other allele lost 3 of its 4 carriers to the partner's missingness.
+    That is precisely the partial-confounding tail this instrument exists to find,
+    and the shipped rule binned it as ``"0"``.
+    """
+    import pairwise_completeness_scan as pcs
+
+    pr = _single_pair_result(pcs, tmp_path, _EXACT_TIE_CELLS, prefix="exacttie")
+
+    # the fixture really is at the exact tie
+    assert pr.del_maf_marginal == 0.5
+    assert pr.n_called_del == 8
+    assert pr.n_both_called == 5
+
+    assert pr.undefined is False, "the pair must stay DEFINED — this is the tail"
+    assert pr.del_carriers_marginal == 4
+    assert pr.del_carriers_retained == 1
+    assert pr.del_carriers_lost == 3
+    assert pr.del_carriers_lost_frac == 0.75
+    assert pr.del_minor_allele_tie is True
+    assert pr.partner_minor_allele_tie is False
+
+    summary = pcs.summarize("R", [pr])
+    assert summary["defined_carriers_lost_frac_bins"]["(0.5,0.9]"] == 1
+    assert summary["defined_carriers_lost_frac_bins"]["0"] == 0
+    assert summary["max_carriers_lost_frac_defined"] == 0.75
+
+
+def test_no_tie_flag_when_the_minor_allele_is_unambiguous(tmp_path):
+    """An ordinary pair reports both tie flags FALSE.
+
+    Without this, ``minor_allele_tie is True`` could be a constant and the tie
+    column would carry no information.
+    """
+    import pairwise_completeness_scan as pcs
+
+    pr = _single_pair_result(pcs, tmp_path, _MIRROR_00057_CELLS, prefix="notie")
+    assert pr.del_maf_marginal != 0.5
+    assert pr.partner_maf_marginal != 0.5
+    assert pr.del_minor_allele_tie is False
+    assert pr.partner_minor_allele_tie is False

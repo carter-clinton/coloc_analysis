@@ -72,6 +72,20 @@ WINDOW-RELATIVE indices that would silently address the WRONG ``.bed`` blocks �
 a wrong-genotype read with no error anywhere. The negative control that pins this
 is ``test_window_relative_index_reads_the_wrong_block``.
 
+THE MINOR-ALLELE TIE RULE
+-------------------------
+The carriers-lost gradient is computed over the member's MINOR allele, decided
+EMPIRICALLY over that member's own called set. When ``af_a1`` is EXACTLY 0.5
+there is no minor allele: the two are equally frequent, and picking one by fiat
+(the shipped rule picked A1) can report a member whose OTHER allele lost most of
+its carriers to the partner's missingness as entirely unaffected — precisely the
+partial-confounding tail this instrument exists to find, binned as reassuring.
+At the exact tie the gradient is therefore computed for BOTH alleles and the
+LARGER ``lost_frac`` is reported (ties broken by the larger ``lost`` count, then
+by A1), and the emitted ``del_minor_allele_tie`` / ``partner_minor_allele_tie``
+columns make the tie visible so the choice is never invisible in the output. For
+every ``af_a1 != 0.5`` the numbers are IDENTICAL to the shipped behaviour.
+
 MEMORY
 ------
 Only the candidate variants' blocks are ever read; the ~354 GB production
@@ -163,6 +177,38 @@ def _count_lines(path: Path) -> int:
             if line.strip():
                 n += 1
     return n
+
+
+def _as_variant_index(value) -> int:
+    """Normalise a variant index to an ``int``, or RAISE. Never truncate.
+
+    Accepts ``int`` / ``np.integer`` / a digit ``str`` / an INTEGRAL ``float``.
+
+    RAISES ``ValueError`` on a NON-INTEGRAL float. ``int(1.5) == 1`` would seek to
+    variant 1 and return a perfectly well-formed dosage array for the WRONG
+    VARIANT with no error anywhere — the same wrong-genotype-read failure class
+    the module's GLOBAL-INDEX rule exists to prevent. Anything ``int()`` itself
+    rejects also raises, as a ``ValueError`` naming the offending value.
+
+    The value this returns is BOTH the bounds-checked quantity AND the addressed
+    quantity in :meth:`BedReader.read_variant` — see
+    ``test_seek_offset_uses_the_normalised_index``.
+    """
+    if isinstance(value, (float, np.floating)):
+        if not float(value).is_integer():
+            raise ValueError(
+                f"non-integral variant index {value!r}: a variant index must be a "
+                "whole number. Truncating it would seek a DIFFERENT .bed block and "
+                "return a well-formed dosage array for the wrong variant, with no "
+                "error anywhere."
+            )
+        return int(value)
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"invalid variant index {value!r} ({type(value).__name__}): {exc}"
+        ) from exc
 
 
 class BedReader:
@@ -278,7 +324,7 @@ class BedReader:
         window-relative index reads a different variant with no error; see the
         module docstring's global-index rule.
         """
-        idx = int(index)
+        idx = _as_variant_index(index)
         if idx < 0 or idx >= self.n_variants:
             raise IndexError(
                 f"variant index {idx} out of range for {self.bed_path}: "
@@ -289,7 +335,8 @@ class BedReader:
             self._cache.move_to_end(idx)
             return Genotypes(cached)
 
-        offset = 3 + index * self.bytes_per_variant
+        # The BOUNDS-CHECKED quantity IS the ADDRESSED quantity. Never `index`.
+        offset = 3 + idx * self.bytes_per_variant
         self._fh.seek(offset)
         raw = self._fh.read(self.bytes_per_variant)
         if len(raw) != self.bytes_per_variant:
@@ -331,6 +378,23 @@ class CandidatePair(NamedTuple):
     side: str
     already_occluded: bool
     pair_key: str
+
+
+def _pair_key(index_a: int, index_b: int) -> str:
+    """Order-normalised key over the two GLOBALLY-UNIQUE ``.bim`` ROW INDICES.
+
+    NEVER the variant ids. Two rows can share an id — a bare ``.`` and a
+    duplicated rsID are both ordinary ``.bim`` occurrences — and an id-keyed pair
+    key COLLAPSES two DISTINCT pairs into one. That is an UNDERCOUNT, which is the
+    dangerous direction: every denominator derived from ``n_distinct_pairs`` would
+    be too small and the undefined already-occluded/newly-discovered split would be
+    computed over the wrong set. The vids stay on the row, for display only.
+
+    A deletion-deletion neighbour still yields TWO ordered rows and ONE key: the
+    sorted index pair is identical from either anchor.
+    """
+    lo, hi = sorted((int(index_a), int(index_b)))
+    return f"{lo}|{hi}"
 
 
 def span_offset(deletion, variant) -> int:
@@ -456,7 +520,9 @@ def enumerate_candidates(
                     already_occluded=bool(
                         deletion.pos < partner.pos <= deletion.span_end
                     ),
-                    pair_key="|".join(sorted((deletion.vid, partner.vid))),
+                    # INDEX-keyed, never vid-keyed: two rows sharing a `.` id are
+                    # DISTINCT pairs and a vid key UNDERCOUNTS them. See _pair_key.
+                    pair_key=_pair_key(deletion.index, partner.index),
                 )
             )
     return pairs
@@ -540,36 +606,20 @@ class PairResult(NamedTuple):
     del_carriers_lost: int
     del_carriers_lost_frac: float
     del_maf_marginal: float
+    del_minor_allele_tie: bool
     partner_carriers_marginal: int
     partner_carriers_retained: int
     partner_carriers_lost: int
     partner_carriers_lost_frac: float
     partner_maf_marginal: float
+    partner_minor_allele_tie: bool
     confounding_pattern: str
 
 
-def _minor_allele_carriers(dosage: np.ndarray, called: np.ndarray):
-    """``(carrier_mask, maf_marginal)`` with the minor allele chosen EMPIRICALLY.
+def _mask_gradient(carrier_mask: np.ndarray, both: np.ndarray):
+    """``(marginal, retained, lost, lost_frac)`` carriers for one carrier mask.
 
-    The minor allele is decided over the member's OWN called set: A1 when
-    ``sum(dosage) / 2 / n_called <= 0.5``, else A2. A carrier holds >= 1 copy of
-    it. No frequency threshold and no reference panel is consulted.
-    """
-    n_called = int(called.sum())
-    if n_called == 0:
-        return np.zeros(dosage.shape, dtype=bool), 0.0
-    af_a1 = float(dosage[called].sum()) / (2.0 * n_called)
-    if af_a1 <= 0.5:
-        mask = dosage >= 1                      # >= 1 copy of A1
-    else:
-        mask = (dosage >= 0) & (dosage <= 1)    # >= 1 copy of A2
-    return mask & called, min(af_a1, 1.0 - af_a1)
-
-
-def _gradient(carrier_mask: np.ndarray, both: np.ndarray):
-    """``(marginal, retained, lost, lost_frac)`` carriers for one member.
-
-    ``lost_frac`` is 0.0 when the member has no carriers at all, so it is never
+    ``lost_frac`` is 0.0 when the mask holds no carriers at all, so it is never
     a divide-by-zero and never a NaN in the emitted TSV.
     """
     marginal = int(carrier_mask.sum())
@@ -577,6 +627,54 @@ def _gradient(carrier_mask: np.ndarray, both: np.ndarray):
     lost = marginal - retained
     lost_frac = (lost / marginal) if marginal > 0 else 0.0
     return marginal, retained, lost, lost_frac
+
+
+def _carrier_gradient(dosage: np.ndarray, called: np.ndarray, both: np.ndarray):
+    """``(marginal, retained, lost, lost_frac, maf, minor_allele_tie, globally_invariant)``.
+
+    The minor allele is decided EMPIRICALLY over the member's OWN called set —
+    no frequency threshold and no reference panel is consulted:
+
+    * ``af_a1 = dosage[called].sum() / (2 * n_called)``
+    * ``af_a1 < 0.5`` -> the A1 carriers (``dosage >= 1``), ``tie`` False
+    * ``af_a1 > 0.5`` -> the A2 carriers (``0 <= dosage <= 1``), ``tie`` False
+    * ``af_a1 == 0.5`` -> **THE EXACT TIE.** There is no minor allele. The
+      gradient is computed for BOTH masks and the one with the LARGER
+      ``lost_frac`` is returned; ties are broken by the larger ``lost`` COUNT,
+      and a full tie by A1. ``tie`` is True so the choice is visible in the
+      emitted TSV. See the module docstring's THE MINOR-ALLELE TIE RULE for WHY
+      a fiat choice at the tie can read a depleted member as reassuring.
+    * ``n_called == 0`` -> an all-zero gradient, ``maf`` 0.0, ``tie`` False and
+      ``globally_invariant`` True (the empty called set is invariant).
+
+    ``globally_invariant`` is ``np.unique(dosage[called]).size <= 1``: the member
+    is constant within its OWN called set, independent of any partner. It is
+    RETAINED-SET PARITY bookkeeping, not a verdict — see the module docstring.
+
+    Behaviour for every ``af_a1 != 0.5`` is IDENTICAL to the pre-remediation
+    ``_minor_allele_carriers`` + ``_gradient`` pair this function replaces.
+    """
+    n_called = int(called.sum())
+    if n_called == 0:
+        return 0, 0, 0, 0.0, 0.0, False, True
+
+    af_a1 = float(dosage[called].sum()) / (2.0 * n_called)
+    maf = min(af_a1, 1.0 - af_a1)
+    globally_invariant = bool(np.unique(dosage[called]).size <= 1)
+
+    a1_mask = (dosage >= 1) & called                     # >= 1 copy of A1
+    a2_mask = (dosage >= 0) & (dosage <= 1) & called     # >= 1 copy of A2
+
+    if af_a1 < 0.5:
+        return (*_mask_gradient(a1_mask, both), maf, False, globally_invariant)
+    if af_a1 > 0.5:
+        return (*_mask_gradient(a2_mask, both), maf, False, globally_invariant)
+
+    # EXACT TIE: report the allele that LOST MORE, never A1 by fiat.
+    g_a1 = _mask_gradient(a1_mask, both)
+    g_a2 = _mask_gradient(a2_mask, both)
+    chosen = g_a1 if (g_a1[3], g_a1[2]) >= (g_a2[3], g_a2[2]) else g_a2
+    return (*chosen, maf, True, globally_invariant)
 
 
 def _confounding_pattern(
@@ -647,16 +745,24 @@ def evaluate_pair(reader: BedReader, pair: CandidatePair) -> PairResult:
     else:
         invariant_member = "none"
 
-    del_carrier_mask, del_maf = _minor_allele_carriers(dosage_del, called_del)
-    partner_carrier_mask, partner_maf = _minor_allele_carriers(
-        dosage_partner, called_partner
-    )
-    del_marginal, del_retained, del_lost, del_lost_frac = _gradient(
-        del_carrier_mask, both
-    )
-    p_marginal, p_retained, p_lost, p_lost_frac = _gradient(
-        partner_carrier_mask, both
-    )
+    (
+        del_marginal,
+        del_retained,
+        del_lost,
+        del_lost_frac,
+        del_maf,
+        del_tie,
+        _del_globally_invariant,   # consumed by PairResult in T2 (retained-set parity)
+    ) = _carrier_gradient(dosage_del, called_del, both)
+    (
+        p_marginal,
+        p_retained,
+        p_lost,
+        p_lost_frac,
+        partner_maf,
+        partner_tie,
+        _partner_globally_invariant,
+    ) = _carrier_gradient(dosage_partner, called_partner, both)
 
     return PairResult(
         *pair,
@@ -672,11 +778,13 @@ def evaluate_pair(reader: BedReader, pair: CandidatePair) -> PairResult:
         del_carriers_lost=del_lost,
         del_carriers_lost_frac=del_lost_frac,
         del_maf_marginal=del_maf,
+        del_minor_allele_tie=del_tie,
         partner_carriers_marginal=p_marginal,
         partner_carriers_retained=p_retained,
         partner_carriers_lost=p_lost,
         partner_carriers_lost_frac=p_lost_frac,
         partner_maf_marginal=partner_maf,
+        partner_minor_allele_tie=partner_tie,
         confounding_pattern=_confounding_pattern(
             n_both_called,
             del_invariant,
