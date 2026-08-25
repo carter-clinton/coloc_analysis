@@ -144,3 +144,109 @@ criterion change. VM idle. Nothing fires. **An agent never fires.**
    answers it in minutes, with no full-region LD recompute. **Design it before firing it.**
 3. Only then: adjudicate the criterion/policy (with Seth, brief-blind) and decide Stage C's posture.
 4. Separately and independently: **RAM-1** fix (TDD) and the **00071** anchor.
+
+---
+
+# MECHANISM CONFIRMED (2026-08-24 ~23:38 EDT) — deletion-linked missingness, PERFECTLY confounded
+
+The joint-callability dump for the pair, verbatim from the VM:
+
+```
+dosage columns: chr15:20394741:AT:A_A  chr15:20394743:T:C_C
+joint (A,B) dosage table incl NA: {('0','0'): 70232, ('0','NA'): 570, ('0','1'): 816,
+                                   ('1','NA'): 871, ('NA','NA'): 598, ('NA','1'): 14, ('NA','0'): 21}
+N non-missing at BOTH: 71048
+A values within that intersection: Counter({'0': 71048})
+B values within that intersection: Counter({'0': 70232, '1': 816})
+```
+
+NCSU-side reconciliation:
+
+| Quantity | Value | Note |
+|---|---|---|
+| Joint table total | **73,122** | exactly the cohort `.fam` count — the table is complete |
+| A (deletion): hom-ref / het / NA | 71,618 / **871** / 633 | no homozygous carriers |
+| **A carriers CALLED at B** | **0 of 871** | cells `('1','0')` and `('1','1')` are ABSENT ENTIRELY |
+| A marginal allele frequency | 871 / (2 × 72,489) = **0.601%** | healthy; A is nowhere near monomorphic |
+| Intersection (both called) | 70,232 + 816 = **71,048** | matches the dump |
+| A within the intersection | **constant 0** | → zero variance → `0/0` → NaN |
+| B within the intersection | 70,232 ref / 816 het | **B is variable — only A collapses** |
+
+**The mechanism, stated exactly:** carrying the deletion and being no-called at the neighbouring
+site are **perfectly confounded, 871 of 871**. The missingness removes precisely and only the
+carriers, so the pairwise-complete intersection retains no copy of the deletion allele; A is
+invariant *within the intersection* while its marginal variance is perfectly healthy. plink writes
+`0/0 → NaN`.
+
+So the producer's message was right that a zero-variance condition caused it and **wrong about the
+scope**: it is zero variance *within the pair's intersection*, induced by deletion-linked
+missingness — not zero variance on the analysis set. Its prescribed remedy (QC out zero-variance
+variants on the actual sample set) would never flag A.
+
+**This is the occlusion mechanism** — a deletion rendering a neighbouring site unreadable —
+occurring **one base beyond the REF span** that the pre-registered criterion tests. The rule
+correctly declined to exclude the pair, and the pair still carries structurally undefined LD *for
+exactly the reason the amendment describes*.
+
+## ⚠ SECOND-ORDER CONSEQUENCE — the NaN raise only catches the knife-edge
+
+Perfect confounding (871/871) is the **boundary case** that yields NaN. **Partial** confounding does
+not: if even a handful of carriers are called at the flanking site, the intersection retains some
+variance, plink returns a **finite** `r`, and **no NaN check anywhere in the pipeline fires** — yet
+that `r` was computed on a **biased, non-random subsample** that systematically under-represents
+deletion carriers. It banks silently.
+
+Therefore: **region 1 passing NaN-free does NOT establish that region 1 is free of deletion-linked
+missingness bias.** It establishes only that region 1 contained no *perfectly* confounded pair.
+Those are very different claims, and the stronger one is the tempting misreading of the Stage A
+falsification. The Stage A result stands exactly as written — occlusion accounted for 100% of
+region 1's *NaN* — and says nothing about defined-but-biased correlations.
+
+The prevalence sweep must therefore measure the **distribution** of confounding, not merely count
+NaN: for each candidate pair, the intersection size and the fraction of one member's carriers lost
+to the other's missingness. A long tail of near-complete confounding would be a data-quality caveat
+for the panel as a whole, not just a NaN-policy question. Whether such a tail exists is **unknown**.
+
+## PREVALENCE SWEEP — design (measure the PROPERTY, not a proxy; no LD compute)
+
+The undefined-LD condition is a **pure genotype property** and needs no `--r` at all:
+
+> for a pair (X, Y), the correlation is undefined ⟺ within `called(X) ∩ called(Y)`, X or Y is invariant.
+
+For the deletion-boundary class this reduces to a set test — `carriers(X) ⊆ missing(Y)` (or the
+symmetric case) — computable from carrier/missing bitsets straight off the `.bed`. Design points:
+
+1. **Sweep the offset; do not assume +1.** For each deletion D (`span_end = pos + ref_len − 1`) and
+   each variant V at `offset = V.pos − span_end`, record the offset alongside the outcome. The
+   empirical offset distribution **gives the boundary width** instead of us guessing it. This is the
+   "scope the guard to the property, not the proxy" rule applied to the fix itself.
+2. **Both sides.** The pre-registered rule is one-sided (`d.pos < v.pos`), but alignment ambiguity at
+   an indel is **not directional** — include negative offsets (variants upstream of `d.pos`). If
+   upstream pairs also fail, the current rule is under-covering in a second, unnoticed direction.
+3. **Both members.** Test invariance of X *and* of Y within the intersection; do not assume the
+   deletion is always the collapsing member.
+4. **Record the gradient, not just the binary.** Per candidate pair: intersection size, carriers of
+   each member, carriers lost to the other's missingness. That is what surfaces the partial-confounding
+   tail described above.
+5. **Scale is small.** Region 1 carries 7,951 multi-base-REF rows at ~7.6 variants/kb, so a ±25 bp
+   window yields on the order of a few thousand candidate pairs per large region — bitset set-ops over
+   73,122 samples, i.e. minutes per region, no LD recompute, no 42 GB matrices.
+6. **Build it TDD at NCSU first ($0).** The detector is pure logic over `.bed`/`.bim` and is fully
+   testable on synthetic fixtures — exactly how `occlusion_span_filter` was built — then run
+   in-perimeter over the pre-committed 21-region sample.
+7. **Context per hit.** Record each hit's coordinates. Region 00057's pair sits at chr15 ~20.39 Mb,
+   pericentromeric; region 1 (chr1:10,000–13,506,933) showed none. Whether these cluster in
+   segdup/pericentromeric territory is a **hypothesis to test**, not a finding — but if they do, both
+   the disclosure and the remedy differ from a uniformly-distributed artifact.
+
+## What is settled, and what is still open
+
+**SETTLED:** the mechanism for this pair (perfect carrier-missingness confounding → intersection-
+invariant → NaN); that the occlusion filter behaved correctly under the posted criterion; that the
+producer's stated diagnosis and remedy do not fit.
+
+**OPEN — and not settleable from n=1:** (a) the prevalence of perfectly-confounded pairs across the
+panel; (b) the true boundary width and whether it is one-sided; (c) whether a partial-confounding
+tail exists and how large; (d) the response — a criterion extension, an explicit pairwise-completeness
+policy, or something else. (d) is a **pre-registration** question, because the exclusion criterion is
+what `trsx5` posts. None of these may be answered by inference from this one pair.
