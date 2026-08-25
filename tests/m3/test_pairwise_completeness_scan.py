@@ -613,3 +613,633 @@ def test_missing_dosage_sentinel_and_called_property(tmp_path):
         assert geno.called.tolist() == [False, True, False, True]
     finally:
         reader.close()
+
+
+# =========================================================================== #
+# T2 — candidate enumeration (both sides), the DIRECT pairwise test, gradient  #
+# =========================================================================== #
+
+def _bim_row(chrom: str, bp: int, ref: str, alt: str) -> list[str]:
+    """An explicit .bim row: [chr, chr:bp:REF:ALT, cm, bp, A1=ALT, A2=REF]."""
+    return [chrom, f"{chrom}:{bp}:{ref}:{alt}", "0", str(bp), alt, ref]
+
+
+#: The MEASURED m2_region_00057 pair geometry (halt record §MECHANISM CONFIRMED).
+_DEL_VID_00057 = "chr15:20394741:AT:A"
+_PARTNER_VID_00057 = "chr15:20394743:T:C"
+
+
+def _joint_table_bfile(
+    tmp_path: Path,
+    cells,
+    *,
+    prefix: str,
+    del_pos: int = 20394741,
+    del_ref: str = "AT",
+    del_alt: str = "A",
+    partner_pos: int = 20394743,
+    partner_ref: str = "T",
+    partner_alt: str = "C",
+    chrom: str = "chr15",
+) -> Path:
+    """Turn a joint ``(deletion, partner)`` dosage/NA table into a 2-variant bfile.
+
+    ``cells`` maps ``(del_dosage_str, partner_dosage_str)`` -> sample count, using
+    the ``plink --recode A`` string vocabulary ``{"0", "1", "2", "NA"}`` exactly as
+    the halt record's dump prints it. The fixture geometry MATCHES the measured
+    pair: the deletion's REF spans ``[20394741, 20394742]`` and the partner sits at
+    ``20394743``, i.e. offset ``+1`` past ``span_end``.
+    """
+    del_codes: list[int] = []
+    partner_codes: list[int] = []
+    for (a, b), count in cells.items():
+        del_codes.extend([_DOSAGE_STR_TO_CODE[a]] * count)
+        partner_codes.extend([_DOSAGE_STR_TO_CODE[b]] * count)
+    n_samples = len(del_codes)
+    return _write_bfile(
+        tmp_path,
+        codes_per_variant=[del_codes, partner_codes],
+        n_samples=n_samples,
+        prefix=prefix,
+        bim_rows=[
+            _bim_row(chrom, del_pos, del_ref, del_alt),
+            _bim_row(chrom, partner_pos, partner_ref, partner_alt),
+        ],
+    )
+
+
+def _single_pair_result(pcs, tmp_path: Path, cells, prefix: str, window_bp: int = 5):
+    """Build a 2-variant joint-table bfile and evaluate its ONE candidate pair."""
+    base = _joint_table_bfile(tmp_path, cells, prefix=prefix)
+    rows = pcs.load_bim_rows(base.with_suffix(".bim"))
+    indexed = list(enumerate(rows))
+    pairs = pcs.enumerate_candidates("R", indexed, window_bp=window_bp)
+    assert len(pairs) == 1, f"expected exactly one candidate row, got {len(pairs)}"
+    reader = pcs.BedReader(base)
+    try:
+        return pcs.evaluate_pair(reader, pairs[0])
+    finally:
+        reader.close()
+
+
+# --------------------------------------------------------------------------- #
+# The SIGNED OFFSET convention                                                 #
+# --------------------------------------------------------------------------- #
+
+def test_span_offset_signed_convention_table():
+    """ONE stated convention: signed distance from the REF interval [pos, span_end].
+
+    ``V.pos < D.pos``            -> ``V.pos - D.pos``      (NEGATIVE, upstream)
+    ``D.pos <= V.pos <= span_end`` -> ``0``                (interior, BOTH ends inclusive)
+    ``V.pos > span_end``         -> ``V.pos - span_end``   (POSITIVE, downstream)
+    """
+    import pairwise_completeness_scan as pcs
+
+    # A 3 bp deletion at 1000: REF interval is [1000, 1002].
+    deletion = pcs.parse_bim_row(_del_row(1000, 3), index=0)
+    assert deletion.span_end == 1002
+
+    table = [
+        (990, -10, "upstream"),
+        (999, -1, "upstream"),
+        (1000, 0, "interior"),   # CO-LOCATED: inside the interval, left end inclusive
+        (1001, 0, "interior"),
+        (1002, 0, "interior"),   # right end inclusive
+        (1003, 1, "downstream"),  # <- the MEASURED 00057 partner's offset
+        (1027, 25, "downstream"),
+    ]
+    for bp, expected_offset, expected_side in table:
+        variant = pcs.parse_bim_row(_snp_row(bp), index=1)
+        assert pcs.span_offset(deletion, variant) == expected_offset, (
+            f"offset at bp={bp}: expected {expected_offset}"
+        )
+        assert pcs.side_for_offset(expected_offset) == expected_side
+
+
+def test_offset_zero_and_already_occluded_are_not_the_same_predicate():
+    """A CO-LOCATED partner has ``offset == 0`` but ``already_occluded == False``.
+
+    The POSTED occlusion rule's left bound is STRICT (``d.pos < v.pos <= span_end``),
+    so "interior" and "already covered by the posted criterion" are DIFFERENT
+    predicates and must never be silently conflated.
+    """
+    import pairwise_completeness_scan as pcs
+
+    rows = [
+        (0, _del_row(1000, 3)),
+        (1, _snp_row(1000)),   # co-located with the deletion's POS
+        (2, _snp_row(1001)),   # strictly inside -> occluded under the posted rule
+    ]
+    pairs = pcs.enumerate_candidates("R", rows, window_bp=5)
+    by_pos = {p.partner_pos: p for p in pairs}
+
+    assert by_pos[1000].offset == 0
+    assert by_pos[1000].side == "interior"
+    assert by_pos[1000].already_occluded is False   # STRICT left bound
+
+    assert by_pos[1001].offset == 0
+    assert by_pos[1001].side == "interior"
+    assert by_pos[1001].already_occluded is True
+
+    # The two predicates disagree on at least one emitted row -> not the same test.
+    assert {p.offset == 0 for p in pairs} != {p.already_occluded for p in pairs} or (
+        any(p.offset == 0 and not p.already_occluded for p in pairs)
+    )
+
+
+def test_default_window_bp_is_25_and_is_a_measurement_window():
+    """``DEFAULT_WINDOW_BP`` is 25 and the docstring calls it a MEASUREMENT window."""
+    import pairwise_completeness_scan as pcs
+
+    assert pcs.DEFAULT_WINDOW_BP == 25
+    doc = pcs.__doc__ or ""
+    assert "MEASUREMENT window" in doc or "MEASUREMENT window" in (
+        (_SRC_PYTHON / "pairwise_completeness_scan.py").read_text()
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Candidate enumeration                                                        #
+# --------------------------------------------------------------------------- #
+
+def test_enumerate_emits_both_sides_with_signed_offsets():
+    """The posted rule is one-sided; alignment ambiguity at an indel is NOT.
+
+    An UPSTREAM partner must be enumerated with a NEGATIVE offset. Seen RED
+    against a one-sided window (perturbation P6).
+    """
+    import pairwise_completeness_scan as pcs
+
+    rows = [
+        (0, _snp_row(997)),        # upstream, offset -3
+        (1, _del_row(1000, 3)),    # anchor: REF interval [1000, 1002]
+        (2, _snp_row(1005)),       # downstream, offset +3
+    ]
+    pairs = pcs.enumerate_candidates("R", rows, window_bp=10)
+    by_pos = {p.partner_pos: p for p in pairs}
+    assert set(by_pos) == {997, 1005}
+
+    assert by_pos[997].offset == -3
+    assert by_pos[997].side == "upstream"
+    assert by_pos[997].already_occluded is False
+
+    assert by_pos[1005].offset == 3
+    assert by_pos[1005].side == "downstream"
+    assert by_pos[1005].already_occluded is False
+
+    for p in pairs:
+        assert p.region_id == "R"
+        assert p.del_index == 1
+        assert p.del_pos == 1000
+        assert p.del_span_end == 1002
+        assert p.del_ref_len == 3
+
+
+def test_window_boundary_is_inclusive_at_exactly_plus_and_minus_K():
+    """Exactly ``+K`` and exactly ``-K`` are IN; ``+(K+1)`` and ``-(K+1)`` are OUT.
+
+    Seen RED against a ``<`` boundary (perturbation P7), which drops the ``+K`` row.
+    """
+    import pairwise_completeness_scan as pcs
+
+    K = 5
+    rows = [
+        (0, _snp_row(1000 - K - 1)),   # 994  -> EXCLUDED
+        (1, _snp_row(1000 - K)),       # 995  -> INCLUDED, offset -5
+        (2, _del_row(1000, 3)),        # span_end 1002
+        (3, _snp_row(1002 + K)),       # 1007 -> INCLUDED, offset +5
+        (4, _snp_row(1002 + K + 1)),   # 1008 -> EXCLUDED
+    ]
+    pairs = pcs.enumerate_candidates("R", rows, window_bp=K)
+    offsets = sorted(p.offset for p in pairs)
+    assert offsets == [-K, K]
+    assert sorted(p.partner_pos for p in pairs) == [995, 1007]
+
+
+def test_only_deletions_anchor_candidates():
+    """An SNV and an INSERTION have a single-base footprint and anchor NOTHING."""
+    import pairwise_completeness_scan as pcs
+
+    rows = [
+        (0, _snp_row(1000)),
+        (1, _ins_row(1002, 6)),   # len(ALT) > len(REF); REF is one anchor base
+        (2, _snp_row(1004)),
+    ]
+    assert pcs.enumerate_candidates("R", rows, window_bp=25) == []
+
+    # Adding ONE real deletion turns the same neighbourhood into candidates.
+    rows_with_del = rows + [(3, _del_row(1006, 4))]
+    rows_with_del.sort(key=lambda t: int(t[1][_BP_COL]))
+    pairs = pcs.enumerate_candidates("R", rows_with_del, window_bp=25)
+    assert {p.del_index for p in pairs} == {3}
+
+
+_BP_COL = 3  # .bim bp column, for sorting FIXTURE rows only (never a module constant)
+
+
+def test_self_pairs_are_never_emitted():
+    """A deletion never pairs with itself, even though it lies in its own window."""
+    import pairwise_completeness_scan as pcs
+
+    rows = [(0, _del_row(1000, 3))]
+    assert pcs.enumerate_candidates("R", rows, window_bp=25) == []
+
+    rows2 = [(0, _del_row(1000, 3)), (1, _snp_row(1004))]
+    pairs = pcs.enumerate_candidates("R", rows2, window_bp=25)
+    assert all(p.del_index != p.partner_index for p in pairs)
+    assert len(pairs) == 1
+
+
+def test_deletion_deletion_neighbour_emits_two_rows_one_pair_key():
+    """Two neighbouring deletions give TWO ordered rows but ONE distinct pair.
+
+    The summary counts ``n_candidate_rows`` AND ``n_distinct_pairs`` so neither can
+    be quoted as the other.
+    """
+    import pairwise_completeness_scan as pcs
+
+    rows = [(0, _del_row(1000, 3)), (1, _del_row(1010, 2))]
+    pairs = pcs.enumerate_candidates("R", rows, window_bp=25)
+    assert len(pairs) == 2
+    assert len({p.pair_key for p in pairs}) == 1
+    # The two anchors carry their OWN offsets, and they are NOT mirror images:
+    # offset is measured from the ANCHOR's REF interval, so anchoring on the
+    # 3 bp deletion at 1000 puts its partner 1010 - 1002 = +8 past span_end,
+    # while anchoring on the 2 bp deletion at 1010 puts its partner
+    # 1000 - 1010 = -10 before pos. That asymmetry is the convention working.
+    assert sorted(p.offset for p in pairs) == [-10, 8]
+    assert {(p.del_index, p.partner_index) for p in pairs} == {(0, 1), (1, 0)}
+
+
+def test_unsorted_input_raises():
+    """Binary-search windowing depends on position order — fail CLOSED, not silent."""
+    import pairwise_completeness_scan as pcs
+
+    rows = [(0, _del_row(1000, 3)), (1, _snp_row(990))]
+    with pytest.raises(ValueError) as exc:
+        pcs.enumerate_candidates("R", rows, window_bp=25)
+    assert "sorted" in str(exc.value).lower() or "order" in str(exc.value).lower()
+
+
+def test_mixed_chromosome_input_raises():
+    """A window is single-chromosome by contract."""
+    import pairwise_completeness_scan as pcs
+
+    rows = [(0, _del_row(1000, 3, chrom=1)), (1, _snp_row(1004, chrom=2))]
+    with pytest.raises(ValueError) as exc:
+        pcs.enumerate_candidates("R", rows, window_bp=25)
+    assert "chrom" in str(exc.value).lower()
+
+
+def test_interior_partner_is_flagged_already_occluded():
+    """A partner strictly inside the REF span is 'already covered' by the posted rule."""
+    import pairwise_completeness_scan as pcs
+
+    rows = [(0, _del_row(1000, 5)), (1, _snp_row(1003)), (2, _snp_row(1009))]
+    pairs = {p.partner_pos: p for p in pcs.enumerate_candidates("R", rows, window_bp=25)}
+    assert pairs[1003].already_occluded is True   # 1000 < 1003 <= 1004
+    assert pairs[1003].offset == 0
+    assert pairs[1009].already_occluded is False
+    assert pairs[1009].offset == 5
+
+
+def test_iter_bim_windows_one_pass_global_indices(tmp_path, monkeypatch):
+    """ONE streaming pass over the FULL .bim; values carry GLOBAL 0-based indices."""
+    import builtins
+
+    import pairwise_completeness_scan as pcs
+
+    bim = tmp_path / "cohort.bim"
+    bim.write_text(
+        "".join(
+            "\t".join(_snp_row(1000 + 10 * i, chrom=1)) + "\n" for i in range(20)
+        )
+    )
+
+    real_open = builtins.open
+    opens = {"n": 0}
+
+    def counting_open(file, *args, **kwargs):
+        try:
+            if Path(file) == bim:
+                opens["n"] += 1
+        except TypeError:
+            pass
+        return real_open(file, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", counting_open)
+
+    windows = [
+        ("r1", "1", 1000, 1030),      # rows 0..3
+        ("r2", "chr1", 1100, 1120),   # rows 10..12  (chr-prefix normalised)
+        ("r3", "1", 1195, 1300),      # empty
+    ]
+    got = pcs.iter_bim_windows(bim, windows)
+
+    assert opens["n"] == 1, f".bim opened {opens['n']} times, expected exactly 1"
+    assert [i for i, _row in got["r1"]] == [0, 1, 2, 3]
+    assert [i for i, _row in got["r2"]] == [10, 11, 12]
+    assert got["r3"] == []
+    assert [row[_BP_COL] for _i, row in got["r2"]] == ["1100", "1110", "1120"]
+
+
+# --------------------------------------------------------------------------- #
+# THE PAIRWISE TEST — the property, directly — and the GRADIENT                #
+# --------------------------------------------------------------------------- #
+
+def test_mirrors_a_measured_case_00057_perfect_confounding_MIRRORS_A_MEASURED_CASE(tmp_path):
+    """MIRRORS_A_MEASURED_CASE — a 1/10-scale mirror of the m2_region_00057 pair.
+
+    PROVENANCE (cited, never re-derived):
+    ``.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md``
+    §MECHANISM CONFIRMED. The measured joint table totals 73,122 (the full cohort
+    .fam), 0 of 871 deletion carriers are called at the partner, the intersection
+    is 71,048, and the deletion's marginal AF is 0.601%.
+
+    This fixture MIRRORS that measurement at 1/10 scale. It DERIVES nothing and
+    establishes NO prevalence: one pair cannot supply a rate, a boundary width, or
+    a tail. Every oracle below is HAND-COMPUTED in this test body.
+
+    ``n_samples = 7313`` is deliberately ``% 4 == 1``, so this realistic fixture
+    ALSO exercises the padding-truncation path.
+    """
+    import pairwise_completeness_scan as pcs
+
+    cells = {
+        ("0", "0"): 7024,
+        ("0", "NA"): 57,
+        ("0", "1"): 82,
+        ("1", "NA"): 87,
+        ("NA", "NA"): 60,
+        ("NA", "1"): 1,
+        ("NA", "0"): 2,
+    }
+    assert sum(cells.values()) == 7313
+    assert 7313 % 4 == 1  # exercises padding
+
+    pr = _single_pair_result(pcs, tmp_path, cells, prefix="m00057")
+
+    # -- geometry: the partner sits ONE BASE past the deletion's REF span end --
+    assert pr.del_vid == _DEL_VID_00057
+    assert pr.partner_vid == _PARTNER_VID_00057
+    assert pr.del_ref_len == 2
+    assert pr.del_span_end == 20394742
+    assert pr.offset == 1
+    assert pr.side == "downstream"
+    assert pr.already_occluded is False   # the posted rule correctly declined
+
+    # -- the intersection: 7024 + 82 = 7106 --
+    assert pr.n_both_called == 7024 + 82 == 7106
+
+    # -- the property: A collapses inside the intersection, B does not --
+    assert pr.del_invariant is True
+    assert pr.partner_invariant is False
+    assert pr.undefined is True
+    assert pr.invariant_member == "deletion"
+
+    # -- deletion gradient: 7024+57+82+87 = 7250 called; 87 carriers, 0 retained --
+    assert pr.n_called_del == 7024 + 57 + 82 + 87 == 7250
+    assert pr.del_carriers_marginal == 87
+    assert pr.del_carriers_retained == 0
+    assert pr.del_carriers_lost == 87
+    assert pr.del_carriers_lost_frac == 1.0
+    # 87 / (2 * 7250) = 0.006
+    assert round(pr.del_maf_marginal, 4) == 0.0060
+    # The MEASURED marginal was 0.601%. The mirror lands within 0.01 pp — that
+    # agreement is a FIXTURE PROPERTY (the mirror was built at 1/10 scale from the
+    # measured cells), NOT an independent rederivation of the measurement.
+    assert abs(pr.del_maf_marginal * 100.0 - 0.601) <= 0.01
+
+    # -- partner gradient: 7024+82+1+2 = 7109 called; 83 carriers, 82 retained --
+    assert pr.n_called_partner == 7024 + 82 + 1 + 2 == 7109
+    assert pr.partner_carriers_marginal == 83
+    assert pr.partner_carriers_retained == 82
+    assert pr.partner_carriers_lost == 1
+    assert round(pr.partner_carriers_lost_frac, 8) == round(1 / 83, 8)
+
+    # -- the DERIVED label (never the test) --
+    assert pr.confounding_pattern == "perfect_deletion_confounding"
+
+
+def test_partial_confounding_is_DEFINED_and_the_gradient_sees_it(tmp_path):
+    """THIS IS THE BLIND SPOT.
+
+    The identical fixture with 5 of the 87 ``('1','NA')`` samples moved to
+    ``('1','0')``. plink returns a FINITE ``r`` — **no NaN check anywhere in the
+    pipeline fires on this row** — yet that ``r`` was computed on a biased
+    subsample that has lost 82 of the deletion's 87 carriers. The carriers-lost
+    GRADIENT is the only instrument in the project that can see it.
+
+    Whether such a tail EXISTS in the panel is OPEN. This test proves only that
+    the instrument reports it when it is present.
+    """
+    import pairwise_completeness_scan as pcs
+
+    cells = {
+        ("0", "0"): 7024,
+        ("0", "NA"): 57,
+        ("0", "1"): 82,
+        ("1", "NA"): 82,   # 87 - 5
+        ("1", "0"): 5,     # the 5 carriers that ARE called at the partner
+        ("NA", "NA"): 60,
+        ("NA", "1"): 1,
+        ("NA", "0"): 2,
+    }
+    assert sum(cells.values()) == 7313
+
+    pr = _single_pair_result(pcs, tmp_path, cells, prefix="m00057partial")
+
+    assert pr.undefined is False          # <- plink would return a finite r
+    assert pr.del_invariant is False
+    assert pr.partner_invariant is False
+    assert pr.invariant_member == "none"
+
+    assert pr.n_both_called == 7024 + 82 + 5 == 7111
+    assert pr.del_carriers_marginal == 87
+    assert pr.del_carriers_retained == 5
+    assert pr.del_carriers_lost == 82
+    assert round(pr.del_carriers_lost_frac, 4) == 0.9425   # 82 / 87
+    assert pr.confounding_pattern == "partial"
+
+
+def test_partner_is_the_invariant_member(tmp_path):
+    """BOTH members are tested. Do not assume the deletion is the collapsing one."""
+    import pairwise_completeness_scan as pcs
+
+    cells = {                    # the 00057 table with the roles mirrored
+        ("0", "0"): 7024,
+        ("NA", "0"): 57,
+        ("1", "0"): 82,
+        ("NA", "1"): 87,
+        ("NA", "NA"): 60,
+        ("1", "NA"): 1,
+        ("0", "NA"): 2,
+    }
+    pr = _single_pair_result(pcs, tmp_path, cells, prefix="mirrorrole")
+
+    assert pr.n_both_called == 7024 + 82 == 7106
+    assert pr.del_invariant is False
+    assert pr.partner_invariant is True
+    assert pr.undefined is True
+    assert pr.invariant_member == "partner"
+    assert pr.partner_carriers_marginal == 87
+    assert pr.partner_carriers_retained == 0
+    assert pr.partner_carriers_lost_frac == 1.0
+    assert pr.confounding_pattern == "perfect_partner_confounding"
+
+
+def test_undefined_without_carriers_subset_of_missing(tmp_path):
+    """The primary path is THE PROPERTY, not the ``carriers ⊆ missing`` shortcut.
+
+    Here ``carriers(deletion) ⊆ missing(partner)`` is DEMONSTRABLY FALSE — 20 of
+    the deletion's 30 carriers ARE called at the partner — and the pair is STILL
+    undefined, because the PARTNER collapses inside the intersection.
+
+    Seen RED against an implementation whose primary test is the one-directional
+    deletion-side containment shortcut (perturbation P5-T2/a).
+    """
+    import pairwise_completeness_scan as pcs
+
+    cells = {
+        ("1", "0"): 20,    # deletion carriers CALLED at the partner
+        ("1", "NA"): 10,   # deletion carriers missing at the partner
+        ("0", "0"): 400,
+        ("NA", "1"): 15,   # every partner carrier is no-called at the deletion
+        ("0", "NA"): 5,
+    }
+    assert sum(cells.values()) == 450
+
+    # The shortcut predicate, computed HERE so the test states what it refutes:
+    del_carriers = cells[("1", "0")] + cells[("1", "NA")]              # 30
+    del_carriers_in_missing_partner = cells[("1", "NA")]               # 10
+    assert del_carriers_in_missing_partner < del_carriers, (
+        "carriers(deletion) is NOT a subset of missing(partner) in this fixture"
+    )
+
+    pr = _single_pair_result(pcs, tmp_path, cells, prefix="notsubset")
+
+    assert pr.n_both_called == 420
+    assert pr.del_invariant is False        # the deletion IS variable here
+    assert pr.partner_invariant is True     # the partner is the one that collapses
+    assert pr.undefined is True
+    assert pr.invariant_member == "partner"
+    assert pr.del_carriers_marginal == 30
+    assert pr.del_carriers_retained == 20
+    assert round(pr.del_carriers_lost_frac, 6) == round(10 / 30, 6)
+
+
+def test_empty_intersection_is_undefined(tmp_path):
+    """Disjoint call sets: the degenerate TRUE case, reported explicitly."""
+    import pairwise_completeness_scan as pcs
+
+    cells = {
+        ("0", "NA"): 200,
+        ("1", "NA"): 30,
+        ("NA", "0"): 180,
+        ("NA", "1"): 40,
+    }
+    pr = _single_pair_result(pcs, tmp_path, cells, prefix="disjoint")
+
+    assert pr.n_both_called == 0
+    assert pr.undefined is True
+    assert pr.del_invariant is True
+    assert pr.partner_invariant is True
+    assert pr.invariant_member == "both"
+    assert pr.confounding_pattern == "empty_intersection"
+
+
+def test_fully_defined_pair_has_zero_gradient(tmp_path):
+    """A healthy pair: defined, and BOTH gradients are exactly zero."""
+    import pairwise_completeness_scan as pcs
+
+    cells = {
+        ("0", "0"): 800,
+        ("1", "0"): 60,
+        ("0", "1"): 55,
+        ("1", "1"): 25,
+    }
+    pr = _single_pair_result(pcs, tmp_path, cells, prefix="healthy")
+
+    assert pr.undefined is False
+    assert pr.del_invariant is False
+    assert pr.partner_invariant is False
+    assert pr.invariant_member == "none"
+    assert pr.del_carriers_lost == 0
+    assert pr.partner_carriers_lost == 0
+    assert pr.del_carriers_lost_frac == 0.0
+    assert pr.partner_carriers_lost_frac == 0.0
+    assert pr.confounding_pattern == "none"
+
+
+def test_lost_frac_one_implies_undefined(tmp_path):
+    """PROPERTY: ``carriers_lost_frac == 1.0`` for a member IMPLIES it is invariant.
+
+    Guards against a gradient that disagrees with the primary test. Asserted over
+    every constructed case at once, so a future case cannot quietly violate it.
+    """
+    import pairwise_completeness_scan as pcs
+
+    cases = {
+        "perfect_del": {
+            ("0", "0"): 7024, ("0", "NA"): 57, ("0", "1"): 82, ("1", "NA"): 87,
+            ("NA", "NA"): 60, ("NA", "1"): 1, ("NA", "0"): 2,
+        },
+        "partial": {
+            ("0", "0"): 7024, ("0", "NA"): 57, ("0", "1"): 82, ("1", "NA"): 82,
+            ("1", "0"): 5, ("NA", "NA"): 60, ("NA", "1"): 1, ("NA", "0"): 2,
+        },
+        "partner_collapses": {
+            ("1", "0"): 20, ("1", "NA"): 10, ("0", "0"): 400,
+            ("NA", "1"): 15, ("0", "NA"): 5,
+        },
+        "healthy": {
+            ("0", "0"): 800, ("1", "0"): 60, ("0", "1"): 55, ("1", "1"): 25,
+        },
+    }
+    seen_a_one = False
+    for name, cells in cases.items():
+        pr = _single_pair_result(pcs, tmp_path, cells, prefix=f"impl_{name}")
+        if pr.del_carriers_lost_frac == 1.0 and pr.del_carriers_marginal > 0:
+            seen_a_one = True
+            assert pr.del_invariant is True, f"{name}: del lost_frac 1.0 but not invariant"
+            assert pr.undefined is True
+        if pr.partner_carriers_lost_frac == 1.0 and pr.partner_carriers_marginal > 0:
+            seen_a_one = True
+            assert pr.partner_invariant is True, f"{name}: partner lost_frac 1.0 but not invariant"
+            assert pr.undefined is True
+    assert seen_a_one, "the property was never exercised — the test proves nothing"
+
+
+def test_scan_region_evaluates_every_candidate_row(tmp_path):
+    """``scan_region`` returns one :class:`PairResult` per enumerated candidate row."""
+    import pairwise_completeness_scan as pcs
+
+    n = 12
+    base = _write_bfile(
+        tmp_path,
+        codes_per_variant=[
+            [_CODE_HOM_A2] * 10 + [_CODE_HET, _CODE_MISSING],   # deletion
+            [_CODE_HOM_A2] * 8 + [_CODE_HET] * 4,               # partner A
+            [_CODE_HOM_A2] * 6 + [_CODE_HET] * 6,               # partner B
+        ],
+        n_samples=n,
+        bim_rows=[
+            _bim_row("chr1", 1000, "ATG", "A"),   # span_end 1002
+            _bim_row("chr1", 1004, "T", "C"),     # offset +2
+            _bim_row("chr1", 1009, "G", "A"),     # offset +7
+        ],
+    )
+    rows = pcs.load_bim_rows(base.with_suffix(".bim"))
+    indexed = list(enumerate(rows))
+    reader = pcs.BedReader(base)
+    try:
+        results = pcs.scan_region(reader, "R7", indexed, window_bp=10)
+    finally:
+        reader.close()
+
+    assert len(results) == 2
+    assert {r.offset for r in results} == {2, 7}
+    assert all(r.region_id == "R7" for r in results)
+    assert all(r.del_index == 0 for r in results)
+    assert {r.partner_index for r in results} == {1, 2}
+    assert all(r.n_both_called > 0 for r in results)

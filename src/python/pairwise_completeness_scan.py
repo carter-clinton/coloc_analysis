@@ -304,6 +304,407 @@ class BedReader:
         return Genotypes(dosage)
 
 
+# =========================================================================== #
+# Candidate enumeration — BOTH SIDES, under ONE signed convention             #
+# =========================================================================== #
+
+class CandidatePair(NamedTuple):
+    """One ORDERED (anchor deletion, partner) candidate row.
+
+    A deletion-deletion neighbour therefore yields TWO rows — one per anchor,
+    each carrying its OWN anchor-relative offset — but ONE distinct
+    :attr:`pair_key`. The region summary reports ``n_candidate_rows`` AND
+    ``n_distinct_pairs`` so neither can be quoted as the other.
+    """
+
+    region_id: str
+    del_index: int
+    del_vid: str
+    del_chr: str
+    del_pos: int
+    del_ref_len: int
+    del_span_end: int
+    partner_index: int
+    partner_vid: str
+    partner_pos: int
+    offset: int
+    side: str
+    already_occluded: bool
+    pair_key: str
+
+
+def span_offset(deletion, variant) -> int:
+    """SIGNED DISTANCE from ``deletion``'s REF interval ``[pos, span_end]``.
+
+    ``variant.pos <  deletion.pos``        -> ``variant.pos - deletion.pos``
+                                             (NEGATIVE, upstream)
+    ``deletion.pos <= variant.pos <= span_end`` -> ``0`` (interior; BOTH ends
+                                             inclusive, so a CO-LOCATED variant
+                                             is offset 0)
+    ``variant.pos >  deletion.span_end``   -> ``variant.pos - deletion.span_end``
+                                             (POSITIVE, downstream)
+
+    The offset is ANCHOR-relative and is therefore NOT symmetric for a
+    deletion-deletion pair; that is the convention, not a defect.
+
+    ⚠ ``offset == 0`` is NOT the same predicate as ``already_occluded``. The
+    POSTED occlusion rule's left bound is STRICT
+    (``d.pos < v.pos <= d.span_end``), so a co-located variant has offset 0 and
+    ``already_occluded is False``. Conflating them would silently reclassify
+    "newly discovered" as "already covered".
+
+    The MEASURED ``m2_region_00057`` partner sits at offset ``+1``.
+    """
+    if variant.pos < deletion.pos:
+        return variant.pos - deletion.pos
+    if variant.pos > deletion.span_end:
+        return variant.pos - deletion.span_end
+    return 0
+
+
+def side_for_offset(offset: int) -> str:
+    """``"upstream"`` | ``"interior"`` | ``"downstream"`` for a signed offset."""
+    if offset < 0:
+        return "upstream"
+    if offset > 0:
+        return "downstream"
+    return "interior"
+
+
+def _norm_chrom(value) -> str:
+    """Normalise a ``.bim`` chromosome field: ``chr15`` and ``15`` are the same."""
+    text = str(value).strip().lower()
+    return text[3:] if text.startswith("chr") else text
+
+
+def enumerate_candidates(
+    region_id: str,
+    indexed_rows: Sequence,
+    *,
+    window_bp: int = DEFAULT_WINDOW_BP,
+) -> list[CandidatePair]:
+    """Enumerate every (deletion, partner) candidate within ``+/- window_bp``.
+
+    ``indexed_rows`` is a sequence of ``(GLOBAL 0-based .bim index, 6-field row)``
+    pairs, SORTED by position ascending (:func:`iter_bim_windows` produces exactly
+    that). Unsorted input RAISES — the windowing is a binary search and would
+    silently under-enumerate otherwise. Mixed chromosomes RAISE: a window is
+    single-chromosome by contract.
+
+    ``window_bp`` is a MEASUREMENT parameter swept on BOTH sides. The posted
+    occlusion rule is one-sided, but alignment ambiguity at an indel is not
+    directional, so an upstream partner is enumerated with a NEGATIVE offset.
+    Nothing is excluded or decided on the basis of this window.
+    """
+    if window_bp < 0:
+        raise ValueError(f"window_bp must be >= 0, got {window_bp}")
+
+    variants: list[tuple] = []
+    chroms: set[str] = set()
+    raw_chroms: list[str] = []
+    prev_pos: "int | None" = None
+    for global_index, row in indexed_rows:
+        variant = parse_bim_row(row, index=int(global_index))
+        if prev_pos is not None and variant.pos < prev_pos:
+            raise ValueError(
+                f"region {region_id}: .bim rows must be sorted by position "
+                f"ascending (binary-search windowing depends on the order); "
+                f"saw {variant.pos} after {prev_pos}"
+            )
+        prev_pos = variant.pos
+        chrom = str(row[_COL_CHR])
+        chroms.add(_norm_chrom(chrom))
+        raw_chroms.append(chrom)
+        variants.append(variant)
+
+    if len(chroms) > 1:
+        raise ValueError(
+            f"region {region_id}: a window is single-chromosome by contract, "
+            f"got chromosomes {sorted(chroms)}"
+        )
+
+    positions = [v.pos for v in variants]
+    pairs: list[CandidatePair] = []
+    for anchor_i, deletion in enumerate(variants):
+        if not deletion.is_deletion:
+            continue  # footprint is len(REF) ONLY: an SNV/insertion anchors nothing
+        lo_bp = deletion.pos - window_bp
+        hi_bp = deletion.span_end + window_bp
+        lo = bisect_left(positions, lo_bp)
+        hi = bisect_right(positions, hi_bp)   # INCLUSIVE at exactly +window_bp
+        for j in range(lo, hi):
+            partner = variants[j]
+            if partner.index == deletion.index:
+                continue  # never a self-pair
+            offset = span_offset(deletion, partner)
+            pairs.append(
+                CandidatePair(
+                    region_id=region_id,
+                    del_index=deletion.index,
+                    del_vid=deletion.vid,
+                    del_chr=raw_chroms[anchor_i],
+                    del_pos=deletion.pos,
+                    del_ref_len=deletion.ref_len,
+                    del_span_end=deletion.span_end,
+                    partner_index=partner.index,
+                    partner_vid=partner.vid,
+                    partner_pos=partner.pos,
+                    offset=offset,
+                    side=side_for_offset(offset),
+                    # THE POSTED RULE, computed separately and never conflated
+                    # with `offset == 0`. Strict left bound.
+                    already_occluded=bool(
+                        deletion.pos < partner.pos <= deletion.span_end
+                    ),
+                    pair_key="|".join(sorted((deletion.vid, partner.vid))),
+                )
+            )
+    return pairs
+
+
+def iter_bim_windows(bim_path: "str | Path", windows: Iterable) -> dict:
+    """ONE streaming pass over the FULL ``.bim``; GLOBAL 0-based indices out.
+
+    ``windows`` is an iterable of ``(region_id, chrom, start_bp, end_bp)``
+    (both bounds inclusive). Returns ``{region_id: [(global_index, row), ...]}``
+    with rows in file order, which is position order within a chromosome.
+
+    The GLOBAL index is what :meth:`BedReader.read_variant` requires. This
+    function exists precisely so no caller is ever tempted to hand it a
+    window-relative index off a pre-extracted window ``.bim``; see the module
+    docstring and ``test_window_relative_index_reads_the_wrong_block``.
+    """
+    specs = [
+        (str(region_id), _norm_chrom(chrom), int(start_bp), int(end_bp))
+        for region_id, chrom, start_bp, end_bp in windows
+    ]
+    out: dict = {region_id: [] for region_id, _c, _s, _e in specs}
+
+    with open(bim_path, "r", encoding="utf-8") as fh:
+        index = -1
+        for line in fh:
+            if not line.strip():
+                continue
+            index += 1
+            row = line.split()[:6]
+            if len(row) < 6:
+                raise ValueError(
+                    f"malformed .bim row at index {index} of {bim_path}: "
+                    f"expected >=6 fields, got {len(row)}: {row!r}"
+                )
+            row_chrom = _norm_chrom(row[_COL_CHR])
+            try:
+                pos = int(row[_COL_BP])
+            except ValueError as exc:
+                raise ValueError(
+                    f"malformed .bim row at index {index} of {bim_path}: bp "
+                    f"field {row[_COL_BP]!r} is not an integer"
+                ) from exc
+            for region_id, chrom, start_bp, end_bp in specs:
+                if row_chrom == chrom and start_bp <= pos <= end_bp:
+                    out[region_id].append((index, row))
+    return out
+
+
+# =========================================================================== #
+# THE PAIRWISE TEST (the property, directly) and the CARRIERS-LOST GRADIENT   #
+# =========================================================================== #
+
+class PairResult(NamedTuple):
+    """One evaluated candidate row: the :class:`CandidatePair` fields plus the
+    pairwise verdict and the gradient. Field order IS :data:`TSV_COLUMNS`."""
+
+    region_id: str
+    del_index: int
+    del_vid: str
+    del_chr: str
+    del_pos: int
+    del_ref_len: int
+    del_span_end: int
+    partner_index: int
+    partner_vid: str
+    partner_pos: int
+    offset: int
+    side: str
+    already_occluded: bool
+    pair_key: str
+    n_called_del: int
+    n_called_partner: int
+    n_both_called: int
+    del_invariant: bool
+    partner_invariant: bool
+    undefined: bool
+    invariant_member: str
+    del_carriers_marginal: int
+    del_carriers_retained: int
+    del_carriers_lost: int
+    del_carriers_lost_frac: float
+    del_maf_marginal: float
+    partner_carriers_marginal: int
+    partner_carriers_retained: int
+    partner_carriers_lost: int
+    partner_carriers_lost_frac: float
+    partner_maf_marginal: float
+    confounding_pattern: str
+
+
+def _minor_allele_carriers(dosage: np.ndarray, called: np.ndarray):
+    """``(carrier_mask, maf_marginal)`` with the minor allele chosen EMPIRICALLY.
+
+    The minor allele is decided over the member's OWN called set: A1 when
+    ``sum(dosage) / 2 / n_called <= 0.5``, else A2. A carrier holds >= 1 copy of
+    it. No frequency threshold and no reference panel is consulted.
+    """
+    n_called = int(called.sum())
+    if n_called == 0:
+        return np.zeros(dosage.shape, dtype=bool), 0.0
+    af_a1 = float(dosage[called].sum()) / (2.0 * n_called)
+    if af_a1 <= 0.5:
+        mask = dosage >= 1                      # >= 1 copy of A1
+    else:
+        mask = (dosage >= 0) & (dosage <= 1)    # >= 1 copy of A2
+    return mask & called, min(af_a1, 1.0 - af_a1)
+
+
+def _gradient(carrier_mask: np.ndarray, both: np.ndarray):
+    """``(marginal, retained, lost, lost_frac)`` carriers for one member.
+
+    ``lost_frac`` is 0.0 when the member has no carriers at all, so it is never
+    a divide-by-zero and never a NaN in the emitted TSV.
+    """
+    marginal = int(carrier_mask.sum())
+    retained = int((carrier_mask & both).sum())
+    lost = marginal - retained
+    lost_frac = (lost / marginal) if marginal > 0 else 0.0
+    return marginal, retained, lost, lost_frac
+
+
+def _confounding_pattern(
+    n_both_called: int,
+    del_invariant: bool,
+    partner_invariant: bool,
+    del_carriers_marginal: int,
+    del_carriers_lost_frac: float,
+    partner_carriers_marginal: int,
+    partner_carriers_lost_frac: float,
+) -> str:
+    """A DERIVED LABEL ONLY — never the test. See the module docstring.
+
+    ``carriers(X) ⊆ missing(Y)`` shows up HERE and nowhere else: it is what
+    distinguishes ``perfect_*_confounding`` from ``partial``, after
+    :func:`evaluate_pair` has already decided ``undefined`` from the property.
+    """
+    if n_both_called == 0:
+        return "empty_intersection"
+    if del_invariant and del_carriers_marginal > 0 and del_carriers_lost_frac == 1.0:
+        return "perfect_deletion_confounding"
+    if (
+        partner_invariant
+        and partner_carriers_marginal > 0
+        and partner_carriers_lost_frac == 1.0
+    ):
+        return "perfect_partner_confounding"
+    if max(del_carriers_lost_frac, partner_carriers_lost_frac) > 0.0:
+        return "partial"
+    return "none"
+
+
+def evaluate_pair(reader: BedReader, pair: CandidatePair) -> PairResult:
+    """Decide UNDEFINED for one candidate pair and record the gradient.
+
+    THE PROPERTY, stated directly: within ``called(X) ∩ called(Y)``, is X
+    constant, or is Y constant? An empty intersection is the degenerate TRUE
+    case. BOTH members are tested — the deletion is not assumed to be the
+    collapsing one. There is NO set-containment test on this path.
+    """
+    geno_del = reader.read_variant(pair.del_index)
+    geno_partner = reader.read_variant(pair.partner_index)
+    dosage_del = geno_del.dosage
+    dosage_partner = geno_partner.dosage
+    called_del = geno_del.called
+    called_partner = geno_partner.called
+    both = called_del & called_partner
+    n_both_called = int(both.sum())
+
+    if n_both_called == 0:
+        # DEGENERATE TRUE CASE — no pairwise-complete sample exists at all.
+        del_invariant = True
+        partner_invariant = True
+    else:
+        del_invariant = bool(np.unique(dosage_del[both]).size == 1)
+        partner_invariant = bool(np.unique(dosage_partner[both]).size == 1)
+
+    # THE PRIMARY TEST. Never a containment shortcut — see
+    # test_undefined_without_carriers_subset_of_missing.
+    undefined = bool(del_invariant or partner_invariant)
+
+    if del_invariant and partner_invariant:
+        invariant_member = "both"
+    elif del_invariant:
+        invariant_member = "deletion"
+    elif partner_invariant:
+        invariant_member = "partner"
+    else:
+        invariant_member = "none"
+
+    del_carrier_mask, del_maf = _minor_allele_carriers(dosage_del, called_del)
+    partner_carrier_mask, partner_maf = _minor_allele_carriers(
+        dosage_partner, called_partner
+    )
+    del_marginal, del_retained, del_lost, del_lost_frac = _gradient(
+        del_carrier_mask, both
+    )
+    p_marginal, p_retained, p_lost, p_lost_frac = _gradient(
+        partner_carrier_mask, both
+    )
+
+    return PairResult(
+        *pair,
+        n_called_del=int(called_del.sum()),
+        n_called_partner=int(called_partner.sum()),
+        n_both_called=n_both_called,
+        del_invariant=del_invariant,
+        partner_invariant=partner_invariant,
+        undefined=undefined,
+        invariant_member=invariant_member,
+        del_carriers_marginal=del_marginal,
+        del_carriers_retained=del_retained,
+        del_carriers_lost=del_lost,
+        del_carriers_lost_frac=del_lost_frac,
+        del_maf_marginal=del_maf,
+        partner_carriers_marginal=p_marginal,
+        partner_carriers_retained=p_retained,
+        partner_carriers_lost=p_lost,
+        partner_carriers_lost_frac=p_lost_frac,
+        partner_maf_marginal=partner_maf,
+        confounding_pattern=_confounding_pattern(
+            n_both_called,
+            del_invariant,
+            partner_invariant,
+            del_marginal,
+            del_lost_frac,
+            p_marginal,
+            p_lost_frac,
+        ),
+    )
+
+
+def scan_region(
+    reader: BedReader,
+    region_id: str,
+    indexed_rows: Sequence,
+    *,
+    window_bp: int = DEFAULT_WINDOW_BP,
+) -> list[PairResult]:
+    """Enumerate then evaluate every candidate row for ONE region.
+
+    Every genotype read goes through :meth:`BedReader.read_variant`, so the
+    ``.bed`` is opened once and only candidate blocks are ever touched.
+    """
+    pairs = enumerate_candidates(region_id, indexed_rows, window_bp=window_bp)
+    return [evaluate_pair(reader, pair) for pair in pairs]
+
+
 def main(argv: "list[str] | None" = None) -> int:  # pragma: no cover - T3 builds this
     """CLI entry point. Implemented in T3."""
     raise NotImplementedError("the CLI lands in T3")
