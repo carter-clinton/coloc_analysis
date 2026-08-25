@@ -378,3 +378,25 @@ No architectural changes. No Rule 4 checkpoint was reached.
 7. **Nothing was fired. `$0`.** Zero VM, Dataproc, OSF, `gsutil` and `gcloud` contact. The VM remains STOPPED. The PENDING PASTE is written and unrun. **An agent never fires.**
 
 Also unchanged and still outstanding: **RAM-1** (`peak_ram_gib` is a monotone high-water mark; fix with `Popen` + `os.wait4` before Stage C) and **COST-1** (`m2_region_00071`, the worst-case anchor, never ran).
+
+---
+
+## Self-Check: PASSED
+
+Ran the plan's `<verification>` block at `f2e59f8`, after the push:
+
+| Check | Result |
+|---|---|
+| `_COL_*` declarations in the scanner | `0` |
+| scanner imports `occlusion_span_filter` | yes |
+| frozen-surface `git diff --stat` vs `7b59721` | `0` lines |
+| amendment paste block (safe two-step file form) | `22945` B / `13a49f543cabcc27ce9f1e589783c060` |
+| `tests/m3/test_pairwise_completeness_scan.py` | 62 passed, 0 failed |
+| full `tests/m3` | 1083 passed / **33** skipped / **0** failed |
+| `MIRRORS_A_MEASURED_CASE` occurrences | 2 (≥ 2) |
+| PENDING PASTE carries `71048` / `871` / `20394741` | 3 / 3 / 3 |
+| commits since `7b59721` | 4 |
+| `git status -sb` | no `ahead` — branch published |
+| artifacts | scanner 1065 lines (≥ 400) · tests 1850 (≥ 500) · paste 174 (≥ 80) · summary present |
+
+⚠ One check FAILED on the first pass and it was **my harness, not the code**: I had pinned the literal string `"62 passed in 0.28s"`, which embeds a wall-clock time and so is red on every subsequent run. Corrected to compare the *count* (`62 passed`, `0 failed`). Recorded because it is the same error class this plan warns about elsewhere — pinning a proxy (a rendered line that includes a timing) instead of the property (the pass/fail counts).
