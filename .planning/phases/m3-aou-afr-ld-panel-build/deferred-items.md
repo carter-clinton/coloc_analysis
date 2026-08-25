@@ -1348,3 +1348,63 @@ concurrence lives here and in the `quick-260818-uoi` SUMMARY, and nowhere else.
   blocks the fire.
 - Seth's banked courier (as-received, no byte anchors supplied):
   `.planning/quick/260818-uoi-bank-seth-d-acceptance-courier-register-/260818-uoi-SETH-COURIER-d-acceptance-as-received.md`
+
+## AF-1 — the native-plink producer NEVER emits an AF sidecar, so the WHOLE panel ships `variants$AF` = all-NA (a DECISION FOR BEFORE STAGE C)
+
+**Found:** Stage A, region 1, 2026-08-24 — the producer printed, verbatim:
+
+```
+WARNING: no --allele-freq sidecar for region 'm2_region_00001'; writing all-NaN AF. Supply the per-region .afreq sidecar to carry allele frequencies into obj$variants$AF.
+```
+
+**This is NOT a region-1 quirk.** Read at HEAD `cd0cff9`, the chain is:
+
+1. `src/python/aou_ld_panel.py::build_plink_ld_command` — the complete shipped argv is
+   `--bfile / --keep-allele-order / --chr / --from-bp / --to-bp [/ --exclude] / --mac 1 /
+   --nonfounders / --write-snplist / --r square bin4 [/ --threads] / --out`. **There is no
+   `--freq` anywhere in it**, so plink never writes ANY frequency file, for any region.
+2. `src/python/run_native_ld_panel.py:1087` looks for `{out_prefix}.afreq`; it is always absent,
+   so `af_arg = None`.
+3. `src/python/plink_ld_to_npz.py:330-334` then writes `np.full(n_var, np.nan)` and emits that
+   warning — for **every region of the 276**.
+
+So the banked panel carries an AF column of all-NaN → R `NA` in `obj$variants$AF`. Region 1 is
+already banked this way.
+
+**Why it matters:** `aou_ld_panel.py:2982-3003` (the RETIRED Hail path) states the m3-W2 phase
+deliverable as **"LD + AF metadata"** and *asserts* `allele_freq is not None`. The native-plink
+producer that replaced it silently dropped the AF half of that deliverable — the assertion did
+not travel with the rewrite. Nothing downstream has caught it because the fire had never run.
+
+**Two traps for whoever fixes it — a one-flag change will NOT work:**
+
+* **Extension/format mismatch.** plink **1.9**'s `--freq` writes `{prefix}.frq`, a multi-column
+  table (`CHR SNP A1 A2 MAF NCHROBS`). `.afreq` is plink **2.0**'s name. The consumer
+  `plink_ld_to_npz._load_af_sidecar` expects **one bare float per line** (blank → NaN, never
+  0.0, per AF-SIDECAR-01 / WR-03). So a fix needs the `--freq` call **plus** a converter.
+* **MAF ≠ AF, and row order is load-bearing.** plink1.9's `--frq` MAF column is the MINOR-allele
+  frequency, but the deliverable is the **alt-allele** frequency aligned to `--keep-allele-order`
+  (the whole reason that flag is mandatory for sign-correct LD vs GWAS z). The array must also be
+  row-aligned to the `.ld.bin` order = the `--write-snplist` retained set (post-`--exclude`,
+  post-`--mac 1`). Getting either wrong ships a plausible-but-wrong AF, which is worse than NA.
+  `--freq counts` + an explicit A1/A2 join against the window `.bim` is the defensible route.
+
+**NOT FIXED, deliberately.** The fire is mid-sequence with region 1 banked; this is a producer
+change on the fire path and must not be made between stages. It is also not a gate failure:
+`fire_verifier stage-a` passed 6/6 and NaN-AF round-trips honestly as `NA` (the WR-03 design
+choice — a missing AF must never masquerade as a real 0.0).
+
+**Carter's decision, before Stage C:**
+
+* **(a)** Ship the panel with `variants$AF` = NA and source AF downstream from the GWAS sumstats
+  / a public AFR reference — cheapest, no re-fire, but the phase deliverable's "+ AF" is unmet
+  and must be disclosed as such.
+* **(b)** Add `--freq counts` + a converter now (validated TDD, re-verify on region 1 only), then
+  fire Stage B/C with AF populated. Region 1 would need a re-run to carry AF — one region, ~92 min.
+* **(c)** Fire Stage C as-is and backfill AF later as a separate per-region pass over the banked
+  `.bim`/snplist (no LD recompute).
+
+**Recommendation: (b) or (c), not (a)** — (a) quietly redefines a stated deliverable. (c) is
+attractive because it does not touch the fire path at all and costs no LD recompute; (b) is
+cleaner but re-opens the producer immediately before the money. Either way the choice is
+Carter's, and it should be made BEFORE Stage C, not after.
