@@ -1349,7 +1349,7 @@ concurrence lives here and in the `quick-260818-uoi` SUMMARY, and nowhere else.
 - Seth's banked courier (as-received, no byte anchors supplied):
   `.planning/quick/260818-uoi-bank-seth-d-acceptance-courier-register-/260818-uoi-SETH-COURIER-d-acceptance-as-received.md`
 
-## AF-1 — the native-plink producer NEVER emits an AF sidecar, so the WHOLE panel ships `variants$AF` = all-NA (a DECISION FOR BEFORE STAGE C)
+## AF-1 — the native-plink producer NEVER emits an AF sidecar, so the WHOLE panel ships `variants$AF` = all-NA (⚠ RE-SCOPED 2026-08-24: **NOT a fire blocker** — see the correction at the end)
 
 **Found:** Stage A, region 1, 2026-08-24 — the producer printed, verbatim:
 
@@ -1408,3 +1408,43 @@ choice — a missing AF must never masquerade as a real 0.0).
 attractive because it does not touch the fire path at all and costs no LD recompute; (b) is
 cleaner but re-opens the producer immediately before the money. Either way the choice is
 Carter's, and it should be made BEFORE Stage C, not after.
+
+### ⚠ RE-SCOPED SAME DAY (2026-08-24, ~21:25 EDT) — this is NOT a Stage-C blocker, and the original heading over-constrained it
+
+The first draft of this item (written ~an hour earlier, immediately off the Stage A warning) called
+AF-1 "a DECISION FOR BEFORE STAGE C". **That was too strong, and it was asserted without checking
+the consumers.** Corrected here rather than quietly edited, because a false constraint left in a
+resume surface is exactly the failure mode this project keeps paying for.
+
+**What the consumer sweep actually shows (read-only, HEAD `00c4625`):**
+
+* **No coloc / SuSiE path reads the panel's AF.** Every MAF in the statistical path comes from the
+  SUMSTATS, not the LD panel: `run_replication_susie.R:199` (`MAF = pmin(sumstats$EAF, 1 - sumstats$EAF)`),
+  `run_coloc_genomewide.R:168,187` (`pmin(merged$EAF_A, …)`), `run_qtl_coloc.R:578` (`MAF = qtl_df$maf`),
+  `run_coloc.R:155` / `run_coloc_abf_legacy.R:163` (`dataset$MAF <- maf_vec`).
+* **The loader already tolerates absence by design.** `src/scripts/ld_npz_to_rds.R:256-260` reads
+  `allele_freq` under `tryCatch` and falls back to `rep(NA_real_, n_input)`; `stitch_subregions_to_rds.R:193`
+  does the same. Nothing raises, nothing degrades.
+* **The all-NaN path is SHIPPED, TESTED behaviour — not an accident.**
+  `tests/m3/test_ld_npz_to_rds.py:670` is literally
+  `test_bm_to_npz_omitted_allele_freq_is_all_nan_and_warns` — "No `--allele-freq` → all-NaN
+  `allele_freq` key (len n_rows) + loud WARNING", with `allele_freq` asserted to be ALWAYS present as a
+  key. The warning Stage A emitted is that designed path announcing itself.
+* **No other Python consumer** reads the panel's `allele_freq` (only the converter chain and
+  `write_conditioned_ld_npz.py`, which passes it through).
+
+**Therefore:** AF is **non-load-bearing metadata** for the science. Nothing about Stage B or Stage C
+depends on it, and firing with all-NA AF degrades no statistic. The completeness question — the
+retired Hail path called the deliverable "LD + AF" — still stands, but it is a **documentation /
+backfill** matter, not a gate.
+
+**Re-scoped disposition:** **fire Stage B and Stage C as-is; do NOT re-open the producer before the
+money.** Afterwards, either backfill (a cheap per-region `plink --freq` pass writing the one-float-per-line
+`.afreq` sidecar the producer ALREADY knows how to upload — `run_native_ld_panel.py:1087,1109` — with
+NO LD recompute and NO `.npz` rewrite), or disclose the NA and source AF downstream. The two traps
+above (plink1.9 writes `.frq` not `.afreq`; MAF ≠ alt-allele AF and row order is load-bearing) still
+apply to whoever does the backfill.
+
+**Superseded by this correction:** the earlier "Carter's decision, before Stage C" framing and its
+recommendation of "(b) or (c), not (a)" — with AF non-load-bearing, **(c) or (a) are both defensible
+and (b) is the one to avoid**, because it re-opens the fire path for something no statistic reads.
