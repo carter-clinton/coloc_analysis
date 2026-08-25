@@ -705,9 +705,360 @@ def scan_region(
     return [evaluate_pair(reader, pair) for pair in pairs]
 
 
-def main(argv: "list[str] | None" = None) -> int:  # pragma: no cover - T3 builds this
-    """CLI entry point. Implemented in T3."""
-    raise NotImplementedError("the CLI lands in T3")
+# =========================================================================== #
+# EGRESS-CLEAN emission — aggregate counts, fractions and COORDINATES only    #
+# =========================================================================== #
+
+#: The emitted TSV columns, in order. Pinned by EXACT tuple equality in the test
+#: suite and identical to ``PairResult._fields`` (a must-be-identity link, so a
+#: new field cannot silently escape the egress review).
+TSV_COLUMNS: tuple = PairResult._fields
+
+#: The per-region summary's key set, pinned by exact equality in the test suite.
+#: COUNTS and FRACTIONS only: no key may name a rate, prevalence, estimate or
+#: ceiling, because the prevalence, the boundary width and the partial-confounding
+#: tail are OPEN questions that one region cannot answer.
+SUMMARY_KEYS: tuple = (
+    "region_id",
+    "window_bp",
+    "n_deletions",
+    "n_candidate_rows",
+    "n_distinct_pairs",
+    "n_undefined_rows",
+    "n_undefined_distinct_pairs",
+    "n_undefined_already_occluded",
+    "n_undefined_not_already_occluded",
+    "undefined_offset_histogram",
+    "defined_carriers_lost_frac_bins",
+    "max_carriers_lost_frac_defined",
+    "n_defined_lost_frac_ge_0p9",
+)
+
+#: Bins for the DEFINED-row carriers-lost distribution. The top bin is OPEN at 1
+#: on purpose: ``lost_frac == 1.0`` implies the member is invariant, which implies
+#: the pair is UNDEFINED, so a defined row can never reach 1.0.
+LOST_FRAC_BIN_LABELS: tuple = (
+    "0",
+    "(0,0.25]",
+    "(0.25,0.5]",
+    "(0.5,0.9]",
+    "(0.9,0.99]",
+    "(0.99,1)",
+)
+
+
+def _lost_frac_bin(value: float) -> str:
+    """Bin one DEFINED row's ``max(del, partner)`` carriers-lost fraction."""
+    if value <= 0.0:
+        return "0"
+    if value <= 0.25:
+        return "(0,0.25]"
+    if value <= 0.5:
+        return "(0.25,0.5]"
+    if value <= 0.9:
+        return "(0.5,0.9]"
+    if value <= 0.99:
+        return "(0.9,0.99]"
+    return "(0.99,1)"
+
+
+def _render_field(value) -> str:
+    """Render one scalar for the TSV, deterministically.
+
+    Floats use ``repr`` (shortest round-trip) so the output is byte-stable across
+    runs and independent of any memory knob.
+    """
+    if isinstance(value, bool):
+        return "True" if value else "False"
+    if isinstance(value, float):
+        return repr(value)
+    return str(value)
+
+
+def write_tsv(results: Iterable[PairResult], path: "str | Path") -> None:
+    """Write the per-pair TSV. Header EQUALS :data:`TSV_COLUMNS`, in order.
+
+    EGRESS: every emitted field is a scalar — a count, a fraction, a variant
+    coordinate or id, or a label. No per-sample vector, no sample identifier, no
+    dosage ever reaches this file. In-perimeter the full TSV STAYS in-perimeter;
+    only the aggregate summary is intended to cross.
+    """
+    out_path = Path(path)
+    with open(out_path, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(TSV_COLUMNS) + "\n")
+        for result in results:
+            fh.write(
+                "\t".join(_render_field(getattr(result, col)) for col in TSV_COLUMNS)
+                + "\n"
+            )
+
+
+def summarize(
+    region_id: str,
+    results: Iterable[PairResult],
+    *,
+    window_bp: int = DEFAULT_WINDOW_BP,
+    n_deletions: "int | None" = None,
+) -> dict:
+    """Roll one region's results up into the aggregate that may cross the perimeter.
+
+    The three quantities this exists to expose:
+
+    * ``n_undefined_already_occluded`` vs ``n_undefined_not_already_occluded`` —
+      separates pairs the POSTED criterion already covers from the NEWLY
+      DISCOVERED class. The split is exhaustive over undefined DISTINCT pairs.
+    * ``undefined_offset_histogram`` — ``{offset: count}`` over the UNDEFINED set,
+      per ROW (each row carries one anchor-relative offset), so it sums to
+      ``n_undefined_rows``. This DISTRIBUTION is what supplies an empirical
+      boundary width instead of a guess. It is not itself a width.
+    * ``defined_carriers_lost_frac_bins`` / ``n_defined_lost_frac_ge_0p9`` — the
+      DEFINED-row tail, i.e. finite-``r`` pairs computed on carrier-depleted
+      subsamples that no NaN check anywhere in the pipeline can see.
+
+    Counts and fractions ONLY. Nothing here is a rate, and no single region's
+    numbers may be read as a prevalence.
+    """
+    rows = list(results)
+    undefined_rows = [r for r in rows if r.undefined]
+    defined_rows = [r for r in rows if not r.undefined]
+
+    undefined_keys = {r.pair_key for r in undefined_rows}
+    # A DISTINCT pair counts as already-occluded if ANY of its ordered rows is.
+    occluded_keys = {r.pair_key for r in undefined_rows if r.already_occluded}
+
+    histogram: dict = {}
+    for r in undefined_rows:
+        key = str(r.offset)
+        histogram[key] = histogram.get(key, 0) + 1
+    histogram = {k: histogram[k] for k in sorted(histogram, key=int)}
+
+    bins = {label: 0 for label in LOST_FRAC_BIN_LABELS}
+    max_frac = 0.0
+    n_tail = 0
+    for r in defined_rows:
+        frac = max(r.del_carriers_lost_frac, r.partner_carriers_lost_frac)
+        bins[_lost_frac_bin(frac)] += 1
+        if frac > max_frac:
+            max_frac = frac
+        if frac >= 0.9:
+            n_tail += 1
+
+    if n_deletions is None:
+        n_deletions = len({r.del_index for r in rows})
+
+    return {
+        "region_id": region_id,
+        "window_bp": int(window_bp),
+        "n_deletions": int(n_deletions),
+        "n_candidate_rows": len(rows),
+        "n_distinct_pairs": len({r.pair_key for r in rows}),
+        "n_undefined_rows": len(undefined_rows),
+        "n_undefined_distinct_pairs": len(undefined_keys),
+        "n_undefined_already_occluded": len(occluded_keys),
+        "n_undefined_not_already_occluded": len(undefined_keys - occluded_keys),
+        "undefined_offset_histogram": histogram,
+        "defined_carriers_lost_frac_bins": bins,
+        "max_carriers_lost_frac_defined": max_frac,
+        "n_defined_lost_frac_ge_0p9": n_tail,
+    }
+
+
+# =========================================================================== #
+# CLI                                                                         #
+# =========================================================================== #
+
+#: 0-based column indices in ``config/ld_regions.tsv`` (1-based 1 / 2 / 15 / 16).
+_REGIONS_TSV_ID_COL = 0
+_REGIONS_TSV_CHR_COL = 1
+_REGIONS_TSV_START_COL = 14
+_REGIONS_TSV_END_COL = 15
+
+
+def _read_regions_tsv(path: "str | Path", region_ids: "list[str] | None"):
+    """Parse a ``config/ld_regions.tsv``-shaped manifest into window specs.
+
+    Rows whose start/end columns are not integers (e.g. a header) are skipped.
+    """
+    wanted = set(region_ids) if region_ids else None
+    windows = []
+    seen = set()
+    for line in Path(path).read_text().splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) <= _REGIONS_TSV_END_COL:
+            continue
+        region_id = parts[_REGIONS_TSV_ID_COL].strip()
+        try:
+            start_bp = int(parts[_REGIONS_TSV_START_COL])
+            end_bp = int(parts[_REGIONS_TSV_END_COL])
+        except ValueError:
+            continue  # header or a non-window row
+        if wanted is not None and region_id not in wanted:
+            continue
+        windows.append((region_id, parts[_REGIONS_TSV_CHR_COL].strip(), start_bp, end_bp))
+        seen.add(region_id)
+    if wanted is not None:
+        missing = sorted(wanted - seen)
+        if missing:
+            raise ValueError(f"region ids not found in {path}: {missing}")
+    return windows
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="pairwise_completeness_scan",
+        description=(
+            "Measure PAIRWISE-COMPLETENESS around deletion REF spans: for each "
+            "candidate (deletion, partner) pair, is one member constant within "
+            "called(X) & called(Y) (so plink's r is UNDEFINED), and what fraction "
+            "of each member's carriers is lost to the other's missingness? "
+            "Reads ONLY the candidate variants' .bed blocks. Computes no LD. "
+            "Changes no criterion, no threshold and no policy: it MEASURES."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--bfile-prefix", dest="bfile_prefix", type=Path, required=True,
+        help=(
+            "plink1 bfile prefix (.bed/.bim/.fam). The prefix's OWN .bim is "
+            "streamed to derive GLOBAL 0-based variant indices; a pre-extracted "
+            "window .bim would carry window-relative indices and silently read "
+            "the WRONG .bed blocks."
+        ),
+    )
+    parser.add_argument("--region-id", dest="region_id", help="single-region mode: region id")
+    parser.add_argument("--chr", dest="chrom", help="single-region mode: chromosome ('15' or 'chr15')")
+    parser.add_argument("--from-bp", dest="from_bp", type=int, help="single-region mode: window start (inclusive)")
+    parser.add_argument("--to-bp", dest="to_bp", type=int, help="single-region mode: window end (inclusive)")
+    parser.add_argument(
+        "--regions-tsv", dest="regions_tsv", type=Path,
+        help=(
+            "multi-region mode: a config/ld_regions.tsv-shaped manifest "
+            "(1-based cols 1 region_id, 2 chr, 15 window_start, 16 window_end). "
+            "ALL windows are served from ONE streaming .bim pass."
+        ),
+    )
+    parser.add_argument("--region-ids", dest="region_ids", help="comma-separated subset of --regions-tsv region ids")
+    parser.add_argument(
+        "--window-bp", dest="window_bp", type=int, default=DEFAULT_WINDOW_BP,
+        help=(
+            "MEASUREMENT window (bp) on BOTH sides of the deletion REF span — "
+            "not a threshold. Nothing is excluded, flagged or decided on the "
+            f"basis of it; widening it costs reads, not validity. Default {DEFAULT_WINDOW_BP}."
+        ),
+    )
+    parser.add_argument("--out", dest="out", type=Path, required=True, help="per-pair TSV output path")
+    parser.add_argument("--summary", dest="summary", type=Path, help="per-region summary JSON output path")
+    parser.add_argument(
+        "--cache-variants", dest="cache_variants", type=int, default=2048,
+        help=(
+            "LRU decode-cache size in variants. A MEMORY knob, not a correctness "
+            "knob: --cache-variants 1 yields a byte-identical TSV. Bound is "
+            "cache_variants * n_samples bytes."
+        ),
+    )
+    return parser
+
+
+def main(argv: "list[str] | None" = None) -> int:
+    """Run the scan. Returns 0 on success, non-zero on a bad or missing input.
+
+    Every input is validated BEFORE the output file is opened, so a failure never
+    leaves a partial TSV behind.
+    """
+    args = _build_parser().parse_args(argv)
+
+    prefix = Path(args.bfile_prefix)
+    for suffix in (".bed", ".bim", ".fam"):
+        component = prefix.with_suffix(suffix)
+        if not component.exists():
+            print(
+                f"ERROR: missing bfile component {component} for prefix {prefix}",
+                file=sys.stderr,
+            )
+            return 2
+
+    try:
+        if args.regions_tsv is not None:
+            if not Path(args.regions_tsv).exists():
+                print(f"ERROR: missing --regions-tsv {args.regions_tsv}", file=sys.stderr)
+                return 2
+            region_ids = (
+                [r.strip() for r in args.region_ids.split(",") if r.strip()]
+                if args.region_ids
+                else None
+            )
+            windows = _read_regions_tsv(args.regions_tsv, region_ids)
+        elif all(v is not None for v in (args.region_id, args.chrom, args.from_bp, args.to_bp)):
+            windows = [(args.region_id, args.chrom, args.from_bp, args.to_bp)]
+        else:
+            print(
+                "ERROR: specify either --regions-tsv (+ optional --region-ids) or "
+                "all of --region-id/--chr/--from-bp/--to-bp",
+                file=sys.stderr,
+            )
+            return 2
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+    if not windows:
+        print("ERROR: no windows selected", file=sys.stderr)
+        return 2
+    if args.window_bp < 0:
+        print(f"ERROR: --window-bp must be >= 0, got {args.window_bp}", file=sys.stderr)
+        return 2
+
+    # ONE streaming pass over the FULL .bim for every window.
+    indexed = iter_bim_windows(prefix.with_suffix(".bim"), windows)
+
+    all_results: list[PairResult] = []
+    summaries: dict = {}
+    reader = BedReader(prefix, cache_variants=args.cache_variants)
+    try:
+        for region_id, _chrom, _start_bp, _end_bp in windows:
+            rows = indexed[region_id]
+            n_deletions = sum(
+                1 for i, row in rows if parse_bim_row(row, index=i).is_deletion
+            )
+            results = scan_region(reader, region_id, rows, window_bp=args.window_bp)
+            all_results.extend(results)
+            summaries[region_id] = summarize(
+                region_id, results, window_bp=args.window_bp, n_deletions=n_deletions
+            )
+    finally:
+        reader.close()
+
+    write_tsv(all_results, args.out)
+    if args.summary is not None:
+        Path(args.summary).write_text(json.dumps(summaries, indent=2, sort_keys=True))
+
+    # --- stdout: AGGREGATE ONLY. Safe to paste back across the perimeter. ---
+    scalar_keys = [k for k in SUMMARY_KEYS if not k.endswith(("histogram", "bins"))]
+    print("\t".join(scalar_keys))
+    for region_id, _c, _s, _e in windows:
+        summary = summaries[region_id]
+        print("\t".join(_render_field(summary[k]) for k in scalar_keys))
+
+    pooled_hist: dict = {}
+    pooled_bins = {label: 0 for label in LOST_FRAC_BIN_LABELS}
+    for summary in summaries.values():
+        for offset, count in summary["undefined_offset_histogram"].items():
+            pooled_hist[offset] = pooled_hist.get(offset, 0) + count
+        for label, count in summary["defined_carriers_lost_frac_bins"].items():
+            pooled_bins[label] += count
+    pooled_hist = {k: pooled_hist[k] for k in sorted(pooled_hist, key=int)}
+
+    print()
+    print(f"POOLED undefined-set offset histogram: {pooled_hist}")
+    print(f"POOLED defined-row carriers_lost_frac bins: {pooled_bins}")
+    print(f"POOLED candidate rows: {len(all_results)}")
+    print(
+        "NOTE: these are COUNTS over the scanned regions. They are NOT a "
+        "prevalence, NOT a boundary width, and NOT a tail size for the panel."
+    )
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -1243,3 +1243,608 @@ def test_scan_region_evaluates_every_candidate_row(tmp_path):
     assert all(r.del_index == 0 for r in results)
     assert {r.partner_index for r in results} == {1, 2}
     assert all(r.n_both_called > 0 for r in results)
+
+
+# =========================================================================== #
+# T3 — egress-clean TSV / summary rollup, the CLI, and the PENDING PASTE       #
+# =========================================================================== #
+
+#: Tokens that must never appear in an emitted column or key name. The AoU
+#: egress boundary is aggregate counts, fractions and variant coordinates ONLY.
+_FORBIDDEN_EGRESS_TOKENS = ("sample", "iid", "fid", "id_list", "dosage")
+
+#: The maximum rendered length of any single emitted field. A per-sample vector
+#: cannot fit in 64 chars, so this is a shape check on the egress surface.
+_MAX_FIELD_CHARS = 64
+
+
+#: The most entries an emitted aggregate distribution may hold. An offset
+#: histogram over a +/-25 bp window has at most 2*25 + 1 == 51 distinct offsets
+#: and the lost-frac bins have 6, so this is generous — while a per-sample map
+#: over 73,122 samples could never satisfy it.
+_MAX_DISTRIBUTION_ENTRIES = 512
+
+
+def _assert_egress_clean(column_names, row_mapping):
+    """The SHARED egress assertion — used by the green test AND its negative control.
+
+    Two emitted summary fields are aggregate DISTRIBUTIONS (the undefined-set
+    offset histogram and the defined-row lost-frac bins), so the rule is applied
+    RECURSIVELY rather than flatly: every key and every value inside a
+    distribution must itself be a short scalar, and the distribution's cardinality
+    is bounded by something that is NOT n_samples. That is strictly stronger than
+    a flat width check on the rendered dict — a per-sample map cannot hide inside.
+    """
+    for name in list(column_names) + list(row_mapping):
+        low = str(name).lower()
+        for token in _FORBIDDEN_EGRESS_TOKENS:
+            assert token not in low, (
+                f"emitted name {name!r} contains forbidden egress token {token!r}"
+            )
+
+    def _check_scalar(label, value):
+        rendered = str(value)
+        assert len(rendered) <= _MAX_FIELD_CHARS, (
+            f"field {label!r} renders to {len(rendered)} chars (> {_MAX_FIELD_CHARS}); "
+            "per-sample data must never cross the perimeter"
+        )
+
+    for name, value in row_mapping.items():
+        if isinstance(value, dict):
+            assert len(value) <= _MAX_DISTRIBUTION_ENTRIES, (
+                f"distribution {name!r} holds {len(value)} entries "
+                f"(> {_MAX_DISTRIBUTION_ENTRIES}); that is per-sample scale"
+            )
+            for k, v in value.items():
+                _check_scalar(f"{name}[{k!r}] key", k)
+                _check_scalar(f"{name}[{k!r}]", v)
+        else:
+            _check_scalar(name, value)
+
+
+_MIRROR_00057_CELLS = {
+    ("0", "0"): 7024,
+    ("0", "NA"): 57,
+    ("0", "1"): 82,
+    ("1", "NA"): 87,
+    ("NA", "NA"): 60,
+    ("NA", "1"): 1,
+    ("NA", "0"): 2,
+}
+
+
+def test_tsv_columns_exact_tuple_equality():
+    """``TSV_COLUMNS`` is pinned by EXACT tuple equality — a must-be-identity check.
+
+    Adding, removing or reordering a column breaks this deliberately.
+    """
+    import pairwise_completeness_scan as pcs
+
+    assert pcs.TSV_COLUMNS == (
+        "region_id",
+        "del_index",
+        "del_vid",
+        "del_chr",
+        "del_pos",
+        "del_ref_len",
+        "del_span_end",
+        "partner_index",
+        "partner_vid",
+        "partner_pos",
+        "offset",
+        "side",
+        "already_occluded",
+        "pair_key",
+        "n_called_del",
+        "n_called_partner",
+        "n_both_called",
+        "del_invariant",
+        "partner_invariant",
+        "undefined",
+        "invariant_member",
+        "del_carriers_marginal",
+        "del_carriers_retained",
+        "del_carriers_lost",
+        "del_carriers_lost_frac",
+        "del_maf_marginal",
+        "partner_carriers_marginal",
+        "partner_carriers_retained",
+        "partner_carriers_lost",
+        "partner_carriers_lost_frac",
+        "partner_maf_marginal",
+        "confounding_pattern",
+    )
+
+
+def test_pair_result_fields_are_the_tsv_columns():
+    """A must-be-identity link: the record's fields ARE the emitted columns."""
+    import pairwise_completeness_scan as pcs
+
+    assert pcs.PairResult._fields == pcs.TSV_COLUMNS
+
+
+def test_summary_keys_exact_equality():
+    """``SUMMARY_KEYS`` is pinned by exact equality, and a real summary matches it."""
+    import pairwise_completeness_scan as pcs
+
+    assert pcs.SUMMARY_KEYS == (
+        "region_id",
+        "window_bp",
+        "n_deletions",
+        "n_candidate_rows",
+        "n_distinct_pairs",
+        "n_undefined_rows",
+        "n_undefined_distinct_pairs",
+        "n_undefined_already_occluded",
+        "n_undefined_not_already_occluded",
+        "undefined_offset_histogram",
+        "defined_carriers_lost_frac_bins",
+        "max_carriers_lost_frac_defined",
+        "n_defined_lost_frac_ge_0p9",
+    )
+    assert set(pcs.summarize("R", []).keys()) == set(pcs.SUMMARY_KEYS)
+
+
+def test_egress_emitted_names_and_field_widths_are_clean(tmp_path):
+    """No emitted name names a person; no emitted field is per-sample sized."""
+    import pairwise_completeness_scan as pcs
+
+    pr = _single_pair_result(pcs, tmp_path, _MIRROR_00057_CELLS, prefix="egress")
+    _assert_egress_clean(pcs.TSV_COLUMNS, pr._asdict())
+    _assert_egress_clean(pcs.SUMMARY_KEYS, pcs.summarize("R", [pr]))
+
+
+def test_egress_assertion_catches_a_per_sample_field(tmp_path):
+    """NEGATIVE CONTROL — the SAME helper must FAIL on a polluted row.
+
+    A green assertion is evidence only if it has been seen to fail
+    (``feedback_green_assertion_needs_a_negative_control``).
+    """
+    import pairwise_completeness_scan as pcs
+
+    pr = _single_pair_result(pcs, tmp_path, _MIRROR_00057_CELLS, prefix="egressnc")
+    polluted = dict(pr._asdict())
+    polluted["sample_ids"] = ",".join(f"I{i}" for i in range(7313))
+
+    with pytest.raises(AssertionError) as exc:
+        _assert_egress_clean(pcs.TSV_COLUMNS, polluted)
+    assert "sample" in str(exc.value)
+
+    # ... and a long value under an innocuous NAME is caught by the width rule.
+    polluted2 = dict(pr._asdict())
+    polluted2["extra"] = "x" * 65
+    with pytest.raises(AssertionError) as exc2:
+        _assert_egress_clean(pcs.TSV_COLUMNS, polluted2)
+    assert "65 chars" in str(exc2.value)
+
+    # ... and a per-sample MAP hidden inside an aggregate-looking distribution
+    # is caught by the cardinality bound, not merely by the rendered width.
+    polluted3 = dict(pcs.summarize("R", [pr]))
+    polluted3["undefined_offset_histogram"] = {str(i): 1 for i in range(7313)}
+    with pytest.raises(AssertionError) as exc3:
+        _assert_egress_clean(pcs.SUMMARY_KEYS, polluted3)
+    assert "per-sample scale" in str(exc3.value)
+
+
+def test_no_summary_key_names_a_rate_or_prevalence():
+    """The summary reports COUNTS and FRACTIONS only — never an inferred rate.
+
+    The prevalence, the boundary width and the tail are OPEN questions. A key
+    called ``*_rate`` or ``*_prevalence`` would invite quoting one region as an
+    answer to them.
+    """
+    import pairwise_completeness_scan as pcs
+
+    for key in pcs.SUMMARY_KEYS:
+        low = key.lower()
+        for banned in ("rate", "prevalence", "estimate", "ceiling"):
+            assert banned not in low, f"summary key {key!r} contains {banned!r}"
+
+
+def test_write_tsv_header_equals_tsv_columns(tmp_path):
+    """The header written to disk EQUALS ``TSV_COLUMNS``, in order."""
+    import pairwise_completeness_scan as pcs
+
+    pr = _single_pair_result(pcs, tmp_path, _MIRROR_00057_CELLS, prefix="tsvhdr")
+    out = tmp_path / "pairs.tsv"
+    pcs.write_tsv([pr], out)
+
+    lines = out.read_text().splitlines()
+    assert tuple(lines[0].split("\t")) == pcs.TSV_COLUMNS
+    assert len(lines) == 2
+    values = lines[1].split("\t")
+    assert len(values) == len(pcs.TSV_COLUMNS)
+    row = dict(zip(pcs.TSV_COLUMNS, values))
+    assert row["del_vid"] == _DEL_VID_00057
+    assert row["undefined"] == "True"
+    assert row["offset"] == "1"
+    assert row["n_both_called"] == "7106"
+    assert row["del_carriers_lost"] == "87"
+
+
+def _fake_result(pcs, **overrides):
+    """A hand-built :class:`PairResult` for summary arithmetic (no genotypes)."""
+    base = dict(
+        region_id="R", del_index=0, del_vid="d0", del_chr="chr1", del_pos=1000,
+        del_ref_len=3, del_span_end=1002, partner_index=1, partner_vid="p1",
+        partner_pos=1003, offset=1, side="downstream", already_occluded=False,
+        pair_key="d0|p1", n_called_del=100, n_called_partner=100,
+        n_both_called=90, del_invariant=False, partner_invariant=False,
+        undefined=False, invariant_member="none", del_carriers_marginal=10,
+        del_carriers_retained=10, del_carriers_lost=0,
+        del_carriers_lost_frac=0.0, del_maf_marginal=0.05,
+        partner_carriers_marginal=8, partner_carriers_retained=8,
+        partner_carriers_lost=0, partner_carriers_lost_frac=0.0,
+        partner_maf_marginal=0.04, confounding_pattern="none",
+    )
+    base.update(overrides)
+    return pcs.PairResult(**base)
+
+
+def test_summarize_counts_every_number():
+    """Every summary number asserted on a hand-built result list."""
+    import pairwise_completeness_scan as pcs
+
+    results = [
+        # 1. a NEWLY DISCOVERED undefined pair at offset +1
+        _fake_result(pcs, pair_key="a|b", offset=1, already_occluded=False,
+                     undefined=True, del_invariant=True, invariant_member="deletion",
+                     del_carriers_lost=10, del_carriers_lost_frac=1.0,
+                     confounding_pattern="perfect_deletion_confounding"),
+        # 2. an ALREADY-OCCLUDED undefined pair, interior (offset 0)
+        _fake_result(pcs, pair_key="c|d", offset=0, side="interior",
+                     already_occluded=True, undefined=True, del_invariant=True,
+                     invariant_member="deletion", del_carriers_lost=10,
+                     del_carriers_lost_frac=1.0,
+                     confounding_pattern="perfect_deletion_confounding"),
+        # 3. a DEFINED pair deep in the partial-confounding tail
+        _fake_result(pcs, pair_key="e|f", offset=2, del_carriers_retained=5,
+                     del_carriers_lost=82, del_carriers_marginal=87,
+                     del_carriers_lost_frac=82 / 87, confounding_pattern="partial"),
+        # 4. a healthy DEFINED pair
+        _fake_result(pcs, pair_key="g|h", offset=-3, side="upstream"),
+        # 5. the OTHER ordered row of pair 1 (same pair_key, own offset)
+        _fake_result(pcs, pair_key="a|b", offset=-4, side="upstream",
+                     del_index=1, partner_index=0, already_occluded=False,
+                     undefined=True, del_invariant=True, invariant_member="deletion",
+                     del_carriers_lost=10, del_carriers_lost_frac=1.0,
+                     confounding_pattern="perfect_deletion_confounding"),
+    ]
+    s = pcs.summarize("m2_region_00057", results, window_bp=25, n_deletions=3)
+
+    assert set(s) == set(pcs.SUMMARY_KEYS)
+    assert s["region_id"] == "m2_region_00057"
+    assert s["window_bp"] == 25
+    assert s["n_deletions"] == 3
+    assert s["n_candidate_rows"] == 5
+    assert s["n_distinct_pairs"] == 4          # a|b counted ONCE
+    assert s["n_undefined_rows"] == 3          # rows 1, 2, 5
+    assert s["n_undefined_distinct_pairs"] == 2  # a|b and c|d
+    # Rows and pairs are DIFFERENT counts and neither may be quoted as the other.
+    assert s["n_undefined_rows"] != s["n_undefined_distinct_pairs"]
+
+
+def test_summarize_separates_already_occluded_from_newly_discovered():
+    """'Already covered by the posted rule' is separated from 'newly discovered'."""
+    import pairwise_completeness_scan as pcs
+
+    results = [
+        _fake_result(pcs, pair_key="a|b", offset=1, already_occluded=False,
+                     undefined=True, del_invariant=True, invariant_member="deletion"),
+        _fake_result(pcs, pair_key="c|d", offset=0, side="interior",
+                     already_occluded=True, undefined=True, del_invariant=True,
+                     invariant_member="deletion"),
+        _fake_result(pcs, pair_key="e|f", offset=4),  # defined
+    ]
+    s = pcs.summarize("R", results)
+
+    assert s["n_undefined_distinct_pairs"] == 2
+    assert s["n_undefined_already_occluded"] == 1
+    assert s["n_undefined_not_already_occluded"] == 1
+    # The split must be EXHAUSTIVE — no undefined pair may fall between them.
+    assert (
+        s["n_undefined_already_occluded"] + s["n_undefined_not_already_occluded"]
+        == s["n_undefined_distinct_pairs"]
+    )
+
+
+def test_summarize_offset_histogram_over_undefined_rows_only():
+    """The offset histogram is what supplies the EMPIRICAL boundary width.
+
+    It is taken over the UNDEFINED set only, per ROW (each row carries one
+    anchor-relative offset), so it sums to ``n_undefined_rows``. It is a
+    DISTRIBUTION, not a width: this task states no width.
+    """
+    import pairwise_completeness_scan as pcs
+
+    results = [
+        _fake_result(pcs, pair_key="a|b", offset=1, undefined=True,
+                     del_invariant=True, invariant_member="deletion"),
+        _fake_result(pcs, pair_key="c|d", offset=1, undefined=True,
+                     del_invariant=True, invariant_member="deletion"),
+        _fake_result(pcs, pair_key="e|f", offset=-2, undefined=True,
+                     side="upstream", partner_invariant=True,
+                     invariant_member="partner"),
+        _fake_result(pcs, pair_key="g|h", offset=7),   # DEFINED -> not counted
+    ]
+    s = pcs.summarize("R", results)
+
+    assert s["undefined_offset_histogram"] == {"-2": 1, "1": 2}
+    assert sum(s["undefined_offset_histogram"].values()) == s["n_undefined_rows"] == 3
+    assert list(s["undefined_offset_histogram"]) == ["-2", "1"]  # numeric order
+    assert "7" not in s["undefined_offset_histogram"]
+    # JSON-safe: keys are strings.
+    assert all(isinstance(k, str) for k in s["undefined_offset_histogram"])
+
+
+def test_summarize_defined_lost_frac_bins_and_tail():
+    """The DEFINED-row lost-frac distribution — the only view of a partial tail.
+
+    A DEFINED row can never carry ``lost_frac == 1.0`` (lost_frac 1.0 implies the
+    member is invariant, which implies undefined), which is why the top bin is
+    open at 1.
+    """
+    import pairwise_completeness_scan as pcs
+
+    results = [
+        _fake_result(pcs, pair_key="a|b", del_carriers_lost_frac=0.0),
+        _fake_result(pcs, pair_key="c|d", del_carriers_lost_frac=0.2),
+        _fake_result(pcs, pair_key="e|f", del_carriers_lost_frac=0.4),
+        _fake_result(pcs, pair_key="g|h", del_carriers_lost_frac=0.75),
+        _fake_result(pcs, pair_key="i|j", del_carriers_lost_frac=82 / 87),  # 0.9425
+        _fake_result(pcs, pair_key="k|l", del_carriers_lost_frac=0.995),
+        # an UNDEFINED row must NOT enter the defined-only bins
+        _fake_result(pcs, pair_key="m|n", undefined=True, del_invariant=True,
+                     invariant_member="deletion", del_carriers_lost_frac=1.0),
+        # the partner's gradient counts too: the bin uses max(del, partner)
+        _fake_result(pcs, pair_key="o|p", del_carriers_lost_frac=0.0,
+                     partner_carriers_lost_frac=0.93),
+    ]
+    s = pcs.summarize("R", results)
+
+    assert s["defined_carriers_lost_frac_bins"] == {
+        "0": 1,
+        "(0,0.25]": 1,
+        "(0.25,0.5]": 1,
+        "(0.5,0.9]": 1,
+        "(0.9,0.99]": 2,     # 0.9425 and 0.93 (the latter via the PARTNER's gradient)
+        "(0.99,1)": 1,
+    }
+    # Component-exact: the bins must sum to the DEFINED row count, never to the
+    # row count (feedback_aggregate_agreement_hides_component_errors).
+    assert sum(s["defined_carriers_lost_frac_bins"].values()) == 7  # 8 rows - 1 undefined
+    assert len(results) - 1 == 7
+    assert s["n_defined_lost_frac_ge_0p9"] == 3    # 0.9425, 0.995, 0.93
+    assert round(s["max_carriers_lost_frac_defined"], 6) == 0.995
+
+
+def test_pending_paste_exists_and_carries_the_harness_crosscheck():
+    """The in-perimeter block exists, is marker-delimited, and cross-checks 00057."""
+    paste = PROJECT_ROOT / ".planning" / "debug" / (
+        "260825-PENDING-PASTE-pairwise-completeness-sweep.md"
+    )
+    assert paste.exists(), f"missing PENDING PASTE: {paste}"
+    text = paste.read_text()
+    for needle in (
+        "--- PASTE FROM HERE ---",
+        "--- PASTE ENDS HERE ---",
+        "71048",
+        "871",
+        "20394741",
+        "20394743",
+        "occ_measure_sample.tsv",
+        "m2_region_00057",
+        "DISCARD ALL",
+    ):
+        assert needle in text, f"PENDING PASTE is missing {needle!r}"
+
+
+# --------------------------------------------------------------------------- #
+# The CLI — exercised END-TO-END in tmp_path. No perimeter, no network.        #
+# --------------------------------------------------------------------------- #
+
+def test_cli_single_region_reproduces_the_00057_oracles(tmp_path):
+    """One region, end to end, reproducing the T2 oracles through the CLI."""
+    import csv
+    import json
+
+    import pairwise_completeness_scan as pcs
+
+    base = _joint_table_bfile(tmp_path, _MIRROR_00057_CELLS, prefix="cli1")
+    out = tmp_path / "pairs.tsv"
+    summ = tmp_path / "summary.json"
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--region-id", "m2_region_00057",
+        "--chr", "15",
+        "--from-bp", "20394700",
+        "--to-bp", "20394800",
+        "--window-bp", "5",
+        "--out", str(out),
+        "--summary", str(summ),
+    ])
+    assert rc == 0
+    assert out.exists() and summ.exists()
+
+    rows = list(csv.DictReader(out.open(), delimiter="\t"))
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["region_id"] == "m2_region_00057"
+    assert row["del_vid"] == _DEL_VID_00057
+    assert row["partner_vid"] == _PARTNER_VID_00057
+    assert row["offset"] == "1"
+    assert row["undefined"] == "True"
+    assert row["already_occluded"] == "False"
+    assert int(row["n_both_called"]) == 7106
+    assert int(row["del_carriers_lost"]) == 87
+    assert row["confounding_pattern"] == "perfect_deletion_confounding"
+
+    payload = json.loads(summ.read_text())
+    assert set(payload) == {"m2_region_00057"}
+    s = payload["m2_region_00057"]
+    assert set(s) == set(pcs.SUMMARY_KEYS)
+    assert s["n_candidate_rows"] == 1
+    assert s["n_undefined_distinct_pairs"] == 1
+    assert s["n_undefined_not_already_occluded"] == 1
+    assert s["n_undefined_already_occluded"] == 0
+    assert s["undefined_offset_histogram"] == {"1": 1}
+    assert s["window_bp"] == 5
+    assert s["n_deletions"] == 1
+
+
+def _multi_region_bfile(tmp_path: Path, prefix: str = "cli2") -> Path:
+    """Two single-chromosome windows, each with one deletion + one partner."""
+    n = 16
+    return _write_bfile(
+        tmp_path,
+        codes_per_variant=[
+            [_CODE_HOM_A2] * 12 + [_CODE_HET] * 2 + [_CODE_MISSING] * 2,  # del r1
+            [_CODE_HOM_A2] * 10 + [_CODE_HET] * 6,                        # snp r1
+            [_CODE_HOM_A2] * 14 + [_CODE_HET] * 2,                        # del r2
+            [_CODE_HOM_A2] * 9 + [_CODE_HET] * 7,                         # snp r2
+        ],
+        n_samples=n,
+        prefix=prefix,
+        bim_rows=[
+            _bim_row("chr1", 1000, "ATG", "A"),   # span_end 1002
+            _bim_row("chr1", 1004, "T", "C"),     # offset +2
+            _bim_row("chr1", 5000, "AT", "A"),    # span_end 5001
+            _bim_row("chr1", 5002, "G", "A"),     # offset +1
+        ],
+    )
+
+
+def _regions_tsv(tmp_path: Path, name: str = "ld_regions.tsv") -> Path:
+    """A config/ld_regions.tsv-shaped file: 1-based cols 1/2/15/16."""
+    path = tmp_path / name
+    header = ["c%d" % i for i in range(1, 17)]
+    header[0], header[1] = "region_id", "chr"
+    header[14], header[15] = "window_start_grch38", "window_end_grch38"
+    rows = [header]
+    for rid, chrom, start, end in [("r1", "1", 990, 1010), ("r2", "chr1", 4990, 5010)]:
+        row = ["."] * 16
+        row[0], row[1], row[14], row[15] = rid, chrom, str(start), str(end)
+        rows.append(row)
+    path.write_text("".join("\t".join(r) + "\n" for r in rows))
+    return path
+
+
+def test_cli_multi_region_one_bim_pass(tmp_path, monkeypatch):
+    """N regions cost the SAME number of ``.bim`` opens as one — one streaming pass."""
+    import builtins
+    import csv
+    import json
+
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path)
+    regions = _regions_tsv(tmp_path)
+    bim = base.with_suffix(".bim")
+
+    real_open = builtins.open
+    counts = {"n": 0}
+
+    def counting_open(file, *args, **kwargs):
+        try:
+            if Path(file) == bim:
+                counts["n"] += 1
+        except TypeError:
+            pass
+        return real_open(file, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", counting_open)
+
+    def run(region_ids, tag):
+        counts["n"] = 0
+        out = tmp_path / f"pairs_{tag}.tsv"
+        summ = tmp_path / f"summary_{tag}.json"
+        rc = pcs.main([
+            "--bfile-prefix", str(base),
+            "--regions-tsv", str(regions),
+            "--region-ids", region_ids,
+            "--window-bp", "10",
+            "--out", str(out),
+            "--summary", str(summ),
+        ])
+        assert rc == 0
+        return counts["n"], out, summ
+
+    opens_one, _out1, _s1 = run("r1", "one")
+    opens_two, out2, summ2 = run("r1,r2", "two")
+
+    assert opens_two == opens_one, (
+        f".bim opens grew with region count ({opens_one} -> {opens_two}); "
+        "the .bim must be streamed ONCE for all windows"
+    )
+
+    rows = list(csv.DictReader(out2.open(), delimiter="\t"))
+    assert len(rows) == 2
+    assert {r["region_id"] for r in rows} == {"r1", "r2"}
+    assert {r["offset"] for r in rows} == {"2", "1"}
+
+    payload = json.loads(summ2.read_text())
+    assert set(payload) == {"r1", "r2"}
+    for s in payload.values():
+        assert set(s) == set(pcs.SUMMARY_KEYS)
+        assert s["n_candidate_rows"] == 1
+
+
+def test_cli_cache_variants_one_is_byte_identical(tmp_path):
+    """A MEMORY knob must not be a CORRECTNESS knob."""
+    import filecmp
+
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path, prefix="cli3")
+    regions = _regions_tsv(tmp_path, name="regions3.tsv")
+
+    outs = []
+    for tag, cache in (("dflt", None), ("one", "1")):
+        out = tmp_path / f"pairs_{tag}.tsv"
+        argv = [
+            "--bfile-prefix", str(base),
+            "--regions-tsv", str(regions),
+            "--region-ids", "r1,r2",
+            "--window-bp", "10",
+            "--out", str(out),
+        ]
+        if cache is not None:
+            argv += ["--cache-variants", cache]
+        assert pcs.main(argv) == 0
+        outs.append(out)
+
+    assert filecmp.cmp(outs[0], outs[1], shallow=False)
+    assert outs[0].read_text() == outs[1].read_text()
+
+
+def test_cli_missing_bfile_exits_nonzero_and_writes_no_partial_tsv(tmp_path, capsys):
+    """A missing component exits NON-ZERO, names the path, and writes NOTHING."""
+    import pairwise_completeness_scan as pcs
+
+    base = _joint_table_bfile(tmp_path, _MIRROR_00057_CELLS, prefix="cli4")
+    base.with_suffix(".bed").unlink()
+    out = tmp_path / "should_not_exist.tsv"
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--region-id", "R", "--chr", "15",
+        "--from-bp", "20394700", "--to-bp", "20394800",
+        "--out", str(out),
+    ])
+    assert rc != 0
+    assert not out.exists(), "a partial TSV was written despite a missing input"
+    captured = capsys.readouterr()
+    assert ".bed" in (captured.err + captured.out)
+    assert str(base.with_suffix(".bed")) in (captured.err + captured.out)
+
+
+def test_cli_help_mentions_measurement_window(capsys):
+    """``--help`` exits 0 and says ``--window-bp`` is a MEASUREMENT window."""
+    import pairwise_completeness_scan as pcs
+
+    with pytest.raises(SystemExit) as exc:
+        pcs.main(["--help"])
+    assert exc.value.code == 0
+    text = capsys.readouterr().out
+    assert "MEASUREMENT window" in text
+    assert "not a threshold" in text
