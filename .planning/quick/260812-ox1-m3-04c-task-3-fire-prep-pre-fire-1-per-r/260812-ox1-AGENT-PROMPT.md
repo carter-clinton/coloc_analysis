@@ -36,6 +36,14 @@ R6. The only files you may create: /tmp/region1_only.tsv, /tmp/stageB.tsv,
     /home/jupyter/fire_gate_stageC_<date>.json, and the gate's working copies
     inside /home/jupyter/native_ld_scratch/ (the panel-TSV snapshot, the
     per-region occlusion-manifest copy, and the downloaded region-1 .npz).
+    ALSO: /home/jupyter/occ_measure/ and the MEASUREMENT-SWEEP outputs written
+    inside it — the row-basis, site-basis and pairwise-completeness sweep
+    TSV/JSON files, and the small plink working files of the pairwise-complete
+    falsifier (its extract lists, .snplist, .ld.bin, .log and .nosex).
+    (added 2026-08-25, quick-260825-qpf: this RECORDS an allowance already
+    exercised with Carter's explicit go from 2026-08-19 onward — three runbooks
+    cite "R6's occ_measure/ allowance" and R6 did not say it. It grants no new
+    directory and no new deletion right.)
     You may not edit repo files. You may not fill the PRE-FIRE 1b signature
     lines (Carter's alone).
     ONE NARROW DELETION EXCEPTION (the only one that exists): you may delete

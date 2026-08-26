@@ -2405,3 +2405,152 @@ def test_summarize_requires_its_denominators():
     s = pcs.summarize("R", [], n_deletions=1, n_candidates_edge_clipped=0)
     assert s["n_deletions"] == 1
     assert s["n_candidate_rows"] == 0
+
+
+# =========================================================================== #
+# quick-260825-qpf — T3: the plink PAIRWISE-COMPLETE FALSIFIER in the runbook, #
+# and the R6 governance amendment                                             #
+# =========================================================================== #
+
+_PENDING_PASTE = PROJECT_ROOT / ".planning" / "debug" / (
+    "260825-PENDING-PASTE-pairwise-completeness-sweep.md"
+)
+
+#: The three step headings whose ORDER is the load-bearing property: the
+#: instrument's premise must be tested BEFORE the harness cross-check and BEFORE
+#: any number is generated.
+_STEP_FALSIFIER = "=== STEP 1 — THE plink PAIRWISE-COMPLETE FALSIFIER"
+_STEP_CROSSCHECK = "=== STEP 2 — THE 00057 HARNESS CROSS-CHECK"
+_STEP_SWEEP = "=== STEP 3 — THE SWEEP"
+
+#: The three runbooks that cite "R6's occ_measure/ allowance". Two of the three
+#: WRAP the citation across a newline, so a one-line grep finds only ONE of them
+#: (MEASURED). Every check below is newline-tolerant.
+_R6_CITING_RUNBOOKS = (
+    ".planning/debug/260819-PENDING-PASTE-2-samepos-and-chain.md",
+    ".planning/debug/260819-PENDING-PASTE-3-site-basis-sweep.md",
+    ".planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md",
+)
+
+_OX1_AGENT_PROMPT = PROJECT_ROOT / ".planning" / "quick" / (
+    "260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r"
+) / "260812-ox1-AGENT-PROMPT.md"
+
+
+def test_pending_paste_carries_the_falsifier_tokens():
+    """The falsifier's load-bearing tokens are all present in the runbook.
+
+    RED: the paste had no falsifier at all. These are the tokens that make the
+    experiment reproducible from the paste alone — the three competing hypotheses,
+    the production LD modifiers, and the PINNED plink build the VM must be running.
+    """
+    text = _PENDING_PASTE.read_text()
+    for needle in (
+        "pairwise-complete",
+        "mean-imputation",
+        "listwise",
+        "--write-snplist",
+        "--mac 1",
+        "--nonfounders",
+        "--keep-allele-order",
+        "--extract",
+        "plink1.9 --version",
+        "v1.90b7.2",
+        "DISCARD THE SWEEP",
+        "founder",
+        ".snplist",
+        "retention",
+    ):
+        assert needle in text, f"PENDING PASTE is missing the falsifier token {needle!r}"
+
+
+def test_pending_paste_runs_the_falsifier_before_the_crosscheck_and_the_sweep():
+    """ORDER IS THE POINT: falsify the premise BEFORE producing any number.
+
+    A falsifier placed after the sweep would be a post-hoc rationalisation. RED:
+    STEP 1 was the 00057 cross-check and no falsifier existed.
+
+    Every pre-existing needle must survive the rewrite — the cross-check and the
+    sweep are MOVED and RENUMBERED, never dropped.
+    """
+    text = _PENDING_PASTE.read_text()
+    for heading in (_STEP_FALSIFIER, _STEP_CROSSCHECK, _STEP_SWEEP):
+        assert heading in text, f"missing step heading {heading!r}"
+    assert (
+        text.index(_STEP_FALSIFIER)
+        < text.index(_STEP_CROSSCHECK)
+        < text.index(_STEP_SWEEP)
+    ), "the falsifier must come BEFORE the cross-check, which comes BEFORE the sweep"
+
+    for needle in (
+        "--- PASTE FROM HERE ---",
+        "--- PASTE ENDS HERE ---",
+        "71048",
+        "871",
+        "20394741",
+        "20394743",
+        "occ_measure_sample.tsv",
+        "m2_region_00057",
+        "DISCARD ALL",
+    ):
+        assert needle in text, f"PENDING PASTE lost the pre-existing needle {needle!r}"
+
+    # No orphaned pointer at the OLD step numbering: the STEP 1 consequence must
+    # forbid BOTH later steps by name. NEWLINE-TOLERANT — the sentence wraps in
+    # the rendered runbook, and pinning the line break would be pinning a proxy
+    # (``feedback_scope_a_guard_to_the_property_not_a_proxy``).
+    import re
+
+    assert "Do not skip STEP 1." in text
+    assert re.search(r"Do NOT run STEP 2\.\s+Do\s+NOT run STEP 3\.", text), (
+        "STEP 1's discard consequence must name BOTH STEP 2 and STEP 3"
+    )
+
+
+def test_pending_paste_no_longer_claims_it_calls_no_plink():
+    """NEGATIVE NEEDLE — a retracted claim must be GONE, not merely contradicted.
+
+    RED: ``"This sweep calls no plink at all"`` appeared TWICE (MEASURED) — once in
+    the header prose and once in the PATH bullet, where it demoted the per-shell
+    ``export PATH="$HOME/bin:$PATH"`` off the critical path. STEP 1 calls plink1.9
+    three times, so both occurrences are false and the PATH export is REQUIRED.
+    """
+    text = _PENDING_PASTE.read_text()
+    assert "calls no plink at all" not in text
+    assert 'export PATH="$HOME/bin:$PATH"' in text
+    assert "REQUIRED FIRST ACTION" in text
+
+
+def test_r6_records_the_occ_measure_allowance_and_all_three_runbooks_cite_it():
+    """The rule and its citations must AGREE — a cited rule that does not exist
+    is an unenforceable permission, and agents act on the citation.
+
+    RED: ``grep -c occ_measure`` on ``260812-ox1-AGENT-PROMPT.md`` was 0 (MEASURED)
+    while THREE runbooks cited "R6's occ_measure/ allowance".
+
+    The assertion is scoped to the ``^R6.`` ... ``^R7.`` BLOCK, not the whole file
+    (``feedback_scope_a_guard_to_the_property_not_a_proxy``): the property is that
+    R6 ITSELF names the directory, and a mention anywhere else in the file would
+    satisfy a whole-file grep without satisfying the property.
+    """
+    import re
+
+    text = _OX1_AGENT_PROMPT.read_text()
+    match = re.search(r"^R6\.(.*?)^R7\.", text, re.S | re.M)
+    assert match, "could not locate the R6 block in the ox1 AGENT-PROMPT"
+    block = match.group(1)
+    assert "occ_measure" in block, (
+        "R6 still does not name /home/jupyter/occ_measure/, yet three runbooks "
+        "cite 'R6's occ_measure/ allowance'"
+    )
+    assert "2026-08-25" in block and "quick-260825-qpf" in block, (
+        "the R6 addition must carry its dated provenance"
+    )
+
+    for rel in _R6_CITING_RUNBOOKS:
+        runbook = (PROJECT_ROOT / rel).read_text()
+        # NEWLINE-TOLERANT: two of the three wrap the citation across a line break,
+        # so a naive one-line grep finds only ONE of them (MEASURED).
+        assert re.search(r"R6's\s+occ_measure/", runbook), (
+            f"{rel} no longer cites R6's occ_measure/ allowance"
+        )
