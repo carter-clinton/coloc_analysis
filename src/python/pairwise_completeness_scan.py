@@ -1158,17 +1158,92 @@ def summarize(
 # CLI                                                                         #
 # =========================================================================== #
 
-#: 0-based column indices in ``config/ld_regions.tsv`` (1-based 1 / 2 / 15 / 16).
+#: 0-based column indices in ``config/ld_regions.tsv``
+#: (1-based 1 / 2 / 7 / 15 / 16).
+#:
+#: ⚠ THE MANIFEST IS KEYED ON ``(region_id x ancestry)``, NOT on ``region_id``
+#: alone: 553 lines = 1 header + 276 region_ids x {AFR, EUR} = 552 data rows.
+#: Reading it ancestry-BLIND returns EVERY window TWICE, which doubles the
+#: ``.bim`` rows, quadruples the candidate pairs and — with the driver's
+#: last-wins ``summaries`` dict against an accumulating ``all_results`` —
+#: inflates the emitted row count by 8x. That is exactly what happened to the
+#: 21-region STEP 3 sweep of 2026-08-26; see
+#: ``.planning/debug/260826-PCS-ancestry-blind-manifest-read-8x-duplication-and-the-prereg-prediction.md``.
 _REGIONS_TSV_ID_COL = 0
 _REGIONS_TSV_CHR_COL = 1
+_REGIONS_TSV_ANCESTRY_COL = 6
 _REGIONS_TSV_START_COL = 14
 _REGIONS_TSV_END_COL = 15
 
+#: The ancestry the scanner reads when none is named. LOAD-BEARING: the
+#: already-written STEP 3 sweep command in
+#: ``.planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md`` passes
+#: NO ``--ancestry`` token, and the cohort it scans is ``afr_cohort``. Pinned by
+#: ``test_pending_paste_step3_carries_no_ancestry_flag_so_the_default_is_load_bearing``.
+DEFAULT_ANCESTRY = "AFR"
 
-def _read_regions_tsv(path: "str | Path", region_ids: "list[str] | None"):
+
+def _tsv_field(parts: "list[str]", index: int) -> str:
+    """Return ``parts[index]`` stripped, or ``""`` if the row is too short.
+
+    A NAMED, MODULE-LEVEL function rather than an inline expression so it can be
+    unit-tested APART from :func:`_read_regions_tsv`'s row-length guard, which
+    masks it: ``_REGIONS_TSV_ANCESTRY_COL`` (6) is less than
+    ``_REGIONS_TSV_END_COL`` (15), so today every short row is already dropped
+    before column 6 is touched. An inline expression would be
+    untestable-by-construction and any test routed through the parser would be a
+    FALSE INVARIANT — green whether or not the bounds tolerance exists. See
+    ``test_tsv_field_is_bounds_tolerant_standalone`` and its companion
+    ``test_read_regions_tsv_length_guard_masks_the_accessor_so_tsv_field_is_tested_alone``.
+    """
+    return parts[index].strip() if index < len(parts) else ""
+
+
+def _matches_ancestry(row_value, ancestry) -> bool:
+    """The manifest ancestry predicate, MIRRORED from production.
+
+    The contract is ``run_native_ld_panel._filter_ancestry``
+    (``src/python/run_native_ld_panel.py``), which every AoU LD-panel run already
+    uses to split this same manifest into its AFR and EUR halves::
+
+        [r for r in regions
+         if str(r.get("ancestry", "")).upper() == ancestry.upper()]
+
+    Two properties of that contract are reproduced deliberately:
+
+    * ``str(...)`` on the row value, so a missing/None/NaN cell yields a string
+      that matches no non-empty ancestry and the row is DROPPED — it never
+      raises (the fail-safe shape).
+    * NO ``.strip()``. Production does not strip, so ``"  AFR  "`` does NOT match
+      ``"AFR"`` there. Whitespace tolerance in this module lives one layer UP, in
+      :func:`_tsv_field`, which strips the cell before this predicate sees it —
+      the composite parse is tolerant while the predicate stays a byte-faithful
+      mirror. Putting the ``.strip()`` here instead would break the mirror on
+      exactly one of the enforcer's 16 cases (MEASURED, quick-260826-qq9).
+
+    Enforcer: ``test_ancestry_predicate_agrees_with_the_production_filter_contract``
+    ast-extracts ``_filter_ancestry``'s SOURCE at call time and compares the two
+    over a case table. It is a SYMBOL pin, not a whole-file SHA pin.
+    """
+    return str(row_value).upper() == str(ancestry).upper()
+
+
+def _read_regions_tsv(
+    path: "str | Path",
+    region_ids: "list[str] | None",
+    *,
+    ancestry: str = DEFAULT_ANCESTRY,
+):
     """Parse a ``config/ld_regions.tsv``-shaped manifest into window specs.
 
-    Rows whose start/end columns are not integers (e.g. a header) are skipped.
+    The manifest is keyed on ``(region_id x ancestry)``, so ONLY rows matching
+    ``ancestry`` (1-based column 7) are returned — see
+    :data:`_REGIONS_TSV_ANCESTRY_COL`. Rows whose start/end columns are not
+    integers (e.g. a header) are skipped.
+
+    ``seen`` accumulates ONLY rows that pass the ancestry filter, so a
+    ``region_ids`` entry that exists only in the OTHER ancestry raises the
+    ``region ids not found in`` error rather than being silently dropped.
     """
     wanted = set(region_ids) if region_ids else None
     windows = []
@@ -1185,6 +1260,8 @@ def _read_regions_tsv(path: "str | Path", region_ids: "list[str] | None"):
             end_bp = int(parts[_REGIONS_TSV_END_COL])
         except ValueError:
             continue  # header or a non-window row
+        if not _matches_ancestry(_tsv_field(parts, _REGIONS_TSV_ANCESTRY_COL), ancestry):
+            continue
         if wanted is not None and region_id not in wanted:
             continue
         windows.append((region_id, parts[_REGIONS_TSV_CHR_COL].strip(), start_bp, end_bp))
@@ -1192,7 +1269,11 @@ def _read_regions_tsv(path: "str | Path", region_ids: "list[str] | None"):
     if wanted is not None:
         missing = sorted(wanted - seen)
         if missing:
-            raise ValueError(f"region ids not found in {path}: {missing}")
+            # The ancestry is named because the id may well BE in the file, in
+            # the OTHER ancestry — without it the message would be misleading.
+            raise ValueError(
+                f"region ids not found in {path} for ancestry {ancestry!r}: {missing}"
+            )
     return windows
 
 
@@ -1226,11 +1307,24 @@ def _build_parser() -> argparse.ArgumentParser:
         "--regions-tsv", dest="regions_tsv", type=Path,
         help=(
             "multi-region mode: a config/ld_regions.tsv-shaped manifest "
-            "(1-based cols 1 region_id, 2 chr, 15 window_start, 16 window_end). "
-            "ALL windows are served from ONE streaming .bim pass."
+            "(1-based cols 1 region_id, 2 chr, 7 ancestry, 15 window_start, "
+            "16 window_end). The manifest is keyed on (region_id x ancestry) — "
+            "276 ids x {AFR, EUR} = 552 data rows — so rows are selected by "
+            "--ancestry as well as by id. ALL windows are served from ONE "
+            "streaming .bim pass."
         ),
     )
     parser.add_argument("--region-ids", dest="region_ids", help="comma-separated subset of --regions-tsv region ids")
+    parser.add_argument(
+        "--ancestry", dest="ancestry", default=DEFAULT_ANCESTRY,
+        help=(
+            "which ancestry's windows to read from --regions-tsv (1-based "
+            "column 7; matched case-insensitively, exactly as "
+            "run_native_ld_panel._filter_ancestry does). The manifest is keyed "
+            "on (region_id x ancestry), so reading it BLIND returns every window "
+            f"TWICE and silently doubles every row-basis count. Default {DEFAULT_ANCESTRY}."
+        ),
+    )
     parser.add_argument(
         "--window-bp", dest="window_bp", type=int, default=DEFAULT_WINDOW_BP,
         help=(
@@ -1280,7 +1374,9 @@ def main(argv: "list[str] | None" = None) -> int:
                 if args.region_ids
                 else None
             )
-            windows = _read_regions_tsv(args.regions_tsv, region_ids)
+            windows = _read_regions_tsv(
+                args.regions_tsv, region_ids, ancestry=args.ancestry
+            )
         elif all(v is not None for v in (args.region_id, args.chrom, args.from_bp, args.to_bp)):
             windows = [(args.region_id, args.chrom, args.from_bp, args.to_bp)]
         else:

@@ -1738,16 +1738,25 @@ def _multi_region_bfile(tmp_path: Path, prefix: str = "cli2") -> Path:
     )
 
 
-def _regions_tsv(tmp_path: Path, name: str = "ld_regions.tsv") -> Path:
-    """A config/ld_regions.tsv-shaped file: 1-based cols 1/2/15/16."""
+def _regions_tsv(
+    tmp_path: Path, name: str = "ld_regions.tsv", ancestry: str = "AFR"
+) -> Path:
+    """A config/ld_regions.tsv-shaped file: 1-based cols 1/2/7/15/16.
+
+    Column 7 (0-based 6) is ``ancestry``. The real manifest is keyed on
+    ``(region_id x ancestry)`` — 276 ids x {AFR, EUR} — and the scanner reads it
+    on that key (quick-260826-qq9), so a fixture that left column 7 as ``"."``
+    would match no ancestry and select nothing.
+    """
     path = tmp_path / name
     header = ["c%d" % i for i in range(1, 17)]
-    header[0], header[1] = "region_id", "chr"
+    header[0], header[1], header[6] = "region_id", "chr", "ancestry"
     header[14], header[15] = "window_start_grch38", "window_end_grch38"
     rows = [header]
     for rid, chrom, start, end in [("r1", "1", 990, 1010), ("r2", "chr1", 4990, 5010)]:
         row = ["."] * 16
-        row[0], row[1], row[14], row[15] = rid, chrom, str(start), str(end)
+        row[0], row[1], row[6] = rid, chrom, ancestry
+        row[14], row[15] = str(start), str(end)
         rows.append(row)
     path.write_text("".join("\t".join(r) + "\n" for r in rows))
     return path
@@ -2134,16 +2143,23 @@ def test_no_tie_flag_when_the_minor_allele_is_unambiguous(tmp_path):
 # Nothing here changes what the scanner DECIDES. It changes what it REPORTS.   #
 # =========================================================================== #
 
-def _region_tsv(tmp_path: Path, specs, name: str = "regions_qpf.tsv") -> Path:
-    """A ``config/ld_regions.tsv``-shaped file from ``[(id, chr, start, end)]``."""
+def _region_tsv(
+    tmp_path: Path, specs, name: str = "regions_qpf.tsv", ancestry: str = "AFR"
+) -> Path:
+    """A ``config/ld_regions.tsv``-shaped file from ``[(id, chr, start, end)]``.
+
+    Column 7 (0-based 6) carries ``ancestry`` — the real manifest's second key
+    (quick-260826-qq9); see :func:`_regions_tsv`.
+    """
     path = tmp_path / name
     header = ["c%d" % i for i in range(1, 17)]
-    header[0], header[1] = "region_id", "chr"
+    header[0], header[1], header[6] = "region_id", "chr", "ancestry"
     header[14], header[15] = "window_start_grch38", "window_end_grch38"
     rows = [header]
     for rid, chrom, start, end in specs:
         row = ["."] * 16
-        row[0], row[1], row[14], row[15] = rid, chrom, str(start), str(end)
+        row[0], row[1], row[6] = rid, chrom, ancestry
+        row[14], row[15] = str(start), str(end)
         rows.append(row)
     path.write_text("".join("\t".join(r) + "\n" for r in rows))
     return path
@@ -2554,3 +2570,360 @@ def test_r6_records_the_occ_measure_allowance_and_all_three_runbooks_cite_it():
         assert re.search(r"R6's\s+occ_measure/", runbook), (
             f"{rel} no longer cites R6's occ_measure/ allowance"
         )
+
+
+# =========================================================================== #
+# quick-260826-qq9 — T1: THE MANIFEST IS KEYED ON (region_id x ancestry)      #
+#                                                                             #
+# ``config/ld_regions.tsv`` is 553 lines = 1 header + 276 region_ids x         #
+# {AFR, EUR}. The shipped ``_read_regions_tsv`` read 0-based columns 0/1/14/15 #
+# ONLY, so it returned EVERY window TWICE. That doubled the ``.bim`` rows,     #
+# quadrupled the candidate pairs, and — with the driver's last-wins            #
+# ``summaries`` dict against an accumulating ``all_results`` — inflated the    #
+# 21-region STEP 3 sweep's row-basis counts by 8x.                             #
+#                                                                             #
+# Provenance: .planning/debug/260826-PCS-ancestry-blind-manifest-read-8x-      #
+# duplication-and-the-prereg-prediction.md                                     #
+# =========================================================================== #
+
+#: The REAL manifest. These tests pin the instrument against the file it will
+#: actually be run on, not only against synthetic fixtures — the defect was
+#: invisible to every synthetic fixture in this file because none of them
+#: carried the ancestry column at all.
+_REAL_REGIONS_TSV = PROJECT_ROOT / "config" / "ld_regions.tsv"
+
+#: READ-ONLY. Parsed with ``ast`` by the cross-module contract enforcer below;
+#: never imported, never written.
+_RUN_NATIVE_LD_PANEL = PROJECT_ROOT / "src" / "python" / "run_native_ld_panel.py"
+
+
+def _ancestry_regions_tsv(tmp_path: Path, specs, name: str = "regions_anc.tsv") -> Path:
+    """A ``config/ld_regions.tsv``-shaped file that CARRIES the ancestry column.
+
+    ``specs`` is ``[(region_id, chrom, start, end, ancestry)]``. ``ancestry`` is
+    written at 0-based index 6 (1-based column 7), which is where the real
+    manifest carries it.
+    """
+    path = tmp_path / name
+    header = ["c%d" % i for i in range(1, 17)]
+    header[0], header[1], header[6] = "region_id", "chr", "ancestry"
+    header[14], header[15] = "window_start_grch38", "window_end_grch38"
+    rows = [header]
+    for rid, chrom, start, end, ancestry in specs:
+        row = ["."] * 16
+        row[0], row[1], row[6] = rid, chrom, ancestry
+        row[14], row[15] = str(start), str(end)
+        rows.append(row)
+    path.write_text("".join("\t".join(r) + "\n" for r in rows))
+    return path
+
+
+def test_read_regions_tsv_reads_the_real_manifest_on_region_id_x_ancestry():
+    """THE DIRECT PIN OF THE DEFECT, against the REAL file.
+
+    553 lines = 1 header + 276 x 2. An ancestry-keyed read returns 276 windows
+    per ancestry with 276 DISTINCT ids. The shipped code returned 552 for both,
+    every id twice.
+    """
+    import pairwise_completeness_scan as pcs
+
+    lines = _REAL_REGIONS_TSV.read_text().splitlines()
+    assert len(lines) == 553, (
+        f"config/ld_regions.tsv is {len(lines)} lines, expected 1 header + 276 x 2"
+    )
+
+    afr = pcs._read_regions_tsv(_REAL_REGIONS_TSV, None)
+    eur = pcs._read_regions_tsv(_REAL_REGIONS_TSV, None, ancestry="EUR")
+
+    assert len(afr) == 276, f"AFR read returned {len(afr)} windows, not 276"
+    assert len(eur) == 276, f"EUR read returned {len(eur)} windows, not 276"
+    assert len({w[0] for w in afr}) == 276, "AFR windows carry a repeated region_id"
+    assert len({w[0] for w in eur}) == 276, "EUR windows carry a repeated region_id"
+    assert {w[0] for w in afr} == {w[0] for w in eur}
+
+
+def test_read_regions_tsv_real_manifest_subset_is_n_windows_not_2n():
+    """A ``--region-ids`` subset of N ids yields EXACTLY N windows, never 2N."""
+    import pairwise_completeness_scan as pcs
+
+    ids = ["m2_region_00001", "m2_region_00120__sub03", "m2_region_00149"]
+    got = pcs._read_regions_tsv(_REAL_REGIONS_TSV, ids)
+
+    assert len(got) == 3, f"3 requested ids returned {len(got)} windows"
+    assert {w[0] for w in got} == set(ids)
+    assert len({w[0] for w in got}) == 3
+
+
+def test_read_regions_tsv_returns_the_requested_ancestrys_real_bounds():
+    """A COUNT alone cannot prove the RIGHT row was kept — pin the BOUNDS.
+
+    ``m2_region_00120__sub03`` is one of the 123 ids whose AFR window is STRICTLY
+    INSIDE its EUR window (EUR pads +/-2 Mb). Because the file order is
+    AFR-then-EUR per region, an ancestry-blind read that de-duplicated by
+    last-wins would have kept the EUR bounds for BOTH — so this assertion
+    separates "the right number of rows" from "the right rows".
+    """
+    import pairwise_completeness_scan as pcs
+
+    afr = {w[0]: (w[2], w[3]) for w in pcs._read_regions_tsv(_REAL_REGIONS_TSV, None)}
+    eur = {
+        w[0]: (w[2], w[3])
+        for w in pcs._read_regions_tsv(_REAL_REGIONS_TSV, None, ancestry="EUR")
+    }
+
+    assert afr["m2_region_00120__sub03"] == (72941765, 83784838)
+    assert eur["m2_region_00120__sub03"] == (70941765, 85784838)
+    # AFR strictly inside EUR — the reason the 8x duplication was NON-UNIFORM.
+    assert eur["m2_region_00120__sub03"][0] < afr["m2_region_00120__sub03"][0]
+    assert afr["m2_region_00120__sub03"][1] < eur["m2_region_00120__sub03"][1]
+    # ...and one of the 153 ids whose bounds are IDENTICAL in both ancestries.
+    assert afr["m2_region_00001"] == eur["m2_region_00001"] == (10000, 13506933)
+
+
+def test_read_regions_tsv_selects_the_ancestrys_bounds_on_a_synthetic_manifest(tmp_path):
+    """Same property, hermetically: the default selects AFR, ``--ancestry EUR``
+    selects the wider EUR row, and NEITHER returns both."""
+    import pairwise_completeness_scan as pcs
+
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [
+            ("r1", "1", 1000, 2000, "AFR"),
+            ("r1", "1", 500, 2500, "EUR"),
+            ("r2", "chr1", 5000, 6000, "AFR"),
+            ("r2", "chr1", 4500, 6500, "EUR"),
+        ],
+    )
+
+    afr = pcs._read_regions_tsv(regions, None)
+    eur = pcs._read_regions_tsv(regions, None, ancestry="EUR")
+
+    assert afr == [("r1", "1", 1000, 2000), ("r2", "chr1", 5000, 6000)]
+    assert eur == [("r1", "1", 500, 2500), ("r2", "chr1", 4500, 6500)]
+    # lowercase is accepted, exactly as production's uppercase match accepts it
+    assert pcs._read_regions_tsv(regions, None, ancestry="afr") == afr
+
+
+def test_default_ancestry_is_afr_in_the_module_and_in_the_parser():
+    """The default is LOAD-BEARING: it is what makes the already-written,
+    UNMODIFIED STEP 3 sweep command correct (see the companion test below)."""
+    import pairwise_completeness_scan as pcs
+
+    assert pcs.DEFAULT_ANCESTRY == "AFR"
+    actions = [a for a in pcs._build_parser()._actions if a.dest == "ancestry"]
+    assert len(actions) == 1, "--ancestry is missing from the parser"
+    assert actions[0].default == "AFR"
+
+
+def test_pending_paste_step3_carries_no_ancestry_flag_so_the_default_is_load_bearing():
+    """THE PASTE IS NOT EDITED — the DEFAULT is what makes it correct.
+
+    ``.planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md`` STEP 3
+    invokes the scanner with ``--regions-tsv config/ld_regions.tsv`` and NO
+    ``--ancestry`` token. That command is correct UNMODIFIED if and only if the
+    default is ``AFR`` — the AFR cohort is what ``/home/jupyter/afr_cohort``
+    holds. Both halves are asserted here, because either alone is satisfiable by
+    the wrong code: the token count is green against the shipped (defective)
+    scanner, and the default alone says nothing about the paste.
+    """
+    import pairwise_completeness_scan as pcs
+
+    text = _PENDING_PASTE.read_text()
+    assert "=== STEP 3" in text, "the STEP 3 block is gone from the PENDING PASTE"
+    assert '"--regions-tsv", "config/ld_regions.tsv"' in text
+    assert text.count("--ancestry") == 0, (
+        "the PENDING PASTE now names --ancestry; it is a received/pending runbook "
+        "and this plan does not edit it"
+    )
+    assert pcs.DEFAULT_ANCESTRY == "AFR", (
+        "the unmodified STEP 3 command passes no --ancestry, so the default IS "
+        "the ancestry the sweep measures"
+    )
+
+
+def test_ancestry_predicate_agrees_with_the_production_filter_contract():
+    """The ancestry predicate is MIRRORED from production, never invented.
+
+    ``run_native_ld_panel._filter_ancestry`` is the contract every AoU LD-panel
+    run already uses to split ``config/ld_regions.tsv`` into its AFR and EUR
+    halves. The scanner MUST agree with it exactly, or the instrument measures a
+    different row set than the panel it is measuring.
+
+    The contract is read AT CALL TIME: parse ``run_native_ld_panel.py`` with
+    ``ast``, take ONLY the ``_filter_ancestry`` FunctionDef via
+    ``ast.get_source_segment``, and ``exec`` it in an EMPTY namespace. The module
+    is never imported — importing would pull a heavy dependency set AND could be
+    served from a stale ``.pyc``
+    (``feedback_negative_control_defeated_by_bytecode_cache``). This is a SYMBOL
+    pin, not a fixed-SHA whole-file pin
+    (``feedback_fixed_sha_whole_file_pin_is_a_timebomb``): it survives every edit
+    to that file except one that changes THIS predicate.
+
+    NOTE ON WHITESPACE — the property is scoped deliberately. Production does NOT
+    strip: ``"  AFR  ".upper() != "AFR"``, so a whitespace-padded manifest cell is
+    DROPPED. ``_matches_ancestry`` mirrors that exactly. Whitespace tolerance in
+    the scanner lives one layer UP, in ``_tsv_field``, which strips the cell
+    before the predicate ever sees it — so the composite parse is tolerant while
+    the predicate stays a byte-faithful mirror. Putting the ``.strip()`` in the
+    predicate instead would make this enforcer FAIL on exactly one of the 16
+    cases below (MEASURED).
+    """
+    import ast
+
+    import pairwise_completeness_scan as pcs
+
+    source = _RUN_NATIVE_LD_PANEL.read_text()
+    tree = ast.parse(source)
+    fn = next(
+        (
+            n
+            for n in ast.walk(tree)
+            if isinstance(n, ast.FunctionDef) and n.name == "_filter_ancestry"
+        ),
+        None,
+    )
+    assert fn is not None, (
+        "run_native_ld_panel._filter_ancestry is GONE — the scanner's ancestry "
+        "predicate no longer has a production contract to mirror"
+    )
+    segment = ast.get_source_segment(source, fn)
+    assert segment is not None and segment.lstrip().startswith("def _filter_ancestry")
+    namespace: dict = {}
+    exec(compile(segment, "<_filter_ancestry contract>", "exec"), namespace)
+    production = namespace["_filter_ancestry"]
+
+    row_values = ["AFR", "afr", "  AFR  ", "EUR", "eur", "", ".", "nan"]
+    disagreements = []
+    for row_value in row_values:
+        for ancestry in ("AFR", "EUR"):
+            expected = len(production([{"ancestry": row_value}], ancestry)) == 1
+            actual = pcs._matches_ancestry(row_value, ancestry)
+            if actual is not expected:
+                disagreements.append((row_value, ancestry, expected, actual))
+    assert not disagreements, (
+        "_matches_ancestry diverges from run_native_ld_panel._filter_ancestry on "
+        f"(row_value, ancestry, production, scanner): {disagreements}"
+    )
+
+    # the predicate must be a BOOL, not a truthy list, so the comparison above is
+    # an identity comparison and not an accidental pass on `[] == False`
+    assert pcs._matches_ancestry("AFR", "AFR") is True
+    assert pcs._matches_ancestry("EUR", "AFR") is False
+
+    # the FAIL-SAFE shape: a MISSING ancestry yields "" and is DROPPED, never raised
+    assert production([{}], "AFR") == []
+    assert pcs._matches_ancestry("", "AFR") is False
+
+    # non-str row values go through str() on BOTH sides, never raise
+    for odd in (None, float("nan"), 0):
+        assert pcs._matches_ancestry(odd, "AFR") is (
+            len(production([{"ancestry": odd}], "AFR")) == 1
+        )
+
+
+def test_region_only_in_the_unrequested_ancestry_raises_naming_the_id(tmp_path):
+    """A LOUD ERROR, never a silent drop.
+
+    ``seen`` accumulates ONLY rows that pass the ancestry filter, so asking for a
+    region that exists only as EUR while reading AFR hits the pre-existing
+    ``region ids not found in`` error instead of quietly returning an empty
+    window list.
+    """
+    import pairwise_completeness_scan as pcs
+
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("r1", "1", 1000, 2000, "AFR"), ("eur_only", "1", 3000, 4000, "EUR")],
+        name="eur_only.tsv",
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        pcs._read_regions_tsv(regions, ["r1", "eur_only"])
+    assert "eur_only" in str(excinfo.value)
+
+    # ...and it IS reachable with --ancestry EUR, so the raise is about the
+    # ancestry key and not about the id being absent from the file entirely.
+    got = pcs._read_regions_tsv(regions, ["eur_only"], ancestry="EUR")
+    assert got == [("eur_only", "1", 3000, 4000)]
+
+
+def test_cli_region_only_in_the_unrequested_ancestry_exits_2_and_writes_no_tsv(
+    tmp_path, capsys
+):
+    """Through ``main()`` that becomes ``ERROR: ...`` on stderr + return code 2,
+    BEFORE any output file is opened."""
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path, prefix="ancerr")
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("r1", "1", 990, 1010, "AFR"), ("r2", "chr1", 4990, 5010, "EUR")],
+        name="ancerr.tsv",
+    )
+    out = tmp_path / "should_not_exist.tsv"
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+    ])
+
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "ERROR:" in captured.err
+    assert "r2" in captured.err
+    assert not out.exists(), "a partial TSV was written before the input was validated"
+
+
+def test_tsv_field_is_bounds_tolerant_standalone():
+    """``_tsv_field`` is unit-tested DIRECTLY against raw lists.
+
+    It is NOT routed through ``_read_regions_tsv`` — see the companion test
+    below for why that would be a FALSE INVARIANT. A naive ``parts[index].strip()``
+    raises ``IndexError`` on the first case.
+    """
+    import pairwise_completeness_scan as pcs
+
+    assert pcs._tsv_field(["a", "b"], 6) == ""
+    assert pcs._tsv_field(["a", "b", "c", "d", "e", "f", "  AFR "], 6) == "AFR"
+    assert pcs._tsv_field([], 0) == ""
+    assert pcs._tsv_field(["  x  "], 0) == "x"
+
+
+def test_read_regions_tsv_length_guard_masks_the_accessor_so_tsv_field_is_tested_alone(
+    tmp_path,
+):
+    """DOCUMENTS THE LAYERING — and why the test above is not routed through the parser.
+
+    ``_REGIONS_TSV_ANCESTRY_COL`` (6) is LESS than ``_REGIONS_TSV_END_COL`` (15),
+    so the pre-existing ``if len(parts) <= _REGIONS_TSV_END_COL: continue`` guard
+    already drops every short row BEFORE column 6 is touched. A bounds-tolerance
+    assertion routed through ``_read_regions_tsv`` therefore passes whether or not
+    ``_tsv_field`` exists at all — a false invariant of exactly the class this
+    project has been bitten by before (a grep pin green on broken code).
+
+    The guard is the FIRST line of defense; ``_tsv_field`` is the SECOND, and it
+    is what keeps the parse correct if the column order ever changes so that
+    ancestry sits PAST ``_REGIONS_TSV_END_COL``.
+
+    What THIS test pins: the ordering fact itself, and that a truncated row does
+    not raise out of the parse while the well-formed rows around it are returned.
+    """
+    import pairwise_completeness_scan as pcs
+
+    assert pcs._REGIONS_TSV_ANCESTRY_COL < pcs._REGIONS_TSV_END_COL, (
+        "ancestry now sits past the length guard — the guard no longer masks "
+        "_tsv_field, and this test's premise must be re-derived"
+    )
+
+    regions = _ancestry_regions_tsv(
+        tmp_path, [("r1", "1", 1000, 2000, "AFR")], name="ragged.tsv"
+    )
+    with regions.open("a") as fh:
+        fh.write("truncated\t1\n")            # 2 fields — dropped by the guard
+        fh.write("\t".join(["short"] * 7) + "\n")  # 7 fields — still short
+
+    windows = pcs._read_regions_tsv(regions, None)
+    assert windows == [("r1", "1", 1000, 2000)]
