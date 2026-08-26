@@ -1339,7 +1339,9 @@ def test_tsv_columns_exact_tuple_equality():
         "n_called_partner",
         "n_both_called",
         "del_invariant",
+        "del_globally_invariant",
         "partner_invariant",
+        "partner_globally_invariant",
         "undefined",
         "invariant_member",
         "del_carriers_marginal",
@@ -1383,8 +1385,16 @@ def test_summary_keys_exact_equality():
         "defined_carriers_lost_frac_bins",
         "max_carriers_lost_frac_defined",
         "n_defined_lost_frac_ge_0p9",
+        "n_candidates_edge_clipped",
+        "n_globally_invariant_variants",
+        "n_undefined_rows_with_globally_invariant_member",
     )
-    assert set(pcs.summarize("R", []).keys()) == set(pcs.SUMMARY_KEYS)
+    # F7: the denominators are EXPLICIT — an empty region with no deletions.
+    assert set(
+        pcs.summarize(
+            "R", [], n_deletions=0, n_candidates_edge_clipped=0
+        ).keys()
+    ) == set(pcs.SUMMARY_KEYS)
 
 
 def test_egress_emitted_names_and_field_widths_are_clean(tmp_path):
@@ -1393,7 +1403,10 @@ def test_egress_emitted_names_and_field_widths_are_clean(tmp_path):
 
     pr = _single_pair_result(pcs, tmp_path, _MIRROR_00057_CELLS, prefix="egress")
     _assert_egress_clean(pcs.TSV_COLUMNS, pr._asdict())
-    _assert_egress_clean(pcs.SUMMARY_KEYS, pcs.summarize("R", [pr]))
+    _assert_egress_clean(
+        pcs.SUMMARY_KEYS,
+        pcs.summarize("R", [pr], n_deletions=1, n_candidates_edge_clipped=0),
+    )
 
 
 def test_egress_assertion_catches_a_per_sample_field(tmp_path):
@@ -1421,7 +1434,9 @@ def test_egress_assertion_catches_a_per_sample_field(tmp_path):
 
     # ... and a per-sample MAP hidden inside an aggregate-looking distribution
     # is caught by the cardinality bound, not merely by the rendered width.
-    polluted3 = dict(pcs.summarize("R", [pr]))
+    polluted3 = dict(
+        pcs.summarize("R", [pr], n_deletions=1, n_candidates_edge_clipped=0)
+    )
     polluted3["undefined_offset_histogram"] = {str(i): 1 for i in range(7313)}
     with pytest.raises(AssertionError) as exc3:
         _assert_egress_clean(pcs.SUMMARY_KEYS, polluted3)
@@ -1471,7 +1486,8 @@ def _fake_result(pcs, **overrides):
         del_ref_len=3, del_span_end=1002, partner_index=1, partner_vid="p1",
         partner_pos=1003, offset=1, side="downstream", already_occluded=False,
         pair_key="d0|p1", n_called_del=100, n_called_partner=100,
-        n_both_called=90, del_invariant=False, partner_invariant=False,
+        n_both_called=90, del_invariant=False, del_globally_invariant=False,
+        partner_invariant=False, partner_globally_invariant=False,
         undefined=False, invariant_member="none", del_carriers_marginal=10,
         del_carriers_retained=10, del_carriers_lost=0,
         del_carriers_lost_frac=0.0, del_maf_marginal=0.05,
@@ -1514,7 +1530,10 @@ def test_summarize_counts_every_number():
                      del_carriers_lost=10, del_carriers_lost_frac=1.0,
                      confounding_pattern="perfect_deletion_confounding"),
     ]
-    s = pcs.summarize("m2_region_00057", results, window_bp=25, n_deletions=3)
+    s = pcs.summarize(
+        "m2_region_00057", results, window_bp=25,
+        n_deletions=3, n_candidates_edge_clipped=0,
+    )
 
     assert set(s) == set(pcs.SUMMARY_KEYS)
     assert s["region_id"] == "m2_region_00057"
@@ -1540,7 +1559,8 @@ def test_summarize_separates_already_occluded_from_newly_discovered():
                      invariant_member="deletion"),
         _fake_result(pcs, pair_key="e|f", offset=4),  # defined
     ]
-    s = pcs.summarize("R", results)
+    # F7: one deletion anchors all three rows (every _fake_result del_index is 0).
+    s = pcs.summarize("R", results, n_deletions=1, n_candidates_edge_clipped=0)
 
     assert s["n_undefined_distinct_pairs"] == 2
     assert s["n_undefined_already_occluded"] == 1
@@ -1571,7 +1591,7 @@ def test_summarize_offset_histogram_over_undefined_rows_only():
                      invariant_member="partner"),
         _fake_result(pcs, pair_key="g|h", offset=7),   # DEFINED -> not counted
     ]
-    s = pcs.summarize("R", results)
+    s = pcs.summarize("R", results, n_deletions=1, n_candidates_edge_clipped=0)
 
     assert s["undefined_offset_histogram"] == {"-2": 1, "1": 2}
     assert sum(s["undefined_offset_histogram"].values()) == s["n_undefined_rows"] == 3
@@ -1604,7 +1624,7 @@ def test_summarize_defined_lost_frac_bins_and_tail():
         _fake_result(pcs, pair_key="o|p", del_carriers_lost_frac=0.0,
                      partner_carriers_lost_frac=0.93),
     ]
-    s = pcs.summarize("R", results)
+    s = pcs.summarize("R", results, n_deletions=1, n_candidates_edge_clipped=0)
 
     assert s["defined_carriers_lost_frac_bins"] == {
         "0": 1,
@@ -2014,7 +2034,7 @@ def test_duplicate_variant_ids_do_not_collapse_distinct_pairs(tmp_path):
     assert len(results) == 2
     assert sum(1 for r in results if r.undefined) == 1
 
-    summary = pcs.summarize("R", results)
+    summary = pcs.summarize("R", results, n_deletions=1, n_candidates_edge_clipped=0)
     assert summary["n_candidate_rows"] == 2
     assert summary["n_distinct_pairs"] == 2
     assert summary["n_undefined_distinct_pairs"] == 1
@@ -2084,7 +2104,7 @@ def test_exact_allele_frequency_tie_reports_the_larger_carrier_loss(tmp_path):
     assert pr.del_minor_allele_tie is True
     assert pr.partner_minor_allele_tie is False
 
-    summary = pcs.summarize("R", [pr])
+    summary = pcs.summarize("R", [pr], n_deletions=1, n_candidates_edge_clipped=0)
     assert summary["defined_carriers_lost_frac_bins"]["(0.5,0.9]"] == 1
     assert summary["defined_carriers_lost_frac_bins"]["0"] == 0
     assert summary["max_carriers_lost_frac_defined"] == 0.75
@@ -2103,3 +2123,285 @@ def test_no_tie_flag_when_the_minor_allele_is_unambiguous(tmp_path):
     assert pr.partner_maf_marginal != 0.5
     assert pr.del_minor_allele_tie is False
     assert pr.partner_minor_allele_tie is False
+
+
+# =========================================================================== #
+# quick-260825-qpf — T2: make the two SILENT COUPLINGS visible                 #
+#                                                                             #
+# F2 region-edge clipping (REPORTED, not changed) · the --mac 1 retained-set   #
+# parity class · F1 the --nonfounders coupling (PINNED, not changed) ·         #
+# F7 explicit-or-raise summary denominators.                                   #
+# Nothing here changes what the scanner DECIDES. It changes what it REPORTS.   #
+# =========================================================================== #
+
+def _region_tsv(tmp_path: Path, specs, name: str = "regions_qpf.tsv") -> Path:
+    """A ``config/ld_regions.tsv``-shaped file from ``[(id, chr, start, end)]``."""
+    path = tmp_path / name
+    header = ["c%d" % i for i in range(1, 17)]
+    header[0], header[1] = "region_id", "chr"
+    header[14], header[15] = "window_start_grch38", "window_end_grch38"
+    rows = [header]
+    for rid, chrom, start, end in specs:
+        row = ["."] * 16
+        row[0], row[1], row[14], row[15] = rid, chrom, str(start), str(end)
+        rows.append(row)
+    path.write_text("".join("\t".join(r) + "\n" for r in rows))
+    return path
+
+
+#: The region under test in the edge-clip fixtures, INCLUSIVE on both bounds.
+_EDGE_REGION = (1000, 1010)
+
+
+def _edge_clip_bfile(tmp_path: Path, *, third_bp: int, prefix: str) -> Path:
+    """A deletion at the region's LEFT edge, an in-region partner, and a third row.
+
+      idx 0  chr1:1000 REF ``AT`` ALT ``A``  -> a 1 bp deletion, span_end 1001,
+                                                INSIDE ``_EDGE_REGION``
+      idx 1  chr1:1005 SNP                   -> INSIDE the region
+      idx 2  chr1:``third_bp`` SNP           -> OUTSIDE the region. At 1011 it is
+                                                one bp past ``to_bp`` and INSIDE
+                                                the deletion's +/-25 bp reach, so
+                                                the region boundary suppresses it.
+    """
+    n = 16
+    return _write_bfile(
+        tmp_path,
+        codes_per_variant=[
+            [_CODE_HOM_A2] * 12 + [_CODE_HET] * 2 + [_CODE_MISSING] * 2,
+            [_CODE_HOM_A2] * 10 + [_CODE_HET] * 6,
+            [_CODE_HOM_A2] * 9 + [_CODE_HET] * 7,
+        ],
+        n_samples=n,
+        prefix=prefix,
+        bim_rows=[
+            _bim_row("chr1", 1000, "AT", "A"),
+            _bim_row("chr1", 1005, "T", "C"),
+            _bim_row("chr1", third_bp, "G", "A"),
+        ],
+    )
+
+
+def _run_edge_cli(pcs, tmp_path: Path, *, third_bp: int, tag: str, window_bp: int = 25):
+    """Run the CLI over ``_EDGE_REGION`` and return ``(rows, summary)``."""
+    import csv
+    import json
+
+    base = _edge_clip_bfile(tmp_path, third_bp=third_bp, prefix=f"edge{tag}")
+    regions = _region_tsv(
+        tmp_path, [("edge", "1", _EDGE_REGION[0], _EDGE_REGION[1])], name=f"reg_{tag}.tsv"
+    )
+    out = tmp_path / f"pairs_{tag}.tsv"
+    summ = tmp_path / f"summary_{tag}.json"
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "edge",
+        "--window-bp", str(window_bp),
+        "--out", str(out),
+        "--summary", str(summ),
+    ])
+    assert rc == 0
+    rows = list(csv.DictReader(out.open(), delimiter="\t"))
+    return rows, json.loads(summ.read_text())["edge"]
+
+
+# --------------------------------------------------------------------------- #
+# F2 — the BEHAVIOUR-PRESERVATION guard comes FIRST, then the counter          #
+# --------------------------------------------------------------------------- #
+
+def test_no_emitted_row_references_a_variant_outside_the_region(tmp_path):
+    """The region's universe is EXACTLY the region's own matrix, still.
+
+    The edge-clip counter is fed by a PADDED ``.bim`` read. This is the assertion
+    that proves the padding is only ever COUNTED and never LEAKS an out-of-region
+    pair into the output — a variant outside ``[from_bp, to_bp]`` is not a row of
+    that region's LD matrix and cannot produce a NaN there.
+
+    Seen red against a scratch copy that emitted the padded partners.
+    """
+    import pairwise_completeness_scan as pcs
+
+    rows, _summary = _run_edge_cli(pcs, tmp_path, third_bp=1011, tag="bounds")
+    assert rows, "fixture emitted no rows"
+    lo, hi = _EDGE_REGION
+    for r in rows:
+        assert lo <= int(r["del_pos"]) <= hi, r
+        assert lo <= int(r["partner_pos"]) <= hi, r
+
+
+def test_edge_clipped_candidates_are_counted_not_silently_absent(tmp_path):
+    """A partner ONE BP past ``to_bp`` is suppressed — and now COUNTED.
+
+    RED: ``n_candidates_edge_clipped`` did not exist, so the suppression was
+    invisible and a region-edge deletion looked like a deletion with fewer
+    neighbours. The review filed this as a HIGH; it is re-dispositioned to
+    REPORTED-not-CHANGED because the clipping itself is CORRECT (see the guard
+    above), and the defect was the SILENCE.
+    """
+    import pairwise_completeness_scan as pcs
+
+    rows, summary = _run_edge_cli(pcs, tmp_path, third_bp=1011, tag="clip")
+
+    assert summary["n_candidates_edge_clipped"] == 1
+    assert summary["n_candidate_rows"] == 1          # hand-counted: del 1000 x snp 1005
+    assert summary["n_deletions"] == 1
+    assert all(r["partner_pos"] != "1011" for r in rows)
+    assert all("1011" != r["del_pos"] for r in rows)
+
+
+def test_no_edge_clipping_reports_zero(tmp_path):
+    """An interior-only fixture reports 0 — the counter is not a constant."""
+    import pairwise_completeness_scan as pcs
+
+    # 2000 is outside the region AND outside the deletion's +/-25 bp reach.
+    _rows, summary = _run_edge_cli(pcs, tmp_path, third_bp=2000, tag="noclip")
+    assert summary["n_candidates_edge_clipped"] == 0
+    assert summary["n_candidate_rows"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# The `--mac 1` / RETAINED-SET PARITY class, counted so it is SUBTRACTABLE     #
+# --------------------------------------------------------------------------- #
+
+#: A partner that is ALL HOM-REF across its entire called set: invariant within
+#: its OWN called set, independent of any partner. The deletion is variable.
+_GLOBALLY_INVARIANT_CELLS = {
+    ("0", "0"): 5,
+    ("1", "0"): 3,
+}
+
+
+def test_globally_invariant_variant_is_reported_separately(tmp_path):
+    """A member invariant in its OWN called set is FLAGGED and COUNTED.
+
+    RED: neither the columns nor the two summary keys existed. The production
+    matrix is built on the RETAINED set (post ``--exclude``, post ``--mac 1``)
+    while this scanner enumerates the full window ``.bim``, so such a variant makes
+    every pair containing it read as undefined — an OVER-report. Counting the class
+    is what makes it SUBTRACTABLE instead of a finding.
+    """
+    import pairwise_completeness_scan as pcs
+
+    pr = _single_pair_result(pcs, tmp_path, _GLOBALLY_INVARIANT_CELLS, prefix="globinv")
+    assert pr.partner_globally_invariant is True
+    assert pr.del_globally_invariant is False
+    assert pr.undefined is True
+    assert pr.invariant_member == "partner"
+
+    summary = pcs.summarize("R", [pr], n_deletions=1, n_candidates_edge_clipped=0)
+    assert summary["n_globally_invariant_variants"] == 1
+    assert summary["n_undefined_rows_with_globally_invariant_member"] == 1
+
+
+def test_ordinary_variants_are_not_globally_invariant(tmp_path):
+    """The MEASURED 00057 mirror is UNDEFINED with NO globally invariant member.
+
+    This is the separation that matters: the 00057 pair is undefined because the
+    deletion is constant WITHIN THE INTERSECTION, while both members are perfectly
+    variable within their own called sets. A counter that just re-counted
+    ``undefined`` would report 1 here.
+    """
+    import pairwise_completeness_scan as pcs
+
+    pr = _single_pair_result(pcs, tmp_path, _MIRROR_00057_CELLS, prefix="notglobinv")
+    assert pr.undefined is True
+    assert pr.del_globally_invariant is False
+    assert pr.partner_globally_invariant is False
+
+    summary = pcs.summarize("R", [pr], n_deletions=1, n_candidates_edge_clipped=0)
+    assert summary["n_undefined_rows"] == 1
+    assert summary["n_globally_invariant_variants"] == 0
+    assert summary["n_undefined_rows_with_globally_invariant_member"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# F1 — the --nonfounders COUPLING, with a named CROSS-MODULE enforcer          #
+# --------------------------------------------------------------------------- #
+
+def test_all_samples_policy_is_pinned_to_the_production_nonfounders_flag():
+    """READ-ONLY cross-module SYMBOL pin on ``build_plink_ld_command``'s square branch.
+
+    plink1.9 LD considers FOUNDERS ONLY by default. This scanner counts ALL
+    ``.fam`` rows, which is the MATCHING policy only because the production square
+    command passes ``--nonfounders``. If that flag is ever dropped, the scanner's
+    verdicts stop being comparable to the matrix they are about — so the coupling
+    gets an enforcer instead of a sentence.
+
+    The pin is on the ARGV the function BUILDS, parsed with ``ast``, not on the
+    file's text: the in-code comment beside that line also contains the string
+    ``--nonfounders``, so a textual grep would stay green with the flag deleted
+    from the command. It is a SYMBOL pin, never a fixed-SHA whole-file pin
+    (``feedback_fixed_sha_whole_file_pin_is_a_timebomb``).
+
+    ``src/python/aou_ld_panel.py`` is READ here and is NEVER written by this plan.
+    """
+    import ast
+
+    import pairwise_completeness_scan as pcs
+
+    panel = _SRC_PYTHON / "aou_ld_panel.py"
+    assert panel.exists(), panel
+    tree = ast.parse(panel.read_text())
+    fns = [
+        n for n in ast.walk(tree)
+        if isinstance(n, ast.FunctionDef) and n.name == "build_plink_ld_command"
+    ]
+    assert len(fns) == 1, f"expected exactly one build_plink_ld_command, got {len(fns)}"
+
+    square_branches = [
+        n for n in ast.walk(fns[0])
+        if isinstance(n, ast.If)
+        and isinstance(n.test, ast.Compare)
+        and len(n.test.ops) == 1
+        and isinstance(n.test.ops[0], ast.Eq)
+        and isinstance(n.test.comparators[0], ast.Constant)
+        and n.test.comparators[0].value == "square"
+    ]
+    assert len(square_branches) == 1, (
+        f"expected exactly one `mode == \"square\"` branch, got {len(square_branches)}"
+    )
+    emitted = {
+        c.value
+        for stmt in square_branches[0].body
+        for c in ast.walk(stmt)
+        if isinstance(c, ast.Constant) and isinstance(c.value, str)
+    }
+    assert "--r" in emitted and "square" in emitted, emitted
+    assert "--nonfounders" in emitted, (
+        "the production square LD command no longer passes --nonfounders; plink1.9 "
+        "LD is FOUNDERS-ONLY by default, so this scanner's all-samples policy is no "
+        "longer the matching one and its verdicts are not comparable. Switch the "
+        "scanner to founders-only or restore the flag."
+    )
+
+    doc = pcs.__doc__ or ""
+    assert "--nonfounders" in doc
+    assert "founders" in doc.lower()
+    assert "test_all_samples_policy_is_pinned_to_the_production_nonfounders_flag" in doc
+
+
+# --------------------------------------------------------------------------- #
+# F7 — EXPLICIT-OR-RAISE denominators                                          #
+# --------------------------------------------------------------------------- #
+
+def test_summarize_requires_its_denominators():
+    """``summarize`` must RAISE rather than invent a denominator from the rows.
+
+    RED: it defaulted ``n_deletions`` to the number of DISTINCT ``del_index``
+    values in ``results``, so a region holding an isolated deletion with no
+    candidate partner (``results == []``) was summarised as ``n_deletions == 0``.
+    That is not a missing number, it is a WRONG one, and it is the denominator any
+    later per-deletion arithmetic would divide by.
+    """
+    import pairwise_completeness_scan as pcs
+
+    with pytest.raises(TypeError, match="n_deletions"):
+        pcs.summarize("R", [])
+    with pytest.raises(TypeError, match="n_candidates_edge_clipped"):
+        pcs.summarize("R", [], n_deletions=1)
+
+    # ... and the explicit form reports what it was TOLD, not what it inferred.
+    s = pcs.summarize("R", [], n_deletions=1, n_candidates_edge_clipped=0)
+    assert s["n_deletions"] == 1
+    assert s["n_candidate_rows"] == 0

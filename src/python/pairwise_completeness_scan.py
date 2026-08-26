@@ -72,6 +72,68 @@ WINDOW-RELATIVE indices that would silently address the WRONG ``.bed`` blocks �
 a wrong-genotype read with no error anywhere. The negative control that pins this
 is ``test_window_relative_index_reads_the_wrong_block``.
 
+SAMPLE POLICY — A COUPLING, NOT AN ASSUMPTION
+---------------------------------------------
+This scanner counts EVERY ``.fam`` row and evaluates EVERY sample; it applies no
+founder filter. plink1.9's LD calculations consider FOUNDERS ONLY by default.
+The production square command
+(``aou_ld_panel.build_plink_ld_command``) passes ``--nonfounders``, so
+all-samples is the MATCHING policy and the two are comparable.
+
+**If ``--nonfounders`` is ever dropped from that command, this scanner must
+switch to founders-only or its verdicts become non-comparable** — it would call a
+pair defined on the strength of samples plink never looked at. That is a COUPLING
+between two modules, so it has a named enforcer rather than a sentence:
+``tests/m3/test_pairwise_completeness_scan.py::test_all_samples_policy_is_pinned_to_the_production_nonfounders_flag``
+parses ``build_plink_ld_command`` and fails if the flag leaves its square branch.
+The scanner is NOT changed here: the review filed the founders question as a
+defect, and it is re-dispositioned to a DOCUMENTED-AND-ENFORCED coupling because
+production already passes the flag.
+
+REGION EDGES — CLIPPED BY DESIGN, COUNTED SO IT IS NEVER SILENT
+---------------------------------------------------------------
+A region's universe is EXACTLY that region's own LD matrix — the variants plink
+retained inside ``--from-bp``/``--to-bp``. A variant OUTSIDE those bounds is not a
+row of that matrix and therefore cannot produce a NaN in it, so declining to emit
+a pair that reaches past the boundary is CORRECT. The defect was that the
+suppression was SILENT: a deletion at a region edge simply looked like a deletion
+with fewer neighbours.
+
+:func:`iter_bim_windows` therefore accepts ``pad_bp`` and, in the SAME single
+streaming pass, also returns the ``[start - pad, end + pad]`` flanks;
+:func:`enumerate_candidates` takes ``region_bounds`` and emits ONLY in-bounds
+anchors with in-bounds partners (so the emitted set is IDENTICAL to an unpadded
+run — pinned by
+``test_no_emitted_row_references_a_variant_outside_the_region``); and
+:func:`count_edge_clipped_candidates` reports how many ordered rows the boundary
+suppressed, as ``n_candidates_edge_clipped``.
+
+ANCHOR-side clipping (a deletion OUTSIDE the region whose span reaches in) is out
+of scope for the same reason: such a deletion is not a row of that region's
+matrix either, so no pair containing it exists there at all.
+
+RETAINED-SET PARITY (``--exclude`` / ``--mac 1``)
+--------------------------------------------------
+The production matrix is built on the RETAINED set — post ``--exclude`` (the
+occlusion manifest) and post ``--mac 1`` (MAC-0 variants dropped). This scanner
+enumerates the FULL window ``.bim``. The two sides of that gap are made visible
+rather than assumed away:
+
+* the ``--exclude`` side is already visible as ``already_occluded``;
+* the ``--mac 1`` side is the new ``del_globally_invariant`` /
+  ``partner_globally_invariant`` columns and the ``n_globally_invariant_variants``
+  / ``n_undefined_rows_with_globally_invariant_member`` counters. A member is
+  "globally invariant" when it is constant within its OWN called set.
+
+The set relation, in the correct direction: ``{MAC 0} ⊆ {invariant within its own
+called set}``. A MAC-0 variant is necessarily invariant among its called samples;
+the CONVERSE IS FALSE — an all-heterozygous variant is invariant here yet has
+``MAC == n_called``. A globally invariant variant makes EVERY pair containing it
+read as undefined, which would be an OVER-report relative to a matrix that never
+contained it. Both observed regions reported ``n_dropped_monomorphic = 0``, but
+that is a measurement of two regions and not a guarantee, so the class is COUNTED
+and SUBTRACTABLE instead of folded into the undefined total.
+
 THE MINOR-ALLELE TIE RULE
 -------------------------
 The carriers-lost gradient is computed over the member's MINOR allele, decided
@@ -441,28 +503,15 @@ def _norm_chrom(value) -> str:
     return text[3:] if text.startswith("chr") else text
 
 
-def enumerate_candidates(
-    region_id: str,
-    indexed_rows: Sequence,
-    *,
-    window_bp: int = DEFAULT_WINDOW_BP,
-) -> list[CandidatePair]:
-    """Enumerate every (deletion, partner) candidate within ``+/- window_bp``.
+def _prepare_variants(region_id: str, indexed_rows: Sequence):
+    """``(variants, raw_chroms)`` from ``(global_index, row)`` pairs, VALIDATED.
 
-    ``indexed_rows`` is a sequence of ``(GLOBAL 0-based .bim index, 6-field row)``
-    pairs, SORTED by position ascending (:func:`iter_bim_windows` produces exactly
-    that). Unsorted input RAISES — the windowing is a binary search and would
-    silently under-enumerate otherwise. Mixed chromosomes RAISE: a window is
-    single-chromosome by contract.
-
-    ``window_bp`` is a MEASUREMENT parameter swept on BOTH sides. The posted
-    occlusion rule is one-sided, but alignment ambiguity at an indel is not
-    directional, so an upstream partner is enumerated with a NEGATIVE offset.
-    Nothing is excluded or decided on the basis of this window.
+    Unsorted input RAISES — the windowing is a binary search and would silently
+    under-enumerate otherwise. Mixed chromosomes RAISE: a window is
+    single-chromosome by contract. Shared by :func:`enumerate_candidates` and
+    :func:`count_edge_clipped_candidates` so the two can never disagree about
+    which rows exist.
     """
-    if window_bp < 0:
-        raise ValueError(f"window_bp must be >= 0, got {window_bp}")
-
     variants: list[tuple] = []
     chroms: set[str] = set()
     raw_chroms: list[str] = []
@@ -486,12 +535,54 @@ def enumerate_candidates(
             f"region {region_id}: a window is single-chromosome by contract, "
             f"got chromosomes {sorted(chroms)}"
         )
+    return variants, raw_chroms
+
+
+def _in_bounds(pos: int, region_bounds) -> bool:
+    """``region_bounds is None`` -> everything is in bounds (today's behaviour)."""
+    if region_bounds is None:
+        return True
+    return int(region_bounds[0]) <= pos <= int(region_bounds[1])
+
+
+def enumerate_candidates(
+    region_id: str,
+    indexed_rows: Sequence,
+    *,
+    window_bp: int = DEFAULT_WINDOW_BP,
+    region_bounds: "tuple[int, int] | None" = None,
+) -> list[CandidatePair]:
+    """Enumerate every (deletion, partner) candidate within ``+/- window_bp``.
+
+    ``indexed_rows`` is a sequence of ``(GLOBAL 0-based .bim index, 6-field row)``
+    pairs, SORTED by position ascending (:func:`iter_bim_windows` produces exactly
+    that). Unsorted input RAISES — the windowing is a binary search and would
+    silently under-enumerate otherwise. Mixed chromosomes RAISE: a window is
+    single-chromosome by contract.
+
+    ``window_bp`` is a MEASUREMENT parameter swept on BOTH sides. The posted
+    occlusion rule is one-sided, but alignment ambiguity at an indel is not
+    directional, so an upstream partner is enumerated with a NEGATIVE offset.
+    Nothing is excluded or decided on the basis of this window.
+
+    ``region_bounds=None`` is TODAY'S BEHAVIOUR EXACTLY. When given as
+    ``(start_bp, end_bp)`` (both inclusive), a deletion ANCHORS only if it is in
+    bounds and a partner is EMITTED only if it is in bounds, so the emitted set is
+    IDENTICAL to an unpadded run even when ``indexed_rows`` carries padded flanks.
+    See the module docstring's REGION EDGES section.
+    """
+    if window_bp < 0:
+        raise ValueError(f"window_bp must be >= 0, got {window_bp}")
+
+    variants, raw_chroms = _prepare_variants(region_id, indexed_rows)
 
     positions = [v.pos for v in variants]
     pairs: list[CandidatePair] = []
     for anchor_i, deletion in enumerate(variants):
         if not deletion.is_deletion:
             continue  # footprint is len(REF) ONLY: an SNV/insertion anchors nothing
+        if not _in_bounds(deletion.pos, region_bounds):
+            continue  # not a row of this region's matrix; it anchors nothing HERE
         lo_bp = deletion.pos - window_bp
         hi_bp = deletion.span_end + window_bp
         lo = bisect_left(positions, lo_bp)
@@ -500,6 +591,10 @@ def enumerate_candidates(
             partner = variants[j]
             if partner.index == deletion.index:
                 continue  # never a self-pair
+            if not _in_bounds(partner.pos, region_bounds):
+                # CLIPPED BY DESIGN — counted by count_edge_clipped_candidates,
+                # never emitted: it is not a row of this region's LD matrix.
+                continue
             offset = span_offset(deletion, partner)
             pairs.append(
                 CandidatePair(
@@ -528,20 +623,81 @@ def enumerate_candidates(
     return pairs
 
 
-def iter_bim_windows(bim_path: "str | Path", windows: Iterable) -> dict:
+def count_edge_clipped_candidates(
+    region_id: str,
+    indexed_rows: Sequence,
+    *,
+    window_bp: int = DEFAULT_WINDOW_BP,
+    region_bounds: "tuple[int, int]",
+) -> int:
+    """ORDERED candidate ROWS the region boundary suppressed. Counted, not emitted.
+
+    An IN-BOUNDS deletion's ``+/- window_bp`` reach may cover a partner OUTSIDE
+    ``region_bounds``. That pair cannot exist in this region's LD matrix, so
+    :func:`enumerate_candidates` correctly declines to emit it — this function is
+    what stops that decision from being SILENT.
+
+    ANCHOR-side clipping is deliberately NOT counted: a deletion outside the
+    region is not a row of that region's matrix, so no pair containing it exists
+    there at all. ``indexed_rows`` must therefore carry the padded flanks
+    (:func:`iter_bim_windows` with ``pad_bp >= window_bp``) or this returns 0 by
+    construction.
+    """
+    if window_bp < 0:
+        raise ValueError(f"window_bp must be >= 0, got {window_bp}")
+    start_bp, end_bp = int(region_bounds[0]), int(region_bounds[1])
+
+    variants, _raw_chroms = _prepare_variants(region_id, indexed_rows)
+    positions = [v.pos for v in variants]
+
+    clipped = 0
+    for deletion in variants:
+        if not deletion.is_deletion:
+            continue
+        if not (start_bp <= deletion.pos <= end_bp):
+            continue  # anchor-side clipping is out of scope — see the docstring
+        lo = bisect_left(positions, deletion.pos - window_bp)
+        hi = bisect_right(positions, deletion.span_end + window_bp)
+        for j in range(lo, hi):
+            partner = variants[j]
+            if partner.index == deletion.index:
+                continue
+            if start_bp <= partner.pos <= end_bp:
+                continue
+            clipped += 1
+    return clipped
+
+
+def iter_bim_windows(
+    bim_path: "str | Path",
+    windows: Iterable,
+    *,
+    pad_bp: int = 0,
+) -> dict:
     """ONE streaming pass over the FULL ``.bim``; GLOBAL 0-based indices out.
 
     ``windows`` is an iterable of ``(region_id, chrom, start_bp, end_bp)``
     (both bounds inclusive). Returns ``{region_id: [(global_index, row), ...]}``
     with rows in file order, which is position order within a chromosome.
 
+    ``pad_bp=0`` is TODAY'S BEHAVIOUR EXACTLY. With ``pad_bp > 0`` the returned
+    rows ALSO include the ``[start - pad, end + pad]`` flanks — in the SAME single
+    pass, so N regions still cost ONE ``.bim`` open — which is what lets
+    :func:`count_edge_clipped_candidates` see the partners the region boundary
+    suppresses. The ``(global_index, row)`` tuple shape is UNCHANGED, and the
+    padded rows never reach the output: :func:`enumerate_candidates` filters them
+    out via ``region_bounds``.
+
     The GLOBAL index is what :meth:`BedReader.read_variant` requires. This
     function exists precisely so no caller is ever tempted to hand it a
     window-relative index off a pre-extracted window ``.bim``; see the module
     docstring and ``test_window_relative_index_reads_the_wrong_block``.
     """
+    if pad_bp < 0:
+        raise ValueError(f"pad_bp must be >= 0, got {pad_bp}")
+    pad = int(pad_bp)
     specs = [
-        (str(region_id), _norm_chrom(chrom), int(start_bp), int(end_bp))
+        (str(region_id), _norm_chrom(chrom), int(start_bp) - pad, int(end_bp) + pad)
         for region_id, chrom, start_bp, end_bp in windows
     ]
     out: dict = {region_id: [] for region_id, _c, _s, _e in specs}
@@ -598,7 +754,9 @@ class PairResult(NamedTuple):
     n_called_partner: int
     n_both_called: int
     del_invariant: bool
+    del_globally_invariant: bool
     partner_invariant: bool
+    partner_globally_invariant: bool
     undefined: bool
     invariant_member: str
     del_carriers_marginal: int
@@ -752,7 +910,7 @@ def evaluate_pair(reader: BedReader, pair: CandidatePair) -> PairResult:
         del_lost_frac,
         del_maf,
         del_tie,
-        _del_globally_invariant,   # consumed by PairResult in T2 (retained-set parity)
+        del_globally_invariant,
     ) = _carrier_gradient(dosage_del, called_del, both)
     (
         p_marginal,
@@ -761,7 +919,7 @@ def evaluate_pair(reader: BedReader, pair: CandidatePair) -> PairResult:
         p_lost_frac,
         partner_maf,
         partner_tie,
-        _partner_globally_invariant,
+        partner_globally_invariant,
     ) = _carrier_gradient(dosage_partner, called_partner, both)
 
     return PairResult(
@@ -770,7 +928,9 @@ def evaluate_pair(reader: BedReader, pair: CandidatePair) -> PairResult:
         n_called_partner=int(called_partner.sum()),
         n_both_called=n_both_called,
         del_invariant=del_invariant,
+        del_globally_invariant=del_globally_invariant,
         partner_invariant=partner_invariant,
+        partner_globally_invariant=partner_globally_invariant,
         undefined=undefined,
         invariant_member=invariant_member,
         del_carriers_marginal=del_marginal,
@@ -803,13 +963,19 @@ def scan_region(
     indexed_rows: Sequence,
     *,
     window_bp: int = DEFAULT_WINDOW_BP,
+    region_bounds: "tuple[int, int] | None" = None,
 ) -> list[PairResult]:
     """Enumerate then evaluate every candidate row for ONE region.
 
     Every genotype read goes through :meth:`BedReader.read_variant`, so the
     ``.bed`` is opened once and only candidate blocks are ever touched.
+
+    ``region_bounds`` is a pass-through to :func:`enumerate_candidates`; ``None``
+    is today's behaviour.
     """
-    pairs = enumerate_candidates(region_id, indexed_rows, window_bp=window_bp)
+    pairs = enumerate_candidates(
+        region_id, indexed_rows, window_bp=window_bp, region_bounds=region_bounds
+    )
     return [evaluate_pair(reader, pair) for pair in pairs]
 
 
@@ -840,6 +1006,10 @@ SUMMARY_KEYS: tuple = (
     "defined_carriers_lost_frac_bins",
     "max_carriers_lost_frac_defined",
     "n_defined_lost_frac_ge_0p9",
+    # --- REPORTING the two silent couplings (quick-260825-qpf) ------------- #
+    "n_candidates_edge_clipped",
+    "n_globally_invariant_variants",
+    "n_undefined_rows_with_globally_invariant_member",
 )
 
 #: Bins for the DEFINED-row carriers-lost distribution. The top bin is OPEN at 1
@@ -906,7 +1076,8 @@ def summarize(
     results: Iterable[PairResult],
     *,
     window_bp: int = DEFAULT_WINDOW_BP,
-    n_deletions: "int | None" = None,
+    n_deletions: int,
+    n_candidates_edge_clipped: int,
 ) -> dict:
     """Roll one region's results up into the aggregate that may cross the perimeter.
 
@@ -951,8 +1122,17 @@ def summarize(
         if frac >= 0.9:
             n_tail += 1
 
-    if n_deletions is None:
-        n_deletions = len({r.del_index for r in rows})
+    globally_invariant_indices: set = set()
+    for r in rows:
+        if r.del_globally_invariant:
+            globally_invariant_indices.add(r.del_index)
+        if r.partner_globally_invariant:
+            globally_invariant_indices.add(r.partner_index)
+    n_undefined_with_gi = sum(
+        1
+        for r in undefined_rows
+        if r.del_globally_invariant or r.partner_globally_invariant
+    )
 
     return {
         "region_id": region_id,
@@ -968,6 +1148,9 @@ def summarize(
         "defined_carriers_lost_frac_bins": bins,
         "max_carriers_lost_frac_defined": max_frac,
         "n_defined_lost_frac_ge_0p9": n_tail,
+        "n_candidates_edge_clipped": int(n_candidates_edge_clipped),
+        "n_globally_invariant_variants": len(globally_invariant_indices),
+        "n_undefined_rows_with_globally_invariant_member": n_undefined_with_gi,
     }
 
 
@@ -1118,22 +1301,48 @@ def main(argv: "list[str] | None" = None) -> int:
         print(f"ERROR: --window-bp must be >= 0, got {args.window_bp}", file=sys.stderr)
         return 2
 
-    # ONE streaming pass over the FULL .bim for every window.
-    indexed = iter_bim_windows(prefix.with_suffix(".bim"), windows)
+    # ONE streaming pass over the FULL .bim for every window. The pad is what
+    # makes the region-edge clipping COUNTABLE; the padded rows are filtered out
+    # of the OUTPUT by region_bounds, so the emitted set is unchanged.
+    indexed = iter_bim_windows(
+        prefix.with_suffix(".bim"), windows, pad_bp=args.window_bp
+    )
 
     all_results: list[PairResult] = []
     summaries: dict = {}
     reader = BedReader(prefix, cache_variants=args.cache_variants)
     try:
-        for region_id, _chrom, _start_bp, _end_bp in windows:
+        for region_id, _chrom, start_bp, end_bp in windows:
             rows = indexed[region_id]
+            region_bounds = (int(start_bp), int(end_bp))
+            # n_deletions is a DENOMINATOR: count IN-BOUNDS deletions only, or the
+            # pad would silently inflate it.
             n_deletions = sum(
-                1 for i, row in rows if parse_bim_row(row, index=i).is_deletion
+                1
+                for i, row in rows
+                if _in_bounds(parse_bim_row(row, index=i).pos, region_bounds)
+                and parse_bim_row(row, index=i).is_deletion
             )
-            results = scan_region(reader, region_id, rows, window_bp=args.window_bp)
+            results = scan_region(
+                reader,
+                region_id,
+                rows,
+                window_bp=args.window_bp,
+                region_bounds=region_bounds,
+            )
+            n_clipped = count_edge_clipped_candidates(
+                region_id,
+                rows,
+                window_bp=args.window_bp,
+                region_bounds=region_bounds,
+            )
             all_results.extend(results)
             summaries[region_id] = summarize(
-                region_id, results, window_bp=args.window_bp, n_deletions=n_deletions
+                region_id,
+                results,
+                window_bp=args.window_bp,
+                n_deletions=n_deletions,
+                n_candidates_edge_clipped=n_clipped,
             )
     finally:
         reader.close()
