@@ -164,7 +164,7 @@ import argparse
 import json
 import sys
 from bisect import bisect_left, bisect_right
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import Iterable, NamedTuple, Sequence
 
@@ -668,6 +668,41 @@ def count_edge_clipped_candidates(
     return clipped
 
 
+def _assert_unique_region_ids(windows) -> None:
+    """Raise ``ValueError`` if any ``region_id`` appears more than once.
+
+    WHY THIS IS A HARD ERROR AND NOT A SILENT DEDUPE — the mechanism that turned
+    an ancestry-blind manifest read into an 8x inflation of a whole sweep:
+
+    * :func:`iter_bim_windows` builds ``specs`` as a **LIST** and ``out`` as a
+      **DICT** keyed on ``region_id``, so a repeated id appends each matching
+      ``.bim`` row ONCE PER MATCHING SPEC -> rows 2x -> ``deletion x partner``
+      candidate pairs 4x.
+    * :func:`main`'s driver then writes ``summaries[region_id] = ...``
+      (**LAST-WINS**) while ``all_results.extend(...)`` **ACCUMULATES**, so the
+      region is evaluated twice: 8x in the emitted TSV, and two mutually
+      inconsistent denominators in the same stdout block.
+    * the per-region stdout table iterates the **LIST** while looking up the
+      **DICT**, so every region prints twice with identical values.
+
+    A dedupe would hide all of that. The raise makes it loud, at the earliest
+    layer that can see it. Enforcers:
+    ``test_iter_bim_windows_duplicate_region_id_identical_bounds_raises`` (CASE A,
+    identical bounds), ``..._differing_bounds_raises`` (CASE B, the non-uniform
+    shape), and the CONTROL
+    ``test_iter_bim_windows_single_region_id_control_still_returns_six_rows``,
+    which must stay GREEN — a guard that raised on everything would be worthless.
+    """
+    counts = Counter(str(window[0]) for window in windows)
+    duplicates = {rid: n for rid, n in counts.items() if n > 1}
+    if duplicates:
+        raise ValueError(
+            f"duplicate region_id(s) in windows: {duplicates} — a region_id must "
+            f"appear at most ONCE; the manifest is keyed on "
+            f"(region_id x ancestry), so an unfiltered read yields each region twice"
+        )
+
+
 def iter_bim_windows(
     bim_path: "str | Path",
     windows: Iterable,
@@ -696,6 +731,12 @@ def iter_bim_windows(
     if pad_bp < 0:
         raise ValueError(f"pad_bp must be >= 0, got {pad_bp}")
     pad = int(pad_bp)
+    # Materialize BEFORE the guard so an iterator argument is not consumed by it,
+    # and guard BEFORE `specs` is built: a repeated region_id would otherwise
+    # append every matching .bim row once per matching spec. The pad_bp check
+    # stays FIRST so its error ordering is unchanged.
+    windows = list(windows)
+    _assert_unique_region_ids(windows)
     specs = [
         (str(region_id), _norm_chrom(chrom), int(start_bp) - pad, int(end_bp) + pad)
         for region_id, chrom, start_bp, end_bp in windows
@@ -1386,6 +1427,12 @@ def main(argv: "list[str] | None" = None) -> int:
                 file=sys.stderr,
             )
             return 2
+        # LAYER 2 of the duplicate-region_id defense, inside the existing
+        # try/except so a duplicate exits 2 with a message rather than a
+        # traceback. (Layer 1 is iter_bim_windows'; layer 3 is the driver loop's
+        # refuse-to-overwrite, which is INTENTIONAL UNREACHABLE REDUNDANCY —
+        # see there.)
+        _assert_unique_region_ids(windows)
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
@@ -1433,6 +1480,22 @@ def main(argv: "list[str] | None" = None) -> int:
                 region_bounds=region_bounds,
             )
             all_results.extend(results)
+            # LAYER 3 — INTENTIONAL UNREACHABLE REDUNDANCY. `windows` is already
+            # guaranteed unique by `_assert_unique_region_ids` above (and by
+            # `iter_bim_windows`, called before this loop), so this branch cannot
+            # fire in the shipped configuration and NO committed test can
+            # exercise it — a committed test would pass via one of those earlier
+            # layers and would be a FALSE INVARIANT. Its independent enforcer
+            # status was established by a scratch-only negative control that
+            # disabled BOTH upstream layers (quick-260826-qq9 SUMMARY, T2(c)).
+            # It exists because `summaries[region_id] = ...` is a LAST-WINS write
+            # against an ACCUMULATING `all_results`: that asymmetry is what
+            # doubled the driver passes on top of the already-doubled rows.
+            if region_id in summaries:
+                raise ValueError(
+                    f"region_id {region_id!r} evaluated twice — summaries would "
+                    f"silently last-win"
+                )
             summaries[region_id] = summarize(
                 region_id,
                 results,
@@ -1442,6 +1505,25 @@ def main(argv: "list[str] | None" = None) -> int:
             )
     finally:
         reader.close()
+
+    # THE TWO 'POOLED' DENOMINATORS ARE ONE BASIS, BY IDENTITY — NOT BY EYE.
+    # `POOLED candidate rows` used to print len(all_results) (the emitted-TSV
+    # basis) three lines below a histogram and bins computed from `summaries`
+    # (the per-region basis). When a region was evaluated twice those two bases
+    # DISAGREED, and the disagreement printed under a single POOLED heading with
+    # nothing to flag it: the 2026-08-26 sweep reported 2,865,513 against a
+    # summaries basis of 1,453,157. Prefer a must-be-identity transform over a
+    # must-match count (`feedback_aggregate_agreement_hides_component_errors`).
+    # This runs BEFORE write_tsv, so a disagreeing instrument leaves NO output.
+    pooled_candidate_rows = sum(s["n_candidate_rows"] for s in summaries.values())
+    if pooled_candidate_rows != len(all_results):
+        raise ValueError(
+            f"POOLED denominator disagreement: sum of per-region "
+            f"n_candidate_rows = {pooled_candidate_rows} but the emitted TSV "
+            f"carries {len(all_results)} candidate rows. These MUST be the same "
+            f"basis; a difference means at least one region was evaluated more "
+            f"than once (or a summary was built from a different row set)."
+        )
 
     write_tsv(all_results, args.out)
     if args.summary is not None:
@@ -1464,9 +1546,18 @@ def main(argv: "list[str] | None" = None) -> int:
     pooled_hist = {k: pooled_hist[k] for k in sorted(pooled_hist, key=int)}
 
     print()
-    print(f"POOLED undefined-set offset histogram: {pooled_hist}")
-    print(f"POOLED defined-row carriers_lost_frac bins: {pooled_bins}")
-    print(f"POOLED candidate rows: {len(all_results)}")
+    print(
+        "POOLED undefined-set offset histogram (basis: per-region summaries): "
+        f"{pooled_hist}"
+    )
+    print(
+        "POOLED defined-row carriers_lost_frac bins (basis: per-region "
+        f"summaries): {pooled_bins}"
+    )
+    print(
+        "POOLED candidate rows (basis: per-region summaries, reconciled against "
+        f"the emitted TSV rows): {pooled_candidate_rows}"
+    )
     print(
         "NOTE: these are COUNTS over the scanned regions. They are NOT a "
         "prevalence, NOT a boundary width, and NOT a tail size for the panel."

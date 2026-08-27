@@ -2927,3 +2927,367 @@ def test_read_regions_tsv_length_guard_masks_the_accessor_so_tsv_field_is_tested
 
     windows = pcs._read_regions_tsv(regions, None)
     assert windows == [("r1", "1", 1000, 2000)]
+
+
+# =========================================================================== #
+# quick-260826-qq9 — T2: DEFENSE IN DEPTH against SILENT MULTIPLICATION        #
+#                                                                             #
+# T1 fixes the CAUSE (an ancestry-blind manifest read). These tests pin the    #
+# MECHANISM that turned that read into an 8x inflation, so the same class of   #
+# silent multiplication cannot recur from a different cause:                   #
+#                                                                             #
+#   iter_bim_windows builds ``specs`` as a LIST and ``out`` as a DICT keyed on #
+#   region_id, so a repeated id appends each matching .bim row ONCE PER        #
+#   MATCHING SPEC -> rows 2x -> deletion x partner pairs 4x; the driver's      #
+#   ``summaries`` dict then LAST-WINS while ``all_results`` ACCUMULATES -> two #
+#   driver passes -> 8x in the emitted TSV; and the stdout table iterates the  #
+#   LIST while looking up the DICT, so every region printed twice.             #
+#                                                                             #
+# Lifted from the local reproduction (6 rows, chr15, bp 1000..1005):           #
+#   CONTROL ("R","15",1000,1005)                    -> 6 rows [0,1,2,3,4,5]    #
+#   CASE A  the same id twice, IDENTICAL bounds     -> was 12 rows             #
+#                                                     [0,0,1,1,2,2,3,3,4,4,5,5]#
+#   CASE B  the same id twice, DIFFERING bounds     -> was 8 rows              #
+#                                                     [0,1,1,2,2,3,4,5]        #
+# Both shapes are REAL: of the 21 swept regions, 12 have IDENTICAL AFR/EUR     #
+# bounds and 9 (``__subNN``) have the AFR window strictly INSIDE the EUR one.  #
+# =========================================================================== #
+
+def _six_row_bim(tmp_path: Path, name: str = "dup.bim") -> Path:
+    """The reproduction's ``.bim``: 6 rows on chr15 at bp 1000..1005."""
+    path = tmp_path / name
+    path.write_text("".join(f"15\tv{i}\t0\t{1000 + i}\tA\tG\n" for i in range(6)))
+    return path
+
+
+def test_iter_bim_windows_single_region_id_control_still_returns_six_rows(tmp_path):
+    """THE NEGATIVE CONTROL FOR THE DUPLICATE GUARD, KEPT GREEN.
+
+    A guard that raised on EVERYTHING would be worthless
+    (``feedback_green_assertion_needs_a_negative_control``). The single-id case
+    must be BYTE-FOR-BYTE what it always was: 6 rows, global indices [0..5].
+    This test is green before AND after the guard lands — deliberately.
+    """
+    import pairwise_completeness_scan as pcs
+
+    out = pcs.iter_bim_windows(_six_row_bim(tmp_path), [("R", "15", 1000, 1005)])
+
+    assert list(out) == ["R"]
+    assert len(out["R"]) == 6
+    assert [i for i, _row in out["R"]] == [0, 1, 2, 3, 4, 5]
+
+
+def test_iter_bim_windows_duplicate_region_id_identical_bounds_raises(tmp_path):
+    """CASE A — the same id twice with IDENTICAL bounds.
+
+    Shipped behaviour: 12 rows with indices [0,0,1,1,2,2,3,3,4,4,5,5] — every
+    ``.bim`` row appended once per matching spec. That is the EXACT 2x that the
+    153 identical-bounds region_ids in ``config/ld_regions.tsv`` produced.
+    """
+    import pairwise_completeness_scan as pcs
+
+    with pytest.raises(ValueError) as excinfo:
+        pcs.iter_bim_windows(
+            _six_row_bim(tmp_path, "a.bim"),
+            [("R", "15", 1000, 1005), ("R", "15", 1000, 1005)],
+        )
+    message = str(excinfo.value)
+    assert "R" in message, message
+    assert "duplicate region_id" in message, message
+
+
+def test_iter_bim_windows_duplicate_region_id_differing_bounds_raises(tmp_path):
+    """CASE B — the same id twice with DIFFERENT, OVERLAPPING bounds.
+
+    Shipped behaviour: 8 rows with indices [0,1,1,2,2,3,4,5] — a NON-UNIFORM
+    multiplication, which is why the contaminated sweep's 2,865,513 / 1,453,157
+    ratio is 1.972 and not 2.000. This is the shape the 123 ``__subNN``-style
+    ids produce, where the AFR window sits strictly inside the EUR window.
+    """
+    import pairwise_completeness_scan as pcs
+
+    with pytest.raises(ValueError) as excinfo:
+        pcs.iter_bim_windows(
+            _six_row_bim(tmp_path, "b.bim"),
+            [("R", "15", 1000, 1002), ("R", "15", 1001, 1005)],
+        )
+    assert "R" in str(excinfo.value)
+
+
+def test_assert_unique_region_ids_names_the_offending_ids_and_their_counts():
+    """The shared helper is a NAMED ENFORCER, not an anonymous inline check
+    (``feedback_a_claimed_invariant_needs_a_named_enforcer``)."""
+    import pairwise_completeness_scan as pcs
+
+    # the CONTROL shape returns None and does not raise
+    assert (
+        pcs._assert_unique_region_ids(
+            [("R", "15", 1000, 1005), ("S", "15", 1000, 1005)]
+        )
+        is None
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        pcs._assert_unique_region_ids(
+            [
+                ("R", "15", 1000, 1005),
+                ("R", "15", 1000, 1005),
+                ("S", "15", 1, 2),
+                ("S", "15", 1, 2),
+                ("S", "15", 1, 2),
+                ("T", "15", 1, 2),
+            ]
+        )
+    message = str(excinfo.value)
+    assert "R" in message and "S" in message
+    assert "2" in message and "3" in message, (
+        f"the repeat COUNTS must be named, not just the ids: {message}"
+    )
+    assert "'T'" not in message, f"the non-duplicated id must not be blamed: {message}"
+
+
+def test_cli_duplicate_region_id_manifest_exits_2_and_writes_no_tsv(tmp_path, capsys):
+    """A duplicated region_id is a CLEAN exit 2, never a traceback and never
+    last-wins.
+
+    ⚠ HONEST LABELLING OF WHAT THIS TEST DEMONSTRATES: it passes via ``main()``'s
+    PRE-LOOP ``_assert_unique_region_ids(windows)`` call. It does NOT exercise the
+    driver loop's ``if region_id in summaries: raise`` line, which is UNREACHABLE
+    in the shipped configuration — ``iter_bim_windows`` is called before the loop
+    and carries the same guard internally. That third layer is INTENTIONAL
+    UNREACHABLE REDUNDANCY; its independent enforcer status is evidenced ONLY by a
+    scratch-only negative control that disables BOTH upstream layers (see the
+    quick's SUMMARY). A committed test claiming to exercise it would be green for
+    the wrong reason.
+
+    Note that an ancestry filter CANNOT save this manifest: both rows are AFR.
+    """
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path, prefix="dupcli")
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("r1", "1", 990, 1010, "AFR"), ("r1", "1", 990, 1010, "AFR")],
+        name="dup_afr.tsv",
+    )
+    out = tmp_path / "should_not_exist.tsv"
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1",
+        "--window-bp", "10",
+        "--out", str(out),
+    ])
+
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "ERROR:" in err and "r1" in err
+    assert not out.exists(), "a partial TSV survived a duplicated region_id"
+
+
+def test_cli_stdout_table_prints_exactly_one_line_per_region_id(tmp_path, capsys):
+    """The per-region table iterates ``windows`` and looks up ``summaries``.
+
+    With ``_assert_unique_region_ids`` upstream, ``windows`` carries unique ids by
+    construction, so no region can print twice. Previously a 2-ancestry manifest
+    made EVERY region print twice with identical values — a defect the receiving
+    agent flagged from the sweep's own stdout.
+    """
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path, prefix="tbl")
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [
+            ("r1", "1", 990, 1010, "AFR"),
+            ("r1", "1", 890, 1110, "EUR"),
+            ("r2", "chr1", 4990, 5010, "AFR"),
+            ("r2", "chr1", 4890, 5110, "EUR"),
+        ],
+        name="tbl.tsv",
+    )
+    assert pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(tmp_path / "pairs.tsv"),
+    ]) == 0
+
+    stdout = capsys.readouterr().out.splitlines()
+    header_at = next(i for i, ln in enumerate(stdout) if ln.split("\t")[0] == "region_id")
+    data = []
+    for line in stdout[header_at + 1:]:
+        if not line.strip():
+            break
+        data.append(line.split("\t")[0])
+
+    assert len(data) == 2, f"the table printed {len(data)} lines for 2 regions: {data}"
+    assert len(set(data)) == len(data), f"a region_id printed twice: {data}"
+    assert set(data) == {"r1", "r2"}
+
+
+def test_pooled_candidate_rows_is_the_summaries_basis_and_names_it(tmp_path, capsys):
+    """THE TWO 'POOLED' DENOMINATORS ARE ONE BASIS, AND EACH LINE SAYS SO.
+
+    Previously ``POOLED candidate rows`` printed ``len(all_results)`` (the
+    DUPLICATED basis) three lines below a histogram and bins computed from
+    ``summaries`` (the DEDUPED basis) — different denominators under one heading.
+    In the contaminated sweep that read 2,865,513 against a summaries basis of
+    1,453,157.
+    """
+    import csv
+
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path, prefix="pooled")
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("r1", "1", 990, 1010, "AFR"), ("r2", "chr1", 4990, 5010, "AFR")],
+        name="pooled.tsv",
+    )
+    out = tmp_path / "pairs.tsv"
+    summ = tmp_path / "summary.json"
+    assert pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+        "--summary", str(summ),
+    ]) == 0
+
+    stdout = capsys.readouterr().out
+    pooled_lines = [ln for ln in stdout.splitlines() if ln.startswith("POOLED")]
+    assert len(pooled_lines) == 3, pooled_lines
+    for line in pooled_lines:
+        assert "basis: per-region summaries" in line, (
+            f"a POOLED line does not state its basis: {line!r}"
+        )
+
+    import json
+
+    summaries = json.loads(summ.read_text())
+    expected = sum(s["n_candidate_rows"] for s in summaries.values())
+    emitted = len(list(csv.DictReader(out.open(), delimiter="\t")))
+    assert expected == emitted == 2
+
+    rows_line = next(ln for ln in pooled_lines if "candidate rows" in ln)
+    assert rows_line.rsplit(": ", 1)[1] == str(expected)
+    assert "reconciled against the emitted TSV rows" in rows_line
+
+
+def test_pooled_candidate_rows_reconciliation_raises_when_the_bases_disagree(
+    tmp_path, monkeypatch
+):
+    """A MUST-BE-IDENTITY TRANSFORM, not a must-match count.
+
+    ``feedback_aggregate_agreement_hides_component_errors``: agreement by eye is
+    what let two denominators print three lines apart for a whole sweep. Here the
+    per-region ``n_candidate_rows`` is perturbed by +1 for ONE region and the run
+    must RAISE naming BOTH numbers — and must write NO output, so a disagreeing
+    instrument cannot leave a plausible-looking TSV behind.
+    """
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path, prefix="recon")
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("r1", "1", 990, 1010, "AFR"), ("r2", "chr1", 4990, 5010, "AFR")],
+        name="recon.tsv",
+    )
+    out = tmp_path / "should_not_exist.tsv"
+
+    real_summarize = pcs.summarize
+    state = {"bumped": False}
+
+    def off_by_one(*args, **kwargs):
+        summary = real_summarize(*args, **kwargs)
+        if not state["bumped"]:
+            state["bumped"] = True
+            summary = dict(summary)
+            summary["n_candidate_rows"] = summary["n_candidate_rows"] + 1
+        return summary
+
+    monkeypatch.setattr(pcs, "summarize", off_by_one)
+
+    with pytest.raises(ValueError) as excinfo:
+        pcs.main([
+            "--bfile-prefix", str(base),
+            "--regions-tsv", str(regions),
+            "--region-ids", "r1,r2",
+            "--window-bp", "10",
+            "--out", str(out),
+        ])
+
+    message = str(excinfo.value)
+    assert "3" in message and "2" in message, (
+        f"the reconciliation must print BOTH numbers: {message}"
+    )
+    assert "n_candidate_rows" in message
+    assert not out.exists(), (
+        "a TSV was written even though the two POOLED bases disagreed"
+    )
+
+
+def test_two_ancestry_manifest_emits_no_inflated_counts_end_to_end(tmp_path, capsys):
+    """THE REGRESSION THAT WOULD HAVE CAUGHT THE 8x.
+
+    An AFR row AND an EUR row for each of two regions, over the existing
+    ``_multi_region_bfile`` fixture. Shipped code emitted 4 TSV rows (2x), printed
+    4 table lines, and reported ``n_candidate_rows == 2`` per region. The repaired
+    scanner emits EXACTLY 2 — one per region — and pools to 2.
+    """
+    import csv
+    import json
+
+    import pairwise_completeness_scan as pcs
+
+    base = _multi_region_bfile(tmp_path, prefix="e2e")
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [
+            ("r1", "1", 990, 1010, "AFR"),
+            ("r1", "1", 890, 1110, "EUR"),
+            ("r2", "chr1", 4990, 5010, "AFR"),
+            ("r2", "chr1", 4890, 5110, "EUR"),
+        ],
+        name="e2e.tsv",
+    )
+    out = tmp_path / "pairs.tsv"
+    summ = tmp_path / "summary.json"
+    assert pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+        "--summary", str(summ),
+    ]) == 0
+
+    rows = list(csv.DictReader(out.open(), delimiter="\t"))
+    assert len(rows) == 2, f"a 2-ancestry manifest emitted {len(rows)} rows, not 2"
+    assert {r["region_id"] for r in rows} == {"r1", "r2"}
+
+    summaries = json.loads(summ.read_text())
+    assert set(summaries) == {"r1", "r2"}
+    for region_id, summary in summaries.items():
+        assert summary["n_candidate_rows"] == 1, (region_id, summary["n_candidate_rows"])
+
+    stdout = capsys.readouterr().out
+    header_at = next(
+        i for i, ln in enumerate(stdout.splitlines()) if ln.split("\t")[0] == "region_id"
+    )
+    table = []
+    for line in stdout.splitlines()[header_at + 1:]:
+        if not line.strip():
+            break
+        table.append(line)
+    assert len(table) == 2, f"the table printed {len(table)} lines, not 2"
+
+    pooled = next(
+        ln for ln in stdout.splitlines()
+        if ln.startswith("POOLED") and "candidate rows" in ln
+    )
+    assert pooled.rsplit(": ", 1)[1] == "2", pooled
