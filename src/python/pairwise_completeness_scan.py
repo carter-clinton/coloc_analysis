@@ -1480,14 +1480,27 @@ def main(argv: "list[str] | None" = None) -> int:
                 region_bounds=region_bounds,
             )
             all_results.extend(results)
-            # LAYER 3 — INTENTIONAL UNREACHABLE REDUNDANCY. `windows` is already
-            # guaranteed unique by `_assert_unique_region_ids` above (and by
-            # `iter_bim_windows`, called before this loop), so this branch cannot
-            # fire in the shipped configuration and NO committed test can
-            # exercise it — a committed test would pass via one of those earlier
-            # layers and would be a FALSE INVARIANT. Its independent enforcer
-            # status was established by a scratch-only negative control that
-            # disabled BOTH upstream layers (quick-260826-qq9 SUMMARY, T2(c)).
+            # LAYER 3 — UNREACHABLE IN THE SHIPPED CONFIGURATION, BUT TESTED.
+            # `windows` is already guaranteed unique by `_assert_unique_region_ids`
+            # above (and by `iter_bim_windows`, called before this loop), so this
+            # branch cannot fire as shipped. A NAIVE committed test — feeding a
+            # duplicated manifest through the front door — would pass via one of
+            # those earlier layers and be a FALSE INVARIANT.
+            #
+            # It does NOT follow that no committed test can reach it. Testing the
+            # innermost layer of a defense-in-depth stack REQUIRES disabling the
+            # outer ones; layers 1 and 2 both call the MODULE-GLOBAL
+            # `_assert_unique_region_ids`, so one monkeypatch neutralizes both and
+            # leaves exactly this branch active. That test is committed —
+            # `test_driver_summaries_guard_independently_refuses_last_wins_with_
+            # both_upstream_layers_disabled` — and it attributes the raise by the
+            # traceback's FINAL FRAME rather than merely asserting something rose.
+            # Negative control observed: deleting this branch makes that test go
+            # RED (quick-260826-qq9 T4). Note what caught it instead — the POOLED
+            # denominator identity below, reporting 4 summary rows against 8
+            # emitted rows: the same 2x inflation that corrupted the 2026-08-26
+            # sweep, in miniature. This layer is not the last line; it is the
+            # EARLIEST, and the only one that names the offending region_id.
             # It exists because `summaries[region_id] = ...` is a LAST-WINS write
             # against an ACCUMULATING `all_results`: that asymmetry is what
             # doubled the driver passes on top of the already-doubled rows.

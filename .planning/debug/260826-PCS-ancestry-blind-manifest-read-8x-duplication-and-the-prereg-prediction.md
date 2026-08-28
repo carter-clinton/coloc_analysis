@@ -358,23 +358,38 @@ under one heading, with nothing to flag it. That is what let 2,865,513 and
 | a region present only in the other ancestry vanishing silently | `seen` accumulates post-filter only | `test_region_only_in_the_unrequested_ancestry_raises_naming_the_id` |
 | duplicated `region_id` multiplying rows | `_assert_unique_region_ids` in `iter_bim_windows` | `test_iter_bim_windows_duplicate_region_id_identical_bounds_raises` / `..._differing_bounds_raises`; CONTROL kept green by `test_iter_bim_windows_single_region_id_control_still_returns_six_rows` |
 | duplicated `region_id` reaching the driver | `_assert_unique_region_ids` in `main()` (pre-loop) | `test_cli_duplicate_region_id_manifest_exits_2_and_writes_no_tsv` |
-| `summaries` silently last-winning | `if region_id in summaries: raise` | **none — INTENTIONAL UNREACHABLE REDUNDANCY**, see below |
+| `summaries` silently last-winning | `if region_id in summaries: raise` | `test_driver_summaries_guard_independently_refuses_last_wins_with_both_upstream_layers_disabled` (monkeypatches the shared enforcer to neutralize layers 1+2; attributes by traceback final frame) |
 | the two POOLED denominators diverging | must-be-identity check before `write_tsv` | `test_pooled_candidate_rows_reconciliation_raises_when_the_bases_disagree` + `..._is_the_summaries_basis_and_names_it` |
 | a region printing twice in the table | unique `windows` by construction | `test_cli_stdout_table_prints_exactly_one_line_per_region_id` |
 | the whole 8x, end to end | all of the above | `test_two_ancestry_manifest_emits_no_inflated_counts_end_to_end` |
 
-**INTENTIONAL UNREACHABLE REDUNDANCY — stated plainly.** The driver's
-`if region_id in summaries: raise` line is UNREACHABLE in the shipped
+**UNREACHABLE AS SHIPPED, BUT TESTED — corrected 2026-08-28 (T4).** The driver's
+`if region_id in summaries: raise` line is unreachable in the shipped
 configuration, because `_assert_unique_region_ids(windows)` runs in `main()`
-before the loop AND inside `iter_bim_windows`. **No committed test exercises it,
-and none should** — such a test would pass via an earlier layer and would be a
-false invariant. Its status as a real enforcer rather than dead code was
-established by a scratch-only negative control that removed **both** upstream
-layers and confirmed, from the traceback's **final frame**, that the raise
-originates at that line (`main()`, enclosing statement `if region_id in
-summaries:`), with no TSV written. It is labelled unreachable redundancy in the
-code, in this record, and in the quick's SUMMARY — never claimed as
-test-demonstrated.
+before the loop AND inside `iter_bim_windows`.
+
+⚠ **This record previously said "No committed test exercises it, and none
+should."** That was right about the NAIVE test — feeding a duplicated manifest
+through the front door passes via an earlier layer and is a false invariant — and
+**wrong to generalise from it.** Testing the innermost layer of a defense-in-depth
+stack *requires* disabling the outer ones, the same way a database unique
+constraint is tested by bypassing application validation. Layers 1 and 2 both call
+the **module-global** `_assert_unique_region_ids`, so a single `monkeypatch.setattr`
+neutralises both and leaves exactly layer 3 active.
+
+That test is now committed:
+`test_driver_summaries_guard_independently_refuses_last_wins_with_both_upstream_layers_disabled`.
+It asserts the raise message, and **attributes it by the traceback's final frame**
+— asserting the raising line sits inside the driver guard — so a green cannot mean
+"some other layer stopped it."
+
+**Negative control, observed:** deleting the branch makes that test go RED. What
+caught the duplication instead is worth recording — the POOLED denominator
+identity, reporting `sum of per-region n_candidate_rows = 4` against `8` emitted
+rows. That is the **same 2× inflation that corrupted the 2026-08-26 sweep,
+reproduced in miniature on a two-row fixture.** So layer 3 is not the last line of
+defence; it is the **earliest**, and the only one that names the offending
+`region_id`.
 
 ---
 

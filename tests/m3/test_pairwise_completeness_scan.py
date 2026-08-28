@@ -3054,11 +3054,15 @@ def test_cli_duplicate_region_id_manifest_exits_2_and_writes_no_tsv(tmp_path, ca
     PRE-LOOP ``_assert_unique_region_ids(windows)`` call. It does NOT exercise the
     driver loop's ``if region_id in summaries: raise`` line, which is UNREACHABLE
     in the shipped configuration — ``iter_bim_windows`` is called before the loop
-    and carries the same guard internally. That third layer is INTENTIONAL
-    UNREACHABLE REDUNDANCY; its independent enforcer status is evidenced ONLY by a
-    scratch-only negative control that disables BOTH upstream layers (see the
-    quick's SUMMARY). A committed test claiming to exercise it would be green for
-    the wrong reason.
+    and carries the same guard internally. So THIS test must not be read as
+    evidence for that third layer; it would be green for the wrong reason.
+
+    That third layer IS separately covered, by
+    ``test_driver_summaries_guard_independently_refuses_last_wins_with_both_upstream_layers_disabled``,
+    which monkeypatches the shared module-global enforcer to neutralize layers 1
+    and 2 and then attributes the raise by the traceback's final frame. (An earlier
+    revision of this docstring claimed no committed test could reach layer 3. That
+    was true of the naive front-door test and false in general — quick-260826-qq9 T4.)
 
     Note that an ancestry filter CANNOT save this manifest: both rows are AFR.
     """
@@ -3291,3 +3295,76 @@ def test_two_ancestry_manifest_emits_no_inflated_counts_end_to_end(tmp_path, cap
         if ln.startswith("POOLED") and "candidate rows" in ln
     )
     assert pooled.rsplit(": ", 1)[1] == "2", pooled
+
+
+def test_driver_summaries_guard_independently_refuses_last_wins_with_both_upstream_layers_disabled(
+    tmp_path, monkeypatch
+):
+    """LAYER 3 -- the driver's ``if region_id in summaries: raise`` -- IS testable.
+
+    ⚠ SUPERSEDES an earlier claim in this file and in the module that "NO committed
+    test can exercise it". That claim was right about the NAIVE test (feed a
+    duplicated manifest through the front door and it passes via layer 1 or 2, a
+    FALSE INVARIANT) and wrong to conclude no committed test is possible.
+
+    Testing the INNERMOST layer of a defense-in-depth stack REQUIRES disabling the
+    outer ones -- the same way a DB unique constraint is tested by bypassing
+    app-level validation, or a fallback by disabling the primary. That is not a
+    contrived setup; it is the only setup under which the property "if upstream
+    validation is ever bypassed or removed, the innermost write still refuses to
+    last-win" can be observed at all.
+
+    Layers 1 (``iter_bim_windows``, :739) and 2 (``main()``, :1435) both call the
+    MODULE-GLOBAL ``_assert_unique_region_ids``, so a single monkeypatch neutralizes
+    both. What remains active is exactly layer 3.
+
+    ATTRIBUTION, NOT MERELY A RAISE: this asserts the traceback's FINAL frame is the
+    driver line. Without that, a green here would only prove "something stopped it"
+    -- the very error this test exists to avoid repeating.
+
+    NEGATIVE CONTROL (must be re-observed if this test is ever edited): deleting the
+    ``if region_id in summaries: raise`` branch makes this test FAIL -- the run
+    completes and ``summaries`` silently last-wins. Recorded in the quick's SUMMARY.
+    """
+    import traceback
+    import pairwise_completeness_scan as pcs
+
+    monkeypatch.setattr(pcs, "_assert_unique_region_ids", lambda windows: None)
+
+    base = _multi_region_bfile(tmp_path, prefix="layer3")
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("r1", "1", 990, 1010, "AFR"), ("r1", "1", 990, 1010, "AFR")],
+        name="layer3_dup.tsv",
+    )
+    out = tmp_path / "should_not_exist.tsv"
+
+    with pytest.raises(ValueError) as excinfo:
+        pcs.main([
+            "--bfile-prefix", str(base),
+            "--regions-tsv", str(regions),
+            "--region-ids", "r1",
+            "--window-bp", "10",
+            "--out", str(out),
+        ])
+
+    assert "evaluated twice" in str(excinfo.value)
+    assert "r1" in str(excinfo.value)
+
+    # ATTRIBUTION: the raise must originate at the DRIVER line, not upstream.
+    frames = traceback.extract_tb(excinfo.tb)
+    last = frames[-1]
+    assert last.name == "main", f"raised from {last.name!r}, expected the driver in main()"
+    assert "raise ValueError" in (last.line or "") or "evaluated twice" in (last.line or ""), last.line
+    src_line = last.lineno
+    driver_guard_lineno = next(
+        i for i, ln in enumerate(
+            Path(pcs.__file__).read_text().splitlines(), start=1
+        ) if "if region_id in summaries:" in ln
+    )
+    assert 0 <= src_line - driver_guard_lineno <= 6, (
+        f"raise at line {src_line} is not inside the driver guard at "
+        f"{driver_guard_lineno} -- attribution failed, a DIFFERENT layer fired"
+    )
+
+    assert not out.exists(), "a partial TSV survived the driver-layer refusal"
