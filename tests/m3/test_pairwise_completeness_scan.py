@@ -2946,6 +2946,113 @@ def test_pending_paste_rotates_before_the_sweep_and_never_deletes():
     assert text.count("--ancestry") == 0
 
 
+#: The pre-registration record. Section (e) carries the prediction; (b1) carries
+#: the AFR-pass row count the two new denominator rows are DERIVED from.
+_PREREG = PROJECT_ROOT / ".planning" / "debug" / (
+    "260826-PCS-ancestry-blind-manifest-read-8x-duplication-and-the-prereg-prediction.md"
+)
+
+
+def test_prereg_pooled_row_prediction_reconciles_with_the_afr_pass():
+    """THE TWO ADDED NUMBERS MUST RECONCILE BY ARITHMETIC, NOT BY EYE.
+
+    ``feedback_a_count_is_a_claim_scope_and_reconcile``: a number in a
+    pre-registration is a claim, and a claim needs a named enforcer
+    (``feedback_a_claimed_invariant_needs_a_named_enforcer``). Section (e) predicts
+    ``POOLED candidate rows`` and ``wc -l pcs_pairs.tsv``; both are DERIVED from
+    the AFR pass recorded at (b1):
+
+        AFR pass / 4 == POOLED candidate rows      (exact division)
+        POOLED candidate rows + 1 header == wc -l
+
+    This test parses BOTH numbers out of (e) and re-derives them. It also requires
+    the AFR-pass figure to still be present in (b1), so the two sections cannot
+    drift apart — the failure mode where a doc "fixes" one number and orphans the
+    other.
+
+    PARSING AND MATCHING OBEY THE STANDING RULE. Thousands separators are
+    normalised away first, so (b1)'s ``1,412,356`` and (e)'s bare ``1412356`` are
+    the SAME FACT; then every match is digit-boundary-anchored, so no longer digit
+    run can satisfy any of them.
+
+    RED mechanism: change either predicted number in the document and this fails.
+    OBSERVED (quick-260828-uej).
+    """
+    import re
+
+    text = _PREREG.read_text()
+
+    def _heading_at(heading: str) -> int:
+        """Index of a heading AT THE START OF A LINE, never mid-sentence.
+
+        A bare ``text.index(heading)`` is the substring-collision bug this quick's
+        standing rule exists to prevent, and it BIT HERE during execution: (b1)
+        carries the sentence ``See `### RESIDUAL — KNOWN, NOT FIXED, AND WHY```
+        as a CROSS-REFERENCE, so a bare index() found the citation ~16 kB before
+        the real heading and produced a NEGATIVE-length slice that silently
+        contained nothing. Anchoring to ``^`` is the fix.
+        """
+        match = re.search(rf"^{re.escape(heading)}", text, re.M)
+        assert match, f"the prereg record no longer carries the heading {heading!r}"
+        return match.start()
+
+    e_start = _heading_at("## (e) PRE-REGISTERED PREDICTION")
+    e_end = _heading_at("### RESIDUAL — KNOWN, NOT FIXED, AND WHY")
+    b1_start = _heading_at("## (b1) THE TWO DENOMINATORS, RECONCILED")
+    b1_end = _heading_at("## (b) ROOT CAUSE")
+    assert e_start < e_end and b1_start < b1_end, (
+        f"the prereg record's sections are out of order — the slices below would "
+        f"be empty: e {e_start}..{e_end}, b1 {b1_start}..{b1_end}"
+    )
+    section_e = text[e_start:e_end]
+    section_b1 = text[b1_start:b1_end]
+
+    def _table_value(section: str, label: str) -> int:
+        match = re.search(
+            rf"\|\s*`{re.escape(label)}`\s*\|\s*\*\*([\d,]+)\*\*\s*\|", section
+        )
+        assert match, f"the prediction table has no row for {label!r}"
+        return int(match.group(1).replace(",", ""))
+
+    rows = _table_value(section_e, "POOLED candidate rows")
+    wc = _table_value(section_e, "wc -l pcs_pairs.tsv")
+
+    assert wc == rows + 1, (
+        f"the predicted wc -l ({wc}) is not the predicted row count ({rows}) plus "
+        f"one header"
+    )
+    assert rows * 4 == 1412356, (
+        f"the predicted POOLED candidate rows ({rows}) x 4 is {rows * 4}, not the "
+        f"AFR pass 1412356 that it is DERIVED from"
+    )
+
+    # ...and each number is actually PRESENT, digit-boundary-anchored, in the
+    # section that is supposed to carry it.
+    assert _has_number(section_e, rows)
+    assert _has_number(section_e, wc)
+    assert _has_number(section_b1, 1412356), (
+        "(b1) no longer carries the AFR pass 1412356, so (e)'s derivation has no "
+        "source in this document"
+    )
+
+    # the EUR corroboration: it must NOT divide, which is why the account is
+    # non-uniform multiplicity rather than a clean 4x everywhere.
+    assert 1453157 % 4 != 0
+    assert _has_number(section_e, 1453157), (
+        "(e) no longer shows the non-integral EUR division that corroborates the "
+        "non-uniform-multiplicity account"
+    )
+
+    # THE PRE-REGISTERED FINDINGS ARE NOT TOUCHED BY THIS ADDITION.
+    for predicted in (15, 13, 10, 3):
+        assert _has_number(section_e, predicted), (
+            f"the pre-registered prediction {predicted} is gone from section (e)"
+        )
+    assert "{-14: 1, -9: 1, -6: 1, -3: 1, -1: 1, 0: 10}" in section_e, (
+        "the pre-registered offset histogram changed"
+    )
+
+
 def test_ancestry_predicate_agrees_with_the_production_filter_contract():
     """The ancestry predicate is MIRRORED from production, never invented.
 

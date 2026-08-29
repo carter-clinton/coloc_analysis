@@ -272,9 +272,26 @@ used as a divisor**. It is banked as received.
 
 **This is precisely the defect T2 fixes.** `POOLED candidate rows` is now computed
 as `sum(s["n_candidate_rows"] for s in summaries.values())` — the SAME basis as
-the pooled histogram and bins — and `main()` RAISES (before any output file is
-written) if that sum disagrees with `len(all_results)`. All three POOLED lines
-now state their basis in-line. The two bases can never silently diverge again.
+the pooled histogram and bins — and that sum is checked against `len(all_results)`
+by a must-be-identity comparison. All three POOLED lines now state their basis
+in-line. The two bases can never silently diverge again.
+
+⚠ **THE FAILURE HANDLING CHANGED AFTER THIS PARAGRAPH WAS FIRST WRITTEN
+(`quick-260828-uej`).** It said `main()` *"RAISES (before any output file is
+written)"*. That is no longer true and the sentence is corrected here rather than
+left standing. `main()` now **writes the TSV (and the summary JSON) FIRST, then
+reconciles**, and on disagreement **QUARANTINES the output to `<out>.SUSPECT`
+(rotating any prior `.SUSPECT` to `.SUSPECT.<UTC>`) and returns 2** — like every
+other failure path in `main()`. The ARITHMETIC is byte-unchanged; only position
+and failure handling moved. Three properties follow: nothing survives at `--out`,
+so an operator's `wc -l` there fails LOUDLY instead of returning the contaminated
+2,865,514 from the previous run; the ~4h18m of compute is salvaged in the
+`.SUSPECT` sibling instead of being discarded by a traceback; and writing first
+TRUNCATES any stale artifact sitting at the read path. **RESIDUAL:** the EARLY
+exits (missing bfile component, `no windows selected`, a duplicate `region_id`, an
+empty `--region-ids`) still return 2 before any write, so a stale artifact
+survives THOSE — closed by the runbook's STEP 2b ROTATE and STEP 3 pre-flight, not
+by the code. See `### RESIDUAL — KNOWN, NOT FIXED, AND WHY` below.
 
 ---
 
@@ -546,17 +563,57 @@ When STEP 3 is re-run with the repaired scanner, the prediction is:
 | `n_undefined_already_occluded` | **10** |
 | `n_undefined_not_already_occluded` | **3** |
 | POOLED offset histogram | **`{-14: 1, -9: 1, -6: 1, -3: 1, -1: 1, 0: 10}`** |
+| `POOLED candidate rows` | **353089** |
+| `wc -l pcs_pairs.tsv` | **353090** |
 
 The histogram **sums to 15**, matching the predicted row count — stated here so
 the two predictions cannot silently disagree.
 
+**THE TWO DENOMINATOR ROWS ARE DERIVED, NOT GUESSED — added `quick-260828-uej`,
+still BEFORE the re-run.** The derivation is shown rather than asserted:
+
+```
+every AFR-pass row had BOTH members inside the AFR window, so each was
+emitted exactly 4x (rows 2x -> deletion x partner pairs 4x):
+
+  AFR pass 1,412,356 / 4 = 353,089        EXACT  (1412356 % 4 == 0)
+  353,089 + 1 header     = 353,090        -> wc -l
+
+the EUR pass does NOT divide:
+
+  EUR pass 1,453,157 / 4 = 363,289.25     NON-INTEGRAL
+```
+
+That non-integrality is not an inconvenience — it is **independent corroboration
+of the non-uniform-multiplicity account already recorded at (b1)**. AFR ⊆ EUR for
+the 9 `__subNN` regions, so EUR-only territory contributes rows at lower
+multiplicity and the EUR pass cannot be a clean 4x of anything. The AFR pass,
+which is what the repaired AFR-only run reproduces, does divide exactly.
+
+Both rows carry the SAME STATUS as every other line in this table: **DERIVED
+BEFORE THE RUN**, and **a mismatch is a finding to report, never a number to
+adjust.** Enforcer: `tests/m3/test_pairwise_completeness_scan.py::
+test_prereg_pooled_row_prediction_reconciles_with_the_afr_pass` parses both
+numbers out of this section and asserts `wc == rows + 1` and `rows * 4 ==
+1412356`, and that `1412356` still appears in (b1) — so the two sections cannot
+drift apart.
+
 Also predicted, as structural consequences of the repair rather than as data:
 `POOLED candidate rows` will equal the sum of the per-region `n_candidate_rows`
-(the run now RAISES otherwise), the per-region table will print **21** lines and
-not 42, and `wc -l` on `pcs_pairs.tsv` will be that pooled count + 1.
+(otherwise the run QUARANTINES the output to `<out>.SUSPECT` and returns 2), the
+per-region table will print **21** lines and not 42, and `wc -l` on
+`pcs_pairs.tsv` will be that pooled count + 1.
 
-**The command does not change.** The repaired scanner's `--ancestry` default of
-`AFR` makes the already-written, UNMODIFIED STEP 3 block correct.
+**The command does not change — the scanner argv is unchanged IN MEANING.** The
+repaired scanner's `--ancestry` default of `AFR` makes the already-written,
+UNMODIFIED STEP 3 invocation correct. The RUNBOOK AROUND it did change
+(`quick-260828-uej`): STEP 0 now gates on the scanner's content hash, byte size,
+last-touching commit and a positive behavioural capability check instead of on a
+commit subject line; a new STEP 2b ROTATEs the contaminated artifacts off the read
+path; STEP 3 refuses to start if either output path is occupied and NAMES all 21
+region ids; and the `.bim` the banked `pair_key`s are relative to is recorded.
+**No predicted number above changes as a result** — those edits change what the
+operator can PROVE, not what the instrument computes.
 
 **A MISMATCH IS A FINDING TO REPORT, NEVER A NUMBER TO ADJUST.** If the re-run
 disagrees with any line above, the disagreement is the result — it is reported,
@@ -570,6 +627,65 @@ caught it — one step before public posting. And the withdrawn `0.0005` came fr
 a number becoming a rule in the conversation that produced it. Both failures share
 one shape: the expectation was formed *after* seeing the output. This record
 breaks that shape by writing the expectation down, in a commit, first.
+
+---
+
+### RESIDUAL — KNOWN, NOT FIXED, AND WHY
+
+Four things are wrong-or-limited and are **deliberately not being fixed** before
+the re-run. They are written down so that no one has to rediscover them, and so
+that nothing here is quietly load-bearing. Added `quick-260828-uej`.
+
+**1. The `__subNN` window overlap double-counts the POOLED candidate DENOMINATOR.**
+MEASURED against the real `config/ld_regions.tsv` (AFR windows):
+
+```
+m2_region_00040__sub12  93,681,040 - 104,615,815
+m2_region_00040__sub13  98,615,815 - 109,550,590   -> 6,000,000 bp of overlap
+m2_region_00060__sub12  81,228,215 -  91,874,650
+m2_region_00060__sub13  85,874,650 -  93,521,095   -> 6,000,000 bp of overlap
+```
+
+The same `.bim` rows therefore enter **two** regions' candidate sets, and the
+POOLED candidate denominator counts them **twice**. This is a pre-existing
+region-**DEFINITION** property, not a scanner defect: the scanner is faithfully
+reporting the regions it was given. It affects the **denominator only** and **not
+the 15 findings** — both of those regions carry **0** undefined rows. And it is
+present on the **same basis** in the `1,412,356` from which `353,089` is derived,
+so the new prediction is *consistent with* this residual rather than contradicted
+by it. Any statement of the form "X of N candidate rows" must therefore say that N
+is a **sum over regions**, not a count of distinct `.bim` rows.
+
+**2. The scanner's denominator is pre-`--mac 1` / pre-`--exclude`; the panel's LD
+matrix is post-.** The scanner counts candidate rows over the raw `.bim` window;
+the production LD matrix is built after MAC filtering and after the occlusion
+exclusion list. The two populations are NOT the same. **Any fraction computed from
+these counts MUST name its denominator, and none of them is a panel prevalence.**
+
+**3. This plan's OWN code fix has a residual, and it is stated plainly.** The
+write-then-reconcile-then-quarantine change (`quick-260828-uej` T1) protects the
+output path only on the paths that reach the write. The **early exits** — a
+missing bfile component, `ERROR: no windows selected`, a duplicate `region_id`,
+and the new empty-`--region-ids` error — all return 2 **before anything is
+written**, so a stale artifact sitting at the output path **survives them
+untouched**. That hole is closed by the RUNBOOK — STEP 2b's ROTATE plus STEP 3's
+pre-flight existence guard in
+`.planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md` — and **NOT
+by the code**. Do not read the write-first ordering as covering the early exits.
+
+**4. DECLINED from the as-received external review**, each with its reason. Full
+text: `.planning/quick/260828-uej-make-the-re-run-safe-to-fire-replace-ste/260828-uej-CODEX-REVIEW-as-received.md`.
+
+| Finding | Severity | Disposition | Reason |
+|---|---|---|---|
+| Scanner parses the manifest POSITIONALLY while production is header-keyed, so a reordered manifest diverges silently | MEDIUM | DECLINED for now | The checked-in `config/ld_regions.tsv` has the expected column order (MEASURED: ancestry at 1-based column 7 for all 552 data rows, 276 AFR / 276 EUR). The failing input is a manifest that does not exist; fixing it would change the parse on the fire path for a hypothetical file. |
+| The duplicate guard only catches exact `str(region_id)` equality, not whitespace/case aliases passed **directly to the iterator** | LOW | DECLINED | An API-only path. The TSV parser strips ids at read time, so the runbook's route cannot reach it; every id the sweep uses comes from `_read_regions_tsv`. |
+| The scanner's composite ancestry parse strips where production does not | MEDIUM | **ADDRESSED as a monitored divergence, not closed** | Pinned at the SELECTION layer with the production behaviour measured by `ast` extraction, plus a monitor asserting the real manifest carries **0** padded-or-quoted ancestry cells (`quick-260828-uej` T2). Closing it would break the byte-faithful production mirror; the monitor goes RED the day it becomes live. |
+
+The pair-level **`n_undefined_not_already_occluded = 3` vs row-level upstream
+blindness = 5** undercount is **already recorded above** at
+`### ⚠ THE PAIR-LEVEL UNDERCOUNT — the dangerous direction, stated explicitly`
+and is cited here rather than duplicated.
 
 ---
 
