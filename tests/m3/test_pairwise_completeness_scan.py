@@ -2741,6 +2741,211 @@ def test_pending_paste_step3_carries_no_ancestry_flag_so_the_default_is_load_bea
     )
 
 
+#: The STEP 0 freshness-gate block, delimited by its own two sub-headings. Every
+#: assertion about the gate is scoped to THIS slice: `276` and `552` are 3-digit
+#: tokens and the runbook is ~600 lines, so a whole-document search would be a
+#: proxy for the property, not the property
+#: (``feedback_scope_a_guard_to_the_property_not_a_proxy``).
+_GATE_OPEN = "--- the BEHAVIOURAL FRESHNESS GATE."
+_GATE_CLOSE = "--- the PINNED plink1.9 build ---"
+_ROTATE_HEADING = "=== STEP 2b — ROTATE the prior artifacts"
+_EGRESS_HEADING = "=== EGRESS RULE ==="
+
+
+def _digits(text: str) -> str:
+    """Normalise thousands separators so `1,412,356` and `1412356` are one fact."""
+    return text.replace(",", "")
+
+
+def _has_number(text: str, n) -> bool:
+    """Digit-boundary-anchored numeric match — THE STANDING RULE of this quick.
+
+    A bare ``str(n) in text`` is FORBIDDEN for numbers. This repo has been bitten
+    by the substring-collision class repeatedly: a ``--nonfounders`` grep returning
+    3 on a file with the flag deleted, ``grep -q "failed"`` matching ``1 xfailed``,
+    a fixture FILENAME satisfying an error assertion. ``276`` must not be
+    satisfiable by a ``276`` inside ``1276000``, and ``73772`` must not be
+    satisfiable by a substring of a longer size.
+    """
+    import re
+
+    return re.search(rf"(?<!\d){n}(?!\d)", _digits(text)) is not None
+
+
+def test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash():
+    """THE GATE'S HASH IS RECOMPUTED HERE, NEVER FROZEN.
+
+    The runbook's STEP 0 gate names an md5 and a byte size for
+    ``src/python/pairwise_completeness_scan.py``. This test recomputes BOTH at
+    call time and asserts the runbook carries those values — so the gate goes RED
+    the MOMENT the scanner changes without the gate being regenerated. That is
+    the point, and the runbook's HOW TO REGENERATE block is the cheap, named
+    remedy.
+
+    THIS IS NOT ``feedback_fixed_sha_whole_file_pin_is_a_timebomb``. That failure
+    mode is a FROZEN SHA written into a doc that nothing recomputes — green once
+    and red forever after, with no remedy. Here the authority is the FILE ON
+    DISK: the test computes the truth and checks the document against it, and a
+    legitimate scanner change is resolved by four commands, not by deleting a pin.
+
+    The md5 is asserted as a plain substring (32 hex chars — no collision risk).
+    The SIZE is digit-boundary-anchored, because a bare 5-digit number is exactly
+    the collision shape this quick's standing rule exists to prevent.
+    """
+    import hashlib
+
+    scanner = PROJECT_ROOT / "src" / "python" / "pairwise_completeness_scan.py"
+    data = scanner.read_bytes()
+    md5 = hashlib.md5(data).hexdigest()
+    size = scanner.stat().st_size
+
+    text = _PENDING_PASTE.read_text()
+    assert _GATE_OPEN in text, "the STEP 0 behavioural freshness gate is GONE"
+    gate = text[text.index(_GATE_OPEN):text.index(_GATE_CLOSE)]
+
+    assert md5 in gate, (
+        f"the STEP 0 gate does not pin the CURRENT scanner md5 {md5}. The scanner "
+        f"changed and the gate was not regenerated — run the four commands in the "
+        f"runbook's HOW TO REGENERATE block and update the gate."
+    )
+    assert _has_number(gate, size), (
+        f"the STEP 0 gate does not pin the CURRENT scanner byte size {size}"
+    )
+    # the gate must gate on the WORKING TREE too: a local edit makes the hash lie
+    assert "git status --porcelain src/python/pairwise_completeness_scan.py" in gate
+    # ...and it must name the commit that last touched the file
+    assert "git log -1 --format='%h %s' -- src/python/pairwise_completeness_scan.py" in gate
+    # NO COMMIT-SUBJECT GATE ANYWHERE: that is the spoof this replaced.
+    assert "quick-260825-qpf" not in text or "769afa6" in text, (
+        "the runbook mentions quick-260825-qpf without the 769afa6 evidence that "
+        "explains why a commit-NAME check is a spoof"
+    )
+
+
+def test_pending_paste_step0_capability_numbers_are_the_real_manifest_numbers():
+    """THE GATE'S EXPECTED NUMBERS ARE COMPUTED HERE, FROM THE REAL MANIFEST.
+
+    The STEP 0 capability check asserts 276 windows / 276 distinct region ids from
+    ``_read_regions_tsv("config/ld_regions.tsv", None)``. If those were merely
+    transcribed they would be belief. They are recomputed at call time and the
+    gate is checked against them.
+
+    The ``552`` failure meaning is asserted too: a capability check that says only
+    "expect 276" leaves the operator no way to RECOGNISE the 8x-duplication code
+    when they see it, which is the exact situation that voided the 2026-08-26
+    sweep.
+
+    Everything is scoped to the gate slice AND digit-boundary-anchored. Both
+    matter: ``276`` and ``552`` are 3-digit tokens in a ~600-line document.
+    """
+    import pairwise_completeness_scan as pcs
+
+    manifest = PROJECT_ROOT / "config" / "ld_regions.tsv"
+    windows = pcs._read_regions_tsv(str(manifest), None)
+    n_windows = len(windows)
+    n_ids = len({w[0] for w in windows})
+    assert n_windows == n_ids, (
+        f"the manifest read is no longer 1:1 ({n_windows} windows, {n_ids} ids) — "
+        f"the gate's premise changed"
+    )
+
+    text = _PENDING_PASTE.read_text()
+    gate = text[text.index(_GATE_OPEN):text.index(_GATE_CLOSE)]
+
+    assert "_read_regions_tsv" in gate, (
+        "the capability check no longer calls the function it claims to check"
+    )
+    assert _has_number(gate, n_windows), (
+        f"the STEP 0 capability check does not EXPECT the real window count "
+        f"{n_windows}"
+    )
+    assert _has_number(gate, n_ids), (
+        f"the STEP 0 capability check does not EXPECT the real distinct-id count "
+        f"{n_ids}"
+    )
+    assert f"manifest windows: {n_windows} distinct region ids: {n_ids}" in gate, (
+        "the gate's EXPECT line does not match what the block actually prints"
+    )
+    assert "CAPABILITY CHECK PASSED" in gate
+
+    assert _has_number(gate, 2 * n_windows), (
+        f"the gate does not name {2 * n_windows} as the ancestry-blind failure "
+        f"meaning, so an operator seeing it has no way to recognise the 8x code"
+    )
+
+
+def test_pending_paste_rotates_before_the_sweep_and_never_deletes():
+    """ROTATE SITS BETWEEN THE CROSS-CHECK AND THE SWEEP, AND NEVER DELETES.
+
+    PARSED STRUCTURE ONLY — heading indices and sliced blocks, never a loose
+    whole-file grep.
+
+    THE ``rm`` CHECK IS THE DELICATE ONE AND ITS MECHANISM IS SPECIFIED, NOT
+    IMPROVISED. A bare ``"rm " not in slice`` FALSE-FAILS on ordinary prose
+    (``confirm``, ``term``, ``warm``, ``alarm``, ``storm``, ``form``, ``norm`` all
+    contain it) and this block is REQUIRED to carry the cited "NEVER `rm`" ruling.
+    A narrower artifact-name-targeted regex
+    (``rm\\s+-?\\w*\\s+.*pcs_(pairs\\.tsv|summary\\.json)``) was TESTED during
+    planning and REJECTED: it false-passes ``rm <path>`` with a single space,
+    ``rm -rf $f`` and ``/bin/rm "$f"``. So: strip INLINE code spans first (the
+    ``[^`\\n]*`` stops at a newline, so real command lines in the block survive the
+    strip and stay scannable), then require the absence of a WORD-BOUNDARY ``rm``
+    and the presence of a word-boundary ``mv``.
+
+    RED MECHANISM, BOTH DIRECTIONS, BOTH OBSERVED (quick-260828-uej): inserting a
+    real deletion of the contaminated artifact into the ROTATE block makes this
+    RED, and inserting the word ``confirm`` into the same block leaves it GREEN —
+    so the guard is not the collision bug it exists to prevent.
+    """
+    import re
+
+    text = _PENDING_PASTE.read_text()
+
+    assert _ROTATE_HEADING in text, "the ROTATE step is GONE from the runbook"
+    assert (
+        text.index(_STEP_CROSSCHECK)
+        < text.index(_ROTATE_HEADING)
+        < text.index(_STEP_SWEEP)
+    ), "ROTATE must sit AFTER the cross-check and BEFORE the sweep"
+
+    rotate = text[text.index(_ROTATE_HEADING):text.index("=== STEP 3")]
+    executable = re.sub(r"`[^`\n]*`", "", rotate)
+    assert re.search(r"(?<![\w.-])rm(?![\w.-])", executable) is None, (
+        "the ROTATE block deletes something. The contaminated artifacts are "
+        "EVIDENCE; the project ruling is rotate, never delete "
+        "(.planning/debug/260824-STAGE-A-env-stop-plink1.9-and-stale-scratch-TSV.md)"
+    )
+    assert re.search(r"(?<![\w.-])mv(?![\w.-])", executable) is not None, (
+        "the ROTATE block does not actually move anything"
+    )
+    assert ".STALE." in rotate, "the rotated name carries no .STALE. marker"
+    for artifact in ("pcs_pairs.tsv", "pcs_summary.json"):
+        assert artifact in rotate, f"ROTATE does not cover {artifact}"
+
+    # STEP 3 REFUSES TO START if either artifact is still at its path.
+    sweep = text[text.index(_STEP_SWEEP):text.index(_EGRESS_HEADING)]
+    assert "SystemExit" in sweep, (
+        "STEP 3 has no pre-flight that stops on an occupied output path"
+    )
+    assert "PRE-FLIGHT STOP" in sweep
+    for path in (
+        "/home/jupyter/occ_measure/pcs_pairs.tsv",
+        "/home/jupyter/occ_measure/pcs_summary.json",
+    ):
+        assert path in sweep, f"the STEP 3 pre-flight does not name {path}"
+
+    # STEP 3 NAMES the region ids rather than only counting them: a count of 21 is
+    # satisfiable by the WRONG 21.
+    assert "region id:" in sweep, "STEP 3 still only COUNTS the region ids"
+    assert "ls -l --time-style=full-iso" in sweep, (
+        "the fresh artifacts' mtimes are not recorded, so a stale file could "
+        "masquerade as fresh output"
+    )
+
+    # BELT AND BRACES with the existing pin: the forbidden flag stays absent.
+    assert text.count("--ancestry") == 0
+
+
 def test_ancestry_predicate_agrees_with_the_production_filter_contract():
     """The ancestry predicate is MIRRORED from production, never invented.
 

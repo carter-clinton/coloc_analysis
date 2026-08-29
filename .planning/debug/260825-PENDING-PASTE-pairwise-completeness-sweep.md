@@ -56,10 +56,96 @@ Paste the SHA and the ls line back BEFORE running anything else.
 
 ⚠ NCSU must have been PUSHED first. The NCSU tree routinely runs many commits
 ahead of origin; if it was not pushed, this clone silently runs STALE code and
-every number below is attributable to the wrong commit. If `git log -1` does not
-show a `quick-260825-qpf` commit (the adversarial-review remediation), or if
-`ls -l` reports no such file: STOP and say so. Do not proceed. A pre-qpf checkout
-carries the reviewed-but-unfixed instrument.
+every number below is attributable to the wrong commit.
+
+--- the BEHAVIOURAL FRESHNESS GATE. Pin what the code DOES, not what a commit is called. ---
+
+WHY THIS IS NOT A COMMIT-NAME CHECK. Until 2026-08-28 this gate said "STOP unless
+`git log -1` shows a `quick-260825-qpf` commit". That gate was a SPOOF in both
+directions, MEASURED:
+
+* The CONTAMINATED 2026-08-26 run pulled to `769afa6`, whose SUBJECT LINE contains
+  the string `quick-260825-qpf`
+  (`git log -1 --format='%s' 769afa6 | grep -c 'quick-260825-qpf'` -> **1**). So the
+  old gate PASSED on the 8x-duplication code and every count that run produced is
+  void.
+* It also FALSE-STOPPED on `352ac9e`
+  (`git log -1 --format='%s' 352ac9e | grep -c 'quick-260825-qpf'` -> **0**), a
+  perfectly good checkout.
+
+A commit SUBJECT is prose. Gate on the CONTENT of the file that will run, and on
+what that file can DO. Run all four checks below; each has an EXPECT and a STOP.
+
+(i) git status --porcelain src/python/pairwise_completeness_scan.py
+
+EXPECT: NO OUTPUT AT ALL. Any output means the working tree has a local edit, so
+the hash in (ii) is not the code that will run. STOP.
+
+(ii) md5sum src/python/pairwise_completeness_scan.py
+     stat -c '%s' src/python/pairwise_completeness_scan.py
+
+EXPECT exactly:
+
+  e03078ff73502c3c877b0d2ebf93941d
+  73772
+
+Any other hash or size means this clone is NOT running the reviewed instrument.
+STOP. (Do not "update" these values from what the VM reports — that inverts the
+gate. See HOW TO REGENERATE below.)
+
+(iii) git log -1 --format='%h %s' -- src/python/pairwise_completeness_scan.py
+
+EXPECT the short hash `cb199b6` (the quick-260828-uej T1 commit: write the TSV
+BEFORE the reconciliation, quarantine to `.SUSPECT` on disagreement). A different
+commit means the file moved after this gate was written — STOP and regenerate.
+
+(iv) THE CAPABILITY CHECK. A POSITIVE test that the code can do the one thing
+every number below depends on: read `config/ld_regions.tsv` on its REAL key.
+
+python3 - <<'EOF'
+import sys
+sys.path.insert(0, "src/python")
+import pairwise_completeness_scan as pcs
+windows = pcs._read_regions_tsv("config/ld_regions.tsv", None)
+ids = {w[0] for w in windows}
+print("manifest windows:", len(windows), "distinct region ids:", len(ids))
+assert len(windows) == 276, "EXPECTED 276 windows, got %d" % len(windows)
+assert len(ids) == 276, "EXPECTED 276 distinct region ids, got %d" % len(ids)
+print("CAPABILITY CHECK PASSED")
+EOF
+
+EXPECT exactly these two lines:
+
+  manifest windows: 276 distinct region ids: 276
+  CAPABILITY CHECK PASSED
+
+WHAT EACH FAILURE MEANS:
+
+* `552` windows against `276` ids = THE ANCESTRY-BLIND READ. The manifest is keyed
+  on (region_id x ancestry) — 553 lines = 1 header + 276 ids x 2 — and this code
+  is returning every window TWICE. That is the 8x-duplication defect that voided
+  the 2026-08-26 sweep. MEASURED: a pre-fix checkout returns exactly `552` / `276`
+  through this same call. **STOP.**
+* `TypeError: _read_regions_tsv() got an unexpected keyword argument` = a pre-fix
+  checkout reached through the keyword call form (MEASURED at `d8f4d54^`). **STOP.**
+* Anything else, including any traceback: **STOP.** Paste it verbatim, change
+  nothing.
+
+⚠ DO NOT "FIX" THIS BLOCK BY ADDING A TWO-DASH ANCESTRY COMMAND-LINE FLAG
+ANYWHERE IN THIS DOCUMENT. The STEP 3 sweep command is correct ONLY because
+`DEFAULT_ANCESTRY == "AFR"` in the scanner, and
+`tests/m3/test_pairwise_completeness_scan.py::test_pending_paste_step3_carries_no_ancestry_flag_so_the_default_is_load_bearing`
+asserts that this file contains that token ZERO times. That is why the check above
+is expressed in Python against `_read_regions_tsv` rather than as a flag.
+
+HOW TO REGENERATE THIS GATE (the only legitimate way to change (i)-(iii); run at
+NCSU, on a clean tree, AFTER the scanner legitimately changes, then update the
+three values above and re-run the test suite so the enforcers agree):
+
+  git status --porcelain src/python/pairwise_completeness_scan.py
+  md5sum src/python/pairwise_completeness_scan.py
+  stat -c '%s' src/python/pairwise_completeness_scan.py
+  git log -1 --format='%h %s' -- src/python/pairwise_completeness_scan.py
 
 --- the PINNED plink1.9 build ---
 
@@ -94,6 +180,27 @@ RECORD whether that distinction is even live in this cohort instead of assuming
 it: if they are equal, every sample is a founder and the flag is a no-op here. Do
 NOT state an expected value — report whatever they say, and change nothing on the
 strength of them.
+
+--- the .bim the banked pair_keys are RELATIVE TO (a FIELD RECORD) ---
+
+wc -l /home/jupyter/afr_cohort.bim
+
+EXPECT 20767864. A DIFFERENT NUMBER IS A STOP. `pair_key` is a GLOBAL `.bim` row
+index, not a coordinate: the 13 banked pair_keys from the contaminated sweep, and
+every pair_key this sweep emits, are comparable ONLY against a byte-identical
+`.bim`. A rebuilt or re-filtered cohort silently renumbers every one of them, and
+nothing downstream would notice.
+
+ls -l --time-style=full-iso /home/jupyter/afr_cohort.bed /home/jupyter/afr_cohort.bim /home/jupyter/afr_cohort.fam
+
+--- the interpreter that will run the scan (FIELD RECORDS) ---
+
+python3 -V
+python3 -c "import numpy; print('numpy', numpy.__version__)"
+
+These blocks are RECORDS, in the same class as the founder counts above: they are
+pasted back so the numbers can be attributed later. Only the `.bim` line count
+carries a STOP.
 
 --- disk ---
 
@@ -393,32 +500,88 @@ window, or the code to make it pass.** A harness that disagrees with the one pai
 we measured by hand is broken, and every number it would produce is worthless.
 (This mirrors the region-1 `231` cross-check that guarded the site-basis sweep.)
 
+=== STEP 2b — ROTATE the prior artifacts. Never delete. ===
+
+THE 2026-08-26 SWEEP'S OUTPUT IS STILL SITTING AT THE PATHS THIS SWEEP WRITES.
+`/home/jupyter/occ_measure/pcs_pairs.tsv` is 871,038,152 B / 2,865,514 lines and
+every count in it is CONTAMINATED (the ancestry-blind 8x read). It is at exactly
+the path STEP 3 later `wc -l`s. Move it aside BEFORE the sweep, so no stale byte
+can be read as a fresh result.
+
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+for f in /home/jupyter/occ_measure/pcs_pairs.tsv /home/jupyter/occ_measure/pcs_summary.json; do
+  if [ -e "$f" ]; then mv -v "$f" "$f.STALE.$STAMP"; fi
+done
+ls -l --time-style=full-iso /home/jupyter/occ_measure/
+
+NEVER `rm`. The contaminated artifacts are EVIDENCE — they are the physical record
+of the 8x defect, in exactly the same class as the forensic
+`m2_region_00057.ld.bin`, and a later question about that run can only be answered
+from the bytes. Project ruling:
+`.planning/debug/260824-STAGE-A-env-stop-plink1.9-and-stale-scratch-TSV.md`
+("ROTATE, never delete").
+
+DISK: the rotate KEEPS the 871 MB copy and the sweep then writes a NEW artifact
+beside it. STEP 0's `df -h /home/jupyter` must show room for BOTH. If it does not,
+STOP and say so — do not free space by discarding the evidence.
+
+PASTE BACK: the `mv -v` lines (or "nothing to rotate") and the `ls -l` listing,
+including the `$STAMP` value. STEP 3's artifacts must later carry an mtime that
+POST-DATES that stamp.
+
 === STEP 3 — THE SWEEP over the pre-committed 21-region sample. ===
 
-Only after STEP 1 printed VERDICT: PAIRWISE-COMPLETE and STEP 2 printed
-CROSS-CHECK PASSED.
+Only after STEP 1 printed VERDICT: PAIRWISE-COMPLETE, STEP 2 printed
+CROSS-CHECK PASSED, and STEP 2b rotated the prior artifacts.
 
 python3 - <<'EOF'
-import subprocess, sys
+import os, subprocess, sys
+OUT = "/home/jupyter/occ_measure/pcs_pairs.tsv"
+SUMMARY = "/home/jupyter/occ_measure/pcs_summary.json"
+# PRE-FLIGHT. A stale artifact at an output path is EXACTLY how a contaminated
+# file masqueraded as a fresh result on 2026-08-26: the operator's wc -l returned
+# 2,865,514 from the PREVIOUS run. Refuse to start rather than risk it.
+for path in (OUT, SUMMARY):
+    if os.path.exists(path):
+        raise SystemExit(
+            "PRE-FLIGHT STOP: %s already exists. Run STEP 2b (ROTATE) first; do "
+            "not overwrite it and do not discard it." % path)
 SAMPLE = "/home/jupyter/occ_measure/occ_measure_sample.tsv"
 ids = [l.split("\t")[0] for l in open(SAMPLE).read().splitlines()[1:] if l.strip()]
 print("regions in the pre-committed sample:", len(ids))
+# NAME them, do not merely count them: a count of 21 is satisfiable by the WRONG
+# 21 (feedback_aggregate_agreement_hides_component_errors).
+for rid in ids:
+    print("  region id:", rid)
 cmd = [sys.executable, "src/python/pairwise_completeness_scan.py",
        "--bfile-prefix", "/home/jupyter/afr_cohort",
        "--regions-tsv", "config/ld_regions.tsv",
        "--region-ids", ",".join(ids),
        "--window-bp", "25",
-       "--out", "/home/jupyter/occ_measure/pcs_pairs.tsv",
-       "--summary", "/home/jupyter/occ_measure/pcs_summary.json"]
+       "--out", OUT,
+       "--summary", SUMMARY]
 print(" ".join(cmd), flush=True)
 raise SystemExit(subprocess.call(cmd))
 EOF
 
 wc -l /home/jupyter/occ_measure/pcs_pairs.tsv
+ls -l --time-style=full-iso /home/jupyter/occ_measure/pcs_pairs.tsv /home/jupyter/occ_measure/pcs_summary.json
+
+⚠ IF THE SWEEP EXITS 2 WITH A `POOLED denominator disagreement` LINE: the output
+has been QUARANTINED to `/home/jupyter/occ_measure/pcs_pairs.tsv.SUSPECT` (and the
+summary likewise) and NOTHING is left at the output path, so the `wc -l` above
+will fail. That is the DESIGNED behaviour: the ~4h18m of compute is preserved in
+the `.SUSPECT` files for forensics, and no plausible-looking artifact survives
+where a fresh result belongs. STOP and paste the ERROR line and the `ls -l`
+verbatim. Do not re-run over it.
 
 PASTE BACK: the FULL stdout of the sweep (the per-region summary table, the pooled
-offset histogram, the pooled lost-frac bins) plus that `wc -l` line, plus the
-contents of /home/jupyter/occ_measure/pcs_summary.json.
+offset histogram, the pooled lost-frac bins), the 21 NAMED region ids printed
+above, that `wc -l` line, the `ls -l --time-style=full-iso` lines for BOTH new
+artifacts, plus the contents of /home/jupyter/occ_measure/pcs_summary.json.
+
+The `ls -l` lines are not decoration: their mtimes must POST-DATE the `$STAMP`
+recorded in STEP 2b. A stale file must not be able to masquerade as fresh output.
 
 === EGRESS RULE ===
 
