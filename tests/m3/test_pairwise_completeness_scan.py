@@ -2822,29 +2822,179 @@ def test_ancestry_predicate_agrees_with_the_production_filter_contract():
 
 
 def test_region_only_in_the_unrequested_ancestry_raises_naming_the_id(tmp_path):
-    """A LOUD ERROR, never a silent drop.
+    """A LOUD ERROR, never a silent drop — AND THE ASSERTION NOW MEANS IT.
 
     ``seen`` accumulates ONLY rows that pass the ancestry filter, so asking for a
     region that exists only as EUR while reading AFR hits the pre-existing
     ``region ids not found in`` error instead of quietly returning an empty
     window list.
+
+    THIS TEST WAS A FALSE INVARIANT UNTIL quick-260828-uej. Its fixture was
+    ``name="eur_only.tsv"`` and it asserted ``"eur_only" in str(excinfo.value)``
+    — but the error interpolates ``{path}``, so THE FIXTURE'S OWN FILENAME
+    satisfied the assertion. MEASURED, both directions:
+
+      * deleting ``: {missing}`` from the f-string in ``_read_regions_tsv`` left
+        the OLD test GREEN (the id came from the path);
+      * the same deletion makes THIS repaired test RED.
+
+    Two changes close it. The fixture is ``anc_split.tsv``, so the filename can no
+    longer carry the id; and the message is SPLIT ONCE on the interpolated path,
+    with the assertion scoped to the TAIL — the only route left to it is the
+    ``{missing}`` list itself.
+
+    Its CLI sibling ``test_cli_region_only_in_the_unrequested_ancestry_exits_2_and_
+    writes_no_tsv`` (fixture ``ancerr.tsv``) already covered the property BY
+    ACCIDENT — its fixture name happens not to contain the id. Accident is not
+    coverage; this test is the one that states the property.
     """
     import pairwise_completeness_scan as pcs
 
     regions = _ancestry_regions_tsv(
         tmp_path,
         [("r1", "1", 1000, 2000, "AFR"), ("eur_only", "1", 3000, 4000, "EUR")],
-        name="eur_only.tsv",
+        name="anc_split.tsv",
+    )
+    assert "eur_only" not in str(regions), (
+        "the fixture filename must not be able to satisfy the assertion below"
     )
 
     with pytest.raises(ValueError) as excinfo:
         pcs._read_regions_tsv(regions, ["r1", "eur_only"])
-    assert "eur_only" in str(excinfo.value)
+    message = str(excinfo.value)
+    assert str(regions) in message, (
+        f"the message no longer interpolates the path, so the split below is "
+        f"not the scoping it claims to be: {message!r}"
+    )
+    tail = message.split(str(regions), 1)[1]
+    assert "eur_only" in tail, (
+        f"the missing id is not named AFTER the interpolated path — only the "
+        f"path itself carried it: {message!r}"
+    )
 
     # ...and it IS reachable with --ancestry EUR, so the raise is about the
     # ancestry key and not about the id being absent from the file entirely.
     got = pcs._read_regions_tsv(regions, ["eur_only"], ancestry="EUR")
     assert got == [("eur_only", "1", 3000, 4000)]
+
+
+def test_composite_whitespace_ancestry_parse_selects_where_production_drops(
+    tmp_path,
+):
+    """THE COMPOSITE PARSE, PINNED AT THE SELECTION LAYER — not at the predicate.
+
+    ``test_ancestry_predicate_agrees_with_the_production_filter_contract`` pins
+    ``_matches_ancestry`` against production and is GREEN — but the scanner's real
+    path is ``_tsv_field(...)`` (which STRIPS) and THEN ``_matches_ancestry``. The
+    predicate test therefore says nothing about a whitespace-padded manifest cell.
+    That gap is exactly the reviewer's MEDIUM finding.
+
+    This test drives ``"  AFR  "`` through ``_read_regions_tsv`` and pins TODAY'S
+    ACTUAL BEHAVIOUR: the scanner SELECTS the row. It then MEASURES the production
+    divergence instead of asserting it in prose — ``_filter_ancestry`` is
+    ast-extracted from ``run_native_ld_panel.py`` AT CALL TIME and ``exec``'d in an
+    empty namespace (never imported, so a stale ``.pyc`` cannot make this green —
+    ``feedback_negative_control_defeated_by_bytecode_cache``), and production DROPS
+    the same row.
+
+    THIS IS A DIVERGENCE. It is LATENT, not live: the checked-in
+    ``config/ld_regions.tsv`` carries ZERO padded-or-quoted ancestry cells, which
+    is what ``test_real_manifest_carries_no_padded_or_quoted_ancestry_cells``
+    below MONITORS. That monitor is what keeps this latent; the day it goes RED,
+    this divergence becomes live and must be closed rather than recorded.
+
+    RED mechanism, OBSERVED (quick-260828-uej): removing ``.strip()`` from
+    ``_tsv_field`` drops the padded row, ``_read_regions_tsv`` returns ``[]`` and
+    this test fails.
+    """
+    import ast
+
+    import pairwise_completeness_scan as pcs
+
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("padded", "1", 1000, 2000, "  AFR  ")],
+        name="padded_anc.tsv",
+    )
+
+    # THE SCANNER SELECTS IT — through the real composite path, not the predicate.
+    got = pcs._read_regions_tsv(regions, None)
+    assert got == [("padded", "1", 1000, 2000)], (
+        f"the scanner no longer selects a whitespace-padded ancestry cell: {got}"
+    )
+
+    # PRODUCTION, READ AT CALL TIME, DROPS IT.
+    source = _RUN_NATIVE_LD_PANEL.read_text()
+    tree = ast.parse(source)
+    fn = next(
+        (
+            n
+            for n in ast.walk(tree)
+            if isinstance(n, ast.FunctionDef) and n.name == "_filter_ancestry"
+        ),
+        None,
+    )
+    assert fn is not None, (
+        "run_native_ld_panel._filter_ancestry is GONE — there is no production "
+        "contract left to measure the divergence against"
+    )
+    segment = ast.get_source_segment(source, fn)
+    assert segment is not None and segment.lstrip().startswith("def _filter_ancestry")
+    namespace: dict = {}
+    exec(compile(segment, "<_filter_ancestry contract>", "exec"), namespace)
+    production = namespace["_filter_ancestry"]
+
+    assert production([{"ancestry": "  AFR  "}], "AFR") == [], (
+        "production now ACCEPTS a padded ancestry cell — the divergence this test "
+        "measures has changed shape and the record must be rewritten"
+    )
+    # ...and it is the PADDING, not the value: unpadded, production takes it.
+    assert len(production([{"ancestry": "AFR"}], "AFR")) == 1
+
+
+def test_real_manifest_carries_no_padded_or_quoted_ancestry_cells():
+    """THE MONITOR THAT KEEPS THE DIVERGENCE LATENT.
+
+    The scanner strips the ancestry cell and production does not. That only
+    MATTERS if a row with a padded or quoted ancestry cell actually exists.
+    MEASURED at quick-260828-uej: 0 of 552 data rows in the real
+    ``config/ld_regions.tsv``. This test re-measures it AT CALL TIME and goes RED
+    the day such a row appears — which is the only condition under which the
+    divergence pinned above becomes live.
+    """
+    import pairwise_completeness_scan as pcs
+
+    manifest = PROJECT_ROOT / "config" / "ld_regions.tsv"
+    assert manifest.exists(), f"the real manifest is gone: {manifest}"
+
+    offenders = []
+    data_rows = 0
+    for lineno, line in enumerate(manifest.read_text().splitlines(), start=1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) <= pcs._REGIONS_TSV_END_COL:
+            continue
+        try:
+            int(parts[pcs._REGIONS_TSV_START_COL])
+            int(parts[pcs._REGIONS_TSV_END_COL])
+        except ValueError:
+            continue  # the header row
+        data_rows += 1
+        cell = parts[pcs._REGIONS_TSV_ANCESTRY_COL]
+        if cell != cell.strip() or '"' in cell:
+            offenders.append((lineno, cell))
+
+    assert data_rows == 552, (
+        f"the manifest's shape changed: {data_rows} data rows, expected 552 "
+        f"(276 region ids x {{AFR, EUR}})"
+    )
+    assert not offenders, (
+        "the real manifest now carries padded-or-quoted ancestry cells, so the "
+        "scanner-vs-production whitespace divergence pinned by "
+        "test_composite_whitespace_ancestry_parse_selects_where_production_drops "
+        f"is LIVE and must be closed, not recorded: {offenders}"
+    )
 
 
 def test_cli_region_only_in_the_unrequested_ancestry_exits_2_and_writes_no_tsv(
