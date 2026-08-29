@@ -165,6 +165,7 @@ import json
 import sys
 from bisect import bisect_left, bisect_right
 from collections import Counter, OrderedDict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, NamedTuple, Sequence
 
@@ -1112,6 +1113,27 @@ def write_tsv(results: Iterable[PairResult], path: "str | Path") -> None:
             )
 
 
+def _quarantine_output(path: "str | Path", stamp: str) -> Path:
+    """Move ``path`` aside to ``<path>.SUSPECT`` and return the new location.
+
+    THE NAME IS BUILT BY STRING CONCATENATION, never by ``Path.with_suffix``.
+    ``Path("pcs_pairs.tsv").with_suffix(".SUSPECT")`` is ``pcs_pairs.SUSPECT``:
+    it DESTROYS the extension an operator greps for and collides with the
+    summary's quarantine name (``pcs_summary.SUSPECT``). Pinned by
+    ``test_the_quarantine_name_is_built_by_string_concatenation_not_with_suffix``.
+
+    ROTATE, NEVER DELETE. If a ``.SUSPECT`` from an earlier disagreement is
+    already there, it is first moved to ``<path>.SUSPECT.<stamp>`` so its bytes
+    survive — the same project ruling that governs the in-perimeter artifacts
+    (``.planning/debug/260824-STAGE-A-env-stop-plink1.9-and-stale-scratch-TSV.md``).
+    """
+    suspect = Path(str(path) + ".SUSPECT")
+    if suspect.exists():
+        suspect.replace(Path(str(suspect) + "." + stamp))
+    Path(path).replace(suspect)
+    return suspect
+
+
 def summarize(
     region_id: str,
     results: Iterable[PairResult],
@@ -1355,7 +1377,14 @@ def _build_parser() -> argparse.ArgumentParser:
             "streaming .bim pass."
         ),
     )
-    parser.add_argument("--region-ids", dest="region_ids", help="comma-separated subset of --regions-tsv region ids")
+    parser.add_argument(
+        "--region-ids", dest="region_ids",
+        help=(
+            "comma-separated subset of --regions-tsv region ids. OMIT the flag "
+            "to scan every region; a value that names no id after stripping "
+            "(e.g. ' , ') is an ERROR and exits 2, NOT a silent all-region scan."
+        ),
+    )
     parser.add_argument(
         "--ancestry", dest="ancestry", default=DEFAULT_ANCESTRY,
         help=(
@@ -1410,11 +1439,26 @@ def main(argv: "list[str] | None" = None) -> int:
             if not Path(args.regions_tsv).exists():
                 print(f"ERROR: missing --regions-tsv {args.regions_tsv}", file=sys.stderr)
                 return 2
-            region_ids = (
-                [r.strip() for r in args.region_ids.split(",") if r.strip()]
-                if args.region_ids
-                else None
-            )
+            # AN EMPTY-AFTER-STRIP VALUE IS AN ERROR, NOT "ALL REGIONS".
+            # The old conditional expression let `--region-ids " , "` produce
+            # `[]`, which is FALSY, which fell through to `region_ids = None`,
+            # which means NO FILTER — a silent scan of every region in the
+            # manifest (21 -> 276, a ~13x cost blow-up) that failed loudly
+            # nowhere. Raising here lands on the existing `except ValueError`
+            # below, so it exits 2 with an `ERROR:` line and no traceback, BEFORE
+            # any scan and BEFORE any file is written. The flag ABSENT still
+            # means "all regions" — that path is UNCHANGED.
+            if args.region_ids is None:
+                region_ids = None
+            else:
+                region_ids = [r.strip() for r in args.region_ids.split(",") if r.strip()]
+                if not region_ids:
+                    raise ValueError(
+                        f"--region-ids was given but names no region id after "
+                        f"stripping: {args.region_ids!r}. OMIT the flag entirely "
+                        f"to scan every region in --regions-tsv; an empty value "
+                        f"is not the same request."
+                    )
             windows = _read_regions_tsv(
                 args.regions_tsv, region_ids, ancestry=args.ancestry
             )
@@ -1519,6 +1563,25 @@ def main(argv: "list[str] | None" = None) -> int:
     finally:
         reader.close()
 
+    # WRITE FIRST, THEN RECONCILE, THEN QUARANTINE. The order is deliberate and
+    # it INVERTS what shipped before (quick-260828-uej). Three reasons, in the
+    # order they were argued:
+    #
+    #   (a) WRITING TRUNCATES ANY STALE ARTIFACT AT THE READ PATH. The runbook
+    #       has the operator `wc -l /home/jupyter/occ_measure/pcs_pairs.tsv`
+    #       immediately after the sweep. The CONTAMINATED 2026-08-26 artifact —
+    #       871,038,152 B, 2,865,514 lines — sits at exactly that path. Under the
+    #       old order a failure exited BEFORE any write, that file survived
+    #       untouched, and the `wc -l` returned 2865514: a stale number that reads
+    #       like a fresh result.
+    #   (b) THE RENAME LEAVES NOTHING AT `--out`. After a disagreement the output
+    #       is MOVED to `<out>.SUSPECT`, so the operator's `wc -l` FAILS LOUDLY
+    #       instead of returning any number at all.
+    #   (c) THE COMPUTE IS SALVAGED. The 21-region sweep costs ~4h18m. A
+    #       traceback discarded all of it; a rename preserves every emitted row
+    #       in `<out>.SUSPECT` for forensics.
+    #
+    # THE ARITHMETIC BELOW IS UNCHANGED. Only POSITION and FAILURE HANDLING moved.
     # THE TWO 'POOLED' DENOMINATORS ARE ONE BASIS, BY IDENTITY — NOT BY EYE.
     # `POOLED candidate rows` used to print len(all_results) (the emitted-TSV
     # basis) three lines below a histogram and bins computed from `summaries`
@@ -1527,20 +1590,36 @@ def main(argv: "list[str] | None" = None) -> int:
     # nothing to flag it: the 2026-08-26 sweep reported 2,865,513 against a
     # summaries basis of 1,453,157. Prefer a must-be-identity transform over a
     # must-match count (`feedback_aggregate_agreement_hides_component_errors`).
-    # This runs BEFORE write_tsv, so a disagreeing instrument leaves NO output.
-    pooled_candidate_rows = sum(s["n_candidate_rows"] for s in summaries.values())
-    if pooled_candidate_rows != len(all_results):
-        raise ValueError(
-            f"POOLED denominator disagreement: sum of per-region "
-            f"n_candidate_rows = {pooled_candidate_rows} but the emitted TSV "
-            f"carries {len(all_results)} candidate rows. These MUST be the same "
-            f"basis; a difference means at least one region was evaluated more "
-            f"than once (or a summary was built from a different row set)."
-        )
-
+    #
+    # RESIDUAL — STATED, NOT CLOSED HERE. The EARLY-exit paths (a missing bfile
+    # component, `no windows selected`, a duplicate region_id, an empty
+    # `--region-ids`) still return 2 BEFORE anything is written, so a stale
+    # artifact at the output path SURVIVES those. That hole is closed by the
+    # runbook — STEP 2b ROTATE plus STEP 3's pre-flight existence guard in
+    # `.planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md` — and
+    # NOT by this code. Do not read the write-first ordering as covering them.
     write_tsv(all_results, args.out)
     if args.summary is not None:
         Path(args.summary).write_text(json.dumps(summaries, indent=2, sort_keys=True))
+
+    pooled_candidate_rows = sum(s["n_candidate_rows"] for s in summaries.values())
+    if pooled_candidate_rows != len(all_results):
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        quarantined = _quarantine_output(args.out, stamp)
+        if args.summary is not None:
+            _quarantine_output(args.summary, stamp)
+        print(
+            f"ERROR: POOLED denominator disagreement: sum of per-region "
+            f"n_candidate_rows = {pooled_candidate_rows} but the emitted TSV "
+            f"carries {len(all_results)} candidate rows. These MUST be the same "
+            f"basis; a difference means at least one region was evaluated more "
+            f"than once (or a summary was built from a different row set). The "
+            f"output is QUARANTINED at {quarantined} — nothing survives at "
+            f"{args.out}, so a `wc -l` there fails loudly rather than returning a "
+            f"stale number.",
+            file=sys.stderr,
+        )
+        return 2
 
     # --- stdout: AGGREGATE ONLY. Safe to paste back across the perimeter. ---
     scalar_keys = [k for k in SUMMARY_KEYS if not k.endswith(("histogram", "bins"))]

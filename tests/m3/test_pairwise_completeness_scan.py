@@ -3182,27 +3182,14 @@ def test_pooled_candidate_rows_is_the_summaries_basis_and_names_it(tmp_path, cap
     assert "reconciled against the emitted TSV rows" in rows_line
 
 
-def test_pooled_candidate_rows_reconciliation_raises_when_the_bases_disagree(
-    tmp_path, monkeypatch
-):
-    """A MUST-BE-IDENTITY TRANSFORM, not a must-match count.
+def _bump_one_region_summary(monkeypatch, pcs):
+    """Monkeypatch ``summarize`` so ONE region reports ``n_candidate_rows`` + 1.
 
-    ``feedback_aggregate_agreement_hides_component_errors``: agreement by eye is
-    what let two denominators print three lines apart for a whole sweep. Here the
-    per-region ``n_candidate_rows`` is perturbed by +1 for ONE region and the run
-    must RAISE naming BOTH numbers — and must write NO output, so a disagreeing
-    instrument cannot leave a plausible-looking TSV behind.
+    The perturbation is applied to the FIRST region only, so the pooled
+    per-region basis exceeds the emitted-TSV basis by exactly 1 and the
+    must-be-identity reconciliation in ``main()`` must fire. Extracted so every
+    quarantine test drives the SAME disagreement rather than re-deriving it.
     """
-    import pairwise_completeness_scan as pcs
-
-    base = _multi_region_bfile(tmp_path, prefix="recon")
-    regions = _ancestry_regions_tsv(
-        tmp_path,
-        [("r1", "1", 990, 1010, "AFR"), ("r2", "chr1", 4990, 5010, "AFR")],
-        name="recon.tsv",
-    )
-    out = tmp_path / "should_not_exist.tsv"
-
     real_summarize = pcs.summarize
     state = {"bumped": False}
 
@@ -3216,23 +3203,339 @@ def test_pooled_candidate_rows_reconciliation_raises_when_the_bases_disagree(
 
     monkeypatch.setattr(pcs, "summarize", off_by_one)
 
-    with pytest.raises(ValueError) as excinfo:
-        pcs.main([
-            "--bfile-prefix", str(base),
-            "--regions-tsv", str(regions),
-            "--region-ids", "r1,r2",
-            "--window-bp", "10",
-            "--out", str(out),
-        ])
 
-    message = str(excinfo.value)
-    assert "3" in message and "2" in message, (
-        f"the reconciliation must print BOTH numbers: {message}"
+def _two_region_disagreement_fixture(tmp_path, prefix="recon", name="recon.tsv"):
+    """The two-region bfile + AFR manifest every quarantine test scans."""
+    base = _multi_region_bfile(tmp_path, prefix=prefix)
+    regions = _ancestry_regions_tsv(
+        tmp_path,
+        [("r1", "1", 990, 1010, "AFR"), ("r2", "chr1", 4990, 5010, "AFR")],
+        name=name,
     )
-    assert "n_candidate_rows" in message
+    return base, regions
+
+
+#: What a contaminated artifact looks like in the stale-file tests. Deliberately
+#: NOT a substring of any real TSV field, so `in` here cannot false-pass.
+_JUNK_MARKER = "JUNK-STALE-CONTAMINATED-ROW"
+
+
+def test_pooled_candidate_rows_disagreement_quarantines_the_output_and_returns_2(
+    tmp_path, monkeypatch, capsys
+):
+    """A MUST-BE-IDENTITY TRANSFORM — and a disagreement costs a RENAME, not a RUN.
+
+    ``feedback_aggregate_agreement_hides_component_errors``: agreement by eye is
+    what let two denominators print three lines apart for a whole sweep. Here the
+    per-region ``n_candidate_rows`` is perturbed by +1 for ONE region and the run
+    must report BOTH numbers.
+
+    RENAMED AND INVERTED by ``quick-260828-uej``. It previously asserted
+    ``pytest.raises(ValueError)`` — and its NAME said ``_raises_``, which is now
+    false. ``main()`` writes the TSV FIRST (so no stale artifact can survive at
+    the read path), then reconciles, and on disagreement QUARANTINES the output
+    to ``<out>.SUSPECT`` and returns 2 like every other failure path. Three
+    properties at once: nothing plausible survives at ``--out`` (an operator's
+    ``wc -l`` fails loudly instead of returning a stale 2,865,514); the compute is
+    salvaged in the ``.SUSPECT`` sibling; and the reconciliation ARITHMETIC is
+    byte-unchanged. The ``not out.exists()`` half SURVIVES the inversion and is
+    still meaningful — the file is renamed AWAY, never left behind.
+    """
+    import json
+    import re
+
+    import pairwise_completeness_scan as pcs
+
+    base, regions = _two_region_disagreement_fixture(tmp_path)
+    out = tmp_path / "pcs_pairs.tsv"
+    summ = tmp_path / "pcs_summary.json"
+
+    _bump_one_region_summary(monkeypatch, pcs)
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+        "--summary", str(summ),
+    ])
+    assert rc == 2, "a POOLED disagreement must RETURN 2, not raise a traceback"
+
+    err = capsys.readouterr().err
+    assert err.count("ERROR:") == 1, (
+        f"exactly ONE ERROR line belongs on stderr, got: {err!r}"
+    )
+    # BOTH numbers, each anchored by the surrounding message text rather than by a
+    # bare `in` — a bare "3" is satisfiable by any digit anywhere, including in
+    # tmp_path (the standing rule of quick-260828-uej).
+    assert re.search(r"n_candidate_rows = 3(?!\d)", err), (
+        f"the per-region basis (3) is not named: {err!r}"
+    )
+    assert re.search(r"carries 2(?!\d) candidate rows", err), (
+        f"the emitted-TSV basis (2) is not named: {err!r}"
+    )
+    assert "n_candidate_rows" in err
+
+    suspect = Path(str(out) + ".SUSPECT")
+    assert str(suspect) in err, (
+        f"the ERROR line must name the quarantine path: {err!r}"
+    )
+
     assert not out.exists(), (
-        "a TSV was written even though the two POOLED bases disagreed"
+        "a TSV survived at --out even though the two POOLED bases disagreed"
     )
+    assert suspect.exists(), "the ~4h18m of compute was discarded, not quarantined"
+    rows = suspect.read_text().splitlines()
+    assert rows[0] == "\t".join(pcs.TSV_COLUMNS)
+    assert len(rows) - 1 == 2, (
+        f"the quarantined TSV must hold the emitted rows, got {len(rows) - 1}"
+    )
+
+    summary_suspect = Path(str(summ) + ".SUSPECT")
+    assert not summ.exists(), "the summary JSON survived at --summary"
+    assert summary_suspect.exists(), "the summary JSON was not quarantined alongside"
+    assert set(json.loads(summary_suspect.read_text())) == {"r1", "r2"}
+
+
+def test_a_stale_artifact_at_out_does_not_survive_a_successful_run(tmp_path):
+    """BLOCKER-2's read path, SUCCESS half: writing TRUNCATES.
+
+    The contaminated ``/home/jupyter/occ_measure/pcs_pairs.tsv`` (871,038,152 B,
+    2,865,514 lines) sits at exactly the path the runbook ``wc -l``s. A successful
+    run must leave ONLY fresh bytes there — zero pre-existing lines survive.
+
+    NEGATIVE CONTROL, OBSERVED (quick-260828-uej): flipping ``write_tsv``'s
+    ``open(out_path, "w")`` to ``"a"`` leaves the junk lines in place and this
+    test goes RED. ``__pycache__`` is cleared around that mutation because ``"w"``
+    and ``"a"`` are the SAME byte length
+    (``feedback_negative_control_defeated_by_bytecode_cache``).
+    """
+    import pairwise_completeness_scan as pcs
+
+    base, regions = _two_region_disagreement_fixture(
+        tmp_path, prefix="stale_ok", name="stale_ok.tsv"
+    )
+    out = tmp_path / "pcs_pairs.tsv"
+    out.write_text("".join(f"{_JUNK_MARKER}-{i}\n" for i in range(5)))
+    assert len(out.read_text().splitlines()) == 5
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+    ])
+    assert rc == 0
+
+    text = out.read_text()
+    assert _JUNK_MARKER not in text, (
+        "a contaminated line survived a SUCCESSFUL run at the read path"
+    )
+    lines = text.splitlines()
+    assert lines[0] == "\t".join(pcs.TSV_COLUMNS)
+    assert len(lines) - 1 == 2
+
+
+def test_a_stale_artifact_at_out_does_not_survive_a_quarantined_run(
+    tmp_path, monkeypatch, capsys
+):
+    """BLOCKER-2's read path, FAILURE half: nothing plausible survives at ``--out``.
+
+    This is the half the old ordering got WRONG. Reconciling BEFORE the write left
+    the 871 MB contaminated file untouched at the exact path the operator then
+    ``wc -l``s — 2,865,514 would have come back and read as a result. Now the
+    write truncates it and the rename carries it away, so the ``wc -l`` FAILS
+    LOUDLY, and the ``.SUSPECT`` sibling holds the FRESH rows, never the junk.
+
+    RED mechanism: revert the write/reconcile order and the junk is still at
+    ``out`` when the run exits.
+    """
+    import pairwise_completeness_scan as pcs
+
+    base, regions = _two_region_disagreement_fixture(
+        tmp_path, prefix="stale_bad", name="stale_bad.tsv"
+    )
+    out = tmp_path / "pcs_pairs.tsv"
+    out.write_text("".join(f"{_JUNK_MARKER}-{i}\n" for i in range(5)))
+
+    _bump_one_region_summary(monkeypatch, pcs)
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+    ])
+    capsys.readouterr()
+    assert rc == 2
+    assert not out.exists(), (
+        "the contaminated artifact survived at the read path — an operator's "
+        "`wc -l` would return a stale number instead of failing"
+    )
+
+    suspect = Path(str(out) + ".SUSPECT")
+    assert suspect.exists()
+    quarantined = suspect.read_text()
+    assert _JUNK_MARKER not in quarantined, (
+        "the quarantined file carries the OLD junk, not the fresh rows"
+    )
+    assert quarantined.splitlines()[0] == "\t".join(pcs.TSV_COLUMNS)
+    assert len(quarantined.splitlines()) - 1 == 2
+
+
+def test_a_preexisting_suspect_is_rotated_not_clobbered(
+    tmp_path, monkeypatch, capsys
+):
+    """ROTATE, never delete — the project ruling applies to the quarantine too.
+
+    ``.planning/debug/260824-STAGE-A-env-stop-plink1.9-and-stale-scratch-TSV.md``:
+    a prior artifact is EVIDENCE. A second disagreement must not destroy the first
+    one's bytes.
+
+    RED mechanism: a bare ``Path(out).replace(suspect)`` onto an existing
+    ``.SUSPECT`` overwrites it and the marker line is gone.
+    """
+    import re
+
+    import pairwise_completeness_scan as pcs
+
+    base, regions = _two_region_disagreement_fixture(
+        tmp_path, prefix="rot", name="rot.tsv"
+    )
+    out = tmp_path / "pcs_pairs.tsv"
+    suspect = Path(str(out) + ".SUSPECT")
+    marker = "EARLIER-SUSPECT-BYTES-THAT-MUST-SURVIVE"
+    suspect.write_text(marker + "\n")
+
+    _bump_one_region_summary(monkeypatch, pcs)
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+    ])
+    capsys.readouterr()
+    assert rc == 2
+
+    rotated = sorted(tmp_path.glob(out.name + ".SUSPECT.*"))
+    assert len(rotated) == 1, (
+        f"expected exactly one rotated sibling, got {[p.name for p in rotated]}"
+    )
+    assert marker in rotated[0].read_text(), (
+        "the earlier .SUSPECT bytes were CLOBBERED, not rotated"
+    )
+    stamp = rotated[0].name.split(".SUSPECT.", 1)[1]
+    assert re.fullmatch(r"\d{8}T\d{6}Z", stamp), (
+        f"the rotation stamp is not a UTC stamp: {stamp!r}"
+    )
+
+    assert suspect.exists()
+    fresh = suspect.read_text()
+    assert marker not in fresh
+    assert fresh.splitlines()[0] == "\t".join(pcs.TSV_COLUMNS)
+
+
+def test_the_quarantine_name_is_built_by_string_concatenation_not_with_suffix(
+    tmp_path, monkeypatch, capsys
+):
+    """``Path.with_suffix`` would turn ``pcs_pairs.tsv`` into ``pcs_pairs.SUSPECT``.
+
+    That silently DESTROYS the extension the operator greps for and, worse, would
+    collide with the summary's quarantine name (``pcs_summary.SUSPECT``). The
+    quarantined name must END WITH the original name plus ``.SUSPECT``, so a
+    future ``with_suffix`` refactor goes RED here.
+    """
+    import pairwise_completeness_scan as pcs
+
+    base, regions = _two_region_disagreement_fixture(
+        tmp_path, prefix="cat", name="cat.tsv"
+    )
+    out = tmp_path / "pcs_pairs.tsv"
+    summ = tmp_path / "pcs_summary.json"
+
+    _bump_one_region_summary(monkeypatch, pcs)
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", "r1,r2",
+        "--window-bp", "10",
+        "--out", str(out),
+        "--summary", str(summ),
+    ])
+    capsys.readouterr()
+    assert rc == 2
+
+    assert (tmp_path / "pcs_pairs.tsv.SUSPECT").exists()
+    assert (tmp_path / "pcs_summary.json.SUSPECT").exists()
+    # the `with_suffix` products must NOT exist
+    assert not (tmp_path / "pcs_pairs.SUSPECT").exists(), (
+        "the quarantine used Path.with_suffix — the .tsv extension was destroyed"
+    )
+    assert not (tmp_path / "pcs_summary.SUSPECT").exists()
+
+    for original in (out, summ):
+        quarantined = Path(str(original) + ".SUSPECT")
+        assert quarantined.name.endswith(original.name + ".SUSPECT")
+
+
+def test_an_empty_after_strip_region_ids_is_an_error_while_the_absent_flag_still_means_all_regions(
+    tmp_path, monkeypatch, capsys
+):
+    """``--region-ids ' , '`` was a SILENT ~13x cost blow-up.
+
+    ``[r.strip() for r in v.split(",") if r.strip()]`` yielded ``[]`` -> falsy ->
+    ``wanted = None`` -> NO filter -> every region in the manifest. On the real
+    276-region manifest that turns a 21-region sweep into a 276-region one and
+    fails loudly NOWHERE. It is now a ``ValueError`` inside the EXISTING ``try:``,
+    so it lands on the existing ``ERROR:`` + ``return 2`` path with no traceback,
+    BEFORE any scan and BEFORE any file is written.
+
+    The flag ABSENT still means "all regions" — that path is UNCHANGED and is the
+    NEGATIVE CONTROL kept green in the second half.
+    """
+    import pairwise_completeness_scan as pcs
+
+    base, regions = _two_region_disagreement_fixture(
+        tmp_path, prefix="rid", name="rid.tsv"
+    )
+    out = tmp_path / "empty_region_ids.tsv"
+
+    def _never(*args, **kwargs):  # pragma: no cover - must not be reached
+        raise AssertionError("the scan STARTED on an empty --region-ids")
+
+    monkeypatch.setattr(pcs, "iter_bim_windows", _never)
+
+    rc = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--region-ids", " , ",
+        "--window-bp", "10",
+        "--out", str(out),
+    ])
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert "--region-ids" in err, f"the flag is not named: {err!r}"
+    assert repr(" , ") in err, f"the offending value is not shown: {err!r}"
+    assert not out.exists(), "an output file was created on an empty --region-ids"
+
+    # --- NEGATIVE CONTROL: the flag ABSENT is UNCHANGED and still scans all ---
+    monkeypatch.undo()
+    out_all = tmp_path / "all_regions.tsv"
+    rc_all = pcs.main([
+        "--bfile-prefix", str(base),
+        "--regions-tsv", str(regions),
+        "--window-bp", "10",
+        "--out", str(out_all),
+    ])
+    capsys.readouterr()
+    assert rc_all == 0, "omitting --region-ids must still scan every region"
+    assert len(out_all.read_text().splitlines()) - 1 == 2
 
 
 def test_two_ancestry_manifest_emits_no_inflated_counts_end_to_end(tmp_path, capsys):
