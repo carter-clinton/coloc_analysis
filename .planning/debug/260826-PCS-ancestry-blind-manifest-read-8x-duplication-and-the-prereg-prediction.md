@@ -376,7 +376,7 @@ under one heading, with nothing to flag it. That is what let 2,865,513 and
 | duplicated `region_id` multiplying rows | `_assert_unique_region_ids` in `iter_bim_windows` | `test_iter_bim_windows_duplicate_region_id_identical_bounds_raises` / `..._differing_bounds_raises`; CONTROL kept green by `test_iter_bim_windows_single_region_id_control_still_returns_six_rows` |
 | duplicated `region_id` reaching the driver | `_assert_unique_region_ids` in `main()` (pre-loop) | `test_cli_duplicate_region_id_manifest_exits_2_and_writes_no_tsv` |
 | `summaries` silently last-winning | `if region_id in summaries: raise` | `test_driver_summaries_guard_independently_refuses_last_wins_with_both_upstream_layers_disabled` (monkeypatches the shared enforcer to neutralize layers 1+2; attributes by traceback final frame) |
-| the two POOLED denominators diverging | must-be-identity check before `write_tsv` | `test_pooled_candidate_rows_reconciliation_raises_when_the_bases_disagree` + `..._is_the_summaries_basis_and_names_it` |
+| the two POOLED denominators diverging | must-be-identity check AFTER `write_tsv`; on disagreement the output is quarantined to `<out>.SUSPECT` and `main()` returns 2 (changed in `quick-260828-uej` T1 — it formerly raised BEFORE `write_tsv`, which left the previous run's file at the output path) | `test_pooled_candidate_rows_disagreement_quarantines_the_output_and_returns_2` + `..._is_the_summaries_basis_and_names_it` |
 | a region printing twice in the table | unique `windows` by construction | `test_cli_stdout_table_prints_exactly_one_line_per_region_id` |
 | the whole 8x, end to end | all of the above | `test_two_ancestry_manifest_emits_no_inflated_counts_end_to_end` |
 
