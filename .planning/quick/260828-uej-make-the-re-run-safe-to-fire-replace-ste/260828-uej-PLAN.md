@@ -48,7 +48,7 @@ must_haves:
     - "THE FALSE INVARIANT IS CLOSED AND ITS CLOSURE WAS OBSERVED RED. `test_region_only_in_the_unrequested_ancestry_raises_naming_the_id` currently passes because its FIXTURE FILE is named `eur_only.tsv` while the error interpolates `{path}`. The fixture is renamed to `anc_split.tsv` and the assertion is scoped to the message segment AFTER the interpolated path (`str(excinfo.value).split(str(regions), 1)[1]`), so only the `{missing}` list can satisfy it. NEGATIVE CONTROL, MEASURED AND RECORDED: deleting `: {missing}` from the f-string at `src/python/pairwise_completeness_scan.py:1316` makes the repaired test RED -- it was GREEN under that same mutation before. The mutation changes the file LENGTH, so the bytecode-cache trap does not apply (`feedback_negative_control_defeated_by_bytecode_cache`); the file is restored and its md5 re-verified equal to the pre-mutation value."
     - "THE COMPOSITE ANCESTRY PARSE IS PINNED WHERE THE SELECTION HAPPENS, NOT ONLY AT THE PREDICATE. A test drives a whitespace-padded ancestry cell (`'  AFR  '`) through `_read_regions_tsv` and pins TODAY'S ACTUAL BEHAVIOUR: `_tsv_field` strips, so the scanner SELECTS the row. The same test MEASURES the divergence rather than asserting it in prose -- it ast-extracts `run_native_ld_panel._filter_ancestry` at call time (same technique as the existing enforcer, never `import`) and shows production DROPS that row. A companion test asserts the REAL `config/ld_regions.tsv` carries ZERO padded-or-quoted ancestry cells (MEASURED: 0 of 552), keeping the divergence LATENT AND MONITORED -- it goes RED the day such a row appears. RED mechanism, observed: removing `.strip()` from `_tsv_field` drops the padded row and the pin fails."
     - "THE PRE-REGISTERED PREDICTION GAINS THE DERIVED POOLED ROW COUNT, AND THE TWO ADDED NUMBERS RECONCILE BY A COMMITTED TEST. Section (e) of `.planning/debug/260826-PCS-ancestry-blind-manifest-read-8x-duplication-and-the-prereg-prediction.md` ADDS exactly two rows: `POOLED candidate rows` = **353089** and `wc -l pcs_pairs.tsv` = **353090**, marked derived-before-the-run with the same status as the rest of (e). Derivation shown, not asserted: every AFR-pass row had both members inside the AFR window, so each was duplicated exactly 4x -> `1,412,356 / 4 = 353,089` EXACTLY; EUR's `1,453,157 / 4 = 363,289.25` is NON-INTEGRAL, independently corroborating the non-uniform-multiplicity account already at (b1). A committed test parses both numbers out of (e) and asserts `wc == rows + 1` AND `rows * 4 == 1412356` (`feedback_a_count_is_a_claim_scope_and_reconcile`). The pre-registered 15 / 13 / 10-3 and the offset histogram are NOT touched."
-    - "THE TWO STALE CLAIMS THE CODE CHANGE CREATES ARE RECONCILED IN THE SAME COMMIT. (i) `src/python/pairwise_completeness_scan.py:1530` says 'This runs BEFORE write_tsv, so a disagreeing instrument leaves NO output'; (ii) the prereg record at (b1) says `main()` 'RAISES (before any output file is written)'. Both become FALSE the moment Task 1 lands and both are rewritten to the new contract (write -> reconcile -> quarantine -> return 2). Section (e)'s '**The command does not change.**' is clarified: the scanner argv is unchanged IN MEANING, while the runbook around it now gates behaviourally, rotates prior artifacts and names the 21 ids -- and NO predicted number changes as a result. HISTORICAL records (`.planning/quick/260825-*`, `260826-qq9-SUMMARY.md`, `-VERIFICATION.md`) are NOT rewritten: they are accurate records of what was true when written."
+    - "THE THREE STALE CLAIMS THE CODE CHANGE CREATES ARE RECONCILED IN THE SAME COMMIT. (i) `src/python/pairwise_completeness_scan.py:1530` says 'This runs BEFORE write_tsv, so a disagreeing instrument leaves NO output'; (ii) the prereg record at (b1) says `main()` 'RAISES (before any output file is written)'; and (iii) section (e) itself -- ONE PARAGRAPH ABOVE where the two new rows land -- says `POOLED candidate rows` will equal the sum `(the run now RAISES otherwise)` (`:555`). All three become FALSE the moment Task 1 lands and all three are rewritten to the new contract (write -> reconcile -> quarantine to `<out>.SUSPECT` -> return 2). Leaving (iii) would put a self-contradiction about the instrument's own reconciliation behaviour INSIDE the pre-registration, committed by the very task whose purpose is to eliminate unreconciled claims. Section (e)'s '**The command does not change.**' is clarified: the scanner argv is unchanged IN MEANING, while the runbook around it now gates behaviourally, rotates prior artifacts and names the 21 ids -- and NO predicted number changes as a result. HISTORICAL records (`.planning/quick/260825-*`, `260826-qq9-SUMMARY.md`, `-VERIFICATION.md`) are NOT rewritten: they are accurate records of what was true when written."
     - "THE RESIDUALS THAT ARE NOT BEING FIXED ARE RECORDED, WITH REASONS. A `RESIDUAL -- KNOWN, NOT FIXED` subsection of the prereg record names: (1) the `__sub12`/`__sub13` window overlap -- MEASURED: `m2_region_00040__sub12` AFR 93,681,040-104,615,815 vs `__sub13` AFR 98,615,815-109,550,590, and `m2_region_00060__sub12` AFR 81,228,215-91,874,650 vs `__sub13` AFR 85,874,650-93,521,095, i.e. 6,000,000 bp of overlap in each pair -- so the same `.bim` rows enter two regions' candidate sets and the POOLED candidate DENOMINATOR double-counts them; a pre-existing region-DEFINITION property, not a scanner defect, affecting the denominator and NOT the 15 findings (both regions carry 0 undefined rows), and present on the SAME basis in the 1,412,356 that 353,089 is derived from; (2) the scanner's denominator is pre-`--mac 1` / pre-`--exclude` while the panel's LD matrix is post-, so ANY fraction computed from these counts MUST name its denominator and none of them is a panel prevalence; (3) the residual of this plan's OWN code fix -- EARLY-exit paths (missing bfile component, `no windows selected`, duplicate region_id, empty `--region-ids`) return 2 BEFORE any write, so a stale artifact at the output path SURVIVES them; that hole is closed by the runbook's ROTATE step plus the STEP 3 pre-flight, NOT by the code, and is stated as such; and (4) a pointer to `260828-uej-CODEX-REVIEW-as-received.md` for the declined items (positional-vs-header manifest parse MEDIUM; iterator-level whitespace/case alias LOW), each with a one-line reason. The already-recorded pair-level 5-rows-vs-3-pairs undercount is CITED at its existing location, never duplicated."
     - "NOTHING WAS FIRED. Zero enclave / VM / Dataproc / OSF / `gsutil` / `gcloud` / network contact; \\$0. No per-sample data is created, read or moved. The re-run has NOT happened and the SUMMARY says so."
     - "NO CRITERION, THRESHOLD OR POLICY MOVED. `git diff --stat e6f4f79 HEAD -- src/python/occlusion_span_filter.py src/python/run_native_ld_panel.py src/python/fire_verifier.py src/python/aou_ld_panel.py .planning/amendments/` is EMPTY at EVERY commit. `run_native_ld_panel.py` is READ by two ast enforcers and never written. The pre-registered 15 / 13 / 10-3 and the offset histogram are byte-unchanged."
@@ -499,27 +499,73 @@ VERIFIED SAFE -- DO NOT TOUCH, DO NOT RE-LITIGATE:
     E. THREE NAMED ENFORCERS in `tests/m3/test_pairwise_completeness_scan.py` (a
        claimed invariant with no enforcer is belief only --
        `feedback_a_claimed_invariant_needs_a_named_enforcer`). All three are
-       RUNTIME-COMPUTED or parsed-structure, never a loose source grep:
+       RUNTIME-COMPUTED or parsed-structure, never a loose source grep.
+
+       STANDING RULE FOR EVERY DOCUMENT-TEXT ASSERTION IN THIS PLAN (tests 1-3 here
+       AND the Task 4.D enforcer): a bare `in` / substring test is FORBIDDEN. Short
+       tokens and numbers MUST be boundary-anchored, because this repo has now been
+       bitten by the substring-collision class SIX times (a `--nonfounders` grep
+       returning 3 on a file with the flag deleted; `grep -qi "NOT BANKED"` firing on
+       legitimate prose; `grep -q "failed"` matching `1 xfailed`; a
+       `basis: per-region summaries` count undercounting a line-wrapped string; and a
+       fixture FILENAME satisfying an error assertion -- the one Task 2 closes).
+       Numbers use digit boundaries `(?<!\d)<n>(?!\d)` after normalising away
+       thousands separators (`text.replace(",", "")`), so `276` cannot be satisfied
+       by a `276` inside a longer digit run and `69258` cannot be satisfied by a
+       coincidental substring of another number. VERIFIED during planning against
+       `69258`, `276`, `552`, `1412356`, `353089`: each anchored pattern rejects
+       `x<n>9` and accepts the standalone form.
          1. `test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash`:
             recompute `hashlib.md5(...).hexdigest()` and `stat().st_size` of
             `src/python/pairwise_completeness_scan.py` AT CALL TIME and assert both
-            strings appear in the runbook. It goes RED the moment the scanner
+            appear in the runbook -- the md5 as a plain substring (32 hex chars, no
+            collision risk) but the SIZE digit-boundary-anchored per the standing
+            rule, since a bare 5-digit size is exactly the collision shape. It goes RED the moment the scanner
             changes without the gate being regenerated -- that is the point, and the
             runbook's REGENERATE line is the remedy. The docstring must say so and
             must distinguish this from `feedback_fixed_sha_whole_file_pin_is_a_timebomb`:
             the pinned value is RECOMPUTED here, never frozen.
          2. `test_pending_paste_step0_capability_numbers_are_the_real_manifest_numbers`:
             compute `len(_read_regions_tsv("config/ld_regions.tsv", None))` and the
-            distinct-id count at call time (276 / 276), assert those exact numbers
-            are the ones the gate EXPECTs, and assert `552` is named as the failure
-            meaning.
+            distinct-id count at call time (276 / 276), then SLICE the STEP 0 gate
+            block and assert -- digit-boundary-anchored, inside that slice only --
+            that those exact numbers are the ones the gate EXPECTs and that `552` is
+            named as the failure meaning. Scoping to the slice matters as much as the
+            anchoring: `276` and `552` are 3-digit tokens and the document is long.
          3. `test_pending_paste_rotates_before_the_sweep_and_never_deletes`: parsed
             structure only -- assert the ROTATE heading's index falls between the
             STEP 2 and STEP 3 heading indices; SLICE the text between the ROTATE
-            heading and `=== STEP 3` and assert WITHIN THAT SLICE that `.STALE.` and
-            `mv ` are present and that neither artifact is `rm`'d; then SLICE the
-            STEP 3 block and assert the pre-flight guard names BOTH paths and raises
-            `SystemExit`. Also assert the whole-document count of the two-dash
+            heading and `=== STEP 3`. THE MECHANISM IS SPECIFIED HERE, NOT LEFT TO
+            IMPROVISATION -- a bare `"rm " not in slice` is satisfied by ordinary
+            prose (`confirm`, `term`, `warm`, `alarm`, `storm`, `form`, `norm` all
+            contain it) and would FALSE-FAIL, while a looser regex FALSE-PASSES a
+            real deletion. Use exactly:
+
+                import re
+                rotate = text[text.index(_ROTATE_HEADING):text.index("=== STEP 3")]
+                # strip INLINE code spans first: this block is REQUIRED to carry the
+                # cited "NEVER `rm`" ruling, and that citation must not false-FAIL
+                # the check. `[^`\n]*` stops at a newline, so a fenced block's real
+                # command lines survive the strip and stay scannable.
+                executable = re.sub(r"`[^`\n]*`", "", rotate)
+                assert re.search(r"(?<![\w.-])rm(?![\w.-])", executable) is None
+                assert re.search(r"(?<![\w.-])mv(?![\w.-])", executable) is not None
+                assert ".STALE." in rotate
+
+            VERIFIED during planning over 10 cases: it rejects `confirm` / `term` /
+            `warm` / `alarm` / `storm` / `form` / `norm`, rejects the cited
+            ``NEVER `rm` ``, rejects the `mv`/`ls` command lines, and CATCHES
+            `rm -f <path>`, `rm <path>` (single space), `rm -rf $f` (variable form),
+            `/bin/rm "$f"`, and an `rm` inside a fenced block. NOTE: the narrower
+            path-targeted form `rm\s+-?\w*\s+.*pcs_(pairs\.tsv|summary\.json)`
+            was TESTED AND REJECTED -- it false-passes on three of those five real
+            deletion forms. Then SLICE the STEP 3 block and assert the pre-flight
+            guard names BOTH paths and raises `SystemExit`.
+            RED MECHANISM, BOTH DIRECTIONS, AND BOTH MUST BE OBSERVED: inserting
+            `rm -f /home/jupyter/occ_measure/pcs_pairs.tsv` into the ROTATE block
+            makes this test RED (the guard works), and inserting the word `confirm`
+            into the same block leaves it GREEN (the guard is not the collision bug
+            it exists to prevent). Revert both. Also assert the whole-document count of the two-dash
             ancestry token is still 0 (belt-and-braces with the existing pin).
 
     Do NOT alter STEP 1, STEP 2, the falsifier tokens, the EGRESS RULE, the plink
@@ -579,9 +625,10 @@ print('CAPABILITY CHECK PASSED')
        the non-uniform-multiplicity account already recorded at (b1). Mark both as
        DERIVED BEFORE THE RUN, same status as the rest of (e), and restate that a
        mismatch is a finding to report, never a number to adjust.
-       DO NOT touch 15 / 13 / 10-3 or the offset histogram. Leave the existing
-       sentence about 21 table lines in place -- it is now numerically pinned by the
-       two new rows.
+       DO NOT touch 15 / 13 / 10-3 or the offset histogram. The existing sentence
+       about 21 table lines STAYS (it is now numerically pinned by the two new rows),
+       but the SAME sentence carries a stale parenthetical that B(iii) below MUST
+       fix -- do not append the new rows and leave it standing.
 
     B. RECONCILE THE TWO CLAIMS TASK 1 MADE STALE.
        (i) In (b1), "`main()` RAISES (before any output file is written)" becomes the
@@ -589,6 +636,11 @@ print('CAPABILITY CHECK PASSED')
            disagreement QUARANTINES the output to `<out>.SUSPECT` (rotating any
            prior `.SUSPECT`) and returns 2 -- so nothing survives at the read path
            and the compute is salvaged. Cite `quick-260828-uej`.
+       (iii) In (e) at `:555`, the parenthetical `(the run now RAISES otherwise)`
+            -- one paragraph ABOVE the two new rows -- is replaced VERBATIM by:
+            `(otherwise the run QUARANTINES the output to `<out>.SUSPECT` and returns 2)`
+            This is the THIRD stale claim, it sits inside the pre-registration, and
+            Task 4 is the commit that would otherwise ship it self-contradicting.
        (ii) In (e), "**The command does not change.**" is clarified: the scanner
             argv is unchanged IN MEANING, while the runbook around it now gates
             behaviourally (content hash + capability check, not a commit name),
@@ -629,8 +681,13 @@ print('CAPABILITY CHECK PASSED')
 
     D. THE ARITHMETIC ENFORCER (one new test): parse the two added numbers out of
        section (e) and assert `wc == rows + 1` AND `rows * 4 == 1412356`, and that
-       `1412356` still appears in (b1) so the two sections cannot drift apart. RED
-       mechanism, to be observed: change either number in the doc and the test fails.
+       `1412356` still appears in (b1) so the two sections cannot drift apart.
+       PARSING AND MATCHING OBEY THE STANDING RULE IN TASK 3.E: normalise thousands
+       separators (`section.replace(",", "")`) so the (b1) rendering `1,412,356` and
+       the bare `1412356` are the same fact, then match digit-boundary-anchored
+       (`(?<!\d)1412356(?!\d)`, `(?<!\d)353089(?!\d)`, `(?<!\d)353090(?!\d)`)
+       so no longer digit run can satisfy any of them. RED mechanism, to be observed:
+       change either number in the doc and the test fails.
 
     E. STATE.md. Append a row for this quick task ONLY IF
        `git diff --stat .planning/STATE.md` shows no FOREIGN in-flight edit from
@@ -712,7 +769,7 @@ print('CAPABILITY CHECK PASSED')
 9. `test_region_only_in_the_unrequested_ancestry_raises_naming_the_id` uses `anc_split.tsv`, asserts after the interpolated path, and was OBSERVED RED under the `{missing}` deletion (GREEN under the same mutation before).
 10. The composite whitespace parse is pinned through `_read_regions_tsv` with the production divergence MEASURED by ast extraction; the real manifest is asserted to carry 0 padded/quoted ancestry cells.
 11. Section (e) adds 353089 / 353090 only; a committed test asserts `wc == rows + 1` and `rows * 4 == 1412356`; 15/13/10-3 and the histogram are byte-unchanged.
-12. The two stale claims (code comment :1530 and prereg (b1)) are reconciled; historical quick records are NOT rewritten.
+12. All THREE stale claims are reconciled -- code comment `:1530`, prereg (b1), and prereg (e)`:555` "(the run now RAISES otherwise)" -- and historical quick records are NOT rewritten.
 13. The four residuals are recorded with reasons, including this plan's OWN early-exit residual.
 14. `tests/m3`: 1134 passed / 33 skipped / 0 failed, reconciled as `1122 + 12` and cross-checked as `101 + 12` on the single-file control; `sparse_parent_benchmark.tsv` restored, never staged.
 15. Frozen surfaces empty-diff at every commit; branch `m3-W2-aou-deltas`; explicit paths only.
