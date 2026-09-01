@@ -1,62 +1,37 @@
 """POST-HOC panel-wide ``--exclude`` reclassification of an emitted pcs_pairs.tsv.
 
-(1) WHY IT EXISTS — ``already_occluded`` IS ANCHOR-RELATIVE
------------------------------------------------------------
-``pairwise_completeness_scan``'s ``already_occluded`` is computed at
-``pairwise_completeness_scan.py:616`` as::
+(1) WHY IT EXISTS — ``already_occluded`` IS ANCHOR-RELATIVE, THE EXCLUDELIST IS
+PANEL-WIDE
+------------------------------------------------------------------------------
+``pairwise_completeness_scan``'s ``already_occluded`` is computed inside
+``pairwise_completeness_scan.enumerate_candidates`` as::
 
     already_occluded = bool(deletion.pos < partner.pos <= deletion.span_end)
 
-— against THE ANCHOR DELETION ONLY. The PRODUCTION excludelist is a DIFFERENT
-quantity: ``occlusion_span_filter.detect_occluded_variants`` evaluated over
-EVERY deletion in the window (``run_native_ld_panel.py:878``, on the row set
-built at ``:851-872``).
+— against THE ANCHOR DELETION OF THAT ROW ONLY. (The symbol is cited, not a line
+number: a line number is a proxy that decays silently on any edit above it, which
+is the same scoping mistake this module's history is about.)
 
-Therefore ``already_occluded == False`` means "not inside THIS anchor's span".
-It does NOT mean "survives ``--exclude``", and ``n_undefined_not_already_occluded``
-does NOT count pairs that survive filtering. This module computes the panel-wide
-quantity that the scanner never asked for, from the scanner's OWN output.
+The PRODUCTION excludelist is a DIFFERENT quantity and it is PANEL-WIDE:
+``occlusion_span_filter.detect_occluded_variants`` evaluated over EVERY deletion
+in the window (``run_native_ld_panel.py:878``, on the row set built at
+``:851-872``).
 
-(1b) ⚠ THE SCANNER'S OWN DOCSTRING CURRENTLY CONTRADICTS (1) — READ THIS ONE
------------------------------------------------------------------------------
-AS OF 2026-08-31, ``pairwise_completeness_scan``'s module docstring STILL
-carries the false claim this module exists to correct. Its RETAINED-SET PARITY
-bullet (``pairwise_completeness_scan.py:122``) reads:
+ANCHOR-RELATIVE vs PANEL-WIDE is the whole distinction. Therefore
+``already_occluded == False`` means "not inside THIS anchor's span". It does NOT
+mean "survives ``--exclude``", and ``n_undefined_not_already_occluded`` does NOT
+count pairs that survive filtering: a pair can carry ``already_occluded=False``
+while one of its members is dropped by a DIFFERENT deletion in the same window.
+That disagreement is DEMONSTRATED at runtime, not asserted, by
+``tests/m3/test_pairwise_completeness_scan.py::test_already_occluded_is_anchor_relative_and_is_not_the_exclude_side``.
+This module computes the PANEL-WIDE quantity that the scanner never asked for,
+from the scanner's OWN output.
 
-    "the ``--exclude`` side is already visible as ``already_occluded``"
-
-THAT SENTENCE IS FALSE, for exactly the reason given in (1): the field is
-ANCHOR-RELATIVE, the excludelist is PANEL-WIDE, and the two predicates provably
-disagree — see
-``tests/m3/test_pairwise_completeness_scan.py::test_already_occluded_is_anchor_relative_and_is_not_the_exclude_side``,
-which CONSTRUCTS a window where a pair carries ``already_occluded == False``
-while ``detect_occluded_variants`` over the SAME rows occludes that member.
-DO NOT BELIEVE THE SCANNER'S BULLET. Section (1) above is the correct statement.
-
-WHY THE FALSE SENTENCE IS STILL THERE — it is DEFERRED, not forgotten, and the
-reason is MEASURED. The live runbook
-``.planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md`` STEP 0
-gate pins the scanner's WHOLE-FILE md5 and byte size
-(``e03078ff73502c3c877b0d2ebf93941d`` / ``73772``), and
-``tests/m3/test_pairwise_completeness_scan.py::test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash``
-recomputes BOTH at call time. A DOCSTRING-ONLY edit moves the md5 to
-``fc1d68dff1f493f6eb57dd427bed638a`` / ``78843`` and turns that gate RED. The
-only way to green it is to rewrite a runbook whose pinned values are CURRENTLY
-A TRUE STATEMENT ABOUT THE ~4h20m SWEEP THAT IS RUNNING — so rewriting it
-mid-flight would make the record lie about which instrument produced the sweep.
-That cost is NOT recoverable later; this prose fix is. Hence: defer.
-
-THE CORRECTION IS WRITTEN AND PARKED, re-appliable unchanged:
-``.planning/debug/260831-DEFERRED-pairwise-completeness-scan-docstring.patch``
-TRIGGER: the post-sweep window, once the sweep LANDS and its artifacts are
-BANKED — together with the rescope of that gate from a WHOLE-FILE BYTE PROXY to
-a docstring-insensitive CODE hash. Full argument, and the record that this is a
-REPEAT of ``feedback_scope_a_guard_to_the_property_not_a_proxy`` (2026-08-06),
-is in
-``.planning/debug/260831-seth-brief-blind-review-already-occluded-is-anchor-relative.md``.
-
-A reader who reaches for THIS tool is precisely the reader at risk of the false
-claim, which is why the true statement is placed here.
+The scanner's own module docstring now carries this correction too (it briefly
+did not; the correction landed in ``quick-260901-l55`` together with the rescope
+of the runbook gate that had made the fix expensive). Its absence there is
+machine-enforced by
+``tests/m3/test_pairwise_completeness_scan.py::test_the_scanner_docstring_no_longer_claims_already_occluded_is_the_exclude_side``.
 
 (2) WHY VID-KEYED — BECAUSE PRODUCTION IS
 ------------------------------------------

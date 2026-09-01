@@ -4,7 +4,8 @@ WHAT THE MODULE UNDER TEST ANSWERS
 ----------------------------------
 ``pairwise_completeness_scan``'s ``already_occluded`` is ANCHOR-RELATIVE — it is
 ``deletion.pos < partner.pos <= deletion.span_end`` against THE ANCHOR DELETION
-ONLY (``pairwise_completeness_scan.py:616``). The PRODUCTION excludelist is a
+ONLY (in ``pairwise_completeness_scan.enumerate_candidates`` — the SYMBOL, not a
+line number, which decays silently). The PRODUCTION excludelist is a
 different quantity: ``occlusion_span_filter.detect_occluded_variants`` over EVERY
 deletion in the window (``run_native_ld_panel.py:878``). So
 ``already_occluded == False`` does NOT mean "survives ``--exclude``", and
@@ -868,27 +869,40 @@ def test_the_window_selection_uses_pad_bp_zero_to_match_production():
 
 
 # --------------------------------------------------------------------------- #
-# THE MITIGATION THAT COSTS NO PINNED BYTES (quick-260831-kw8, coordinator      #
-# decision after the byte-proxy STOP).                                          #
+# THE MITIGATION IS DISCHARGED (quick-260901-l55).                              #
 #                                                                              #
-# The scanner's false claim CANNOT be deleted right now: the live runbook's     #
-# STEP 0 gate pins the scanner's WHOLE-FILE md5, and that pin is currently a    #
-# TRUE statement about an in-flight sweep. THIS module is new and NOT pinned,   #
-# so the TRUE semantics live here instead -- adjacent to the tool, which is     #
-# where the at-risk reader arrives.                                             #
+# quick-260831-kw8 put the TRUE semantics HERE, in section (1b) of              #
+# pcs_panelwide_reclassify.py's docstring, because the scanner's own docstring  #
+# still carried the false claim and could not be corrected: the live runbook's  #
+# STEP 0 gate pinned the scanner's WHOLE-FILE md5 and byte size, so deleting a  #
+# known falsehood cost an edit to a runbook that was a TRUE statement about an  #
+# in-flight sweep. That note was written SELF-INVALIDATING on purpose -- its    #
+# claims about the scanner were recomputed from disk -- so that it would go RED #
+# and force its own removal the moment the parked patch landed. It did exactly  #
+# that, and this is that removal.                                              #
 #                                                                              #
-# Both assertions below are SELF-INVALIDATING ON PURPOSE. The docstring makes   #
-# two claims ABOUT ANOTHER FILE (that it still carries the false sentence, and  #
-# what its bytes currently are). This test recomputes BOTH from the file on     #
-# disk at call time, so the note cannot decay into a stale lie: the moment the  #
-# parked patch lands, this test goes RED and forces the note's removal.         #
+# WHAT CHANGED: the gate was rescoped OFF the byte proxy onto a git-ref CODE    #
+# pin (assert_code_frozen against cb199b6), so a docstring correction now costs #
+# NOTHING -- MEASURED: the parked patch moved the scanner's md5 and 5,071 bytes #
+# and left the CODE PIN green, both sides 540 code lines. The correction then   #
+# landed in the scanner itself. Section (1b) is DELETED; its true semantics     #
+# survive in section (1), which this test still enforces.                       #
+#                                                                              #
+# THIS TEST STAYS LIVE AGAINST ANOTHER FILE. Claim (3) below reads the SCANNER  #
+# on disk and requires the correction to be PRESENT and the false sentence      #
+# ABSENT, so the two docstrings cannot drift back apart silently. Sources are   #
+# read at CALL TIME and parsed with ast, never imported                         #
+# (feedback_negative_control_defeated_by_bytecode_cache).                       #
 # --------------------------------------------------------------------------- #
 
+#: The sentence the scanner used to carry. It was FALSE (`already_occluded` is
+#: ANCHOR-RELATIVE, the excludelist is PANEL-WIDE) and it is now a REQUIRED
+#: ABSENCE, not a required presence.
 _SCANNER_FALSE_CLAIM = "already visible as ``already_occluded``"
 
 
-def test_the_tool_docstring_carries_the_true_semantics_and_flags_the_scanners_false_claim():
-    """The corrective statement is HERE, and its claims about the scanner are LIVE.
+def test_the_tool_and_the_scanner_agree_that_already_occluded_is_anchor_relative():
+    """The correction is in BOTH docstrings, and the deferral framing is GONE.
 
     ⚠ WHITESPACE IS NORMALISED FIRST -- both docstrings wrap at ~79 chars, so an
     un-normalised phrase match would fail on a merely line-WRAPPED copy
@@ -896,63 +910,68 @@ def test_the_tool_docstring_carries_the_true_semantics_and_flags_the_scanners_fa
     TIME and parsed with :mod:`ast`, never imported, so a stale ``__pycache__``
     cannot decide the outcome
     (`feedback_negative_control_defeated_by_bytecode_cache`).
-    """
-    import hashlib
-    import re
 
+    REPLACES
+    ``test_the_tool_docstring_carries_the_true_semantics_and_flags_the_scanners_false_claim``,
+    whose claims (2) and (5) -- that the scanner STILL carries the false sentence,
+    and that the runbook pins the scanner's md5 and byte size -- are both false as
+    of quick-260901-l55 and were self-invalidating by design.
+    """
     reclass_path = PROJECT_ROOT / "src" / "python" / "pcs_panelwide_reclassify.py"
     doc = ast.get_docstring(ast.parse(reclass_path.read_text(encoding="utf-8"))) or ""
     assert doc, "the tool's module docstring vanished"
+    assert len(doc) > 1000, (
+        f"the tool's module docstring is only {len(doc)} chars -- a truncated "
+        "docstring must not be able to green the ABSENCE assertions below"
+    )
     flat = " ".join(doc.split())
 
-    # -- (1) THE TRUE SEMANTICS ARE STATED HERE ----------------------------- #
+    # -- (1) THE TRUE SEMANTICS ARE STATED HERE, IN SECTION (1) ------------- #
     assert "ANCHOR-RELATIVE" in flat
     assert "PANEL-WIDE" in flat
     assert "does NOT mean" in flat and "survives ``--exclude``" in flat
 
-    # -- (2) THE SCANNER'S FALSE CLAIM IS NAMED *AND* MARKED FALSE ---------- #
-    assert _SCANNER_FALSE_CLAIM in flat, "the false sentence is not quoted here"
-    assert "THAT SENTENCE IS FALSE" in flat, "it is quoted but not refuted"
-
-    # -- (3) THE DEFERRAL IS ACTIONABLE, NOT A SHRUG ------------------------ #
-    assert "260831-DEFERRED-pairwise-completeness-scan-docstring.patch" in flat
-    assert "post-sweep" in flat
-    assert "feedback_scope_a_guard_to_the_property_not_a_proxy" in flat
+    # -- (2) THE DEFERRAL FRAMING IS GONE ----------------------------------- #
+    # Section (1b) existed only because the correction could not be made. It
+    # was made. A note that describes a discharged deferral is a stale lie in
+    # waiting, and this module is the file the at-risk reader opens.
+    assert _SCANNER_FALSE_CLAIM not in flat, (
+        "the tool still QUOTES the scanner's false sentence as if it were live. "
+        "The scanner was corrected in quick-260901-l55; section (1b) must go."
+    )
+    assert "THAT SENTENCE IS FALSE" not in flat, (
+        "the tool still refutes a sentence that no longer exists"
+    )
+    assert "260831-DEFERRED-pairwise-completeness-scan-docstring.patch" not in flat, (
+        "the tool still names the PARKED patch as pending; it has been applied"
+    )
+    assert "DEFERRED" not in doc, (
+        "a DEFERRAL note survives in the tool's docstring after the deferral was "
+        "discharged"
+    )
 
     # ---------------------------------------------------------------------- #
-    # (4) SELF-INVALIDATION #1: the note claims the scanner STILL carries the #
-    # false sentence. Verify that against the scanner ON DISK. If the parked  #
-    # patch has landed, this note is STALE and must go with it.               #
+    # (3) THE CLAIM THAT KEEPS THIS TEST LIVE AGAINST ANOTHER FILE.          #
+    # The scanner's OWN docstring must now carry the correction. Read from    #
+    # disk at call time -- the authority is the FILE, never a frozen literal. #
     # ---------------------------------------------------------------------- #
     scanner_path = PROJECT_ROOT / "src" / "python" / "pairwise_completeness_scan.py"
-    scanner_bytes = scanner_path.read_bytes()
     scanner_doc = ast.get_docstring(
-        ast.parse(scanner_bytes.decode("utf-8"))
+        ast.parse(scanner_path.read_text(encoding="utf-8"))
     ) or ""
-    assert _SCANNER_FALSE_CLAIM in " ".join(scanner_doc.split()), (
-        "the scanner's false claim is GONE -- the DEFERRAL note in "
-        "pcs_panelwide_reclassify.py is now STALE. Remove section (1b) in the "
-        "same commit that lands the parked patch."
+    assert len(scanner_doc) > 1000, (
+        f"the scanner's module docstring is only {len(scanner_doc)} chars -- a "
+        "vanished docstring must not be able to green the ABSENCE assertion below"
     )
+    scanner_flat = " ".join(scanner_doc.split())
 
-    # ---------------------------------------------------------------------- #
-    # (5) SELF-INVALIDATION #2, AND THE LIVE-FIRE GUARD. The note quotes the  #
-    # scanner's CURRENT md5 and byte size as the values the runbook's STEP 0  #
-    # gate pins. Recompute both from disk -- the authority is the FILE, never #
-    # a frozen literal (this is the same shape as                             #
-    # test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash,    #
-    # NOT `feedback_fixed_sha_whole_file_pin_is_a_timebomb`).                  #
-    #                                                                        #
-    # While the sweep is in flight this is ALSO the machine check that the    #
-    # scanner's bytes have not moved.                                         #
-    # ---------------------------------------------------------------------- #
-    md5 = hashlib.md5(scanner_bytes).hexdigest()
-    size = len(scanner_bytes)
-    assert md5 in flat, (
-        f"the note quotes a stale scanner md5; the file on disk is {md5}"
+    assert _SCANNER_FALSE_CLAIM not in scanner_flat, (
+        "the scanner's FALSE claim is back: it says the ``--exclude`` side is "
+        "already visible as ``already_occluded``. It is not -- the field is "
+        "ANCHOR-RELATIVE and the excludelist is PANEL-WIDE."
     )
-    # digit-boundary anchored after comma normalisation -- a bare 5-digit
-    # number is exactly the collision shape the standing rule prevents.
-    assert re.search(r"(?<!\d)" + str(size) + r"(?!\d)", flat.replace(",", "")), (
-        f"the note quotes a stale scanner byte size; the file on disk is {size}"
+    assert "ANCHOR-RELATIVE" in scanner_flat, (
+        "the scanner's docstring no longer states the anchor-relative semantics; "
+        "the two files have drifted apart"
     )
+    assert "does NOT mean" in scanner_flat and "survives ``--exclude``" in scanner_flat

@@ -81,23 +81,89 @@ what that file can DO. Run all four checks below; each has an EXPECT and a STOP.
 EXPECT: NO OUTPUT AT ALL. Any output means the working tree has a local edit, so
 the hash in (ii) is not the code that will run. STOP.
 
-(ii) md5sum src/python/pairwise_completeness_scan.py
-     stat -c '%s' src/python/pairwise_completeness_scan.py
+(ii) THE CODE PIN. Pin what the file DOES, not its BYTES. A comment or docstring
+correction must cost NOTHING; a one-character CODE change must STOP the run.
 
-EXPECT exactly:
+python3 - <<'EOF'
+import sys
+if sys.version_info < (3, 9):
+    raise SystemExit(
+        "STOP: this gate needs Python 3.9+ (ast.unparse). Got %s" % sys.version
+    )
+sys.path.insert(0, "tests/m3")
+from source_freeze import assert_code_frozen, LANG_PY
 
-  e03078ff73502c3c877b0d2ebf93941d
-  73772
+SCANNER_REL = "src/python/pairwise_completeness_scan.py"
+SCANNER_CODE_REF = "cb199b6"
 
-Any other hash or size means this clone is NOT running the reviewed instrument.
-STOP. (Do not "update" these values from what the VM reports — that inverts the
-gate. See HOW TO REGENERATE below.)
+try:
+    assert_code_frozen(SCANNER_REL, SCANNER_CODE_REF, LANG_PY)
+except AssertionError as exc:
+    print("STOP -- the scanner's CODE has MOVED off the STEP 0 pin.")
+    print(exc)
+    print(
+        "REMEDY: see HOW TO REGENERATE THIS GATE below. IGNORE the "
+        "'tests/m3/test_source_freeze_pins.py' clause in the message above: that "
+        "is source_freeze's GENERIC re-pin sentence and it does NOT apply to this "
+        "gate. The constant to update is SCANNER_CODE_REF, in this block."
+    )
+    raise SystemExit(1)
 
-(iii) git log -1 --format='%h %s' -- src/python/pairwise_completeness_scan.py
+print("SCANNER CODE PIN ref:", SCANNER_CODE_REF)
+print("CODE PIN PASSED")
+EOF
 
-EXPECT the short hash `cb199b6` (the quick-260828-uej T1 commit: write the TSV
-BEFORE the reconciliation, quarantine to `.SUSPECT` on disagreement). A different
-commit means the file moved after this gate was written — STOP and regenerate.
+EXPECT exactly these two lines (the ref is a FIELD RECORD -- paste it back):
+
+  SCANNER CODE PIN ref: cb199b6
+  CODE PIN PASSED
+
+Anything else is a STOP. Paste the block's full output verbatim and change nothing.
+
+WHY A REF AND NOT A HASH LITERAL. `tests/m3/source_freeze.py` forbids the literal
+in terms. Its module docstring, verbatim:
+
+  ``ast.unparse`` output can differ across Python minor versions. That is
+  harmless **because both sides of every comparison are unparsed by the same
+  interpreter in the same process**. Do not "fix" it by freezing an unparse
+  string.
+
+A code-hash LITERAL printed into this runbook would BE that frozen unparse string,
+re-derived on a VM whose interpreter is not the one that wrote it — and it would be
+green once and red forever after. The block above resolves BOTH sides here, in one
+process, so interpreter drift cancels by construction. It is also why the ref must
+be an immutable SHA: `assert_code_frozen` REFUSES a symbolic name such as HEAD, so
+the cheapest possible weakening — re-pointing the gate at itself — is structurally
+unavailable.
+
+WHAT IT IGNORES ON PURPOSE: comments, Python docstrings, blank lines and trailing
+whitespace. Correcting a wrong SENTENCE in the scanner costs NOTHING here — no
+re-pin, no decision, no edit to this runbook. That is the entire point of the
+rescope: the pin this replaced made shipping a known-false docstring CHEAPER than
+correcting it.
+
+WHAT IT STILL CATCHES: any real code change — a moved argument, a flipped operator,
+a reordered statement — reported as a FIRST DIFFERENCE naming the moved line.
+
+WHY (i) SURVIVES AND IS NOT REDUNDANT: the code pin reads the WORKING TREE, so it
+already sees an uncommitted CODE edit. It is deliberately BLIND to an uncommitted
+PROSE edit. `git status --porcelain` is the only check that sees one, and a prose
+edit still means this clone is not byte-identical to what was reviewed. Neither
+check subsumes the other; (i) STAYS.
+
+IF `git show` FAILS (a shallow or partial clone cannot read the pinned revision),
+the assertion re-raises git's own stderr and the block exits non-zero: STOP. Do not
+work around it by deleting the check — re-clone with full history.
+
+(iii) FIELD RECORD, NOT A GATE — the commit that last touched the file:
+
+git log -1 --format='%h %s' -- src/python/pairwise_completeness_scan.py
+
+Report whatever it says and paste it back; there is no EXPECT and no STOP here.
+Until 2026-09-01 this check EXPECTed the short hash `cb199b6` and STOPped on
+anything else — which is the byte proxy one level up: a DOCSTRING-only commit
+legitimately moves the last-touching commit and would FALSE-STOP a perfectly good
+checkout. Only the CODE PIN in (ii) carries a STOP.
 
 (iv) THE CAPABILITY CHECK. A POSITIVE test that the code can do the one thing
 every number below depends on: read `config/ld_regions.tsv` on its REAL key.
@@ -138,14 +204,28 @@ ANYWHERE IN THIS DOCUMENT. The STEP 3 sweep command is correct ONLY because
 asserts that this file contains that token ZERO times. That is why the check above
 is expressed in Python against `_read_regions_tsv` rather than as a flag.
 
-HOW TO REGENERATE THIS GATE (the only legitimate way to change (i)-(iii); run at
-NCSU, on a clean tree, AFTER the scanner legitimately changes, then update the
-three values above and re-run the test suite so the enforcers agree):
+HOW TO REGENERATE THIS GATE. There is exactly ONE legitimate change, and it is one
+constant: set SCANNER_CODE_REF in the (ii) block to the SHA of the commit that
+landed an AUTHORIZED CODE change to the scanner. Nothing else in (i)-(iii) is a
+value to be regenerated — there are no bytes, no hashes and no sizes left to
+transcribe.
 
-  git status --porcelain src/python/pairwise_completeness_scan.py
-  md5sum src/python/pairwise_completeness_scan.py
-  stat -c '%s' src/python/pairwise_completeness_scan.py
-  git log -1 --format='%h %s' -- src/python/pairwise_completeness_scan.py
+  * A COMMENT or DOCSTRING change to the scanner updates NOTHING. Do not touch this
+    gate for one. The pin is CODE-scoped precisely so that a prose correction is
+    free; that is what `DEC-2026-08-06-sr4-freeze-scope` in `.planning/DECISIONS.md`
+    ruled, and this gate now follows it.
+  * A CODE change: land it at NCSU on a clean tree, then set SCANNER_CODE_REF to the
+    landing commit's SHA — an immutable revision, never a symbolic name (the gate
+    refuses one).
+  * NEVER "update" the pin from what the VM reports. That inverts the gate.
+  * CONFIRM at NCSU, on a clean tree:
+
+      pytest tests/m3/test_pairwise_completeness_scan.py -k step0
+
+    That enforcer EXTRACTS the (ii) block from THIS document, parses it, reads
+    SCANNER_CODE_REF out of the parse tree and then EXECUTES the block — so the exact
+    text an operator pastes is the text under test, and a stale ref cannot survive a
+    green suite.
 
 --- the PINNED plink1.9 build ---
 

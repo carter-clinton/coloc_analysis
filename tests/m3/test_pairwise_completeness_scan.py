@@ -43,6 +43,17 @@ _SRC_PYTHON = PROJECT_ROOT / "src" / "python"
 if str(_SRC_PYTHON) not in sys.path:
     sys.path.insert(0, str(_SRC_PYTHON))
 
+_THIS_DIR = Path(__file__).resolve().parent
+if str(_THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_THIS_DIR))
+
+# The SHARED code-identity utility. Imported, never re-implemented: a hand-rolled
+# comment stripper "makes a real code change INVISIBLE, which is strictly worse
+# than the byte pin it replaces" (``source_freeze``'s own module docstring), and a
+# second copy is exactly what ``feedback_extract_reusable_utilities`` forbids for a
+# recurrent bug class -- and the byte-proxy class has now bitten TWICE.
+from source_freeze import LANG_PY, code_lines, git_show  # noqa: E402
+
 # NOTE: NO module-level ``import pairwise_completeness_scan`` — see the docstring.
 
 
@@ -2772,50 +2783,237 @@ def _has_number(text: str, n) -> bool:
     return re.search(rf"(?<!\d){n}(?!\d)", _digits(text)) is not None
 
 
-def test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash():
-    """THE GATE'S HASH IS RECOMPUTED HERE, NEVER FROZEN.
+def test_pending_paste_step0_pins_the_scanner_CODE_against_a_git_ref():
+    """THE GATE PINS WHAT THE SCANNER *DOES*, NOT WHAT ITS BYTES ARE.
 
-    The runbook's STEP 0 gate names an md5 and a byte size for
-    ``src/python/pairwise_completeness_scan.py``. This test recomputes BOTH at
-    call time and asserts the runbook carries those values — so the gate goes RED
-    the MOMENT the scanner changes without the gate being regenerated. That is
-    the point, and the runbook's HOW TO REGENERATE block is the cheap, named
-    remedy.
+    REPLACES ``test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash``
+    (quick-260901-l55). That test recomputed the scanner's whole-file md5 and byte
+    size and required the runbook to carry them. It was TRUE and it was still
+    MIS-SCOPED: it made correcting a KNOWN-FALSE docstring sentence in the scanner
+    cost an edit to a live runbook mid-flight, i.e. it made shipping a falsehood the
+    CHEAPER option. That is a REPEAT of
+    ``feedback_scope_a_guard_to_the_property_not_a_proxy`` (baked 2026-08-06 on
+    ``run_susie_rss.R``, repeated 2026-08-31 here). The property is CODE IDENTITY;
+    bytes were only ever a proxy for it.
 
-    THIS IS NOT ``feedback_fixed_sha_whole_file_pin_is_a_timebomb``. That failure
-    mode is a FROZEN SHA written into a doc that nothing recomputes — green once
-    and red forever after, with no remedy. Here the authority is the FILE ON
-    DISK: the test computes the truth and checks the document against it, and a
-    legitimate scanner change is resolved by four commands, not by deleting a pin.
+    WHAT IS ASSERTED, in six parts:
 
-    The md5 is asserted as a plain substring (32 hex chars — no collision risk).
-    The SIZE is digit-boundary-anchored, because a bare 5-digit number is exactly
-    the collision shape this quick's standing rule exists to prevent.
+    1. STRUCTURE -- the gate slice contains a heredoc whose PARSED module body
+       assigns ``SCANNER_CODE_REF``, calls ``assert_code_frozen``, and passes it
+       NEITHER an ``actual_text=`` keyword NOR a ``**`` unpack (the control seam
+       would make the assertion stop reading the working tree).
+    2. VALUE -- ``SCANNER_REL`` is the scanner and ``SCANNER_CODE_REF`` is an
+       IMMUTABLE revision, never a symbolic name.
+    3. RUNTIME -- the block is EXECUTED, in a subprocess, from the project root, and
+       must exit 0 printing ``CODE PIN PASSED``. The exact text an operator pastes is
+       the text under test (``feedback_a_grep_gate_matches_text_not_meaning``).
+    4. NEGATIVE CONTROL, BOTH DIRECTIONS, in memory -- see below.
+    5. THE BYTE PROXY IS GONE -- no 32-hex md5 token and no current byte size in the
+       gate slice.
+    6. CARRIED FORWARD from the deleted test -- the working-tree check and the
+       commit-subject spoof evidence.
+
+    ⚠ WHY (4) IS AST-SCOPED BY BYTE RANGE AND NOT A ``text.replace(...)``. The
+    planner's FIRST negative control for this gate did a first-match replace of
+    ``deletion.pos < partner.pos <= deletion.span_end`` and reported the gate GREEN
+    -- proving nothing, because that phrase's FIRST occurrence is in the module
+    DOCSTRING (MEASURED: 3 matching lines at ``cb199b6``, 4 after the docstring
+    correction, one of which yields ``<==``/SyntaxError under a blind substitution).
+    So the CODE side anchors on ``already_occluded=bool(``, which occurs EXACTLY
+    ONCE, and the PROSE side is confined to the docstring's own byte span. Every
+    perturbation asserts BOTH that it changed something AND that it landed where
+    this test claims -- structurally, via ``ast.get_docstring``.
+
+    NOTHING IS WRITTEN TO DISK: both perturbations live in memory, so no stale
+    ``__pycache__`` can decide the outcome
+    (``feedback_negative_control_defeated_by_bytecode_cache``).
     """
-    import hashlib
-
-    scanner = PROJECT_ROOT / "src" / "python" / "pairwise_completeness_scan.py"
-    data = scanner.read_bytes()
-    md5 = hashlib.md5(data).hexdigest()
-    size = scanner.stat().st_size
+    import ast
+    import re
+    import subprocess
 
     text = _PENDING_PASTE.read_text()
     assert _GATE_OPEN in text, "the STEP 0 behavioural freshness gate is GONE"
     gate = text[text.index(_GATE_OPEN):text.index(_GATE_CLOSE)]
+    assert gate.strip(), "the gate slice is EMPTY -- every assertion below is vacuous"
 
-    assert md5 in gate, (
-        f"the STEP 0 gate does not pin the CURRENT scanner md5 {md5}. The scanner "
-        f"changed and the gate was not regenerated — run the four commands in the "
-        f"runbook's HOW TO REGENERATE block and update the gate."
+    # ------------------------------------------------------------------ (1)
+    # Extract every heredoc body by LINE ANCHORS, then PARSE. A regex over the
+    # document would match the word `EOF` inside prose; a line anchor cannot.
+    blocks, cur = [], None
+    for line in gate.split("\n"):
+        if line == "python3 - <<'EOF'":
+            cur = []
+            continue
+        if cur is not None:
+            if line == "EOF":
+                blocks.append("\n".join(cur))
+                cur = None
+            else:
+                cur.append(line)
+    assert cur is None, "an unterminated heredoc in the STEP 0 gate"
+    assert blocks, "the STEP 0 gate carries NO python heredoc at all"
+
+    def _assigns(mod, name):
+        return [
+            n for n in mod.body
+            if isinstance(n, ast.Assign)
+            and any(getattr(t, "id", None) == name for t in n.targets)
+        ]
+
+    parsed = [(b, ast.parse(b)) for b in blocks]
+    selected = [(b, m) for b, m in parsed if _assigns(m, "SCANNER_CODE_REF")]
+    assert len(selected) == 1, (
+        "expected EXACTLY ONE heredoc in the STEP 0 gate assigning "
+        f"SCANNER_CODE_REF; found {len(selected)} of {len(blocks)} blocks. The "
+        "gate no longer pins the scanner's CODE."
     )
-    assert _has_number(gate, size), (
-        f"the STEP 0 gate does not pin the CURRENT scanner byte size {size}"
+    block, module = selected[0]
+
+    calls = [
+        n for n in ast.walk(module)
+        if isinstance(n, ast.Call)
+        and (n.func.attr if isinstance(n.func, ast.Attribute)
+             else getattr(n.func, "id", None)) == "assert_code_frozen"
+    ]
+    assert len(calls) == 1, (
+        "the gate block must call assert_code_frozen exactly once; the CODE pin is "
+        f"the whole gate. Found {len(calls)}."
     )
-    # the gate must gate on the WORKING TREE too: a local edit makes the hash lie
-    assert "git status --porcelain src/python/pairwise_completeness_scan.py" in gate
-    # ...and it must name the commit that last touched the file
-    assert "git log -1 --format='%h %s' -- src/python/pairwise_completeness_scan.py" in gate
-    # NO COMMIT-SUBJECT GATE ANYWHERE: that is the spoof this replaced.
+    for kw in calls[0].keywords:
+        assert kw.arg != "actual_text", (
+            "the gate passes the TEST-CONTROL SEAM actual_text=, so its assertion no "
+            "longer reads the working tree -- it would be blind to the very edit it "
+            "exists to catch"
+        )
+        assert kw.arg is not None, (
+            "the gate passes a ** unpack to assert_code_frozen, which can smuggle "
+            "actual_text= past a keyword-name check"
+        )
+
+    # ------------------------------------------------------------------ (2)
+    scanner_rel = _assigns(module, "SCANNER_REL")[0].value.value
+    code_ref = _assigns(module, "SCANNER_CODE_REF")[0].value.value
+    assert scanner_rel == "src/python/pairwise_completeness_scan.py", (
+        f"the gate pins {scanner_rel!r}, not the scanner"
+    )
+    assert re.fullmatch(r"[0-9a-f]{7,40}", code_ref), (
+        f"the STEP 0 code pin {code_ref!r} is not an IMMUTABLE revision. A symbolic "
+        "name (HEAD, a branch, a tag) would make this gate permanently green with "
+        "nothing ever able to turn it red -- the cheapest possible weakening."
+    )
+
+    # ------------------------------------------------------------------ (3)
+    proc = subprocess.run(
+        [sys.executable, "-c", block],
+        cwd=str(PROJECT_ROOT), capture_output=True, text=True,
+    )
+    assert proc.returncode == 0, (
+        "the STEP 0 CODE PIN block that an operator will PASTE does not pass on this "
+        f"tree (exit {proc.returncode}).\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
+    )
+    assert "CODE PIN PASSED" in proc.stdout, (
+        f"the gate block exited 0 without its success line.\nSTDOUT:\n{proc.stdout}"
+    )
+    assert f"SCANNER CODE PIN ref: {code_ref}" in proc.stdout, (
+        "the gate must PRINT the ref it resolved, as a FIELD RECORD -- otherwise the "
+        "attribution is what the document CLAIMED, not what the run RESOLVED"
+    )
+
+    # ------------------------------------------------------------------ (4)
+    scanner_text = (PROJECT_ROOT / scanner_rel).read_text()
+    tree = ast.parse(scanner_text)
+    doc_node = tree.body[0]
+    assert isinstance(doc_node, ast.Expr) and isinstance(doc_node.value, ast.Constant) \
+        and isinstance(doc_node.value.value, str), (
+        "the scanner's first statement is not a module docstring -- the byte span "
+        "this control is scoped to cannot be computed"
+    )
+    starts, pos = [0], 0
+    for line in scanner_text.split("\n"):
+        pos += len(line) + 1
+        starts.append(pos)
+    doc_start = starts[doc_node.lineno - 1] + doc_node.col_offset
+    doc_end = starts[doc_node.end_lineno - 1] + doc_node.end_col_offset
+    ref_lines = code_lines(git_show(code_ref, scanner_rel), LANG_PY)
+    assert code_lines(scanner_text, LANG_PY) == ref_lines, (
+        "premise failure: the scanner's CODE is already off the pin, so neither "
+        "direction of the control below means anything"
+    )
+
+    # (4a) CODE SIDE -- must make code_lines DIFFER.
+    anchor = "already_occluded=bool("
+    assert scanner_text.count(anchor) == 1, (
+        f"the CODE anchor {anchor!r} is no longer unique ({scanner_text.count(anchor)} "
+        "occurrences) -- this control would perturb an unknown site"
+    )
+    at = scanner_text.index(anchor)
+    assert not (doc_start <= at < doc_end), (
+        "the CODE anchor is INSIDE the module docstring -- perturbing it would test "
+        "prose, not code. This is exactly the trap that made the planner's first "
+        "negative control report a meaningless green."
+    )
+    pert_code = (
+        scanner_text[:at] + "already_occluded_NC=bool(" + scanner_text[at + len(anchor):]
+    )
+    assert pert_code != scanner_text, "the CODE perturbation did not change anything"
+    assert ast.get_docstring(ast.parse(pert_code)) == ast.get_docstring(tree), (
+        "the CODE perturbation moved the module DOCSTRING -- it did not land where "
+        "this control claims"
+    )
+    assert code_lines(pert_code, LANG_PY) != ref_lines, (
+        "A ONE-TOKEN CODE CHANGE IS INVISIBLE TO THIS GATE. The pin is worthless: it "
+        "would stay green while the instrument changed underneath it, which is the "
+        "exact failure that voided the 2026-08-26 sweep."
+    )
+
+    # (4b) PROSE SIDE -- must leave code_lines IDENTICAL.
+    doc_slice = scanner_text[doc_start:doc_end]
+    assert doc_slice.count("already_occluded") >= 1, (
+        "the PROSE target is not in the module docstring -- this control would "
+        "perturb something other than what it claims"
+    )
+    pert_doc = (
+        scanner_text[:doc_start]
+        + doc_slice.replace("already_occluded", "already_occluded_PERTURBED_BY_NC", 1)
+        + scanner_text[doc_end:]
+    )
+    assert pert_doc != scanner_text, "the PROSE perturbation did not change anything"
+    assert ast.get_docstring(ast.parse(pert_doc)) != ast.get_docstring(tree), (
+        "the PROSE perturbation did not land in the MODULE DOCSTRING"
+    )
+    assert code_lines(pert_doc, LANG_PY) == ref_lines, (
+        "A DOCSTRING-ONLY EDIT MOVES THIS GATE. That is the byte proxy again: "
+        "correcting a wrong sentence would cost a re-pin, and shipping the wrong "
+        "sentence would be the cheaper option "
+        "(feedback_scope_a_guard_to_the_property_not_a_proxy)."
+    )
+
+    # ------------------------------------------------------------------ (5)
+    md5_re = re.compile(r"(?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])")
+    assert md5_re.search("d41d8cd98f00b204e9800998ecf8427e"), (
+        "the md5 regex matches nothing at all -- its 'absence' finding below would "
+        "be vacuous"
+    )
+    stray = md5_re.findall(gate)
+    assert not stray, (
+        "the STEP 0 gate carries a 32-hex content hash again: "
+        f"{stray}. The gate was rescoped OFF the whole-file byte proxy in "
+        "quick-260901-l55 precisely because a byte pin makes correcting a comment "
+        "cost a re-pin. Pin the CODE against a git ref instead."
+    )
+    size = (PROJECT_ROOT / scanner_rel).stat().st_size
+    assert not _has_number(gate, size), (
+        f"the STEP 0 gate names the scanner's current byte size {size} -- the byte "
+        "proxy is back"
+    )
+
+    # ------------------------------------------------------------------ (6)
+    assert "git status --porcelain src/python/pairwise_completeness_scan.py" in gate, (
+        "check (i) is GONE. The CODE pin is deliberately BLIND to an uncommitted "
+        "PROSE edit; git status is the only check that sees one. Neither subsumes "
+        "the other."
+    )
     assert "quick-260825-qpf" not in text or "769afa6" in text, (
         "the runbook mentions quick-260825-qpf without the 769afa6 evidence that "
         "explains why a commit-NAME check is a spoof"
@@ -4136,33 +4334,101 @@ def test_driver_summaries_guard_independently_refuses_last_wins_with_both_upstre
 
 
 # --------------------------------------------------------------------------- #
-# quick-260831-kw8 -- `already_occluded` is ANCHOR-RELATIVE, not the            #
-# `--exclude` side. Seth's brief-blind review, 2026-08-29, FINDING A.          #
+# `already_occluded` is ANCHOR-RELATIVE, not the `--exclude` side.              #
+# Seth's brief-blind review, 2026-08-29, FINDING A -- CLOSED 2026-09-01.        #
 #                                                                              #
-# The module docstring's RETAINED-SET PARITY bullet (`:122`) asserts that "the  #
-# ``--exclude`` side is already visible as ``already_occluded``". IT IS FALSE.  #
-# The PRIMARY enforcer below is BEHAVIOURAL: it constructs a window in which    #
-# the two predicates DISAGREE at runtime, which is what falsifies that          #
-# sentence. It is green against the code AS IT STANDS and stays green after     #
-# the prose correction, because the DEFECT IS IN THE PROSE, NOT THE CODE.      #
+# The module docstring's RETAINED-SET PARITY bullet USED TO assert that "the    #
+# ``--exclude`` side is already visible as ``already_occluded``". IT WAS FALSE: #
+# the field is evaluated against THE ANCHOR DELETION OF THAT ROW ONLY, while    #
+# the production excludelist is `detect_occluded_variants` over EVERY deletion  #
+# in the window.                                                                #
 #                                                                              #
-# ⚠ DEFERRED, DELIBERATELY: the SECONDARY `ast.get_docstring` phrase test --    #
-# which asserts the false sentence is ABSENT -- is NOT in this file yet,        #
-# because the sentence is still present. The prose correction is written and    #
-# PARKED at                                                                     #
-#   .planning/debug/260831-DEFERRED-pairwise-completeness-scan-docstring.patch  #
-# and is deferred to the POST-SWEEP window for a MEASURED reason: the live      #
-# runbook `.planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md` #
-# STEP 0 gate pins this file's WHOLE-FILE md5 + byte size                       #
-# (e03078ff73502c3c877b0d2ebf93941d / 73772), and                               #
-# `test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash` below   #
-# recomputes both at call time. A DOCSTRING-ONLY edit moves the md5 to          #
-# fc1d68dff1f493f6eb57dd427bed638a / 78843 and turns that gate RED -- and the   #
-# only way to green it is to rewrite a runbook that is CURRENTLY A TRUE         #
-# STATEMENT ABOUT AN IN-FLIGHT SWEEP. See                                       #
-# `.planning/debug/260831-seth-brief-blind-review-already-occluded-is-anchor-relative.md`
-# §THE BYTE-PROXY GATE for the full argument and the scheduled rescope.        #
+# TWO ENFORCERS, NAMED, because an invariant without one is a belief            #
+# (`feedback_a_claimed_invariant_needs_a_named_enforcer`):                      #
+#                                                                              #
+#   1. BEHAVIOURAL, and it is the primary one:                                  #
+#      test_already_occluded_is_anchor_relative_and_is_not_the_exclude_side     #
+#      constructs a window in which the two predicates DISAGREE at runtime.     #
+#      That is what falsifies the sentence. It was green BEFORE the prose       #
+#      correction and is green after it, because the DEFECT WAS IN THE PROSE,   #
+#      NOT THE CODE.                                                            #
+#   2. PHRASE-LEVEL, the SECONDARY test, landed in quick-260901-l55:            #
+#      test_the_scanner_docstring_no_longer_claims_already_occluded_is_the_..._side
+#      asserts the false sentence is ABSENT and the correction PRESENT, read    #
+#      from disk with `ast.get_docstring` at call time.                         #
+#                                                                              #
+# WHY (2) WAS DEFERRED, AND WHAT DISCHARGED IT. The correction was written and  #
+# PARKED for a MEASURED reason: the live runbook's STEP 0 gate pinned this      #
+# file's WHOLE-FILE md5 and byte size, so a DOCSTRING-ONLY edit turned that     #
+# gate RED, and greening it meant rewriting a runbook that was CURRENTLY A TRUE #
+# STATEMENT ABOUT AN IN-FLIGHT SWEEP. quick-260901-l55 rescoped that gate onto  #
+# a git-ref CODE pin (`assert_code_frozen` against `cb199b6`), which is blind   #
+# to prose by construction and was observed BOTH green on a docstring-only      #
+# change and RED on a one-character code change. The patch then applied         #
+# unchanged, and this test landed with it -- in the SAME commit, because either #
+# one alone leaves a committed statement in another file false.                 #
+#                                                                              #
+# The byte-proxy episode is recorded as a REPEAT of                             #
+# `feedback_scope_a_guard_to_the_property_not_a_proxy` (baked 2026-08-06) in    #
+# `.planning/debug/260901-l55-step0-gate-rescope-off-the-byte-proxy.md`.        #
 # --------------------------------------------------------------------------- #
+
+
+def test_the_scanner_docstring_no_longer_claims_already_occluded_is_the_exclude_side():
+    """THE SECONDARY, PHRASE-LEVEL ENFORCER -- deferred by quick-260831-kw8, landed here.
+
+    The comment block at :4149-4152 of the kw8 tree declared this test "NOT in
+    this file yet, because the sentence is still present". The sentence is gone,
+    so the test exists.
+
+    ⚠ WHITESPACE IS NORMALISED FIRST: the docstring wraps at ~79 chars, so an
+    un-normalised phrase match would fail on a merely line-WRAPPED copy
+    (`feedback_grep_gate_matches_text_not_meaning`). The source is READ AT CALL
+    TIME and parsed with :mod:`ast`, never imported, so a stale ``__pycache__``
+    cannot decide the outcome
+    (`feedback_negative_control_defeated_by_bytecode_cache`).
+
+    NON-VACUITY comes first: an ABSENCE assertion is satisfied by a file with no
+    docstring at all, so the docstring must be present and substantial before its
+    absence-of-a-phrase means anything.
+    """
+    import ast
+
+    scanner = PROJECT_ROOT / "src" / "python" / "pairwise_completeness_scan.py"
+    doc = ast.get_docstring(ast.parse(scanner.read_text(encoding="utf-8"))) or ""
+    assert doc, "the scanner's module docstring vanished"
+    assert len(doc) > 1000, (
+        f"the scanner's module docstring is only {len(doc)} chars -- too short to "
+        "be the real one, so the ABSENCE assertion below would be vacuous"
+    )
+    flat = " ".join(doc.split())
+
+    # -- the FALSE sentence is ABSENT --------------------------------------- #
+    assert "already visible as ``already_occluded``" not in flat, (
+        "the scanner's docstring claims the ``--exclude`` side is already visible "
+        "as ``already_occluded``. THAT IS FALSE: the field is ANCHOR-RELATIVE "
+        "(evaluated against THIS row's anchor deletion only) while the excludelist "
+        "is PANEL-WIDE. It misled a reader once already -- see "
+        "test_already_occluded_is_anchor_relative_and_is_not_the_exclude_side, "
+        "which DEMONSTRATES the disagreement at runtime."
+    )
+
+    # -- the CORRECTION is PRESENT ------------------------------------------ #
+    assert "ANCHOR-RELATIVE" in flat, (
+        "the scanner's docstring no longer states the anchor-relative semantics"
+    )
+    assert "does NOT mean" in flat and "survives ``--exclude``" in flat, (
+        "the docstring names the semantics but no longer spells out the "
+        "consequence -- that a False does NOT mean the pair survives --exclude"
+    )
+    assert "pcs_panelwide_reclassify" in flat, (
+        "the docstring does not point at the tool that computes the PANEL-WIDE "
+        "quantity, so a reader has nowhere to go"
+    )
+    assert "detect_occluded_variants" in flat, (
+        "the docstring does not name the function that actually builds the "
+        "production excludelist"
+    )
 
 
 def test_already_occluded_is_anchor_relative_and_is_not_the_exclude_side():
