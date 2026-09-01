@@ -55,12 +55,23 @@ Confirmed both findings of a brief-blind external review, built a post-hoc tool 
 FAILED tests/m3/test_pairwise_completeness_scan.py::test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash
 AssertionError: the STEP 0 gate does not pin the CURRENT scanner md5 fc1d68dff1f493f6eb57dd427bed638a.
 1 failed, 171 passed, 2 skipped in 4.47s   # scanner + freeze-pins + occlusion-filter files
-# ^ VERBATIM CAPTURE, NOT ALTERED. 1+171+2 = 174 items, correct for the moment it was
-#   taken: all THREE T2 tests were present. Only TWO landed (the secondary text test was
-#   deliberately withheld pending the deferred prose edit), so the same three files at HEAD
-#   collect 173 and read `171 passed, 2 skipped` — MEASURED. The 1-item delta IS the
-#   withheld test, not a discrepancy.
 ```
+
+⚠ **THAT CAPTURE IS VERBATIM BUT WAS NOT SCOPED — corrected here.** It was taken on a
+tree that ALSO held the third (secondary text) T2 test, which I then deliberately did NOT
+land. So it is `1 + 171 + 2 = 174` items. A reader re-running it on the SHIPPED tree gets a
+different number and would think the record was wrong. **All three states, each MEASURED:**
+
+| tree | result | items |
+|---|---|---|
+| HEAD as shipped (patch NOT applied) | `171 passed, 2 skipped` — 0 failed | 173 |
+| HEAD + the parked patch applied | `1 failed, 170 passed, 2 skipped` | 173 |
+| the capture above (tree also held the withheld 3rd test) | `1 failed, 171 passed, 2 skipped` | 174 |
+
+The 1-item delta between rows 2 and 3 **is** the withheld test. The substantive claim is
+identical in every row and is what the deferral rests on: **exactly one failure, and it is
+the STEP 0 gate.** (Caught by the independent verifier; a count is a claim and must carry
+the tree it was measured on — `feedback_a_count_is_a_claim_scope_and_reconcile`.)
 
 Exactly one failure. Only one test file reads that runbook (`grep -rln` over `tests/`). The scanner is NOT in `PY_FROZEN_RELS` — the plan's freeze analysis was right about `source_freeze` but `source_freeze` is not the guard that fired.
 
