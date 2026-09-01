@@ -865,3 +865,94 @@ def test_the_window_selection_uses_pad_bp_zero_to_match_production():
         assert len(pads) == 1, "pad_bp must be passed EXPLICITLY"
         assert isinstance(pads[0].value, ast.Constant)
         assert pads[0].value.value == 0
+
+
+# --------------------------------------------------------------------------- #
+# THE MITIGATION THAT COSTS NO PINNED BYTES (quick-260831-kw8, coordinator      #
+# decision after the byte-proxy STOP).                                          #
+#                                                                              #
+# The scanner's false claim CANNOT be deleted right now: the live runbook's     #
+# STEP 0 gate pins the scanner's WHOLE-FILE md5, and that pin is currently a    #
+# TRUE statement about an in-flight sweep. THIS module is new and NOT pinned,   #
+# so the TRUE semantics live here instead -- adjacent to the tool, which is     #
+# where the at-risk reader arrives.                                             #
+#                                                                              #
+# Both assertions below are SELF-INVALIDATING ON PURPOSE. The docstring makes   #
+# two claims ABOUT ANOTHER FILE (that it still carries the false sentence, and  #
+# what its bytes currently are). This test recomputes BOTH from the file on     #
+# disk at call time, so the note cannot decay into a stale lie: the moment the  #
+# parked patch lands, this test goes RED and forces the note's removal.         #
+# --------------------------------------------------------------------------- #
+
+_SCANNER_FALSE_CLAIM = "already visible as ``already_occluded``"
+
+
+def test_the_tool_docstring_carries_the_true_semantics_and_flags_the_scanners_false_claim():
+    """The corrective statement is HERE, and its claims about the scanner are LIVE.
+
+    ⚠ WHITESPACE IS NORMALISED FIRST -- both docstrings wrap at ~79 chars, so an
+    un-normalised phrase match would fail on a merely line-WRAPPED copy
+    (`feedback_grep_gate_matches_text_not_meaning`). Sources are READ AT CALL
+    TIME and parsed with :mod:`ast`, never imported, so a stale ``__pycache__``
+    cannot decide the outcome
+    (`feedback_negative_control_defeated_by_bytecode_cache`).
+    """
+    import hashlib
+    import re
+
+    reclass_path = PROJECT_ROOT / "src" / "python" / "pcs_panelwide_reclassify.py"
+    doc = ast.get_docstring(ast.parse(reclass_path.read_text(encoding="utf-8"))) or ""
+    assert doc, "the tool's module docstring vanished"
+    flat = " ".join(doc.split())
+
+    # -- (1) THE TRUE SEMANTICS ARE STATED HERE ----------------------------- #
+    assert "ANCHOR-RELATIVE" in flat
+    assert "PANEL-WIDE" in flat
+    assert "does NOT mean" in flat and "survives ``--exclude``" in flat
+
+    # -- (2) THE SCANNER'S FALSE CLAIM IS NAMED *AND* MARKED FALSE ---------- #
+    assert _SCANNER_FALSE_CLAIM in flat, "the false sentence is not quoted here"
+    assert "THAT SENTENCE IS FALSE" in flat, "it is quoted but not refuted"
+
+    # -- (3) THE DEFERRAL IS ACTIONABLE, NOT A SHRUG ------------------------ #
+    assert "260831-DEFERRED-pairwise-completeness-scan-docstring.patch" in flat
+    assert "post-sweep" in flat
+    assert "feedback_scope_a_guard_to_the_property_not_a_proxy" in flat
+
+    # ---------------------------------------------------------------------- #
+    # (4) SELF-INVALIDATION #1: the note claims the scanner STILL carries the #
+    # false sentence. Verify that against the scanner ON DISK. If the parked  #
+    # patch has landed, this note is STALE and must go with it.               #
+    # ---------------------------------------------------------------------- #
+    scanner_path = PROJECT_ROOT / "src" / "python" / "pairwise_completeness_scan.py"
+    scanner_bytes = scanner_path.read_bytes()
+    scanner_doc = ast.get_docstring(
+        ast.parse(scanner_bytes.decode("utf-8"))
+    ) or ""
+    assert _SCANNER_FALSE_CLAIM in " ".join(scanner_doc.split()), (
+        "the scanner's false claim is GONE -- the DEFERRAL note in "
+        "pcs_panelwide_reclassify.py is now STALE. Remove section (1b) in the "
+        "same commit that lands the parked patch."
+    )
+
+    # ---------------------------------------------------------------------- #
+    # (5) SELF-INVALIDATION #2, AND THE LIVE-FIRE GUARD. The note quotes the  #
+    # scanner's CURRENT md5 and byte size as the values the runbook's STEP 0  #
+    # gate pins. Recompute both from disk -- the authority is the FILE, never #
+    # a frozen literal (this is the same shape as                             #
+    # test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash,    #
+    # NOT `feedback_fixed_sha_whole_file_pin_is_a_timebomb`).                  #
+    #                                                                        #
+    # While the sweep is in flight this is ALSO the machine check that the    #
+    # scanner's bytes have not moved.                                         #
+    # ---------------------------------------------------------------------- #
+    md5 = hashlib.md5(scanner_bytes).hexdigest()
+    size = len(scanner_bytes)
+    assert md5 in flat, (
+        f"the note quotes a stale scanner md5; the file on disk is {md5}"
+    )
+    # digit-boundary anchored after comma normalisation -- a bare 5-digit
+    # number is exactly the collision shape the standing rule prevents.
+    assert re.search(r"(?<!\d)" + str(size) + r"(?!\d)", flat.replace(",", "")), (
+        f"the note quotes a stale scanner byte size; the file on disk is {size}"
+    )

@@ -1,0 +1,145 @@
+diff --git a/src/python/pairwise_completeness_scan.py b/src/python/pairwise_completeness_scan.py
+index 99c354d..fa1f3c3 100644
+--- a/src/python/pairwise_completeness_scan.py
++++ b/src/python/pairwise_completeness_scan.py
+@@ -116,11 +116,38 @@ RETAINED-SET PARITY (``--exclude`` / ``--mac 1``)
+ --------------------------------------------------
+ The production matrix is built on the RETAINED set — post ``--exclude`` (the
+ occlusion manifest) and post ``--mac 1`` (MAC-0 variants dropped). This scanner
+-enumerates the FULL window ``.bim``. The two sides of that gap are made visible
+-rather than assumed away:
+-
+-* the ``--exclude`` side is already visible as ``already_occluded``;
+-* the ``--mac 1`` side is the new ``del_globally_invariant`` /
++enumerates the FULL window ``.bim``. The two sides of that gap are NAMED here,
++and only ONE of them is fully computed by this scanner:
++
++* the ``--exclude`` side is only PARTLY visible, and the visible part is
++  ANCHOR-RELATIVE. ``already_occluded`` is exactly
++  ``deletion.pos < partner.pos <= deletion.span_end`` evaluated against THE
++  ANCHOR DELETION OF THAT ROW ONLY (:func:`enumerate_candidates`). The
++  PANEL-WIDE question — does either member land on the production excludelist,
++  which ``occlusion_span_filter.detect_occluded_variants`` builds over EVERY
++  deletion in the window (``run_native_ld_panel.py`` assembles ``raw_rows``
++  from the in-window ``.bim`` and calls the detector there) — is a SEPARATE
++  quantity that THIS SCANNER DOES NOT COMPUTE.
++
++  ⚠ THE CONSEQUENCE, and it is not a nuance. ``already_occluded == False``
++  means "not inside THIS anchor's span". It does NOT mean "survives
++  ``--exclude``", and ``n_undefined_not_already_occluded`` does NOT count pairs
++  that survive filtering: a pair can carry ``already_occluded=False`` while one
++  of its members is dropped by a DIFFERENT deletion in the same window. This is
++  DEMONSTRATED at runtime rather than asserted, by
++  ``tests/m3/test_pairwise_completeness_scan.py::test_already_occluded_is_anchor_relative_and_is_not_the_exclude_side``,
++  which constructs a window in which the two predicates disagree. (An earlier
++  version of this bullet asserted that this field WAS the ``--exclude`` side.
++  That was FALSE and it misled a reader; the behavioural test above is what
++  keeps the correction from decaying back into prose.)
++
++  The panel-wide quantity is computed POST-HOC by
++  ``src/python/pcs_panelwide_reclassify.py``, from an ALREADY-EMITTED
++  ``pcs_pairs.tsv`` plus the cohort ``.bim``: coordinate-only, no ``.bed``, no
++  genotype, and no re-run of this scanner.
++
++* the ``--mac 1`` side is UNCHANGED by that correction — the
++  ``del_globally_invariant`` /
+   ``partner_globally_invariant`` columns and the ``n_globally_invariant_variants``
+   / ``n_undefined_rows_with_globally_invariant_member`` counters. A member is
+   "globally invariant" when it is constant within its OWN called set.
+@@ -134,6 +161,41 @@ contained it. Both observed regions reported ``n_dropped_monomorphic = 0``, but
+ that is a measurement of two regions and not a guarantee, so the class is COUNTED
+ and SUBTRACTABLE instead of folded into the undefined total.
+ 
++THE ``already_occluded`` RENAME: CONSIDERED, DECLINED, AND WHY
++--------------------------------------------------------------
++A name is a claim, and this one has already misled a reader — so the decline is
++ARGUED, not assumed. A rename to something anchor-explicit (e.g.
++``occluded_by_this_anchor``) was considered and is DECLINED for three MEASURED
++reasons:
++
++1. A SWEEP IS MID-FLIGHT AND WILL EMIT A HEADER CARRYING THIS EXACT COLUMN.
++   :data:`TSV_COLUMNS` is the emitted header. Renaming now desynchronizes every
++   reader from an artifact already being written — including
++   ``pcs_panelwide_reclassify.py``, whose header check is STRICT EQUALITY
++   against :data:`TSV_COLUMNS` and would RAISE on the in-flight file.
++2. THE PRE-REGISTRATION NAMES THE TWO SUMMARY KEYS.
++   ``.planning/debug/260826-PCS-ancestry-blind-manifest-read-8x-duplication-and-the-prereg-prediction.md``
++   §(e) pre-registers ``n_undefined_already_occluded`` /
++   ``n_undefined_not_already_occluded``. Renaming a PRE-REGISTERED key in
++   response to a review is the exact move pre-registration exists to prevent.
++   The correct response to a misleading name whose semantics were misread is to
++   fix the SEMANTICS RECORD (this docstring) and to add the missing quantity
++   (the post-hoc tool) — not to relabel the prediction.
++3. ``TSV_COLUMNS IS PairResult._fields`` (a must-be-identity link). One rename
++   therefore moves the emitted header, :data:`SUMMARY_KEYS`, the banked BLOCK 2
++   identity pull and every downstream consumer AT ONCE.
++
++WHAT WOULD BREAK: the emitted TSV header; the two summary keys; the strict
++header equality check in ``pcs_panelwide_reclassify.py``; every banked
++``pcs_pairs.tsv`` already on disk; and the pre-registered key names.
++
++TRIGGER FOR REVISITING: the NEXT OSF version — and only AFTER the in-flight
++sweep lands and its artifacts are banked. Not before.
++
++ENFORCER (named, so this is not a belief):
++``tests/m3/test_pairwise_completeness_scan.py::test_the_already_occluded_rename_is_declined_while_the_sweep_artifact_contract_stands``
++fails if the field leaves the artifact contract while that contract stands.
++
+ THE MINOR-ALLELE TIE RULE
+ -------------------------
+ The carriers-lost gradient is computed over the member's MINOR allele, decided
+@@ -478,7 +540,9 @@ def span_offset(deletion, variant) -> int:
+     POSTED occlusion rule's left bound is STRICT
+     (``d.pos < v.pos <= d.span_end``), so a co-located variant has offset 0 and
+     ``already_occluded is False``. Conflating them would silently reclassify
+-    "newly discovered" as "already covered".
++    "newly discovered" as "already covered BY THIS ANCHOR". Note the scope:
++    ``already_occluded`` is ANCHOR-RELATIVE and is NOT the ``--exclude`` side —
++    see the module docstring's RETAINED-SET PARITY section.
+ 
+     The MEASURED ``m2_region_00057`` partner sits at offset ``+1``.
+     """
+@@ -611,8 +675,15 @@ def enumerate_candidates(
+                     partner_pos=partner.pos,
+                     offset=offset,
+                     side=side_for_offset(offset),
+-                    # THE POSTED RULE, computed separately and never conflated
+-                    # with `offset == 0`. Strict left bound.
++                    # THE POSTED RULE EVALUATED AGAINST THIS ANCHOR ONLY --
++                    # computed separately and never conflated with
++                    # `offset == 0`. Strict left bound.
++                    # ⚠ ANCHOR-RELATIVE, NOT the `--exclude` side: the
++                    # production excludelist is detect_occluded_variants over
++                    # EVERY deletion in the window. A False here does NOT mean
++                    # the partner survives `--exclude`. See the module
++                    # docstring's RETAINED-SET PARITY section and
++                    # src/python/pcs_panelwide_reclassify.py.
+                     already_occluded=bool(
+                         deletion.pos < partner.pos <= deletion.span_end
+                     ),
+@@ -1147,8 +1218,14 @@ def summarize(
+     The three quantities this exists to expose:
+ 
+     * ``n_undefined_already_occluded`` vs ``n_undefined_not_already_occluded`` —
+-      separates pairs the POSTED criterion already covers from the NEWLY
+-      DISCOVERED class. The split is exhaustive over undefined DISTINCT pairs.
++      separates pairs whose ROW's OWN ANCHOR already covers them under the
++      posted criterion from the rest. The split is exhaustive over undefined
++      DISTINCT pairs. ⚠ IT IS ANCHOR-RELATIVE, NOT THE ``--exclude`` SIDE:
++      ``n_undefined_not_already_occluded`` is NOT a count of pairs that survive
++      filtering, because a member may be occluded by a DIFFERENT deletion in
++      the window. The panel-wide count is a SEPARATE quantity, computed
++      post-hoc by ``src/python/pcs_panelwide_reclassify.py``. See the module
++      docstring's RETAINED-SET PARITY section.
+     * ``undefined_offset_histogram`` — ``{offset: count}`` over the UNDEFINED set,
+       per ROW (each row carries one anchor-relative offset), so it sums to
+       ``n_undefined_rows``. This DISTRIBUTION is what supplies an empirical
+@@ -1166,6 +1243,8 @@ def summarize(
+ 
+     undefined_keys = {r.pair_key for r in undefined_rows}
+     # A DISTINCT pair counts as already-occluded if ANY of its ordered rows is.
++    # ANCHOR-RELATIVE by construction: `already_occluded` is per-ROW and per-
++    # ANCHOR, so the complement is NOT "survives `--exclude`".
+     occluded_keys = {r.pair_key for r in undefined_rows if r.already_occluded}
+ 
+     histogram: dict = {}

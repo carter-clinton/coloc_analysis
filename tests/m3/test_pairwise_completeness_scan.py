@@ -4133,3 +4133,131 @@ def test_driver_summaries_guard_independently_refuses_last_wins_with_both_upstre
     )
 
     assert not out.exists(), "a partial TSV survived the driver-layer refusal"
+
+
+# --------------------------------------------------------------------------- #
+# quick-260831-kw8 -- `already_occluded` is ANCHOR-RELATIVE, not the            #
+# `--exclude` side. Seth's brief-blind review, 2026-08-29, FINDING A.          #
+#                                                                              #
+# The module docstring's RETAINED-SET PARITY bullet (`:122`) asserts that "the  #
+# ``--exclude`` side is already visible as ``already_occluded``". IT IS FALSE.  #
+# The PRIMARY enforcer below is BEHAVIOURAL: it constructs a window in which    #
+# the two predicates DISAGREE at runtime, which is what falsifies that          #
+# sentence. It is green against the code AS IT STANDS and stays green after     #
+# the prose correction, because the DEFECT IS IN THE PROSE, NOT THE CODE.      #
+#                                                                              #
+# ⚠ DEFERRED, DELIBERATELY: the SECONDARY `ast.get_docstring` phrase test --    #
+# which asserts the false sentence is ABSENT -- is NOT in this file yet,        #
+# because the sentence is still present. The prose correction is written and    #
+# PARKED at                                                                     #
+#   .planning/debug/260831-DEFERRED-pairwise-completeness-scan-docstring.patch  #
+# and is deferred to the POST-SWEEP window for a MEASURED reason: the live      #
+# runbook `.planning/debug/260825-PENDING-PASTE-pairwise-completeness-sweep.md` #
+# STEP 0 gate pins this file's WHOLE-FILE md5 + byte size                       #
+# (e03078ff73502c3c877b0d2ebf93941d / 73772), and                               #
+# `test_pending_paste_step0_pins_the_scanner_by_a_CURRENT_content_hash` below   #
+# recomputes both at call time. A DOCSTRING-ONLY edit moves the md5 to          #
+# fc1d68dff1f493f6eb57dd427bed638a / 78843 and turns that gate RED -- and the   #
+# only way to green it is to rewrite a runbook that is CURRENTLY A TRUE         #
+# STATEMENT ABOUT AN IN-FLIGHT SWEEP. See                                       #
+# `.planning/debug/260831-seth-brief-blind-review-already-occluded-is-anchor-relative.md`
+# §THE BYTE-PROXY GATE for the full argument and the scheduled rescope.        #
+# --------------------------------------------------------------------------- #
+
+
+def test_already_occluded_is_anchor_relative_and_is_not_the_exclude_side():
+    """The two predicates DISAGREE on a constructed window -- shown, not asserted.
+
+    Geometry (one window, three rows):
+
+    * deletion A @1000, ``len(REF) == 10`` -> span 1000-1009, covers 1001..1009
+    * deletion B @1004, ``len(REF) ==  2`` -> span 1004-1005, covers 1005 ONLY
+    * SNP      @1008 -> INSIDE A's span, OUTSIDE B's
+
+    Anchored on B the emitted pair carries ``already_occluded is False`` (the
+    posted predicate evaluated against THE ANCHOR ONLY, in
+    :func:`enumerate_candidates`), while
+    :func:`occlusion_span_filter.detect_occluded_variants` over the SAME rows --
+    which is what ``run_native_ld_panel.py`` feeds to plink ``--exclude`` --
+    DOES return that SNP's vid. So ``already_occluded == False`` does NOT mean
+    "survives ``--exclude``", and ``n_undefined_not_already_occluded`` does NOT
+    count pairs that survive filtering.
+
+    The mirror assertion (anchored on A -> ``True``) keeps the test from passing
+    vacuously: the field is not simply always ``False``.
+    """
+    import pairwise_completeness_scan as pcs
+    from occlusion_span_filter import detect_occluded_variants
+
+    del_a = _del_row(1000, 10)   # span_end 1009
+    del_b = _del_row(1004, 2)    # span_end 1005
+    snp = _snp_row(1008)         # covered by A, NOT by B
+
+    rows = [(0, del_a), (1, del_b), (2, snp)]
+    pairs = pcs.enumerate_candidates("R", rows, window_bp=25)
+    by_anchor_partner = {(p.del_pos, p.partner_pos): p for p in pairs}
+
+    # -- the geometry is what the docstring says it is ---------------------- #
+    anchored_on_b = by_anchor_partner[(1004, 1008)]
+    assert anchored_on_b.del_span_end == 1005
+    assert anchored_on_b.partner_pos == 1008
+    assert anchored_on_b.already_occluded is False, (
+        "ANCHOR-RELATIVE: 1004 < 1008 <= 1005 is FALSE"
+    )
+
+    # -- the MIRROR, so the test cannot pass vacuously ---------------------- #
+    anchored_on_a = by_anchor_partner[(1000, 1008)]
+    assert anchored_on_a.del_span_end == 1009
+    assert anchored_on_a.already_occluded is True, (
+        "ANCHOR-RELATIVE: 1000 < 1008 <= 1009 is TRUE"
+    )
+
+    # -- and the PANEL-WIDE predicate, over the SAME rows, disagrees -------- #
+    occluded_ids, edges = detect_occluded_variants([row for _ix, row in rows])
+    assert anchored_on_b.partner_vid in occluded_ids, (
+        "the panel-wide excludelist must contain the SNP that the B-anchored "
+        "pair reports as already_occluded=False"
+    )
+    # ATTRIBUTION: it is A, not B, that puts the SNP on the excludelist.
+    attributed = {e.occluded_id: e.occluder_id for e in edges}
+    assert attributed[anchored_on_b.partner_vid] == anchored_on_a.del_vid
+
+    # THE DISAGREEMENT, stated as one proposition: a pair whose anchor-relative
+    # flag is False, whose member is nonetheless dropped by `--exclude`.
+    assert (anchored_on_b.already_occluded is False) and (
+        anchored_on_b.partner_vid in occluded_ids
+    )
+
+
+def test_the_already_occluded_rename_is_declined_while_the_sweep_artifact_contract_stands():
+    """STRUCTURAL enforcer of the DECLINE recorded in the review record.
+
+    The name misled a reader, so a rename was considered and DECLINED for three
+    MEASURED reasons:
+
+    1. A SWEEP IS MID-FLIGHT and will emit a header carrying this exact column.
+       :data:`TSV_COLUMNS` IS the emitted header, and
+       ``pcs_panelwide_reclassify.py`` checks it by STRICT EQUALITY -- a rename
+       would make the new tool RAISE on the in-flight artifact.
+    2. THE PRE-REGISTRATION NAMES THE TWO SUMMARY KEYS
+       (``.planning/debug/260826-PCS-...-prereg-prediction.md`` §(e)). Renaming a
+       pre-registered key in response to a review is the exact move
+       pre-registration exists to prevent.
+    3. ``TSV_COLUMNS IS PairResult._fields`` -- one rename moves the emitted
+       header, :data:`SUMMARY_KEYS`, the banked BLOCK 2 identity pull and every
+       consumer AT ONCE.
+
+    TRIGGER for revisiting: the next OSF version, AFTER the sweep lands and its
+    artifacts are banked. Not before.
+
+    This test is the NAMED ENFORCER of that decline -- an invariant without one
+    is a belief (`feedback_a_claimed_invariant_needs_a_named_enforcer`).
+    """
+    import pairwise_completeness_scan as pcs
+
+    assert "already_occluded" in pcs.TSV_COLUMNS
+    assert "n_undefined_already_occluded" in pcs.SUMMARY_KEYS
+    assert "n_undefined_not_already_occluded" in pcs.SUMMARY_KEYS
+    # the must-be-identity link the third reason rests on
+    assert pcs.TSV_COLUMNS == pcs.PairResult._fields
+    assert pcs.TSV_COLUMNS is pcs.PairResult._fields
