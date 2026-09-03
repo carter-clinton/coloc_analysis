@@ -114,14 +114,29 @@ definition is the scientifically motivated one.
   NO row has zero informative carriers; the matrix-reaching set has NO singletons.
   NO CARRIER FLOOR IS PROPOSED. The tool emits the distribution only.
 
-## ACTION ITEM (flag it; do NOT fix it in this docs-only task)
-The 0.0005 bound is a LIVE CONTRADICTION in the tree:
-  src/python/pairwise_completeness_scan.py:45   calls it "the withdrawn 0.0005 bound"
-  src/python/condition_ld_matrix.py:120         ceiling_frac: float = 0.0005   (live default)
-  src/python/write_conditioned_ld_npz.py:64     ceiling_frac: float = 0.0005   (live default)
-  src/python/write_conditioned_ld_npz.py:17     calls it "the pre-registered 0.0005"
-One module says withdrawn, another says pre-registered, and the value is live in both.
-Needs a code fix in a SEPARATE task.
+## CORRECTION — the 0.0005 "contradiction" was FALSE; the two constants are unrelated
+The action item previously recorded here alleged that the 0.0005 bound was self-contradictory
+across modules. IT IS FALSE and it is WITHDRAWN. The two 0.0005 values are DIFFERENT,
+UNRELATED constants.
+- `_OCCLUSION_ANOMALY_FRACTION = 0.0005` (commit d9fbc63) was the OCCLUSION gate. It was
+  genuinely withdrawn, and it is REMOVED: 0 hits in src/ and tests/. It was replaced by the
+  POSTED two-condition gate (mk7ze):
+    OCCLUSION_SITE_FRACTION_CEILING = 0.005056
+    OCCLUSION_INFLATION_CEILING     = 3.42
+  both of which live in src/python/occlusion_gate_constants.py.
+- condition_ld_matrix.py `ceiling_frac = 0.0005` is the LD-MATRIX NaN-ZEROING ceiling
+  (n_zeroed_pairs <= ceiling_frac * n_var). That file contains the string `occlu` ZERO times.
+Therefore pairwise_completeness_scan.py:45 calling the occlusion bound "withdrawn" is CORRECT.
+The two statements are about two different quantities, so they do not conflict.
+ROOT CAUSE, stated plainly: the original action item grepped the literal 0.0005 and treated
+textual co-occurrence as semantic identity.
+
+A SEPARATE, REAL defect remains and is recorded as DEFERRED (do NOT fix here, it touches
+src/): condition_ld_matrix.py:3-4 and :153 cite
+osf-amendment-afr-native-ld-nan-psd-2026-07-03.md (OSF tcujq) as PRE-REGISTERING the NaN->0
+policy, but .planning/osf_deviations.md:133 and :166 record that the 2026-07-10 update (OSF
+trsx5) WITHDRAWS exactly that policy. Accurate label: "parameter of a withdrawn policy,
+retained in a frozen module, not called in production."
 
 ## SCOPE CAVEATS — state these plainly, do NOT bury them
 1. n_tail_distinct_pairs_in = 2521 is the SUM of per-region distinct pairs, NOT a

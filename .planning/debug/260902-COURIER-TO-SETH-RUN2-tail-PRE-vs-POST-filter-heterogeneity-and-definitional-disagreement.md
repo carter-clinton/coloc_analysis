@@ -20,7 +20,7 @@ establish, and what is being asked. Nothing else needs to be open to read it.
 
 Every number in this record originates in
 `.planning/quick/260902-vsp-bank-the-run-2-step-2-tail-pre-post-resu/CONTENT-SPEC.md`
-(md5 `20fb7fa058b0e0c03ff669706f534349`, **10672** B, 157 lines), which is committed alongside this
+(md5 `619426a0157d199c711a4d771023330a`, **11747** B, 173 lines), which is committed alongside this
 file so the appendix has an in-repo origin. The **VERBATIM APPENDIX** at the bottom is spliced **BY
 SCRIPT** from that file, `## ARTIFACTS` to EOF, and a checker re-reads BOTH files at verification time
 and fails unless the appendix bytes are equal to that slice. **The appendix is the authority.** The
@@ -31,7 +31,7 @@ One provenance note, so the plan file committed beside this record does not read
 the plan pinned an EARLIER revision of the spec (`d10acca5ca2b6c15548bb50d5c11bc43`, 8248 B, 124
 lines). That revision was **SUPERSEDED at source before execution** — deliberately, not by drift — to
 correct a mis-attribution described in the next two sections. Everything outside those sections is
-byte-identical between the two revisions. The anchor that governs this record is the 10672-B one.
+byte-identical between the two revisions. The anchor that governs this record is the 11747-B one.
 
 ## THE RUN
 
@@ -153,6 +153,32 @@ Whichever figure is used, a single pooled POST rate does not describe these regi
 the power argument, and it should be read as one: **this design CAN detect a strong structural
 correlation across these 21 regions, and did — just not for the POST rate.** The heterogeneity is
 therefore an open question, not an artifact of a covariate we forgot to look at.
+
+### WHAT DOES AND DOES NOT ESTABLISH THE HETEROGENEITY
+
+**A test we ran DOES NOT DISCRIMINATE, and it is withdrawn.** The test merged correlated sub-windows
+into their parent regions and re-fitted. For a chi-square homogeneity statistic the contribution of a
+deviation scales with the denominator, so merging two same-rate sub-windows holds chi-square roughly
+constant while removing a degree of freedom — **the ratio rises BY CONSTRUCTION**. Simulated under
+the rival hypothesis being TRUE: merging raises dispersion in **65%** of runs, median **+3.6%**. It
+moves the same direction under both hypotheses, so it distinguished nothing, and no inference may be
+drawn from its outcome in either direction.
+
+**THE VALID REFUTATION — Seth's, not ours.** Non-independence cannot **CREATE** dispersion; it can
+only amplify dispersion already present at parent level. Simulated: parent rates **ALL EQUAL** plus
+duplication gives dispersion **0.98**. An observed ~2x therefore **REQUIRES** real parent-level
+heterogeneity. This is the argument that carries the conclusion.
+
+**STILL VALID AND RETAINED.** Leave-one-out over 21 fits — overdispersion **1.99–2.48**, worst-case
+p **0.0063** — independently rules out a single influential point.
+
+**READER-FACING TRANSLATION.** Overdispersion ~2.0 corresponds to a parent-rate **CV ≈ 0.20**, i.e.
+roughly **20%** relative variation in tail rate between parent regions. (Our simulation; CV 0.25
+gives **2.54**. Seth proposed 0.25–0.30 — corrected **DOWNWARD**.)
+
+**Disposition, so a reader who met the withdrawn test in correspondence knows where it stands:** it
+was **ours**, and it was never written into this record — there is nothing here to retract, only this
+correction to add. The headline stays **1.99x**: an argument was removed, not the conclusion.
 
 ## FINDING 3 — DEFINITIONAL DISAGREEMENT, A SEPARATE AND INDEPENDENT AXIS
 
@@ -287,30 +313,40 @@ they cannot prove byte-identity to what was written at 21:07:03Z.
 What they DO establish is bounded and worth stating exactly: **a damaged file would not have parsed and
 summed to exactly 3094 / 0 / 0.** That is the whole of it. No consoling clause is appended.
 
-⚠ One wording note, so the appendix is not read as a contradiction of the COMPLETION CHECK section: the
-appendix's own HONEST LIMITATIONS paragraph still says "the three **pre-registered** values." That
-phrase predates the correction recorded above, and it is reproduced **unedited** because the appendix is
-byte-equal by construction and must not be touched. **The governing characterisation is the COMPLETION
-CHECK section: those three values are an INVARIANT CHECK, not a pre-registration.**
+## CORRECTION — THE 0.0005 ACTION ITEM WAS FALSE; THE TWO CONSTANTS ARE UNRELATED
 
-## ACTION ITEM — THE 0.0005 BOUND IS A LIVE CONTRADICTION (NOT FIXED HERE)
+This record previously carried an action item asserting that the `0.0005` bound was
+self-contradictory across modules. **That assertion was FALSE, and it is withdrawn.** The two
+`0.0005` values are **different, unrelated constants**, and nothing in the tree conflicts.
 
-Four citations, each verified present in the tree at execution time:
+* **The occlusion constant.** `_OCCLUSION_ANOMALY_FRACTION = 0.0005` (commit `d9fbc63`) was the
+  **OCCLUSION** gate. It was genuinely withdrawn, and it is **REMOVED** — **0 hits in `src/` and
+  `tests/`**. It was replaced by the **POSTED** two-condition gate (`mk7ze`):
+  `OCCLUSION_SITE_FRACTION_CEILING = 0.005056` and `OCCLUSION_INFLATION_CEILING = 3.42`, both in
+  `src/python/occlusion_gate_constants.py`.
+* **The LD-matrix constant.** `condition_ld_matrix.py`'s `ceiling_frac = 0.0005` is the **LD-matrix
+  NaN-zeroing** ceiling (`n_zeroed_pairs <= ceiling_frac * n_var`). That file contains the string
+  `occlu` **zero times**. It is not an occlusion parameter and never was.
 
-* `src/python/pairwise_completeness_scan.py:45` — "…the error that produced the withdrawn ``0.0005``
-  bound."
-* `src/python/condition_ld_matrix.py:120` — `ceiling_frac: float = 0.0005` (**live default**)
-* `src/python/write_conditioned_ld_npz.py:64` — `ceiling_frac: float = 0.0005` (**live default**)
-* `src/python/write_conditioned_ld_npz.py:17` — "…``ceiling_frac`` records the pre-registered 0.0005
-  ceiling for reproducibility (a fixed pre-registration constant…"
+**Therefore `src/python/pairwise_completeness_scan.py:45`, which calls the occlusion bound
+"withdrawn", is CORRECT.** The two docstrings describe two different quantities, so they do not
+conflict; only one of them was ever about the occlusion gate, and that one says withdrawn.
 
-**One module calls the bound withdrawn while another calls it pre-registered, and the value is LIVE in
-both.** At most one of those docstrings can be true.
+**ROOT CAUSE, stated plainly:** the original action item grepped the literal `0.0005` and treated
+textual co-occurrence as semantic identity. It spent rigor downstream of an unchecked premise.
+
+⚠ **A SEPARATE, REAL defect does remain, and it is DEFERRED here because it touches `src/`.**
+`src/python/condition_ld_matrix.py:3-4` and `:153` cite
+`osf-amendment-afr-native-ld-nan-psd-2026-07-03.md` (OSF `tcujq`) as **PRE-REGISTERING** the NaN→0
+policy, while `.planning/osf_deviations.md:133` and `:166` record that the 2026-07-10 update (OSF
+`trsx5`) **WITHDRAWS exactly that policy**. The accurate label is "parameter of a withdrawn policy,
+retained in a frozen module, not called in production." The scope is **wider than one file**:
+`src/python/write_conditioned_ld_npz.py:4`, `:17` and `:85` call the same ceiling "pre-registered".
 
 **This task is DOCS-ONLY and deliberately does NOT fix it.** `git status --porcelain -- src tests` is
-empty at commit time. The code fix belongs to a **SEPARATE** task, which must decide which reading is
-correct, make both docstrings agree with the live default, and land a named enforcer test so the
-agreement has a guard rather than a belief. Recorded in this task's `deferred-items.md`.
+empty at commit time. The code fix belongs to a **SEPARATE** task, which must correct **both** files
+and land a **named enforcer test**, so the agreement has a guard rather than a belief. Recorded in
+this task's `deferred-items.md`.
 
 ## THE ASK
 
@@ -446,14 +482,29 @@ definition is the scientifically motivated one.
   NO row has zero informative carriers; the matrix-reaching set has NO singletons.
   NO CARRIER FLOOR IS PROPOSED. The tool emits the distribution only.
 
-## ACTION ITEM (flag it; do NOT fix it in this docs-only task)
-The 0.0005 bound is a LIVE CONTRADICTION in the tree:
-  src/python/pairwise_completeness_scan.py:45   calls it "the withdrawn 0.0005 bound"
-  src/python/condition_ld_matrix.py:120         ceiling_frac: float = 0.0005   (live default)
-  src/python/write_conditioned_ld_npz.py:64     ceiling_frac: float = 0.0005   (live default)
-  src/python/write_conditioned_ld_npz.py:17     calls it "the pre-registered 0.0005"
-One module says withdrawn, another says pre-registered, and the value is live in both.
-Needs a code fix in a SEPARATE task.
+## CORRECTION — the 0.0005 "contradiction" was FALSE; the two constants are unrelated
+The action item previously recorded here alleged that the 0.0005 bound was self-contradictory
+across modules. IT IS FALSE and it is WITHDRAWN. The two 0.0005 values are DIFFERENT,
+UNRELATED constants.
+- `_OCCLUSION_ANOMALY_FRACTION = 0.0005` (commit d9fbc63) was the OCCLUSION gate. It was
+  genuinely withdrawn, and it is REMOVED: 0 hits in src/ and tests/. It was replaced by the
+  POSTED two-condition gate (mk7ze):
+    OCCLUSION_SITE_FRACTION_CEILING = 0.005056
+    OCCLUSION_INFLATION_CEILING     = 3.42
+  both of which live in src/python/occlusion_gate_constants.py.
+- condition_ld_matrix.py `ceiling_frac = 0.0005` is the LD-MATRIX NaN-ZEROING ceiling
+  (n_zeroed_pairs <= ceiling_frac * n_var). That file contains the string `occlu` ZERO times.
+Therefore pairwise_completeness_scan.py:45 calling the occlusion bound "withdrawn" is CORRECT.
+The two statements are about two different quantities, so they do not conflict.
+ROOT CAUSE, stated plainly: the original action item grepped the literal 0.0005 and treated
+textual co-occurrence as semantic identity.
+
+A SEPARATE, REAL defect remains and is recorded as DEFERRED (do NOT fix here, it touches
+src/): condition_ld_matrix.py:3-4 and :153 cite
+osf-amendment-afr-native-ld-nan-psd-2026-07-03.md (OSF tcujq) as PRE-REGISTERING the NaN->0
+policy, but .planning/osf_deviations.md:133 and :166 record that the 2026-07-10 update (OSF
+trsx5) WITHDRAWS exactly that policy. Accurate label: "parameter of a withdrawn policy,
+retained in a frozen module, not called in production."
 
 ## SCOPE CAVEATS — state these plainly, do NOT bury them
 1. n_tail_distinct_pairs_in = 2521 is the SUM of per-region distinct pairs, NOT a
