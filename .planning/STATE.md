@@ -25,7 +25,59 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-09-01 — 🔧 **SETH'S LOAD-BEARING QUESTION NOW HAS AN INSTRUMENT: THE DEFINED-ROW TAIL IS CLASSIFIABLE *PRE-FILTER vs POST-FILTER* AGAINST THE SAME PRODUCTION EXCLUDELIST, AND THE INFORMATIVE-CARRIER DISTRIBUTION IS EMITTED WITH *NO FLOOR ANYWHERE*. BUILT · TESTED · STAGED · **NOT RUN**. VM STOPPED, $0.** (★ RESUME HERE — LATEST ★)
+## 2026-09-03 — ✅ **RUN 2 STEP 2 LANDED AND IS BANKED: THE DEFINED-ROW TAIL IS *PRE-FILTER DOMINANT* WITH A *POST-FILTER RESIDUAL IN ALL 21 REGIONS*; THE REGIONS DO **NOT** SHARE A COMMON POST RATE; AND rarer-vs-min DISAGREEMENT IS A *SEPARATE* AXIS. SETH ADJUDICATED TWICE. NOTHING RUNNING, VM STOPPED, $0.** (★ RESUME HERE — LATEST ★)
+
+**Nothing is running.** VM stopped by Carter; PID 1072 gone. HEAD `ee3af4b`, **3 commits AHEAD of origin, NOT PUSHED**. There is no job to reattach.
+
+### The three findings (banked)
+
+| | rows | pairs |
+|---|---|---|
+| tail | 3,094 | 2,521 |
+| PRE-filter | 2,560 | 2,047 |
+| **POST-filter** | **534 (17.26%)** | **474 (18.80%)** |
+
+Regions with tail rows **21**; regions with **zero** POST-filter rows **0**.
+
+2. **Heterogeneity, unexplained.** Pair-level overdispersion **1.99×** (χ² 37.78, dof 19, p 6.3e-3) after dropping the chr15 double-count — quote the reduced figure, never the inflated 2.36×. No structural correlate: ρ −0.199 (window rows), −0.201 (occluded ids), +0.004 (occlusion density), in a design returning ρ **+0.886** when structure is present. Reader-facing translation: **~20% relative variation in tail rate between parent regions** (our simulation; Seth's 0.25–0.30 corrected downward).
+3. **Definitional disagreement, a separate axis.** `informative_carriers_rarer != informative_carriers_min` on **24.27%** of tail rows vs **0.52%** below tail = **46.5×** enrichment. Independent of PRE/POST at ρ **+0.173**. Not a tie artifact.
+
+**Record:** `.planning/debug/260902-COURIER-TO-SETH-RUN2-tail-PRE-vs-POST-filter-heterogeneity-and-definitional-disagreement.md` — 491 lines, md5 `e2c0b5443bf82a12940d492fefb1f282`.
+
+### ⚠ THE THREE VALUES ARE **NOT** A PRE-REGISTRATION
+
+`n_tail_rows_in` 3094/3094, `n_tail_rows_out_of_scope` 0/0, `n_defined_rows_out_of_scope` 0/0 all PASS — but 3,094 was **carried forward from the smoke** and the two zeros **follow by construction**. They are a **completion/invariant check** (enforced at `pcs_panelwide_reclassify.py:1106`), proving the run completed rather than raised. The governing document `260901-PENDING-PASTE-POSTHOC-…md:211-216` **deliberately declined** to state an expectation. The three findings are **MEASURED-NOT-PREDICTED**, and that is a strength.
+
+### Seth round 2 — what changed
+
+- **His non-independence hypothesis is DEAD**, by *his* argument, confirmed by simulation: all-equal parent rates + duplication → dispersion **0.98**. Non-independence cannot *create* dispersion, only amplify existing parent-level dispersion.
+- ⛔ **OUR collapse-to-parents argument must be STRUCK.** Re-simulated: collapse raises dispersion under *his* hypothesis too (65% of runs, median +3.6%). **The conclusion survives; the argument does not discriminate.**
+- ✅ **Leave-one-out STANDS** — 21 fits, overdispersion 1.99–2.48, worst-case p 0.0063.
+- **Ask 1** = disclose + annotate, do **not** amend (two targets; the data-product manifest annotation is the one that matters). **Ask 2** = do not pre-register a dispersion figure; *do* register the negative result. **Ask 3** = property of the first, not a third disclosure.
+- 📌 **PINNED NOW:** any carrier floor **MUST** be defined on **min-on-the-pairwise-complete-intersection**, never rarer-by-overall-MAF — they disagree on ~24% of exactly the rows a floor exists to catch.
+
+### 🎯 SURVIVOR GEOMETRY — promote to headline (we misfiled it under "ALSO")
+
+`m2_region_00149` · `chr7:89454077:GCGTA:G` × `chr7:89454076:C:T`, offset **−1**, upstream. REF=GCGTA spans 89454077..89454081; the posted predicate `d.pos < v.pos` gives `89454077 < 89454076` = **FALSE**. Invisible **by construction**, class (ii), and the **only** surviving direction — no positive offset appears anywhere across 21 regions. That is a **positive result for the rule**.
+⛔ **DO NOT extend the predicate to −1.** n=1, and its cheapness (~0.12% of panel) is an argument *against*, not for — that is calibrate-to-pass. **Register the prediction instead.**
+
+### ❓ OPEN QUESTION BACK TO SETH — the disclosure is NOT written pending his answer
+
+mk7ze line 275 (posted body): *"An observable NaN requires complete-case zero variance at that pair; geometric occlusion requires only coordinate span coverage, so every NaN-implicated occlusion is a geometric occlusion but not conversely."* Read strictly the survivor does not contradict it; read for what the sentence **does** in the argument (geometry as a safe superset of the NaN cases) the survivor is an undefined pair geometry does not catch. **Disclosure, or correction-obligation to a posted record? Seth's call.**
+
+### Three repo fixes QUEUED, NOT DONE
+
+1. **Strike the false `0.0005` ACTION ITEM** from the courier record. The two constants are **different**: `_OCCLUSION_ANOMALY_FRACTION = 0.0005` (`d9fbc63`) was the occlusion gate — withdrawn, **removed, 0 hits**, replaced by the posted 0.005056 + 3.42×. `condition_ld_matrix.py`'s `ceiling_frac = 0.0005` is the LD-matrix NaN-zeroing ceiling; that file contains `occlu` **zero** times. **No contradiction exists**; `pairwise_completeness_scan.py:45` is correct. *(My grep-a-literal error; Seth then built an inverted §4 on it.)*
+2. **Strike the collapse-to-parents reasoning** (keep the conclusion and leave-one-out).
+3. **Fix `condition_ld_matrix.py` docstring** (`:3-4`, `:153`): it cites `tcujq` as pre-registering NaN→0, but `osf_deviations.md:133`/`:166` show the 2026-07-10 `trsx5` update **withdraws** exactly that policy. Accurate label: *parameter of a withdrawn policy, retained in a frozen module, not called in production.* ⚠ **touches `src/` — not docs-only.**
+
+### Carter's, not an agent's
+
+Send the round-2 reply to Seth (drafted, **not sent**). Decide whether to open the three-fix quick task now or hold for Seth's mk7ze ruling. Seth's §5: a **single-region re-run (~9 min VM)** converts "anchored forward" into "verified against a fresh computation" — **requires a fire, Carter only**. Decide whether to push the 3 commits.
+
+---
+
+## 2026-09-01 — 🔧 **SETH'S LOAD-BEARING QUESTION NOW HAS AN INSTRUMENT: THE DEFINED-ROW TAIL IS CLASSIFIABLE *PRE-FILTER vs POST-FILTER* AGAINST THE SAME PRODUCTION EXCLUDELIST, AND THE INFORMATIVE-CARRIER DISTRIBUTION IS EMITTED WITH *NO FLOOR ANYWHERE*. BUILT · TESTED · STAGED · **NOT RUN**. VM STOPPED, $0.** (SUPERSEDED for *what to do next* by the 2026-09-03 block above; every measurement and physical-state fact in this block stands unchanged)
 
 **`quick-260901-rvu`, ONE commit on `m3-W2-aou-deltas`, five explicit paths.**
 
