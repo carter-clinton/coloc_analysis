@@ -483,7 +483,8 @@ Needs a code fix in a SEPARATE task.
 ## HONEST LIMITATIONS — do not soften
 The run finished during a VM blackout (machine rebooted; `uptime` showed 14 min against a
 21:07:03Z write). The full stdout and the exit status $? are UNRECOVERABLE and were NEVER
-SEEN by anyone. The completion verdict rests entirely on the three pre-registered values
+SEEN by anyone. The completion verdict rests entirely on the three
+COMPLETION-CHECK values (see that section — they are NOT a pre-registration)
 plus the artifacts. There is NO pre-reboot hash, so the recorded md5s anchor FORWARD, not
 backward — they cannot prove byte-identity to what was written at 21:07:03Z. What they do
 establish is that a damaged file would not have parsed and summed to exactly 3094/0/0.
