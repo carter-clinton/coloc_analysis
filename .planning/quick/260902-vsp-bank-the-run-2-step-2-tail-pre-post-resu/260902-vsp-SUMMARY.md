@@ -15,6 +15,7 @@ provides:
   - "a VERBATIM APPENDIX proven byte-equal at verification time to CONTENT-SPEC.md '## ARTIFACTS'..EOF — so no number was retyped"
   - "a precise two-pre-registration attribution: the three completion-check values are an INVARIANT CHECK, not a pre-registration"
   - "the 0.0005 live contradiction as an ACTION ITEM with four path:line citations, FLAGGED not fixed"
+  - "SUPERSEDED 2026-09-04 (260904-dgi): that alleged contradiction was FALSE (withdrawn by 260903-ict), and the first correction then OVERSHOT — the constants are distinct and uncoupled at runtime but share a documented common origin"
 affects: [m3-afr-ld-panel, seth-consultation, pcs-sweep, osf-preregistration]
 
 tech-stack:
@@ -248,6 +249,14 @@ phrase would move the spec's md5 and invalidate the anchor this record was built
 that is Carter's decision, not a silent tidy.**
 
 ## Deferred
+
+⚠ **SUPERSEDED 2026-09-04 (`260904-dgi`).** The alleged contradiction was FALSE and was
+withdrawn by `260903-ict`; `260904-dgi` then found that correction **overshot** — the two
+constants are distinct live parameters with no runtime coupling, **but they are not
+unrelated**: mk7ze records that the occlusion gate reused *"the same fractional gate as the
+withdrawn ceiling, re-purposed to exclusions"*, so the shared value has a documented common
+origin. The courier heading cited here no longer exists. **The historical description below
+is left unedited on purpose** — rewriting it would falsify the log.
 
 1. **The `0.0005` LIVE CONTRADICTION** — `pairwise_completeness_scan.py:45` calls it
    withdrawn; `write_conditioned_ld_npz.py:17` calls it pre-registered; it is the live default

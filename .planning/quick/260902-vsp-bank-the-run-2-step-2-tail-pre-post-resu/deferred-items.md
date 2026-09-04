@@ -6,6 +6,14 @@ directly caused by this task's own changes are auto-fixed).
 
 ## 1. DEFERRED — the `0.0005` bound is a LIVE CONTRADICTION in `src/` (code fix)
 
+⚠ **SUPERSEDED 2026-09-04 (`260904-dgi`).** The alleged contradiction was FALSE and was
+withdrawn by `260903-ict`; `260904-dgi` then found that correction **overshot** — the two
+constants are distinct live parameters with no runtime coupling, **but they are not
+unrelated**: mk7ze records that the occlusion gate reused *"the same fractional gate as the
+withdrawn ceiling, re-purposed to exclusions"*, so the shared value has a documented common
+origin. The courier heading cited here no longer exists. **The historical description below
+is left unedited on purpose** — rewriting it would falsify the log.
+
 **Measured in the tree at execution time, four citations:**
 
 ```

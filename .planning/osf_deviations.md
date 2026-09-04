@@ -534,6 +534,26 @@ gate; a compliance gap, not a mechanics blocker.
 - **Status:** DRAFTED — NOT POSTED; placement and posting are Carter's. No agent has contacted
   OSF, no GUID has been reserved, and nothing below has been uploaded anywhere. This entry is the
   in-repo methods record only.
+- ⚠ **CORRECTED 2026-09-04 (`260904-dgi`) after a 5-reviewer adversarial review** (Codex CLI plus
+  four blind investigators), which found 5 blocker-level and 6 high-level false or overclaimed
+  statements in the 2026-09-03 draft. The corrections are made INLINE rather than appended as
+  errata, because this draft was never posted: there is nothing to retract, only a draft to fix
+  before it becomes one.
+- ⚠ **CITATION CONVENTION (corrected).** Every mk7ze citation below gives the **POSTED** line with
+  the repo-draft line carried alongside — *"mk7ze line 108 (repo draft line 275)"* — so a reader
+  can check either. The 2026-09-03 draft cited repo-draft line numbers of a 598-line working file
+  while calling them mk7ze lines. **Posted = repo draft − 167**, and this is proven rather than
+  asserted: repo lines 168-500 of
+  `.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md` reproduce
+  mk7ze's exact posted md5 `13a49f543cabcc27ce9f1e589783c060`, 22,945 B, **333 lines**. That repo
+  file's line 1 reads `DRAFT — NOT POSTED`, its paste boundary is at repo line 501, and its lines
+  502-598 are post-posting status material that was never part of the posted body.
+- ⚠ **STATISTICAL CONVENTION (named, because it was the actual defect).** Every Spearman
+  confidence interval in this entry is a **95% CI, Fisher z with the Bonett-Wright Spearman
+  standard error 1.03/sqrt(n-3)**. It is named inline because an earlier draft mixed two
+  conventions inside a single sentence — quoting a Pearson-form Fisher-z interval beside a
+  Bonett-Wright bound — which is how a value outside its own stated interval survived review. A
+  referee can now reproduce every interval here; against the earlier draft they could not.
 
 ### (1) DISPOSITION, and that it was adjudicated
 
@@ -553,13 +573,30 @@ gate; a compliance gap, not a mechanics blocker.
 - **ROWS** 2560 PRE-filter / 534 POST-filter of 3094 — POST = **17.26%**
 - **PAIRS** 2047 PRE-filter / 474 POST-filter of 2521 — POST = **18.80%**
 - Regions with tail rows **21**; regions with ZERO POST-filter rows **0**.
-- **Heterogeneity:** pair-level overdispersion **1.99x** (chi2 37.78, dof 19, p 6.3e-3) after
-  dropping the chr15 double-count.
-- **UNEXPLAINED:** rho **-0.199** (window rows), **-0.201** (occluded ids), **+0.004** (occlusion
-  density), in a design returning rho **+0.886** for tail rows vs window rows. ~20% relative
+- **Heterogeneity, with its interval and its fragility:** pair-level overdispersion **1.99x
+  (95% CI ~1.1-4.2; chi2 37.78, dof 19, p 6.3e-3)** after dropping the chr15 double-count. Under
+  the more conservative **drop-both-chr15-windows** treatment the estimate is **1.52 (p 0.073)** —
+  **not significant at alpha 0.05**. The dispersion is robust in **DIRECTION** (every correction
+  gives phi > 1.3) but **POORLY DETERMINED in magnitude**, and **its significance is not robust to
+  the choice of overlap correction**. A bare "1.99x" overstates what was identified.
+- **Permutation confirmation:** verified against a 40,000-resample Monte Carlo permutation test,
+  **p = 0.0072** (asymptotic chi-square p 6.3e-3; the asymptotic value is mildly
+  anti-conservative, conclusion unchanged). ⚠ The permutation test permutes PAIRS and therefore
+  assumes exchangeable independent pairs — **it validates the asymptotics, NOT the independence
+  assumption at issue in the clustering caveat** in §(7).
+- **NO STRUCTURAL COVARIATE WAS FOUND to account for the heterogeneity** — rho **-0.199** (window
+  rows), **-0.201** (occluded ids), **+0.004** (occlusion density). See §(7): at n=21 this is an
+  **underpowered null**, not a demonstration that no covariate explains it. ~20% relative
   variation between parent regions.
 - **Definitional axis:** rarer != min on **24.27%** of tail rows vs **0.52%** below tail = **46.5x**
-  enrichment; independent of PRE/POST at rho **+0.173**.
+  enrichment. **No association with the PRE/POST axis was DETECTED** — rho **+0.173**, 95% CI
+  **[-0.292, +0.572]**, p **0.453**; the PRE-vs-POST 2x2 gives chi2 2.914, p **0.088**. **BOTH are
+  underpowered at n=21 and NEITHER establishes independence.** The two axes are reported
+  separately because no association was detected, not because none exists.
+  ⚠ **Recorded against ourselves:** an earlier draft argued the rho carried the independence claim
+  and that the 2x2 should deliberately not be used as support. That is inverted — the rho is the
+  **WEAKER** of the two (**p 0.45** vs **p 0.088**). Steering from the stronger signal to the
+  weaker one, in a passage about absence of evidence, was itself an absence-of-evidence error.
 
 ### (3) ⭐ THE SURVIVOR GEOMETRY — a HEADLINE, and a POSITIVE result for the rule
 
@@ -567,33 +604,64 @@ gate; a compliance gap, not a mechanics blocker.
   partner `chr7:89454076:C:T`, offset **-1**, side upstream, `already_occluded` False, pair_key
   `9776035|9776036`.
 - The posted predicate is `d.pos < v.pos`: `89454077 < 89454076` = **FALSE**. The single survivor is
-  **INVISIBLE TO THE PREDICATE BY CONSTRUCTION**, and it is the ONLY direction that survives — NO
-  positive offset appears anywhere across 21 regions. Offset histogram
-  `{-14:1, -9:1, -6:1, -3:1, -1:1, 0:10}`.
-- **Stated as a POSITIVE result:** the strictly-downstream predicate is COMPLETE IN ITS OWN
-  DIRECTION across 21 regions, and 100% of the residual sits on the side the strict inequality
-  cannot see.
+  **INVISIBLE TO THE PREDICATE BY CONSTRUCTION**. Across the 21-region scan, **no positive-offset
+  undefined survivor was observed**, and the only measured surviving pair was upstream at offset
+  **-1**. Offset histogram `{-14:1, -9:1, -6:1, -3:1, -1:1, 0:10}`.
+- **Stated at the strength the evidence supports:** that observation supports a **prospective
+  positive-offset falsification check**; it is **NOT proof of predicate completeness**. The
+  scanner's own docstring (`pairwise_completeness_scan.py:40-45`) states the reason directly —
+  n = 1 supplies neither prevalence, boundary width, nor one-sidedness. An earlier draft promoted
+  this to a completeness claim for the downstream direction; **that promotion is withdrawn as
+  overclaimed from n=1.**
 - ⛔ **NO PREDICATE CHANGE.** Extending to offset -1 would cost only ~0.12% of the panel, and that
   cheapness is an argument AGAINST, not for: it is calibrate-to-pass at n=1.
-- **REGISTERED PREDICTION INSTEAD** (recorded as pre-registered here): *"Residual undefined-r is
-  expected EXCLUSIVELY at negative offsets. A positive-offset survivor would falsify predicate
-  completeness in the downstream direction."* Production tests it. Change the predicate only if the
-  RATE warrants it against data.
+- **PROSPECTIVE PRODUCTION PREDICTION** — *"Within the 21-region pre-committed sample, residual
+  undefined-r was observed ONLY at negative offsets. A positive-offset survivor WITHIN that sample
+  would falsify downstream predicate completeness for it."*
+  ⚠ **THIS IS EXPLICITLY SAMPLE-SCOPED.** A positive-offset case is **ALREADY KNOWN
+  out-of-sample** — `m2_region_00057`'s **+1**: `chr15:20394741:AT:A` (ref_len 2, span_end
+  20394742) x `chr15:20394743:T:C`, **one base past the span end, downstream, un-occluded**,
+  measured 2026-08-24
+  (`.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md:62-70`), and the
+  pre-committed 21-region sample does not contain it. Our own `.planning/STATE.md:287` had already
+  concluded that the residual class **sits immediately adjacent to the REF span on EITHER side**
+  and that this sweep could observe only one side. **Production tests the rate on BOTH sides.**
+  ⚠ The 2026-09-03 draft stated this prediction without the sample scope, which made it **false
+  against data we already held**. That is corrected here.
+- ⚠ **THIS IS NOT A PRE-REGISTRATION TODAY.** It is a prospective production prediction, **to be
+  pre-registered IF AND WHEN this disclosure is posted, and posted BEFORE production testing**. It
+  is **post hoc relative to the 21-region scan**. The 2026-09-03 draft's parenthetical "(recorded
+  as pre-registered here)" could not be true of an entry marked DRAFTED — NOT POSTED, and is
+  withdrawn. Change the predicate only if the RATE warrants it against data.
 
-### (4) ⭐ SCOPE OF mk7ze LINE 275 — stated explicitly, as a RECORDED COMMITMENT
+### (4) ⭐ SCOPE OF mk7ze LINE 108 (repo draft line 275) — stated explicitly, as a RECORDED COMMITMENT
 
-- mk7ze line 275 reads: *"An observable NaN requires complete-case zero variance at that pair;
-  geometric occlusion requires only coordinate span coverage, so every NaN-implicated occlusion is a
-  geometric occlusion but not conversely."*
+- **mk7ze line 108 (repo draft line 275)** reads: *"An observable NaN requires complete-case zero
+  variance at that pair; geometric occlusion requires only coordinate span coverage, so every
+  NaN-implicated occlusion is a geometric occlusion but not conversely."*
 - **RECORDED SCOPE:** it is a statement about OCCLUSIONS and their relation to NaN-implication. It
-  makes NO claim about NaNs arising WITHOUT an occlusion. Its argumentative work is carried by *"but
-  not conversely"* (not every geometric occlusion is NaN-implicated), which is substantive, true, and
-  untouched by the survivor.
-- **"Occlusion" is GEOMETRIC throughout mk7ze** — clause (a) at line 467: *"A variant record is
-  flagged as an occluder when its reference-allele interval [POS, POS + len(REF) - 1] covers the
-  position of a neighbouring variant."*
+  does not address NaNs arising WITHOUT an occlusion. Its argumentative work is carried by *"but
+  not conversely"* (not every geometric occlusion is NaN-implicated), which is substantive, true,
+  and untouched by the survivor.
+- **"Occlusion" is GEOMETRIC throughout mk7ze** — clause (a) at **mk7ze line 300 (repo draft line
+  467)**: *"A variant record is flagged as an occluder when its reference-allele interval
+  [POS, POS + len(REF) - 1] covers the position of a neighbouring variant."*
 - The survivor is a NaN with NO covering deletion, hence **OUTSIDE the sentence's domain, not a
   counterexample within it**.
+- ⚠ **THE SENTENCE'S OWN DRAFTING RECORD, carried verbatim rather than withheld.** The claim
+  descends from `.planning/debug/fire-morning-occlusion-oracle-vs-geometry.md:227-233`, whose
+  conclusion was stated **BROADLY**: *"Every NaN-producing pair is geometrically occluded."*
+  That is stated plainly here because claiming a narrow scope for a sentence while withholding its
+  own drafting record is the weakest available position, and because **mk7ze §(e) set the house
+  standard of carrying provenance verbatim.** The narrow reading is defended below on what the
+  expectation set was actually built on, not on the drafting record being favourable.
+- ⚠ **THE NARROW READING IS NOT MERELY GRAMMATICALLY AVAILABLE — IT IS WHAT THE EXPECTATION SET WAS
+  BUILT ON.** `.planning/amendments/m3_region1_nan_geometry_verdict.md:20` and `:30-37` record a
+  region-1 NaN pair (pair 4) whose geometry is **`disjoint`** — a NaN pair with **NO covering
+  deletion** — documented **BEFORE posting** and **DELIBERATELY EXCLUDED** from the expectation
+  set. **mk7ze line 104 (repo draft line 271)** speaks of *"a settled 5-member expectation"*
+  against **SIX** observed NaN pairs. The sixth is that disjoint pair. The posted expectation set
+  was therefore constructed on the narrow reading at the time of writing.
 - ⚠ **WHY THIS IS WRITTEN DOWN RATHER THAN LEFT AS AN INTERPRETATION:** mk7ze §(a) corrected a scope
   promotion and closed with *"The scope of the surviving claim is therefore stated here explicitly,
   so it cannot be promoted again."* §(a)'s remedy was EXPLICIT SCOPING IN THE RECORD, not narrow
@@ -602,20 +670,35 @@ gate; a compliance gap, not a mechanics blocker.
 
 ### (5) ⭐ RECORDING THE SILENCE (not merely the survivor)
 
-- mk7ze makes NO claim whatsoever about undefined or degraded r arising outside the occlusion
-  predicate — verified by sweep of the 598-line posted body: **ZERO hits** for "defined row",
-  "finite r", "degraded", "precision", "SE(".
+- **mk7ze does not claim that undefined or degraded r is EXHAUSTED by the occlusion predicate, and
+  it does not discuss the measured degraded defined-row class.** ⚠ That is a bounded statement, and
+  it replaces the 2026-09-03 draft's blanket assertion that mk7ze says nothing at all on the
+  subject — which was too broad, because mk7ze **DOES** retain a raw-panel NaN-raise contract at
+  **mk7ze lines 321-322 (repo draft lines 488-489)**: the raw per-region `.npz` reader continues to
+  **RAISE** on any NaN rather than silently coercing it.
+- **Sweep of the 333-line posted body:** ZERO hits for "defined row", "finite r", "degraded",
+  "precision", "SE(". ⚠ The 2026-09-03 draft described this as a sweep of a 598-line body and
+  called that body the posted one. 598 is the **repo draft working file**, not what was posted.
+  The sweep's **CONCLUSION is unaffected**, since zero hits over the superset implies zero over
+  the subset, **but the sentence stated a false fact about what was posted** and is corrected.
+- ⚠ **THE SWEEP MISSED THE WORD THAT MATTERS, AND IT IS ADDED HERE: `undefined`.** It occurs
+  **EXACTLY ONCE** in the posted body, at **mk7ze line 82 (repo draft line 249)**: *"The exclusion
+  policy for an occluded variant is unaffected: its LD is structurally undefined"*. That is a
+  **DIRECTIONAL** claim — occluded ⇒ LD undefined — and it runs the **OTHER way** from the tail
+  finding, so **it is not falsified**. It is disclosed here as swept and considered rather than
+  silently omitted.
 - **That is a SILENCE, not a false statement. Nothing in the posted record is falsified.**
 - But the silence covers a real, measured class, and a reader of §(c) meets in sequence a correct
   detector, a too-small expectation, a passed index-origin validation, and NaN-implicated ⊆
   geometric — from which the natural inference is that geometry brackets the undefined-r cases.
   **THAT INFERENCE IS NOT LICENSED BY THE TEXT.**
 - So, in substance: *"mk7ze characterises the relationship between NaN-implicated occlusions and
-  geometric occlusions; it makes no claim about undefined or degraded r arising outside the
-  occlusion predicate. Such cases exist and are quantified here: one undefined pair with no covering
-  deletion (upstream, offset -1), and 474 pairs across 21 regions with a defined but degraded
-  informative-carrier count. Neither class is claimed against in the posted record; both are
-  reported here so the posted record's silence is not read as coverage."*
+  geometric occlusions; it does not claim that undefined or degraded r is exhausted by the
+  occlusion predicate, and it does not discuss the degraded defined-row class. Such cases exist and
+  are quantified here: one undefined pair with no covering deletion (upstream, offset -1), and 474
+  pairs across 21 regions with a defined but degraded informative-carrier count. Neither class is
+  claimed against in the posted record; both are reported here so the posted record's silence is
+  not read as coverage."*
 
 ### (6) NO CARRIER FLOOR — and the definition PINNED before one exists
 
@@ -631,13 +714,39 @@ gate; a compliance gap, not a mechanics blocker.
   asymmetric carrier loss **INVERTS THE RANK**. This is why the definitional disagreement is a
   signature of the first finding, not a third phenomenon.
 
-### (7) THE NEGATIVE RESULT, registered
+### (7) THE COVARIATE SCAN — AN UNDERPOWERED NULL, NOT A NEGATIVE RESULT
 
-- Three structural correlates measured, **NONE found** (rho -0.199 / -0.201 / +0.004), in a design
-  that returns rho **+0.886** when structure is present. **Register this as a negative result.**
-- It is STRONGER than an unexamined null because both artifact explanations were eliminated:
-  non-independence cannot create dispersion (**0.98** under equal parent rates), and leave-one-out
-  rules out a single influential point (**1.99-2.48**, worst p **0.0063**).
+- Three structural correlates were measured (95% CI, Fisher z with the Bonett-Wright Spearman
+  standard error 1.03/sqrt(n-3)):
+  rho **-0.199** [-0.590, +0.267], rho **-0.201** [-0.591, +0.266], rho **+0.004**
+  [-0.440, +0.446].
+- **At n=21 the design has 80% power only for |rho| >~ 0.61, and 24% power at rho 0.30.** These
+  therefore exclude only **STRONG** correlates and remain consistent with moderate ones — for the
+  cleanest of them, **|rho| up to 0.446 is inside the interval**. **This is an UNDERPOWERED NULL,
+  not a negative result**, and the 2026-09-03 draft's instruction to record it as the latter is
+  withdrawn.
+- ⚠ The rho **+0.886** comparison does **not** calibrate the power of those three: it is a **COUNT
+  against its own EXPOSURE** (both scale with window size, so a large rho there is near-mechanical),
+  while the nulls are **SIZE-NORMALIZED PROPORTIONS** against size. Different tests.
+- ⚠ **THE TWO ARTIFACT EXPLANATIONS WERE NOT BOTH ELIMINATED.** The 2026-09-03 draft claimed the
+  heterogeneity was better established than an unexamined null on that basis. One was eliminated;
+  the more plausible one was never tested:
+  - **BETWEEN-window duplication cannot create dispersion** (simulated **0.98** under equal parent
+    rates). **It does NOT follow that non-independence cannot: WITHIN-window clustering can and
+    does.** Pairs sharing an occluding deletion do not flip independently, because carrier loss is
+    a property of the deletion. An average of **two co-moving pairs per occluding deletion
+    reproduces the observed 1.99 EXACTLY with zero parent-rate heterogeneity.**
+  - The **pairs-per-deletion distribution in the tail HAS NOT BEEN MEASURED**, so the observed
+    dispersion is **NOT yet attributable** to parent-region heterogeneity rather than to a cluster
+    design effect. The operative structure is present and measured: **22.9%** of tail pairs are
+    deletion-deletion neighbours (**564 of 2461**). That measurement is queued and is the thing
+    that decides Finding 2's magnitude.
+  - **The leave-one-out does not rule out an influential unit.** Leave-one-**WINDOW**-out gives
+    **1.99-2.48** (worst-case p **0.0063**), but the two chr15 windows **shield each other**, so it
+    cannot remove parent `00060` at all, and its minimum **is the headline itself**.
+    Leave-one-**PARENT**-out over the **19 distinct parent regions** ranges **1.52-2.49** with
+    worst-case **p 0.073**: parent region `00060` is influential enough that **its removal renders
+    the heterogeneity non-significant at alpha 0.05.**
 - ⛔ **Do NOT pre-register a dispersion FIGURE.**
 
 ### (8) EPISTEMIC STATUS — do not soften

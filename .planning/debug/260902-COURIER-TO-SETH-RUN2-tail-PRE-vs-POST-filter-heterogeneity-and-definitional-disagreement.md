@@ -20,7 +20,7 @@ establish, and what is being asked. Nothing else needs to be open to read it.
 
 Every number in this record originates in
 `.planning/quick/260902-vsp-bank-the-run-2-step-2-tail-pre-post-resu/CONTENT-SPEC.md`
-(md5 `619426a0157d199c711a4d771023330a`, **11747** B, 173 lines), which is committed alongside this
+(md5 `34199ab125727f28c7f7b2d910e2005a`, **14376** B, 201 lines), which is committed alongside this
 file so the appendix has an in-repo origin. The **VERBATIM APPENDIX** at the bottom is spliced **BY
 SCRIPT** from that file, `## ARTIFACTS` to EOF, and a checker re-reads BOTH files at verification time
 and fails unless the appendix bytes are equal to that slice. **The appendix is the authority.** The
@@ -31,7 +31,7 @@ One provenance note, so the plan file committed beside this record does not read
 the plan pinned an EARLIER revision of the spec (`d10acca5ca2b6c15548bb50d5c11bc43`, 8248 B, 124
 lines). That revision was **SUPERSEDED at source before execution** — deliberately, not by drift — to
 correct a mis-attribution described in the next two sections. Everything outside those sections is
-byte-identical between the two revisions. The anchor that governs this record is the 11747-B one.
+byte-identical between the two revisions. The anchor that governs this record is the 14376-B one.
 
 ## THE RUN
 
@@ -133,7 +133,12 @@ handful of regions that could be quarantined. It is present in every single one 
 ## FINDING 2 — THE REGIONS DO NOT SHARE A COMMON POST RATE
 
 **Headline, pair-level, dropping `m2_region_00060__sub13` (78.5% inside sub12's window):
-chi2 37.78, dof 19, p 6.3e-3, overdispersion 1.99x.** This is the figure to quote.
+chi2 37.78, dof 19, p 6.3e-3, overdispersion 1.99x.** This is the figure to quote — but it must be
+quoted WITH its interval and its fragility, because **the magnitude is NOT identified**: the 95% CI on
+the overdispersion is **~1.1-4.2**, and under the more conservative **drop-both-chr15-windows**
+treatment the estimate falls to **1.52 (p 0.073)** — not significant at alpha 0.05. The dispersion is
+robust in **DIRECTION** (every correction gives phi > 1.3) but **POORLY DETERMINED in magnitude**, and
+**its significance is not robust to the choice of overlap correction.**
 
 The all-21 pair-level figure is **chi2 47.24, dof 20, p 5.4e-4, overdispersion 2.36x**, and it is
 shown here only with its explanation: it is **INFLATED by the chr15 overlap**, whose two regions rank
@@ -143,16 +148,24 @@ fraction ranges **8.33% – 36.36%**, CV 0.365.
 
 Whichever figure is used, a single pooled POST rate does not describe these regions.
 
-**UNEXPLAINED — no structural covariate accounts for it:**
+**NO STRUCTURAL COVARIATE WAS FOUND TO ACCOUNT FOR IT — but that is an UNDERPOWERED NULL, not a
+negative result.** Every interval below is a **95% CI, Fisher z with the Bonett-Wright Spearman
+standard error 1.03/sqrt(n-3)**:
 
-* `spearman(POST frac, window rows)` = **-0.199**
-* `spearman(POST frac, occluded ids)` = **-0.201**
-* `spearman(POST frac, occlusion density)` = **+0.004**
+* `spearman(POST frac, window rows)` = **-0.199**, 95% CI **[-0.590, +0.267]**, p 0.387
+* `spearman(POST frac, occluded ids)` = **-0.201**, 95% CI **[-0.591, +0.266]**
+* `spearman(POST frac, occlusion density)` = **+0.004**, 95% CI **[-0.440, +0.446]**, p 0.986
 
-…in a design with the power to find `spearman(tail rows, window rows)` = **+0.886**. That last clause is
-the power argument, and it should be read as one: **this design CAN detect a strong structural
-correlation across these 21 regions, and did — just not for the POST rate.** The heterogeneity is
-therefore an open question, not an artifact of a covariate we forgot to look at.
+At n=21 this design has **80% power only for |rho| >~ 0.61**, and **24% power at rho 0.30**. These three
+results therefore exclude only **STRONG** correlates and remain fully consistent with moderate ones —
+for the cleanest of them, **|rho| up to 0.446 is inside this CI**. The heterogeneity is an open
+question, and the covariate scan is **not** evidence that no covariate explains it.
+
+⚠ **The `+0.886` clause is NOT a fair power calibration and is withdrawn as one.**
+`spearman(tail rows, window rows)` = **+0.886** is a **COUNT against its own EXPOSURE** — both scale
+with window size, so a large rho there is near-mechanical — while the three nulls are
+**SIZE-NORMALIZED PROPORTIONS** against size. Different tests. It does not calibrate power for a
+size-normalized rate.
 
 ### WHAT DOES AND DOES NOT ESTABLISH THE HETEROGENEITY
 
@@ -164,13 +177,26 @@ the rival hypothesis being TRUE: merging raises dispersion in **65%** of runs, m
 moves the same direction under both hypotheses, so it distinguished nothing, and no inference may be
 drawn from its outcome in either direction.
 
-**THE VALID REFUTATION — Seth's, not ours.** Non-independence cannot **CREATE** dispersion; it can
-only amplify dispersion already present at parent level. Simulated: parent rates **ALL EQUAL** plus
-duplication gives dispersion **0.98**. An observed ~2x therefore **REQUIRES** real parent-level
-heterogeneity. This is the argument that carries the conclusion.
+**A REFUTATION WE CREDITED TO SETH IS TOO BROAD, AND IS NARROWED HERE.** What was simulated is
+**BETWEEN-window duplication**, and that structure genuinely cannot create dispersion: parent rates
+**ALL EQUAL** plus duplication gives **0.98**. **It does NOT follow that non-independence cannot.**
+**WITHIN-window** clustering can and does: pairs sharing an occluding deletion do not flip
+independently, because carrier loss is a property of the deletion. An average of **two co-moving pairs
+per occluding deletion reproduces the observed 1.99 EXACTLY with ZERO parent-rate heterogeneity.**
 
-**STILL VALID AND RETAINED.** Leave-one-out over 21 fits — overdispersion **1.99–2.48**, worst-case
-p **0.0063** — independently rules out a single influential point.
+The operative structure is measured **in this very record**: **22.9%** of tail pairs are
+deletion-deletion neighbours (**564 of 2461**, SCOPE CAVEAT (2)). But the **pairs-per-deletion
+distribution in the tail HAS NOT BEEN MEASURED**, so the observed dispersion is **NOT yet attributable**
+to parent-region heterogeneity rather than to a cluster design effect. That measurement is queued in
+`260904-dgi`'s `deferred-items.md`; **it decides Finding 2's magnitude**, and it is Carter's to fire.
+
+**THE LEAVE-ONE-OUT DOES NOT RULE OUT AN INFLUENTIAL UNIT, AND IS RESTATED AT PARENT LEVEL.**
+Leave-one-**WINDOW**-out over 21 fits gives **1.99–2.48**, worst-case p **0.0063** — but that does not
+address influence: the two chr15 windows **shield each other**, so the window-level LOO cannot remove
+parent `00060` at all, and its minimum **is the headline itself**. Leave-one-**PARENT**-out over the
+**19 distinct parent regions** ranges **1.52–2.49** with worst-case **p 0.073**: one parent region
+(`00060`) is influential enough that **its removal renders the heterogeneity non-significant at
+alpha 0.05.**
 
 **READER-FACING TRANSLATION.** Overdispersion ~2.0 corresponds to a parent-rate **CV ≈ 0.20**, i.e.
 roughly **20%** relative variation in tail rate between parent regions. (Our simulation; CV 0.25
@@ -191,12 +217,18 @@ Rows where `informative_carriers_rarer != informative_carriers_min`:
 
 **Enrichment 46.5x.** **NOT a tie artifact:** `rarer_by_maf_tie` is False for **ALL 3094** tail rows.
 
-**Independence from the PRE/POST axis is carried by `spearman(POST frac, disagree frac) = +0.173` over
-the 21 regions.** ⚠ The PRE-vs-POST 2x2 is reported for completeness and is **deliberately NOT used as
-support**: 606/2560 = **23.67%** PRE vs 145/534 = **27.15%** POST, chi2 2.914, p **0.088**, Fisher p
-**0.096**, with POST trending **HIGHER**. That is **UNDERPOWERED, NOT NULL**, and treating a p of 0.088
-as evidence of independence would be exactly the inference this record refuses. The independence claim
-leans on the rho.
+**NO ASSOCIATION between the definitional axis and the PRE/POST axis was DETECTED** —
+`spearman(POST frac, disagree frac)` = **+0.173** over the 21 regions, 95% CI **[-0.292, +0.572]**
+(Fisher z with the Bonett-Wright Spearman standard error **1.03/sqrt(n-3)**), **p 0.453**. The
+PRE-vs-POST 2x2: 606/2560 = **23.67%** PRE vs 145/534 = **27.15%** POST, chi2 2.914, p **0.088**,
+Fisher p **0.096**, with POST trending **HIGHER**. **BOTH are underpowered at n=21 and NEITHER
+establishes independence.** The two axes are reported separately because **no association was
+DETECTED**, not because none exists.
+
+⚠ **Recorded against ourselves.** This record previously argued that the rho carried the independence
+claim and that the 2x2 should **deliberately NOT** be used as support. That is inverted: the rho is the
+**WEAKER** of the two (**p 0.45** vs **p 0.088**). Steering from the stronger signal to the weaker one,
+in a passage lecturing about absence of evidence, was **itself an absence-of-evidence error**.
 
 This axis is also heterogeneous, but less so: chi2 37.80, dof 20, p 0.0094, overdispersion 1.89, CV
 0.196; tail disagreement spread by region **13.7% – 32.1%**.
@@ -313,11 +345,12 @@ they cannot prove byte-identity to what was written at 21:07:03Z.
 What they DO establish is bounded and worth stating exactly: **a damaged file would not have parsed and
 summed to exactly 3094 / 0 / 0.** That is the whole of it. No consoling clause is appended.
 
-## CORRECTION — THE 0.0005 ACTION ITEM WAS FALSE; THE TWO CONSTANTS ARE UNRELATED
+## CORRECTION — THE 0.0005 ACTION ITEM WAS FALSE, AND THE FIRST CORRECTION OVERSHOT
 
 This record previously carried an action item asserting that the `0.0005` bound was
-self-contradictory across modules. **That assertion was FALSE, and it is withdrawn.** The two
-`0.0005` values are **different, unrelated constants**, and nothing in the tree conflicts.
+self-contradictory across modules. **That assertion was FALSE, and it is withdrawn.** The two current
+`0.0005` occurrences are **DISTINCT LIVE PARAMETERS with NO RUNTIME COUPLING**, and nothing in the tree
+conflicts at runtime.
 
 * **The occlusion constant.** `_OCCLUSION_ANOMALY_FRACTION = 0.0005` (commit `d9fbc63`) was the
   **OCCLUSION** gate. It was genuinely withdrawn, and it is **REMOVED** — **0 hits in `src/` and
@@ -332,8 +365,18 @@ self-contradictory across modules. **That assertion was FALSE, and it is withdra
 "withdrawn", is CORRECT.** The two docstrings describe two different quantities, so they do not
 conflict; only one of them was ever about the occlusion gate, and that one says withdrawn.
 
+⚠ **BUT THE SHARED VALUE IS NOT A COINCIDENCE, and the first correction overshot in implying it was.**
+`mk7ze`'s own text records that `0.0005` was *"calibrated against observed NaN count"* (**mk7ze line
+271**, repo draft line 438) and that the amendment used *"the same fractional gate as the withdrawn
+ceiling, re-purposed to exclusions"* (**mk7ze line 278**, repo draft line 445). The occlusion bound was
+therefore **TRANSPLANTED FROM** the NaN-conditioning ceiling: the two parameters are distinct and
+uncoupled **at runtime**, but they have a documented **COMMON ORIGIN**. The shared value is causal, not
+coincidental.
+
 **ROOT CAUSE, stated plainly:** the original action item grepped the literal `0.0005` and treated
-textual co-occurrence as semantic identity. It spent rigor downstream of an unchecked premise.
+textual co-occurrence as semantic identity. It spent rigor downstream of an unchecked premise. **The
+first correction then made the mirror-image error** — it treated the absence of runtime coupling as the
+absence of any relationship, and was wrong to call the two values unrelated.
 
 ⚠ **A SEPARATE, REAL defect does remain, and it is DEFERRED here because it touches `src/`.**
 `src/python/condition_ld_matrix.py:3-4` and `:153` cite
@@ -440,11 +483,25 @@ Row-level, all 21  :   chi2 51.25  dof 20  p 1.5e-4   overdispersion 2.56
 Row-level POST fraction range 8.33% - 36.36%; CV 0.365.
 ⚠ Quote the REDUCED (1.99x) figure as the headline. The all-21 figure is inflated by the
   chr15 overlap, whose two regions rank 2nd and 3rd on POST fraction and are largely one locus.
-UNEXPLAINED — no structural covariate accounts for it:
-  spearman(POST frac, window rows)      = -0.199
-  spearman(POST frac, occluded ids)     = -0.201
-  spearman(POST frac, occlusion density)= +0.004
-  ...in a design with the power to find spearman(tail rows, window rows) = +0.886.
+⚠ THE MAGNITUDE IS NOT IDENTIFIED. Quote 1.99x WITH its interval and its fragility:
+  1.99x (95% CI ~1.1-4.2; chi2 37.78, dof 19, p 6.3e-3) under the drop-one-window correction.
+  Under the more conservative drop-both-chr15-windows treatment the estimate is 1.52 (p 0.073).
+  The dispersion is robust in DIRECTION (every correction gives phi > 1.3) but POORLY
+  DETERMINED in magnitude, and its significance is not robust to the choice of overlap
+  correction.
+NO STRUCTURAL COVARIATE WAS FOUND TO ACCOUNT FOR IT — but this is an UNDERPOWERED NULL, not
+a negative result. Three structural correlates were measured. Every interval below is a
+95% CI, Fisher z with the Bonett-Wright Spearman standard error 1.03/sqrt(n-3):
+  spearman(POST frac, window rows)      = -0.199   95% CI [-0.590, +0.267]   p 0.387
+  spearman(POST frac, occluded ids)     = -0.201   95% CI [-0.591, +0.266]
+  spearman(POST frac, occlusion density)= +0.004   95% CI [-0.440, +0.446]   p 0.986
+At n=21 the design has 80% power only for |rho| >~ 0.61, and 24% power at rho 0.30. These
+therefore exclude only STRONG correlates and remain consistent with moderate ones — for the
+cleanest of them, |rho| up to 0.446 is INSIDE this CI.
+⚠ The rho = +0.886 figure (spearman(tail rows, window rows)) does NOT calibrate the power of
+  these three. It is a COUNT against its own EXPOSURE — both scale with window size, so a
+  large rho is near-mechanical — while the nulls are SIZE-NORMALIZED PROPORTIONS against size.
+  Different tests. It does not calibrate power for a size-normalized rate.
 
 ## FINDING 3 — definitional disagreement, a SEPARATE and independent axis
 informative_carriers_rarer != informative_carriers_min
@@ -452,10 +509,16 @@ informative_carriers_rarer != informative_carriers_min
   below tail   : 1826 / 349980    =  0.52%
   enrichment   : 46.5x
 NOT a tie artifact: rarer_by_maf_tie is False for ALL 3094 tail rows.
-INDEPENDENT of PRE/POST: spearman(POST frac, disagree frac) = +0.173 over 21 regions.
-  ⚠ Do NOT support independence with the PRE-vs-POST 2x2 (606/2560 = 23.67% vs
-    145/534 = 27.15%, chi2 2.914 p 0.088, Fisher p 0.096, POST trending HIGHER).
-    That is UNDERPOWERED, not null. Lean on the rho.
+NO ASSOCIATION DETECTED between the definitional axis and the PRE/POST axis:
+  spearman(POST frac, disagree frac) = +0.173 over 21 regions, 95% CI [-0.292, +0.572]
+    (Fisher z with the Bonett-Wright Spearman standard error 1.03/sqrt(n-3)), p 0.453.
+  PRE-vs-POST 2x2: 606/2560 = 23.67% vs 145/534 = 27.15%, chi2 2.914 p 0.088,
+    Fisher p 0.096, POST trending HIGHER.
+BOTH tests are underpowered at n=21 and NEITHER establishes independence. The two axes are
+reported separately because no association was DETECTED, not because none exists.
+⚠ RECORDED AGAINST OURSELVES: we previously argued the rho was the stronger evidence and that
+  the 2x2 should not be used. The rho is the WEAKER of the two (p 0.45 vs p 0.088). Steering
+  from the 2x2 to the rho was itself an absence-of-evidence error.
 Also heterogeneous, but less so: chi2 37.80 dof 20 p 0.0094 overdispersion 1.89; CV 0.196.
 Tail disagreement spread by region: 13.7% - 32.1%.
 Definitions: "rarer" is decided by *_maf_marginal (each member's MAF over its OWN called
@@ -482,10 +545,10 @@ definition is the scientifically motivated one.
   NO row has zero informative carriers; the matrix-reaching set has NO singletons.
   NO CARRIER FLOOR IS PROPOSED. The tool emits the distribution only.
 
-## CORRECTION — the 0.0005 "contradiction" was FALSE; the two constants are unrelated
+## CORRECTION — the 0.0005 "contradiction" was FALSE; the constants are DISTINCT but SHARE AN ORIGIN
 The action item previously recorded here alleged that the 0.0005 bound was self-contradictory
-across modules. IT IS FALSE and it is WITHDRAWN. The two 0.0005 values are DIFFERENT,
-UNRELATED constants.
+across modules. IT IS FALSE and it is WITHDRAWN. The two current 0.0005 occurrences are
+DISTINCT LIVE PARAMETERS with NO RUNTIME COUPLING.
 - `_OCCLUSION_ANOMALY_FRACTION = 0.0005` (commit d9fbc63) was the OCCLUSION gate. It was
   genuinely withdrawn, and it is REMOVED: 0 hits in src/ and tests/. It was replaced by the
   POSTED two-condition gate (mk7ze):
@@ -495,9 +558,17 @@ UNRELATED constants.
 - condition_ld_matrix.py `ceiling_frac = 0.0005` is the LD-MATRIX NaN-ZEROING ceiling
   (n_zeroed_pairs <= ceiling_frac * n_var). That file contains the string `occlu` ZERO times.
 Therefore pairwise_completeness_scan.py:45 calling the occlusion bound "withdrawn" is CORRECT.
-The two statements are about two different quantities, so they do not conflict.
-ROOT CAUSE, stated plainly: the original action item grepped the literal 0.0005 and treated
-textual co-occurrence as semantic identity.
+The two statements are about two different quantities, so they do not conflict at runtime.
+⚠ BUT THE SHARED VALUE IS NOT A COINCIDENCE, and the first correction overshot in implying it
+  was. mk7ze's own text records that 0.0005 was "calibrated against observed NaN count"
+  (mk7ze line 271, repo draft line 438) and that the amendment used "the same fractional gate
+  as the withdrawn ceiling, re-purposed to exclusions" (mk7ze line 278, repo draft line 445).
+  The occlusion bound was therefore TRANSPLANTED FROM the NaN-conditioning ceiling: the two
+  parameters are distinct and uncoupled at runtime, but they have a documented COMMON ORIGIN.
+ROOT CAUSE, stated plainly: the original ACTION ITEM grepped the literal 0.0005 and treated
+textual co-occurrence as semantic identity — it was wrong to call this a live contradiction.
+The first correction then made the mirror-image error: it treated the absence of runtime
+coupling as the absence of any relationship, and was wrong to call the two values unrelated.
 
 A SEPARATE, REAL defect remains and is recorded as DEFERRED (do NOT fix here, it touches
 src/): condition_ld_matrix.py:3-4 and :153 cite

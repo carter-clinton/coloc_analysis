@@ -59,7 +59,24 @@ source anyway. Both places that pinned it now carry the true post-task values:
 `.planning/STATE.md:45`'s courier pin was likewise refreshed to `c8525e2665e98cfa9d3d0f1c4266429d`,
 542 lines.
 
-**Nothing to do. Do not re-open.**
+⚠ **CORRECTED 2026-09-04 (`260904-dgi`): THIS ITEM WAS WRONG WHEN WRITTEN. There are FIVE pin
+sites, not three, and the "CLOSED" declaration above enumerated only three of them.** The two
+that escaped, and why this task's guard did not see them:
+
+| # | site | pinned | why it escaped `260903-ict`'s guard |
+|---|---|---|---|
+| 1 | `.planning/STATE.md:45` | 542 / `c8525e26…` | (caught) |
+| 2 | courier `:23` | source md5 / bytes / lines | (caught) |
+| 3 | courier `:34` | "the 11747-B one" | (caught, found during execution) |
+| 4 | `.planning/HANDOFF.json:209` | 491 / `e2c0b544…` | **`HANDOFF.json` is not a `.md` file**, and the guard was `grep -rn <md5> .planning --include=*.md` — the file was never read |
+| 5 | `.planning/phases/m3-aou-afr-ld-panel-build/.continue-here.md:15` | 491 / `e2c0b544…` | it writes the md5 **TRUNCATED** as `` `e2c0b544…` ``, which a full-md5 grep cannot match |
+
+Sites 4 and 5 were therefore **stale by two generations** until `260904-dgi` refreshed them. All
+five now carry the MEASURED post-`260904-dgi` value (**613 lines, md5 `ce6791344916c6ebebacfadbb808c702`**).
+
+**Lesson, recorded because it is the recurring shape:** a pin guard must be
+**extension-agnostic** and must match **truncated md5 prefixes**. The claim "closed" was false
+when written; it is made true here rather than deleted.
 
 ---
 

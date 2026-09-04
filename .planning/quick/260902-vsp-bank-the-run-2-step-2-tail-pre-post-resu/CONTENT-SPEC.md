@@ -72,11 +72,25 @@ Row-level, all 21  :   chi2 51.25  dof 20  p 1.5e-4   overdispersion 2.56
 Row-level POST fraction range 8.33% - 36.36%; CV 0.365.
 ⚠ Quote the REDUCED (1.99x) figure as the headline. The all-21 figure is inflated by the
   chr15 overlap, whose two regions rank 2nd and 3rd on POST fraction and are largely one locus.
-UNEXPLAINED — no structural covariate accounts for it:
-  spearman(POST frac, window rows)      = -0.199
-  spearman(POST frac, occluded ids)     = -0.201
-  spearman(POST frac, occlusion density)= +0.004
-  ...in a design with the power to find spearman(tail rows, window rows) = +0.886.
+⚠ THE MAGNITUDE IS NOT IDENTIFIED. Quote 1.99x WITH its interval and its fragility:
+  1.99x (95% CI ~1.1-4.2; chi2 37.78, dof 19, p 6.3e-3) under the drop-one-window correction.
+  Under the more conservative drop-both-chr15-windows treatment the estimate is 1.52 (p 0.073).
+  The dispersion is robust in DIRECTION (every correction gives phi > 1.3) but POORLY
+  DETERMINED in magnitude, and its significance is not robust to the choice of overlap
+  correction.
+NO STRUCTURAL COVARIATE WAS FOUND TO ACCOUNT FOR IT — but this is an UNDERPOWERED NULL, not
+a negative result. Three structural correlates were measured. Every interval below is a
+95% CI, Fisher z with the Bonett-Wright Spearman standard error 1.03/sqrt(n-3):
+  spearman(POST frac, window rows)      = -0.199   95% CI [-0.590, +0.267]   p 0.387
+  spearman(POST frac, occluded ids)     = -0.201   95% CI [-0.591, +0.266]
+  spearman(POST frac, occlusion density)= +0.004   95% CI [-0.440, +0.446]   p 0.986
+At n=21 the design has 80% power only for |rho| >~ 0.61, and 24% power at rho 0.30. These
+therefore exclude only STRONG correlates and remain consistent with moderate ones — for the
+cleanest of them, |rho| up to 0.446 is INSIDE this CI.
+⚠ The rho = +0.886 figure (spearman(tail rows, window rows)) does NOT calibrate the power of
+  these three. It is a COUNT against its own EXPOSURE — both scale with window size, so a
+  large rho is near-mechanical — while the nulls are SIZE-NORMALIZED PROPORTIONS against size.
+  Different tests. It does not calibrate power for a size-normalized rate.
 
 ## FINDING 3 — definitional disagreement, a SEPARATE and independent axis
 informative_carriers_rarer != informative_carriers_min
@@ -84,10 +98,16 @@ informative_carriers_rarer != informative_carriers_min
   below tail   : 1826 / 349980    =  0.52%
   enrichment   : 46.5x
 NOT a tie artifact: rarer_by_maf_tie is False for ALL 3094 tail rows.
-INDEPENDENT of PRE/POST: spearman(POST frac, disagree frac) = +0.173 over 21 regions.
-  ⚠ Do NOT support independence with the PRE-vs-POST 2x2 (606/2560 = 23.67% vs
-    145/534 = 27.15%, chi2 2.914 p 0.088, Fisher p 0.096, POST trending HIGHER).
-    That is UNDERPOWERED, not null. Lean on the rho.
+NO ASSOCIATION DETECTED between the definitional axis and the PRE/POST axis:
+  spearman(POST frac, disagree frac) = +0.173 over 21 regions, 95% CI [-0.292, +0.572]
+    (Fisher z with the Bonett-Wright Spearman standard error 1.03/sqrt(n-3)), p 0.453.
+  PRE-vs-POST 2x2: 606/2560 = 23.67% vs 145/534 = 27.15%, chi2 2.914 p 0.088,
+    Fisher p 0.096, POST trending HIGHER.
+BOTH tests are underpowered at n=21 and NEITHER establishes independence. The two axes are
+reported separately because no association was DETECTED, not because none exists.
+⚠ RECORDED AGAINST OURSELVES: we previously argued the rho was the stronger evidence and that
+  the 2x2 should not be used. The rho is the WEAKER of the two (p 0.45 vs p 0.088). Steering
+  from the 2x2 to the rho was itself an absence-of-evidence error.
 Also heterogeneous, but less so: chi2 37.80 dof 20 p 0.0094 overdispersion 1.89; CV 0.196.
 Tail disagreement spread by region: 13.7% - 32.1%.
 Definitions: "rarer" is decided by *_maf_marginal (each member's MAF over its OWN called
@@ -114,10 +134,10 @@ definition is the scientifically motivated one.
   NO row has zero informative carriers; the matrix-reaching set has NO singletons.
   NO CARRIER FLOOR IS PROPOSED. The tool emits the distribution only.
 
-## CORRECTION — the 0.0005 "contradiction" was FALSE; the two constants are unrelated
+## CORRECTION — the 0.0005 "contradiction" was FALSE; the constants are DISTINCT but SHARE AN ORIGIN
 The action item previously recorded here alleged that the 0.0005 bound was self-contradictory
-across modules. IT IS FALSE and it is WITHDRAWN. The two 0.0005 values are DIFFERENT,
-UNRELATED constants.
+across modules. IT IS FALSE and it is WITHDRAWN. The two current 0.0005 occurrences are
+DISTINCT LIVE PARAMETERS with NO RUNTIME COUPLING.
 - `_OCCLUSION_ANOMALY_FRACTION = 0.0005` (commit d9fbc63) was the OCCLUSION gate. It was
   genuinely withdrawn, and it is REMOVED: 0 hits in src/ and tests/. It was replaced by the
   POSTED two-condition gate (mk7ze):
@@ -127,9 +147,17 @@ UNRELATED constants.
 - condition_ld_matrix.py `ceiling_frac = 0.0005` is the LD-MATRIX NaN-ZEROING ceiling
   (n_zeroed_pairs <= ceiling_frac * n_var). That file contains the string `occlu` ZERO times.
 Therefore pairwise_completeness_scan.py:45 calling the occlusion bound "withdrawn" is CORRECT.
-The two statements are about two different quantities, so they do not conflict.
-ROOT CAUSE, stated plainly: the original action item grepped the literal 0.0005 and treated
-textual co-occurrence as semantic identity.
+The two statements are about two different quantities, so they do not conflict at runtime.
+⚠ BUT THE SHARED VALUE IS NOT A COINCIDENCE, and the first correction overshot in implying it
+  was. mk7ze's own text records that 0.0005 was "calibrated against observed NaN count"
+  (mk7ze line 271, repo draft line 438) and that the amendment used "the same fractional gate
+  as the withdrawn ceiling, re-purposed to exclusions" (mk7ze line 278, repo draft line 445).
+  The occlusion bound was therefore TRANSPLANTED FROM the NaN-conditioning ceiling: the two
+  parameters are distinct and uncoupled at runtime, but they have a documented COMMON ORIGIN.
+ROOT CAUSE, stated plainly: the original ACTION ITEM grepped the literal 0.0005 and treated
+textual co-occurrence as semantic identity — it was wrong to call this a live contradiction.
+The first correction then made the mirror-image error: it treated the absence of runtime
+coupling as the absence of any relationship, and was wrong to call the two values unrelated.
 
 A SEPARATE, REAL defect remains and is recorded as DEFERRED (do NOT fix here, it touches
 src/): condition_ld_matrix.py:3-4 and :153 cite
