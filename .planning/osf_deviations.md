@@ -539,6 +539,45 @@ gate; a compliance gap, not a mechanics blocker.
   statements in the 2026-09-03 draft. The corrections are made INLINE rather than appended as
   errata, because this draft was never posted: there is nothing to retract, only a draft to fix
   before it becomes one.
+- ⚠ **ADJUDICATED 2026-09-08 — NO OPEN OBJECTION.** The disclosure was reviewed across multiple
+  rounds by the project's external reviewer, who then raised **two defects in the corrections
+  themselves**. Both are disposed of below, and **no objection from any round remains open.**
+  - **D8 — ACCEPTED.** The pair-4 citation asserted that neither of its members was covered by
+    any deletion record. **FALSE:** its NaN-implicated SNP at 5922718 **IS** covered by a
+    **THIRD** record, **DEL 5922716** (span 5922716-5922722), is therefore **EXCLUDED by the
+    predicate**, and yields **ZERO residual** — a **DIFFERENT class** from the chr7 survivor,
+    for which **no record covers EITHER member** and which **SURVIVES INTO THE PANEL**.
+    Corrected in `260908-hv8`. ⚠ **The mechanism was BROADER than the instance reported, and
+    that is the more important half:** the same phrasing occurred **THREE times** — false on
+    pair 4, **TRUE** on the survivor and on one annotation — and that *shared phrasing* WAS the
+    false equivalence, so correcting only pair 4 would have left it **RECONSTRUCTIBLE** from the
+    surrounding text. All three were eliminated. ⚠ The phrase was also **invisible to a literal
+    `grep`** — it was **line-wrapped AND bolded** — so a literal-scoped guard would have
+    reported success while leaving the defect standing.
+  - **D7 — RAISED, THEN RETRACTED BY THE REVIEWER AFTER HE MEASURED IT.** The charge was that
+    our corrected mk7ze line numbers had been converted from stale references. Measurement
+    showed otherwise: the cited sentences **SPAN MULTIPLE LINES** (the NaN sentence = posted
+    **108-110**, repo draft 275-277; clause (a) = posted **300-302**, repo draft 467-469). We
+    cited where each sentence **BEGINS**; he measured where the phrase he quoted **FALLS**.
+    **Both are defensible referents**, and `275 - 167 = 108` is **correct arithmetic on a
+    correct input**. This is recorded as **neither an error of ours nor a win**: the defect was
+    the citation **FORM**, not the number — a single line number for a multi-line sentence is
+    **AMBIGUOUS**, which is exactly why two parties measuring the same artifact produced
+    different numbers. Fixed as **RANGES**, with the **verbatim quotation as the primary
+    locator**, since a quote survives repagination and a line number does not.
+- ⚠ **REMAINING BEFORE POSTING — ONE MEASUREMENT, NOT AN OBJECTION.** The
+  **pairs-per-occluding-deletion DISTRIBUTION** in the tail, from `pcs_tail_verdicts.tsv`
+  (VM-side; **reads the emitted TSV only — no re-run, no genotypes**). The cluster design effect
+  is ~ **1 + (c-1)·ICC**: **c ~ 2** at high ICC reproduces Finding 2's **1.99** headline from a
+  **COMPLETELY HOMOGENEOUS** panel, whereas **c ~ 1** leaves the dispersion unexplained and
+  parent-region heterogeneity live. ⚠ **Report the DISTRIBUTION, not the mean alone** — the
+  design effect is driven by the mean of c **WEIGHTED BY CLUSTER SIZE**. ⚠ **The 22.9%
+  deletion-deletion-neighbour figure is NOT a measurement of c:** it constrains pair
+  **COMPOSITION**, not cluster **SIZE**; it makes c > 1 plausible, it does **not** quantify it.
+  **No prediction is offered by either party.** ⛔ **Carter fires this. No agent fires it.**
+  ⚠ **This is an outstanding MEASUREMENT, not an unresolved objection — and closure of the
+  review loop is NOT authorization to post.** The status above stands unchanged:
+  **DRAFTED — NOT POSTED.**
 - ⚠ **CITATION CONVENTION (corrected 2026-09-04; REFINED 2026-09-08).** Every mk7ze citation below
   gives the **POSTED** line with the repo-draft line carried alongside — *"mk7ze lines 108-110 (repo
   draft lines 275-277)"* — so a reader can check either. ⚠ **Where a cited sentence SPANS MULTIPLE
@@ -763,6 +802,13 @@ gate; a compliance gap, not a mechanics blocker.
     does.** Pairs sharing an occluding deletion do not flip independently, because carrier loss is
     a property of the deletion. An average of **two co-moving pairs per occluding deletion
     reproduces the observed 1.99 EXACTLY with zero parent-rate heterogeneity.**
+  - ⚠ **REVIEWER ACCOUNTING, recorded 2026-09-08 — his framing adopted over ours because it is
+    sharper.** His **SPECIFIC** mechanism (sub-window replication) **does** remain unable to
+    create dispersion and **stays dead**. But the **GENERAL PRINCIPLE** he used to kill it —
+    that non-independence can only **AMPLIFY** dispersion and never **GENERATE** it — was
+    **FALSE**, and **a false general principle silently forecloses hypotheses nobody tested.**
+    That is why **within-window clustering went untested while both parties believed the
+    question settled.** It cost more than the specific error did.
   - The **pairs-per-deletion distribution in the tail HAS NOT BEEN MEASURED**, so the observed
     dispersion is **NOT yet attributable** to parent-region heterogeneity rather than to a cluster
     design effect. The operative structure is present and measured: **22.9%** of tail pairs are

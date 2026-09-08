@@ -25,7 +25,52 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-09-03 — ✅ **RUN 2 STEP 2 LANDED AND IS BANKED: THE DEFINED-ROW TAIL IS *PRE-FILTER DOMINANT* WITH A *POST-FILTER RESIDUAL IN ALL 21 REGIONS*; THE REGIONS DO **NOT** SHARE A COMMON POST RATE; AND rarer-vs-min DISAGREEMENT IS A *SEPARATE* AXIS. SETH ADJUDICATED TWICE. NOTHING RUNNING, VM STOPPED, $0.** (★ RESUME HERE — LATEST ★)
+## 2026-09-08 — ✅ **THE SETH REVIEW LOOP IS CLOSED: THE TAIL DISCLOSURE IS ADJUDICATED WITH *NO OPEN OBJECTION*, AND REMAINS *DRAFTED — NOT POSTED*. ONE MEASUREMENT (NOT AN OBJECTION) IS ALL THAT REMAINS BEFORE POSTING — CARTER FIRES IT. NOTHING RUNNING, VM STOPPED, $0.** (★ RESUME HERE — LATEST ★)
+
+**Nothing is running.** VM stopped; no job to reattach. HEAD = the `260908-n48` commit, **8 commits AHEAD of `origin/m3-W2-aou-deltas` (measured 2026-09-08), NOT PUSHED.**
+
+### What changed today (`260908-n48`) — DOCS-ONLY, purely ADDITIVE
+
+The disclosure already recorded that it was **CORRECTED** after the 5-reviewer adversarial pass
+(`260904-dgi`). It did **not** record that it was subsequently **ADJUDICATED TO CLOSURE**. For a
+document headed to OSF, *"unadjudicated draft"* and *"adjudicated, no open objection"* are
+materially different postures. The second is now banked in `.planning/osf_deviations.md`:
+
+- **D8 — ACCEPTED.** Pair 4's NaN-implicated SNP at 5922718 **IS** covered by a **THIRD** record,
+  `DEL 5922716` (span 5922716-5922722) → excluded by the predicate, **ZERO residual** — a
+  **different class** from the chr7 survivor, which has **no covering record for EITHER member**
+  and **survives into the panel**. ⚠ The more important half is the **mechanism**: the shared
+  phrasing occurred **THREE times** (false on pair 4, **true** on the survivor and one
+  annotation), so fixing only pair 4 would have left the false equivalence **reconstructible**.
+  All three eliminated in `260908-hv8`. It was **invisible to a literal `grep`** (line-wrapped
+  **and** bolded) — a literal-scoped guard would have reported success over a live defect.
+- **D7 — RAISED, THEN RETRACTED BY THE REVIEWER AFTER HE MEASURED IT.** Not an error of ours, and
+  not a win. The cited sentences **span multiple lines**; we cited where each **begins**, he
+  measured where his quoted phrase **falls**. Both referents are defensible and `275 - 167 = 108`
+  is correct arithmetic on a correct input. The defect was the citation **FORM** — a single line
+  number for a multi-line sentence is **ambiguous**. Fixed as **ranges**, with the **verbatim
+  quotation as the primary locator**.
+- **Reviewer accounting (§7).** His **specific** mechanism (sub-window replication) stays dead.
+  But the **general principle** he used to kill it — that non-independence can only *amplify*
+  dispersion, never *generate* it — was **FALSE**, and **a false general principle silently
+  forecloses hypotheses nobody tested.** That is why within-window clustering went untested while
+  both parties believed the question settled. It cost more than the specific error did.
+
+### ⚠ THE ONE REMAINING PRE-POSTING ITEM — a MEASUREMENT, not an objection
+
+The **pairs-per-occluding-deletion DISTRIBUTION** in the tail, from `pcs_tail_verdicts.tsv`
+(VM-side; **reads the emitted TSV only — no re-run, no genotypes**). Design effect ~ `1 + (c-1)·ICC`:
+**c ~ 2** at high ICC reproduces Finding 2's **1.99** headline from a **completely homogeneous**
+panel; **c ~ 1** leaves the dispersion unexplained and parent heterogeneity live.
+⚠ **Report the DISTRIBUTION, not the mean alone** — the design effect is driven by the mean of c
+**weighted by cluster size**. ⚠ The **22.9%** deletion-deletion-neighbour figure is **NOT** a
+measurement of c: it constrains pair **composition**, not cluster **size**. **No prediction is
+offered by either party.** ⛔ **CARTER FIRES THIS. NO AGENT FIRES IT.**
+
+⛔ **CLOSURE IS NOT AUTHORIZATION TO POST.** Status stays **DRAFTED — NOT POSTED**; no OSF contact,
+no GUID reserved. The `tcujq` two-file docstring defect stays **DEFERRED** (lives under `src/`).
+
+## 2026-09-03 — ✅ **RUN 2 STEP 2 LANDED AND IS BANKED: THE DEFINED-ROW TAIL IS *PRE-FILTER DOMINANT* WITH A *POST-FILTER RESIDUAL IN ALL 21 REGIONS*; THE REGIONS DO **NOT** SHARE A COMMON POST RATE; AND rarer-vs-min DISAGREEMENT IS A *SEPARATE* AXIS. SETH ADJUDICATED TWICE. NOTHING RUNNING, VM STOPPED, $0.** (★ PRIOR — superseded by the 2026-09-08 section above ★)
 
 **Nothing is running.** VM stopped by Carter; PID 1072 gone. HEAD `ee3af4b`, **3 commits AHEAD of origin, NOT PUSHED**. There is no job to reattach.
 
@@ -62,6 +107,8 @@ Regions with tail rows **21**; regions with **zero** POST-filter rows **0**.
 ⛔ **DO NOT extend the predicate to −1.** n=1, and its cheapness (~0.12% of panel) is an argument *against*, not for — that is calibrate-to-pass. **Register the prediction instead — but SAMPLE-SCOPED.** ⚠ A positive-offset case is **already known out-of-sample**: `m2_region_00057`'s **+1** (`chr15:20394741:AT:A` × `chr15:20394743:T:C`, measured 2026-08-24), and `STATE.md:287` already concluded the residual class sits adjacent to the REF span on **EITHER** side. Production tests the rate on **both** sides. It is **post hoc** relative to the 21-region scan and is **not a pre-registration today**.
 
 ### ❓ OPEN QUESTION BACK TO SETH — the disclosure is NOT written pending his answer
+
+> ✅ **RESOLVED 2026-09-08 — this question is CLOSED and the heading below is HISTORICAL.** The disclosure WAS written, corrected (`260904-dgi`), re-corrected (`260908-hv8`) and is now **ADJUDICATED with NO OPEN OBJECTION** (`260908-n48`). See the 2026-09-08 section at the top. It remains **DRAFTED — NOT POSTED**.
 
 **mk7ze lines 108-110 (repo draft lines 275-277)** — posted = repo draft − 167, proven against the posted body's own md5: *"An observable NaN requires complete-case zero variance at that pair; geometric occlusion requires only coordinate span coverage, so every NaN-implicated occlusion is a geometric occlusion but not conversely."* Read strictly the survivor does not contradict it; read for what the sentence **does** in the argument (geometry as a safe superset of the NaN cases) the survivor is an undefined pair geometry does not catch. **Disclosure, or correction-obligation to a posted record? Seth's call.**
 
