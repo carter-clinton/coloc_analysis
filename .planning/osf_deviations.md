@@ -539,9 +539,17 @@ gate; a compliance gap, not a mechanics blocker.
   statements in the 2026-09-03 draft. The corrections are made INLINE rather than appended as
   errata, because this draft was never posted: there is nothing to retract, only a draft to fix
   before it becomes one.
-- ⚠ **CITATION CONVENTION (corrected).** Every mk7ze citation below gives the **POSTED** line with
-  the repo-draft line carried alongside — *"mk7ze line 108 (repo draft line 275)"* — so a reader
-  can check either. The 2026-09-03 draft cited repo-draft line numbers of a 598-line working file
+- ⚠ **CITATION CONVENTION (corrected 2026-09-04; REFINED 2026-09-08).** Every mk7ze citation below
+  gives the **POSTED** line with the repo-draft line carried alongside — *"mk7ze lines 108-110 (repo
+  draft lines 275-277)"* — so a reader can check either. ⚠ **Where a cited sentence SPANS MULTIPLE
+  LINES the FULL RANGE is given, and the VERBATIM QUOTATION is the primary locator**, because a quote
+  survives repagination and a line number does not. This refines, rather than corrects, an arithmetic
+  error: the 2026-09-04 entry cited the single line on which each multi-line sentence **BEGINS**,
+  which is a **defensible referent**, as is the line on which any later clause of the same sentence
+  falls. **Both were right; neither was sufficient.** A single line number for a multi-line sentence
+  is **AMBIGUOUS** — a reader quoting a later clause lands on a different number and cannot tell
+  whether the citation or the arithmetic is at fault. The 2026-09-03 draft cited repo-draft line
+  numbers of a 598-line working file
   while calling them mk7ze lines. **Posted = repo draft − 167**, and this is proven rather than
   asserted: repo lines 168-500 of
   `.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md` reproduce
@@ -598,7 +606,7 @@ gate; a compliance gap, not a mechanics blocker.
   **WEAKER** of the two (**p 0.45** vs **p 0.088**). Steering from the stronger signal to the
   weaker one, in a passage about absence of evidence, was itself an absence-of-evidence error.
 
-### (3) ⭐ THE SURVIVOR GEOMETRY — a HEADLINE, and a POSITIVE result for the rule
+### (3) ⭐ THE SURVIVOR GEOMETRY — a HEADLINE, and what it does and does NOT establish
 
 - `m2_region_00149`, deletion `chr7:89454077:GCGTA:G` (REF len 5, span 89454077..89454081) x
   partner `chr7:89454076:C:T`, offset **-1**, side upstream, `already_occluded` False, pair_key
@@ -634,20 +642,20 @@ gate; a compliance gap, not a mechanics blocker.
   as pre-registered here)" could not be true of an entry marked DRAFTED — NOT POSTED, and is
   withdrawn. Change the predicate only if the RATE warrants it against data.
 
-### (4) ⭐ SCOPE OF mk7ze LINE 108 (repo draft line 275) — stated explicitly, as a RECORDED COMMITMENT
+### (4) ⭐ SCOPE OF mk7ze LINES 108-110 (repo draft lines 275-277) — stated explicitly, as a RECORDED COMMITMENT
 
-- **mk7ze line 108 (repo draft line 275)** reads: *"An observable NaN requires complete-case zero
-  variance at that pair; geometric occlusion requires only coordinate span coverage, so every
-  NaN-implicated occlusion is a geometric occlusion but not conversely."*
+- **mk7ze lines 108-110 (repo draft lines 275-277)** read: *"An observable NaN requires
+  complete-case zero variance at that pair; geometric occlusion requires only coordinate span
+  coverage, so every NaN-implicated occlusion is a geometric occlusion but not conversely."*
 - **RECORDED SCOPE:** it is a statement about OCCLUSIONS and their relation to NaN-implication. It
   does not address NaNs arising WITHOUT an occlusion. Its argumentative work is carried by *"but
   not conversely"* (not every geometric occlusion is NaN-implicated), which is substantive, true,
   and untouched by the survivor.
-- **"Occlusion" is GEOMETRIC throughout mk7ze** — clause (a) at **mk7ze line 300 (repo draft line
-  467)**: *"A variant record is flagged as an occluder when its reference-allele interval
+- **"Occlusion" is GEOMETRIC throughout mk7ze** — clause (a) at **mk7ze lines 300-302 (repo draft
+  lines 467-469)**: *"A variant record is flagged as an occluder when its reference-allele interval
   [POS, POS + len(REF) - 1] covers the position of a neighbouring variant."*
-- The survivor is a NaN with NO covering deletion, hence **OUTSIDE the sentence's domain, not a
-  counterexample within it**.
+- The survivor is a NaN with **no covering record for EITHER member**, hence **OUTSIDE the
+  sentence's domain, not a counterexample within it**.
 - ⚠ **THE SENTENCE'S OWN DRAFTING RECORD, carried verbatim rather than withheld.** The claim
   descends from `.planning/debug/fire-morning-occlusion-oracle-vs-geometry.md:227-233`, whose
   conclusion was stated **BROADLY**: *"Every NaN-producing pair is geometrically occluded."*
@@ -656,12 +664,28 @@ gate; a compliance gap, not a mechanics blocker.
   standard of carrying provenance verbatim.** The narrow reading is defended below on what the
   expectation set was actually built on, not on the drafting record being favourable.
 - ⚠ **THE NARROW READING IS NOT MERELY GRAMMATICALLY AVAILABLE — IT IS WHAT THE EXPECTATION SET WAS
-  BUILT ON.** `.planning/amendments/m3_region1_nan_geometry_verdict.md:20` and `:30-37` record a
-  region-1 NaN pair (pair 4) whose geometry is **`disjoint`** — a NaN pair with **NO covering
-  deletion** — documented **BEFORE posting** and **DELIBERATELY EXCLUDED** from the expectation
-  set. **mk7ze line 104 (repo draft line 271)** speaks of *"a settled 5-member expectation"*
+  BUILT ON.** `.planning/amendments/m3_region1_nan_geometry_verdict.md:19-20` and `:30-37` record
+  region-1 pair 4 — a NaN pair whose two members are **not in a coverage relation** (geometry
+  **`disjoint`**; the NaN-implicated SNP at 5922718 is covered by a **THIRD** record, **DEL 5922716**
+  spanning 5922716-5922722, and is therefore **EXCLUDED by the predicate**, with **NO residual**) —
+  documented **BEFORE posting** and **DELIBERATELY EXCLUDED** from the 5-member expectation set.
+  **mk7ze line 104 (repo draft line 271)** speaks of *"a settled 5-member expectation"*
   against **SIX** observed NaN pairs. The sixth is that disjoint pair. The posted expectation set
   was therefore constructed on the narrow reading at the time of writing.
+- ⛔ **PAIR 4 IS A DIFFERENT CLASS FROM THE SURVIVOR AND MUST NOT BE READ AS THE SAME ONE.** The
+  2026-09-04 entry glossed pair 4 as though **no record covered either of its members**, and used
+  that same gloss for the chr7 survivor. **For pair 4 that gloss was FALSE.** Its NaN-implicated SNP
+  **IS** covered — by a third record, **DEL 5922716** (span 5922716-5922722) — and the verdict
+  annotates the pair *"2nd-order: SNP already occluded by DEL@5922716"*. Because one phrase served
+  both cases, they read as a single class, from which a reader would conclude that **the survivor's
+  class was documented before posting. IT WAS NOT.** The distinction, stated so it cannot be
+  collapsed again: **pair 4 = known, handled, ZERO residual** — a covering record exists, so the
+  predicate excludes it and nothing reaches the panel; **the chr7 survivor = unhandled, IN-PANEL
+  residual** — **NO covering record exists for EITHER member**, so it **SURVIVES INTO THE PANEL**.
+  ⚠ The citation above remains **sound for its own purpose** — pair 4's two members not being in a
+  coverage relation is exactly what shows the narrow reading is what the expectation set was built
+  on — but it establishes **NOTHING** about the survivor's class, which was **NOT** documented
+  before posting.
 - ⚠ **WHY THIS IS WRITTEN DOWN RATHER THAN LEFT AS AN INTERPRETATION:** mk7ze §(a) corrected a scope
   promotion and closed with *"The scope of the surviving claim is therefore stated here explicitly,
   so it cannot be promoted again."* §(a)'s remedy was EXPLICIT SCOPING IN THE RECORD, not narrow
@@ -684,9 +708,11 @@ gate; a compliance gap, not a mechanics blocker.
 - ⚠ **THE SWEEP MISSED THE WORD THAT MATTERS, AND IT IS ADDED HERE: `undefined`.** It occurs
   **EXACTLY ONCE** in the posted body, at **mk7ze line 82 (repo draft line 249)**: *"The exclusion
   policy for an occluded variant is unaffected: its LD is structurally undefined"*. That is a
-  **DIRECTIONAL** claim — occluded ⇒ LD undefined — and it runs the **OTHER way** from the tail
-  finding, so **it is not falsified**. It is disclosed here as swept and considered rather than
-  silently omitted.
+  **DIRECTIONAL** claim — its implication runs **occluded ⇒ undefined**, **NOT** undefined ⇒
+  occluded — so it runs the **OTHER way** from the tail finding, **makes no completeness claim over
+  undefined r**, and there is **nothing there for the tail finding to falsify**. It is disclosed here
+  as swept and considered rather than silently omitted, and recorded because **a sweep that omits the
+  one relevant term is not a sweep**.
 - **That is a SILENCE, not a false statement. Nothing in the posted record is falsified.**
 - But the silence covers a real, measured class, and a reader of §(c) meets in sequence a correct
   detector, a too-small expectation, a passed index-origin validation, and NaN-implicated ⊆
@@ -695,7 +721,8 @@ gate; a compliance gap, not a mechanics blocker.
 - So, in substance: *"mk7ze characterises the relationship between NaN-implicated occlusions and
   geometric occlusions; it does not claim that undefined or degraded r is exhausted by the
   occlusion predicate, and it does not discuss the degraded defined-row class. Such cases exist and
-  are quantified here: one undefined pair with no covering deletion (upstream, offset -1), and 474
+  are quantified here: one undefined pair with no covering record for EITHER member (upstream,
+  offset -1), and 474
   pairs across 21 regions with a defined but degraded informative-carrier count. Neither class is
   claimed against in the posted record; both are reported here so the posted record's silence is
   not read as coverage."*
