@@ -51,9 +51,15 @@ six-day gap and a VM stop/start. **It did NOT confirm Finding 2 — it removed i
   directly (**Rao-Scott**, per-region deff). **THE DECISIVE OBSERVATION IS THE STRADDLE, NOT THE
   DESIGN EFFECT:** dropping `00060__sub13` and dropping `00060__sub12` are **interchangeable**
   (the windows overlap by 6,000,001 bp; neither is privileged), yet corrected they give
-  **p 0.0366** and **p 0.0556** — **straddling 0.05**. Correcting *and* dropping both chr15
-  windows gives **p 0.2116**. The **DIRECTION** holds under every treatment (**phi > 1.2**), but
+  **p 0.0326** and **p 0.0517** — **straddling 0.05**. Correcting *and* dropping both chr15
+  windows gives **p 0.2171**. The **DIRECTION** holds under every treatment (**phi > 1.2**), but
   the **magnitude is unidentified** and the **significance is an artifact of analytic choice**.
+- ⚠ **ESTIMATOR CORRECTED 2026-09-08 (`260908-uer`).** The Rao-Scott table first estimated the
+  pooled POST rate **once from all 21 regions** and reused it for every subset; a homogeneity
+  test must estimate it **from the regions under test**. Four figures moved and **the conclusion
+  did not** — the straddle got **TIGHTER** (0.0326 vs 0.0517, previously 0.0366 vs 0.0556). This
+  also closes `260908-u5k` **D1**: the courier's **1.99** was right, §(10b)'s 1.969 was the
+  artifact (correct value **1.988**). ⭐ No clustering figure moved.
 - ⚠ **CONSERVATISM DISCLOSURE, against ourselves:** the five NA regions were given **deff = 1.0**,
   i.e. **no correction at all**. A fuller correction pushes phi **lower still** — the conservative
   choice ran **AGAINST** the conclusion now drawn.
@@ -152,11 +158,11 @@ Regions with tail rows **21**; regions with **zero** POST-filter rows **0**.
    > ⛔ **SUPERSEDED 2026-09-08 (`260908-tnd`) — FINDING 2 IS *NOT ESTABLISHED*.** Every number in
    > this item is an **UNCORRECTED** figure that assumes **independent pairs**, and that assumption
    > is now **measured false** (ICC **0.728930**, deff **1.360272**). Design-corrected, two
-   > **interchangeable** chr15 overlap treatments give **p 0.0366** and **p 0.0556** — **straddling
-   > 0.05** — and correcting while dropping both gives **p 0.2116**. Direction holds (**phi > 1.2**);
+   > **interchangeable** chr15 overlap treatments give **p 0.0326** and **p 0.0517** — **straddling
+   > 0.05** — and correcting while dropping both gives **p 0.2171**. Direction holds (**phi > 1.2**);
    > **magnitude unidentified; significance is an artifact of analytic choice.** ⚠ Note also that
    > *"every correction gives φ > 1.3"* was scoped to the **overlap** corrections only; the
-   > design-corrected minimum is **1.249**. See the 2026-09-08 (LATER) section at the top.
+   > design-corrected minimum is **1.241**. See the 2026-09-08 (LATER) section at the top.
 3. **Definitional disagreement, a separate axis.** `informative_carriers_rarer != informative_carriers_min` on **24.27%** of tail rows vs **0.52%** below tail = **46.5×** enrichment. **No association with PRE/POST was DETECTED** — ρ **+0.173**, 95% CI **[−0.292, +0.572]**, p 0.453; the 2×2 gives p **0.088**. **Both are underpowered at n=21 and neither establishes independence**, and the ρ is the *weaker* of the two. Not a tie artifact.
 
 **Record:** `.planning/debug/260902-COURIER-TO-SETH-RUN2-tail-PRE-vs-POST-filter-heterogeneity-and-definitional-disagreement.md` — 621 lines, md5 `f52b76ce73b5f83d03a6e09e2822563f`

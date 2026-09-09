@@ -571,7 +571,7 @@ gate; a compliance gap, not a mechanics blocker.
   re-run, no genotypes, no scan re-execution**). It returned, and **its result RETRACTS Finding 2's
   establishment rather than confirming it.** With the clustering **measured**, the heterogeneity
   chi-square can be corrected for it directly, and under that correction **two INTERCHANGEABLE
-  treatments of the chr15 window overlap straddle p = 0.05** (**0.0366** vs **0.0556**).
+  treatments of the chr15 window overlap straddle p = 0.05** (**0.0326** vs **0.0517**).
   **Finding 2 — between-region heterogeneity in the POST-filter rate — is recorded below as
   NOT ESTABLISHED.** The within-window clustering is itself a **NEW REPORTABLE FINDING**, not
   merely a caveat. Both are in **§(10)**, with the measurement's provenance in **§(9)**.
@@ -628,7 +628,7 @@ gate; a compliance gap, not a mechanics blocker.
   0.05**. ⚠ **Every one of those figures assumes INDEPENDENT pairs, and as of 2026-09-08 that
   assumption is MEASURED FALSE** (within-cluster **ICC 0.728930**, design effect **1.360272** —
   §(10)). **Corrected for the measured design effect, two interchangeable treatments of the chr15
-  overlap give p 0.0366 and p 0.0556 — STRADDLING 0.05 — so the between-region heterogeneity is
+  overlap give p 0.0326 and p 0.0517 — STRADDLING 0.05 — so the between-region heterogeneity is
   NOT ESTABLISHED.** The **DIRECTION** remains positive under every treatment (**phi > 1.2
   throughout**), but the **magnitude is unidentified** and the **significance is an artifact of
   analytic choice**. A bare "1.99x" overstates what was identified; so does any claim of
@@ -843,7 +843,7 @@ gate; a compliance gap, not a mechanics blocker.
 - ⭐ **FINDING 2 IS NOT ESTABLISHED (recorded 2026-09-08).** The between-region heterogeneity in
   POST-filter rate does **not** survive the **measured** within-window design effect combined with
   **defensible** handling of the chr15 window overlap: two interchangeable overlap treatments
-  **straddle p = 0.05** (**0.0366** vs **0.0556**). ⭐ **FINDING 1 IS UNCHANGED** and **Finding 3's
+  **straddle p = 0.05** (**0.0326** vs **0.0517**). ⭐ **FINDING 1 IS UNCHANGED** and **Finding 3's
   status is unchanged.** Full statement, caveats and the measurement behind it: **§(10)**.
 
 - **MEASURED, NOT PRE-REGISTERED.** The governing document
@@ -931,31 +931,56 @@ panel downstream must carry.
 
 Because the clustering is now **MEASURED**, the heterogeneity chi-square can be **CORRECTED for it
 directly** instead of argued about: a **Rao-Scott** correction dividing each region's contribution
-by **that region's own measured design effect**. Computed in-session, 2026-09-08:
+by **that region's own measured design effect**. In every row the **pooled POST rate is estimated
+from the regions UNDER TEST in that row**, because the null being tested is that *those* regions
+share a common rate (see the correction note below). Computed in-session, 2026-09-08:
 
 | chr15 overlap treatment              | uncorrected phi | p       | DESIGN-CORRECTED phi | p          |
 | ------------------------------------ | --------------- | ------- | -------------------- | ---------- |
 | all 21 windows                       | 2.362           | 5.4e-4  | 1.931                | 0.0074     |
-| drop `00060__sub13` (the HEADLINE)   | 1.969           | 0.0071  | **1.652**            | **0.0366** |
-| drop `00060__sub12` (the MIRROR)     | 1.972           | 0.0069  | **1.564**            | **0.0556** |
-| drop BOTH chr15 windows              | 1.535           | 0.0678  | 1.249                | 0.2116     |
+| drop `00060__sub13` (the HEADLINE)   | 1.988           | 0.0063  | **1.675**            | **0.0326** |
+| drop `00060__sub12` (the MIRROR)     | 1.992           | 0.0062  | **1.579**            | **0.0517** |
+| drop BOTH chr15 windows              | 1.518           | 0.0732  | 1.241                | 0.2171     |
 
 ⭐ **THE DECISIVE OBSERVATION IS THE STRADDLE, NOT THE DESIGN EFFECT.** Dropping `sub13` and
 dropping `sub12` are **INTERCHANGEABLE** choices: the two windows overlap by **6,000,001 bp**
 (SCOPE CAVEAT (3)) and **neither is privileged**. After the design correction they land at
-**p 0.0366** and **p 0.0556** — **STRADDLING 0.05**. **A coin-flip between two equally defensible
+**p 0.0326** and **p 0.0517** — **STRADDLING 0.05**. **A coin-flip between two equally defensible
 analyses moves the result across the significance threshold.** This separation appears **ONLY
 after the correction**, because sub12 and sub13 carry **different measured design effects (1.096
-vs 1.359)**; **uncorrected they are indistinguishable (1.969 vs 1.972)**.
+vs 1.359)**; **uncorrected they are indistinguishable (1.988 vs 1.992)**.
 
 **THE CONCLUSION, and it is not to be softened:**
 
 > The between-region heterogeneity in POST-filter rate is **NOT ESTABLISHED**. It is not robust to
 > the measured within-window design effect combined with defensible handling of the chr15 window
-> overlap: two interchangeable overlap treatments straddle p = 0.05 after correction (**0.0366** vs
-> **0.0556**), and correcting for clustering while dropping both overlapping windows gives
-> **p = 0.21**. The **DIRECTION** is positive under every treatment (**phi > 1.2 throughout**), but
+> overlap: two interchangeable overlap treatments straddle p = 0.05 after correction (**0.0326** vs
+> **0.0517**), and correcting for clustering while dropping both overlapping windows gives
+> **p = 0.2171**. The **DIRECTION** is positive under every treatment (**phi > 1.2 throughout**), but
 > the **magnitude is unidentified** and the **significance is an artifact of analytic choice**.
+
+⚠ **CORRECTED 2026-09-08 (`260908-uer`) — THE ESTIMATOR WAS WRONG; THE CONCLUSION IS NOT.**
+An earlier draft of this table estimated the pooled rate once from all 21 regions and reused that
+one fixed value for every subset. **That is not the homogeneity test being reported:** the null is
+that the regions **UNDER TEST** share a common rate, so the rate is estimated **from them**. The
+table above is recomputed correctly. The correction **moved every subset figure slightly and did
+NOT change the conclusion** — the p-value straddle that makes Finding 2 non-robust became
+**TIGHTER** (**0.0326** vs **0.0517**, previously 0.0366 vs 0.0556). ⛔ This was an **error in the
+analysis script, not a transcription fault**, and it is recorded as such. The three restatements of
+the straddle elsewhere in this entry (the discharge bullet above, §(7) and §(8)) were aligned to the
+corrected figures in the same edit; **no clustering figure moved**, because `c_eff`, ICC and
+`deff` are computed from the measurement and involve **no pooled-rate choice** at all.
+
+⭐ **A DISCREPANCY STANDING IN THE RECORD IS CLOSED BY THIS CORRECTION — AND THE OTHER SIDE WAS THE
+RIGHT ONE.** Task `260908-u5k` deferred item **D1** flagged that this table gave **1.969** for the
+drop-`sub13` uncorrected phi where the 2026-09-02 courier body gives **1.99**, and correctly
+declined to adjudicate it. Under the subset estimator the value is **1.988**: **the courier's 1.99
+was right and this table's 1.969 was the artifact** of the fixed-rate error. ⚠ **The corrected
+column is also what §(7) already reported independently, which is why this is a reconciliation and
+not a new disagreement:** §(7)'s leave-one-**WINDOW**-out worst case is **1.99 at p 0.0063** (its
+minimum is the headline itself) and its leave-one-**PARENT**-out worst case is **p 0.073** — against
+**1.988 / 0.0063** and **1.518 / 0.0732** in the corrected table. The **superseded** fixed-rate
+column matched **neither**.
 
 ⚠ **CONSERVATISM DISCLOSURE, in our own disfavour, recorded before the conclusion is leaned on.**
 The **five NA regions were assigned deff = 1.0 — that is, NO correction at all.** A fuller
