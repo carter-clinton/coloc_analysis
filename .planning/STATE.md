@@ -159,7 +159,13 @@ Regions with tail rows **21**; regions with **zero** POST-filter rows **0**.
    > design-corrected minimum is **1.249**. See the 2026-09-08 (LATER) section at the top.
 3. **Definitional disagreement, a separate axis.** `informative_carriers_rarer != informative_carriers_min` on **24.27%** of tail rows vs **0.52%** below tail = **46.5×** enrichment. **No association with PRE/POST was DETECTED** — ρ **+0.173**, 95% CI **[−0.292, +0.572]**, p 0.453; the 2×2 gives p **0.088**. **Both are underpowered at n=21 and neither establishes independence**, and the ρ is the *weaker* of the two. Not a tie artifact.
 
-**Record:** `.planning/debug/260902-COURIER-TO-SETH-RUN2-tail-PRE-vs-POST-filter-heterogeneity-and-definitional-disagreement.md` — 613 lines, md5 `ce6791344916c6ebebacfadbb808c702` (measured after `260904-dgi`'s corrections + re-splice).
+**Record:** `.planning/debug/260902-COURIER-TO-SETH-RUN2-tail-PRE-vs-POST-filter-heterogeneity-and-definitional-disagreement.md` — 621 lines, md5 `f52b76ce73b5f83d03a6e09e2822563f`
+(measured 2026-09-08 after `260908-u5k` added ONE additive SCOPE-LIMITING annotation to the LIVE
+BODY's `phi > 1.3` sentence; was 613 lines, md5 `ce6791344916c6ebebacfadbb808c702` after
+`260904-dgi`'s corrections + re-splice). ⚠ **The sentence itself is UNEDITED** — it was TRUE when
+written and remains true in its overlap-correction scope; only its scope has narrowed. ⭐ **The
+byte-frozen VERBATIM APPENDIX is UNMOVED**: 14119 B, md5 `e4cb947823dd758ec2bd32667b788391`, still
+byte-equal to `260902-vsp/CONTENT-SPEC.md` `## ARTIFACTS`→EOF.
 
 ### ⚠ THE THREE VALUES ARE **NOT** A PRE-REGISTRATION
 

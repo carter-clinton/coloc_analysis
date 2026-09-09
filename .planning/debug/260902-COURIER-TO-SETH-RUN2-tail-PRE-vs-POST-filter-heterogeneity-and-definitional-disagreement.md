@@ -140,6 +140,14 @@ treatment the estimate falls to **1.52 (p 0.073)** — not significant at alpha 
 robust in **DIRECTION** (every correction gives phi > 1.3) but **POORLY DETERMINED in magnitude**, and
 **its significance is not robust to the choice of overlap correction.**
 
+⚠ **SCOPE-LIMITED 2026-09-08.** That "phi > 1.3" statement was scoped to the OVERLAP
+corrections available on 2026-09-02 (2.36 / 1.97 / 1.99 / 1.52). It is TRUE for those and
+is left unedited for that reason. It does NOT extend to the DESIGN-CORRECTED figures,
+which did not exist when it was written: after correcting for the measured within-window
+clustering (ICC 0.729, c_eff 1.494), the corrections give 1.931 / 1.652 / 1.564 / **1.249**,
+and the last falls BELOW 1.3. See the 2026-09-08 entry in `.planning/osf_deviations.md`:
+**Finding 2 is NOT ESTABLISHED.**
+
 The all-21 pair-level figure is **chi2 47.24, dof 20, p 5.4e-4, overdispersion 2.36x**, and it is
 shown here only with its explanation: it is **INFLATED by the chr15 overlap**, whose two regions rank
 2nd and 3rd on POST fraction and are largely one locus. Quoting 2.36x unqualified would be counting one
