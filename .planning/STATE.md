@@ -25,7 +25,45 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-09-08 (LATER) — ⛔ **THE MEASUREMENT LANDED AND IT RETRACTS: *FINDING 2 IS NOT ESTABLISHED*. WITHIN-WINDOW CLUSTERING IS REAL, MEASURED AND STRONG (ICC 0.729) — A NEW FINDING IN ITS OWN RIGHT. FINDING 1 UNCHANGED. NOTHING OPEN BEFORE A POSTING *DECISION*, AND THAT IS NOT AUTHORIZATION TO POST. STILL *DRAFTED — NOT POSTED*.** (★ RESUME HERE — LATEST ★)
+## 2026-09-09 — ✅ **THE ARC IS CLOSED: FINDING 2 IS *NOT ESTABLISHED*, WITHIN-WINDOW CLUSTERING IS A NEW FINDING, THE RAO-SCOTT ESTIMATOR IS CORRECTED, AND FINDING 1 IS UNTOUCHED. SETH HAS NO OPEN OBJECTION. NOTHING RUNNING. STILL *DRAFTED — NOT POSTED*.** (★ RESUME HERE — LATEST ★)
+
+**Nothing is running.** ⚠ The AoU VM was STARTED by Carter for the 2026-09-08 measurement — **confirm it is stopped** (Carter-only). Branch pushed this session.
+
+### The three findings, final
+
+| | status |
+|---|---|
+| **1 — the PRE/POST split** | **UNCHANGED.** 2560 PRE / 534 POST of 3094 rows (**17.26%**); 2047 / 474 of 2521 pairs (**18.80%**); **21/21** regions carry tail rows, **0** have zero POST. Counting, not inference. Survived 5 reviewers, 2 adjudication rounds and a measurement designed to break it. |
+| **2 — between-region heterogeneity** | ⛔ **NOT ESTABLISHED.** |
+| **3 — rarer-vs-min disagreement** | 24.27% in tail vs 0.52% below = 46.5×. No association with PRE/POST **detected**; both tests underpowered — not independence. |
+| **NEW — within-window clustering** | ⭐ Real, measured, strong: `c_eff` **1.494248**, **ICC 0.728930**, `deff` **1.360272**. |
+
+### Why Finding 2 is not established — the CORRECTED table
+
+Pooled rate estimated **from the subset under test** (an earlier draft fixed it at all-21; that was wrong and is corrected):
+
+| chr15 treatment | uncorrected φ | p | **design-corrected φ** | **p** |
+|---|---|---|---|---|
+| all 21 windows | 2.362 | 5.4e-4 | 1.931 | 0.0074 |
+| drop `00060__sub13` (headline) | 1.988 | 0.0063 | **1.675** | **0.0326** |
+| drop `00060__sub12` (mirror) | 1.992 | 0.0062 | **1.579** | **0.0517** |
+| drop BOTH chr15 windows | 1.518 | 0.0732 | 1.241 | 0.2171 |
+
+⭐ **The straddle.** `sub13` and `sub12` overlap by 6,000,001 bp and neither is privileged. After correction they land **either side of 0.05**. A coin flip between two defensible analyses moves the result across the threshold — that is the finding, not the design effect.
+
+⚠ **What was NOT shown.** `deff` 1.360 against observed 1.99: clustering does **not** explain Finding 2. It sits inside the observed CI [1.1, 4.2] — a **failure to exclude**, not a demonstration.
+
+⚠ **Conservatism ran against us:** five regions with unestimable ICC were given `deff = 1.0` (no correction). A fuller correction pushes φ **lower**. Three regions return ICC exactly 1.000000 — an estimator **boundary**, not a fitted value.
+
+### Seth
+Adjudication **CLOSED**, no open objection (D8 accepted; D7 raised then **retracted by him** after he measured it). ⚠ **He has NOT been sent the measurement result** — drafted in-session with the corrected table. No agent contacts him.
+
+### Carter's, not an agent's
+Send Seth the result (**corrected** figures 0.0326 / 0.0517). The **posting decision** — nothing is open before it, and that is not authorization to post. Confirm the VM is stopped.
+
+---
+
+## 2026-09-08 (LATER) — ⛔ **THE MEASUREMENT LANDED AND IT RETRACTS: *FINDING 2 IS NOT ESTABLISHED*. WITHIN-WINDOW CLUSTERING IS REAL, MEASURED AND STRONG (ICC 0.729) — A NEW FINDING IN ITS OWN RIGHT. FINDING 1 UNCHANGED. NOTHING OPEN BEFORE A POSTING *DECISION*, AND THAT IS NOT AUTHORIZATION TO POST. STILL *DRAFTED — NOT POSTED*.** (SUPERSEDED for *what to do next* by the 2026-09-09 block above; its measurement and clustering figures stand, but its Rao-Scott table was recomputed — use the corrected one above)
 
 **Nothing is running.** VM stopped; no job to reattach. Docs-only; `src/` and `tests/` untouched; no OSF contact, no Seth contact, no VM, no fire. `$0`.
 
