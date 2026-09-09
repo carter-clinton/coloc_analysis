@@ -145,3 +145,16 @@ got: none.
 
 `DRAFTED — NOT POSTED` is unchanged by this task. The courier remains an in-repo record;
 nothing about the posting decision moved.
+
+## Self-Check: PASSED
+
+Run **after** the commit, against the committed tree (`62290b0`):
+
+- All 8 staged paths exist on disk; `git status --porcelain` shows **no** tracked changes.
+- `guard.py` → **GREEN** (21/21). `pin_check.py` → **GREEN**.
+- The courier blob **as stored at HEAD** hashes to **`f52b76ce73b5f83d03a6e09e2822563f`**
+  at **621** lines — i.e. the digest that `STATE.md` and `HANDOFF.json` now claim is the
+  digest git actually holds. The pin has a **named enforcer** (`pin_check.py`), not a belief.
+- `git status --porcelain -- src tests` → **EMPTY**.
+- `git diff --cached --numstat` on the courier was **`8 / 0`** — additive only, zero deletions.
+- **Not pushed.** No OSF, no Seth, no VM.
