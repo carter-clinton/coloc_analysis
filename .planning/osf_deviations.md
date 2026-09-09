@@ -565,19 +565,19 @@ gate; a compliance gap, not a mechanics blocker.
     **AMBIGUOUS**, which is exactly why two parties measuring the same artifact produced
     different numbers. Fixed as **RANGES**, with the **verbatim quotation as the primary
     locator**, since a quote survives repagination and a line number does not.
-- ⚠ **REMAINING BEFORE POSTING — ONE MEASUREMENT, NOT AN OBJECTION.** The
-  **pairs-per-occluding-deletion DISTRIBUTION** in the tail, from `pcs_tail_verdicts.tsv`
-  (VM-side; **reads the emitted TSV only — no re-run, no genotypes**). The cluster design effect
-  is ~ **1 + (c-1)·ICC**: **c ~ 2** at high ICC reproduces Finding 2's **1.99** headline from a
-  **COMPLETELY HOMOGENEOUS** panel, whereas **c ~ 1** leaves the dispersion unexplained and
-  parent-region heterogeneity live. ⚠ **Report the DISTRIBUTION, not the mean alone** — the
-  design effect is driven by the mean of c **WEIGHTED BY CLUSTER SIZE**. ⚠ **The 22.9%
-  deletion-deletion-neighbour figure is NOT a measurement of c:** it constrains pair
-  **COMPOSITION**, not cluster **SIZE**; it makes c > 1 plausible, it does **not** quantify it.
-  **No prediction is offered by either party.** ⛔ **Carter fires this. No agent fires it.**
-  ⚠ **This is an outstanding MEASUREMENT, not an unresolved objection — and closure of the
-  review loop is NOT authorization to post.** The status above stands unchanged:
-  **DRAFTED — NOT POSTED.**
+- ⭐ **DISCHARGED 2026-09-08 — THE MEASUREMENT WAS FIRED, AND IT RETRACTS RATHER THAN CONFIRMS.**
+  The one outstanding item — the **pairs-per-occluding-deletion DISTRIBUTION** in the tail — was
+  fired by **Carter** on **2026-09-08** against `pcs_tail_verdicts.tsv` (**the emitted TSV only: no
+  re-run, no genotypes, no scan re-execution**). It returned, and **its result RETRACTS Finding 2's
+  establishment rather than confirming it.** With the clustering **measured**, the heterogeneity
+  chi-square can be corrected for it directly, and under that correction **two INTERCHANGEABLE
+  treatments of the chr15 window overlap straddle p = 0.05** (**0.0366** vs **0.0556**).
+  **Finding 2 — between-region heterogeneity in the POST-filter rate — is recorded below as
+  NOT ESTABLISHED.** The within-window clustering is itself a **NEW REPORTABLE FINDING**, not
+  merely a caveat. Both are in **§(10)**, with the measurement's provenance in **§(9)**.
+  ⛔ **This discharges the last OPEN item. It is NOT authorization to post.** No open objection and
+  no outstanding measurement now remain, and that changes **nothing** about posting: the decision is
+  **Carter's alone**, and the status above stands unchanged — **DRAFTED — NOT POSTED.**
 - ⚠ **CITATION CONVENTION (corrected 2026-09-04; REFINED 2026-09-08).** Every mk7ze citation below
   gives the **POSTED** line with the repo-draft line carried alongside — *"mk7ze lines 108-110 (repo
   draft lines 275-277)"* — so a reader can check either. ⚠ **Where a cited sentence SPANS MULTIPLE
@@ -620,12 +620,19 @@ gate; a compliance gap, not a mechanics blocker.
 - **ROWS** 2560 PRE-filter / 534 POST-filter of 3094 — POST = **17.26%**
 - **PAIRS** 2047 PRE-filter / 474 POST-filter of 2521 — POST = **18.80%**
 - Regions with tail rows **21**; regions with ZERO POST-filter rows **0**.
-- **Heterogeneity, with its interval and its fragility:** pair-level overdispersion **1.99x
-  (95% CI ~1.1-4.2; chi2 37.78, dof 19, p 6.3e-3)** after dropping the chr15 double-count. Under
-  the more conservative **drop-both-chr15-windows** treatment the estimate is **1.52 (p 0.073)** —
-  **not significant at alpha 0.05**. The dispersion is robust in **DIRECTION** (every correction
-  gives phi > 1.3) but **POORLY DETERMINED in magnitude**, and **its significance is not robust to
-  the choice of overlap correction**. A bare "1.99x" overstates what was identified.
+- **Heterogeneity — MEASURED, but NOT ESTABLISHED.** ⚠ **§(10) supersedes the interpretation of
+  this bullet; the numbers in it are retained because they are what was measured.** The
+  **uncorrected** pair-level overdispersion is **1.99x (95% CI ~1.1-4.2; chi2 37.78, dof 19,
+  p 6.3e-3)** after dropping the chr15 double-count; under the more conservative
+  **drop-both-chr15-windows** treatment it is **1.52 (p 0.073)** — **not significant at alpha
+  0.05**. ⚠ **Every one of those figures assumes INDEPENDENT pairs, and as of 2026-09-08 that
+  assumption is MEASURED FALSE** (within-cluster **ICC 0.728930**, design effect **1.360272** —
+  §(10)). **Corrected for the measured design effect, two interchangeable treatments of the chr15
+  overlap give p 0.0366 and p 0.0556 — STRADDLING 0.05 — so the between-region heterogeneity is
+  NOT ESTABLISHED.** The **DIRECTION** remains positive under every treatment (**phi > 1.2
+  throughout**), but the **magnitude is unidentified** and the **significance is an artifact of
+  analytic choice**. A bare "1.99x" overstates what was identified; so does any claim of
+  significance.
 - **Permutation confirmation:** verified against a 40,000-resample Monte Carlo permutation test,
   **p = 0.0072** (asymptotic chi-square p 6.3e-3; the asymptotic value is mildly
   anti-conservative, conclusion unchanged). ⚠ The permutation test permutes PAIRS and therefore
@@ -802,6 +809,10 @@ gate; a compliance gap, not a mechanics blocker.
     does.** Pairs sharing an occluding deletion do not flip independently, because carrier loss is
     a property of the deletion. An average of **two co-moving pairs per occluding deletion
     reproduces the observed 1.99 EXACTLY with zero parent-rate heterogeneity.**
+    ⚠ **MEASURED 2026-09-08 — that hypothetical is NOT what the tail contains.** The size-weighted
+    mean is **`c_eff` 1.494248** at **ICC 0.728930**, giving **deff 1.360272**, **BELOW** the ~2
+    this sentence posits. The sentence stands as arithmetic about what **c ~ 2 WOULD** do; it is
+    **not a description of the panel**. See **§(10)**.
   - ⚠ **REVIEWER ACCOUNTING, recorded 2026-09-08 — his framing adopted over ours because it is
     sharper.** His **SPECIFIC** mechanism (sub-window replication) **does** remain unable to
     create dispersion and **stays dead**. But the **GENERAL PRINCIPLE** he used to kill it —
@@ -809,11 +820,16 @@ gate; a compliance gap, not a mechanics blocker.
     **FALSE**, and **a false general principle silently forecloses hypotheses nobody tested.**
     That is why **within-window clustering went untested while both parties believed the
     question settled.** It cost more than the specific error did.
-  - The **pairs-per-deletion distribution in the tail HAS NOT BEEN MEASURED**, so the observed
-    dispersion is **NOT yet attributable** to parent-region heterogeneity rather than to a cluster
-    design effect. The operative structure is present and measured: **22.9%** of tail pairs are
-    deletion-deletion neighbours (**564 of 2461**). That measurement is queued and is the thing
-    that decides Finding 2's magnitude.
+  - ⭐ **THE pairs-per-deletion DISTRIBUTION HAS NOW BEEN MEASURED (2026-09-08) — see §(10).**
+    Until then the observed dispersion was **NOT attributable** to parent-region heterogeneity
+    rather than to a cluster design effect, and the only operative structure on record was that
+    **22.9%** of tail pairs are deletion-deletion neighbours (**564 of 2461**, panel-wide dedup
+    basis; §(10) reports **573 of 2521 = 22.73%** on the per-region SUM basis and reconciles the
+    two). ⚠ **That neighbour percentage was never a measurement of `c`**, and the measurement it
+    was standing in for did **not** resolve Finding 2's magnitude as anticipated here — **it
+    removed Finding 2's establishment instead.** The design effect is **1.360272** against an
+    observed **1.99**: **clustering alone is not shown to reproduce the dispersion**, and the
+    magnitude remains **unidentified**.
   - **The leave-one-out does not rule out an influential unit.** Leave-one-**WINDOW**-out gives
     **1.99-2.48** (worst-case p **0.0063**), but the two chr15 windows **shield each other**, so it
     cannot remove parent `00060` at all, and its minimum **is the headline itself**.
@@ -823,6 +839,12 @@ gate; a compliance gap, not a mechanics blocker.
 - ⛔ **Do NOT pre-register a dispersion FIGURE.**
 
 ### (8) EPISTEMIC STATUS — do not soften
+
+- ⭐ **FINDING 2 IS NOT ESTABLISHED (recorded 2026-09-08).** The between-region heterogeneity in
+  POST-filter rate does **not** survive the **measured** within-window design effect combined with
+  **defensible** handling of the chr15 window overlap: two interchangeable overlap treatments
+  **straddle p = 0.05** (**0.0366** vs **0.0556**). ⭐ **FINDING 1 IS UNCHANGED** and **Finding 3's
+  status is unchanged.** Full statement, caveats and the measurement behind it: **§(10)**.
 
 - **MEASURED, NOT PRE-REGISTERED.** The governing document
   `.planning/debug/260901-PENDING-PASTE-POSTHOC-tail-prefilter-vs-postfilter-and-carrier-distribution.md:211-216`
@@ -849,3 +871,127 @@ gate; a compliance gap, not a mechanics blocker.
   to `sha256sum config/ld_regions.tsv` at HEAD.
 - `region_ids_selected = 276` is the ancestry-resolved MANIFEST size, **NOT** the 21 regions carrying
   rows. Stated explicitly so it is never read as a region count for this measurement.
+
+- ⚠ **SECOND READ, 2026-09-08 (the clustering measurement of §(10)).** The same
+  `pcs_tail_verdicts.tsv` was re-read VM-side at `/home/jupyter/occ_measure/pcs_tail_verdicts.tsv`.
+  **All four banked anchors were matched BEFORE anything was computed** — md5
+  `960f283734aea3b2c56c9249cf4fe94b`, **1,031,086 B**, **3,110 lines**, **32 columns** — and the
+  file was **byte-identical after a six-day gap and a VM stop/start** (mtime 2026-09-02 21:07).
+  The provenance above therefore holds against **this exact artifact**. **No re-run, no genotypes,
+  no scan re-execution. Exit 0; all reconciliations passed.**
+
+### (10) ⭐ THE CLUSTERING MEASUREMENT (2026-09-08) — A NEW FINDING, AND THE RETRACTION OF FINDING 2's ESTABLISHMENT
+
+The measurement left outstanding in the status block above was fired by **Carter** on
+**2026-09-08**. It is reported here in full, **including the parts that run against the conclusion
+drawn from it**. Its provenance is the **SECOND READ** bullet in §(9).
+
+#### (10a) NEW FINDING — WITHIN-WINDOW CLUSTERING IS REAL, MEASURED, AND STRONG
+
+This did not exist before 2026-09-08 and is **reportable in its own right**, independently of what
+it does to Finding 2. Pairs that share an occluding deletion are **STRONGLY correlated in PRE/POST
+status**: carrier loss is a property of the **deletion**, so such pairs do **not** flip
+independently. That is a **structural property of the tail** which anyone doing inference on this
+panel downstream must carry.
+
+- **n_pairs 2521**; **n_pairs_POST 474**; **POST-conflicts within a pair: 0** — the outcome is
+  therefore a **well-defined property of the pair**, and the pair-level analysis is **not void**.
+- **n_pairs_dual_anchored 573 = 22.73%** — deletion-deletion neighbours, two anchors each.
+- **n_clusters 2105**; cluster-size distribution
+  `{1: 1802, 2: 239, 3: 40, 4: 12, 5: 4, 6: 5, 7: 1, 8: 2}`; **c_max 8** at del_vid
+  `chr15:91246748:CT:C`; **52 clusters span more than one region**.
+- **c_mean 1.1976** — but the quantity a design effect actually depends on is the **SIZE-WEIGHTED**
+  mean: **`c_eff` = sum(c^2)/sum(c) = 3767/2521 = 1.494248**.
+- **ICC_hat = 0.728930** — ANOVA over the **k=303** clusters of size >= 2 (**N=719**,
+  c0=2.371745).
+- **deff_hat = 1 + (`c_eff` - 1) * ICC = 1.360272**.
+
+⚠ **CAVEATS THAT MUST TRAVEL WITH THIS FINDING:**
+
+- **THREE regions return ICC exactly 1.000000** (`00027`, `00040__sub10`, `00161__sub13`). That is
+  **the estimator AT ITS BOUNDARY** — zero within-cluster variance — and **NOT a fitted estimate.**
+  It must never be quoted as one.
+- **FIVE regions return NA** (too few clusters of size >= 2): `00017`, `00033`, `00053`, `00064`,
+  `00088__sub01`.
+- **The unit choice does not matter.** The row-level computation agrees closely: **ICC 0.7467,
+  deff 1.3408 over 2601 clusters**. **No material unit disagreement.**
+- ⭐ **THE CHAINING DIAGNOSTIC IS CLEAN — and this is the check that could have gone the other
+  way.** Assigning each pair to a **single** anchoring deletion would **understate** clustering if
+  pairs chained across deletions. They do not: **2051 connected components, largest 8 pairs
+  (0.32%)**, with a distribution tracking the single-anchor clusters (**2051 vs 2105**). **The one
+  way this measurement could have been biased toward its own conclusion is ruled out.**
+- ⚠ **BASIS NOTE, so the two neighbour figures are not misread as a disagreement.** The
+  **573 / 2521 = 22.73%** here is on the **per-region SUM** basis (SCOPE CAVEAT (1): a pair
+  appearing in two regions is counted twice). The **564 / 2461 = 22.9%** quoted in §(7) is on the
+  **panel-wide DEDUP** basis. **Different denominators, same structure**; the 60-pair gap between
+  the bases is exactly the double-counting SCOPE CAVEAT (1) describes. ⚠ **Neither percentage is a
+  measurement of `c`** — `c_eff` above is.
+
+#### (10b) FINDING 2 IS **NOT ESTABLISHED**
+
+Because the clustering is now **MEASURED**, the heterogeneity chi-square can be **CORRECTED for it
+directly** instead of argued about: a **Rao-Scott** correction dividing each region's contribution
+by **that region's own measured design effect**. Computed in-session, 2026-09-08:
+
+| chr15 overlap treatment              | uncorrected phi | p       | DESIGN-CORRECTED phi | p          |
+| ------------------------------------ | --------------- | ------- | -------------------- | ---------- |
+| all 21 windows                       | 2.362           | 5.4e-4  | 1.931                | 0.0074     |
+| drop `00060__sub13` (the HEADLINE)   | 1.969           | 0.0071  | **1.652**            | **0.0366** |
+| drop `00060__sub12` (the MIRROR)     | 1.972           | 0.0069  | **1.564**            | **0.0556** |
+| drop BOTH chr15 windows              | 1.535           | 0.0678  | 1.249                | 0.2116     |
+
+⭐ **THE DECISIVE OBSERVATION IS THE STRADDLE, NOT THE DESIGN EFFECT.** Dropping `sub13` and
+dropping `sub12` are **INTERCHANGEABLE** choices: the two windows overlap by **6,000,001 bp**
+(SCOPE CAVEAT (3)) and **neither is privileged**. After the design correction they land at
+**p 0.0366** and **p 0.0556** — **STRADDLING 0.05**. **A coin-flip between two equally defensible
+analyses moves the result across the significance threshold.** This separation appears **ONLY
+after the correction**, because sub12 and sub13 carry **different measured design effects (1.096
+vs 1.359)**; **uncorrected they are indistinguishable (1.969 vs 1.972)**.
+
+**THE CONCLUSION, and it is not to be softened:**
+
+> The between-region heterogeneity in POST-filter rate is **NOT ESTABLISHED**. It is not robust to
+> the measured within-window design effect combined with defensible handling of the chr15 window
+> overlap: two interchangeable overlap treatments straddle p = 0.05 after correction (**0.0366** vs
+> **0.0556**), and correcting for clustering while dropping both overlapping windows gives
+> **p = 0.21**. The **DIRECTION** is positive under every treatment (**phi > 1.2 throughout**), but
+> the **magnitude is unidentified** and the **significance is an artifact of analytic choice**.
+
+⚠ **CONSERVATISM DISCLOSURE, in our own disfavour, recorded before the conclusion is leaned on.**
+The **five NA regions were assigned deff = 1.0 — that is, NO correction at all.** A fuller
+correction would push phi **LOWER still**. The conservative choice therefore ran **AGAINST** the
+conclusion now being drawn, which is part of why it is drawn.
+
+⛔ **WHAT WAS NOT SHOWN, and the boundary is strict.** The measured design effect **1.360272** is
+**BELOW** the observed dispersion **1.99**; on its own it **does not reproduce** that dispersion.
+It **does** sit **INSIDE** the observed 95% CI **[1.1, 4.2]**, so clustering alone remains
+statistically **CONSISTENT WITH** the entire effect — **but that is a FAILURE TO EXCLUDE, NOT a
+demonstration.** ⛔ **Nothing in §(10a) is an explanation of Finding 2 and it must never be
+reported as one.** The retraction rests on **the straddle**, not on the design effect's point
+value.
+
+#### (10c) THE DECISION RULE DID NOT FIRE, AND THE TEST THAT SETTLED IT WAS PROPOSED BY NEITHER PARTY
+
+The rule set **before** the measurement (status block above, and §(7)) was: **c ~ 2 at high ICC**
+reproduces the observed **1.99** from a homogeneous panel, whereas **c ~ 1** leaves the dispersion
+open and parent-region heterogeneity live. **MEASURED: `c_eff` 1.494248 at ICC 0.728930 ->
+deff 1.360272 — BETWEEN the two branches. NEITHER fired.** The comparison of point estimates was
+therefore **not the decisive test at all**. What settled it was the **Rao-Scott correction**, and
+**NEITHER party proposed it** — it was constructible only once the clustering had been measured.
+**Recorded plainly, because a decision rule that fails to fire is a fact about the rule, not a
+licence to pick whichever branch one prefers.**
+
+#### (10d) WHAT IS UNCHANGED — stated explicitly, so the retraction is not over-read
+
+- ⭐ **FINDING 1 IS UNTOUCHED BY ALL OF THIS.** Rows **2560 PRE / 534 POST of 3094 (17.26%)**;
+  pairs **2047 PRE / 474 POST of 2521 (18.80%)**; **21/21** regions carry tail rows; **0** regions
+  have zero POST. It is **COUNTING, NOT INFERENCE** — **no independence assumption enters it**, so
+  a design effect cannot touch it. It has now survived **five reviewers, two adjudication rounds,
+  and this measurement.**
+- **Finding 3's status is unchanged:** **no association DETECTED** on the definitional axis, and
+  **both tests remain underpowered**.
+- **The panel's contents are unchanged.** Nothing here changes an exclusion, a criterion or a
+  branch; **no carrier floor** is introduced (§(6)); this remains a **DISCLOSURE, not an
+  amendment** (§(1)).
+- ⛔ **The status is unchanged: DRAFTED — NOT POSTED.** **Discharging the last open item is NOT
+  authorization to post.** The posting decision is **Carter's alone**.

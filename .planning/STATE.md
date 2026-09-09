@@ -25,7 +25,65 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-09-08 — ✅ **THE SETH REVIEW LOOP IS CLOSED: THE TAIL DISCLOSURE IS ADJUDICATED WITH *NO OPEN OBJECTION*, AND REMAINS *DRAFTED — NOT POSTED*. ONE MEASUREMENT (NOT AN OBJECTION) IS ALL THAT REMAINS BEFORE POSTING — CARTER FIRES IT. NOTHING RUNNING, VM STOPPED, $0.** (★ RESUME HERE — LATEST ★)
+## 2026-09-08 (LATER) — ⛔ **THE MEASUREMENT LANDED AND IT RETRACTS: *FINDING 2 IS NOT ESTABLISHED*. WITHIN-WINDOW CLUSTERING IS REAL, MEASURED AND STRONG (ICC 0.729) — A NEW FINDING IN ITS OWN RIGHT. FINDING 1 UNCHANGED. NOTHING OPEN BEFORE A POSTING *DECISION*, AND THAT IS NOT AUTHORIZATION TO POST. STILL *DRAFTED — NOT POSTED*.** (★ RESUME HERE — LATEST ★)
+
+**Nothing is running.** VM stopped; no job to reattach. Docs-only; `src/` and `tests/` untouched; no OSF contact, no Seth contact, no VM, no fire. `$0`.
+
+### What happened (`260908-tnd`) — DOCS-ONLY
+
+Carter fired the outstanding measurement (the **pairs-per-occluding-deletion DISTRIBUTION**) on
+**2026-09-08** against `pcs_tail_verdicts.tsv` — **the emitted TSV only: no re-run, no genotypes,
+no scan re-execution.** All four banked anchors matched **BEFORE anything was computed** (md5
+`960f283734aea3b2c56c9249cf4fe94b`, 1,031,086 B, 3,110 lines, 32 columns), byte-identical after a
+six-day gap and a VM stop/start. **It did NOT confirm Finding 2 — it removed its robustness.**
+
+- ⭐ **NEW FINDING — WITHIN-WINDOW CLUSTERING IS REAL, MEASURED AND STRONG.** Pairs sharing an
+  occluding deletion do **not** flip independently (carrier loss is a property of the deletion).
+  **n_clusters 2105**; sizes `{1:1802, 2:239, 3:40, 4:12, 5:4, 6:5, 7:1, 8:2}`; **c_max 8**;
+  **c_mean 1.1976** but the size-weighted **`c_eff` = 3767/2521 = 1.494248**; **ICC 0.728930**
+  (k=303 clusters of size ≥ 2, N=719) → **deff 1.360272**. **POST-conflicts within a pair: 0**, so
+  the outcome is a well-defined property of the pair and the pair-level analysis is not void.
+  ⚠ Three regions return **ICC exactly 1.000000** — that is the estimator **at its BOUNDARY**, not
+  a fitted estimate. Five regions return **NA**. Row-level agrees (ICC 0.7467, deff 1.3408).
+  ⭐ **The chaining diagnostic is CLEAN** (2051 components, largest 8 pairs, 0.32%) — the one way
+  this measurement could have been biased toward its own conclusion is **ruled out**.
+- ⛔ **FINDING 2 IS NOT ESTABLISHED.** With clustering measured, the chi-square is corrected
+  directly (**Rao-Scott**, per-region deff). **THE DECISIVE OBSERVATION IS THE STRADDLE, NOT THE
+  DESIGN EFFECT:** dropping `00060__sub13` and dropping `00060__sub12` are **interchangeable**
+  (the windows overlap by 6,000,001 bp; neither is privileged), yet corrected they give
+  **p 0.0366** and **p 0.0556** — **straddling 0.05**. Correcting *and* dropping both chr15
+  windows gives **p 0.2116**. The **DIRECTION** holds under every treatment (**phi > 1.2**), but
+  the **magnitude is unidentified** and the **significance is an artifact of analytic choice**.
+- ⚠ **CONSERVATISM DISCLOSURE, against ourselves:** the five NA regions were given **deff = 1.0**,
+  i.e. **no correction at all**. A fuller correction pushes phi **lower still** — the conservative
+  choice ran **AGAINST** the conclusion now drawn.
+- ⛔ **NOT SHOWN, and the boundary is strict:** deff **1.360** is **below** the observed **1.99**,
+  so it does not on its own reproduce the dispersion. It **does** sit inside the observed 95% CI
+  **[1.1, 4.2]** — a **FAILURE TO EXCLUDE, NOT a demonstration.** **Nothing here is an explanation
+  of Finding 2 and it must never be reported as one.**
+- ⚠ **THE DECISION RULE DID NOT FIRE.** The pre-set branches were `c ~ 2` (reproduces 1.99) vs
+  `c ~ 1` (leaves it open). Measured **`c_eff` 1.494 at ICC 0.729 → deff 1.360 — BETWEEN them.
+  Neither fired.** What settled it was the **Rao-Scott correction**, and **NEITHER party proposed
+  it**. Recorded plainly.
+- ⭐ **FINDING 1 IS UNTOUCHED** (rows 2560/534 of 3094 = 17.26%; pairs 2047/474 of 2521 = 18.80%;
+  21/21 regions carry tail rows, 0 have zero POST). It is **counting, not inference** — no
+  independence assumption enters it. **Finding 3 unchanged.**
+
+### ⛔ NOTHING IS OPEN — AND THAT IS STILL NOT AUTHORIZATION TO POST
+
+The last **OPEN** item is **DISCHARGED**: no open objection and no outstanding measurement remain.
+**The posting decision is Carter's alone.** Status stays **DRAFTED — NOT POSTED**; no OSF contact,
+no GUID reserved. The `tcujq` two-file docstring defect stays **DEFERRED** (lives under `src/`).
+⚠ **The courier record was left BYTE-IDENTICAL** — see the SUMMARY for the measured reason.
+
+### Carter's, not an agent's
+
+Decide whether to post (or not). Decide whether to push the unpushed commits. The Seth round-2
+reply remains drafted and **unsent**.
+
+
+
+## 2026-09-08 — ✅ **THE SETH REVIEW LOOP IS CLOSED: THE TAIL DISCLOSURE IS ADJUDICATED WITH *NO OPEN OBJECTION*, AND REMAINS *DRAFTED — NOT POSTED*. ONE MEASUREMENT (NOT AN OBJECTION) IS ALL THAT REMAINS BEFORE POSTING — CARTER FIRES IT. NOTHING RUNNING, VM STOPPED, $0.** (★ PRIOR — superseded for *what to do next* by the 2026-09-08 (LATER) section above; ⛔ its "ONE MEASUREMENT … REMAINS BEFORE POSTING" clause is **DISCHARGED**, and Finding 2 is now **NOT ESTABLISHED** ★)
 
 **Nothing is running.** VM stopped; no job to reattach. HEAD = the `260908-n48` commit, **8 commits AHEAD of `origin/m3-W2-aou-deltas` (measured 2026-09-08), NOT PUSHED.**
 
@@ -56,7 +114,13 @@ materially different postures. The second is now banked in `.planning/osf_deviat
   forecloses hypotheses nobody tested.** That is why within-window clustering went untested while
   both parties believed the question settled. It cost more than the specific error did.
 
-### ⚠ THE ONE REMAINING PRE-POSTING ITEM — a MEASUREMENT, not an objection
+### ✅ THE ONE REMAINING PRE-POSTING ITEM — **DISCHARGED 2026-09-08** (`260908-tnd`)
+
+> ⛔ **This heading is HISTORICAL.** The measurement was **FIRED by Carter on 2026-09-08** and it
+> **RETRACTED Finding 2's establishment rather than confirming it.** See the 2026-09-08 (LATER)
+> section at the top. **Neither branch of the decision rule below fired** — measured `c_eff` 1.494
+> at ICC 0.729 → deff 1.360, **between** them — and the test that settled it (**Rao-Scott**) was
+> proposed by **neither party**. The original item, preserved:
 
 The **pairs-per-occluding-deletion DISTRIBUTION** in the tail, from `pcs_tail_verdicts.tsv`
 (VM-side; **reads the emitted TSV only — no re-run, no genotypes**). Design effect ~ `1 + (c-1)·ICC`:
@@ -85,6 +149,14 @@ no GUID reserved. The `tcujq` two-file docstring defect stays **DEFERRED** (live
 Regions with tail rows **21**; regions with **zero** POST-filter rows **0**.
 
 2. **Heterogeneity — direction robust, MAGNITUDE NOT IDENTIFIED.** Pair-level overdispersion **1.99×** (**95% CI ~1.1-4.2**; χ² 37.78, dof 19, p 6.3e-3) after dropping the chr15 double-count — quote the reduced figure, never the inflated 2.36×, and **never bare**. Under the more conservative **drop-both-chr15-windows** treatment the estimate is **1.52 (p 0.073) — not significant**; the dispersion is robust in DIRECTION (every correction gives φ > 1.3) but **poorly determined in magnitude, and its significance is not robust to the choice of overlap correction** (`260904-dgi`). **No structural correlate was DETECTED** — ρ −0.199 **[−0.590, +0.267]**, −0.201 **[−0.591, +0.266]**, +0.004 **[−0.440, +0.446]** (95% CI, Fisher z with the Bonett-Wright Spearman SE 1.03/sqrt(n-3)). ⚠ **This is an UNDERPOWERED NULL**: at n=21 the design has 80% power only for |ρ| ≳ 0.61 and 24% power at ρ 0.30. The ρ **+0.886** figure does **not** calibrate it — that is a count against its own exposure, not a size-normalized rate. Reader-facing translation: **~20% relative variation in tail rate between parent regions** (our simulation; Seth's 0.25–0.30 corrected downward).
+   > ⛔ **SUPERSEDED 2026-09-08 (`260908-tnd`) — FINDING 2 IS *NOT ESTABLISHED*.** Every number in
+   > this item is an **UNCORRECTED** figure that assumes **independent pairs**, and that assumption
+   > is now **measured false** (ICC **0.728930**, deff **1.360272**). Design-corrected, two
+   > **interchangeable** chr15 overlap treatments give **p 0.0366** and **p 0.0556** — **straddling
+   > 0.05** — and correcting while dropping both gives **p 0.2116**. Direction holds (**phi > 1.2**);
+   > **magnitude unidentified; significance is an artifact of analytic choice.** ⚠ Note also that
+   > *"every correction gives φ > 1.3"* was scoped to the **overlap** corrections only; the
+   > design-corrected minimum is **1.249**. See the 2026-09-08 (LATER) section at the top.
 3. **Definitional disagreement, a separate axis.** `informative_carriers_rarer != informative_carriers_min` on **24.27%** of tail rows vs **0.52%** below tail = **46.5×** enrichment. **No association with PRE/POST was DETECTED** — ρ **+0.173**, 95% CI **[−0.292, +0.572]**, p 0.453; the 2×2 gives p **0.088**. **Both are underpowered at n=21 and neither establishes independence**, and the ρ is the *weaker* of the two. Not a tie artifact.
 
 **Record:** `.planning/debug/260902-COURIER-TO-SETH-RUN2-tail-PRE-vs-POST-filter-heterogeneity-and-definitional-disagreement.md` — 613 lines, md5 `ce6791344916c6ebebacfadbb808c702` (measured after `260904-dgi`'s corrections + re-splice).
@@ -96,6 +168,12 @@ Regions with tail rows **21**; regions with **zero** POST-filter rows **0**.
 ### Seth round 2 — what changed
 
 - ⚠ **His non-independence hypothesis is NARROWED, not dead** (`260904-dgi`). What the simulation refutes is **BETWEEN-window duplication**: all-equal parent rates + duplication → dispersion **0.98**. It does **not** follow that non-independence in general cannot — **WITHIN-window clustering can and does**, and an average of **two co-moving pairs per occluding deletion reproduces the observed 1.99 exactly with zero parent-rate heterogeneity**. The pairs-per-deletion distribution **HAS NOT BEEN MEASURED**, so Finding 2's magnitude is **not yet attributable**. Queued in `260904-dgi`'s `deferred-items.md` — **Carter fires**.
+  > ✅ **MEASURED 2026-09-08 (`260908-tnd`) — this item is DISCHARGED.** The pairs-per-deletion
+  > distribution **HAS now been measured**: **`c_eff` 1.494248**, **ICC 0.728930**, **deff
+  > 1.360272**. ⚠ **The "two co-moving pairs" hypothetical is NOT what the tail contains** —
+  > `c_eff` is **1.494**, so that sentence stands as arithmetic about what `c ~ 2` *would* do, not
+  > as a description of the panel. The measurement did **not** resolve Finding 2's magnitude:
+  > **it removed Finding 2's establishment.** See the 2026-09-08 (LATER) section at the top.
 - ⛔ **OUR collapse-to-parents argument is WITHDRAWN — it does not discriminate.** Re-simulated: collapse raises dispersion under *his* hypothesis too (65% of runs, median +3.6%). **The conclusion survives; the argument does not.** ⓘ It was made in CORRESPONDENCE and was **never written into the courier record** (measured **2026-09-03 against the PRE-`9ce807f` courier, 491 lines**: `collaps`/`parent`/`2.62`/`leave-one-out`/`2.48`/`0.0063` all 0 hits — ⚠ **AS-OF that state only**: `9ce807f`'s own PART A2 addition then introduced `parent`, `leave-one-out`, `2.48` and `0.0063` into the record, so four of the six no longer measure 0. The finding — that the argument was never in the record — stands; only its 0-hit evidence went stale), so `260903-ict` recorded the corrected position as an **ADDITION**, not a strike.
 - ⚠ **Leave-one-out RESTATED AT PARENT LEVEL** (`260904-dgi`). The window-level LOO (21 fits, 1.99–2.48, worst p 0.0063) does **not** address influence: the two chr15 windows shield each other, so it cannot remove parent `00060`, and its minimum **is the headline**. Leave-one-**PARENT**-out over the **19 distinct parents** ranges **1.52–2.49, worst-case p 0.073** — removing `00060` renders the heterogeneity **non-significant at α 0.05**.
 - **Ask 1** = disclose + annotate, do **not** amend (two targets; the data-product manifest annotation is the one that matters). **Ask 2** = do not pre-register a dispersion figure; ⚠ and the covariate scan is an **UNDERPOWERED NULL**, not a negative result — `260904-dgi` withdrew the instruction to record it as one. **Ask 3** = property of the first, not a third disclosure.
