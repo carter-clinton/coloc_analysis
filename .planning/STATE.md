@@ -59,7 +59,7 @@ Carter deleted all four apps via the Workbench UI (the pet SA has Dataproc creat
 
 ### ⚠ Carter's, and the first one is costing money now
 
-1. **STOP the analysis VM** `aoujupytercomputeengine20260626b` (`n1-standard-32`, ~$1.50/hr) — the **only billing instance left**. Stop, **never delete**: its reattachable PD holds the 379 GB bfile.
+1. ✅ **DONE 2026-09-10 — the analysis VM is STOPPED** (stop, not delete; the reattachable PD and the 379 GB bfile are preserved). **No billing instance remains in the project.** Any in-flight `gsutil` enumerations died with it and are not a pending result.
 2. **Triage the ~41 TB bucket** — and do **not** delete anything there yet. The empty-MT catastrophe means multiple `mt_afr_qc.mt` / `mt_eur_qc.mt` vintages may be parked; a live one is not distinguishable from an orphan without the listing. ⚠ `gsutil du` produced no output after ~25 min and may run for hours (Hail MTs are millions of objects) — **cheaper path:** bucket total from the Cloud Console (free, from monitoring) plus Storage Insights for per-prefix, no VM time.
 3. `gs://dataproc-staging-*` and `gs://dataproc-temp-*` now serve clusters that **no longer exist** — likely the cleanest remaining reclaim.
 4. Send Seth the measurement result — **corrected** table (0.0326 / 0.0517). Posting decision still open.
