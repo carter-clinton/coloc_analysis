@@ -25,7 +25,48 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-09-09 — ✅ **THE ARC IS CLOSED: FINDING 2 IS *NOT ESTABLISHED*, WITHIN-WINDOW CLUSTERING IS A NEW FINDING, THE RAO-SCOTT ESTIMATOR IS CORRECTED, AND FINDING 1 IS UNTOUCHED. SETH HAS NO OPEN OBJECTION. NOTHING RUNNING. STILL *DRAFTED — NOT POSTED*.** (★ RESUME HERE — LATEST ★)
+## 2026-09-10 — 💸 **STOPPED IS NOT FREE: ~$14,000 LEAKED ON FOUR *STOPPED* DATAPROC CLUSTERS. ALL FOUR DELETED, VERIFIED THREE WAYS. ⚠ THE ANALYSIS VM IS STILL RUNNING.** (★ RESUME HERE — LATEST ★)
+
+**Science state is UNCHANGED** from the 2026-09-09 block below — this block is infrastructure and cost only.
+
+### The leak
+
+| | |
+|---|---|
+| August invoice | **$2,934.31**, 98% ($2,883) in `wb-perky-corn-6639` |
+| …persistent disk | **$1,968** (~49 TB) |
+| …GCS bucket | **$847** (~41 TB) |
+| …**actual compute** | **$64** for the whole month |
+| run-rate | ~**$93/day**; May 2,286 / Jun 5,898 / Jul 2,857 / Aug 2,934 ≈ **$14,000** |
+
+**Cause: four Dataproc clusters left STOPPED since June** — `20260604` (24w), `20260605` (24w), `20260617` (16w), `20260620` (24w) = **88 workers + 4 masters = 92 nodes** × ~500 GB default PD ≈ 46 TB. A STOPPED resource halts the vCPU/RAM meter and bills **100% of its disk** indefinitely.
+
+⚠ **Our own rule already said this.** `STATE.md:2928` recorded **Rule 1 (Delete, never Pause)** for Dataproc on 2026-05-14, *because* AoU Dataproc envs expose no reattachable PD. It was not followed. And a reclamation click — *"delete the STOPPED Hail cluster 20260604 (~$169 standby)"* — sat in the handoff from **June**, carried forward session after session, unactioned. **A deferred item with a RECURRING cost is not like other deferred items.**
+
+### Action and verification
+
+Carter deleted all four apps via the Workbench UI (the pet SA has Dataproc create/get/delete/start/stop **DENIED** — `gcloud` cannot do it). Verified three ways:
+
+1. `dataproc clusters list` → **Listed 0 items**
+2. `dataproc operations list` → a **DELETE operation for each of the four**
+3. `compute instances list` collapsed **94 → 2** — exactly **92 removed**, reconciling to the 92-node count **to the unit**
+
+⚠ **Disk-level reclamation is NOT confirmed by measurement.** `compute.disks.list` is DENIED to the pet SA *and returns EXIT 0 with empty output* — a trap the browser agent caught and refused to treat as a measurement. The 92-instance collapse is the arithmetic substitute: an instance cannot exist without its boot disk. **The real measurement is the next day's spend.**
+
+### Provenance rescued BEFORE any reclamation
+
+4 objects → `gs://rw-migration-aou-rw-476cdac2/provenance/occ_measure/`, 108,390,543 B, **every md5 round-trip verified**: `pcs_tail_verdicts.tsv` `960f2837…`, `pcs_tail_summary.json` `bd74c0d5…`, `pcs_pairs.tsv` `287b16b1…`, `pcs_summary.json` `4917c46d…`. These were **single-copy on one VM's PD** and are the provenance for a publication-bound disclosure. Recorded hashes **anchor forward, not backward** — losing the file would mean those numbers could never be re-verified.
+
+### ⚠ Carter's, and the first one is costing money now
+
+1. **STOP the analysis VM** `aoujupytercomputeengine20260626b` (`n1-standard-32`, ~$1.50/hr) — the **only billing instance left**. Stop, **never delete**: its reattachable PD holds the 379 GB bfile.
+2. **Triage the ~41 TB bucket** — and do **not** delete anything there yet. The empty-MT catastrophe means multiple `mt_afr_qc.mt` / `mt_eur_qc.mt` vintages may be parked; a live one is not distinguishable from an orphan without the listing. ⚠ `gsutil du` produced no output after ~25 min and may run for hours (Hail MTs are millions of objects) — **cheaper path:** bucket total from the Cloud Console (free, from monitoring) plus Storage Insights for per-prefix, no VM time.
+3. `gs://dataproc-staging-*` and `gs://dataproc-temp-*` now serve clusters that **no longer exist** — likely the cleanest remaining reclaim.
+4. Send Seth the measurement result — **corrected** table (0.0326 / 0.0517). Posting decision still open.
+
+---
+
+## 2026-09-09 — ✅ **THE ARC IS CLOSED: FINDING 2 IS *NOT ESTABLISHED*, WITHIN-WINDOW CLUSTERING IS A NEW FINDING, THE RAO-SCOTT ESTIMATOR IS CORRECTED, AND FINDING 1 IS UNTOUCHED. SETH HAS NO OPEN OBJECTION. NOTHING RUNNING. STILL *DRAFTED — NOT POSTED*.** (SUPERSEDED for *what to do next* by the 2026-09-10 block above; every scientific fact in it STANDS UNCHANGED — the 09-10 block is infrastructure/cost only)
 
 **Nothing is running.** ⚠ The AoU VM was STARTED by Carter for the 2026-09-08 measurement — **confirm it is stopped** (Carter-only). Branch pushed this session.
 
