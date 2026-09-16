@@ -181,25 +181,168 @@ _WINDOW_BIM_RETRY_SLEEP_S = 0.5
 
 
 # --------------------------------------------------------------------------- #
-# SOLE subprocess seam (tests monkeypatch exactly this one function)          #
+# SOLE plink subprocess seam (tests monkeypatch exactly this one function)    #
 # --------------------------------------------------------------------------- #
 
-def _run_plink(cmd: list[str]) -> tuple[float, float]:
-    """Run the plink argv via subprocess; return (wall_min, peak_ram_gib).
+#: The measuring launcher run by _run_plink as
+#: [sys.executable, "-I", "-S", "-c", _PLINK_PEAK_RSS_LAUNCHER, <report fd>, *cmd].
+#: It spawns plink with subprocess.Popen (the old exec semantics), reaps it with
+#: os.wait4 and writes ONE JSON record to the report fd. See _run_plink for why.
+_PLINK_PEAK_RSS_LAUNCHER = r'''
+import json, os, signal, subprocess, sys
 
-    Peak child RAM is the RUSAGE_CHILDREN.ru_maxrss DELTA across the call (Linux
-    ru_maxrss is KiB -> /1024/1024 = GiB). This is headless-safe on a Spot VM (no
-    /usr/bin/time dependency). This is the ONLY subprocess call site, so tests
-    monkeypatch a single seam.
+exitcode_of = os.waitstatus_to_exitcode  # bound BEFORE the spawn: fail before plink runs
+report_fd = int(sys.argv[1])
+argv = sys.argv[2:]
+child = None
+kill_requested = False
+
+
+def _report(record):
+    try:
+        os.write(report_fd, (json.dumps(record) + "\n").encode("ascii"))
+    except OSError:
+        pass  # the driver is gone (EPIPE): nobody is left to read the report
+
+
+def _kill_child(signum, frame):
+    global kill_requested
+    kill_requested = True
+    if child is not None and child.returncode is None:
+        try:
+            os.kill(child.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+signal.signal(signal.SIGTERM, _kill_child)
+if signal.getsignal(signal.SIGINT) is not signal.SIG_IGN:
+    signal.signal(signal.SIGINT, _kill_child)
+try:
+    child = subprocess.Popen(argv)
+except OSError as exc:
+    _report(["E", exc.errno, exc.strerror, exc.filename])
+    raise SystemExit(0)
+if kill_requested:
+    _kill_child(None, None)
+_, wait_status, usage = os.wait4(child.pid, 0)
+child.returncode = exitcode_of(wait_status)
+_report(["R", child.returncode, usage.ru_maxrss])
+'''
+
+
+def _run_plink(cmd: list[str]) -> tuple[float, float]:
+    """Run the plink argv; return (wall_min, peak_ram_gib) for THIS plink process.
+
+    peak_ram_gib is plink's OWN peak resident set size, taken from os.wait4's
+    rusage for the plink pid. It includes descendants plink itself waited for, and
+    not descendants it did not wait for (test_waited_grandchild_is_charged_to_child,
+    test_unwaited_grandchild_is_not_charged_to_child). It also includes a constant
+    floor of a few MiB, the launcher interpreter's own resident size
+    (test_launcher_bias_is_bounded, < 24 MiB). It is never inherited from earlier
+    calls or from this driver's memory. Linux ru_maxrss is KiB (-> /1024/1024 =
+    GiB); macOS reports bytes, but this module targets Linux (the AoU analysis VM,
+    NCSU) and does no platform branching.
+
+    WHY A LAUNCHER. At exec, the child's ru_maxrss absorbs the SPAWNING process's
+    memory. Measured 2026-09-16 (quick-260916-ocb): CPython 3.11 subprocess (vfork)
+    charges the parent's lifetime high-water; CPython 3.9 (fork) charges the
+    parent's current resident size. This driver reads the whole cohort .bim just
+    before each spawn and loads .ld.bin matrices in-process after, so a direct
+    Popen(cmd) + os.wait4 would report the DRIVER's memory. The pre-260916
+    RUSAGE_CHILDREN reading additionally never decreased across children, which is
+    how m2_region_00057 inherited sub14's 26.5745 GiB. Premise monitor:
+    test_premise_direct_wait4_charges_parent_resident_memory_to_child.
+
+    Why each launcher piece exists:
+    - "-I -S": a json.py / subprocess.py in the working directory cannot hijack it.
+    - subprocess.Popen(argv) reproduces the old exec semantics exactly: PATH lookup,
+      restore_signals, close_fds (plink never inherits the report fd) and the
+      exec-error exception. close_fds=False would also switch CPython 3.11 to its
+      posix_spawn path and change plink's ignored-signal mask.
+    - exitcode_of is bound BEFORE the spawn, so an interpreter without
+      os.waitstatus_to_exitcode fails before plink runs, not after hours of compute.
+    - The SIGTERM handler is installed before the spawn and kill_requested is
+      re-checked after it, so an early SIGTERM cannot orphan plink. Handlers, not
+      SIG_IGN: handled signals reset to default across exec, ignored ones would be
+      inherited by plink.
+    - The SIGINT handler is installed only if SIGINT was not already ignored, so a
+      driver started with SIGINT ignored hands plink an ignored SIGINT, exactly as
+      subprocess.run did.
+    - _report swallows OSError: if the driver is gone, the launcher exits quietly
+      after plink finishes.
+    - child.returncode is set right after os.wait4, so Popen never waits on a reaped
+      pid (no double wait, no ResourceWarning). The reap-to-assignment pid-reuse
+      window is the one Popen.kill already has.
+
+    Contract (pinned by tests/m3/test_run_plink_peak_rss.py):
+    - stdout/stderr, fds and signal dispositions are inherited as
+      subprocess.run(cmd, check=True) left them.
+    - A non-zero exit raises subprocess.CalledProcessError(returncode, cmd); a
+      negative returncode means killed by that signal.
+    - Failure to execute plink raises the same OSError subclass and args (e.g.
+      FileNotFoundError: [Errno 2] No such file or directory: 'plink1.9').
+    - A launcher without a valid report raises subprocess.SubprocessError, never
+      numbers (NaN would pass fire_verifier.check_peak_ram open).
+    - An exception while waiting (e.g. KeyboardInterrupt) terminates the launcher,
+      which SIGKILLs plink, then re-raises. subprocess.run also killed the child;
+      its 0.25 s SIGINT grace is not reproduced.
+    - SIGTERM to the driver alone leaves plink running to completion (as before).
+      SIGTERM to the process group (GNU timeout expiry) kills plink (as before).
+    - No EINTR loop is needed: os.read/waitpid/wait4 retry automatically since
+      PEP 475.
+    - wall_min includes launcher start-up (tens of ms).
+
+    Headless-safe on a Spot VM (no /usr/bin/time dependency). This is the ONLY place
+    plink is spawned (gsutil has its own seam, _run_gsutil), so tests monkeypatch a
+    single seam.
     """
-    rss_before = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+    read_fd, write_fd = os.pipe()
+    chunks: list[bytes] = []
     t0 = time.time()
-    subprocess.run(cmd, check=True)
+    try:
+        with subprocess.Popen(
+            [sys.executable, "-I", "-S", "-c", _PLINK_PEAK_RSS_LAUNCHER, str(write_fd), *cmd],
+            pass_fds=(write_fd,),
+        ) as launcher:
+            os.close(write_fd)
+            write_fd = -1
+            try:
+                while True:
+                    chunk = os.read(read_fd, 4096)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                launcher.wait()
+            except BaseException:
+                launcher.terminate()  # launcher SIGKILLs plink, reports, exits
+                launcher.wait()
+                raise
+    finally:
+        os.close(read_fd)
+        if write_fd != -1:
+            os.close(write_fd)
     wall_min = (time.time() - t0) / 60.0
-    rss_after = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-    peak_kib = max(rss_after - rss_before, rss_after)
-    peak_ram_gib = peak_kib / 1024.0 / 1024.0
-    return (wall_min, peak_ram_gib)
+    try:
+        record = json.loads(b"".join(chunks).decode("ascii"))
+    except ValueError:  # JSONDecodeError and UnicodeDecodeError are both ValueError
+        record = None
+    ran = (isinstance(record, list) and len(record) == 3 and record[0] == "R"
+           and all(type(v) is int for v in record[1:]))
+    exec_failed = (isinstance(record, list) and len(record) == 4 and record[0] == "E"
+                   and type(record[1]) is int and isinstance(record[2], str)
+                   and (record[3] is None or isinstance(record[3], str)))
+    if launcher.returncode != 0 or not (ran or exec_failed):
+        raise subprocess.SubprocessError(
+            f"plink peak-RSS launcher exited {launcher.returncode} without a valid "
+            f"report; refusing to fabricate wall_min/peak_ram_gib for {cmd!r}")
+    if exec_failed:
+        # OSError(errno, strerror, filename) constructs the errno's subclass, e.g.
+        # FileNotFoundError — identical to what subprocess.run(cmd) raised here.
+        raise OSError(record[1], record[2], record[3])
+    if record[1] != 0:
+        raise subprocess.CalledProcessError(record[1], cmd)
+    return (wall_min, record[2] / 1024.0 / 1024.0)
 
 
 # --------------------------------------------------------------------------- #
