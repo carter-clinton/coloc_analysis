@@ -25,7 +25,44 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn).
 
-## 2026-09-10 — 💸 **STOPPED IS NOT FREE: ~$14,000 LEAKED ON FOUR *STOPPED* DATAPROC CLUSTERS. ALL FOUR DELETED, VERIFIED THREE WAYS. ⚠ THE ANALYSIS VM IS STILL RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-09-16 — 🧭 **SESSION CLOSE TO RESUME THE ANALYSIS. THE PANEL FIRE'S BLOCKER IS *STAGE C's NaN ERROR POSTURE*. COST TRACK FULLY INVENTORIED, NOTHING DELETED.** (★ RESUME HERE — LATEST ★)
+
+**Nothing is running.** Only app: `aoujupytercomputeengine20260626b`, **STOPPED** ($0.06/hr = its PD). An agent never fires, starts, stops or deletes anything — bucket objects included.
+
+### ▶ RESUME THE ANALYSIS HERE, in order
+
+**1. ⭐ Stage C's NaN error posture — the blocker.** From `.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md` `## Next`:
+- ✅ Step 1 **mechanism** — DONE 2026-08-24: 871 of 871 deletion carriers no-called at the neighbour → the deletion is invariant *within the pair's intersection* → `0/0` → NaN.
+- ✅ Step 2 **prevalence** — DONE: pairwise-completeness sweep → panel-wide reclassification (ONE surviving pair) → tail classified (Finding 1: 17.26% POST, all 21 regions).
+- ⛔ Step 3 **policy + Stage C posture** — criterion **adjudicated** with Seth (no predicate change at n=1; disclose, don't amend; sample-scoped prediction), but **Stage C's error posture is NOT decided.** Production keeps the raw-panel NaN-raise contract, so a region with a residual boundary-adjacent undefined pair **raises**, and `--fail-fast` halts the batch. The class sits on **both** sides of the span (`00057` +1, `00149` −1), so a 276-region run will halt.
+- **The question to settle:** does Stage C run without `--fail-fast` and let raising regions take the posted mk7ze **defer-not-exclude protocol** — and is that already pre-registered behaviour, or does it need an amendment-update first? Agent drafts options against the posted text (repo draft lines 168–500 = mk7ze; §(g) enumerates the unchanged defer-not-exclude protocol, NaN-raise contract and `BRANCH_AFR_OCC_*` tokens) → Seth brief-blind → **Carter decides.** ⛔ No NaN-posture code before that.
+
+**2. RAM-1 — agent-doable now (NCSU, TDD, before Stage C).** `_run_plink`'s `peak_ram_gib` is a monotone high-water mark (`RUSAGE_CHILDREN.ru_maxrss`), so it reports "largest plink child so far" — `00057` inherited 26.5745 GiB from `sub14`. Fix with `Popen` + `os.wait4`.
+
+**3. `tcujq` docstring defect — agent-doable, cheap.** `condition_ld_matrix.py:4,153` and `write_conditioned_ld_npz.py:4,17,85` call the withdrawn NaN→0 policy pre-registered. `condition_ld_matrix.py` is **CODE-pinned**, so docstring edits are free; nothing calls either module. Needs a named enforcer.
+
+**4. COST-1 (Carter's fire).** `m2_region_00071` never ran — the Stage-B→C cost extrapolation lacks its worst-case anchor.
+
+**5. Bank `pcs_00057_crosscheck.tsv`** — never pasted to NCSU; most likely on `20260626b`'s PD under `/home/jupyter/occ_measure/`. Confirm, and run raw `gcloud compute instances list` to confirm `20260608` is gone, the next time that VM starts.
+
+**6. Seth** — send `.planning/debug/260916-COURIER-TO-SETH-measurement-result-UNSENT.md` (**corrected** table 0.0326 / 0.0517).
+
+**7. Disclosure** — still **DRAFTED — NOT POSTED**; posting is Carter's decision.
+
+### Cost track — banked, nothing deleted
+
+Full record: **`.planning/debug/260916-AOU-STORAGE-INVENTORY-and-reclaim-plan.md`**.
+- `ld/` = **45,519,841,557,487 B / 1,788,824 objects**, reconciled to **zero residual** in bytes and objects.
+- **All three live finals PROVEN** exact against `cohort_summary_m3.tsv`, entries partition list identical to rows element-wise. Missing `_VALIDATED` is **expected** by the code's own contract.
+- **The June no-op PROVEN numerically:** contaminated final has **73,122** columns (a working filter gives ≤ 62,557) and rows identical to `mt_afr_qc.mt`.
+- **The bucket `.bim` hashes to the disclosure anchor** `9cc378b7…`.
+- `20260608` **deleted**; its 7 probe files + `load-env*` preserved with md5s.
+- Reclaim candidates **38.65 TB / ~$773/mo**; honest floor **~$180/mo**.
+- **Pending Carter:** daily-spend reading · credit claim yes/no (contaminated tree, ~$171/mo) · intermediates go/no-go (~$601/mo). Deletion only via the record's §6 reconciling dry-run, run by Carter.
+
+---
+
+## 2026-09-10 — 💸 **STOPPED IS NOT FREE: ~$14,000 LEAKED ON FOUR *STOPPED* DATAPROC CLUSTERS. ALL FOUR DELETED, VERIFIED THREE WAYS. ⚠ THE ANALYSIS VM IS STILL RUNNING.** (SUPERSEDED for *what to do next* by the 2026-09-16 block above; every fact in it stands)
 
 **Science state is UNCHANGED** from the 2026-09-09 block below — this block is infrastructure and cost only.
 
