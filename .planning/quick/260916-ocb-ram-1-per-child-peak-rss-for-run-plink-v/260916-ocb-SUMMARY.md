@@ -456,3 +456,28 @@ All under `/gpfs_common/share01/clintonlab/ckclinto/tmp/260916-ocb/`:
 - `tests/m3/test_run_plink_peak_rss.py`: FOUND (674 lines; 21 `def test_`; contains `drv._run_plink(`).
 - `src/python/run_native_ld_panel.py`: FOUND; contains `_PLINK_PEAK_RSS_LAUNCHER`, `sys.executable, "-I", "-S", "-c", _PLINK_PEAK_RSS_LAUNCHER`, `os.wait4(child.pid, 0)`; the caller `wall_min, peak_ram_gib = _run_plink(cmd)` is unchanged.
 - Commits `f8ff9cd` and `9a3eb97`: FOUND in `git log` on `m3-W2-aou-deltas`, with every tree object present.
+
+---
+
+## ⚠ AS-OF CORRECTION 2026-09-16 (appended by quick-260916-vqp; nothing above is edited)
+
+Appended by `quick-260916-vqp` after the 2026-09-16 blast-radius review (finding B10). Nothing
+above this heading is edited, softened or removed; these are as-of corrections only.
+
+**1. `:47`-`:48` are now FALSE — the work is committed AND pushed.** `:47` reads "Two commits
+(`f8ff9cd` RED, `9a3eb97` fix), not pushed." and `:48` reads "PLAN, this SUMMARY and STATE.md are
+NOT committed." Both were true when written. Since then the close-out landed at `0231cbf`
+("docs(quick-260916-ocb): close out RAM-1 — PLAN + SUMMARY + VERIFICATION (passed 9/9) +
+STATE.md") and the branch was pushed: re-measured 2026-09-16,
+`git rev-parse HEAD origin/m3-W2-aou-deltas` prints
+`621701c8c28168b13f188467670d1ab90502ea06` twice, i.e. `origin/m3-W2-aou-deltas == HEAD == 621701c`.
+
+**2. `:392` names the WRONG benchmark writer.** It attributes the rewrite of
+`tests/m3/sparse_parent_benchmark.tsv` to `test_sparse_parent_benchmark_records_metrics`. Measured
+2026-09-16 with `grep -n 'def test_\|BENCHMARK_TSV' tests/m3/test_sparse_parent_benchmark.py`: the
+unconditional writer is **`test_no_whole_parent_dense_materialization`**
+(`tests/m3/test_sparse_parent_benchmark.py:54`-`:138`), which calls
+`BENCHMARK_TSV.write_text(header + line)` at `:138`. `test_sparse_parent_benchmark_records_metrics`
+begins at `:141` and only READS the file (`:145`-`:148`). The recorded remedy —
+`git checkout -- tests/m3/sparse_parent_benchmark.tsv` after a full run — is UNCHANGED and still
+correct; only the attribution was wrong.

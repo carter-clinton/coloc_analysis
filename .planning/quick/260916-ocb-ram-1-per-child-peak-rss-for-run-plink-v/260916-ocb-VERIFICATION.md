@@ -188,3 +188,16 @@ None for this task's goal. Everything was checked by running code.
 
 _Verified: 2026-09-17T00:01:40Z_
 _Verifier: Claude (gsd-verifier)_
+
+---
+
+## ⚠ AS-OF CORRECTION 2026-09-16 (appended by quick-260916-vqp; nothing above is edited)
+
+Appended by `quick-260916-vqp` after the 2026-09-16 blast-radius review (finding B10). Nothing
+above this heading is edited.
+
+**`:135` is now FALSE.** It reads "**Worktree:** tracked status is empty; not pushed (ahead 4)."
+That was true at verification time. The branch has since been pushed: re-measured 2026-09-16,
+`git rev-parse HEAD origin/m3-W2-aou-deltas` prints
+`621701c8c28168b13f188467670d1ab90502ea06` twice, so `origin/m3-W2-aou-deltas == HEAD == 621701c`
+and nothing is ahead. The tracked tree is still clean (`git status --porcelain -uno` is empty).

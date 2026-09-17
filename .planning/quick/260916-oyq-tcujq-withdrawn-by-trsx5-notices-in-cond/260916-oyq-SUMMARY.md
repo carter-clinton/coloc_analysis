@@ -114,3 +114,23 @@ None.
 
 ## Self-Check
 Commits b6b1f70 / b709ce1 / 48b8828 FOUND on branch; 5-file diff FOUND [ORCH]; tracked tree clean [ORCH]; enforcer RED-on-pre-notice / GREEN-at-HEAD re-observed [ORCH]; independent gsd-verifier: status PASSED 11/11 (see 260916-oyq-VERIFICATION.md), incl. its own mutations (notice moved into another function docstring, one-hyphen and date-token edits, same-size posted-body edit, staged importer / .smk / bin/ subprocess path) all RED. Known limits recorded by the verifier: the caller scan does not see dynamic imports (importlib) or untracked files (documented in the enforcer docstring; none exist today).
+
+---
+
+## ⚠ AS-OF CORRECTION 2026-09-16 (appended by quick-260916-vqp; nothing above is edited)
+
+Appended by `quick-260916-vqp` after the 2026-09-16 blast-radius review (finding B10). Nothing
+above this heading is edited.
+
+**1. `:37`'s closing "Not pushed." is now FALSE.** `621701c` is pushed: re-measured 2026-09-16,
+`git rev-parse HEAD origin/m3-W2-aou-deltas` prints
+`621701c8c28168b13f188467670d1ab90502ea06` twice (`origin/m3-W2-aou-deltas == HEAD`). The rest of
+`:37` — 5 files, 752 insertions, 2 deletions between `0231cbf` and HEAD — is unaffected.
+
+**2. REPORTED, NOT FIXED — `260916-oyq-VERIFICATION.md:26` is off by one in two places.** That line
+states the PRE->HEAD line counts as `213 -> 250` (`condition_ld_matrix.py`) and `112 -> 141`
+(`write_conditioned_ld_npz.py`). Re-measured 2026-09-16 with `git show 0231cbf:<f> | wc -l` and
+`git show HEAD:<f> | wc -l`: **212 -> 249** and **111 -> 140**. The DELTAS the sentence depends on
+are correct — `+37` and `+29` — and agree with `git diff --numstat 0231cbf HEAD`
+(`37 0`, `29 0`). `260916-oyq-VERIFICATION.md` belongs to `quick-260916-oyq` and is deliberately NOT
+edited by this task; the discrepancy is recorded here and in `260916-vqp-SUMMARY.md` only.
