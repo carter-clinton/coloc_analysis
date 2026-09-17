@@ -44,7 +44,7 @@ citation counts as information only.
 - `plink_ld_to_npz.py` → `src/python/plink_ld_to_npz.py`
 - `osf_deviations.md` → `.planning/osf_deviations.md`
 - `deferred-items.md` → `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`
-- `STATE.md` → `.planning/STATE.md`
+- `HANDOFF.json` → `.planning/HANDOFF.json`
 - `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` → `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`
 - `260831-…-anchor-relative.md` → `.planning/debug/260831-seth-brief-blind-review-already-occluded-is-anchor-relative.md`
 - `260901-kw8-PANELWIDE-RECLASSIFICATION.md` → `.planning/quick/260831-kw8-close-seth-s-brief-blind-review-already-/260901-kw8-PANELWIDE-RECLASSIFICATION-as-received.md`
@@ -241,12 +241,12 @@ from both.
     reading that is the prediction being spent rather than a neutral measurement.
 - **Consequences:** the regions expected to raise are measured before Stage C instead of observed
   during it, at the cost of VM time (Carter). Measured runtimes, named by instrument, run and region
-  count: the 21-region pairwise-completeness scan took 48 min (`STATE.md:18`), which scales linearly
-  to ~10.5 h over 276 regions; the `pcs_panelwide_reclassify` pass covered 6 regions in 1 h 53 m on
-  2026-09-01 (`260901-kw8-PANELWIDE-RECLASSIFICATION.md:13`, region count at `STATE.md:485`) and the
-  21 regions that carry rows in 2 h 40 m 46 s on 2026-09-02 (`260902-vsp-CONTENT-SPEC.md:10`), which
-  scales linearly to ~35.2 h over 276 regions. Both scalings are linear extrapolations of a measured
-  run, not measurements.
+  count: the 21-region pairwise-completeness scan took 48 min (`HANDOFF.json:142`), which scales
+  linearly to ~10.5 h over 276 regions; the `pcs_panelwide_reclassify` pass covered
+  6 regions in 1 h 53 m on 2026-09-01 (`260901-kw8-PANELWIDE-RECLASSIFICATION.md:13`; its verdict
+  rows at `:47-61` name the 6 regions) and the 21 regions that carry rows in 2 h 40 m 46 s on
+  2026-09-02 (`260902-vsp-CONTENT-SPEC.md:10`), which scales linearly to ~35.2 h over 276 regions.
+  Both scalings are linear extrapolations of a measured run, not measurements.
 
 ### Option E: change what reaches the matrix
 

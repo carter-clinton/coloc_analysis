@@ -107,8 +107,7 @@ SINCE_CONTROL = "2026-08-01 00:00:00 -0400"  # 7 commits at BASIS (an empty cont
 NEWEST_TOUCH = "9a3eb9786e20208249d04f5510f5d3799af8ec4c"   # 2026-09-16 19:17:15 -0400 (RAM-1)
 
 # --- c-hand: inputs ---
-H2_MARKER = "PRIOR: 2026-09-01 — ✅ SWEEP COMPLETE"
-H2_RUNTIME = "Runtime 48m"
+H2_KEY = "sweep_2026_09_01_COMPLETE"      # HANDOFF.json at BASIS; its "runtime" is cited at HANDOFF.json:142
 H3_HEADING = "## 2026-09-03 —"               # found by HEADING SEARCH, not by a literal line number
 H3_LINE = 567                                # re-derived at BASIS (was 532 before vqp)
 H3_STATUS = "- **Status:** DRAFTED — NOT POSTED"
@@ -144,14 +143,16 @@ PATHS = {
     "AR": ".planning/debug/260831-seth-brief-blind-review-already-occluded-is-anchor-relative.md",
     "KW": ".planning/quick/260831-kw8-close-seth-s-brief-blind-review-already-/260901-kw8-PANELWIDE-RECLASSIFICATION-as-received.md",
     "VS": ".planning/quick/260902-vsp-bank-the-run-2-step-2-tail-pre-post-resu/CONTENT-SPEC.md",
+    "HJ": ".planning/HANDOFF.json",
 }
 SHORT = {
     "AP": "AGENT-PROMPT.md", "RF": "READY-TO-FIRE.md", "RN": "run_native_ld_panel.py",
     "FV": "fire_verifier.py", "PL": "plink_ld_to_npz.py", "OD": "osf_deviations.md",
     "HA": "260824-STAGE-B-HALT-…md", "DI": "deferred-items.md", "ST": "STATE.md",
     "AR": "260831-…-anchor-relative.md", "KW": "260901-kw8-PANELWIDE-RECLASSIFICATION.md",
-    "VS": "260902-vsp-CONTENT-SPEC.md",
+    "VS": "260902-vsp-CONTENT-SPEC.md", "HJ": "HANDOFF.json",
 }
+AT_BASIS_KEYS = ("ST", "HJ")    # per-session ledgers: ALWAYS read at BASIS, even under --live
 
 # ============================================================================================
 # CLAIMS_V1 — v1's 88 positional rows. Used by --baseline, and inherited by v2's table.
@@ -315,9 +316,9 @@ CLAIMS_INSERTS = [
  ("after", "c71", ("n32", "MK", "Q", ["NO fourth branch and NO new token: a region deferred by EITHER the site-fraction ceiling or the multiplicity companion routes to the SAME `BRANCH_AFR_OCC_DEFERRED`"], [], "E8")),
  ("after", "n04", ("n33", "OD", "Q", ["Production tests the rate on BOTH sides"], [], "E9")),
  ("after", "n33", ("n34", "AR", "Q", ["`already_occluded == False` means \"not inside THIS anchor's span\"… does not count pairs that survive filtering"], [], "E10")),
- ("after", "c77", ("n35", "ST", "T", ["Runtime 48m"], [], "E10")),
+ ("after", "c77", ("n35", "HJ", "T", ['"runtime": "48m'], [], "E25")),
  ("after", "n35", ("n36", "KW", "T", ["1h53m", "exit 0"], [], "E10")),
- ("after", "n36", ("n37", "ST", "T", ["6-region/1h53m/1,011,893-row banked run"], [], "E10")),
+ ("after", "n36", ("n37", "KW", "T", ["m2_region_00001", "m2_region_00008", "m2_region_00062", "m2_region_00081", "m2_region_00120__sub03", "m2_region_00149"], ["m2_region_00057"], "E25")),
  ("after", "n37", ("n38", "VS", "T", ["2 h 40 m 46 s wall"], [], "E10")),
  ("after", "c78", ("n39", "TR", "Q", ["choosing the occlusion criterion to obtain a particular fine-mapping result"], [], "E11")),
  ("after", "n39", ("n40", "MK", "Q", ["the anomaly GATE is a different object from the CRITERION, and recalibrating the gate against a measured population is not that prohibited act"], [], "E11")),
@@ -580,6 +581,8 @@ PERMITTED_EDITS = [
   "old": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:866-872`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
   "new": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:1009-1015`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
  },
+ {'id': 'E24', 'cls': 4, 'label': 'f68 E-S: key maps HANDOFF.json, not STATE.md', 'origin': 'orchestrator brief-blind finding 2026-09-17 (quick-260917-f68)', 'why': 'E-S: v2 no longer cites STATE.md, so the Files-cited key maps HANDOFF.json in its place.', 'old': '- `STATE.md` → `.planning/STATE.md`', 'new': '- `HANDOFF.json` → `.planning/HANDOFF.json`'},
+ {'id': 'E25', 'cls': 4, 'amends': 'E10c', 'bare_ref': '`:47-61`', 'label': 'f68 E-S: Option D re-cited', 'origin': 'orchestrator brief-blind finding 2026-09-17 (quick-260917-f68)', 'why': "E-S: the 48-min runtime is re-cited to HANDOFF.json:142 and the 6-region count to kw8's verdict rows :47-61, so no STATE.md line is cited; declared as amending E10c, which stays byte-unchanged.", 'old': '  count: the 21-region pairwise-completeness scan took 48 min (`STATE.md:18`), which scales linearly\n  to ~10.5 h over 276 regions; the `pcs_panelwide_reclassify` pass covered 6 regions in 1 h 53 m on\n  2026-09-01 (`260901-kw8-PANELWIDE-RECLASSIFICATION.md:13`, region count at `STATE.md:485`) and the\n  21 regions that carry rows in 2 h 40 m 46 s on 2026-09-02 (`260902-vsp-CONTENT-SPEC.md:10`), which\n  scales linearly to ~35.2 h over 276 regions. Both scalings are linear extrapolations of a measured\n  run, not measurements.\n', 'new': '  count: the 21-region pairwise-completeness scan took 48 min (`HANDOFF.json:142`), which scales\n  linearly to ~10.5 h over 276 regions; the `pcs_panelwide_reclassify` pass covered\n  6 regions in 1 h 53 m on 2026-09-01 (`260901-kw8-PANELWIDE-RECLASSIFICATION.md:13`; its verdict\n  rows at `:47-61` name the 6 regions) and the 21 regions that carry rows in 2 h 40 m 46 s on\n  2026-09-02 (`260902-vsp-CONTENT-SPEC.md:10`), which scales linearly to ~35.2 h over 276 regions.\n  Both scalings are linear extrapolations of a measured run, not measurements.\n'},
 ]
 
 
@@ -611,13 +614,15 @@ def inside_root(p):
 class Reader(object):
     """Cited-file reader: `git show BASIS:<path>` (default) or the working tree (--live).
 
-    ST is ALWAYS read at BASIS (a ledger whose head moves every session is not a citable surface
-    in --live mode).  `overrides` maps a repo-relative path to a file on disk; it is the ONLY way
+    Every key in AT_BASIS_KEYS (ST, HJ) is ALWAYS read at BASIS (a ledger whose head moves every
+    session is not a citable surface in --live mode); `lk:hj-basis` is the named enforcer.  `overrides` maps a repo-relative path to a file on disk; it is the ONLY way
     --selftest corrupts an input, so no working-tree file is ever mutated.
     """
 
-    def __init__(self, live=False, overrides=None, basis=None):
+    def __init__(self, live=False, overrides=None, basis=None, at_basis_keys=None):
         self.live = live
+        self.at_basis_rels = frozenset(
+            PATHS[k] for k in (AT_BASIS_KEYS if at_basis_keys is None else at_basis_keys))
         self.overrides = dict(overrides or {})
         self.basis = basis or BASIS
         self._cache = {}
@@ -625,7 +630,7 @@ class Reader(object):
     def raw(self, rel, at_basis=False):
         if rel in self.overrides:
             return Path(self.overrides[rel]).read_bytes()
-        from_tree = bool(self.live and not at_basis and rel != PATHS["ST"])
+        from_tree = bool(self.live and not at_basis and rel not in self.at_basis_rels)
         key = (rel, from_tree)
         if key not in self._cache:
             if from_tree:
@@ -751,7 +756,7 @@ def content_check(reader, fkey, rng, kind, payload, nots, prng=None):
 # citation parser / Files-cited key / bare-ref resolution / paragraph units
 # --------------------------------------------------------------------------------------------
 CITE = re.compile(
-    r'`(?P<file>[^`\s:]*(?:\.|…)(?:md|py|txt)):(?P<a>\d+)(?:-(?P<b>\d+))?`'
+    r'`(?P<file>[^`\s:]*(?:\.|…)(?:md|py|txt|json)):(?P<a>\d+)(?:-(?P<b>\d+))?`'
     r'|`:(?P<ba>\d+)(?:-(?P<bb>\d+))?`'
     r'|\btrsx5:(?P<ta>\d+)(?:-(?P<tb>\d+))?'
     r'|\bmk7ze P(?P<pa>\d+)(?:-(?P<pb>\d+))?(?:\s*/\s*R(?P<ra>\d+)(?:-(?P<rb>\d+))?)?')
@@ -1316,11 +1321,12 @@ def check_hand(draft, reader):
         mins = int(ms.group(1))
         st_h, st_n = float(ml[0][0]), int(ml[0][1])
         calc = mins * st_n / 21.0 / 60.0
-        st = reader.text(PATHS["ST"], at_basis=True)
-        marker = H2_MARKER in st and H2_RUNTIME in st
+        hj = json.loads(reader.text(PATHS["HJ"], at_basis=True))
+        rt = hj[H2_KEY]["runtime"].split()[0]
+        marker = rt == "%dm" % mins
         out.append(("c-hand:H2", abs(calc - st_h) < 0.06 and marker,
-                    "%d min x %d/21 = %.2f h, stated ~%.1f h; STATE.md at BASIS carries %r and %r: %s"
-                    % (mins, st_n, calc, st_h, H2_MARKER, H2_RUNTIME, marker)))
+                    "%d min x %d/21 = %.2f h, stated ~%.1f h; HANDOFF.json at BASIS %s.runtime starts %r: %s"
+                    % (mins, st_n, calc, st_h, H2_KEY, rt, marker)))
 
     # H6 — Option D's MEASURED reclassify runtimes (the brief's "1h53m for 21 regions" is FALSE)
     r1, r2 = need("run1"), need("run2")
@@ -1333,6 +1339,15 @@ def check_hand(draft, reader):
         kw = reader.text(PATHS["KW"])
         vs = reader.text(PATHS["VS"])
         src_ok = ("1h53m" in kw) and ("2 h 40 m 46 s wall" in vs) and ("21 regions carry rows" in vs)
+        mv = re.search(r"its verdict rows at `:(\d+)-(\d+)` name the (\d+) regions", flat)
+        cnt_ok = False
+        if mv:
+            ka, kb_, kst = int(mv.group(1)), int(mv.group(2)), int(mv.group(3))
+            kwl = reader.text(PATHS["KW"], at_basis=True).splitlines()[ka - 1:kb_]
+            rows_ok = bool(kwl) and all(re.match(r"^\d+\s+m2_region_", l) for l in kwl)
+            ids = set(re.findall(r"m2_region_\d{5}(?:__sub\d+)?", "\n".join(kwl)))
+            cnt_ok = rows_ok and len(ids) == kst == n1
+        src_ok = src_ok and cnt_ok
         out.append(("c-hand:H6", n1 == 6 and n2 == 21 and abs(calc - st_h) < 0.06 and src_ok,
                     "RUN1 %d regions / 1h53m; RUN2 %d regions / 2h40m46s = 9646 s; 9646 x %d/%d = "
                     "%.2f h, stated ~%.1f h; source records carry the strings: %s"
@@ -1870,13 +1885,15 @@ def report_sweeps(draft):
 # f: — THE EDIT LEDGER.  v2 is v1 plus an ordered, declared list of replacements, and nothing else.
 #   f:forward   E1..En applied to v1 reproduces v2's bytes
 #   f:reverse   En..E1 applied to v2 reproduces v1's bytes (size THEN md5)  <- must-be-identity
-#   f:unique    every `old` occurs EXACTLY once at its point of application, every `new` once in v2
+#   f:unique    every `old` occurs EXACTLY once at its point of application, every `new` once in v2;
+#               an edit that a LATER edit declares it `amends` is checked AS AMENDED (quick-260917-f68)
+#   f:amends    every declared `amends` names an edit in the ledger (no dangling declaration)
 #   f:evidence  every class-3 (citation correction) edit carries live before-RED / after-GREEN proof
 #   f:t18       NAMED ENFORCER for the "T1-T8 are not renumbered" invariant (W10 / R7 i).
 #               f: covers the file as a whole, but a claimed invariant needs its own named enforcer.
 # ============================================================================================
 _BARE_TOK = re.compile(r"`:\d+(?:-\d+)?`")
-_EXPL_TOK = re.compile(r"`[^`\s:]*(?:\.|…)(?:md|py|txt):\d+(?:-\d+)?`")
+_EXPL_TOK = re.compile(r"`[^`\s:]*(?:\.|…)(?:md|py|txt|json):\d+(?:-\d+)?`")
 _TROW = re.compile(r"^\| (T[1-8]) \|")
 
 
@@ -1929,9 +1946,29 @@ def check_edits(banked_text, source_bytes, edits, claims, reader, have_source=Fa
         okr, msgr = False, str(e)
     out.append(("f:reverse", okr, msgr))
     for e in edits:
-        n_new = banked_text.count(e["new"])
-        out.append(("f:unique:" + e["id"], n_new == 1,
-                    "cls%d `new` occurs %d time(s) in v2 (want 1)" % (e["cls"], n_new)))
+        amenders = [x for x in edits if x.get("amends") == e["id"]]
+        if not amenders:
+            n_new = banked_text.count(e["new"])
+            out.append(("f:unique:" + e["id"], n_new == 1,
+                        "cls%d `new` occurs %d time(s) in v2 (want 1)" % (e["cls"], n_new)))
+            continue
+        cur, probs = e["new"], []
+        for x in amenders:
+            k = cur.count(x["old"])
+            if k != 1:
+                probs.append("FALSE DECLARATION: %s `old` occurs %d time(s) in %s's `new`"
+                             % (x["id"], k, e["id"]))
+            else:
+                cur = cur.replace(x["old"], x["new"], 1)
+        n_new = banked_text.count(cur)
+        out.append(("f:unique:" + e["id"], (not probs) and n_new == 1,
+                    "cls%d `new` AS AMENDED by declared %s occurs %d time(s) in v2 (want 1)%s"
+                    % (e["cls"], [x["id"] for x in amenders], n_new,
+                       ("; " + "; ".join(probs)) if probs else "")))
+    ids_ = set(e["id"] for e in edits)
+    dang = [(e["id"], e["amends"]) for e in edits if e.get("amends") and e["amends"] not in ids_]
+    out.append(("f:amends", not dang,
+                "every `amends` names an edit in the ledger; dangling: %s" % (dang or "none")))
     for e in edits:
         if e["cls"] != 3:
             continue
@@ -2063,6 +2100,53 @@ def check_sibling(folder=None):
              "%d hit(s) in total" % (len(files), sum(1 for h in per if h), sum(per)))]
 
 
+def check_leak(draft, claims, reader):
+    """No STATE.md citation, key entry or mention (case-insensitive, markdown stripped); no declared
+    marker in any cited record or in the draft."""
+    out = []
+    cites = parse_citations(draft)
+    n_cite = sum(1 for c in cites
+                 if c.get("file") is not None and norm(os.path.basename(c["file"])) == "state.md")
+    out.append(("lk:state-cite", n_cite == 0,
+                "%d citation token(s) into STATE.md (case-insensitive, markdown stripped)" % n_cite))
+    key = parse_key(draft)
+    n_key = sum(1 for s, f in (key["entries"] if key else [])
+                if norm(s).endswith("state.md") or norm(f) == norm(PATHS["ST"]))
+    out.append(("lk:state-key", bool(key) and n_key == 0,
+                "%d Files-cited key entr(ies) naming STATE.md (case-insensitive)" % n_key))
+    n_txt = norm(draft).count("state.md")
+    out.append(("lk:state-text", n_txt == 0,
+                "'state.md' occurs %d time(s) in the normalized draft (case-insensitive, markdown "
+                "stripped)" % n_txt))
+    fkeys = sorted(set(r[1] for r in claims))
+    per = [marker_hits(reader.text(PATHS[k], at_basis=True)) for k in fkeys]
+    out.append(("lk:private", not any(per),
+                "%d cited record(s) screened at BASIS; %d carry a marker hit; %d hit(s) in total"
+                % (len(fkeys), sum(1 for h in per if h), sum(per))))
+    n_draft = marker_hits(draft)
+    out.append(("lk:private-draft", n_draft == 0, "%d marker hit(s) in the draft" % n_draft))
+    return out
+
+
+def check_private_control(reader, digests=None):
+    """The screen must be able to FIND each declared marker: every digest hits the control record at
+    least once (a total >= 1 would let a dead digest pass unseen). Counts only; the record is not named."""
+    per = marker_counts(reader.text(PATHS["ST"], at_basis=True), digests)
+    each = bool(per) and all(c >= 1 for c in per)
+    return [("lk:private-control", each,
+             "control record at BASIS: %d marker hit(s) (each digest ≥1: %s)" % (sum(per), "yes" if each else "no"))]
+
+
+def check_hj_basis(at_basis_keys=None):
+    """W2: under --live a per-session ledger must still be read at BASIS, never from the tree."""
+    rd = Reader(live=True, at_basis_keys=at_basis_keys)
+    rd.raw(PATHS["HJ"])
+    at_b, from_t = (PATHS["HJ"], False) in rd._cache, (PATHS["HJ"], True) in rd._cache
+    return [("lk:hj-basis", at_b and not from_t,
+             "Reader(live=True) cached HANDOFF.json with from_tree=False: %s; with from_tree=True: %s"
+             % (at_b, from_t))]
+
+
 def run_all(ctx, families=None):
     res = []
     want = (lambda f: True) if families is None else (lambda f: f in families)
@@ -2107,7 +2191,8 @@ def run_all(ctx, families=None):
     if want("bal"):
         res += _guard("bal:", lambda: check_balance(ctx.draft))
     if want("lk"):
-        res += _guard("lk:", lambda: check_sibling())
+        res += _guard("lk:", lambda: (check_sibling() + check_leak(ctx.draft, ctx.claims, ctx.reader)
+                                      + check_private_control(ctx.reader) + check_hj_basis()))
     if want("report"):
         res += _guard("report:", lambda: report_sweeps(ctx.draft))
     return res, parsed, table, verified, cres
@@ -2379,6 +2464,72 @@ def selftest(args):
             return _exact(check_sibling(tmp), "lk:sibling")
         M.append(("lk:sibling — a marker window, found by hash in the control record at BASIS, re-inserted into a "
                   "temp copy of the checker's folder", "lk:sibling", _sibling_reinserted))
+        M.append(("lk:state-cite — a STATE.md citation token (upper case)", "lk:state-cite",
+                  lambda: _exact(fam(C(mut(D, "(`HANDOFF.json:142`)", "(`STATE.md:18`)")), {"lk"}),
+                                 "lk:state-cite")))
+        M.append(("lk:state-cite — a state.md citation token (lower case)", "lk:state-cite",
+                  lambda: _exact(fam(C(mut(D, "(`HANDOFF.json:142`)", "(`state.md:18`)")), {"lk"}),
+                                 "lk:state-cite")))
+        M.append(("lk:state-key — a lower-case state.md Files-cited entry", "lk:state-key",
+                  lambda: _exact(fam(C(mut(D, "- `HANDOFF.json` → `.planning/HANDOFF.json`\n",
+                                           "- `HANDOFF.json` → `.planning/HANDOFF.json`\n"
+                                           "- `state.md` → `.planning/state.md`\n")), {"lk"}),
+                                 "lk:state-key")))
+        M.append(("lk:state-text — STATE.md named in prose", "lk:state-text",
+                  lambda: _exact(fam(C(mut(D, "## 1. What the posted text commits to",
+                                           "See STATE.md.\n\n## 1. What the posted text commits to")),
+                                     {"lk"}), "lk:state-text")))
+        M.append(("lk:state-text — a markdown-obfuscated **State**.md:18 in prose", "lk:state-text",
+                  lambda: _exact(fam(C(mut(D, "## 1. What the posted text commits to",
+                                           "See **State**.md:18.\n\n## 1. What the posted text commits to")),
+                                     {"lk"}), "lk:state-text")))
+        M.append(("lk:private — a marker window (found by hash) copied into a cited record's override",
+                  "lk:private",
+                  lambda: _exact(fam(C(D, overrides={PATHS["KW"]: _w(
+                      d, "lk-kw.md", ctx0.reader.text(PATHS["KW"], at_basis=True) + "\n" + _frag() + "\n")}),
+                      {"lk"}), "lk:private")))
+        M.append(("lk:private-draft — a marker window (found by hash) copied into the draft",
+                  "lk:private-draft",
+                  lambda: _exact(fam(C(mut(D, "## 1. What the posted text commits to",
+                                           _frag() + "\n\n## 1. What the posted text commits to")),
+                                     {"lk"}), "lk:private-draft")))
+
+        def _st_windows_deleted():
+            t = st_basis
+            for _i in range(200):
+                win = marker_windows(t)
+                if not win:
+                    break
+                a, b = win[0]
+                t = t[:a] + t[b:]
+            if marker_windows(t):
+                raise VerifyError("marker windows could not all be deleted from the control-record copy")
+            return _exact(fam(C(D, overrides={PATHS["ST"]: _w(d, "lk-ctl.md", t)}), {"lk"}),
+                          "lk:private-control")
+        M.append(("lk:private-control — every marker window (found by hash) deleted from the control "
+                  "record's override", "lk:private-control", _st_windows_deleted))
+
+        def _one_digest_corrupted():
+            dg = list(MARKER_DIGESTS)
+            k, h = dg[-1]
+            dg[-1] = (k, h[:-1] + ("0" if h[-1] != "0" else "1"))
+            if sum(marker_counts(st_basis, tuple(dg))) < 1:
+                raise VerifyError("corrupting one digest also zeroed the total: not a per-digest control")
+            return _exact(check_private_control(ctx0.reader, digests=tuple(dg)), "lk:private-control")
+        M.append(("lk:private-control — ONE declared digest corrupted (the total stays >= 1, so only the "
+                  "per-digest rule can see it)", "lk:private-control", _one_digest_corrupted))
+        M.append(("lk:hj-basis — HANDOFF.json dropped from the always-at-BASIS set, so --live reads it "
+                  "from the working tree", "lk:hj-basis",
+                  lambda: _exact(check_hj_basis(at_basis_keys=("ST",)), "lk:hj-basis")))
+        M.append(("c-hand:H2 — HANDOFF.json's runtime altered in an override", "c-hand:H2",
+                  lambda: _exact(fam(C(D, overrides={PATHS["HJ"]: _w(d, "lk-hj.json", mut(
+                      ctx0.reader.text(PATHS["HJ"], at_basis=True), '"runtime": "48m', '"runtime": "58m'))}),
+                      {"c-hand"}), "c-hand:H2")))
+        M.append(("c-hand:H6 — a kw8 verdict row re-labelled so the distinct-region count drops to 5",
+                  "c-hand:H6",
+                  lambda: _exact(fam(C(D, overrides={PATHS["KW"]: _w(d, "lk-kw2.md", mut(
+                      ctx0.reader.text(PATHS["KW"], at_basis=True), "14  m2_region_00149",
+                      "14  m2_region_00062"))}), {"c-hand"}), "c-hand:H6")))
         M += _mut_bal(C, fam, D, ctx0, v1b)
         M += _mut_f(C, fam, D, ctx0, d)
         M += _mut_baseline(ctx0)
