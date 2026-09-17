@@ -580,41 +580,6 @@ PERMITTED_EDITS = [
   "old": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:866-872`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
   "new": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:1009-1015`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
  },
- {
-  "id": 'E24', "cls": 4, "amends": 'E7c',
-  "why": 'D1 "State it once" (Carter 2026-09-17): Option A\'s consequences point to X4 instead of restating the enforcer fact, and the pointer names "the disclosure obligation" (X4\'s heading noun) because "that obligation" would have no antecedent in Option A\'s unit (planner finding 3); declared as amending E7c, which stays byte-unchanged.',
-  "label": 'f68 D1: Option A points to X4', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
-  "old": 'precedent (C7),\n  but with no registered disclosure obligation and no enforcer yet.',
-  "new": 'precedent (C7);\n  whether the disclosure obligation has an enforcer is X4.',
- },
- {
-  "id": 'E25', "cls": 4, "amends": 'E11c',
-  "why": 'D1 "State it once" (Carter 2026-09-17): Option F\'s consequences drop the "unlike A" clause and carry the same X4 pointer as Option A, byte-identical to it (planner finding 3); declared as amending E11c, which stays byte-unchanged.',
-  "label": "f68 D1: Option F drops 'unlike A', points to X4", "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
-  "old": 'as under A and C —\n  and unlike A, this option would register that obligation and its enforcer when the status is added.',
-  "new": 'as under A and C;\n  whether the disclosure obligation has an enforcer is X4.',
- },
- {
-  "id": 'E26', "cls": 4,
-  "why": 'D1 "State it once" (Carter 2026-09-17): X4 becomes the single place the enforcer fact is stated, naming every option that adds a status — F, or B\'s new-prefix variant — per orchestrator addendum D-2, re-wrapped at 100 columns.',
-  "label": 'f68 D1: X4 states the enforcer fact once', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
-  "old": '**X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7). This class does not.',
-  "new": "**X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7); this class has none\n  under A, B or C as written. Under an option that adds a status (F, or B's new-prefix variant), one\n  could be registered at that point.",
- },
- {
-  "id": 'E27', "cls": 4, "amends": 'E14',
-  "why": 'D2 "Split Q6" (Carter 2026-09-17): one §5 methods sentence stating that question coverage follows recorded text, posted or in-repo (orchestrator addendum D-3), and is not a weighting, placed on its own line because the line it follows is already 101 columns (planner finding 4); declared as amending E14, which stays byte-unchanged.',
-  "label": 'f68 D2: §5 coverage is not a weighting', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
-  "old": 'The question order below follows the option order and likewise carries no ranking.',
-  "new": 'The question order below follows the option order and likewise carries no ranking.\nQuestion coverage follows how much recorded text — posted or in-repo — bears on each option; it is\nnot a weighting.',
- },
- {
-  "id": 'E28', "cls": 4, "amends": 'E14',
-  "why": 'D2 "Split Q6" (Carter 2026-09-17): the question Options D and E shared is split so that each has its own (Q6 tagged D, Q7 tagged E), which leaves every per-option question count unchanged; declared as amending E14, which stays byte-unchanged.',
-  "label": 'f68 D2: Q6 split, E gets its own question', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
-  "old": '6. Does a full-panel measurement before the disclosure is posted use up the prospective production\n   prediction, and would changing the occlusion criterion for a stated methodological reason be the\n   act trsx5:49 fences? (Options D, E)',
-  "new": '6. Does a full-panel measurement before the disclosure is posted use up the prospective production\n   prediction? (Option D)\n7. Would changing the occlusion criterion for a stated methodological reason be the act trsx5:49\n   fences? (Option E)',
- },
 ]
 
 
@@ -1905,12 +1870,7 @@ def report_sweeps(draft):
 # f: — THE EDIT LEDGER.  v2 is v1 plus an ordered, declared list of replacements, and nothing else.
 #   f:forward   E1..En applied to v1 reproduces v2's bytes
 #   f:reverse   En..E1 applied to v2 reproduces v1's bytes (size THEN md5)  <- must-be-identity
-#   f:unique    every `old` occurs EXACTLY once at its point of application, every `new` once in v2;
-#               an edit that later edits DECLARE (`"amends": "<id>"`) is checked AS AMENDED: each
-#               declared amender's `old` must occur exactly once inside its `new` (else FALSE
-#               DECLARATION) and the amended `new` must occur once in v2. An UNDECLARED overwrite
-#               stays RED (quick-260917-f68).
-#   f:amends    every `amends` declaration names an id that is in the ledger (no dangling target)
+#   f:unique    every `old` occurs EXACTLY once at its point of application, every `new` once in v2
 #   f:evidence  every class-3 (citation correction) edit carries live before-RED / after-GREEN proof
 #   f:t18       NAMED ENFORCER for the "T1-T8 are not renumbered" invariant (W10 / R7 i).
 #               f: covers the file as a whole, but a claimed invariant needs its own named enforcer.
@@ -1969,33 +1929,9 @@ def check_edits(banked_text, source_bytes, edits, claims, reader, have_source=Fa
         okr, msgr = False, str(e)
     out.append(("f:reverse", okr, msgr))
     for e in edits:
-        amenders = [x for x in edits if x.get("amends") == e["id"]]      # ledger order
-        if not amenders:
-            n_new = banked_text.count(e["new"])
-            out.append(("f:unique:" + e["id"], n_new == 1,
-                        "cls%d `new` occurs %d time(s) in v2 (want 1)" % (e["cls"], n_new)))
-            continue
-        txt, problems = e["new"], []
-        for x in amenders:
-            k = txt.count(x["old"])
-            if k != 1:
-                problems.append("%s old occurs %d time(s) inside %s's new (want 1)"
-                                % (x["id"], k, e["id"]))
-                continue
-            txt = txt.replace(x["old"], x["new"], 1)
-        n_new = banked_text.count(txt)
-        out.append(("f:unique:" + e["id"], (not problems) and n_new == 1,
-                    "cls%d `new` AS AMENDED by declared %s occurs %d time(s) in v2 (want 1)%s"
-                    % (e["cls"], [x["id"] for x in amenders], n_new,
-                       ("; FALSE DECLARATION: %s" % "; ".join(problems)) if problems else "")))
-    ids = set(e["id"] for e in edits)
-    declared = [(e["id"], e["amends"]) for e in edits if "amends" in e]
-    dangling = [i for (i, t) in declared if t not in ids]
-    out.append(("f:amends", not dangling,
-                "%d declared amendment(s) %s; %s"
-                % (len(declared), ", ".join("%s->%s" % d for d in declared) or "-",
-                   ("every target is a ledger id" if not dangling
-                    else "DANGLING (target not in the ledger): %s" % dangling))))
+        n_new = banked_text.count(e["new"])
+        out.append(("f:unique:" + e["id"], n_new == 1,
+                    "cls%d `new` occurs %d time(s) in v2 (want 1)" % (e["cls"], n_new)))
     for e in edits:
         if e["cls"] != 3:
             continue
@@ -2519,55 +2455,6 @@ def _mut_f(C, fam, D, ctx0, d):
         M.append(("f:unique:%s — the edit's `new` string duplicated in v2" % e0["id"],
                   "f:unique:%s" % e0["id"],
                   lambda: fam(C(D + "\n" + e0["new"] + "\n"), {"f"})))
-        # ---- the declared-amends gate (quick-260917-f68): observed RED four ways -------------
-        am = [e for e in PERMITTED_EDITS if e.get("amends")]
-        if am:
-            def _amended_ledger(change):
-                import copy
-                ed = copy.deepcopy(PERMITTED_EDITS)          # no global state changes
-                change(ed)
-                return ed
-
-            def _by_id(ed, i):
-                return next(e for e in ed if e["id"] == i)
-
-            def undeclared():
-                ed = _amended_ledger(lambda ed: _by_id(ed, am[0]["id"]).pop("amends"))
-                return fam(C(D, edits=ed), {"f"})
-            M.append(("f:unique:%s — UNDECLARED overwrite: %s's `amends` removed, so an edit that "
-                      "rewrites %s's `new` without declaring it stays RED"
-                      % (am[0]["amends"], am[0]["id"], am[0]["amends"]),
-                      "f:unique:%s" % am[0]["amends"], undeclared))
-
-            other = next(e["amends"] for e in am if e["amends"] != am[0]["amends"])
-
-            def false_declaration():
-                tgt = next(e for e in PERMITTED_EDITS if e["id"] == other)
-                if am[0]["old"] in tgt["new"]:
-                    raise VerifyError("%s's old occurs inside %s's new: the re-pointed declaration "
-                                      "would be TRUE, so this mutation could not prove anything"
-                                      % (am[0]["id"], other))
-
-                def repoint(ed):
-                    _by_id(ed, am[0]["id"])["amends"] = other
-                return fam(C(D, edits=_amended_ledger(repoint)), {"f"})
-            M.append(("f:unique:%s — FALSE declaration: %s re-pointed to amend %s, whose `new` does "
-                      "not contain %s's `old`" % (other, am[0]["id"], other, am[0]["id"]),
-                      "f:unique:%s" % other, false_declaration))
-
-            def dangling():
-                def point_nowhere(ed):
-                    next(e for e in ed if not e.get("amends"))["amends"] = "E_NOT_IN_LEDGER"
-                return fam(C(D, edits=_amended_ledger(point_nowhere)), {"f"})
-            M.append(("f:amends — DANGLING declaration: an edit declares it amends an id that is "
-                      "not in the ledger", "f:amends", dangling))
-
-            M.append(("f:unique:%s — AMENDED TEXT ALTERED: a typo inside %s's `new`, outside every "
-                      "declared amender's `new`, is not absorbed by the declaration"
-                      % (am[-1]["amends"], am[-1]["amends"]),
-                      "f:unique:%s" % am[-1]["amends"],
-                      lambda: fam(C(mut(D, "The A–F labels are inherited",
-                                        "The A–F labels are inheritted")), {"f"})))
         c3 = [e for e in PERMITTED_EDITS if e["cls"] == 3 and e.get("evidence")]
         if c3:
             def same_evidence():

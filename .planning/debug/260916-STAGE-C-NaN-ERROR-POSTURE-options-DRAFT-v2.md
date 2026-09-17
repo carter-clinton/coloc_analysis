@@ -163,8 +163,8 @@ from both.
     outcome branches … before any occlusion-handling code fires". A region in none of the three is a
     fourth realized outcome, and on this reading a posted amendment-update is owed **before** Stage C
     rather than at closeout.
-- **Consequences:** each raising region is a coverage gap shaped like the R4-COVERAGE precedent (C7);
-  whether the disclosure obligation has an enforcer is X4. After the first raise, every later
+- **Consequences:** each raising region is a coverage gap shaped like the R4-COVERAGE precedent (C7),
+  but with no registered disclosure obligation and no enforcer yet. After the first raise, every later
   `stage-c` check-in exits 1 for the rest of the ~11 days (`AGENT-PROMPT.md:393`), and each exit 1 is
   an R8 STOP, so a *new* failure arrives on a gate that is already red. The verifier does print
   per-status counts (`fire_verifier.py:363-370`), so a new failure is visible by diffing check-ins.
@@ -291,8 +291,8 @@ from both.
     operational token is still a fourth realized outcome in the record. On this reading an
     amendment-update is owed **before** code, exactly as under B.
 - **Consequences:** check-ins stay green without asserting anything about the posted branch list. The
-  region still banks nothing, so the R4-COVERAGE-shaped obligation (C7) reaches it as under A and C;
-  whether the disclosure obligation has an enforcer is X4.
+  region still banks nothing, so the R4-COVERAGE-shaped obligation (C7) reaches it as under A and C —
+  and unlike A, this option would register that obligation and its enforcer when the status is added.
 
 ### LOW: three further options with less cited ground at this basis
 
@@ -330,16 +330,12 @@ Brevity here reflects how much cited ground exists at this basis, not a ranking.
   few large raising regions could make later regions fail with `error:` for an unrelated reason.
 - **X3: resume re-spends compute.** Every re-fire recomputes and re-raises each raising region (C5),
   assuming identical inputs.
-- **X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7); this class has none
-  under A, B or C as written. Under an option that adds a status (F, or B's new-prefix variant), one
-  could be registered at that point.
+- **X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7). This class does not.
 
 ## 5. Questions for the adjudicator
 
 The A–F labels are inherited and alphabetical: they carry no ranking, and the order in §3 is not an
 ordering by merit. The question order below follows the option order and likewise carries no ranking.
-Question coverage follows how much recorded text — posted or in-repo — bears on each option; it is
-not a weighting.
 
 1. Does a region that banks nothing *because the raw-panel NaN-raise contract fired* fall under any of
    the three posted branches (T4, T3)? If not, does T5 require a posted amendment-update before Stage
@@ -354,6 +350,5 @@ not a weighting.
    and occlusion manifest — reach the bucket (X1)? If so, must that land before Stage C? (Options A,
    B, C, F)
 6. Does a full-panel measurement before the disclosure is posted use up the prospective production
-   prediction? (Option D)
-7. Would changing the occlusion criterion for a stated methodological reason be the act trsx5:49
-   fences? (Option E)
+   prediction, and would changing the occlusion criterion for a stated methodological reason be the
+   act trsx5:49 fences? (Options D, E)
