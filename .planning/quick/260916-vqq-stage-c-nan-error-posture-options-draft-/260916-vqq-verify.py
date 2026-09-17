@@ -2150,10 +2150,10 @@ def selftest(args):
         M = []          # (label, expected RED id or prefix, callable -> results)
 
         # ---- a: / b: posted anchors ---------------------------------------------------------
-        M.append(("a:size — mk7ze extract truncated by 1 byte", "a:size",
-                  lambda: check_anchor_mk(mkb[:-1], D)))
-        M.append(("a:md5 — one byte inside the extract flipped, size preserved", "a:md5",
-                  lambda: check_anchor_mk(_flip(mkb, 12000), D)))
+        M.append(("a:size — one byte INSERTED inside the mk7ze extract (lines 168-500)", "a:size",
+                  lambda: check_anchor_mk(_mk_mut(mkb, "size"), D)))
+        M.append(("a:md5 — one byte FLIPPED inside the extract, size preserved", "a:md5",
+                  lambda: check_anchor_mk(_mk_mut(mkb, "md5"), D)))
         M.append(("a:control — control range set EQUAL to the anchor range (a control that DOES match)",
                   "a:control", lambda: check_anchor_mk(mkb, D, ctrl=(MK_START, MK_END))))
         M.append(("b:size — trsx5 body truncated by 1 byte", "b:size",
@@ -2293,6 +2293,16 @@ def selftest(args):
         shutil.rmtree(d, ignore_errors=True)
 
 
+def _mk_mut(mkb, mode):
+    """Mutate mk7ze INSIDE lines 168-500, so the mutation actually reaches the extract a: hashes."""
+    ls = mkb.splitlines(keepends=True)
+    pre, ext, post = b"".join(ls[:167]), b"".join(ls[167:500]), b"".join(ls[500:])
+    if mode == "size":
+        return pre + ext[:100] + b"X" + ext[100:] + post
+    j = next(k for k in range(200, len(ext)) if 65 <= ext[k] <= 90 or 97 <= ext[k] <= 122)
+    return pre + ext[:j] + bytes([ext[j] + 1]) + ext[j + 1:] + post
+
+
 def _flip(b, i):
     ba = bytearray(b)
     ba[i] = (ba[i] + 1) % 128 or 65
@@ -2354,12 +2364,12 @@ def _mut_bal(C, fam, D, ctx0, v1b):
     M.append(("bal:readweight — one READING inflated until the within-option 2.0 band breaks",
               "bal:readweight",
               lambda: fam(C(_in_option(D, "B", "*READING 1:*", "*READING 1:*" + FILLER)), {"bal"})))
-    M.append(("bal:readweight — a READING's sub-bullets MOVED under its sibling "
+    M.append(("bal:readweight — READING 1's supporting line RE-ATTRIBUTED to READING 2 "
               "(the v1 defect wearing a label)", "bal:readweight",
-              lambda: fam(C(_shift_bullets(D, "B")), {"bal"})))
+              lambda: fam(C(_shift_bullets(D, "D")), {"bal"})))
     M.append(("bal:words — one option unit padded until the 3.0 band breaks", "bal:words",
               lambda: fam(C(_in_option(D, "A", "**Consequences:**",
-                                       "**Consequences:**" + FILLER + FILLER)), {"bal"})))
+                                       "**Consequences:**" + FILLER * 3)), {"bal"})))
     M.append(("bal:eval — a declared cue injected into §0 (A-1: OUTSIDE any option unit)",
               "bal:eval",
               lambda: fam(C(mut(D, "## 1. What the posted text commits to",
@@ -2397,8 +2407,9 @@ def _mut_bal(C, fam, D, ctx0, v1b):
 
 
 def _shift_bullets(text, letter):
-    """Move the first sub-bullet that follows READING 2 to ABOVE the READING 2 label, so its words
-    are attributed to READING 1 instead. Nothing is added or deleted — only re-attributed."""
+    """Move the line immediately BEFORE the READING 2 label to just AFTER it, so words that were
+    attributed to READING 1 are attributed to READING 2 instead. Nothing is added or deleted — only
+    re-attributed. This is the v1 defect in miniature: the labels stay balanced, the weight does not."""
     u = option_units(text)[letter]
     lines = list(text.split("\n"))
     a, b = u["start"] - 1, u["end"]
@@ -2407,9 +2418,9 @@ def _shift_bullets(text, letter):
         if "*READING 2:*" in lines[i]:
             idx = i
             break
-    if idx is None or idx + 1 >= b:
-        raise VerifyError("no READING 2 with a following line in Option %s" % letter)
-    moved = lines.pop(idx + 1)
+    if idx is None or idx - 1 <= a:
+        raise VerifyError("no READING 2 with a preceding line in Option %s" % letter)
+    moved = lines.pop(idx - 1)
     lines.insert(idx, moved)
     out = "\n".join(lines)
     if out == text:
@@ -2457,7 +2468,7 @@ def _mut_f(C, fam, D, ctx0, d):
         br = [e for e in PERMITTED_EDITS if e.get("bare_ref")]
         if br:
             M.append(("f:bareplan — a declared bare-ref expansion removed from v2", "f:bareplan",
-                      lambda: fam(C(D.replace(br[0]["bare_ref"], "REMOVED", 1)), {"f"})))
+                      lambda: fam(C(D.replace(br[0]["bare_ref"], "REMOVED")), {"f"})))
     M.append(("f:t18 — a T1-T8 row altered (the NAMED enforcer for \"no renumbering\")", "f:t18",
               lambda: fam(C(_bump_trow(D)), {"f"})))
     return M
