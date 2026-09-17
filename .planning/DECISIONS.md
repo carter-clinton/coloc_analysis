@@ -2536,3 +2536,89 @@ project-side copy); `quick-260916-oyq`; `[[feedback_scope_a_guard_to_the_propert
 ("scope a guard to the property, not a proxy") and
 `[[feedback_a_claimed_invariant_needs_a_named_enforcer]]` ("a claimed invariant needs a named
 enforcer").
+
+## 2026-09-16 — DEC-2026-09-16-ram1-launcher-measurement: RAM-1's recorded Popen+os.wait4 fix is falsified by measurement; `_run_plink` measures plink's own peak RSS in an isolated launcher
+
+**Decision (CARTER, 2026-09-16, AskUserQuestion):** Carter chose the option labelled verbatim
+**"Small launcher process (Recommended)"** (`260916-ocb-PLAN.md:14`, `:97`; echoed at
+`260916-ocb-SUMMARY.md:8`, `:70`).
+
+**The falsified premise, with its measurements.**
+`.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md:124` prescribed
+"`subprocess.Popen` + `os.wait4(pid, 0)`, whose `rusage` is that child's own". **That is false in
+this environment**: at `exec`, Linux folds the SPAWNER's memory into the child's `ru_maxrss`.
+Measured on NCSU login03 2026-09-16 and banked at `260916-ocb-PLAN.md:112`-`:113`, `:115`:
+
+- CPython **3.11** (`subprocess._USE_VFORK=True`) / `os.posix_spawn` — floor = the spawner's
+  LIFETIME high-water: parent VmHWM **523,060 KiB** (VmRSS 11,400 KiB), and a trivial child then
+  read **523,060 KiB**.
+- CPython **3.9** (fork) — floor = the spawner's CURRENT resident size: with the parent holding
+  400 MiB, `/usr/bin/true` read **413,992 KiB**.
+- The unmodified `_run_plink`'s FIRST tiny child read **106.8 MiB** (VmHWM 109,504 KiB) — the
+  importer's own numpy/pandas footprint, so even a first child is not a clean reading.
+
+**Why it matters in production:** right before every spawn the driver runs `_window_bim_n_var`,
+which does `read_text().splitlines()` over the whole cohort `.bim` (**20,767,864 lines**), and it
+converts `.ld.bin` in-process afterwards — so a direct `Popen` + `os.wait4` would report the
+DRIVER's high-water and the `peak_ram_gib` column would flat-line again.
+
+**Negative control (observed, not assumed):** NC01 implemented the recorded fix exactly and was
+observed **RED** — A2 **362.59** MiB / A3 **362.92** MiB (`260916-ocb-SUMMARY.md:44`).
+**The naive-probe trap, recorded so it is not repeated:** a `MAP_SHARED` probe does NOT show the
+3.9 effect, because fork does not copy shared page tables — so a naive probe "refutes" a premise
+that is true (`.planning/STATE.md:65`).
+
+**What changes.** `_run_plink` starts an isolated `-I -S` Python launcher, which forks plink from
+its own small image, `os.wait4`s it, and returns plink's `ru_maxrss` over a pipe. Measured launcher
+bias **11,264 KiB (3.11) / 4,352 KiB (3.9)**, independent of driver memory
+(`260916-ocb-PLAN.md:121`, `:203`). The `subprocess.run(check=True)` contract, fd and
+signal-disposition parity, and SIGTERM / `timeout` behaviour are preserved and pinned (36/36
+contract checks per interpreter). Landed by `quick-260916-ocb`: `f8ff9cd`
+(RED — `tests/m3/test_run_plink_peak_rss.py`, 21 functions / 25 items, **9 RED on the unmodified
+driver**, observed `collected=25 failed=9 passed=16`) and `9a3eb97` (fix); close-out `0231cbf`;
+**verified 9/9 by an independent verifier**.
+
+**What does NOT change.**
+- **No pre-registered behaviour moved.** Docstring-stripped top-level AST diff of
+  `src/python/run_native_ld_panel.py`, `c93e97b` vs HEAD `621701c` (re-derived 2026-09-16 with
+  `ast.parse` + docstring stripping + per-node `ast.dump(include_attributes=False)`): exactly **one
+  CHANGED node (`_run_plink`)** and **one ADDED node (`_PLINK_PEAK_RSS_LAUNCHER`)**; top-level node
+  count 59 → 60; the `if __name__ == "__main__"` block's dump is byte-identical and differs only in
+  its positional key.
+- **No deviation-log entry is required.** No posted or pre-registered body registers a peak-RAM
+  measurement or its column: 0 case-insensitive hits for
+  `peak.?ram|peak.?rss|ru_maxrss|maxrss|\bRAM\b|resident set` in the posted trsx5 body
+  (`260817-vbu-trsx5-posted-9695-reconstructed.txt`), the mk7ze amendment
+  (`osf-amendment-occlusion-gate-recalibration-2026-08-20.md`), the tcujq amendment
+  (`osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`) and the trsx5 project copy
+  (`osf-amendment-afr-native-ld-nan-psd-2026-07-03.md`) — all re-measured 2026-09-16. ⚠ The one
+  nuance, stated narrowly and honestly: `.planning/amendments/AOU-LD-PIPELINE.md` DOES say "RAM" at
+  `:471`, `:488` and `:492` — "~1.6 TB worker RAM", "`n1-highmem-16` … RAM-bound", "fit in one
+  cluster's worth of RAM". That is **cluster-sizing prose in an internal protocol, not a
+  measurement contract and not a posted OSF text**. `.planning/osf_deviations.md` is therefore
+  **NOT amended by this decision**.
+- `fire_verifier.check_peak_ram` (`src/python/fire_verifier.py:733`) is an **UNCHANGED consumer**;
+  it now receives plink-only values.
+
+**Consequences recorded, not decided (for Carter).**
+- `src/python/condition_ld_matrix.py:159`-`:160` says trsx5 "retains the fully-NaN-row drop rule
+  that this raise directs", but **in PRODUCTION that retained rule is carried out by `--mac 1` plus
+  the raw-panel NaN-raise, NOT by this module**. It is a code-adjacent docstring in a frozen file
+  (blast-radius finding B10, report-only), so it was not edited here.
+- **COST-1 must use post-fix `peak_ram_gib` only.** No pre-fix value — region 17's 2.9689,
+  region 1's 30.6591, `00040__sub14` / `00057`'s 26.5745 — is a proven plink-only measurement.
+- **Record `python3 -V` on the AoU VM before Stage C**: the launcher binds
+  `os.waitstatus_to_exitcode` (3.9+).
+- `pgrep -f` / `pkill -f plink1.9` now also match the launcher (its argv contains plink's argv);
+  `pgrep -x plink1.9` matches only plink.
+
+**Cross-refs:** `.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md`
+(its `⚠ SUPERSEDED 2026-09-16` section); `quick-260916-ocb` PLAN / SUMMARY / VERIFICATION;
+`DEC-2026-09-16-condition-ld-matrix-freeze-code-only` (its sibling from the same day);
+`.planning/debug/260916-BLAST-RADIUS-c93e97b-to-621701c.md`;
+`[[feedback_error_message_named_cause_is_not_the_measurement]]`;
+`[[feedback_green_assertion_needs_a_negative_control]]`.
+
+**Provenance.** Appended at EOF by `quick-260916-vqp` on 2026-09-16 after the blast-radius review
+(finding B10, "RAM-1 has no `DEC-*` entry"). INSERTION ONLY: no pre-existing line of this file is
+edited. Nothing fired; no OSF, Seth, cloud or network contact; `$0`.

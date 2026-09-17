@@ -341,6 +341,41 @@ body, not the verdict on it. **The fire remains HELD. Obligation-(2) posting rem
   `$0`. Nothing fired. Appended, never rewritten: every pre-existing line of this section
   survives unchanged.
 
+### RESOLVED 2026-08-17 — the trsx5 body question is settled; pointer recorded here 2026-09-16
+
+- **Why this pointer exists (and why it is only a pointer).** This section previously ended on
+  "None of (1)-(6) has been actioned" (`:326` at `621701c`, re-derived 2026-09-16), and a search of
+  THIS FILE for `08-17` / `gate-released` / `260817` returns **ZERO hits**
+  (`grep -cE '08-17|gate-released|260817' .planning/osf_deviations.md` = `0`, re-measured
+  2026-09-16), so a reader of the ledger alone could not learn the outcome. **Nothing above is
+  re-adjudicated, edited or softened**: the 2026-08-13 / 2026-08-14 readings stay as the honest
+  state of knowledge at their dates. This sub-entry adds the pointer, and nothing else.
+- **The resolution.** The posted **9,695-B** body is a **byte-exact plain-text rendering of the
+  COMPLETE 9,907-B lineage** — not a truncation, and not a third body. Seth published the 6-step
+  transform first; we replicated it firsthand from the git object store at `3684413`
+  (`git show 3684413:.planning/quick/260814-u9p-bank-seth-prefix-test-reply-third-body-e/260814-u9p-seth-lineage-9907.txt`,
+  re-measured 2026-09-16 = **9,907 B** / `425d925a88ab474ec2396cbea25e665c`), implemented from his
+  prose spec alone, run once, with no fitting. Output **9,695 B** /
+  `c19be8b2ad7cd6a45fee1d668d8a9cf9` — which is also Carter's own firsthand 2026-08-16 OSF download
+  measurement. The in-repo copy of the posted body is
+  `.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-trsx5-posted-9695-reconstructed.txt`
+  (re-measured 2026-09-16: **9,695 B** / `c19be8b2ad7cd6a45fee1d668d8a9cf9`).
+- **Consequence for the pre-registration record.** All three bodies carry the same pre-registration
+  prose; the 212-B and 149-B deltas are pure markup. The public record is substantively correct and
+  complete. The **"unexplained third body" characterization is RETIRED** — by the person who coined
+  it, and by our own replication — while the heading above that coined it stays exactly as written.
+- **The gate.** **RELEASED BY CARTER ON SUBSTANCE, 2026-08-17 22:32 EDT**:
+  `DEC-2026-08-17-trsx5-gate-released` in `.planning/DECISIONS.md` (at `:2030`, re-derived
+  2026-09-16). **Re-post NOT taken**: optional legibility only, per Seth's withdrawn "re-post
+  required". The recommendation list's "(1)-(6) not actioned" was TRUE when written, and is
+  superseded by a resolution that reached the same question by a different route — characterize the
+  posted body rather than re-post it.
+- **Provenance.** Appended by `quick-260916-vqp` on 2026-09-16 after the blast-radius review
+  (finding B8); the review is banked at
+  `.planning/debug/260916-BLAST-RADIUS-c93e97b-to-621701c.md`. No OSF contact, no Seth contact, no
+  agent posted anything. `$0`. Nothing fired. Appended, never rewritten: every pre-existing line of
+  this section survives unchanged.
+
 ---
 
 ### REQ-AOU-LD-VALIDATION Check 2 redefined without prior OSF amendment posting (operator override 2026-08-03)

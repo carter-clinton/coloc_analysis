@@ -250,3 +250,52 @@ panel; (b) the true boundary width and whether it is one-sided; (c) whether a pa
 tail exists and how large; (d) the response — a criterion extension, an explicit pairwise-completeness
 policy, or something else. (d) is a **pre-registration** question, because the exclusion criterion is
 what `trsx5` posts. None of these may be answered by inference from this one pair.
+
+---
+
+## ⚠ SUPERSEDED 2026-09-16 — RAM-1's DIAGNOSIS held; its PRESCRIBED FIX is falsified
+
+**Nothing above this heading is edited, softened or removed.** Appended by `quick-260916-vqp` on
+2026-09-16 after the blast-radius review (finding B1). This is an annotation, not a rewrite.
+
+**`:118`-`:122` — the "real" labels are SUPERSEDED.** The record reads "region 17 → 2.9689 (real,
+first child), sub14 → 26.5745 (real, larger), **00057 → 26.5745 (inherited; …)**. Region 1's
+30.6591 is real because Stage A was its own process." **A first child is not clean either:** at
+`exec` Linux folds the SPAWNER's memory into the child's `ru_maxrss`. Measured on NCSU login03,
+2026-09-16, banked at `260916-ocb-PLAN.md:112`-`:113` and `:115`:
+
+- CPython **3.11** (`subprocess._USE_VFORK=True`) and `os.posix_spawn`: the floor is the spawner's
+  **lifetime high-water**. Parent VmHWM **523,060 KiB** (VmRSS 11,400 KiB) after touching and
+  freeing 500 MiB; a trivial child (`/usr/bin/true`, `python -c pass`) then read **523,060 KiB**.
+- CPython **3.9** (fork): the floor is the spawner's **current resident size**. With the parent
+  holding 400 MiB, `/usr/bin/true` read **413,992 KiB**.
+- The UNMODIFIED `_run_plink`, imported into a fresh 3.11 process: its **FIRST** tiny child read
+  **106.8 MiB** — the importer's own numpy/pandas footprint (VmHWM 109,504 KiB).
+
+**Consequence: no pre-fix `peak_ram_gib` value is a proven plink-only measurement — region 17's
+2.9689 and region 1's 30.6591 included.** The DEFECT this record diagnosed — a monotone
+`resource.getrusage(RUSAGE_CHILDREN).ru_maxrss` high-water that flat-lines the column — is
+**CONFIRMED and unchanged**. Only the "real" labels and the remedy are wrong.
+
+**`:124` — the prescribed fix is FALSIFIED.** "Clean fix: `subprocess.Popen` + `os.wait4(pid, 0)`,
+whose `rusage` is that child's own" was implemented as negative control **NC01** and observed
+**RED** (A2 **362.59** MiB / A3 **362.92** MiB — `260916-ocb-SUMMARY.md:44`). ⛔ **Do not reinstate
+it**: `tests/m3/test_run_plink_peak_rss.py` goes RED if anyone does. What landed instead is
+Carter's 2026-09-16 choice, verbatim **"Small launcher process (Recommended)"**
+(`260916-ocb-PLAN.md:14`, `:97`): `_run_plink` reads plink's own `rusage` inside a small isolated
+`-I -S` launcher process. Measured launcher bias **11,264 KiB (3.11) / 4,352 KiB (3.9)**
+(`260916-ocb-PLAN.md:121`, `:203`). Post-fix behaviour: a 300 MiB child then a tiny child reads
+**307.96** then **11.00** MiB (the old code read 308 then 308); a tiny child with the driver
+holding 256 MiB reads **11.25** MiB (old ≈ 363) — `260916-ocb-SUMMARY.md:41`-`:42`. Commit
+`9a3eb97`; decision record **`DEC-2026-09-16-ram1-launcher-measurement`** in
+`.planning/DECISIONS.md`.
+
+**`:146` — "Separately and independently: RAM-1 fix (TDD) and the 00071 anchor" is half done.**
+RAM-1 is **DONE** (`f8ff9cd` RED, `9a3eb97` fix, `0231cbf` close-out, verified 9/9).
+**COST-1 / `m2_region_00071` is STILL OPEN** and still needs a Carter fire; nothing in this
+annotation changes that.
+
+**Courier note.** This record is CITED by the banked Stage C options draft
+(`.planning/debug/260916-STAGE-C-NaN-ERROR-POSTURE-options-DRAFT.md`), so a courier of that draft
+should carry this annotation with it — otherwise the recipient reads a prescribed fix that
+measurement has already killed.
