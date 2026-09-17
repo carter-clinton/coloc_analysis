@@ -1,6 +1,34 @@
 """Bank a NaN-conditioned LD matrix as a separate provenance-stamped ``.npz``
 (m3-06-W6-T3, ROADMAP 999.1 §4).
 
+==== WITHDRAWN POLICY NOTICE (tcujq -> trsx5) -- READ BEFORE ANYTHING BELOW ====
+
+The conditioning this module banks -- the isolated-pair off-diagonal ``NaN -> 0``
+zeroing and the per-region zeroing ceiling, run by ``condition_ld_matrix`` -- WAS
+pre-registered: OSF file tcujq on az52u, posted 2026-07-04T04:14:46Z. It was then
+WITHDRAWN by the amendment-update OSF file trsx5 on az52u, posted
+2026-07-10T13:32:22Z. The posted trsx5 body, under "What is withdrawn:", reads:
+
+    The off-diagonal NaN→0 conditioning of isolated pairwise-undefined entries
+    (prior amendment tcujq item (a) isolated-off-diagonal-pair branch and item
+    (b) the per-region zeroing ceiling), together with its
+    BRANCH_AFR_COND_CLEAN / BRANCH_AFR_COND_APPLIED / BRANCH_AFR_COND_DEFERRED
+    outcome branches, is withdrawn.
+
+The replacement pre-registered by trsx5 is overlapping-deletion occlusion
+exclude-in-lockstep (LD panel AND harmonized summary statistics) with a mandatory
+provenance manifest; NaN→0 is prohibited.
+
+STATUS: this module (m3-06, HELD) is retained as a historical record and is NOT
+called by the pipeline. Its code, its error strings and its on-disk provenance
+keys (``nan_policy``, ``n_zeroed``, ``zeroed_pairs``, ``ceiling_frac``) are
+deliberately left unchanged -- read them, and the "pre-registered" wording below,
+in light of this withdrawal. The text below this notice is the original 2026-07
+wording, kept as written. Recorded:
+DEC-2026-09-16-condition-ld-matrix-freeze-code-only (quick-260916-oyq).
+
+==== END WITHDRAWN POLICY NOTICE ====
+
 ``write_conditioned_npz`` runs ``condition_ld_matrix`` (the pre-registered
 off-diagonal ``NaN -> 0`` policy) then ``np.savez_compressed`` the conditioned matrix
 to a SEPARATE ``{region}.conditioned.npz`` — NEVER the raw ``{region}.npz``. The
@@ -83,6 +111,7 @@ def write_conditioned_npz(
         )
 
     # Apply the pre-registered conditioning (RAISES propagate here -> no file written).
+    # (Policy WITHDRAWN by trsx5, OSF 2026-07-10; see the module docstring notice.)
     conditioned, record = clm.condition_ld_matrix(
         m, nan_policy=nan_policy, ceiling_frac=ceiling_frac,
     )

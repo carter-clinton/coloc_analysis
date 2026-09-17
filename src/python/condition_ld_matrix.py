@@ -1,5 +1,36 @@
 """Pre-registered AFR native-plink LD NaN conditioning (ROADMAP 999.1 §3).
 
+==== WITHDRAWN POLICY NOTICE (tcujq -> trsx5) -- READ BEFORE ANYTHING BELOW ====
+
+The isolated-pair off-diagonal ``NaN -> 0`` zeroing and the per-region zeroing
+ceiling that this module implements WERE pre-registered: OSF file tcujq on az52u,
+posted 2026-07-04T04:14:46Z. They were then WITHDRAWN by the amendment-update OSF
+file trsx5 on az52u, posted 2026-07-10T13:32:22Z. The posted trsx5 body, under
+"What is withdrawn:", reads:
+
+    The off-diagonal NaN→0 conditioning of isolated pairwise-undefined entries
+    (prior amendment tcujq item (a) isolated-off-diagonal-pair branch and item
+    (b) the per-region zeroing ceiling), together with its
+    BRANCH_AFR_COND_CLEAN / BRANCH_AFR_COND_APPLIED / BRANCH_AFR_COND_DEFERRED
+    outcome branches, is withdrawn.
+
+The replacement pre-registered by trsx5 is overlapping-deletion occlusion
+exclude-in-lockstep (LD panel AND harmonized summary statistics) with a mandatory
+provenance manifest; NaN→0 is prohibited. trsx5 RETAINS, unchanged, the
+fully-NaN-row drop rule (this module raises on a fully-NaN row), the PSD
+regularization methods, and the raw-panel NaN-raise contract.
+
+STATUS: this module is retained FROZEN / HELD as a historical record and is NOT
+called by the pipeline. Two of the four error-message strings at its ``raise``
+sites still say "pre-registered", and one of those two also names
+BRANCH_AFR_COND_DEFERRED. These strings are CODE under the source-freeze pin
+(tests/m3/test_source_freeze_pins.py) and are deliberately left unchanged --
+read them in light of this withdrawal. The text below this notice is the
+original 2026-07 wording, kept as written. Recorded:
+DEC-2026-09-16-condition-ld-matrix-freeze-code-only (quick-260916-oyq).
+
+==== END WITHDRAWN POLICY NOTICE ====
+
 ``condition_ld_matrix`` applies the off-diagonal ``NaN -> 0`` policy pre-registered
 in ``osf-amendment-afr-native-ld-nan-psd-2026-07-03.md`` (OSF file ``tcujq`` on
 ``az52u``, posted 2026-07-04) for the All of Us AFR native-plink per-region LD panel.
@@ -121,6 +152,12 @@ def condition_ld_matrix(
     block: int = 1024,
 ) -> Tuple[np.ndarray, dict]:
     """Apply the pre-registered off-diagonal ``NaN -> 0`` conditioning to ``m``.
+
+    WITHDRAWN POLICY: this conditioning (tcujq, OSF 2026-07-04) was WITHDRAWN by
+    trsx5 (OSF 2026-07-10) and replaced by occlusion exclude-in-lockstep; this
+    function is NOT called by the pipeline. See the WITHDRAWN POLICY NOTICE in the
+    module docstring. Its fully-NaN-row raise is NOT part of the withdrawal: trsx5
+    retains the fully-NaN-row drop rule that this raise directs.
 
     Parameters
     ----------
