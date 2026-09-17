@@ -694,6 +694,7 @@ command form was decided on GNU coreutils 8.32 at NCSU and this VM's version is
 **unmeasured**.
 
 ```
+REPO=$PWD   # ⚠ remember where the fire runs from; check 4 ends by returning here
 cd /tmp && cat > hupchild.py <<'PYEOF'
 import os, sys, time
 open(sys.argv[1], "w").write(str(os.getpid()))
@@ -711,15 +712,24 @@ LB=$!; sleep 2; CB=$(cat /tmp/pidB); kill -HUP $LB; sleep 2
 echo "formB  launcher=$(alive $LB) child=$(alive $CB)"
 kill -9 $CB $LB 2>/dev/null
 timeout 3 nohup python3 /tmp/hupchild.py /tmp/pidC > /dev/null 2>&1; echo "expiry rc=$?"
+cd "$REPO" && pwd   # ⚠ MANDATORY: check 4 cd'd to /tmp; the fire uses RELATIVE paths
 ```
 
-EXPECT, exactly these three lines:
+EXPECT these three propositions, in this order, followed by the repo path:
 
 ```
 formA  launcher=DEAD child=DEAD
 formB  launcher=ALIVE child=ALIVE
 expiry rc=124
+/home/jupyter/coloc_analysis          <- whatever $REPO was; the cd-back, NOT optional
 ```
+
+⚠ bash may interleave its own job notices (`… Hangup …`, `… Killed …`) around those
+lines — that is the shell reporting the probe's own children and is EXPECTED; judge the
+three propositions and the final path, not the line count. ⛔ If the last line is `/tmp`
+or the `cd` is missing, STOP: the fire command uses RELATIVE paths (`src/python/…`,
+`config/ld_regions.tsv`) and would fail from the wrong directory while `echo "fire PID: $!"`
+still prints a PID — it reads as launched and is not.
 
 **Read it as a property, not as a hope.** form A's **death** is the NEGATIVE
 CONTROL that makes form B's survival mean anything. ⛔ **If both forms survive, or
