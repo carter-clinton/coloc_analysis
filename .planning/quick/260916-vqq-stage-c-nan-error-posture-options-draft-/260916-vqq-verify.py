@@ -12,10 +12,10 @@ MEASURED here rather than asserted:
      c-halt:``).
   2. v2's delta from v1 is fully declared and REVERSIBLE to v1's exact bytes  (family ``f:``), and v1
      plus the checker that verified it are byte-unchanged  (family ``imm:``).
-  3. Nothing in v2 leaks a recommendation — lexically (``g:``) OR structurally (``bal:``). The v1 leak
-     was structural, not lexical: kht's inherited word screen scores 0 hits on all five v1 option
-     bodies while v1's Option A carries 6.0x Option E's words and only two of its five options carry
-     a labelled READING at all.
+  3. Nothing in v2 leaks a recommendation — lexically (``g:``) OR structurally (``bal:``).
+     The v1 imbalance was structural, not lexical: kht's inherited word screen scores 0 hits on all
+     five v1 option bodies while v1's option word counts spanned 6.0x and only two of its five
+     options carried a labelled READING.
 
 NOT SCREENED, ON PURPOSE (recorded so a reader does not mistake the omission for an oversight):
   * §4 MEMBERSHIP — which options leave a region unbanked is a factual property of the options, not a
@@ -1997,6 +1997,72 @@ def _guard(fam, fn):
         return [(fam, False, "EXC %s: %s" % (type(e).__name__, e))]
 
 
+# ============================================================================================
+# lk: — the brief-blind LEAK screen (quick-260917-f68).
+#   Markers are stored ONLY as sha256 digests of their normalized word n-grams (lower-case
+#   [A-Za-z0-9]+ runs joined by one space), so this file discloses no content. Every lk: message
+#   prints COUNTS only: never a phrase, never a line number, never a context window.
+# ============================================================================================
+MARKER_DIGESTS = (
+    (3, "b5160ce5da19ee3df632263c152bc2ae5e093d282ad00e35bdd44821af1bccc6"),
+    (2, "45032ce437619f482fc629292f6623def42765984dfcd1468e8119e7731dc884"),
+    (3, "d2fb4a03852c37a5f2a9a5392f9443060b8bbc575bb130e04010020d792c0028"),
+    (5, "3cd9cd553d93c8dbf5065ee82aef9d8b931a09d96a60a54d6020bec5312395ae"),
+)
+CHECKER_DIR_REL = ".planning/quick/260916-vqq-stage-c-nan-error-posture-options-draft-"
+_MK_TOKEN = re.compile(r"[A-Za-z0-9]+")
+
+
+def checker_dir():
+    return ROOT / CHECKER_DIR_REL
+
+
+def _marker_scan(text, digests=None):
+    """(start, end, j) for every word n-gram whose sha256 equals declared digest j."""
+    dg = MARKER_DIGESTS if digests is None else digests
+    toks = [(m.start(), m.end(), m.group(0).lower()) for m in _MK_TOKEN.finditer(text)]
+    out = []
+    for n in sorted(set(k for k, _dg in dg)):
+        want = {}
+        for j, (k, h) in enumerate(dg):
+            if k == n:
+                want.setdefault(h, []).append(j)
+        for i in range(len(toks) - n + 1):
+            w = toks[i:i + n]
+            h = hashlib.sha256(" ".join(t[2] for t in w).encode("utf-8")).hexdigest()
+            for j in want.get(h, ()):
+                out.append((w[0][0], w[-1][1], j))
+    return sorted(out)
+
+
+def marker_windows(text, digests=None):
+    """Char spans (start, end) of every word n-gram whose sha256 is a declared marker digest."""
+    return [(a, b) for a, b, _j in _marker_scan(text, digests)]
+
+
+def marker_counts(text, digests=None):
+    """Hit count per declared digest, in declared order."""
+    dg = MARKER_DIGESTS if digests is None else digests
+    per = [0] * len(dg)
+    for _a, _b, j in _marker_scan(text, dg):
+        per[j] += 1
+    return per
+
+
+def marker_hits(text, digests=None):
+    return len(_marker_scan(text, digests))
+
+
+def check_sibling(folder=None):
+    """v2 sends its reviewers to this checker, so every file beside it is reviewer-visible."""
+    folder = Path(folder) if folder is not None else checker_dir()
+    files = sorted(p for p in folder.iterdir() if p.is_file())
+    per = [marker_hits(p.read_text(encoding="utf-8", errors="replace")) for p in files]
+    return [("lk:sibling", bool(files) and not any(per),
+             "%d file(s) in the checker's own folder (working tree) screened; %d carry a marker hit; "
+             "%d hit(s) in total" % (len(files), sum(1 for h in per if h), sum(per)))]
+
+
 def run_all(ctx, families=None):
     res = []
     want = (lambda f: True) if families is None else (lambda f: f in families)
@@ -2040,6 +2106,8 @@ def run_all(ctx, families=None):
         res += _guard("g:", lambda: check_neutral(ctx.draft))
     if want("bal"):
         res += _guard("bal:", lambda: check_balance(ctx.draft))
+    if want("lk"):
+        res += _guard("lk:", lambda: check_sibling())
     if want("report"):
         res += _guard("report:", lambda: report_sweeps(ctx.draft))
     return res, parsed, table, verified, cres
@@ -2285,6 +2353,32 @@ def selftest(args):
                   lambda: fam(C(mut(D, "## 5. Questions for the adjudicator",
                                     "Read the code at c93e97b.\n\n## 5. Questions for the adjudicator")),
                               {"basis"})))
+        # ---- lk: (quick-260917-f68). Markers are located BY HASH, never by a stored phrase, and every
+        #      lk: mutation is matched on its EXACT result id (no prefix matching). ----------------------
+        st_basis = ctx0.reader.text(PATHS["ST"], at_basis=True)
+        st_win = marker_windows(st_basis)
+
+        def _exact(res, cid, must=None):
+            return [r for r in res if r[0] == cid and (must is None or must in r[2])]
+
+        def _frag():
+            if not st_win:
+                raise VerifyError("the control record at BASIS carries no marker window to copy")
+            a, b = st_win[0]
+            return st_basis[a:b]
+
+        def _sibling_reinserted():
+            tmp = Path(d) / "lk-sibling"
+            tmp.mkdir()
+            files = sorted(p for p in checker_dir().iterdir() if p.is_file())
+            for p in files:
+                shutil.copyfile(str(p), str(tmp / p.name))
+            victim = tmp / files[0].name
+            victim.write_text(victim.read_text(encoding="utf-8", errors="replace")
+                              + "\n" + _frag() + "\n", encoding="utf-8")
+            return _exact(check_sibling(tmp), "lk:sibling")
+        M.append(("lk:sibling — a marker window, found by hash in the control record at BASIS, re-inserted into a "
+                  "temp copy of the checker's folder", "lk:sibling", _sibling_reinserted))
         M += _mut_bal(C, fam, D, ctx0, v1b)
         M += _mut_f(C, fam, D, ctx0, d)
         M += _mut_baseline(ctx0)

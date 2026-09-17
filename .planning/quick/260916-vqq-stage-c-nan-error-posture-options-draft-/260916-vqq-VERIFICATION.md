@@ -114,20 +114,14 @@ the executor's code.
 
 ### Does anything still tilt — including the channels the gates deliberately do not screen?
 
-**No structural or lexical advantage to Option A.** Measured:
+[Redacted 2026-09-17 (quick-260917-f68): working note on the Stage C decision, removed from the folder the options draft sends its reviewers to.]
 
-- A is first AND longest (349 w), the classic primacy+volume pair — but A's extra volume is **burden**
-  text: its `Already pre-registered?` block (189 w, the largest of six) is where the draft argues that
-  **no posted branch fits A on its face**, and its Consequences carry the heaviest stated cost in the
-  document ("every later `stage-c` check-in exits 1 for the rest of the ~11 days … a *new* failure
-  arrives on a gate that is already red").
-- §4's four issues (X1–X4) apply to A, C and F and not to D/E — i.e. §4 membership, an unscreened
-  channel, tilts **against** A.
+- [Redacted 2026-09-17 (quick-260917-f68): working note on the Stage C decision, removed from the folder the options draft sends its reviewers to.]
 - A's citation density (7) ties D for highest; disclosed as INFO by `report:cites`, and the draft's own
   Method note records density and §4 membership as deliberately unbalanced because both are factually
   determined. That disclosure is present in v2 (v2:14-17), not only in the SUMMARY.
 
-**Residual tilts I did find — all mild, none toward A, reported for human adjudication:**
+[Redacted 2026-09-17 (quick-260917-f68): working note on the Stage C decision, removed from the folder the options draft sends its reviewers to.]
 
 1. **Option F's Consequences carries the draft's only differential-capability sentence:** "and unlike A,
    this option would register that obligation and its enforcer when the status is added" (v2:295). The
@@ -142,14 +136,7 @@ the executor's code.
    (`already requires`, `already red`), C ×1, E ×2 (`already banked`, `already recorded`, both to E's
    cost), F ×1 (`already carries`, to F's credit). Not one-sided, so not a repeat of v1's Option-C cue.
 
-**On the private recommendation ("Option A plus an R4-COVERAGE-style disclosure obligation with a named
-enforcer"):** the hybrid is **not offered as an option**, so it is not handed to the adjudicator. Its
-first half (A) is the option carrying the most explicitly stated costs. Its second half is visible — the
-missing enforcer is named as A's deficit and as X4, and F is the option that supplies it — so a
-determined reader could *reconstruct* the synthesis. The R4-COVERAGE precedent appears exactly where the
-plan declared BEFORE authoring ({A,C,F} + §4 + Q4), carries an explicit counter-reading in F's READING 2
-("that precedent is in-repo, not posted"), and Q4 asks whether it governs rather than asserting it.
-My judgement: **no leak of the recommendation; a reconstructable synthesis, which is Carter's call.**
+[Redacted 2026-09-17 (quick-260917-f68): working note on the Stage C decision, removed from the folder the options draft sends its reviewers to.]
 
 ## Claim integrity — ~35 citations re-verified at BASIS `74f962d` by the verifier
 
@@ -232,8 +219,8 @@ fire-path files is `9a3eb97` (2026-09-16, RAM-1). All reproduce.
 **The deliverable is sound.** v2 verifies end to end: 428 gated checks GREEN over 112 citations at BASIS,
 every citation I spot-checked resolves, the posted quotes are byte-accurate, the edit ledger is
 byte-reversible to v1, v1 and the kht checker are untouched, and the brief-blindness screens reproduce
-under an independent implementation — plus an undeclared broader advocacy sweep that finds nothing. I
-found **no leak of the private recommendation** and **no structural advantage to Option A**.
+under an independent implementation — plus an undeclared broader advocacy sweep that finds nothing.
+[Redacted 2026-09-17 (quick-260917-f68): working note on the Stage C decision, removed from the folder the options draft sends its reviewers to.]
 
 The gaps are in the **verification apparatus's coverage** and in the **executor's record**, not in the
 draft: (1) three gated families — 88 of 428 checks — ship with no negative control while the commit
