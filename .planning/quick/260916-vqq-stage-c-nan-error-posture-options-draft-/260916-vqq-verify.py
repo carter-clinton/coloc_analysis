@@ -296,8 +296,291 @@ G_EXEMPT = "with no recommendation"          # must occur EXACTLY once
 # ============================================================================================
 # v2's OWN claims (appended in Task 2b) and the edit ledger (Task 2b).
 # ============================================================================================
-CLAIMS_NEW = []          # filled in Task 2b — v2's new citation rows, in v2's reading order
-PERMITTED_EDITS = []     # filled in Task 2b — the ordered E1..En ledger v1 -> v2
+# ============================================================================================
+# v2's OWN claims: the rows v2 adds to v1's 88, and the two v1 rows v2 drops.
+#   c72 (`mk7ze P316 / R483`, "NO new token")  -> superseded in Option B by the FULL sentence
+#        (n32, `mk7ze P316-318 / R483-485`), which is what R3(i)'s counter-READING rests on.
+#   n05 (`mk7ze P88-89 / R255-256` on Option D's SCAN sentence) -> DROPPED: R6(iii). That sentence
+#        describes the pre-committed 21-of-276 occlusion SAMPLE, which is Option C's sentence, where
+#        the same citation already lives as n04. A citation on the wrong sentence is a wrong citation.
+# CLAIMS is POSITIONAL: it is spliced into v1's order at named anchors, never appended, because the
+# engine pairs the Nth parsed citation token with the Nth row.
+# ============================================================================================
+CLAIMS_DROP = {"c72", "n05"}
+
+CLAIMS_INSERTS = [
+ ("before", "c01", ("n00", "OD", "T", ["AFR native-panel DEFINED-ROW TAIL disclosure"], [], None)),
+ ("after", "c44", ("n30", "TR", "Q", ["The fully-NaN-row → drop rule (prior item (a) first branch): a variant row that is entirely NaN (a zero-variance / monomorphic-within-analysis-set source) is dropped by MAF / missingness QC. This converges with the new exclude policy and is retained."], [], "E6")),
+ ("after", "n30", ("n31", "MK", "T", ["The fully-NaN-row → drop rule"], [], "E6")),
+ ("after", "c71", ("n32", "MK", "Q", ["NO fourth branch and NO new token: a region deferred by EITHER the site-fraction ceiling or the multiplicity companion routes to the SAME `BRANCH_AFR_OCC_DEFERRED`"], [], "E8")),
+ ("after", "n04", ("n33", "OD", "Q", ["Production tests the rate on BOTH sides"], [], "E9")),
+ ("after", "n33", ("n34", "AR", "Q", ["`already_occluded == False` means \"not inside THIS anchor's span\"… does not count pairs that survive filtering"], [], "E10")),
+ ("after", "c77", ("n35", "ST", "T", ["Runtime 48m"], [], "E10")),
+ ("after", "n35", ("n36", "KW", "T", ["1h53m", "exit 0"], [], "E10")),
+ ("after", "n36", ("n37", "ST", "T", ["6-region/1h53m/1,011,893-row banked run"], [], "E10")),
+ ("after", "n37", ("n38", "VS", "T", ["2 h 40 m 46 s wall"], [], "E10")),
+ ("after", "c78", ("n39", "TR", "Q", ["choosing the occlusion criterion to obtain a particular fine-mapping result"], [], "E11")),
+ ("after", "n39", ("n40", "MK", "Q", ["the anomaly GATE is a different object from the CRITERION, and recalibrating the gate against a measured population is not that prohibited act"], [], "E11")),
+ ("after", "n40", ("n41", "FV", "T", ["_DEFERRAL_PREFIXES", "deferred_infeasible_square"], [], "E11")),
+ ("after", "n41", ("n42", "RN", "T", ["deferred_infeasible_square", "return result"], [], "E11")),
+ ("after", "n42", ("n43", "DI", "Q", ["a DISCLOSURE OBLIGATION — not blocking the fire"], [], "E11")),
+ ("after", "n43", ("n44", "FV", "T", ["def check_coverage_disclosure_resolved", "R4-COVERAGE"], [], "E11")),
+ ("after", "n44", ("n45", "TR", "T", ["All three outcomes are reportable"], [], "E11")),
+ ("after", "n45", ("n46", "TR", "T", ["the three outcome branches", "before any occlusion-handling code fires"], [], "E11")),
+ ("after", "n46", ("n47", "RN", "Q", ["~30+ GiB/region … overflows any finite scratch disk"], [], "E11")),
+ ("after", "n47", ("n48", "RF", "T", ["120000", "--max-n-var"], [], "E11")),
+ ("after", "c79", ("n49", "RN", "T", ["if ok:"], [], "E13")),
+ ("after", "n49", ("n54", "RN", "T", ["_gsutil_upload(", "afreq"], [], "E13")),
+ ("after", "n54", ("n50", "RN", "T", ["_gsutil_upload(", "occluded.excludelist"], [], "E13")),
+ ("after", "n50", ("n51", "RN", "T", ["_gsutil_upload(", "occlusion_manifest.tsv"], [], "E13")),
+ ("after", "n51", ("n52", "RN", "T", ["_gsutil_upload(", "occlusion_gate.json"], [], "E13")),
+ ("after", "c81", ("n53", "TR", "T", ["choosing the occlusion criterion to obtain a particular fine-mapping result"], [], "E14")),
+]
+
+
+def build_claims():
+    rows = [r for r in CLAIMS_V1 if r[0] not in CLAIMS_DROP]
+    for pos, anchor, row in CLAIMS_INSERTS:
+        i = [r[0] for r in rows].index(anchor)
+        rows.insert(i if pos == "before" else i + 1, row)
+    return rows
+
+
+CLAIMS_NEW = []          # kept for the module contract; v2's table is built by build_claims()
+
+
+PERMITTED_EDITS = [
+ {
+  "id": 'E1', "cls": 1,
+  "why": 'R1(i)(iv): v2 status block; SUPERSEDES v1 for couriering with a brief-blind-safe reason (no defect count, no option letter); method note recording what is and is not screened (A-7 iii).',
+  "old": '# Stage C: what happens to a region that RAISES on a leftover pairwise NaN (options draft)\n\n**Status:** DRAFT, banked in the repo (quick-260916-kht), NOT sent to Seth, NOT decided, no code written, **no decision made.** Built for review by\nan adjudicator who has not seen our reasoning: options are laid out neutrally, with no recommendation.\nEvery claim cites file:line. Labels: **TEXT** = what a posted record says; **CODE** = what shipped code\ndoes; **READING** = an interpretation offered for adjudication, not a finding.',
+  "new": "# Stage C: what happens to a region that RAISES on a leftover pairwise NaN (options draft v2)\n\n**Status:** DRAFT v2, banked in the repo (quick-260916-vqq), NOT sent to Seth, NOT decided, no code written, **no decision made.** Built for review by\nan adjudicator who has not seen our reasoning: options are laid out neutrally, with no recommendation.\nEvery claim cites file:line. Labels: **TEXT** = what a posted record says; **CODE** = what shipped code\ndoes; **READING** = an interpretation offered for adjudication, not a finding.\n\n**SUPERSEDES** `.planning/debug/260916-STAGE-C-NaN-ERROR-POSTURE-options-DRAFT.md` for couriering: that draft's code citations were written at `c93e97b`, the code basis has since moved, so every citation here was re-derived at the commit stated below, and the options section was restructured for symmetry.\n\n**Method note.** This draft is screened mechanically by\n`.planning/quick/260916-vqq-stage-c-nan-error-posture-options-draft-/260916-vqq-verify.py`: a phrase\nscreen for advocacy language, and a balance family that measures the option structure — identical\nlabelled sub-fields, READING symmetry within and across options, a word band, an evaluative-cue screen\nover the whole document, precedent placement, and question coverage. Two things are deliberately\n**not** balanced, because both are factually determined and evening them out would be falsification:\nwhich options appear in §4, and how much cited ground each option has. The checker prints per-option\ncitation counts as information only.",
+ },
+ {
+  "id": 'E2', "cls": 2,
+  "why": 'R1(i)(ii): the basis statement replaces "Code at HEAD c93e97b" with the full 40-char commit, the branch, and a reader-actionable reproduction instruction plus the checker\'s path.',
+  "old": '- Code at HEAD `c93e97b`.',
+  "new": '- **Code basis for every citation below:** commit\n  `74f962d21b07a8b765dfba6c3825448e05eb17e7` (short `74f962d`) on branch `m3-W2-aou-deltas`. To read\n  any cited file exactly as it is cited here, run `git show 74f962d:<path>`; every `file:line` below\n  is a 1-based line number in that output. The mechanical re-verification of this draft is\n  `.planning/quick/260916-vqq-stage-c-nan-error-posture-options-draft-/260916-vqq-verify.py`, run\n  with no arguments from the repository root.',
+ },
+ {
+  "id": 'E3', "cls": 2,
+  "why": "R1/R6/R8b: three new Files-cited key entries for the records Option D cites, plus the two scope notes a brief-blind reader needs — that every osf_deviations citation sits inside a DRAFTED - NOT POSTED entry, and that the halt record's RAM-measurement passages are FALSIFIED and nothing here depends on them.",
+  "old": '- `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` → `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`',
+  "new": '- `osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md` → `.planning/amendments/osf-amendment-afr-occlusion-exclude-UPDATE-2026-07-10.md`\n- `260831-…-anchor-relative.md` → `.planning/debug/260831-seth-brief-blind-review-already-occluded-is-anchor-relative.md`\n- `260901-kw8-PANELWIDE-RECLASSIFICATION.md` → `.planning/quick/260831-kw8-close-seth-s-brief-blind-review-already-/260901-kw8-PANELWIDE-RECLASSIFICATION-as-received.md`\n- `260902-vsp-CONTENT-SPEC.md` → `.planning/quick/260902-vsp-bank-the-run-2-step-2-tail-pre-post-resu/CONTENT-SPEC.md`\n\n⚠ **Scope of the `osf_deviations.md` citations.** Every one of them sits inside a single ledger entry\nheaded "AFR native-panel DEFINED-ROW TAIL disclosure", which is marked **DRAFTED — NOT POSTED**. The\nentry begins at `osf_deviations.md:567` and runs to the end of the file. Nothing cited from it is\nposted text; it is our own working ledger.\n\n⚠ **Scope of the `260824-STAGE-B-HALT-…md` citations.** That record now carries a\n`## ⚠ SUPERSEDED 2026-09-16` section recording that its RAM-measurement passages — the `ru_maxrss`\ninheritance reading and the `subprocess.Popen` + `os.wait4` "clean fix" it prescribed — are\nFALSIFIED. **No citation in this draft depends on those passages**, and the re-verifier gates that\ndisjointness mechanically rather than by inspection.',
+ },
+ {
+  "id": 'E4', "cls": 4,
+  "why": 'R8(i): retitle §0 away from "Premise corrections" (which frames the section as a rebuttal of the reader\'s premise) to a neutral measured-premise heading.',
+  "label": 'R8(i) §0 heading', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '## 0. Premise corrections: the question is narrower than "the fire will halt"',
+  "new": '## 0. Measured premises: what the committed card and the shipped code fix today',
+ },
+ {
+  "id": 'E5', "cls": 4,
+  "why": 'R8(ii): v1 pre-dismissed the halt/continue question ("the open question is not halt versus continue"). Both questions are open; C addresses one, A/B/F the other.',
+  "label": 'R8(ii) both questions open', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '**So the open question is not halt versus continue.** It is: **what pre-registered disposition does a\nregion get when the raw-panel NaN-raise contract fires, the region banks nothing, and the loop moves\non?** And does settling that need a posted amendment-update before Stage C?',
+  "new": '**Two questions are open here, and this draft treats both as open.** The first: **does the\noperator stop the fire when a region raises, or let the loop continue?** Option C addresses that one.\nThe second: **what pre-registered disposition does a region get when the raw-panel NaN-raise contract\nfires, the region banks nothing, and the loop moves on?** Options A, B and F address that one. For\neither: does settling it need a posted amendment-update before Stage C?',
+ },
+ {
+  "id": 'E6', "cls": 4,
+  "why": 'R7(i): the only posted rule that disposes of NaN-bearing variants had no §1 row. APPENDED as T9 — T1-T8 are NOT renumbered, because their ids are referenced by name throughout §3, §4 and §5 and renumbering would silently invalidate every reference. The checker carries f:t18 as the named enforcer of that invariant.',
+  "label": 'R7(i) T9 appended', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '| T8 | Prohibited or fenced: NaN→0 (trsx5:25; mk7ze P307-308 / R474-475); "choosing the occlusion criterion to obtain a particular fine-mapping result" (trsx5:49; mk7ze P302-305 / R469-472). | as cited |',
+  "new": '| T8 | Prohibited or fenced: NaN→0 (trsx5:25; mk7ze P307-308 / R474-475); "choosing the occlusion criterion to obtain a particular fine-mapping result" (trsx5:49; mk7ze P302-305 / R469-472). | as cited |\n| T9 | The one posted rule that disposes of NaN-bearing variants, and it is RETAINED: "The fully-NaN-row → drop rule (prior item (a) first branch): a variant row that is entirely NaN (a zero-variance / monomorphic-within-analysis-set source) is dropped by MAF / missingness QC. This converges with the new exclude policy and is retained." Restated as unchanged at "**The fully-NaN-row → drop rule** and **the raw-panel NaN-raise contract**". | trsx5:37; mk7ze P321 / R488 |',
+ },
+ {
+  "id": 'E7a', "cls": 4,
+  "why": 'R4(i): the four labelled sub-fields. The pre-registration answer opens with the scope sentence instead of two unlabelled bullets.',
+  "label": 'R4 Option A sub-fields', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '### Option A: run the card as committed (no code change)\n\n- **Behaviour:** no `--fail-fast`. A raising region records `error:`, banks nothing, and the loop\n  continues (P2). At the next check-in the gate exits 1 and the agent reports to Carter (P3). At\n  closeout the region is reported as unbanked and logged as a deviation.\n- **Code needed:** none.\n- **Already pre-registered?**\n  - The *raise* is (T1). The *non-halting loop* is runbook, not OSF.',
+  "new": '### Option A: run the card as committed (no code change)\n\n- **Behaviour:** no `--fail-fast`. A raising region records `error:`, banks nothing, and the loop\n  continues (P2). At the next check-in the gate exits 1 and the agent reports to Carter (P3). At\n  closeout the region is reported as unbanked and logged as a deviation.\n- **Code needed:** none. This is the committed card run unchanged, and no file in the fire path moves.\n- **Already pre-registered?** The *raise* is (T1); the *non-halting loop* is runbook, not OSF; the\n  *disposition* is what is at issue.',
+ },
+ {
+  "id": 'E7b', "cls": 3,
+  "why": "c66 c67 +143: Option A's gate-returns-before-plink citations re-based, in their final wording.",
+  "evidence": {'key': 'RN', 'kind': 'T', 'payload': ['return result'], 'before': [967, 967], 'after': [1110, 1110]},
+  "old": '  - The *disposition* is not. No branch fits: NONE needs "the panel and fine-mapping result stand unmodified"\n    (trsx5:43), but nothing was banked; EXCLUDED needs "fine-mapping proceeds on the reduced variant set"\n    (trsx5:45); DEFERRED\'s trigger is the anomaly gate (T3), and 00057\'s gate did **not** fire (a region\n    whose gate fires returns at `run_native_ld_panel.py:967` before plink runs, so it cannot reach the raise at `:1090`).',
+  "new": '  - No posted branch fits on its face: NONE needs "the panel and fine-mapping result stand unmodified"\n    (trsx5:43) and nothing was banked; EXCLUDED needs "fine-mapping proceeds on the reduced variant set"\n    (trsx5:45); DEFERRED\'s trigger is the anomaly gate (T3), and 00057\'s gate did **not** fire — a\n    region whose gate fires returns at `run_native_ld_panel.py:1110` before plink runs, so it cannot\n    reach the raise at `:1233`.',
+ },
+ {
+  "id": 'E7c', "cls": 4,
+  "why": 'R4(ii): both readings carry an explicit READING label of comparable weight. R4(vii): the supporting material is distributed between them rather than piled under one.',
+  "label": 'R4(ii)(vii) Option A readings', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '  - *READING 1:* logging it under T6 changes no criterion, no gate and no variant\'s treatment. A\n    deviation entry plus disclosure is what the posted discipline already requires, so no amendment\n    is needed before code (and no code is involved).\n  - *READING 2:* T5 presents the three branches as the complete\n    list, and trsx5:53 fixes "the three outcome branches … before any occlusion-handling code fires".\n    A region in none of them is a fourth outcome, which may need a posted amendment-update **before**\n    Stage C.\n- **Consequences:**\n  - Each raising region is a coverage gap shaped like R4-COVERAGE (C7), but with **no** registered\n    disclosure obligation or enforcer yet.\n  - After the first raise, every later `stage-c` check-in exits 1 for the rest of the ~11 days (`AGENT-PROMPT.md:393`). Each is\n    an R8 STOP. A *new* failure then shows up on a gate that is already red. The verifier does print\n    per-status counts (`fire_verifier.py:363-370`), so a new failure is visible only by diffing check-ins.\n  - C3, C4 and C5 apply (see §4).\n',
+  "new": '  - *READING 1:* logging it under T6 changes no criterion, no gate and no variant\'s treatment. A\n    deviation entry plus manuscript disclosure is what the posted discipline already requires of any\n    deviation, so on this reading nothing is owed before Stage C — and no code is involved either way.\n  - *READING 2:* T5 presents the three branches as the complete list, and trsx5:53 fixes "the three\n    outcome branches … before any occlusion-handling code fires". A region in none of the three is a\n    fourth realized outcome, and on this reading a posted amendment-update is owed **before** Stage C\n    rather than at closeout.\n- **Consequences:** each raising region is a coverage gap shaped like the R4-COVERAGE precedent (C7),\n  but with no registered disclosure obligation and no enforcer yet. After the first raise, every later\n  `stage-c` check-in exits 1 for the rest of the ~11 days (`AGENT-PROMPT.md:393`), and each exit 1 is\n  an R8 STOP, so a *new* failure arrives on a gate that is already red. The verifier does print\n  per-status counts (`fire_verifier.py:363-370`), so a new failure is visible by diffing check-ins.\n  C3, C4 and C5 apply (see §4).\n',
+ },
+ {
+  "id": 'E8a', "cls": 4,
+  "why": "R4(i)(ii): the four sub-fields, and v1's single flat *READING:* becomes a labelled READING 1 so it has a peer.",
+  "label": 'R4 Option B sub-fields + READING 1', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '### Option B: send raising regions to `BRANCH_AFR_OCC_DEFERRED` (defer, don\'t exclude)\n\n- **Behaviour:** the producer catches this particular raise, records a deferral status, and the\n  verifier PASSes it.\n- **Code needed:** yes. The producer\'s error path, plus either a new status prefix (which turns the C6\n  enforcer red until the vocabulary is extended) or reuse of `deferred_occlusion_anomaly:`.\n- **Already pre-registered?** *READING:* no. DEFERRED is tied to the anomaly-gate trigger (T3), and\n  defer-not-exclude is stated for "a region over the anomaly gate" (T2). Adding a NaN-raise trigger\n  changes what DEFERRED means, which would need an amendment-update **before** code.\n  - Reusing `deferred_occlusion_anomaly:` would record an anomaly the gate did not find.',
+  "new": '### Option B: send raising regions to `BRANCH_AFR_OCC_DEFERRED` (defer, don\'t exclude)\n\n- **Behaviour:** the producer catches this particular raise, records a deferral status, and the\n  verifier PASSes it instead of reporting a FINDING.\n- **Code needed:** yes. The producer\'s error path, plus either a new status prefix (which turns the C6\n  enforcer red until the vocabulary is extended) or reuse of `deferred_occlusion_anomaly:`.\n- **Already pre-registered?**\n  - *READING 1:* no. DEFERRED is tied to the anomaly-gate trigger (T3), and defer-not-exclude is\n    stated for "a region over the anomaly gate" (T2). Adding a NaN-raise trigger changes what DEFERRED\n    denotes, which would need an amendment-update **before** code.\n  - Reusing `deferred_occlusion_anomaly:` would record an anomaly the gate did not find.',
+ },
+ {
+  "id": 'E8b', "cls": 3,
+  "why": "c70 +35: Option B's no-covering-record citation re-based, in its final wording.",
+  "evidence": {'key': 'OD', 'kind': 'Q', 'payload': ['no covering record for EITHER member'], 'before': [703, 704], 'after': [738, 739]},
+  "old": '  - The surviving class has "no covering record for EITHER member" (`osf_deviations.md:703-704`, a\n    DRAFTED — NOT POSTED entry), so it is not an occlusion under clause (a) (mk7ze P300-302 / R467-469).',
+  "new": '  - The surviving class has "no covering record for EITHER member" (`osf_deviations.md:738-739`, a\n    DRAFTED — NOT POSTED entry), so it is not an occlusion under clause (a) (mk7ze P300-302 / R467-469).',
+ },
+ {
+  "id": 'E8c', "cls": 4,
+  "why": "R3(i): a counter-READING of comparable weight, built from cited posted text — mk7ze's own 'NO fourth branch and NO new token' read as a commitment AGAINST token proliferation — with its scope limit stated. R3(ii): the overreach 'the mechanism for this class is already established for 00057' is removed; the mechanism is measured for ONE member and predicted for the second, and whether re-diagnosis is discharged is left OPEN.",
+  "label": 'R3(i)(ii) Option B counter-READING', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '  - A new token runs into the explicit "NO new token" sentence (mk7ze P316 / R483). That sentence is\n    scoped to the companion condition, so how far it reaches is itself a question for review.\n- **Consequences:** check-ins stay green. A contract raise would be classified under the deferral PASS, whose stated reason is "the gates working"\n  (`fire_verifier.py:335-336`). "Deferred for\n  re-diagnosis" presumes a diagnosis still to do, but the mechanism for this class is already\n  established for 00057 (`260824-STAGE-B-HALT-…md:150-179`).\n',
+  "new": '  - *READING 2:* the same posted text can be read the other way. mk7ze commits to "NO fourth branch\n    and NO new token: a region deferred by EITHER the site-fraction ceiling or the multiplicity\n    companion routes to the SAME `BRANCH_AFR_OCC_DEFERRED`" (mk7ze P316-318 / R483-485). A reader\n    could take that as a commitment against token proliferation — directing any disposition that is\n    neither NONE nor EXCLUDED to the SAME token rather than to a new one. Scope limit: that sentence\n    is written about the companion condition, so how far it reaches is itself part of the question.\n- **Consequences:** check-ins stay green. A contract raise would then be classified under the deferral\n  PASS, whose stated reason is "the gates working" (`fire_verifier.py:335-336`). "Deferred for\n  re-diagnosis" presumes a diagnosis still to do: the mechanism is measured for one member,\n  `m2_region_00057` (`260824-STAGE-B-HALT-…md:150-179`), and predicted rather than observed for the\n  second, `m2_region_00149` (P5). Whether "re-diagnosis" is discharged for this class at n=1 is open.\n',
+ },
+ {
+  "id": 'E9a', "cls": 4,
+  "why": "R8(iii): 'the Stage B halt record already argues against this' is replaced by the record's sentence as TEXT with no editorial verb — 'already argues' and 'argues against' are both on the declared evaluative-cue list. R4(i)(ii): the four sub-fields and two READINGs.",
+  "label": 'R8(iii) + R4 Option C', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '### Option C: halt on each raise and re-diagnose before continuing\n\n- **Behaviour:** literal `--fail-fast` would also halt on already-banked and deferred regions (P4), so\n  this option means the operator stopping the fire at the first `error:` row.\n- **Code needed:** none (runbook change only).\n- **Already pre-registered?** No posted text requires or forbids halting, so no amendment either way.\n- **Consequences:** the Stage B halt record already argues against this at an unknown rate:\n  "`--fail-fast` is correct for Stage A/B and **must not be carried into Stage C** at an unknown\n  per-region failure rate" (`260824-STAGE-B-HALT-…md:104-107`). *For planning only, not a calibrated',
+  "new": '### Option C: stop the fire at the first raise and re-diagnose before continuing\n\n- **Behaviour:** literal `--fail-fast` would also halt on already-banked and deferred regions (P4), so\n  this option means the operator stopping the fire at the first `error:` row and resuming by hand.\n- **Code needed:** none. This is a runbook change: the committed command is unchanged and the operator\n  acts on the check-in the gate already produces.\n- **Already pre-registered?**\n  - *READING 1:* no posted text requires halting and none forbids it, so on this reading the choice is\n    operational, sits outside the amendment surface, and carries nothing to post in either direction.\n  - *READING 2:* stopping changes which regions are measured and in what order, and T7 commits the\n    realized branches and the genome-wide present-rate to a closeout update. On this reading an\n    operator-truncated run is a closeout-disclosure question even though the halt itself is not a\n    posted act.\n- **Consequences:** the Stage B halt record states: "`--fail-fast` is correct for Stage A/B and **must\n  not be carried into Stage C** at an unknown per-region failure rate"\n  (`260824-STAGE-B-HALT-…md:104-107`). *For planning only, not a calibrated',
+ },
+ {
+  "id": 'E9b', "cls": 3,
+  "why": "n03 +35: Option C's 1-of-21 citation re-based, in its final wording.",
+  "evidence": {'key': 'OD', 'kind': 'T', 'payload': ['single survivor', '21-region scan'], 'before': [660, 663], 'after': [695, 698]},
+  "old": '  rate:* 1 of 21 sampled regions carries a surviving pair (`osf_deviations.md:660-663`). The sample was systematic-by-span, not',
+  "new": '  rate:* 1 of 21 sampled regions carries a surviving pair (`osf_deviations.md:695-698`).',
+ },
+ {
+  "id": 'E9c', "cls": 4,
+  "why": "R8(iv): the C rate now carries the ledger's OWN one-sided-sweep caveat beside the systematic-by-span and predicted-not-observed ones. R4(iv): the R4-COVERAGE precedent is named here because C also leaves the region unbanked (declared fitting set {A, C, F}).",
+  "label": 'R8(iv) + R4(iv) Option C caveats', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '  random (mk7ze P88-89 / R255-256), and the one case is predicted, not observed (P5). Scaled to 276 that is ≈13 regions, with an\n  exact 95% binomial range of 0.3–66.\n',
+  "new": '  Three caveats travel with that number: the sample was systematic-by-span rather than random\n  (mk7ze P88-89 / R255-256); the one case is predicted, not observed (P5); and the ledger\'s own caveat\n  is that this sweep could observe only one side, while "Production tests the rate on BOTH sides"\n  (`:717`). Scaled to 276 that is ≈13 regions, with an exact 95% binomial range of 0.3–66. A region\n  skipped by an operator stop is still unbanked, so the R4-COVERAGE-shaped obligation (C7) reaches it\n  as it does under A.\n',
+ },
+ {
+  "id": 'E10a', "cls": 4,
+  "why": "R6(i): the scan alone is ANCHOR-RELATIVE and the expected-raise list needs the separate pcs_panelwide_reclassify pass — both stated with citations. R6(iii): mk7ze P88-89 / R255-256 is REMOVED from the scan sentence; it describes the pre-committed 21-of-276 SAMPLE and already sits on C's sample sentence. R6(iv)+R4(i)(ii): four sub-fields, two labelled READINGs.",
+  "label": 'R6(i)(iii) + R4 Option D', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '### Option D: measure before deciding (combines with A or B)\n\n- **Behaviour:** Carter runs the existing pairwise-completeness scan across all 276 AFR regions (mk7ze P88-89 / R255-256) before\n  Stage C, so any posture is chosen against a measured list of regions expected to raise. This is a\n  read-only measurement. *Unmeasured scaling:* the 21-region run took 48 min (STATE.md frontmatter,\n  2026-09-01), which scales linearly to ~10.5 h.\n- **Code needed:** none expected. Whether the scan runs unchanged over all 276 has **not** been checked.\n- **Already pre-registered?** A read-only measurement changes no analysis choice, so no amendment.\n  **But there is a sequencing constraint.** The disclosure\'s prospective production prediction is "to',
+  "new": '### Option D: measure the expected raise list before deciding (combines with A, B or F)\n\n- **Behaviour:** Carter runs the pairwise-completeness scan across the AFR regions before Stage C, so\n  any posture is chosen against a measured list rather than against one observed case. The scan alone\n  is **anchor-relative**: "`already_occluded == False` means "not inside THIS anchor\'s span"… does not\n  count pairs that survive filtering" (`260831-…-anchor-relative.md:50-53`), so the list of regions\n  expected to RAISE needs the separate `pcs_panelwide_reclassify` pass on top of it. Both passes are\n  read-only.\n- **Code needed:** none expected for the scan; whether it runs unchanged over all 276 regions has\n  **not** been checked, and the reclassify pass has so far been run only on subsets of them.\n- **Already pre-registered?**\n  - *READING 1:* a read-only measurement changes no analysis choice, no criterion and no variant\'s\n    treatment, so on this reading it sits outside the amendment surface entirely and nothing is owed\n    before it runs.\n  - *READING 2:* there is a sequencing constraint. The disclosure\'s prospective production prediction\n    is "to',
+ },
+ {
+  "id": 'E10b', "cls": 3,
+  "why": "c76 c77 +35: Option D's sequencing-constraint citations re-based, in their final wording.",
+  "bare_ref": '`:717`',
+  "evidence": {'key': 'OD', 'kind': 'Q', 'payload': ['to be pre-registered IF AND WHEN this disclosure is posted, and posted BEFORE production testing'], 'before': [685, 689], 'after': [720, 724]},
+  "old": '  be pre-registered IF AND WHEN this disclosure is posted, and posted BEFORE production testing"\n  (`osf_deviations.md:685-689`), and "Production tests the rate on BOTH sides" (`:682`). A full-panel',
+  "new": '    be pre-registered IF AND WHEN this disclosure is posted, and posted BEFORE production testing"\n    (`osf_deviations.md:720-724`), and "Production tests the rate on BOTH sides" (`:717`).',
+ },
+ {
+  "id": 'E10c', "cls": 4,
+  "why": 'R6(ii): the MEASURED runtimes with instrument, run and region count. ⚠ The review brief\'s "1h53m for 21 regions" is FALSE and conflates two runs: 1h53m is the 6-region RUN 1 of 2026-09-01; the 21-region reclassify pass is RUN 2 of 2026-09-02 at 2h40m46s. Both scalings are recomputed by the checker from their stated inputs.',
+  "label": 'R6(ii) Option D measured runtimes', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '  scan would measure that same both-sides rate before production does; whether that uses up the\n  prediction is question 5.\n- **Consequences:** the regions expected to raise are measured before Stage C instead of observed during it. Needs VM time (Carter).\n',
+  "new": '    A full-panel measurement tests that same both-sides rate before production does, and on this\n    reading that is the prediction being spent rather than a neutral measurement.\n- **Consequences:** the regions expected to raise are measured before Stage C instead of observed\n  during it, at the cost of VM time (Carter). Measured runtimes, named by instrument, run and region\n  count: the 21-region pairwise-completeness scan took 48 min (`STATE.md:18`), which scales linearly\n  to ~10.5 h over 276 regions; the `pcs_panelwide_reclassify` pass covered 6 regions in 1 h 53 m on\n  2026-09-01 (`260901-kw8-PANELWIDE-RECLASSIFICATION.md:13`, region count at `STATE.md:485`) and the\n  21 regions that carry rows in 2 h 40 m 46 s on 2026-09-02 (`260902-vsp-CONTENT-SPEC.md:10`), which\n  scales linearly to ~35.2 h over 276 regions. Both scalings are linear extrapolations of a measured\n  run, not measurements.\n',
+ },
+ {
+  "id": 'E11a', "cls": 4,
+  "why": "R5(i): the heading cue '(listed for completeness)' is dropped — it is on the declared evaluative-cue list and it sat in the HEADING, where a body-only screen cannot see it. R4(i): Option E gains the four sub-fields it had none of.",
+  "label": 'R5(i) + R4 Option E', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '### Option E: change what reaches the matrix (listed for completeness)\n\nOptions here would be widening the predicate to cover −1/+1, a pairwise-completeness exclusion rule, or',
+  "new": '### Option E: change what reaches the matrix\n\n- **Behaviour:** widen the occlusion predicate to cover −1/+1 offsets, add a pairwise-completeness\n  exclusion rule, or coerce NaN→0. NaN→0 is prohibited outright (T8), so the live members of this\n  family are the predicate widening and the new exclusion rule.\n- **Code needed:** yes, in the panel-build path — and, for the predicate widening, a rebuild of every\n  region already banked under the current predicate.\n- **Already pre-registered?**',
+ },
+ {
+  "id": 'E11b', "cls": 3,
+  "why": "c78 +35: Option E's NO PREDICATE CHANGE citation re-based, in its final wording, with the DRAFTED - NOT POSTED label R5(iii) requires at the point of citation.",
+  "evidence": {'key': 'OD', 'kind': 'Q', 'payload': ['NO PREDICATE CHANGE … calibrate-to-pass at n=1'], 'before': [670, 671], 'after': [705, 706]},
+  "old": 'NaN→0. NaN→0 is prohibited (T8). The criterion is unchanged and fenced (T8). "NO PREDICATE CHANGE …\ncalibrate-to-pass at n=1" is already recorded (`osf_deviations.md:670-671`). Any new exclusion rule',
+  "new": '  - *READING 1:* no. "NO PREDICATE CHANGE … calibrate-to-pass at n=1" is already recorded\n    (`osf_deviations.md:705-706`, a DRAFTED — NOT POSTED entry), and a new exclusion rule is a new\n    criterion, so an amendment-update would be owed **before** code on either live member. That record\n    is our own working ledger rather than posted text, so it binds our practice, not the\n    pre-registration.',
+ },
+ {
+  "id": 'E11c', "cls": 4,
+  "why": "R5(ii): 'The criterion is unchanged and fenced (T8)' is replaced by what the posted text actually says — trsx5:49 fences a MOTIVE, and mk7ze P302-305 separates recalibrating the GATE from that act — so the question is OPEN. R7(ii): the new Option F on the deferred_infeasible_square analogue, same four sub-fields, its own READINGs and consequences. R7(iv): the LOW subsection, each item cited or explicitly marked UNCITED, under its own ### heading so the option spans terminate naturally and LOW is excluded from the balance counts (A-6 i).",
+  "label": 'R5(ii) + R7(ii) Option F + R7(iv) LOW', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": 'would be an amendment-update **before** code.\n\n---\n',
+  "new": '  - *READING 2:* what the posted text fences is narrower than "any change". trsx5:49 fences\n    "choosing the occlusion criterion to obtain a particular fine-mapping result", and mk7ze separates\n    recalibration from that act: "the anomaly GATE is a different object from the CRITERION, and\n    recalibrating the gate against a measured population is not that prohibited act"\n    (mk7ze P302-305 / R469-472). On this reading a change made for a stated methodological reason is\n    not the fenced act.\n- **Consequences:** this is the only family that changes which variants reach the matrix, so it moves\n  the panel itself rather than the disposition of a region that banks nothing. Regions banked under\n  the current predicate would then be inconsistent with regions built after it unless they are\n  rebuilt, which is compute that has not been scoped here.\n\n### Option F: record an operational `deferred_*` status not mapped to a posted branch\n\n- **Behaviour:** the producer records a distinct operational status — say `deferred_pairwise_nan:` —\n  which the verifier treats as a deferral PASS, while the draft asserts nothing about whether the\n  region falls under `BRANCH_AFR_OCC_DEFERRED` or under any posted branch. The disposition question is\n  answered at closeout, in the open, rather than at fire time.\n- **Code needed:** yes. A new prefix in the producer\'s error path and one entry in the verifier\'s\n  deferral allow-list (`fire_verifier.py:300-303`), which the C6 enforcer holds honest.\n- **Already pre-registered?**\n  - *READING 1:* the shipped code already carries this exact shape. `deferred_infeasible_square`\n    (`run_native_ld_panel.py:1009-1015`) is an operational `deferred_*` status that is in the verifier\n    vocabulary and in none of the three posted branches, registered in-repo as "a DISCLOSURE\n    OBLIGATION — not blocking the fire" (`deferred-items.md:1148-1191`) with a named enforcer\n    (`fire_verifier.py:875-939`). On this reading the precedent is the surface that governs.\n  - *READING 2:* that precedent is in-repo, not posted. trsx5:49 presents the branch list as closed\n    and trsx5:53 fixes the three outcome branches before any occlusion-handling code fires, so a new\n    operational token is still a fourth realized outcome in the record. On this reading an\n    amendment-update is owed **before** code, exactly as under B.\n- **Consequences:** check-ins stay green without asserting anything about the posted branch list. The\n  region still banks nothing, so the R4-COVERAGE-shaped obligation (C7) reaches it as under A and C —\n  and unlike A, this option would register that obligation and its enforcer when the status is added.\n\n### LOW: three further options with less cited ground at this basis\n\nBrevity here reflects how much cited ground exists at this basis, not a ranking.\n\n- **LOW-1 — a per-region pairwise-completeness pre-check at fire time.** Run the completeness check\n  for a region before its plink pass, so a region expected to raise is dispositioned before the\n  compute and the scratch are spent: the docstring puts intermediates at "~30+ GiB/region … overflows\n  any finite scratch disk" (`run_native_ld_panel.py:866-868`) against a `--max-n-var` ceiling of\n  120,000 (`READY-TO-FIRE.md:369-370`). **Cited.**\n- **LOW-2 — re-run on a different sample set, or with sample-level QC.** A different analysis set\n  changes which rows are monomorphic-within-set, and so which pairs are structurally undefined.\n  **UNCITED:** no posted or in-repo record at this basis states what that would do to this class.\n- **LOW-3 — the downstream effect on AFR fine-mapping and coloc denominators.** A region that banks\n  nothing is absent from the panel and therefore from every downstream denominator. **UNCITED:** the\n  posted text defines the panel-stands and reduced-set cases but says nothing about an unbanked\n  region, which is the §1 sweep finding restated.\n\n---\n',
+ },
+ {
+  "id": 'E12', "cls": 4,
+  "why": 'R2: uploading evidence fixes X1 only. X2 (scratch reclaimed only on ok), X3 (a region with no .npz is recomputed on every re-fire) and X4 apply to B regardless — and the new Option F also leaves the region unbanked, so F belongs in the scope.',
+  "label": 'R2 §4 heading', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": "## 4. Issues that apply to any option that leaves a raising region unbanked (A, C, and B unless B's code also uploads evidence)",
+  "new": "## 4. Issues that apply when a raising region banks nothing (A, C and F; and B, where adding uploads to B's code would close X1 but not X2–X4)",
+ },
+ {
+  "id": 'E13', "cls": 4,
+  "why": 'R7(iii): the excludelist and the occlusion manifest upload under the SAME `if ok:` block as the gate sidecar. MEASURED at BASIS by AST containment (never by line number): that block encloses FIVE upload calls, so the allele-frequency sidecar is lost too — four artifacts besides the .npz, where the review listed two. Reported as a finding.',
+  "label": 'R7(iii) X1 completeness', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '- **X1: evidence egress versus the mk7ze closeout commitment.** mk7ze P247-250 commits that "both\n  complete distributions fold in at closeout". A raising region\'s sidecar (site counts, inflation) is\n  written locally but never uploaded (C4). Its `n_dropped_occluded` row count does reach the panel TSV\n  (C2); its site count and inflation do not. As shipped, the closeout distributions would be missing\n  every raising region unless scratch is harvested by hand. Closing that gap in code touches the fire\n  path and needs a decision.',
+  "new": '- **X1: evidence egress versus the mk7ze closeout commitment.** mk7ze P247-250 commits that "both\n  complete distributions fold in at closeout". A raising region\'s gate sidecar (site counts,\n  inflation) is written locally but never uploaded (C4) — and the same `if ok:` block\n  (`run_native_ld_panel.py:1245`) gates four further per-region artifacts: the allele-frequency\n  sidecar (`:1251-1252`), the **excludelist** (`:1257-1261`), the **occlusion manifest**\n  (`:1266-1271`) and the gate sidecar (`:1277-1282`). A raising region therefore loses four egress\n  artifacts besides the `.npz` itself, not one. Its `n_dropped_occluded` row count does reach the\n  panel TSV (C2); its allele frequencies, site count, inflation, excludelist and manifest do not. As shipped, the closeout\n  distributions would be missing every raising region unless scratch is harvested by hand. Closing\n  that gap in code touches the fire path and needs a decision.',
+ },
+ {
+  "id": 'E14', "cls": 4,
+  "why": 'R4(vi): every question carries an explicit option tag and the union of tags is exactly {A..F}, so no option is silently left un-interrogated (measured: v1 interrogates A, B, the precedent, X1 and D and never C or E). R4(iv): the precedent question sits in neither the first nor the last slot. R4(viii)+A-7(i): one neutral sentence on the labels AND on the question order. The word "Should" is removed: it is on the declared evaluative-cue list.',
+  "label": 'R4(vi)(viii) + A-7(i) §5', "origin": 'orchestrator-specified, blast-radius 260916 finding B2',
+  "old": '## 5. Questions for the adjudicator\n\n1. Does a region that banks nothing *because the raw-panel NaN-raise contract fired* fall under any of\n   the three posted branches (T4, T3)? If not, does T5 require a posted amendment-update before Stage C,\n   or is a deviation entry plus disclosure (T6) enough?\n2. Would routing such a region to `BRANCH_AFR_OCC_DEFERRED` change what DEFERRED means (T3), and does\n   "NO new token" (mk7ze P316) reach beyond the companion condition?\n3. Should the R4-COVERAGE precedent (C7: a disclosure obligation with a named enforcer, not blocking\n   the fire) govern this class?\n4. Does honouring mk7ze P247-250 require that a raising region\'s gate evidence reach the bucket (X1)?\n   If so, must that land before Stage C?\n5. Does a full-panel scan (D) before the disclosure is posted use up the prospective production\n   prediction?',
+  "new": '## 5. Questions for the adjudicator\n\nThe A–F labels are inherited and alphabetical: they carry no ranking, and the order in §3 is not an\nordering by merit. The question order below follows the option order and likewise carries no ranking.\n\n1. Does a region that banks nothing *because the raw-panel NaN-raise contract fired* fall under any of\n   the three posted branches (T4, T3)? If not, does T5 require a posted amendment-update before Stage\n   C, or is a deviation entry plus disclosure (T6) enough? (Options A, B, F)\n2. Would routing such a region to `BRANCH_AFR_OCC_DEFERRED` change what DEFERRED means (T3), and does\n   "NO new token" (mk7ze P316) reach beyond the companion condition? (Options B, F)\n3. Is an operator stop at the first raise a matter the posted text speaks to at all, and does an\n   operator-truncated run raise a closeout-disclosure question under T7? (Options C, D)\n4. Does the R4-COVERAGE precedent (C7: a disclosure obligation with a named enforcer, not blocking the\n   fire) govern this class? (Options A, C, F)\n5. Does honouring mk7ze P247-250 require that a raising region\'s gate evidence — sidecar, excludelist\n   and occlusion manifest — reach the bucket (X1)? If so, must that land before Stage C? (Options A,\n   B, C, F)\n6. Does a full-panel measurement before the disclosure is posted use up the prospective production\n   prediction, and would changing the occlusion criterion for a stated methodological reason be the\n   act trsx5:49 fences? (Options D, E)',
+ },
+ {
+  "id": 'E15', "cls": 3,
+  "why": 'c05 +143: the --fail-fast help text moved with the RAM-1 launcher insertion.',
+  "evidence": {'key': 'RN', 'kind': 'Q', 'payload': ['Stage C runs without --fail-fast'], 'before': [1325, 1328], 'after': [1468, 1471]},
+  "old": '--fail-fast" (`run_native_ld_panel.py:1325-1328`).',
+  "new": '--fail-fast" (`run_native_ld_panel.py:1468-1471`).',
+ },
+ {
+  "id": 'E16', "cls": 3,
+  "why": "c07 c08 c09 c10 c11 +143: P2's whole CODE trace re-based.",
+  "bare_ref": '`:1287-1289`',
+  "evidence": {'key': 'RN', 'kind': 'T', 'payload': ['except Exception', 'error: {e}'], 'before': [1144, 1146], 'after': [1287, 1289]},
+  "old": '**P2: Without the flag, a raising region does not stop the loop (CODE).** The NaN raise is\n`plink_ld_to_npz.read_square_bin` (`plink_ld_to_npz.py:218-228`), called at\n`run_native_ld_panel.py:1090-1093`. `process_region` catches it (`:1144-1146`) and records\n`status = "error: square LD carries NaN …"`. The panel row is appended (`:1148`), no `.npz` is uploaded\n(uploads happen only under `if ok:`, `:1101-1107`), and the region returns. The loop raises only\n`if fail_fast and status != "ok"` (`:1278-1279`).',
+  "new": '**P2: Without the flag, a raising region does not stop the loop (CODE).** The NaN raise is\n`plink_ld_to_npz.read_square_bin` (`plink_ld_to_npz.py:218-228`), called at\n`run_native_ld_panel.py:1233-1236`. `process_region` catches it (`:1287-1289`) and records\n`status = "error: square LD carries NaN …"`. The panel row is appended (`:1291`), no `.npz` is uploaded\n(uploads happen only under `if ok:`, `:1244-1250`), and the region returns. The loop raises only\n`if fail_fast and status != "ok"` (`:1421-1422`).',
+ },
+ {
+  "id": 'E17', "cls": 3,
+  "why": "c20 c21 c23 +143: P4's fail-fast, skip and deferral citations re-based.",
+  "evidence": {'key': 'RN', 'kind': 'T', 'payload': ['"skipped_idempotent"', 'return result'], 'before': [806, 815], 'after': [949, 958]},
+  "old": '**P4: Adding `--fail-fast` to Stage C would halt on regions already banked.** The flag raises on any\n`status != "ok"` (`run_native_ld_panel.py:1278`). An already-banked region returns\n`skipped_idempotent` (`:806-815`), and `00001`, `00017` and `00040__sub14` are banked\n(`260824-STAGE-B-HALT-…md:20-21`). It also halts on every deferral (`run_native_ld_panel.py:1325-1328`).',
+  "new": '**P4: Adding `--fail-fast` to Stage C would halt on regions already banked.** The flag raises on any\n`status != "ok"` (`run_native_ld_panel.py:1421`). An already-banked region returns\n`skipped_idempotent` (`:949-958`), and `00001`, `00017` and `00040__sub14` are banked\n(`260824-STAGE-B-HALT-…md:20-21`). It also halts on every deferral (`run_native_ld_panel.py:1468-1471`).',
+ },
+ {
+  "id": 'E18', "cls": 3,
+  "why": 'c25 +35: osf_deviations.md gained 35 lines above this entry under vqp.',
+  "evidence": {'key': 'OD', 'kind': 'T', 'payload': ['m2_region_00149', 'offset -1', 'single survivor'], 'before': [657, 663], 'after': [692, 698]},
+  "old": '(`.planning/osf_deviations.md:657-663`, a DRAFTED — NOT POSTED ledger',
+  "new": '(`.planning/osf_deviations.md:692-698`, a DRAFTED — NOT POSTED ledger',
+ },
+ {
+  "id": 'E19', "cls": 3,
+  "why": 'c47 c48 c49 c50 +143: §2 row C2 re-based.',
+  "evidence": {'key': 'RN', 'kind': 'T', 'payload': ['result["n_dropped_occluded"] = n_dropped_occluded'], 'before': [1068, 1069], 'after': [1211, 1212]},
+  "old": '| C2 | The raise becomes `status="error: …"`. The row keeps `n_dropped_occluded` (set at `run_native_ld_panel.py:1068-1069`, before conversion at `:1090`). No `.npz` upload. | `run_native_ld_panel.py:1144-1148`, `:1101-1107` |',
+  "new": '| C2 | The raise becomes `status="error: …"`. The row keeps `n_dropped_occluded` (set at `run_native_ld_panel.py:1211-1212`, before conversion at `:1233`). No `.npz` upload. | `run_native_ld_panel.py:1287-1291`, `:1244-1250` |',
+ },
+ {
+  "id": 'E20', "cls": 3,
+  "why": 'c51 c52 +143: §2 row C3 re-based.',
+  "evidence": {'key': 'RN', 'kind': 'Q', 'payload': ['~30+ GiB/region … overflows any finite scratch disk'], 'before': [723, 725], 'after': [866, 868]},
+  "old": '| C3 | Local scratch is reclaimed **only** when `status == "ok"`. The docstring puts intermediates at "~30+ GiB/region … overflows any finite scratch disk". | `:1149-1154`, `:723-725` |',
+  "new": '| C3 | Local scratch is reclaimed **only** when `status == "ok"`. The docstring puts intermediates at "~30+ GiB/region … overflows any finite scratch disk". | `:1292-1297`, `:866-868` |',
+ },
+ {
+  "id": 'E21', "cls": 3,
+  "why": 'n01 n07 c53 c54 c55 +143: §2 row C4 re-based.',
+  "evidence": {'key': 'RN', 'kind': 'T', 'payload': ['occlusion_gate.json', '"occ_sites"'], 'before': [923, 939], 'after': [1066, 1082]},
+  "old": '| C4 | The gate sidecar (`occ_sites`, `n_sites`, inflation, verdict) is written locally, before plink, for every square region that gets past both the resume skip and the n_var feasibility ceiling and does not raise before the write (an already-banked region returns at `run_native_ld_panel.py:806-815`, an infeasible one at `:866-872`). It is uploaded **only** on deferral or on `ok`. | written `:923-939`; uploaded `:961-965` (deferral), `:1129-1139` (inside `if ok:`) |',
+  "new": '| C4 | The gate sidecar (`occ_sites`, `n_sites`, inflation, verdict) is written locally, before plink, for every square region that gets past both the resume skip and the n_var feasibility ceiling and does not raise before the write (an already-banked region returns at `run_native_ld_panel.py:949-958`, an infeasible one at `:1009-1015`). It is uploaded **only** on deferral or on `ok`. | written `:1066-1082`; uploaded `:1104-1108` (deferral), `:1272-1282` (inside `if ok:`) |',
+ },
+ {
+  "id": 'E22', "cls": 3,
+  "why": 'c56 +143: §2 row C5 re-based.',
+  "evidence": {'key': 'RN', 'kind': 'T', 'payload': ['SKIP guard', 'existing'], 'before': [799, 815], 'after': [942, 958]},
+  "old": '| C5 | Resume skips a region only if its `.npz` exists, so an `error:` region is recomputed on every re-fire. | `:799-815` |',
+  "new": '| C5 | Resume skips a region only if its `.npz` exists, so an `error:` region is recomputed on every re-fire. | `:942-958` |',
+ },
+ {
+  "id": 'E23', "cls": 3,
+  "why": "c59 +143: §2 row C7's producer-site citation re-based.",
+  "evidence": {'key': 'RN', 'kind': 'T', 'payload': ['deferred_infeasible_square', 'return result'], 'before': [866, 872], 'after': [1009, 1015]},
+  "old": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:866-872`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
+  "new": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:1009-1015`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
+ },
+]
 
 
 class VerifyError(Exception):
@@ -876,24 +1159,29 @@ def check_ast(reader):
             return False, "expected exactly one `if ok:` in process_region, found %d" % len(ifok)
         blk = ifok[0]
         ups = _calls(f, "_gsutil_upload")
-        want = {"npz": ".npz", "excludelist": ".occluded.excludelist",
-                "manifest": ".occlusion_manifest.tsv", "sidecar": ".occlusion_gate.json"}
-        found, outside = {}, []
+        # MEASURED at BASIS: the `if ok:` body gates FIVE uploads, not the four the review listed —
+        # the per-region allele-frequency sidecar is in there too. Reported as a finding.
+        want = {"npz": "out_npz", "afreq": ".afreq", "excludelist": ".occluded.excludelist",
+                "manifest": ".occlusion_manifest.tsv", "sidecar": "gate_json"}
+        inside_calls, outside_calls = [], []
         for c in ups:
             seg = ast.get_source_segment(rn_src, c) or ""
-            for k, tok in want.items():
-                if tok in seg:
-                    inside = any(_contains(s, c) for s in blk.body)
-                    found.setdefault(k, (c.lineno, inside))
-                    if not inside:
-                        outside.append("%s@RN:%d" % (k, c.lineno))
-        missing = [k for k in want if k not in found]
-        ok = not missing and not outside
-        return (ok, "if ok: @RN:%d body encloses %s%s%s"
-                % (blk.lineno,
-                   ", ".join("%s@RN:%d" % (k, found[k][0]) for k in sorted(found)),
-                   ("; MISSING %s" % missing) if missing else "",
-                   ("; OUTSIDE the if ok: body: %s" % outside) if outside else ""))
+            (inside_calls if any(_contains(s, c) for s in blk.body)
+             else outside_calls).append((c.lineno, seg))
+        got = {}
+        for k, tok in want.items():
+            hit = [ln for ln, seg in inside_calls if tok in seg]
+            if hit:
+                got[k] = hit[0]
+        missing = sorted(k for k in want if k not in got)
+        # the DEFERRAL sidecar upload (gate_sidecar) is a DIFFERENT call and must live OUTSIDE
+        defer = [ln for ln, seg in outside_calls if "gate_sidecar" in seg]
+        ok = (not missing) and len(inside_calls) == 5 and len(defer) == 1
+        return (ok, "if ok: @RN:%d body encloses %d upload call(s): %s%s; the deferral sidecar upload "
+                "is OUTSIDE it at RN:%s"
+                % (blk.lineno, len(inside_calls),
+                   ", ".join("%s@RN:%d" % (k, got[k]) for k in sorted(got)),
+                   ("; MISSING %s" % missing) if missing else "", defer or "ABSENT"))
 
     def a7():
         f = rnf.get("run_native_ld_panel") or rnf["process_region"]
@@ -995,9 +1283,13 @@ H_REGEX = {
 
 def check_hand(draft, reader):
     out = []
+    # The draft is hard-wrapped at ~100 columns, so a stated number and its units routinely straddle a
+    # newline. Every H pattern therefore runs against a whitespace-FLATTENED copy; the raw draft is
+    # still what every other family reads.
+    flat = re.sub(r"\s+", " ", draft)
 
     def need(key):
-        m = re.search(H_REGEX[key], draft)
+        m = re.search(H_REGEX[key], flat)
         return m
 
     # H1 — the C rate, recomputed from its own stated inputs
@@ -1017,7 +1309,7 @@ def check_hand(draft, reader):
                                                          lo * tot, hi * tot, lo_s, hi_s)))
 
     # H2 — the 48-minute scan and its linear scaling
-    ms, ml = need("scan"), re.findall(H_REGEX["lin"], draft)
+    ms, ml = need("scan"), re.findall(H_REGEX["lin"], flat)
     if not (ms and ml):
         out.append(("c-hand:H2", False, "the scan-runtime sentence did not parse"))
     else:
@@ -1690,7 +1982,7 @@ class Ctx(object):
         self.live = live
         self.overrides = dict(overrides or {})
         self.source = source
-        self.claims = claims if claims is not None else (CLAIMS_V1 + CLAIMS_NEW)
+        self.claims = claims if claims is not None else build_claims()
         self.edits = edits if edits is not None else PERMITTED_EDITS
         self.reader = Reader(live=live, overrides=self.overrides, basis=basis)
         self.ref = "HEAD" if live else BASIS
