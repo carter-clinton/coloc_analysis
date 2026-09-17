@@ -2622,3 +2622,11 @@ driver**, observed `collected=25 failed=9 passed=16`) and `9a3eb97` (fix); close
 **Provenance.** Appended at EOF by `quick-260916-vqp` on 2026-09-16 after the blast-radius review
 (finding B10, "RAM-1 has no `DEC-*` entry"). INSERTION ONLY: no pre-existing line of this file is
 edited. Nothing fired; no OSF, Seth, cloud or network contact; `$0`.
+
+**⚠ CORRECTED 2026-09-17 (append-only, by the orchestrator at quick-260916-vqp close-out).** This
+entry's citation `.planning/STATE.md:65` for the MAP_SHARED trap was correct at commit `5a2b437`
+and moved to **`.planning/STATE.md:66`** when this same quick task's next commit (`3f418df`)
+inserted one line above it. The quoted sentence is unchanged: "A `MAP_SHARED` probe does NOT show
+the 3.9 effect: fork doesn't copy shared page tables, so a naive probe 'refutes' a true premise."
+Found by the task's own independent verifier — a task whose subject was stale citations moved two
+of its own. Prefer quotes to line numbers.
