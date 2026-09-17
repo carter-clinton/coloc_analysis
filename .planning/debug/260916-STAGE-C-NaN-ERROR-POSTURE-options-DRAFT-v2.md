@@ -163,8 +163,8 @@ from both.
     outcome branches … before any occlusion-handling code fires". A region in none of the three is a
     fourth realized outcome, and on this reading a posted amendment-update is owed **before** Stage C
     rather than at closeout.
-- **Consequences:** each raising region is a coverage gap shaped like the R4-COVERAGE precedent (C7),
-  but with no registered disclosure obligation and no enforcer yet. After the first raise, every later
+- **Consequences:** each raising region is a coverage gap shaped like the R4-COVERAGE precedent (C7);
+  whether the disclosure obligation has an enforcer is X4. After the first raise, every later
   `stage-c` check-in exits 1 for the rest of the ~11 days (`AGENT-PROMPT.md:393`), and each exit 1 is
   an R8 STOP, so a *new* failure arrives on a gate that is already red. The verifier does print
   per-status counts (`fire_verifier.py:363-370`), so a new failure is visible by diffing check-ins.
@@ -174,8 +174,9 @@ from both.
 
 - **Behaviour:** the producer catches this particular raise, records a deferral status, and the
   verifier PASSes it instead of reporting a FINDING.
-- **Code needed:** yes. The producer's error path, plus either a new status prefix (which turns the C6
-  enforcer red until the vocabulary is extended) or reuse of `deferred_occlusion_anomaly:`.
+- **Code needed:** yes. The producer's error path, plus either a new status prefix and its entry in
+  the verifier's deferral allow-list, which the C6 enforcer checks, or reuse of
+  `deferred_occlusion_anomaly:`.
 - **Already pre-registered?**
   - *READING 1:* no. DEFERRED is tied to the anomaly-gate trigger (T3), and defer-not-exclude is
     stated for "a region over the anomaly gate" (T2). Adding a NaN-raise trigger changes what DEFERRED
@@ -279,7 +280,7 @@ from both.
   region falls under `BRANCH_AFR_OCC_DEFERRED` or under any posted branch. The disposition question is
   answered at closeout, in the open, rather than at fire time.
 - **Code needed:** yes. A new prefix in the producer's error path and one entry in the verifier's
-  deferral allow-list (`fire_verifier.py:300-303`), which the C6 enforcer holds honest.
+  deferral allow-list (`fire_verifier.py:300-303`), which the C6 enforcer checks.
 - **Already pre-registered?**
   - *READING 1:* the shipped code already carries this exact shape. `deferred_infeasible_square`
     (`run_native_ld_panel.py:1009-1015`) is an operational `deferred_*` status that is in the verifier
@@ -291,8 +292,8 @@ from both.
     operational token is still a fourth realized outcome in the record. On this reading an
     amendment-update is owed **before** code, exactly as under B.
 - **Consequences:** check-ins stay green without asserting anything about the posted branch list. The
-  region still banks nothing, so the R4-COVERAGE-shaped obligation (C7) reaches it as under A and C —
-  and unlike A, this option would register that obligation and its enforcer when the status is added.
+  region still banks nothing, so the R4-COVERAGE-shaped obligation (C7) reaches it as under A and C;
+  whether the disclosure obligation has an enforcer is X4.
 
 ### LOW: three further options with less cited ground at this basis
 
@@ -330,12 +331,15 @@ Brevity here reflects how much cited ground exists at this basis, not a ranking.
   few large raising regions could make later regions fail with `error:` for an unrelated reason.
 - **X3: resume re-spends compute.** Every re-fire recomputes and re-raises each raising region (C5),
   assuming identical inputs.
-- **X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7). This class does not.
+- **X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7); this class has none
+  under A, B, C or F as written. Under F, and under B with a new status prefix, one could be
+  registered at the point the status is added.
 
 ## 5. Questions for the adjudicator
 
 The A–F labels are inherited and alphabetical: they carry no ranking, and the order in §3 is not an
 ordering by merit. The question order below follows the option order and likewise carries no ranking.
+The number of questions that name an option is not a weighting of that option.
 
 1. Does a region that banks nothing *because the raw-panel NaN-raise contract fired* fall under any of
    the three posted branches (T4, T3)? If not, does T5 require a posted amendment-update before Stage
@@ -350,5 +354,6 @@ ordering by merit. The question order below follows the option order and likewis
    and occlusion manifest — reach the bucket (X1)? If so, must that land before Stage C? (Options A,
    B, C, F)
 6. Does a full-panel measurement before the disclosure is posted use up the prospective production
-   prediction, and would changing the occlusion criterion for a stated methodological reason be the
-   act trsx5:49 fences? (Options D, E)
+   prediction? (Option D)
+7. Would changing the occlusion criterion for a stated methodological reason be the act trsx5:49
+   fences? (Option E)

@@ -583,6 +583,13 @@ PERMITTED_EDITS = [
  },
  {'id': 'E24', 'cls': 4, 'label': 'f68 E-S: key maps HANDOFF.json, not STATE.md', 'origin': 'orchestrator brief-blind finding 2026-09-17 (quick-260917-f68)', 'why': 'E-S: v2 no longer cites STATE.md, so the Files-cited key maps HANDOFF.json in its place.', 'old': '- `STATE.md` → `.planning/STATE.md`', 'new': '- `HANDOFF.json` → `.planning/HANDOFF.json`'},
  {'id': 'E25', 'cls': 4, 'amends': 'E10c', 'bare_ref': '`:47-61`', 'label': 'f68 E-S: Option D re-cited', 'origin': 'orchestrator brief-blind finding 2026-09-17 (quick-260917-f68)', 'why': "E-S: the 48-min runtime is re-cited to HANDOFF.json:142 and the 6-region count to kw8's verdict rows :47-61, so no STATE.md line is cited; declared as amending E10c, which stays byte-unchanged.", 'old': '  count: the 21-region pairwise-completeness scan took 48 min (`STATE.md:18`), which scales linearly\n  to ~10.5 h over 276 regions; the `pcs_panelwide_reclassify` pass covered 6 regions in 1 h 53 m on\n  2026-09-01 (`260901-kw8-PANELWIDE-RECLASSIFICATION.md:13`, region count at `STATE.md:485`) and the\n  21 regions that carry rows in 2 h 40 m 46 s on 2026-09-02 (`260902-vsp-CONTENT-SPEC.md:10`), which\n  scales linearly to ~35.2 h over 276 regions. Both scalings are linear extrapolations of a measured\n  run, not measurements.\n', 'new': '  count: the 21-region pairwise-completeness scan took 48 min (`HANDOFF.json:142`), which scales\n  linearly to ~10.5 h over 276 regions; the `pcs_panelwide_reclassify` pass covered\n  6 regions in 1 h 53 m on 2026-09-01 (`260901-kw8-PANELWIDE-RECLASSIFICATION.md:13`; its verdict\n  rows at `:47-61` name the 6 regions) and the 21 regions that carry rows in 2 h 40 m 46 s on\n  2026-09-02 (`260902-vsp-CONTENT-SPEC.md:10`), which scales linearly to ~35.2 h over 276 regions.\n  Both scalings are linear extrapolations of a measured run, not measurements.\n'},
+ {'id': 'E26', 'cls': 4, 'amends': 'E7c', 'label': 'f68 D1: Option A points to X4', 'origin': 'Carter decision 2026-09-17 (quick-260917-f68)', 'why': 'D1 "State it once": Option A points to X4. It says "the disclosure obligation" (X4\'s heading noun) because "that obligation" would have no antecedent in Option A; amends E7c.', 'old': 'precedent (C7),\n  but with no registered disclosure obligation and no enforcer yet.', 'new': 'precedent (C7);\n  whether the disclosure obligation has an enforcer is X4.'},
+ {'id': 'E27', 'cls': 4, 'amends': 'E11c', 'label': 'f68 D1: Option F drops the unlike-A clause', 'origin': 'Carter decision 2026-09-17 (quick-260917-f68)', 'why': 'D1 "State it once": Option F carries the same X4 pointer as Option A, byte-identical; amends E11c.', 'old': 'as under A and C —\n  and unlike A, this option would register that obligation and its enforcer when the status is added.', 'new': 'as under A and C;\n  whether the disclosure obligation has an enforcer is X4.'},
+ {'id': 'E28', 'cls': 4, 'label': 'f68 D1: X4 states the enforcer fact once', 'origin': 'Carter decision 2026-09-17 (quick-260917-f68)', 'why': 'D1 "State it once": X4 is the single statement of the enforcer fact and names both options that add a status (orchestrator wording B5).', 'old': '**X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7). This class does not.', 'new': '**X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7); this class has none\n  under A, B, C or F as written. Under F, and under B with a new status prefix, one could be\n  registered at the point the status is added.'},
+ {'id': 'E29', 'cls': 4, 'amends': 'E14', 'label': 'f68 D2: question counts are not a weighting', 'origin': 'Carter decision 2026-09-17 (quick-260917-f68)', 'why': 'D2 "Split Q6": one §5 sentence, on its own line because the line before it is already 101 columns; amends E14.', 'old': 'The question order below follows the option order and likewise carries no ranking.', 'new': 'The question order below follows the option order and likewise carries no ranking.\nThe number of questions that name an option is not a weighting of that option.'},
+ {'id': 'E30', 'cls': 4, 'amends': 'E14', 'label': 'f68 D2: Q6 split, E gets its own question', 'origin': 'Carter decision 2026-09-17 (quick-260917-f68)', 'why': 'D2 "Split Q6": Q6 (Option D) and Q7 (Option E), each clause verbatim; amends E14.', 'old': '6. Does a full-panel measurement before the disclosure is posted use up the prospective production\n   prediction, and would changing the occlusion criterion for a stated methodological reason be the\n   act trsx5:49 fences? (Options D, E)', 'new': '6. Does a full-panel measurement before the disclosure is posted use up the prospective production\n   prediction? (Option D)\n7. Would changing the occlusion criterion for a stated methodological reason be the act trsx5:49\n   fences? (Option E)'},
+ {'id': 'E31', 'cls': 4, 'amends': 'E8a', 'label': 'f68 O2: Option B names the C6 check as F does', 'origin': 'orchestrator symmetry edit O2 2026-09-17 (quick-260917-f68)', 'why': 'O2 symmetry: Option B describes the new-prefix mechanism in the same terms as Option F ("which the C6 enforcer checks"), with no new citation; amends E8a.', 'old': 'plus either a new status prefix (which turns the C6\n  enforcer red until the vocabulary is extended) or reuse of `deferred_occlusion_anomaly:`.', 'new': "plus either a new status prefix and its entry in\n  the verifier's deferral allow-list, which the C6 enforcer checks, or reuse of\n  `deferred_occlusion_anomaly:`."},
+ {'id': 'E32', 'cls': 4, 'amends': 'E11c', 'label': 'f68 O2: Option F says checks', 'origin': 'orchestrator symmetry edit O2 2026-09-17 (quick-260917-f68)', 'why': 'O2 symmetry: Option F ends with the same phrase as Option B ("which the C6 enforcer checks"); amends E11c.', 'old': 'which the C6 enforcer holds honest.', 'new': 'which the C6 enforcer checks.'},
 ]
 
 
@@ -2714,6 +2721,41 @@ def _mut_f(C, fam, D, ctx0, d):
         if br:
             M.append(("f:bareplan — a declared bare-ref expansion removed from v2", "f:bareplan",
                       lambda: fam(C(D.replace(br[0]["bare_ref"], "REMOVED")), {"f"})))
+    # ---- the declared-amends gate (quick-260917-f68): EXACT ids, edits located by `amends` ----------
+    import copy as _copy
+    am = [e for e in PERMITTED_EDITS if e.get("amends")]
+    if am:
+        def _ex(res, cid, must=None):
+            return [r for r in res if r[0] == cid and (must is None or must in r[2])]
+
+        def _gate_undeclared():
+            ed = _copy.deepcopy(PERMITTED_EDITS)
+            next(e for e in ed if e["id"] == am[0]["id"]).pop("amends")
+            return _ex(fam(C(D, edits=ed), {"f"}), "f:unique:%s" % am[0]["amends"])
+        M.append(("f:unique:%s — the `amends` declaration removed from %s (an UNDECLARED overwrite)"
+                  % (am[0]["amends"], am[0]["id"]), "f:unique:%s" % am[0]["amends"], _gate_undeclared))
+        xb = next(e for e in am if e["amends"] != "E7c")
+
+        def _gate_false():
+            ed = _copy.deepcopy(PERMITTED_EDITS)
+            x = next(e for e in ed if e["id"] == xb["id"])
+            if x["old"] in next(e for e in ed if e["id"] == "E7c")["new"]:
+                raise VerifyError("the false declaration is not false: %s `old` is inside E7c's `new`" % x["id"])
+            x["amends"] = "E7c"
+            return _ex(fam(C(D, edits=ed), {"f"}), "f:unique:E7c", "FALSE DECLARATION")
+        M.append(("f:unique:E7c — %s re-declared as amending E7c, whose `new` lacks its `old` (must print "
+                  "FALSE DECLARATION)" % xb["id"], "f:unique:E7c", _gate_false))
+
+        def _gate_dangling():
+            ed = _copy.deepcopy(PERMITTED_EDITS)
+            next(e for e in ed if not e.get("amends"))["amends"] = "E_NOT_IN_LEDGER"
+            return _ex(fam(C(D, edits=ed), {"f"}), "f:amends")
+        M.append(("f:amends — an `amends` naming an id that is not in the ledger", "f:amends",
+                  _gate_dangling))
+        M.append(("f:unique:E14 — v2 altered inside E14's amended text, outside every amender's `new`",
+                  "f:unique:E14",
+                  lambda: _ex(fam(C(mut(D, "The A–F labels are inherited", "The A–F labels are inheritted")),
+                                  {"f"}), "f:unique:E14")))
     M.append(("f:t18 — a T1-T8 row altered (the NAMED enforcer for \"no renumbering\")", "f:t18",
               lambda: fam(C(_bump_trow(D)), {"f"})))
     return M
