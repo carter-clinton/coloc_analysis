@@ -17,6 +17,14 @@ whitespace are ignored. The mechanism, the two mask invariants it rests on and
 the re-pin protocol are documented in ``source_freeze.py``; the decision is
 ``DEC-2026-08-06-sr4-freeze-scope``.
 
+⚠ ONE byte-level assertion remains (measured 2026-09-16):
+``test_the_handoff_frozen_claim_is_recorded_as_partly_false`` still requires
+``plink_ld_to_npz.py`` and ``occlusion_span_filter.py`` to be 0-``numstat`` vs
+``PY_CODE_REF`` at HEAD -- a whole-file BYTE pin, so a COMMITTED docstring edit
+to either IS red. ``condition_ld_matrix.py`` was moved to its CODE pin by
+DEC-2026-09-16-condition-ld-matrix-freeze-code-only; the other two were
+deliberately left as they are (same entry).
+
 NO SKIPS, BY CONSTRUCTION -- pure source text + ``git`` + stdlib.
 """
 from __future__ import annotations
@@ -80,6 +88,7 @@ SUSIE_R_REL = "src/legacy/region_analysis/scripts/run_susie_rss.R"
 #: The three files AUTH-SR4-EXTEND covers -- MEASURED 0-diff against
 #: ``PY_CODE_REF`` before they were gated. Adding a file here requires a
 #: RECORDED DECISION that it is frozen, not an inference.
+#: condition_ld_matrix.py: CODE-only since DEC-2026-09-16-condition-ld-matrix-freeze-code-only (no longer 0-numstat-pinned).
 PY_FROZEN_RELS = (
     "src/python/plink_ld_to_npz.py",
     "src/python/condition_ld_matrix.py",
@@ -178,7 +187,13 @@ def test_the_pinned_set_is_exactly_the_files_that_have_not_moved():
 def test_the_handoff_frozen_claim_is_recorded_as_partly_false():
     """``HANDOFF.json:14``'s "All 7 pinned files 0-line diff vs bf16289" is FALSE
     for 5 of 8. Recorded here so a future sweep cannot "helpfully" add them back
-    without a decision, and so the record itself stays honest."""
+    without a decision, and so the record itself stays honest.
+
+    ``condition_ld_matrix.py`` is held here to its CODE pin
+    (``assert_code_frozen``), not a byte pin, per
+    DEC-2026-09-16-condition-ld-matrix-freeze-code-only; the other two frozen
+    modules, ``plink_ld_to_npz.py`` and ``occlusion_span_filter.py``, keep the
+    0-``numstat`` requirement."""
     for rel in MOVED_SINCE_PY_CODE_REF:
         assert rel not in PY_FROZEN_RELS, (
             f"{rel} has MOVED since {PY_CODE_REF} and must not be gated against "
@@ -191,7 +206,28 @@ def test_the_handoff_frozen_claim_is_recorded_as_partly_false():
             "(HANDOFF's claim is false for 5 of 8 files) has changed -- re-open "
             "the question rather than editing this list"
         )
-    for rel in PY_FROZEN_RELS:
+    # DEC-2026-09-16-condition-ld-matrix-freeze-code-only (Carter, 2026-09-16):
+    # condition_ld_matrix.py's freeze is CODE-only. The whole-file numstat check
+    # below was a BYTE proxy: it made the additive tcujq WITHDRAWN-by-trsx5
+    # docstring notice (quick-260916-oyq) cost a red test. The property the
+    # freeze protects is the CODE, which assert_code_frozen pins -- docstrings and
+    # comments ignored, code string constants (e.g. the raise messages that still
+    # say "pre-registered") KEPT. It reads the WORKING TREE, where the numstat
+    # compared two COMMITS. plink_ld_to_npz.py and occlusion_span_filter.py
+    # deliberately KEEP the byte-level numstat pin: a recorded non-change.
+    code_only = ("src/python/condition_ld_matrix.py",)
+    assert set(code_only) <= set(PY_FROZEN_RELS), (
+        "the CODE-only rescope names a file outside PY_FROZEN_RELS -- its branch "
+        "would be dead and would guard nothing"
+    )
+    numstat_pinned = [rel for rel in PY_FROZEN_RELS if rel not in code_only]
+    assert numstat_pinned == [
+        "src/python/plink_ld_to_npz.py",
+        "src/python/occlusion_span_filter.py",
+    ], f"the byte-pinned set changed shape without a decision: {numstat_pinned}"
+    for rel in code_only:
+        assert_code_frozen(rel, PY_CODE_REF, LANG_PY)
+    for rel in numstat_pinned:
         numstat = _git("diff", "--numstat", PY_CODE_REF, "HEAD", "--", rel).stdout.strip()
         assert not numstat, (
             f"{rel} is NO LONGER 0-diff vs {PY_CODE_REF} ({numstat!r}); it left "

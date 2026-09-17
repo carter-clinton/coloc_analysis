@@ -2409,3 +2409,130 @@ the seven supporting records `.planning/debug/260819-SETH-VERDICT-adjudication-c
 `.planning/debug/260821-SETH-FINAL-PASS-no-blocking-objection-as-received.md`;
 Carter's posting procedure `.planning/debug/260821-POSTING-CARD-for-carter.md`;
 `.planning/amendments/osf-amendment-occlusion-gate-recalibration-2026-08-20.md`.
+
+## 2026-09-16 — DEC-2026-09-16-condition-ld-matrix-freeze-code-only: condition_ld_matrix.py's freeze is CODE-only; its whole-file numstat pin is retired so an additive WITHDRAWN-by-trsx5 docstring notice is free
+
+**Decision (CARTER, 2026-09-16 ~17:45 EDT, AskUserQuestion):** Carter chose the option
+labelled **"Both files + rescope pin (Recommended)"**. Its description, verbatim:
+*"Additive WITHDRAWN-by-trsx5 notice in the docstrings of BOTH modules (history kept, code
+strings :153/:200 untouched so the code pin stays green). Records a decision that
+condition_ld_matrix.py's freeze is CODE-only: replace its whole-file numstat assertion at
+:194-199 with the existing code pin, proven able to fail. Named enforcer test for the
+notices. Matches the scope-a-guard-to-the-property rule."* (The line numbers inside that
+quote are those of the files at `0231cbf`. They are quoted, not re-cited: the notices move
+every later line.)
+
+**Landed by `quick-260916-oyq`** in three commits: this entry plus the rescoped assertion;
+the named enforcer, committed RED; the additive notices, which turn it GREEN.
+
+### The premise, corrected (MEASURED at `0231cbf`)
+
+1. **The recorded defect list was incomplete.** The recorded list was
+   `condition_ld_matrix.py:4,153` and `write_conditioned_ld_npz.py:4,17,85`, all described as
+   docstring text. Every `pre-registered` / `pre-registration` occurrence, classified by `ast`
+   docstring spans plus `tokenize` (case-insensitive), at `0231cbf`:
+   - `src/python/condition_ld_matrix.py`: **DOCSTRING** lines 1, 3, 26, 123, 130;
+     **CODE-STRING** (f-strings inside `raise ValueError`) lines 153, 200; COMMENT none.
+     (Line 4 holds no occurrence: that sentence starts on line 3.)
+   - `src/python/write_conditioned_ld_npz.py`: **DOCSTRING** lines 4, 17, 18; **COMMENT**
+     line 85; CODE-STRING none.
+2. **"`condition_ld_matrix.py` is CODE-pinned, so docstring edits are free" was WRONG.**
+   `tests/m3/test_source_freeze_pins.py::test_the_handoff_frozen_claim_is_recorded_as_partly_false`
+   also required `git diff --numstat bf16289 HEAD -- <rel>` to be EMPTY for all three
+   `PY_FROZEN_RELS`. That compares a COMMIT to a COMMIT: a working-tree-only edit leaves it
+   GREEN, and only a COMMITTED edit turns it RED. So the premise was measured in a
+   `git clone --shared` scratch clone, never by editing the shared tree. **Proof A** (a
+   committed one-line docstring probe on `condition_ld_matrix.py`, OLD assertion):
+   `AssertionError: src/python/condition_ld_matrix.py is NO LONGER 0-diff vs bf16289 ('1\t1\tsrc/python/condition_ld_matrix.py'); it left the measured basis for AUTH-SR4-EXTEND`
+   (1 failed), while the 3 module + 22 symbol CODE pins stayed GREEN (25 passed). At
+   `0231cbf`, `git diff --numstat bf16289 HEAD` was empty for `condition_ld_matrix.py`,
+   `write_conditioned_ld_npz.py`, `plink_ld_to_npz.py` and `occlusion_span_filter.py`.
+3. **The raise messages are CODE, not docstrings.** `condition_ld_matrix.py` has 4 `raise`
+   sites. Exactly 2 messages say "pre-registered" (the unsupported-policy raise and the
+   over-ceiling raise), and exactly 1 of those 2 names `BRANCH_AFR_COND_DEFERRED`;
+   `write_conditioned_ld_npz.py` has 2 `raise` sites and neither says it. They are code
+   string constants, and editing one trips the code pins (Proof B2 below).
+4. **"pre-registered" was TRUE when written.** The policy was posted as OSF file `tcujq` on
+   `az52u` at 2026-07-04T04:14:46Z and withdrawn by the amendment-update OSF file `trsx5`,
+   posted 2026-07-10T13:32:22Z. The posted trsx5 body, line 19 (counted with
+   `str.splitlines()`; the file has no trailing newline), reads: *"The off-diagonal NaN→0
+   conditioning of isolated pairwise-undefined entries (prior amendment tcujq item (a)
+   isolated-off-diagonal-pair branch and item (b) the per-region zeroing ceiling), together
+   with its BRANCH_AFR_COND_CLEAN / BRANCH_AFR_COND_APPLIED / BRANCH_AFR_COND_DEFERRED outcome
+   branches, is withdrawn."* Deleting the historical wording would falsify the record, so the
+   correction is **additive, never a deletion**. trsx5 also **RETAINS** PSD regularization
+   (posted line 35), the fully-NaN-row → drop rule (line 37; this module's fully-NaN-row
+   raise directs that drop) and the raw-panel NaN-raise contract (line 39). The notice is
+   therefore scoped to what trsx5 actually withdrew — the isolated-pair zeroing, the zeroing
+   ceiling and `BRANCH_AFR_COND_*` — not to "the module" wholesale.
+
+### What changes
+
+- **The rescoped assertion.** In `test_the_handoff_frozen_claim_is_recorded_as_partly_false`,
+  `condition_ld_matrix.py` is now held to `assert_code_frozen(rel, PY_CODE_REF, LANG_PY)`,
+  REUSED from `tests/m3/source_freeze.py` (no new stripper, no control seam), inside
+  `for rel in code_only:`. A subset assertion keeps `code_only` inside `PY_FROZEN_RELS`, and
+  an exact assertion pins the remaining byte-pinned list. It was proven able to fail BEFORE
+  commit, each probe COMMITTED in a fresh scratch clone with the rescoped test copied in:
+  - **B1** docstring-only probe on `condition_ld_matrix.py`: rescoped form GREEN (1 passed)
+    with the 25 code pins GREEN; the OLD form, in the same clone, RED ("NO LONGER 0-diff").
+  - **B2** raise-string probe (`is pre-registered` → `is pre-registeredX`): RED, "the CODE of
+    src/python/condition_ld_matrix.py (whole file) has MOVED off its pin bf16289", with the
+    first difference naming `pre-registeredX`. The symbol pins went 1 failed (the
+    `condition_ld_matrix` symbol) / 2 passed. Code strings are CODE.
+  - **B3** `ceiling_frac` default `0.0005` → `0.0006`: RED (MOVED off its pin).
+  - **B4 / B5** docstring-only probes on `plink_ld_to_npz.py` / `occlusion_span_filter.py`:
+    RED ("NO LONGER 0-diff"). Their numstat pin is retained.
+- **Semantics note.** The rescoped check (`assert_code_frozen`) reads the **WORKING TREE** for
+  its actual side, whereas the retired numstat compared two **COMMITS** (`bf16289`..HEAD).
+  Consequences: an uncommitted CODE edit to `condition_ld_matrix.py` now turns it RED
+  immediately (stronger, for code), while a committed docstring or comment edit no longer
+  does (the intended freedom).
+- **The additive notices.** A WITHDRAWN POLICY NOTICE block at the top of the module
+  docstrings of `src/python/condition_ld_matrix.py` and `src/python/write_conditioned_ld_npz.py`,
+  a short notice in the `condition_ld_matrix()` function docstring, and one new comment line
+  at the conditioning call in `write_conditioned_ld_npz.py` (quick-260916-oyq, Task 3). No
+  existing line is modified or removed.
+- **The named enforcer** `tests/m3/test_tcujq_withdrawal_notices.py` (quick-260916-oyq,
+  Task 2): `ast` docstring checks (never a grep), the posted-trsx5 byte anchor, a
+  pipeline-caller scan with positive controls, and committed negative controls.
+
+### What does NOT change
+
+- `PY_CODE_REF` stays `bf16289` (no re-pin). `PY_FROZEN_RELS` and the 22 derived symbols are
+  unchanged.
+- `test_python_module_code_is_frozen` and `test_python_symbol_code_is_frozen` are unchanged.
+- Every line of code, code string, import, constant, signature and behaviour of both modules
+  is unchanged, **both "pre-registered" raise messages included**.
+- **`src/python/plink_ld_to_npz.py` and `src/python/occlusion_span_filter.py` KEEP their
+  whole-file numstat pin.** They are named here explicitly as unchanged: a recorded
+  non-change, not an oversight.
+- OSF records, `.planning/amendments/` and `.planning/osf_deviations.md` are untouched.
+- `DEC-2026-08-06-sr4-freeze-scope` is NOT edited (append-only). This entry is the correction
+  of record for that entry's sentence that docstrings are "deliberately **outside** every
+  freeze gate", as it applied to the three `PY_FROZEN_RELS`: while the numstat assertion
+  existed that sentence was false for all three, and it stays false for
+  `plink_ld_to_npz.py` and `occlusion_span_filter.py`.
+
+### Observation for Carter (NOT decided here)
+
+The same proxy-vs-property question applies to `plink_ld_to_npz.py` and
+`occlusion_span_filter.py`: a committed docstring edit to either is still RED (Proofs B4/B5).
+The module docstring of `tests/m3/test_source_freeze_pins.py` now carries a caveat saying so,
+where it previously said "Every pin here is a CODE pin". At `0231cbf`,
+`.planning/HANDOFF.json:261` still carries the wrong "docstring edits are FREE" premise, and
+`.planning/STATE.md:82` carries it too (it was `:61` when this task was planned at `11f61e8`;
+the correction is already noted beneath it). Both are orchestrator-owned and were not edited
+here.
+
+**Cross-refs:** `DEC-2026-08-06-sr4-freeze-scope`; `.planning/osf_deviations.md` entries
+`## 2026-07-04 — AFR native-panel LD NaN→0 + PSD conditioning amendment (999.1 OSF gate)` and
+`## 2026-07-10 — AFR native-panel occlusion exclude-in-lockstep amendment-update (WITHDRAWS the 2026-07-04 NaN→0 policy; m3-07 OSF gate)`;
+the posted body
+`.planning/quick/260817-vbu-release-trsx5-gate-bank-resolved-adjudic/260817-vbu-trsx5-posted-9695-reconstructed.txt`
+(9,695 B / `c19be8b2ad7cd6a45fee1d668d8a9cf9`);
+`.planning/amendments/osf-amendment-afr-native-ld-nan-psd-2026-07-03.md` (the tcujq
+project-side copy); `quick-260916-oyq`; `[[feedback_scope_a_guard_to_the_property_not_a_proxy]]`
+("scope a guard to the property, not a proxy") and
+`[[feedback_a_claimed_invariant_needs_a_named_enforcer]]` ("a claimed invariant needs a named
+enforcer").
