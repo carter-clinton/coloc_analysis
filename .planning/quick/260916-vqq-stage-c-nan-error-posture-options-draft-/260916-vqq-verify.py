@@ -1992,9 +1992,10 @@ def check_edits(banked_text, source_bytes, edits, claims, reader, have_source=Fa
     declared = [(e["id"], e["amends"]) for e in edits if "amends" in e]
     dangling = [i for (i, t) in declared if t not in ids]
     out.append(("f:amends", not dangling,
-                "%d declared amendment(s) %s; every target is a ledger id%s"
+                "%d declared amendment(s) %s; %s"
                 % (len(declared), ", ".join("%s->%s" % d for d in declared) or "-",
-                   ("" if not dangling else "; DANGLING (target not in the ledger): %s" % dangling))))
+                   ("every target is a ledger id" if not dangling
+                    else "DANGLING (target not in the ledger): %s" % dangling))))
     for e in edits:
         if e["cls"] != 3:
             continue
@@ -2518,6 +2519,55 @@ def _mut_f(C, fam, D, ctx0, d):
         M.append(("f:unique:%s — the edit's `new` string duplicated in v2" % e0["id"],
                   "f:unique:%s" % e0["id"],
                   lambda: fam(C(D + "\n" + e0["new"] + "\n"), {"f"})))
+        # ---- the declared-amends gate (quick-260917-f68): observed RED four ways -------------
+        am = [e for e in PERMITTED_EDITS if e.get("amends")]
+        if am:
+            def _amended_ledger(change):
+                import copy
+                ed = copy.deepcopy(PERMITTED_EDITS)          # no global state changes
+                change(ed)
+                return ed
+
+            def _by_id(ed, i):
+                return next(e for e in ed if e["id"] == i)
+
+            def undeclared():
+                ed = _amended_ledger(lambda ed: _by_id(ed, am[0]["id"]).pop("amends"))
+                return fam(C(D, edits=ed), {"f"})
+            M.append(("f:unique:%s — UNDECLARED overwrite: %s's `amends` removed, so an edit that "
+                      "rewrites %s's `new` without declaring it stays RED"
+                      % (am[0]["amends"], am[0]["id"], am[0]["amends"]),
+                      "f:unique:%s" % am[0]["amends"], undeclared))
+
+            other = next(e["amends"] for e in am if e["amends"] != am[0]["amends"])
+
+            def false_declaration():
+                tgt = next(e for e in PERMITTED_EDITS if e["id"] == other)
+                if am[0]["old"] in tgt["new"]:
+                    raise VerifyError("%s's old occurs inside %s's new: the re-pointed declaration "
+                                      "would be TRUE, so this mutation could not prove anything"
+                                      % (am[0]["id"], other))
+
+                def repoint(ed):
+                    _by_id(ed, am[0]["id"])["amends"] = other
+                return fam(C(D, edits=_amended_ledger(repoint)), {"f"})
+            M.append(("f:unique:%s — FALSE declaration: %s re-pointed to amend %s, whose `new` does "
+                      "not contain %s's `old`" % (other, am[0]["id"], other, am[0]["id"]),
+                      "f:unique:%s" % other, false_declaration))
+
+            def dangling():
+                def point_nowhere(ed):
+                    next(e for e in ed if not e.get("amends"))["amends"] = "E_NOT_IN_LEDGER"
+                return fam(C(D, edits=_amended_ledger(point_nowhere)), {"f"})
+            M.append(("f:amends — DANGLING declaration: an edit declares it amends an id that is "
+                      "not in the ledger", "f:amends", dangling))
+
+            M.append(("f:unique:%s — AMENDED TEXT ALTERED: a typo inside %s's `new`, outside every "
+                      "declared amender's `new`, is not absorbed by the declaration"
+                      % (am[-1]["amends"], am[-1]["amends"]),
+                      "f:unique:%s" % am[-1]["amends"],
+                      lambda: fam(C(mut(D, "The A–F labels are inherited",
+                                        "The A–F labels are inheritted")), {"f"})))
         c3 = [e for e in PERMITTED_EDITS if e["cls"] == 3 and e.get("evidence")]
         if c3:
             def same_evidence():
