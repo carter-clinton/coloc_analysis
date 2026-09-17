@@ -3,9 +3,20 @@
 > ## ⛔ AN AGENT MUST NEVER FIRE IT. (HANDOFF `do_not[0]`.)
 >
 > This runbook was **produced by an agent**. It was **verified at commit
-> `5284505f5b7410fe3775e96f3ac3eb1adf668f40`** (the 260812-ox1 L-01 HEAD; any commits
-> after that HEAD are `.planning`-only — 0 files under `src/`, `tests/`, `config/`,
-> `Snakefile`). All **agent-verifiable rows are green as of 2026-08-12** per
+> `5284505f5b7410fe3775e96f3ac3eb1adf668f40`** (the 260812-ox1 L-01 HEAD).
+> ⚠ **RETIRED 2026-09-16 (`quick-260916-vqr`):** the clause that used to stand here
+> — "any commits after that HEAD are `.planning`-only — 0 files under `src/`,
+> `tests/`, `config/`, `Snakefile`" — was **half false and is now stale in the half
+> that matters.** Measured 2026-09-16 with
+> `git diff --name-only 5284505 HEAD -- src tests config Snakefile workflow` at the
+> NCSU tip `480feae`: **19 files changed — 9 under `src/python/` and 10 under
+> `tests/m3/`** (9 + 10 = 19, reconciled). The other half is still TRUE: **0 files
+> under `config/`, `Snakefile` or `workflow/`.** Two of those changes matter to this
+> fire by name — **`9a3eb97`** (RAM-1: `_run_plink` now reports **plink's own** peak
+> RSS through an isolated launcher, which changes what the `peak_ram_gib` column
+> means) and **`48b8828`** (the tcujq withdrawal notices). Item 1 below states the
+> clone requirement as a checkable ancestry property instead of a count that goes
+> stale. All **agent-verifiable rows are green as of 2026-08-12** per
 > `260812-ox1-evidence.tsv` (20/20 PASS; suites 907/31/0 and 136/1/0). **The fire
 > decision, and EVERY perimeter command below, are Carter's.** Every quoted perimeter
 > command is copied character-for-character from the CORRECTED
@@ -32,6 +43,26 @@ cross-references to "item 7" elsewhere in the 260812-ox1 package still resolve.
   fresh-clone checklist. Confirm `git branch --show-current` prints
   `m3-W2-aou-deltas`. **Never run from `main`** (stale unrelated history; a
   clone-from-`main` re-run wedges deterministically).
+- ⚠ **THE CLONE TARGET, STATED AS A CHECKABLE PROPERTY** (added 2026-09-16,
+  `quick-260916-vqr`). The target is **the tip you push from NCSU immediately
+  before the fire** — i.e. *at or after* the NCSU tip at fire time, which is why
+  the `git push` above comes first. A runbook cannot name the SHA of the commit
+  that contains it, so the requirement is expressed as an ancestry property the
+  clone can verify about **itself**. In the clone, run:
+
+```
+git log --oneline -1
+git merge-base --is-ancestor 9a3eb97 HEAD && echo "RAM-1 present"
+git merge-base --is-ancestor 48b8828 HEAD && echo "tcujq present"
+```
+
+  **EXPECT both echo lines to print.** `git merge-base --is-ancestor` exits 0 when
+  the commit is in this clone's history and 1 when it is not, so **a silent line is
+  the failure signal**: the clone predates a fix that changes the fire path →
+  **STOP**, push from NCSU and re-clone/`git pull`, do not proceed. `9a3eb97` is
+  RAM-1 (the `_run_plink` peak-RSS launcher — see the header note on what
+  `peak_ram_gib` now means); `48b8828` is the tcujq withdrawal notices. This is the
+  in-perimeter half of the same gate the agent runs at `AGENT-PROMPT` STEP 1.
 
 ## 2. §4 row 1 — bucket `.npz` count (expect **0** pre-fire)
 
@@ -327,10 +358,25 @@ is built, or lower `min_ld_coverage` — are **scientific calls, not executor ca
 
 ## 10. STEP B — THE FIRE (~263 VM-h, ~11 days, $385–1,084)
 
-`nohup` plus `timeout 312h` (13-day wall-cap), **server-side**, on the
-STOPPED-not-deleted Cloud Analysis VM. **Do NOT restart the kernel.** Check in every
-**2–3 days**. **Teardown is UI-only** (the pet SA is list-only; `timeout` is the
-backstop).
+⚠ **ORDER MATTERS — CORRECTED 2026-09-16 (`quick-260916-vqr`).** The command form
+is **`timeout 312h nohup python3 …`** — **`nohup` INSIDE `timeout`**, not the
+reverse — **server-side**, on the STOPPED-not-deleted Cloud Analysis VM. The
+previously committed form A (`nohup timeout 312h python3 …`) does **NOT** survive a
+disconnect: `nohup`'s ignore-SIGHUP applies to **`timeout`**, which forwards the
+signal to its child, and **the child DIED** when measured on GNU coreutils 8.32
+(2026-09-16). In the corrected form the child ignores SIGHUP and **survives** a
+SIGHUP sent to the pid **and** to its whole process group; `$!` still names the
+`timeout` process (so the `echo "fire PID: $!"` line and teardown guidance are
+unchanged); and the 312h wall-cap **remains armed after the SIGHUP** (a HUP'd job
+was still killed by its cap). This document deliberately states **no invocation** —
+the two literal command sites are `AGENT-PROMPT` STEP 10 and `BROWSER-PASTE` §10,
+and both were swapped in the same change. ⚠ **The VM's own coreutils version is
+UNMEASURED**, so the property is proved in-perimeter before the fire by the ~10 s /
+$0 A/B check at `AGENT-PROMPT` **STEP 9d** / `BROWSER-PASTE` **§9d** (check 4),
+which has form A's death as its negative control and STOPS if the property does not
+reproduce. Run **all four** STEP 9d preconditions in the same shell that fires.
+**Do NOT restart the kernel.** Check in every **2–3 days**. **Teardown is UI-only**
+(the pet SA is list-only; `timeout` is the backstop).
 
 **MECHANICAL GATES for this stage (added 2026-08-18, `quick-260818-sml`):**
 `src/python/fire_verifier.py stage-b` before the fire (per-region peak-RAM
@@ -340,6 +386,23 @@ PASSING as the gates working, `verify_failed`/`error:` rows failing at FINDING,
 and an unrecognized status a HARD_STOP). **Exit 0 is required to proceed; a red is
 a STOP, never a licence to retry or repair.** Full invocations in `AGENT-PROMPT`
 STEP 9-GATE / STEP 10 and `BROWSER-PASTE` §9b / §9c.
+
+⚠ **READ `peak_ram_gib` AS PLINK-ONLY** (added 2026-09-16, `quick-260916-vqr`).
+Since RAM-1 (`9a3eb97`) that column is **plink's own peak RSS**, not the driver's
+(launcher bias ≈ 11 MiB, bounded under 24 MiB by
+`tests/m3/test_run_plink_peak_rss.py`). **The driver's largest load is not in it:**
+`plink_ld_to_npz.read_square_bin` `np.fromfile`s the whole `.ld.bin` into one dense
+`float32` array = **4 · n_var² bytes** — **39.08 GiB** at n_var 102,421 and
+**53.64 GiB** at the `--max-n-var` ceiling of 120,000 — and `content_verify_npz`
+re-loads it afterwards. That figure is a **FLOOR**; the driver's true peak has not
+been measured. So the stage-b gate's 102.0 GiB bound (15% headroom on 120 GiB) now
+bounds **plink only** — **add the driver term separately** when sizing the VM or
+computing `COST-1`. ⚠ And the four rows already in the bucket panel TSV
+(`m2_region_00001 30.6591`, `m2_region_00017 2.9689`,
+`m2_region_00040__sub14 26.5745`, `m2_region_00057 26.5745`) are **PRE-FIX**: not
+plink-only measurements, with no code-version column to separate them. **Do not mix
+them with post-fix values**; `COST-1` uses post-fix rows only, and a class with no
+post-fix row is reported as such rather than filled in with a pre-fix one.
 
 **Liveness is the GCS `.npz` object listing climbing toward 276 — NOT the kernel
 light, NOT a `_SUCCESS` marker, NOT the log.** THE POLL COMMAND, both corrected forms:

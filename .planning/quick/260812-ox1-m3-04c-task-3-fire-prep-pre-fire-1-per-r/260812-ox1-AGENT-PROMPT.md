@@ -66,9 +66,21 @@ STEP 1 — clone and branch. RUN:
   git checkout m3-W2-aou-deltas
   git checkout -f
   git branch --show-current
+  git merge-base --is-ancestor 9a3eb97 HEAD && echo "RAM-1 present"
+  git merge-base --is-ancestor 48b8828 HEAD && echo "tcujq present"
   echo $WORKSPACE_BUCKET
-EXPECT: branch prints m3-W2-aou-deltas; the bucket echo prints exactly
-gs://rw-migration-aou-rw-476cdac2. Either mismatch -> R3.
+EXPECT: branch prints m3-W2-aou-deltas; BOTH ancestry lines print ("RAM-1 present"
+and "tcujq present"); the bucket echo prints exactly
+gs://rw-migration-aou-rw-476cdac2. Any mismatch -> R3.
+⚠ THE ANCESTRY GATE (added 2026-09-16, quick-260916-vqr). 9a3eb97 is the
+_run_plink peak-RSS launcher (RAM-1) — it changes what the peak_ram_gib column
+means and it is the seam STEP 9d exercises. 48b8828 is the tcujq withdrawal
+notices. `git merge-base --is-ancestor` exits 0 when the commit IS in this
+clone's history and 1 when it is not, so A SILENT LINE IS THE FAILURE SIGNAL:
+this clone predates a fix that changes the fire path -> STOP under R3, do NOT
+proceed to STEP 2, report to Carter and ask him to push from NCSU first. This is
+deliberately a checkable PROPERTY of the clone rather than a tip SHA, which no
+document can keep current about itself.
 
 STEP 2 — pre-fire bucket count. RUN:
   gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/*.npz | wc -l
@@ -95,6 +107,11 @@ STEP 8 (re-check `which plink1.9` immediately before STEP 8):
 EXPECT the version line above. If the download is blocked: STOP and report
 `plink --version` of the workbench binary — a shim is ruled by Carter ONLY for a
 PLINK v1.90 build (PLINK 2.x has different `--r` semantics; never shim it).
+⚠ SAME-SHELL POINTER (added 2026-09-16, quick-260916-vqr): this `export PATH`
+lives in THIS shell only. STEP 9d's fire-shell preconditions must be run in the
+SAME shell that will fire, after this export — that is the whole point of them.
+If you open a new tab or the terminal is recycled before STEP 10, redo this
+export AND re-run STEP 9d there.
 
 STEP 4 — stale panel TSV. RUN:
   gsutil stat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv
@@ -331,6 +348,36 @@ peak_ram_gib is missing FAILS CLOSED — unmeasurable is never ok. Zero computed
 rows also FAILS: a check with no input must not pass vacuously. Exit 0 required;
 any red is a STOP under R8 — paste and wait.
 
+⚠ HOW TO READ peak_ram_gib — IT IS PLINK-ONLY (added 2026-09-16,
+quick-260916-vqr). This changes how the gate's PASS must be interpreted:
+  * Since the RAM-1 launcher landed (commit 9a3eb97), peak_ram_gib is PLINK'S OWN
+    peak RSS, read by a small isolated launcher via os.wait4 — it is NOT the
+    driver's memory. The launcher's own bias is ~11 MiB (measured 0.0107-0.0110
+    GiB for a bare `true` on python 3.11, NCSU 2026-09-16);
+    tests/m3/test_run_plink_peak_rss.py bounds that bias under 24 MiB
+    (_BIAS_CEIL_MIB).
+  * THE DRIVER'S OWN LARGEST LOAD IS NOT IN THAT COLUMN. After plink exits,
+    plink_ld_to_npz.read_square_bin np.fromfile's the whole .ld.bin into ONE dense
+    float32 array inside the driver process = 4 * n_var^2 bytes. At n_var 102,421
+    that is 39.08 GiB; at the --max-n-var ceiling of 120,000 it is 53.64 GiB. The
+    NaN / unit-diagonal / symmetry scans are deliberately BLOCKED
+    (plink_ld_to_npz._has_any_nan_blocked, block=1024) so they add about
+    block * n_var bytes rather than another n_var^2 — but content_verify_npz then
+    RE-LOADS the banked array afterwards. STATE 4 * n_var^2 AS A FLOOR: the
+    driver's true peak has NOT been measured anywhere.
+  * Therefore fire_verifier.check_peak_ram (15% headroom on the 120 GiB VM =
+    102.0 GiB) now bounds PLINK ONLY. plink reserves roughly half of detected RAM
+    by default, so a PASS there is NOT headroom evidence for the driver. ADD THE
+    DRIVER TERM SEPARATELY whenever you read this gate, size the VM, or compute
+    COST-1.
+  * THE FOUR ROWS ALREADY IN THE BUCKET PANEL TSV ARE PRE-FIX AND MUST BE
+    QUARANTINED: m2_region_00001 30.6591, m2_region_00017 2.9689,
+    m2_region_00040__sub14 26.5745, m2_region_00057 26.5745. They were written
+    BEFORE 9a3eb97, so they are NOT plink-only measurements. The panel TSV has no
+    code-version column and nothing mechanically separates them — DO NOT MIX them
+    with post-fix values. COST-1 uses post-fix rows only; if a class has no
+    post-fix row, say so rather than substituting a pre-fix one.
+
 NOTE (A-12, not wired — do not attempt it): the gate also implements a
 MAF-DEPRESSION DIRECTION check (occluded variants should show depressed panel MAF
 vs sumstats MAF; absent depression WEAKENS the occlusion attribution and is a
@@ -390,16 +437,175 @@ REGION 1 sits at 0.2027% (196 of 96,708 sites) and 1.18x (231 rows / 196 sites) 
 UNDER BOTH ceilings, MEASURED 2026-08-19/20. A deferral there would itself be the
 finding.
 
+STEP 9d — FIRE-SHELL PRECONDITIONS ($0, under a minute; added 2026-09-16,
+quick-260916-vqr). RUN ALL FOUR IN THE SAME SHELL THAT WILL FIRE — the shell in
+which STEP 3's `export PATH="$HOME/bin:$PATH"` was done. A new tab is a DIFFERENT
+shell and proves nothing about the one that matters.
+
+WHY THIS EXISTS, in two lines:
+  * THE LAUNCHER HAS NEVER RUN FOR REAL. Stage A and Stage B regions auto-skip
+    once banked, so Stage C — 11 days, unattended, no --fail-fast — is the first
+    real run of _run_plink for almost every region.
+  * ERRORS ARE STICKY. Panel rows are FIRST-ROW-WINS: append_panel_row dedups by
+    region_id and RETURNS on a region already present —
+    `if str(out_row["region_id"]) in set(existing["region_id"].astype(str)): return`
+    (cite it BY SYMBOL; the line number drifts). An environment defect that errors
+    every region writes error rows a re-fire will NOT replace.
+
+1) THE SMOKE — the PRIMARY check; it exercises the whole shipped seam. RUN:
+
+```
+python3 -c 'import sys;sys.path.insert(0,"src/python");import run_native_ld_panel as r;print(r._run_plink(["plink1.9","--version"]))'
+```
+
+EXPECT TWO LINES, NOT ONE. plink inherits fd 1, so its own version banner arrives
+FIRST, then the tuple:
+
+```
+<plink's version banner line>
+(<wall_min>, <peak_ram_gib>)
+```
+
+THE BANNER IS EXPECTED — it is neither noise nor a failure. wall_min is a small
+fraction of a minute (measured 33-56 ms at NCSU); peak_ram_gib is a SMALL NON-ZERO
+number on the order of the launcher's own floor (measured 0.0107-0.0110 GiB, about
+11 MiB, on python 3.11; tests/m3/test_run_plink_peak_rss.py bounds a bare `true`
+under 24 MiB, _BIAS_CEIL_MIB). This check spawns plink for tens of milliseconds
+and COMPUTES NOTHING — it is $0.
+⚠ Do NOT expect a specific banner string, and do NOT assume exit 0: the VM's
+pinned build prints its own version line and THAT BUILD'S `--version` EXIT STATUS
+IS UNMEASURED. If it returns non-zero, CalledProcessError below is the expected
+outcome and the banner is the evidence — report it, do not improvise.
+ANYTHING ELSE IS A STOP UNDER R3. The four signatures you will actually see:
+  * FileNotFoundError: [Errno 2] No such file or directory: 'plink1.9'
+    -> PATH: plink1.9 is not on THIS shell's PATH. Go back to STEP 3's pinned
+       install and re-export PATH IN THIS SHELL. (This is the 2026-08-24 Stage A
+       stop, unchanged.)
+  * subprocess.SubprocessError: plink peak-RSS launcher exited 0 without a valid
+    report; refusing to fabricate wall_min/peak_ram_gib for [...]
+    -> SIGCHLD is ignored, or sys.executable is odd. Go to check 3.
+  * AttributeError / ModuleNotFoundError raised on import
+    -> interpreter or environment. Go to check 2.
+  * subprocess.CalledProcessError: Command '[...]' returned non-zero exit status N
+    -> plink RAN and returned non-zero. Read its banner and report it.
+
+2) THE INTERPRETER. RUN:
+
+```
+python3 -V; which python3
+```
+
+RECORD BOTH — neither has ever appeared in an as-received record for this VM.
+PYTHON >= 3.9 IS REQUIRED: the launcher binds os.waitstatus_to_exitcode BEFORE the
+spawn ("bound BEFORE the spawn" in run_native_ld_panel.py), precisely so an
+interpreter without it fails before plink runs rather than after hours of compute.
+Below 3.9 -> STOP under R3.
+
+3) SIGCHLD MUST NOT BE IGNORED. RUN:
+
+```
+V=$(grep '^SigIgn' /proc/self/status | awk '{print $2}'); if [ $(( 0x$V & 0x10000 )) -eq 0 ]; then echo "SigIgn=$V  SIGCHLD-OK"; else echo "SigIgn=$V  STOP: SIGCHLD is SIG_IGN"; fi
+```
+
+EXPECT: SIGCHLD-OK. ⛔ THE PASS CONDITION IS THE BIT, NEVER THE WHOLE MASK.
+SIGCHLD is signal 17, so its mask bit is 1 << 16 = 0x10000. Measured 2026-09-16:
+a NON-interactive shell reads 0000000000000000, while an INTERACTIVE shell — which
+is what this VM terminal is — reads 0000000000380000 (bits 19/20/21 =
+SIGTSTP/SIGTTIN/SIGTTOU, exactly what any interactive shell ignores). BOTH ARE
+GREEN. Publishing a whole-mask expectation would FALSE-STOP a healthy fire. The
+RED readings in the same measurement were 0000000000010000 (non-interactive) and
+0000000000390000 (interactive) — both differ from their green partner in the
+0x10000 bit alone, which is why only that bit decides.
+WHY IT MATTERS: with SIGCHLD inherited as SIG_IGN, os.wait4 raises
+ChildProcessError and EVERY region raises — and the pre-RAM-1 subprocess.run
+silently returned 0, so nothing else in the pipeline notices.
+SCOPE, STATED HONESTLY: on GNU coreutils 8.32 `timeout` RESETS SIGCHLD to SIG_DFL
+before exec, so the STEP 10 fire command is additionally shielded (measured
+2026-09-16: bare python3 -> bit set; nohup python3 -> bit set; timeout ... python3,
+in either command order -> bit CLEAR). But STEP 8 (Stage A), STEP 9 (Stage B) and
+every bare `python3 src/python/...` invocation — INCLUDING the three
+fire_verifier.py gate runs — are NOT shielded, and THIS VM's coreutils version is
+unmeasured. The shell-level check above is the version-independent cover for all
+of them.
+
+4) THE SIGHUP PROPERTY CHECK — does the fire actually survive a browser
+disconnect ON THIS VM's OWN COREUTILS? (~10 s, $0.) It is here because the command
+form was decided on GNU coreutils 8.32 at NCSU and this VM's version is UNMEASURED.
+RUN:
+
+```
+cd /tmp && cat > hupchild.py <<'PYEOF'
+import os, sys, time
+open(sys.argv[1], "w").write(str(os.getpid()))
+time.sleep(90)
+PYEOF
+alive(){ s=$(ps -o stat= -p "$1" 2>/dev/null | tr -d ' '); if [ -z "$s" ] || [ "${s#Z}" != "$s" ]; then echo DEAD; else echo ALIVE; fi; }
+set -m
+rm -f /tmp/pidA /tmp/pidB
+nohup timeout 40 python3 /tmp/hupchild.py /tmp/pidA > /tmp/hupA.log 2>&1 &
+LA=$!; sleep 2; CA=$(cat /tmp/pidA); kill -HUP $LA; sleep 2
+echo "formA  launcher=$(alive $LA) child=$(alive $CA)"
+kill -9 $CA $LA 2>/dev/null
+timeout 40 nohup python3 /tmp/hupchild.py /tmp/pidB > /tmp/hupB.log 2>&1 &
+LB=$!; sleep 2; CB=$(cat /tmp/pidB); kill -HUP $LB; sleep 2
+echo "formB  launcher=$(alive $LB) child=$(alive $CB)"
+kill -9 $CB $LB 2>/dev/null
+timeout 3 nohup python3 /tmp/hupchild.py /tmp/pidC > /dev/null 2>&1; echo "expiry rc=$?"
+```
+
+EXPECT, exactly these three lines:
+
+```
+formA  launcher=DEAD child=DEAD
+formB  launcher=ALIVE child=ALIVE
+expiry rc=124
+```
+
+READ IT AS A PROPERTY, NOT AS A HOPE. form A's DEATH is the NEGATIVE CONTROL that
+makes form B's survival mean anything. ⛔ IF BOTH FORMS SURVIVE, OR BOTH DIE, OR
+THE EXPIRY LINE IS NOT 124, THE PROPERTY DID NOT REPRODUCE ON THIS VM -> STOP
+UNDER R3 AND REPORT. DO NOT FIRE.
+The `expiry rc=124` line is the BACKSTOP control: form B does not trade the
+312h wall-cap away for survival. Measured 2026-09-16 at NCSU: a form-B job HUP'd
+at t=2 s under a 6 s cap was still ALIVE at t+1 s and DEAD at t+9 s — the cap
+still fired after the SIGHUP, and the same run showed the child surviving a SIGHUP
+sent to the pid AND to its whole process group.
+⚠ IDENTIFY THE CHILD BY PIDFILE, as above. NEVER use `pgrep -f <pattern>` here: an
+-f pattern matches the probing shell's own command line and self-matches, which
+already produced one false result during the work that wrote this step.
+The `kill -9` lines leave nothing running; this check spawns two sleeps and
+computes nothing.
+
 STEP 10 — GATE: STAGE C, THE FULL FIRE (~11 days, $385–1,084). Preconditions
 Carter must confirm: the PRE-FIRE 1b signature lines in
 .planning/quick/260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r/260812-ox1-READY-TO-FIRE.md
 item 7 are FILLED (his hand, not yours), and the Stage-B cost gate was
-accepted. On his explicit go, RUN:
-  nohup timeout 312h python3 src/python/run_native_ld_panel.py --manifest config/ld_regions.tsv --bfile-prefix /home/jupyter/afr_cohort --out-dir gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou --scratch-dir /home/jupyter/native_ld_scratch --mode square --ancestry AFR > /home/jupyter/native_ld_fire.log 2>&1 &
+accepted. STEP 9d must have been run in THIS shell and all four checks green. On
+his explicit go, RUN:
+  timeout 312h nohup python3 src/python/run_native_ld_panel.py --manifest config/ld_regions.tsv --bfile-prefix /home/jupyter/afr_cohort --out-dir gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou --scratch-dir /home/jupyter/native_ld_scratch --mode square --ancestry AFR > /home/jupyter/native_ld_fire.log 2>&1 &
   echo "fire PID: $!"
-Everything already banked auto-skips. nohup survives browser disconnects; the
-312h timeout is the wall-cap backstop; teardown is UI-only. Check-ins every 2-3
-days, each reported to Carter:
+Everything already banked auto-skips.
+⚠ COMMAND FORM CORRECTED 2026-09-16 (quick-260916-vqr). The retired wording here
+read "nohup survives browser disconnects" and the committed command was form A,
+`nohup timeout 312h python3 …`. THAT WAS FALSE, and it is retired rather than
+deleted so the correction is legible. In form A, nohup's ignore-SIGHUP applies to
+`timeout`, which FORWARDS the signal to its child — MEASURED 2026-09-16 on GNU
+coreutils 8.32: the child DIED. The form now above (form B, nohup INSIDE timeout)
+survived a SIGHUP sent to the pid AND to the whole process group, child alive in
+both cases.
+What did NOT change: `$!` still names the `timeout` process under both forms
+(`ps -o comm= -p $!` printed `timeout`), so `echo "fire PID: $!"` keeps its
+meaning and teardown guidance is unchanged. The 312h timeout is still the
+wall-cap backstop AND IT REMAINS ARMED AFTER A SIGHUP (measured: a HUP'd form-B
+job was still killed by its cap). Teardown is UI-only.
+⚠ Prove the property on THIS VM before firing — STEP 9d check 4. The decision was
+measured on coreutils 8.32; this VM's version is unmeasured.
+⚠ The fire log's FIRST line will be `nohup: ignoring input` whenever this terminal
+has job control — measured under BOTH command forms, so it is form-independent. It
+is not an error, it does NOT match the `grep -cE "VERIFY-FAILED|^ERROR"` monitor,
+and no `nohup.out` appears in the cwd because the shell's `> …fire.log 2>&1`
+already owns stdout.
+Check-ins every 2-3 days, each reported to Carter:
   gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/*.npz | wc -l
   gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv | awk -F'\t' 'NR>1{c[$7]++} END{for(k in c) print k, c[k]}'
   tail -20 /home/jupyter/native_ld_fire.log
@@ -430,3 +636,26 @@ m2_region_00040__sub14.npz appears (Stage B), tell Carter it is time for the
 SH2B3 estimate_s check on his planning side. Every .npz in the bucket passed a
 content verification (symmetry, unit diagonal, NaN scan) BEFORE upload — bucket
 presence means verified by construction.
+
+OPERATIONAL NOTES FOR THE RAM-1 LAUNCHER (added 2026-09-16, quick-260916-vqr).
+Since 9a3eb97 plink is spawned by a small isolated launcher process. Three things
+you may observe mid-fire follow from that, each with its scope:
+  * A SIGKILL TO THE LAUNCHER ALONE — or an OOM kill of it — ORPHANS PLINK. The
+    region records `error: …` and the loop moves on, so the orphaned plink keeps
+    running while the NEXT region's plink starts: two concurrent plinks, and the
+    scratch of both. Report it with the panel TSV row rather than improvising. The
+    reassuring half, stated so you do not over-react: no region is recorded `ok`
+    by mistake, and no region runs twice — there is no retry path.
+  * `pgrep -f plink1.9` / `pkill -f plink1.9` NOW ALSO MATCH THE LAUNCHER, whose
+    argv carries plink's argv; its lower PID lists first, so a naive "first hit"
+    reads the wrong process. USE `pgrep -x plink1.9` — it matches the plink
+    process only. ⚠ And the trap that cost a false result during the work that
+    wrote this note: an `-f` pattern can also match the probing shell itself.
+  * THE LAUNCHER RUNS PYTHON `-I -S`, WHICH CAN ADD `LC_CTYPE=C.UTF-8` TO PLINK'S
+    ENVIRONMENT — but ONLY in the narrow case `LANG=C` AND `PYTHONCOERCECLOCALE=0`
+    together: isolated mode implies `-E`, so the opt-out is ignored (measured on
+    python 3.11.15, 2026-09-16). With `PYTHONCOERCECLOCALE` unset the driver
+    already coerced the locale before RAM-1 and plink sees the same value it
+    always did. This is a note for reading plink's behaviour, not an action.
+  * The launcher's own failure messages do NOT name the launcher, which is exactly
+    why STEP 9d check 1 lists the four signatures by exception type.
