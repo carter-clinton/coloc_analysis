@@ -605,8 +605,8 @@ gate; a compliance gap, not a mechanics blocker.
   fired by **Carter** on **2026-09-08** against `pcs_tail_verdicts.tsv` (**the emitted TSV only: no
   re-run, no genotypes, no scan re-execution**). It returned, and **its result RETRACTS Finding 2's
   establishment rather than confirming it.** With the clustering **measured**, the heterogeneity
-  chi-square can be corrected for it directly, and under that correction **two INTERCHANGEABLE
-  treatments of the chr15 window overlap straddle p = 0.05** (**0.0326** vs **0.0517**).
+  chi-square can be corrected for it directly, and under that correction **either treatment of the
+  chr15 overlap carries AT MOST WEAK evidence** (p 0.0326 / p 0.0517; p 0.2171 dropping both).
   **Finding 2 — between-region heterogeneity in the POST-filter rate — is recorded below as
   NOT ESTABLISHED.** The within-window clustering is itself a **NEW REPORTABLE FINDING**, not
   merely a caveat. Both are in **§(10)**, with the measurement's provenance in **§(9)**.
@@ -662,12 +662,12 @@ gate; a compliance gap, not a mechanics blocker.
   **drop-both-chr15-windows** treatment it is **1.52 (p 0.073)** — **not significant at alpha
   0.05**. ⚠ **Every one of those figures assumes INDEPENDENT pairs, and as of 2026-09-08 that
   assumption is MEASURED FALSE** (within-cluster **ICC 0.728930**, design effect **1.360272** —
-  §(10)). **Corrected for the measured design effect, two interchangeable treatments of the chr15
-  overlap give p 0.0326 and p 0.0517 — STRADDLING 0.05 — so the between-region heterogeneity is
-  NOT ESTABLISHED.** The **DIRECTION** remains positive under every treatment (**phi > 1.2
-  throughout**), but the **magnitude is unidentified** and the **significance is an artifact of
-  analytic choice**. A bare "1.99x" overstates what was identified; so does any claim of
-  significance.
+  §(10)). **Under the measured design effect, either treatment of the chr15 overlap carries AT MOST
+  WEAK evidence of heterogeneity beyond measured clustering (p 0.0326 / p 0.0517; p 0.2171 dropping
+  both), so the between-region heterogeneity is NOT ESTABLISHED.** The **DIRECTION** remains
+  positive under every treatment (**phi > 1.2 throughout**), but the **magnitude is unidentified**
+  and the dispersion is **not robustly distinguishable from a clustering-only explanation**. A bare
+  "1.99x" overstates what was identified; so does any claim of significance.
 - **Permutation confirmation:** verified against a 40,000-resample Monte Carlo permutation test,
   **p = 0.0072** (asymptotic chi-square p 6.3e-3; the asymptotic value is mildly
   anti-conservative, conclusion unchanged). ⚠ The permutation test permutes PAIRS and therefore
@@ -855,6 +855,17 @@ gate; a compliance gap, not a mechanics blocker.
     **FALSE**, and **a false general principle silently forecloses hypotheses nobody tested.**
     That is why **within-window clustering went untested while both parties believed the
     question settled.** It cost more than the specific error did.
+  - ⚠ **PROVENANCE, CORRECTED 2026-09-17 at the reviewer's own request (§(10e)).** Stated as he
+    stated it, and checked against the record before it was written: **(i)** the **BETWEEN-window**
+    hypothesis (same-parent sub-window replication) was **his, and it was wrong** — the bullet above;
+    **(ii)** the **WITHIN-window** mechanism and the **c=2 simulation** were **ours**, in
+    `260904-dgi`'s `CONTENT-SPEC.md:45-56`: *"The operative dependence is WITHIN-window: pairs sharing
+    an occluding deletion do not flip independently"* and *"c=2, ICC 1.0 -> mean phi 2.032"*;
+    **(iii)** the measurement **confirmed that within-window clustering EXISTS** (ICC 0.73, §(10a))
+    **without showing that it accounts for the dispersion** (§(10b)); **(iv)** the **Rao-Scott test
+    was proposed by NEITHER party** (§(10c)). Our courier of the §(10) result credited him with
+    pointing at within-window structure; **he declined that credit, the record agrees with him, and
+    the credit never entered this entry.**
   - ⭐ **THE pairs-per-deletion DISTRIBUTION HAS NOW BEEN MEASURED (2026-09-08) — see §(10).**
     Until then the observed dispersion was **NOT attributable** to parent-region heterogeneity
     rather than to a cluster design effect, and the only operative structure on record was that
@@ -875,11 +886,13 @@ gate; a compliance gap, not a mechanics blocker.
 
 ### (8) EPISTEMIC STATUS — do not soften
 
-- ⭐ **FINDING 2 IS NOT ESTABLISHED (recorded 2026-09-08).** The between-region heterogeneity in
-  POST-filter rate does **not** survive the **measured** within-window design effect combined with
-  **defensible** handling of the chr15 window overlap: two interchangeable overlap treatments
-  **straddle p = 0.05** (**0.0326** vs **0.0517**). ⭐ **FINDING 1 IS UNCHANGED** and **Finding 3's
-  status is unchanged.** Full statement, caveats and the measurement behind it: **§(10)**.
+- ⭐ **FINDING 2 IS NOT ESTABLISHED (recorded 2026-09-08).** Corrected for the **measured**
+  within-window design effect, the between-region heterogeneity in POST-filter rate carries **at most
+  weak evidence** under either **defensible** treatment of the chr15 window overlap (**p 0.0326** /
+  **p 0.0517**, the same evidence; **p 0.2171** dropping both windows), is **not robustly
+  distinguishable from a clustering-only explanation**, and its **magnitude is unidentified**.
+  ⭐ **FINDING 1 IS UNCHANGED** and **Finding 3's status is unchanged.** Full statement, caveats and
+  the measurement behind it: **§(10)**.
 
 - **MEASURED, NOT PRE-REGISTERED.** The governing document
   `.planning/debug/260901-PENDING-PASTE-POSTHOC-tail-prefilter-vs-postfilter-and-carrier-distribution.md:211-216`
@@ -935,10 +948,17 @@ panel downstream must carry.
 - **n_clusters 2105**; cluster-size distribution
   `{1: 1802, 2: 239, 3: 40, 4: 12, 5: 4, 6: 5, 7: 1, 8: 2}`; **c_max 8** at del_vid
   `chr15:91246748:CT:C`; **52 clusters span more than one region**.
+- **Pairs in clusters of size >= 2: 719 of 2521 = 28.52%**, in **303** clusters; the other **1,802 of
+  2521 (71.48%)** are **singletons**. ⚠ **This is NOT the 22.73% above, and the two must not be
+  conflated:** 22.73% counts pairs anchored by **two** deletions (dual-anchored); 28.52% counts pairs
+  whose anchoring deletion anchors **at least one other pair**. Reading 22.73% as the clustered
+  fraction would understate it. Both are on the **per-region SUM** basis (SCOPE CAVEAT (1)).
 - **c_mean 1.1976** — but the quantity a design effect actually depends on is the **SIZE-WEIGHTED**
   mean: **`c_eff` = sum(c^2)/sum(c) = 3767/2521 = 1.494248**.
 - **ICC_hat = 0.728930** — ANOVA over the **k=303** clusters of size >= 2 (**N=719**,
-  c0=2.371745).
+  c0=2.371745). ⚠ **SCOPE: this ICC describes those 719 pairs (28.52% of 2521) ONLY** — among pairs
+  sharing an anchoring deletion, PRE/POST status is highly correlated. It does **not** describe the
+  **1,802 singletons (71.48%)**, and it must not be quoted as a tail-wide ICC without that denominator.
 - **deff_hat = 1 + (`c_eff` - 1) * ICC = 1.360272**.
 
 ⚠ **CAVEATS THAT MUST TRAVEL WITH THIS FINDING:**
@@ -977,22 +997,29 @@ share a common rate (see the correction note below). Computed in-session, 2026-0
 | drop `00060__sub12` (the MIRROR)     | 1.992           | 0.0062  | **1.579**            | **0.0517** |
 | drop BOTH chr15 windows              | 1.518           | 0.0732  | 1.241                | 0.2171     |
 
-⭐ **THE DECISIVE OBSERVATION IS THE STRADDLE, NOT THE DESIGN EFFECT.** Dropping `sub13` and
-dropping `sub12` are **INTERCHANGEABLE** choices: the two windows overlap by **6,000,001 bp**
-(SCOPE CAVEAT (3)) and **neither is privileged**. After the design correction they land at
-**p 0.0326** and **p 0.0517** — **STRADDLING 0.05**. **A coin-flip between two equally defensible
-analyses moves the result across the significance threshold.** This separation appears **ONLY
-after the correction**, because sub12 and sub13 carry **different measured design effects (1.096
-vs 1.359)**; **uncorrected they are indistinguishable (1.988 vs 1.992)**.
+⭐ **REPORT THE EVIDENCE, NOT WHICH SIDE OF A THRESHOLD IT FELL ON.** Dropping `sub13` and dropping
+`sub12` are interchangeable **only as equally defensible handling choices made in advance**: both
+were on record before either design-corrected p-value existed (the drop-`sub13` headline since
+2026-09-02, the drop-`sub12` mirror in `260904-dgi`'s sensitivity table), the two windows overlap by
+**6,000,001 bp** (SCOPE CAVEAT (3)) and **neither is privileged**. They are **NOT statistically
+equivalent**: sub12 and sub13 carry **different measured design effects (1.096 vs 1.359)**, which is
+why the two analyses separate **ONLY after the correction** (**p 0.0326** dropping `sub13`,
+**p 0.0517** dropping `sub12`; **uncorrected they are indistinguishable (1.988 vs 1.992)**). In
+evidence units they are **the same evidence**: -log10 p **1.49** vs **1.29**. ⛔ **Both are reported
+and NEITHER is selected:** choosing either window now that both p-values are known, by ICC precision
+or any other criterion, would be **post-hoc selection**. The evidence is also **AT MOST weak**: the
+**five NA regions carry deff 1.0**, i.e. no correction (CONSERVATISM DISCLOSURE below), so a fuller
+correction would lower phi.
 
 **THE CONCLUSION, and it is not to be softened:**
 
-> The between-region heterogeneity in POST-filter rate is **NOT ESTABLISHED**. It is not robust to
-> the measured within-window design effect combined with defensible handling of the chr15 window
-> overlap: two interchangeable overlap treatments straddle p = 0.05 after correction (**0.0326** vs
-> **0.0517**), and correcting for clustering while dropping both overlapping windows gives
-> **p = 0.2171**. The **DIRECTION** is positive under every treatment (**phi > 1.2 throughout**), but
-> the **magnitude is unidentified** and the **significance is an artifact of analytic choice**.
+> The between-region heterogeneity in POST-filter rate is **NOT ESTABLISHED**. Under either
+> treatment of the chr15 window overlap, the design-corrected dispersion carries **at most weak
+> evidence** of between-region heterogeneity beyond measured clustering: **p = 0.0326** dropping
+> `00060__sub13` and **p = 0.0517** dropping `00060__sub12` (-log10 p **1.49** and **1.29**, the same
+> evidence), and **p = 0.2171** with both chr15 windows dropped. The **magnitude is unidentified**,
+> and the dispersion is **not robustly distinguishable from a clustering-only explanation**. The
+> **DIRECTION** is positive under every treatment (**phi > 1.2 throughout**).
 
 ⚠ **CORRECTED 2026-09-08 (`260908-uer`) — THE ESTIMATOR WAS WRONG; THE CONCLUSION IS NOT.**
 An earlier draft of this table estimated the pooled rate once from all 21 regions and reused that
@@ -1027,8 +1054,8 @@ conclusion now being drawn, which is part of why it is drawn.
 It **does** sit **INSIDE** the observed 95% CI **[1.1, 4.2]**, so clustering alone remains
 statistically **CONSISTENT WITH** the entire effect — **but that is a FAILURE TO EXCLUDE, NOT a
 demonstration.** ⛔ **Nothing in §(10a) is an explanation of Finding 2 and it must never be
-reported as one.** The retraction rests on **the straddle**, not on the design effect's point
-value.
+reported as one.** The retraction rests on **the design-corrected evidence being at most weak under
+either treatment of the overlap**, not on the design effect's point value.
 
 #### (10c) THE DECISION RULE DID NOT FIRE, AND THE TEST THAT SETTLED IT WAS PROPOSED BY NEITHER PARTY
 
@@ -1055,3 +1082,43 @@ licence to pick whichever branch one prefers.**
   amendment** (§(1)).
 - ⛔ **The status is unchanged: DRAFTED — NOT POSTED.** **Discharging the last open item is NOT
   authorization to post.** The posting decision is **Carter's alone**.
+
+#### (10e) REVIEWER RESPONSE 2026-09-17 — framing corrected, provenance corrected, scope stated
+
+The project's external reviewer answered the §(10) result on **2026-09-17**. His reply is banked as
+received (pasted into the session; **not byte-verified** against the original) at
+`.planning/quick/260917-irg-seth-reply-on-the-finding-2-measurement-/260917-irg-SETH-REPLY-finding2-review-as-received.md`.
+He **accepted the disposition as stated**, objected to the sentence that carried it, and declined a
+credit. **The disposition does not change: Finding 2 is NOT ESTABLISHED.** Every site that carried
+the old framing was aligned in this edit (the discharge bullet in the status block, §(2), §(8) and
+§(10b)), following the precedent of the `260908-uer` correction note above.
+
+- ⚠ **FRAMING — the "straddle" is withdrawn as a reading of the evidence.** This entry had said that
+  two interchangeable overlap treatments "straddle p = 0.05", that "a coin-flip between two equally
+  defensible analyses" moves the result across the threshold, and that the significance "is an
+  artifact of analytic choice". The two design-corrected p-values, **0.0326** and **0.0517**, are
+  **1.49** and **1.29** in -log10 p: **the same evidence**. That they fall on opposite sides of a
+  threshold is a property of the **threshold**, not of the data, and reporting which side each fell
+  on is the calibrate-to-a-threshold error run in reverse. The aligned sites now report the evidence:
+  **at most weak** under either treatment, **p 0.2171** with both chr15 windows dropped, magnitude
+  unidentified, and not robustly distinguishable from a clustering-only explanation. **"At most"**
+  because the five NA regions carry deff 1.0, so a fuller correction lowers phi. ⚠ The `260908-uer`
+  correction note keeps its original wording and numbers: it records what that edit did. ⚠ Its
+  parenthetical names the three restatements it then aligned as the discharge bullet, §(7) and §(8);
+  the third was in fact **§(2)** — §(7) carried the design effect, never the straddle. The note is
+  left exactly as written because it is the historical record; this clause is the correction.
+- ⚠ **"INTERCHANGEABLE" — scoped, and NO window is selected.** The reviewer also argued that, given
+  their different design effects (**1.096** vs **1.359**), the better-corrected window is determinable
+  from the data. **Declined:** both p-values are now known, so choosing either window, by ICC
+  precision or any other criterion, would be **post-hoc selection**. "Interchangeable" now means
+  **equally defensible handling choices made in advance**, **not statistically equivalent**, and both
+  analyses stay reported. **This entry does not record his acceptance of the scoping decided here.**
+- ⚠ **SCOPE — two quantities separated, and the ICC's denominator attached (§(10a)).** **22.73%**
+  (573 of 2521) of pairs are dual-anchored; **28.52%** (719 of 2521, in 303 clusters) are in clusters
+  of size >= 2; the other **1,802 (71.48%)** are singletons, which the ICC does not describe.
+- ⚠ **PROVENANCE — corrected in §(7)'s reviewer accounting.** Our courier of the §(10) result
+  credited the reviewer with pointing at within-window structure. **He declined the credit, and the
+  record agrees with him:** the within-window mechanism and its simulation were ours.
+- **Finding 1's text is unchanged.**
+- ⛔ **The status is unchanged: DRAFTED — NOT POSTED.** A reviewer response is **NOT authorization to
+  post.** The posting decision is **Carter's alone**.
