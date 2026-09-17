@@ -580,6 +580,41 @@ PERMITTED_EDITS = [
   "old": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:866-872`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
   "new": '| C7 | Precedent for a region that banks nothing outside the three posted branches: `deferred_infeasible_square` (`run_native_ld_panel.py:1009-1015`). Registered in-repo as "a DISCLOSURE OBLIGATION — not blocking the fire", with measured numbers owed at publication, a remedy path recorded, and a named enforcer. | `deferred-items.md:1148-1191`; enforcer `fire_verifier.py:875-939` |',
  },
+ {
+  "id": 'E24', "cls": 4, "amends": 'E7c',
+  "why": 'D1 "State it once" (Carter 2026-09-17): Option A\'s consequences point to X4 instead of restating the enforcer fact, and the pointer names "the disclosure obligation" (X4\'s heading noun) because "that obligation" would have no antecedent in Option A\'s unit (planner finding 3); declared as amending E7c, which stays byte-unchanged.',
+  "label": 'f68 D1: Option A points to X4', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
+  "old": 'precedent (C7),\n  but with no registered disclosure obligation and no enforcer yet.',
+  "new": 'precedent (C7);\n  whether the disclosure obligation has an enforcer is X4.',
+ },
+ {
+  "id": 'E25', "cls": 4, "amends": 'E11c',
+  "why": 'D1 "State it once" (Carter 2026-09-17): Option F\'s consequences drop the "unlike A" clause and carry the same X4 pointer as Option A, byte-identical to it (planner finding 3); declared as amending E11c, which stays byte-unchanged.',
+  "label": "f68 D1: Option F drops 'unlike A', points to X4", "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
+  "old": 'as under A and C —\n  and unlike A, this option would register that obligation and its enforcer when the status is added.',
+  "new": 'as under A and C;\n  whether the disclosure obligation has an enforcer is X4.',
+ },
+ {
+  "id": 'E26', "cls": 4,
+  "why": 'D1 "State it once" (Carter 2026-09-17): X4 becomes the single place the enforcer fact is stated, naming every option that adds a status — F, or B\'s new-prefix variant — per orchestrator addendum D-2, re-wrapped at 100 columns.',
+  "label": 'f68 D1: X4 states the enforcer fact once', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
+  "old": '**X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7). This class does not.',
+  "new": "**X4: the disclosure obligation has no enforcer.** R4-COVERAGE has one (C7); this class has none\n  under A, B or C as written. Under an option that adds a status (F, or B's new-prefix variant), one\n  could be registered at that point.",
+ },
+ {
+  "id": 'E27', "cls": 4, "amends": 'E14',
+  "why": 'D2 "Split Q6" (Carter 2026-09-17): one §5 methods sentence stating that question coverage follows recorded text, posted or in-repo (orchestrator addendum D-3), and is not a weighting, placed on its own line because the line it follows is already 101 columns (planner finding 4); declared as amending E14, which stays byte-unchanged.',
+  "label": 'f68 D2: §5 coverage is not a weighting', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
+  "old": 'The question order below follows the option order and likewise carries no ranking.',
+  "new": 'The question order below follows the option order and likewise carries no ranking.\nQuestion coverage follows how much recorded text — posted or in-repo — bears on each option; it is\nnot a weighting.',
+ },
+ {
+  "id": 'E28', "cls": 4, "amends": 'E14',
+  "why": 'D2 "Split Q6" (Carter 2026-09-17): the question Options D and E shared is split so that each has its own (Q6 tagged D, Q7 tagged E), which leaves every per-option question count unchanged; declared as amending E14, which stays byte-unchanged.',
+  "label": 'f68 D2: Q6 split, E gets its own question', "origin": 'Carter decision 2026-09-17 (quick-260917-f68)',
+  "old": '6. Does a full-panel measurement before the disclosure is posted use up the prospective production\n   prediction, and would changing the occlusion criterion for a stated methodological reason be the\n   act trsx5:49 fences? (Options D, E)',
+  "new": '6. Does a full-panel measurement before the disclosure is posted use up the prospective production\n   prediction? (Option D)\n7. Would changing the occlusion criterion for a stated methodological reason be the act trsx5:49\n   fences? (Option E)',
+ },
 ]
 
 
@@ -1870,7 +1905,12 @@ def report_sweeps(draft):
 # f: — THE EDIT LEDGER.  v2 is v1 plus an ordered, declared list of replacements, and nothing else.
 #   f:forward   E1..En applied to v1 reproduces v2's bytes
 #   f:reverse   En..E1 applied to v2 reproduces v1's bytes (size THEN md5)  <- must-be-identity
-#   f:unique    every `old` occurs EXACTLY once at its point of application, every `new` once in v2
+#   f:unique    every `old` occurs EXACTLY once at its point of application, every `new` once in v2;
+#               an edit that later edits DECLARE (`"amends": "<id>"`) is checked AS AMENDED: each
+#               declared amender's `old` must occur exactly once inside its `new` (else FALSE
+#               DECLARATION) and the amended `new` must occur once in v2. An UNDECLARED overwrite
+#               stays RED (quick-260917-f68).
+#   f:amends    every `amends` declaration names an id that is in the ledger (no dangling target)
 #   f:evidence  every class-3 (citation correction) edit carries live before-RED / after-GREEN proof
 #   f:t18       NAMED ENFORCER for the "T1-T8 are not renumbered" invariant (W10 / R7 i).
 #               f: covers the file as a whole, but a claimed invariant needs its own named enforcer.
@@ -1929,9 +1969,32 @@ def check_edits(banked_text, source_bytes, edits, claims, reader, have_source=Fa
         okr, msgr = False, str(e)
     out.append(("f:reverse", okr, msgr))
     for e in edits:
-        n_new = banked_text.count(e["new"])
-        out.append(("f:unique:" + e["id"], n_new == 1,
-                    "cls%d `new` occurs %d time(s) in v2 (want 1)" % (e["cls"], n_new)))
+        amenders = [x for x in edits if x.get("amends") == e["id"]]      # ledger order
+        if not amenders:
+            n_new = banked_text.count(e["new"])
+            out.append(("f:unique:" + e["id"], n_new == 1,
+                        "cls%d `new` occurs %d time(s) in v2 (want 1)" % (e["cls"], n_new)))
+            continue
+        txt, problems = e["new"], []
+        for x in amenders:
+            k = txt.count(x["old"])
+            if k != 1:
+                problems.append("%s old occurs %d time(s) inside %s's new (want 1)"
+                                % (x["id"], k, e["id"]))
+                continue
+            txt = txt.replace(x["old"], x["new"], 1)
+        n_new = banked_text.count(txt)
+        out.append(("f:unique:" + e["id"], (not problems) and n_new == 1,
+                    "cls%d `new` AS AMENDED by declared %s occurs %d time(s) in v2 (want 1)%s"
+                    % (e["cls"], [x["id"] for x in amenders], n_new,
+                       ("; FALSE DECLARATION: %s" % "; ".join(problems)) if problems else "")))
+    ids = set(e["id"] for e in edits)
+    declared = [(e["id"], e["amends"]) for e in edits if "amends" in e]
+    dangling = [i for (i, t) in declared if t not in ids]
+    out.append(("f:amends", not dangling,
+                "%d declared amendment(s) %s; every target is a ledger id%s"
+                % (len(declared), ", ".join("%s->%s" % d for d in declared) or "-",
+                   ("" if not dangling else "; DANGLING (target not in the ledger): %s" % dangling))))
     for e in edits:
         if e["cls"] != 3:
             continue
