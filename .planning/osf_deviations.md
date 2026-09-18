@@ -1075,6 +1075,12 @@ licence to pick whichever branch one prefers.**
   have zero POST. It is **COUNTING, NOT INFERENCE** — **no independence assumption enters it**, so
   a design effect cannot touch it. It has now survived **five reviewers, two adjudication rounds,
   and this measurement.**
+- ⚠ **SCOPE OF FINDING 1 — the reviewer's own formulation, accepted 2026-09-17 (§(10e)).** In **all
+  21 regions scanned** — **21 of the 276**-region ancestry-resolved manifest (§(9)), **7.6%** of the
+  panel — a post-filter residual of **defined-but-degraded `r`** survives the **posted** predicate
+  and is **invisible to the retained NaN-raise by construction**, because those rows are defined and
+  so never produce a NaN. ⛔ **Stated at that scope deliberately: this says nothing about the 255
+  regions NOT scanned, and nothing about any predicate other than the posted one.**
 - **Finding 3's status is unchanged:** **no association DETECTED** on the definitional axis, and
   **both tests remain underpowered**.
 - **The panel's contents are unchanged.** Nothing here changes an exclusion, a criterion or a
@@ -1112,13 +1118,22 @@ the old framing was aligned in this edit (the discharge bullet in the status blo
   from the data. **Declined:** both p-values are now known, so choosing either window, by ICC
   precision or any other criterion, would be **post-hoc selection**. "Interchangeable" now means
   **equally defensible handling choices made in advance**, **not statistically equivalent**, and both
-  analyses stay reported. **This entry does not record his acceptance of the scoping decided here.**
+  analyses stay reported. ⭐ **He ACCEPTED this scoping on 2026-09-17**, in a closure banked as
+  received (**not byte-verified**) at
+  `.planning/quick/260917-pff-bank-the-reviewer-closure-on-finding-2-r/260917-pff-SETH-CLOSURE-finding2-review-as-received.md`.
+  He accepted **all seven points** of our reply and **WITHDREW BOTH of his objections** — the pooled
+  design-effect share, and this post-hoc window selector, which he named as his own threshold
+  objection applied to the selector. **He closed with no open objection**, and nothing further is
+  expected from him until there is a new measurement or a posting decision.
 - ⚠ **SCOPE — two quantities separated, and the ICC's denominator attached (§(10a)).** **22.73%**
   (573 of 2521) of pairs are dual-anchored; **28.52%** (719 of 2521, in 303 clusters) are in clusters
   of size >= 2; the other **1,802 (71.48%)** are singletons, which the ICC does not describe.
 - ⚠ **PROVENANCE — corrected in §(7)'s reviewer accounting.** Our courier of the §(10) result
   credited the reviewer with pointing at within-window structure. **He declined the credit, and the
   record agrees with him:** the within-window mechanism and its simulation were ours.
-- **Finding 1's text is unchanged.**
+- **Finding 1's counts and its claim are unchanged.** ⚠ On the same date, a **scope sentence** in
+  the reviewer's own accepted formulation was added beside it in §(10d) (quick `260917-pff`): it
+  states the scope of what was measured — 21 of 21 scanned regions, the **posted** predicate, and the
+  retained **NaN-raise** — and changes none of the counts.
 - ⛔ **The status is unchanged: DRAFTED — NOT POSTED.** A reviewer response is **NOT authorization to
   post.** The posting decision is **Carter's alone**.

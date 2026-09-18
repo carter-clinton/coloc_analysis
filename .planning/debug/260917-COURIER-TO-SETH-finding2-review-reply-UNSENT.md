@@ -1,6 +1,10 @@
 # Courier to Seth — reply to his 2026-09-17 Finding 2 review (⛔ UNSENT)
 
-**Status:** DRAFTED 2026-09-17, **NOT SENT**. No agent contacts Seth — Carter sends it.
+**Status:** ✅ **SENT 2026-09-17.** Drafted 2026-09-17; sending was Carter's decision, recorded here
+2026-09-17. **The reviewer's CLOSURE is the reply to it** — all seven points accepted, both of his
+objections withdrawn, no open objection — banked as received (**not byte-verified**) at
+`.planning/quick/260917-pff-bank-the-reviewer-closure-on-finding-2-r/260917-pff-SETH-CLOSURE-finding2-review-as-received.md`.
+⚠ **The filename still reads `UNSENT`** — kept deliberately, because other records cite this path.
 **Replies to:** `.planning/quick/260917-irg-seth-reply-on-the-finding-2-measurement-/260917-irg-SETH-REPLY-finding2-review-as-received.md`
 (as pasted; not byte-verified).
 **Uses only the corrected Rao-Scott table** (pooled rate estimated from the subset under test, quick

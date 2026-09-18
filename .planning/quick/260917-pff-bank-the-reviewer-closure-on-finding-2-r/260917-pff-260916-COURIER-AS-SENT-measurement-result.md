@@ -1,27 +1,23 @@
-# Courier to Seth — the pairs-per-deletion measurement result (⛔ UNSENT)
+# Courier to Seth — the pairs-per-deletion measurement result, ✅ AS SENT (⛔ NOT BYTE-VERIFIED)
 
-**Status:** ✅ **SENT 2026-09-17, in the CORRECTED form** — per Carter's record; the text as sent is
-banked, not byte-verified, at
-`.planning/quick/260917-pff-bank-the-reviewer-closure-on-finding-2-r/260917-pff-260916-COURIER-AS-SENT-measurement-result.md`.
-Drafted 2026-09-14; sending was Carter's decision, recorded here 2026-09-17. ⚠ **The body below is
-the DRAFT, not the text sent:** before it went out, the **superseded figures were removed from the
-two sentences that carried them**, and they are **NOT restated in this header** — the ⛔ warning
-below is kept verbatim and still binds. **This file stays the DRAFT OF RECORD**, and the text as
-sent is banked at the path above.
-⚠ **The courier-vs-table mismatch.** The reviewer's reply (**§3**, banked at
-`.planning/quick/260917-irg-seth-reply-on-the-finding-2-measurement-/260917-irg-SETH-REPLY-finding2-review-as-received.md`)
-characterises that discrepancy with a figure — "a 0.02 mismatch"; **the sent text stated no figure
-for it**. That figure was reachable from two files already committed before his reply: this draft's
-own body, committed in `c93e97b` on 2026-09-16, which states it verbatim, and the disclosure as it
-stood at that commit, which carried the superseded value it is computed against. ⛔ **Which source
-he used is NOT established by this record; it is recorded here as unattributed, not attributed.**
-⚠ **The filename still reads `UNSENT`** — kept deliberately, because other records cite this path.
-**Uses the CORRECTED Rao-Scott table** (pooled rate estimated from the subset under test, quick
-`260908-uer`). ⛔ Do NOT send the superseded figures `1.652/0.0366`, `1.564/0.0556`, `1.969`.
-**Source of every number:** `.planning/osf_deviations.md`, the 2026-09-03 tail-disclosure entry §(10),
-as amended through `7c92f27`.
-**Seth's last state:** adjudication CLOSED with no open objection (D8 accepted; D7 raised then retracted by
-him after measuring). He has NOT seen this measurement.
+**Sent:** 2026-09-17, by Carter. **Sending was Carter's decision**, recorded here 2026-09-17.
+**This is the text as SENT**, not a draft. ⚠ **Not byte-verified** against what was pasted into the
+reviewer's channel: it is banked from a session **scratch** copy, and chat rendering may have altered
+blank lines or other whitespace.
+**Scratch source:** `SETH-PASTE-1b-measurement-result-SEND.txt`, md5
+`502fe68481edeedcf42d53442af6b127`, 4907 B, 77 lines. The fenced block below is that file
+byte-for-byte, first line included.
+**Draft of record:** `.planning/debug/260916-COURIER-TO-SETH-measurement-result-UNSENT.md`
+(drafted 2026-09-14; that filename is stale by decision, because other records cite the path).
+**What changed before sending:** the **superseded figures were removed from the two sentences that
+carried them**, so **this file contains none of them**, and none is restated in this header. The draft
+of record still carries them in its body, behind its own ⛔ warning.
+**His reply to this:**
+`.planning/quick/260917-irg-seth-reply-on-the-finding-2-measurement-/260917-irg-SETH-REPLY-finding2-review-as-received.md`.
+**His closure of the exchange:** `260917-pff-SETH-CLOSURE-finding2-review-as-received.md`, in this
+directory.
+⛔ This is correspondence. It is not a source for the record, and the disclosure it describes is still
+**DRAFTED — NOT POSTED**.
 
 ---
 
@@ -65,10 +61,10 @@ throughout), magnitude is unidentified, significance is an artifact of analytic 
 My first Rao-Scott pass estimated the pooled POST rate ONCE from all 21 regions and reused
 that fixed value for every subset. Wrong: for a homogeneity test the null is that the groups
 UNDER TEST share a rate, so it must be estimated from them. The table above is recomputed
-correctly. Four numbers moved; the conclusion did not, and the straddle TIGHTENED (0.0326 /
-0.0517, previously 0.0366 / 0.0556).
-It surfaced only because the fixed-rate pass produced 1.969 for drop-sub13 where the courier
-said 1.99 — a 0.02 mismatch that someone flagged and declined to reconcile. Under the correct
+correctly. Four numbers moved; the conclusion did not, and the straddle TIGHTENED, to 0.0326 /
+0.0517.
+It surfaced only because the fixed-rate pass disagreed with the courier's 1.99 for drop-sub13
+— a small mismatch that someone flagged and declined to reconcile. Under the correct
 estimator it is 1.988. THE COURIER WAS RIGHT; my table carried the artifact.
 
 4. AGAINST MY OWN CASE.
