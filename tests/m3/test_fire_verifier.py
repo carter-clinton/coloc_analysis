@@ -30,14 +30,40 @@ runs the SAME extractor over a fixture module carrying ``"banana"`` and asserts 
 coverage assertion fails for it.
 
 THE R4-COVERAGE OBLIGATION. ``test_coverage_disclosure_live_gate_...`` SKIPS while
-no measured panel TSV exists in-repo, which is why this module contributes exactly
-one skip to the tests/m3 baseline (31 -> 32). That skip IS the named enforcer of
+no measured panel TSV exists in-repo. That skip IS the named enforcer of
 the R4-COVERAGE disclosure obligation: the moment a measured panel TSV lands in the
 repo the gate stops skipping and goes red until the disclosure carries measured
 numbers plus a ``MEASURED:`` provenance line. The skip is guarded against masking
 three ways (the check function's own green/red run unconditionally against
 fixtures; the finder itself is shown valid on a tmp tree with and without the file;
 the skip-count move is recorded in the SUMMARY).
+
+THIS MODULE'S SKIP COUNT — ⚠ CORRECTED 2026-09-18 (quick-260918-qz5). This
+paragraph used to claim the module "contributes exactly one skip to the tests/m3
+baseline (31 -> 32)". BOTH halves are now wrong, and the retired wording is kept
+here rather than deleted so the correction is legible: the baseline is 33 (not 31
+— MEASURED at 940df48 and again at b6076b2: 1262 ids, 1229 passed, 33 skipped),
+and this module now contributes TWO skips, because quick-260918-qz5 added a second
+live gate on the same C7 template:
+
+  * ``test_coverage_disclosure_live_gate_against_the_repo_file`` — the
+    R4-COVERAGE disclosure obligation;
+  * ``test_raised_nan_class_coverage_live_gate_against_the_repo_file`` — the
+    R5-RAISED-NAN closeout obligation for the raised-NaN class.
+
+Both skip on the SAME condition (``find_measured_panel_tsvs(PROJECT_ROOT)`` is
+empty) and both fire the moment a measured panel TSV lands in-repo. So the
+tests/m3 skip count moves **33 -> 34**: 33 at the end of that change would mean the
+new enforcer did not collect (a silent coverage loss), and 35+ would mean something
+else started skipping. Either is a stop.
+
+⚠ AND THIS CLAIM NOW HAS A NAMED ENFORCER, which is the whole point of correcting
+it:
+``tests/m3/test_fire_runbook_pins.py::test_the_two_live_gate_skips_are_the_only_ones_while_no_panel_tsv_is_in_repo``
+runs this module in a child process and reconciles its skips BY TEST ID, asserting
+exactly these two names. An unenforced count claim is precisely the class of
+belief-only assertion this correction exists to fix, and leaving the corrected
+number equally unenforced would just reset the same trap.
 """
 from __future__ import annotations
 

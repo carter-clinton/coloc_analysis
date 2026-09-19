@@ -90,7 +90,13 @@ stderr (which `| wc -l` discards) before concluding anything.
 
 Expected: **0** pre-fire. **Anything > 0 means a prior fire banked regions** —
 reconcile before re-firing (`force_fresh=False` on resume; the `.npz`, not the panel
-TSV, gates the resume skip).
+TSV, gates the resume skip — so `error:`, `verify_failed` and BOTH `deferred_*`
+regions all recompute). ⚠ The clause after the dash was added 2026-09-18
+(`quick-260918-qz5`): the sentence was already correct about the KEYING but silent
+on WHICH classes recompute, and read by omission it invites the narrower — and
+false — belief that only an `error:` region is recomputed. Since 2026-09-18 a
+non-`ok` region DOES leave coordinate-only gate evidence in the bucket; that does
+not change this rule, precisely because the skip keys on the `.npz` alone.
 
 ## 3. §4 row 2 — VM state (UI only)
 
@@ -387,6 +393,23 @@ and an unrecognized status a HARD_STOP). **Exit 0 is required to proceed; a red 
 a STOP, never a licence to retry or repair.** Full invocations in `AGENT-PROMPT`
 STEP 9-GATE / STEP 10 and `BROWSER-PASTE` §9b / §9c.
 
+⚠ **THE STAGE-C RAISE POSTURE AND ITS CONDITIONAL STOP LIVE IN THE TWO OPERATING
+SURFACES, NOT HERE** (added 2026-09-18, `quick-260918-qz5`): the four operative
+rules for a `raised_nan:` row — continue on a known-class raise, STOP on an
+UNCLASSIFIED one, re-diagnosis classifies and never changes the inputs or the
+criterion, and an unresumed stop truncates the closeout denominator — plus the
+stateful `--prev-report` check-in procedure, are carried in
+`260812-ox1-AGENT-PROMPT.md` (the AGENT surface) and
+`260812-ox1-BROWSER-PASTE.md` (the PASTE surface), which a named test holds in
+agreement. They are NAMED here and deliberately NOT restated: this file is
+Carter's pre-fire go/no-go document, not an operating surface, and a third copy of
+four operative rules is a third thing to keep in sync. That is not a hypothetical
+— the same change had to correct THREE stale copies of one `grep` monitor.
+⚠ Stage C is also the one stage where a red gate is not automatically a stop: an
+ACKNOWLEDGED, known-class `raised_nan:` row that the gate re-reports is not a NEW
+stop. That is the single documented exception, and it is scoped to that one
+status. Everything else above stands.
+
 ⚠ **READ `peak_ram_gib` AS PLINK-ONLY** (added 2026-09-16, `quick-260916-vqr`).
 Since RAM-1 (`9a3eb97`) that column is **plink's own peak RSS**, not the driver's
 (launcher bias ≈ 11 MiB, bounded under 24 MiB by
@@ -420,9 +443,15 @@ document): the variable already carries the scheme; doubling it empties stdout a
 **healthy fire reads as dead**. On any surprising 0: literal-bucket form + read stderr
 first.
 
-⚠ **276 IS NOT A PASS BAR.** A `verify_failed` region **never uploads** (the
-`if ok:` gate; the file stays in scratch), and a per-region exception is recorded as
-`status="error: …"` while **the loop continues**. A final count under 276 is a
+⚠ **276 IS NOT A PASS BAR.** A `verify_failed` region **never uploads its `.npz`**
+(the `if ok:` gate; the `.npz` stays in scratch) — ⚠ **CORRECTED 2026-09-18
+(`quick-260918-qz5`): its coordinate-only gate evidence (the
+`.occlusion_gate.json` sidecar, and the `.occluded.excludelist` /
+`.occlusion_manifest.tsv` when they exist) IS uploaded, on every square outcome,
+so the closeout distributions fold the region in. Only the `.npz` is gated on
+`ok`, and only `.npz` presence means "banked".** A per-region exception is
+recorded as `status="error: …"` — or, for the raw-panel NaN class,
+`status="raised_nan: …"` — while **the loop continues**. A final count under 276 is a
 **partial bank — a real, reportable outcome** to report with its per-region statuses,
 not a failure to paper over and not a reason to re-fire blindly (`force_fresh=False`
 on resume). **A count that stops climbing is the signal to investigate**, not a number
@@ -517,6 +546,47 @@ checker by design.
   region with an M2 counterpart; its output JSON must show `ld_file_declared` ==
   `ld_matrix` == the `AFR_aou/…rds` path — never `identity`/`identity_fallback`,
   never an `AFR/…` 1kG path.
+
+---
+
+## 12. PRE-FIRE CODE HARDENING FOR THE STAGE-C RAISE POSTURE (added 2026-09-18, `quick-260918-qz5`)
+
+Carter's 2026-09-18 decision on the raw-panel NaN raise — **the raise stands, the
+region banks nothing, the loop continues, with a stop reserved for an UNCLASSIFIED
+raise** — is the pre-registered T1 contract executing, not a deviation. Three code
+changes landed so the posture's commitments are TRUE in the shipped code rather
+than only in prose:
+
+1. **The gate evidence now leaves the VM on every square outcome.** `mk7ze`
+   P248-250 commits that every region computes its own occlusion count AND its own
+   occluded-site inflation during the production run "so both complete
+   distributions fold in at closeout". That was FALSE for every region that did not
+   reach `ok`: the four coordinate-only artifacts uploaded from inside `if ok:`,
+   and a region whose `.npz` conversion RAISED never reached that block at all. The
+   `.occlusion_gate.json` / `.occluded.excludelist` / `.occlusion_manifest.tsv` /
+   `.afreq` now upload from a site no square outcome can skip. ⚠ **Consequence for
+   reading the bucket: those four no longer imply a banked region — only `.npz`
+   presence does.**
+2. **The NaN raise has its own status.** `raised_nan: square LD carries NaN …`,
+   distinct from `error:` in the panel TSV and from `RAISED-NAN` in the log, with
+   its own verifier class — **not** a deferral (a deferral asserts a pending
+   outcome that does not exist, and would make the gate PASS it as "the gates
+   working") and **not** an operational failure. A scratch-full failure and a
+   gsutil failure are now distinguishable from the contract firing, which they
+   were not before.
+3. **The Stage-C check-in is stateful.** `stage-c --prev-report <the previous
+   check-in's report>`: exit 1 means something NEW since that report; an
+   acknowledged raise stays counted and reported. Without it, one raise would have
+   made every remaining check-in red for ~9 days, and a gate that is always red is
+   a gate no one reads. A closeout enforcer (`raised_nan_class_coverage` plus a
+   skipping live gate) keeps the class from being forgotten at publication, while
+   being explicit that **no classification mechanism exists** — the per-region
+   pre-check is deferred until COST-1 measures a per-region wall time.
+
+The RECORDS side of the same decision — the adjudication banked, the DECISIONS
+entry, the disclosure paragraph, and the `## R5-RAISED-NAN` coverage obligation —
+is **`quick-260918-qz0`**, which executed first. Nothing here is an OSF amendment
+and nothing here moves the pre-registered occlusion criterion.
 
 ---
 

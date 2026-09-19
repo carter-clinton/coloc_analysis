@@ -612,9 +612,15 @@ job was still killed by its cap). Teardown is UI-only.
 measured on coreutils 8.32; this VM's version is unmeasured.
 ⚠ The fire log's FIRST line will be `nohup: ignoring input` whenever this terminal
 has job control — measured under BOTH command forms, so it is form-independent. It
-is not an error, it does NOT match the `grep -cE "VERIFY-FAILED|^ERROR"` monitor,
-and no `nohup.out` appears in the cwd because the shell's `> …fire.log 2>&1`
-already owns stdout.
+is not an error, it does NOT match the
+`grep -cE "VERIFY-FAILED|^ERROR|^RAISED-NAN"` monitor, and no `nohup.out` appears
+in the cwd because the shell's `> …fire.log 2>&1` already owns stdout.
+⚠ THE MONITOR GAINED `|^RAISED-NAN` on 2026-09-18 (quick-260918-qz5). Without it
+a raw-panel NaN raise was INVISIBLE to the monitor, because the producer now logs
+that class as `RAISED-NAN <region_id>: …` rather than `ERROR …`. A NON-ZERO
+`RAISED-NAN` count is the pre-registered contract firing, NOT a defect — read it
+with the conditional stop below (known class → continue; unclassified → STOP).
+`VERIFY-FAILED` and `^ERROR` still want 0.
 Check-ins every 2-3 days, each reported to Carter:
   gsutil ls gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/*.npz | wc -l
   gsutil cat gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv | awk -F'\t' 'NR>1{c[$7]++} END{for(k in c) print k, c[k]}'
@@ -624,19 +630,78 @@ commands above, and paste its full output:
   gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
   python3 src/python/fire_verifier.py stage-c \
     --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
-    --report /home/jupyter/fire_gate_stageC_$(date +%Y%m%d).json
+    --report /home/jupyter/fire_gate_stageC_$(date +%Y%m%d).json \
+    --prev-report /home/jupyter/fire_gate_stageC_<THE PREVIOUS CHECK-IN'S DATE>.json
   echo "gate exit: $?"
+⚠ `--prev-report` NAMES THE PREVIOUS CHECK-IN'S FILE AND MUST NEVER BE THE SAME
+PATH AS `--report` (added 2026-09-18, quick-260918-qz5). The report is written
+AFTER the checks run, so passing the same path would read the acknowledged set and
+then destroy it. That case is REFUSED before any check runs, with nothing written
+(`prev_report_aliasing`, HARD_STOP) — including when the two are different
+spellings of one file. Keep the dated convention above and just substitute
+yesterday's date. OMIT `--prev-report` at the FIRST check-in only: there is no
+previous report to name, by construction.
+THE CHECK-IN IS STATEFUL, and this is what exit 0 now means: with
+`--prev-report`, exit 1 means at least one region entered a stop-worthy state
+SINCE THAT REPORT. A raise or failure ALREADY ACKNOWLEDGED at the previous
+check-in is still COUNTED and still LISTED — it is simply not a NEW stop. A
+region that was acknowledged and has DISAPPEARED from the panel TSV is a
+HARD_STOP: the TSV is append-only and deduped, so a vanished row means it was
+truncated or replaced (if you rotated or re-seeded it deliberately, run ONCE
+without `--prev-report` to re-mint a baseline and SAY SO when you report). A
+missing, unparseable, or pre-change `--prev-report` FAILS CLOSED — it never
+degrades to "assume nothing was acknowledged", which would mark every row new.
+Why stateful at all: under the raise posture below, ONE raise would otherwise make
+every remaining check-in exit 1 for ~9 days, and a gate that is always red is a
+gate no one reads.
+⚠ BEFORE THE FIRST REGION COMPLETES, BOTH THE `gsutil cp` AND THIS GATE WILL
+FAIL — and that is the gate failing CLOSED, not a fire defect (measured
+2026-09-18). Two shapes: no panel TSV in the bucket yet → the cp errors and the
+gate reports `stage-c_driver … FileNotFoundError … -> FAIL CLOSED`; a header-only
+TSV (the first write landed, the first data row has not) → the
+`stage_c_zero_data_rows` HARD_STOP, which names its five routes in. The first
+MEANINGFUL check-in is after the first `.npz` appears in the bucket. Report the
+output either way; do not re-fire, and do not hand-create a panel TSV to make the
+gate green. Noted honestly: the zero-row case gets a self-explaining message, the
+missing-file case only the generic driver handler — which is why it is written
+here.
 HOW TO READ IT — this is the whole point of the gate:
   * `deferred_infeasible_square: …` and `deferred_occlusion_anomaly: …` rows
     PASS. They are THE GATES WORKING. Never "fix" one mid-fire.
   * `verify_failed` and `error: …` rows FAIL at FINDING. Those regions banked
     NOTHING. The loop continues by design (Stage C runs without --fail-fast) —
     report them to Carter with their per-region statuses; do NOT re-fire blindly.
+  * `raised_nan: square LD carries NaN …` rows are THE PRE-REGISTERED RAW-PANEL
+    NaN CONTRACT FIRING AS COMMITTED — not a defect, and not a deviation (added
+    2026-09-18, quick-260918-qz5). The region banked NOTHING and the loop
+    continues by design. Its coordinate-only gate evidence — the
+    `.occlusion_gate.json` sidecar, and the `.occluded.excludelist` and
+    `.occlusion_manifest.tsv` when they exist — IS in the bucket, so the closeout
+    distributions fold the region in; its `.npz` is NOT there and never will be.
+    The gate reports it in its OWN check, `raised_nan_contract_fired` (a FINDING
+    with the count and the region list), and NEVER as a deferral and NEVER as an
+    operational failure — so it can no longer be confused with a scratch-full or
+    a gsutil failure, which are the two things `error:` now means on its own.
+    `raised_nan_class_coverage` separately accounts for the class at closeout and
+    labels every row UNCLASSIFIED.
+  * THE CONDITIONAL STOP. CONTINUE on a raise you can place in a known class;
+    STOP AND REPORT on an UNCLASSIFIED one. State plainly what that rests on:
+    there is NO CLASSIFICATION MECHANISM IN THE PIPELINE TODAY — the per-region
+    pre-check is deferred until COST-1 measures a per-region wall time — so this
+    is YOUR JUDGEMENT CALL against the reported region id and `n_var`, not a
+    lookup against anything. The known class is the m2_region_00057 shape named
+    in the posture block below.
   * An UNRECOGNIZED or EMPTY status FAILS at HARD_STOP. That means the producer
     emitted something the gate does not know, or the panel TSV is corrupt.
-    STOP and report immediately.
-Exit 0 = nothing to report beyond the counts. Any red = STOP under R8; never
-chain past it.
+    STOP and report immediately. ⚠ An unknown status is NEVER acknowledgeable: it
+    HARD_STOPs even if it appears in the `--prev-report`, because it is a
+    vocabulary defect rather than a region outcome, and acknowledging one is
+    exactly how a new failure mode would enter unnoticed.
+Exit 0 = nothing to report beyond the counts — ⚠ AMENDED 2026-09-18
+(quick-260918-qz5), because with `--prev-report` exit 0 can now mean "one
+ACKNOWLEDGED raise, still counted": exit 0 means nothing NEW since the last
+check-in. The counts still carry every acknowledged raise and failure, and they
+must still be pasted in full. Any red = STOP under R8; never chain past it.
 STAGE-C RAISE POSTURE — THE PRE-FIRE RESUME RULE (added 2026-09-18,
 quick-260918-qz0; Carter's decision after the reviewer's brief-blind Stage C
 adjudication; recorded in DECISIONS.md as
@@ -667,23 +732,63 @@ unchanged.
     recomputes on resume, and so does a truncated .npz; a pause-and-resume
     changes nothing about WHICH regions are measured. A stop never resumed
     changes the closeout denominator, and that must be disclosed, not carried.
-  * ⚠ WHAT THE GATE CAN SEE TODAY, so the rule above is operable. Until
-    quick-260918-qz5 lands the distinct non-deferral raise status and its own
-    verifier class, EVERY exception is one indistinguishable "error: ..." row
-    and the gate classifies all of them as FAILURE — so a KNOWN-CLASS raise
-    turns the check-in red too. Classify from the row's message text (the raise
-    says "square LD carries NaN"), then apply the two rules above: known-class
-    -> report and let the loop run; unclassified -> stop. A red gate is NEVER
+  * ⚠ WHAT THE GATE CAN SEE TODAY, so the rule above is operable. ⚠ UPDATED
+    2026-09-18 BY quick-260918-qz5, WHICH HAS NOW LANDED — this bullet's own
+    precondition ("until qz5 lands the distinct non-deferral raise status and
+    its own verifier class") is MET, so the paragraph it replaces is retired
+    rather than deleted, to keep the correction legible. WHAT IT USED TO SAY:
+    that every exception was one indistinguishable "error: ..." row, that the
+    gate classified all of them as FAILURE, that a known-class raise therefore
+    turned the check-in red too, and that you had to classify from the row's
+    message text yourself. WHAT IS TRUE NOW: the producer records a raise as
+    `raised_nan: square LD carries NaN ...` — its own status, distinct from
+    `error:` — and the gate gives it its own class and its own check
+    (`raised_nan_contract_fired`), neither a deferral nor an operational
+    failure. You no longer classify FAILURE-vs-raise from message text; the
+    panel TSV's status column says which it is. With `--prev-report`, a
+    known-class raise you have already acknowledged does NOT keep the check-in
+    red. What has NOT changed: the two rules above still apply (known-class ->
+    report and let the loop run; unclassified -> stop), and a red gate is NEVER
     authorization to re-fire a region or to re-treat one.
 Liveness = the .npz count CLIMBING toward 276 — not the kernel light, not
-_SUCCESS markers, not the log. 276 IS NOT A PASS BAR: verify_failed regions
-never upload (their artifacts stay in scratch, recorded in the panel TSV) and
+_SUCCESS markers, not the log, and ⚠ NOT THE OBJECT COUNT (see the egress
+correction below). 276 IS NOT A PASS BAR: verify_failed regions
+never upload a `.npz` — ⚠ CORRECTED 2026-09-18 (quick-260918-qz5): their bulky
+artifacts stay in scratch (recorded in the panel TSV) **AND their coordinate-only
+gate evidence IS now in the bucket**; only the `.npz` never uploads — and
 per-region errors continue the loop — a partial bank is a real, reportable
 outcome. A count that STOPS CLIMBING is the investigate signal. When
 m2_region_00040__sub14.npz appears (Stage B), tell Carter it is time for the
 SH2B3 estimate_s check on his planning side. Every .npz in the bucket passed a
 content verification (symmetry, unit diagonal, NaN scan) BEFORE upload — bucket
-presence means verified by construction.
+presence means verified by construction, ⚠ AND THAT IS NOW TRUE OF THE `.npz`
+ONLY.
+⚠ A BUCKET INVARIANT CHANGED ON 2026-09-18 (quick-260918-qz5), and every
+liveness/completeness reading above depends on knowing it. Before that change,
+ANY per-region object in the bucket implied a region that got at least as far as
+`ok`. Now `.occlusion_gate.json`, `.occluded.excludelist`,
+`.occlusion_manifest.tsv` and `.afreq` are uploaded on EVERY square outcome —
+`ok`, `verify_failed`, `error:` and `raised_nan:` alike — because `mk7ze`
+P248-250 commits that every region's own occlusion count AND occluded-site
+inflation fold into the closeout distributions, and previously a region that did
+not reach `ok` had its gate evidence die in VM scratch. So THE PRESENCE OF THOSE
+FOUR NO LONGER IMPLIES A BANKED REGION. Only `.npz` presence does. This is safe
+rather than alarming, and here is why: the resume skip keys on the `.npz` alone,
+at the `_MIN_REGION_NPZ_BYTES` floor, so a stray coordinate artifact cannot fake
+a banked region — which is also why liveness stays "the **.npz** count CLIMBING"
+and must never be counted as objects.
+⚠ SCRATCH HEADROOM, unchanged by any of the above but worth stating while you are
+reading this block: `_reclaim_region_scratch` runs ONLY on `ok`, so a raising, a
+verify-failed or an erroring region leaves its `.ld.bin` (n_var² × 4 B — ≈57.6 GB
+at the 120,000-variant ceiling) in scratch. SEVERAL such regions can therefore
+make LATER, perfectly healthy regions fail with an unrelated `error:` about
+space. If you see `error:` rows clustering after a non-`ok` region, check free
+space before concluding anything about the regions themselves.
+⚠ `peak_ram_gib` IN THE PANEL TSV IS PLINK-ONLY since the RAM-1 launcher change
+(9a3eb97): plink is spawned by a small isolated launcher and the recorded peak is
+that child's. The DRIVER'S OWN dense read of the square matrix (~4·n_var² bytes)
+is NOT included and must be ADDED before any headroom claim. The Stage B gate's
+15%-headroom figure is about plink alone.
 
 OPERATIONAL NOTES FOR THE RAM-1 LAUNCHER (added 2026-09-16, quick-260916-vqr).
 Since 9a3eb97 plink is spawned by a small isolated launcher process. Three things

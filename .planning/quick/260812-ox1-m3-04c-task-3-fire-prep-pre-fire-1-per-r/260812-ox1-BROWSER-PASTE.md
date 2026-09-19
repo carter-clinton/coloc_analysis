@@ -506,13 +506,66 @@ banked auto-skips.
    **MECHANICAL STAGE-C GATE (AGENT-PROMPT R8)** — run this at EVERY 2–3-day
    check-in alongside the rollup, and paste its full output:
 
+   **STAGE-C RAISE POSTURE — read this before you read the gate output.**
+   A `raised_nan: square LD carries NaN …` row is **the pre-registered contract
+   firing as committed — not a defect, and not a deviation.** The region banked
+   NOTHING; the loop continues by design. Four rules:
+
+   1. **CONTINUE on a KNOWN-CLASS raise.** The known class is the
+      `m2_region_00057` shape (measured 2026-08-24): a *confined symmetric pair*
+      — 2 NaN cells out of n_var², both rows `nan_count 1`, both diagonals
+      `1.0`, `PATTERN = confined pair? True`, `whole-row (zero-variance)? False`
+      — i.e. one pairwise-undefined correlation at a deletion-span boundary, not
+      a zero-variance variant.
+   2. **STOP on an UNCLASSIFIED raise**, and report it. There is **no
+      classification mechanism in the pipeline today** (the per-region pre-check
+      is deferred until COST-1 measures a per-region wall time), so this is your
+      judgement call against the reported region id and `n_var` — not a lookup.
+   3. **Re-diagnosis CLASSIFIES. It never changes the inputs or the criterion.**
+      No re-running a region with different data, no touching the occlusion
+      criterion — that is pre-registered and moving it needs a new posted
+      amendment FIRST.
+   4. **A stop that is not resumed TRUNCATES THE CLOSEOUT DENOMINATOR.** Every
+      region after the stop is unbanked and unmeasured, and that has to be
+      disclosed. Stopping is cheap; stopping and not resuming is not.
+
+   **RESUME, exactly:** resume skips a region only if its `.npz` is **ALREADY IN
+   THE BUCKET**, so **every region that banked nothing — `error:`,
+   `verify_failed` and BOTH `deferred_*` classes — recomputes on resume.**
+   (Coordinate-only gate evidence in the bucket does **not** count: the skip keys
+   on the `.npz` alone.)
+
+   ⚠ **This is the ONE documented exception to "Any red = STOP".** An
+   acknowledged, known-class `raised_nan:` row that the gate re-reports is not a
+   new stop. Everything else still is.
+
    ```
    gsutil cp gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv /home/jupyter/native_ld_scratch/
    python3 src/python/fire_verifier.py stage-c \
      --panel-tsv /home/jupyter/native_ld_scratch/m3-W2-native-plink-panel.tsv \
-     --report /home/jupyter/fire_gate_stageC_$(date +%Y%m%d).json
+     --report /home/jupyter/fire_gate_stageC_$(date +%Y%m%d).json \
+     --prev-report /home/jupyter/fire_gate_stageC_<THE PREVIOUS CHECK-IN'S DATE>.json
    echo "gate exit: $?"
    ```
+
+   ⚠ `--prev-report` names the **previous** check-in's file and must **never** be
+   the same path as `--report` — the report is written AFTER the checks, so that
+   would read the acknowledged set and then destroy it. That case is refused
+   before any check runs, with nothing written. Omit `--prev-report` at the FIRST
+   check-in only. **The check-in is stateful:** exit 1 means something entered a
+   stop-worthy state SINCE that report; an already-acknowledged raise or failure
+   is still counted and still listed, just not a new stop. A row that DISAPPEARED
+   is a HARD_STOP (the TSV is append-only — if you rotated it deliberately, run
+   once without `--prev-report` to re-mint a baseline and say so). A missing or
+   pre-change `--prev-report` FAILS CLOSED.
+
+   ⚠ **Before the first region completes, both the `gsutil cp` and this gate will
+   FAIL — that is the gate failing CLOSED, not a fire defect.** No panel TSV in
+   the bucket yet → the cp errors and the gate reports `stage-c_driver …
+   FileNotFoundError … -> FAIL CLOSED`; a header-only TSV → the
+   `stage_c_zero_data_rows` HARD_STOP, which names its five routes in. The first
+   meaningful check-in is after the first `.npz` appears. Report it either way; do
+   not re-fire, and do not hand-create a panel TSV to make the gate green.
 
    How to read it — this is the whole point of the gate:
    - `deferred_infeasible_square: …` / `deferred_occlusion_anomaly: …` rows
@@ -522,18 +575,50 @@ banked auto-skips.
    - `verify_failed` / `error: …` rows **FAIL at FINDING** — those regions banked
      NOTHING. The loop continues by design (no `--fail-fast` at Stage C); report
      them with their per-region statuses, do not re-fire blindly.
+   - `raised_nan: square LD carries NaN …` rows are **the pre-registered raw-panel
+     NaN contract firing as committed** — not a defect and not a deviation (added
+     2026-09-18, `quick-260918-qz5`). The region banked NOTHING and the loop
+     continues by design; its coordinate-only gate evidence (`.occlusion_gate.json`,
+     plus `.occluded.excludelist` / `.occlusion_manifest.tsv` when they exist) **is**
+     in the bucket so the closeout distributions fold it in, and its `.npz` is not
+     and never will be. The gate reports it in its OWN check
+     (`raised_nan_contract_fired`, a FINDING with the count and region list),
+     never as a deferral and never as an operational failure — so it can no longer
+     be confused with a scratch-full or a gsutil failure, which is what `error:`
+     now means on its own. **THE CONDITIONAL STOP:** continue on a known-class
+     raise; **STOP and report** on an UNCLASSIFIED one (see the four rules above).
    - An **UNRECOGNIZED or EMPTY** status **FAILS at HARD_STOP** — the producer
      emitted something the gate does not know, or the panel TSV is corrupt. Stop
-     and report immediately.
+     and report immediately. ⚠ An unknown status is **never acknowledgeable**: it
+     HARD_STOPs even if it appears in the `--prev-report`.
 
-   Exit 0 = nothing to report beyond the counts. **Never chain past a red.**
+   Exit 0 = nothing to report beyond the counts — ⚠ **amended 2026-09-18**, because
+   with `--prev-report` exit 0 can mean "one ACKNOWLEDGED raise, still counted":
+   it means nothing **NEW** since the last check-in. The counts still carry every
+   acknowledged raise and must still be pasted in full. **Never chain past a red**
+   — with the ONE documented exception above.
 3. **The log** — `tail -20 /home/jupyter/native_ld_fire.log` and
-   `grep -cE "VERIFY-FAILED|^ERROR" /home/jupyter/native_ld_fire.log` (want 0).
-4. **Built-in content gate (the reason bucket presence ≈ success):** every `.npz`
-   is content-verified BEFORE upload (`content_verify_npz`: symmetry, unit
+   `grep -cE "VERIFY-FAILED|^ERROR|^RAISED-NAN" /home/jupyter/native_ld_fire.log`
+   (want 0). ⚠ `|^RAISED-NAN` was added 2026-09-18 (`quick-260918-qz5`): the
+   producer logs a raw-panel NaN raise as `RAISED-NAN <region_id>: …`, so without
+   it a raise was INVISIBLE to this monitor. A non-zero `RAISED-NAN` count is the
+   contract firing, **not** a defect — read it with the conditional stop above.
+   `VERIFY-FAILED` and `^ERROR` still want 0.
+4. **Built-in content gate (the reason bucket `.npz` presence ≈ success):** every
+   `.npz` is content-verified BEFORE upload (`content_verify_npz`: symmetry, unit
    diagonal, NaN scan) and uploads only inside `if ok:` — a bucket `.npz` is
-   verified by construction. The per-region occlusion manifest + `.afreq` +
-   excludelist ride the same gate.
+   verified by construction. ⚠ **CORRECTED 2026-09-18 (`quick-260918-qz5`): the
+   per-region occlusion manifest, the `.afreq`, the excludelist and the gate
+   sidecar NO LONGER ride that gate.** Those four now cross on EVERY square
+   outcome — `ok`, `verify_failed`, `error:` and `raised_nan:` alike — because
+   `mk7ze` P248-250 commits that every region's own occlusion count AND
+   occluded-site inflation fold into the closeout distributions, and previously a
+   region that did not reach `ok` had its gate evidence die in VM scratch. **Only
+   the `.npz` rides the `if ok:` gate.** So the presence of those four does NOT
+   imply a banked region — only `.npz` presence does, which is why liveness is
+   the **`.npz`** count climbing and never the object count. Safe by construction:
+   the resume skip keys on the `.npz` alone at the `_MIN_REGION_NPZ_BYTES` floor,
+   so a stray coordinate artifact cannot fake a banked region.
 5. **Optional in-perimeter spot-check ($0)** — after Stage B, on the VM:
 
    ```
@@ -788,8 +873,12 @@ check 4.**
 ⚠ The fire log's FIRST line will be `nohup: ignoring input` whenever this terminal
 has job control — measured under **both** command forms, so it is
 form-independent. It is not an error, it does **not** match the
-`grep -cE "VERIFY-FAILED|^ERROR"` monitor, and no `nohup.out` appears in the cwd
-because the shell's `> …fire.log 2>&1` already owns stdout.
+`grep -cE "VERIFY-FAILED|^ERROR|^RAISED-NAN"` monitor, and no `nohup.out` appears
+in the cwd because the shell's `> …fire.log 2>&1` already owns stdout.
+⚠ That monitor gained `|^RAISED-NAN` on 2026-09-18 (`quick-260918-qz5`) — kept in
+step with the operator's actual command in §3 above, because leaving a stale copy
+of a monitor in a descriptive note is how the next reader concludes the command
+was never changed.
 
 **Liveness = the `.npz` listing climbing toward 276 — NOT the kernel light, NOT
 `_SUCCESS`, NOT the log.** Check in every **2–3 days**:
