@@ -291,6 +291,17 @@ def parse_panel_tsv(path: "str | Path") -> List[Dict[str, Any]]:
 STATUS_OK = "ok_class"
 STATUS_DEFERRAL = "deferral_class"
 STATUS_FAILURE = "failure_class"
+#: quick-260918-qz5 (P3). A raw-panel NaN raise is NEITHER ok, NOR a deferral, NOR
+#: an operational failure. It is the pre-registered T1 contract EXECUTING: the
+#: region banks nothing and the loop continues, with a stop reserved for an
+#: UNCLASSIFIED raise (Carter's 2026-09-18 decision).
+#:   * NOT a deferral — the external methodological reviewer disqualified that: a
+#:     deferral asserts a PENDING OUTCOME that does not exist here, and it would
+#:     route the row to this module's PASS-as-"the gates working" branch.
+#:   * NOT a failure — a scratch-full failure and a gsutil failure are operational
+#:     defects; the contract executing is not, and conflating them would both
+#:     misattribute the raise AND hide a real defect behind an expected row.
+STATUS_RAISED_NAN = "raised_nan_class"
 STATUS_UNKNOWN = "unknown"
 
 #: Measured from the shipped producer's SEVEN status emission sites (M2). The
@@ -301,6 +312,11 @@ _OK_STATUSES = ("ok", "skipped_idempotent")
 _DEFERRAL_PREFIXES = ("deferred_infeasible_square", "deferred_occlusion_anomaly")
 _FAILURE_STATUSES = ("verify_failed", "error")
 _FAILURE_PREFIXES = ("error:",)
+#: The producer's eighth emission site (``run_native_ld_panel``'s
+#: ``raised_nan: {e}``). Tested BEFORE the failure branches, because the raise
+#: detail begins with the frozen reader's message and must never fall through to
+#: ``error``.
+_RAISED_NAN_PREFIXES = ("raised_nan:",)
 
 
 def _status_class(status: Any) -> str:
@@ -319,6 +335,10 @@ def _status_class(status: Any) -> str:
     for prefix in _DEFERRAL_PREFIXES:
         if s.startswith(prefix):
             return STATUS_DEFERRAL
+    # BEFORE the failure branches, deliberately (quick-260918-qz5 / P3).
+    for prefix in _RAISED_NAN_PREFIXES:
+        if s.startswith(prefix):
+            return STATUS_RAISED_NAN
     if s in _FAILURE_STATUSES:
         return STATUS_FAILURE
     for prefix in _FAILURE_PREFIXES:
@@ -338,27 +358,48 @@ def classify_statuses(status_rows: List[Dict[str, Any]]) -> Check:
         A region that banked NOTHING is not the gates working — but Stage C runs
         without ``--fail-fast``, so the loop legitimately continues and the correct
         response is report-to-Carter, not an auto-abort.
+      * raised-NaN class (``raised_nan:``, quick-260918-qz5) -> PASS *here*, and
+        reported by its OWN check (``raised_nan_contract_fired``). It does NOT
+        enter ``failures`` and does NOT drive this check's FAIL: the region banked
+        nothing, but that is the pre-registered contract EXECUTING, not an
+        operational failure. THREE separate checks exist so that no disposition
+        can hide another — a single ``Check`` can only report its first failing
+        condition.
       * anything else, and any EMPTY status                 -> FAIL at HARD_STOP.
         An unknown status silently treated as ok is how a new failure mode enters
         unnoticed.
+
+    ``measured`` RECONCILES: ``n_ok + n_deferred + n_raised_nan + n_failed +
+    n_unknown == n_rows`` on every panel, and the per-class REGION LISTS are what
+    the stateful ``--prev-report`` acknowledgement is computed from — one source,
+    the one check that sees every row.
     """
     def run() -> Check:
         n = "status_classification"
         counts: Dict[str, int] = {}
         by_class: Dict[str, int] = {STATUS_OK: 0, STATUS_DEFERRAL: 0,
-                                    STATUS_FAILURE: 0, STATUS_UNKNOWN: 0}
+                                    STATUS_FAILURE: 0, STATUS_RAISED_NAN: 0,
+                                    STATUS_UNKNOWN: 0}
         unknown: List[str] = []
         failures: List[str] = []
+        failed_regions: List[str] = []
+        raised_nan_regions: List[str] = []
+        unknown_regions: List[str] = []
         for r in status_rows:
             raw = r.get("status", "")
             key = ("<empty status>" if str(raw).strip() == "" else str(raw).strip())
             counts[key] = counts.get(key, 0) + 1
             cls = _status_class(raw)
             by_class[cls] += 1
+            rid = str(r.get("region_id", "")).strip()
             if cls == STATUS_UNKNOWN:
                 unknown.append(key)
+                unknown_regions.append(rid)
             elif cls == STATUS_FAILURE:
                 failures.append(key)
+                failed_regions.append(rid)
+            elif cls == STATUS_RAISED_NAN:
+                raised_nan_regions.append(rid)
 
         measured = {
             "counts": counts,
@@ -366,7 +407,11 @@ def classify_statuses(status_rows: List[Dict[str, Any]]) -> Check:
             "n_ok": by_class[STATUS_OK],
             "n_deferred": by_class[STATUS_DEFERRAL],
             "n_failed": by_class[STATUS_FAILURE],
+            "n_raised_nan": by_class[STATUS_RAISED_NAN],
             "n_unknown": by_class[STATUS_UNKNOWN],
+            "failed_regions": sorted(failed_regions),
+            "raised_nan_regions": sorted(raised_nan_regions),
+            "unknown_regions": sorted(unknown_regions),
         }
 
         if unknown:
@@ -388,6 +433,30 @@ def classify_statuses(status_rows: List[Dict[str, Any]]) -> Check:
                 f"blindly.",
                 FINDING, measured)
 
+        # ⚠ B2 — THE FRAMING FIX. Left alone, a panel of [ok, raised_nan:...]
+        # printed "1 ok-class + 0 deferred row(s) of 2, ALL recognized (the gates
+        # working; ...)": the raise INVISIBLE in the counts and the row framed as
+        # the gates working — the exact framing the 2026-09-18 adjudication
+        # disqualified, and it would have printed at every check-in for ~9 days.
+        # So whenever a raise is present the counts are stated in FULL (and they
+        # reconcile to n_rows) and the deferral-guidance clause is REPLACED by one
+        # that names the contract executing and points at its own check.
+        if by_class[STATUS_RAISED_NAN]:
+            return Check(
+                n, PASS,
+                f"{by_class[STATUS_OK]} ok-class + {by_class[STATUS_DEFERRAL]} "
+                f"deferred + {by_class[STATUS_RAISED_NAN]} raised-NaN + "
+                f"{by_class[STATUS_FAILURE]} failed + "
+                f"{by_class[STATUS_UNKNOWN]} unknown = {len(status_rows)} row(s), "
+                f"ALL recognized. {by_class[STATUS_RAISED_NAN]} region(s) fired "
+                f"the pre-registered raw-panel NaN contract and banked NOTHING — "
+                f"see raised_nan_contract_fired for the region list; that is the "
+                f"contract executing, NOT the occlusion gates working, and "
+                f"NOT a deferral.",
+                HARD_STOP, measured)
+        # ZERO raises -> the shipped sentence is UNTOUCHED, verbatim. The control
+        # in the tests pins this, so the fix above cannot silently delete the
+        # shipped deferral guidance.
         return Check(
             n, PASS,
             f"{by_class[STATUS_OK]} ok-class + {by_class[STATUS_DEFERRAL]} "
@@ -695,6 +764,49 @@ def check_occlusion_gate(occ_rows: Optional[int], occ_sites: Optional[int],
     return _guard("occlusion_gate", HARD_STOP, run)
 
 
+def check_raised_nan_findings(status_rows: List[Dict[str, Any]]) -> Check:
+    """Report every raw-panel NaN raise as a FINDING with its count and regions.
+
+    ``status_classification`` deliberately PASSES a raise (it is not an
+    operational failure), so without this check a raise would be reported only as
+    a number inside another check's ``measured`` — and a single ``Check`` can
+    report only its FIRST failing condition, so folding this into that one would
+    let one disposition hide another.
+
+    The disposition is FINDING, not HARD_STOP: Carter decided the raise stands,
+    the region banks nothing and the loop CONTINUES. The stop is reserved for a
+    raise the operator cannot place in a known class — and that is the operator's
+    judgement call against the reported region id and ``n_var``, because there is
+    NO classification mechanism in the pipeline today (the per-region pre-check is
+    deferred until COST-1 measures a per-region wall time). Nothing here claims
+    otherwise.
+    """
+    def run() -> Check:
+        n = "raised_nan_contract_fired"
+        regions = sorted(str(r.get("region_id", "")).strip() for r in status_rows
+                         if _status_class(r.get("status")) == STATUS_RAISED_NAN)
+        measured = {"n_raised_nan": len(regions), "raised_nan_regions": regions}
+        if not regions:
+            return Check(n, PASS,
+                         "no raised_nan: rows -> the raw-panel NaN contract has "
+                         "not fired on this panel",
+                         FINDING, measured)
+        return Check(
+            n, FAIL,
+            f"{len(regions)} region(s) fired the pre-registered raw-panel NaN "
+            f"contract: {regions}. This is the contract firing AS COMMITTED — not "
+            f"a defect, and not a deviation. Each of these regions banked NOTHING "
+            f"(no .npz; its coordinate-only gate evidence IS in the bucket so the "
+            f"closeout distributions fold it in) and the loop continues by design. "
+            f"CONTINUE on a raise you can place in a known class; STOP and report "
+            f"if the raise is UNCLASSIFIED. There is no classification mechanism "
+            f"in the pipeline today, so that is your judgement call against the "
+            f"region id and n_var above, not a lookup.",
+            FINDING, measured)
+
+    return _guard("raised_nan_contract_fired", FINDING, run)
+
+
 def check_region1_status(status: Any) -> Check:
     """Region 1 is the known-answer region; anything other than exactly ``ok`` is
     the finding.
@@ -803,33 +915,60 @@ def check_maf_depression(pairs: List[Dict[str, float]],
 # --------------------------------------------------------------------------- #
 
 def check_cost_denominator(n_regions_used: int, n_bankable: int,
-                           n_total: int) -> Check:
+                           n_total: int, *, n_raised_nan: int = 0,
+                           n_deferred: int = 0, n_failed: int = 0) -> Check:
     """Cost must be computed per BANKABLE region, never per region-of-``n_total``.
 
     A-08: ``n_total`` is REQUIRED, with no default. It is 276 today (measured:
     ``awk -F'\\t' 'NR>1 && $7=="AFR"' config/ld_regions.tsv | wc -l``) — and a
     default is exactly how a count goes silently stale.
+
+    quick-260918-qz5 (D6) — THE DECISION, WITH ITS REASON. A ``raised_nan:`` row is
+    **NOT bankable and NOT an operational failure**:
+      * ``n_bankable`` stays **ok-class only**. A raising region banked no ``.npz``,
+        and cost-per-BANKABLE-region is this gate's entire purpose; diluting the
+        denominator with regions that banked nothing is the exact understatement
+        this check exists to refuse.
+      * it is nevertheless **not counted as an operational failure**, because
+        calling the pre-registered contract executing a "failure" misattributes it.
+    So the three class counts arrive as KEYWORD-ONLY parameters defaulting to 0 —
+    every pre-existing 3-positional call site and every pre-existing test stays
+    BYTE-UNCHANGED — and they flow into ``measured`` plus a sentence that lets a
+    human separate the two reasons a row is unbankable. That separation matters
+    concretely: COST-1 is already invalidated by ONE deferral (00071 at n_var
+    169,803), and a message that conflated the causes would hide which one moved.
     """
     def run() -> Check:
         n = "cost_gate_denominator"
         measured = {"used": n_regions_used, "bankable": n_bankable,
-                    "total": n_total}
+                    "total": n_total, "raised_nan": n_raised_nan,
+                    "deferred": n_deferred, "failed": n_failed}
+        n_unbankable = n_regions_used - n_bankable
+        why = (f"Of the {n_unbankable} unbankable row(s) in the denominator: "
+               f"{n_deferred} deferred by a pre-registered gate, {n_raised_nan} "
+               f"raised-NaN (fired the pre-registered raw-panel NaN contract, "
+               f"banked nothing, and is NOT an operational failure), and "
+               f"{n_failed} operational failure(s). The two reasons are reported "
+               f"separately on purpose: only the last one is a defect.")
         if n_regions_used == n_total and n_bankable != n_total:
             return Check(n, FAIL,
                          f"cost denominator is {n_total} (all regions) but only "
                          f"{n_bankable} are bankable -> understates per-region cost "
                          f"by {n_total / max(n_bankable, 1):.2f}x. Use "
-                         f"cost-per-BANKABLE-region.",
+                         f"cost-per-BANKABLE-region. {why}",
                          HARD_STOP, measured)
         if n_regions_used != n_bankable:
             return Check(n, FAIL,
                          f"cost denominator {n_regions_used} != bankable "
                          f"{n_bankable} -> the extrapolation covers regions that "
-                         f"banked nothing",
+                         f"banked nothing. {why}",
                          HARD_STOP, measured)
         return Check(n, PASS,
                      f"cost computed on {n_bankable} bankable region(s) of "
-                     f"{n_total} total", HARD_STOP, measured)
+                     f"{n_total} total (0 unbankable rows in the denominator; "
+                     f"raised-NaN {n_raised_nan}, deferred {n_deferred}, "
+                     f"failed {n_failed} were excluded from it)",
+                     HARD_STOP, measured)
 
     return _guard("cost_gate_denominator", HARD_STOP, run)
 
@@ -1086,17 +1225,23 @@ def _stage_b(args) -> List[Check]:
             c = check_peak_ram(r["peak_ram_gib"], vm_gib=args.vm_gib)
             c.name = f"{c.name}[{r['region_id']}]"
             checks.append(c)
-    checks.append(classify_statuses(rows))
+    cls = classify_statuses(rows)
+    checks.append(cls)
     n_bankable = sum(1 for r in rows if _status_class(r.get("status")) == STATUS_OK)
-    checks.append(check_cost_denominator(n_regions_used=len(rows),
-                                         n_bankable=n_bankable,
-                                         n_total=args.n_total))
+    # quick-260918-qz5 (D6): the three class counts come from the ONE check that
+    # sees every row, so the cost gate's "why is this row unbankable" sentence can
+    # never disagree with the classification it is describing.
+    checks.append(check_cost_denominator(
+        n_regions_used=len(rows), n_bankable=n_bankable, n_total=args.n_total,
+        n_raised_nan=cls.measured.get("n_raised_nan", 0),
+        n_deferred=cls.measured.get("n_deferred", 0),
+        n_failed=cls.measured.get("n_failed", 0)))
     return checks
 
 
 def _stage_c(args) -> List[Check]:
     rows = parse_panel_tsv(args.panel_tsv)
-    return [classify_statuses(rows)]
+    return [classify_statuses(rows), check_raised_nan_findings(rows)]
 
 
 def _disclosure(args) -> List[Check]:

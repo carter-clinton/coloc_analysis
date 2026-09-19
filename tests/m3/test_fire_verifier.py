@@ -1164,3 +1164,186 @@ def test_report_json_carries_no_float_arrays(tmp_path):
 
     for entry in data["report"]:
         walk(entry["measured"], f"report[{entry['name']}].measured")
+
+
+# --------------------------------------------------------------------------- #
+# P3 (quick-260918-qz5) — `raised_nan:` IS ITS OWN CLASS                      #
+# --------------------------------------------------------------------------- #
+# Carter's 2026-09-18 decision: the raise stands, the region banks NOTHING, the
+# loop continues (the pre-registered T1 contract executing), with a stop reserved
+# for an UNCLASSIFIED raise. The verifier must therefore be able to say "a raise
+# happened, here is which region, and it banked nothing" WITHOUT either
+#   (a) calling it a deferral — which would route it to the PASS-as-"the gates
+#       working" branch the adjudication disqualified, or
+#   (b) lumping it with `error:`/`verify_failed` — which would misattribute the
+#       pre-registered contract executing as an operational failure.
+
+#: A REAL raise in the shape P2 emits it (the frozen reader's head + the ranked
+#: NaN source rows). Copied from a MEASURED producer run, not from memory.
+REAL_RAISED_NAN = (
+    "raised_nan: square LD carries NaN for /scratch/m2_region_00057.ld.bin: "
+    "likely source variant row(s) ranked by NaN count [index: 3, 0, 1, 2, 4...] "
+    "— plink --r writes 0/0 -> NaN for a zero-variance variant")
+
+
+def test_status_class_raised_nan_is_its_own_class():
+    """T2.6 — not ok, not a deferral, not a failure, not unknown."""
+    cls = fv._status_class(REAL_RAISED_NAN)
+    assert cls == fv.STATUS_RAISED_NAN
+    for other in (fv.STATUS_OK, fv.STATUS_DEFERRAL, fv.STATUS_FAILURE,
+                  fv.STATUS_UNKNOWN):
+        assert cls != other, other
+    # the bare prefix classifies too (the ast enforcer extracts `raised_nan: `)
+    assert fv._status_class("raised_nan: ") == fv.STATUS_RAISED_NAN
+
+
+def test_classify_statuses_counts_raises_SEPARATELY_from_failures():
+    """T2.7 — n_raised_nan and n_failed are reported separately, their region
+    lists are DISJOINT, and a raise is counted in neither n_ok nor n_deferred."""
+    rows = [
+        {"region_id": "r1", "status": "ok"},
+        {"region_id": "r2", "status": "ok"},
+        {"region_id": "r57", "status": REAL_RAISED_NAN},
+        {"region_id": "r9", "status": REAL_ERROR},
+    ]
+    c = fv.classify_statuses(rows)
+    m = c.measured
+    assert m["n_raised_nan"] == 1, m
+    assert m["n_failed"] == 1, m
+    assert m["n_ok"] == 2 and m["n_deferred"] == 0, m
+    assert m["raised_nan_regions"] == ["r57"], m
+    assert m["failed_regions"] == ["r9"], m
+    assert not set(m["raised_nan_regions"]) & set(m["failed_regions"])
+    # THE SUM IDENTITY (B2): the five classes must account for every row
+    assert (m["n_ok"] + m["n_deferred"] + m["n_raised_nan"] + m["n_failed"]
+            + m["n_unknown"]) == m["n_rows"] == 4, m
+
+
+def test_classify_statuses_a_raise_alone_does_not_populate_the_failure_list():
+    """T2.7b — a panel of [ok, raised_nan] must not report a FAILURE state: the
+    region banked nothing, but that is the contract executing, not an operational
+    failure."""
+    rows = [{"region_id": "r1", "status": "ok"},
+            {"region_id": "r57", "status": REAL_RAISED_NAN}]
+    c = fv.classify_statuses(rows)
+    assert c.measured["failed_regions"] == [], c.measured
+    assert c.measured["n_raised_nan"] == 1
+
+
+def test_classify_statuses_PASS_detail_drops_the_gates_working_clause_on_a_raise():
+    """T2.7c — ⚠ B2, the framing defect this change exists to stop. Left alone, a
+    panel of [ok, raised_nan] printed "1 ok-class + 0 deferred row(s) of 2, ALL
+    recognized (THE GATES WORKING; do NOT 'fix' a deferral mid-fire ...)" — the
+    raise INVISIBLE in the counts and framed as the gates working, at every
+    check-in for ~9 days. That is the exact framing the adjudication disqualified.
+
+    CONTROL (below): on a ZERO-raise panel the original "the gates working"
+    sentence must survive VERBATIM, so the fix cannot silently delete the shipped
+    deferral guidance."""
+    raise_rows = [{"region_id": "r1", "status": "ok"},
+                  {"region_id": "r57", "status": REAL_RAISED_NAN}]
+    c = fv.classify_statuses(raise_rows)
+    assert c.ok, c.detail          # a raise alone is not this check's FAIL
+    # the DISQUALIFIED FRAMING, pinned by its exact shipped shape rather than by
+    # the loose substring "the gates working" — a negative literal assertion that
+    # a nearby innocent phrase can satisfy or break is the trap recorded in
+    # [[reference_enforcement_traps_literals_and_linenumbers]]
+    assert "ALL recognized (the gates" not in c.detail, c.detail
+    assert "do NOT 'fix' a deferral mid-fire" not in c.detail, c.detail
+    assert "raised-NaN" in c.detail or "raised_nan" in c.detail, c.detail
+    assert "raised_nan_contract_fired" in c.detail, c.detail
+    assert "NOT a deferral" in c.detail, c.detail
+    # the five counts are NAMED in the detail and reconcile to n_rows
+    assert "= 2 row(s)" in c.detail, c.detail
+
+    # --- CONTROL: zero raises -> the shipped sentence is untouched ---
+    clean = [{"region_id": "r1", "status": "ok"},
+             {"region_id": "r2", "status": REAL_INFEASIBLE}]
+    c2 = fv.classify_statuses(clean)
+    assert c2.ok, c2.detail
+    assert "the gates working" in c2.detail, c2.detail
+    assert "do NOT 'fix' a deferral mid-fire" in c2.detail, c2.detail
+    assert "raised" not in c2.detail.lower(), c2.detail
+
+
+def test_raised_nan_contract_fired_is_a_FINDING_naming_the_regions():
+    """T2.8 — a panel of ONLY ok + raised_nan rows does NOT pass as "the gates
+    working": a separate check reports the raise as a FINDING with its own count
+    and region list. THREE distinct checks exist precisely so no disposition can
+    hide another (one Check can only report its first failing condition)."""
+    rows = [{"region_id": "r1", "status": "ok"},
+            {"region_id": "m2_region_00057", "status": REAL_RAISED_NAN}]
+    c = fv.check_raised_nan_findings(rows)
+    assert not c.ok, c.detail
+    assert c.name == "raised_nan_contract_fired"
+    assert c.severity == fv.FINDING
+    assert "m2_region_00057" in c.detail, c.detail
+    assert c.measured["n_raised_nan"] == 1, c.measured
+    # the wording carries the posture, so a check-in reader cannot misread it
+    for phrase in ("banked", "loop continues", "UNCLASSIFIED"):
+        assert phrase.lower() in c.detail.lower(), (phrase, c.detail)
+    # CONTROL: a raise-free panel PASSES this check
+    c2 = fv.check_raised_nan_findings([{"region_id": "r1", "status": "ok"}])
+    assert c2.ok, c2.detail
+
+
+def test_check_region1_status_findings_on_a_raise():
+    """T2.9 — RECORDED NON-CHANGE: region 1 runs under --fail-fast, which raises
+    on ANY non-'ok' status, so check_region1_status needed no logic change."""
+    c = fv.check_region1_status(REAL_RAISED_NAN)
+    assert not c.ok, c.detail
+    assert "raised_nan" in c.detail
+
+
+def test_cost_denominator_a_raise_is_unbankable_but_not_an_operational_failure():
+    """T2.10 — D6, the decision the brief asked for. A `raised_nan:` row is NOT
+    bankable (it banked no .npz, and cost-per-BANKABLE-region is the gate's whole
+    purpose) and NOT an operational failure (calling the pre-registered contract
+    executing a "failure" misattributes it). The message must let a human separate
+    the two reasons, because COST-1 is ALREADY invalidated by one deferral
+    (00071 at n_var 169,803) and conflating the causes would hide that."""
+    c = fv.check_cost_denominator(n_regions_used=3, n_bankable=2, n_total=276,
+                                  n_raised_nan=1, n_deferred=0, n_failed=0)
+    assert c.measured["raised_nan"] == 1, c.measured
+    assert c.measured["bankable"] == 2, c.measured   # ok-class ONLY
+    # The PROPERTY, not a bare word: the detail must attribute this unbankable row
+    # to the NaN contract AND state the operational-failure count separately, so a
+    # human can tell which one moved.
+    assert "1 raised-NaN" in c.detail, c.detail
+    assert "0 operational failure(s)" in c.detail, c.detail
+    assert "NOT an operational failure" in c.detail, c.detail
+
+    # CONTROL: the same shape with the raise replaced by an operational failure
+    # attributes it to the FAILURE count, not the raise count. Without this the
+    # assertions above could not tell a two-reason message from a one-reason one.
+    c2 = fv.check_cost_denominator(n_regions_used=3, n_bankable=2, n_total=276,
+                                   n_raised_nan=0, n_deferred=0, n_failed=1)
+    assert c2.measured["failed"] == 1 and c2.measured["raised_nan"] == 0, c2.measured
+    assert "0 raised-NaN" in c2.detail, c2.detail
+    assert "1 operational failure(s)" in c2.detail, c2.detail
+    assert c.detail != c2.detail, "the two reasons must be distinguishable"
+
+
+def test_cost_denominator_three_positional_signature_is_unchanged():
+    """T2.10b — every pre-existing 3-positional call site and test must be
+    BYTE-UNCHANGED: the new parameters are keyword-only with 0 defaults."""
+    assert fv.check_cost_denominator(247, 247, 276).ok
+    c = fv.check_cost_denominator(276, 247, 276)
+    assert not c.ok
+    assert c.measured["raised_nan"] == 0 and c.measured["deferred"] == 0
+    assert c.measured["failed"] == 0
+
+
+def test_status_vocabulary_covers_the_measured_eight_sites():
+    """T2.11 — the M6 table EXTENDED to the eighth emission site."""
+    for prefix, want in [
+        ("skipped_idempotent", fv.STATUS_OK),
+        ("ok", fv.STATUS_OK),
+        ("error", fv.STATUS_FAILURE),
+        ("error: ", fv.STATUS_FAILURE),
+        ("verify_failed", fv.STATUS_FAILURE),
+        ("deferred_infeasible_square: n_var=", fv.STATUS_DEFERRAL),
+        ("deferred_occlusion_anomaly: ", fv.STATUS_DEFERRAL),
+        ("raised_nan: ", fv.STATUS_RAISED_NAN),
+    ]:
+        assert fv._status_class(prefix) == want, prefix
