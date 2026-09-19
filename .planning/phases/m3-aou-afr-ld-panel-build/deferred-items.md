@@ -1448,3 +1448,85 @@ apply to whoever does the backfill.
 **Superseded by this correction:** the earlier "Carter's decision, before Stage C" framing and its
 recommendation of "(b) or (c), not (a)" — with AF non-load-bearing, **(c) or (a) are both defensible
 and (b) is the one to avoid**, because it re-opens the fire path for something no statistic reads.
+
+# Deferred items — discovered during quick-260918-qz0 execution (2026-09-18)
+
+## R5-RAISED-NAN — a raising region is UNBANKED and OUTSIDE the branch list; its count, span and CLASSIFICATION are owed at publication, on the R4-COVERAGE/C7 template
+
+**Logged:** 2026-09-18 (`quick-260918-qz0`, from the external reviewer's
+brief-blind Stage C adjudication of 2026-09-18, its Q4).
+**Status: REGISTERED as a DISCLOSURE OBLIGATION — not blocking the fire.**
+
+**The gap.** A region whose **raw-panel NaN-raise** contract (**trsx5 posted
+line 39**) fires during Stage C **banks no panel**. It is **not** a `deferred_*`
+region and **not** an occlusion outcome, so it appears in **none** of the three
+`BRANCH_AFR_OCC_*` branch distributions — the same shape as the
+`deferred_infeasible_square` set that **R4-COVERAGE** registers above, one
+contract over. ⚠ **The adjudication adopts C7 for the mechanics:** it calls
+`deferred_infeasible_square` the right template for *"unbanked, outside the
+branch list, disclosure obligation with a named enforcer, numbers owed at
+publication"*, and this item follows it.
+
+| Quantity | Value |
+|---|---|
+| regions raising in Stage C | ⛔ **UNMEASURED — emerges at fire time** |
+| raises OBSERVED to date | **1** — `m2_region_00057` (Stage B, 2026-08-24) |
+| PREDICTED, not observed | **1** — `m2_region_00149` (from the 21-region scan) |
+
+⚠ **No raise count is a pre-committed expectation, and no planning figure for
+this class is calibrated.** The options draft's **≈13 regions** scaled 1-in-21
+with the **PREDICTED** case counted as an observed rate; the **observed**
+Stage-B denominator is the regions actually run. Both figures are recorded as
+uncalibrated in `DEC-2026-09-18-stage-c-nan-posture-adopted`, and the ACTUAL
+numbers emerge at fire time from the panel TSV and **MUST replace them before
+anything is published**.
+
+**The obligation.** Disclose at closeout, on the **R4-COVERAGE** form, as *"N
+regions raised on the raw-panel NaN contract and banked no panel; affected span
+M Mb; K of N classified as known-class (boundary-adjacent pairwise-undefined),
+J unclassified"* — with the measured numbers. Both quantities are known before
+plink runs and the raising region's panel row already carries the variant count:
+`run_native_ld_panel.py` sets `result["n_var"]` before the raise and
+`append_panel_row(...)` runs unconditionally after the handler (measured in the
+DEC entry above; cited by symbol because the line drifts). ⛔ **The count is a
+COVERAGE RESULT, not a deviation:** T1 fired as written.
+
+**The enforcer — NAMED, and it DOES NOT EXIST YET.**
+
+* `tests/m3/test_fire_verifier.py::test_raised_nan_class_coverage_live_gate_against_the_repo_file`
+  — ⛔ **NOT WRITTEN. PENDING `quick-260918-qz5`**, which adds the distinct
+  non-deferral raise status, its verifier class, and the `raised_nan_class_coverage`
+  check (`fire_verifier.check_raised_nan_coverage`) that reads **this heading**
+  (`## R5-RAISED-NAN`) as its live gate. **Nothing enforces this obligation until
+  that task lands**; this item is a REGISTRATION, not a claim that a check exists.
+  ⚠ **Its scope, stated honestly:** it checks **presence, count and the
+  UNCLASSIFIED default** only. It does **not** verify that a raise was classified
+  as known-class, because the classification mechanism (**LOW-1**, the per-region
+  pre-check) is **DEFERRED until COST-1 returns a measured per-region wall time**.
+  Until then every raise defaults to **UNCLASSIFIED**, which is the conservative
+  direction: it over-reports the thing that must be stopped on.
+* `tests/m3/test_fire_verifier.py::test_shipped_status_vocabulary_is_covered_by_the_allow_list`
+  — **EXISTS today** (the C6 shipped-vocabulary drift enforcer). It is what will
+  FORCE the allow-list entry the moment the producer emits a new status, so the
+  new prefix cannot ship unclassified.
+
+⚠ **Why C7's template is necessary but NOT sufficient** (the adjudication's Q4).
+`deferred_infeasible_square` is unbanked for a **compute** reason and nothing
+about the data is in question. A raising region is unbanked because a
+**scientific contract** fired, and that contract's own message is known to
+**mis-state its cause** — it blames zero variance, measured FALSE for
+`m2_region_00057`. So this class carries an obligation the precedent does not:
+**each raise must be CLASSIFIED**, known-class vs unclassified, because an
+unclassified raise may be a different defect. **The enforcer must check
+classification, not only count** — which is exactly why the enforcer above is
+registered with its scope limit visible rather than as a finished check.
+
+**Not blocking.** The fire proceeds; the raise is the contract working. What is
+owed is the closeout disclosure with measured numbers.
+
+**Cross-references:** **R4-COVERAGE** in this file (the sibling obligation and
+the template this follows); `DEC-2026-09-18-stage-c-nan-posture-adopted`;
+`§(11)` of the 2026-09-03 entry in `.planning/osf_deviations.md` (the
+posted-before-production accounting paragraph); the `STAGE-C RAISE POSTURE`
+block in `.planning/quick/260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r/260812-ox1-AGENT-PROMPT.md`;
+`.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md`.

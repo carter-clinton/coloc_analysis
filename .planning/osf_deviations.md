@@ -1137,3 +1137,53 @@ the old framing was aligned in this edit (the discharge bullet in the status blo
   retained **NaN-raise** — and changes none of the counts.
 - ⛔ **The status is unchanged: DRAFTED — NOT POSTED.** A reviewer response is **NOT authorization to
   post.** The posting decision is **Carter's alone**.
+
+#### (11) RAISING-REGION ACCOUNTING FOR THE PRODUCTION RUN — the raw-panel NaN-raise, stated BEFORE the fire
+
+⭐ **Added 2026-09-18 (quick `260918-qz0`).** The project's external reviewer delivered a
+**brief-blind Stage C adjudication** on **2026-09-18**, written against the options draft v2
+(`57a3105`) and the code at `74f962d`. It is banked as received (**not byte-verified**) at
+`.planning/quick/260918-qz0-bank-the-stage-c-adjudication-and-record/260918-qz0-SETH-STAGEC-ADJUDICATION-as-received.md`,
+and the posture Carter adopted from it is recorded in `DEC-2026-09-18-stage-c-nan-posture-adopted`.
+⛔ **The status is unchanged: DRAFTED — NOT POSTED.** This paragraph is part of what §(3) already
+commits to posting **BEFORE production testing**; it is **not** authorization to post, and the
+posting decision is **Carter's alone**.
+
+- ⭐ **THE ACCOUNTING, stated before the fire.** A region whose **raw-panel NaN-raise** contract
+  (**trsx5 posted line 39**) fires during the production run **banks no panel**, is **not coerced**,
+  **receives no post-hoc treatment**, is **classified on the occlusion axis by its computed count**,
+  and is **reported at closeout as an UNBANKED region** with its raise classified as **known-class**
+  (boundary-adjacent pairwise-undefined) or **UNCLASSIFIED**. **The count of such regions is a
+  COVERAGE RESULT, not a deviation.** ⛔ **This is not a deviation from pre-registration; T1 fired as
+  written** — recording it in a deviations ledger as a DEPARTURE would misreport a realized,
+  pre-registered outcome in the one file a referee reads to find departures.
+- ⚠ **FRAMING CORRECTION — the posted text carries TWO INDEPENDENT CONTRACTS, and the branch list
+  belongs to only ONE of them.** (i) **Occlusion handling** — the criterion, lockstep exclusion, the
+  manifest, the anomaly gate and the three `BRANCH_AFR_OCC_*` outcomes, which are **the outcome space
+  of occlusion handling** only: every trigger that selects among them is an occlusion count.
+  (ii) **The raw-panel NaN-raise** — the retained contract that *"the raw per-region panel `.npz`
+  reader continues to RAISE on any NaN rather than silently coercing it"* — whose **outcome space has
+  one element: raise, bank nothing**. A NaN raise is the realized outcome of the **second** contract,
+  so **its absence from the branch list is not a gap in the list**, and asking which
+  `BRANCH_AFR_OCC_*` branch it falls under is a category error. ⚠ This **changes no treatment, no
+  criterion and no number**; it corrects a reading this record could otherwise be taken to hold.
+- ⚠ **HIS §0-iii IS A READING, AND IS RECORDED HERE AS A READING — NOT AS A FINDING.** He also offers
+  the reading that each branch's **classification clause** (*"contains no occlusion-undefined pair"* /
+  *"contains >=1 occluded variant under the gate"*) is what the branch selects on, while its
+  **consequence clause** presupposes that a panel exists — under which a raising region DOES fall
+  under a posted branch on the occlusion axis, carrying an orthogonal raised flag, and the closeout
+  branch distribution stays complete. ⛔ **He labels it a reading; it is recorded here as one.**
+  **Nothing above depends on it:** under the alternative reading the region falls under no branch on
+  either axis — which is correct, because it is not an occlusion outcome — and the accounting is
+  unchanged either way.
+- ⚠ **NO OSF AMENDMENT IS REQUIRED FOR THIS**, per the same adjudication: **T1 pre-registered the
+  treatment**, so what was unregistered is the **label and the accounting** — and that rides on this
+  disclosure, which must be posted before production anyway. ⚠ **His own counter-caveat,
+  recorded at his strength rather than dropped:** **trsx5 posted line 53** fixes the branches
+  *"before any occlusion-handling code fires"*, and **Stage C has NOT fired** — so an amendment
+  **could** still be posted cleanly. His reason not to is that it would **change no treatment**
+  and would add **only a label**, and *"a posted amendment that adds a label invites the reading
+  that the label was a policy choice"*. ⛔ **The option is therefore open and declined on that
+  reasoning, not closed.**
+- ⛔ **The status is unchanged: DRAFTED — NOT POSTED.** An adjudication is **NOT authorization to
+  post.** The posting decision is **Carter's alone**.

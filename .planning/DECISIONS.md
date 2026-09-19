@@ -2630,3 +2630,212 @@ inserted one line above it. The quoted sentence is unchanged: "A `MAP_SHARED` pr
 the 3.9 effect: fork doesn't copy shared page tables, so a naive probe 'refutes' a true premise."
 Found by the task's own independent verifier — a task whose subject was stale citations moved two
 of its own. Prefer quotes to line numbers.
+
+## 2026-09-18 — DEC-2026-09-18-stage-c-nan-posture-adopted: the Stage C raw-panel NaN raise is ADOPTED as Option A's behaviour (T1 executing), with Option C's stop reserved for an UNCLASSIFIED raise; B, F-as-drafted and E are REJECTED, D only after posting; NO OSF amendment
+
+**Decision (CARTER, 2026-09-18):** Carter decided the Stage C posture for a raw-panel NaN
+raise after reading the project's external reviewer's **brief-blind Stage C adjudication**
+of **2026-09-18**. That adjudication was written against the options draft v2 (read by him
+at `57a3105`) and the code at `74f962d`, and is banked as received — **not byte-verified**
+against his original; it was pasted into the session by Carter at ~18:46 EDT and chat
+rendering may have altered blank lines — at
+`.planning/quick/260918-qz0-bank-the-stage-c-adjudication-and-record/260918-qz0-SETH-STAGEC-ADJUDICATION-as-received.md`
+(scratch source md5 `5e35a093a1920ad0f453ae64b353f2e4`, 23,225 B, 141 lines).
+**This entry records the decision and the reasons. It changes NO code:** the two authorized
+pre-fire code changes are `quick-260918-qz5`, planned separately.
+
+### ADOPTED — the treatment
+
+**Option A's behaviour: the raise stands, the region banks nothing, the loop continues** —
+**because that is the pre-registered T1 contract executing**, not a disposition chosen at
+fire time. The reviewer's framing correction is adopted with it: *"T1 is the disposition, at
+the only level the posted text speaks to: a NaN-bearing panel is not banked and is not
+coerced. What is unregistered is narrower — the label the region carries in the record and
+the closeout accounting."*
+
+**WITH Option C's stop reserved for an UNCLASSIFIED raise** — a raise whose mechanism is
+**not** the known boundary-adjacent pairwise-undefined class (the `m2_region_00057` shape: a
+confined symmetric pair, `nan_count` 1 per row, diagonal 1.0). Continue on a known-class
+raise; **STOP on an unclassified one**, because it may be a different defect and the
+remaining regions must not bank behind it. The operable form of this rule is written into
+the fire runbook (`.planning/quick/260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r/260812-ox1-AGENT-PROMPT.md`,
+the `STAGE-C RAISE POSTURE` block), together with the resume rule: **re-diagnosis classifies
+a raise; it never changes the region's inputs or the criterion**, and **a stop that is not
+resumed truncates the present-rate denominator and is a closeout disclosure**.
+
+⚠ **One clause of that runbook block is OURS and corrects the adjudication.** Its **Q3**
+(*"Does the posted text speak to an operator stop?"*) says
+*"Resume recomputes only `error:` regions (C5)"*, which NARROWS the claim the byte-frozen
+draft states correctly at C5. **MEASURED at `74f962d`:** the skip guard is
+`_existing_region_npz_gs(region_id, gs_out_dir)` **in gs mode** (the local branch of the same
+range calls `alp._existing_region_npz`), keyed on `{region_id}.npz` and its
+`_MIN_REGION_NPZ_BYTES` floor (`:945-958`) so a truncated-but-present `.npz` recomputes too,
+and it is the **only** skip condition; the
+occlusion-anomaly deferral returns early having shipped **only its gate sidecar** (`:1100-1110`:
+*"no .npz, no .afreq, no excludelist, no occlusion manifest"*), and the infeasible-square
+deferral (`:1009-1015`) ships nothing at all. So **`error:`, `verify_failed` and BOTH
+`deferred_*` classes recompute on resume** — not only `error:` ones. The runbook carries the
+corrected sentence; a narrowed one in a pre-fire instruction would have been a false mechanism
+sentence in the one document an operator follows mid-fire.
+
+### REJECTED — with the reviewer's reasons, not ours
+
+- **B (route a raise to `BRANCH_AFR_OCC_DEFERRED`) — REJECTED, and disqualified on one
+  reason alone.** B converts the contract raise into a **verifier PASS** whose stated
+  rationale reads **"THE GATES WORKING"**, so **the first time the raise fires in production
+  the check-in is green and no human is told**. That is weakening the raw contract at the
+  **verifier** layer — the thing **trsx5 posted line 39** forbids at the **reader** layer,
+  moved one file downstream. (The definitional objection also holds — `DEFERRED` is defined
+  by its trigger, the gate did not fire, and "deferred for re-diagnosis" presupposes a path
+  back to banking that does not exist — but the silence is the disqualifier.)
+- **F as drafted (a `deferred_*` status prefix) — REJECTED as drafted.** A `deferred_*` prefix
+  **asserts a pending outcome that does not exist**: the only routes back to banking are
+  **coercion**, which is prohibited, or a **criterion change**, which is fixed. A T1 raise is
+  a **terminal** outcome, not a pending one. ⭐ **Its recording intent is ADOPTED** — via a
+  **NON-deferral prefix** instead, in `quick-260918-qz5`.
+- **E (change the occlusion criterion for a stated methodological reason) — REJECTED, and
+  the question it turns on is moot.** Any change to the criterion is **an amendment before
+  code** under **trsx5 posted line 53**, which fixes the criterion among the five objects
+  fixed before any occlusion-handling code fires — **regardless** of whether widening the
+  predicate is the **trsx5 posted line 49** fenced act (it is not the literal fenced act; it
+  is the same act one level up). And **there is no case for such an amendment at n≈2**.
+- **D (measure the expected raise list over the full panel before deciding) — legitimate in
+  exactly ONE order: post the disclosure → D → Stage C.** Run before the disclosure is
+  posted, it **spends the prospective prediction**: the prediction's falsifiable content is
+  *both sides* and *boundary-adjacent only*, a full-panel scan tests both, and a forecast
+  written after the result is known is the record-integrity failure the disclosure's own
+  "posted BEFORE production testing" sequencing rule exists to prevent.
+
+### NO OSF AMENDMENT IS REQUIRED FOR THIS
+
+Per the adjudication, in his words: *"T1 pre-registered the treatment; the rest is
+accounting, and it rides on the disclosure."* **T1 pre-registered the treatment**; what was
+**unregistered** is the **label and the accounting**, and that rides on the disclosure which
+must be posted **before production anyway**. The accounting paragraph is landed as **§(11)
+of the 2026-09-03 entry** in `.planning/osf_deviations.md`, which **stays DRAFTED — NOT
+POSTED**; nothing was posted, reserved or uploaded by this decision.
+
+### Carter's three implementation decisions (2026-09-18)
+
+1. **Both pre-fire code changes AUTHORIZED** — `quick-260918-qz5`, planned and executed
+   separately: (i) the **coordinate-only occlusion artifacts** (excludelist, manifest, gate
+   sidecar) are uploaded **whether or not the region banks**, because as shipped a raising
+   region's occluded-site inflation never leaves the VM and **mk7ze P248-250's "both complete
+   distributions" is false in code for every raising region** — see determination **(c)**
+   below for why the adjudication's own prescribed edit does not reach that class; and (ii) a
+   **distinct non-deferral producer status** for the NaN raise, with its own verifier class,
+   its C6 vocabulary entry and a `raised_nan_class_coverage` check, so the closeout count is
+   mechanical rather than parsed out of message text.
+2. **The LOW-1 per-region pre-check as CLASSIFIER is DEFERRED — not rejected — until COST-1
+   returns a MEASURED per-region wall time.** The adjudication's **~7%** overhead figure
+   divides measured scan runtimes by a **July planning figure** for the plink pass, which he
+   states himself is *"a planning figure I carried from an earlier session, not a Stage-B
+   measurement"*. A ratio whose denominator is a planning number cannot authorize adding a
+   pass to an ~11-day fire path. ⚠ COST-1's own target region is currently invalidated
+   (`m2_region_00071` deferred at `n_var` 169,803 > 120,000), so this deferral has no date
+   attached to it — it is contingent on a measurement, not on a schedule.
+3. **Gate semantics = STATEFUL.** The Stage-C gate exits 1 **only when a NEW region fails in
+   any failure class since the last check-in**; acknowledged raises are **reported as counted
+   findings** rather than holding the light red for the rest of the fire. The reason is the
+   one the adjudication gives: *"A gate that is always red is a gate no one reads — the
+   second failure arrives on a light that is already on."* ⚠ This is a decision about
+   semantics **recorded before the fire**, and it is implemented in `quick-260918-qz5`; it is
+   **not** in force until that task lands.
+
+### OUR determinations — three items, ours and not his, each open to his objection
+
+⚠ **All three of the following are OUR measurements and OUR readings, recorded here so they
+are attributable. None of them is his, and none is closed against his objection.**
+
+- **(a) His §3e "check" — VERIFIED GREEN, with a correction to the mechanism he guessed.** He
+  asked whether a raising region's panel TSV row carries `n_var` and span, saying *"I believe
+  it does via `pre_window_n_var`, but I did not verify the column, so: check."* **It does
+  carry it, and not by that route.** `run_native_ld_panel.py` sets `result["n_var"] = n_var`
+  (`:1228` at `74f962d`, cited by symbol because the line drifts) **before** the raise, which
+  originates downstream in the `pln.plink_ld_to_npz(...)` call (`:1233`) via
+  `plink_ld_to_npz.py`'s *"square LD carries NaN"* raise (`:222`); the `except Exception`
+  handler (`:1287-1288`) only rewrites `status`, and `append_panel_row(...)` (`:1291`) runs
+  **unconditionally** afterwards. The shipped column list is `_PANEL_COLUMNS`, whose third
+  entry is **`n_var`**; **there is no `pre_window_n_var` column** — that name is a local
+  variable used only on the deferral path. ⭐ **And it was OBSERVED on the production
+  artifact, not only read out of the code:** Carter's pasted VM terminal output of **2026-09-17**
+  (the COST-1 card) reported the production panel TSV at
+  `gs://rw-migration-aou-rw-476cdac2/ld/AFR_aou/m3-W2-native-plink-panel.tsv` as **6 lines
+  (header + 5)**, with the raising row reading, **as transcribed from that paste**,
+  `m2_region_00057 chr15 2854 error: square LD carries NaN …` — so a raising row carries
+  its
+  `n_var`, **2,854** for `m2_region_00057`, in the real panel. ⚠ **What kind of evidence that
+  is, stated rather than implied:** it is a **chat paste**, it is **NOT byte-verified**, and **no
+  panel TSV is tracked in this repo** — so the in-repo verification is the **code path above**,
+  and the same figure is independently corroborated by the Stage-B halt record's forensics
+  (`.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md`).
+- **(b) His open `.afreq` question — MEASURED, and the antecedent of his conditional is
+  FALSE.** He asked whether the `.afreq` sidecar should also move out of the `if ok:` block,
+  *"if from plink --freq independent of the LD pass"*. **It is not from a `--freq` pass at
+  all.** `build_plink_ld_command` never passes `--freq`: the square branch emits
+  `--mac 1 --nonfounders --write-snplist --r square bin4` and nothing else, plink **1.9**'s
+  `--freq` would write `{prefix}.frq`, and `.afreq` is plink **2.0**'s name — already recorded
+  in this project as **AF-1** in `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`.
+  So `af_sidecar = Path(f"{out_prefix}.afreq")` (`:1230`) is an **existence-gated OPTIONAL
+  INPUT**, `af_arg` is **None** in the current build, and the `.afreq` upload inside `if ok:`
+  (`:1252`) is **existence-gated DEAD CODE on the fire path today**. ⭐ That is MEASURED, not
+  inferred: the `260812-ox1` evidence log records *"WARNING: no --allele-freq sidecar for
+  region 'm2_region_00001'"* for REAL regions — 5 such warnings, over `m2_region_00001` and
+  `m2_region_00002` — which is the producer announcing the sidecar's absence on the fire path.
+  What IS true is the part his reasoning turns on: the
+  sidecar is consumed as an **input** (`:1233-1236`) **before** `ok` is computed (`:1238`), so
+  its per-variant allele frequencies do not depend on the `r` matrix verifying. ⭐ **Carter's
+  decision stands — it moves out of `if ok:` with the other three in `quick-260918-qz5`** —
+  and the determination attached to it is that the move is **harmless and consistent** (the
+  same egress class as the other three) but **DORMANT — it banks nothing in the current
+  build**, and **must not be counted as closing any part of the mk7ze P248-250 gap**. ⛔ A
+  stray `.afreq` **cannot fake a banked region**: the gs:// resume
+  guard is `_existing_region_npz_gs`, which keys on `{region_id}.npz` and its
+  `_MIN_REGION_NPZ_BYTES` floor.
+- **(c) His Q5 FIX, AS PRESCRIBED, DOES NOT REACH THE CLASS HIS Q5 IS ABOUT — our
+  measurement, and it makes his requirement HARDER, not weaker.** His Q5 asks that the three
+  coordinate-only occlusion artifacts move *"out of the `if ok:` block"*. **That edit is
+  insufficient**, because a **raising** region never reaches that block at all. Measured call
+  order in `process_region` at `74f962d`: `result["n_var"] = n_var` (`:1228`) →
+  `pln.plink_ld_to_npz(...)` (`:1233`), which calls `read_square_bin`
+  (`plink_ld_to_npz.py:311`) and **RAISES there** → `content_verify_npz` (`:1238`) →
+  `if gs_mode:` (`:1244`) → `if ok:` (`:1245`). An exception at `:1233` jumps straight to the
+  outer `except` (`:1287`), **skipping the whole `if gs_mode:` block** — so de-indenting the
+  three uploads by one level fixes **`verify_failed` only**, and leaves **mk7ze P248-250 false
+  for exactly the raising class the adjudication is about**. ⭐ **His diagnosis and his
+  requirement are both right; only the prescribed edit was too small.** The fix planned in
+  `quick-260918-qz5` **will** therefore upload the coordinate-only artifacts from a **helper
+  called BEFORE the reader runs**, plus a **guarded call in the `except`** for an exception
+  raised earlier still, with the **deferral path re-pointed at the same helper**. ⛔ None of
+  that exists yet: this entry records the decision, not a shipped change.
+
+### The draft's own arithmetic slip — recorded WITHOUT editing v2
+
+⛔ **The options draft v2 is the COURIERED artifact and stays BYTE-FROZEN.** The slip is
+recorded here and in the bank file's header, and **v2 is not edited**. The reviewer caught it:
+the draft's **Q3 planning number scales 1-in-21 to ≈13 regions** using **`m2_region_00149`**
+— the **PREDICTED** case — as if it were the observed one, i.e. **it counts the predicted
+case as the observed rate**. The **observed** Stage-B denominator is **the regions actually
+run**, with **`m2_region_00057`** the one observed raise — a different denominator. ⚠ In
+fairness to the draft, it labels the figure *"For planning only, not a calibrated rate"* and
+flags in the same bullet that *"the one case is predicted, not observed"*; the defect is that
+it then scales that case as the rate anyway. **Neither figure is calibrated**, and neither is
+a pre-committed expectation. The measured count emerges at fire time and is owed at closeout
+(`R5-RAISED-NAN` in `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`).
+
+**Cross-references:** the adjudication as received (path above); `§(11)` of the 2026-09-03
+entry in `.planning/osf_deviations.md`; `R5-RAISED-NAN` and its `R4-COVERAGE`/C7 template
+in `.planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md`; the
+`STAGE-C RAISE POSTURE` block in
+`.planning/quick/260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r/260812-ox1-AGENT-PROMPT.md`;
+`.planning/debug/260916-STAGE-C-NaN-ERROR-POSTURE-options-DRAFT-v2.md` (v2, byte-frozen);
+`.planning/debug/260824-STAGE-B-HALT-region57-boundary-adjacent-pairwise-NaN.md`;
+`DEC-2026-08-17-trsx5-gate-released`; `DEC-2026-08-19-occlusion-recalibration-adopted`;
+`[[feedback_error_message_named_cause_is_not_the_measurement]]`;
+`[[feedback_rigor_downstream_of_an_unchecked_premise]]`.
+
+**Provenance.** Appended at EOF by `quick-260918-qz0` on 2026-09-18. INSERTION ONLY: no
+pre-existing line of this file is edited, so every line reference into this file re-resolves
+unchanged. No code was written; nothing fired; no OSF, reviewer, cloud or network contact;
+`$0`. The executor wrote neither `STATE.md` nor `HANDOFF.json` — close-out is the
+orchestrator's.

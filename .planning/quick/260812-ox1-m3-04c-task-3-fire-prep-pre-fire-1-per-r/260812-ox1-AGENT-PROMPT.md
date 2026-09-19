@@ -637,6 +637,44 @@ HOW TO READ IT — this is the whole point of the gate:
     STOP and report immediately.
 Exit 0 = nothing to report beyond the counts. Any red = STOP under R8; never
 chain past it.
+STAGE-C RAISE POSTURE — THE PRE-FIRE RESUME RULE (added 2026-09-18,
+quick-260918-qz0; Carter's decision after the reviewer's brief-blind Stage C
+adjudication; recorded in DECISIONS.md as
+DEC-2026-09-18-stage-c-nan-posture-adopted). This is the rule for ONE status:
+a raw-panel NaN raise, and ⚠ IT IS THE ONE DOCUMENTED EXCEPTION TO "Any red =
+STOP under R8" IMMEDIATELY ABOVE: on a KNOWN-CLASS raise you report it and let
+the loop run instead of stopping. Everything else in the reading above is
+unchanged.
+  * CONTINUE ON A KNOWN-CLASS RAISE. A raise whose mechanism IS the known class
+    — boundary-adjacent pairwise-undefined, the m2_region_00057 shape: a
+    CONFINED SYMMETRIC PAIR, nan_count 1 per row, diagonal 1.0 — is the
+    pre-registered contract firing. The region banks NOTHING, it is NOT
+    coerced, it gets NO post-hoc treatment, and the loop continues. Report it
+    to Carter with its panel TSV row and its classification. Do not re-fire it.
+  * STOP ON AN UNCLASSIFIED RAISE. A raise that is NOT that class may be a
+    DIFFERENT defect, and the remaining regions must not bank behind it. STOP
+    under R8 and report before anything else runs.
+  * RE-DIAGNOSIS CLASSIFIES A RAISE; IT NEVER CHANGES THE REGION'S INPUTS OR
+    THE CRITERION. Re-diagnosis exists to decide known-class vs unclassified
+    and nothing else. It is NOT an occasion to widen the occlusion criterion,
+    to edit an excludelist, to re-run the region on different inputs, or to
+    coerce a NaN. The criterion is fixed before any occlusion-handling code
+    fires; changing it is an amendment BEFORE code, never a mid-fire action.
+  * A STOP THAT IS NOT RESUMED TRUNCATES THE PRESENT-RATE DENOMINATOR AND IS A
+    CLOSEOUT DISCLOSURE. Resume skips a region only if its .npz is ALREADY IN
+    the bucket at or above the _MIN_REGION_NPZ_BYTES floor, so every region
+    that banked nothing — error:, verify_failed and BOTH deferred_* classes —
+    recomputes on resume, and so does a truncated .npz; a pause-and-resume
+    changes nothing about WHICH regions are measured. A stop never resumed
+    changes the closeout denominator, and that must be disclosed, not carried.
+  * ⚠ WHAT THE GATE CAN SEE TODAY, so the rule above is operable. Until
+    quick-260918-qz5 lands the distinct non-deferral raise status and its own
+    verifier class, EVERY exception is one indistinguishable "error: ..." row
+    and the gate classifies all of them as FAILURE — so a KNOWN-CLASS raise
+    turns the check-in red too. Classify from the row's message text (the raise
+    says "square LD carries NaN"), then apply the two rules above: known-class
+    -> report and let the loop run; unclassified -> stop. A red gate is NEVER
+    authorization to re-fire a region or to re-treat one.
 Liveness = the .npz count CLIMBING toward 276 — not the kernel light, not
 _SUCCESS markers, not the log. 276 IS NOT A PASS BAR: verify_failed regions
 never upload (their artifacts stay in scratch, recorded in the panel TSV) and
