@@ -101,16 +101,27 @@ class _MockPlink:
     row whose id is in ``nan_snps`` gets that treatment, so a driver that does NOT
     exclude the occluded variants produces a NaN matrix (and fails conversion), while
     a driver that DOES excludes them cleanly. Without this, an "npz has no NaN" test
-    would pass GREEN for the wrong reason."""
+    would pass GREEN for the wrong reason.
+
+    ``write_afreq`` (quick-260918-qz5 / D2) writes ``{out_prefix}.afreq`` — ONE
+    float per line, exactly ``len(emitted_rows)`` lines, which is the format
+    ``plink_ld_to_npz._load_af_sidecar`` reads and the length its
+    ``allele_freq.shape[0] != n_var`` check demands. It exists ONLY because the
+    shipped fire path emits NO ``.afreq`` (MEASURED: ``build_plink_ld_command``
+    passes no ``--freq``/``--allele-freq``, and plink1.9 would write ``.frq``
+    anyway), so ANY test asserting "the .afreq moved" would pass VACUOUSLY unless
+    the test MAKES the file exist. Opt-in and defaulting to falsy, so every
+    pre-existing call site is byte-identical (the ``nan_snps`` precedent)."""
 
     def __init__(self, bim_path: Path, *, corrupt_regions=None, seed: int = 0,
-                 mono_snps=None, nan_snps=None):
+                 mono_snps=None, nan_snps=None, write_afreq: bool = False):
         self.bim_path = Path(bim_path)
         self.calls: list[list[str]] = []
         self.corrupt_regions = set(corrupt_regions or [])
         self.seed = seed
         self.mono_snps = set(mono_snps or [])
         self.nan_snps = set(nan_snps or [])
+        self.write_afreq = bool(write_afreq)
         self.exclude_calls: list[set[str]] = []
         self._bim_rows = [ln.split() for ln in self.bim_path.read_text().splitlines() if ln.strip()]
 
@@ -169,6 +180,12 @@ class _MockPlink:
         else:
             emitted_rows = window_rows
             n = len(window_rows)
+
+        # quick-260918-qz5 (D2): the opt-in per-region AF sidecar. ONE float per
+        # line, exactly len(emitted_rows) lines — the format _load_af_sidecar reads.
+        if self.write_afreq:
+            Path(out_prefix + ".afreq").parent.mkdir(parents=True, exist_ok=True)
+            _write_af(Path(out_prefix + ".afreq"), len(emitted_rows))
 
         m = _symmetric_corr(n, seed=self.seed)
 
@@ -678,12 +695,18 @@ class _MockGsutil:
     tool's output is the same bug class as P3 itself. This is safe for the
     pre-existing stat-error test below because ``_gsutil_object_size`` catches ALL
     exceptions and returns None regardless of stderr.
+
+    quick-260918-qz5 adds ``cp_transient_fail_srcs`` — ``{src: n_failures}`` — the
+    only shape that can distinguish a TRANSIENT blip from a PERSISTENT outage, and
+    therefore the only way to pin the bounded retry of D1c: ``cp_fail_srcs`` fails
+    FOREVER, so with it alone "the retry works" and "there is no retry" are
+    indistinguishable. Opt-in, defaulting to None (the same precedent).
     """
 
     def __init__(self, *, prestaged: dict | None = None, stat_error_uris=None,
                  prestaged_contents: dict | None = None,
                  stat_indeterminate_uris=None, stat_raise_uris: dict | None = None,
-                 cp_fail_srcs=None):
+                 cp_fail_srcs=None, cp_transient_fail_srcs: dict | None = None):
         self.objects: dict[str, int] = dict(prestaged or {})
         self.contents: dict[str, bytes] = {}
         for _uri, _blob in (prestaged_contents or {}).items():
@@ -697,6 +720,8 @@ class _MockGsutil:
         # {uri: exception} -> raised verbatim (e.g. FileNotFoundError: no .stderr)
         self.stat_raise_uris: dict = dict(stat_raise_uris or {})
         self.cp_fail_srcs = set(cp_fail_srcs or [])
+        # {src: remaining failures} -> decremented per cp, then succeeds
+        self.cp_transient_fail_srcs: dict = dict(cp_transient_fail_srcs or {})
         self.calls: list[list[str]] = []
 
     def __call__(self, args: list[str]):
@@ -730,6 +755,11 @@ class _MockGsutil:
         if verb == "cp":
             src, dst = args[1], args[2]
             if src in self.cp_fail_srcs:
+                raise _sp.CalledProcessError(
+                    1, ["gsutil", *args], output="",
+                    stderr="ServiceException: 503 Backend Error")
+            if self.cp_transient_fail_srcs.get(src, 0) > 0:
+                self.cp_transient_fail_srcs[src] -= 1
                 raise _sp.CalledProcessError(
                     1, ["gsutil", *args], output="",
                     stderr="ServiceException: 503 Backend Error")
@@ -2018,9 +2048,30 @@ def test_gs_per_region_occlusion_manifest_only_for_occluded_regions(tmp_path, mo
 
 
 def test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed(tmp_path, monkeypatch):
-    """(c) verify_failed region: NO REGION ARTIFACT is uploaded — the per-region
-    manifest (written pre-plink, so it EXISTS in local scratch) stays gated
-    inside `if ok:` together with the .npz/.afreq/.occluded.excludelist.
+    """(c) verify_failed region: the ``.npz`` is STILL never uploaded — while the
+    COORDINATE-ONLY gate evidence that exists DOES cross.
+
+    ⚠ CONTRACT CHANGE (quick-260918-qz5 / X1), in the same register as the
+    quick-260821-x91 note two tests below. THE TEST NAME AND THE MEASURED
+    "HOW verify_failed IS FORCED" NOTE BELOW ARE UNCHANGED; what changed is the
+    ASSERTION, deliberately and with a posted reason:
+
+      * BEFORE: this test asserted NO region artifact crossed at all, and that the
+        panel TSV was the ONLY permitted cp destination. That WAS the shipped
+        contract — the four coordinate-only uploads sat inside ``if ok:``.
+      * AFTER: `mk7ze` P248-250 commits that EVERY region computes its own
+        occlusion count AND its own occluded-site inflation during the production
+        run "so both complete distributions fold in at closeout". That sentence was
+        FALSE for every non-``ok`` region, whose gate evidence died in VM scratch.
+        The four coordinate-only artifacts now upload from a site NO square outcome
+        can skip, so on ``verify_failed`` they DO cross.
+      * WHAT DID NOT CHANGE, and is still asserted here: the ``.npz`` stays gated
+        on ``ok`` (R8). That is the whole safety argument — the resume guard keys on
+        the ``.npz`` at the ``alp._MIN_REGION_NPZ_BYTES`` floor, so a stray
+        coordinate artifact cannot fake a banked region. Corollary the runbooks now
+        carry (D13/W8): gate-sidecar / excludelist / manifest / ``.afreq`` presence
+        in the bucket NO LONGER implies a banked region; only ``.npz`` presence
+        does.
 
     WHY a panel-TSV cp IS still expected here (do NOT assert zero cp calls —
     that is unsatisfiable): ``append_panel_row`` runs UNCONDITIONALLY after the
@@ -2029,8 +2080,7 @@ def test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed(tmp_pa
     (``_gs_join(gs_out_dir, _DEFAULT_PANEL_NAME)``, ~:734) is uploaded via cp at
     the tail of append_panel_row's gs branch. This is the fire-path-faithful
     default panel behavior the review §4 row 3 documents ("prior fires appended
-    status=error rows unconditionally"). The panel-TSV status row is therefore
-    the ONLY permitted cp destination on a verify_failed region.
+    status=error rows unconditionally").
 
     HOW verify_failed is forced (measured, 260812-ox1 RED run): a corrupt
     ``.ld.bin`` (``corrupt_regions``) CANNOT reach this state — the FROZEN
@@ -2068,16 +2118,31 @@ def test_gs_per_region_occlusion_manifest_never_uploaded_on_verify_failed(tmp_pa
     # survives (no reclaim on verify_failed) ...
     assert (scratch / "m2_region_00001.occlusion_manifest.tsv").is_file()
 
-    # ... but NO region artifact crossed to the bucket
     cp_dsts = [c[2] for c in mock_gs.calls if c[0] == "cp"]
-    for dst in cp_dsts:
-        assert not dst.endswith((".npz", ".afreq", ".occluded.excludelist",
-                                 ".occlusion_manifest.tsv")), \
-            f"region artifact uploaded on verify_failed: {dst}"
-    # the ONLY permitted cp destination is the panel-TSV status row
     panel_uri = drv._gs_join(gs_out, drv._DEFAULT_PANEL_NAME)
     assert cp_dsts, "the unconditional panel status row should still upload"
-    assert all(d == panel_uri for d in cp_dsts), cp_dsts
+
+    # (1) UNCHANGED CONTRACT: the .npz — and every individual-level artifact —
+    #     never crosses on verify_failed. This is R8 and it does not move.
+    for dst in cp_dsts:
+        assert not dst.endswith((".npz", ".bed", ".bim", ".fam")), \
+            f"unverified / individual-level artifact uploaded on verify_failed: {dst}"
+
+    # (2) CHANGED CONTRACT (X1): the coordinate-only gate evidence that EXISTS in
+    #     scratch DOES cross, so the closeout distributions can fold this region in.
+    for suffix in (".occlusion_gate.json", ".occluded.excludelist",
+                   ".occlusion_manifest.tsv"):
+        assert f"{gs_out}/m2_region_00001{suffix}" in cp_dsts, (
+            f"X1: {suffix} must cross on verify_failed too; cp destinations were "
+            f"{cp_dsts}")
+
+    # (3) NON-VACUITY of (2): the panel TSV is no longer the ONLY destination, and
+    #     every destination is either the panel row or a coordinate-only artifact.
+    assert set(cp_dsts) != {panel_uri}
+    for dst in cp_dsts:
+        assert dst == panel_uri or dst.endswith(
+            (".afreq", ".occluded.excludelist", ".occlusion_manifest.tsv",
+             ".occlusion_gate.json")), f"unexpected cp destination: {dst}"
 
 
 def test_per_region_occlusion_manifest_name_matches_lockstep_glob():
@@ -2721,3 +2786,357 @@ def test_fail_fast_halts_on_deferral(tmp_path, monkeypatch):
     assert ei.value.status.startswith("deferred_infeasible_square")
     assert ei.value.region_id == "m2_region_00001"
     assert mock.calls == []   # the deferred region ran no plink; region 2 never reached
+
+
+# --------------------------------------------------------------------------- #
+# 20. X1 (quick-260918-qz5): the coordinate-only gate evidence leaves the VM   #
+#     on EVERY square outcome — ok, verify_failed AND the frozen reader's raise#
+# --------------------------------------------------------------------------- #
+# `mk7ze` P248-250 commits that EVERY region computes its own occlusion count
+# AND its own occluded-site inflation during the production run "so both complete
+# distributions fold in at closeout". As shipped that sentence was FALSE for every
+# region that did not reach `ok`: the four coordinate-only artifacts were uploaded
+# from INSIDE `if ok:`, and a region whose .npz conversion RAISES never reaches the
+# `if gs_mode:` block at all — so its gate evidence died in VM scratch.
+#
+# ⚠ THE CONTRACT THAT CHANGES (D13/W8): gate-sidecar / excludelist /
+# occlusion-manifest / .afreq presence in the bucket NO LONGER implies a banked
+# region. ONLY `.npz` presence does, and only the `.npz` is "verified by
+# construction" — which is also why the resume guard is unaffected: it keys on the
+# `.npz` alone, at the alp._MIN_REGION_NPZ_BYTES floor (R8).
+
+def _cp_dsts(mock_gs) -> list[str]:
+    return [c[2] for c in mock_gs.calls if c[0] == "cp"]
+
+
+def _cp_srcs(mock_gs) -> list[str]:
+    return [c[1] for c in mock_gs.calls if c[0] == "cp"]
+
+
+def _plain_window_ids(bim: Path, occluded_ids) -> list[str]:
+    """Row ids the span filter does NOT exclude — the only ids whose NaN can
+    survive into --r and reach the FROZEN reader."""
+    return [ln.split()[1] for ln in bim.read_text().splitlines()
+            if ln.strip() and ln.split()[1] not in set(occluded_ids)]
+
+
+def test_x1_raising_region_ships_its_coordinate_only_gate_evidence(tmp_path, monkeypatch):
+    """T1.1 — THE X1 TEST, driven on the REAL seam, never a hand-stubbed status.
+
+    `rs1003` is a PLAIN in-window SNP of the zero-occlusion cohort, so the
+    reference-occlusion span filter does NOT exclude it: its NaN row/col survives
+    into `--r` and the FROZEN `plink_ld_to_npz.read_square_bin` raises (MEASURED at
+    BASE, quick-260918-qz5 M2b — the raise propagates unwrapped to the producer's
+    outer except). Before this change the ONLY object such a region shipped was the
+    shared panel TSV.
+
+    Status TEXT is deliberately NOT asserted here (that is Task 2 / P2): this test
+    must pin the EGRESS contract independently of the status vocabulary."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)   # 20 plain SNPs
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "r_raise", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": to_bp},
+        # a SECOND region whose window excludes rs1003 -> it must complete, proving
+        # the raise did not abort the loop
+        {"region_id": "r_next", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp + 500, "window_end_grch38": from_bp + 900},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    scratch = tmp_path / "scratch"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps={"rs1003"}))
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=scratch)
+
+    assert res[0]["region_id"] == "r_raise"
+    assert res[0]["status"] != "ok", res[0]["status"]
+    dsts = _cp_dsts(mock_gs)
+    assert f"{gs_out}/r_raise.occlusion_gate.json" in dsts, (
+        "X1: a raising region's gate evidence must reach the bucket so the closeout "
+        f"distributions can fold it in; cp destinations were {dsts}")
+    assert f"{gs_out}/r_raise.npz" not in dsts
+    for d in dsts:
+        assert not d.endswith((".npz", ".bed", ".bim", ".fam")), \
+            f"individual-level / unverified artifact crossed: {d}"
+    # the loop CONTINUED to the next region
+    assert [r["region_id"] for r in res] == ["r_raise", "r_next"]
+    assert res[1]["status"] == "ok", res[1]["status"]
+
+
+def test_x1_raising_region_with_occlusions_ships_every_artifact_that_exists(
+        tmp_path, monkeypatch):
+    """T1.2 — a RAISING region that ALSO has occlusions, gate pinned open: all
+    FOUR coordinate-only artifacts that EXIST cross, and the .npz does not.
+
+    NON-VACUITY for the `.afreq` (M4/D2): the shipped fire path emits NO `.afreq`
+    (build_plink_ld_command passes no --freq/--allele-freq), so an `.afreq`
+    assertion would pass VACUOUSLY. The file is MADE to exist by the opt-in
+    `_MockPlink(write_afreq=True)` kwarg, and the control below re-runs the SAME
+    body with `write_afreq=False` and asserts the `.afreq` URI is ABSENT."""
+    bfile, bim, (chrom, from_bp, to_bp), occluded_ids, _vid = \
+        _setup_region1_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp)
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    nan_id = _plain_window_ids(bim, occluded_ids)[0]
+    # PIN THE POSTED TWO-CONDITION GATE OPEN: the fixture is topology-dense
+    # (5 occluded rows at 5 sites of 11), far above the real region-1 rates.
+    monkeypatch.setattr(drv, "_OCCLUSION_SITE_FRACTION_CEILING", 1.0)
+    monkeypatch.setattr(drv, "_OCCLUSION_INFLATION_CEILING", 1e9)
+
+    def _run(write_afreq: bool, tag: str):
+        monkeypatch.setattr(drv, "_run_plink",
+                            _MockPlink(bim, nan_snps={nan_id},
+                                       write_afreq=write_afreq))
+        mock_gs = _MockGsutil()
+        monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+        res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                      scratch_dir=tmp_path / tag)
+        return res, _cp_dsts(mock_gs)
+
+    res, dsts = _run(True, "s_afreq")
+    rid = "m2_region_00001"
+    assert res[0]["status"] != "ok", res[0]["status"]
+    for suffix in (".occlusion_gate.json", ".occluded.excludelist",
+                   ".occlusion_manifest.tsv", ".afreq"):
+        assert f"{gs_out}/{rid}{suffix}" in dsts, (f"{suffix} did not cross: {dsts}")
+    assert f"{gs_out}/{rid}.npz" not in dsts
+    for d in dsts:
+        assert not d.endswith((".npz", ".bed", ".bim", ".fam")), d
+
+    # NON-VACUITY CONTROL: no .afreq written => no .afreq URI
+    res2, dsts2 = _run(False, "s_noafreq")
+    assert res2[0]["status"] != "ok", res2[0]["status"]
+    assert f"{gs_out}/{rid}.afreq" not in dsts2, (
+        "the .afreq assertion above is VACUOUS unless this control shows the URI "
+        f"absent when the file was never written: {dsts2}")
+    # the other three still cross in the control (the .afreq is the ONLY difference)
+    assert f"{gs_out}/{rid}.occlusion_gate.json" in dsts2
+
+
+def test_x1_zero_occlusion_ok_region_ships_only_what_exists(tmp_path, monkeypatch):
+    """T1.3 — a ZERO-OCCLUSION `ok` region: the gate sidecar crosses (it is written
+    on all three square outcomes), the excludelist and the per-region manifest do
+    NOT (they were never written — existence-gated), and the .npz still crosses."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp,
+                                 region_id="r_clean")
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=tmp_path / "scratch")
+    assert res[0]["status"] == "ok", res[0]["status"]
+    dsts = _cp_dsts(mock_gs)
+    assert f"{gs_out}/r_clean.occlusion_gate.json" in dsts, dsts
+    assert f"{gs_out}/r_clean.npz" in dsts, dsts
+    assert f"{gs_out}/r_clean.occluded.excludelist" not in dsts
+    assert f"{gs_out}/r_clean.occlusion_manifest.tsv" not in dsts
+    assert f"{gs_out}/r_clean.afreq" not in dsts   # no .afreq on the fire path (M4)
+
+
+def test_x1_exception_before_the_upload_site_still_ships_the_gate_sidecar(
+        tmp_path, monkeypatch):
+    """T1.4 — SITE (b): an exception raised BEFORE the coordinate-artifact call
+    site (a plink failure here; an n_var mismatch in the field) still banks the
+    region's gate sidecar, via the GUARDED except-path fallback — and the guard
+    cannot abort the loop."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "r_boom", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": from_bp + 400},
+        {"region_id": "r_after", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp + 500, "window_end_grch38": from_bp + 900},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    real = _MockPlink(bim)
+    calls = {"n": 0}
+
+    def _flaky_plink(cmd):
+        calls["n"] += 1
+        if "r_boom" in " ".join(cmd):
+            raise RuntimeError("plink exploded before the .ld.bin existed")
+        return real(cmd)
+
+    monkeypatch.setattr(drv, "_run_plink", _flaky_plink)
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=tmp_path / "scratch")
+    dsts = _cp_dsts(mock_gs)
+    assert res[0]["status"].startswith("error:"), res[0]["status"]
+    assert f"{gs_out}/r_boom.occlusion_gate.json" in dsts, dsts
+    assert not any(d.endswith(".npz") and "r_boom" in d for d in dsts)
+    assert res[1]["region_id"] == "r_after" and res[1]["status"] == "ok"
+
+
+def test_x1_site_a_upload_failure_is_FATAL_and_costs_the_region(tmp_path, monkeypatch):
+    """T1.5 — D1b: site (a) is DELIBERATELY UNGUARDED. On an `ok` region
+    `_reclaim_region_scratch` DELETES the coordinate artifacts, so swallowing an
+    upload failure would destroy the region's only durable gate evidence SILENTLY.
+    It must cost the region instead (an `error:` region recomputes on resume).
+
+    Control (below): the SAME run without `cp_fail_srcs` is `ok` with the .npz
+    crossed — so the FAIL above is caused by the injected cp failure and nothing
+    else."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp,
+                                 region_id="r_ok")
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    scratch = tmp_path / "scratch"
+    gate_src = str(scratch / "r_ok.occlusion_gate.json")
+
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    mock_gs = _MockGsutil(cp_fail_srcs={gate_src})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=scratch)
+    assert res[0]["status"].startswith("error:"), res[0]["status"]
+    dsts = _cp_dsts(mock_gs)
+    assert not any(d.endswith(".npz") for d in dsts), dsts
+    # scratch NOT reclaimed (reclaim runs only on status == "ok")
+    assert (scratch / "r_ok.ld.bin").is_file(), sorted(p.name for p in scratch.iterdir())
+
+    # --- CONTROL: no injected failure -> ok, and the .npz crosses ---
+    scratch2 = tmp_path / "scratch2"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    mock_ok = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_ok)
+    res2 = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                   scratch_dir=scratch2)
+    assert res2[0]["status"] == "ok", res2[0]["status"]
+    assert f"{gs_out}/r_ok.npz" in _cp_dsts(mock_ok)
+
+
+def test_x1_site_b_upload_failure_cannot_abort_the_loop(tmp_path, monkeypatch, capsys):
+    """T1.6 — site (b) IS guarded: "one bad region never aborts the whole loop" is
+    a shipped invariant. The region records the PLINK message (not the gsutil one),
+    a WARN is printed, and the NEXT region still completes."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = tmp_path / "regions.tsv"
+    _write_manifest(manifest, [
+        {"region_id": "r_boom", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp, "window_end_grch38": from_bp + 400},
+        {"region_id": "r_after", "chr": chrom, "ancestry": "AFR",
+         "window_start_grch38": from_bp + 500, "window_end_grch38": from_bp + 900},
+    ])
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    scratch = tmp_path / "scratch"
+    real = _MockPlink(bim)
+
+    def _flaky_plink(cmd):
+        if "r_boom" in " ".join(cmd):
+            raise RuntimeError("plink exploded before the .ld.bin existed")
+        return real(cmd)
+
+    monkeypatch.setattr(drv, "_run_plink", _flaky_plink)
+    mock_gs = _MockGsutil(cp_fail_srcs={str(scratch / "r_boom.occlusion_gate.json")})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=scratch)
+    err = capsys.readouterr().err
+    assert "plink exploded" in res[0]["status"], res[0]["status"]
+    assert "503" not in res[0]["status"], (
+        "the region must record the ORIGINAL plink failure, not the site-(b) "
+        f"upload failure that happened while handling it: {res[0]['status']}")
+    assert "WARN r_boom" in err, err[-2000:]
+    assert res[1]["region_id"] == "r_after" and res[1]["status"] == "ok"
+
+
+def test_x1_coordinate_upload_retries_a_transient_failure_but_is_BOUNDED(
+        tmp_path, monkeypatch, capsys):
+    """T1.8 — B5/D1c BOUNDED RETRY. Site (a) moved the coordinate uploads to
+    BEFORE the .npz, and `_gsutil_upload` has NO retry, so without a bounded retry
+    one transient 503 would cost a COMPLETED plink pass (up to ~57.6 GB / hours at
+    the 120,000-variant ceiling) and — because `_append_panel_row_local` is
+    first-row-wins — write a PERMANENT spurious `error:` row.
+
+    Four properties: (i) a transient failure is survived; (ii) a PERSISTENT one is
+    still FATAL at site (a); (iii) the attempt count is BOUNDED (exactly
+    `_COORD_UPLOAD_ATTEMPTS`), so neither an infinite loop nor a silent
+    single-attempt regression passes; (iv) the `.npz` upload gained NO retry.
+
+    `drv.time.sleep` is monkeypatched to a no-op: no test may actually sleep."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp,
+                                 region_id="r_ok")
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    monkeypatch.setattr(drv.time, "sleep", lambda *_a, **_k: None)
+    assert drv._COORD_UPLOAD_ATTEMPTS >= 2
+    assert len(drv._COORD_UPLOAD_BACKOFF_S) == drv._COORD_UPLOAD_ATTEMPTS - 1
+
+    # (i) transient: fail the first _COORD_UPLOAD_ATTEMPTS - 1 attempts, then succeed
+    s1 = tmp_path / "s1"
+    gate_src = str(s1 / "r_ok.occlusion_gate.json")
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    mock_t = _MockGsutil(cp_transient_fail_srcs={
+        gate_src: drv._COORD_UPLOAD_ATTEMPTS - 1})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_t)
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                  scratch_dir=s1)
+    err = capsys.readouterr().err
+    assert res[0]["status"] == "ok", res[0]["status"]
+    dsts = _cp_dsts(mock_t)
+    assert f"{gs_out}/r_ok.occlusion_gate.json" in dsts, dsts
+    assert f"{gs_out}/r_ok.npz" in dsts, dsts
+    assert f"attempt 1/{drv._COORD_UPLOAD_ATTEMPTS}" in err, err[-2000:]
+
+    # (ii)+(iii) persistent: FATAL at site (a), and BOUNDED at exactly N attempts
+    s2 = tmp_path / "s2"
+    gate_src2 = str(s2 / "r_ok.occlusion_gate.json")
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    mock_p = _MockGsutil(cp_fail_srcs={gate_src2})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_p)
+    res2 = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                   scratch_dir=s2)
+    assert res2[0]["status"].startswith("error:"), res2[0]["status"]
+    assert not any(d.endswith(".npz") for d in _cp_dsts(mock_p))
+    assert (s2 / "r_ok.ld.bin").is_file()   # scratch not reclaimed
+    n_attempts = sum(1 for s in _cp_srcs(mock_p) if s == gate_src2)
+    assert n_attempts == drv._COORD_UPLOAD_ATTEMPTS, (
+        f"the coordinate upload must be BOUNDED at {drv._COORD_UPLOAD_ATTEMPTS} "
+        f"attempts; it made {n_attempts}")
+
+    # (iv) the .npz upload gained NO retry: exactly ONE attempt on a persistent fail
+    s3 = tmp_path / "s3"
+    npz_src = str(s3 / "r_ok.npz")
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    mock_n = _MockGsutil(cp_fail_srcs={npz_src})
+    monkeypatch.setattr(drv, "_run_gsutil", mock_n)
+    res3 = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="square",
+                                   scratch_dir=s3)
+    assert res3[0]["status"].startswith("error:"), res3[0]["status"]
+    assert sum(1 for s in _cp_srcs(mock_n) if s == npz_src) == 1, (
+        "NO retry was added to the .npz upload (D1c: a different risk with a "
+        "different blast radius on the fire path)")
+
+
+def test_x1_banded_mode_uploads_no_coordinate_artifacts(tmp_path, monkeypatch):
+    """T1.9 — W13: banded mode writes no gate sidecar, no excludelist and no
+    per-region manifest, so `_upload_coordinate_artifacts` must upload NOTHING.
+    This pins that the helper's EXISTENCE-GATING is what makes banded safe."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp,
+                                 region_id="r_band")
+    gs_out = "gs://test-bucket/ld/AFR_aou"
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+    mock_gs = _MockGsutil()
+    monkeypatch.setattr(drv, "_run_gsutil", mock_gs)
+
+    res = drv.run_native_ld_panel(manifest, bfile, gs_out, mode="banded",
+                                  scratch_dir=tmp_path / "scratch")
+    assert res[0]["status"] == "ok", res[0]["status"]
+    for d in _cp_dsts(mock_gs):
+        assert not d.endswith((".afreq", ".occluded.excludelist",
+                               ".occlusion_manifest.tsv", ".occlusion_gate.json")), \
+            f"banded mode uploaded a coordinate artifact that was never written: {d}"
