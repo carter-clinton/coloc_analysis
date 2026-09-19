@@ -146,7 +146,12 @@ _DEFAULT_PANEL_NAME = "m3-W2-native-plink-panel.tsv"
 # SITES; the amendment is explicit that reporting exclusions in sites would
 # understate what left the panel and break the manifest's audit purpose. Both
 # routes emit the SAME `deferred_occlusion_anomaly:` status prefix, so the
-# fire_verifier status vocabulary needs no fourth branch.
+# fire_verifier status vocabulary needs no fourth DEFERRAL branch.
+# ⚠ CORRECTED quick-260918-qz5: that sentence used to read "no fourth branch",
+# which is now false — the two deferral ROUTES still share one prefix, but a
+# fourth status CLASS does exist (`raised_nan:`, P2), and fire_verifier
+# classifies it as STATUS_RAISED_NAN: not ok, not a deferral, and not an
+# operational failure. The claim here is scoped to the DEFERRALS only.
 #
 # THE VALUES LIVE IN `occlusion_gate_constants` AND NOWHERE ELSE, because changing
 # either one requires a NEW posted OSF amendment FIRST — pre-registration precedes
@@ -417,6 +422,35 @@ def _gsutil_upload(local_path: "str | Path", gs_uri: str) -> None:
 # X1 (quick-260918-qz5): the per-region GATE EVIDENCE leaves the VM on EVERY   #
 # square outcome — not only on `ok`                                           #
 # --------------------------------------------------------------------------- #
+
+# --------------------------------------------------------------------------- #
+# P2 (quick-260918-qz5): THE RAW-PANEL NaN RAISE IS ITS OWN STATUS CLASS       #
+# --------------------------------------------------------------------------- #
+
+#: The head of the message the FROZEN ``plink_ld_to_npz.read_square_bin`` raises
+#: when plink's square ``.ld.bin`` carries NaN. ``plink_ld_to_npz.plink_ld_to_npz``
+#: calls that reader with NO try/except, so the ``ValueError`` propagates VERBATIM
+#: to ``process_region``'s outer handler and ``str(e)`` starts with this literal.
+#:
+#: ⛔ MATCHED ON THE MESSAGE, NEVER ON THE EXCEPTION TYPE. ``ValueError`` is raised
+#: by NINE sites in that module (measured): the n_var mismatch, the AF-length
+#: mismatch, the mode check, the byte-count check, the diagonal check, the symmetry
+#: check. Classifying by type would file a scratch-full or an AF-length defect as
+#: "the NaN contract firing", which is a lie about what was measured. The
+#: behaviour-pin for this constant is
+#: tests/m3/test_run_native_ld_panel.py::test_p2_message_head_constant_is_pinned_by_DRIVING_the_frozen_reader
+#: — it DRIVES the frozen reader on a real NaN matrix rather than grepping either
+#: source, so a change to the reader's wording turns it red.
+#:
+#: ⛔ AND NOT A ``deferred_*`` PREFIX. The external methodological reviewer
+#: disqualified that: a deferral asserts a PENDING OUTCOME that does not exist
+#: here, and it would route the row to fire_verifier's
+#: PASS-as-"the-gates-working" branch — the exact framing the 2026-09-18
+#: adjudication rejected. The raise is the pre-registered T1 contract EXECUTING:
+#: the region banks nothing and the loop continues, with a stop reserved for an
+#: UNCLASSIFIED raise. The frozen reader is right and is never touched.
+_NAN_RAISE_MESSAGE_HEAD = "square LD carries NaN"
+
 
 #: The four AGGREGATE per-region artifacts the closeout distributions are
 #: computed from. Uploaded from a site NO square outcome can skip.
@@ -1386,8 +1420,20 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
         else:
             result["out"] = str(out_npz)
     except Exception as e:  # one bad region never aborts the whole loop
-        result["status"] = f"error: {e}"
-        print(f"ERROR {region_id}: {e}", file=sys.stderr, flush=True)
+        # P2 (quick-260918-qz5): a raw-panel NaN raise gets its OWN status, so the
+        # panel TSV can distinguish it from a scratch-full failure and a gsutil
+        # failure — three outcomes that were one indistinguishable `error:` row.
+        # MESSAGE-head match, not an exception-type match (see
+        # _NAN_RAISE_MESSAGE_HEAD for why), and the detail suffix is preserved: it
+        # carries the ranked NaN source rows, which is the only in-panel evidence
+        # of the raise's SHAPE and the operator's whole basis for calling it a
+        # known class.
+        if str(e).startswith(_NAN_RAISE_MESSAGE_HEAD):
+            result["status"] = f"raised_nan: {e}"
+            print(f"RAISED-NAN {region_id}: {e}", file=sys.stderr, flush=True)
+        else:
+            result["status"] = f"error: {e}"
+            print(f"ERROR {region_id}: {e}", file=sys.stderr, flush=True)
         # X1 SITE (b) — the FALLBACK for an exception raised BEFORE site (a): a
         # plink failure, an n_var mismatch, a short .ld.bin. The gate sidecar was
         # written pre-plink, so it EXISTS and would otherwise die in scratch.
@@ -1586,7 +1632,12 @@ def main(argv: "list[str] | None" = None) -> int:
                         "Deferrals (deferred_infeasible_square / "
                         "deferred_occlusion_anomaly) also halt — deliberate: Stages "
                         "A/B contain only feasible, far-below-ceiling regions; Stage "
-                        "C runs without --fail-fast so deferrals continue the loop.")
+                        "C runs without --fail-fast so deferrals continue the loop. "
+                        "A raised_nan: row (the raw-panel NaN contract firing) also "
+                        "halts under --fail-fast, for the same reason: the gate is "
+                        "status != 'ok'. Stage C, which is where a raise is expected, "
+                        "runs WITHOUT --fail-fast, so there the loop continues by "
+                        "design and the region banks nothing.")
     args = p.parse_args(argv)
 
     results = run_native_ld_panel(
