@@ -1347,3 +1347,380 @@ def test_status_vocabulary_covers_the_measured_eight_sites():
         ("raised_nan: ", fv.STATUS_RAISED_NAN),
     ]:
         assert fv._status_class(prefix) == want, prefix
+
+
+# --------------------------------------------------------------------------- #
+# P4 (quick-260918-qz5) — STATEFUL stage-C check-in semantics (--prev-report)  #
+# --------------------------------------------------------------------------- #
+# Under the adopted posture ONE raise would otherwise make EVERY remaining Stage C
+# check-in exit 1 for the remaining ~9 days. A gate that is always red is a gate no
+# one reads — so the gate becomes stateful: exit 1 means something NEW failed SINCE
+# THE LAST CHECK-IN. The acknowledged set is FILE-based and explicit, never hidden
+# state, and every degenerate input FAILS CLOSED.
+
+import hashlib      # noqa: E402  (P4: the aliasing guard is pinned on the FILE)
+import subprocess   # noqa: E402  (the skip-count enforcer shells out)
+
+
+def _md5(p: Path) -> str:
+    return hashlib.md5(Path(p).read_bytes()).hexdigest()
+
+
+def _stage_c(panel, report=None, prev=None):
+    """Run stage-c through the real CLI, returning (rc, stdout)."""
+    import io
+    import contextlib
+    argv = ["stage-c", "--panel-tsv", str(panel)]
+    if report is not None:
+        argv += ["--report", str(report)]
+    if prev is not None:
+        argv += ["--prev-report", str(prev)]
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = fv.main(argv)
+    return rc, buf.getvalue()
+
+
+def test_stateful_checkin_sequence_end_to_end(tmp_path):
+    """T3.1 — the four-step sequence the operator actually performs.
+
+    (ii) is the whole point, and note what it does NOT mean: the raise is still
+    REPORTED and still COUNTED. "Acknowledged" must never mean "hidden" — that
+    would trade an always-red gate for a lying one."""
+    p1 = _write_panel(tmp_path, [_panel_row("r1", n_var=100),
+                                 _panel_row("r57", n_var=8000,
+                                            status=REAL_RAISED_NAN)],
+                      name="p1.tsv")
+    A = tmp_path / "A.json"
+    B = tmp_path / "B.json"
+    C = tmp_path / "C.json"
+
+    # (i) first check-in, no prev report -> RED
+    rc, out = _stage_c(p1, report=A)
+    assert rc == 1, out
+    assert "r57" in out, out
+
+    # (ii) the SAME panel, acknowledged against A -> GREEN, still reported+counted
+    rc, out = _stage_c(p1, report=B, prev=A)
+    assert rc == 0, out
+    assert "r57" in out, "an acknowledged raise must still be REPORTED"
+    rep = json.loads(B.read_text())
+    entry = [e for e in rep["report"] if e["name"] == "status_classification"][0]
+    assert entry["measured"]["n_raised_nan"] == 1, entry["measured"]
+    assert entry["measured"]["raised_nan_regions"] == ["r57"], entry["measured"]
+
+    # (iii) a SECOND raising region -> RED, naming ONLY the new one
+    p2 = _write_panel(tmp_path, [_panel_row("r1", n_var=100),
+                                 _panel_row("r57", n_var=8000,
+                                            status=REAL_RAISED_NAN),
+                                 _panel_row("r99", n_var=9000,
+                                            status=REAL_RAISED_NAN)],
+                      name="p2.tsv")
+    rc, out = _stage_c(p2, report=C, prev=B)
+    assert rc == 1, out
+    newc = [e for e in json.loads(C.read_text())["report"]
+            if e["name"] == "new_failures_since_last_checkin"][0]
+    assert newc["measured"]["new_regions"] == ["r99"], newc["measured"]
+    assert "r99" in newc["detail"], newc["detail"]
+
+    # (iv) a NEW error: region against (iii)'s report -> RED, naming only it
+    p3 = _write_panel(tmp_path, [_panel_row("r1", n_var=100),
+                                 _panel_row("r57", n_var=8000,
+                                            status=REAL_RAISED_NAN),
+                                 _panel_row("r99", n_var=9000,
+                                            status=REAL_RAISED_NAN),
+                                 _panel_row("r5", status=REAL_ERROR)],
+                      name="p3.tsv")
+    rc, out = _stage_c(p3, report=tmp_path / "D.json", prev=C)
+    assert rc == 1, out
+    newc = [e for e in json.loads((tmp_path / "D.json").read_text())["report"]
+            if e["name"] == "new_failures_since_last_checkin"][0]
+    assert newc["measured"]["new_regions"] == ["r5"], newc["measured"]
+
+
+def test_a_disappeared_row_is_a_HARD_STOP_with_the_rotation_remedy(tmp_path):
+    """T3.2 + T3.5c — the panel TSV is append-only and deduped, so an
+    acknowledged region that VANISHED means truncation or replacement. That can
+    never be a silent pass.
+
+    W3 — and the message must carry its REMEDY, because the innocent route in is
+    ordinary: the shipped stale-header error tells the operator to rotate the
+    panel TSV, after which EVERY acknowledged region has "disappeared"."""
+    p1 = _write_panel(tmp_path, [_panel_row("r1"), _panel_row(
+        "r57", n_var=8000, status=REAL_RAISED_NAN)], name="p1.tsv")
+    A = tmp_path / "A.json"
+    _stage_c(p1, report=A)
+    rotated = _write_panel(tmp_path, [_panel_row("r1")], name="rotated.tsv")
+    rc, out = _stage_c(rotated, report=tmp_path / "B.json", prev=A)
+    assert rc == 1, out
+    e = [x for x in json.loads((tmp_path / "B.json").read_text())["report"]
+         if x["name"] == "new_failures_since_last_checkin"][0]
+    assert e["severity"] == fv.HARD_STOP, e
+    assert "r57" in e["detail"], e["detail"]
+    assert "append-only" in e["detail"], e["detail"]
+    assert "without `--prev-report`" in e["detail"] or \
+           "without --prev-report" in e["detail"], e["detail"]
+    assert "re-mint" in e["detail"], e["detail"]
+
+
+def test_an_unknown_status_is_NEVER_acknowledgeable(tmp_path):
+    """T3.3 — D8. An unknown status is a VOCABULARY DEFECT, not a region outcome:
+    acknowledging it is precisely how a new failure mode would enter unnoticed,
+    which is the reason that branch exists at all."""
+    p = _write_panel(tmp_path, [_panel_row("r1"),
+                                _panel_row("rX", status="banana")], name="p.tsv")
+    A = tmp_path / "A.json"
+    rc, _ = _stage_c(p, report=A)
+    assert rc == 1
+    # A now lists rX among the unknown regions; re-check against it anyway
+    assert "rX" in json.loads(A.read_text())["report"][0]["measured"][
+        "unknown_regions"]
+    rc2, out2 = _stage_c(p, report=tmp_path / "B.json", prev=A)
+    assert rc2 == 1, out2
+    e = [x for x in json.loads((tmp_path / "B.json").read_text())["report"]
+         if x["name"] == "status_classification"][0]
+    assert e["severity"] == fv.HARD_STOP, e
+    assert "UNRECOGNIZED" in e["detail"], e["detail"]
+
+
+def test_no_prev_report_exit_codes_match_the_MEASURED_base_table(tmp_path):
+    """T3.4 — WITHOUT --prev-report the exit code is IDENTICAL to the MEASURED
+    BASE table, with EXACTLY ONE deliberate, recorded exception.
+
+    The `BASE exit` column below was MEASURED in a --shared clone checked out at
+    BASE b6076b2 (banked in $SCRATCH/stage_c_base_exit_codes.txt), not guessed —
+    the first draft of this plan GUESSED it and was wrong for the header-only row,
+    which is the row that turned out to matter."""
+    table = [
+        # (label, rows, BASE exit measured, required POST exit)
+        ("[ok]", [_panel_row("r1")], 0, 0),
+        ("[ok + real deferral]",
+         [_panel_row("r1"), _panel_row("r2", status=REAL_INFEASIBLE)], 0, 0),
+        ("[verify_failed]", [_panel_row("r1", status="verify_failed")], 1, 1),
+        ("[error: boom]", [_panel_row("r1", status="error: boom")], 1, 1),
+        ("[banana]", [_panel_row("r1", status="banana")], 1, 1),
+        ("[<empty status>]", [_panel_row("r1", status="")], 1, 1),
+        # ⚠ THE ONE DELIBERATE CHANGE (D7e / W2): a header-only panel PASSED
+        # vacuously at BASE, printing "ALL recognized (the gates working)" over
+        # ZERO rows, while _stage_b already refused the same input.
+        ("[header-only, 0 rows]", [], 0, 1),
+    ]
+    for i, (label, rows, base_exit, want) in enumerate(table):
+        p = _write_panel(tmp_path, rows, name=f"t34_{i}.tsv")
+        rc, out = _stage_c(p)
+        assert rc == want, f"{label}: expected {want}, got {rc}\n{out}"
+        if label != "[header-only, 0 rows]":
+            assert rc == base_exit or label == "[header-only, 0 rows]", label
+        # the two new raise checks are PRESENT but SILENT on a raise-free panel:
+        # they are NAMED in the rollup (so the operator sees they ran) and they
+        # report ZERO raises. (The plan asked for "no raised_nan string in the
+        # output", which is unsatisfiable: the checks' own NAMES contain it.)
+        assert "raised_nan_contract_fired" in out, out
+        assert "raised_nan_class_coverage" in out, out
+        assert "0 raised-NaN row(s)" in out or "no raised_nan: rows" in out, out
+
+
+def test_a_header_only_panel_does_not_pass_vacuously(tmp_path):
+    """T3.4b — W2. Closed in _stage_c (MANDATED: classify_statuses is called by
+    stage-a, stage-b AND stage-c, so putting it there would silently change two
+    OTHER fire-path gates' report shape).
+
+    The message must LIST the five routes in and assert none of them, because
+    four of the five are innocent — including day one, before the first region
+    appends its row."""
+    p = _write_panel(tmp_path, [], name="empty.tsv")
+    rc, out = _stage_c(p, report=tmp_path / "R.json")
+    assert rc == 1, out
+    e = [x for x in json.loads((tmp_path / "R.json").read_text())["report"]
+         if x["name"] == "stage_c_zero_data_rows"][0]
+    assert e["severity"] == fv.HARD_STOP, e
+    # the _stage_b wording precedent, so the two gates agree (anchor C3)
+    assert "a check with no input must FAIL" in e["detail"], e["detail"]
+    assert "not pass vacuously" in e["detail"], e["detail"]
+    # the five routes in
+    for route in ("first row", "rotated", "not atomic", "truncated", "overwrite"):
+        assert route in e["detail"], (route, e["detail"])
+
+    # CONTROL: ONE data row and the condition does not fire (a legitimately early
+    # panel is not an error)
+    p1 = _write_panel(tmp_path, [_panel_row("r1")], name="one.tsv")
+    rc1, out1 = _stage_c(p1, report=tmp_path / "R1.json")
+    assert rc1 == 0, out1
+    names = [x["name"] for x in json.loads((tmp_path / "R1.json").read_text())["report"]]
+    assert "stage_c_zero_data_rows" not in names, names
+
+
+def test_prev_report_fail_closed_cases_carry_their_remedy(tmp_path):
+    """T3.5 — each FAILS CLOSED at HARD_STOP *with its remedy asserted*. The
+    remedy text is only REACHABLE because the loaders RETURN a Check rather than
+    raising (W12): a raise would be swallowed by main()'s generic handler into
+    "stage_c_driver: the gate could not run (...)" and the specific remedy would
+    never print."""
+    p = _write_panel(tmp_path, [_panel_row("r1")], name="p.tsv")
+
+    # (a) --prev-report naming a file that does not exist
+    rc, out = _stage_c(p, report=tmp_path / "R1.json",
+                       prev=tmp_path / "nope.json")
+    assert rc == 1, out
+    e = [x for x in json.loads((tmp_path / "R1.json").read_text())["report"]
+         if x["name"] == "prev_report_loadable"][0]
+    assert e["severity"] == fv.HARD_STOP, e
+    assert "without --prev-report" in e["detail"], e["detail"]
+    assert "mint" in e["detail"], e["detail"]
+
+    # (b) a PRE-CHANGE report shape: valid JSON with acknowledgeable_schema
+    #     DELETED. Built by deleting the key from a REAL report, so the fixture
+    #     cannot drift from the real shape.
+    real = tmp_path / "real.json"
+    _stage_c(p, report=real)
+    d = json.loads(real.read_text())
+    assert d.pop("acknowledgeable_schema", None) is not None, \
+        "summarize() must emit the named key, or this fixture is vacuous"
+    old = tmp_path / "old.json"
+    old.write_text(json.dumps(d))
+    rc, out = _stage_c(p, report=tmp_path / "R2.json", prev=old)
+    assert rc == 1, out
+    e = [x for x in json.loads((tmp_path / "R2.json").read_text())["report"]
+         if x["name"] == "prev_report_loadable"][0]
+    assert e["severity"] == fv.HARD_STOP, e
+    assert "acknowledgeable_schema" in e["detail"], e["detail"]
+    assert "without --prev-report" in e["detail"], e["detail"]
+
+
+def test_an_ALIASED_invocation_leaves_the_prev_report_BYTE_UNCHANGED(tmp_path):
+    """T3.5b — ⚠ B3, pinned on the PROPERTY (the FILE), not on the message.
+
+    A HARD_STOP *check* is not enough here: main() writes the report
+    UNCONDITIONALLY AFTER the checks run (MEASURED at BASE), so a check that
+    merely REPORTS the aliasing would watch the overwrite happen and the
+    acknowledged set would be DESTROYED by the very invocation that read it. The
+    guard must run BEFORE the checks and return early WITHOUT writing."""
+    p = _write_panel(tmp_path, [_panel_row("r1"), _panel_row(
+        "r57", n_var=8000, status=REAL_RAISED_NAN)], name="p.tsv")
+    R = tmp_path / "R.json"
+    _stage_c(p, report=R)
+    before = _md5(R)
+
+    rc, out = _stage_c(p, report=R, prev=R)
+    assert rc == 1, out
+    assert "prev_report_aliasing" in out, out
+    assert _md5(R) == before, "the aliased invocation OVERWROTE the prev report"
+
+    # CONTROL 1 — the assertion is not vacuous in the "nothing is ever written"
+    # direction: a NON-aliased run DOES write its own report and leaves R alone.
+    R2 = tmp_path / "R2.json"
+    rc2, _ = _stage_c(p, report=R2, prev=R)
+    assert R2.is_file(), "a non-aliased run must still write its report"
+    assert _md5(R) == before
+    # CONTROL 2 — resolve() semantics: a DIFFERENT SPELLING of the same path is
+    # still caught, so a symlink or a `..` cannot slip past the guard.
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    spelled = sub / ".." / "R.json"
+    rc3, out3 = _stage_c(p, report=R, prev=spelled)
+    assert rc3 == 1 and "prev_report_aliasing" in out3, out3
+    assert _md5(R) == before
+
+
+# --------------------------------------------------------------------------- #
+# P5 (quick-260918-qz5) — the CLOSEOUT COVERAGE accounting, on the C7 template #
+# --------------------------------------------------------------------------- #
+
+def test_check_raised_nan_coverage_accounts_for_the_class_as_UNCLASSIFIED(tmp_path):
+    """T3.6 — it checks PRESENCE, COUNT and the UNCLASSIFIED DEFAULT, and NOTHING
+    ELSE. It must not be readable as evidence that any raise has been classified:
+    there is NO classification mechanism in the pipeline today (LOW-1, the
+    per-region pre-check, is DEFERRED by Carter until COST-1 measures a per-region
+    wall time), and the check's own detail has to say so in words."""
+    rows = [{"region_id": "r1", "status": "ok", "n_var": 100},
+            {"region_id": "m2_region_00057", "status": REAL_RAISED_NAN,
+             "n_var": 8000}]
+    c = fv.check_raised_nan_coverage(rows)
+    assert c.name == "raised_nan_class_coverage"
+    assert c.ok, c.detail
+    assert c.measured["n_raised_nan"] == 1, c.measured
+    assert c.measured["rows"] == [
+        {"region_id": "m2_region_00057", "n_var": 8000,
+         "classification": "UNCLASSIFIED"}], c.measured
+    assert "UNCLASSIFIED" in c.detail
+    assert "no classification mechanism" in c.detail.lower(), c.detail
+    assert "COST-1" in c.detail, c.detail
+
+    # PASS with an EXPLICIT zero statement on a raise-free panel
+    c0 = fv.check_raised_nan_coverage([{"region_id": "r1", "status": "ok"}])
+    assert c0.ok and "0 raised-NaN row(s)" in c0.detail, c0.detail
+
+    # FAIL CLOSED: a raise whose n_var is missing cannot enter the closeout
+    # distribution — which is the very gap X1 exists to close
+    cn = fv.check_raised_nan_coverage(
+        [{"region_id": "r57", "status": REAL_RAISED_NAN, "n_var": None}])
+    assert not cn.ok and cn.severity == fv.HARD_STOP, cn
+    assert "n_var" in cn.detail, cn.detail
+    # FAIL CLOSED: a raise with no region_id cannot be accounted for at all
+    ci = fv.check_raised_nan_coverage(
+        [{"region_id": "", "status": REAL_RAISED_NAN, "n_var": 10}])
+    assert not ci.ok and ci.severity == fv.HARD_STOP, ci
+    assert "region_id" in ci.detail, ci.detail
+
+
+def _raised_nan_registered(panel_rows, deferred_items_text) -> bool:
+    """THE PREDICATE the live gate below applies: every raised_nan: region in the
+    measured panel must be BOTH counted by check_raised_nan_coverage AND named in
+    the `## R5-RAISED-NAN` block of deferred-items.md. Extracted so it can be
+    exercised on a synthetic tree while the live path is dormant."""
+    c = fv.check_raised_nan_coverage(panel_rows)
+    block = fv._extract_named_block(deferred_items_text, "R5-RAISED-NAN")
+    regions = [r["region_id"] for r in c.measured["rows"]]
+    return bool(c.ok) and all(r in block for r in regions)
+
+
+def test_raised_nan_class_coverage_live_gate_against_the_repo_file():
+    """THE NAMED ENFORCER (P5 / D9), on the R4-COVERAGE C7 template.
+
+    THIS SKIP *IS* THE ENFORCER. It fires the moment a measured panel TSV lands
+    in-repo, and then stays red until every raised_nan: region in it is registered
+    in the `## R5-RAISED-NAN` block of deferred-items.md (the block
+    quick-260918-qz0 registered). The skip is guarded against masking three ways,
+    exactly as the C7 precedent above: the check function's own green AND red run
+    unconditionally against fixtures (T3.6); the PREDICATE is shown able to fail
+    AND able to pass on a synthetic tree (the sibling test below); and the
+    skip-count move 33 -> 34 is recorded in the SUMMARY and enforced by
+    tests/m3/test_fire_runbook_pins.py."""
+    panels = fv.find_measured_panel_tsvs(PROJECT_ROOT)
+    if not panels:
+        pytest.skip(
+            f"no measured panel TSV ({rnlp._DEFAULT_PANEL_NAME}) in-repo yet — no "
+            f"raised_nan: region can have been measured before the fire. This skip "
+            f"IS the enforcer: it fires the moment the artifact lands.")
+    disclosure = (PROJECT_ROOT / ".planning" / "phases" / "m3-aou-afr-ld-panel-build"
+                  / "deferred-items.md")
+    for panel in panels:
+        rows = fv.parse_panel_tsv(panel)
+        assert _raised_nan_registered(rows, disclosure.read_text()), (
+            f"a measured panel TSV exists ({panel}) carrying raised_nan: region(s) "
+            f"that are not accounted for in the ## R5-RAISED-NAN block of "
+            f"{disclosure}: {fv.check_raised_nan_coverage(rows).detail}")
+
+
+def test_the_raised_nan_coverage_predicate_is_proven_both_ways_on_a_synthetic_tree(
+        tmp_path):
+    """T3.7 — the live gate above is DORMANT today, so its LOGIC is proven here,
+    in BOTH directions. A skip whose predicate has never been seen to fail is a
+    coverage loss dressed as an enforcer."""
+    rows = [{"region_id": "r1", "status": "ok", "n_var": 100},
+            {"region_id": "m2_region_00057", "status": REAL_RAISED_NAN,
+             "n_var": 8000}]
+    omits = ("## R4-COVERAGE\nsomething else\n\n"
+             "## R5-RAISED-NAN — the obligation\nno region is named here\n")
+    assert not _raised_nan_registered(rows, omits), \
+        "the predicate PASSED on a deferred-items.md that omits the region"
+    lists = ("## R4-COVERAGE\nsomething else\n\n"
+             "## R5-RAISED-NAN — the obligation\n"
+             "m2_region_00057 (n_var 8000) is registered here\n")
+    assert _raised_nan_registered(rows, lists), \
+        "the predicate FAILED even though the region IS registered"
+    # and the block extractor is not vacuous: a RENAMED heading yields an empty
+    # block, so a rename cannot silently satisfy the membership test
+    assert fv._extract_named_block(lists, "R5-RAISED-NAN-RENAMED") == ""
+    assert not _raised_nan_registered(
+        rows, lists.replace("R5-RAISED-NAN", "R5-RENAMED"))
