@@ -414,6 +414,92 @@ def _gsutil_upload(local_path: "str | Path", gs_uri: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# X1 (quick-260918-qz5): the per-region GATE EVIDENCE leaves the VM on EVERY   #
+# square outcome — not only on `ok`                                           #
+# --------------------------------------------------------------------------- #
+
+#: The four AGGREGATE per-region artifacts the closeout distributions are
+#: computed from. Uploaded from a site NO square outcome can skip.
+_COORDINATE_ARTIFACT_SUFFIXES = (".afreq", ".occluded.excludelist",
+                                 ".occlusion_manifest.tsv", ".occlusion_gate.json")
+
+#: BOUNDED retry for the coordinate uploads ONLY (D1c). A blip is a non-event; a
+#: real failure still surfaces. `len(_COORD_UPLOAD_BACKOFF_S) == ATTEMPTS - 1`.
+_COORD_UPLOAD_ATTEMPTS = 3
+_COORD_UPLOAD_BACKOFF_S = (2.0, 5.0)
+
+
+def _upload_coordinate_artifacts(out_prefix: "str | Path", region_id: str,
+                                 gs_out_dir: str) -> list:
+    """Upload every AGGREGATE per-region gate artifact that EXISTS. Never the .npz.
+
+    WHY THIS EXISTS. `mk7ze` P248-250 commits that EVERY region computes its own
+    occlusion count AND its own occluded-site inflation during the production run
+    "so both complete distributions fold in at closeout". As shipped that sentence
+    was FALSE for every region that did not reach ``ok``: these four artifacts were
+    uploaded from inside ``if ok:``, and a region whose ``.npz`` conversion RAISES
+    never reaches the ``if gs_mode:`` block at all — so its gate evidence died in
+    VM scratch, and for an ``ok`` region ``_reclaim_region_scratch`` then deleted
+    it. De-indenting the four uploads out of ``if ok:`` would have fixed
+    ``verify_failed`` and NOTHING ELSE; hence a helper called from a site the raise
+    cannot skip.
+
+    THE EGRESS CLASS, NAMED HONESTLY. Three of the four are variant ids, counts,
+    fractions and policy labels. The fourth, ``.afreq``, is per-variant
+    COHORT-AGGREGATE ALLELE FREQUENCIES derived from cohort genotypes — the same
+    class as the ``.npz``'s own ``allele_freq`` array, which already ships. So the
+    licensed class is "variant ids, counts, fractions, policy labels AND
+    cohort-aggregate allele frequencies — no genotypes, no per-person data, no LD
+    values". The NAME ``_COORDINATE_ARTIFACT_SUFFIXES`` is kept for continuity with
+    the shipped comments, with that caveat attached: a justification that
+    mis-describes what it licenses is the defect, not a wording nit.
+
+    ⚠ A BUCKET INVARIANT CHANGES (D13). Before this, any per-region object in the
+    bucket implied a region that got at least as far as ``ok``. Now the presence of
+    ``.occlusion_gate.json`` / ``.occluded.excludelist`` /
+    ``.occlusion_manifest.tsv`` / ``.afreq`` NO LONGER implies a banked region —
+    only ``.npz`` presence does, and only the ``.npz`` is "verified by
+    construction". This is safe, and is the whole R8 argument: the resume guard
+    keys on the ``.npz`` alone, at the ``alp._MIN_REGION_NPZ_BYTES`` floor, so a
+    stray coordinate artifact cannot fake a banked region. It is also why the
+    runbook's liveness rule stays "the **.npz** count CLIMBING", never "the object
+    count".
+
+    EXISTENCE-GATED, which is what makes banded mode a no-op: banded writes no
+    gate sidecar, no excludelist and no per-region manifest, so nothing uploads.
+
+    Each file gets ``_COORD_UPLOAD_ATTEMPTS`` bounded attempts (D1c). ``_gsutil_upload``
+    has no retry, and this helper's FIRST call site now runs BEFORE plink's output is
+    converted, so one transient 503 would otherwise cost a COMPLETED plink pass and —
+    because ``_append_panel_row_local`` is first-row-wins — write a PERMANENT spurious
+    ``error:`` row. A PERSISTENT failure still raises, which is deliberate: see the
+    call sites for the guard asymmetry.
+
+    Returns the list of gs:// URIs actually uploaded.
+    """
+    uploaded = []
+    for suffix in _COORDINATE_ARTIFACT_SUFFIXES:
+        path = Path(f"{out_prefix}{suffix}")
+        if not path.is_file():
+            continue
+        uri = _gs_join(gs_out_dir, f"{region_id}{suffix}")
+        for attempt in range(1, _COORD_UPLOAD_ATTEMPTS + 1):
+            try:
+                _gsutil_upload(path, uri)
+                break
+            except Exception as exc:  # noqa: BLE001 — bounded retry, then re-raise
+                if attempt == _COORD_UPLOAD_ATTEMPTS:
+                    raise
+                print(f"WARN {region_id}: coordinate artifact upload attempt "
+                      f"{attempt}/{_COORD_UPLOAD_ATTEMPTS} failed for {uri} "
+                      f"({exc}); retrying",
+                      file=sys.stderr, flush=True)
+                time.sleep(_COORD_UPLOAD_BACKOFF_S[attempt - 1])
+        uploaded.append(uri)
+    return uploaded
+
+
+# --------------------------------------------------------------------------- #
 # Fail-CLOSED bucket stat for the PANEL TSV path (quick-260715-vxz / P3)      #
 # --------------------------------------------------------------------------- #
 
@@ -965,6 +1051,15 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
         "n_dropped_occluded": None,     # set in the SQUARE ok path; None otherwise
         "n_dropped_monomorphic": None,  # set in the SQUARE ok path; None otherwise
     }
+    # X1 (quick-260918-qz5): has the coordinate-only gate evidence already been
+    # shipped this pass? Site (a) sets it; site (b) in the except uses it to avoid
+    # a double upload. A site-(a) FAILURE deliberately leaves it False, so the
+    # guarded site (b) RE-RUNS the helper: an outage that clears in the seconds
+    # between the two sites still banks the region's gate evidence, and site (b)
+    # cannot hurt anything (it is WARN-only). Worst case under a sustained outage
+    # is ~7 s at site (a) (it raises at the FIRST persistently-failing file) plus
+    # ~4 x 7 s at site (b) = ~35 s, once, against an ~11-day fire.
+    coords_uploaded = False
     try:
         # window-subset .bim (load_bim row order == .ld.bin row order)
         bim_path = f"{bfile_prefix}.bim"
@@ -1101,11 +1196,19 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
                 # Nothing else crosses because nothing else ran — no .npz, no
                 # .afreq, no excludelist, no occlusion manifest. Same egress class
                 # as those artifacts (counts, fractions and policy labels only).
+                #
+                # quick-260918-qz5: re-pointed at the shared helper so there is ONE
+                # coordinate-upload implementation. Behaviour here is IDENTICAL —
+                # the helper is existence-gated and on this path only the gate json
+                # exists. The two pre-existing exact-one-element allow-list tests
+                # (test_occlusion_gate_site_fraction_fires /
+                # test_occlusion_gate_deferred_region_ships_only_its_sidecar)
+                # staying green WITHOUT edit is the control that proves it. This is
+                # also why the helper is called explicitly rather than from a
+                # `finally`: a `finally` would fire on the two deferral
+                # early-returns too and re-upload the sidecar.
                 if gs_mode:
-                    _gsutil_upload(
-                        gate_sidecar,
-                        _gs_join(gs_out_dir, f"{region_id}.occlusion_gate.json"),
-                    )
+                    _upload_coordinate_artifacts(out_prefix, region_id, gs_out_dir)
                 append_panel_row(panel_tsv, result, scratch_dir=compute_dir)
                 return result
             if occluded_ids:
@@ -1227,6 +1330,22 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
             result["n_dropped_monomorphic"] = None  # banded does not drop MAC=0
         result["n_var"] = n_var
 
+        # X1 SITE (a) — BEFORE the frozen reader runs, so the raise cannot skip it.
+        # This ONE site covers `ok`, `verify_failed` AND the NaN raise, because all
+        # three pass through here.
+        #
+        # ⚠ DELIBERATELY UNGUARDED, and the asymmetry with site (b) is the point
+        # (fail-safe defaults are CALLER-relative). On an `ok` region
+        # _reclaim_region_scratch DELETES these artifacts once the region finishes,
+        # so swallowing an upload failure here would destroy the region's only
+        # durable gate evidence SILENTLY — exactly what the gate-sidecar WRITE
+        # above already refuses to do. It must cost the region instead: the failure
+        # surfaces as `error:` through the outer handler, and an `error:` region
+        # recomputes on resume (the skip keys on the .npz alone).
+        if gs_mode:
+            _upload_coordinate_artifacts(out_prefix, region_id, gs_out_dir)
+            coords_uploaded = True
+
         af_sidecar = Path(f"{out_prefix}.afreq")
         af_arg = af_sidecar if af_sidecar.is_file() else None
         out_npz = compute_dir / f"{region_id}.npz"
@@ -1243,43 +1362,25 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
 
         if gs_mode:
             if ok:
-                # Upload ONLY the verified aggregate .npz (+ AF sidecar). The
-                # individual-level .bed/.bim/.fam never leave the compute node.
+                # Upload ONLY the VERIFIED aggregate .npz. The individual-level
+                # .bed/.bim/.fam never leave the compute node.
+                #
+                # ⛔ THE .npz GATE DOES NOT MOVE (R8). This stays inside `if ok:`,
+                # and so does `result["out"] = npz_uri`. The resume guard keys on
+                # the .npz at the alp._MIN_REGION_NPZ_BYTES floor, which is the
+                # entire reason the coordinate-only artifacts can safely ship from
+                # site (a) on EVERY outcome: a stray gate sidecar cannot fake a
+                # banked region, and bucket .npz presence still means "verified by
+                # construction".
+                #
+                # The four COORDINATE-ONLY uploads that used to live here (.afreq,
+                # .occluded.excludelist, .occlusion_manifest.tsv,
+                # .occlusion_gate.json) moved to _upload_coordinate_artifacts at
+                # site (a) above — see X1 / quick-260918-qz5. They are NOT repeated
+                # here: site (a) already ran for every region that reaches this line.
                 npz_uri = _gs_join(gs_out_dir, f"{region_id}.npz")
                 _gsutil_upload(out_npz, npz_uri)
                 result["out"] = npz_uri
-                if af_arg is not None and Path(af_arg).is_file():
-                    _gsutil_upload(af_arg, _gs_join(gs_out_dir, f"{region_id}.afreq"))
-                # m3-07b: the occlusion drop set is durable provenance the OSF
-                # amendment-update commits to publishing — upload it before the
-                # local scratch is reclaimed. Coordinate/id-only (egress-clean:
-                # variant ids + geometry, no genotypes, no per-person counts).
-                if exclude_path is not None and Path(exclude_path).is_file():
-                    _gsutil_upload(
-                        exclude_path,
-                        _gs_join(gs_out_dir, f"{region_id}.occluded.excludelist"),
-                    )
-                # PRE-FIRE 1 (260812-ox1): the per-region Stage-A occlusion manifest is
-                # the same egress class as the excludelist above (coordinate/id-only:
-                # variant ids + REF-span geometry, no genotypes, no per-person counts).
-                # Existence-gated: a zero-occlusion region writes no manifest.
-                region_manifest = Path(f"{out_prefix}.occlusion_manifest.tsv")
-                if region_manifest.is_file():
-                    _gsutil_upload(
-                        region_manifest,
-                        _gs_join(gs_out_dir, f"{region_id}.occlusion_manifest.tsv"),
-                    )
-                # quick-260821-x91: the per-region occlusion GATE SIDECAR — the
-                # shipped two-condition gate's own measurement for this region.
-                # Same egress class as the two artifacts above (counts, fractions
-                # and policy labels; no genotypes, no per-person data, no LD
-                # values). Existence-gated: banded mode writes no sidecar.
-                gate_json = Path(f"{out_prefix}.occlusion_gate.json")
-                if gate_json.is_file():
-                    _gsutil_upload(
-                        gate_json,
-                        _gs_join(gs_out_dir, f"{region_id}.occlusion_gate.json"),
-                    )
             else:
                 result["out"] = str(out_npz)  # left in scratch for inspection
         else:
@@ -1287,6 +1388,23 @@ def process_region(row: dict, *, bfile_prefix: str, out_dir: "str | Path",
     except Exception as e:  # one bad region never aborts the whole loop
         result["status"] = f"error: {e}"
         print(f"ERROR {region_id}: {e}", file=sys.stderr, flush=True)
+        # X1 SITE (b) — the FALLBACK for an exception raised BEFORE site (a): a
+        # plink failure, an n_var mismatch, a short .ld.bin. The gate sidecar was
+        # written pre-plink, so it EXISTS and would otherwise die in scratch.
+        #
+        # ⚠ GUARDED, unlike site (a), and the asymmetry is deliberate: we are
+        # already inside an exception handler, and "one bad region never aborts the
+        # whole loop" is a shipped invariant — a raise here would break it. The
+        # region's status keeps the ORIGINAL failure (set above, before this runs),
+        # so a site-(b) upload failure can never overwrite the real cause.
+        if gs_mode and not coords_uploaded:
+            try:
+                _upload_coordinate_artifacts(out_prefix, region_id, gs_out_dir)
+            except Exception as coord_exc:  # noqa: BLE001 — never abort the loop
+                print(f"WARN {region_id}: could not bank the coordinate-only gate "
+                      f"evidence after a failed region ({coord_exc}); it stays in "
+                      f"scratch (which is NOT reclaimed on a non-ok region)",
+                      file=sys.stderr, flush=True)
 
     append_panel_row(panel_tsv, result, scratch_dir=compute_dir)
     # Reclaim per-region scratch so a long serial panel can't fill the disk. ONLY on

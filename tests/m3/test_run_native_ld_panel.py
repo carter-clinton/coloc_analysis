@@ -2858,9 +2858,14 @@ def test_x1_raising_region_ships_its_coordinate_only_gate_evidence(tmp_path, mon
         "X1: a raising region's gate evidence must reach the bucket so the closeout "
         f"distributions can fold it in; cp destinations were {dsts}")
     assert f"{gs_out}/r_raise.npz" not in dsts
+    # scoped to the RAISING region: the second region is legitimately `ok` and
+    # legitimately banks its own .npz (that is what proves the loop continued)
     for d in dsts:
-        assert not d.endswith((".npz", ".bed", ".bim", ".fam")), \
-            f"individual-level / unverified artifact crossed: {d}"
+        assert not ("r_raise" in d and d.endswith(".npz")), \
+            f"the raising region's .npz crossed: {d}"
+        # the individual-level artifacts are banned GLOBALLY, on every outcome
+        assert not d.endswith((".bed", ".bim", ".fam")), \
+            f"individual-level artifact crossed: {d}"
     # the loop CONTINUED to the next region
     assert [r["region_id"] for r in res] == ["r_raise", "r_next"]
     assert res[1]["status"] == "ok", res[1]["status"]
@@ -3103,9 +3108,25 @@ def test_x1_coordinate_upload_retries_a_transient_failure_but_is_BOUNDED(
     assert not any(d.endswith(".npz") for d in _cp_dsts(mock_p))
     assert (s2 / "r_ok.ld.bin").is_file()   # scratch not reclaimed
     n_attempts = sum(1 for s in _cp_srcs(mock_p) if s == gate_src2)
-    assert n_attempts == drv._COORD_UPLOAD_ATTEMPTS, (
+    # ⚠ MEASURED, and it is 2 x ATTEMPTS, not ATTEMPTS — because BOTH sites run.
+    # This is W-r2-4's explicit decision, not an accident: a site-(a) failure
+    # leaves `coords_uploaded` False, so the GUARDED site (b) re-runs the helper
+    # (an outage that clears in the seconds between the two sites still banks the
+    # evidence, and site (b) is WARN-only so it cannot hurt anything). The plan's
+    # own cost arithmetic says the same thing — "site (a) ~7 s, then site (b) ...
+    # 4 x 7 s = 28 s; total ~35 s per region".
+    #
+    # Pinning the exact total AND its per-site decomposition is strictly TIGHTER
+    # than pinning one site's count: an infinite loop, a silent single-attempt
+    # regression, AND a change to how many sites run all fail here.
+    assert n_attempts == 2 * drv._COORD_UPLOAD_ATTEMPTS, (
         f"the coordinate upload must be BOUNDED at {drv._COORD_UPLOAD_ATTEMPTS} "
-        f"attempts; it made {n_attempts}")
+        f"attempts PER SITE across exactly 2 sites (site (a) fatal + the guarded "
+        f"site (b) re-run, W-r2-4); it made {n_attempts}")
+    warn_lines = [ln for ln in capsys.readouterr().err.splitlines()
+                  if "coordinate artifact upload attempt" in ln]
+    # ATTEMPTS-1 WARNs per site (the final attempt re-raises instead of warning)
+    assert len(warn_lines) == 2 * (drv._COORD_UPLOAD_ATTEMPTS - 1), warn_lines
 
     # (iv) the .npz upload gained NO retry: exactly ONE attempt on a persistent fail
     s3 = tmp_path / "s3"
