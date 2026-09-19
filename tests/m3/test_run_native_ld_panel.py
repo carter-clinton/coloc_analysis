@@ -30,6 +30,7 @@ if str(_SRC_PYTHON) not in sys.path:
     sys.path.insert(0, str(_SRC_PYTHON))
 
 import run_native_ld_panel as drv  # noqa: E402
+import plink_ld_to_npz as pln  # noqa: E402  (FROZEN — driven, never edited, by T2.3)
 
 
 # --------------------------------------------------------------------------- #
@@ -3161,3 +3162,137 @@ def test_x1_banded_mode_uploads_no_coordinate_artifacts(tmp_path, monkeypatch):
         assert not d.endswith((".afreq", ".occluded.excludelist",
                                ".occlusion_manifest.tsv", ".occlusion_gate.json")), \
             f"banded mode uploaded a coordinate artifact that was never written: {d}"
+
+
+# --------------------------------------------------------------------------- #
+# 21. P2 (quick-260918-qz5): the raw-panel NaN raise is its OWN status         #
+# --------------------------------------------------------------------------- #
+# Today a NaN raise, a scratch-full failure and a gsutil failure are ONE
+# indistinguishable `error:` row — the class the whole 2026-09-18 adjudication is
+# about is not even nameable in the panel TSV. Carter's decision: the raise
+# stands, the region banks nothing, the loop continues (the pre-registered T1
+# contract executing), with a stop reserved for an UNCLASSIFIED raise.
+#
+# ⛔ The token is `raised_nan:` and NOT a `deferred_*` prefix: the reviewer
+# disqualified that, because a deferral asserts a pending outcome that does not
+# exist and would route the row to the verifier's PASS-as-the-gates-working branch.
+#
+# ⛔ The match is on the MESSAGE HEAD, never on the exception TYPE. `ValueError` is
+# raised by NINE sites in plink_ld_to_npz (MEASURED) — the n_var mismatch, the AF
+# length mismatch, the mode check, the byte-count check, the diagonal check, the
+# symmetry check — and swallowing those into the raise class would be a lie.
+
+def test_p2_raising_region_records_raised_nan_with_its_detail_and_n_var(
+        tmp_path, monkeypatch):
+    """T2.1 — the raising region of T1.1 records `raised_nan: square LD carries
+    NaN for ...` with the detail suffix INTACT, `n_var` PRESERVED (not None), and
+    the other populated fields untouched. n_var is what makes the region
+    accountable at closeout (it is the span the distribution needs)."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp,
+                                 region_id="r_raise")
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps={"rs1003"}))
+
+    res = drv.run_native_ld_panel(manifest, bfile, tmp_path / "out", mode="square",
+                                  scratch_dir=tmp_path / "scratch")
+    st = res[0]["status"]
+    assert st.startswith("raised_nan: "), st
+    assert st.startswith(f"raised_nan: {drv._NAN_RAISE_MESSAGE_HEAD}"), st
+    # the DETAIL SUFFIX is preserved verbatim — it carries the ranked NaN source
+    # rows, which is the only in-panel evidence of the raise's SHAPE
+    assert "likely source variant row(s) ranked by NaN count" in st, st
+    assert "[index: 3," in st, st
+    assert not st.startswith("error:"), st
+    # n_var and the other populated fields survive
+    assert res[0]["n_var"] == 20, res[0]
+    assert res[0]["region_id"] == "r_raise"
+    assert res[0]["chr"] == chrom
+    assert res[0]["wall_min"] is not None and res[0]["peak_ram_gib"] is not None
+
+
+def test_p2_an_unrelated_ValueError_still_records_error(tmp_path, monkeypatch):
+    """T2.2 — THE CONTROL that keeps the head-match honest: an UNRELATED
+    ValueError from the same seam must still record `error:`. If this went
+    `raised_nan:` the classifier would be matching the TYPE, not the message, and
+    a scratch-full or AF-length failure would be misfiled as the NaN contract."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp,
+                                 region_id="r_other")
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim))
+
+    def _boom(npz_path, *, mode="square"):
+        raise ValueError("totally unrelated")
+
+    monkeypatch.setattr(drv, "content_verify_npz", _boom)
+    res = drv.run_native_ld_panel(manifest, bfile, tmp_path / "out", mode="square",
+                                  scratch_dir=tmp_path / "scratch")
+    st = res[0]["status"]
+    assert st.startswith("error: "), st
+    assert "totally unrelated" in st, st
+    assert "raised_nan" not in st, st
+
+
+def test_p2_message_head_constant_is_pinned_by_DRIVING_the_frozen_reader(tmp_path):
+    """T2.3 — the head constant is BEHAVIOUR-pinned, not text-pinned (R4). This
+    DRIVES the FROZEN `plink_ld_to_npz.read_square_bin` on a real NaN-bearing
+    square matrix and asserts the raised message starts with the producer's
+    constant. If the frozen reader's wording ever moved, THIS goes red — a grep
+    over either source could not tell you that.
+
+    NON-VACUITY: the same call on a NaN-FREE symmetric matrix does not raise, so
+    the assertion is not passing merely because everything raises."""
+    n = 6
+    m = _symmetric_corr(n, seed=3)
+
+    clean = tmp_path / "clean.ld.bin"
+    m.astype("<f4").tofile(clean)
+    pln.read_square_bin(clean, n)          # must NOT raise (the control)
+
+    nan_m = m.copy()
+    nan_m[2, :] = np.float32("nan")
+    nan_m[:, 2] = np.float32("nan")
+    nan_m[2, 2] = np.float32(1.0)          # the real fire-#3 fingerprint
+    bad = tmp_path / "nan.ld.bin"
+    nan_m.astype("<f4").tofile(bad)
+    with pytest.raises(ValueError) as ei:
+        pln.read_square_bin(bad, n)
+    assert str(ei.value).startswith(drv._NAN_RAISE_MESSAGE_HEAD), str(ei.value)
+
+
+def test_p2_raised_nan_status_survives_the_panel_tsv_round_trip(tmp_path):
+    """T2.4 — the detail carries spaces, `[`, `]`, commas, `->` and an absolute
+    path. Assert it comes back BYTE-IDENTICALLY through
+    append_panel_row -> fire_verifier.parse_panel_tsv, so the verifier classifies
+    what the producer actually wrote."""
+    import fire_verifier as fv
+    status = (f"raised_nan: {drv._NAN_RAISE_MESSAGE_HEAD} for /scratch/r9.ld.bin: "
+              f"likely source variant row(s) ranked by NaN count "
+              f"[index: 3, 0, 1, 2, 4...] — plink --r writes 0/0 -> NaN")
+    tsv = tmp_path / "panel.tsv"
+    drv.append_panel_row(tsv, {
+        "region_id": "r9", "chr": 12, "n_var": 20, "wall_min": 1.5,
+        "peak_ram_gib": 2.0, "output_gib": 0.1, "status": status, "out": None,
+        "n_dropped_occluded": 0, "n_dropped_monomorphic": 0,
+    }, scratch_dir=tmp_path)
+    rows = fv.parse_panel_tsv(tsv)
+    assert len(rows) == 1
+    assert rows[0]["status"] == status, (rows[0]["status"], status)
+    assert rows[0]["n_var"] == 20
+
+
+def test_p2_stderr_line_is_RAISED_NAN_not_ERROR(tmp_path, monkeypatch, capsys):
+    """T2.5 — D4: the log line must be DISTINGUISHABLE. The shipped runbook
+    monitor is `grep -cE "VERIFY-FAILED|^ERROR"` and "want 0", so a raise logged
+    as `ERROR` would be indistinguishable from a real defect while a raise logged
+    only as `RAISED-NAN` would be INVISIBLE to it — which is why P6 adds
+    `|^RAISED-NAN` to all three copies of that monitor."""
+    bfile, bim, (chrom, from_bp, to_bp) = _setup_cohort(tmp_path)
+    manifest = _region1_manifest(tmp_path / "regions.tsv", chrom, from_bp, to_bp,
+                                 region_id="r_raise")
+    monkeypatch.setattr(drv, "_run_plink", _MockPlink(bim, nan_snps={"rs1003"}))
+    drv.run_native_ld_panel(manifest, bfile, tmp_path / "out", mode="square",
+                            scratch_dir=tmp_path / "scratch")
+    err = capsys.readouterr().err
+    lines = err.splitlines()
+    assert any(ln.startswith("RAISED-NAN r_raise:") for ln in lines), err[-2000:]
+    assert not any(ln.startswith("ERROR r_raise") for ln in lines), err[-2000:]
