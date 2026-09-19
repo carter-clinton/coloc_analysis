@@ -347,8 +347,16 @@ def _status_class(status: Any) -> str:
     return STATUS_UNKNOWN
 
 
-def classify_statuses(status_rows: List[Dict[str, Any]]) -> Check:
+def classify_statuses(status_rows: List[Dict[str, Any]], *,
+                      acknowledged: Optional[set] = None) -> Check:
     """Classify every panel row's status.
+
+    ``acknowledged`` defaults to ``None``, which reproduces the pre-P4 behaviour
+    EXACTLY — no existing call site or test changes. When a set is supplied (only
+    stage-c with ``--prev-report`` does), failure-class rows already acknowledged
+    at the previous check-in do not re-drive this check's FAIL; they are still
+    COUNTED and still LISTED in ``measured``. An UNKNOWN status is NEVER
+    acknowledgeable (D8) and still HARD_STOPs.
 
     Dispositions (A-02):
       * ok-class (``ok`` / ``skipped_idempotent``)          -> PASS
@@ -374,6 +382,8 @@ def classify_statuses(status_rows: List[Dict[str, Any]]) -> Check:
     the stateful ``--prev-report`` acknowledgement is computed from — one source,
     the one check that sees every row.
     """
+    ack = set() if acknowledged is None else {str(r) for r in acknowledged}
+
     def run() -> Check:
         n = "status_classification"
         counts: Dict[str, int] = {}
@@ -396,8 +406,11 @@ def classify_statuses(status_rows: List[Dict[str, Any]]) -> Check:
                 unknown.append(key)
                 unknown_regions.append(rid)
             elif cls == STATUS_FAILURE:
-                failures.append(key)
+                # counted and listed ALWAYS; only the FAIL disposition below is
+                # acknowledgement-aware
                 failed_regions.append(rid)
+                if rid not in ack:
+                    failures.append(key)
             elif cls == STATUS_RAISED_NAN:
                 raised_nan_regions.append(rid)
 
@@ -764,8 +777,15 @@ def check_occlusion_gate(occ_rows: Optional[int], occ_sites: Optional[int],
     return _guard("occlusion_gate", HARD_STOP, run)
 
 
-def check_raised_nan_findings(status_rows: List[Dict[str, Any]]) -> Check:
+def check_raised_nan_findings(status_rows: List[Dict[str, Any]], *,
+                              acknowledged: Optional[set] = None) -> Check:
     """Report every raw-panel NaN raise as a FINDING with its count and regions.
+
+    ``acknowledged`` defaults to ``None`` => today's behaviour exactly. When
+    supplied, an ALREADY-ACKNOWLEDGED raise does not re-fire the FINDING — it is
+    still named and still counted in the detail, because an acknowledged raise
+    that stopped being reported would be a gate that lies rather than a gate that
+    is quiet.
 
     ``status_classification`` deliberately PASSES a raise (it is not an
     operational failure), so without this check a raise would be reported only as
@@ -781,20 +801,31 @@ def check_raised_nan_findings(status_rows: List[Dict[str, Any]]) -> Check:
     deferred until COST-1 measures a per-region wall time). Nothing here claims
     otherwise.
     """
+    ack = set() if acknowledged is None else {str(r) for r in acknowledged}
+
     def run() -> Check:
         n = "raised_nan_contract_fired"
         regions = sorted(str(r.get("region_id", "")).strip() for r in status_rows
                          if _status_class(r.get("status")) == STATUS_RAISED_NAN)
-        measured = {"n_raised_nan": len(regions), "raised_nan_regions": regions}
+        unack = [r for r in regions if r not in ack]
+        measured = {"n_raised_nan": len(regions), "raised_nan_regions": regions,
+                    "unacknowledged_regions": unack}
         if not regions:
             return Check(n, PASS,
                          "no raised_nan: rows -> the raw-panel NaN contract has "
                          "not fired on this panel",
                          FINDING, measured)
+        if not unack:
+            return Check(n, PASS,
+                         f"{len(regions)} raised_nan: region(s) {regions}, ALL "
+                         f"ACKNOWLEDGED at a previous check-in. Still counted and "
+                         f"still reported here — an acknowledged raise that the "
+                         f"gate re-reports is not a NEW stop. Nothing new fired.",
+                         FINDING, measured)
         return Check(
             n, FAIL,
-            f"{len(regions)} region(s) fired the pre-registered raw-panel NaN "
-            f"contract: {regions}. This is the contract firing AS COMMITTED — not "
+            f"{len(unack)} region(s) fired the pre-registered raw-panel NaN "
+            f"contract: {unack}. This is the contract firing AS COMMITTED — not "
             f"a defect, and not a deviation. Each of these regions banked NOTHING "
             f"(no .npz; its coordinate-only gate evidence IS in the bucket so the "
             f"closeout distributions fold it in) and the loop continues by design. "
@@ -1101,6 +1132,217 @@ def find_measured_panel_tsvs(root: "str | Path") -> List[Path]:
     return sorted(hits)
 
 
+def _extract_named_block(text: str, heading: str) -> str:
+    """The `## <heading>` block of a markdown file, or "" if the heading is absent.
+
+    Generalised from ``_extract_r4_block`` with the SAME load-bearing negative
+    lookahead: a RENAMED heading must yield an EMPTY block (so every content
+    assertion against it fails loudly), never a fuzzy match that lets the rename
+    through.
+    """
+    pat = re.compile(r"^## " + re.escape(heading) + r"(?![-\w])", re.M)
+    m = pat.search(text)
+    if m is None:
+        return ""
+    start = m.start()
+    nxt = _SECTION_HEADING.search(text, m.end())
+    return text[start:nxt.start()] if nxt else text[start:]
+
+
+def check_raised_nan_coverage(status_rows: List[Dict[str, Any]]) -> Check:
+    """Account for the raised-NaN class at closeout — PRESENCE, COUNT and the
+    UNCLASSIFIED DEFAULT, and nothing else.
+
+    ⚠ WHAT THIS DOES NOT DO, stated here because a check named "coverage" invites
+    the opposite reading: it does NOT classify anything, and it must never be read
+    as evidence that a raise HAS been classified. There is NO classification
+    mechanism in the pipeline today — the per-region pre-check (LOW-1) is DEFERRED
+    by Carter until COST-1 measures a per-region wall time — so every row it
+    reports is labelled ``classification=UNCLASSIFIED``, by construction and not
+    as a placeholder.
+
+    FAILS CLOSED at HARD_STOP only when a ``raised_nan:`` row cannot be ACCOUNTED
+    FOR: no ``region_id``, or a missing ``n_var``. Those two fields are exactly
+    what the closeout distribution needs; a raise missing either is the very gap
+    X1 exists to close, so it must not pass as "covered".
+    """
+    def run() -> Check:
+        n = "raised_nan_class_coverage"
+        raises = [r for r in status_rows
+                  if _status_class(r.get("status")) == STATUS_RAISED_NAN]
+        rows_out = []
+        unaccounted = []
+        for r in raises:
+            rid = str(r.get("region_id", "")).strip()
+            n_var = r.get("n_var")
+            if not rid:
+                unaccounted.append("<missing region_id>")
+            elif n_var is None or str(n_var).strip() == "":
+                unaccounted.append(f"{rid} (n_var missing)")
+            rows_out.append({"region_id": rid, "n_var": n_var,
+                             "classification": "UNCLASSIFIED"})
+        measured = {"n_raised_nan": len(raises), "rows": rows_out,
+                    "unaccounted": unaccounted}
+        honest = ("Every row is labelled classification=UNCLASSIFIED because NO "
+                  "classification mechanism exists in the pipeline today: the "
+                  "per-region pre-check is DEFERRED until COST-1 measures a "
+                  "per-region wall time. This check accounts for the class; it "
+                  "does NOT classify it, and it is not evidence that any raise "
+                  "has been classified.")
+        if unaccounted:
+            return Check(n, FAIL,
+                         f"{len(unaccounted)} raised_nan: row(s) cannot be "
+                         f"accounted for at closeout: {unaccounted}. A raise "
+                         f"without a region_id and an n_var cannot enter the "
+                         f"closeout distribution at all, which is the exact gap "
+                         f"the coordinate-artifact egress change closes. "
+                         f"FAIL CLOSED. {honest}",
+                         HARD_STOP, measured)
+        if not raises:
+            return Check(n, PASS,
+                         f"0 raised-NaN row(s) on this panel -> nothing owed to "
+                         f"the raised-NaN closeout accounting yet. {honest}",
+                         HARD_STOP, measured)
+        return Check(n, PASS,
+                     f"{len(raises)} raised-NaN row(s) accounted for "
+                     f"(region_id + n_var present for each): {rows_out}. "
+                     f"{honest}",
+                     HARD_STOP, measured)
+
+    return _guard("raised_nan_class_coverage", HARD_STOP, run)
+
+
+# --------------------------------------------------------------------------- #
+# STATEFUL CHECK-INS (quick-260918-qz5 / P4) — exit 1 on a NEW failure only    #
+# --------------------------------------------------------------------------- #
+#: The remedy every fail-closed message in this family carries. A gate that fails
+#: closed without telling the operator how to get legitimately green is a gate
+#: that will be worked around.
+_PREV_REPORT_REMEDY = ("Run ONCE without --prev-report to mint a compatible "
+                       "baseline report, then name THAT file as --prev-report at "
+                       "the next check-in.")
+
+
+def load_prev_report(path: "str | Path"):
+    """``(report | None, Check | None)``. NEVER raises.
+
+    W12 — the return-a-Check shape is load-bearing, not a style choice. If this
+    raised instead, ``main()``'s generic handler would swallow the specific remedy
+    into ``"stage_c_driver: the gate could not run (...)"`` and the remedy text
+    would be UNREACHABLE — so the test that asserts it could never pass honestly.
+    """
+    n = "prev_report_loadable"
+    p = Path(path)
+    if not p.is_file():
+        return None, Check(n, FAIL,
+                           f"--prev-report {p} does not exist -> the acknowledged "
+                           f"set is UNKNOWN, and an unknown acknowledged set must "
+                           f"never be read as an empty one (that would mark every "
+                           f"row 'new'). FAIL CLOSED. {_PREV_REPORT_REMEDY}",
+                           HARD_STOP, {"path": str(p)})
+    try:
+        report = json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001 — fail closed, never raise
+        return None, Check(n, FAIL,
+                           f"--prev-report {p} is not parseable JSON "
+                           f"({type(e).__name__}: {e}) -> FAIL CLOSED. "
+                           f"{_PREV_REPORT_REMEDY}",
+                           HARD_STOP, {"path": str(p)})
+    if not isinstance(report, dict) or "acknowledgeable_schema" not in report:
+        return None, Check(n, FAIL,
+                           f"--prev-report {p} carries no acknowledgeable_schema "
+                           f"key -> it is a PRE-CHANGE report and does not contain "
+                           f"the per-class region lists the acknowledgement is "
+                           f"computed from. Treating it as an empty acknowledged "
+                           f"set would mark every row 'new' — misleading rather "
+                           f"than silent, but still wrong. FAIL CLOSED. "
+                           f"{_PREV_REPORT_REMEDY}",
+                           HARD_STOP, {"path": str(p)})
+    return report, None
+
+
+def acknowledged_regions(report: Dict[str, Any]):
+    """``(set_of_region_ids, Check | None)``. NEVER raises.
+
+    The acknowledged set is the union of ``failed_regions``,
+    ``raised_nan_regions`` and ``unknown_regions`` from the prior report's
+    ``status_classification`` entry — ONE source, the one check that sees every
+    row, so two checks can never disagree about what was acknowledged.
+
+    ⚠ D8: an UNKNOWN status is included here only so the DIFF check does not
+    re-report it as new. It is NEVER acknowledgeable as an outcome:
+    ``classify_statuses`` HARD_STOPs on it regardless.
+    """
+    n = "prev_report_loadable"
+    entries = [e for e in (report.get("report") or [])
+               if e.get("name") == "status_classification"]
+    if not entries:
+        return set(), Check(n, FAIL,
+                            f"--prev-report has no status_classification entry -> "
+                            f"there is no acknowledged set to read. FAIL CLOSED. "
+                            f"{_PREV_REPORT_REMEDY}",
+                            HARD_STOP, {})
+    m = entries[0].get("measured") or {}
+    ack = set()
+    for key in ("failed_regions", "raised_nan_regions", "unknown_regions"):
+        ack |= {str(r) for r in (m.get(key) or [])}
+    return ack, None
+
+
+def check_new_failures_since_last_checkin(
+        status_rows: List[Dict[str, Any]], ack: set, *, prev_path: str) -> Check:
+    """Exit 1 only on something NEW since the last check-in.
+
+    Computed in EXACTLY ONE place, so "new" can never mean two different things in
+    two checks. Three dispositions:
+      * a region that DISAPPEARED  -> HARD_STOP. The panel TSV is append-only and
+        deduped, so a vanished acknowledged row means it was truncated or
+        replaced. Never a silent pass — but the message carries the remedy,
+        because a deliberate rotation is an ordinary, innocent route in (W3).
+      * a NEW stop-worthy region   -> FINDING (exit 1).
+      * otherwise                  -> PASS, restating the acknowledged ids so the
+        operator can see WHAT is being carried rather than inferring it.
+    """
+    def run() -> Check:
+        n = "new_failures_since_last_checkin"
+        current = {str(r.get("region_id", "")).strip() for r in status_rows}
+        stopworthy = {str(r.get("region_id", "")).strip() for r in status_rows
+                      if _status_class(r.get("status")) in
+                      (STATUS_FAILURE, STATUS_RAISED_NAN, STATUS_UNKNOWN)}
+        new = sorted(stopworthy - ack)
+        disappeared = sorted(ack - current)
+        measured = {"acknowledged": sorted(ack), "new_regions": new,
+                    "disappeared_regions": disappeared,
+                    "n_acknowledged": len(ack), "prev_report": prev_path}
+        if disappeared:
+            return Check(n, FAIL,
+                         f"region(s) {disappeared} were ACKNOWLEDGED in "
+                         f"{prev_path} but are ABSENT from this panel. The panel "
+                         f"TSV is append-only and deduped by region_id, so a "
+                         f"vanished row means the file was truncated or replaced "
+                         f"— if the panel TSV was deliberately rotated or "
+                         f"re-seeded, run ONCE without `--prev-report` to re-mint "
+                         f"a baseline, and say so when you report; otherwise this "
+                         f"is an overwrite of banked provenance — STOP.",
+                         HARD_STOP, measured)
+        if new:
+            return Check(n, FAIL,
+                         f"{len(new)} region(s) entered a stop-worthy state SINCE "
+                         f"the last check-in ({prev_path}): {new}. These are NEW — "
+                         f"the {len(ack)} already-acknowledged region(s) are not "
+                         f"re-reported as new here (they are still counted and "
+                         f"still listed by status_classification). Report the new "
+                         f"ones with their statuses.",
+                         FINDING, measured)
+        return Check(n, PASS,
+                     f"nothing NEW since {prev_path}: {len(ack)} acknowledged "
+                     f"region(s) {sorted(ack)} are still present and still "
+                     f"counted, and no other region entered a stop-worthy state.",
+                     FINDING, measured)
+
+    return _guard("new_failures_since_last_checkin", HARD_STOP, run)
+
+
 # --------------------------------------------------------------------------- #
 # Driver                                                                      #
 # --------------------------------------------------------------------------- #
@@ -1116,6 +1358,12 @@ def summarize(checks: List[Check]) -> Dict[str, Any]:
     hard = [c for c in failed if c.severity == HARD_STOP]
     finds = [c for c in failed if c.severity == FINDING]
     return {
+        # quick-260918-qz5 (D7): a NAMED key declaring that this report carries the
+        # per-class region lists a later `--prev-report` check-in reads. Shape is
+        # therefore checked BY NAME rather than by probing for keys, and a
+        # PRE-CHANGE report (which lacks it) FAILS CLOSED instead of being read as
+        # an empty acknowledged set — which would silently mark every row "new".
+        "acknowledgeable_schema": 1,
         "all_pass": not failed,
         "exit_code": 0 if not failed else 1,
         "n_checks": len(checks),
@@ -1138,6 +1386,10 @@ def _print_summary(subcommand: str, s: Dict[str, Any]) -> None:
     if s["exit_code"] != 0:
         print("A RED IS A STOP. Paste this block to Carter and wait — never chain "
               "past a red, and never retry or 'repair' on your own.")
+        print("ONE DOCUMENTED EXCEPTION (stage-c with --prev-report): an "
+              "ACKNOWLEDGED raise or failure that this gate re-reports is not a "
+              "NEW stop — it is still counted and still listed above. Exit 1 "
+              "means something NEW since the named previous report.")
 
 
 def _lookup_region(rows: List[Dict[str, Any]], region_id: str
@@ -1241,7 +1493,55 @@ def _stage_b(args) -> List[Check]:
 
 def _stage_c(args) -> List[Check]:
     rows = parse_panel_tsv(args.panel_tsv)
-    return [classify_statuses(rows), check_raised_nan_findings(rows)]
+
+    # ⚠ D7e / W2 — THE VACUITY HOLE, MEASURED at BASE: a header-only panel exited
+    # 0 here and printed "0 ok-class + 0 deferred row(s) of 0, ALL recognized (the
+    # gates working)" over ZERO rows, while _stage_b already REFUSED the same
+    # input. It goes in _stage_c and NOT in classify_statuses, deliberately:
+    # classify_statuses is called by stage-a, stage-b AND stage-c (measured), so
+    # putting it there would silently change two OTHER fire-path gates' report
+    # shape. The message LISTS the five routes in and asserts NONE of them —
+    # four of the five are innocent.
+    if not rows:
+        return [Check(
+            "stage_c_zero_data_rows", FAIL,
+            f"no data rows in {args.panel_tsv} -> there is NOTHING to classify; "
+            f"a check with no input must FAIL, not pass vacuously. FIVE routes "
+            f"in, and only the last is a stop in itself: (1) the fire has not "
+            f"appended its first row yet — wait, this is day one; (2) the TSV was "
+            f"deliberately rotated or re-seeded — say so, and re-mint a baseline; "
+            f"(3) an interrupted or failed FIRST write: the producer appends "
+            f"through pandas.to_csv, which emits the HEADER first and is not "
+            f"atomic, so a kill between the header and the first data row leaves "
+            f"exactly this file; (4) in gs:// mode, a truncated seed download of "
+            f"the bucket mirror; (5) a genuine truncation or an overwrite of "
+            f"banked provenance — STOP.",
+            HARD_STOP, {"n_rows": 0})]
+
+    prev_path = getattr(args, "prev_report", None)
+    if not prev_path:
+        # NO --prev-report => no acknowledgement and NO diff check, so the exit
+        # semantics stay identical to the measured BASE table (the two new raise
+        # checks are added unconditionally but PASS on every raise-free panel, so
+        # they move no exit code). The one deliberate change is the zero-row FAIL
+        # above.
+        return [classify_statuses(rows), check_raised_nan_findings(rows),
+                check_raised_nan_coverage(rows)]
+
+    report, err = load_prev_report(prev_path)
+    if err is not None:
+        # FAIL CLOSED and return EARLY: without a trustworthy acknowledged set the
+        # acknowledgement-dependent checks cannot be evaluated at all, and running
+        # them against an assumed-empty set would report every row as new.
+        return [err]
+    ack, err = acknowledged_regions(report)
+    if err is not None:
+        return [err]
+    return [classify_statuses(rows, acknowledged=ack),
+            check_raised_nan_findings(rows, acknowledged=ack),
+            check_raised_nan_coverage(rows),
+            check_new_failures_since_last_checkin(rows, ack,
+                                                  prev_path=str(prev_path))]
 
 
 def _disclosure(args) -> List[Check]:
@@ -1291,6 +1591,22 @@ def _build_parser() -> argparse.ArgumentParser:
 
     c = sub.add_parser("stage-c", help="full-fire check-in rollup")
     c.add_argument("--panel-tsv", required=True)
+    c.add_argument("--prev-report", dest="prev_report", default=None,
+                   help="the PREVIOUS check-in's --report JSON. With it, exit 1 "
+                        "means something NEW entered a stop-worthy state SINCE "
+                        "that check-in; an already-acknowledged raise or failure "
+                        "is still COUNTED and still REPORTED but is not a new "
+                        "stop. WHY the stop is stateful: under the adopted "
+                        "raised-NaN posture one raise would otherwise make every "
+                        "remaining check-in exit 1 for ~9 days, and a gate that is "
+                        "always red is a gate no one reads. Use the dated "
+                        "convention (fire_gate_stageC_YYYYMMDD.json) and NEVER "
+                        "give the same path as --report: the report is written "
+                        "AFTER the checks, so that would read the acknowledged set "
+                        "and then destroy it. That case is refused before any "
+                        "check runs, with nothing written. A missing, unparseable "
+                        "or pre-change report FAILS CLOSED; a row that "
+                        "DISAPPEARED is a HARD_STOP.")
     c.set_defaults(_run=_stage_c)
 
     d = sub.add_parser("disclosure", help="R4-COVERAGE publication obligation")
@@ -1311,6 +1627,27 @@ def main(argv: Optional[List[str]] = None) -> int:
     shell still sees the exit status while the tests can assert on the value.
     """
     args = _build_parser().parse_args(argv)
+
+    # ⚠ B3 — THE ALIASING GUARD RUNS BEFORE THE CHECKS AND RETURNS WITHOUT
+    # WRITING. A HARD_STOP *check* would not be enough: the report below is
+    # written UNCONDITIONALLY AFTER the checks (MEASURED), so a check that merely
+    # REPORTED the aliasing would watch the acknowledged set be DESTROYED by the
+    # very invocation that read it. Path.resolve() so a symlink, a `..` or any
+    # other spelling of the same file is caught, and compared only when BOTH are
+    # given. (A guard that names a property while the property is violated is a
+    # proxy, not a guard.)
+    if getattr(args, "report", None) and getattr(args, "prev_report", None) and \
+            Path(args.report).resolve() == Path(args.prev_report).resolve():
+        s = summarize([Check(
+            "prev_report_aliasing", FAIL,
+            "--prev-report and --report resolve to the SAME path; the report is "
+            "written AFTER the checks, so this would read the acknowledged set and "
+            "then DESTROY it. Name the PREVIOUS check-in's dated report as "
+            "--prev-report and today's as --report. FAIL CLOSED, nothing written.",
+            HARD_STOP, {"path": str(Path(args.report).resolve())})])
+        _print_summary(args.subcommand, s)
+        return int(s["exit_code"])          # <-- NO write, on either path
+
     try:
         checks = args._run(args)
     except Exception as e:  # noqa: BLE001 — the driver fails closed too

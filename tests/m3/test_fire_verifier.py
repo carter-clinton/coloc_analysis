@@ -1509,15 +1509,23 @@ def test_no_prev_report_exit_codes_match_the_MEASURED_base_table(tmp_path):
         p = _write_panel(tmp_path, rows, name=f"t34_{i}.tsv")
         rc, out = _stage_c(p)
         assert rc == want, f"{label}: expected {want}, got {rc}\n{out}"
-        if label != "[header-only, 0 rows]":
-            assert rc == base_exit or label == "[header-only, 0 rows]", label
+        if label == "[header-only, 0 rows]":
+            # the ONE deliberate change: BASE 0 -> POST 1. It early-returns with
+            # ONLY the zero-row check, which is correct — with no rows there is
+            # nothing for the raise checks to classify.
+            assert base_exit == 0 and want == 1, label
+            assert "stage_c_zero_data_rows" in out, out
+            continue
+        assert rc == base_exit, f"{label}: BASE said {base_exit}, POST gave {rc}"
         # the two new raise checks are PRESENT but SILENT on a raise-free panel:
         # they are NAMED in the rollup (so the operator sees they ran) and they
         # report ZERO raises. (The plan asked for "no raised_nan string in the
-        # output", which is unsatisfiable: the checks' own NAMES contain it.)
+        # output", which is unsatisfiable: the checks' own NAMES contain it, and
+        # naming a check that ran is the opposite of a defect.)
         assert "raised_nan_contract_fired" in out, out
         assert "raised_nan_class_coverage" in out, out
-        assert "0 raised-NaN row(s)" in out or "no raised_nan: rows" in out, out
+        assert "0 raised-NaN row(s)" in out, out
+        assert "no raised_nan: rows" in out, out
 
 
 def test_a_header_only_panel_does_not_pass_vacuously(tmp_path):
