@@ -39,20 +39,20 @@ created: 2026-10-21
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| (planner fills) | | | D-13 no silent identity | — | N/A | unit + live gate | `pytest tests/ta_r4/test_no_silent_identity.py` | ❌ W0 | ⬜ pending |
-| | | | D-01 matched variant sets | — | N/A | live gate | `pytest tests/ta_r4/test_arm_variant_sets_identical.py` | ❌ W0 | ⬜ pending |
-| | | | D-02 fallback labelled | — | N/A | unit | `pytest tests/ta_r4/test_fallback_labelled.py` | ❌ W0 | ⬜ pending |
-| | | | priors constant | — | N/A | live gate | `pytest tests/ta_r4/test_priors_constant.py` | ❌ W0 | ⬜ pending |
-| | | | D-04/D-15 Track B isolation | — | N/A | dry-run | `pytest tests/ta_r4/test_track_b_isolation.py` | ❌ W0 | ⬜ pending |
-| | | | D-05/D-27 OSF sentinel gate | — | production refuses without sentinel | dry-run | `pytest tests/ta_r4/test_osf_gate.py` | ❌ W0 | ⬜ pending |
-| | | | D-11 storage on /rs1 | — | N/A | unit | `pytest tests/ta_r4/test_storage_on_rs1.py` | ❌ W0 | ⬜ pending |
-| | | | D-18 BMI allele restoration | — | N/A | unit | `pytest tests/ta_r4/test_bmi_allele_restoration.py` | ❌ W2 | ⬜ pending |
-| | | | D-06 panel REF/ALT emit | — | N/A | unit (R) | `pytest tests/ta_r4/test_plink_ld_to_rds_ref_alt.py` | ❌ W2 | ⬜ pending |
-| | | | D-06 QTL orientation | — | N/A | unit (R) | `pytest tests/ta_r4/test_qtl_orient.py` | ❌ W2 | ⬜ pending |
-| | | | D-12a panel known answers | — | N/A | live gate | `pytest tests/ta_r4/test_known_answer_panels.py` | ❌ W1/W3 | ⬜ pending |
-| | | | D-12b/D-17 reproduction | — | N/A | live gate | `pytest tests/ta_r4/test_known_answer_repro.py` | ❌ W3 | ⬜ pending |
-| | | | UKB tile triangle/diag | — | N/A | live gate | `pytest tests/ta_r4/test_ukb_tile_triangle.py` | ❌ W1 | ⬜ pending |
-| | | | Track B unchanged | — | N/A | suite | full `tests/m3` (+ `test_source_freeze_pins`) | ✅ | ⬜ pending |
+| W0c-T1 | W0c | 3 | D-13 no silent identity | — | N/A | unit + live gate | `pytest tests/ta_r4/test_no_silent_identity.py` | ❌ W0 | ⬜ pending |
+| W0c-T2 | W0c | 3 | D-01 matched variant sets | — | N/A | live gate | `pytest tests/ta_r4/test_arm_variant_sets_identical.py` | ❌ W0 | ⬜ pending |
+| W0d-T1 | W0d | 4 | D-02 fallback labelled | — | N/A | unit | `pytest tests/ta_r4/test_fallback_labelled.py` | ❌ W0 | ⬜ pending |
+| W0d-T1 | W0d | 4 | priors constant | — | N/A | live gate | `pytest tests/ta_r4/test_priors_constant.py` | ❌ W0 | ⬜ pending |
+| W0b-T3 | W0b | 2 | D-04/D-15 Track B isolation | — | N/A | dry-run | `pytest tests/ta_r4/test_track_b_isolation.py` | ❌ W0 | ⬜ pending |
+| W0b-T3 | W0b | 2 | D-05/D-27 OSF sentinel gate | — | production refuses without sentinel | dry-run | `pytest tests/ta_r4/test_osf_gate.py` | ❌ W0 | ⬜ pending |
+| W0a-T1 | W0a | 1 | D-11 storage on /rs1 | — | N/A | unit | `pytest tests/ta_r4/test_storage_on_rs1.py` | ❌ W0 | ⬜ pending |
+| W1-T1 | W1 | 5 | D-18 BMI allele restoration | — | N/A | unit | `pytest tests/ta_r4/test_bmi_allele_restoration.py` | ❌ W1 | ⬜ pending |
+| W1-T2 | W1 | 5 | D-06 panel REF/ALT emit | — | N/A | unit (R) | `pytest tests/ta_r4/test_plink_ld_to_rds_ref_alt.py` | ❌ W1 | ⬜ pending |
+| W1-T3 | W1 | 5 | D-06 QTL orientation | — | N/A | unit (R) | `pytest tests/ta_r4/test_qtl_orient.py` | ❌ W1 | ⬜ pending |
+| W2a-T3 | W2a | 6 | D-12a panel known answers | — | N/A | live gate | `pytest tests/ta_r4/test_known_answer_panels.py` | ❌ W2a | ⬜ pending |
+| W3a-T3 / W3b-T2 | W3a/W3b | 9/10 | D-12b/D-17 reproduction | — | N/A | live gate | `pytest tests/ta_r4/test_known_answer_repro.py` | ❌ W3a/W3b | ⬜ pending |
+| W2b-T2 | W2b | 7 | UKB tile triangle/diag | — | N/A | live gate | `pytest tests/ta_r4/test_ukb_tile_triangle.py` | ❌ W2b | ⬜ pending |
+| §C (every plan) | all | 1-22 | Track B unchanged | — | N/A | suite | full `tests/m3` (+ `test_source_freeze_pins`) | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

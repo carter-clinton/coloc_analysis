@@ -76,3 +76,13 @@ Chronological record of every action in this phase. Append-only.
   checkpoints whose outcome is a scientific judgement (panel manifest, known-answer findings,
   manuscript), (d) anything that spends AoU/cloud money (none planned).
 - `ta-r4-VALIDATION.md` committed (`daedde5`).
+- **Planning complete** (gsd-planner): 22 plans in 22 sequential waves + `ta-r4-PLAN-INDEX.md`
+  (shared constants, standing rules, D-01..D-28 coverage). Planner-introduced rigor choices:
+  analysis code frozen at a lock commit BEFORE the OSF post (W3c/W3d/W3e precede W4; W5–W6
+  refuse to fire if analysis files differ from the lock); OSF sentinel must match the committed
+  amendment sha256 AND the hash the public OSF API reports for the file on az52u; exhaustive
+  36-case branch classifier; two brief-blind Codex reviews (amendment, manuscript); static
+  246-row pair manifest (220 admissible) + static QTL manifest; manuscript numbers rendered only
+  from FINAL tables; separate `Snakefile.ta_r4`; extra `A3_1kg_isect` arm (13 arms total).
+  Corrections: legacy EUR panel count 10 (not 11); AFR 661 = 504 + ASW 61 + ACB 96 (measured).
+  Committing plans before the plan-checker run.
