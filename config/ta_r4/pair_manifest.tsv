@@ -1,0 +1,347 @@
+row_id	ancestry	region_id	region_safe	trait_a	trait_b	row_class	admissible	inadmissible_reason	canonical_pair	nc_set	nc_caveat
+NC_ABO__EUR__asthma_vs_bmi	EUR	NC_ABO	NC_ABO	asthma	bmi	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__asthma_vs_hypertension	EUR	NC_ABO	NC_ABO	asthma	hypertension	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__asthma_vs_stroke	EUR	NC_ABO	NC_ABO	asthma	stroke	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__asthma_vs_t2d	EUR	NC_ABO	NC_ABO	asthma	t2d	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__bmi_vs_hypertension	EUR	NC_ABO	NC_ABO	bmi	hypertension	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__bmi_vs_stroke	EUR	NC_ABO	NC_ABO	bmi	stroke	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__bmi_vs_t2d	EUR	NC_ABO	NC_ABO	bmi	t2d	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__hypertension_vs_stroke	EUR	NC_ABO	NC_ABO	hypertension	stroke	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__hypertension_vs_t2d	EUR	NC_ABO	NC_ABO	hypertension	t2d	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_ABO__EUR__stroke_vs_t2d	EUR	NC_ABO	NC_ABO	stroke	t2d	negative_control	true		false	blood_group	reported_stroke_association_verify
+NC_FUT1_FUT2__EUR__asthma_vs_bmi	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	asthma	bmi	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__asthma_vs_hypertension	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	asthma	hypertension	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__asthma_vs_stroke	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	asthma	stroke	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__asthma_vs_t2d	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	asthma	t2d	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__bmi_vs_hypertension	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	bmi	hypertension	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__bmi_vs_stroke	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	bmi	stroke	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__bmi_vs_t2d	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	bmi	t2d	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__hypertension_vs_stroke	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	hypertension	stroke	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__hypertension_vs_t2d	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	hypertension	t2d	negative_control	true		false	blood_group	
+NC_FUT1_FUT2__EUR__stroke_vs_t2d	EUR	NC_FUT1_FUT2	NC_FUT1_FUT2	stroke	t2d	negative_control	true		false	blood_group	
+NC_IRF4__EUR__asthma_vs_bmi	EUR	NC_IRF4	NC_IRF4	asthma	bmi	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__asthma_vs_hypertension	EUR	NC_IRF4	NC_IRF4	asthma	hypertension	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__asthma_vs_stroke	EUR	NC_IRF4	NC_IRF4	asthma	stroke	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__asthma_vs_t2d	EUR	NC_IRF4	NC_IRF4	asthma	t2d	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__bmi_vs_hypertension	EUR	NC_IRF4	NC_IRF4	bmi	hypertension	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__bmi_vs_stroke	EUR	NC_IRF4	NC_IRF4	bmi	stroke	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__bmi_vs_t2d	EUR	NC_IRF4	NC_IRF4	bmi	t2d	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__hypertension_vs_stroke	EUR	NC_IRF4	NC_IRF4	hypertension	stroke	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__hypertension_vs_t2d	EUR	NC_IRF4	NC_IRF4	hypertension	t2d	negative_control	true		false	cosmetic	
+NC_IRF4__EUR__stroke_vs_t2d	EUR	NC_IRF4	NC_IRF4	stroke	t2d	negative_control	true		false	cosmetic	
+NC_KEL__EUR__asthma_vs_bmi	EUR	NC_KEL	NC_KEL	asthma	bmi	negative_control	true		false	blood_group	
+NC_KEL__EUR__asthma_vs_hypertension	EUR	NC_KEL	NC_KEL	asthma	hypertension	negative_control	true		false	blood_group	
+NC_KEL__EUR__asthma_vs_stroke	EUR	NC_KEL	NC_KEL	asthma	stroke	negative_control	true		false	blood_group	
+NC_KEL__EUR__asthma_vs_t2d	EUR	NC_KEL	NC_KEL	asthma	t2d	negative_control	true		false	blood_group	
+NC_KEL__EUR__bmi_vs_hypertension	EUR	NC_KEL	NC_KEL	bmi	hypertension	negative_control	true		false	blood_group	
+NC_KEL__EUR__bmi_vs_stroke	EUR	NC_KEL	NC_KEL	bmi	stroke	negative_control	true		false	blood_group	
+NC_KEL__EUR__bmi_vs_t2d	EUR	NC_KEL	NC_KEL	bmi	t2d	negative_control	true		false	blood_group	
+NC_KEL__EUR__hypertension_vs_stroke	EUR	NC_KEL	NC_KEL	hypertension	stroke	negative_control	true		false	blood_group	
+NC_KEL__EUR__hypertension_vs_t2d	EUR	NC_KEL	NC_KEL	hypertension	t2d	negative_control	true		false	blood_group	
+NC_KEL__EUR__stroke_vs_t2d	EUR	NC_KEL	NC_KEL	stroke	t2d	negative_control	true		false	blood_group	
+NC_MC1R__EUR__asthma_vs_bmi	EUR	NC_MC1R	NC_MC1R	asthma	bmi	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__asthma_vs_hypertension	EUR	NC_MC1R	NC_MC1R	asthma	hypertension	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__asthma_vs_stroke	EUR	NC_MC1R	NC_MC1R	asthma	stroke	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__asthma_vs_t2d	EUR	NC_MC1R	NC_MC1R	asthma	t2d	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__bmi_vs_hypertension	EUR	NC_MC1R	NC_MC1R	bmi	hypertension	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__bmi_vs_stroke	EUR	NC_MC1R	NC_MC1R	bmi	stroke	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__bmi_vs_t2d	EUR	NC_MC1R	NC_MC1R	bmi	t2d	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__hypertension_vs_stroke	EUR	NC_MC1R	NC_MC1R	hypertension	stroke	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__hypertension_vs_t2d	EUR	NC_MC1R	NC_MC1R	hypertension	t2d	negative_control	true		false	cosmetic	
+NC_MC1R__EUR__stroke_vs_t2d	EUR	NC_MC1R	NC_MC1R	stroke	t2d	negative_control	true		false	cosmetic	
+NC_NULL_01__EUR__asthma_vs_bmi	EUR	NC_NULL_01	NC_NULL_01	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__asthma_vs_hypertension	EUR	NC_NULL_01	NC_NULL_01	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__asthma_vs_stroke	EUR	NC_NULL_01	NC_NULL_01	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__asthma_vs_t2d	EUR	NC_NULL_01	NC_NULL_01	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__bmi_vs_hypertension	EUR	NC_NULL_01	NC_NULL_01	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__bmi_vs_stroke	EUR	NC_NULL_01	NC_NULL_01	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__bmi_vs_t2d	EUR	NC_NULL_01	NC_NULL_01	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__hypertension_vs_stroke	EUR	NC_NULL_01	NC_NULL_01	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__hypertension_vs_t2d	EUR	NC_NULL_01	NC_NULL_01	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_01__EUR__stroke_vs_t2d	EUR	NC_NULL_01	NC_NULL_01	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__asthma_vs_bmi	EUR	NC_NULL_02	NC_NULL_02	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__asthma_vs_hypertension	EUR	NC_NULL_02	NC_NULL_02	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__asthma_vs_stroke	EUR	NC_NULL_02	NC_NULL_02	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__asthma_vs_t2d	EUR	NC_NULL_02	NC_NULL_02	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__bmi_vs_hypertension	EUR	NC_NULL_02	NC_NULL_02	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__bmi_vs_stroke	EUR	NC_NULL_02	NC_NULL_02	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__bmi_vs_t2d	EUR	NC_NULL_02	NC_NULL_02	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__hypertension_vs_stroke	EUR	NC_NULL_02	NC_NULL_02	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__hypertension_vs_t2d	EUR	NC_NULL_02	NC_NULL_02	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_02__EUR__stroke_vs_t2d	EUR	NC_NULL_02	NC_NULL_02	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__asthma_vs_bmi	EUR	NC_NULL_03	NC_NULL_03	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__asthma_vs_hypertension	EUR	NC_NULL_03	NC_NULL_03	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__asthma_vs_stroke	EUR	NC_NULL_03	NC_NULL_03	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__asthma_vs_t2d	EUR	NC_NULL_03	NC_NULL_03	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__bmi_vs_hypertension	EUR	NC_NULL_03	NC_NULL_03	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__bmi_vs_stroke	EUR	NC_NULL_03	NC_NULL_03	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__bmi_vs_t2d	EUR	NC_NULL_03	NC_NULL_03	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__hypertension_vs_stroke	EUR	NC_NULL_03	NC_NULL_03	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__hypertension_vs_t2d	EUR	NC_NULL_03	NC_NULL_03	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_03__EUR__stroke_vs_t2d	EUR	NC_NULL_03	NC_NULL_03	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__asthma_vs_bmi	EUR	NC_NULL_04	NC_NULL_04	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__asthma_vs_hypertension	EUR	NC_NULL_04	NC_NULL_04	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__asthma_vs_stroke	EUR	NC_NULL_04	NC_NULL_04	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__asthma_vs_t2d	EUR	NC_NULL_04	NC_NULL_04	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__bmi_vs_hypertension	EUR	NC_NULL_04	NC_NULL_04	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__bmi_vs_stroke	EUR	NC_NULL_04	NC_NULL_04	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__bmi_vs_t2d	EUR	NC_NULL_04	NC_NULL_04	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__hypertension_vs_stroke	EUR	NC_NULL_04	NC_NULL_04	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__hypertension_vs_t2d	EUR	NC_NULL_04	NC_NULL_04	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_04__EUR__stroke_vs_t2d	EUR	NC_NULL_04	NC_NULL_04	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__asthma_vs_bmi	EUR	NC_NULL_05	NC_NULL_05	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__asthma_vs_hypertension	EUR	NC_NULL_05	NC_NULL_05	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__asthma_vs_stroke	EUR	NC_NULL_05	NC_NULL_05	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__asthma_vs_t2d	EUR	NC_NULL_05	NC_NULL_05	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__bmi_vs_hypertension	EUR	NC_NULL_05	NC_NULL_05	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__bmi_vs_stroke	EUR	NC_NULL_05	NC_NULL_05	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__bmi_vs_t2d	EUR	NC_NULL_05	NC_NULL_05	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__hypertension_vs_stroke	EUR	NC_NULL_05	NC_NULL_05	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__hypertension_vs_t2d	EUR	NC_NULL_05	NC_NULL_05	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_05__EUR__stroke_vs_t2d	EUR	NC_NULL_05	NC_NULL_05	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__asthma_vs_bmi	EUR	NC_NULL_06	NC_NULL_06	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__asthma_vs_hypertension	EUR	NC_NULL_06	NC_NULL_06	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__asthma_vs_stroke	EUR	NC_NULL_06	NC_NULL_06	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__asthma_vs_t2d	EUR	NC_NULL_06	NC_NULL_06	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__bmi_vs_hypertension	EUR	NC_NULL_06	NC_NULL_06	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__bmi_vs_stroke	EUR	NC_NULL_06	NC_NULL_06	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__bmi_vs_t2d	EUR	NC_NULL_06	NC_NULL_06	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__hypertension_vs_stroke	EUR	NC_NULL_06	NC_NULL_06	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__hypertension_vs_t2d	EUR	NC_NULL_06	NC_NULL_06	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_06__EUR__stroke_vs_t2d	EUR	NC_NULL_06	NC_NULL_06	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__asthma_vs_bmi	EUR	NC_NULL_07	NC_NULL_07	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__asthma_vs_hypertension	EUR	NC_NULL_07	NC_NULL_07	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__asthma_vs_stroke	EUR	NC_NULL_07	NC_NULL_07	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__asthma_vs_t2d	EUR	NC_NULL_07	NC_NULL_07	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__bmi_vs_hypertension	EUR	NC_NULL_07	NC_NULL_07	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__bmi_vs_stroke	EUR	NC_NULL_07	NC_NULL_07	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__bmi_vs_t2d	EUR	NC_NULL_07	NC_NULL_07	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__hypertension_vs_stroke	EUR	NC_NULL_07	NC_NULL_07	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__hypertension_vs_t2d	EUR	NC_NULL_07	NC_NULL_07	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_07__EUR__stroke_vs_t2d	EUR	NC_NULL_07	NC_NULL_07	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__asthma_vs_bmi	EUR	NC_NULL_08	NC_NULL_08	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__asthma_vs_hypertension	EUR	NC_NULL_08	NC_NULL_08	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__asthma_vs_stroke	EUR	NC_NULL_08	NC_NULL_08	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__asthma_vs_t2d	EUR	NC_NULL_08	NC_NULL_08	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__bmi_vs_hypertension	EUR	NC_NULL_08	NC_NULL_08	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__bmi_vs_stroke	EUR	NC_NULL_08	NC_NULL_08	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__bmi_vs_t2d	EUR	NC_NULL_08	NC_NULL_08	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__hypertension_vs_stroke	EUR	NC_NULL_08	NC_NULL_08	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__hypertension_vs_t2d	EUR	NC_NULL_08	NC_NULL_08	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_08__EUR__stroke_vs_t2d	EUR	NC_NULL_08	NC_NULL_08	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__asthma_vs_bmi	EUR	NC_NULL_09	NC_NULL_09	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__asthma_vs_hypertension	EUR	NC_NULL_09	NC_NULL_09	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__asthma_vs_stroke	EUR	NC_NULL_09	NC_NULL_09	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__asthma_vs_t2d	EUR	NC_NULL_09	NC_NULL_09	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__bmi_vs_hypertension	EUR	NC_NULL_09	NC_NULL_09	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__bmi_vs_stroke	EUR	NC_NULL_09	NC_NULL_09	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__bmi_vs_t2d	EUR	NC_NULL_09	NC_NULL_09	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__hypertension_vs_stroke	EUR	NC_NULL_09	NC_NULL_09	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__hypertension_vs_t2d	EUR	NC_NULL_09	NC_NULL_09	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_09__EUR__stroke_vs_t2d	EUR	NC_NULL_09	NC_NULL_09	stroke	t2d	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__asthma_vs_bmi	EUR	NC_NULL_10	NC_NULL_10	asthma	bmi	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__asthma_vs_hypertension	EUR	NC_NULL_10	NC_NULL_10	asthma	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__asthma_vs_stroke	EUR	NC_NULL_10	NC_NULL_10	asthma	stroke	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__asthma_vs_t2d	EUR	NC_NULL_10	NC_NULL_10	asthma	t2d	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__bmi_vs_hypertension	EUR	NC_NULL_10	NC_NULL_10	bmi	hypertension	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__bmi_vs_stroke	EUR	NC_NULL_10	NC_NULL_10	bmi	stroke	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__bmi_vs_t2d	EUR	NC_NULL_10	NC_NULL_10	bmi	t2d	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__hypertension_vs_stroke	EUR	NC_NULL_10	NC_NULL_10	hypertension	stroke	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__hypertension_vs_t2d	EUR	NC_NULL_10	NC_NULL_10	hypertension	t2d	negative_control	true		false	gwas_null	
+NC_NULL_10__EUR__stroke_vs_t2d	EUR	NC_NULL_10	NC_NULL_10	stroke	t2d	negative_control	true		false	gwas_null	
+NC_OCA2_HERC2__EUR__asthma_vs_bmi	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	asthma	bmi	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__asthma_vs_hypertension	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	asthma	hypertension	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__asthma_vs_stroke	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	asthma	stroke	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__asthma_vs_t2d	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	asthma	t2d	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__bmi_vs_hypertension	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	bmi	hypertension	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__bmi_vs_stroke	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	bmi	stroke	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__bmi_vs_t2d	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	bmi	t2d	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__hypertension_vs_stroke	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	hypertension	stroke	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__hypertension_vs_t2d	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	hypertension	t2d	negative_control	true		false	cosmetic	
+NC_OCA2_HERC2__EUR__stroke_vs_t2d	EUR	NC_OCA2_HERC2	NC_OCA2_HERC2	stroke	t2d	negative_control	true		false	cosmetic	
+NC_RH__EUR__asthma_vs_bmi	EUR	NC_RH	NC_RH	asthma	bmi	negative_control	true		false	blood_group	
+NC_RH__EUR__asthma_vs_hypertension	EUR	NC_RH	NC_RH	asthma	hypertension	negative_control	true		false	blood_group	
+NC_RH__EUR__asthma_vs_stroke	EUR	NC_RH	NC_RH	asthma	stroke	negative_control	true		false	blood_group	
+NC_RH__EUR__asthma_vs_t2d	EUR	NC_RH	NC_RH	asthma	t2d	negative_control	true		false	blood_group	
+NC_RH__EUR__bmi_vs_hypertension	EUR	NC_RH	NC_RH	bmi	hypertension	negative_control	true		false	blood_group	
+NC_RH__EUR__bmi_vs_stroke	EUR	NC_RH	NC_RH	bmi	stroke	negative_control	true		false	blood_group	
+NC_RH__EUR__bmi_vs_t2d	EUR	NC_RH	NC_RH	bmi	t2d	negative_control	true		false	blood_group	
+NC_RH__EUR__hypertension_vs_stroke	EUR	NC_RH	NC_RH	hypertension	stroke	negative_control	true		false	blood_group	
+NC_RH__EUR__hypertension_vs_t2d	EUR	NC_RH	NC_RH	hypertension	t2d	negative_control	true		false	blood_group	
+NC_RH__EUR__stroke_vs_t2d	EUR	NC_RH	NC_RH	stroke	t2d	negative_control	true		false	blood_group	
+NC_SLC24A5__EUR__asthma_vs_bmi	EUR	NC_SLC24A5	NC_SLC24A5	asthma	bmi	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__asthma_vs_hypertension	EUR	NC_SLC24A5	NC_SLC24A5	asthma	hypertension	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__asthma_vs_stroke	EUR	NC_SLC24A5	NC_SLC24A5	asthma	stroke	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__asthma_vs_t2d	EUR	NC_SLC24A5	NC_SLC24A5	asthma	t2d	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__bmi_vs_hypertension	EUR	NC_SLC24A5	NC_SLC24A5	bmi	hypertension	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__bmi_vs_stroke	EUR	NC_SLC24A5	NC_SLC24A5	bmi	stroke	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__bmi_vs_t2d	EUR	NC_SLC24A5	NC_SLC24A5	bmi	t2d	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__hypertension_vs_stroke	EUR	NC_SLC24A5	NC_SLC24A5	hypertension	stroke	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__hypertension_vs_t2d	EUR	NC_SLC24A5	NC_SLC24A5	hypertension	t2d	negative_control	true		false	cosmetic	
+NC_SLC24A5__EUR__stroke_vs_t2d	EUR	NC_SLC24A5	NC_SLC24A5	stroke	t2d	negative_control	true		false	cosmetic	
+NC_TYR__EUR__asthma_vs_bmi	EUR	NC_TYR	NC_TYR	asthma	bmi	negative_control	true		false	cosmetic	
+NC_TYR__EUR__asthma_vs_hypertension	EUR	NC_TYR	NC_TYR	asthma	hypertension	negative_control	true		false	cosmetic	
+NC_TYR__EUR__asthma_vs_stroke	EUR	NC_TYR	NC_TYR	asthma	stroke	negative_control	true		false	cosmetic	
+NC_TYR__EUR__asthma_vs_t2d	EUR	NC_TYR	NC_TYR	asthma	t2d	negative_control	true		false	cosmetic	
+NC_TYR__EUR__bmi_vs_hypertension	EUR	NC_TYR	NC_TYR	bmi	hypertension	negative_control	true		false	cosmetic	
+NC_TYR__EUR__bmi_vs_stroke	EUR	NC_TYR	NC_TYR	bmi	stroke	negative_control	true		false	cosmetic	
+NC_TYR__EUR__bmi_vs_t2d	EUR	NC_TYR	NC_TYR	bmi	t2d	negative_control	true		false	cosmetic	
+NC_TYR__EUR__hypertension_vs_stroke	EUR	NC_TYR	NC_TYR	hypertension	stroke	negative_control	true		false	cosmetic	
+NC_TYR__EUR__hypertension_vs_t2d	EUR	NC_TYR	NC_TYR	hypertension	t2d	negative_control	true		false	cosmetic	
+NC_TYR__EUR__stroke_vs_t2d	EUR	NC_TYR	NC_TYR	stroke	t2d	negative_control	true		false	cosmetic	
+9p21_CDKN2A__AFR__asthma_vs_stroke	AFR	9p21_CDKN2A	9p21_CDKN2A	asthma	stroke	primary	true		false		
+9p21_CDKN2A__AFR__asthma_vs_t2d	AFR	9p21_CDKN2A	9p21_CDKN2A	asthma	t2d	primary	true		false		
+9p21_CDKN2A__AFR__stroke_vs_t2d	AFR	9p21_CDKN2A	9p21_CDKN2A	stroke	t2d	primary	true		false		
+APOE_19q13__AFR__asthma_vs_stroke	AFR	APOE_19q13	APOE_19q13	asthma	stroke	primary	true		false		
+APOE_19q13__AFR__asthma_vs_t2d	AFR	APOE_19q13	APOE_19q13	asthma	t2d	primary	true		false		
+APOE_19q13__AFR__stroke_vs_t2d	AFR	APOE_19q13	APOE_19q13	stroke	t2d	primary	true		false		
+APOL1_22q12__AFR__asthma_vs_stroke	AFR	APOL1_22q12	APOL1_22q12	asthma	stroke	primary	true		false		
+APOL1_22q12__AFR__asthma_vs_t2d	AFR	APOL1_22q12	APOL1_22q12	asthma	t2d	primary	true		false		
+APOL1_22q12__AFR__stroke_vs_t2d	AFR	APOL1_22q12	APOL1_22q12	stroke	t2d	primary	true		false		
+BMI_5q13_3__AFR__asthma_vs_stroke	AFR	BMI_5q13.3	BMI_5q13_3	asthma	stroke	primary	true		false		
+BMI_5q13_3__AFR__asthma_vs_t2d	AFR	BMI_5q13.3	BMI_5q13_3	asthma	t2d	primary	true		false		
+BMI_5q13_3__AFR__stroke_vs_t2d	AFR	BMI_5q13.3	BMI_5q13_3	stroke	t2d	primary	true		false		
+BMI_Xq24__AFR__asthma_vs_stroke	AFR	BMI_Xq24	BMI_Xq24	asthma	stroke	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__AFR__asthma_vs_t2d	AFR	BMI_Xq24	BMI_Xq24	asthma	t2d	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__AFR__stroke_vs_t2d	AFR	BMI_Xq24	BMI_Xq24	stroke	t2d	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+CXADR_F2RL1_6p21__AFR__asthma_vs_stroke	AFR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	asthma	stroke	primary	true		false		
+CXADR_F2RL1_6p21__AFR__asthma_vs_t2d	AFR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	asthma	t2d	primary	true		false		
+CXADR_F2RL1_6p21__AFR__stroke_vs_t2d	AFR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	stroke	t2d	primary	true		false		
+FTO_16q12__AFR__asthma_vs_stroke	AFR	FTO_16q12	FTO_16q12	asthma	stroke	primary	true		false		
+FTO_16q12__AFR__asthma_vs_t2d	AFR	FTO_16q12	FTO_16q12	asthma	t2d	primary	true		false		
+FTO_16q12__AFR__stroke_vs_t2d	AFR	FTO_16q12	FTO_16q12	stroke	t2d	primary	true		false		
+HLA_6p21__AFR__asthma_vs_stroke	AFR	HLA_6p21	HLA_6p21	asthma	stroke	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__AFR__asthma_vs_t2d	AFR	HLA_6p21	HLA_6p21	asthma	t2d	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__AFR__stroke_vs_t2d	AFR	HLA_6p21	HLA_6p21	stroke	t2d	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+MC4R_18q21__AFR__asthma_vs_stroke	AFR	MC4R_18q21	MC4R_18q21	asthma	stroke	primary	true		false		
+MC4R_18q21__AFR__asthma_vs_t2d	AFR	MC4R_18q21	MC4R_18q21	asthma	t2d	primary	true		false		
+MC4R_18q21__AFR__stroke_vs_t2d	AFR	MC4R_18q21	MC4R_18q21	stroke	t2d	primary	true		false		
+PYHIN1_1q23__AFR__asthma_vs_stroke	AFR	PYHIN1_1q23	PYHIN1_1q23	asthma	stroke	primary	true		false		
+PYHIN1_1q23__AFR__asthma_vs_t2d	AFR	PYHIN1_1q23	PYHIN1_1q23	asthma	t2d	primary	true		false		
+PYHIN1_1q23__AFR__stroke_vs_t2d	AFR	PYHIN1_1q23	PYHIN1_1q23	stroke	t2d	primary	true		false		
+SH2B3_12q24__AFR__asthma_vs_stroke	AFR	SH2B3_12q24	SH2B3_12q24	asthma	stroke	primary	true		true		
+SH2B3_12q24__AFR__asthma_vs_t2d	AFR	SH2B3_12q24	SH2B3_12q24	asthma	t2d	primary	true		false		
+SH2B3_12q24__AFR__stroke_vs_t2d	AFR	SH2B3_12q24	SH2B3_12q24	stroke	t2d	primary	true		true		
+SLC2A9_urate__AFR__asthma_vs_stroke	AFR	SLC2A9_urate	SLC2A9_urate	asthma	stroke	primary	true		false		
+SLC2A9_urate__AFR__asthma_vs_t2d	AFR	SLC2A9_urate	SLC2A9_urate	asthma	t2d	primary	true		false		
+SLC2A9_urate__AFR__stroke_vs_t2d	AFR	SLC2A9_urate	SLC2A9_urate	stroke	t2d	primary	true		false		
+9p21_CDKN2A__EUR__asthma_vs_bmi	EUR	9p21_CDKN2A	9p21_CDKN2A	asthma	bmi	primary	true		false		
+9p21_CDKN2A__EUR__asthma_vs_hypertension	EUR	9p21_CDKN2A	9p21_CDKN2A	asthma	hypertension	primary	true		false		
+9p21_CDKN2A__EUR__asthma_vs_stroke	EUR	9p21_CDKN2A	9p21_CDKN2A	asthma	stroke	primary	true		false		
+9p21_CDKN2A__EUR__asthma_vs_t2d	EUR	9p21_CDKN2A	9p21_CDKN2A	asthma	t2d	primary	true		false		
+9p21_CDKN2A__EUR__bmi_vs_hypertension	EUR	9p21_CDKN2A	9p21_CDKN2A	bmi	hypertension	primary	true		false		
+9p21_CDKN2A__EUR__bmi_vs_stroke	EUR	9p21_CDKN2A	9p21_CDKN2A	bmi	stroke	primary	true		false		
+9p21_CDKN2A__EUR__bmi_vs_t2d	EUR	9p21_CDKN2A	9p21_CDKN2A	bmi	t2d	primary	true		false		
+9p21_CDKN2A__EUR__hypertension_vs_stroke	EUR	9p21_CDKN2A	9p21_CDKN2A	hypertension	stroke	primary	true		false		
+9p21_CDKN2A__EUR__hypertension_vs_t2d	EUR	9p21_CDKN2A	9p21_CDKN2A	hypertension	t2d	primary	true		false		
+9p21_CDKN2A__EUR__stroke_vs_t2d	EUR	9p21_CDKN2A	9p21_CDKN2A	stroke	t2d	primary	true		false		
+APOE_19q13__EUR__asthma_vs_bmi	EUR	APOE_19q13	APOE_19q13	asthma	bmi	primary	true		false		
+APOE_19q13__EUR__asthma_vs_hypertension	EUR	APOE_19q13	APOE_19q13	asthma	hypertension	primary	true		false		
+APOE_19q13__EUR__asthma_vs_stroke	EUR	APOE_19q13	APOE_19q13	asthma	stroke	primary	true		false		
+APOE_19q13__EUR__asthma_vs_t2d	EUR	APOE_19q13	APOE_19q13	asthma	t2d	primary	true		false		
+APOE_19q13__EUR__bmi_vs_hypertension	EUR	APOE_19q13	APOE_19q13	bmi	hypertension	primary	true		false		
+APOE_19q13__EUR__bmi_vs_stroke	EUR	APOE_19q13	APOE_19q13	bmi	stroke	primary	true		false		
+APOE_19q13__EUR__bmi_vs_t2d	EUR	APOE_19q13	APOE_19q13	bmi	t2d	primary	true		false		
+APOE_19q13__EUR__hypertension_vs_stroke	EUR	APOE_19q13	APOE_19q13	hypertension	stroke	primary	true		false		
+APOE_19q13__EUR__hypertension_vs_t2d	EUR	APOE_19q13	APOE_19q13	hypertension	t2d	primary	true		false		
+APOE_19q13__EUR__stroke_vs_t2d	EUR	APOE_19q13	APOE_19q13	stroke	t2d	primary	true		false		
+APOL1_22q12__EUR__asthma_vs_bmi	EUR	APOL1_22q12	APOL1_22q12	asthma	bmi	primary	true		false		
+APOL1_22q12__EUR__asthma_vs_hypertension	EUR	APOL1_22q12	APOL1_22q12	asthma	hypertension	primary	true		false		
+APOL1_22q12__EUR__asthma_vs_stroke	EUR	APOL1_22q12	APOL1_22q12	asthma	stroke	primary	true		false		
+APOL1_22q12__EUR__asthma_vs_t2d	EUR	APOL1_22q12	APOL1_22q12	asthma	t2d	primary	true		false		
+APOL1_22q12__EUR__bmi_vs_hypertension	EUR	APOL1_22q12	APOL1_22q12	bmi	hypertension	primary	true		false		
+APOL1_22q12__EUR__bmi_vs_stroke	EUR	APOL1_22q12	APOL1_22q12	bmi	stroke	primary	true		false		
+APOL1_22q12__EUR__bmi_vs_t2d	EUR	APOL1_22q12	APOL1_22q12	bmi	t2d	primary	true		false		
+APOL1_22q12__EUR__hypertension_vs_stroke	EUR	APOL1_22q12	APOL1_22q12	hypertension	stroke	primary	true		true		
+APOL1_22q12__EUR__hypertension_vs_t2d	EUR	APOL1_22q12	APOL1_22q12	hypertension	t2d	primary	true		false		
+APOL1_22q12__EUR__stroke_vs_t2d	EUR	APOL1_22q12	APOL1_22q12	stroke	t2d	primary	true		false		
+BMI_5q13_3__EUR__asthma_vs_bmi	EUR	BMI_5q13.3	BMI_5q13_3	asthma	bmi	primary	true		false		
+BMI_5q13_3__EUR__asthma_vs_hypertension	EUR	BMI_5q13.3	BMI_5q13_3	asthma	hypertension	primary	true		false		
+BMI_5q13_3__EUR__asthma_vs_stroke	EUR	BMI_5q13.3	BMI_5q13_3	asthma	stroke	primary	true		false		
+BMI_5q13_3__EUR__asthma_vs_t2d	EUR	BMI_5q13.3	BMI_5q13_3	asthma	t2d	primary	true		false		
+BMI_5q13_3__EUR__bmi_vs_hypertension	EUR	BMI_5q13.3	BMI_5q13_3	bmi	hypertension	primary	true		false		
+BMI_5q13_3__EUR__bmi_vs_stroke	EUR	BMI_5q13.3	BMI_5q13_3	bmi	stroke	primary	true		false		
+BMI_5q13_3__EUR__bmi_vs_t2d	EUR	BMI_5q13.3	BMI_5q13_3	bmi	t2d	primary	true		false		
+BMI_5q13_3__EUR__hypertension_vs_stroke	EUR	BMI_5q13.3	BMI_5q13_3	hypertension	stroke	primary	true		false		
+BMI_5q13_3__EUR__hypertension_vs_t2d	EUR	BMI_5q13.3	BMI_5q13_3	hypertension	t2d	primary	true		false		
+BMI_5q13_3__EUR__stroke_vs_t2d	EUR	BMI_5q13.3	BMI_5q13_3	stroke	t2d	primary	true		false		
+BMI_Xq24__EUR__asthma_vs_bmi	EUR	BMI_Xq24	BMI_Xq24	asthma	bmi	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__asthma_vs_hypertension	EUR	BMI_Xq24	BMI_Xq24	asthma	hypertension	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__asthma_vs_stroke	EUR	BMI_Xq24	BMI_Xq24	asthma	stroke	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__asthma_vs_t2d	EUR	BMI_Xq24	BMI_Xq24	asthma	t2d	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__bmi_vs_hypertension	EUR	BMI_Xq24	BMI_Xq24	bmi	hypertension	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__bmi_vs_stroke	EUR	BMI_Xq24	BMI_Xq24	bmi	stroke	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__bmi_vs_t2d	EUR	BMI_Xq24	BMI_Xq24	bmi	t2d	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__hypertension_vs_stroke	EUR	BMI_Xq24	BMI_Xq24	hypertension	stroke	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__hypertension_vs_t2d	EUR	BMI_Xq24	BMI_Xq24	hypertension	t2d	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+BMI_Xq24__EUR__stroke_vs_t2d	EUR	BMI_Xq24	BMI_Xq24	stroke	t2d	primary	false	D-24: chrX absent from LDSC 1000G and UKB LD	false		
+CXADR_F2RL1_6p21__EUR__asthma_vs_bmi	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	asthma	bmi	primary	true		false		
+CXADR_F2RL1_6p21__EUR__asthma_vs_hypertension	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	asthma	hypertension	primary	true		false		
+CXADR_F2RL1_6p21__EUR__asthma_vs_stroke	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	asthma	stroke	primary	true		false		
+CXADR_F2RL1_6p21__EUR__asthma_vs_t2d	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	asthma	t2d	primary	true		false		
+CXADR_F2RL1_6p21__EUR__bmi_vs_hypertension	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	bmi	hypertension	primary	true		true		
+CXADR_F2RL1_6p21__EUR__bmi_vs_stroke	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	bmi	stroke	primary	true		false		
+CXADR_F2RL1_6p21__EUR__bmi_vs_t2d	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	bmi	t2d	primary	true		false		
+CXADR_F2RL1_6p21__EUR__hypertension_vs_stroke	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	hypertension	stroke	primary	true		false		
+CXADR_F2RL1_6p21__EUR__hypertension_vs_t2d	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	hypertension	t2d	primary	true		false		
+CXADR_F2RL1_6p21__EUR__stroke_vs_t2d	EUR	CXADR_F2RL1_6p21	CXADR_F2RL1_6p21	stroke	t2d	primary	true		false		
+FTO_16q12__EUR__asthma_vs_bmi	EUR	FTO_16q12	FTO_16q12	asthma	bmi	primary	true		false		
+FTO_16q12__EUR__asthma_vs_hypertension	EUR	FTO_16q12	FTO_16q12	asthma	hypertension	primary	true		false		
+FTO_16q12__EUR__asthma_vs_stroke	EUR	FTO_16q12	FTO_16q12	asthma	stroke	primary	true		false		
+FTO_16q12__EUR__asthma_vs_t2d	EUR	FTO_16q12	FTO_16q12	asthma	t2d	primary	true		false		
+FTO_16q12__EUR__bmi_vs_hypertension	EUR	FTO_16q12	FTO_16q12	bmi	hypertension	primary	true		true		
+FTO_16q12__EUR__bmi_vs_stroke	EUR	FTO_16q12	FTO_16q12	bmi	stroke	primary	true		false		
+FTO_16q12__EUR__bmi_vs_t2d	EUR	FTO_16q12	FTO_16q12	bmi	t2d	primary	true		true		
+FTO_16q12__EUR__hypertension_vs_stroke	EUR	FTO_16q12	FTO_16q12	hypertension	stroke	primary	true		false		
+FTO_16q12__EUR__hypertension_vs_t2d	EUR	FTO_16q12	FTO_16q12	hypertension	t2d	primary	true		true		
+FTO_16q12__EUR__stroke_vs_t2d	EUR	FTO_16q12	FTO_16q12	stroke	t2d	primary	true		false		
+HLA_6p21__EUR__asthma_vs_bmi	EUR	HLA_6p21	HLA_6p21	asthma	bmi	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__asthma_vs_hypertension	EUR	HLA_6p21	HLA_6p21	asthma	hypertension	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__asthma_vs_stroke	EUR	HLA_6p21	HLA_6p21	asthma	stroke	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__asthma_vs_t2d	EUR	HLA_6p21	HLA_6p21	asthma	t2d	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__bmi_vs_hypertension	EUR	HLA_6p21	HLA_6p21	bmi	hypertension	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__bmi_vs_stroke	EUR	HLA_6p21	HLA_6p21	bmi	stroke	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__bmi_vs_t2d	EUR	HLA_6p21	HLA_6p21	bmi	t2d	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__hypertension_vs_stroke	EUR	HLA_6p21	HLA_6p21	hypertension	stroke	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__hypertension_vs_t2d	EUR	HLA_6p21	HLA_6p21	hypertension	t2d	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+HLA_6p21__EUR__stroke_vs_t2d	EUR	HLA_6p21	HLA_6p21	stroke	t2d	primary	false	D-24: no admissible panel (69k HM3 variants > 16000 cap); UKB exploratory fits only, no coloc row	false		
+MC4R_18q21__EUR__asthma_vs_bmi	EUR	MC4R_18q21	MC4R_18q21	asthma	bmi	primary	true		false		
+MC4R_18q21__EUR__asthma_vs_hypertension	EUR	MC4R_18q21	MC4R_18q21	asthma	hypertension	primary	true		false		
+MC4R_18q21__EUR__asthma_vs_stroke	EUR	MC4R_18q21	MC4R_18q21	asthma	stroke	primary	true		false		
+MC4R_18q21__EUR__asthma_vs_t2d	EUR	MC4R_18q21	MC4R_18q21	asthma	t2d	primary	true		false		
+MC4R_18q21__EUR__bmi_vs_hypertension	EUR	MC4R_18q21	MC4R_18q21	bmi	hypertension	primary	true		false		
+MC4R_18q21__EUR__bmi_vs_stroke	EUR	MC4R_18q21	MC4R_18q21	bmi	stroke	primary	true		false		
+MC4R_18q21__EUR__bmi_vs_t2d	EUR	MC4R_18q21	MC4R_18q21	bmi	t2d	primary	true		true		
+MC4R_18q21__EUR__hypertension_vs_stroke	EUR	MC4R_18q21	MC4R_18q21	hypertension	stroke	primary	true		false		
+MC4R_18q21__EUR__hypertension_vs_t2d	EUR	MC4R_18q21	MC4R_18q21	hypertension	t2d	primary	true		false		
+MC4R_18q21__EUR__stroke_vs_t2d	EUR	MC4R_18q21	MC4R_18q21	stroke	t2d	primary	true		false		
+PYHIN1_1q23__EUR__asthma_vs_bmi	EUR	PYHIN1_1q23	PYHIN1_1q23	asthma	bmi	primary	true		false		
+PYHIN1_1q23__EUR__asthma_vs_hypertension	EUR	PYHIN1_1q23	PYHIN1_1q23	asthma	hypertension	primary	true		false		
+PYHIN1_1q23__EUR__asthma_vs_stroke	EUR	PYHIN1_1q23	PYHIN1_1q23	asthma	stroke	primary	true		false		
+PYHIN1_1q23__EUR__asthma_vs_t2d	EUR	PYHIN1_1q23	PYHIN1_1q23	asthma	t2d	primary	true		false		
+PYHIN1_1q23__EUR__bmi_vs_hypertension	EUR	PYHIN1_1q23	PYHIN1_1q23	bmi	hypertension	primary	true		false		
+PYHIN1_1q23__EUR__bmi_vs_stroke	EUR	PYHIN1_1q23	PYHIN1_1q23	bmi	stroke	primary	true		false		
+PYHIN1_1q23__EUR__bmi_vs_t2d	EUR	PYHIN1_1q23	PYHIN1_1q23	bmi	t2d	primary	true		false		
+PYHIN1_1q23__EUR__hypertension_vs_stroke	EUR	PYHIN1_1q23	PYHIN1_1q23	hypertension	stroke	primary	true		false		
+PYHIN1_1q23__EUR__hypertension_vs_t2d	EUR	PYHIN1_1q23	PYHIN1_1q23	hypertension	t2d	primary	true		false		
+PYHIN1_1q23__EUR__stroke_vs_t2d	EUR	PYHIN1_1q23	PYHIN1_1q23	stroke	t2d	primary	true		false		
+SH2B3_12q24__EUR__asthma_vs_bmi	EUR	SH2B3_12q24	SH2B3_12q24	asthma	bmi	primary	true		true		
+SH2B3_12q24__EUR__asthma_vs_hypertension	EUR	SH2B3_12q24	SH2B3_12q24	asthma	hypertension	primary	true		true		
+SH2B3_12q24__EUR__asthma_vs_stroke	EUR	SH2B3_12q24	SH2B3_12q24	asthma	stroke	primary	true		true		
+SH2B3_12q24__EUR__asthma_vs_t2d	EUR	SH2B3_12q24	SH2B3_12q24	asthma	t2d	primary	true		false		
+SH2B3_12q24__EUR__bmi_vs_hypertension	EUR	SH2B3_12q24	SH2B3_12q24	bmi	hypertension	primary	true		true		
+SH2B3_12q24__EUR__bmi_vs_stroke	EUR	SH2B3_12q24	SH2B3_12q24	bmi	stroke	primary	true		true		
+SH2B3_12q24__EUR__bmi_vs_t2d	EUR	SH2B3_12q24	SH2B3_12q24	bmi	t2d	primary	true		true		
+SH2B3_12q24__EUR__hypertension_vs_stroke	EUR	SH2B3_12q24	SH2B3_12q24	hypertension	stroke	primary	true		true		
+SH2B3_12q24__EUR__hypertension_vs_t2d	EUR	SH2B3_12q24	SH2B3_12q24	hypertension	t2d	primary	true		true		
+SH2B3_12q24__EUR__stroke_vs_t2d	EUR	SH2B3_12q24	SH2B3_12q24	stroke	t2d	primary	true		true		
+SLC2A9_urate__EUR__asthma_vs_bmi	EUR	SLC2A9_urate	SLC2A9_urate	asthma	bmi	primary	true		false		
+SLC2A9_urate__EUR__asthma_vs_hypertension	EUR	SLC2A9_urate	SLC2A9_urate	asthma	hypertension	primary	true		false		
+SLC2A9_urate__EUR__asthma_vs_stroke	EUR	SLC2A9_urate	SLC2A9_urate	asthma	stroke	primary	true		false		
+SLC2A9_urate__EUR__asthma_vs_t2d	EUR	SLC2A9_urate	SLC2A9_urate	asthma	t2d	primary	true		false		
+SLC2A9_urate__EUR__bmi_vs_hypertension	EUR	SLC2A9_urate	SLC2A9_urate	bmi	hypertension	primary	true		false		
+SLC2A9_urate__EUR__bmi_vs_stroke	EUR	SLC2A9_urate	SLC2A9_urate	bmi	stroke	primary	true		false		
+SLC2A9_urate__EUR__bmi_vs_t2d	EUR	SLC2A9_urate	SLC2A9_urate	bmi	t2d	primary	true		false		
+SLC2A9_urate__EUR__hypertension_vs_stroke	EUR	SLC2A9_urate	SLC2A9_urate	hypertension	stroke	primary	true		false		
+SLC2A9_urate__EUR__hypertension_vs_t2d	EUR	SLC2A9_urate	SLC2A9_urate	hypertension	t2d	primary	true		false		
+SLC2A9_urate__EUR__stroke_vs_t2d	EUR	SLC2A9_urate	SLC2A9_urate	stroke	t2d	primary	true		false		
