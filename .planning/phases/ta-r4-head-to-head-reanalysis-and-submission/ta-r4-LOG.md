@@ -68,3 +68,11 @@ Chronological record of every action in this phase. Append-only.
   negative controls cannot separate arms → simulation arm.
 - **Carter decisions D-17..D-20** (SH2B3 exact-mix known answer; BMI allele restoration;
   fold osf-correction-v2 into the R4 amendment; AFR n=661). **Orchestrator-locked D-21..D-28.**
+- **15:09 — Carter directive:** "continue with this analysis using --auto --chain choosing
+  rigor over speed, but feel free to ask me any necessary questions." Interpretation applied:
+  plan → check → execute without per-step confirmation; at every discretionary choice take the
+  more rigorous option; STILL hard-stop for Carter at (a) the W4 OSF gate (D-27 sentinel — auto
+  mode must never select past it), (b) any OSF posting or journal submission, (c) human-verify
+  checkpoints whose outcome is a scientific judgement (panel manifest, known-answer findings,
+  manuscript), (d) anything that spends AoU/cloud money (none planned).
+- `ta-r4-VALIDATION.md` committed (`daedde5`).
