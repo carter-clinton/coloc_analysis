@@ -196,3 +196,8 @@ Chronological record of every action in this phase. Append-only.
   tests_baseline_W0a.tsv: common 1474, removed 0, added 91 (all tests/ta_r4, passed), outcome
   changes 0; 1474 + 91 = 1565, 1428 + 91 = 1519.
 - **Commits:** `714df7a5` (T1), `c6e9297f` (T2), docs commit follows; fsck clean before/after each.
+- **Orchestrator spot-check of W0b1** (`47c9e9b`): origin HEAD matches; quick suite re-run by the
+  orchestrator. Hand-offs carried forward: W2a must add a `type_source` column to the trait
+  manifest if any trait `type` can be UNRESOLVED (W2c-T4 sign-off check reads `F_source`);
+  `review_decisions.yaml` trait facts as `trait_facts: {trait.<t>.<anc>.<field>: value}`; W4a-T3
+  prints `ta_r4.signoff.canonical_sha256(decision_rules["confirmatory"])` for Carter to sign.
