@@ -202,7 +202,7 @@ Sign-off directory: .planning/phases/ta-r4-head-to-head-reanalysis-and-submissio
     - SCHEMAS maps checkpoint id → required keys and enums:
       W2c-T4: ukb_native ∈ {native, hm3}; qtl_scope ∈ {full, tissues_frozen, eqtl_only, tissues_frozen+eqtl_only}; plus the dynamic keys passed by the caller (one `trait.<trait>.<ancestry>.<field>` per UNRESOLVED trait-manifest cell)
       W3b-T3: instructions
-      W4a-T3: p12_primary, kappa_cut, n_both_min, partial_rule.ci_pos_mcnemar_ns, partial_rule.ci_pos_mcnemar_opposite, partial_rule.ci_neg_mcnemar_ns, partial_rule.ci_neg_mcnemar_opposite (each ∈ the five branch names), confirmatory ∈ {approved}, draft ∈ {approved}. No ukb_native: it is decided once, at W2c-T4
+      W4a-T3: p12_primary, kappa_cut, n_both_min, partial_rule.ci_pos_mcnemar_ns, partial_rule.ci_pos_mcnemar_opposite, partial_rule.ci_neg_mcnemar_ns, partial_rule.ci_neg_mcnemar_opposite (each ∈ the five branch names), confirmatory_sha256 = 64 lowercase hex chars; test_signoffs asserts it equals the sha256 of the canonical-serialized `confirmatory:` block of the LOCKED `config/ta_r4/decision_rules.yaml` (negative control: one edited value in the block → RED), draft ∈ {approved}. No ukb_native: it is decided once, at W2c-T4
       W4b-T3: posted ∈ {yes}
       W7-T3: instructions
       W8b-T3: instructions

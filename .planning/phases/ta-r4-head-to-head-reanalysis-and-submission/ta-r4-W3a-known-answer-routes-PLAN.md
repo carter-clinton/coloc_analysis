@@ -116,7 +116,7 @@ Validator mode for repro arms: legacy_any (records ld_source_class; never fails 
          {HLA_6p21, BMI_Xq24} with no legacy panel (10);
          AFR = 3 traits × 12 regions = 36 = 3 × n_AFR (regions with a legacy_repro/AFR panel, from
          `panels_legacy_repro_AFR.tsv`) + 3 × (12 − n_AFR) without.
-         Panel-absent fits run exactly as the frozen fire did: no panel input, receipt
+         Panel-absent fits run as the frozen fire did where the frozen fit exited early (`too_many_variants`); the frozen HLA_6p21 EUR fire used UKBB-LD tiles (INVENTORY §2), so a `bmi.EUR.HLA_6p21` mismatch vs the k2d `ok` row is attributed in the findings to the absent panel, not code drift (plan-check iter 3 INFO-4). Mechanics: no panel input, receipt
          `present: false` / `ld_source_class: missing`, and the legacy code's own fallback
          (W0c legacy_any path). Their reproduced statuses are compared to the frozen ones like any other.
     3. Dry-run: `bash bin/r4_fire.sh repro repro_routeC -n <targets>` lists the expected job count.

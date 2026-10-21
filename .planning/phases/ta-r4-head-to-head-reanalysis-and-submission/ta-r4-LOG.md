@@ -113,3 +113,6 @@ Chronological record of every action in this phase. Append-only.
   `run_aggregation.py` all pre-lock in W3d, rendered verbatim into the amendment; sign-off
   integrity text on all 8 human-action tasks; manifests keyed (ancestry, region_safe);
   `/data/r4` gitignored in W0a; R1_STRUCTURAL cause into the W3b findings + amendment (h).
+- **Plan check iteration 3 (final): 0 blockers.** Two warnings + three info items applied by the
+  orchestrator (see `ta-r4-PLAN-CHECK-LOG.md`). Planning closed; proceeding to
+  `/gsd-execute-phase` under --auto --chain with human-action stops.

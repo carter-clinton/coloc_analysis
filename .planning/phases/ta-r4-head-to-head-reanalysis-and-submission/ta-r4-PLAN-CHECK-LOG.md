@@ -29,3 +29,19 @@ Orchestrator decision for the blocker (rigor rule; Carter can change at W4a lock
 set = primary curated EUR rows only (10 admissible curated EUR regions × 10 pairs = 100 rows,
 row_class primary, p12_primary, A1 matched), bootstrap clusters = those 10 regions; negative-
 control rows are a pre-specified specificity analysis, never inputs to the branch classifier.
+
+## Iteration 3 (2026-10-21, final) — 0 blockers, 2 warnings, 4 info
+All iteration-2 items resolved; repro split reconciles (EUR 50+10, AFR 36, total 96); VALIDATION
+80-task map matches. Applied by the orchestrator directly (last allowed iteration):
+- WARN-1 W3d must_haves: clusters = the 10 primary curated EUR regions (never NC).
+- WARN-2 W5a lock-diff path set (reused by W5b/W5c/W6/W7) += ld_allele_join.R (sourced at
+  run_qtl_coloc.R:164 — verified), assign_tiers.py, aggregate_qtl_coloc.py, harmonize_eqtl.py,
+  harmonize_sqtl.py, ld_read_path.py, ld_panel.py (all verified to exist), envs, $MAN/panels_*.tsv;
+  amendment (m) states the full list.
+- INFO-2 W4a-T3 resume requires `confirmatory_sha256`; W0b1 schema + test_signoffs compare it to
+  the locked block (negative control).
+- INFO-3 n_both ∈ {0,1} → CI NA, ci = incl0, own test.
+- INFO-4 W3a: bmi.EUR.HLA_6p21 mismatch attributed to the absent UKBB-tile panel.
+- INFO-1 (sign-off integrity is procedural) accepted as stated: only human-action stops and the
+  OSF API hash are non-forgeable.
+VERDICT: plans fit to execute.

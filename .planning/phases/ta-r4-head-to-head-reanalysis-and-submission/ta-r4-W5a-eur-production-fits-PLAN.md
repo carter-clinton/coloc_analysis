@@ -80,7 +80,8 @@ Validators: python -m ta_r4.validate_r4_fits (runs inside every job); live gates
        Non-zero → STOP the plan and report. Also `$PY -m ta_r4.signoff verify W4b-T3` must exit 0.
     2. Code-state check: for each analysis-code and lock commit sha cited by the FINAL amendment,
        `git merge-base --is-ancestor <sha> HEAD`. Then run
-       `git diff --stat <lock-commit-A-sha> HEAD -- src/snakemake/scripts/ta_r4 src/python/ta_r4 src/snakemake/rules/ta_r4_*.smk config/ta_r4 Snakefile.ta_r4 bin/r4_fire.sh src/legacy/region_analysis/scripts/run_susie_rss.R src/snakemake/scripts/plink_ld_to_rds.R src/snakemake/scripts/run_qtl_coloc.R`.
+       `git diff --stat <lock-commit-A-sha> HEAD -- src/snakemake/scripts/ta_r4 src/python/ta_r4 src/snakemake/rules/ta_r4_*.smk config/ta_r4 Snakefile.ta_r4 bin/r4_fire.sh src/legacy/region_analysis/scripts/run_susie_rss.R src/snakemake/scripts/plink_ld_to_rds.R src/snakemake/scripts/run_qtl_coloc.R src/snakemake/scripts/ld_allele_join.R src/python/assign_tiers.py src/python/aggregate_qtl_coloc.py src/python/harmonize_eqtl.py src/python/harmonize_sqtl.py src/python/ld_read_path.py src/python/ld_panel.py envs $MAN/panels_*.tsv`.
+       (Orchestrator, plan-check iter 3 WARN-2: the added files are runtime dependencies of the production fires — `run_qtl_coloc.R:164` sources `ld_allele_join.R`; W6 tiers use `assign_tiers.py`/`aggregate_qtl_coloc.py`; QTL harmonization uses `harmonize_{eqtl,sqtl}.py`; DAG panel resolution uses `ld_read_path.py`/`ld_panel.py`; every fit receipt takes its md5 from `$MAN/panels_*.tsv`. W5b, W5c, W6 and W7 reuse this exact list.)
        The `src/python/ta_r4` path covers `run_aggregation.py`, `estimands.py` (incl. `contrast_stats`),
        `branch_classifier.py` and `coloc_coverage.py`; list them in the SUMMARY as checked. W5b, W5c,
        W6 and W7 repeat this exact path set.
