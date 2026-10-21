@@ -33,3 +33,27 @@ Chronological record of every action in this phase. Append-only.
   from under any concurrent Track B session. Phase work is committed on the
   current branch (`m3-W2-aou-deltas`) with explicit-path staging only.
 - Phase registered in ROADMAP.md (Track-A-R4 section) and STATE.md.
+- **Fact found (scout):** all 28 empty R1 trait-pair rows are `status=no_signal`
+  with `n_cs = 0` on at least one side (ta-r3 W2 SUMMARY) — coloc.susie never ran.
+  Also: `coloc.abf` uses no LD matrix, so "identity LD" exists only inside SuSiE;
+  the draft conflates them.
+- **Inventory (background agent, read-only, banked verbatim as
+  `ta-r4-INVENTORY-2026-10-21.md`):** every Track A fit (96 real + 95 identity),
+  the 1000G EUR/AFR LD panels, variant lists, GTEx v8 QTL inputs and the QTL-coloc
+  outputs are GONE — never git-tracked, purged from `/share` (30-day purge,
+  inferred). Survivors: 8 harmonized sumstats (sha256 match), 1000G VCFs on /rs1,
+  code/config, pinned `r_coloc` env, tracked aggregates. Hazards recorded:
+  `02c4404` max_iter change, silent `diag(n)` fallback, AFR now routed to AoU
+  paths, identity overlay depends on real panel, `envs/qtl_processing.yml`
+  deleted but referenced, `coloc_summary.tsv` md5 ≠ the one the manuscript cites.
+- **Discuss-phase decisions (Carter, two AskUserQuestion rounds):** three arms;
+  coloc.abf fallback labelled separately; 1000G primary + UKB sensitivity in a
+  separate path; OSF pre-registration posted before the production comparison;
+  E-2 FIX then before/after (reverses DEC-2026-08-07 option A for Track A);
+  exhaustive scope with AFR secondary; fresh draft; venue after results.
+- **Orchestrator-locked (rigor rule):** regenerate everything; outputs on /rs1
+  with committed sha256 manifests; known-answer reproduction (k2d identity n_CS,
+  SH2B3 PP.H4=1.0 at max_iter=100) before production; named test against silent
+  identity fallback; AFR/identity overlays; restore qtl_processing.yml; no Track B
+  side effects.
+- `ta-r4-CONTEXT.md` + `ta-r4-DISCUSSION-LOG.md` written.

@@ -41,13 +41,17 @@ progress:
 
 ### ▶ LANES
 - **Track A (active):** `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/` —
-  running log `ta-r4-LOG.md`. Next: `/gsd-discuss-phase ta-r4` → plan → execute.
+  running log `ta-r4-LOG.md`. **Context gathered 2026-10-21** (`ta-r4-CONTEXT.md`, D-01…D-16):
+  three-arm head-to-head (coloc.abf / identity SuSiE / real-LD SuSiE), E-2 FIX + before/after,
+  OSF pre-registration posted by Carter BEFORE the production comparison. ⚠ All Track A fits,
+  LD panels and QTL inputs were PURGED from /share (`ta-r4-INVENTORY-2026-10-21.md`) — full
+  regeneration on /rs1. Next: `/gsd-plan-phase ta-r4-head-to-head-reanalysis-and-submission`.
 - **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
   is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
 - ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR
   fits. ta-r4 freezes the Track A baseline first.
 
-## 2026-09-19 — ⭐ **THE STAGE C NaN POSTURE IS DECIDED AND THE TWO HARD PRE-FIRE CODE CHANGES HAVE LANDED. THE 276-REGION FIRE IS NO LONGER BLOCKED ON A DECISION.** (★ RESUME HERE — LATEST ★)
+## 2026-09-19 — ⭐ **THE STAGE C NaN POSTURE IS DECIDED AND THE TWO HARD PRE-FIRE CODE CHANGES HAVE LANDED. THE 276-REGION FIRE IS NO LONGER BLOCKED ON A DECISION.** (Track B lane — still current; see the 2026-10-21 block above)
 
 **Nothing is running.** Only app `aoujupytercomputeengine20260626b`, **STOPPED**. No fire, no job, no agent to reattach. An agent never fires, starts, stops or deletes anything. `origin` is BEHIND: **12 local commits** (see the push note below).
 
