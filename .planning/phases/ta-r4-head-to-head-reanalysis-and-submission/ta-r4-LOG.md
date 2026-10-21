@@ -168,3 +168,31 @@ Chronological record of every action in this phase. Append-only.
   HOME=$R4_CONDA_PREFIX/home CONDARC=$R4_CONDARC` (measured to list exactly one pkgs_dir), with
   `channel_priority: strict` and `solver: libmamba` written into the R4 condarc.
   Noted: /rs1 R4 dirs are group `oit-rs-researcher-ckclinto` (inherited), not `clintonlab`.
+
+## 2026-10-21 — W0b1 executed (arms, paths, overlays, sign-off helper + sentinels)
+
+- **Arms:** `src/python/ta_r4/arms.py` ARMS = 13 arms (8 production + 5 repro); stage is
+  code-owned (`test_stage_is_code_not_config`). `paths.result_dirs("fits")` = 8 dirs (incl.
+  A3_1kg_isect), `result_dirs("coloc")` = 10 (8 + A1_EUR + A1_AFR); no repro dir.
+- **Overlays:** base + 13 arm overlays in `config/ta_r4/`; chain replaced wholesale + pinned;
+  `config/pipeline.yaml`, Snakefile, all rules and the frozen script unchanged (`git diff --quiet` 0).
+  Repro policy differs from `config/susie_policy.yaml` in one line (`max_iter_retry` 200 -> 100).
+- **Import clash (orchestrator decision) fixed:** `tests/ta_r4/__init__.py` puts src/python first +
+  `pkgutil.extend_path`; `test_import_isolation.py` RED without extend_path
+  (`No module named 'ta_r4.arms'`), GREEN with it, incl. a tests/m3 `from conftest import` module
+  in a subprocess, both orders.
+- **Sign-off:** `ta_r4.signoff` rejects `approved` / `Approved.` / no date / bad date / future /
+  pre-min / missing / empty / enum / unknown / duplicate keys (all `WAIT:`). Negative control: the
+  plan's literal relaxed regex `^(carter-)?approved` turned 8 valid-reply tests RED but left the
+  bare-approved rejections green (second layer: no date, missing key). A relaxation that also
+  defaults the date turned 2 rejection tests RED. `test_signoffs.py`: every sentinel blinded →
+  its fixture tests RED (4/4/1/1/1/1).
+- **Hand-off to W2a/W2c:** sentinel reads Carter cells as `F` + `F_source == "Carter <date>"`;
+  W2a's trait manifest needs a `type_source` column if `type` can be UNRESOLVED; review_decisions
+  carries `trait_facts: {trait.<t>.<anc>.<field>: value}`. W4a: confirmatory_sha256 =
+  `ta_r4.signoff.canonical_sha256(decision_rules["confirmatory"])`.
+- **Wave close:** QUICK 91 passed, 8.3 s wall (7+2+25+35+22); HEAVY 0 selected; freeze pins 39
+  passed; FULL 1565 ids / 1519 passed / 46 skipped / 0 failed (15m07s). Join vs
+  tests_baseline_W0a.tsv: common 1474, removed 0, added 91 (all tests/ta_r4, passed), outcome
+  changes 0; 1474 + 91 = 1565, 1428 + 91 = 1519.
+- **Commits:** `714df7a5` (T1), `c6e9297f` (T2), docs commit follows; fsck clean before/after each.

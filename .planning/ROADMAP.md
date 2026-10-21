@@ -676,7 +676,7 @@ REQ-SNAKEMAKE-CI, REQ-PATH-PARAMETERIZATION
 
 Plans:
 - [x] ta-r4-W0a-storage-envs-survivors-PLAN.md — durable /rs1 storage, survivor rescue, env restore, DEC entries, test baseline, `ta-r4-pre-baseline` tag
-- [ ] ta-r4-W0b1-arms-paths-overlays-signoff-PLAN.md — arms table, path module (ARMS-derived globs), overlays, policies, priors, Carter sign-off helper + sentinels
+- [x] ta-r4-W0b1-arms-paths-overlays-signoff-PLAN.md — arms table, path module (ARMS-derived globs), overlays, policies, priors, Carter sign-off helper + sentinels
 - [ ] ta-r4-W0b2-pair-manifest-osf-gate-workflow-PLAN.md — regions + GWAS-null NC set, static pair manifest, OSF gate (online once per fire, offline in jobs), Snakefile.ta_r4, fire script, envs
 - [ ] ta-r4-W0c-receipts-validators-enforcers-PLAN.md — D-13 receipts + validator, frozen-script e2e, matched variant sets
 - [ ] ta-r4-W0d-pair-coloc-r4-script-PLAN.md — one coloc script: A1 matched/allvars, coloc.susie, labelled fallback, explicit priors; toy `--use-conda` e2e
