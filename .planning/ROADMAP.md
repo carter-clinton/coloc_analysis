@@ -641,6 +641,39 @@ manuscript narrative survives unchanged. Cowork-side scope (A1 / A2 / A3
 outcome-branch follow-up update) remains explicitly OUT OF this phase's
 scope per the OSF amendment "What is not changing" paragraph.
 
+### Track-A-R4-head-to-head-reanalysis-and-submission
+**Slug**: ta-r4-head-to-head-reanalysis-and-submission
+**Added**: 2026-10-21 (Carter revived Track A: the 2026-05-12 Genome Medicine
+package was never submitted; no submission is pending anywhere). Rigor over speed.
+**Goal**: Turn the manuscript's identity-LD vs real-LD claim into a MEASUREMENT,
+then ship a reviewer-ready manuscript. The current draft asserts "systematic
+inflation" while its own head-to-head is non-computable (Table 3: 0 survived,
+0 lost, 28 both-null; the identity-LD trait-pair comparator was never run; the
+one contrast, SH2B3, survives).
+**Scope (wave structure decided by `/gsd-plan-phase`, not pre-locked here):**
+  - Freeze + tag the current Track A results/env as the pre-R4 baseline; guard
+    m3-04c BLOCKER-B (building `EUR_ukbb_pub` silently moves Track A EUR fits).
+  - Re-examine the R3 `BRANCH_R1_STRUCTURAL` finding: establish exactly why the
+    28 trait-pair `coloc.susie` rows are empty (no credible set on one side vs
+    CS misalignment) and pre-specify the analysis for that case.
+  - Matched head-to-head: identity-LD vs real 1000G EUR LD trait-pair
+    colocalization on the same sumstats, same regions, same priors, with the
+    estimand and decision rule fixed before the fire.
+  - Reopen E-2: option A rested on "Track A is in submission", now false.
+    Decide fix-and-rerun (EUR QTL-beta orientation + EUR sumstats-to-panel
+    allele-aware join) with a before/after comparison.
+  - Regenerate all tables/figures from frozen outputs; resolve Table 3 vs
+    Results contradictions.
+  - Rewrite to a clean ~4-5k-word article; process provenance moves to a
+    Supplementary reproducibility note; brief-blind adversarial review.
+  - Venue reconsideration; OSF record of the R4 analysis + updated correction.
+    Posting to OSF and submitting remain Carter's external actions.
+**Requirements**: REQ-PUBLIC-DATA-ONLY, REQ-SUSIE-RSS-POLICY, REQ-OSF-PREREG,
+REQ-SNAKEMAKE-CI, REQ-PATH-PARAMETERIZATION
+**Dependencies**: Track-A-R3 closeout; `DEC-2026-08-07-e2-orientation-disposition`;
+`DEC-2026-08-12-*` venue/correction decisions; m3-04c-BLAST-RADIUS.md BLOCKER-B.
+**Plans**: TBD
+
 ## Pre-pivot spine (completed 2026-04-14; artifacts reusable per Amendment §8)
 
 The Phase 00–11 content below executed between 2026-02 and 2026-04-14 under
@@ -970,6 +1003,7 @@ M: 11 (parallel from Phase 9)
 | M6 manuscript + replication + submission | not planned | gated on M5 | 2027-04 / 2027-05 |
 | Track-A-finalization | Route A in flight; audit-V2 sweep landed 2026-04-27 (`260427-azv` — 12 atomic commits, 15 V2-CLOSED tracker rows, Fig S2 + frozen scalars + 3 DEC entries) | in flight (independent of M0–M6) | 2026-05 / 2026-06 |
 | Track-A-R2-sh2b3-canonical-and-cache-refresh | 3/8 (W0 + W1 + W2 complete; W1.5 LD-audit landed 2026-04-29 alongside W2; W3 next = checkpoint:human-verify) | in flight; W2 SUMMARY 2026-04-29 (3 SURVIVE_GE_0.8 + 2 COLLAPSE_BELOW_0.5; PP.H4 BMI-HTN=1.0); W1.5 LD-audit demonstrates panel pathology (50.4% rank deficiency; 23.46% negative eigenvalues) substantively justifying DISCLOSE-AS-COLUMN; Pitfall 3 + Invariant 2 preserved; closes SH2B3 reference-LD coverage gap (Issue 1) + variant-ID matcher cache propagation (Issue 2) ahead of Genome Medicine R2 submission | 2026-05 / 2026-06 |
+| Track-A-R4-head-to-head-reanalysis-and-submission | 0/TBD | added 2026-10-21; not planned yet | — |
 
 ## Backlog (parking lot — 999.x)
 

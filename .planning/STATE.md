@@ -26,6 +26,27 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
+## 2026-10-21 — 📄 **TRACK A REVIVED: NEW PHASE `ta-r4-head-to-head-reanalysis-and-submission`. TWO LANES ARE NOW ACTIVE.** (★ RESUME HERE — LATEST ★)
+
+### ▶ WHAT CHANGED
+- Carter revived Track A (`docs/manuscript/id-vs-ref-LD.md`). The 2026-05-12 Genome Medicine
+  package was **never submitted**; nothing is pending at any venue. Directive: run the head-to-head
+  re-analysis before rewriting; rigor over speed.
+- Why a re-analysis: the draft claims identity-LD "systematically inflates" colocalization, but its
+  own identity-vs-real comparison is non-computable (0 survived / 0 lost / 28 both-null; the
+  identity-LD trait-pair comparator was never run; SH2B3, the one contrast, survives). E-2 option A
+  rested on "Track A is in submission", which is false.
+- **Git repaired** (objects only): a lost pack file (orphan `.idx`) caused 837 broken links;
+  restored from an origin mirror; fsck clean. Details in the phase log.
+
+### ▶ LANES
+- **Track A (active):** `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/` —
+  running log `ta-r4-LOG.md`. Next: `/gsd-discuss-phase ta-r4` → plan → execute.
+- **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
+  is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
+- ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR
+  fits. ta-r4 freezes the Track A baseline first.
+
 ## 2026-09-19 — ⭐ **THE STAGE C NaN POSTURE IS DECIDED AND THE TWO HARD PRE-FIRE CODE CHANGES HAVE LANDED. THE 276-REGION FIRE IS NO LONGER BLOCKED ON A DECISION.** (★ RESUME HERE — LATEST ★)
 
 **Nothing is running.** Only app `aoujupytercomputeengine20260626b`, **STOPPED**. No fire, no job, no agent to reattach. An agent never fires, starts, stops or deletes anything. `origin` is BEHIND: **12 local commits** (see the push note below).
