@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-09-19T04:20:00Z",
+  "timestamp": "2026-10-21T22:45:00Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
@@ -65,6 +65,9 @@
   "cluster": "AoU_Jupyter_ComputeEngine_20260626b STOPPED since the site-basis sweep (2026-08-20 ~20:11 EDT). Disk persists bfile, repo clone, occ_measure/ (both sweep TSVs; both banked in-repo), step7_vv.txt, region1_window.bim, the failed-notebook record. NEVER DELETE (Standard-disk semantics). Next start = the fire itself, after posting + remediation.",
   "data_state": "UNCHANGED this session — no perimeter contact. AoU AFR native-plink LD panel does NOT exist: bucket .npz = 0/276. data/processed/ld_reference/ does not exist AT ALL on NC-State, so resolve_ld_path returning \"the first EXISTING path\" currently has nothing to return — which is why several of this session's fixes are correct-but-inert wiring.",
   "do_not": [
+    "Do not let any agent author \"carter-approved\" text or write signoffs/*.yaml except via `signoff record` from Carter's verbatim paste.",
+    "Do not write the real OSF sentinel/receipt or post to OSF — Carter only.",
+    "Do not edit src/legacy/region_analysis/scripts/run_susie_rss.R, Snakefile, config/pipeline.yaml or docs/manuscript/id-vs-ref-LD.md in ta-r4.",
     "AN AGENT NEVER FIRES, STARTS, STOPS OR DELETES ANY CLOUD RESOURCE — including bucket objects. Carter does all of it.",
     "DELETE Dataproc clusters when done; STOP analysis VMs, never delete them while they hold artifacts.",
     "Do NOT delete bucket data before the inventory record's §5 decisions AND a §6 dry-run that reconciles exactly.",
@@ -255,18 +258,6 @@
     "5. Read .planning/quick/260831-kw8-.../260901-kw8-PANELWIDE-RECLASSIFICATION-as-received.md for the full result with its scope condition."
   ],
   "headline_PRIOR_2026_09_16": "RESUME THE ANALYSIS AT STAGE C's NaN ERROR POSTURE. Stage A PASSED; Stage B banked 3 of 4 then --fail-fast halted on m2_region_00057 (the pre-registered raw-panel NaN-raise contract working). The halt record's steps 1 (mechanism: 871/871 deletion carriers no-called at the neighbour) and 2 (prevalence: sweep -> panel-wide reclass -> ONE survivor; tail classified) are DONE. Step 3 — how Stage C treats a region that raises on a residual boundary-adjacent NaN — is NOT decided, and the class exists on BOTH sides of the span (00057 +1, 00149 -1), so a 276-region run under --fail-fast will halt.",
-  "headline": "RUN VM CARD 2, THEN THE FIRE IS A GO/NO-GO ON COST. The Stage C posture is DECIDED and the two hard pre-fire code changes are IN (quick-260918-qz0 records 1647840/b6076b2; quick-260918-qz5 code b1d3ff3..0206a71). What remains before the 276-region fire: (1) COST-1 - Card 2 in session scratch counts every AFR region's pre-window n_var from the .bim (00071 = 169,803 is the known-answer control) then runs COST-1 on the real largest square-feasible region; its wall time ALSO decides the deferred LOW-1 classifier; (2) the posting decision on the tail disclosure (Carter's alone, not made); (3) PUSH - origin is 12 commits behind and the Workbench clone pulls from origin. ⚠ Under the adopted posture the FIRST production raise STOPS the fire until a human classifies it from the message text 'square LD carries NaN', because the classifier is deferred on COST-1 and every raise defaults to UNCLASSIFIED.",
-  "resume_on_reconnect": [
-    "0. READ FIRST: the 2026-09-19 ★ RESUME HERE ★ block at the top of .planning/STATE.md. NOTHING IS RUNNING - do not look for a job to reattach. The VM is STOPPED: start it, never create; stop it, never delete. AN AGENT NEVER FIRES, STARTS, STOPS OR DELETES ANY CLOUD RESOURCE, BUCKET OBJECTS INCLUDED.",
-    "1. ⚠ PUSH FIRST IF ANY CLONE FIRE IS COMING. `git rev-list --count origin/m3-W2-aou-deltas..HEAD` was 12 at close. The Workbench clone pulls from origin, so an unpushed fire path means the VM runs the OLD producer - no raised_nan: status, no coordinate-evidence upload, no stateful gate.",
-    "2. ⭐ COST-1 is the next measurement, and it is CARTER's (Card 2, session scratch 260917-CARD-2-COST1-largest-feasible-region.md): a per-region pre-window n_var census from the .bim (driver rule: rows on the contig within the INCLUSIVE window, chr prefix stripped; 00071 = 169,803 is the known-answer control and its STOP condition), then COST-1 on the real largest square-feasible region, into a LOCAL out-dir if that region is already banked. m2_region_00071 DEFERRED at n_var=169803 > ceiling=120000, so the runbook's 'largest square-feasible region' label for it is FALSE and nothing was measured.",
-    "3. The COST-1 wall time ALSO decides the DEFERRED LOW-1 classifier (Carter deferred it until a measured per-region wall time exists; the reviewer's ~7% overhead estimate rests on a July planning figure, not a measurement).",
-    "4. ⚠ UNTIL A CLASSIFIER EXISTS, EVERY RAISE DEFAULTS TO UNCLASSIFIED, so under the adopted posture the FIRST production raise STOPS the fire until a human classifies it from the message text ('square LD carries NaN'; the known class is the m2_region_00057 shape - confined symmetric pair, nan_count 1 per row, diagonal 1.0). The closeout enforcer checks presence, count and the UNCLASSIFIED default ONLY - it does not and must not claim classification exists.",
-    "5. Reading the gate: stage-c is now STATEFUL. Pass --prev-report <the previous check-in's json>; exit 1 means something NEW since that report; an acknowledged raise is still reported and still counted. A header-only panel now exits 1 (it was 0). Before the first region completes, the gsutil cp AND the gate both fail - that is the gate failing closed, not a fire defect; the first meaningful check-in is after the first .npz appears.",
-    "6. Reading peak_ram_gib: PLINK-ONLY since the RAM-1 launcher. The driver's own load (~4*n_var^2 bytes: 39.08 GiB at 102,421; 53.64 GiB at 120,000) is SEPARATE and must be added for VM sizing. Never compare against the pre-fix rows (30.6591 / 2.9689 / 26.5745).",
-    "7. The tail disclosure is DRAFTED - NOT POSTED and the posting decision is Carter's alone. The reviewer's closure is NOT authorization. fire_verifier stage-b's cost_gate_denominator has been RED since 00057's row joined the panel and stays RED while any non-ok row is present - pre-existing, not a reason to re-fire.",
-    "8. PROCESS: a forked orchestrator branch committed twice on a superseded plan in this arc (e8532e4/f4becda, reverted by 29a7f68). Before every dispatch and every commit: git log --oneline -3 AND ls -t <session>/subagents/*.meta.json | head -3. ListAgents could not see that executor and TaskStop could not reach it; SendMessage stopped it."
-  ],
   "storage_inventory_2026_09_16": {
     "record": ".planning/debug/260916-AOU-STORAGE-INVENTORY-and-reclaim-plan.md",
     "ld_total": "45,519,841,557,487 B / 1,788,824 objects, reconciled to ZERO residual in bytes AND objects",
@@ -277,7 +268,6 @@
     "keep_floor": "6,868,308,070,790 B / ~$137/mo storage; realistic floor ~$180/mo incl. 20260626b PD",
     "provenance_added": "gs://rw-migration-aou-rw-476cdac2/provenance/vm_20260608_probes/ — 7 probe files + load-env.sh + load-env, md5-verified"
   },
-  "resume_entry_point": ".planning/HANDOFF.json resume_on_reconnect (above) + the 2026-09-19 ★ RESUME HERE ★ block at the top of .planning/STATE.md. ⭐ WHERE THIS FILE AND THAT BLOCK DISAGREE, STATE.md WINS - it is refreshed at every session close. Resume at item 1 (push if a clone fire is coming) then item 2 (COST-1, Carter's).",
   "timestamp_reason_2026_09_16_blast_radius": "quick-260916-vqp refreshed this file's stale B1 fields on 2026-09-16 after the blast-radius review of c93e97b..621701c, which is banked BYTE-IDENTICALLY (no banked-by header added) at .planning/debug/260916-BLAST-RADIUS-c93e97b-to-621701c.md with its Codex CLI v0.141.0 sibling at .planning/debug/260916-BLAST-RADIUS-codex-review-as-received.md (= the 'codex-review.md beside this file' that §D of the banked file refers to). Fields changed: headline (PRE value preserved verbatim in headline_PRIOR_2026_09_16), resume_on_reconnect[1]/[2]/[3], carter_decisions_outstanding[0], repo_fixes_status[2], suite_baselines, freeze_state, resume_entry_point, timestamp. Every other field is byte-unchanged; every edited string still CONTAINS its pre-2026-09-16 text verbatim. DOCS ONLY: nothing fired, no OSF/Seth/cloud/network contact, $0.",
   "headline_PRIOR_2026_09_17": "RESUME THE ANALYSIS AT STAGE C's NaN ERROR POSTURE - and the OPTIONS DRAFT IS ALREADY BANKED AND NOT SENT: .planning/debug/260916-STAGE-C-NaN-ERROR-POSTURE-options-DRAFT.md (quick-260916-kht, f09535c, close-out 11f61e8; brief-blind, 88 citations verified). Halt-record steps 1 (mechanism) and 2 (prevalence) are DONE; step 3 - how Stage C treats a region that raises on a residual boundary-adjacent NaN - is NOT decided. What remains is CARTER's: judge the two residual framing cues, courier brief-blind, decide after Seth. ⚠ The 2026-09-16 blast-radius review lists 7 MEDIUM courier-readiness findings against the v1 draft (§B2 of .planning/debug/260916-BLAST-RADIUS-c93e97b-to-621701c.md), so courier a v2 or courier v1 with the basis caveat. ⚠ CORRECTED 2026-09-16: the committed Stage C command has NO --fail-fast (260812-ox1-AGENT-PROMPT.md:398), so a raising region records 'error:' and the loop CONTINUES (run_native_ld_panel.py:1287-1289 and :1421 at 621701c; :1144-1146 and :1278 at c93e97b, each re-located per citation). The PRIOR headline's 'a 276-region run under --fail-fast will halt' describes a command form that is NOT the committed one; it is preserved verbatim in headline_PRIOR_2026_09_16. RAM-1 and tcujq are DONE (f8ff9cd/9a3eb97/0231cbf; b6b1f70/b709ce1/48b8828/621701c), pushed at 621701c. Nothing is running; only app 20260626b, STOPPED.",
   "prep_landmines_2026_09_18": [
@@ -286,5 +276,74 @@
     "Stage C fire command is FORM B: `timeout 312h nohup python3 …` (survives SIGHUP to pid and group and keeps the cap, rc 124). `nohup timeout …` DIES.",
     "A region already carrying a panel-TSV row is NOT skipped by that row - the resume guard checks for a banked .npz in the bucket. But append_panel_row dedups FIRST-ROW-WINS, so if the ceiling is ever raised for 00071 its stale deferred row would survive a later ok row."
   ],
-  "headline_PRIOR_2026_09_18": "STAGE C IS THE BLOCKER AND IT NEEDS ONE COURIER FROM CARTER. v2 of the options draft is brief-blind, courier-ready and PUSHED: .planning/debug/260916-STAGE-C-NaN-ERROR-POSTURE-options-DRAFT-v2.md at 57a3105 (md5 46537925de303ffb8a2d2b31d8160071), options A-F, 7 questions in §5, no recommendation, citations at basis 74f962d, checker GREEN 446 / selftest 70/70 / --live RED on exactly 10 known ids. A brief-blind LEAK was found while couriering and closed (quick-260917-f68): v2 no longer cites STATE.md (line 53 held the private recommendation), the working notes beside the checker are redacted, the checker docstring names no option, and hashed lk: gates print counts only. The reviewer's Finding 2 loop is CLOSED (quick-260917-irg + -pff): closure banked, both his objections withdrawn, Finding 1 is the substantive result. ⚠ A forked orchestrator branch committed twice on a superseded plan (e8532e4, f4becda), the second AFTER a stop instruction; both reverted by 29a7f68."
+  "headline_PRIOR_2026_09_18": "STAGE C IS THE BLOCKER AND IT NEEDS ONE COURIER FROM CARTER. v2 of the options draft is brief-blind, courier-ready and PUSHED: .planning/debug/260916-STAGE-C-NaN-ERROR-POSTURE-options-DRAFT-v2.md at 57a3105 (md5 46537925de303ffb8a2d2b31d8160071), options A-F, 7 questions in §5, no recommendation, citations at basis 74f962d, checker GREEN 446 / selftest 70/70 / --live RED on exactly 10 known ids. A brief-blind LEAK was found while couriering and closed (quick-260917-f68): v2 no longer cites STATE.md (line 53 held the private recommendation), the working notes beside the checker are redacted, the checker docstring names no option, and hashed lk: gates print counts only. The reviewer's Finding 2 loop is CLOSED (quick-260917-irg + -pff): closure banked, both his objections withdrawn, Finding 1 is the substantive result. ⚠ A forked orchestrator branch committed twice on a superseded plan (e8532e4, f4becda), the second AFTER a stop instruction; both reverted by 29a7f68.",
+  "headline_PRIOR_2026_09_19_TRACK_B": "RUN VM CARD 2, THEN THE FIRE IS A GO/NO-GO ON COST. The Stage C posture is DECIDED and the two hard pre-fire code changes are IN (quick-260918-qz0 records 1647840/b6076b2; quick-260918-qz5 code b1d3ff3..0206a71). What remains before the 276-region fire: (1) COST-1 - Card 2 in session scratch counts every AFR region's pre-window n_var from the .bim (00071 = 169,803 is the known-answer control) then runs COST-1 on the real largest square-feasible region; its wall time ALSO decides the deferred LOW-1 classifier; (2) the posting decision on the tail disclosure (Carter's alone, not made); (3) PUSH - origin is 12 commits behind and the Workbench clone pulls from origin. ⚠ Under the adopted posture the FIRST production raise STOPS the fire until a human classifies it from the message text 'square LD carries NaN', because the classifier is deferred on COST-1 and every raise defaults to UNCLASSIFIED.",
+  "resume_on_reconnect_PRIOR_2026_09_19_TRACK_B": [
+    "0. READ FIRST: the 2026-09-19 ★ RESUME HERE ★ block at the top of .planning/STATE.md. NOTHING IS RUNNING - do not look for a job to reattach. The VM is STOPPED: start it, never create; stop it, never delete. AN AGENT NEVER FIRES, STARTS, STOPS OR DELETES ANY CLOUD RESOURCE, BUCKET OBJECTS INCLUDED.",
+    "1. ⚠ PUSH FIRST IF ANY CLONE FIRE IS COMING. `git rev-list --count origin/m3-W2-aou-deltas..HEAD` was 12 at close. The Workbench clone pulls from origin, so an unpushed fire path means the VM runs the OLD producer - no raised_nan: status, no coordinate-evidence upload, no stateful gate.",
+    "2. ⭐ COST-1 is the next measurement, and it is CARTER's (Card 2, session scratch 260917-CARD-2-COST1-largest-feasible-region.md): a per-region pre-window n_var census from the .bim (driver rule: rows on the contig within the INCLUSIVE window, chr prefix stripped; 00071 = 169,803 is the known-answer control and its STOP condition), then COST-1 on the real largest square-feasible region, into a LOCAL out-dir if that region is already banked. m2_region_00071 DEFERRED at n_var=169803 > ceiling=120000, so the runbook's 'largest square-feasible region' label for it is FALSE and nothing was measured.",
+    "3. The COST-1 wall time ALSO decides the DEFERRED LOW-1 classifier (Carter deferred it until a measured per-region wall time exists; the reviewer's ~7% overhead estimate rests on a July planning figure, not a measurement).",
+    "4. ⚠ UNTIL A CLASSIFIER EXISTS, EVERY RAISE DEFAULTS TO UNCLASSIFIED, so under the adopted posture the FIRST production raise STOPS the fire until a human classifies it from the message text ('square LD carries NaN'; the known class is the m2_region_00057 shape - confined symmetric pair, nan_count 1 per row, diagonal 1.0). The closeout enforcer checks presence, count and the UNCLASSIFIED default ONLY - it does not and must not claim classification exists.",
+    "5. Reading the gate: stage-c is now STATEFUL. Pass --prev-report <the previous check-in's json>; exit 1 means something NEW since that report; an acknowledged raise is still reported and still counted. A header-only panel now exits 1 (it was 0). Before the first region completes, the gsutil cp AND the gate both fail - that is the gate failing closed, not a fire defect; the first meaningful check-in is after the first .npz appears.",
+    "6. Reading peak_ram_gib: PLINK-ONLY since the RAM-1 launcher. The driver's own load (~4*n_var^2 bytes: 39.08 GiB at 102,421; 53.64 GiB at 120,000) is SEPARATE and must be added for VM sizing. Never compare against the pre-fix rows (30.6591 / 2.9689 / 26.5745).",
+    "7. The tail disclosure is DRAFTED - NOT POSTED and the posting decision is Carter's alone. The reviewer's closure is NOT authorization. fire_verifier stage-b's cost_gate_denominator has been RED since 00057's row joined the panel and stays RED while any non-ok row is present - pre-existing, not a reason to re-fire.",
+    "8. PROCESS: a forked orchestrator branch committed twice on a superseded plan in this arc (e8532e4/f4becda, reverted by 29a7f68). Before every dispatch and every commit: git log --oneline -3 AND ls -t <session>/subagents/*.meta.json | head -3. ListAgents could not see that executor and TaskStop could not reach it; SendMessage stopped it."
+  ],
+  "resume_entry_point_PRIOR_2026_09_19_TRACK_B": ".planning/HANDOFF.json resume_on_reconnect (above) + the 2026-09-19 ★ RESUME HERE ★ block at the top of .planning/STATE.md. ⭐ WHERE THIS FILE AND THAT BLOCK DISAGREE, STATE.md WINS - it is refreshed at every session close. Resume at item 1 (push if a clone fire is coming) then item 2 (COST-1, Carter's).",
+  "timestamp_reason_2026_10_21": "Session close (Carter relocating) mid-way through ta-r4 W0b2. Track A lane reopened; Track B state unchanged since 2026-09-19.",
+  "headline": "TWO LANES. TRACK A (ACTIVE): phase ta-r4-head-to-head-reanalysis-and-submission is PLANNED (25 plans, 3 plan-check iterations, 0 blockers) and EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY after Task 2 of 4 (Tasks 1-2 committed 9bb65c0, ab77e97; Task 3 WIP uncommitted, inventoried below). Nothing running, no LSF jobs, no OSF gate files written. TRACK B: unchanged since 2026-09-19 (see *_PRIOR_2026_09_19_TRACK_B keys): COST-1 (Carter, VM card 2) is the last measurement before the 276-region fire.",
+  "ta_r4": {
+    "phase_dir": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission",
+    "running_log": "ta-r4-LOG.md (append-only record of every action)",
+    "plans": "25 sequential waves; index ta-r4-PLAN-INDEX.md; plan checks ta-r4-PLAN-CHECK-LOG.md",
+    "done": [
+      "W0a (99d2c9e)",
+      "W0b1 (47c9e9b)"
+    ],
+    "in_progress": {
+      "plan": "ta-r4-W0b2-pair-manifest-osf-gate-workflow",
+      "committed_tasks": [
+        "T1 regions_r4 + static all-pairs manifest (9bb65c0)",
+        "T2 OSF gate online-once + offline in-job (ab77e97)"
+      ],
+      "stopped_at": "Task 3 (workflow skeleton + env solves) mid conda-frontend solve; executor stopped by orchestrator via TaskStop at 18:39 EDT; no orphan processes; bjobs empty",
+      "uncommitted_wip_sha256_prefix": {
+        "Snakefile.ta_r4": "796e6dc1c7de",
+        "bin/r4_fire.sh": "8dca7ea9f228",
+        "src/snakemake/rules/ta_r4_env.smk": "a8c2f945572b",
+        "tests/ta_r4/test_track_b_isolation.py": "e3fbebfb5687",
+        "config/ta_r4/cluster_lsf/config.yaml": "416ef49fa0dd",
+        "config/ta_r4/cluster_lsf/cluster_config.yaml": "a9cfd2517586",
+        "tests/ta_r4/fixtures/make_fixture_repo.py": "ad671bd46f1c",
+        "tests/ta_r4/test_osf_gate.py": "MODIFIED +73 lines (uncommitted)",
+        "manifests/compute_node_network_probe.tsv": "untracked"
+      },
+      "resume_instruction": "Spawn a fresh gsd-executor for W0b2 told: Tasks 1-2 are committed; Task 3 WIP files exist uncommitted — READ them, verify against the plan, finish Task 3 (re-run any conda solve from scratch; do not trust a half-solved env), then Task 4; RED-first still applies to any test not yet observed RED."
+    },
+    "measured_2026_10_21": "Compute nodes have NO route to api.osf.io (LSF serial job on c017n03: curl exit 28 timeout; login01 HTTP 200). Confirms the submit-host-once OSF verification + offline in-job receipt design.",
+    "next_after_W0b2": "W0c receipts/validators/enforcers → W0d → W1 E-2 TDD → W2a/W2b panels → W2c (FIRST CARTER CHECKPOINT: panel/data review, human-action, reply must start \"carter-approved YYYY-MM-DD\")",
+    "carter_gates_ahead": [
+      "W2c-T4 panel/data review",
+      "W3b-T3 known-answer findings",
+      "W4a-T3 lock amendment values (p12, kappa_cut, n_both_min, partial_rule, confirmatory_sha256)",
+      "W4b-T3 POST the OSF R4 amendment + commit sentinel WITHOUT a Claude trailer",
+      "W7-T3 results",
+      "W8b-T3 manuscript",
+      "W9 venue + submission"
+    ],
+    "orchestrator_decisions": "import clash fixed via pkgutil.extend_path in tests/ta_r4/__init__.py; conda isolation = CONDA_PKGS_DIRS+HOME+CONDARC under the R4 prefix; restore tests/m3/sparse_parent_benchmark.tsv after every full-suite run (timing noise)"
+  },
+  "resume_on_reconnect": [
+    "Nothing is running (no LSF jobs, no AoU/cloud work). There is nothing to reattach to.",
+    "Resume the Claude session with `claude --continue` (or `claude --resume` and pick this session) from /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis.",
+    "git fetch && git status: confirm origin == local and the W0b2 WIP files listed in ta_r4.in_progress are still present and their sha256 prefixes match.",
+    "If the session cannot be resumed: in a fresh session, read this file + the STATE.md RESUME HERE block + ta-r4-LOG.md, then run `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` — it skips plans with a SUMMARY (W0a, W0b1) and starts at W0b2; give the executor the ta_r4.in_progress.resume_instruction.",
+    "Run `git fsck --connectivity-only` before the first commit (GPFS pack-loss history)."
+  ],
+  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md 2026-10-21 RESUME HERE block + .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/.continue-here.md",
+  "prep_landmines_2026_10_21": [
+    "All Track A results were purged from /share (30-day purge); R4 outputs live on /rs1 via data/r4 symlink — never write R4 outputs under /share.",
+    "Local git lost a pack file 2026-10-21 (orphan .idx); repaired from an origin mirror. If `unable to read tree` recurs: clone --mirror origin to scratch, repack, copy pack+idx in.",
+    "tests/m3/sparse_parent_benchmark.tsv is rewritten by the suite — restore it, never commit it."
+  ]
 }

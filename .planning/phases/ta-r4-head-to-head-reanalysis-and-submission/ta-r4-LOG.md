@@ -201,3 +201,10 @@ Chronological record of every action in this phase. Append-only.
   manifest if any trait `type` can be UNRESOLVED (W2c-T4 sign-off check reads `F_source`);
   `review_decisions.yaml` trait facts as `trait_facts: {trait.<t>.<anc>.<field>: value}`; W4a-T3
   prints `ta_r4.signoff.canonical_sha256(decision_rules["confirmatory"])` for Carter to sign.
+- **18:39 — SESSION CLOSE requested (Carter relocating).** Terminal is not in tmux/screen, so the
+  W0b2 executor would have died at an unknown point; the orchestrator stopped it via TaskStop
+  after Task 2's commit (`ab77e97`) while Task 3 was mid conda-frontend solve. Verified: no
+  conda/snakemake/pytest/bsub processes, `bjobs` empty, `data/r4/gate` absent. Task 3 WIP left
+  uncommitted and inventoried (sha256 prefixes) in HANDOFF.json `ta_r4.in_progress`.
+  Measured by W0b2 before the stop: compute node c017n03 has no route to api.osf.io (curl exit 28);
+  login01 returns 200.
