@@ -86,3 +86,13 @@ Chronological record of every action in this phase. Append-only.
   from FINAL tables; separate `Snakefile.ta_r4`; extra `A3_1kg_isect` arm (13 arms total).
   Corrections: legacy EUR panel count 10 (not 11); AFR 661 = 504 + ASW 61 + ACB 96 (measured).
   Committing plans before the plan-checker run.
+- **Plan check iteration 1: ISSUES FOUND** (gsd-plan-checker): 7 blockers, 16 warnings, 6 info.
+  Orchestrator VERIFIED B1 against `~/.claude/get-shit-done/workflows/execute-phase.md:636`:
+  under auto/chain, `checkpoint:human-verify` is auto-approved with user_response "approved" and
+  `checkpoint:decision` auto-selects the first option; ONLY `checkpoint:human-action` stops.
+  So the LOG's promised scientific stops (item c, 15:09 entry) would NOT have held — corrected:
+  every Carter-judgement checkpoint becomes `checkpoint:human-action` with a resume token the auto
+  path cannot produce (`carter-approved YYYY-MM-DD`). Orchestrator fixed B7 (RESEARCH Open
+  Questions marked RESOLVED → D-ids) and its own CONTEXT error (frozen file is
+  `src/legacy/region_analysis/scripts/run_susie_rss.R`, not `src/snakemake/scripts/...`).
+  Remaining blockers B1–B6 + all warnings sent to the planner (revision mode).

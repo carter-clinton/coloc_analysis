@@ -143,7 +143,7 @@ Orchestrator-locked (rigor rule; Carter may override):
 - **D-27:** OSF gate is a sentinel file Carter commits after posting (GSD `mode: yolo`
   auto-picks the first option at blocking gates — memory
   `feedback_gsd_automode_bypasses_blocking_fire_gates`); production rules refuse to run without it.
-- **D-28:** No edit to code-frozen `run_susie_rss.R` (pinned by `test_source_freeze_pins`);
+- **D-28:** No edit to code-frozen `src/legacy/region_analysis/scripts/run_susie_rss.R` (pinned by `test_source_freeze_pins`);
   R4 behaviour comes from overlays + receipts/validators per RESEARCH §Architecture.
 
 ### Claude's Discretion
@@ -176,7 +176,8 @@ Orchestrator-locked (rigor rule; Carter may override):
 
 ### Pipeline
 - `Snakefile`, `src/snakemake/rules/{finemap,coloc,multitrait,qtl_coloc,ld_reference}.smk`
-- `src/snakemake/scripts/{run_susie_rss.R,run_coloc_susie.R,run_qtl_coloc.R,ld_allele_join.R,make_identity_ld_refs.R}`
+- `src/legacy/region_analysis/scripts/run_susie_rss.R` (code-frozen; pinned by `tests/m3/test_source_freeze_pins.py`)
+- `src/snakemake/scripts/{run_coloc_susie.R,run_qtl_coloc.R,ld_allele_join.R,make_identity_ld_refs.R}`
 - `config/pipeline.yaml`, `config/susie_policy.yaml`, `config/pipeline_identity_overlay.yaml`, `config/qtl_sources.yaml`, `config/regions_curated.csv`
 - `envs/r_coloc.yml` (R 4.4.2, susieR 0.14.2, coloc 5.2.3)
 
@@ -198,7 +199,7 @@ Orchestrator-locked (rigor rule; Carter may override):
 - Snakemake via `/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake` (Python 3.11).
 
 ### Integration Points / hazards
-- `run_susie_rss.R:1114` silent `diag(n)` fallback (D-13).
+- `src/legacy/region_analysis/scripts/run_susie_rss.R:1114` silent `diag(n)` fallback (D-13).
 - EUR declared-input chain vs read path differ (`ld_panel.EUR` chain vs `{ld_reference_dir}/EUR`).
 - `02c4404` changed effective max_iter for retries (D-12).
 - `envs/qtl_processing.yml` deleted by `c2dfb08` but referenced by 5 rules (D-14).

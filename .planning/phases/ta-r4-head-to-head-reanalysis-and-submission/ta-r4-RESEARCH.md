@@ -524,18 +524,18 @@ The κ and n_both cut-offs are discretion items; lock them in the amendment.
 | A8 | A κ ≥ 0.6 / n_both ≥ 10 branch thresholds are reasonable | Estimands | Discretion item; Carter locks them in the amendment. |
 | A9 | `src/snakemake/rules/envs` is a symlink to `envs/` (identical listings observed) | Pattern 8 | The restored file may not be visible to rules. Check with `ls -la`. |
 
-## Open Questions (for Carter, ideally resolved before or in the OSF amendment)
+## Open Questions (RESOLVED)
 
-1. **D-12(b) premise correction.** Accept "reproduce the R2 SH2B3 configuration (L15 @ 500/1000 for BMI/HTN/stroke + Stage-2 L10 for asthma/T2D)" as the known answer, plus an L10/iter-100 run reported as a separate measurement?
-2. **BMI allele restoration** from the same-release M1 file (Pitfall 2): approve as a disclosed data step?
-3. **`osf-correction-v2`** (drafted, unposted; it states the code is unchanged): supersede it with the R4 amendment's E-2 section, or post a revised v3? (DEC-2026-08-12 P-1 requires posting by submission day.)
-4. **A1 variant set:** matched (the A3-bound set) as primary with "all region sumstats variants" (literature practice) as secondary? (Recommended.)
-5. **QTL layer arms:** A3 only, or A2 + A3, so the identity effect on GWAS×QTL coloc is measured too? (Recommended: both. Under A2 the QTL side also uses R = I.)
-6. **EUR panel n:** verify the `.fam` row count after download. The manuscript states the measured value.
-7. **AFR reference:** 504 continental (current sample list) or 661 including ASW/ACB (better ancestry match for African American GWAS)? Pre-register one; optionally run the other as sensitivity.
-8. **Trait types for `coloc.abf`:** hypertension EUR (Evangelou 2018: binary HTN or continuous BP?), and sdY values for quantitative traits.
-9. **Simulation calibration arm (E8):** include as pre-registered secondary? (Recommended under rigor-over-speed.)
-10. **HLA_6p21 and BMI_Xq24:** confirm "not admissible; reported as such" (no panel). Optionally HLA on the UKB tiles as an exploratory row.
+1. **RESOLVED: D-17 (ta-r4-CONTEXT.md).** **D-12(b) premise correction.** Accept "reproduce the R2 SH2B3 configuration (L15 @ 500/1000 for BMI/HTN/stroke + Stage-2 L10 for asthma/T2D)" as the known answer, plus an L10/iter-100 run reported as a separate measurement?
+2. **RESOLVED: D-18 (ta-r4-CONTEXT.md).** **BMI allele restoration** from the same-release M1 file (Pitfall 2): approve as a disclosed data step?
+3. **RESOLVED: D-19 (ta-r4-CONTEXT.md).** **`osf-correction-v2`** (drafted, unposted; it states the code is unchanged): supersede it with the R4 amendment's E-2 section, or post a revised v3? (DEC-2026-08-12 P-1 requires posting by submission day.)
+4. **RESOLVED: D-21 (ta-r4-CONTEXT.md).** **A1 variant set:** matched (the A3-bound set) as primary with "all region sumstats variants" (literature practice) as secondary? (Recommended.)
+5. **RESOLVED: D-22 (ta-r4-CONTEXT.md).** **QTL layer arms:** A3 only, or A2 + A3, so the identity effect on GWAS×QTL coloc is measured too? (Recommended: both. Under A2 the QTL side also uses R = I.)
+6. **RESOLVED: D-25 (ta-r4-CONTEXT.md).** **EUR panel n:** verify the `.fam` row count after download. The manuscript states the measured value.
+7. **RESOLVED: D-20 (ta-r4-CONTEXT.md).** **AFR reference:** 504 continental (current sample list) or 661 including ASW/ACB (better ancestry match for African American GWAS)? Pre-register one; optionally run the other as sensitivity.
+8. **RESOLVED: D-25 (ta-r4-CONTEXT.md).** **Trait types for `coloc.abf`:** hypertension EUR (Evangelou 2018: binary HTN or continuous BP?), and sdY values for quantitative traits.
+9. **RESOLVED: D-23 (ta-r4-CONTEXT.md).** **Simulation calibration arm (E8):** include as pre-registered secondary? (Recommended under rigor-over-speed.)
+10. **RESOLVED: D-24 (ta-r4-CONTEXT.md).** **HLA_6p21 and BMI_Xq24:** confirm "not admissible; reported as such" (no panel). Optionally HLA on the UKB tiles as an exploratory row.
 
 ## Environment Availability
 
