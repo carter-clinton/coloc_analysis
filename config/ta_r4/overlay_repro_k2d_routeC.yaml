@@ -1,0 +1,11 @@
+# config/ta_r4/overlay_repro_k2d_routeC.yaml — ta-r4 arm repro_k2d_routeC (repro).
+# Loaded after config/pipeline.yaml + config/ta_r4/overlay_base.yaml.
+# Run only via: bin/r4_fire.sh <stage> repro_k2d_routeC <targets...>
+ta_r4: {arm: repro_k2d_routeC}
+ld_read_path: {ancestries: []}
+ld_panel:
+  EUR:
+    - {source: "k2d_identity", path: "data/r4/ld/k2d_identity/EUR/{region_safe}.rds"}
+  AFR:
+    - {source: "k2d_identity", path: "data/r4/ld/k2d_identity/AFR/{region_safe}.rds"}
+  pin: {EUR: k2d_identity, AFR: k2d_identity}

@@ -1,0 +1,7 @@
+# config/ta_r4/overlay_base.yaml — ta-r4 base overlay, shared by every arm.
+# Loaded after config/pipeline.yaml and before config/ta_r4/overlay_<arm>.yaml.
+# Run only via: bin/r4_fire.sh <stage> <arm> <targets...>
+ta_r4: {enabled: true}
+enable_ld_pipeline: false
+occlusion_lockstep: {enabled: false}
+ld_read_path: {enabled: true, ancestries: [EUR, AFR], allele_aware: true, coloc: true}

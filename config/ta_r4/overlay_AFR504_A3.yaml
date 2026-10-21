@@ -1,0 +1,8 @@
+# config/ta_r4/overlay_AFR504_A3.yaml — ta-r4 arm AFR504_A3 (production).
+# Loaded after config/pipeline.yaml + config/ta_r4/overlay_base.yaml.
+# Run only via: bin/r4_fire.sh <stage> AFR504_A3 <targets...>
+ta_r4: {arm: AFR504_A3}
+ld_panel:
+  AFR:
+    - {source: "AFR504_1kg_r4", path: "data/r4/ld/AFR504_1kg_r4/{region_safe}.rds"}
+  pin: {AFR: AFR504_1kg_r4}

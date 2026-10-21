@@ -1,0 +1,11 @@
+# config/ta_r4/overlay_repro_routeC.yaml — ta-r4 arm repro_routeC (repro).
+# Loaded after config/pipeline.yaml + config/ta_r4/overlay_base.yaml.
+# Run only via: bin/r4_fire.sh <stage> repro_routeC <targets...>
+ta_r4: {arm: repro_routeC}
+ld_read_path: {ancestries: []}
+ld_panel:
+  EUR:
+    - {source: "legacy_repro", path: "data/r4/ld/legacy_repro/EUR/{region_safe}.rds"}
+  AFR:
+    - {source: "legacy_repro", path: "data/r4/ld/legacy_repro/AFR/{region_safe}.rds"}
+  pin: {EUR: legacy_repro, AFR: legacy_repro}

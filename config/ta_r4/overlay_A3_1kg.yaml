@@ -1,0 +1,8 @@
+# config/ta_r4/overlay_A3_1kg.yaml — ta-r4 arm A3_1kg (production).
+# Loaded after config/pipeline.yaml + config/ta_r4/overlay_base.yaml.
+# Run only via: bin/r4_fire.sh <stage> A3_1kg <targets...>
+ta_r4: {arm: A3_1kg}
+ld_panel:
+  EUR:
+    - {source: "EUR_1kg_r4", path: "data/r4/ld/EUR_1kg_r4/{region_safe}.rds"}
+  pin: {EUR: EUR_1kg_r4}

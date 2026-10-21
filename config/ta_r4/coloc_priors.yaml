@@ -1,0 +1,10 @@
+# config/ta_r4/coloc_priors.yaml — single source of coloc priors for every R4 arm (A1, A2, A3, QTL).
+# locked flips to true only in W4b, from Carter's W4a-T3 sign-off (tests/ta_r4/test_signoffs.py).
+p1: 1.0e-4
+p2: 1.0e-4
+p12_primary: 5.0e-6
+p12_sensitivity: 1.0e-5
+overlap_min: 0.5
+trim_by_posterior: true
+locked: false
+citation_check: "verify Wallace 2020 p12 recommendation before W4a"
