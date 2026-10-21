@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 18
+plan: 21
 slug: W6-qtl-layer
 type: execute
-wave: 18
-depends_on: ["W5c"]
+wave: 21
+depends_on: ["ta-r4-W5c-afr-secondary-and-simulation-run"]
 files_modified:
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/qtl_coloc_sha256.tsv
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/qtl_tiers_sha256.tsv
@@ -68,7 +68,8 @@ Invocations: QTL_A3 under `bin/r4_fire.sh production A3_1kg`; QTL_A2 under `prod
     - src/snakemake/rules/ta_r4_qtl.smk; src/python/ta_r4/run_qtl_group_r4.py
   </read_first>
   <action>
-    Repeat the gate and code-state checks; STOP on failure. Dry-run each QTL arm. The expected group
+    Repeat the gate checks (verify-online, check) and the code-state diff against lock commit A
+    (W5a Task 1 steps 1-2); STOP on failure. Do not commit while a fire is in flight (§B.14). Dry-run each QTL arm. The expected group
     job count equals the distinct (region, source, qtd) groups in the manifest; paste it. Fire,
     monitor by listing `.done` files, and confirm "Nothing to be done" after. Each group job already
     exits 1 on a coverage mismatch. Afterwards also run a global check:

@@ -1,17 +1,21 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 8
+plan: 9
 slug: W2c-qtl-downloads-manifest-and-panel-review
 type: execute
-wave: 8
-depends_on: ["W2b"]
+wave: 9
+depends_on: ["ta-r4-W2b-afr-and-ukb-panels"]
 files_modified:
   - src/python/ta_r4/fetch_eqtl_catalogue.py
   - src/python/ta_r4/build_qtl_manifest.py
   - config/ta_r4/qtl_manifest.tsv
   - tests/ta_r4/test_qtl_manifest.py
+  - config/ta_r4/trait_manifest.tsv
+  - config/ta_r4/review_decisions.yaml
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/qtl_downloads_sha256.tsv
+  - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/qtl_compute_estimate.tsv
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W2-REVIEW-PACKET.md
+  - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W2c-T4.yaml
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md
   - .planning/STATE.md
 autonomous: false
@@ -23,7 +27,8 @@ must_haves:
   truths:
     - "GTEx v8 eQTL (.all.tsv.gz) and sQTL (.cc.tsv.gz) files for exactly the tissue set in config/qtl_sources.yaml + config/eqtl_catalogue_qtd_map.yaml are on /rs1 under data/r4/downloads/eqtl_catalogue/, each with Content-Length match, gzip -t pass, its .tbi, and a sha256 row (D-10)"
     - "config/ta_r4/qtl_manifest.tsv is a static, outcome-independent enumeration (admissible EUR region x EUR trait x tissue x source x gene with >= 1 QTL row in the region's GRCh38 window); no GWAS-fit status or tier column; deterministic builder; committed BEFORE the OSF post (rigor upgrade 2)"
-    - "Carter has reviewed the W2 review packet (panel manifests, measured EUR n, trait manifest incl. UNRESOLVED items, BMI match rate, AFR and UKB-native panel-size findings) before any known-answer fit; the checkpoint's first option is WAIT"
+    - "The QTL manifest row count is measured under every pre-registered scope option (full, tissues_frozen, eqtl_only, tissues_frozen+eqtl_only) with a compute/storage estimate per option, and the scope is presented to Carter as a decision; no option depends on any result (checker W6)"
+    - "Carter has reviewed the W2 review packet (panel manifests, measured EUR n, trait manifest incl. UNRESOLVED items, BMI match rate, AFR and UKB-native panel-size findings, QTL scope and cost) before any known-answer fit, through a checkpoint:human-action whose resume token auto-mode cannot produce; his answers are recorded by ta_r4.signoff in signoffs/W2c-T4.yaml and copied into config/ta_r4/review_decisions.yaml, which test_signoffs ties to the sign-off (B1)"
   artifacts:
     - path: "config/ta_r4/qtl_manifest.tsv"
       provides: "pre-registered QTL-coloc row set"
@@ -108,7 +113,7 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
 
 <task type="auto" tdd="true">
   <name>Task 2: Static QTL-coloc manifest (outcome-independent) with a deterministic builder</name>
-  <files>src/python/ta_r4/build_qtl_manifest.py, config/ta_r4/qtl_manifest.tsv, tests/ta_r4/test_qtl_manifest.py</files>
+  <files>src/python/ta_r4/build_qtl_manifest.py, config/ta_r4/qtl_manifest.tsv, tests/ta_r4/test_qtl_manifest.py, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/qtl_compute_estimate.tsv</files>
   <read_first>
     - src/snakemake/rules/qtl_coloc.smk lines 360-435 and the manifest script it invokes
     - config/regions_curated_grch38.csv; config/ta_r4/pair_manifest.tsv (admissible EUR regions)
@@ -116,17 +121,27 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
   </read_first>
   <behavior>
     - One row per (region_safe [10 admissible EUR], trait [5 EUR], source [eqtl, sqtl], tissue, gene_or_phenotype_id) where the raw file has ≥ 1 row inside the region's GRCh38 window; columns `qtl_row_id, region_safe, ancestry, trait, source, tissue, qtd, gene_id, molecular_trait_id, chr38, start38, end38, n_qtl_variants_in_window`
+    - `--scope {full, tissues_frozen, eqtl_only, tissues_frozen+eqtl_only}`: `tissues_frozen` keeps only the tissue set of the frozen Track A QTL layer (read from TRACK-A-FROZEN-NUMBERS.md / config, recorded with its source line); `eqtl_only` drops sQTL. Each option is a pure filter on (source, tissue); a test asserts each restricted manifest is a subset of `full` with exactly the expected (source, tissue) set
+    - The committed `config/ta_r4/qtl_manifest.tsv` is built with the scope in `config/ta_r4/review_decisions.yaml` if that file exists, else `full`; the determinism test regenerates with the same rule
     - Removing the trait column and taking unique rows gives the per-region feature set, and the row count == that set's size × 5 traits (reconciliation identity)
     - No column refers to GWAS fit status or tier. The schema test rejects a `status` / `tier` column (negative control)
     - Deterministic: two builds give the same sha256
     - The scope differences from the frozen QTL layer (ancestries / sources / tissues) are written to the SUMMARY; an R4 row set narrower than the frozen scope is a FINDING to raise at Task 4
   </behavior>
   <action>
-    Tests RED, then implement `build_qtl_manifest.py`. It slices each raw file with `tabix` over
-    each region's GRCh38 window and enumerates distinct `molecular_trait_id` / gene ids, mirroring
-    the legacy builder's id semantics but without its tier gate. Run it and commit
-    `config/ta_r4/qtl_manifest.tsv`. Record the row count and the per-source and per-region counts
-    in the LOG.
+    1. Tests RED, then implement `build_qtl_manifest.py` (`--scope` as above). It slices each raw
+       file with `tabix` over each region's GRCh38 window and enumerates distinct
+       `molecular_trait_id` / gene ids, mirroring the legacy builder's id semantics but without its
+       tier gate. Run it with `--scope full` and commit `config/ta_r4/qtl_manifest.tsv`. Record the
+       row count and the per-source and per-region counts in the LOG.
+    2. Size and cost (checker W6). For each scope option, build into `data/r4/tmp/` and record
+       the row count. Estimate compute as rows × 3 QTL arms (QTL_A3, QTL_A2, QTL_legacy) × t_row.
+       t_row is the median wall time of `run_qtl_coloc.R` per row taken from surviving legacy QTL
+       LSF logs (`find results data/r4/known_answer_survivors -path '*qtl*' -name '*.log'`; cite
+       the files). If none survive, time `run_qtl_coloc.R` on the tests/phase2 fixture, label t_row
+       "fixture lower bound, UNMEASURED on real data", and say so in the packet. Estimate storage as
+       rows × 3 × the median row-JSON size. Write `$MAN/qtl_compute_estimate.tsv`
+       (`scope, n_rows, n_groups, t_row_s, t_row_source, est_core_hours, est_storage_gb`).
   </action>
   <verify>
     <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_qtl_manifest.py -q</automated>
@@ -134,6 +149,7 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
   <acceptance_criteria>
     - the test passes; the SUMMARY shows the RED run and the `tier`-column negative control
     - `awk 'NR>1' config/ta_r4/qtl_manifest.tsv | wc -l` equals 5 × the unique (region, source, tissue, feature) count (both numbers pasted)
+    - `$MAN/qtl_compute_estimate.tsv` has 4 data rows (one per scope option) with t_row_source filled
   </acceptance_criteria>
   <done>The QTL row set is fixed before any QTL result exists.</done>
 </task>
@@ -154,8 +170,10 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
     (3) BMI restoration classes and the raw cross-check rate;
     (4) trait manifest, with every UNRESOLVED item stated as a question (hypertension type; sdY sources);
     (5) AFR panel-size findings;
-    (6) UKB-native panel sizes and the open decision: keep native as-is, or pre-register an HM3 restriction;
-    (7) QTL scope vs the frozen layer.
+    (6) UKB-native panel sizes and the open decision: keep native as-is (`ukb_native: native`), or pre-register an HM3 restriction (`ukb_native: hm3`; W2d builds it before the lock);
+    (7) QTL scope vs the frozen layer;
+    (8) QTL size and cost per scope option, from `qtl_compute_estimate.tsv`, and the open decision `qtl_scope` (W2d rebuilds the manifest before the lock if not `full`);
+    (9) the exact reply format Carter must use (see Task 4), listing every required key, including one `trait.<trait>.<ancestry>.<field>` key per UNRESOLVED trait-manifest cell.
     Then run §C with label `W2c`, commit type `feat`. Commit BEFORE the checkpoint so Carter
     reviews committed files.
   </action>
@@ -163,35 +181,46 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && git log -1 --format=%s && git status --porcelain -- .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W2-REVIEW-PACKET.md config/ta_r4/qtl_manifest.tsv</automated>
   </verify>
   <acceptance_criteria>
-    - the packet exists with the 7 sections; the git status line is empty (committed); pushed
+    - the packet exists with the 9 sections; the git status line is empty (committed); pushed
   </acceptance_criteria>
   <done>The review packet is committed and pushed.</done>
 </task>
 
-<task type="checkpoint:human-verify" gate="blocking">
-  <name>Task 4: Carter reviews the measured data facts (panel manifests, trait manifest, BMI restoration, UKB native sizes)</name>
-  <what-built>Every R4 panel (EUR legacy + R4, A2, k2d, AFR 661/504, UKB native/isect, 1000G isect), the trait manifest, the BMI allele restoration and the QTL downloads and manifest, all on /rs1 with committed manifests. The review packet summarizes the measured facts and the open questions.</what-built>
+<task type="checkpoint:human-action" gate="blocking">
+  <name>Task 4: Carter reviews the measured data facts and answers the open decisions (human-action; auto-mode cannot pass it)</name>
+  <what-built>Every R4 panel (EUR legacy + R4, A2, k2d, AFR 661/504, UKB native/isect, 1000G isect), the trait manifest, the BMI allele restoration, the QTL downloads, manifest and cost estimate, all on /rs1 with committed manifests. The review packet summarizes the measured facts and the open decisions.</what-built>
   <how-to-verify>
     1. Open `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W2-REVIEW-PACKET.md`.
     2. Check that the EUR n, the panel dims and the SH2B3 895 comparison are plausible.
     3. Answer each UNRESOLVED trait-manifest item (hypertension trait type; sdY values).
-    4. Decide the UKB-native question (keep native with `too_many_variants` outcomes, or pre-register an HM3 restriction in W4).
-    5. Confirm or adjust the QTL scope.
+    4. Decide `ukb_native` (native | hm3) and `qtl_scope` (full | tissues_frozen | eqtl_only | tissues_frozen+eqtl_only).
   </how-to-verify>
-  <options>
-    - option-wait (FIRST, the default under auto-mode): WAIT. Stop execution and hand back to Carter. No further plan runs.
-    - option-approved: Carter has reviewed and typed his answers. The executor records them verbatim in the LOG and in `config/ta_r4/trait_manifest.tsv` (UNRESOLVED → value, with source "Carter 2026-MM-DD"), commits, and the chain continues to W3a.
-  </options>
-  <resume-signal>Carter types "approved" plus his answers to every open item, or describes the issues. Anything else = WAIT.</resume-signal>
-  <files>config/ta_r4/trait_manifest.tsv, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
-  <action>Present the packet. On approval, record Carter's answers verbatim and commit with explicit paths. Do not infer answers.</action>
-  <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && ! grep -q UNRESOLVED config/ta_r4/trait_manifest.tsv && echo RESOLVED</automated></verify>
+  <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then one `key: value` line per required key (packet §9). Any other reply, including a bare "approved" (the auto-mode response), means WAIT: re-present this checkpoint and record nothing. To raise issues instead, Carter describes them; that is also WAIT.</resume-signal>
+  <files>config/ta_r4/trait_manifest.tsv, config/ta_r4/review_decisions.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W2c-T4.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
+  <action>
+    Present the packet. On a reply:
+    1. Save it byte-for-byte to `data/r4/tmp/signoff_W2c-T4.txt` and run
+       `cd src/python && $PY -m ta_r4.signoff record W2c-T4 --raw-file ../../data/r4/tmp/signoff_W2c-T4.txt --min-date <date of the packet commit> --extra-required <one key per UNRESOLVED cell>`.
+       A non-zero exit means WAIT: print the `WAIT:` message, re-present the checkpoint, and write
+       nothing else. Never construct, paraphrase or complete a reply on Carter's behalf, and never
+       log an auto-generated response as his sign-off.
+    2. On success: write `config/ta_r4/review_decisions.yaml` from the recorded `fields` only
+       (ukb_native, qtl_scope, trait facts, `signoff: signoffs/W2c-T4.yaml`); replace each UNRESOLVED
+       trait-manifest cell with its value and source `Carter <token date>`; append the reply verbatim
+       to the LOG with the date.
+    3. Run `$PY -m pytest tests/ta_r4/test_signoff.py tests/ta_r4/test_signoffs.py -q` (the
+       review_decisions ⇒ W2c-T4 sentinel is now live), then commit the four files with explicit
+       paths and push.
+  </action>
+  <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W2c-T4 && cd ../.. && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_signoffs.py -q && ! grep -q UNRESOLVED config/ta_r4/trait_manifest.tsv && echo SIGNED_OFF</automated></verify>
   <acceptance_criteria>
-    - the LOG contains Carter's verbatim answers, dated; `config/ta_r4/trait_manifest.tsv` has no `UNRESOLVED` cell
+    - `signoff verify W2c-T4` exits 0; `test_signoffs.py` passes with the review_decisions sentinel live; `config/ta_r4/trait_manifest.tsv` has no `UNRESOLVED` cell
+    - the LOG contains Carter's verbatim reply, dated
   </acceptance_criteria>
-  <done>Carter has signed off the measured data facts.</done>
+  <done>Carter has signed off the measured data facts and decided ukb_native and qtl_scope; the record is machine-checked.</done>
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W2-REVIEW-PACKET.md
+    - src/python/ta_r4/signoff.py (SCHEMAS["W2c-T4"])
   </read_first>
 </task>
 
@@ -211,12 +240,13 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
 |-----------|----------|-----------|-------------|-----------------|
 | T-r4-W2c-01 | Tampering | QTL downloads | mitigate | HEAD Content-Length match, gzip -t, tabix -l, sha256 manifest, published checksums where available |
 | T-r4-W2c-02 | Tampering | arm-dependent QTL row attrition | mitigate | static manifest with no status/tier column; deterministic builder; schema negative control |
-| T-r4-W2c-03 | Elevation of privilege | auto-approval of a scientific checkpoint | mitigate | first option WAIT; the acceptance check requires zero UNRESOLVED cells, which only Carter's answers can supply |
+| T-r4-W2c-03 | Elevation of privilege | auto-approval of a scientific checkpoint | mitigate | `checkpoint:human-action` (auto-mode stops); `carter-approved YYYY-MM-DD` token + required keys parsed by ta_r4.signoff; review_decisions.yaml tied to the sign-off by test_signoffs; the UNRESOLVED check is secondary |
+| T-r4-W2c-04 | Repudiation | QTL scope chosen after results | mitigate | scope options are pure (source, tissue) filters fixed in code before any QTL result; the choice is recorded before W3a and frozen at the lock |
 </threat_model>
 
 <verification>
-Downloads reconciled to the resolved URL count. The QTL manifest is reconciled and deterministic.
-Carter's answers are recorded verbatim.
+Downloads reconciled to the resolved URL count. The QTL manifest is reconciled and deterministic,
+with a cost estimate per scope option. Carter's answers are recorded verbatim and machine-checked.
 </verification>
 
 <success_criteria>

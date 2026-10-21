@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 20
+plan: 23
 slug: W8a-manuscript-draft
 type: execute
-wave: 20
-depends_on: ["W7"]
+wave: 23
+depends_on: ["ta-r4-W7-aggregation-figures"]
 files_modified:
   - src/python/ta_r4/render_manuscript.py
   - tests/ta_r4/test_render_manuscript.py
@@ -24,7 +24,7 @@ requirements:
 must_haves:
   truths:
     - "A fresh manuscript exists at docs/manuscript/id-vs-ref-LD-r4.md, rendered from a template whose result numbers come ONLY from {{tbl:...}} / {{man:...}} placeholders resolved against committed tables and manifests; the render fails on any unresolved placeholder (D-08)"
-    - "docs/manuscript/id-vs-ref-LD.md is unchanged (git diff vs 055f159c is empty)"
+    - "docs/manuscript/id-vs-ref-LD.md is unchanged by W8a/W8b: checked by an acceptance command in these two plans only, never by a permanent test (a fixed-SHA whole-file pin turns red forever after any later legitimate edit; memory feedback_fixed_sha_whole_file_pin_is_a_timebomb; checker W11)"
     - "Main text is 4,000-5,000 words (Abstract <= 250) in a neutral format; the headline is the pre-registered branch from branch_outcomes.tsv; coloc.abf (A1) and identity LD (A2) are never conflated (D-01, D-08, D-09)"
     - "Known factual errors of the old draft are corrected from measured values: 12 curated regions of which 10 are admissible in EUR (HLA_6p21, BMI_Xq24 inadmissible); the EUR panel n measured from the .fam; the AFR reference actually used (1000G AFR 661 primary / 504 sensitivity; the original Track A had no AFR real-LD panel); the SH2B3 PP.H4 provenance as measured in W3b (D-17, D-20, D-24, D-25)"
     - "The Methods carries a rewritten allele-orientation note (the E-2 finding, fix and measured before/after), replacing the retired osf-correction-v2 text; BMI allele restoration is disclosed (D-06, D-18, D-19)"
@@ -75,7 +75,7 @@ Reusable from the old draft: background on coloc assumptions, GWAS source descri
   rationale, references (Wallace 2020/2021, Zou 2022, Benner 2017, Weissbrod 2020). NOT reusable: any number, "systematically inflates",
   .planning/commit/DEC references, "50 regions", n=661/503 claims, "pivot" wording (line 1 of the old draft)
 Phase-start commit for the old-draft invariant: 055f159c
-Carter's W7 manuscript instructions: in the LOG (W7 checkpoint entry)
+Carter's W7 manuscript instructions: signoffs/W7-T3.yaml `instructions` (verify with `python -m ta_r4.signoff verify W7-T3` before starting)
 </interfaces>
 </context>
 
@@ -95,7 +95,7 @@ Carter's W7 manuscript instructions: in the LOG (W7 checkpoint entry)
     - An unknown file, column or selector → RenderError naming the placeholder. Any `{{` left after rendering → RenderError
     - The renderer refuses a table whose header lacks `status=FINAL` (negative control with a DRAFT fixture)
   </behavior>
-  <action>Tests RED (paste), implement, GREEN. CLI: `python -m ta_r4.render_manuscript --template T --out O --repo .`. The rendered output has a first-line HTML comment carrying the template sha256 and render UTC.</action>
+  <action>0. Precondition: `cd src/python && $PY -m ta_r4.signoff verify W7-T3` exits 0; non-zero → STOP. Then: tests RED (paste), implement, GREEN. CLI: `python -m ta_r4.render_manuscript --template T --out O --repo .`. The rendered output has a first-line HTML comment carrying the template sha256 and render UTC.</action>
   <verify>
     <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_render_manuscript.py -q</automated>
   </verify>
@@ -117,7 +117,6 @@ Carter's W7 manuscript instructions: in the LOG (W7 checkpoint entry)
   </read_first>
   <behavior>
     test_manuscript_r4.py (the properties checked are literal text properties of the manuscript, so text scans are the right instrument; each scan has a negative-control fixture):
-    - the old draft is unchanged: `git diff --quiet 055f159c -- docs/manuscript/id-vs-ref-LD.md` exits 0
     - the rendered file has no `{{`; the template's Abstract and Results sections contain no bare decimal numbers outside placeholders, except whitelisted literals (the thresholds 0.5/0.7/0.8/0.9, years, citation numbers)
     - main-text word count (Abstract through Discussion, excluding tables, figure legends and references) is within [4000, 5000]; the Abstract is <= 250 words
     - main text has no match for `\.planning/`, `\bDEC-\d{4}`, or `\b[0-9a-f]{7,40}\b` tokens that are git objects (verify each candidate with `git cat-file -e`, so hex-looking data does not false-positive), and no `\b(pivot|revision|salvage|audit-driven)\b` (case-insensitive)
@@ -151,7 +150,7 @@ Carter's W7 manuscript instructions: in the LOG (W7 checkpoint entry)
   </verify>
   <acceptance_criteria>
     - all checks pass; the SUMMARY reports the measured main-text and Abstract word counts and pastes the Abstract
-    - `git diff --quiet 055f159c -- docs/manuscript/id-vs-ref-LD.md; echo $?` prints 0
+    - acceptance-only (not a test): `git diff --quiet 055f159c -- docs/manuscript/id-vs-ref-LD.md; echo $?` prints 0. This check is scoped to W8a/W8b; no test file contains the sha
   </acceptance_criteria>
   <done>A fresh, table-bound, correctly framed draft exists.</done>
 </task>
@@ -192,7 +191,7 @@ Carter's W7 manuscript instructions: in the LOG (W7 checkpoint entry)
 </threat_model>
 
 <verification>
-Renderer tests and manuscript checks pass, with negative controls observed. The old draft is untouched.
+Renderer tests and manuscript checks pass, with negative controls observed. The old draft is untouched (acceptance command, W8a/W8b only).
 </verification>
 
 <success_criteria>

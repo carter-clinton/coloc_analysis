@@ -96,3 +96,12 @@ Chronological record of every action in this phase. Append-only.
   Questions marked RESOLVED → D-ids) and its own CONTEXT error (frozen file is
   `src/legacy/region_analysis/scripts/run_susie_rss.R`, not `src/snakemake/scripts/...`).
   Remaining blockers B1–B6 + all warnings sent to the planner (revision mode).
+- **Plan revision iteration 1 complete** (gsd-planner): 25 plans / 25 sequential waves / 79 tasks,
+  all with automated verify; VALIDATION `nyquist_compliant: true`. B1: every Carter checkpoint is
+  `checkpoint:human-action`, resumable only by `carter-approved YYYY-MM-DD` + required keys, parsed
+  by `src/python/ta_r4/signoff.py`, recorded verbatim in `signoffs/<ID>.yaml`, enforced by
+  `test_signoffs.py`. B5: OSF API verified once per fire on the submit host → receipt bound to HEAD;
+  in-job checks offline. New design element (planner, rigor rule — Carter can veto at the W4a
+  lock): a THIRD negative-control set of 10 GWAS-null windows (P ≥ 1e-5 in all 8 Track A sumstats,
+  seed 20261021), raising regions to 31 and the pair manifest to 346 rows / 320 admissible.
+  New plan W2d applies Carter's W2c review choices (UKB HM3 restriction, QTL scope) before the lock.

@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 13
+plan: 15
 slug: W3e-qtl-harmonize-and-group-runner
 type: execute
-wave: 13
-depends_on: ["W3d"]
+wave: 15
+depends_on: ["ta-r4-W3d-estimators-and-branch-classifier"]
 files_modified:
   - src/snakemake/rules/ta_r4_qtl.smk
   - src/python/ta_r4/run_qtl_group_r4.py
@@ -65,7 +65,7 @@ Output: harmonized QTL slices + manifest, the group runner, the qtl_abf mode, ru
 <interfaces>
 Harmonizers (shipped; do not edit): src/python/harmonize_eqtl.py, src/python/harmonize_sqtl.py
   CLI per qtl_download.smk:166-205 / :259-305: --input --region-chr --region-start --region-end --gene-id --tissue-name
-  --tissue-n --qtl-source-config config/qtl_sources.yaml --output; conda envs/qtl_processing.yml (restored in W0a; lockfile in W0b)
+  --tissue-n --qtl-source-config config/qtl_sources.yaml --output; conda envs/qtl_processing.yml (restored in W0a; lockfile in W0b2)
 run_qtl_coloc.R CLI (qtl_coloc.smk:480-497): --gwas-fit --qtl-sumstats --ld-matrix --qtl-source --tissue --gene-id --region
   --ancestry --sdy --sample-size --policy --ld-allele-join --variant-list --output, plus --qtl-orient (W1)
 Tiering: src/python/assign_tiers.py (--input --gwas-coloc --pph4-config --output --sweep --sweep-output); aggregation: src/python/aggregate_qtl_coloc.py
@@ -122,7 +122,8 @@ Tissue N lookup: qtl_download.smk build_tissue_n_lookup (mirror its source of ti
     - The W0d tests still pass after adding the mode
   </behavior>
   <action>
-    1. RED: write the tests and paste the failures.
+    1. RED: write the tests and paste the failures. Tests that run `run_qtl_coloc.R` or the frozen
+       fit script are marked `r4_heavy`.
     2. Add `--mode qtl_abf` to `run_coloc_pair_r4.R`. It reuses `coloc_pair_core`'s abf path; the
        bridge logic is replicated as a function with a differential test against run_qtl_coloc.R's
        bridge on the same fixture (same bridged id set).
@@ -141,8 +142,11 @@ Tissue N lookup: qtl_download.smk build_tissue_n_lookup (mirror its source of ti
        - Rule `r4_qtl_tiers`: runs `assign_tiers.py --sweep` with `config/pph4_thresholds.yaml`.
        - Target lists `R4_QTL_TARGETS(qtl_arm)`.
     5. Dry-run proof: `bash bin/r4_fire.sh production A3_1kg -n <one QTL_A3 group target>` exits
-       non-zero with OsfGateError; the same for a QTL_legacy target under `repro repro_routeL` lists
-       jobs (no gate).
+       non-zero at the fire script's `verify-online` step (sentinel absent); the same for a
+       QTL_legacy target under `repro repro_routeL` lists jobs (no gate). Also add a fixture-repo
+       test (r4_heavy, reusing `make_fixture_repo`) that a QTL_A3 group target dry-run without a
+       sentinel fails with OsfGateError at DAG time, so the in-rule gate is proven independently of
+       the fire script.
   </action>
   <verify>
     <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_qtl_group_runner.py tests/ta_r4/test_coloc_pair_r4.py tests/phase2/test_run_qtl_coloc.py -q</automated>
@@ -160,14 +164,14 @@ Tissue N lookup: qtl_download.smk build_tissue_n_lookup (mirror its source of ti
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md §C
   </read_first>
-  <action>Run §C with label `W3e`, commit type `feat`. The LOG records the commit sha (the last analysis-code commit cited by the W4 amendment).</action>
+  <action>Run §C with label `W3e`, commit type `feat`. The LOG records the commit sha (the last analysis-code commit cited by the W4a amendment).</action>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q && git fsck --connectivity-only 2>&1 | tail -2</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 | tail -2</automated>
   </verify>
   <acceptance_criteria>
     - tests/ta_r4 green; tests/m3, phase1 and phase2 unchanged against the baseline; committed; pushed
   </acceptance_criteria>
-  <done>W3e committed and pushed. All analysis code is frozen ahead of W4.</done>
+  <done>W3e committed and pushed. All analysis code is frozen ahead of W4a.</done>
 </task>
 
 </tasks>

@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 17
+plan: 20
 slug: W5c-afr-secondary-and-simulation-run
 type: execute
-wave: 17
-depends_on: ["W5b"]
+wave: 20
+depends_on: ["ta-r4-W5b-eur-production-coloc"]
 files_modified:
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/fits_production_AFR_status.tsv
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/fits_production_AFR_sha256.tsv
@@ -66,7 +66,8 @@ Coverage: python -m ta_r4.coloc_coverage --ancestry AFR ...
     - data/r4/findings/afr_panel_size.tsv (regions expected to report too_many_variants)
   </read_first>
   <action>
-    Repeat the gate and code-state checks; STOP on failure. Dry-run: 30 jobs per arm. Fire the
+    Repeat the gate checks (verify-online, check) and the code-state diff against lock commit A
+    (W5a Task 1 steps 1-2); STOP on failure. Do not commit while a fire is in flight (§B.14). Dry-run: 30 jobs per arm. Fire the
     three arms and monitor by listing. Write the status TSV (90 rows) and the sha256 manifest.
     Fits whose panel exceeded the variant cap are reported with their status, not dropped. Run
     `test_no_silent_identity.py` and `test_arm_variant_sets_identical.py` (the AFR661_A2 vs

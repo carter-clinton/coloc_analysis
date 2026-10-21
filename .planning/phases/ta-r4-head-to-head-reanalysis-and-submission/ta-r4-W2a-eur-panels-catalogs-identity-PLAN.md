@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 6
+plan: 7
 slug: W2a-eur-panels-catalogs-identity
 type: execute
-wave: 6
-depends_on: ["W1"]
+wave: 7
+depends_on: ["ta-r4-W1-e2-orientation-tdd"]
 files_modified:
   - src/snakemake/rules/ta_r4_panels.smk
   - src/python/ta_r4/panel_manifest.py
@@ -30,7 +30,7 @@ requirements:
 must_haves:
   truths:
     - "The LDSC 1000G Phase 3 plinkfiles tgz on /rs1 has md5 a7773ab485827b533cb300c76356d76b and size 288277344, verified BEFORE extraction; the EUR sample n is measured from the .fam and recorded (D-25)"
-    - "Legacy-identical EUR panels (plink WITHOUT --keep-allele-order, plink_ld_to_rds.R without --emit-ref-alt) exist for the 10 EUR autosomal non-HLA curated regions (12 minus HLA_6p21 minus chrX BMI_Xq24) under data/r4/ld/legacy_repro/EUR/; R4 EUR panels (--keep-allele-order + --emit-ref-alt) exist for the 10 admissible + 9 negative-control regions under data/r4/ld/EUR_1kg_r4/ (D-12a)"
+    - "Legacy-identical EUR panels (plink WITHOUT --keep-allele-order, plink_ld_to_rds.R without --emit-ref-alt) exist for the 10 EUR autosomal non-HLA curated regions (12 minus HLA_6p21 minus chrX BMI_Xq24) under data/r4/ld/legacy_repro/EUR/; R4 EUR panels (--keep-allele-order + --emit-ref-alt) exist for the 10 admissible + 19 negative-control regions (9 NC loci + 10 GWAS-null windows) under data/r4/ld/EUR_1kg_r4/ (D-12a)"
     - "For every region built both ways, n_var(R4) == n_var(legacy) and |R4| == |legacy| elementwise within 1e-12 (orientation changes signs, not magnitudes); the SH2B3 panel has n_var 895 or the mismatch is recorded as a finding"
     - "A2 payloads EUR_identity_r4/{region}.rds have R = I and variants identical() to EUR_1kg_r4; k2d R=NULL payloads exist only under data/r4/ld/k2d_identity/ for reproduction (D-01, D-14, Pattern 3)"
     - "Every panel class has a committed manifest (md5, sha256, size_bytes, n_var, n_samples, build, source, has_ref_alt) and panels are chmod a-w after the manifest is written"
@@ -150,13 +150,13 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
   </read_first>
   <action>
     In `src/snakemake/rules/ta_r4_panels.smk`, write the rules below. The guarded include in
-    `Snakefile.ta_r4` from W0b picks the file up. None of these rules takes the gate input, because
+    `Snakefile.ta_r4` from W0b2 picks the file up. None of these rules takes the gate input, because
     they are infrastructure (D-05).
     - `r4_catalog_legacy`: the catalog command from `collect_region_variants`, pointed at the 8
       original sumstats, output `data/r4/ld/variants_legacy/{region_safe}.tsv`. Run it for the 12
       curated regions.
     - `r4_catalog_r4`: the same command, but with `paths.sumstats_path` (restored BMI), output
-      `data/r4/ld/variants_r4/{region_safe}.tsv`. Run it for the 12 curated regions plus the 9 NC
+      `data/r4/ld/variants_r4/{region_safe}.tsv`. Run it for the 12 curated regions plus the 19 NC
       regions.
     - `r4_panel_eur_legacy`: the plink + `plink_ld_to_rds.R` commands verbatim from
       `build_ld_rds_1kg_eur` (no `--keep-allele-order`, no `--emit-ref-alt`, `--ld-source
@@ -165,7 +165,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
       10 autosomal non-HLA curated regions (the rule's own eligibility set, `_ONEKG_EUR_REGION_PATTERN`).
     - `r4_panel_eur_1kg`: the same, plus `--keep-allele-order` on plink and `--emit-ref-alt true`
       on the Rscript, `--ld-source onekg_phase3_eur_hm3_keep_allele_order`. Output
-      `data/r4/ld/EUR_1kg_r4/{region_safe}.rds`. Covers the 10 admissible + 9 NC regions. The
+      `data/r4/ld/EUR_1kg_r4/{region_safe}.rds`. Covers the 10 admissible + 19 NC regions = 29. The
       plink work dir is `data/r4/ld/work/{panel}/{region_safe}`. Keep the .bim, .snplist and .log;
       delete the .ld text after the .rds is written and its manifest row recorded.
     - `r4_identity_payload`: `make_matched_identity_payload.R --in EUR_1kg_r4/{r}.rds --out EUR_identity_r4/{r}.rds`.
@@ -177,17 +177,17 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
     - Target lists `R4_PANEL_TARGETS_EUR` and `R4_CATALOG_TARGETS`.
     Build with `bash bin/r4_fire.sh repro repro_routeC <targets> -n` first, then for real. Watch
     progress by listing `data/r4/ld/*/`. When it is done, write `$MAN/catalogs_sha256.tsv`.
-    Reconcile the counts: 12 legacy catalogs + 21 r4 catalogs = 33 rows; 10 legacy panels;
-    19 R4 panels; 19 A2 payloads; and k2d payloads equal to the number of distinct
+    Reconcile the counts: 12 legacy catalogs + 31 r4 catalogs = 43 rows; 10 legacy panels;
+    29 R4 panels; 29 A2 payloads; and k2d payloads equal to the number of distinct
     (ancestry, region) pairs in the k2d summary. Paste every count.
   </action>
   <verify>
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && ls data/r4/ld/EUR_1kg_r4/*.rds | wc -l && ls data/r4/ld/EUR_identity_r4/*.rds | wc -l && ls data/r4/ld/legacy_repro/EUR/*.rds | wc -l</automated>
   </verify>
   <acceptance_criteria>
-    - the three `ls | wc -l` outputs are 19, 19 and 10
+    - the three `ls | wc -l` outputs are 29, 29 and 10
     - `find data/processed/ld_reference -newer data/r4/ld/variants_legacy -print 2>/dev/null | wc -l` prints 0 (no Track B tree write during this wave)
-    - `$MAN/catalogs_sha256.tsv` has 33 data rows (`awk 'NR>1' | wc -l`)
+    - `$MAN/catalogs_sha256.tsv` has 43 data rows (`awk 'NR>1' | wc -l`)
     - the dry-run printout (first 40 lines) is in the SUMMARY and contains no forbidden substring from INDEX §B.7
   </acceptance_criteria>
   <done>EUR panels (legacy + R4), matched identity payloads, k2d payloads and catalogs exist on /rs1.</done>
@@ -204,7 +204,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
   </read_first>
   <behavior>
     - panel_manifest.py inspects each .rds through `$RSCRIPT` with a blockwise checker (2,000-row blocks): n_var, symmetric within 1e-8, diag == 1 within 1e-8 (identity payloads: R == I exactly; k2d payloads: R NULL recorded as such), finite, has_ref_alt, plus md5/sha256/size. It writes the manifest TSV
-    - Live gate test_known_answer_panels (skips only while data/r4/ld/EUR_1kg_r4 is absent):
+    - Live gate test_known_answer_panels (marked r4_heavy; skips only while data/r4/ld/EUR_1kg_r4 is absent):
       (a) every manifest row's md5 equals the file on disk;
       (b) n_var(EUR_1kg_r4/r) == n_var(legacy_repro/r) for the 10 shared curated regions;
       (c) |R_r4| == |R_legacy| elementwise within 1e-12, blockwise;
@@ -224,7 +224,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
        find which phenotype the file is (binary hypertension vs continuous BP) by tracing its
        provenance in the repo (the download script / trait_inventory / harmonize notes) and its
        value distribution (median |BETA|, presence of an OR-like scale). If the evidence does not
-       settle it, write `UNRESOLVED` with the evidence. It goes to Carter at W2c and is fixed in W4.
+       settle it, write `UNRESOLVED` with the evidence. It goes to Carter at W2c and is fixed there (signoff W2c-T4).
        For BMI (quant), set `sdY = 1` with source "Yengo 2018 per-SD units" only if confirmed in
        the paper or repo docs. Also compute, for the record, `coloc:::sdY.est(varbeta, MAF, N)`
        medians over the 10 admissible regions, using the restored EAF, and put them in `evidence`.
@@ -236,7 +236,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
   </verify>
   <acceptance_criteria>
     - the test passes with 0 skips (the panels exist); the SUMMARY shows the RED run and the corrupted-copy negative control
-    - `awk 'NR>1' $MAN/panels_EUR_1kg_r4.tsv | wc -l` prints 19; `panels_legacy_repro.tsv` 10; `panels_EUR_identity_r4.tsv` 19
+    - `awk 'NR>1' $MAN/panels_EUR_1kg_r4.tsv | wc -l` prints 29; `panels_legacy_repro.tsv` 10; `panels_EUR_identity_r4.tsv` 29
     - `config/ta_r4/trait_manifest.tsv` has 8 data rows; any `UNRESOLVED` entries are listed in the LOG for W2c
     - `stat -c %A data/r4/ld/EUR_1kg_r4/SH2B3_12q24.rds` shows no `w` bits
   </acceptance_criteria>
@@ -251,7 +251,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
   </read_first>
   <action>Run §C with label `W2a`, commit type `feat`. The LOG records the measured EUR n, every panel count, the SH2B3 n_var, and every finding row.</action>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q && git fsck --connectivity-only 2>&1 | tail -2</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 | tail -2</automated>
   </verify>
   <acceptance_criteria>
     - tests/ta_r4 green; tests/m3 unchanged against the baseline; committed with explicit paths; pushed
@@ -280,7 +280,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
 </threat_model>
 
 <verification>
-Panel counts reconciled (19/19/10 + k2d); the known-answer findings file is written; the sample n is
+Panel counts reconciled (29/29/10 + k2d); the known-answer findings file is written; the sample n is
 measured; nothing is written under the Track B tree.
 </verification>
 

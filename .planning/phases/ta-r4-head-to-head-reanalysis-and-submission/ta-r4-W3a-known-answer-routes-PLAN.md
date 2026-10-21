@@ -1,13 +1,15 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 9
+plan: 11
 slug: W3a-known-answer-routes
 type: execute
-wave: 9
-depends_on: ["W2c"]
+wave: 11
+depends_on: ["ta-r4-W2d-apply-review-decisions"]
 files_modified:
   - bin/r4_extract_legacy_code.sh
   - src/snakemake/rules/ta_r4_repro.smk
+  - src/snakemake/rules/ta_r4_finemap.smk
+  - src/python/ta_r4/commands.py
   - src/python/ta_r4/known_answer_compare.py
   - tests/ta_r4/test_known_answer_repro.py
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/legacy_code_sha256.tsv
@@ -47,7 +49,7 @@ policy (Route C). The result is a committed per-fit comparison that measures cod
 2026-04-22 and the reproducibility of the frozen record.
 
 Purpose: D-12(b), D-10, REQ-SUSIE-RSS-POLICY. Mismatches are findings (§B.10).
-Output: the legacy code extraction, repro rules, ~384 repro fits on /rs1, a comparison tool + live test + table.
+Output: the legacy code extraction, repro rules, 382 repro fits on /rs1 (96 Route C + 96 Route L + 95 k2d Route C + 95 k2d Route L), a comparison tool + live test + table.
 </objective>
 
 <execution_context>
@@ -79,7 +81,7 @@ Validator mode for repro arms: legacy_any (records ld_source_class; never fails 
 
 <task type="auto">
   <name>Task 1: Extract the legacy code (Route L) with its dependencies; write the repro rules</name>
-  <files>bin/r4_extract_legacy_code.sh, src/snakemake/rules/ta_r4_repro.smk, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/legacy_code_sha256.tsv</files>
+  <files>bin/r4_extract_legacy_code.sh, src/snakemake/rules/ta_r4_repro.smk, src/snakemake/rules/ta_r4_finemap.smk, src/python/ta_r4/commands.py, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/legacy_code_sha256.tsv</files>
   <read_first>
     - `git show 3dd76df:src/legacy/region_analysis/scripts/run_susie_rss.R | grep -n "source(\|library(\|require("` (dependencies to extract)
     - `git log --oneline 3dd76df..08beb4c -- src/legacy/region_analysis/scripts/` (confirm no fit-code commit in between, per research)
@@ -99,23 +101,26 @@ Validator mode for repro arms: legacy_any (records ld_source_class; never fails 
        - For the k2d arms, the exact (trait, ancestry, region) set in `IDENTITY-LD-K2D-FIT-SUMMARY.tsv`
          (95 rows). Record which of the 96 combos is absent and why, from the k2d record.
        - The fits use `r4_run_finemap` from W0c, which branches on `ARMS[arm]["route"]`. If W0c did
-         not implement the legacy branch fully, implement it in `commands.fit_command`. That edit is
-         confined to the route-legacy branch, and the W0c e2e tests must stay green.
+         not implement the legacy branch fully, implement it in `commands.fit_command` (and, only if
+         the rule's shell must change, in `ta_r4_finemap.smk`). That edit is confined to the
+         route-legacy branch; the W0c e2e tests and the W0d toy e2e must stay green. If neither file
+         needs a change, leave both untouched and say so in the SUMMARY.
        - Legacy panel naming follows `safe_region_id()`, and the legacy invocation passes
          `--ld-dir data/r4/ld/legacy_repro` (or `data/r4/ld/k2d_identity`).
        - HLA_6p21 and BMI_Xq24 use the same panel semantics the frozen fire used. If the frozen
          status for those fits was an early exit (`too_many_variants` / `no_variants`), say so, give
          the source, and verify the reproduced status matches.
     3. Dry-run: `bash bin/r4_fire.sh repro repro_routeC -n <targets>` lists the expected job count.
-       The expected count is 96 for each real-LD route and 95 for each k2d route; paste the counts.
+       The expected count is 96 for each real-LD route and 95 for each k2d route: 96 + 96 + 95 + 95
+       = 382 fits in total; paste the counts.
   </action>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && bash bin/r4_fire.sh repro repro_routeC -n --quiet 2>&1 | tail -5 && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_frozen_script_armed_e2e.py -q</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && bash bin/r4_fire.sh repro repro_routeC -n --quiet 2>&1 | tail -5 && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_frozen_script_armed_e2e.py tests/ta_r4/test_snakemake_toy_e2e.py -q</automated>
   </verify>
   <acceptance_criteria>
     - `$MAN/legacy_code_sha256.tsv` lists `run_susie_rss.R` at 3dd76df plus each sourced dependency
     - the dry-run job counts per arm are pasted and equal 96 / 96 / 95 / 95 (or any deviation is explained from the frozen record)
-    - the W0c e2e tests remain green
+    - the W0c e2e tests and the W0d toy e2e remain green
   </acceptance_criteria>
   <done>Both reproduction routes are wired and dry-run.</done>
 </task>
@@ -146,7 +151,7 @@ Validator mode for repro arms: legacy_any (records ld_source_class; never fails 
   </verify>
   <acceptance_criteria>
     - the per-arm JSON counts equal the dry-run job counts from Task 1, or each shortfall is listed by fit id with its error excerpt
-    - `$MAN/fits_repro_sha256.tsv` row count == 2 × total JSONs (arithmetic pasted)
+    - `$MAN/fits_repro_sha256.tsv` row count == 2 × total JSONs (arithmetic pasted; 2 × 382 = 764 if every fit produced both files, otherwise the early-exit contract is applied and shown)
   </acceptance_criteria>
   <done>All reproduction fits exist on /rs1 and are manifested.</done>
 </task>
@@ -165,7 +170,7 @@ Validator mode for repro arms: legacy_any (records ld_source_class; never fails 
     - compare_to_k2d(row, fit) returns status/n_CS/cs_sizes equality flags vs the frozen summary row
     - aggregate(fits) returns status counts and the non-empty count, compared with the frozen aggregates
     - Unit tests on synthetic fit dicts cover: identical fits (equal); a PIP perturbation of 1e-9 (NOT equal at the 1e-10 tolerance; max |ΔPIP| reported as 1e-9); a cs_sizes difference; a missing variant
-    - Live test (skips only while data/r4/results/repro_routeC is absent): the comparison table has exactly one row per fit present in either route; columns are complete; it does NOT assert equality (§B.10). It does assert the table was produced from the files on disk (row count == union of fit ids)
+    - Live test (marked r4_heavy; skips only while data/r4/results/repro_routeC is absent): the comparison table has exactly one row per fit present in either route; columns are complete; it does NOT assert equality (§B.10). It does assert the table was produced from the files on disk (row count == union of fit ids)
   </behavior>
   <action>
     Tests RED, then implement `known_answer_compare.py`. Run it to write

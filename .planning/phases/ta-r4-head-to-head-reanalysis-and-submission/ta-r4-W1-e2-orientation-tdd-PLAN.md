@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 5
+plan: 6
 slug: W1-e2-orientation-tdd
 type: tdd
-wave: 5
-depends_on: ["W0d"]
+wave: 6
+depends_on: ["ta-r4-W0d-pair-coloc-r4-script"]
 files_modified:
   - src/python/ta_r4/restore_bmi_alleles.py
   - src/snakemake/scripts/plink_ld_to_rds.R
@@ -37,7 +37,7 @@ must_haves:
     - path: "tests/ta_r4/test_qtl_orient.py"
       provides: "unit 3 tests: exact/transposed/palindromic/mismatch + flag-off identity"
     - path: ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/bmi_allele_restoration_report.tsv"
-      provides: "D-18 match-rate report (disclosed in W4 and W8a)"
+      provides: "D-18 match-rate report (disclosed in W4a and W8a)"
   key_links:
     - from: "src/python/ta_r4/paths.py::sumstats_path('bmi','EUR', r4 arm)"
       to: "data/r4/sumstats/bmi.EUR.r4_alleles.tsv.bgz"
@@ -71,7 +71,7 @@ sha256 + match-rate manifests.
 <context>
 @.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md
 @.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-RESEARCH.md
-@.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W0b-r4-workflow-overlays-osf-gate-SUMMARY.md
+@.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W0b2-pair-manifest-osf-gate-workflow-SUMMARY.md
 
 <interfaces>
 Frozen BMI file (no alleles): data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
@@ -87,7 +87,7 @@ run_qtl_coloc.R: options at lines 30-75; allele-join block ~440-480 computes joi
   beta is signed on that ALT.
 Existing guards to keep green: tests/m3/test_qtl_coloc_allele_join.py, tests/m3/test_qtl_coloc_ld_resolution.py,
   tests/phase2/test_run_qtl_coloc.py, tests/m3/test_ld_npz_to_rds.py
-R4 PLINK binary: R4_PLINK recorded in the W0b SUMMARY (plink 1.90b6.21 from envs/plink.yml)
+R4 PLINK binary: R4_PLINK recorded in the W0b2 SUMMARY (plink 1.90b6.21 from envs/plink.yml)
 </interfaces>
 </context>
 
@@ -238,7 +238,7 @@ R4 PLINK binary: R4_PLINK recorded in the W0b SUMMARY (plink 1.90b6.21 from envs
     the two shared scripts did not move Track B. The LOG entry records the BMI match-rate numbers.
   </action>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q && git fsck --connectivity-only 2>&1 | tail -2</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 | tail -2</automated>
   </verify>
   <acceptance_criteria>
     - the full-suite join shows 0 removed ids and 0 outcome changes in pre-existing suites; tests/ta_r4 additions only

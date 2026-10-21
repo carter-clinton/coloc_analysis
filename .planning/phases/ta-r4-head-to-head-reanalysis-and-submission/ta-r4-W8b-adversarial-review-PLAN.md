@@ -1,12 +1,13 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 21
+plan: 24
 slug: W8b-adversarial-review
 type: execute
-wave: 21
-depends_on: ["W8a"]
+wave: 24
+depends_on: ["ta-r4-W8a-manuscript-draft"]
 files_modified:
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W8-MANUSCRIPT-REVIEW-as-received.md
+  - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W8b-T3.yaml
   - docs/manuscript/r4/id-vs-ref-LD-r4.template.md
   - docs/manuscript/id-vs-ref-LD-r4.md
   - docs/manuscript/r4/supplementary_reproducibility.md
@@ -21,8 +22,8 @@ must_haves:
   truths:
     - "A brief-blind adversarial review (Codex CLI) received ONLY the rendered manuscript and the instruction to attack every claim against the repository's code, tables and manifests; its output is banked verbatim with the prompt sha256 (D-08)"
     - "Every finding has a disposition (verified against file:line → fixed in the template and re-rendered, or rejected with evidence); the finding count equals the disposition-row count"
-    - "After remediation the W8a checks still pass, and the old draft is still unchanged"
-    - "Carter reviews the submission candidate at a blocking checkpoint whose first option is WAIT"
+    - "After remediation the W8a checks still pass, and the old draft is still unchanged (acceptance command scoped to W8a/W8b, not a permanent test; checker W11)"
+    - "Carter reviews the submission candidate through a checkpoint:human-action; only a reply parsing as `carter-approved YYYY-MM-DD` + `instructions:` lets W9 start (B1)"
   artifacts:
     - path: ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W8-MANUSCRIPT-REVIEW-as-received.md"
       provides: "verbatim review + disposition table"
@@ -106,30 +107,33 @@ Checks: tests/ta_r4/test_manuscript_r4.py, tests/ta_r4/test_render_manuscript.py
   </verify>
   <acceptance_criteria>
     - the finding count equals the disposition-row count (both printed); the W8a checks pass; committed; pushed
+    - acceptance-only: `git diff --quiet 055f159c -- docs/manuscript/id-vs-ref-LD.md; echo $?` prints 0
   </acceptance_criteria>
   <done>The manuscript survived a brief-blind review with every finding dispositioned.</done>
 </task>
 
-<task type="checkpoint:human-verify" gate="blocking">
-  <name>Task 3: Carter reads the submission candidate</name>
+<task type="checkpoint:human-action" gate="blocking">
+  <name>Task 3: Carter reads the submission candidate (human-action; auto-mode cannot pass it)</name>
   <what-built>A fresh ~4.5k-word manuscript rendered from FINAL tables, a supplementary reproducibility note, and the brief-blind review record with dispositions.</what-built>
   <how-to-verify>
     1. Read `docs/manuscript/id-vs-ref-LD-r4.md` and `docs/manuscript/r4/supplementary_reproducibility.md`.
     2. Read the disposition table in `ta-r4-W8-MANUSCRIPT-REVIEW-as-received.md`, especially any analysis-level deviation.
     3. Confirm the scientific accuracy and framing, or list the edits.
   </how-to-verify>
-  <options>
-    - option-wait (FIRST, the default under auto-mode): WAIT. Stop and hand back to Carter.
-    - option-approved: Carter types "approved" or his edits. Edits are applied to the template, re-rendered and re-checked; the chain continues to W9 only after his explicit "approved".
-  </options>
-  <resume-signal>"approved", or edits. Anything else = WAIT.</resume-signal>
-  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
-  <action>Present the documents. Record Carter's response verbatim, dated; commit with an explicit path; push.</action>
-  <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && git log -1 --format=%s -- .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</automated></verify>
+  <resume-signal>To approve: first line exactly `carter-approved YYYY-MM-DD`, then `instructions: <text or none>`. To request edits: describe them (this is WAIT: the executor applies them to the template, re-renders, re-runs the W8a checks, commits, and re-presents this checkpoint). Any other reply, including a bare "approved", means WAIT.</resume-signal>
+  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W8b-T3.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
+  <action>
+    Present the documents. Save the reply byte-for-byte to `data/r4/tmp/signoff_W8b-T3.txt` and run
+    `cd src/python && $PY -m ta_r4.signoff record W8b-T3 --raw-file ../../data/r4/tmp/signoff_W8b-T3.txt --min-date <date of the W8b commit>`.
+    Non-zero exit → WAIT (apply any edits described, as above, then re-present). Never construct a
+    reply or log an auto-generated response as Carter's sign-off. On success, append the reply
+    verbatim to the LOG with its date; commit the sign-off and the LOG with explicit paths; push.
+  </action>
+  <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W8b-T3 && echo SIGNED_OFF</automated></verify>
   <acceptance_criteria>
-    - the LOG quotes Carter's W8 decision with a date
+    - `signoff verify W8b-T3` exits 0; the LOG quotes Carter's W8 decision with a date
   </acceptance_criteria>
-  <done>Carter has approved the submission candidate, or the edits are recorded.</done>
+  <done>Carter has approved the submission candidate; W9 starts only after `signoff verify W8b-T3` passes.</done>
   <read_first>
     - docs/manuscript/id-vs-ref-LD-r4.md
   </read_first>

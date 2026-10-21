@@ -1,16 +1,20 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 10
+plan: 12
 slug: W3b-sh2b3-known-answer-and-findings
 type: execute
-wave: 10
-depends_on: ["W3a"]
+wave: 12
+depends_on: ["ta-r4-W3a-known-answer-routes"]
 files_modified:
   - src/snakemake/rules/ta_r4_repro.smk
+  - src/snakemake/rules/ta_r4_finemap.smk
+  - src/python/ta_r4/commands.py
   - src/python/ta_r4/sh2b3_known_answer.py
   - tests/ta_r4/test_sh2b3_known_answer.py
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/known_answer_sh2b3.tsv
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/fits_repro_sh2b3_sha256.tsv
+  - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/legacy_code_sha256.tsv
+  - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W3b-T3.yaml
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3-KNOWN-ANSWER-FINDINGS.md
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md
   - .planning/STATE.md
@@ -24,15 +28,15 @@ must_haves:
     - "The SH2B3 R2 known answer is reproduced in its EXACT configuration: L=15 fits at the R2 policy (config/susie_policy_L15.yaml; max_iter values recorded) for bmi/hypertension/stroke EUR on the legacy-identical panel, with the code at the R2-fire commit, plus the Stage-2 L=10 asthma/t2d fits (W3a Route L); coloc.susie is run for the 9 SH2B3 canonical pairs with the R2 coloc script and its R2-era priors (D-17)"
     - "The comparison against results/multitrait/coloc_susie_R2/SH2B3_12q24__EUR__*.json records PP.H4 per pair, the fingerprint (bmi-hypertension n_cs 13 x 5, nsnps 168, hit rs3184504), the L15 n_CS (13/5/3) and ld_overlap (170/589/622) for bmi/htn/stroke"
     - "The standard L=10 / iter-100 SH2B3 run (Route C fits) is reported as a SEPARATE measurement, never as the known answer (D-17)"
-    - "A findings report consolidates every known-answer result from W2a/W2b/W3a/W3b with mismatches stated as findings; Carter reviews it at a blocking checkpoint whose first option is WAIT"
+    - "A findings report consolidates every known-answer result from W2a/W2b/W3a/W3b with mismatches stated as findings; Carter reviews it at a checkpoint:human-action (auto-mode stops) and his reply is recorded only if it parses as `carter-approved YYYY-MM-DD` + `instructions:` (B1)"
   artifacts:
     - path: ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3-KNOWN-ANSWER-FINDINGS.md"
-      provides: "known-answer findings report (input to the W4 amendment)"
+      provides: "known-answer findings report (input to the W4a amendment)"
     - path: ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/known_answer_sh2b3.tsv"
       provides: "per-pair SH2B3 reproduction table (R2 config and L10/iter-100 rows, labelled)"
   key_links:
     - from: "ta-r4-W3-KNOWN-ANSWER-FINDINGS.md"
-      to: "W4 OSF amendment §known-answer results"
+      to: "W4a OSF amendment §(h) known-answer results"
       via: "copied numbers with source table paths"
       pattern: "known_answer_"
 ---
@@ -42,7 +46,7 @@ Wave 3b reproduces the SH2B3 PP.H4 = 1.0 known answer in its true configuration 
 the standard L=10 / iter-100 run separately. It consolidates every known-answer result into one
 findings report, which Carter reviews before the pre-registration is finalized.
 
-Purpose: D-12(b) as corrected by D-17; feeds the W4 amendment.
+Purpose: D-12(b) as corrected by D-17; feeds the W4a amendment.
 Output: SH2B3 repro fits + coloc outputs on /rs1, a comparison table, the findings report, Carter's sign-off.
 </objective>
 
@@ -74,7 +78,7 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
 
 <task type="auto">
   <name>Task 1: Identify the R2-fire code commit; wire and fire the SH2B3 R2-exact and L10/iter-100 measurements</name>
-  <files>src/snakemake/rules/ta_r4_repro.smk, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/fits_repro_sh2b3_sha256.tsv</files>
+  <files>src/snakemake/rules/ta_r4_repro.smk, src/snakemake/rules/ta_r4_finemap.smk, src/python/ta_r4/commands.py, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/fits_repro_sh2b3_sha256.tsv, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/legacy_code_sha256.tsv</files>
   <read_first>
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W2-canonical-pair-coloc-susie-SUMMARY.md (whole; record the exact lines that state which fits were swapped in)
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-*-SUMMARY.md (the lsweep fire commit and policy)
@@ -97,7 +101,10 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
          `data/r4/results/repro_sh2b3_r2/coloc/<pair>.json`.
        - Rule `r4_sh2b3_L10_coloc`: the same coloc script on the `repro_routeC` L10 / iter-100
          fits for all 5 traits. Output `data/r4/results/repro_sh2b3_L10/coloc/<pair>.json`.
-       All of this is stage repro, so no gate applies.
+       All of this is stage repro, so no gate applies. If the L15 fits need a policy path or option
+       the W0c/W3a `commands.fit_command` legacy branch does not support, extend that branch (and
+       `ta_r4_finemap.smk` only if its shell must change); the W0c e2e and W0d toy e2e tests must
+       stay green. Otherwise leave both files untouched and say so.
     3. Dry-run, fire (serial queue; L15 at 1000 iterations may take ~30 min per fit), confirm
        "Nothing to be done" afterwards, and write the sha256 manifest of fits + coloc outputs.
   </action>
@@ -125,7 +132,7 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
     - The table has exactly 18 rows: 9 pairs × {R2_exact, L10_iter100}; config_label is the column that distinguishes them
     - Per row: pp_h4_reproduced, pp_h4_frozen (R2 JSON; NA for L10 rows), abs_diff, nsnps, hit1, hit2, n_cs_a, n_cs_b, and match_flag (|diff| ≤ 1e-6 and equal fingerprint) for R2_exact rows only
     - The fingerprint check for bmi_vs_hypertension compares n_cs 13 × 5, nsnps 168 and hit rs3184504 field by field
-    - Unit tests on synthetic JSON pairs; the live test (skips only while the repro_sh2b3_r2 dir is absent) asserts the table has 18 rows built from files on disk. It does NOT assert match (§B.10)
+    - Unit tests on synthetic JSON pairs; the live test (marked r4_heavy; skips only while the repro_sh2b3_r2 dir is absent) asserts the table has 18 rows built from files on disk. It does NOT assert match (§B.10)
   </behavior>
   <action>
     1. Tests RED, then implement `sh2b3_known_answer.py`. Write `$MAN/known_answer_sh2b3.tsv`.
@@ -154,26 +161,28 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
   <done>The SH2B3 known answer is measured in its true configuration, and all findings are consolidated.</done>
 </task>
 
-<task type="checkpoint:human-verify" gate="blocking">
-  <name>Task 3: Carter reviews the known-answer findings before the pre-registration is finalized</name>
+<task type="checkpoint:human-action" gate="blocking">
+  <name>Task 3: Carter reviews the known-answer findings before the pre-registration is drafted (human-action; auto-mode cannot pass it)</name>
   <what-built>Reproduction of the frozen Track A fits by two routes, the k2d identity fits, the SH2B3 R2-exact configuration and the L10/iter-100 measurement, consolidated in `ta-r4-W3-KNOWN-ANSWER-FINDINGS.md` with committed tables.</what-built>
   <how-to-verify>
     1. Read `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3-KNOWN-ANSWER-FINDINGS.md`.
     2. Confirm that each mismatch is stated as a finding (not adjusted), and that the SH2B3 provenance statement is the one you want in the amendment and manuscript (D-17).
-    3. Say whether any finding changes the pre-registration draft (W4).
+    3. Say whether any finding changes the pre-registration draft (W4a).
   </how-to-verify>
-  <options>
-    - option-wait (FIRST, the default under auto-mode): WAIT. Stop and hand back to Carter. No further plan runs.
-    - option-approved: Carter types "approved" plus any instructions for the amendment. The executor records them verbatim in the LOG and the chain continues to W3c.
-  </options>
-  <resume-signal>"approved" plus instructions, or a description of issues. Anything else = WAIT.</resume-signal>
-  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
-  <action>Present the report. Record Carter's response verbatim in the LOG with a date; commit with an explicit path; push.</action>
-  <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && git log -1 --format=%s -- .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</automated></verify>
+  <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then `instructions: <text or none>`. Any other reply, including a bare "approved", means WAIT: re-present this checkpoint and record nothing.</resume-signal>
+  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W3b-T3.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
+  <action>
+    Present the report. Save the reply byte-for-byte to `data/r4/tmp/signoff_W3b-T3.txt` and run
+    `cd src/python && $PY -m ta_r4.signoff record W3b-T3 --raw-file ../../data/r4/tmp/signoff_W3b-T3.txt --min-date <date of the W3b commit>`.
+    Non-zero exit → WAIT (print the message, re-present, write nothing). Never construct a reply
+    or log an auto-generated response as Carter's sign-off. On success, append the reply verbatim
+    to the LOG with its date, commit the sign-off file and the LOG with explicit paths, and push.
+  </action>
+  <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W3b-T3 && echo SIGNED_OFF</automated></verify>
   <acceptance_criteria>
-    - the LOG has a dated entry quoting Carter's W3 sign-off
+    - `signoff verify W3b-T3` exits 0; the LOG has a dated entry quoting Carter's reply verbatim
   </acceptance_criteria>
-  <done>Carter has reviewed the known-answer findings.</done>
+  <done>Carter has reviewed the known-answer findings; W3c starts only after `signoff verify W3b-T3` passes.</done>
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3-KNOWN-ANSWER-FINDINGS.md
   </read_first>
@@ -194,7 +203,7 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
 |-----------|----------|-----------|-------------|-----------------|
 | T-r4-W3b-01 | Repudiation | SH2B3 provenance | mitigate | the R2-exact configuration is reproduced from extracted commits with sha256; L10 is labelled separately; Carter signs off |
 | T-r4-W3b-02 | Tampering | tuning toward 1.0 | mitigate | the table is committed as produced; no policy change in this plan; §B.10 |
-| T-r4-W3b-03 | Elevation of privilege | auto-approval | mitigate | first option WAIT |
+| T-r4-W3b-03 | Elevation of privilege | auto-approval | mitigate | `checkpoint:human-action`; `carter-approved YYYY-MM-DD` token parsed by ta_r4.signoff; W3c checks `signoff verify W3b-T3` before starting |
 </threat_model>
 
 <verification>

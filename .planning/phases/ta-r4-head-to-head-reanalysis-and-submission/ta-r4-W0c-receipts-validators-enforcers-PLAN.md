@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 3
+plan: 4
 slug: W0c-receipts-validators-enforcers
 type: execute
-wave: 3
-depends_on: ["W0b"]
+wave: 4
+depends_on: ["ta-r4-W0b2-pair-manifest-osf-gate-workflow"]
 files_modified:
   - src/python/ta_r4/validate_r4_fits.py
   - src/python/ta_r4/write_ld_receipt.py
@@ -71,7 +71,8 @@ Output: validator + receipt writer + identity-payload builder + fit rule + three
 <context>
 @.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md
 @.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-RESEARCH.md
-@.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W0b-r4-workflow-overlays-osf-gate-SUMMARY.md
+@.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W0b1-arms-paths-overlays-signoff-SUMMARY.md
+@.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W0b2-pair-manifest-osf-gate-workflow-SUMMARY.md
 
 <interfaces>
 Frozen script hot spots (read; never edit), per RESEARCH:
@@ -86,7 +87,8 @@ JSON keys already emitted (finemap.smk:561 receipt one-liner reads them): status
   ld_allele_dropped_{palindromic,mismatch,ambiguous,unusable}, ld_allele_catalog_join, variant_catalog_fallback,
   ld_overlap_zero_fallback, d3b_ld_z_consistency_s, ld_overlap, ld_overlap_fraction, n_CS / cs fields
 Early exits (no LD keys): status in {no_variants, too_many_variants} -> validator records "early_exit" (not a violation, but counted)
-From W0b: ta_r4.arms.ARMS[arm]["validator_mode"], ta_r4.paths.{panel_path, fit_json, sumstats_path, catalog_path, ld_dir_unused, regions_csv}
+From W0b1: ta_r4.arms.ARMS[arm]["validator_mode"], ta_r4.arms.production_arms(), ta_r4.paths.{panel_path, fit_json, sumstats_path, catalog_path, ld_dir_unused, regions_csv, result_dirs}
+From W0b2: Snakefile.ta_r4 gate_input (offline, memoized check_osf_gate); tests/ta_r4/fixtures/make_fixture_repo.py
 Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_safe, path, md5, sha256, size_bytes, n_var, n_samples, build, source, has_ref_alt
 </interfaces>
 </context>
@@ -121,9 +123,11 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
   <action>
     1. Write `tests/ta_r4/test_no_silent_identity.py`. Build fixture JSON dicts in-test: one valid
        per mode plus one per injected shape (≥ 9 negative cases). Parametrize over them. Also add a
-       **live gate** `test_live_r4_fits_have_no_identity`. It globs
-       `data/r4/results/{A3_1kg,A3_ukb,A3_ukb_isect,AFR661_A3,AFR504_A3,A2_identity,AFR661_A2}/fine_mapping/susie/*.json`
-       and validates each JSON with its receipt in the arm's mode. While **no** production results
+       **live gate** `test_live_r4_fits_have_no_identity` (marked `r4_heavy`). It globs
+       `*.json` under every dir in `ta_r4.paths.result_dirs("fits")`, i.e. every production arm in
+       ARMS including A3_1kg_isect (checker W1/B4; no hand-written arm list), and validates each
+       JSON with its receipt in its arm's `validator_mode`. Repro dirs are never globbed. A unit test
+       asserts the gate's dir list equals `result_dirs("fits")` and contains `A3_1kg_isect`. While **no** production results
        directory exists it skips with reason `"no production fits yet (W5a enables)"`. Once any such
        directory exists, it must find ≥ 1 JSON per existing arm dir or fail. A zero-file glob over an
        existing dir is a FAIL, not a pass (memory feedback_skip_guard_masks_not_fixes).
@@ -143,7 +147,7 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
     <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_no_silent_identity.py -q</automated>
   </verify>
   <acceptance_criteria>
-    - the pytest run reports ≥ 12 passed and exactly 1 skipped, the live gate, with the skip reason text shown via `-rs`
+    - the pytest run reports ≥ 13 passed and exactly 1 skipped, the live gate, with the skip reason text shown via `-rs`
     - the SUMMARY shows the initial RED, plus the sabotage RED on the identity_fallback case
     - `$PY -m ta_r4.validate_r4_fits --mode real_ld --fit <identity-fixture.json> ...; echo $?` (run from src/python) prints `1`
   </acceptance_criteria>
@@ -165,7 +169,7 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
     - e2e A3: the frozen script with the r4_run_finemap shell (authoritative true, allele-aware true, --ld-file fixture A3 .rds, --ld-dir data/r4/ld_dir_unused, absent) on a 60-variant fixture region (2 causal signals, 1 transposed-allele SNP, 1 palindromic SNP) produces status ok. ld_allele_flipped >= 1, ld_allele_dropped_palindromic >= 1, and validate_fit(mode=real_ld) returns []
     - e2e A2: the same with the matched identity payload produces validate_fit(mode=identity_matched) == []. The set of retained variant ids in the A2 fit equals the set in the A3 fit
     - e2e negative control: the same A3 call with --ld-file pointing to a non-existent path. Either the script exits non-zero, or the JSON fails validate_fit(real_ld) with a named violation. The test asserts one of the two and records which happened
-    - test_arm_variant_sets_identical (live gate): for each (trait, ancestry, region) present in both arms of each matched pair — (A2_identity, A3_1kg), (AFR661_A2, AFR661_A3), (A3_ukb_isect, A3_1kg_isect) — the retained-variant id sets are equal. It skips only while neither arm dir exists; with one present and the other absent, it fails
+    - test_arm_variant_sets_identical (live gate, marked r4_heavy): for each (trait, ancestry, region) present in both arms of each matched pair — (A2_identity, A3_1kg), (AFR661_A2, AFR661_A3), (A3_ukb_isect, A3_1kg_isect) — the retained-variant id sets are equal. It skips only while neither arm dir exists; with one present and the other absent, it fails
   </behavior>
   <action>
     1. `tests/ta_r4/fixtures/build_fixture_region.R` (run with `$RSCRIPT`, seed 20261021). It
@@ -176,7 +180,7 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
          with BETA negated; one SNP is palindromic (A/T).
        - a variant catalog TSV
        - a `regions.csv` row `FIX_1,EUR,1,1000,61000,...`
-       bgzip/tabix come from the R4 plink env (path recorded in the W0b SUMMARY). Fixtures are
+       bgzip/tabix come from the R4 plink env (path recorded in the W0b2 SUMMARY). Fixtures are
        generated into `tmp_path` at test time; no binary fixtures are committed.
     2. `make_matched_identity_payload.R` (optparse `--in --out`). It stops if `in$R` is NULL or
        `in$variants` lacks REF/ALT. Use `diag(nrow(in$R))`, a base dense matrix, to match what the
@@ -201,7 +205,8 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
        rule's shell would produce, through subprocess with `$RSCRIPT`'s env on PATH, so the e2e
        test exercises the frozen script, not a copy. Put the command assembly in the new module
        `src/python/ta_r4/commands.py` as `fit_command(arm, trait, ancestry, region_safe, config) -> list[str]`
-       and use it from both the rule (joined with `shlex.join`) and the test.
+       and use it from both the rule (joined with `shlex.join`) and the test. Mark the e2e tests
+       `r4_heavy` (they run the frozen R script).
        `test_arm_variant_sets_identical.py` holds the live gate plus a fixture-level version using
        the e2e outputs. Write RED first, then make it GREEN.
     5. Confirm D-28: `git diff --quiet HEAD -- src/legacy/region_analysis/scripts/run_susie_rss.R`
@@ -227,7 +232,7 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
   </read_first>
   <action>Run §C with label `W0c`, commit type `feat`. Stage exactly this plan's files_modified.</action>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q && git fsck --connectivity-only 2>&1 | tail -2</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 | tail -2</automated>
   </verify>
   <acceptance_criteria>
     - tests/ta_r4 green; tests/m3 outcomes unchanged against the W0a baseline (join shown); pushed

@@ -7,7 +7,6 @@ wave: 1
 depends_on: []
 files_modified:
   - bin/r4_link_storage.sh
-  - data/r4                                   # symlink -> /rs1/researchers/c/ckclinto/coloc_analysis/ta_r4 (untracked; gitignored data/)
   - config/ta_r4/data_sources.yaml
   - envs/qtl_processing.yml
   - tests/ta_r4/__init__.py
@@ -32,11 +31,13 @@ must_haves:
     - "A tests/m3 + tests/phase1 + tests/phase2 baseline (ids/passed/skipped/failed) measured at this wave's start is committed; later waves compare against it"
     - "DECISIONS.md carries new append-only entries: E-2 fix supersedes DEC-2026-08-07 option A for Track A (D-06); osf-correction-v2 retired unposted (D-19, supersedes the P-1 posting obligation of DEC-2026-08-12); SH2B3 known-answer premise correction (D-17)"
     - "tests/ta_r4/test_storage_on_rs1.py was observed RED before the symlink existed and is GREEN after"
+    - "An annotated tag ta-r4-pre-baseline marks the pre-R4 HEAD and exists on origin (git ls-remote shows it); plain `git push` does not push tags, so it is pushed explicitly"
+    - "tests/ta_r4/conftest.py registers the `r4_heavy` pytest marker; QUICK deselects it, HEAVY selects it (INDEX §A)"
   artifacts:
     - path: "bin/r4_link_storage.sh"
       provides: "idempotent creation of data/r4 -> /rs1 storage root with 2770 perms"
     - path: "tests/ta_r4/conftest.py"
-      provides: "overlay-merge helper (snakemake.utils.update_config), REPO_ROOT, R4 constants"
+      provides: "overlay-merge helper (snakemake.utils.update_config), REPO_ROOT, R4 constants, r4_heavy marker registration"
       contains: "update_config"
     - path: "tests/ta_r4/test_storage_on_rs1.py"
       provides: "D-11 + REQ-PATH-PARAMETERIZATION enforcer"
@@ -115,7 +116,7 @@ Nothing is fired. No Snakemake run.
     - test_data_r4_realpath_on_rs1: os.path.realpath(REPO/"data/r4") starts with "/rs1/" and is a directory
     - test_data_r4_is_a_symlink_not_a_dir: os.path.islink(REPO/"data/r4") is True (a real dir on /share would be purged)
     - test_check_function_rejects_share_target (negative control, always runs): the helper `storage_violations(repo_root)` returns a non-empty list for a tmp_path fixture whose data/r4 symlinks to a tmp dir outside /rs1
-    - test_no_rs1_or_share_literals_in_r4_config_and_src: scanning every file under config/ta_r4/, src/python/ta_r4/ and src/snakemake/scripts/ta_r4/ (whichever exist) finds no "/rs1/researchers", "/share/clintonlab" or "/gpfs_common" substring (REQ-PATH-PARAMETERIZATION; the property is the literal itself); negative control: the same scanner on a tmp file containing "/rs1/researchers/x" reports it
+    - test_no_rs1_or_share_literals_in_r4_config_and_src: scanning every file under config/ta_r4/, src/python/ta_r4/, src/snakemake/scripts/ta_r4/, every src/snakemake/rules/ta_r4_*.smk and Snakefile.ta_r4 (whichever exist; the glob is re-evaluated at every run, so files added by later waves are scanned) finds no "/rs1/researchers", "/share/clintonlab" or "/gpfs_common" substring (REQ-PATH-PARAMETERIZATION; the property is the literal itself); negative control: the same scanner on a tmp file containing "/rs1/researchers/x" reports it
     - test_manifests_parse: every *.tsv under $MAN with a sha256 column has 64-hex values, and no duplicate path rows
     - test_data_sources_public: every entry in config/ta_r4/data_sources.yaml has non-empty `license` and `public: true`
   </behavior>
@@ -126,7 +127,11 @@ Nothing is fired. No Snakemake run.
        `MAN_DIR = PHASE_DIR/"manifests"`; `R4_ROOT = "/rs1/researchers/c/ckclinto/coloc_analysis/ta_r4"`.
        Add the helper `merged_config(*overlay_paths)`, which loads `config/pipeline.yaml` with
        `yaml.safe_load` and applies `snakemake.utils.update_config` once per overlay in order. It is
-       used from W0b on. Add a session fixture `repo_root`.
+       used from W0b1 on. Add a session fixture `repo_root`. Register the marker in
+       `pytest_configure(config)`: `config.addinivalue_line("markers", "r4_heavy: real-data live gates, Snakemake runs/dry-runs, frozen-script R end-to-end; run per wave via HEAVY, deselected by QUICK")`.
+       Rule for later waves: a test is marked `r4_heavy` if it runs `$SMK`, runs the frozen
+       `run_susie_rss.R`, or reads `data/r4/results/`. Pure R/Python unit tests stay unmarked
+       unless the measured QUICK run exceeds 120 s (§C measures it).
     2. Write `tests/ta_r4/test_storage_on_rs1.py` with the six behaviours above. Put the checking
        logic in pure functions inside the test module (`storage_violations(repo_root)`,
        `literal_violations(paths)`), so the negative controls exercise the same code.
@@ -174,7 +179,7 @@ Nothing is fired. No Snakemake run.
 </task>
 
 <task type="auto">
-  <name>Task 2: Restore envs/qtl_processing.yml, isolate the R4 conda package cache, measure the test baseline</name>
+  <name>Task 2: Tag the pre-R4 baseline, restore envs/qtl_processing.yml, isolate the R4 conda package cache, measure the test baseline</name>
   <files>envs/qtl_processing.yml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/tests_baseline_W0a.tsv</files>
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-RESEARCH.md §"Pattern 8" and §"Environment Availability"
@@ -183,15 +188,25 @@ Nothing is fired. No Snakemake run.
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-VALIDATION.md (suite commands)
   </read_first>
   <action>
+    0. Pre-R4 baseline tag (ROADMAP scope "freeze + tag the current Track A results/env"). Nothing
+       has been committed by this phase's execution yet, so HEAD is the pre-R4 state.
+       - `git fsck --connectivity-only 2>&1 | tail -3` must report no missing objects.
+       - If `git rev-parse -q --verify refs/tags/ta-r4-pre-baseline` succeeds, STOP and report: never
+         move or recreate an existing tag.
+       - `git tag -a ta-r4-pre-baseline -m "ta-r4 pre-R4 baseline: Track A state before the R4 head-to-head (2026-10-21 plans)" HEAD`
+       - `git push origin ta-r4-pre-baseline` (plain `git push` does not push tags; memory
+         reference_ncsu_github_push_auth).
+       - Record `git rev-parse ta-r4-pre-baseline^{commit}` and `git ls-remote --tags origin ta-r4-pre-baseline`
+         in the SUMMARY; the two commit shas must be equal.
     1. Run `git show c2dfb08^:envs/qtl_processing.yml > envs/qtl_processing.yml`, then confirm
        `cmp <(git show c2dfb08^:envs/qtl_processing.yml) envs/qtl_processing.yml` exits 0 and
        `ls -la src/snakemake/rules/envs/qtl_processing.yml` resolves through the symlink. Edit nothing
        in the file. Its unpinned `>=` specs are frozen by a lockfile export after the first solve
-       (W0b Task 1).
+       (W0b2 Task 3).
     2. Create `$R4_CONDA_PREFIX` and `$R4_CONDA_PREFIX/pkgs` (mkdir -p; chmod 2770). Write
        `$R4_CONDARC` containing exactly
        `pkgs_dirs:\n  - /rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4/pkgs\n` (YAML). This
-       file lives on /rs1 and is not committed. Its path is passed by `bin/r4_fire.sh` (W0b). Check
+       file lives on /rs1 and is not committed. Its path is passed by `bin/r4_fire.sh` (W0b2). Check
        with `CONDARC=$R4_CONDARC conda config --show pkgs_dirs` that only that directory is listed.
        The shared `/rs1/.../conda_pkgs` must NOT appear.
     3. Measure the baseline before any further code change:
@@ -208,6 +223,7 @@ Nothing is fired. No Snakemake run.
     - the `cmp` above prints `IDENTICAL`
     - `CONDARC=/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4/condarc conda config --show pkgs_dirs` lists exactly one directory, `/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4/pkgs`
     - `$MAN/tests_baseline_W0a.tsv` exists; the SUMMARY shows `awk -F'\t' 'NR>1{c[$2]++} END{for(k in c) print k,c[k]}'`, and its passed/skipped/failed values equal the pytest totals line
+    - `git ls-remote --tags origin ta-r4-pre-baseline` prints one line, and `git cat-file -t ta-r4-pre-baseline` prints `tag` (annotated)
   </acceptance_criteria>
   <done>The env file is restored byte-identically, the R4 conda cache is isolated, and the baseline is committed and reconciled.</done>
 </task>
@@ -239,7 +255,7 @@ Nothing is fired. No Snakemake run.
        the line numbers you verify by reading it (expected near 153-156). The L=10 / iter-100 run is
        a separate measurement. The manuscript states the true provenance.
     Then run the §C wave-close protocol with label `W0a`. Stage exactly the files in this plan's
-    `files_modified`, except `data/r4`, which is a gitignored symlink. The commit type is `chore`.
+    `files_modified`. Never stage `data/r4` (a gitignored symlink created by `bin/r4_link_storage.sh`). The commit type is `chore`.
     Push.
   </action>
   <verify>

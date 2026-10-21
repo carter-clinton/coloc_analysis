@@ -672,31 +672,34 @@ one contrast, SH2B3, survives).
 REQ-SNAKEMAKE-CI, REQ-PATH-PARAMETERIZATION
 **Dependencies**: Track-A-R3 closeout; `DEC-2026-08-07-e2-orientation-disposition`;
 `DEC-2026-08-12-*` venue/correction decisions; m3-04c-BLAST-RADIUS.md BLOCKER-B.
-**Plans:** 22 plans (index: `ta-r4-PLAN-INDEX.md`)
+**Plans:** 25 plans in 25 sequential waves (index: `ta-r4-PLAN-INDEX.md`; revised after plan-check iteration 1)
 
 Plans:
-- [ ] ta-r4-W0a-storage-envs-survivors-PLAN.md — durable /rs1 storage, survivor rescue, env restore, DEC entries, test baseline
-- [ ] ta-r4-W0b-r4-workflow-overlays-osf-gate-PLAN.md — standalone Snakefile.ta_r4, arm overlays, static pair manifest, OSF sentinel gate
+- [ ] ta-r4-W0a-storage-envs-survivors-PLAN.md — durable /rs1 storage, survivor rescue, env restore, DEC entries, test baseline, `ta-r4-pre-baseline` tag
+- [ ] ta-r4-W0b1-arms-paths-overlays-signoff-PLAN.md — arms table, path module (ARMS-derived globs), overlays, policies, priors, Carter sign-off helper + sentinels
+- [ ] ta-r4-W0b2-pair-manifest-osf-gate-workflow-PLAN.md — regions + GWAS-null NC set, static pair manifest, OSF gate (online once per fire, offline in jobs), Snakefile.ta_r4, fire script, envs
 - [ ] ta-r4-W0c-receipts-validators-enforcers-PLAN.md — D-13 receipts + validator, frozen-script e2e, matched variant sets
-- [ ] ta-r4-W0d-pair-coloc-r4-script-PLAN.md — one coloc script: A1 matched/allvars, coloc.susie, labelled fallback, explicit priors
+- [ ] ta-r4-W0d-pair-coloc-r4-script-PLAN.md — one coloc script: A1 matched/allvars, coloc.susie, labelled fallback, explicit priors; toy `--use-conda` e2e
 - [ ] ta-r4-W1-e2-orientation-tdd-PLAN.md — E-2 fix: BMI alleles, panel REF/ALT, QTL-beta orientation (TDD, default-off)
 - [ ] ta-r4-W2a-eur-panels-catalogs-identity-PLAN.md — 1000G EUR legacy + R4 panels, A2/k2d payloads, trait manifest
-- [ ] ta-r4-W2b-afr-and-ukb-panels-PLAN.md — AFR 661/504 panels, legacy AFR, UKB 337k loader + isolated panels
-- [ ] ta-r4-W2c-qtl-downloads-manifest-and-panel-review-PLAN.md — GTEx v8 QTL downloads, static QTL manifest, Carter data review
-- [ ] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d
-- [ ] ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md — SH2B3 R2-exact known answer, findings report, Carter review
-- [ ] ta-r4-W3c-simulation-harness-PLAN.md — E8 known-truth simulation harness (pre-gate code)
-- [ ] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators + total branch classifier (pre-gate code)
-- [ ] ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md — QTL harmonization + group runner (pre-gate code)
-- [ ] ta-r4-W4-osf-r4-amendment-and-gate-PLAN.md — R4 amendment, brief-blind review, Carter locks, OSF posting gate
-- [ ] ta-r4-W5a-eur-production-fits-PLAN.md — EUR production fits, five arms, live gates
-- [ ] ta-r4-W5b-eur-production-coloc-PLAN.md — EUR coloc, all arms x both p12, exact coverage
+- [ ] ta-r4-W2b-afr-and-ukb-panels-PLAN.md — AFR 661/504 panels, legacy AFR, UKB 337k loader + isolated, re-oriented panels
+- [ ] ta-r4-W2c-qtl-downloads-manifest-and-panel-review-PLAN.md — GTEx v8 QTL downloads, static QTL manifest + cost per scope, Carter data review (human-action)
+- [ ] ta-r4-W2d-apply-review-decisions-PLAN.md — apply Carter's ukb_native (HM3) and qtl_scope decisions before the lock
+- [ ] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d (382 fits)
+- [ ] ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md — SH2B3 R2-exact known answer, findings report, Carter review (human-action)
+- [ ] ta-r4-W3c-simulation-harness-PLAN.md — E8 known-truth simulation harness (pre-lock code)
+- [ ] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators, total ordered branch classifier, coloc coverage tool (pre-lock code)
+- [ ] ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md — QTL harmonization + group runner (pre-lock code)
+- [ ] ta-r4-W4a-amendment-draft-review-locks-PLAN.md — R4 amendment draft, public-extract tooling, brief-blind review, Carter locks (human-action)
+- [ ] ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md — lock commit, FINAL + PUBLIC amendment, OSF posting gate (human-action + code gate)
+- [ ] ta-r4-W5a-eur-production-fits-PLAN.md — EUR production fits, five arms (730), live gates
+- [ ] ta-r4-W5b-eur-production-coloc-PLAN.md — EUR coloc, all arms x both p12 (4060), exact coverage
 - [ ] ta-r4-W5c-afr-secondary-and-simulation-run-PLAN.md — AFR secondary arm + E8 simulation run
 - [ ] ta-r4-W6-qtl-layer-PLAN.md — QTL coloc A3/A2 (fixed) + legacy (pre-fix), tiers
-- [ ] ta-r4-W7-aggregation-figures-PLAN.md — pre-registered estimands, branch outcomes, figures, Carter review
+- [ ] ta-r4-W7-aggregation-figures-PLAN.md — pre-registered estimands, branch outcomes, figures, Carter review (human-action)
 - [ ] ta-r4-W8a-manuscript-draft-PLAN.md — fresh table-bound manuscript + supplementary reproducibility note
-- [ ] ta-r4-W8b-adversarial-review-PLAN.md — brief-blind manuscript review, dispositions, Carter read
-- [ ] ta-r4-W9-submission-prep-PLAN.md — venue (Carter), package, OSF results draft; closes on Carter's submission
+- [ ] ta-r4-W8b-adversarial-review-PLAN.md — brief-blind manuscript review, dispositions, Carter read (human-action)
+- [ ] ta-r4-W9-submission-prep-PLAN.md — venue (Carter, human-action), package, OSF results draft; closes on Carter's submission
 
 ## Pre-pivot spine (completed 2026-04-14; artifacts reusable per Amendment §8)
 

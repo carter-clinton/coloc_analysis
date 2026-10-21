@@ -1,10 +1,10 @@
 ---
 phase: ta-r4-head-to-head-reanalysis-and-submission
-plan: 4
+plan: 5
 slug: W0d-pair-coloc-r4-script
 type: tdd
-wave: 4
-depends_on: ["W0c"]
+wave: 5
+depends_on: ["ta-r4-W0c-receipts-validators-enforcers"]
 files_modified:
   - src/snakemake/scripts/ta_r4/run_coloc_pair_r4.R
   - src/snakemake/rules/ta_r4_coloc.smk
@@ -12,6 +12,8 @@ files_modified:
   - tests/ta_r4/test_coloc_pair_r4.py
   - tests/ta_r4/test_fallback_labelled.py
   - tests/ta_r4/test_priors_constant.py
+  - tests/ta_r4/fixtures/build_toy_workflow.py
+  - tests/ta_r4/test_snakemake_toy_e2e.py
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md
   - .planning/STATE.md
 autonomous: true
@@ -27,6 +29,8 @@ must_haves:
     - "p1, p2, p12 come only from config/ta_r4/coloc_priors.yaml and are written into every output; coloc.abf and coloc.susie never run on their package defaults (Pitfall 5)"
     - "coloc_susie outputs equal a direct coloc::coloc.susie(fit_a, fit_b, p1, p2, p12) call on the same fixture fits, so the wrapper adds no numerics"
     - "Every output records variant_set_sha256 (sorted ids used), n_snps, overlap_min, trim_by_posterior, coloc and susieR versions"
+    - "The fallback and priors live gates glob only paths.result_dirs('coloc') (production arms from ARMS + A1_EUR/A1_AFR), so W3b reproduction outputs (default priors, R2-era schema) are never read (B4)"
+    - "A toy end-to-end run of `Snakefile.ta_r4 --use-conda` on 3 fixture regions (fits under A3_1kg and A2_identity, coloc_susie, A1 matched/allvars) completes with every validator passing (REQ-SNAKEMAKE-CI)"
   artifacts:
     - path: "src/snakemake/scripts/ta_r4/run_coloc_pair_r4.R"
       provides: "A1 / coloc_susie / fallback_abf for one manifest row"
@@ -37,6 +41,8 @@ must_haves:
       provides: "named D-02 enforcer (unit + live gate)"
     - path: "tests/ta_r4/test_priors_constant.py"
       provides: "named priors enforcer (unit + live gate)"
+    - path: "tests/ta_r4/test_snakemake_toy_e2e.py"
+      provides: "REQ-SNAKEMAKE-CI toy 3-locus end-to-end run (r4_heavy)"
   key_links:
     - from: "run_coloc_pair_r4.R"
       to: "config/ta_r4/coloc_priors.yaml"
@@ -74,7 +80,7 @@ coloc 5.2.3 (verified in research): coloc.abf(dataset1, dataset2, MAF=NULL, p1=1
 Existing name-alignment logic to replicate behaviourally (not source()): src/snakemake/scripts/run_coloc_susie.R lines 95-260
   (chr:pos rewrite when fits carry chr:pos vs rsid; no-signal emission when n_cs == 0)
 Fit objects: <fit>.fit.rds written by run_susie_rss.R, already annotated (coloc:::annotate_susie applied before saveRDS)
-From W0b: config/ta_r4/coloc_priors.yaml {p1, p2, p12_primary, p12_sensitivity, overlap_min, trim_by_posterior, locked}
+From W0b1: config/ta_r4/coloc_priors.yaml {p1, p2, p12_primary, p12_sensitivity, overlap_min, trim_by_posterior, locked}
 Trait manifest (W2a writes the real one): config/ta_r4/trait_manifest.tsv columns trait, ancestry, type (cc|quant), sdY (NA for cc), sdY_source, N_median
 </interfaces>
 </context>
@@ -90,7 +96,7 @@ Trait manifest (W2a writes the real one): config/ta_r4/trait_manifest.tsv column
     - --mode A1_allvars → variant set = all region sumstats rows matched between the two traits on CHR:POS with an unordered {REF,ALT} equality (rows with missing alleles: CHR:POS only, counted as n_matched_pos_only); method "A1_abf_allvars"; n_snps >= the A1_matched n_snps
     - Priors: every output's priors == yaml values for the selected --p12-key. Negative control: coloc.abf with package defaults gives a different PP.H4 on the fixture (asserted !=), proving the explicit prior is load-bearing
     - quant trait with sdY from the trait manifest → dataset carries sdY; missing sdY for a quant trait → stop() (no silent estimation)
-    - Live gates (skip only while no data/r4/results/*/coloc* dir exists; then ≥1 file per existing dir required): no JSON has method coloc_susie with n_cs_a==0 or n_cs_b==0; every JSON's priors equal the yaml; per row_id, all arms' p12 values for a given p12_key are equal
+    - Live gates (marked r4_heavy; glob ONLY `*.json` under each dir of `ta_r4.paths.result_dirs("coloc")`; skip only while none of those dirs exists; then ≥1 file per existing dir required): no JSON has method coloc_susie with n_cs_a==0 or n_cs_b==0; every JSON's priors equal the yaml; per row_id, all arms' p12 values for a given p12_key are equal. A unit test asserts the gates' dir list equals `result_dirs("coloc")` and excludes every repro arm (B4). Negative control: a tmp results tree with a repro_sh2b3_r2 coloc JSON carrying default priors is NOT read by the gate
   </behavior>
   <implementation>
     `run_coloc_pair_r4.R` (optparse):
@@ -126,7 +132,8 @@ Trait manifest (W2a writes the real one): config/ta_r4/trait_manifest.tsv column
   <behavior>See the feature block above; every listed case is a test.</behavior>
   <action>
     Build the fixture fits by running the frozen `run_susie_rss.R`, through the W0c
-    `commands.fit_command` helper, on two fixture traits. That way the fits have the real annotated
+    `commands.fit_command` helper, on two fixture traits. Tests that need these fixture fits are
+    marked `r4_heavy` (they run the frozen script). That way the fits have the real annotated
     shape. Write the fixture trait manifest into `tmp_path`: trait A cc; trait B quant with
     sdY 1.0. Write all tests and run them RED (script absent); paste. Implement
     `run_coloc_pair_r4.R` per the feature block until GREEN. Then run the negative controls and
@@ -146,12 +153,13 @@ Trait manifest (W2a writes the real one): config/ta_r4/trait_manifest.tsv column
 </task>
 
 <task type="auto">
-  <name>Task 2: Snakemake coloc rules (gated), dry-run check, wave-close (W0d)</name>
-  <files>src/snakemake/rules/ta_r4_coloc.smk, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md, .planning/STATE.md</files>
+  <name>Task 2: Snakemake coloc rules (gated), production dry-run refusal, and the toy end-to-end `--use-conda` run (REQ-SNAKEMAKE-CI)</name>
+  <files>src/snakemake/rules/ta_r4_coloc.smk, tests/ta_r4/fixtures/build_toy_workflow.py, tests/ta_r4/test_snakemake_toy_e2e.py</files>
   <read_first>
-    - Snakefile.ta_r4 and src/snakemake/rules/ta_r4_finemap.smk (W0b/W0c)
+    - Snakefile.ta_r4 and src/snakemake/rules/ta_r4_finemap.smk (W0b2/W0c)
     - src/python/ta_r4/paths.py, src/python/ta_r4/arms.py
-    - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md §C
+    - tests/ta_r4/fixtures/make_fixture_repo.py, tests/ta_r4/fixtures/build_fixture_region.R (W0b2/W0c)
+    - .planning/REQUIREMENTS.md §REQ-SNAKEMAKE-CI (toy 3-locus end-to-end)
   </read_first>
   <action>
     1. Write `src/snakemake/rules/ta_r4_coloc.smk` per the feature block. Both rules take
@@ -161,17 +169,52 @@ Trait manifest (W2a writes the real one): config/ta_r4/trait_manifest.tsv column
        must exit non-zero with `OsfGateError` (no sentinel). Panels and fits do not exist yet either.
        Record which error fires first. The gate is evaluated in the input function; if the panel
        resolver raises first, record it. The gate refusal is proven separately by
-       `r4_gate_probe` (W0b).
-    3. Run §C with label `W0d`, commit type `feat`.
+       `r4_gate_probe` (W0b2). Note that `bin/r4_fire.sh` runs `verify-online` first for production,
+       so this refusal comes from the fire script's gate step; record its message.
+    3. Toy end-to-end (REQ-SNAKEMAKE-CI; `tests/ta_r4/test_snakemake_toy_e2e.py`, marked `r4_heavy`):
+       - `tests/ta_r4/fixtures/build_toy_workflow.py` takes a `make_fixture_repo(tmp_path)` repo and
+         writes into it: 3 fixture regions FIX_1..FIX_3 (`build_fixture_region.R`, seeds
+         20261021+k) as `config/ta_r4/regions_r4.csv`; a 3-row `pair_manifest.tsv` (one trait pair per
+         region, ancestry EUR); a 2-row `trait_manifest.tsv`; fixture sumstats at the paths
+         `ta_r4.paths.sumstats_path` returns; A3 panels at `data/r4/ld/EUR_1kg_r4/FIX_k.rds` and A2
+         payloads via `make_matched_identity_payload.R`; panel manifests under the fixture's
+         `$MAN`; catalogs; and a fixture amendment + sentinel committed in the fixture repo plus a
+         receipt written in-process by `verify_online` with a fake fetch. These fixture gate files
+         exist only under tmp_path (§B.12 applies to the real repo).
+       - It runs `$SMK -s <fx>/Snakefile.ta_r4 -d <fx> --configfile <fx>/config/pipeline.yaml <fx>/config/ta_r4/overlay_base.yaml <fx>/config/ta_r4/overlay_A3_1kg.yaml --use-conda --conda-prefix /rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4 --cores 2 <targets>`
+         with `CONDARC` set as in `bin/r4_fire.sh`, then the same for `overlay_A2_identity.yaml`.
+         Targets: 2 traits × 3 regions fits per arm; the 3 rows × {p12_primary, p12_sensitivity}
+         coloc outputs per arm; and A1 matched + allvars in the A3_1kg invocation.
+       - Asserts: exit 0; every target exists; every fit has a receipt and passed the in-job
+         validator; coloc JSON methods are within {coloc_susie, fallback_abf, A1_abf_matched,
+         A1_abf_allvars}; priors equal the fixture yaml. Negative control: deleting the A3 panel
+         manifest row for FIX_2 makes the run fail at the receipt md5 gate (exit non-zero, named rule).
+       Record the wall time in the SUMMARY.
   </action>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q && git fsck --connectivity-only 2>&1 | tail -2</automated>
+    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_snakemake_toy_e2e.py -q -rs</automated>
   </verify>
   <acceptance_criteria>
     - `bash bin/r4_fire.sh repro repro_routeC --list` lists `r4_coloc_pair`; the production dry-run above exits non-zero (stderr excerpt in the SUMMARY)
-    - tests/ta_r4 green; tests/m3 unchanged against the baseline (join shown); pushed
+    - the toy e2e test RAN (no skip) and passed; its negative control failed as designed; wall time recorded
   </acceptance_criteria>
-  <done>The coloc rules are wired behind the gate; W0d committed and pushed.</done>
+  <done>The coloc rules are wired behind the gate, and the full R4 workflow runs end to end with `--use-conda` on fixture data.</done>
+</task>
+
+<task type="auto">
+  <name>Task 3: Wave-close (W0d)</name>
+  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md, .planning/STATE.md</files>
+  <read_first>
+    - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md §C
+  </read_first>
+  <action>Run §C with label `W0d`, commit type `feat`. Stage exactly this plan's files_modified.</action>
+  <verify>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 | tail -2</automated>
+  </verify>
+  <acceptance_criteria>
+    - QUICK and HEAVY green; tests/m3 unchanged against the baseline (join shown); pushed
+  </acceptance_criteria>
+  <done>W0d committed and pushed.</done>
 </task>
 
 </tasks>
