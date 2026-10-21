@@ -57,3 +57,14 @@ Chronological record of every action in this phase. Append-only.
   identity fallback; AFR/identity overlays; restore qtl_processing.yml; no Track B
   side effects.
 - `ta-r4-CONTEXT.md` + `ta-r4-DISCUSSION-LOG.md` written.
+- **Research complete** (`ta-r4-RESEARCH.md`, 688 lines, gsd-phase-researcher). Two of its
+  corrections spot-checked by the orchestrator and CONFIRMED: (a) the SH2B3 PP.H4=1.0 came
+  from L=15 lsweep fits swapped into the Stage-2 namespace (ta-sh2b3 W2 SUMMARY :153-156);
+  (b) `config/regions_curated.csv` has **12** regions — the draft says "50 curated regions"
+  (manuscript factual error to fix in the rewrite). Other key findings: E-2 reaches EUR
+  fine-mapping (panel `.rds` has no REF/ALT; plink run without `--keep-allele-order`;
+  BMI file lacks alleles); the naive QTL-side fix would orient the wrong object; p12 defaults
+  differ between coloc.abf and coloc.susie; the legacy manifest admits only converged fits;
+  negative controls cannot separate arms → simulation arm.
+- **Carter decisions D-17..D-20** (SH2B3 exact-mix known answer; BMI allele restoration;
+  fold osf-correction-v2 into the R4 amendment; AFR n=661). **Orchestrator-locked D-21..D-28.**
