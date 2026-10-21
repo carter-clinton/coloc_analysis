@@ -159,3 +159,12 @@ Chronological record of every action in this phase. Append-only.
   'ta_r4.paths'`. Without the `__init__.py`, `tests/ta_r4/conftest.py` becomes the bare
   `conftest` and breaks the tests/m3 `from conftest import R_SUBPROCESS_TIMEOUT_S` imports
   (also measured). W0b1 must pick a resolution before its first `from ta_r4...` test.
+- **Orchestrator decisions after W0a (technical, not scientific):**
+  (1) `ta_r4` import clash (tests/ta_r4 package shadows src/python/ta_r4): keep all plan paths;
+  `tests/ta_r4/__init__.py` inserts `src/python` on sys.path then
+  `__path__ = pkgutil.extend_path(__path__, __name__)`; W0b1 proves it with a test that
+  `from ta_r4.paths import ...` imports and that `tests/m3` `from conftest import ...` still works.
+  (2) conda isolation for W0b2's fire script = `CONDA_PKGS_DIRS=$R4_CONDA_PREFIX/pkgs
+  HOME=$R4_CONDA_PREFIX/home CONDARC=$R4_CONDARC` (measured to list exactly one pkgs_dir), with
+  `channel_priority: strict` and `solver: libmamba` written into the R4 condarc.
+  Noted: /rs1 R4 dirs are group `oit-rs-researcher-ckclinto` (inherited), not `clintonlab`.
