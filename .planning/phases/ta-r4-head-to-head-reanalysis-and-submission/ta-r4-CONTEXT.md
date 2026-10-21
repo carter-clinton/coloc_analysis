@@ -111,16 +111,16 @@ new GWAS vintages (the audit stays at the vintages of the claims it audits).
 - **D-16:** **Branch.** Shared multi-terminal GPFS tree → no branch switching;
   commit on the current branch with explicit-path staging; push after each wave.
 
-### Post-research decisions (2026-10-21, after )
+### Post-research decisions (2026-10-21, after `ta-r4-RESEARCH.md`)
 Carter (AskUserQuestion):
 - **D-17 (corrects D-12(b)):** the SH2B3 known answer is the EXACT R2 configuration —
   L=15 @ max_iter 500/1000 fits for BMI/HTN/stroke + Stage-2 L=10 fits for asthma/T2D
-  (, verified). The standard
+  (`ta-sh2b3-W2-canonical-pair-coloc-susie-SUMMARY.md:153-156`, verified). The standard
   L=10/iter-100 SH2B3 run is reported as a separate measurement. The manuscript states the
   true provenance of the 1.0.
 - **D-18:** BMI REF/ALT restored from the same Yengo 2018 release already on disk, by a
   checksum-pinned script with a match-rate report; disclosed in the OSF amendment and Methods.
-- **D-19:**  is retired UNPOSTED; the R4 pre-registration amendment carries
+- **D-19:** `osf-correction-v2` is retired UNPOSTED; the R4 pre-registration amendment carries
   the E-2 finding and fix as one public record. The manuscript's Methods correction note is
   rewritten to match. (Supersedes the P-1 posting obligation of DEC-2026-08-12; needs a DEC entry.)
 - **D-20:** AFR secondary arm pre-registers 1000G AFR n=661 (incl. ASW/ACB); 504 continental
@@ -135,15 +135,15 @@ Orchestrator-locked (rigor rule; Carter may override):
   controls cannot separate arms.
 - **D-24:** HLA_6p21 and BMI_Xq24: not admissible (no panel), reported as such; HLA on UKB
   tiles optional exploratory row only.
-- **D-25:** Measured-not-assumed facts (EUR panel n from the , hypertension trait type
+- **D-25:** Measured-not-assumed facts (EUR panel n from the `.fam`, hypertension trait type
   and sdY per trait for coloc.abf) are measured in execution, recorded in the panel/trait
   manifests, and fixed in the amendment before posting.
 - **D-26:** Estimands E1–E8 and the five outcome branches in RESEARCH §Estimands are the draft
   pre-registration; κ and n_both cut-offs are locked in the amendment (Carter).
-- **D-27:** OSF gate is a sentinel file Carter commits after posting (GSD 
+- **D-27:** OSF gate is a sentinel file Carter commits after posting (GSD `mode: yolo`
   auto-picks the first option at blocking gates — memory
-  ); production rules refuse to run without it.
-- **D-28:** No edit to code-frozen  (pinned by );
+  `feedback_gsd_automode_bypasses_blocking_fire_gates`); production rules refuse to run without it.
+- **D-28:** No edit to code-frozen `run_susie_rss.R` (pinned by `test_source_freeze_pins`);
   R4 behaviour comes from overlays + receipts/validators per RESEARCH §Architecture.
 
 ### Claude's Discretion
