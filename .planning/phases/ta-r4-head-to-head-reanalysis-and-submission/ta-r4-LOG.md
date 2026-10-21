@@ -105,3 +105,6 @@ Chronological record of every action in this phase. Append-only.
   lock): a THIRD negative-control set of 10 GWAS-null windows (P ≥ 1e-5 in all 8 Track A sumstats,
   seed 20261021), raising regions to 31 and the pair manifest to 346 rows / 320 admissible.
   New plan W2d applies Carter's W2c review choices (UKB HM3 restriction, QTL scope) before the lock.
+- **Plan check iteration 2: 1 blocker, 5 warnings** (details + iteration-1 list banked in
+  `ta-r4-PLAN-CHECK-LOG.md`). Orchestrator fixed the confirmatory row set (see that file) and
+  sent all issues to the planner for revision 2 (final allowed iteration).
