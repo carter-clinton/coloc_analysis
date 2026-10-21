@@ -49,6 +49,9 @@ progress:
   (`ta-r4-PLAN-CHECK-LOG.md`), final 0 blockers (`59b4ce7`). Executing under --auto --chain; every
   Carter judgement is a `checkpoint:human-action` resumable only by `carter-approved YYYY-MM-DD`.
   Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` (starts at W0a).
+  **W0a DONE 2026-10-21** (`c8130c5a`/`c26d77ad`/`6f968b1b`; tag `ta-r4-pre-baseline` → `3a2c1add`,
+  on origin): `data/r4` → /rs1, 92 survivors sha256-verified, baseline 1474/1428/46/0. ⚠ For W0b1/W0b2:
+  the `ta_r4` package-name clash and the CONDARC-alone isolation failure (see `ta-r4-LOG.md`). Next: W0b1.
 - **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
   is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
 - ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR

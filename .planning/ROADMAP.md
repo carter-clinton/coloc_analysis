@@ -675,7 +675,7 @@ REQ-SNAKEMAKE-CI, REQ-PATH-PARAMETERIZATION
 **Plans:** 25 plans in 25 sequential waves (index: `ta-r4-PLAN-INDEX.md`; revised after plan-check iteration 1)
 
 Plans:
-- [ ] ta-r4-W0a-storage-envs-survivors-PLAN.md — durable /rs1 storage, survivor rescue, env restore, DEC entries, test baseline, `ta-r4-pre-baseline` tag
+- [x] ta-r4-W0a-storage-envs-survivors-PLAN.md — durable /rs1 storage, survivor rescue, env restore, DEC entries, test baseline, `ta-r4-pre-baseline` tag
 - [ ] ta-r4-W0b1-arms-paths-overlays-signoff-PLAN.md — arms table, path module (ARMS-derived globs), overlays, policies, priors, Carter sign-off helper + sentinels
 - [ ] ta-r4-W0b2-pair-manifest-osf-gate-workflow-PLAN.md — regions + GWAS-null NC set, static pair manifest, OSF gate (online once per fire, offline in jobs), Snakefile.ta_r4, fire script, envs
 - [ ] ta-r4-W0c-receipts-validators-enforcers-PLAN.md — D-13 receipts + validator, frozen-script e2e, matched variant sets

@@ -116,3 +116,46 @@ Chronological record of every action in this phase. Append-only.
 - **Plan check iteration 3 (final): 0 blockers.** Two warnings + three info items applied by the
   orchestrator (see `ta-r4-PLAN-CHECK-LOG.md`). Planning closed; proceeding to
   `/gsd-execute-phase` under --auto --chain with human-action stops.
+
+## 2026-10-21 — W0a executed (storage, survivors, env, baseline, DEC entries)
+
+- **Tag:** `ta-r4-pre-baseline` (annotated, object `09e7795f`) → commit `3a2c1add`; pushed
+  explicitly; `git ls-remote` shows `refs/tags/ta-r4-pre-baseline^{}` = `3a2c1add`. Created
+  before any W0a commit so it marks the pre-R4 HEAD.
+- **Storage:** `bin/r4_link_storage.sh` → `data/r4` -> `/rs1/researchers/c/ckclinto/coloc_analysis/ta_r4`
+  (2770 on root + 8 subdirs; group `oit-rs-researcher-ckclinto`, inherited from the parent).
+  Second run: same realpath, exit 0. Refusal branch measured on a scratch fake repo: a real
+  `data/r4` dir → exit 2, dir untouched. `/data/r4` appended to `.gitignore` (+1/-0).
+- **Survivors:** N_SRC = 92 = 24 lsweep-backup files (6 dirs × 4) + 46 stage2_narrow_validation
+  + 21 `coloc_susie_R2*` + 1 zip. Copied by `rsync -a --relative` to
+  `data/r4/known_answer_survivors/`; sha256(copy) == sha256(source) for 92/92; sizes equal;
+  manifest `manifests/survivors_sha256.tsv` 92 rows, 0 non-hex sha256. 19 of the 92 are `.rds`.
+- **Env:** `envs/qtl_processing.yml` restored, `cmp` vs `c2dfb08^` IDENTICAL.
+- **Conda cache isolation — plan premise FALSE (measured):** `CONDARC=$R4_CONDARC conda config
+  --show pkgs_dirs` lists THREE dirs (shared `/rs1/.../conda_pkgs` included), because conda
+  always reads `~/.condarc` and `~/.bashrc` exports `CONDA_PKGS_DIRS=/rs1/.../conda_pkgs`.
+  Only `CONDA_PKGS_DIRS=$R4_CONDA_PREFIX/pkgs HOME=$R4_CONDA_PREFIX/home CONDARC=$R4_CONDARC`
+  listed exactly one. That recipe also drops `~/.condarc`'s `channel_priority: strict` and
+  `solver: libmamba`. Also measured: Snakemake 7.32.4 `--conda-cleanup-pkgs` defaults to None
+  (cleans only when the flag is passed); the 2026-10-11 incident was Snakemake 9.x. Hand-off to
+  W0b2 (`bin/r4_fire.sh`). `~/.condarc` NOT edited.
+- **Baseline** (`tests/m3 tests/phase1 tests/phase2 -q -rA`, 16m10s): 1474 ids / 1428 passed /
+  46 skipped / 0 failed (tests/m3 alone 1299 / 1265 / 34 / 0 = the 2026-09-19 record). Skipped
+  ids = collected − PASSED ids; per-file skip counts equal the `-rA` SKIPPED [N] sums for all
+  11 files. No pre-existing failure. Log: `data/r4/logs/tests_baseline_W0a.log`.
+- **RED → GREEN:** `test_storage_on_rs1.py` 6 failed / 1 passed before the link, config and
+  manifest existed; 7 passed after. Every negative control was also seen biting: each checker
+  blinded → its test RED; a `/share/clintonlab` literal dropped into `config/ta_r4/` → RED.
+- **DEC entries** appended (0 removed lines): `DEC-2026-10-21-ta-r4-e2-fix-supersedes-option-a`,
+  `DEC-2026-10-21-osf-correction-v2-retired-unposted`, `DEC-2026-10-21-sh2b3-known-answer-premise`.
+- **Wave close:** QUICK 7 passed (32 s cold first run, 0.4 s warm); HEAVY 0 selected (exit 5,
+  no r4_heavy tests yet); `test_source_freeze_pins.py` 39 passed; FULL 1481 ids / 1435 passed /
+  46 skipped / 0 failed (14m49s) = baseline 1474 + 7 new ta_r4; join vs baseline: 0 removed,
+  7 added, 0 outcome changes. fsck before/after: 0 missing/broken.
+- **Commits:** `c8130c5a` (T1), `c26d77ad` (T2), `6f968b1b` (T3 DEC), pushed.
+- ⚠ **Hand-off to W0b1:** `tests/ta_r4/__init__.py` makes pytest import the test dir as the
+  package `ta_r4` (`tests/` has no `__init__.py`), which shadows `src/python/ta_r4`. Measured
+  on a scratch mock: `from ta_r4.paths import X` → `ModuleNotFoundError: No module named
+  'ta_r4.paths'`. Without the `__init__.py`, `tests/ta_r4/conftest.py` becomes the bare
+  `conftest` and breaks the tests/m3 `from conftest import R_SUBPROCESS_TIMEOUT_S` imports
+  (also measured). W0b1 must pick a resolution before its first `from ta_r4...` test.
