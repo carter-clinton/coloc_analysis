@@ -2839,3 +2839,38 @@ pre-existing line of this file is edited, so every line reference into this file
 unchanged. No code was written; nothing fired; no OSF, reviewer, cloud or network contact;
 `$0`. The executor wrote neither `STATE.md` nor `HANDOFF.json` — close-out is the
 orchestrator's.
+
+## 2026-10-21 — DEC-2026-10-21-ta-r4-e2-fix-supersedes-option-a: E-2 is FIXED for Track A (supersedes DEC-2026-08-07 option A for Track A only)
+
+- **Decider:** Carter, 2026-10-21 (ta-r4 discuss-phase D-06).
+- **Supersedes** `DEC-2026-08-07-e2-orientation-disposition` (option A) **for Track A only**.
+  Option A's premise ("Track A is in submission; fixing would move numbers in a manuscript
+  under submission", reason 2 of that entry) is recorded as **FALSE**: the 2026-05-12 package
+  was never submitted.
+- **The fix** has three TDD units: BMI allele restoration; panel REF/ALT emission with plink
+  `--keep-allele-order`; QTL-beta orientation behind `--qtl-orient`, default false.
+- All R4 arms run on fixed code. Frozen (pre-fix) and fixed numbers are reported side by side.
+- **Track B is unaffected:** AFR-gated paths stay byte-identical with the flags at their defaults.
+
+## 2026-10-21 — DEC-2026-10-21-osf-correction-v2-retired-unposted: osf-correction-v2 is retired UNPOSTED; the R4 pre-registration amendment carries the E-2 finding and fix
+
+- **Decider:** Carter, 2026-10-21 (ta-r4 D-19).
+- **Supersedes the P-1 posting obligation** of
+  `## 2026-08-12 — DEC-2026-08-12-e2-p1-closing-sentence: Step 0 fork CHOSEN — P-1, the v2 block placed byte-intact; obligation (2) becomes post-by-submission-day`
+  (post `osf-correction-v2` on osf.io/az52u by submission day). That posting is no longer owed.
+- Its stated premise ("code is unchanged") is false under D-06
+  (`DEC-2026-10-21-ta-r4-e2-fix-supersedes-option-a`).
+- The R4 pre-registration amendment carries the E-2 finding and fix as one public record. The
+  manuscript's Methods correction note is rewritten in ta-r4 W8a.
+
+## 2026-10-21 — DEC-2026-10-21-sh2b3-known-answer-premise: the SH2B3 PP.H4 = 1.0 known answer is the EXACT R2 configuration (L=15 @ max_iter 500/1000 for BMI/HTN/stroke + Stage-2 L=10 for asthma/T2D), not max_iter 100
+
+- **Decider:** Carter, 2026-10-21 (ta-r4 D-17, correcting D-12(b)).
+- **Provenance (verified by reading):**
+  `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W2-canonical-pair-coloc-susie-SUMMARY.md:155`
+  — the Stage-2 BMI/HTN/stroke SH2B3 fits were swapped (cp -p) for the W1 V2 L=15 lsweep fits
+  before the R2 coloc.susie fire, with asthma and T2D left at Stage-2 L=10 (3+2 split); `:102`
+  — the BMI–HTN PP.H4 = 1.0 was computed on the L=15/niter=1000 BMI fit.
+- The known-answer reproduction targets that exact mix. The standard L=10 / max_iter 100 SH2B3
+  run is a separate measurement, reported as such.
+- The manuscript states the true provenance of the 1.0.
