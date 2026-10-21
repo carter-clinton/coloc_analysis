@@ -10,11 +10,14 @@ files_modified:
   - src/python/ta_r4/estimands.py
   - src/python/ta_r4/branch_classifier.py
   - src/python/ta_r4/coloc_coverage.py
+  - src/python/ta_r4/run_aggregation.py
   - src/snakemake/scripts/ta_r4/cs_cross_purity.R
   - tests/ta_r4/test_estimands.py
   - tests/ta_r4/test_branch_classifier.py
   - tests/ta_r4/test_cs_cross_purity.py
   - tests/ta_r4/test_coloc_coverage.py
+  - tests/ta_r4/test_contrast_stats.py
+  - tests/ta_r4/test_run_aggregation.py
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md
   - .planning/STATE.md
 autonomous: true
@@ -30,14 +33,18 @@ must_haves:
     - "E1 uses a region-cluster bootstrap (B = 10000, seed 20261021, percentile 95% CI, clusters = admissible regions) and a paired sign test; E2 uses 2x2 tables, Cohen's kappa and an exact McNemar at {0.5, 0.7, 0.8, 0.9}; the confirmatory contrasts A1 vs A3 and A2 vs A3 each use alpha 0.025"
     - "The branch classifier applies a fixed precedence (n_both first; then CI includes 0 → kappa; then CI and McNemar agree → INFLATION/DEFLATION; else partial_rule) and maps all 36 combinations to exactly one branch: 18 NON_INFORMATIVE, 3 NO_SYSTEMATIC_DIFFERENCE, 3 HETEROGENEOUS, 2 INFLATION_SUPPORTED, 2 DEFLATION, and 8 via partial_rule (checker W5)"
     - "The 8 uncovered combinations are exactly: CI > 0 with McNemar non-significant or significant A3>X, and CI < 0 with McNemar non-significant or significant X>A3 (each × kappa ok/not ok); decision_rules.yaml carries one partial_rule key per (CI sign, McNemar state) pair (4 keys), each a draft for Carter to lock in W4a (D-26)"
+    - "The confirmatory analysis is fixed pre-lock in decision_rules.yaml `confirmatory:` and implemented by estimands.contrast_stats: rows = primary curated EUR admissible rows (10 regions × 10 pairs = 100), p12_primary, A1 varset matched, reference arm A3_1kg; bootstrap clusters = those 10 regions; CI on the both-have-CS subset; McNemar, kappa and n_both on the both-have-CS subset at PP.H4 >= 0.8; explicit p/CI/kappa → category rules. Negative-control, AFR, p12_sensitivity, A1-allvars, UKB/isect and repro rows never reach classify() (iteration-2 blocker)"
+    - "run_aggregation.py (the single entry point for every R4 table) is written and fixture-tested here, before the lock; W7 only runs it (iteration-2 blocker)"
     - "Estimand outputs are labelled DRAFT unless decision_rules.yaml, coloc_priors.yaml and simulation.yaml all carry locked: true, signoffs/W4a-T3.yaml verifies, AND the offline OSF gate passes for stage production"
     - "Cross-evaluated purity scores A2 credible sets against the real 1000G R (Pitfall 9)"
     - "coloc_coverage.py proves output ids == the expected (admissible row × production arm of the ancestry + A1_<ANC> matched/allvars × p12 key) set exactly; it is analysis code, so it exists before the lock and the amendment cites it (B2)"
   artifacts:
     - path: "src/python/ta_r4/estimands.py"
-      provides: "load_rows, region_stat, e1_paired_delta, cluster_bootstrap_ci, sign_test, e2_agreement, mcnemar_exact, cohen_kappa, e3_reclassification, e4_finemap_structure, e5_diagnostics, e6_panel_contrast, e7_frozen_vs_fixed, e8_simulation_rates, wilson_ci"
+      provides: "load_rows, region_stat, contrast_stats, e1_paired_delta, cluster_bootstrap_ci, sign_test, e2_agreement, mcnemar_exact, cohen_kappa, e3_reclassification, e4_finemap_structure, e5_diagnostics, e6_panel_contrast, e7_frozen_vs_fixed, e8_simulation_rates, wilson_ci"
     - path: "src/python/ta_r4/branch_classifier.py"
       provides: "classify(contrast_stats, rules) -> (branch, via); enumerate_truth_table(rules)"
+    - path: "src/python/ta_r4/run_aggregation.py"
+      provides: "one entry point producing the 17 R4 tables from on-disk outputs, via estimands/branch_classifier only"
     - path: "src/python/ta_r4/coloc_coverage.py"
       provides: "expected-vs-observed coverage over manifest × arm × p12 (CLI exits 1 on any missing/extra)"
     - path: "config/ta_r4/decision_rules.yaml"
@@ -60,8 +67,10 @@ decision rule is total with a stated precedence, and no production completeness 
 after the lock.
 
 Purpose: D-26, D-02 (dual reporting), D-23 (E8 rates), Pitfalls 8 and 9; REQ-PP.H4-THRESHOLD-SWEEP;
-checker B2 (coverage tool pre-lock) and W5 (precedence + enumerated uncovered combinations).
-Output: estimator, classifier and coverage modules, the cross-purity R helper, decision rules (draft), tests.
+checker B2 (coverage + aggregation pre-lock), W5 (precedence + enumerated uncovered combinations),
+iteration-2 blocker (confirmatory set and stats→category derivation fixed in config + code).
+Output: estimator, classifier, contrast_stats, coverage and aggregation modules, the cross-purity R
+helper, decision rules (draft), tests.
 </objective>
 
 <execution_context>
@@ -96,8 +105,8 @@ smoke_dev Python 3.11: check numpy/pandas availability; implement exact binomial
 <tasks>
 
 <task type="auto" tdd="true">
-  <name>Task 1: RED → GREEN for estimators, the total classifier with explicit precedence, and cross purity</name>
-  <files>config/ta_r4/decision_rules.yaml, src/python/ta_r4/estimands.py, src/python/ta_r4/branch_classifier.py, src/snakemake/scripts/ta_r4/cs_cross_purity.R, tests/ta_r4/test_estimands.py, tests/ta_r4/test_branch_classifier.py, tests/ta_r4/test_cs_cross_purity.py</files>
+  <name>Task 1: RED → GREEN for estimators, the confirmatory contrast_stats, the total classifier with explicit precedence, and cross purity</name>
+  <files>config/ta_r4/decision_rules.yaml, src/python/ta_r4/estimands.py, src/python/ta_r4/branch_classifier.py, src/snakemake/scripts/ta_r4/cs_cross_purity.R, tests/ta_r4/test_estimands.py, tests/ta_r4/test_contrast_stats.py, tests/ta_r4/test_branch_classifier.py, tests/ta_r4/test_cs_cross_purity.py</files>
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-RESEARCH.md §"Estimands and decision rules", §"Pitfall 8", §"Pitfall 9"
     - src/python/ta_r4/r4_osf_gate.py and src/python/ta_r4/signoff.py (for the FINAL-label check)
@@ -116,6 +125,13 @@ smoke_dev Python 3.11: check numpy/pandas availability; implement exact binomial
     - e8: false-H4 = share of H3 reps with region PP.H4 >= 0.8, per (arm, r² bin, gen_panel), with a Wilson 95% CI; 0 of 200 → CI upper ≈ 0.0188 (Wilson, z = 1.96)
     - e7 joins known_answer_W3a / known_answer_sh2b3 (frozen side) with R4-A3 rows (fixed side) on fit or pair ids and reports flipped share = flipped / (exact + flipped) per region (fine-map) and per QTL row
     - Labelling: with any of the three configs unlocked → every output carries `status: DRAFT`. All three locked but no valid W4a-T3 sign-off → DRAFT. All locked + a valid fixture sign-off + a passing offline gate (fixture repo with fixture sentinel and a receipt written by verify_online with a fake fetch) → `status: FINAL`
+    contrast_stats(rows, X, ref, rules) (tests/ta_r4/test_contrast_stats.py; synthetic rows covering every row class):
+    - Selection is exactly `rules["confirmatory"]["rows"]`: row_class primary, ancestry EUR, admissible true, p12_key p12_primary, A1 varset matched, arms {X, ref} with ref = A3_1kg. On the real committed manifest the selected row_ids number 100 over 10 regions (asserted)
+    - Clusters for the bootstrap = the distinct region_safe of the selected rows (10 on the real manifest), never the 29 incl. negative controls
+    - both_have_cs: A2 vs A3 → both rows method coloc_susie; A1 vs A3 → the A3 row method coloc_susie. CI, sign test, McNemar, kappa and n_both all use this subset; H4 call = region_stat >= threshold_primary (0.8)
+    - Returns {n_rows, n_both, median_delta, mean_delta, ci_lo, ci_hi, sign_p, mcnemar_b, mcnemar_c, mcnemar_p, kappa, observed_agreement, categories: {n_both_ok, ci, mcnemar, kappa_ok}}; b = X calls H4 and ref does not, c = the reverse
+    - Category rules (exactly as in the yaml): n_both_ok = n_both >= n_both_min; ci = pos if ci_lo > 0, neg if ci_hi < 0, else incl0 (a bound exactly 0 → incl0); mcnemar = sig_X_gt_A3 if mcnemar_p < alpha and b > c, sig_A3_gt_X if mcnemar_p < alpha and c > b, else ns (p == alpha → ns); kappa_ok = kappa >= kappa_cut, and when kappa is undefined (expected agreement == 1) kappa is reported NA and kappa_ok = (observed_agreement == 1). Each edge case has its own test
+    - Negative controls: perturbing the PP.H4 of any negative-control row, any AFR row, any p12_sensitivity row, any A1-allvars row or any repro-arm row leaves the returned dict identical; positive control: perturbing one confirmatory row changes median_delta
     Classifier (inputs: n_both_ok ∈ {T, F}; mcnemar ∈ {sig_X_gt_A3, sig_A3_gt_X, ns}; ci ∈ {pos, neg, incl0}; kappa_ok ∈ {T, F}; 2 × 3 × 3 × 2 = 36 combinations):
     - Precedence, applied in order, first match wins:
       1. n_both_ok == F → NON_INFORMATIVE (18 combos; via "rule1_n_both")
@@ -147,24 +163,43 @@ smoke_dev Python 3.11: check numpy/pandas availability; implement exact binomial
       ci_level: 0.95
       region_stat_coloc_susie: pp_h4_max
       precedence: [n_both, ci_includes_0, ci_mcnemar_agree, partial_rule]
+      confirmatory:
+        contrasts: [A1_matched_vs_A3_1kg, A2_identity_vs_A3_1kg]
+        reference_arm: A3_1kg
+        rows: {row_class: primary, ancestry: EUR, admissible: true, p12_key: p12_primary, a1_varset: matched}   # 10 curated EUR regions x 10 pairs = 100
+        clusters: region_safe of the confirmatory rows                                                       # 10 regions
+        both_have_cs: {A2_identity_vs_A3_1kg: "both methods coloc_susie", A1_matched_vs_A3_1kg: "A3 method coloc_susie"}
+        ci: {statistic: median_delta_pph4, subset: both_have_cs, method: region_cluster_bootstrap_percentile}
+        mcnemar_kappa: {subset: both_have_cs, call: "region_stat >= threshold_primary"}
+        n_both: {subset: both_have_cs}
+        categories:
+          n_both_ok: "n_both >= n_both_min"
+          ci: "pos if ci_lo > 0; neg if ci_hi < 0; else incl0"
+          mcnemar: "sig_X_gt_A3 if p < alpha and b > c; sig_A3_gt_X if p < alpha and c > b; else ns"
+          kappa_ok: "kappa >= kappa_cut; if kappa undefined, observed_agreement == 1"
+        excluded_from_classifier: [negative_control rows (pre-specified specificity analysis), AFR rows (secondary), p12_sensitivity, A1 allvars, A3_ukb / A3_ukb_isect / A3_1kg_isect (E6), repro arms]
       partial_rule:
         ci_pos_mcnemar_ns: HETEROGENEOUS
         ci_pos_mcnemar_opposite: HETEROGENEOUS
         ci_neg_mcnemar_ns: HETEROGENEOUS
         ci_neg_mcnemar_opposite: HETEROGENEOUS
       locked: false
-      notes: "kappa_cut, n_both_min and the four partial_rule entries are Carter's to lock in W4a (D-26)"
+      notes: "kappa_cut, n_both_min, the four partial_rule entries and the confirmatory block are Carter's to lock in W4a (D-26); the confirmatory block is the orchestrator's rigor-rule default"
       ```
+    `contrast_stats` reads every selection and category rule from `rules["confirmatory"]` and the
+    thresholds from the top-level keys; no literal row filter or threshold lives in code (a test
+    edits a tmp copy of the yaml to `ancestry: AFR` and observes the selection change).
     Negative controls, each observed RED and then restored: delete one partial_rule key (coverage
     test RED); swap precedence steps 1 and 2 (precedence test RED); make the bootstrap resample rows
-    instead of clusters (cluster-width test RED). Never call any estimator on real production data
+    instead of clusters (cluster-width test RED); widen the row filter to include negative_control
+    rows (the NC-perturbation test RED). Never call any estimator on real production data
     in this plan; none exists yet.
   </action>
   <verify>
-    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_estimands.py tests/ta_r4/test_branch_classifier.py tests/ta_r4/test_cs_cross_purity.py -q</automated>
+    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_estimands.py tests/ta_r4/test_contrast_stats.py tests/ta_r4/test_branch_classifier.py tests/ta_r4/test_cs_cross_purity.py -q</automated>
   </verify>
   <acceptance_criteria>
-    - all pass; the SUMMARY shows the RED run and the three negative-control REDs
+    - all pass; the SUMMARY shows the RED run and the four negative-control REDs, and the confirmatory row count (100) and cluster count (10) from the real manifest
     - the SUMMARY pastes the 36-row truth table with branch and `via` columns and the per-branch counts 18/3/3/2/2/8. The 8 partial_rule rows go into the W4a amendment as an explicit decision for Carter
   </acceptance_criteria>
   <done>The analysis is fully specified in tested code before the data exist, with a total, ordered decision rule.</done>
@@ -194,8 +229,35 @@ smoke_dev Python 3.11: check numpy/pandas availability; implement exact binomial
   <done>Coverage can be proven exactly, with code frozen before the lock.</done>
 </task>
 
+<task type="auto" tdd="true">
+  <name>Task 3: Aggregation entry point run_aggregation.py (fixture-tested), moved pre-lock</name>
+  <files>src/python/ta_r4/run_aggregation.py, tests/ta_r4/test_run_aggregation.py</files>
+  <read_first>
+    - src/python/ta_r4/estimands.py, src/python/ta_r4/branch_classifier.py, config/ta_r4/decision_rules.yaml
+    - src/python/ta_r4/paths.py (result_dirs)
+    - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W7-aggregation-figures-PLAN.md (the 17 table names)
+  </read_first>
+  <behavior>
+    - run_aggregation(repo, out_dir) writes exactly 17 tables (TABLES constant: branch_outcomes, e1_paired_delta, e2_agreement_sweep, e3_reclassification, e4_finemap_structure, e4_no_cs_rate, e4_cross_purity, e5_diagnostics, e6_panel_contrast, e7_frozen_vs_fixed, e8_simulation_rates, afr_secondary, negative_controls, qtl_layer, min_abs_corr_sweep, hla_exploratory, table1_data), each with a `p12_key` column where the estimand is per-prior and a `status=FINAL|DRAFT` header comment
+    - branch_outcomes has exactly one row per confirmatory contrast (2), built only from `contrast_stats` + `classify`, with every input statistic and `via`. Descriptive repeats (p12_sensitivity, AFR, A3_ukb) go to their own tables and never carry a branch column
+    - negative_controls.tsv is the pre-specified specificity analysis (per nc_set: share of rows with region PP.H4 >= 0.8 per arm); it never feeds classify()
+    - Trait-pair coloc JSONs are read only from `result_dirs("coloc")`; the E7 frozen side comes from the committed known-answer tables and QTL_legacy tier tables by explicit path. Fixture: a `repro_sh2b3_r2/coloc/x.json` with default priors is never opened (monkeypatched `open`/`Path.read_text` records paths)
+    - If any config is unlocked, the W4a-T3 sign-off is invalid, or the offline gate fails, it writes nothing and exits 2, unless `--draft` is given, in which case every table is labelled DRAFT (fixture use only; W7 never passes it)
+    - An `ast` test asserts it defines no p-value / CI / kappa computation (no math.comb, no numpy random, no scipy) — statistics only via estimands.py / branch_classifier.py
+    - Fixture results tree (3 curated regions + 1 NC region, A1/A2/A3, both p12 keys): table row counts equal the fixture's admissible rows; perturbing the NC region's rows changes negative_controls.tsv but not branch_outcomes.tsv
+  </behavior>
+  <action>Tests RED (paste), implement, GREEN. Negative controls observed: an unlocked tmp decision_rules.yaml gives exit 2 with nothing written; adding the NC rows to the confirmatory filter in a tmp yaml changes branch_outcomes (proving the test can see a leak). Never run it on real production data here (none exists).</action>
+  <verify>
+    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_run_aggregation.py -q</automated>
+  </verify>
+  <acceptance_criteria>
+    - the test passes; the SUMMARY shows RED and both negative controls
+  </acceptance_criteria>
+  <done>The aggregation code that produces the headline is frozen before the lock and cited by the amendment.</done>
+</task>
+
 <task type="auto">
-  <name>Task 3: Wave-close (W3d)</name>
+  <name>Task 4: Wave-close (W3d)</name>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md, .planning/STATE.md</files>
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md §C
@@ -228,6 +290,7 @@ smoke_dev Python 3.11: check numpy/pandas availability; implement exact binomial
 | T-r4-W3d-02 | Tampering | DRAFT numbers presented as final | mitigate | FINAL requires all three configs locked, a valid W4a-T3 sign-off and the offline gate passing |
 | T-r4-W3d-03 | Tampering | pseudo-replication in CIs | mitigate | cluster bootstrap over regions; a test proves cluster-not-row resampling |
 | T-r4-W3d-04 | Tampering | incomplete result set | mitigate | coverage tool frozen pre-lock; expected totals asserted from the committed manifest and ARMS |
+| T-r4-W3d-05 | Repudiation | confirmatory set or category mapping chosen after results | mitigate | `confirmatory:` block in decision_rules.yaml (locked in W4b), contrast_stats + run_aggregation frozen pre-lock; NC/repro perturbation negative controls |
 </threat_model>
 
 <verification>

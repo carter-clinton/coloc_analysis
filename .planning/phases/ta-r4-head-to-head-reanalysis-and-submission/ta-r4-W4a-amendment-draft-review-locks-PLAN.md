@@ -34,7 +34,7 @@ must_haves:
       provides: "draft amendment with ‹CARTER-LOCK› placeholders"
       contains: "--- PASTE INTO OSF FROM HERE ---"
     - path: "src/python/ta_r4/extract_paste_block.py"
-      provides: "extract(path) -> str; CLI writes the PUBLIC file"
+      provides: "extract(path) -> str; render_confirmatory(rules) -> str; CLI writes the PUBLIC file"
     - path: "tests/ta_r4/test_amendment_text.py"
       provides: "framing + internal-content scans over the whole public extract; required paragraphs; PUBLIC == extract(FINAL)"
   key_links:
@@ -98,6 +98,7 @@ Sign-off tool: python -m ta_r4.signoff record|verify W4a-T3 (SCHEMAS in src/pyth
     - Framing scan over the WHOLE extract (DRAFT now; FINAL and PUBLIC when they exist): no match for `\b(pivot|revision|salvage|audit-driven)\b` (case-insensitive). The banned words are the property itself, so a text scan is the right instrument
     - Internal-content scan over the whole extract: no `.planning/`, `/rs1/`, `/gpfs`, `/share/`, `data/r4`, `signoffs/`, `DEC-20`, `Pre-Paste`, `do NOT paste`, `CARTER-LOCK` (FINAL/PUBLIC only), and no Markdown checklist item (`- [ ]` / `- [x]`)
     - Paragraphs (a)–(m) are present in the extract
+    - `render_confirmatory(yaml.safe_load(decision_rules.yaml))` (row filter, 100 rows, 10 clusters, both-have-CS subsets, threshold 0.8, alpha, category rules) appears verbatim in the extract of DRAFT (and FINAL/PUBLIC when present), so (e)/(f) cannot drift from the config. Negative control: a tmp yaml with a changed cluster rule renders text the extract does not contain, and the test fails
     - When PUBLIC exists: PUBLIC is byte-identical to extract(FINAL)
     - Negative controls: a tmp extract containing "pivot" fails the framing scan; one containing ".planning/x" fails the internal-content scan; a file with the end marker before the start marker raises
   </behavior>
@@ -114,14 +115,29 @@ Sign-off tool: python -m ta_r4.signoff record|verify W4a-T3 (SCHEMAS in src/pyth
        (b) the arms and why A1 ≠ "identity LD";
        (c) the data, with checksums and the measured n (EUR from the .fam; AFR 661/504), the BMI allele restoration with match-rate numbers, the trait types / sdY, and the A3-UKB panel class Carter chose (`ukb_native`);
        (d) the matched-variant rule and the D-02 fallback with dual reporting;
-       (e) the estimands E1–E8 with formulas and the region statistic;
-       (f) the decision thresholds, the classifier precedence (n_both → CI includes 0 → CI and McNemar agree → partial_rule) and the five branches, plus a table of the 8 partial_rule combinations with `‹CARTER-LOCK›` values;
+       (e) the estimands E1–E8 with formulas and the region statistic, and the confirmatory analysis
+           stated verbatim from `decision_rules.yaml` `confirmatory:`: the row set (primary curated
+           EUR admissible rows, 10 regions × 10 pairs = 100, p12_primary, A1 varset matched,
+           reference A3_1kg), the bootstrap clusters (those 10 regions), the both-have-CS subset per
+           contrast used for the CI, McNemar, kappa and n_both, and the H4 call threshold (0.8).
+           State that negative-control, AFR, p12_sensitivity, A1-allvars, A3-UKB/isect and
+           reproduction rows never enter the classifier. The confirmatory sentences of (e)/(f) are
+           generated, not hand-typed: `extract_paste_block.render_confirmatory(rules)` renders them
+           from the yaml and they are pasted into the DRAFT unchanged;
+       (f) the decision thresholds, the stats→category rules verbatim from `confirmatory.categories`
+           (ci pos/neg/incl0 with the bound-equals-0 rule; McNemar sig/ns with strict p < alpha;
+           kappa_ok incl. the undefined-kappa rule; n_both_ok), the classifier precedence
+           (n_both → CI includes 0 → CI and McNemar agree → partial_rule) and the five branches,
+           plus a table of the 8 partial_rule combinations with `‹CARTER-LOCK›` values;
        (g) the simulation design;
-       (h) the known-answer results, including the SH2B3 provenance stated as measured;
+       (h) the known-answer results, including the SH2B3 provenance stated as measured, and one
+           line on the 28 empty R1 trait-pair rows of the earlier analysis: their measured cause
+           (status no_signal, n_cs = 0 on at least one side; from the W3b findings report §(8)) and
+           that the D-02 fallback is the pre-specified handling of that case;
        (i) the allele-orientation finding and fix with its before/after reporting commitment. This replaces the unposted correction note; phrase it as a methods finding;
        (j) HLA_6p21 / BMI_Xq24 inadmissibility; HLA_6p21 UKB fits are exploratory, reported descriptively, and produce no coloc row because no admissible 1000G comparator exists for the head-to-head (D-24);
        (k) the production policy (current corrected max_iter) disclosed vs the reproduction policy;
-       (l) negative controls: the cosmetic and blood_group loci, the third set of 10 GWAS-null windows with its exact selection rule (250-kb tiles, exclusions, P ≥ 1e-5 in all 8 files, ≥ 200 variants, seed 20261021) and the ABO caveat; the QTL scope (`qtl_scope`) and its row count;
+       (l) negative controls as a pre-specified specificity analysis (never classifier inputs): the cosmetic and blood_group loci, the third set of 10 GWAS-null windows with its exact selection rule (250-kb tiles, exclusions, P ≥ 1e-5 in all 8 files, ≥ 200 variants, seed 20261021) and the ABO caveat; the QTL scope (`qtl_scope`) and its row count;
        (m) "What is not changing", with the analysis-code commit shas.
        Leave lock values as `‹CARTER-LOCK: …›` placeholders. Every number is copied from a committed
        file named inline in the Pre-Paste Reference (outside the extract). Keep the body ≤ ~2,700 words.
@@ -143,7 +159,7 @@ Sign-off tool: python -m ta_r4.signoff record|verify W4a-T3 (SCHEMAS in src/pyth
 
 <task type="auto">
   <name>Task 2: Brief-blind adversarial review of the public extract against the code (Codex CLI); disposition; commit before the checkpoint</name>
-  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W4-AMENDMENT-REVIEW-as-received.md, .planning/amendments/osf-amendment-r4-DRAFT.md</files>
+  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W4-AMENDMENT-REVIEW-as-received.md, .planning/amendments/osf-amendment-r4-DRAFT.md, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md, .planning/STATE.md</files>
   <read_first>
     - memory reference_codex_cli_for_gsd_review (invocation), feedback_internal_validation_cannot_catch_misspecified_premise
     - .planning/amendments/osf-amendment-r4-DRAFT.md
@@ -175,21 +191,23 @@ Sign-off tool: python -m ta_r4.signoff record|verify W4a-T3 (SCHEMAS in src/pyth
 
 <task type="checkpoint:human-action" gate="blocking">
   <name>Task 3: Carter locks the pre-registration parameters and approves the draft (human-action; auto-mode cannot pass it)</name>
-  <what-built>The committed DRAFT amendment, its brief-blind review with dispositions, and the proposed lock values: p12_primary 5e-6 (sensitivity 1e-5), kappa_cut 0.6, n_both_min 10, partial_rule HETEROGENEOUS for each of the 4 keys (the 8 combinations in §(f)), and ukb_native as recorded at W2c.</what-built>
+  <what-built>The committed DRAFT amendment, its brief-blind review with dispositions, and the proposed lock values: p12_primary 5e-6 (sensitivity 1e-5), kappa_cut 0.6, n_both_min 10, partial_rule HETEROGENEOUS for each of the 4 keys (the 8 combinations in §(f)), and the confirmatory block (100 primary curated EUR rows, 10 clusters; orchestrator default under the rigor rule). ukb_native is NOT re-decided here: it was signed at W2c-T4 and applied in W2d.</what-built>
   <how-to-verify>
     1. Read the PASTE block of `.planning/amendments/osf-amendment-r4-DRAFT.md` and the disposition table in `ta-r4-W4-AMENDMENT-REVIEW-as-received.md`.
-    2. Decide every lock value. These define the outcome branches and must be fixed before the data exist (D-26).
+    2. Decide every lock value. These define the outcome branches and must be fixed before the data exist (D-26). To change the confirmatory block, describe the change (WAIT): the executor edits decision_rules.yaml and the DRAFT pre-lock, re-runs the W3d tests and the text test, commits, and re-presents.
   </how-to-verify>
-  <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then these lines: `p12_primary: <value>`, `kappa_cut: <value>`, `n_both_min: <value>`, `partial_rule.ci_pos_mcnemar_ns: <branch>`, `partial_rule.ci_pos_mcnemar_opposite: <branch>`, `partial_rule.ci_neg_mcnemar_ns: <branch>`, `partial_rule.ci_neg_mcnemar_opposite: <branch>`, `ukb_native: <native|hm3>`, `draft: approved`. Any other reply, including a bare "approved", means WAIT. A reply asking for text edits is also WAIT: apply the edits to the DRAFT only, re-run the text test, commit, and re-present this checkpoint.</resume-signal>
+  <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then these lines: `p12_primary: <value>`, `kappa_cut: <value>`, `n_both_min: <value>`, `partial_rule.ci_pos_mcnemar_ns: <branch>`, `partial_rule.ci_pos_mcnemar_opposite: <branch>`, `partial_rule.ci_neg_mcnemar_ns: <branch>`, `partial_rule.ci_neg_mcnemar_opposite: <branch>`, `confirmatory: approved`, `draft: approved`. Any other reply, including a bare "approved", means WAIT. A reply asking for text edits is also WAIT: apply the edits to the DRAFT only, re-run the text test, commit, and re-present this checkpoint.</resume-signal>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W4a-T3.yaml, .planning/DECISIONS.md, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
     Present the draft, the dispositions and the proposed values. Save the reply byte-for-byte to
     `data/r4/tmp/signoff_W4a-T3.txt` and run
     `cd src/python && $PY -m ta_r4.signoff record W4a-T3 --raw-file ../../data/r4/tmp/signoff_W4a-T3.txt --min-date <date of the W4a-draft commit>`.
     Non-zero exit → WAIT (print the message, re-present, write nothing). Never infer, default or
-    complete any value, and never log an auto-generated response as Carter's sign-off.
-    If the recorded `ukb_native` differs from `config/ta_r4/review_decisions.yaml`, STOP and hand
-    back: W2d must be re-run for the new choice before the lock (record this in the LOG).
+    complete any value. Sign-off integrity (§B.15): the executor never authors, types or completes
+    any `carter-approved` text and never writes signoffs/*.yaml except via `signoff record`; the
+    raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response); the SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
     On success, append `## <date> — DEC-<date>-ta-r4-prereg-locks: R4 pre-registration lock values (Carter)`
     to DECISIONS.md quoting the reply verbatim and citing `signoffs/W4a-T3.yaml`; log it; commit the
     three files with explicit paths; push.
@@ -197,7 +215,7 @@ Sign-off tool: python -m ta_r4.signoff record|verify W4a-T3 (SCHEMAS in src/pyth
   <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W4a-T3 && cd ../.. && grep -c "ta-r4-prereg-locks" .planning/DECISIONS.md</automated></verify>
   <acceptance_criteria>
     - `signoff verify W4a-T3` exits 0; DECISIONS.md has exactly one `ta-r4-prereg-locks` entry quoting Carter's reply verbatim
-    - the recorded ukb_native equals review_decisions.yaml
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>Carter's lock values are recorded and machine-checkable; W4b applies them.</done>
   <read_first>

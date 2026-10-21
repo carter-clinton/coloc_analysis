@@ -108,3 +108,8 @@ Chronological record of every action in this phase. Append-only.
 - **Plan check iteration 2: 1 blocker, 5 warnings** (details + iteration-1 list banked in
   `ta-r4-PLAN-CHECK-LOG.md`). Orchestrator fixed the confirmatory row set (see that file) and
   sent all issues to the planner for revision 2 (final allowed iteration).
+- **Plan revision 2 complete** (25 plans / 80 tasks): confirmatory set fixed in
+  `config/ta_r4/decision_rules.yaml` (`confirmatory:` block) + `estimands.contrast_stats` +
+  `run_aggregation.py` all pre-lock in W3d, rendered verbatim into the amendment; sign-off
+  integrity text on all 8 human-action tasks; manifests keyed (ancestry, region_safe);
+  `/data/r4` gitignored in W0a; R1_STRUCTURAL cause into the W3b findings + amendment (h).

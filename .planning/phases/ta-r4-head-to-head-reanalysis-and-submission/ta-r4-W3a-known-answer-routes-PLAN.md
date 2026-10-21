@@ -110,6 +110,15 @@ Validator mode for repro arms: legacy_any (records ld_source_class; never fails 
        - HLA_6p21 and BMI_Xq24 use the same panel semantics the frozen fire used. If the frozen
          status for those fits was an early exit (`too_many_variants` / `no_variants`), say so, give
          the source, and verify the reproduced status matches.
+       - Panel availability split of the 96 real-LD fits (checker W-3), written to the SUMMARY as a
+         table and reconciled to 96:
+         EUR = 5 traits × 12 regions = 60 = 5 × 10 regions with a legacy_repro/EUR panel (50) + 5 ×
+         {HLA_6p21, BMI_Xq24} with no legacy panel (10);
+         AFR = 3 traits × 12 regions = 36 = 3 × n_AFR (regions with a legacy_repro/AFR panel, from
+         `panels_legacy_repro_AFR.tsv`) + 3 × (12 − n_AFR) without.
+         Panel-absent fits run exactly as the frozen fire did: no panel input, receipt
+         `present: false` / `ld_source_class: missing`, and the legacy code's own fallback
+         (W0c legacy_any path). Their reproduced statuses are compared to the frozen ones like any other.
     3. Dry-run: `bash bin/r4_fire.sh repro repro_routeC -n <targets>` lists the expected job count.
        The expected count is 96 for each real-LD route and 95 for each k2d route: 96 + 96 + 95 + 95
        = 382 fits in total; paste the counts.

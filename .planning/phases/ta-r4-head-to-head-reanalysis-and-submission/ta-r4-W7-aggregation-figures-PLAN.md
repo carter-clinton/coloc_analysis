@@ -6,9 +6,7 @@ type: execute
 wave: 22
 depends_on: ["ta-r4-W6-qtl-layer"]
 files_modified:
-  - src/python/ta_r4/run_aggregation.py
   - src/python/ta_r4/figures.py
-  - tests/ta_r4/test_run_aggregation.py
   - docs/manuscript/r4/tables/branch_outcomes.tsv
   - docs/manuscript/r4/tables/e1_paired_delta.tsv
   - docs/manuscript/r4/tables/e2_agreement_sweep.tsv
@@ -61,15 +59,13 @@ must_haves:
   artifacts:
     - path: "docs/manuscript/r4/tables/branch_outcomes.tsv"
       provides: "the pre-registered decision per confirmatory contrast"
-    - path: "src/python/ta_r4/run_aggregation.py"
-      provides: "one entry point producing every R4 table from the on-disk outputs"
     - path: ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W7-RESULTS.md"
       provides: "results report for Carter (numbers with sources; no interpretation beyond the branch)"
   key_links:
-    - from: "src/python/ta_r4/run_aggregation.py"
-      to: "src/python/ta_r4/estimands.py + branch_classifier.py"
-      via: "the frozen (pre-registered) functions; no new statistics"
-      pattern: "branch_classifier"
+    - from: "docs/manuscript/r4/tables/branch_outcomes.tsv"
+      to: "src/python/ta_r4/run_aggregation.py (frozen since W3d, unchanged since lock commit A)"
+      via: "python -m ta_r4.run_aggregation; contrast_stats + classify only"
+      pattern: "run_aggregation"
 ---
 
 <objective>
@@ -103,37 +99,33 @@ Plotting: check matplotlib in smoke_dev python, else ggplot2 in r_coloc; record 
 
 <tasks>
 
-<task type="auto" tdd="true">
-  <name>Task 1: Aggregation entry point (TDD on fixtures), then run it on the real outputs</name>
-  <files>src/python/ta_r4/run_aggregation.py, tests/ta_r4/test_run_aggregation.py, docs/manuscript/r4/tables/branch_outcomes.tsv, docs/manuscript/r4/tables/e1_paired_delta.tsv, docs/manuscript/r4/tables/e2_agreement_sweep.tsv, docs/manuscript/r4/tables/e3_reclassification.tsv, docs/manuscript/r4/tables/e4_finemap_structure.tsv, docs/manuscript/r4/tables/e4_no_cs_rate.tsv, docs/manuscript/r4/tables/e4_cross_purity.tsv, docs/manuscript/r4/tables/e5_diagnostics.tsv, docs/manuscript/r4/tables/e6_panel_contrast.tsv, docs/manuscript/r4/tables/e7_frozen_vs_fixed.tsv, docs/manuscript/r4/tables/e8_simulation_rates.tsv, docs/manuscript/r4/tables/afr_secondary.tsv, docs/manuscript/r4/tables/negative_controls.tsv, docs/manuscript/r4/tables/qtl_layer.tsv, docs/manuscript/r4/tables/min_abs_corr_sweep.tsv, docs/manuscript/r4/tables/hla_exploratory.tsv, docs/manuscript/r4/tables/table1_data.tsv, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/aggregation_sha256.tsv</files>
+<task type="auto">
+  <name>Task 1: Lock-diff check, then run the frozen aggregation (W3d) on the real outputs</name>
+  <files>docs/manuscript/r4/tables/branch_outcomes.tsv, docs/manuscript/r4/tables/e1_paired_delta.tsv, docs/manuscript/r4/tables/e2_agreement_sweep.tsv, docs/manuscript/r4/tables/e3_reclassification.tsv, docs/manuscript/r4/tables/e4_finemap_structure.tsv, docs/manuscript/r4/tables/e4_no_cs_rate.tsv, docs/manuscript/r4/tables/e4_cross_purity.tsv, docs/manuscript/r4/tables/e5_diagnostics.tsv, docs/manuscript/r4/tables/e6_panel_contrast.tsv, docs/manuscript/r4/tables/e7_frozen_vs_fixed.tsv, docs/manuscript/r4/tables/e8_simulation_rates.tsv, docs/manuscript/r4/tables/afr_secondary.tsv, docs/manuscript/r4/tables/negative_controls.tsv, docs/manuscript/r4/tables/qtl_layer.tsv, docs/manuscript/r4/tables/min_abs_corr_sweep.tsv, docs/manuscript/r4/tables/hla_exploratory.tsv, docs/manuscript/r4/tables/table1_data.tsv, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/aggregation_sha256.tsv</files>
   <read_first>
-    - src/python/ta_r4/estimands.py, src/python/ta_r4/branch_classifier.py, config/ta_r4/decision_rules.yaml
-    - .planning/amendments/osf-amendment-r4-FINAL.md §(e)–(g)
+    - src/python/ta_r4/run_aggregation.py, src/python/ta_r4/estimands.py (contrast_stats), config/ta_r4/decision_rules.yaml (`confirmatory:`)
+    - .planning/amendments/osf-amendment-r4-FINAL.md §(e)–(g), (m) (lock commit A)
   </read_first>
-  <behavior>
-    - run_aggregation(repo, out_dir) writes exactly the 17 tables in this plan's files_modified (a TABLES constant; the test asserts set equality), each with a `p12_key` column where the estimand is per-prior. With a fixture results tree (3 regions, 2 arms + A3, both p12 keys), the table row counts equal the fixture's admissible rows and branch_outcomes has one row per (contrast, ancestry, p12_key)
-    - Globs (B4): the fixture tree also holds a `repro_sh2b3_r2/coloc/x.json` with default priors and a different schema; run_aggregation never opens it (asserted by monkeypatching `open`/`Path.read_text` to record paths); its coloc dir list equals `result_dirs("coloc")`
-    - If any config is unlocked or the gate fails (injected), it writes nothing and exits 2. This is a negative control: run it with a tmp copy of decision_rules.yaml set to locked: false
-    - It only calls functions from estimands.py / branch_classifier.py for statistics. A test asserts, via `ast`, that run_aggregation.py defines no function computing a p-value / CI / kappa (no calls to math.comb, no numpy random)
-  </behavior>
   <action>
-    Tests RED, then implement, GREEN. Run it on the real outputs:
-    `$PY -m ta_r4.run_aggregation --repo . --out docs/manuscript/r4/tables`.
-    - Cross-evaluated purity: call `cs_cross_purity.R` for A2 fits against EUR_1kg_r4, and for
-      A3_ukb_isect vs A3_1kg_isect in both directions.
-    - The run writes `branch_outcomes.tsv` first. Paste it verbatim in the SUMMARY before any other
-      output.
-    - Write `aggregation_sha256.tsv`.
-    - Assert that every table file carries `status=FINAL` in its header comment.
+    1. Code-state check (same path set as W5a Task 1, which includes `src/python/ta_r4/run_aggregation.py`
+       and `estimands.py`): `git diff --stat <lock-commit-A-sha> HEAD -- ...` must be empty. A
+       non-empty diff is a STOP and a deviation for Carter. This plan writes no analysis code;
+       a needed change to run_aggregation/estimands/branch_classifier is a deviation, not a fix.
+    2. `cd src/python && $PY -m ta_r4.run_aggregation --repo ../.. --out ../../docs/manuscript/r4/tables`
+       (never `--draft`). Exit 2 means locks/sign-off/gate failed: STOP.
+    3. Paste `branch_outcomes.tsv` verbatim in the SUMMARY before any other output. Cross-purity
+       calls `cs_cross_purity.R` for A2 fits against EUR_1kg_r4, and for A3_ukb_isect vs A3_1kg_isect
+       in both directions (inside run_aggregation).
+    4. Write `aggregation_sha256.tsv` over the 17 tables.
   </action>
   <verify>
-    <automated>/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_run_aggregation.py -q</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_run_aggregation.py tests/ta_r4/test_contrast_stats.py -q && ls docs/manuscript/r4/tables/*.tsv | wc -l && grep -L 'status=FINAL' docs/manuscript/r4/tables/*.tsv | wc -l</automated>
   </verify>
   <acceptance_criteria>
-    - tests pass; the SUMMARY shows RED, the unlocked-config negative control (exit 2), and `branch_outcomes.tsv` verbatim
-    - `grep -L 'status=FINAL' docs/manuscript/r4/tables/*.tsv` prints nothing (every table is FINAL)
+    - the lock-diff output is empty (pasted); the frozen tests still pass; 17 tables exist; `grep -L 'status=FINAL'` count is 0
+    - `branch_outcomes.tsv` has exactly 2 rows (A1_matched_vs_A3_1kg, A2_identity_vs_A3_1kg), pasted verbatim
   </acceptance_criteria>
-  <done>The pre-registered decision and every table exist, computed only by frozen code.</done>
+  <done>The pre-registered decision and every table exist, computed only by code frozen before the lock.</done>
 </task>
 
 <task type="auto">
@@ -185,6 +177,12 @@ Plotting: check matplotlib in smoke_dev python, else ggplot2 in r_coloc; record 
   <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then `instructions: <manuscript instructions or none>`. Any other reply, including a bare "approved", means WAIT: re-present and record nothing.</resume-signal>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W7-T3.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
+    Sign-off integrity (§B.15): the executor never authors, types or completes any
+    `carter-approved` text and never writes signoffs/*.yaml except via `python -m ta_r4.signoff record`.
+    The raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response). The SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
+
     Present the report. Save the reply byte-for-byte to `data/r4/tmp/signoff_W7-T3.txt` and run
     `cd src/python && $PY -m ta_r4.signoff record W7-T3 --raw-file ../../data/r4/tmp/signoff_W7-T3.txt --min-date <date of the W7 commit>`.
     Non-zero exit → WAIT. Never construct a reply or log an auto-generated response as Carter's
@@ -194,6 +192,7 @@ Plotting: check matplotlib in smoke_dev python, else ggplot2 in r_coloc; record 
   <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W7-T3 && echo SIGNED_OFF</automated></verify>
   <acceptance_criteria>
     - `signoff verify W7-T3` exits 0; the LOG has a dated entry quoting Carter's reply verbatim
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>Carter has reviewed the results; his manuscript instructions are recorded.</done>
   <read_first>
@@ -214,7 +213,7 @@ Plotting: check matplotlib in smoke_dev python, else ggplot2 in r_coloc; record 
 
 | Threat ID | Category | Component | Disposition | Mitigation Plan |
 |-----------|----------|-----------|-------------|-----------------|
-| T-r4-W7-01 | Repudiation | post-hoc statistics | mitigate | an `ast` test forbids new statistics in run_aggregation.py; the estimators are frozen since W3d |
+| T-r4-W7-01 | Repudiation | post-hoc statistics | mitigate | run_aggregation/contrast_stats frozen in W3d and cited by the amendment; empty lock diff required before running; no code written in W7 |
 | T-r4-W7-02 | Tampering | DRAFT numbers in tables | mitigate | the FINAL label requires locks + gate; a grep -L check across all tables (the label is a literal property of the file) |
 | T-r4-W7-03 | Tampering | figures drifting from tables | mitigate | figures read only the committed tables |
 | T-r4-W7-04 | Tampering | repro outputs mixed into estimands | mitigate | coloc globs from result_dirs("coloc") only; fixture test proves a repro JSON is never opened |

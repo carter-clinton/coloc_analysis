@@ -122,6 +122,7 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
   <behavior>
     - One row per (region_safe [10 admissible EUR], trait [5 EUR], source [eqtl, sqtl], tissue, gene_or_phenotype_id) where the raw file has ≥ 1 row inside the region's GRCh38 window; columns `qtl_row_id, region_safe, ancestry, trait, source, tissue, qtd, gene_id, molecular_trait_id, chr38, start38, end38, n_qtl_variants_in_window`
     - `--scope {full, tissues_frozen, eqtl_only, tissues_frozen+eqtl_only}`: `tissues_frozen` keeps only the tissue set of the frozen Track A QTL layer (read from TRACK-A-FROZEN-NUMBERS.md / config, recorded with its source line); `eqtl_only` drops sQTL. Each option is a pure filter on (source, tissue); a test asserts each restricted manifest is a subset of `full` with exactly the expected (source, tissue) set
+    - The tabix-slicing tests and the determinism test over the real downloads are marked `r4_heavy`
     - The committed `config/ta_r4/qtl_manifest.tsv` is built with the scope in `config/ta_r4/review_decisions.yaml` if that file exists, else `full`; the determinism test regenerates with the same rule
     - Removing the trait column and taking unique rows gives the per-region feature set, and the row count == that set's size × 5 traits (reconciliation identity)
     - No column refers to GWAS fit status or tier. The schema test rejects a `status` / `tier` column (negative control)
@@ -170,7 +171,7 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
     (3) BMI restoration classes and the raw cross-check rate;
     (4) trait manifest, with every UNRESOLVED item stated as a question (hypertension type; sdY sources);
     (5) AFR panel-size findings;
-    (6) UKB-native panel sizes and the open decision: keep native as-is (`ukb_native: native`), or pre-register an HM3 restriction (`ukb_native: hm3`; W2d builds it before the lock);
+    (6) UKB-native panel sizes and the open decision: keep native as-is (`ukb_native: native`), or pre-register an HM3 restriction (`ukb_native: hm3`; W2d builds it before the lock). Note: the HLA_6p21 A3_ukb exploratory fits will report `too_many_variants` under native (n_var above 16,000; quote the measured n_var) unless hm3 brings them under the cap; this is decided once, here (not re-opened at W4a);
     (7) QTL scope vs the frozen layer;
     (8) QTL size and cost per scope option, from `qtl_compute_estimate.tsv`, and the open decision `qtl_scope` (W2d rebuilds the manifest before the lock if not `full`);
     (9) the exact reply format Carter must use (see Task 4), listing every required key, including one `trait.<trait>.<ancestry>.<field>` key per UNRESOLVED trait-manifest cell.
@@ -198,6 +199,12 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
   <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then one `key: value` line per required key (packet §9). Any other reply, including a bare "approved" (the auto-mode response), means WAIT: re-present this checkpoint and record nothing. To raise issues instead, Carter describes them; that is also WAIT.</resume-signal>
   <files>config/ta_r4/trait_manifest.tsv, config/ta_r4/review_decisions.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W2c-T4.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
+    Sign-off integrity (§B.15): the executor never authors, types or completes any
+    `carter-approved` text and never writes signoffs/*.yaml except via `python -m ta_r4.signoff record`.
+    The raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response). The SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
+
     Present the packet. On a reply:
     1. Save it byte-for-byte to `data/r4/tmp/signoff_W2c-T4.txt` and run
        `cd src/python && $PY -m ta_r4.signoff record W2c-T4 --raw-file ../../data/r4/tmp/signoff_W2c-T4.txt --min-date <date of the packet commit> --extra-required <one key per UNRESOLVED cell>`.
@@ -216,6 +223,7 @@ Parallel downloads: xargs -P 5 (memory feedback_parallel_downloads); /rs1 has ~2
   <acceptance_criteria>
     - `signoff verify W2c-T4` exits 0; `test_signoffs.py` passes with the review_decisions sentinel live; `config/ta_r4/trait_manifest.tsv` has no `UNRESOLVED` cell
     - the LOG contains Carter's verbatim reply, dated
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>Carter has signed off the measured data facts and decided ukb_native and qtl_scope; the record is machine-checked.</done>
   <read_first>

@@ -89,7 +89,7 @@ JSON keys already emitted (finemap.smk:561 receipt one-liner reads them): status
 Early exits (no LD keys): status in {no_variants, too_many_variants} -> validator records "early_exit" (not a violation, but counted)
 From W0b1: ta_r4.arms.ARMS[arm]["validator_mode"], ta_r4.arms.production_arms(), ta_r4.paths.{panel_path, fit_json, sumstats_path, catalog_path, ld_dir_unused, regions_csv, result_dirs}
 From W0b2: Snakefile.ta_r4 gate_input (offline, memoized check_osf_gate); tests/ta_r4/fixtures/make_fixture_repo.py
-Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_safe, path, md5, sha256, size_bytes, n_var, n_samples, build, source, has_ref_alt
+Panel manifest (written by W2a/W2b): file chosen by ta_r4.paths.panel_manifest_path(arm, ancestry); columns ancestry, region_safe, path, md5, sha256, size_bytes, n_var, n_samples, build, source, has_ref_alt; unique key (ancestry, region_safe)
 </interfaces>
 </context>
 
@@ -135,11 +135,17 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
     2. Implement `validate_r4_fits.py` with
        `validate_fit(fit: dict, receipt: dict, manifest_row: dict | None, mode: str) -> list[str]`
        (violation names) and `main()`.
-       `write_ld_receipt.py` (CLI) takes `--declared --arm --stage --overlay-files ... --policy --panel-manifest --region-safe --out`
-       and writes `{declared, md5, sha256, size_bytes, arm, stage, overlay_sha256, git_sha, policy_sha256, panel_manifest_md5}`.
+       `write_ld_receipt.py` (CLI) takes `--declared --arm --stage --overlay-files ... --policy --panel-manifest --ancestry --region-safe --out`
+       and writes `{declared, present, md5, sha256, size_bytes, arm, stage, ancestry, region_safe, overlay_sha256, git_sha, policy_sha256, panel_manifest_md5, ld_source_class}`.
+       The manifest row is looked up by (ancestry, region_safe); a manifest with a duplicate key or
+       without an `ancestry` column is an error (exit 3). The validator rejects a receipt whose
+       ancestry differs from the fit's (a unit case: an AFR receipt on an EUR fit fails).
        `overlay_sha256` is the sha256 of the concatenated bytes of the overlay files in order.
-       `git_sha` comes from `git rev-parse HEAD`. It exits 3 if `declared` md5 != the manifest row md5,
-       or if there is no manifest row.
+       `git_sha` comes from `git rev-parse HEAD`. For real_ld / identity_matched arms it exits 3 if
+       `declared` md5 != the manifest row md5, or if there is no manifest row. For legacy_any arms
+       (`--legacy-any`) an absent panel is not an error: it writes `present: false`, `md5: null`,
+       `ld_source_class: missing` and exits 0, because the frozen record's fits ran with that absence
+       and reproduction must mirror it (checker W-3).
     3. GREEN. Then the negative-control proof: temporarily make `validate_fit` ignore
        `convergence_status`, observe the identity_fallback case go RED, restore, and paste both.
   </action>
@@ -168,6 +174,7 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
     - make_matched_identity_payload.R --in A3.rds --out A2.rds writes list(R = diag(n) as a base matrix, variants = identical(in$variants), ld_source = "identity_matched_r4"). identical(out$variants, in$variants) is TRUE, and all(out$R == diag(n)) is TRUE
     - e2e A3: the frozen script with the r4_run_finemap shell (authoritative true, allele-aware true, --ld-file fixture A3 .rds, --ld-dir data/r4/ld_dir_unused, absent) on a 60-variant fixture region (2 causal signals, 1 transposed-allele SNP, 1 palindromic SNP) produces status ok. ld_allele_flipped >= 1, ld_allele_dropped_palindromic >= 1, and validate_fit(mode=real_ld) returns []
     - e2e A2: the same with the matched identity payload produces validate_fit(mode=identity_matched) == []. The set of retained variant ids in the A2 fit equals the set in the A3 fit
+    - legacy_any absent panel (unit, receipt writer): a repro-arm call whose expected legacy panel file is absent writes `present: false`, `ld_source_class: missing` and exits 0; the same call for a real_ld arm exits 3
     - e2e negative control: the same A3 call with --ld-file pointing to a non-existent path. Either the script exits non-zero, or the JSON fails validate_fit(real_ld) with a named violation. The test asserts one of the two and records which happened
     - test_arm_variant_sets_identical (live gate, marked r4_heavy): for each (trait, ancestry, region) present in both arms of each matched pair — (A2_identity, A3_1kg), (AFR661_A2, AFR661_A3), (A3_ukb_isect, A3_1kg_isect) — the retained-variant id sets are equal. It skips only while neither arm dir exists; with one present and the other absent, it fails
   </behavior>
@@ -190,13 +197,15 @@ Panel manifest (written by W2a/W2b): $MAN/panels_<panel_dir>.tsv columns region_
        - output `ta_r4.paths.fit_json(ARM, "{trait}", "{ancestry}", "{region}")` and its `.fit.rds` and `.ld_receipt.json`
        - input: sumstats from `paths.sumstats_path`, variants from `paths.catalog_path`
        - input `ld_matrix=lambda w: str(resolve_ld_path(region_id=w.region, ancestry=w.ancestry, config=config, region_safe=w.region))`. The R4 chain templates use `{region_safe}` only, so the curated→M2 crosswalk (`ld_matrix_region_id`) is deliberately NOT called. The negative-control regions are absent from the crosswalk, and calling it could raise or move a path
-         (for repro arms, the legacy-dir path built from `paths.panel_path`)
-       - input `policy=ARMS[ARM]["policy"]`, `gate=gate_input`, `panel_manifest=$MAN/panels_<panel_dir>.tsv`
+         For legacy_any (repro) arms the panel is NOT a Snakemake input: the frozen fire never declared
+       it, and the legacy code resolves `{ld_dir}/{ancestry}/<file>` itself, falling back on its own
+       when the file is absent. The rule passes the expected path only to the receipt writer.
+       - input `policy=ARMS[ARM]["policy"]`, `gate=gate_input`, `panel_manifest=paths.panel_manifest_path(ARM, w.ancestry)`
        - params `ld_authoritative=ld_file_authoritative(w.ancestry, config)`, `ld_allele_aware=ld_allele_aware(w.ancestry, config)`
        - `conda: "envs/r_coloc.yml"` (pinned)
        The shell, in order (`set -euo pipefail`):
-       (i) `test -s {input.ld_matrix}`;
-       (ii) `python -m ta_r4.write_ld_receipt ...`, which exits 3 on md5 mismatch;
+       (i) real_ld / identity_matched only: `test -s {input.ld_matrix}`. legacy_any arms skip this step (no `test -s`);
+       (ii) `python -m ta_r4.write_ld_receipt ... --ancestry {wildcards.ancestry} --region-safe {wildcards.region}` (plus `--legacy-any` for repro arms), which exits 3 on md5 mismatch for non-legacy arms;
        (iii) `export SUSIE_MAX_VARIANTS=16000`, then the exact `Rscript src/legacy/region_analysis/scripts/run_susie_rss.R` argument list from finemap.smk:441-455, with `--ld-dir data/r4/ld_dir_unused` and `--regions-csv config/ta_r4/regions_r4.csv`.
          For route `legacy` arms, call `data/r4/legacy_code/run_susie_rss_3dd76df.R` with only the 3dd76df options;
        (iv) `python -m ta_r4.validate_r4_fits --mode {params.mode} ...` (non-zero fails the job);

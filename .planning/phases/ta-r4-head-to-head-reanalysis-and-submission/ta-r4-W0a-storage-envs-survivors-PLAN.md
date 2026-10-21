@@ -7,6 +7,7 @@ wave: 1
 depends_on: []
 files_modified:
   - bin/r4_link_storage.sh
+  - .gitignore
   - config/ta_r4/data_sources.yaml
   - envs/qtl_processing.yml
   - tests/ta_r4/__init__.py
@@ -85,7 +86,9 @@ Nothing is fired. No Snakemake run.
 <interfaces>
 - Storage root: /rs1/researchers/c/ckclinto/coloc_analysis/ta_r4 (28 TB free; group clintonlab).
   Share only with `chmod 2770` (memory reference_clintonlab_group_membership_and_sharing).
-- `data/` is gitignored; the `data/r4` symlink itself is NOT committed. The link script is.
+- `data/r4` is NOT gitignored (measured 2026-10-21: `git check-ignore -v data/r4` prints nothing;
+  .gitignore covers data/raw, data/processed, data/external, data/catalogs, data/reference only).
+  Task 1 appends `/data/r4` to `.gitignore`. The symlink itself is never committed; the link script is.
 - Survivor sources (measured 2026-10-21, all on purge-exposed /share):
   results_lsweep_L{15,20,30}.{preFix.bak.20260429_215312,preNiter500.bak.20260429_213644}/
   .planning/debug/stage2_narrow_validation/ (reald_fits/, identity_fits/, *_test.{bim,ld,log,nosex,rds,snplist})
@@ -104,7 +107,7 @@ Nothing is fired. No Snakemake run.
 
 <task type="auto" tdd="true">
   <name>Task 1: RED-first storage enforcer, then the data/r4 link, then rescue the survivors with a sha256 manifest</name>
-  <files>tests/ta_r4/__init__.py, tests/ta_r4/conftest.py, tests/ta_r4/test_storage_on_rs1.py, bin/r4_link_storage.sh, config/ta_r4/data_sources.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/survivors_sha256.tsv</files>
+  <files>.gitignore, tests/ta_r4/__init__.py, tests/ta_r4/conftest.py, tests/ta_r4/test_storage_on_rs1.py, bin/r4_link_storage.sh, config/ta_r4/data_sources.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/survivors_sha256.tsv</files>
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md (§A, §B)
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-RESEARCH.md §"Pattern 1" and §"Runtime State Inventory"
@@ -132,7 +135,7 @@ Nothing is fired. No Snakemake run.
        Rule for later waves: a test is marked `r4_heavy` if it runs `$SMK`, runs the frozen
        `run_susie_rss.R`, or reads `data/r4/results/`. Pure R/Python unit tests stay unmarked
        unless the measured QUICK run exceeds 120 s (§C measures it).
-    2. Write `tests/ta_r4/test_storage_on_rs1.py` with the six behaviours above. Put the checking
+    2. Write `tests/ta_r4/test_storage_on_rs1.py` with the six behaviours above (step 3 adds a seventh, `test_data_r4_gitignored`). Put the checking
        logic in pure functions inside the test module (`storage_violations(repo_root)`,
        `literal_violations(paths)`), so the negative controls exercise the same code.
        Run `$QUICK`. It MUST be RED on `test_data_r4_realpath_on_rs1` and
@@ -144,7 +147,11 @@ Nothing is fired. No Snakemake run.
        it exits 2 with a message and never moves or deletes it. Otherwise it runs
        `ln -sfn /rs1/researchers/c/ckclinto/coloc_analysis/ta_r4 data/r4`, then prints
        `realpath data/r4`. The /rs1 literal belongs in `bin/`, which REQ-PATH-PARAMETERIZATION's scan
-       (src/, config/) does not cover. Run it twice and confirm the second run is a no-op with the
+       (src/, config/) does not cover. Before the first run, append one line `/data/r4` to
+       `.gitignore` (append-only), confirm `git check-ignore -q data/r4 && echo IGNORED` prints
+       IGNORED, and add `test_data_r4_gitignored` (subprocess `git check-ignore -q data/r4`, exit 0;
+       negative control: `git check-ignore -q data/r4_not_ignored_probe` exits 1).
+       Run it twice and confirm the second run is a no-op with the
        same realpath.
     4. Write `config/ta_r4/data_sources.yaml` with one top-level key `sources:` (a mapping name → entry). Each entry carries name, url, license, `public: true`,
        build and checksum (where published). Entries:
@@ -171,7 +178,8 @@ Nothing is fired. No Snakemake run.
   <acceptance_criteria>
     - `readlink -f data/r4` prints `/rs1/researchers/c/ckclinto/coloc_analysis/ta_r4`; `stat -c %a /rs1/researchers/c/ckclinto/coloc_analysis/ta_r4` prints `2770`
     - `bash bin/r4_link_storage.sh; echo $?` prints the same realpath and `0` on a second run
-    - `pytest tests/ta_r4/test_storage_on_rs1.py -q` reports `6 passed`. The SUMMARY contains the earlier RED output, showing ≥ 2 failures on the realpath/symlink tests
+    - `git check-ignore -q data/r4 && echo IGNORED` prints IGNORED; `git diff HEAD -- .gitignore` adds exactly one line and removes none; `git status --porcelain -- data/r4` is empty
+    - `pytest tests/ta_r4/test_storage_on_rs1.py -q` reports `7 passed`. The SUMMARY contains the earlier RED output, showing ≥ 2 failures on the realpath/symlink tests
     - `awk 'NR>1' $MAN/survivors_sha256.tsv | wc -l` equals N_SRC from step 5 (both numbers pasted in the SUMMARY), and `cut -f3 ... | grep -cvE '^[0-9a-f]{64}$'` prints 0
     - `$PY -c "import yaml;d=yaml.safe_load(open('config/ta_r4/data_sources.yaml'));assert all(v.get('public') is True and v.get('license') for v in d['sources'].values())"` exits 0
   </acceptance_criteria>
@@ -265,7 +273,7 @@ Nothing is fired. No Snakemake run.
     - `git diff HEAD~1 -- .planning/DECISIONS.md | grep -c '^-[^-]'` prints 0, so the change is append-only
     - `grep -c '^## 2026-10-21 — DEC-2026-10-21-' .planning/DECISIONS.md` prints 3
     - `$PY -m pytest tests/m3/test_source_freeze_pins.py -q` passes
-    - the full-suite counts in the LOG equal the baseline plus the 6 new ta_r4 tests, with 0 removed ids and 0 outcome changes. Show the comparison as a `join` of `tests_baseline_W0a.tsv` against the new `-rA` output
+    - the full-suite counts in the LOG equal the baseline plus the 7 new ta_r4 tests, with 0 removed ids and 0 outcome changes. Show the comparison as a `join` of `tests_baseline_W0a.tsv` against the new `-rA` output
     - `git status --porcelain -- envs/qtl_processing.yml config/ta_r4 tests/ta_r4 bin/r4_link_storage.sh` is empty after commit, and `git push` exited 0
   </acceptance_criteria>
   <done>The three DEC entries are appended; W0a is committed, fsck is clean and the commit is pushed; the LOG and STATE are updated.</done>

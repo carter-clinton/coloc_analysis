@@ -127,6 +127,7 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
     - .planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W2-pp-h4-report.tsv
     - manifests/known_answer_W3a.tsv; data/r4/findings/*.tsv
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-PLAN-INDEX.md §C
+    - .planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-W2-r1-trait-pair-coloc-refire-SUMMARY.md (lines 20-70; the 28 R1 rows) and ta-r3-W2-r1-targets.tsv
   </read_first>
   <behavior>
     - The table has exactly 18 rows: 9 pairs × {R2_exact, L10_iter100}; config_label is the column that distinguishes them
@@ -145,7 +146,16 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
        (4) Stage-2 aggregate reproduction;
        (5) SH2B3 R2-exact per-pair reproduction plus the fingerprint;
        (6) SH2B3 L10/iter-100, labelled "separate measurement — not the known answer";
-       (7) the implications to state in the amendment, in one line each.
+       (7) the implications to state in the amendment, in one line each;
+       (8) the R1_STRUCTURAL re-examination (ROADMAP scope): the measured cause of the 28 empty R1
+           trait-pair rows, quoted with file:line from
+           `.planning/phases/ta-r3-audit-v2-driven-psd-and-r1-refire/ta-r3-W2-r1-trait-pair-coloc-refire-SUMMARY.md`
+           (line 25: 28 R1 JSONs re-fired, `status="no_signal"`, `n_cs_a=0 OR n_cs_b=0`; line 66:
+           per-JSON failure mode, SuSiE-RSS attrition cascading to coloc.susie no_signal; verify both
+           line numbers by reading the file), cross-checked against the Route C / Route L n_CS of the
+           underlying fits in `known_answer_W3a.tsv` (count of the 28 pairs with n_CS = 0 on ≥ 1 side,
+           reconciled to 28), and the statement that D-02 (`fallback_abf`, labelled, with the per-arm
+           no-CS rate reported as E4) is the pre-specified handling of that case.
        Every number is pasted with its source path. Mismatches are stated as findings, with no
        remediation proposed that would adjust numbers.
     3. Run §C with label `W3b`, commit type `test`.
@@ -155,7 +165,7 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
   </verify>
   <acceptance_criteria>
     - the test passes with the live test run; `awk 'NR>1' $MAN/known_answer_sh2b3.tsv | wc -l` prints 18
-    - the findings report has the 7 sections, and every number in it carries a source path
+    - the findings report has the 8 sections, and every number in it carries a source path; §(8) quotes the ta-r3-W2 SUMMARY lines with file:line
     - committed with explicit paths; pushed
   </acceptance_criteria>
   <done>The SH2B3 known answer is measured in its true configuration, and all findings are consolidated.</done>
@@ -172,6 +182,12 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
   <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then `instructions: <text or none>`. Any other reply, including a bare "approved", means WAIT: re-present this checkpoint and record nothing.</resume-signal>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W3b-T3.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
+    Sign-off integrity (§B.15): the executor never authors, types or completes any
+    `carter-approved` text and never writes signoffs/*.yaml except via `python -m ta_r4.signoff record`.
+    The raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response). The SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
+
     Present the report. Save the reply byte-for-byte to `data/r4/tmp/signoff_W3b-T3.txt` and run
     `cd src/python && $PY -m ta_r4.signoff record W3b-T3 --raw-file ../../data/r4/tmp/signoff_W3b-T3.txt --min-date <date of the W3b commit>`.
     Non-zero exit → WAIT (print the message, re-present, write nothing). Never construct a reply
@@ -181,6 +197,7 @@ Expected R2 values: bmi-htn 1.0 (rs3184504, nsnps 168, n_cs 13 x 5); htn-stroke 
   <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W3b-T3 && echo SIGNED_OFF</automated></verify>
   <acceptance_criteria>
     - `signoff verify W3b-T3` exits 0; the LOG has a dated entry quoting Carter's reply verbatim
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>Carter has reviewed the known-answer findings; W3c starts only after `signoff verify W3b-T3` passes.</done>
   <read_first>

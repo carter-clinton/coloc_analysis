@@ -81,14 +81,19 @@ Validators: python -m ta_r4.validate_r4_fits (runs inside every job); live gates
     2. Code-state check: for each analysis-code and lock commit sha cited by the FINAL amendment,
        `git merge-base --is-ancestor <sha> HEAD`. Then run
        `git diff --stat <lock-commit-A-sha> HEAD -- src/snakemake/scripts/ta_r4 src/python/ta_r4 src/snakemake/rules/ta_r4_*.smk config/ta_r4 Snakefile.ta_r4 bin/r4_fire.sh src/legacy/region_analysis/scripts/run_susie_rss.R src/snakemake/scripts/plink_ld_to_rds.R src/snakemake/scripts/run_qtl_coloc.R`.
+       The `src/python/ta_r4` path covers `run_aggregation.py`, `estimands.py` (incl. `contrast_stats`),
+       `branch_classifier.py` and `coloc_coverage.py`; list them in the SUMMARY as checked. W5b, W5c,
+       W6 and W7 repeat this exact path set.
        It must be empty. Any change to analysis code after the pre-registration is a STOP and a
        deviation to report to Carter.
     3. B3 positive check on the real repo: `bash bin/r4_fire.sh production A3_1kg -n r4_gate_probe; echo $?`
        prints 0 (the same command refused before the posting). Paste it. Also run
        `$PY -m pytest tests/ta_r4/test_osf_gate.py tests/ta_r4/test_signoffs.py -q -rs`: the
        fixture-repo refusal still passes and the real-repo state test takes its "sentinel tracked" branch.
-    4. Dry-run each arm. Expected job counts: 145, 145, 150, 145, 145 (5 traits × 29 regions; A3_ukb
-       adds the 5 HLA_6p21 exploratory fits). Paste them.
+    4. Dry-run each arm. Compare only the `r4_run_finemap` row of the dry-run job-count table (the
+       table also lists gate probes and collector rules, which are not fits). Expected
+       `r4_run_finemap` counts: 145, 145, 150, 145, 145 (5 traits × 29 regions; A3_ukb adds the 5
+       HLA_6p21 exploratory fits). Paste them.
   </action>
   <verify>
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.r4_osf_gate verify-online --stage production && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.r4_osf_gate check --stage production && cd ../.. && bash bin/r4_fire.sh production A3_1kg -n r4_gate_probe >/dev/null && echo GATE_OPEN</automated>

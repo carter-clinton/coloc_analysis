@@ -113,7 +113,7 @@ Extractor: python -m ta_r4.extract_paste_block --in FINAL --out PUBLIC
        2. copy the OSF file GUID;
        3. `sha256sum .planning/amendments/osf-amendment-r4-PUBLIC.md`;
        4. create `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/OSF-R4-POSTED.json` with osf_url, osf_file_guid, posted_utc (ISO-8601 Z), `amendment_path: .planning/amendments/osf-amendment-r4-PUBLIC.md`, amendment_sha256, head_sha (`git rev-parse HEAD` at posting);
-       5. `git add` that file explicitly, commit, push;
+       5. `git add` that file explicitly, commit (Carter's own commit; no Claude Co-Authored-By trailer), push;
        6. record the URL and timestamp in `.planning/osf_deviations.md` under the R4 entry;
        7. reply to the checkpoint with `carter-approved YYYY-MM-DD` and `posted: yes`.
     2. `cd src/python && $PY -m ta_r4.extract_paste_block --in ../../.planning/amendments/osf-amendment-r4-FINAL.md --out ../../.planning/amendments/osf-amendment-r4-PUBLIC.md`.
@@ -144,6 +144,12 @@ Extractor: python -m ta_r4.extract_paste_block --in FINAL --out PUBLIC
   <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then `posted: yes`. Any other reply, including a bare "approved", means WAIT. Even a valid reply opens production only if the gate checks below pass.</resume-signal>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W4b-T3.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
+    Sign-off integrity (§B.15): the executor never authors, types or completes any
+    `carter-approved` text and never writes signoffs/*.yaml except via `python -m ta_r4.signoff record`.
+    The raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response). The SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
+
     1. Validate the reply without writing: `$PY -c "from ta_r4.signoff import parse_signoff; ..."`
        (min_date = date of commit B). Invalid → WAIT (re-present; write nothing).
     2. Run `cd src/python && $PY -m ta_r4.r4_osf_gate verify-online --stage production && $PY -m ta_r4.r4_osf_gate check --stage production`.
@@ -155,7 +161,8 @@ Extractor: python -m ta_r4.extract_paste_block --in FINAL --out PUBLIC
   <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W4b-T3 && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.r4_osf_gate verify-online --stage production && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.r4_osf_gate check --stage production && echo GATE_OPEN</automated></verify>
   <acceptance_criteria>
     - `GATE_OPEN` printed; `test_signoffs.py` passes (tracked sentinel ⇒ valid W4b-T3)
-    - the sha of the commit that added the sentinel (`git log --format=%h --diff-filter=A -- .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/OSF-R4-POSTED.json`) is NOT in the list of commits this executor created (listed in the SUMMARY)
+    - the sha of the commit that added the sentinel (`git log --format=%h --diff-filter=A -- .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/OSF-R4-POSTED.json`) is NOT in the list of commits this executor created (listed in the SUMMARY), and that commit carries no Claude trailer: `git log -1 --format=%B <sha> | grep -ci 'Co-Authored-By: Claude'` prints 0 (the trailer is a literal property of Carter's commit). A Claude trailer on it is a STOP: the sentinel was not committed by Carter
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>The R4 analysis is publicly pre-registered, and production is unlocked by verified evidence and Carter's recorded sign-off.</done>
   <read_first>

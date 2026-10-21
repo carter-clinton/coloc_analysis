@@ -22,7 +22,7 @@ requirements:
 
 must_haves:
   truths:
-    - "This plan runs only if `python -m ta_r4.signoff verify W2c-T4` exits 0; it reads Carter's decisions from config/ta_r4/review_decisions.yaml, never from prose"
+    - "This plan runs only if no config carries locked: true and `python -m ta_r4.signoff verify W2c-T4` exits 0; it reads Carter's decisions from config/ta_r4/review_decisions.yaml, never from prose"
     - "If ukb_native == hm3: EUR_ukb337k_hm3_r4 panels (UKB native restricted to the LDSC HapMap3 SNP list, fetched with a recorded sha256) exist for the same 29 + HLA_6p21 regions, are manifested and read-only, and ARMS['A3_ukb'] + overlay_A3_ukb.yaml point at them; the overlay/isolation tests stay green. If ukb_native == native: nothing changes and the LOG records the no-op (checker W3)"
     - "If qtl_scope != full: config/ta_r4/qtl_manifest.tsv is rebuilt by build_qtl_manifest.py --scope <qtl_scope>; its row count equals the qtl_compute_estimate.tsv row for that scope; test_qtl_manifest stays green. If full: nothing changes (checker W6)"
     - "Both changes land BEFORE the W4b lock commit, so the pre-registration cites the code and manifests actually used"
@@ -78,7 +78,10 @@ LDSC HapMap3 list: w_hm3.snplist (public, LDSC distribution; URL rot alternates 
     - memory feedback_url_rot_workarounds
   </read_first>
   <action>
-    0. `cd src/python && $PY -m ta_r4.signoff verify W2c-T4`. Non-zero → STOP and report; do not
+    0. STOP if any of `config/ta_r4/{coloc_priors,decision_rules,simulation}.yaml` has `locked: true`
+       (`$PY -c "import yaml,sys;sys.exit(any(yaml.safe_load(open(f'config/ta_r4/{n}.yaml')).get('locked') for n in ('coloc_priors','decision_rules','simulation')))"`
+       must exit 0): W2d changes inputs and may only run before the lock (checker W-2).
+       Then `cd src/python && $PY -m ta_r4.signoff verify W2c-T4`. Non-zero → STOP and report; do not
        read review_decisions.yaml.
     1. If `ukb_native == native`: change nothing. Append a LOG line "W2d: ukb_native=native (Carter
        <token date>), no-op". Go to Task 2.

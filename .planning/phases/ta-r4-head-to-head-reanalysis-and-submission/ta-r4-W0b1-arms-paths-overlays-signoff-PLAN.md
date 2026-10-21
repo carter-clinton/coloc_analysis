@@ -51,7 +51,7 @@ must_haves:
       exports: ["ARMS", "arm_stage", "production_arms"]
     - path: "src/python/ta_r4/paths.py"
       provides: "single source for every R4 input/output path, incl. result_dirs(kind)"
-      exports: ["panel_path", "fit_json", "sumstats_path", "catalog_path", "coloc_json", "ld_dir_unused", "regions_csv", "result_dirs"]
+      exports: ["panel_path", "panel_manifest_path", "fit_json", "sumstats_path", "catalog_path", "coloc_json", "ld_dir_unused", "regions_csv", "result_dirs"]
     - path: "src/python/ta_r4/signoff.py"
       provides: "Carter sign-off parser/recorder/verifier (SCHEMAS per checkpoint id)"
       exports: ["SCHEMAS", "SignoffError", "parse_signoff", "record_signoff", "verify_signoff"]
@@ -129,6 +129,7 @@ Sign-off directory: .planning/phases/ta-r4-head-to-head-reanalysis-and-submissio
     - test_base_config_untouched (negative control): merged_config() with no overlays gives ld_allele_aware("EUR")=="false" and ld_read_path ancestries == ["AFR"], and the EUR chain head is "EUR_ukbb_pub"
     - test_identity_overlay_independent_of_real_panel: the A2_identity chain has one entry, whose path template contains "EUR_identity_r4" and no other panel dir
     - test_stage_is_code_not_config: arm_stage("A3_1kg") == "production" even after update_config(c, {"ta_r4": {"stage": "repro"}})
+    - test_panel_manifest_path_per_ancestry: repro_routeC with EUR and AFR returns two different files; every production arm returns `panels_<panel_dir>.tsv`
     - test_priors_single_source: coloc_priors.yaml has p1 == p2 == 1e-4, p12_primary == 5e-6, p12_sensitivity == 1e-5, and locked: false (W4b flips it)
     - test_result_dirs_from_arms: result_dirs("fits") == sorted fit dirs of exactly the arms with stage == "production" (8 dirs, includes A3_1kg_isect); result_dirs("coloc") == those arms' coloc dirs + data/r4/results/A1_EUR/coloc + data/r4/results/A1_AFR/coloc (10 dirs); no repro arm appears. Negative control: with a monkeypatched ARMS that relabels repro_routeC as production, its dir appears (the function reads ARMS, not a literal list)
   </behavior>
@@ -157,6 +158,7 @@ Sign-off directory: .planning/phases/ta-r4-head-to-head-reanalysis-and-submissio
        - `catalog_path(route, region_safe)`
        - `coloc_json(arm_or_A1, row_id, p12_key, varset=None)`, `ld_dir_unused()` = `data/r4/ld_dir_unused` (MUST NOT exist)
        - `regions_csv()` = `config/ta_r4/regions_r4.csv` (created in W0b2)
+       - `panel_manifest_path(arm, ancestry)`: `$MAN/panels_<panel_dir>.tsv` for single-ancestry panel dirs; for the multi-ancestry legacy dir, `panels_legacy_repro.tsv` (EUR) and `panels_legacy_repro_AFR.tsv` (AFR); `panels_k2d_identity.tsv` for k2d (both ancestries in one file). Every panel manifest carries an `ancestry` column and is keyed by (ancestry, region_safe) (checker W-3)
        - `result_dirs(kind)` with kind ∈ {"fits", "coloc"}: built from `production_arms()`; for "coloc" it appends `data/r4/results/A1_EUR/coloc` and `data/r4/results/A1_AFR/coloc`. Every live gate and the W7 aggregation glob through this function only (B4).
     2. Overlays.
        - `overlay_base.yaml`: `ta_r4: {enabled: true}`, `enable_ld_pipeline: false`,
@@ -200,7 +202,7 @@ Sign-off directory: .planning/phases/ta-r4-head-to-head-reanalysis-and-submissio
     - SCHEMAS maps checkpoint id → required keys and enums:
       W2c-T4: ukb_native ∈ {native, hm3}; qtl_scope ∈ {full, tissues_frozen, eqtl_only, tissues_frozen+eqtl_only}; plus the dynamic keys passed by the caller (one `trait.<trait>.<ancestry>.<field>` per UNRESOLVED trait-manifest cell)
       W3b-T3: instructions
-      W4a-T3: p12_primary, kappa_cut, n_both_min, partial_rule.ci_pos_mcnemar_ns, partial_rule.ci_pos_mcnemar_opposite, partial_rule.ci_neg_mcnemar_ns, partial_rule.ci_neg_mcnemar_opposite (each ∈ the five branch names), ukb_native ∈ {native, hm3}, draft ∈ {approved}
+      W4a-T3: p12_primary, kappa_cut, n_both_min, partial_rule.ci_pos_mcnemar_ns, partial_rule.ci_pos_mcnemar_opposite, partial_rule.ci_neg_mcnemar_ns, partial_rule.ci_neg_mcnemar_opposite (each ∈ the five branch names), confirmatory ∈ {approved}, draft ∈ {approved}. No ukb_native: it is decided once, at W2c-T4
       W4b-T3: posted ∈ {yes}
       W7-T3: instructions
       W8b-T3: instructions
@@ -213,12 +215,12 @@ Sign-off directory: .planning/phases/ta-r4-head-to-head-reanalysis-and-submissio
     - CLI: `python -m ta_r4.signoff record <ID> --raw-file F --min-date YYYY-MM-DD [--extra-required k ...]` and `python -m ta_r4.signoff verify <ID>`; both exit 1 with the SignoffError message on failure
     Conditional sentinels (tests/ta_r4/test_signoffs.py; each is a function taking a repo root so fixtures can exercise it, then one test applies it to the real repo):
     - every file in signoffs/ verifies
-    - if config/ta_r4/review_decisions.yaml exists → W2c-T4 verifies and its ukb_native / qtl_scope / trait fields equal the file's values
+    - if config/ta_r4/review_decisions.yaml exists → W2c-T4 verifies and its ukb_native / qtl_scope / trait fields equal the file's values; and every config/ta_r4/trait_manifest.tsv cell whose source is `Carter <date>` equals the W2c-T4 field `trait.<trait>.<ancestry>.<field>` (and every such field has a matching cell)
     - if any of config/ta_r4/{coloc_priors,decision_rules,simulation}.yaml has locked: true → W4a-T3 verifies and p12_primary, kappa_cut, n_both_min and the four partial_rule entries equal the config values
     - if the OSF sentinel is git-tracked → W4b-T3 verifies
     - if docs/manuscript/r4/submission/venue_overlay.yaml exists → W9-T1 verifies
     - if the ROADMAP line for ta-r4-W9-submission-prep-PLAN.md is checked (`- [x]`) → W9-T4 verifies
-    - Negative controls (tmp_path fixtures): a locked decision_rules.yaml with no sign-off fails; a sign-off whose kappa_cut differs from the config fails; a checked W9 ROADMAP line with no W9-T4 fails
+    - Negative controls (tmp_path fixtures): a locked decision_rules.yaml with no sign-off fails; a sign-off whose kappa_cut differs from the config fails; a checked W9 ROADMAP line with no W9-T4 fails; a trait-manifest cell edited after the sign-off fails
   </behavior>
   <action>
     1. Write both test modules RED and paste the failures.

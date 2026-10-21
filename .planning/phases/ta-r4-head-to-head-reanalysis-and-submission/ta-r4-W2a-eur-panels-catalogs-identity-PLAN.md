@@ -203,7 +203,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
     - src/python/ta_r4/write_ld_receipt.py (manifest columns it reads)
   </read_first>
   <behavior>
-    - panel_manifest.py inspects each .rds through `$RSCRIPT` with a blockwise checker (2,000-row blocks): n_var, symmetric within 1e-8, diag == 1 within 1e-8 (identity payloads: R == I exactly; k2d payloads: R NULL recorded as such), finite, has_ref_alt, plus md5/sha256/size. It writes the manifest TSV
+    - panel_manifest.py inspects each .rds through `$RSCRIPT` with a blockwise checker (2,000-row blocks): n_var, symmetric within 1e-8, diag == 1 within 1e-8 (identity payloads: R == I exactly; k2d payloads: R NULL recorded as such), finite, has_ref_alt, plus md5/sha256/size. It writes the manifest TSV with an `ancestry` column first; (ancestry, region_safe) is unique (duplicate → error), and the file name follows `ta_r4.paths.panel_manifest_path` (checker W-3)
     - Live gate test_known_answer_panels (marked r4_heavy; skips only while data/r4/ld/EUR_1kg_r4 is absent):
       (a) every manifest row's md5 equals the file on disk;
       (b) n_var(EUR_1kg_r4/r) == n_var(legacy_repro/r) for the 10 shared curated regions;
@@ -214,7 +214,7 @@ Memory rule: dense n_var^2 verification must be memory-bounded (blockwise), neve
     - Negative control: corrupt one byte of a COPY of one panel in tmp, point the md5 check at it, and observe the failure
   </behavior>
   <action>
-    1. Tests RED, then implement `panel_manifest.py` (CLI `--panel-dir --source --build GRCh37 --n-samples N --out`).
+    1. Tests RED, then implement `panel_manifest.py` (CLI `--panel-dir --ancestry EUR|AFR --source --build GRCh37 --n-samples N --out`; run once per (panel dir, ancestry); the k2d manifest holds both ancestries keyed by (ancestry, region_safe)).
        Run it for the four panel dirs, then `chmod a-w` every panel file. n_samples is the measured
        .fam count for the 1kg panels and NA for payloads.
     2. Trait manifest `config/ta_r4/trait_manifest.tsv`, columns

@@ -11,8 +11,8 @@ revised: 2026-10-21
 # Phase ta-r4 — Validation Strategy
 
 > Per-phase validation contract for feedback sampling during execution.
-> Source: `ta-r4-RESEARCH.md` §Validation Architecture. Per-task map covers all 79 tasks of the 25 plans
-> (revised after plan-check iteration 1).
+> Source: `ta-r4-RESEARCH.md` §Validation Architecture. Per-task map covers all 80 tasks of the 25 plans
+> (revised after plan-check iterations 1 and 2).
 
 ---
 
@@ -86,9 +86,10 @@ revised: 2026-10-21
 | W3b-T3 | W3b | 12 | D-12/D-17, B1 | T-r4-W3b-03 | carter-approved token required | human-action; sign-off verify | `(src/python) $PY -m ta_r4.signoff verify W3b-T3 && echo SIGNED_OFF` | ❌ W0b1 (signoff.py) | ⬜ pending |
 | W3c-T1 | W3c | 13 | D-23 | T-r4-W3c-01/02/03 | harness == frozen fit; sim gated | unit + R identity (r4_heavy) | `$PY -m pytest tests/ta_r4/test_simulation_harness.py tests/ta_r4/test_coloc_pair_r4.py tests/ta_r4/test_fallback_labelled.py tests/ta_r4/test_priors_constant.py -q` | ❌ W3c | ⬜ pending |
 | W3c-T2 | W3c | 13 | §C | — | N/A | QUICK + HEAVY + suite join | `$PY -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 \| tail -2` | ✅ | ⬜ pending |
-| W3d-T1 | W3d | 14 | D-26, D-02, REQ-PP.H4-THRESHOLD-SWEEP, W5 | T-r4-W3d-01/02/03 | total ordered classifier; FINAL needs locks + sign-off + gate | unit (hand-computed) + negative controls | `$PY -m pytest tests/ta_r4/test_estimands.py tests/ta_r4/test_branch_classifier.py tests/ta_r4/test_cs_cross_purity.py -q` | ❌ W3d | ⬜ pending |
+| W3d-T1 | W3d | 14 | D-26, D-02, REQ-PP.H4-THRESHOLD-SWEEP, W5, iteration-2 blocker | T-r4-W3d-01/02/03/05 | confirmatory set + categories from yaml; NC/repro perturbation leaves branch unchanged | unit (hand-computed) + negative controls | `$PY -m pytest tests/ta_r4/test_estimands.py tests/ta_r4/test_contrast_stats.py tests/ta_r4/test_branch_classifier.py tests/ta_r4/test_cs_cross_purity.py -q` | ❌ W3d | ⬜ pending |
 | W3d-T2 | W3d | 14 | B2, D-07 | T-r4-W3d-04 | exact coverage, pre-lock | unit + negative control | `$PY -m pytest tests/ta_r4/test_coloc_coverage.py -q` | ❌ W3d | ⬜ pending |
-| W3d-T3 | W3d | 14 | §C | — | N/A | QUICK + HEAVY + suite join | `$PY -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 \| tail -2` | ✅ | ⬜ pending |
+| W3d-T3 | W3d | 14 | D-26, iteration-2 blocker, B4 | T-r4-W3d-05 | aggregation frozen pre-lock; NC rows never classify | unit (fixture, ast) + negative controls | `$PY -m pytest tests/ta_r4/test_run_aggregation.py -q` | ❌ W3d | ⬜ pending |
+| W3d-T4 | W3d | 14 | §C | — | N/A | QUICK + HEAVY + suite join | `$PY -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 \| tail -2` | ✅ | ⬜ pending |
 | W3e-T1 | W3e | 15 | D-07, D-10 | T-r4-W3e-01 | harmonized counts reconcile | data counts | `find data/r4/qtl/harmonized -name '*.harmonized.tsv.gz' \| wc -l && cut -f1,5,7,8 config/ta_r4/qtl_manifest.tsv \| tail -n +2 \| awk -F'\t' '{print $2"\|"$3"\|"$4}' \|...` | ✅ (find/cut) | ⬜ pending |
 | W3e-T2 | W3e | 15 | D-06, D-22, D-02 | T-r4-W3e-01/02/03 | coverage per group; legacy argv exact; gated | unit + fixture-repo dry-run (r4_heavy) | `$PY -m pytest tests/ta_r4/test_qtl_group_runner.py tests/ta_r4/test_coloc_pair_r4.py tests/phase2/test_run_qtl_coloc.py -q` | ❌ W3e | ⬜ pending |
 | W3e-T3 | W3e | 15 | §C | — | N/A | QUICK + HEAVY + suite join | `$PY -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 \| tail -2` | ✅ | ⬜ pending |
@@ -110,7 +111,7 @@ revised: 2026-10-21
 | W6-T1 | W6 | 21 | D-06, D-07, D-22 | T-r4-W6-01/03 | per-group + global coverage | output counts | `for a in QTL_A3 QTL_A2 QTL_legacy; do echo $a $(find data/r4/results/$a/qtl -name '*.json' \| wc -l); done && awk 'NR>1' config/ta_r4/qtl_manifest.tsv \| wc -l` | ✅ (find) | ⬜ pending |
 | W6-T2 | W6 | 21 | D-06, D-02 | T-r4-W6-02 | orientation counters reconcile | reconciliation script + listing | `ls data/r4/results/QTL_A3/qtl_tiers* data/r4/results/QTL_A2/qtl_tiers* data/r4/results/QTL_legacy/qtl_tiers* 2>&1 \| head -12` | ✅ | ⬜ pending |
 | W6-T3 | W6 | 21 | §C | — | N/A | fsck + commit check | `git fsck --connectivity-only 2>&1 \| tail -2 && git log -1 --format=%s` | ✅ | ⬜ pending |
-| W7-T1 | W7 | 22 | D-26, D-02, B4, REQ-PP.H4-THRESHOLD-SWEEP | T-r4-W7-01/02/04 | frozen statistics only; FINAL labels; ARMS-derived globs | unit (ast, fixture) + negative controls | `$PY -m pytest tests/ta_r4/test_run_aggregation.py -q` | ❌ W7 | ⬜ pending |
+| W7-T1 | W7 | 22 | D-26, D-02, B4 | T-r4-W7-01/02/04 | empty lock diff; frozen code only; FINAL labels | frozen tests + table count + FINAL label check | `$PY -m pytest tests/ta_r4/test_run_aggregation.py tests/ta_r4/test_contrast_stats.py -q && ls docs/manuscript/r4/tables/*.tsv \| wc -l && grep -L 'status=FINAL' docs/m...` | ✅ (W3d tests) | ⬜ pending |
 | W7-T2 | W7 | 22 | D-23, D-24, REQ-NEGATIVE-CONTROLS | T-r4-W7-03 | figures from committed tables | listing + commit check | `ls docs/manuscript/r4/figures/ && git status --porcelain -- docs/manuscript/r4` | ✅ (ls) | ⬜ pending |
 | W7-T3 | W7 | 22 | B1 | T-r4-W7-05 | carter-approved token required | human-action; sign-off verify | `(src/python) $PY -m ta_r4.signoff verify W7-T3 && echo SIGNED_OFF` | ❌ W0b1 (signoff.py) | ⬜ pending |
 | W8a-T1 | W8a | 23 | D-08 | T-r4-W8a-01 | FINAL tables only; unresolved placeholder fails | unit + negative control | `$PY -m pytest tests/ta_r4/test_render_manuscript.py -q` | ❌ W8a | ⬜ pending |

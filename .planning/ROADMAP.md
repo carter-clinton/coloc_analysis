@@ -688,7 +688,7 @@ Plans:
 - [ ] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d (382 fits)
 - [ ] ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md — SH2B3 R2-exact known answer, findings report, Carter review (human-action)
 - [ ] ta-r4-W3c-simulation-harness-PLAN.md — E8 known-truth simulation harness (pre-lock code)
-- [ ] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators, total ordered branch classifier, coloc coverage tool (pre-lock code)
+- [ ] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators, confirmatory contrast_stats, total ordered branch classifier, coloc coverage + run_aggregation (pre-lock code)
 - [ ] ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md — QTL harmonization + group runner (pre-lock code)
 - [ ] ta-r4-W4a-amendment-draft-review-locks-PLAN.md — R4 amendment draft, public-extract tooling, brief-blind review, Carter locks (human-action)
 - [ ] ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md — lock commit, FINAL + PUBLIC amendment, OSF posting gate (human-action + code gate)

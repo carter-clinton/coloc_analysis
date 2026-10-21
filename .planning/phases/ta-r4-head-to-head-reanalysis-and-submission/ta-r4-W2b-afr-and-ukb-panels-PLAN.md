@@ -118,7 +118,7 @@ From W1: plink_ld_to_rds.R --emit-ref-alt true; from W2a: panel_manifest.py, fet
        Rule `r4_panel_afr_legacy`: the original `build_ld_rds` command semantics (VCF route,
        `LD_MAX_VARIANTS` unset, so the 6000 default applies and placeholders appear exactly as
        before) into `data/r4/ld/legacy_repro/AFR/`, for the AFR regions the frozen record fitted.
-    3. Build (dry-run first). Run `panel_manifest.py` per class with n_samples 661 / 504 measured
+    3. Build (dry-run first). Run `panel_manifest.py --ancestry AFR` per class (the legacy AFR manifest is `panels_legacy_repro_AFR.tsv`, per `paths.panel_manifest_path`) with n_samples 661 / 504 measured
        from the .fam the plink run reports. Record per-region n_var. Any region with n_var > 16000
        is written to `data/r4/findings/afr_panel_size.tsv` as a FINDING: those fits will report
        `too_many_variants`, and the outcome is reported, not hidden. Run `chmod a-w` on the panels.

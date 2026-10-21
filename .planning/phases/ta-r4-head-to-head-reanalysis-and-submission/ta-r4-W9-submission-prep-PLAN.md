@@ -90,6 +90,12 @@ Sign-offs: python -m ta_r4.signoff verify W8b-T3 / record W9-T1 / record W9-T4 (
   <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then `venue: <journal name>`. Any other reply, including a bare "approved", means WAIT: re-present and record nothing.</resume-signal>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W9-T1.yaml, .planning/DECISIONS.md, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
+    Sign-off integrity (§B.15): the executor never authors, types or completes any
+    `carter-approved` text and never writes signoffs/*.yaml except via `python -m ta_r4.signoff record`.
+    The raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response). The SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
+
     Save the reply byte-for-byte to `data/r4/tmp/signoff_W9-T1.txt` and run
     `cd src/python && $PY -m ta_r4.signoff record W9-T1 --raw-file ../../data/r4/tmp/signoff_W9-T1.txt --min-date <date of the W8b sign-off>`.
     Non-zero exit → WAIT. Never construct a reply or log an auto-generated response as Carter's
@@ -99,6 +105,7 @@ Sign-offs: python -m ta_r4.signoff verify W8b-T3 / record W9-T1 / record W9-T4 (
   <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W9-T1 && cd ../.. && grep -c "ta-r4-venue" .planning/DECISIONS.md</automated></verify>
   <acceptance_criteria>
     - `signoff verify W9-T1` exits 0; exactly one `ta-r4-venue` DEC entry quoting Carter's reply
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>The venue is chosen by Carter and recorded in a machine-checkable sign-off.</done>
   <read_first>
@@ -175,6 +182,12 @@ Sign-offs: python -m ta_r4.signoff verify W8b-T3 / record W9-T1 / record W9-T4 (
   <resume-signal>Carter replies with the first line exactly `carter-approved YYYY-MM-DD`, then `journal: <name>`, `submitted_date: <YYYY-MM-DD>`, `manuscript_id: <id>`, `osf_url: <url>`. Any other reply, including a bare "approved", means WAIT: the phase stays open.</resume-signal>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W9-T4.yaml, .planning/DECISIONS.md, .planning/osf_deviations.md, .planning/ROADMAP.md, .planning/STATE.md, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
+    Sign-off integrity (§B.15): the executor never authors, types or completes any
+    `carter-approved` text and never writes signoffs/*.yaml except via `python -m ta_r4.signoff record`.
+    The raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response). The SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
+
     Save the reply byte-for-byte to `data/r4/tmp/signoff_W9-T4.txt` and run
     `cd src/python && $PY -m ta_r4.signoff record W9-T4 --raw-file ../../data/r4/tmp/signoff_W9-T4.txt --min-date <date of the W9 commit>`.
     Non-zero exit → WAIT. On success:
@@ -187,6 +200,7 @@ Sign-offs: python -m ta_r4.signoff verify W8b-T3 / record W9-T1 / record W9-T4 (
   <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W9-T4 && cd ../.. && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_signoffs.py -q && grep -c "ta-r4-submitted" .planning/DECISIONS.md</automated></verify>
   <acceptance_criteria>
     - `signoff verify W9-T4` exits 0; test_signoffs passes with the ROADMAP sentinel live; exactly one `ta-r4-submitted` DEC entry quoting Carter; ROADMAP/STATE updated; pushed
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>Carter has submitted; the phase is closed on a recorded, machine-checked confirmation.</done>
   <read_first>

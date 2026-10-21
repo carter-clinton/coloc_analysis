@@ -1,7 +1,7 @@
 # ta-r4 — Plan index, shared conventions, decision coverage
 
 **Phase:** ta-r4-head-to-head-reanalysis-and-submission
-**Planned:** 2026-10-21 (gsd-planner, standard mode); **revised** 2026-10-21 (plan-check iteration 1: B1–B6, W1–W16)
+**Planned:** 2026-10-21 (gsd-planner, standard mode); **revised** 2026-10-21 (plan-check iteration 1: B1–B6, W1–W16; iteration 2: confirmatory-set blocker, W-1..W-5)
 **Inputs:** ta-r4-CONTEXT.md (D-01..D-28, LOCKED), ta-r4-RESEARCH.md, ta-r4-VALIDATION.md,
 ta-r4-INVENTORY-2026-10-21.md, ta-r4-LOG.md
 
@@ -35,7 +35,7 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 11 | ta-r4-W3a-known-answer-routes-PLAN.md | W3 | — | yes |
 | 12 | ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md | W3 | W3b-T3 known-answer findings | no |
 | 13 | ta-r4-W3c-simulation-harness-PLAN.md | (E8 code, pre-lock) | — | yes |
-| 14 | ta-r4-W3d-estimators-and-branch-classifier-PLAN.md | (E1–E8 + coverage code, pre-lock) | — | yes |
+| 14 | ta-r4-W3d-estimators-and-branch-classifier-PLAN.md | (E1–E8, confirmatory contrast_stats, coverage + aggregation code, pre-lock) | — | yes |
 | 15 | ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md | (W6 prep, pre-lock) | — | yes |
 | 16 | ta-r4-W4a-amendment-draft-review-locks-PLAN.md | W4 | W4a-T3 lock values + draft approval | no |
 | 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 OSF posting (+ code gate) | no |
@@ -50,7 +50,9 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 
 **Rigor upgrades over the research decomposition** (rigor-over-speed rule; recorded here so they are
 visible to Carter):
-1. The **estimators, the outcome-branch classifier and the coloc coverage tool (E1–E8)**, the **E8
+1. The **estimators, the confirmatory row set and stats→category rules (`decision_rules.yaml`
+   `confirmatory:` + `estimands.contrast_stats`), the outcome-branch classifier, the coloc coverage
+   tool and the aggregation entry point `run_aggregation.py` (E1–E8)**, the **E8
    simulation harness** and the **QTL group runner** (W3c–W3e) are written and tested **before** the
    OSF post. The amendment cites the commit hashes of the analysis code and of the locked configs
    (W4b commit A), and W5a–W6 refuse to fire if any analysis file differs from the lock commit. The
@@ -119,6 +121,16 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
 - **Negative-control regions (19, EUR):** cosmetic 5 (NC_OCA2_HERC2, NC_SLC24A5, NC_MC1R, NC_TYR, NC_IRF4),
   blood_group 4 (NC_ABO, NC_RH, NC_FUT1_FUT2, NC_KEL), gwas_null 10 (NC_NULL_01..NC_NULL_10, selected in W0b2).
   `regions_r4.csv` = 12 + 19 = 31 rows; `pair_manifest.tsv` = 346 rows, 320 admissible (290 EUR, 30 AFR).
+- **Confirmatory analysis (pre-lock, W3d; orchestrator default under the rigor rule, Carter may change it at W4a-T3):**
+  rows = primary curated EUR admissible rows (10 regions × 10 pairs = 100), p12_primary, A1 varset
+  matched, reference A3_1kg; bootstrap clusters = those 10 regions (never the 29 incl. NC);
+  CI / McNemar / kappa / n_both on the both-have-CS subset at PP.H4 ≥ 0.8. Negative-control rows are a
+  pre-specified specificity analysis and never feed the classifier; AFR, p12_sensitivity, A1-allvars,
+  UKB/isect and repro rows are descriptive.
+- **Panel manifests and receipts** are keyed by (ancestry, region_safe); the file comes from
+  `ta_r4.paths.panel_manifest_path(arm, ancestry)`. Repro (legacy_any) fits with no legacy panel run
+  as the frozen fire did (no panel input; receipt `present: false`, `ld_source_class: missing`).
+- **`data/r4`** is gitignored by W0a (it was not, measured 2026-10-21).
 - **Priors:** single source `config/ta_r4/coloc_priors.yaml` (p1 = p2 = 1e-4; p12 primary 5e-6,
   sensitivity 1e-5; final values locked in W4b from Carter's W4a sign-off).
 
@@ -161,8 +173,14 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
 15. **Carter sign-off protocol.** At every `checkpoint:human-action`, save Carter's reply
     byte-for-byte and run `python -m ta_r4.signoff record <ID> ...`. A non-zero exit (including a
     bare "approved", the auto-mode string) means WAIT: re-present the checkpoint and write nothing.
-    Never construct, complete or paraphrase a reply, and never log an auto-generated response as
-    Carter's sign-off. The next plan's first step runs `signoff verify <ID>`.
+    The executor never authors, types or completes any `carter-approved` text and never writes
+    `signoffs/*.yaml` except via `signoff record`. The raw file is written only from the resume
+    payload the orchestrator passes, which must be Carter's message pasted verbatim (never a
+    summary, paraphrase or auto response). The SUMMARY quotes the resume payload next to the
+    recorded raw_sha256. Carter's sentinel commit (W4b-T3) must not carry a Claude Co-Authored-By
+    trailer. The next plan's first step runs `signoff verify <ID>`.
+16. **Decisions are made once.** `ukb_native` is decided only at W2c-T4 (not at W4a). W2d refuses
+    to run once any config carries `locked: true`.
 
 ## §C Wave-close protocol (the last task of every plan runs this)
 
@@ -218,6 +236,8 @@ is presented to Carter. Therefore:
   - `render_manuscript --venue-overlay` refuses without a valid W9-T1; estimand outputs are FINAL
     only with locked configs + valid W4a-T3 + the offline gate passing.
   - The next plan after W3b, W7 and W8b starts with `signoff verify <ID>`.
+  - W2d refuses to run after the lock; W7 refuses to aggregate unless the lock diff (incl.
+    `run_aggregation.py`) is empty.
 
 ## §E Requirement mapping
 
@@ -248,7 +268,7 @@ is presented to Carter. Therefore:
 | D-09 venue after results; neutral format; no preprint | W8a (neutral), W9 T1 (human-action venue) | Full | |
 | D-10 regenerate everything | W2a, W2b, W2c, W3a, W5a–W6 | Full | |
 | D-11 /rs1 storage + committed sha256 manifests | W0a T1–T2, §B.5 in every plan, W0a T1 (`test_storage_on_rs1`) | Full | |
-| D-12 known answers before comparison | W2a T2–T3 (a: panel md5 + dims), W3a, W3b (b) | Full | mismatches = findings |
+| D-12 known answers before comparison | W2a T2–T3 (a: panel md5 + dims), W3a, W3b (b) | Full | mismatches = findings; W3b §(8) records the measured cause of the 28 empty R1 rows (ROADMAP R1_STRUCTURAL item) |
 | D-13 no silent identity fallback; named test | W0c T1–T2 (globs from ARMS incl. A3_1kg_isect), W5a, W5c, W6 | Full | `tests/ta_r4/test_no_silent_identity.py` |
 | D-14 AFR + identity overlays; restore qtl_processing.yml | W0a T2, W0b1 T1 | Full | |
 | D-15 Track B isolation | W0b2 T3, §B.7, full `tests/m3` every wave | Full | |
@@ -262,7 +282,7 @@ is presented to Carter. Therefore:
 | D-23 E8 simulation, pre-registered secondary | W3c (harness), W4a (registered), W5c T3 (run), W7 | Full | |
 | D-24 HLA / BMI_Xq24 inadmissible; HLA-UKB exploratory | W0b2 T1 (manifest `admissible` column), W2b T3, W5a, W7 (`hla_exploratory.tsv`) | Full | HLA UKB fits are exploratory and produce **no coloc row**: no admissible 1000G comparator exists, so no head-to-head is defined |
 | D-25 measured n, trait type, sdY | W2a T1–T3 (panel + trait manifests), W2c T4 (Carter answers), W4a | Full | |
-| D-26 E1–E8 + five branches; κ / n_both locked by Carter | W3d (code + total ordered classifier; 8 partial_rule combos), W4a T3 (Carter locks), W4b T1 (configs), W7 (applied) | Full | |
+| D-26 E1–E8 + five branches; κ / n_both locked by Carter | W3d T1 (estimators, `confirmatory:` block + contrast_stats, total ordered classifier, 8 partial_rule combos), W3d T3 (run_aggregation, pre-lock), W4a (e)/(f) rendered from the yaml + T3 (Carter locks), W4b T1 (configs), W7 T1 (frozen code run) | Full | confirmatory set = 100 primary curated EUR rows, 10 clusters (orchestrator default; Carter may change at W4a-T3) |
 | D-27 sentinel file; production refuses without it | W0b2 T2–T3, W4b, W5a T1 | Full | |
 | D-28 no edit to run_susie_rss.R | §B.6; `test_source_freeze_pins` in every §C | Full | |
 

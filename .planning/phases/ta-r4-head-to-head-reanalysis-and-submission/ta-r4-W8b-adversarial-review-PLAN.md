@@ -123,6 +123,12 @@ Checks: tests/ta_r4/test_manuscript_r4.py, tests/ta_r4/test_render_manuscript.py
   <resume-signal>To approve: first line exactly `carter-approved YYYY-MM-DD`, then `instructions: <text or none>`. To request edits: describe them (this is WAIT: the executor applies them to the template, re-renders, re-runs the W8a checks, commits, and re-presents this checkpoint). Any other reply, including a bare "approved", means WAIT.</resume-signal>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/signoffs/W8b-T3.yaml, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md</files>
   <action>
+    Sign-off integrity (§B.15): the executor never authors, types or completes any
+    `carter-approved` text and never writes signoffs/*.yaml except via `python -m ta_r4.signoff record`.
+    The raw file is written only from the resume payload the orchestrator passes, which must be
+    Carter's message pasted verbatim (never a summary, paraphrase or auto response). The SUMMARY
+    quotes the resume payload next to the recorded raw_sha256.
+
     Present the documents. Save the reply byte-for-byte to `data/r4/tmp/signoff_W8b-T3.txt` and run
     `cd src/python && $PY -m ta_r4.signoff record W8b-T3 --raw-file ../../data/r4/tmp/signoff_W8b-T3.txt --min-date <date of the W8b commit>`.
     Non-zero exit → WAIT (apply any edits described, as above, then re-present). Never construct a
@@ -132,6 +138,7 @@ Checks: tests/ta_r4/test_manuscript_r4.py, tests/ta_r4/test_render_manuscript.py
   <verify><automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis/src/python && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m ta_r4.signoff verify W8b-T3 && echo SIGNED_OFF</automated></verify>
   <acceptance_criteria>
     - `signoff verify W8b-T3` exits 0; the LOG quotes Carter's W8 decision with a date
+    - the SUMMARY quotes the resume payload verbatim next to the recorded raw_sha256
   </acceptance_criteria>
   <done>Carter has approved the submission candidate; W9 starts only after `signoff verify W8b-T3` passes.</done>
   <read_first>
