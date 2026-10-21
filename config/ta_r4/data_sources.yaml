@@ -1,0 +1,109 @@
+# ta-r4 data sources (REQ-PUBLIC-DATA-ONLY). Every entry: license + public: true.
+# Paths are repo-relative; durable storage is data/r4 (symlink, bin/r4_link_storage.sh).
+sources:
+  ldsc_1000G_Phase3_plinkfiles:
+    name: LDSC 1000 Genomes Phase 3 plink files (EUR QC, HapMap3)
+    url: https://zenodo.org/records/10515792/files/1000G_Phase3_plinkfiles.tgz
+    license: CC-BY-4.0
+    public: true
+    build: GRCh37
+    checksum: {md5: a7773ab485827b533cb300c76356d76b, size_bytes: 288277344}
+
+  onekg_phase3_vcf:
+    name: 1000 Genomes Phase 3 VCFs + EUR/AFR sample lists (existing copy)
+    url: data/r4/inputs/1kg_vcf
+    license: 1000 Genomes open data (no restrictions)
+    public: true
+    build: GRCh37
+    checksum: null
+
+  ukbb_ld_weissbrod_337k:
+    name: UK Biobank 337k British-ancestry LD (Weissbrod et al. 2020, PolyFun)
+    url: s3://broad-alkesgroup-ukbb-ld/UKBB_LD/
+    license: CC BY-4.0 (AWS Open Data)
+    public: true
+    build: hg19
+    checksum: null
+
+  pan_ukbb_ld:
+    name: Pan-UKBB EUR LD (documented alternate; not used)
+    url: s3://pan-ukb-us-east-1/ld_release/UKBB.EUR.ldadj.bm
+    license: CC BY-4.0 (Pan-UKB release)
+    public: true
+    build: GRCh37
+    checksum: null
+    used: false
+
+  eqtl_catalogue_QTS000015:
+    name: GTEx v8 eQTL/sQTL via the eQTL Catalogue (QTS000015)
+    url: https://ftp.ebi.ac.uk/pub/databases/spot/eQTL/sumstats/QTS000015/
+    license: open (eQTL Catalogue)
+    public: true
+    build: GRCh38
+    checksum: null
+
+  yengo2018_bmi_alleles:
+    name: Yengo 2018 GIANT-UKBB BMI with effect/other alleles (E-2 allele restoration)
+    url: data/processed/sumstats_harmonized/bmi.EUR.GIANT-UKBB.2018.GRCh37.tsv.bgz
+    license: public summary statistics (config/datasets.yaml yengo2018_bmi)
+    public: true
+    build: GRCh37
+    checksum: {sha256: 0147fbcd0d12cc917f9c2babe8e6a462b3c51ce7ff885999f310c445c32b6587, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+
+  # The 8 Track A harmonized sumstats; sha256 pinned by .planning/amendments/sha256_manifest_harmonized_m1.tsv
+  sumstats_asthma_EUR:
+    name: asthma EUR (GBMI 2021)
+    url: data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml gbmi_asthma)
+    public: true
+    build: GRCh37
+    checksum: {sha256: 22b2807551ca6a5967fa67ba81c7546cc66a7f3b9d0055cd23ddd8d2b3eda137, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+  sumstats_asthma_AFR:
+    name: asthma AFR (GBMI 2021)
+    url: data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml gbmi_asthma)
+    public: true
+    build: GRCh37
+    checksum: {sha256: c9a723f3c900797692f54c6df5ae547840131f79a9a7891490d1670fc09a5c30, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+  sumstats_bmi_EUR:
+    name: BMI EUR (Yengo 2018)
+    url: data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml yengo2018_bmi)
+    public: true
+    build: GRCh37
+    checksum: {sha256: c914e16b6b4e3264993c39db141090856e7e7fcdd1cad69405b04a2384acd9a0, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+  sumstats_hypertension_EUR:
+    name: hypertension EUR (Evangelou 2018)
+    url: data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml evangelou2018_bp)
+    public: true
+    build: GRCh37
+    checksum: {sha256: a740bb261b58cbb9f284139dd0012cb7fc01df24095e9a14833118fac6eba78f, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+  sumstats_stroke_EUR:
+    name: stroke EUR (datasets.yaml megastroke_metastroke)
+    url: data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml megastroke_metastroke)
+    public: true
+    build: GRCh37
+    checksum: {sha256: 4dafe6152375b57e9b82033e92a3327df8a39f08fcea5dd3c86fda67394c3cd9, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+  sumstats_stroke_AFR:
+    name: stroke AFR (GIGASTROKE 2022 AFR, GCST90104553)
+    url: data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml megastroke_metastroke)
+    public: true
+    build: GRCh37
+    checksum: {sha256: bf08ef2831b03a160857ef420ea448eeb38fac94a68b74359840d28e5d070384, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+  sumstats_t2d_EUR:
+    name: T2D EUR (DIAMANTE 2022)
+    url: data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml diamante2022_t2d)
+    public: true
+    build: GRCh37
+    checksum: {sha256: 7cf7723ae0a6e6d05780d76ad53f922ec3a130c47ea38db26b1001911d6e4e8f, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+  sumstats_t2d_AFR:
+    name: T2D AFR (DIAMANTE 2022)
+    url: data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
+    license: public summary statistics (config/datasets.yaml diamante2022_t2d)
+    public: true
+    build: GRCh37
+    checksum: {sha256: 23347618a0cb31bd995aa49155ec933b276544e12f71e76279a66493eeb0470c, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}

@@ -207,3 +207,4 @@ data/interim/aou_ld_exports/**/bm/
 data/processed/ld_reference/AFR_aou/
 data/processed/ld_reference/EUR_aou/
 tests/m3/fixtures/synthetic_mt/
+/data/r4
