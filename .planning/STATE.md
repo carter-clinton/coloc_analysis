@@ -45,7 +45,10 @@ progress:
   three-arm head-to-head (coloc.abf / identity SuSiE / real-LD SuSiE), E-2 FIX + before/after,
   OSF pre-registration posted by Carter BEFORE the production comparison. ⚠ All Track A fits,
   LD panels and QTL inputs were PURGED from /share (`ta-r4-INVENTORY-2026-10-21.md`) — full
-  regeneration on /rs1. Next: `/gsd-plan-phase ta-r4-head-to-head-reanalysis-and-submission`.
+  regeneration on /rs1. **PLANNED 2026-10-21:** 25 plans / 80 tasks, 3 plan-check iterations
+  (`ta-r4-PLAN-CHECK-LOG.md`), final 0 blockers (`59b4ce7`). Executing under --auto --chain; every
+  Carter judgement is a `checkpoint:human-action` resumable only by `carter-approved YYYY-MM-DD`.
+  Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` (starts at W0a).
 - **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
   is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
 - ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR
