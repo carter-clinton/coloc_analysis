@@ -245,3 +245,47 @@ Chronological record of every action in this phase. Append-only.
   1474 + 186 = 1660, 1428 + 186 = 1614. The main Snakefile / pipeline.yaml / frozen script / finemap.smk are unchanged.
   PLAN-INDEX §A now records the 10 NC_NULL tiles, the full conda-isolation recipe + flexible priority, and R4_PLINK.
   ARMS = 13 = §A (no change). Commits: `2d4da61e` (T3) + the wave-close commits; fsck clean before/after.
+
+## 2026-10-22 — W0c executed (D-13 receipts, validator, r4_run_finemap, frozen-script e2e)
+
+- **Task 1 RED → GREEN.** `test_no_silent_identity.py` written first: `55 failed in 2.20s`, all
+  `ModuleNotFoundError: No module named 'ta_r4.validate_r4_fits'` / `No module named ta_r4.write_ld_receipt`.
+  GREEN: `54 passed, 1 skipped` (skip = live gate, "no production fits yet (W5a enables)"). 24 injected silent shapes
+  are each rejected by name (NULL-R identity/None, identity_fallback, ld_dir_missing as status and as ld_status,
+  LD_DECLARED_ABSENT, matrix != declared, non-authoritative, non-allele-aware, md5 != manifest, LD fields missing,
+  AFR receipt on an EUR fit, no row, no receipt, panel absent, receipt declared != fit, status not loaded, arm/mode
+  mismatch, fallback_identity in ld_status; A2: points at the real panel, sha256 != manifest, NULL-R, declared not
+  the arm's panel, identity_fallback).
+  Negative controls: validator made to ignore `convergence_status` → `FAILED [a2_identity_fallback]`,
+  `FAILED [identity_fallback]`, `2 failed, 52 passed`; receipt md5 check disabled → `FAILED test_receipt_writer_exits_3[md5_mismatch]`.
+  Both restored (`cmp` identical). CLI on an identity fixture from src/python: 5 VIOLATION lines, `echo $?` → `1`.
+- **Task 2 RED → GREEN.** e2e + variant-set tests written before `commands.py`/the rule: `3 failed, 1 passed, 1 skipped,
+  6 errors` (ImportError `ta_r4.commands`; r4_run_finemap absent from `--list`; production dry-run raised no OsfGateError).
+  GREEN with freeze pins: `49 passed, 1 skipped`; with the controls added later: e2e 9 + variant 4 (1 skip) + silent 56 (1 skip).
+- **Fixture facts (60 SNPs, seed 20261021).** A3: `status ok`, `ld_matrix data/r4/ld/EUR_1kg_r4/FIX_1.rds` (== declared),
+  `ld_status ld_loaded;overlap_ok;59;0.983`, `ld_allele_flipped 1`, `ld_allele_dropped_palindromic 1`, `ld_overlap 59`.
+  A2: `ld_matrix data/r4/ld/EUR_identity_r4/FIX_1.rds`, same ld_status. Retained variants A3 59, A2 59, identical sets
+  (60 − 1 palindrome = 59).
+- **Missing-panel negative control (recorded verbatim):** the frozen script exited **rc 0** with
+  `ld_matrix 'identity'`, `ld_status 'ld_dir_missing'`, `ld_file_declared 'data/r4/ld/EUR_1kg_r4/FIX_1.rds'`;
+  validator violations `['LD_MATRIX_IDENTITY', 'LD_DIR_MISSING', 'LD_STATUS_NOT_LOADED', 'IDENTITY_SUBSTRING',
+  'LD_MATRIX_NE_DECLARED']`; validator CLI rc 1. (In the rule, `test -s` and the receipt writer stop this case earlier.)
+- **Rule-level runs (fixture repo from make_fixture_repo):** repro_routeC r4_run_finemap ran for real (receipt → frozen
+  script → validator legacy_any `ld_source_class=real violations=0` → receipt one-liner `ld_fields_present`);
+  the printed shell contains the three `shlex.join(commands.*)` strings. A3_1kg dry-run → OsfGateError `sentinel absent`.
+  Manifest md5 swapped → job fails with `LD_RECEIPT_REFUSED ... != manifest md5`, frozen script never started, no JSON.
+- **Task 2 sabotage controls (all RED, all restored `cmp` identical):** `--ld-file` dropped from fit_command →
+  A3 fit rc 0 on `identity`/`ld_dir_missing`, 2 tests RED; receipt md5 check off → `test_rule_fails_on_panel_swap` RED;
+  payload drops one variant → A2 58 vs A3 59, fixture set test RED; gate call removed from the input function →
+  `test_rule_production_arm_refused_without_gate` RED. Live gates carry in-test controls (empty arm dir / identity fit;
+  one arm of a pair alone / 58 vs 59 ids).
+- **Measured:** the frozen loader also accepts a `Matrix::Diagonal` payload (rc 0, `ld_loaded;overlap_ok;59;0.983`);
+  the builder keeps base `diag(n)`. The finemap.smk receipt one-liner is copied verbatim and produces identical output
+  on the A3 JSON (test). `conda:` uses `workflow.basedir/envs/r_coloc.yml` (byte-identical to rules/envs/r_coloc.yml;
+  plain `envs/r_coloc.yml` resolves rule-relative, which the fixture repo lacks — first rule run failed on it).
+- **D-28:** `git diff --quiet HEAD -- run_susie_rss.R` → 0; `test_source_freeze_pins.py` 39 passed.
+- **Wave close.** QUICK 235 passed / 20 deselected, 18.8 s wall. HEAVY 18 passed / 2 skipped (231 s). FULL
+  1729 ids / 1681 passed / 48 skipped / 0 failed (19m28s). Join vs W0b2 junit (`full_W0b2.xml` → `full_W0c.xml`):
+  common 1660, removed 0, changed 0, added 69 (silent 56, e2e 9, variant 4; 67 passed + 2 live-gate skips);
+  1660 + 69 = 1729, 1614 + 67 = 1681, 46 + 2 = 48; tests/m3 1299/1299, 0 changed. sparse_parent_benchmark.tsv restored.
+  Commits `dbc2c19d` (T1), `fef3589f` (T2), wave-close commit follows; fsck clean before.

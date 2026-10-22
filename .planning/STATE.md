@@ -26,7 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 DONE. NEXT = W0c. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 + W0c DONE. NEXT = W0d. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- **W0c closed** (T1 `dbc2c19d`, T2 `fef3589f`, plus the wave-close commit, pushed): D-13 validator
+  (`validate_r4_fits`, 24 silent shapes rejected by name) + per-fit LD receipt (exit 3 on manifest md5 mismatch),
+  rule `r4_run_finemap` wrapping the UNEDITED run_susie_rss.R, A2 matched identity payload builder. Fixture e2e:
+  A3 reads the declared panel allele-aware (flipped 1, palindromic 1, overlap 59), A2 = A3 = 59 retained variants;
+  a missing declared panel exits rc 0 on identity and is rejected by the validator. Live gates skip until W5a.
+  FULL 1729/1681/48/0; vs W0b2: 0 removed, 0 changed, +69.
 
 - **W0b2 closed** (T1 `9bb65c0`, T2 `ab77e97`, T3 `2d4da61e`, plus the wave-close commits, pushed): 346-row static pair
   manifest (320 admissible; NC sets cosmetic/blood_group/GWAS-null), OSF gate (one anonymous API call per
@@ -37,7 +44,7 @@ progress:
   public, 200). The gate fails closed on a non-public node, so the R4 amendment must be anonymously readable via
   the API before any production fire. This also bears on how public the existing az52u amendments are. Nothing was changed.
 - R4 condarc uses `channel_priority: flexible` (`envs/plink.yml` is unsatisfiable under strict; measured).
-- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W0c (one executor per plan).
+- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W0d (one executor per plan).
   First Carter checkpoint: W2c.
 
 ## 2026-10-21 18:45 EDT — 🧭 **SESSION CLOSE (Carter relocating). TRACK A ta-r4 IS EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY AFTER TASK 2 OF 4. NOTHING RUNNING.** (SUPERSEDED by the 2026-10-22 block above)
@@ -86,7 +93,9 @@ progress:
   helper + sentinels; import clash fixed; FULL 1565/1519/46/0, 0 removed/changed. Next: W0b2.
   **W0b2 DONE 2026-10-22** (`9bb65c01`/`ab77e97c`/`2d4da61e`): regions_r4 (31), pair manifest 346/320,
   OSF gate, Snakefile.ta_r4 + r4_fire.sh + LSF profile, env lockfiles; FULL 1660/1614/46/0, 0 removed/changed.
-  ⚠ OSF API 401 on az52u/k8w7n (anonymous) — W4b hand-off. Next: W0c.
+  ⚠ OSF API 401 on az52u/k8w7n (anonymous) — W4b hand-off.
+  **W0c DONE 2026-10-22** (`dbc2c19d`/`fef3589f`): D-13 validator + receipts, r4_run_finemap, frozen-script
+  fixture e2e, matched variant-set gates; FULL 1729/1681/48/0, 0 removed/changed. Next: W0d.
 - **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
   is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
 - ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR
