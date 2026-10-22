@@ -1,0 +1,19 @@
+metric	value	note
+n_frozen	2336269	data rows in the frozen file
+n_exact	2327244	class
+n_flipped	0	class
+n_value_mismatch	0	class
+n_unjoined	9025	class
+n_kept	2327244	exact + flipped; rows in the output
+n_sign_uninformative	23896	kept as exact; BETA equal to 0 at frozen precision
+n_ambiguous_source	0	counted in value_mismatch; >1 distinct source rows
+sha256_frozen	c914e16b6b4e3264993c39db141090856e7e7fcdd1cad69405b04a2384acd9a0	bmi.EUR.tsv.bgz
+sha256_source	0147fbcd0d12cc917f9c2babe8e6a462b3c51ce7ff885999f310c445c32b6587	bmi.EUR.GIANT-UKBB.2018.GRCh37.tsv.bgz
+sha256_out	2f87e771c5a20660611c3de5e737f6ab29ec66d45f1a62302532e6dc3bc5b1b4	bmi.EUR.r4_alleles.tsv.bgz
+sha256_out_tbi	36d01d38ead3e09ba7ba8ae4a9c93ba3a55eaf64a051f2e38c944b65d70f572a	bmi.EUR.r4_alleles.tsv.bgz.tbi
+raw_n_sampled	10000	bmi.EUR.raw.gz sha256 0d6ed0ea97870916b830ccae349df94ca6f3cc68c025c79e784729af7f7136a4; seed 20261021; recorded, not gated
+raw_n_alt_match	10000	bmi.EUR.raw.gz sha256 0d6ed0ea97870916b830ccae349df94ca6f3cc68c025c79e784729af7f7136a4; seed 20261021; recorded, not gated
+raw_n_ref_match	0	bmi.EUR.raw.gz sha256 0d6ed0ea97870916b830ccae349df94ca6f3cc68c025c79e784729af7f7136a4; seed 20261021; recorded, not gated
+raw_n_absent	0	bmi.EUR.raw.gz sha256 0d6ed0ea97870916b830ccae349df94ca6f3cc68c025c79e784729af7f7136a4; seed 20261021; recorded, not gated
+raw_n_other	0	bmi.EUR.raw.gz sha256 0d6ed0ea97870916b830ccae349df94ca6f3cc68c025c79e784729af7f7136a4; seed 20261021; recorded, not gated
+raw_alt_match_rate	1.000000	bmi.EUR.raw.gz sha256 0d6ed0ea97870916b830ccae349df94ca6f3cc68c025c79e784729af7f7136a4; seed 20261021; recorded, not gated
