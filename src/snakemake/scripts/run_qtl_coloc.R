@@ -72,6 +72,12 @@ option_list <- list(
                            "i.e. {ld_reference}/variants/{region}.tsv -- the same",
                            "artifact run_finemap.input.variants consumes. Required",
                            "when --ld-allele-join is true.")),
+  make_option("--qtl-orient",    dest = "qtl_orient",     type = "character",
+              default = "false",
+              help = paste("'true' or 'false'. When true (requires --ld-allele-join",
+                           "true), re-sign QTL beta from its variant_id ALT to the",
+                           "bound panel row's ALT (D-06); drop and count palindromic,",
+                           "mismatched and unparseable rows.")),
   make_option("--output",        type = "character",
               help = "Output JSON path")
 )
@@ -133,6 +139,17 @@ if (!identical(LD_ALLELE_JOIN_FLAG, "true") &&
 }
 LD_ALLELE_JOIN <- identical(LD_ALLELE_JOIN_FLAG, "true")
 
+QTL_ORIENT_FLAG <- opt$qtl_orient %||% "false"
+if (!identical(QTL_ORIENT_FLAG, "true") && !identical(QTL_ORIENT_FLAG, "false")) {
+  stop(sprintf("--qtl-orient must be exactly 'true' or 'false', got '%s'",
+               QTL_ORIENT_FLAG), call. = FALSE)
+}
+QTL_ORIENT <- identical(QTL_ORIENT_FLAG, "true")
+if (QTL_ORIENT && !LD_ALLELE_JOIN) {
+  stop("--qtl-orient true requires --ld-allele-join true (it re-signs rows bound by the panel bridge)",
+       call. = FALSE)
+}
+
 # The realized-overlap floor. Deliberately the SAME literal 50 the two
 # pre-existing gates use (:183 and the post-LD-intersection gate below), so this
 # change invents no new fatal threshold -- it only changes whether falling below
@@ -163,6 +180,13 @@ if (LD_ALLELE_JOIN) {
   }
   source(LD_ALLELE_JOIN_R)
 }
+if (QTL_ORIENT) {
+  QTL_ORIENT_R <- file.path(.script_dir(), "qtl_orient.R")
+  if (!file.exists(QTL_ORIENT_R)) {
+    stop(sprintf("[run_qtl_coloc] qtl_orient.R missing: %s", QTL_ORIENT_R), call. = FALSE)
+  }
+  source(QTL_ORIENT_R)
+}
 
 # ---- provenance, filled in as it is MEASURED; NULL means "not measured" ----
 # NULL (not 0, not "") is the discipline inherited from 260805-o7o: a counter
@@ -172,6 +196,7 @@ LD_KEY_SPACE <- NULL
 LD_PANEL_OVERLAP <- NULL
 LD_CANDIDATE_OVERLAPS <- NULL
 LD_JOIN_COUNTS <- NULL
+QTL_ORIENT_COUNTS <- NULL
 
 ld_provenance <- function() {
   # ⚠ RETURNS AN EMPTY LIST OFF THE GATE, AND THAT IS LOAD-BEARING. In R
@@ -197,8 +222,20 @@ ld_provenance <- function() {
   )
 }
 
+qtl_orient_provenance <- function() {
+  # Off the flag: nothing, so the JSON stays identical to the pre-flag script.
+  if (!QTL_ORIENT) return(list())
+  g <- function(nm) if (is.null(QTL_ORIENT_COUNTS)) NA_integer_ else as.integer(QTL_ORIENT_COUNTS[[nm]])
+  list(qtl_orient                     = TRUE,
+       qtl_orient_exact               = g("exact"),
+       qtl_orient_flipped             = g("flipped"),
+       qtl_orient_dropped_palindromic = g("dropped_palindromic"),
+       qtl_orient_dropped_mismatch    = g("dropped_mismatch"),
+       qtl_orient_dropped_unparseable = g("dropped_unparseable"))
+}
+
 attach_ld_provenance <- function(result) {
-  extra <- ld_provenance()
+  extra <- c(ld_provenance(), qtl_orient_provenance())
   for (nm in names(extra)) result[[nm]] <- extra[[nm]]
   result
 }
@@ -466,6 +503,9 @@ if (LD_ALLELE_JOIN && (!exists("use_identity") || !isTRUE(use_identity))) {
                  sprintf("variants rows=%d but R rows=%d",
                          nrow(panel_variants), nrow(ld_full)))
   }
+  if (QTL_ORIENT && !all(c("REF", "ALT") %in% names(panel_variants))) {
+    stop("[run_qtl_coloc] qtl-orient requires panel REF/ALT", call. = FALSE)
+  }
 
   # ---- the shared allele-aware 4-key join ----
   join <- ld_allele_join_indices(catalog, panel_variants)
@@ -475,13 +515,12 @@ if (LD_ALLELE_JOIN && (!exists("use_identity") || !isTRUE(use_identity))) {
                  "verification is impossible: one side carries no usable REF/ALT")
   }
 
-  # ⚠ `join$orient` IS MEASURED AND REPORTED, AND DELIBERATELY NOT APPLIED.
-  # This closes the ROW-BINDING half only. Signing the QTL beta against the
-  # panel's ALT (E-2) is pre-existing on the legacy 1kG/EUR path, is not named by
-  # finding E, and correcting it would move Track-A EUR numbers that are in
-  # submission. What the counters buy is that E-2's magnitude becomes MEASURABLE
-  # (ld_allele_flipped) instead of invisible. See
-  # .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md.
+  # `join$orient` (catalog -> panel) is measured and reported, never applied to
+  # the QTL beta: it is the wrong vector for that. The QTL beta is re-signed to the
+  # panel ALT from the QTL's own variant_id alleles, only under --qtl-orient true
+  # (D-06, DEC-2026-10-21-ta-r4-e2-fix-supersedes-option-a; step 4c below). Off the
+  # flag, E-2 is left as it was (legacy 1kG/EUR path; see
+  # .planning/phases/m3-aou-afr-ld-panel-build/deferred-items.md).
 
   # ---- MEASURE the candidate key spaces; do not assume one ----
   # The same best-overlap discipline this script already uses on the QTL side.
@@ -563,6 +602,28 @@ if (!exists("use_identity") || !isTRUE(use_identity)) {
 
 # Subset QTL data to overlap SNPs (in same order as LD matrix rows).
 qtl_df <- qtl_df[match(overlap_snps, qtl_df[[match_key]]), ]
+
+# -------------------------------------------------------------------------
+# 4c. D-06 -- orient QTL beta to the bound panel row's ALT (--qtl-orient true)
+# -------------------------------------------------------------------------
+if (QTL_ORIENT) {
+  pidx <- as.integer(ld_row_index[overlap_snps])
+  qo <- qtl_orient_vector(qtl_df$variant_id, panel_variants$REF[pidx], panel_variants$ALT[pidx])
+  QTL_ORIENT_COUNTS <- qo$counts
+  keep_q <- !is.na(qo$orient)
+  orient_keep <- qo$orient[keep_q]
+  qtl_df <- qtl_df[keep_q, ]
+  qtl_df[, beta := beta * orient_keep]
+  overlap_snps <- overlap_snps[keep_q]
+  ld_matrix_subset <- ld_matrix_subset[keep_q, keep_q, drop = FALSE]
+  n_snps_overlap <- length(overlap_snps)
+  cat(sprintf("[run_qtl_coloc] qtl-orient: %s\n",
+              paste(sprintf("%s=%d", names(qo$counts), unlist(qo$counts)), collapse = ", ")))
+  if (n_snps_overlap < MIN_COLOC_LD_OVERLAP) {
+    ld_join_stop("qtl_orient_below_threshold",
+                 sprintf("%d QTL rows remain after orientation drops", n_snps_overlap))
+  }
+}
 
 # -------------------------------------------------------------------------
 # 5. Build QTL dataset list for coloc
