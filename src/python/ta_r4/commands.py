@@ -67,3 +67,37 @@ def validate_command(arm, trait, ancestry, region_safe):
                   "--fit", paths.fit_json(arm, trait, ancestry, region_safe),
                   "--receipt", paths.ld_receipt_json(arm, trait, ancestry, region_safe),
                   "--panel-manifest", paths.panel_manifest_path(arm, ancestry)]
+
+
+COLOC_SCRIPT = "src/snakemake/scripts/ta_r4/run_coloc_pair_r4.R"
+COLOC_PRIORS = "config/ta_r4/coloc_priors.yaml"
+TRAIT_MANIFEST = "config/ta_r4/trait_manifest.tsv"
+P12_KEYS = ("p12_primary", "p12_sensitivity")
+COLOC_MODES = ("susie", "A1_matched", "A1_allvars")
+#: A1 runs inside the invocation of the arm whose fits bind its matched variant set (D-21).
+A1_FIT_ARMS = {"A3_1kg": "EUR", "AFR661_A3": "AFR"}
+
+
+def coloc_output(arm, row, p12_key, mode):
+    if mode == "susie":
+        return paths.coloc_json(arm, row["row_id"], p12_key)
+    return paths.coloc_json(f"A1_{row['ancestry']}", row["row_id"], p12_key, mode.split("_", 1)[1])
+
+
+def coloc_command(arm, row, p12_key, mode):
+    """run_coloc_pair_r4.R for one pair_manifest row. `arm` owns the fits (A1: the A3 arm)."""
+    if mode not in COLOC_MODES or p12_key not in P12_KEYS:
+        raise ValueError(f"mode {mode!r} / p12_key {p12_key!r}")
+    anc, reg = row["ancestry"], row["region_safe"]
+    if mode != "susie" and A1_FIT_ARMS.get(arm) != anc:
+        raise ValueError(f"A1 runs only within {A1_FIT_ARMS} for its ancestry, not {arm} {anc}")
+    a, b = row["trait_a"], row["trait_b"]
+    cmd = ["Rscript", COLOC_SCRIPT, "--mode", mode]
+    if mode != "A1_allvars":
+        cmd += ["--fit-a", paths.fit_rds(arm, a, anc, reg), "--fit-b", paths.fit_rds(arm, b, anc, reg)]
+    out_arm = arm if mode == "susie" else f"A1_{anc}"
+    return cmd + ["--sumstats-a", paths.sumstats_path(a, anc, arm), "--sumstats-b", paths.sumstats_path(b, anc, arm),
+                  "--trait-a", a, "--trait-b", b, "--ancestry", anc, "--region-id", row["region_id"],
+                  "--regions-csv", paths.regions_csv(), "--trait-manifest", TRAIT_MANIFEST,
+                  "--priors", COLOC_PRIORS, "--p12-key", p12_key, "--row-id", row["row_id"], "--arm", out_arm,
+                  "--output", coloc_output(arm, row, p12_key, mode)]
