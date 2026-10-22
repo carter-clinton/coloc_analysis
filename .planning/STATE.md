@@ -26,7 +26,18 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 + W0c DONE. NEXT = W0d. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 + W0c + W0d DONE. NEXT = W1. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- **W0d closed** (T1 `99e05961`, T2 `c536547c`, plus the wave-close commit, pushed): one coloc script
+  `run_coloc_pair_r4.R` (coloc_susie / labelled fallback_abf / A1 matched / A1 all-variants), priors only from
+  coloc_priors.yaml and recorded per output; fallback PPs == A1_matched exactly; rules `r4_coloc_pair` and
+  `r4_coloc_A1` behind the OSF gate; toy 3-region `Snakefile.ta_r4 --use-conda` e2e passes (A3_1kg + A2_identity;
+  first r_coloc solve into the R4 prefix, shared conda cache unchanged). FULL 1767/1717/50/0; vs W0c 0 removed, 0 changed, +38.
+- ⚠ **DECISION NEEDED before W4 (code freezes at the OSF lock):** the frozen run_susie_rss.R renames chr:pos sumstats
+  SNP_IDs to LD-panel rsids. run_coloc_susie.R then drops all non-CS variants (measured `fit_b=1/57, intersect=0`);
+  the R4 script refuses (UNMAPPED_FIT_NAMES). If W2a's 1000G panels carry rsids, every hypertension/stroke/t2d pair
+  will refuse. Options: map fit names through the arm's panel variants frame too (adds the panel as a coloc input), or
+  another rule Carter picks. Not chosen by the executor.
 
 - **W0c closed** (T1 `dbc2c19d`, T2 `fef3589f`, plus the wave-close commit, pushed): D-13 validator
   (`validate_r4_fits`, 24 silent shapes rejected by name) + per-fit LD receipt (exit 3 on manifest md5 mismatch),
@@ -44,7 +55,7 @@ progress:
   public, 200). The gate fails closed on a non-public node, so the R4 amendment must be anonymously readable via
   the API before any production fire. This also bears on how public the existing az52u amendments are. Nothing was changed.
 - R4 condarc uses `channel_priority: flexible` (`envs/plink.yml` is unsatisfiable under strict; measured).
-- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W0d (one executor per plan).
+- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W1 (one executor per plan).
   First Carter checkpoint: W2c.
 
 ## 2026-10-21 18:45 EDT — 🧭 **SESSION CLOSE (Carter relocating). TRACK A ta-r4 IS EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY AFTER TASK 2 OF 4. NOTHING RUNNING.** (SUPERSEDED by the 2026-10-22 block above)
@@ -95,7 +106,9 @@ progress:
   OSF gate, Snakefile.ta_r4 + r4_fire.sh + LSF profile, env lockfiles; FULL 1660/1614/46/0, 0 removed/changed.
   ⚠ OSF API 401 on az52u/k8w7n (anonymous) — W4b hand-off.
   **W0c DONE 2026-10-22** (`dbc2c19d`/`fef3589f`): D-13 validator + receipts, r4_run_finemap, frozen-script
-  fixture e2e, matched variant-set gates; FULL 1729/1681/48/0, 0 removed/changed. Next: W0d.
+  fixture e2e, matched variant-set gates; FULL 1729/1681/48/0, 0 removed/changed.
+  **W0d DONE 2026-10-22** (`99e05961`/`c536547c`): run_coloc_pair_r4.R + r4_coloc_pair/r4_coloc_A1, toy
+  `--use-conda` e2e; FULL 1767/1717/50/0, 0 removed/changed. ⚠ panel-rsid name-override decision before W4. Next: W1.
 - **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
   is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
 - ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR

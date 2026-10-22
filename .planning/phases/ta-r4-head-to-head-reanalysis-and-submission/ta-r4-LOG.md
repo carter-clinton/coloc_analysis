@@ -289,3 +289,47 @@ Chronological record of every action in this phase. Append-only.
   common 1660, removed 0, changed 0, added 69 (silent 56, e2e 9, variant 4; 67 passed + 2 live-gate skips);
   1660 + 69 = 1729, 1614 + 67 = 1681, 46 + 2 = 48; tests/m3 1299/1299, 0 changed. sparse_parent_benchmark.tsv restored.
   Commits `dbc2c19d` (T1), `fef3589f` (T2), wave-close commit follows; fsck clean before.
+
+## 2026-10-22 — W0d executed (run_coloc_pair_r4.R, r4_coloc_pair / r4_coloc_A1, toy --use-conda e2e)
+
+- **Task 1 RED → GREEN.** test_coloc_pair_r4 / test_fallback_labelled / test_priors_constant written first, fixture
+  fits built by the frozen script via `commands.fit_command`: `16 failed, 14 passed, 2 skipped`; every failure
+  `Fatal error: cannot open file 'src/snakemake/scripts/ta_r4/run_coloc_pair_r4.R'`. The 14 passes are the gate-checker
+  unit tests (controlled below); the 2 skips are the live gates. GREEN: `30 passed, 2 skipped` (102.7 s).
+- **Fixture numbers (verbatim test prints).** coloc_susie (FIXP_SAME) `pp_h4_max 0.999999999998337 direct
+  0.999999999998337 max|diff| 0.0`. A1_matched (FIXP_MIX, n_snps 57) p12_primary `0.999441327677598`, direct coloc.abf
+  with explicit priors identical (|diff| 0.0), package-default coloc.abf `0.999720585788306` (!=). Fallback (FIXP_NULL,
+  n_cs_b 0): p12_primary fallback `0.0267819546730813` == A1_matched `0.0267819546730813`; p12_sensitivity
+  `0.0521667809824499` == `0.0521667809824499`. A1 allvars n_snps 60 (59 allele-matched + 1 position-only) vs matched 57.
+- **Sabotage REDs (each restored, `cmp` identical):** `P12 <- 1e-5` hard-coded → test_priors_constant `2 failed`
+  (`test_every_mode_records_yaml_priors`, `test_explicit_prior_moves_the_answer`); fallback labelled `coloc_susie` →
+  test_fallback_labelled `2 failed` (`assert ('coloc_susie' == 'fallback_abf'`); gate globbing every `results/*/coloc`
+  → both repro-tree tests RED; n_cs check removed / p12 not compared / cross-arm check no-op → the matching checker
+  test RED; UNMAPPED refusal disabled → override test RED.
+- **Measured (name alignment).** The frozen script renames chr:pos sumstats SNP_IDs to LD-panel rsids
+  ("Overriding 59 sumstats SNP_IDs with LD-panel rsids"). On that shape run_coloc_susie.R prints
+  `fit_b=1/57 (intersect=0)`: it drops every non-CS column and colocalizes nothing. run_coloc_pair_r4.R stops with
+  UNMAPPED_FIT_NAMES instead. On the rsid-vs-chr:pos shape both give `intersect=57`, same hits/nsnps/PPs.
+  ⚠ DECISION NEEDED before W4 (analysis frozen at the OSF lock): W2a's 1000G panels carry .bim IDs (likely rsids),
+  so production hypertension/stroke/t2d fits will have the override shape and refuse.
+- **Measured (reader).** The named r_coloc env has no R.utils, so run_coloc_susie.R's `fread(<.bgz>)` fails and it
+  silently skips its rewrite there. run_coloc_pair_r4.R uses the frozen script's reader (`fread(cmd = "gunzip -c ...")`).
+- **Task 2.** Toy e2e RED (rule held aside): `4 failed, 1 passed` — `MissingRuleException: No rule to produce
+  data/r4/results/A1_EUR/coloc/FIX_1__EUR__asthma_vs_bmi.matched.p12_primary.json`; the pass is the receipt negative
+  control (fit rule only). That run was the first r_coloc solve into the R4 prefix: env `0f3436279d4146c376747a0ea5bfd4bf_`
+  (R 4.4.2, coloc 5.2.3, susieR 0.14.2, R.utils 2.12.3). GREEN `5 passed`: A3_1kg 24 targets rc 0 in 50.3 s,
+  A2_identity 12 targets rc 0 in 26.0 s. Negative control: FIX_2 A3 manifest row deleted → `Error in rule
+  r4_run_finemap`, `LD_RECEIPT_REFUSED: no manifest row (EUR, FIX_2)`. Coloc gate refusal test (A1 allvars target, no
+  sentinel) → OsfGateError; with the gate call removed → `MissingInputException in rule r4_coloc_A1` (RED), restored.
+- **Shared conda cache** `/rs1/.../conda_pkgs`: before 2188 entries / listing sha256 `f094b37d…9085` / 23348 MB /
+  0 archives; after all --use-conda runs identical, 0 entries newer than the start. R4 pkgs 809 → 1095 (546 archives).
+- **Production dry-run (real repo).** Dirty tree: `REFUSED: uncommitted changes ... ?? src/snakemake/rules/ta_r4_coloc.smk`
+  (rc 2). After commit: `OsfGateError: (a) sentinel absent` from verify-online (rc 1), Snakemake never started. Direct
+  `$SMK -n`: `InputFunctionException in rule r4_coloc_pair ... OsfGateError: (a) sentinel absent` (and r4_coloc_A1).
+  `bin/r4_fire.sh repro repro_routeC --list` lists r4_coloc_pair; r4_coloc_A1 is listed only under A3_1kg.
+- **Wave close.** QUICK 254 passed / 39 deselected, 36.7 s wall. HEAVY 35 passed / 4 skipped (live gates), 7m14s.
+  Freeze pins 39 passed. FULL 1767 ids / 1717 passed / 50 skipped / 0 failed (22m43s). Join vs `full_W0c.xml`:
+  common 1729, removed 0, changed 0, added 38 (coloc_pair 11, fallback 11, priors 10, toy 6; 36 passed + 2 live-gate
+  skips); 1729 + 38 = 1767, 1681 + 36 = 1717, 48 + 2 = 50; tests/m3 1299/1299, 0 changed. sparse_parent_benchmark.tsv
+  restored. Frozen files (run_susie_rss.R, run_coloc_susie.R, Snakefile, pipeline.yaml, finemap.smk, envs/r_coloc.yml,
+  Snakefile.ta_r4) 0-diff. Commits `99e05961` (T1), `c536547c` (T2), wave-close commit follows; fsck clean before.
