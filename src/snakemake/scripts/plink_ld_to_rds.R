@@ -44,7 +44,9 @@ suppressPackageStartupMessages({
         make_option("--ancestry", type = "character", default = "AFR"),
         make_option("--ld-source", dest = "ld_source", type = "character",
                     default = "hgdp_1kg_v3_1_2"),
-        make_option("--output", type = "character")
+        make_option("--output", type = "character"),
+        make_option("--emit-ref-alt", dest = "emit_ref_alt", type = "character",
+                    default = "false")
       )
       parse_args(OptionParser(option_list = opts), args = argv)
     }
@@ -59,6 +61,13 @@ stopifnot(
   !is.null(opt$ld), !is.null(opt$variants),
   !is.null(opt$region_id), !is.null(opt$output)
 )
+emit_ref_alt <- if (is.null(opt$emit_ref_alt)) "false" else opt$emit_ref_alt
+if (!emit_ref_alt %in% c("true", "false")) {
+  stop(sprintf("--emit-ref-alt must be 'true' or 'false', got '%s'", emit_ref_alt))
+}
+if (emit_ref_alt == "true" && tolower(tools::file_ext(opt$variants)) != "bim") {
+  stop("--emit-ref-alt requires .bim variants (plink 1.9 --keep-allele-order run)")
+}
 
 # --- Load the square LD matrix --------------------------------------------
 # plink2 writes the matrix as tab-separated floats, one variant per row.
@@ -117,6 +126,11 @@ if (ext %in% c("pvar", "vcor")) {
     A2 = as.character(bim[[6]]),
     stringsAsFactors = FALSE
   )
+  if (emit_ref_alt == "true") {
+    # D-06: under --keep-allele-order plink signs r on A1 dosage, so ALT := A1.
+    variants$REF <- variants$A2
+    variants$ALT <- variants$A1
+  }
 } else {
   stop(sprintf("Unrecognized variant file extension '%s' for %s", ext, opt$variants))
 }
@@ -136,6 +150,7 @@ ld_obj <- list(
   region_id = opt$region_id,
   ancestry = if (is.null(opt$ancestry)) "AFR" else opt$ancestry
 )
+if (emit_ref_alt == "true") attr(ld_obj, "ref_alt_source") <- "bim_A2_A1_keep_allele_order"
 
 dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
 saveRDS(ld_obj, opt$output)
