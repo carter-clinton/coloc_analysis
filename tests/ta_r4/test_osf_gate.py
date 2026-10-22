@@ -386,3 +386,76 @@ def test_constants():
     assert g.SENTINEL_REL == ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/OSF-R4-POSTED.json"
     assert g.RECEIPT_DIR_REL == "data/r4/gate"
     assert g.OSF_NODE == "az52u"
+
+
+# --- Snakefile.ta_r4 gate dry-runs on a sentinel-free fixture repo (B3) ---------------------------
+
+import sys  # noqa: E402
+
+from .fixtures.make_fixture_repo import git as fx_git, make_fixture_repo  # noqa: E402
+
+SMK = str(Path(sys.executable).parent / "snakemake")
+
+
+def _dry_run(repo, overlay, target):
+    """Returns (rc, output). Snakemake 7.32.4 logs to stdout under -n, so output is stdout + stderr."""
+    cfg = ["config/pipeline.yaml", "config/ta_r4/overlay_base.yaml", f"config/ta_r4/overlay_{overlay}.yaml"]
+    r = subprocess.run([SMK, target, "-s", str(repo / "Snakefile.ta_r4"), "-d", str(repo), "-n",
+                        "--configfile", *cfg], cwd=repo, capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
+@pytest.fixture(scope="module")
+def fixture_repo(tmp_path_factory):
+    return make_fixture_repo(tmp_path_factory.mktemp("fx"))
+
+
+@pytest.mark.r4_heavy
+def test_fixture_has_no_sentinel(fixture_repo):
+    assert not (fixture_repo / g.SENTINEL_REL).exists()
+    assert not (fixture_repo / "data").exists()
+    assert (fixture_repo / "Snakefile.ta_r4").read_bytes() == (REPO_ROOT / "Snakefile.ta_r4").read_bytes()
+
+
+@pytest.mark.r4_heavy
+def test_fixture_production_dry_run_refuses(fixture_repo):
+    rc, out = _dry_run(fixture_repo, "A3_1kg", "r4_gate_probe")
+    assert rc != 0
+    assert "OsfGateError" in out and "sentinel absent" in out, out[-2000:]
+
+
+@pytest.mark.r4_heavy
+def test_fixture_repro_dry_run_passes(fixture_repo):
+    for target in ("r4_gate_probe_repro", "r4_gate_probe"):
+        rc, out = _dry_run(fixture_repo, "repro_routeC", target)
+        assert rc == 0, out[-2000:]
+
+
+@pytest.mark.r4_heavy
+def test_fixture_production_dry_run_passes_with_sentinel_and_receipt(tmp_path):
+    repo = make_fixture_repo(tmp_path)
+    (repo / AMEND_REL).parent.mkdir(parents=True, exist_ok=True)
+    (repo / AMEND_REL).write_text("# R4 amendment (fixture)\n")
+    fx_git(repo, "add", AMEND_REL)
+    fx_git(repo, "commit", "-q", "-m", "fixture amendment")
+    _write_sentinel(repo, posted_utc="2026-01-01T00:00:00Z")
+    rc, out = _dry_run(repo, "A3_1kg", "r4_gate_probe")
+    assert rc != 0 and "OsfGateError" in out and "no receipt" in out, out[-2000:]
+    verify_online(repo, fetch=_fake_fetch(repo))
+    rc, out = _dry_run(repo, "A3_1kg", "r4_gate_probe")
+    assert rc == 0, out[-2000:]
+    assert "r4_gate_probe" in out
+
+
+def test_real_repo_state():
+    """Conditional: never permanently RED. Absent/untracked sentinel -> CLI exit 1; tracked -> (a)-(g) pass."""
+    tracked = subprocess.run(["git", "ls-files", "--error-unmatch", "--", g.SENTINEL_REL], cwd=REPO_ROOT,
+                             capture_output=True).returncode == 0
+    if not tracked:
+        r = subprocess.run([sys.executable, "-m", "ta_r4.r4_osf_gate", "check", "--stage", "production"],
+                           cwd=REPO_ROOT / "src/python", capture_output=True, text=True)
+        assert r.returncode == 1
+        want = "sentinel absent" if not (REPO_ROOT / g.SENTINEL_REL).exists() else "sentinel untracked"
+        assert want in r.stderr and "OsfGateError" in r.stderr, r.stderr
+    else:
+        g._local_checks(REPO_ROOT, None)

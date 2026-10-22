@@ -1,0 +1,3 @@
+host	exec_host	utc	http_code	curl_exit	note
+submit_host	login01.hpc.ncsu.edu	2026-10-21T22:28:43Z	200	0	interactive curl, same command
+lsf_serial_job_404985	c017n03	2026-10-21T22:28:45Z	000	28	LSF serial queue; --max-time 20 timed out (no route to api.osf.io)

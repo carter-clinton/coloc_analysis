@@ -1,0 +1,10 @@
+# ta-r4 Snakemake LSF profile (copy of config/cluster_lsf/config.yaml; logs under data/r4).
+# Used only by bin/r4_fire.sh. bsub_wrapper.sh converts mem_mb to GB and sets the queue wall time.
+cluster: "config/bsub_wrapper.sh -q {cluster.queue} -n {cluster.threads} -R 'rusage[mem={cluster.mem_mb}]' -o data/r4/logs/lsf/%J.{rule}.out -e data/r4/logs/lsf/%J.{rule}.err"
+cluster-config: config/ta_r4/cluster_lsf/cluster_config.yaml
+jobs: 200
+latency-wait: 120
+use-conda: true
+conda-frontend: conda
+rerun-incomplete: true
+keep-going: true

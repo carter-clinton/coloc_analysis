@@ -1,0 +1,77 @@
+"""Standalone ta-r4 workflow. Run only via bin/r4_fire.sh <stage> <arm> <targets...>.
+
+The main Snakefile is never included, so the Track B DAG cannot change. Later plans add
+src/snakemake/rules/ta_r4_*.smk files (included in sorted order) and never edit this file.
+"""
+
+import csv
+import glob
+import sys
+from pathlib import Path
+
+from snakemake.exceptions import WorkflowError
+
+configfile: "config/pipeline.yaml"
+
+sys.path.insert(0, str(Path(workflow.basedir) / "src/python"))
+from ta_r4.arms import ARMS, arm_stage
+from ta_r4 import paths as r4paths
+from ta_r4.r4_osf_gate import SENTINEL_REL, check_osf_gate
+
+_R4 = config.get("ta_r4") or {}
+if _R4.get("enabled") is not True or _R4.get("arm") not in ARMS:
+    raise WorkflowError("run via bin/r4_fire.sh (ta_r4.enabled and a known ta_r4.arm are required)")
+ARM = _R4["arm"]
+STAGE = arm_stage(ARM)
+
+# Regions: the Snakefile:51-61 safe-id rule.
+REGION_INFOS = []
+REGION_SAFE_TO_ID = {}
+REGION_METADATA = {}
+with open(Path(workflow.basedir) / r4paths.regions_csv(), newline="") as fh:
+    for row in csv.DictReader(fh):
+        orig = row["region_id"]
+        safe = orig.replace(".", "_").replace("/", "_")
+        suffix = 1
+        while safe in REGION_SAFE_TO_ID:
+            suffix += 1
+            safe = f"{safe}_{suffix}"
+        REGION_INFOS.append((orig, safe))
+        REGION_SAFE_TO_ID[safe] = orig
+        REGION_METADATA[safe] = {
+            "chr": row["chr"].replace("chr", "").replace("CHR", ""),
+            "start": int(float(row["start"])),
+            "end": int(float(row["end"])),
+            "ancestry": row["ancestry"],
+            "source": row["source"],
+        }
+
+with open(Path(workflow.basedir) / "config/ta_r4/pair_manifest.tsv", newline="") as fh:
+    PAIR_ROWS = list(csv.DictReader(fh, delimiter="\t"))
+
+
+def gate_input(wildcards):
+    """Offline OSF gate at DAG time (memoized per process). Production rules take this as input."""
+    check_osf_gate(Path(workflow.basedir), STAGE)
+    return [SENTINEL_REL] if STAGE == "production" else []
+
+
+def repro_gate_input(wildcards):
+    if STAGE != "repro":
+        raise WorkflowError(f"r4_gate_probe_repro needs a repro arm; {ARM} is {STAGE}")
+    check_osf_gate(Path(workflow.basedir), "repro")
+    return []
+
+
+rule r4_gate_probe:
+    input: gate_input
+    output: touch(f"data/r4/tmp/gate_probe_{ARM}.ok")
+
+
+rule r4_gate_probe_repro:
+    input: repro_gate_input
+    output: touch(f"data/r4/tmp/gate_probe_repro_{ARM}.ok")
+
+
+for _smk in sorted(glob.glob(str(Path(workflow.basedir) / "src/snakemake/rules/ta_r4_*.smk"))):
+    include: _smk

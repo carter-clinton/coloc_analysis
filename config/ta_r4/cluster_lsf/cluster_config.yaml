@@ -1,0 +1,6 @@
+# ta-r4 LSF resources. serial = 1 slot; panel/fit rules with mem_mb >= 16000 stay on serial.
+# Never `standard` with < 8 threads; never `short`.
+__default__:
+  queue: "serial"
+  mem_mb: 8000
+  threads: 1
