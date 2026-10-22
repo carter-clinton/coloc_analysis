@@ -333,3 +333,36 @@ Chronological record of every action in this phase. Append-only.
   skips); 1729 + 38 = 1767, 1681 + 36 = 1717, 48 + 2 = 50; tests/m3 1299/1299, 0 changed. sparse_parent_benchmark.tsv
   restored. Frozen files (run_susie_rss.R, run_coloc_susie.R, Snakefile, pipeline.yaml, finemap.smk, envs/r_coloc.yml,
   Snakefile.ta_r4) 0-diff. Commits `99e05961` (T1), `c536547c` (T2), wave-close commit follows; fsck clean before.
+
+## 2026-10-22 — W1 executed (E-2 orientation: BMI alleles, panel REF/ALT, QTL-beta orientation)
+
+- **Unit 1 (D-18) RED → GREEN.** test_bmi_allele_restoration RED `5 failed, 5 errors` (`No module named
+  ta_r4.restore_bmi_alleles`); GREEN `10 passed`. Controls (each restored, `cmp` identical): flipped class removed →
+  class-count test RED (`{'exact': 2, ..._mismatch': 4}`) while `test_report_reconciles` stayed GREEN (the class test is
+  the discriminating one); tolerance forced to 0 → 5 RED; sha256 check disabled → the 2 refusal tests RED.
+- **Unit 1 real run** (`restore` 44 s): frozen bmi.EUR.tsv.bgz has **2,336,269** rows and the Yengo source
+  **2,327,244** (the plan's interfaces block had the two counts swapped). Report: n_frozen 2336269 = exact 2327244 +
+  flipped 0 + value_mismatch 0 + unjoined 9025 (awk: RECONCILED; equals `zcat | tail -n +2 | wc -l`). n_kept 2327244.
+  n_sign_uninformative 23896 (all frozen BETA "0.0"; kept as exact). n_ambiguous_source 0 (9 frozen duplicate keys,
+  byte-identical rows in both files). Raw cross-check (seed 20261021, 10000 kept rows): Tested_Allele == ALT
+  10000/10000 (rate 1.000000). **FINDING:** the 9,025 unjoined rows are absent from the Yengo M1 file and are ALL A/T
+  (3,844) or C/G (5,181) in the raw file, which has all 2,336,269 rows — they are dropped from R4, not restored.
+  Output sha256 2f87e771…b1b4 (.bgz) / 36d01d38…572a (.tbi); index -s1 -b2 -e2 -S1 (frozen .tbi parameters).
+  sumstats_r4_sha256.tsv 11 rows (9 inputs m1-verified + 2 outputs); `sha256sum -c` 11 OK.
+- **Unit 2 RED → GREEN.** test_plink_ld_to_rds_ref_alt RED `8 failed, 3 passed` (`long flag "emit-ref-alt" is
+  invalid`; the passes are the flag-absent identity and the plink property). GREEN `11 passed`, 0 skipped. Measured:
+  `--keep-allele-order` R[1,2] 0.5000000000 == cor(A1 dosages) 0.5000000000; SNP 2 A1/A2 swapped with recoded dosage
+  → -0.5000000000 == cor(d1, 2-d2); without `--keep-allele-order` → -0.5 (A1 major is re-coded). Sabotage
+  `ALT = A2` → 2 RED (label assertions; a global label swap leaves every pairwise LD sign unchanged); per-SNP
+  inconsistent ALT → known-answer correlation assertion RED; unconditional attr → 4 identity tests RED. My first swap
+  test was wrong (kept the .bed, so A1 dosage was unchanged); fixed to recode the dosage as the plan says.
+- **Unit 3 RED → GREEN.** test_qtl_orient RED `10 failed, 2 passed` (passes = flag-absent identity); GREEN 12 passed.
+  `join$orient` sabotage → only `test_transposed_qtl_is_negated` RED (PP.H4 0.7488 vs 0.7178); `qtl_orient: FALSE`
+  emitted off-flag → the 4 identity tests RED. Task verify (4 files) 141 passed.
+- **Wave close.** QUICK 287 passed / 39 deselected, 112.2 s wall (budget 120 s; slowest = test_qtl_orient e2e ~11 s
+  each). HEAVY 35 passed / 4 skipped (live gates), 6m59s. Freeze pins 39 passed. FULL 1800 ids / 1750 passed /
+  50 skipped / 0 failed (24m01s, junit data/r4/logs/full_W1.xml). Join vs full_W0d.xml: common 1767, removed 0,
+  changed 0, added 33 (bmi 10, plink 11, qtl_orient 12; all passed); 1767 + 33 = 1800, 1717 + 33 = 1750, 50 + 0 = 50;
+  tests/m3 1299/1299, phase1 38/38, phase2 137/137, 0 changed (D-15). sparse_parent_benchmark.tsv restored. Shared
+  conda cache after HEAVY: 2188 entries / f094b37d…9085 / 23348 MB / 0 archives (= W0d). Frozen files 0-diff.
+  Commits `fb0a5b5c` (T1), `4896e011` (T2), `e7224a91` (T3), wave-close commit follows; fsck clean before.

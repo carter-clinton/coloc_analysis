@@ -26,7 +26,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 + W0c + W0d DONE. NEXT = W1. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 + W0c + W0d + W1 DONE. NEXT = W2a. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- **W1 closed** (T1 `fb0a5b5c`, T2 `4896e011`, T3 `e7224a91`, plus the wave-close commit, pushed): E-2 fix in code,
+  all default-off. BMI REF/ALT restored to `data/r4/sumstats/bmi.EUR.r4_alleles.tsv.bgz` (2,336,269 frozen = 2,327,244
+  exact + 0 flipped + 0 mismatch + 9,025 unjoined; raw Tested_Allele == ALT 10000/10000). `plink_ld_to_rds.R
+  --emit-ref-alt` (plink sign known-answer 0.5 / -0.5) and `run_qtl_coloc.R --qtl-orient` (requires
+  --ld-allele-join true). FULL 1800/1750/50/0; vs W0d 0 removed, 0 changed, +33; m3/phase1/phase2 unchanged.
+- ⚠ **For Carter (W2c / W4a disclosure):** the 9,025 unjoined BMI rows are all A/T or C/G palindromes present in the
+  raw GIANT file but absent from the Yengo M1 file, so they are dropped from R4 BMI (not restored from raw).
 
 - **W0d closed** (T1 `99e05961`, T2 `c536547c`, plus the wave-close commit, pushed): one coloc script
   `run_coloc_pair_r4.R` (coloc_susie / labelled fallback_abf / A1 matched / A1 all-variants), priors only from
@@ -55,7 +63,7 @@ progress:
   public, 200). The gate fails closed on a non-public node, so the R4 amendment must be anonymously readable via
   the API before any production fire. This also bears on how public the existing az52u amendments are. Nothing was changed.
 - R4 condarc uses `channel_priority: flexible` (`envs/plink.yml` is unsatisfiable under strict; measured).
-- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W1 (one executor per plan).
+- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W2a (one executor per plan).
   First Carter checkpoint: W2c.
 
 ## 2026-10-21 18:45 EDT — 🧭 **SESSION CLOSE (Carter relocating). TRACK A ta-r4 IS EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY AFTER TASK 2 OF 4. NOTHING RUNNING.** (SUPERSEDED by the 2026-10-22 block above)
@@ -108,7 +116,9 @@ progress:
   **W0c DONE 2026-10-22** (`dbc2c19d`/`fef3589f`): D-13 validator + receipts, r4_run_finemap, frozen-script
   fixture e2e, matched variant-set gates; FULL 1729/1681/48/0, 0 removed/changed.
   **W0d DONE 2026-10-22** (`99e05961`/`c536547c`): run_coloc_pair_r4.R + r4_coloc_pair/r4_coloc_A1, toy
-  `--use-conda` e2e; FULL 1767/1717/50/0, 0 removed/changed. ⚠ panel-rsid name-override decision before W4. Next: W1.
+  `--use-conda` e2e; FULL 1767/1717/50/0, 0 removed/changed. ⚠ panel-rsid name-override decision before W4.
+  **W1 DONE 2026-10-22** (`fb0a5b5c`/`4896e011`/`e7224a91`): BMI allele restoration, --emit-ref-alt, --qtl-orient;
+  FULL 1800/1750/50/0, 0 removed/changed. ⚠ 9,025 palindromic BMI rows dropped (disclose). Next: W2a.
 - **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
   is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
 - ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR
@@ -2383,7 +2393,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-10-22 (latest) - ta-r4 W0b2 complete (Task 3 finished + wave-close; FULL 1660/1614/46/0; OSF anonymous-read 401 on az52u flagged for W4b). Next: W0c.
+Last activity: 2026-10-22 (latest) - ta-r4 W1 complete (E-2 fix, default-off; FULL 1800/1750/50/0, 0 changed vs W0d). Next: W2a.
+Last activity (prior): 2026-10-22 - ta-r4 W0b2 complete (Task 3 finished + wave-close; FULL 1660/1614/46/0; OSF anonymous-read 401 on az52u flagged for W4b). Next: W0c.
 Last activity (prior): 2026-10-21 18:45 EDT - SESSION CLOSE mid ta-r4 W0b2 (Track A revived: 25-plan re-analysis phase executing; W0a+W0b1 done; nothing running).
 Last activity (PRIOR): 2026-09-19 00:20 EDT - ⭐ THE STAGE C NaN POSTURE IS DECIDED (DEC-2026-09-18-stage-c-nan-posture-adopted: A's behaviour = the pre-registered T1 contract executing, with C's stop reserved for an UNCLASSIFIED raise; B/F-as-drafted/E rejected; NO OSF amendment) AND THE TWO HARD PRE-FIRE CODE CHANGES LANDED (quick-260918-qz0 records 1647840/b6076b2; quick-260918-qz5 code 9 commits b1d3ff3..0206a71). X1 now true in code (the reviewer's own prescribed fix was insufficient — the frozen reader raises upstream of the upload block); raised_nan: is its own verifier class; stage-c is stateful via --prev-report; the closeout enforcer is registered. Suite re-run by the orchestrator: 1299/1265/34/0 from 1262/1229/33/0. ⚠ origin is 12 commits behind — PUSH before any AoU clone fire. NEXT: Carter runs VM card 2 (per-region n_var census + COST-1 on the real largest square-feasible region), which also decides the deferred LOW-1 classifier.
 Last activity (prior): 2026-09-18 15:10 EDT - SESSION CLOSE via /close-session. Nothing running; VM STOPPED; origin == local at 3c570f0. The Finding 2 review loop is CLOSED with the reviewer (his closure banked + recorded; both objections withdrawn; Finding 1 is the result and gained one scope sentence; disclosure still DRAFTED — NOT POSTED). Stage C is UNDECIDED and blocks on ONE courier in Carter's hands (v2 at 57a3105 + the cover note); he has not confirmed sending it. COST-1 still unmeasured — 00071 deferred at n_var 169,803 > 120,000, so Card 2 re-picks the target. Resume = this file's 2026-09-18 ★ RESUME HERE ★ block + .planning/HANDOFF.json.
