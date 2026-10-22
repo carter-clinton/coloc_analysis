@@ -201,3 +201,73 @@ def pair_session_root(tmp_path_factory, with_fits=True):
                 fit_arm(root, "A3_1kg", t, r.region_id)
     done.touch()
     return root
+
+
+# --- the REQ-SNAKEMAKE-CI toy workflow (W0d Task 2) ----------------------------------------------------------
+
+R4_CONDA_PREFIX = "/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4"
+CONDA_BIN = "/rs1/researchers/c/ckclinto/miniconda3/condabin"
+TOY_REGIONS = tuple(Region(f"FIX_{k}", str(k), 1000, 20261021 + k, b_null=(k == 3)) for k in (1, 2, 3))
+TOY_ARMS = ("A3_1kg", "A2_identity")
+
+
+def _git(repo, *args):
+    r = subprocess.run(["git", *GIT_ID, *args], cwd=repo, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"git {args}: {r.stderr}")
+    return r.stdout.strip()
+
+
+def build_toy_workflow(tmp_path):
+    """Fixture repo: 3 regions x 1 pair, A3 panels + A2 payloads, sentinel committed, receipt via verify_online."""
+    from ta_r4.r4_osf_gate import SENTINEL_REL, verify_online
+
+    from .make_fixture_repo import make_fixture_repo
+    repo = make_fixture_repo(tmp_path)
+    link_repo_files(repo, TOY_ARMS)
+    build_pair_regions(repo, TOY_REGIONS, fit_arm="A3_1kg", identity_arm="A2_identity")
+    _write_tsv(repo / "config/ta_r4/pair_manifest.tsv", PAIR_HDR, [pair_row(r.region_id) for r in TOY_REGIONS])
+    write_trait_manifest(repo)
+    (repo / AMEND_REL).parent.mkdir(parents=True, exist_ok=True)
+    (repo / AMEND_REL).write_text("# R4 amendment (fixture)\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "toy inputs + fixture amendment")
+    doc = {"osf_url": "https://osf.io/az52u/files/fixture", "osf_file_guid": "fxgid",
+           "posted_utc": "2026-01-01T00:00:00Z", "amendment_path": AMEND_REL,
+           "amendment_sha256": hashlib.sha256((repo / AMEND_REL).read_bytes()).hexdigest(),
+           "head_sha": _git(repo, "rev-parse", "HEAD")}
+    (repo / SENTINEL_REL).parent.mkdir(parents=True, exist_ok=True)
+    (repo / SENTINEL_REL).write_text(json.dumps(doc, indent=1) + "\n")
+    _git(repo, "add", SENTINEL_REL)
+    _git(repo, "commit", "-q", "-m", "fixture sentinel")
+
+    def fake_fetch(guid):
+        raw = json.dumps({"data": {"id": guid, "attributes": {"extra": {"hashes": {"sha256": doc["amendment_sha256"]}}}}})
+        return {"sha256": doc["amendment_sha256"], "md5": "0" * 32, "date_created": doc["posted_utc"],
+                "target_node": "az52u", "raw": raw.encode()}
+
+    verify_online(repo, fetch=fake_fetch)
+    return repo
+
+
+def toy_targets(arm):
+    """Fits (2 traits x 3 regions), coloc rows x p12 keys, and A1 matched + allvars in the A3_1kg invocation."""
+    fits = [paths.fit_json(arm, t, ANC, r.region_id) for r in TOY_REGIONS for t in (TRAIT_A, TRAIT_B)]
+    modes = ["susie"] + (["A1_matched", "A1_allvars"] if arm in commands.A1_FIT_ARMS else [])
+    rows = [pair_row(r.region_id) for r in TOY_REGIONS]
+    return fits + [commands.coloc_output(arm, row, k, m) for row in rows for k in commands.P12_KEYS for m in modes]
+
+
+def smk_env():
+    condarc = Path(R4_CONDA_PREFIX) / "condarc"
+    assert condarc.is_file(), f"{condarc} absent: run bin/r4_fire.sh --show-conda-pkgs-dirs once"
+    return dict(os.environ, CONDA_PKGS_DIRS=f"{R4_CONDA_PREFIX}/pkgs", HOME=f"{R4_CONDA_PREFIX}/home",
+                CONDARC=str(condarc), PATH=f"{CONDA_BIN}:{os.environ['PATH']}")
+
+
+def run_toy(repo, arm, targets, *extra, smk):
+    cfg = [repo / "config/pipeline.yaml", repo / "config/ta_r4/overlay_base.yaml",
+           repo / f"config/ta_r4/overlay_{arm}.yaml"]
+    cmd = [smk, "-s", repo / "Snakefile.ta_r4", "-d", repo, "--configfile", *cfg, "--use-conda",
+           "--conda-prefix", R4_CONDA_PREFIX, "--conda-frontend", "conda", "--cores", "2", *extra, *targets]
+    return run(cmd, repo, env=smk_env())
