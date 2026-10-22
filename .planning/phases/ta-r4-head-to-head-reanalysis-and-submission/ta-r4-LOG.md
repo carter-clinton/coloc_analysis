@@ -208,3 +208,40 @@ Chronological record of every action in this phase. Append-only.
   uncommitted and inventoried (sha256 prefixes) in HANDOFF.json `ta_r4.in_progress`.
   Measured by W0b2 before the stop: compute node c017n03 has no route to api.osf.io (curl exit 28);
   login01 returns 200.
+
+## 2026-10-22 — W0b2 resumed and closed (Task 3 finished, Task 4 wave-close)
+
+- **Resume.** T1 `9bb65c01` and T2 `ab77e97c` were already committed. Their tests were re-run: T1 28 passed;
+  T2 is inside the Task 3 run. The Task 3 WIP sha256 prefixes matched the hand-off. It was read line by line against
+  the spec and conformed, except for the 3 fixes below. The stopped executor's T1/T2 RED evidence had never been
+  written down; it was re-derived after the fact (modules moved aside → ImportError at collection; (o)-skip →
+  `test_o_receipt_head_sha` DID NOT RAISE + `test_env_vars_do_not_change_pass`, 2 failed / 46 passed).
+- **Task 3 RED → GREEN.** With the implementation moved to scratch: 9 failed / 55 passed / 3 errors. Restored on the
+  unmodified WIP: 67 passed. Six more negative controls (gate call removed; CLI blinded; base config;
+  crosswalk injection; forbidden path in a probe shell; ld_matrix_region_id name) all RED, each restored byte-identically.
+- **Fixes to the WIP.** (1) The R4 condarc now has `channel_priority: flexible`. `envs/plink.yml` (bioconda first)
+  is UNSATISFIABLE under strict with today's repodata (this is what stopped the previous solve; reproduced in
+  scratch: strict rc=1, flexible rc=0). (2) The profile has `conda-frontend: conda` (Snakemake 7.32.4 defaults to mamba
+  from condabin; isolation was measured for conda). (3) `bin/r4_fire.sh` runs `mkdir -p data/r4/logs/lsf`
+  (bsub_wrapper only creates logs/lsf).
+- **Env solve from scratch.** The stale `55c377a7…_.yaml`, `pkgs/`, `home/` and `condarc` were removed from the confirmed
+  R4 prefix. `--conda-create-envs-only` rc=0 (10m08s). `--cores 1 --profile ''` was accepted (localrules), 4/4 steps.
+  The three probe tools resolve inside the R4 env dirs. Lockfiles: plink 110 lines / qtl_processing 186 /
+  python_stats 252 / r_coloc_named 224, each with `dependencies:`. Shared `/rs1/.../conda_pkgs`: archives 0 → 0,
+  entries 2188 → 2188 (identical listing sha256), du 23348M → 23348M. R4 pkgs: 809 entries / 403 archives.
+  `R4_PLINK=/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4/55c377a7e8fce799d92381bcc5138d7f_/bin/plink`
+  (PLINK v1.90b6.21).
+- **Network probe (informational).** The LSF row was verified against `data/r4/logs/net_probe.404985.{out,err}` (c017n03,
+  000, curl exit 28, 20004 ms timeout). The submit host was re-measured today: login03 → 200. The gate design does not depend on it.
+- ⚠ **OSF anonymous-read finding (NOT fixed; for Carter / W4b).** `fetch_osf_file('k8w7n')` → HTTP 401.
+  `curl` `/v2/files/k8w7n/`, `/v2/nodes/az52u/` and the redirect target `/v2/files/69ed77ef…/` → 401 "Authentication
+  credentials were not provided". `/v2/registrations/pvb5j/` → 200, `public: True`. So the k8w7n known-answer
+  dict could not be recorded. verify_online is anonymous by design, so it would fail closed (i) on any non-public
+  node. W4b must confirm an anonymous API read returns 200 for the posted R4 file before the sentinel is written.
+- **Measured.** Snakemake 7.32.4 prints the DAG-time OsfGateError on stdout (stderr empty). Tests assert on both streams.
+- **Wave close.** QUICK 180 passed / 6 deselected, 24.9 s wall. HEAVY 6 passed (204 s). Freeze pins 39 passed.
+  FULL 1660 ids / 1614 passed / 46 skipped / 0 failed (19m09s). Join vs tests_baseline_W0a.tsv (junit XML): common
+  1474, removed 0, added 186 (all tests/ta_r4, passed), changed 0; tests/m3 1299/1299, 0 changed;
+  1474 + 186 = 1660, 1428 + 186 = 1614. The main Snakefile / pipeline.yaml / frozen script / finemap.smk are unchanged.
+  PLAN-INDEX §A now records the 10 NC_NULL tiles, the full conda-isolation recipe + flexible priority, and R4_PLINK.
+  ARMS = 13 = §A (no change). Commits: `2d4da61e` (T3) + the wave-close commits; fsck clean before/after.

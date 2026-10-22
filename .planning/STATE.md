@@ -26,7 +26,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-21 18:45 EDT — 🧭 **SESSION CLOSE (Carter relocating). TRACK A ta-r4 IS EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY AFTER TASK 2 OF 4. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 DONE. NEXT = W0c. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- **W0b2 closed** (T1 `9bb65c0`, T2 `ab77e97`, T3 `2d4da61e`, plus the wave-close commits, pushed): 346-row static pair
+  manifest (320 admissible; NC sets cosmetic/blood_group/GWAS-null), OSF gate (one anonymous API call per
+  production fire on the submit host; offline memoized in-job check against a per-HEAD receipt), `Snakefile.ta_r4`
+  plus `bin/r4_fire.sh`, and job envs solved fresh into `/rs1/.../smk_job_envs/ta_r4` with committed lockfiles (shared
+  conda cache untouched). FULL 1660/1614/46/0, 0 removed/changed vs the W0a baseline.
+- ⚠ **For Carter / W4b:** the OSF API returns **401 to anonymous reads of node az52u and file k8w7n** (pvb5j is
+  public, 200). The gate fails closed on a non-public node, so the R4 amendment must be anonymously readable via
+  the API before any production fire. This also bears on how public the existing az52u amendments are. Nothing was changed.
+- R4 condarc uses `channel_priority: flexible` (`envs/plink.yml` is unsatisfiable under strict; measured).
+- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W0c (one executor per plan).
+  First Carter checkpoint: W2c.
+
+## 2026-10-21 18:45 EDT — 🧭 **SESSION CLOSE (Carter relocating). TRACK A ta-r4 IS EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY AFTER TASK 2 OF 4. NOTHING RUNNING.** (SUPERSEDED by the 2026-10-22 block above)
 
 - **Done:** W0a (`99d2c9e`: /rs1 storage, survivors sha256, `ta-r4-pre-baseline` tag, env restored,
   test baseline 1474/1428/46/0) and W0b1 (`47c9e9b`: 13-arm table, paths, overlays, priors,
@@ -70,6 +84,9 @@ progress:
   the `ta_r4` package-name clash and the CONDARC-alone isolation failure (see `ta-r4-LOG.md`).
   **W0b1 DONE 2026-10-21** (`714df7a5`/`c6e9297f`): ARMS (13 arms), ta_r4.paths, 14 overlays, sign-off
   helper + sentinels; import clash fixed; FULL 1565/1519/46/0, 0 removed/changed. Next: W0b2.
+  **W0b2 DONE 2026-10-22** (`9bb65c01`/`ab77e97c`/`2d4da61e`): regions_r4 (31), pair manifest 346/320,
+  OSF gate, Snakefile.ta_r4 + r4_fire.sh + LSF profile, env lockfiles; FULL 1660/1614/46/0, 0 removed/changed.
+  ⚠ OSF API 401 on az52u/k8w7n (anonymous) — W4b hand-off. Next: W0c.
 - **Track B (unchanged):** the 2026-09-19 block below still governs — COST-1 (Carter, VM card 2)
   is the last measurement before the 276-region fire; tail disclosure DRAFTED — NOT POSTED.
 - ⚠ Coupling: m3-04c BLOCKER-B — building `EUR_ukbb_pub` for Track B silently moves Track A EUR
@@ -2344,7 +2361,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-10-21 18:45 EDT (latest) - SESSION CLOSE mid ta-r4 W0b2 (Track A revived: 25-plan re-analysis phase executing; W0a+W0b1 done; nothing running).
+Last activity: 2026-10-22 (latest) - ta-r4 W0b2 complete (Task 3 finished + wave-close; FULL 1660/1614/46/0; OSF anonymous-read 401 on az52u flagged for W4b). Next: W0c.
+Last activity (prior): 2026-10-21 18:45 EDT - SESSION CLOSE mid ta-r4 W0b2 (Track A revived: 25-plan re-analysis phase executing; W0a+W0b1 done; nothing running).
 Last activity (PRIOR): 2026-09-19 00:20 EDT - ⭐ THE STAGE C NaN POSTURE IS DECIDED (DEC-2026-09-18-stage-c-nan-posture-adopted: A's behaviour = the pre-registered T1 contract executing, with C's stop reserved for an UNCLASSIFIED raise; B/F-as-drafted/E rejected; NO OSF amendment) AND THE TWO HARD PRE-FIRE CODE CHANGES LANDED (quick-260918-qz0 records 1647840/b6076b2; quick-260918-qz5 code 9 commits b1d3ff3..0206a71). X1 now true in code (the reviewer's own prescribed fix was insufficient — the frozen reader raises upstream of the upload block); raised_nan: is its own verifier class; stage-c is stateful via --prev-report; the closeout enforcer is registered. Suite re-run by the orchestrator: 1299/1265/34/0 from 1262/1229/33/0. ⚠ origin is 12 commits behind — PUSH before any AoU clone fire. NEXT: Carter runs VM card 2 (per-region n_var census + COST-1 on the real largest square-feasible region), which also decides the deferred LOW-1 classifier.
 Last activity (prior): 2026-09-18 15:10 EDT - SESSION CLOSE via /close-session. Nothing running; VM STOPPED; origin == local at 3c570f0. The Finding 2 review loop is CLOSED with the reviewer (his closure banked + recorded; both objections withdrawn; Finding 1 is the result and gained one scope sentence; disclosure still DRAFTED — NOT POSTED). Stage C is UNDECIDED and blocks on ONE courier in Carter's hands (v2 at 57a3105 + the cover note); he has not confirmed sending it. COST-1 still unmeasured — 00071 deferred at n_var 169,803 > 120,000, so Card 2 re-picks the target. Resume = this file's 2026-09-18 ★ RESUME HERE ★ block + .planning/HANDOFF.json.
 Last activity (prior): 2026-09-18 15:05 EDT - Completed quick task 260917-pff: the reviewer CLOSED the Finding 2 exchange (all seven points accepted; he WITHDREW both objections — his pooled-deff 36% share and his post-hoc window selector, which he named as his own threshold objection applied to the selector; nothing further from him until a new measurement or a posting decision). Banked as received (NOT byte-verified) + recorded in a new (10e) paragraph; Finding 1 gained ONE scope sentence in his accepted formulation with the denominator attached (21 of the 276-region manifest, 7.6%; says nothing about the 255 unscanned regions or any predicate but the posted one) while its counts stay byte-frozen; a planner-found contradiction was reconciled (the old "Finding 1's text is unchanged" line); both courier headers now say SENT 2026-09-17 with the epistemic qualifier IN the status sentence; and the measurement courier's text AS SENT is banked (52d3586/d00beb9; guard 396/396 over 126 ids, 113 controls with 126/126 coverage, RED 333/383 on the unedited files, three existing enforcers byte-identical, osf lines 1-1077 frozen). ⚠ A provenance BLOCKER was caught at plan-check and fixed by MEASUREMENT: the header had claimed his "0.02 mismatch" phrasing came from an earlier exchange; it is now recorded as UNATTRIBUTED, because the figure was reachable from two files committed before his reply (this draft's own body at c93e97b 2026-09-16, and the pre-correction ledger). NEXT: Carter couriers v2 + the Stage C cover note (the ONLY thing blocking Stage C); VM card 2 (per-region n_var census then COST-1 on the largest square-feasible region).

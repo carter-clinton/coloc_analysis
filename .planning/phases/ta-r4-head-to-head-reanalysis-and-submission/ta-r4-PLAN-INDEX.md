@@ -94,6 +94,9 @@ PY=/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11
 RSCRIPT=/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript   # R 4.4.2, susieR 0.14.2, coloc 5.2.3
 R4_CONDA_PREFIX=/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4
 R4_CONDARC=$R4_CONDA_PREFIX/condarc     # pkgs_dirs: [$R4_CONDA_PREFIX/pkgs]  (isolates `conda clean --tarballs`)
+# bin/r4_fire.sh also exports CONDA_PKGS_DIRS=$R4_CONDA_PREFIX/pkgs HOME=$R4_CONDA_PREFIX/home (CONDARC alone does not isolate; W0a);
+# channel_priority flexible (envs/plink.yml is unsatisfiable under strict; W0b2); conda-frontend conda
+R4_PLINK=$R4_CONDA_PREFIX/55c377a7e8fce799d92381bcc5138d7f_/bin/plink   # PLINK v1.90b6.21 (W0b2 env solve)
 QUICK="$PY -m pytest tests/ta_r4 -x -q -m 'not r4_heavy'"          # per task; must stay < 120 s
 HEAVY="$PY -m pytest tests/ta_r4 -q -m r4_heavy -rs"               # per wave: live gates, Snakemake runs, frozen-script e2e
 FULL="$PY -m pytest tests/ta_r4 tests/m3 tests/phase1 tests/phase2 -q"
@@ -119,7 +122,9 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
   CXADR_F2RL1_6p21, BMI_5q13_3 (safe id of `BMI_5q13.3`), 9p21_CDKN2A, APOE_19q13, SLC2A9_urate.
   **Not admissible (D-24):** HLA_6p21 (UKB exploratory fits only; no coloc row), BMI_Xq24 (chrX; no panel).
 - **Negative-control regions (19, EUR):** cosmetic 5 (NC_OCA2_HERC2, NC_SLC24A5, NC_MC1R, NC_TYR, NC_IRF4),
-  blood_group 4 (NC_ABO, NC_RH, NC_FUT1_FUT2, NC_KEL), gwas_null 10 (NC_NULL_01..NC_NULL_10, selected in W0b2).
+  blood_group 4 (NC_ABO, NC_RH, NC_FUT1_FUT2, NC_KEL), gwas_null 10 (NC_NULL_01..NC_NULL_10, selected in W0b2;
+  GRCh37 250-kb tiles 1:99500001, 1:218750001, 2:190000001, 3:30750001, 3:178250001, 6:81500001,
+  11:21500001, 13:38500001, 13:71000001, 14:49000001 (start; end = start + 249999)).
   `regions_r4.csv` = 12 + 19 = 31 rows; `pair_manifest.tsv` = 346 rows, 320 admissible (290 EUR, 30 AFR).
 - **Confirmatory analysis (pre-lock, W3d; orchestrator default under the rigor rule, Carter may change it at W4a-T3):**
   rows = primary curated EUR admissible rows (10 regions × 10 pairs = 100), p12_primary, A1 varset
