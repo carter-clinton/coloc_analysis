@@ -321,20 +321,42 @@ def test_live_gate_dirs_are_result_dirs():
     assert not any("/repro_" in d for d in dirs)
 
 
-@pytest.mark.r4_heavy
-def test_live_r4_fits_have_no_identity():
+def live_gate_problems(root):
+    """None while no production fit dir exists; else every problem found (empty list = pass)."""
     from ta_r4.validate_r4_fits import production_fit_dirs, validate_file
-    existing = [d for d in production_fit_dirs() if (REPO / d).is_dir()]
+    existing = [d for d in production_fit_dirs() if (root / d).is_dir()]
     if not existing:
-        pytest.skip("no production fits yet (W5a enables)")
+        return None
     problems = []
     for d in existing:
         arm = Path(d).parts[3]
-        fits = sorted(p for p in (REPO / d).glob("*.json") if not p.name.endswith(".ld_receipt.json"))
+        fits = sorted(p for p in (root / d).glob("*.json") if not p.name.endswith(".ld_receipt.json"))
         if not fits:
             problems.append(f"{d}: existing arm dir with 0 fit JSONs")
             continue
         for f in fits:
-            for v in validate_file(f, arm, root=REPO)[0]:
-                problems.append(f"{f.relative_to(REPO)}: {v}")
+            for v in validate_file(f, arm, root=root)[0]:
+                problems.append(f"{f.relative_to(root)}: {v}")
+    return problems
+
+
+@pytest.mark.r4_heavy
+def test_live_r4_fits_have_no_identity():
+    problems = live_gate_problems(REPO)
+    if problems is None:
+        pytest.skip("no production fits yet (W5a enables)")
     assert problems == []
+
+
+def test_live_gate_controls(tmp_path):
+    """The live gate itself can fail: an empty arm dir, and an identity fit, are both reported."""
+    assert live_gate_problems(tmp_path) is None
+    d = tmp_path / paths.result_dirs("fits")[0]
+    d.mkdir(parents=True)
+    assert live_gate_problems(tmp_path) == [f"{paths.result_dirs('fits')[0]}: existing arm dir with 0 fit JSONs"]
+    arm = Path(paths.result_dirs("fits")[0]).parts[3]
+    decl = paths.panel_path(arm, REGION, ARMS[arm]["ancestry"])
+    (d / f"t2d.EUR.{REGION}.json").write_text(json.dumps(_fit(decl, ld_matrix="identity")))
+    (d / f"t2d.EUR.{REGION}.ld_receipt.json").write_text(json.dumps(_receipt(decl, arm)))
+    problems = live_gate_problems(tmp_path)
+    assert any("LD_MATRIX_IDENTITY" in p for p in problems), problems
