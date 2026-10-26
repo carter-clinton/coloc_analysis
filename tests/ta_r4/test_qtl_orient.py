@@ -141,6 +141,7 @@ def test_counters_reconcile_to_bridged_rows(fx_t, tmp_path):
     assert d["n_snps_overlap"] == c["exact"] + c["flipped"]
 
 
+@pytest.mark.r4_heavy
 def test_transposed_qtl_is_negated(fx_t, fx_e, tmp_path):
     """The transposed fixture writes the swapped rows with G/A alleles AND negated betas. Oriented to the panel it
     must give exactly the exact fixture's coloc result; un-oriented it must not (the negation matters here)."""
@@ -154,6 +155,7 @@ def test_transposed_qtl_is_negated(fx_t, fx_e, tmp_path):
     assert (t0["summary"], t0["all_pairs"]) != (e0["summary"], e0["all_pairs"])
 
 
+@pytest.mark.r4_heavy
 @pytest.mark.parametrize("orient", [None, "false"])
 @pytest.mark.parametrize("allele_join", [None, "true"])
 def test_flag_off_json_equal_to_pre_change(fx_t, old_script, tmp_path, orient, allele_join):

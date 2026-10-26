@@ -26,7 +26,22 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 + W0c + W0d + W1 DONE. NEXT = W2a. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-26 — **TRACK A ta-r4: W0a … W1 + W2a DONE. NEXT = W2b. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- **W2a closed** (T1 `f19d6398`, T2 `8a5c75e2`, T3 `b266e1d8`, plus the wave-close commit, pushed): 1000G EUR n = 489
+  (measured). On /rs1 there are legacy_repro/EUR 10, EUR_1kg_r4 29, EUR_identity_r4 29, k2d 24 and catalogs 43. All are
+  manifested and chmod a-w, and they were rebuilt from scratch byte-identically. The live known-answer gate passed 181/181,
+  0 findings. The SH2B3 legacy panel has n_var 895 and the same spectrum as the W1.5 audit. Legacy == R4 matrices
+  including sign (LDSC A1 = minor). FULL 1819/1769/50/0; vs W1: 0 removed, 0 changed, +19.
+- ⚠ **For the pre-W4 SNP_ID decision (measured, not chosen):** the 1000G panels are 100% rsid (86,035 R4 rows). In the
+  admissible regions, hypertension/stroke/t2d sumstats (EUR, plus stroke/t2d AFR) are 100% chr:pos, so those fits will
+  take the override shape that the R4 coloc script refuses.
+- ⚠ **For Carter at W2c:** hypertension.EUR is Evangelou SBP (continuous). Its sdY is UNRESOLVED in config/ta_r4/trait_manifest.tsv.
+- LSF pre-script failures ("Cannot open your job file") leave Snakemake waiting forever (no .jobfailed). Watch the
+  listing, and stop and re-fire if the steps stall with no LSF jobs alive.
+- **Next:** `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → W2b.
+
+## 2026-10-22 — **TRACK A ta-r4: W0a + W0b1 + W0b2 + W0c + W0d + W1 DONE. NEXT = W2a. NOTHING RUNNING.** (SUPERSEDED by the 2026-10-26 block above)
 
 - **W1 closed** (T1 `fb0a5b5c`, T2 `4896e011`, T3 `e7224a91`, plus the wave-close commit, pushed): E-2 fix in code,
   all default-off. BMI REF/ALT restored to `data/r4/sumstats/bmi.EUR.r4_alleles.tsv.bgz` (2,336,269 frozen = 2,327,244

@@ -366,3 +366,34 @@ Chronological record of every action in this phase. Append-only.
   tests/m3 1299/1299, phase1 38/38, phase2 137/137, 0 changed (D-15). sparse_parent_benchmark.tsv restored. Shared
   conda cache after HEAVY: 2188 entries / f094b37d…9085 / 23348 MB / 0 archives (= W0d). Frozen files 0-diff.
   Commits `fb0a5b5c` (T1), `4896e011` (T2), `e7224a91` (T3), wave-close commit follows; fsck clean before.
+
+## 2026-10-26 — W2a executed (EUR 1000G legacy + R4 panels, A2/k2d payloads, catalogs, trait manifest)
+
+- **Task 1** (`f19d6398`, previous executor, 2026-10-23): Zenodo 10515792 tgz md5 `a7773ab485827b533cb300c76356d76b`, size
+  288277344 (re-measured today); 66 members, single top dir; 22 `.fam` sha256 distinct = 1; **EUR n_samples = 489** (D-25;
+  not 503). RED re-derived today (module aside → `1 error`), HTML-magic sabotage → `test_html_body_with_200_fails_magic` RED.
+- **Resume.** Earlier fire: 130/136 then a killed resume fire; stale lock (5 W2a outputs, no live process/job) → unlocked via
+  r4_fire.sh. All earlier W2a outputs DELETED and rebuilt; rebuild byte-identical (135/135 md5). Fire 1 hung at 124/136 on 7
+  LSF jobs that exited before their script ran ("Cannot open your job file", c018n02/c014n04/c002n01; no .jobfailed marker)
+  → stopped, re-fired, 12/12; final dry-run "Nothing to be done".
+- **Counts.** EUR_1kg_r4 29, EUR_identity_r4 29, legacy_repro/EUR 10, k2d 24 (EUR 12 + AFR 12 = 24 distinct pairs in the k2d
+  summary), catalogs 43 (legacy 12 + r4 31); 29+29+10+24+43 = 135 files. data/processed/ld_reference absent → 0 Track B writes.
+- **SNP_ID format (pre-W4 decision input; nothing chosen).** Panels: R4 86,035/86,035 rsid, legacy 68,214/68,214 rsid, 0 chr:pos.
+  Sumstats in the 10 admissible regions: hypertension/stroke/t2d EUR and stroke/t2d AFR 100% chr:pos; bmi 100% rsid; asthma
+  EUR/AFR rsid or empty (32,491 / 23,471 empty). So hypertension/stroke/t2d fits will take the override shape.
+- **Orientation.** A1 identical legacy vs R4 for all 68,214 variants (LDSC .bim A1 = minor): R4 == legacy matrices including sign.
+- **Manifests** legacy 10 / R4 29 / identity 29 / k2d 24; max asym 0, max |diag-1| 0, finite; identity_exact 29/29; chmod a-w
+  92 .rds. **Live gate** 8 passed, 0 skips; 181 checks = md5 92 + n_var 10 + |R| 10 + identity 29 + has_ref_alt 39 + sh2b3 1,
+  all PASS, **0 FINDING rows**. **SH2B3 legacy n_var 895**; spectrum 210 neg / 81 < -1e-6 / rank 451 / cond 1.466e+07 = W1.5 audit.
+  Fake-root controls: legacy→R4 swap → has_ref_alt FAIL; identity wrong region → identity FAIL; legacy wrong region →
+  n_var + |R| FAIL; n_var 894 → FINDING (not FAIL). Unit sabotage (symmetry, duplicate, identity, md5) each RED.
+- **Trait manifest** 8 rows. ⚠ **UNRESOLVED for W2c:** hypertension.EUR sdY. The file is Evangelou 2018 SBP (continuous, mmHg;
+  sha256 = the sbp inventory entry), type quant; sdY.est median 10.72 (record only). BMI quant sdY 1 (inverse-rank-normal;
+  sdY.est 1.012). asthma/stroke/t2d cc. stroke.EUR = METASTROKE N 75000 constant; stroke.AFR / stroke.EUR sha256 ≠ GIGASTROKE
+  inventory entries; t2d.AFR N = Neff.
+- **Wave close.** QUICK 304 passed in 125.7 s (> 120 s) → 5 test_qtl_orient e2e marked r4_heavy → 299 passed / 46 deselected,
+  73.1 s. HEAVY 42 passed / 4 skipped (10m39s). Pins 39 passed. FULL 1819 ids / 1769 passed / 50 skipped / 0 failed
+  (27m49s, `full_W2a.xml`). Join vs full_W1.xml: common 1800, removed 0, changed 0, added 19 (fetch 11, panels 8; passed);
+  1800+19 = 1819, 1750+19 = 1769; tests/m3 1299/1299, phase1 38, phase2 137, 0 changed. sparse_parent_benchmark.tsv restored.
+  Shared conda cache 2188 / f094b37d…9085 / 0 archives before and after (23348 MB before; 0 entries newer). Frozen files 0-diff.
+  Commits `8a5c75e2` (T2), `b266e1d8` (T3), wave-close commit follows; fsck clean before/after each.
