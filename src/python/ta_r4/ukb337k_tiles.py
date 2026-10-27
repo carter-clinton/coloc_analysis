@@ -199,16 +199,31 @@ def load_tile(npz_path, gz_path, keep=None):
     return R, v.reset_index(drop=True)
 
 
-def assemble_region(tile_list, chrom, start, end, keep_positions=None):
-    """One R over the union of the tiles' variants in [start, end] (optionally only keep_positions). Each pair's r
-    comes from a tile containing both; overlapping tiles must agree within OVERLAP_TOL; pairs in no common tile = 0."""
+def _allele_keys(v):
+    return [(int(p), frozenset((a, b))) for p, a, b in zip(v["POS"], v["REF"], v["ALT"])]
+
+
+def assemble_region(tile_list, chrom, start, end, keep_positions=None, allowed=None, return_filled=False):
+    """One R over the union of the tiles' variants in [start, end] (optionally only keep_positions, and only
+    (POS, {REF, ALT}) keys in `allowed`). Each pair's r comes from a tile containing both; overlapping tiles must
+    agree within OVERLAP_TOL; pairs in no common tile = 0. Variants at an allowed position but with another allele
+    pair are counted in n_var_dropped_allele_mismatch. return_filled adds the boolean mask of tile-measured pairs."""
+    if allowed is not None:
+        allowed = set(allowed)
+        allowed_pos = {k[0] for k in allowed}
+        keep_positions = allowed_pos if keep_positions is None else set(int(p) for p in keep_positions) & allowed_pos
     keep_positions = None if keep_positions is None else set(int(p) for p in keep_positions)
-    per_tile, frames = [], []
+    per_tile, frames, mismatched = [], [], set()
     for npz, gz in tile_list:
         v = read_tile_variants(gz)
         m = (v["CHR"] == str(chrom)) & (v["POS"] >= start) & (v["POS"] <= end)
         if keep_positions is not None:
             m &= v["POS"].isin(keep_positions)
+        if allowed is not None:
+            ok = np.array([k in allowed for k in _allele_keys(v)], dtype=bool)
+            mismatched.update(tuple(r) for r in v.loc[m.to_numpy() & ~ok, ["CHR", "POS", "REF", "ALT"]].itertuples(
+                index=False))
+            m &= ok
         loc = np.flatnonzero(m.to_numpy())
         sel = v.iloc[loc]
         if sel.duplicated(["CHR", "POS", "REF", "ALT"]).any():
@@ -241,14 +256,16 @@ def assemble_region(tile_list, chrom, start, end, keep_positions=None):
         raise ValueError("a variant without its own diagonal")
     n_zero = int((n * n - int(filled.sum())) // 2)
     stats = {"n_tiles": sum(1 for t in per_tile if len(t[2])), "n_var": n, "n_pairs_zero_filled": n_zero,
-             "max_overlap_abs_diff": max_diff}
+             "max_overlap_abs_diff": max_diff, "n_var_dropped_allele_mismatch": len(mismatched)}
+    if return_filled:
+        return R, union, stats, filled
     return R, union, stats
 
 
 # --- orientation -----------------------------------------------------------------------------------------------------
-def orient_to_reference(R, variants, ref_variants):
-    """Keep variants present in ref_variants (CHR:POS + the same unordered allele pair, not palindromic, unique), in
-    reference order, with s_i = +1 if ALT == ALT_ref else -1 and R' = D.R.D. The returned frame is ref_variants' rows."""
+def match_to_reference(variants, ref_variants):
+    """[(ref_row, variant_row, s)] sorted by ref_row (CHR:POS + the same unordered allele pair, not palindromic,
+    unique on both sides; s = +1 if ALT == ALT_ref else -1) and the drop counts."""
     ref = ref_variants.reset_index(drop=True)
     at = {}
     for j, (c, p) in enumerate(zip(ref["CHR"].astype(str), ref["POS"].astype(np.int64))):
@@ -278,12 +295,104 @@ def orient_to_reference(R, variants, ref_variants):
         st["n_var_dropped_ambiguous"] += sum(1 for t in pick if t[0] in dup)
         pick = [t for t in pick if t[0] not in dup]
     pick.sort()
+    st["n_out"] = len(pick)
+    st["n_flipped"] = sum(1 for t in pick if t[2] < 0)
+    return pick, st
+
+
+def orient_to_reference(R, variants, ref_variants):
+    """Keep the variants matched to ref_variants (match_to_reference), in reference order, with R' = D.R.D,
+    D = diag(s). The returned frame is ref_variants' rows."""
+    ref = ref_variants.reset_index(drop=True)
+    pick, st = match_to_reference(variants, ref)
     ii = np.array([t[1] for t in pick], dtype=np.int64)
     s = np.array([t[2] for t in pick])
     Ro = R[np.ix_(ii, ii)] * np.outer(s, s)
-    st["n_out"] = len(pick)
-    st["n_flipped"] = int((s < 0).sum())
     return Ro, ref.iloc[[t[0] for t in pick]].reset_index(drop=True), st
+
+
+def sign_agreement(R, R_ref, flipped=None, zero_filled=None, thr=0.5):
+    """Sign agreement of R with R_ref over pairs i < j with |r_ref| > thr, excluding zero-filled pairs; the same over
+    mixed-orientation pairs (exactly one of i, j flipped) when `flipped` is given."""
+    iu = np.triu_indices(R.shape[0], 1)
+    strong = np.abs(R_ref[iu]) > thr
+    if zero_filled is not None:
+        strong &= ~zero_filled[iu]
+    agree = np.sign(R[iu]) == np.sign(R_ref[iu])
+    out = {"n_pairs_abs_r_gt_0.5": int(strong.sum()), "n_agree": int((agree & strong).sum())}
+    out["n_disagree"] = out["n_pairs_abs_r_gt_0.5"] - out["n_agree"]
+    if flipped is not None:
+        mixed = strong & (flipped[iu[0]] != flipped[iu[1]])
+        out["n_pairs_mixed"] = int(mixed.sum())
+        out["n_agree_mixed"] = int((agree & mixed).sum())
+    return out
+
+
+# --- panel builders --------------------------------------------------------------------------------------------------
+def region_tiles(chrom, start, end, manifest=TILE_MANIFEST, root=DOWNLOAD_DIR):
+    """[(npz, gz)] of the covering tiles among those whose .npz and .gz are both in the tile manifest."""
+    rows = _manifest_rows(manifest)
+    have = {}
+    for r in rows:
+        have.setdefault(r["tile"], set()).add(r["file"].rsplit(".", 1)[1])
+    avail = {t for t, e in have.items() if {"npz", "gz"} <= e}
+    return [tile_paths(n, root) for n in covering_tiles(chrom, start, end, available=avail)]
+
+
+def build_native(tile_list, chrom, start, end, catalog_tsv):
+    """UKB variants at catalog positions whose unordered {allele1, allele2} equals a catalog {REF, ALT} there."""
+    cat = pd.read_csv(catalog_tsv, sep="\t", dtype={"CHR": str, "REF": str, "ALT": str})
+    cat = cat[cat["CHR"].astype(str).str.replace("chr", "", regex=False) == str(chrom)]
+    R, v, st = assemble_region(tile_list, chrom, start, end, allowed=set(_allele_keys(cat)))
+    return R, v, st
+
+
+def build_isect(tile_list, chrom, start, end, R_ref, v_ref):
+    """(R_ukb oriented to v_ref's REF/ALT by D.R.D, R_ref restricted to the same rows, the shared variants frame =
+    v_ref rows in v_ref order, stats incl. sign agreement over |r_ref| > 0.5 tile-measured pairs)."""
+    v_ref = v_ref.reset_index(drop=True)
+    v_all = pd.concat([read_tile_variants(gz) for _, gz in tile_list], ignore_index=True)
+    v_all = v_all.drop_duplicates(["CHR", "POS", "REF", "ALT"])
+    v_all = v_all[(v_all["CHR"] == str(chrom)) & (v_all["POS"] >= start) & (v_all["POS"] <= end)]
+    v_all = v_all[v_all["POS"].isin(set(v_ref["POS"].astype(np.int64)))].reset_index(drop=True)
+    pick0, mst = match_to_reference(v_all, v_ref)
+    keys = set(_allele_keys(v_all.iloc[[t[1] for t in pick0]]))
+    R_u, v_u, ast, filled = assemble_region(tile_list, chrom, start, end, allowed=keys, return_filled=True)
+    pick, _ = match_to_reference(v_u, v_ref)
+    if [t[0] for t in pick] != [t[0] for t in pick0] or len(pick) != len(v_u):
+        raise ValueError(f"isect re-match changed: {len(pick)} vs {len(pick0)} (assembled {len(v_u)})")
+    ii = np.array([t[1] for t in pick], dtype=np.int64)
+    s = np.array([t[2] for t in pick])
+    R_o = R_u[np.ix_(ii, ii)] * np.outer(s, s)
+    del R_u
+    zf = ~filled[np.ix_(ii, ii)]
+    ref_rows = np.array([t[0] for t in pick], dtype=np.int64)
+    R_k = R_ref[np.ix_(ref_rows, ref_rows)]
+    st = {"n_tiles": ast["n_tiles"], "n_var": len(pick), "n_var_ref": len(v_ref),
+          "n_pairs_zero_filled": ast["n_pairs_zero_filled"], "max_overlap_abs_diff": ast["max_overlap_abs_diff"],
+          "n_var_dropped_allele_mismatch": mst["n_var_dropped_allele_mismatch"],
+          "n_var_dropped_palindromic": mst["n_var_dropped_palindromic"],
+          "n_var_dropped_ambiguous": mst["n_var_dropped_ambiguous"], "n_flipped": int((s < 0).sum())}
+    st.update(sign_agreement(R_o, R_k, s < 0, zf))
+    return R_o, R_k, v_ref.iloc[ref_rows].reset_index(drop=True), st
+
+
+def write_isect_panels(tile_list, chrom, start, end, ref_rds, out_ukb, out_1kg, region_id="", rscript=None,
+                       tmpdir=None):
+    """Both isect panels from one reference .rds; the two variants frames are the same object (v_ref rows)."""
+    R_ref, v_ref = read_rds(ref_rds, rscript=rscript, tmpdir=tmpdir)
+    R_o, R_k, v, st = build_isect(tile_list, chrom, start, end, R_ref, v_ref)
+    del R_ref
+    src = "bim_A2_A1_keep_allele_order"
+    write_rds(R_o, v, out_ukb, "ukb337k_isect_oriented_to_EUR_1kg_r4", region_id, "EUR", src, rscript)
+    write_rds(R_k, v, out_1kg, "onekg_phase3_eur_keep_allele_order_isect_ukb337k", region_id, "EUR", src, rscript)
+    return st
+
+
+def write_native_panel(tile_list, chrom, start, end, catalog_tsv, out, region_id="", rscript=None):
+    R, v, st = build_native(tile_list, chrom, start, end, catalog_tsv)
+    write_rds(R, v, out, "ukb337k_native", region_id, "EUR", "ukb_allele2_allele1", rscript)
+    return st
 
 
 # --- .rds I/O --------------------------------------------------------------------------------------------------------
@@ -356,16 +465,61 @@ def read_rds(path, rscript=None, tmpdir=None):
     return R, v
 
 
+def _write_stats(path, region_safe, tiles, st):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    row = {"region_safe": region_safe, "tiles": ",".join(Path(t[0]).stem for t in tiles), **st}
+    pd.DataFrame([row]).to_csv(path, sep="\t", index=False)
+
+
+def add_stats_columns(manifest, stats_dir, cols):
+    """Join per-region build stats ({stats_dir}/{region_safe}.stats.tsv) onto a panel manifest as extra columns;
+    every manifest row must have exactly one stats row."""
+    man = pd.read_csv(manifest, sep="\t", dtype=str, keep_default_na=False)
+    st = pd.concat([pd.read_csv(f, sep="\t", dtype=str, keep_default_na=False)
+                    for f in sorted(Path(stats_dir).glob("*.stats.tsv"))], ignore_index=True)
+    if st["region_safe"].duplicated().any():
+        raise ValueError("duplicate region_safe in stats")
+    out = man.merge(st[["region_safe", *cols]], on="region_safe", how="left", validate="one_to_one")
+    if out[cols].isna().any().any() or len(out) != len(man):
+        raise ValueError(f"{manifest}: a row without build stats")
+    out.to_csv(manifest, sep="\t", index=False, lineterminator="\n")
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("fetch")
     f.add_argument("tiles", nargs="+")
     f.add_argument("--exts", default="gz,npz")
+    for name in ("build-native", "build-isect"):
+        b = sub.add_parser(name)
+        for k in ("--region-id", "--region-safe", "--chr", "--start", "--end", "--stats"):
+            b.add_argument(k, required=True)
+        if name == "build-native":
+            b.add_argument("--catalog", required=True)
+            b.add_argument("--out", required=True)
+        else:
+            b.add_argument("--ref-panel", required=True)
+            b.add_argument("--out-ukb", required=True)
+            b.add_argument("--out-1kg", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "fetch":
         for t in a.tiles:
             print(*fetch_tile(t, exts=tuple(a.exts.split(","))), sep="\t")
+        return 0
+    start, end = int(a.start), int(a.end)
+    tiles = region_tiles(a.chr, start, end)
+    if not tiles:
+        raise SystemExit(f"no fetched tile covers {a.chr}:{start}-{end}")
+    if a.cmd == "build-native":
+        st = write_native_panel(tiles, a.chr, start, end, a.catalog, a.out, a.region_id)
+    else:
+        st = write_isect_panels(tiles, a.chr, start, end, a.ref_panel, a.out_ukb, a.out_1kg, a.region_id,
+                                tmpdir=Path(a.stats).parent)
+    _write_stats(a.stats, a.region_safe, tiles, st)
+    print(a.region_safe, st)
     return 0
 
 

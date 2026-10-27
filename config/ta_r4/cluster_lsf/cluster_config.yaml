@@ -9,3 +9,7 @@ r4_panel_afr_1kg:
   mem_mb: 32000
 r4_identity_payload_afr:
   mem_mb: 32000
+r4_panel_ukb_native:
+  mem_mb: 48000
+r4_panel_ukb_isect:
+  mem_mb: 32000

@@ -274,3 +274,117 @@ def test_covering_tiles_only_from_available():
     names = ukb.covering_tiles("6", 25_000_000, 35_000_000, available=set(all_names) - gone)
     assert not gone & set(names)
     assert "chr6_27000001_30000001" in names and "chr6_31000001_34000001" in names
+
+
+# --- W2b T3: allele-checked assembly, native and isect panel builders -------------------------------------------------
+def _keys(pos, a, b):
+    return {(int(p), frozenset((x, y))) for p, x, y in zip(pos, a, b)}
+
+
+def test_assemble_allowed_drops_allele_mismatch(tmp_path):
+    tiles = [_tile(tmp_path, "a", [0, 1, 2, 3]), _tile(tmp_path, "b", [2, 3, 4, 5])]
+    allowed = _keys(BPOS, BA1, BA2) - {(30, frozenset(("G", "A")))} | {(30, frozenset(("G", "C")))}
+    R, v, st = ukb.assemble_region(tiles, "12", 1, 100, allowed=allowed)
+    keep = [0, 1, 3, 4, 5]
+    assert list(v["POS"]) == [BPOS[i] for i in keep]
+    assert st["n_var_dropped_allele_mismatch"] == 1
+    covered = np.zeros((6, 6), bool)
+    covered[np.ix_([0, 1, 2, 3], [0, 1, 2, 3])] = True
+    covered[np.ix_([2, 3, 4, 5], [2, 3, 4, 5])] = True
+    c = covered[np.ix_(keep, keep)]
+    np.testing.assert_allclose(R[c], BIG[np.ix_(keep, keep)][c], atol=1e-12)
+    assert st["n_pairs_zero_filled"] == int((~c).sum() // 2) == 4
+
+
+def _write_catalog(path, pos, ref, alt):
+    pd.DataFrame({"CHR": ["12"] * len(pos), "POS": pos, "REF": ref, "ALT": alt,
+                  "SNP_ID": [f"c{p}" for p in pos]}).to_csv(path, sep="\t", index=False)
+    return path
+
+
+def test_build_native(tmp_path):
+    tiles = [_tile(tmp_path, "a", [0, 1, 2, 3]), _tile(tmp_path, "b", [2, 3, 4, 5])]
+    # catalog: 10 (alleles transposed: still the same unordered pair), 20, 40 with a different allele pair, 60; 70 absent
+    cat = _write_catalog(tmp_path / "cat.tsv", [10, 20, 40, 60, 70], ["A", "T", "A", "C", "A"], ["G", "C", "G", "T", "G"])
+    R, v, st = ukb.build_native(tiles, "12", 1, 100, cat)
+    assert list(v["POS"]) == [10, 20, 60]
+    assert list(v["ALT"]) == [BA1[0], BA1[1], BA1[5]] and list(v["REF"]) == [BA2[0], BA2[1], BA2[5]]
+    assert st["n_var_dropped_allele_mismatch"] == 1 and st["n_var"] == 3 and st["n_tiles"] == 2
+    np.testing.assert_allclose(R[:2, :2], BIG[np.ix_([0, 1], [0, 1])], atol=1e-12)
+    assert R[0, 2] == 0 and st["n_pairs_zero_filled"] == 2
+
+
+def _ref_panel():
+    """A 1000G-like reference over BPOS[1:] whose labels are REF/ALT-transposed at 20 and 50 relative to the tiles
+    (so R_ref = D.BIG.D there) and an allele mismatch at 40."""
+    idx = [1, 2, 3, 4, 5]
+    s = np.array([-1.0, 1.0, 1.0, -1.0, 1.0])
+    R_ref = BIG[np.ix_(idx, idx)] * np.outer(s, s)
+    ref_alt = [BA2[1], BA1[2], "C", BA2[4], BA1[5]]
+    ref_ref = [BA1[1], BA2[2], "A", BA1[4], BA2[5]]
+    v = pd.DataFrame({"SNP_ID": [f"rs{BPOS[i]}" for i in idx], "CHR": ["12"] * 5, "POS": [BPOS[i] for i in idx],
+                      "A1": ref_alt, "A2": ref_ref, "REF": ref_ref, "ALT": ref_alt})
+    return R_ref, v
+
+
+def test_build_isect_known_answer(tmp_path):
+    tiles = [_tile(tmp_path, "a", [0, 1, 2, 3]), _tile(tmp_path, "b", [2, 3, 4, 5])]
+    R_ref, v_ref = _ref_panel()
+    R_u, R_k, v, st = ukb.build_isect(tiles, "12", 1, 100, R_ref, v_ref)
+    keep = [0, 1, 3, 4]  # reference rows kept: 20, 30, 50, 60 (40 dropped: allele mismatch)
+    assert list(v["POS"]) == [20, 30, 50, 60]
+    pd.testing.assert_frame_equal(v, v_ref.iloc[keep].reset_index(drop=True))
+    np.testing.assert_allclose(R_k, R_ref[np.ix_(keep, keep)], atol=0, rtol=0)
+    covered = np.array([[1, 1, 0, 0], [1, 1, 1, 1], [0, 1, 1, 1], [0, 1, 1, 1]], bool)  # 20 and 50/60 share no tile
+    np.testing.assert_allclose(R_u[covered], R_k[covered], atol=1e-12)
+    assert np.all(R_u[~covered] == 0)
+    assert st["n_flipped"] == 2 and st["n_var_dropped_allele_mismatch"] == 1 and st["n_var"] == 4
+    assert st["n_pairs_zero_filled"] == 2
+    assert st["n_agree"] + st["n_disagree"] == st["n_pairs_abs_r_gt_0.5"]
+
+
+def test_build_isect_rds_frames_identical(tmp_path):
+    rscript = ukb.default_rscript()
+    if rscript is None:
+        pytest.skip("no Rscript")
+    tiles = [_tile(tmp_path, "a", [0, 1, 2, 3]), _tile(tmp_path, "b", [2, 3, 4, 5])]
+    R_ref, v_ref = _ref_panel()
+    ref_rds = ukb.write_rds(R_ref, v_ref, tmp_path / "ref.rds", ld_source="ref", rscript=rscript)
+    st = ukb.write_isect_panels(tiles, "12", 1, 100, ref_rds, tmp_path / "u.rds", tmp_path / "k.rds",
+                                region_id="X", rscript=rscript)
+    Ru, vu = ukb.read_rds(tmp_path / "u.rds", rscript=rscript)
+    Rk, vk = ukb.read_rds(tmp_path / "k.rds", rscript=rscript)
+    pd.testing.assert_frame_equal(vu, vk)
+    assert list(vu.columns) == list(v_ref.columns) and st["n_var"] == 4
+    assert np.array_equal(np.diag(Ru), np.ones(4)) and np.array_equal(Ru, Ru.T)
+
+
+def test_build_isect_sign_agreement_skips_zero_filled(tmp_path):
+    C = BIG.copy()
+    C[1, 5] = C[5, 1] = 0.9  # strong, but 20 and 60 share no tile
+    tiles = [_tile(tmp_path, "a", [0, 1, 2, 3], R=C), _tile(tmp_path, "b", [2, 3, 4, 5], R=C)]
+    v_ref = pd.DataFrame({"SNP_ID": [f"rs{p}" for p in BPOS], "CHR": ["12"] * 6, "POS": BPOS, "REF": BA2, "ALT": BA1})
+    _, _, _, st = ukb.build_isect(tiles, "12", 1, 100, C, v_ref)
+    covered = np.zeros((6, 6), bool)
+    covered[np.ix_([0, 1, 2, 3], [0, 1, 2, 3])] = True
+    covered[np.ix_([2, 3, 4, 5], [2, 3, 4, 5])] = True
+    iu = np.triu_indices(6, 1)
+    expected = int((covered[iu] & (np.abs(C[iu]) > 0.5)).sum())
+    assert st["n_pairs_abs_r_gt_0.5"] == expected == st["n_agree"]
+    assert st["n_flipped"] == 0 and st["n_pairs_mixed"] == 0
+
+
+def test_add_stats_columns(tmp_path):
+    man = tmp_path / "m.tsv"
+    man.write_text("ancestry\tregion_safe\tn_var\nEUR\tA\t3\nEUR\tB\t4\n")
+    sd = tmp_path / "st"
+    sd.mkdir()
+    (sd / "A.stats.tsv").write_text("region_safe\tn_tiles\tn_flipped\nA\t1\t0\n")
+    (sd / "B.stats.tsv").write_text("region_safe\tn_tiles\tn_flipped\nB\t3\t2\n")
+    out = ukb.add_stats_columns(man, sd, ["n_tiles", "n_flipped"])
+    assert list(out.columns) == ["ancestry", "region_safe", "n_var", "n_tiles", "n_flipped"]
+    assert pd.read_csv(man, sep="\t", dtype=str)["n_flipped"].tolist() == ["0", "2"]
+    (sd / "B.stats.tsv").unlink()
+    man.write_text("ancestry\tregion_safe\tn_var\nEUR\tA\t3\nEUR\tB\t4\n")
+    with pytest.raises(ValueError, match="without build stats"):
+        ukb.add_stats_columns(man, sd, ["n_tiles"])

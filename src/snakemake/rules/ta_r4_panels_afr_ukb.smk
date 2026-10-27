@@ -146,3 +146,83 @@ rule r4_panel_afr_legacy:
             --rscript Rscript \
             --variant-list {input.variants}
         """
+
+
+# --- UKB 337k EUR sensitivity panels (D-03, D-04, E6): native, isect (oriented to EUR_1kg_r4), matched 1000G isect ---
+from ta_r4 import ukb337k_tiles as r4ukb
+
+UKB_ISECT_REGIONS = R4_PANEL_REGIONS  # 10 admissible + 19 NC
+UKB_NATIVE_REGIONS = R4_PANEL_REGIONS + ["HLA_6p21"]  # HLA: exploratory fits only (D-24)
+if len(UKB_ISECT_REGIONS) != 29:
+    raise WorkflowError(f"expected 29 UKB isect regions, got {len(UKB_ISECT_REGIONS)}")
+UKB_STATS = "data/r4/ld/work/ukb337k/{kind}/{region}.stats.tsv"
+
+R4_UKB_TARGETS = (
+    [r4paths.panel_path("A3_ukb", s) for s in UKB_NATIVE_REGIONS]
+    + [r4paths.panel_path(a, s) for a in ("A3_ukb_isect", "A3_1kg_isect") for s in UKB_ISECT_REGIONS]
+)
+
+
+def _ukb_tiles(w):
+    m = REGION_METADATA[w.region]
+    return [str(p) for t in r4ukb.region_tiles(m["chr"], m["start"], m["end"]) for p in t]
+
+
+rule r4_w2b_ukb_all:
+    input:
+        R4_UKB_TARGETS,
+
+
+rule r4_panel_ukb_native:
+    input:
+        tiles=_ukb_tiles,
+        catalog=lambda w: r4paths.catalog_path("r4", w.region),
+        code="src/python/ta_r4/ukb337k_tiles.py",
+    output:
+        rds=_tpl("A3_ukb"),
+        stats=UKB_STATS.replace("{kind}", "native"),
+    wildcard_constraints:
+        region=_wc(UKB_NATIVE_REGIONS),
+    params:
+        chrom=lambda w: REGION_METADATA[w.region]["chr"],
+        start=lambda w: REGION_METADATA[w.region]["start"],
+        end=lambda w: REGION_METADATA[w.region]["end"],
+        region_id=lambda w: REGION_SAFE_TO_ID[w.region],
+    threads: 1
+    resources:
+        mem_mb=48000,
+    shell:
+        r"""
+        PYTHONPATH=src/python {PYTHON_BIN} -m ta_r4.ukb337k_tiles build-native \
+            --region-id {params.region_id} --region-safe {wildcards.region} \
+            --chr {params.chrom} --start {params.start} --end {params.end} \
+            --catalog {input.catalog} --out {output.rds} --stats {output.stats}
+        """
+
+
+rule r4_panel_ukb_isect:
+    input:
+        tiles=_ukb_tiles,
+        ref=_tpl("A3_1kg"),
+        code="src/python/ta_r4/ukb337k_tiles.py",
+    output:
+        ukb=_tpl("A3_ukb_isect"),
+        onekg=_tpl("A3_1kg_isect"),
+        stats=UKB_STATS.replace("{kind}", "isect"),
+    wildcard_constraints:
+        region=_wc(UKB_ISECT_REGIONS),
+    params:
+        chrom=lambda w: REGION_METADATA[w.region]["chr"],
+        start=lambda w: REGION_METADATA[w.region]["start"],
+        end=lambda w: REGION_METADATA[w.region]["end"],
+        region_id=lambda w: REGION_SAFE_TO_ID[w.region],
+    threads: 1
+    resources:
+        mem_mb=32000,
+    shell:
+        r"""
+        PYTHONPATH=src/python {PYTHON_BIN} -m ta_r4.ukb337k_tiles build-isect \
+            --region-id {params.region_id} --region-safe {wildcards.region} \
+            --chr {params.chrom} --start {params.start} --end {params.end} \
+            --ref-panel {input.ref} --out-ukb {output.ukb} --out-1kg {output.onekg} --stats {output.stats}
+        """
