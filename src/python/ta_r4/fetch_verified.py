@@ -14,7 +14,7 @@ from pathlib import Path
 
 DOWNLOADS_ROOT = "data/r4/downloads"
 CHUNK = 1 << 20
-MAGIC = {"gzip": b"\x1f\x8b", "bzip2": b"BZh"}
+MAGIC = {"gzip": b"\x1f\x8b", "bzip2": b"BZh", "zip": b"PK\x03\x04"}
 MANIFEST_COLS = ["source", "url", "file", "size_bytes", "md5", "sha256", "fetched_utc"]
 
 
@@ -101,7 +101,7 @@ def main(argv=None):
     ap.add_argument("--md5")
     ap.add_argument("--sha256")
     ap.add_argument("--size", type=int)
-    ap.add_argument("--magic", default="gzip", help="comma list of gzip,bzip2,tar")
+    ap.add_argument("--magic", default="gzip", help="comma list of gzip,bzip2,zip,tar")
     ap.add_argument("--name")
     ap.add_argument("--manifest")
     a = ap.parse_args(argv)

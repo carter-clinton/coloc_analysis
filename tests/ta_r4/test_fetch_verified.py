@@ -28,6 +28,7 @@ def _tgz_bytes():
 
 TGZ = _tgz_bytes()
 GZ_NOT_TAR = gzip.compress(b"just text, not a tar archive\n" * 50)
+NPZ = b"PK\x03\x04" + b"\x00" * 60
 HTML = b"<!DOCTYPE html><html><body>Please log in</body></html>\n"
 
 
@@ -38,6 +39,7 @@ def server(tmp_path_factory):
     (d / "www" / "f.tgz").write_bytes(TGZ)
     (d / "www" / "plain.gz").write_bytes(GZ_NOT_TAR)
     (d / "www" / "page.tgz").write_bytes(HTML)
+    (d / "www" / "t.npz").write_bytes(NPZ)
     key, crt = d / "key.pem", d / "crt.pem"
     subprocess.run(
         ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(key), "-out", str(crt),
@@ -176,3 +178,13 @@ def test_manifest_row_appended(server, tmp_path):
     row = lines[1].split("\t")
     assert row[:6] == ["toy", f"{base}/f.tgz", "f.tgz", str(len(TGZ)), hashlib.md5(TGZ).hexdigest(),
                        hashlib.sha256(TGZ).hexdigest()]
+
+
+def test_zip_magic_for_npz(server, tmp_path):
+    base, ctx = server
+    root = _root(tmp_path)
+    out = fv.fetch_verified(f"{base}/t.npz", root / "a", magic=("zip",), downloads_root=root, ssl_context=ctx)
+    assert Path(out["path"]).read_bytes() == NPZ
+    with pytest.raises(fv.VerificationError, match="magic"):
+        fv.fetch_verified(f"{base}/f.tgz", root / "b", magic=("zip",), downloads_root=root, ssl_context=ctx)
+    assert list((root / "b").iterdir()) == []

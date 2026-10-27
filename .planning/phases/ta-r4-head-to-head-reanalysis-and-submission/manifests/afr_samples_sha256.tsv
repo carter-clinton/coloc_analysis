@@ -1,0 +1,5 @@
+path	role	n_rows	sha256	note
+/rs1/researchers/c/ckclinto/coloc_analysis/region_analysis/data_raw/1kg/AFR.samples	original_AFR_continental	504	97ff9e5774da042901ab5344f912ad7e4229e1546250df2dbbd05deb6b8e64c4	FID IID (already two-column); pipeline.yaml AFR list; YRI LWK GWD MSL ESN
+/rs1/researchers/c/ckclinto/coloc_analysis/region_analysis/data_raw/1kg/integrated_call_samples.panel	original_1000G_panel	2505	b4023dc6ee2d62ee89c8d4d347db4d348e65518d66d346574cdae7a4bbd76858	header + 2504 samples; ASW 61 ACB 96
+data/r4/ref/samples/AFR504.samples	AFR504_1kg_r4	504	97ff9e5774da042901ab5344f912ad7e4229e1546250df2dbbd05deb6b8e64c4	byte copy of AFR.samples (D-20 sensitivity)
+data/r4/ref/samples/AFR661.samples	AFR661_1kg_r4	661	c984613332726bf0f4d738cd628deb19f888e556d391ec07db1faca0feb978ae	AFR504 + panel pop in {ASW,ACB} (157; 0 overlap with 504) (D-20 primary)

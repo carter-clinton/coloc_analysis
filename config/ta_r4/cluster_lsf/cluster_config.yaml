@@ -4,3 +4,8 @@ __default__:
   queue: "serial"
   mem_mb: 8000
   threads: 1
+# W2b: the profile's -R rusage reads cluster.mem_mb (this file), not the rule's resources.mem_mb.
+r4_panel_afr_1kg:
+  mem_mb: 32000
+r4_identity_payload_afr:
+  mem_mb: 32000
