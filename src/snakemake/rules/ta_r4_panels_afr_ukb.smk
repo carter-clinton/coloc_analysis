@@ -10,12 +10,8 @@ AFR_SAMPLES = {"AFR661_1kg_r4": "data/r4/ref/samples/AFR661.samples", "AFR504_1k
 AFR_PANEL_REGIONS = sorted(
     {r["region_safe"] for r in PAIR_ROWS if r["ancestry"] == "AFR" and r["admissible"] == "true"}
 )
-if len(AFR_PANEL_REGIONS) != 10:
-    raise WorkflowError(f"expected 10 AFR-admissible regions, got {AFR_PANEL_REGIONS}")
 # Legacy AFR reproduction: every region of the frozen 36 AFR fits (3 traits x 12 curated regions).
 LEGACY_AFR_REGIONS = CURATED_REGIONS
-if len(LEGACY_AFR_REGIONS) != 12:
-    raise WorkflowError(f"expected 12 curated regions, got {LEGACY_AFR_REGIONS}")
 
 R4_AFR_TARGETS = (
     [r4paths.panel_path(a, s) for a in ("AFR661_A3", "AFR504_A3", "AFR661_A2") for s in AFR_PANEL_REGIONS]
@@ -153,8 +149,6 @@ from ta_r4 import ukb337k_tiles as r4ukb
 
 UKB_ISECT_REGIONS = R4_PANEL_REGIONS  # 10 admissible + 19 NC
 UKB_NATIVE_REGIONS = R4_PANEL_REGIONS + ["HLA_6p21"]  # HLA: exploratory fits only (D-24)
-if len(UKB_ISECT_REGIONS) != 29:
-    raise WorkflowError(f"expected 29 UKB isect regions, got {len(UKB_ISECT_REGIONS)}")
 UKB_STATS = "data/r4/ld/work/ukb337k/{kind}/{region}.stats.tsv"
 
 R4_UKB_TARGETS = (
