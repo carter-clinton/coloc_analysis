@@ -26,7 +26,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-26 — **TRACK A ta-r4: W0a … W1 + W2a DONE. NEXT = W2b. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-27 — **TRACK A ta-r4: W2b IN PROGRESS (mid-wave checkpoint, executor still running).** (★ RESUME HERE — LATEST ★)
+
+- **Committed, unpushed until this checkpoint:** Task 1 AFR 661/504 panels + AFR661 identity + legacy AFR repro `37a391e4`;
+  Task 2 UKB 337k tile loader + real-tile known-answer gate `f6d637aa`; Task 3 UKB native + isect panels and matched 1000G
+  isect panels `fa91305f`; fix `0e621884` (no /rs1 literal in ukb337k_tiles, tile manifest keyed by file, UKB rules in the
+  r_coloc env).
+- **In flight:** UKB fire #4 (`/rs1/.../ta_r4/logs/fire_W2b_ukb_4.log`) reached 52/60 and then the scheduler exited with no
+  error in the log. A full test suite was running as LSF job 426532 at 14:15.
+- **Not done:** UKB build completion and content check, full-suite reconciliation vs W2a (1819/1769/50/0) by name,
+  W2b SUMMARY, ROADMAP tick, wave-close push. Stop at W2c (needs Carter's `carter-approved`).
+- ⚠ Check that the `.rds` step resolves the r_coloc Rscript under Snakemake: `0e621884` removed the pinned fallback from
+  `default_rscript()`.
+- **Resume:** `.planning/HANDOFF.json` → `resume_on_reconnect`.
+
+## 2026-10-26 — **TRACK A ta-r4: W0a … W1 + W2a DONE. NEXT = W2b. NOTHING RUNNING.** (SUPERSEDED by the 2026-10-27 block above)
 
 - **W2a closed** (T1 `f19d6398`, T2 `8a5c75e2`, T3 `b266e1d8`, plus the wave-close commit, pushed): 1000G EUR n = 489
   (measured). On /rs1 there are legacy_repro/EUR 10, EUR_1kg_r4 29, EUR_identity_r4 29, k2d 24 and catalogs 43. All are
@@ -2408,7 +2422,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-10-22 (latest) - ta-r4 W1 complete (E-2 fix, default-off; FULL 1800/1750/50/0, 0 changed vs W0d). Next: W2a.
+Last activity: 2026-10-27 (latest) - ta-r4 W2b mid-wave checkpoint: Tasks 1-3 + fix committed (37a391e4, f6d637aa, fa91305f, 0e621884); UKB fire #4 stopped 52/60; wave close pending.
+Last activity (prior): 2026-10-22 - ta-r4 W1 complete (E-2 fix, default-off; FULL 1800/1750/50/0, 0 changed vs W0d). Next: W2a.
 Last activity (prior): 2026-10-22 - ta-r4 W0b2 complete (Task 3 finished + wave-close; FULL 1660/1614/46/0; OSF anonymous-read 401 on az52u flagged for W4b). Next: W0c.
 Last activity (prior): 2026-10-21 18:45 EDT - SESSION CLOSE mid ta-r4 W0b2 (Track A revived: 25-plan re-analysis phase executing; W0a+W0b1 done; nothing running).
 Last activity (PRIOR): 2026-09-19 00:20 EDT - ⭐ THE STAGE C NaN POSTURE IS DECIDED (DEC-2026-09-18-stage-c-nan-posture-adopted: A's behaviour = the pre-registered T1 contract executing, with C's stop reserved for an UNCLASSIFIED raise; B/F-as-drafted/E rejected; NO OSF amendment) AND THE TWO HARD PRE-FIRE CODE CHANGES LANDED (quick-260918-qz0 records 1647840/b6076b2; quick-260918-qz5 code 9 commits b1d3ff3..0206a71). X1 now true in code (the reviewer's own prescribed fix was insufficient — the frozen reader raises upstream of the upload block); raised_nan: is its own verifier class; stage-c is stateful via --prev-report; the closeout enforcer is registered. Suite re-run by the orchestrator: 1299/1265/34/0 from 1262/1229/33/0. ⚠ origin is 12 commits behind — PUSH before any AoU clone fire. NEXT: Carter runs VM card 2 (per-region n_var census + COST-1 on the real largest square-feasible region), which also decides the deferred LOW-1 classifier.

@@ -1,12 +1,12 @@
 {
   "version": "1.0",
-  "timestamp": "2026-10-21T22:45:00Z",
+  "timestamp": "2026-10-27T18:20:00Z",
   "phase": "m3",
   "phase_name": "m3-aou-afr-ld-panel-build",
   "phase_dir": ".planning/phases/m3-aou-afr-ld-panel-build",
   "wave": "UPDATED 2026-08-12 EVENING (quick-260812-ot2 + 260812-ox1 + the five-dimension blast-radius sweep + quick-260812-thz): two clauses of the close-record below are superseded. (a) NEXT is NO LONGER “place ms-correction-v2 -> post osf-correction-v2”: obligation (2) is SKIPPED BY CARTER’S DIRECTION = DEFERRED, NOT DISCHARGED (DEC-2026-08-12-e2-obligation1-venue-and-obligation2-skip); current NEXT = venue pick (Nature-first memo) -> P-1/P-2 closing-sentence choice -> place ms-correction-v2 per the ot2 placement SPEC. (b) THE FIRE SURFACE IS NO LONGER the rcw review directly: it is the READY-TO-FIRE runbook at .planning/quick/260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r/260812-ox1-READY-TO-FIRE.md, which wraps the corrected review; PRE-FIRE 1 LANDED (5284505) so 1b branch (i) is the live default. || 2026-08-12 CLOSE BODY, PRESERVED: SESSION CLOSE 2026-08-12. One continuous arc since resume on 2026-08-11: FIVE validated quick tasks + a five-way adversarial review. (1) 260811-oku — E-2 disclosure drafts, both framings, decision surface; (2) 260811-pmv — SR4-OPEN evidence dossier (NEVER-FROZEN, all drift traceable); (3) 260811-rcw — m3-04c Task 3 PRE-FIRE gate review, 20/20 L-checks, suites 902/31/0 + 136/1/0 re-run once; (4) 260811-tf3 — Carter DECIDED both open items: E-2 framing = B/CORRECTION (DEC-2026-08-11-e2-framing-correction, obligation 3 DISCHARGED) and SR4-OPEN = NEVER-FROZEN (DEC-2026-08-11-sr4-disposition); (5) Carter then ordered a comprehensive adversarial review (Codex CLI v0.141.0 read-only + 4 blind investigators + /assess-blast-radius) which found 5 blockers -> quick-260812-09a REMEDIATED 21/22 findings (1 reported-with-reason: STATE.md:15 is inside the frontmatter fence), DEC-2026-08-12-adversarial-review-remediation. NET STATE: v2 disclosure pair (260812-09a-SELECTED-PAIR-correction-v2.md) SUPERSEDES tf3's v1 — place/post ONLY v2; the rcw PRE-FIRE review is CORRECTED IN PLACE and is the fire surface; ZERO Carter decisions outstanding. NEXT = Carter's external actions with the v2 texts (journal-policy pre-placement check -> place ms-correction-v2 -> post osf-correction-v2 + record URL/timestamp in osf_deviations.md), then m3-04c Task 3 (the terminal fire gate — NEVER an agent).",
   "headline_2026_08_04": "⛔⛔ m3-04c IS HALTED — ITS HEADLINE must_have IS FALSE AS SPECIFIED. The m3-04b blast-radius sweep (4 independent read-only investigators + orchestrator verification, $0, no perimeter) found the 2026-08-03 panel-unreachability diagnosis is RIGHT BUT ONE LAYER TOO SHALLOW. BLOCKER-1: `{input.ld_matrix}` IS NEVER REFERENCED IN run_finemap's SHELL BLOCK. The R script gets only `--ld-dir {params.ld_dir}` + `--region {params.region_id}` and RECONSTRUCTS its own path at run_susie_rss.R:124-127 as file.path(ld_dir, ancestry, region_id.rds) — ancestry is 'AFR', NEVER 'AFR_aou', and NO rule promotes AFR_aou/*.rds into AFR/ (grep over every .smk + Snakefile = zero hits). On a miss it falls SILENTLY to an identity matrix (run_susie_rss.R:472-474). PROVEN EMPIRICALLY: with the AoU panel present on disk and correctly resolved, resolve_ld_path returns .../AFR_aou/m2_region_00067.rds (exists=True) while SuSiE opens .../AFR/FTO_16q12.rds (exists=False). SO m3-04c T1's ONE-ARGUMENT CHANGE CANNOT MAKE THE PANEL READABLE — the fire would STILL bank a panel nothing reads. This defect is PRE-EXISTING (m3-W3-T2 wired resolve_ld_path into input: only); m3-04b aggravated only the BELIEF, via its docstring. BLOCKER-4 (independent, autonomous, $0): a PARTIAL Stage-A rollup makes assemble_occlusion_catalog.py:352-359 IGNORE EVERY EXCLUDELIST and stamp the result 'stage_a_manifest' — the override fires when the rollup is merely NON-EMPTY, not COMPLETE, and run_native_ld_panel.py:821-831 already swallows the per-region manifest-append exception that creates that state. There is NO completeness check against 276 anywhere. Result = orphaned variants wearing a clean provenance stamp. ⇒ NEXT = a CARTER DECISION on the BLOCKER-1 remedy, then REPLAN m3-04c. DO NOT execute m3-04c as written; DO NOT fire.",
-  "status": "2026-09-19. ⭐ THE STAGE C NaN POSTURE IS DECIDED AND THE TWO HARD PRE-FIRE CODE CHANGES HAVE LANDED. Nothing running; only app 20260626b, STOPPED. ⚠ origin is 12 COMMITS BEHIND local - the Workbench clone pulls from origin, so the fire path MUST be pushed before any AoU clone fire. (A) DECIDED: DEC-2026-09-18-stage-c-nan-posture-adopted - Option A's behaviour (the raise stands, the region banks nothing, the loop continues, because that is the pre-registered T1 contract executing) WITH Option C's stop reserved for an UNCLASSIFIED raise. B, F-as-drafted and E rejected; D only after posting; NO OSF amendment. The reviewer adjudicated brief-blind and his adjudication is banked verbatim (NOT byte-verified). (B) LANDED (quick-260918-qz5, 9 commits b1d3ff3..0206a71): X1 - the coordinate-only occlusion evidence now uploads on EVERY square outcome, so mk7ze P248-250 is true in code (the reviewer's own prescribed fix was INSUFFICIENT: the frozen reader raises upstream of the upload block); raised_nan: is its own verifier class, never a deferral, tested before the failure branches; the disqualified 'the gates working' framing is gone from raise-bearing panels; stage-c is STATEFUL via --prev-report (exit 1 only on a NEW failure; acknowledged raises still reported AND counted; the aliasing guard is pinned on the FILE); the closeout enforcer raised_nan_class_coverage is registered against ## R5-RAISED-NAN. Suite re-run by the orchestrator: tests/m3 1299/1265/34/0 from 1262/1229/33/0. (C) STILL OPEN: COST-1 is unmeasured and its target was wrong (m2_region_00071 deferred at n_var=169803 > 120000); the classification mechanism does not exist, so every raise defaults to UNCLASSIFIED and the FIRST production raise stops the fire until a human classifies it; the tail disclosure is still DRAFTED - NOT POSTED.",
+  "status": "ta-r4 W2b IN PROGRESS (executor running)",
   "no_fire_running": "NOTHING RUNNING. Only app: aoujupytercomputeengine20260626b, STOPPED (its reattachable PD holds the 379 GB bfile). 20260608 is GONE (confirmed 2026-09-17 at both the Workbench level and via in-perimeter gcloud, non-empty list, rc=0).",
   "nc_state_cost": "$0 for the entire 2026-08-14 -> 08-16 arc. NOTHING running server-side or NC-State-side. ZERO perimeter contact: no gsutil, no gcloud, no bq, no wb, not even read-only control-plane. No LSF jobs (bjobs: \"No unfinished job found\"). The AoU browser agent stood down AT the Step 3 GATE and the VM was NEVER STARTED. Local compute only: read-only text normalization/diff/md5 and two gate-script runs.",
   "verified_this_session_firsthand": [
@@ -291,7 +291,6 @@
   ],
   "resume_entry_point_PRIOR_2026_09_19_TRACK_B": ".planning/HANDOFF.json resume_on_reconnect (above) + the 2026-09-19 ★ RESUME HERE ★ block at the top of .planning/STATE.md. ⭐ WHERE THIS FILE AND THAT BLOCK DISAGREE, STATE.md WINS - it is refreshed at every session close. Resume at item 1 (push if a clone fire is coming) then item 2 (COST-1, Carter's).",
   "timestamp_reason_2026_10_21": "Session close (Carter relocating) mid-way through ta-r4 W0b2. Track A lane reopened; Track B state unchanged since 2026-09-19.",
-  "headline": "TWO LANES. TRACK A (ACTIVE): phase ta-r4-head-to-head-reanalysis-and-submission is PLANNED (25 plans, 3 plan-check iterations, 0 blockers) and EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY after Task 2 of 4 (Tasks 1-2 committed 9bb65c0, ab77e97; Task 3 WIP uncommitted, inventoried below). Nothing running, no LSF jobs, no OSF gate files written. TRACK B: unchanged since 2026-09-19 (see *_PRIOR_2026_09_19_TRACK_B keys): COST-1 (Carter, VM card 2) is the last measurement before the 276-region fire.",
   "ta_r4": {
     "phase_dir": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission",
     "running_log": "ta-r4-LOG.md (append-only record of every action)",
@@ -331,19 +330,52 @@
       "W8b-T3 manuscript",
       "W9 venue + submission"
     ],
-    "orchestrator_decisions": "import clash fixed via pkgutil.extend_path in tests/ta_r4/__init__.py; conda isolation = CONDA_PKGS_DIRS+HOME+CONDARC under the R4 prefix; restore tests/m3/sparse_parent_benchmark.tsv after every full-suite run (timing noise)"
+    "orchestrator_decisions": "import clash fixed via pkgutil.extend_path in tests/ta_r4/__init__.py; conda isolation = CONDA_PKGS_DIRS+HOME+CONDARC under the R4 prefix; restore tests/m3/sparse_parent_benchmark.tsv after every full-suite run (timing noise)",
+    "W2b_inflight_2026_10_27": {
+      "commits": [
+        "37a391e4",
+        "f6d637aa",
+        "fa91305f",
+        "0e621884"
+      ],
+      "ukb_fire": {
+        "log": "/rs1/researchers/c/ckclinto/coloc_analysis/ta_r4/logs/fire_W2b_ukb_4.log",
+        "progress": "52/60 then scheduler exit",
+        "outputs": [
+          "/rs1/researchers/c/ckclinto/coloc_analysis/ta_r4/ld/EUR_ukb337k_r4",
+          "/rs1/researchers/c/ckclinto/coloc_analysis/ta_r4/ld/EUR_ukb337k_isect_r4"
+        ]
+      },
+      "lsf_tests_job": 426532,
+      "open_concern": "0e621884 dropped the pinned r_coloc Rscript fallback from default_rscript(); the commit says UKB rules now run in the r_coloc env — verify the .rds step resolves r_coloc Rscript under Snakemake.",
+      "remaining": [
+        "finish UKB panels (re-fire if needed, verify content not _SUCCESS)",
+        "full suite reconcile by name vs W2a",
+        "SUMMARY + STATE + ROADMAP wave close + push"
+      ]
+    }
   },
-  "resume_on_reconnect": [
+  "prep_landmines_2026_10_21": [
+    "All Track A results were purged from /share (30-day purge); R4 outputs live on /rs1 via data/r4 symlink — never write R4 outputs under /share.",
+    "Local git lost a pack file 2026-10-21 (orphan .idx); repaired from an origin mirror. If `unable to read tree` recurs: clone --mirror origin to scratch, repack, copy pack+idx in.",
+    "tests/m3/sparse_parent_benchmark.tsv is rewritten by the suite — restore it, never commit it."
+  ],
+  "headline_PRIOR_2026_10_21": "TWO LANES. TRACK A (ACTIVE): phase ta-r4-head-to-head-reanalysis-and-submission is PLANNED (25 plans, 3 plan-check iterations, 0 blockers) and EXECUTING: W0a + W0b1 DONE, W0b2 STOPPED CLEANLY after Task 2 of 4 (Tasks 1-2 committed 9bb65c0, ab77e97; Task 3 WIP uncommitted, inventoried below). Nothing running, no LSF jobs, no OSF gate files written. TRACK B: unchanged since 2026-09-19 (see *_PRIOR_2026_09_19_TRACK_B keys): COST-1 (Carter, VM card 2) is the last measurement before the 276-region fire.",
+  "resume_on_reconnect_PRIOR_2026_10_21": [
     "Nothing is running (no LSF jobs, no AoU/cloud work). There is nothing to reattach to.",
     "Resume the Claude session with `claude --continue` (or `claude --resume` and pick this session) from /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis.",
     "git fetch && git status: confirm origin == local and the W0b2 WIP files listed in ta_r4.in_progress are still present and their sha256 prefixes match.",
     "If the session cannot be resumed: in a fresh session, read this file + the STATE.md RESUME HERE block + ta-r4-LOG.md, then run `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` — it skips plans with a SUMMARY (W0a, W0b1) and starts at W0b2; give the executor the ta_r4.in_progress.resume_instruction.",
     "Run `git fsck --connectivity-only` before the first commit (GPFS pack-loss history)."
   ],
-  "resume_entry_point": ".planning/HANDOFF.json (this file) + .planning/STATE.md 2026-10-21 RESUME HERE block + .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/.continue-here.md",
-  "prep_landmines_2026_10_21": [
-    "All Track A results were purged from /share (30-day purge); R4 outputs live on /rs1 via data/r4 symlink — never write R4 outputs under /share.",
-    "Local git lost a pack file 2026-10-21 (orphan .idx); repaired from an origin mirror. If `unable to read tree` recurs: clone --mirror origin to scratch, repack, copy pack+idx in.",
-    "tests/m3/sparse_parent_benchmark.tsv is rewritten by the suite — restore it, never commit it."
-  ]
+  "resume_entry_point_PRIOR_2026_10_21": ".planning/HANDOFF.json (this file) + .planning/STATE.md 2026-10-21 RESUME HERE block + .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/.continue-here.md",
+  "timestamp_reason_2026_10_27": "Mid-wave checkpoint commit requested by Carter (connection insurance) while the W2b executor is still running; NOT a session close.",
+  "headline": "TRACK A ta-r4: W0a..W2a DONE+pushed. W2b IN PROGRESS: Task 1 AFR panels 37a391e4, Task 2 UKB tile loader f6d637aa, Task 3 UKB native+isect panels fa91305f, follow-up fix 0e621884 (no /rs1 literal in ukb337k_tiles; tile manifest keyed by file; UKB rules in r_coloc env). UKB fire #4 (fire_W2b_ukb_4.log) stopped at 52/60 via a clean scheduler exit (no error in log; cause not recorded there); full test suite running as LSF job 426532 at 14:15. NOT YET DONE: UKB rebuild completion, W2b SUMMARY, full-suite reconciliation vs W2a (1819/1769/50/0), STATE/ROADMAP wave close. Stop before W2c (needs carter-approved).",
+  "resume_on_reconnect": [
+    "If the W2b executor agent is gone: `bjobs` (LSF lane) + `git log --oneline e8aa84a8..HEAD` + `git status --short` to see where it stopped.",
+    "Check fire log tail and output dirs above; if the UKB DAG is incomplete and no LSF jobs alive, re-fire the same Snakemake target (smoke_dev snakemake), never /share outputs.",
+    "Verify UKB panel CONTENTS against the W2b plan invariants (n_var, symmetry, diag 1, triangle flag, manifest sha256) — Snakemake-done is not evidence.",
+    "Then re-spawn a gsd-executor for W2b wave close only (SUMMARY, full-suite reconciliation vs W2a, STATE/ROADMAP, push). Stop at W2c."
+  ],
+  "resume_entry_point": "/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission (W2b close, then W2c checkpoint — Carter sign-off)"
 }
