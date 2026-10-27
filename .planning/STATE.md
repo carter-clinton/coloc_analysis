@@ -26,7 +26,16 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-27 — **TRACK A ta-r4: W0a … W2a + W2b DONE. NEXT = W2c (Carter checkpoint). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-27 17:05 — **TRACK A ta-r4: W2c Task 1 RUNNING (GTEx QTL downloads, detached).** (★ RESUME HERE — LATEST ★)
+
+- W2c started on Carter's go. Task 1: 98 eQTL Catalogue GTEx files (49 tissues × eqtl/sqtl, 192.1 GB) downloading on
+  login01, detached (PID 1793323; `/rs1/.../ta_r4/logs/qtl_fetch.{pid,log}`), ETA ~00:00–01:00 EDT 10-28. Compute nodes
+  have no internet (`manifests/compute_node_network_probe.tsv`), so this cannot be an LSF job.
+- Then Tasks 2–3 (QTL manifest, review packet, full suite, push); STOP at Task 4 for Carter's `carter-approved` reply.
+- Carter's earlier "carter approved 10-27-2026" predates the packet and is not in the required format: NOT recorded.
+- **Resume:** `.planning/HANDOFF.json` → `resume_on_reconnect`.
+
+## 2026-10-27 — **TRACK A ta-r4: W0a … W2a + W2b DONE. NEXT = W2c (Carter checkpoint). NOTHING RUNNING.** (SUPERSEDED by the 17:05 block above)
 
 - **W2b closed** (T1 `37a391e4`, T2 `f6d637aa`, T3 `fa91305f`, fixes `0e621884` + `1d900305`, plus the wave-close commit, pushed).
   AFR661 = 504 + ASW 61 + ACB 96. AFR661/AFR504 R4 panels 10 + 10, AFR661 identity 10, legacy AFR 12 (all 12 are use_identity
