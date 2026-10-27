@@ -3,6 +3,7 @@ overlapping tiles, and D.R.D re-orientation to a reference panel's REF/ALT (chec
 from __future__ import annotations
 
 import gzip
+import os
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,8 @@ import pytest
 import scipy.sparse as sp
 
 from ta_r4 import ukb337k_tiles as ukb
+
+RSCRIPT = os.environ.get("RSCRIPT", "/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript")
 
 
 def _write_tile(tmp_path, name, M, pos, a1, a2, chrom="12"):
@@ -230,9 +233,7 @@ def test_orient_counts_variants_absent_from_reference():
 
 # --- .rds round trip --------------------------------------------------------------------------------------------------
 def test_write_read_rds_roundtrip(tmp_path):
-    rscript = ukb.default_rscript()
-    if rscript is None:
-        pytest.skip("no Rscript")
+    rscript = RSCRIPT
     R = BIG
     v = pd.DataFrame({"SNP_ID": [f"rs{p}" for p in BPOS], "CHR": ["12"] * 6, "POS": BPOS, "REF": BA2, "ALT": BA1})
     out = tmp_path / "x.rds"
@@ -344,9 +345,7 @@ def test_build_isect_known_answer(tmp_path):
 
 
 def test_build_isect_rds_frames_identical(tmp_path):
-    rscript = ukb.default_rscript()
-    if rscript is None:
-        pytest.skip("no Rscript")
+    rscript = RSCRIPT
     tiles = [_tile(tmp_path, "a", [0, 1, 2, 3]), _tile(tmp_path, "b", [2, 3, 4, 5])]
     R_ref, v_ref = _ref_panel()
     ref_rds = ukb.write_rds(R_ref, v_ref, tmp_path / "ref.rds", ld_source="ref", rscript=rscript)

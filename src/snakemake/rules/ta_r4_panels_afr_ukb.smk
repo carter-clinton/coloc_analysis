@@ -188,6 +188,8 @@ rule r4_panel_ukb_native:
         start=lambda w: REGION_METADATA[w.region]["start"],
         end=lambda w: REGION_METADATA[w.region]["end"],
         region_id=lambda w: REGION_SAFE_TO_ID[w.region],
+    conda:
+        str(Path(workflow.basedir) / "envs" / "r_coloc.yml")
     threads: 1
     resources:
         mem_mb=48000,
@@ -216,6 +218,8 @@ rule r4_panel_ukb_isect:
         start=lambda w: REGION_METADATA[w.region]["start"],
         end=lambda w: REGION_METADATA[w.region]["end"],
         region_id=lambda w: REGION_SAFE_TO_ID[w.region],
+    conda:
+        str(Path(workflow.basedir) / "envs" / "r_coloc.yml")
     threads: 1
     resources:
         mem_mb=32000,

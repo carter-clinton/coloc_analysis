@@ -29,11 +29,10 @@ from ta_r4.fetch_verified import fetch_verified
 BASE_URL = "https://broad-alkesgroup-ukbb-ld.s3.amazonaws.com/UKBB_LD/"
 DOWNLOAD_DIR = f"{_fv.DOWNLOADS_ROOT}/ukb337k"
 TILE_MANIFEST = f"{r4paths.MAN}/ukb337k_tiles_sha256.tsv"
-TILE_COLS = ["tile", "file", "url", "size_bytes", "etag", "md5", "sha256", "fetched_utc"]
+TILE_COLS = ["file", "tile", "url", "size_bytes", "etag", "md5", "sha256", "fetched_utc"]
 TILE_STEP, TILE_SPAN = 1_000_000, 3_000_000
 OVERLAP_TOL = 1e-6
 PALINDROMIC = ({"A", "T"}, {"C", "G"})
-RSCRIPT_R4 = "/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript"
 
 
 class TileConventionError(ValueError):
@@ -126,7 +125,7 @@ def fetch_tile(name, dest_root=DOWNLOAD_DIR, manifest=TILE_MANIFEST, downloads_r
         with open(man, "a") as fh:
             if new:
                 fh.write("\t".join(TILE_COLS) + "\n")
-            fh.write("\t".join([name, fname, url, str(res["size"]), etag, res["md5"], res["sha256"],
+            fh.write("\t".join([fname, name, url, str(res["size"]), etag, res["md5"], res["sha256"],
                                 _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")]) + "\n")
     return npz, gz
 
@@ -397,7 +396,7 @@ def write_native_panel(tile_list, chrom, start, end, catalog_tsv, out, region_id
 
 # --- .rds I/O --------------------------------------------------------------------------------------------------------
 def default_rscript():
-    for c in (os.environ.get("RSCRIPT"), RSCRIPT_R4, shutil.which("Rscript")):
+    for c in (os.environ.get("RSCRIPT"), shutil.which("Rscript")):
         if c and Path(c).is_file():
             return c
     return None

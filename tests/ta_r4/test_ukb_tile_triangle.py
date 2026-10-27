@@ -4,6 +4,7 @@ Skips only while the tile has not been fetched; once it is on disk every check m
 from __future__ import annotations
 
 import csv
+import os
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +20,7 @@ TILE = "chr12_111000001_114000001"
 EUR_PANEL = REPO / "data/r4/ld/EUR_1kg_r4/SH2B3_12q24.rds"
 OUT = REPO / "data/r4/findings/ukb_tile_sign_agreement.tsv"
 MIN_AGREEMENT = 0.90
+RSCRIPT = os.environ.get("RSCRIPT", "/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript")
 
 
 def _tile_paths():
@@ -65,7 +67,7 @@ def test_sign_agreement_with_1000g_eur():
     npz, gz = _tile_paths()
     if not EUR_PANEL.is_file():
         pytest.fail(f"missing W2a panel {EUR_PANEL}")
-    R_1kg, v_1kg = ukb.read_rds(EUR_PANEL)
+    R_1kg, v_1kg = ukb.read_rds(EUR_PANEL, rscript=RSCRIPT)
     v_all = ukb.read_tile_variants(gz)
     keep = np.flatnonzero(v_all["POS"].isin(set(v_1kg["POS"])).to_numpy())
     R_u, v_u = ukb.load_tile(npz, gz, keep=keep)
