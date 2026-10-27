@@ -1,2 +1,3 @@
 source	url	file	size_bytes	md5	sha256	fetched_utc
 ldsc_1000G_Phase3_plinkfiles	https://zenodo.org/records/10515792/files/1000G_Phase3_plinkfiles.tgz?download=1	1000G_Phase3_plinkfiles.tgz	288277344	a7773ab485827b533cb300c76356d76b	18383e998035521270d158b0aa4e546d269fc938f6e8490ff6916b644330f5df	2026-10-24T01:17:30Z
+gwas_catalog_GCST90104549	https://ftp.ebi.ac.uk/pub/databases/gwas/summary_statistics/GCST90104001-GCST90105000/GCST90104549/GCST90104549_buildGRCh37.tsv.gz	GCST90104549_buildGRCh37.tsv.gz	438966654	15d6213c131aebf625b11879db5db05a	220d26108f966c9ead6764b9babcac1c6e60196255d22fe6c8e954b71a4b9dd4	2026-10-27T20:15:02Z
