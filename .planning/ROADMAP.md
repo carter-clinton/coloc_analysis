@@ -682,7 +682,7 @@ Plans:
 - [x] ta-r4-W0d-pair-coloc-r4-script-PLAN.md — one coloc script: A1 matched/allvars, coloc.susie, labelled fallback, explicit priors; toy `--use-conda` e2e
 - [x] ta-r4-W1-e2-orientation-tdd-PLAN.md — E-2 fix: BMI alleles, panel REF/ALT, QTL-beta orientation (TDD, default-off)
 - [x] ta-r4-W2a-eur-panels-catalogs-identity-PLAN.md — 1000G EUR legacy + R4 panels, A2/k2d payloads, trait manifest
-- [ ] ta-r4-W2b-afr-and-ukb-panels-PLAN.md — AFR 661/504 panels, legacy AFR, UKB 337k loader + isolated, re-oriented panels
+- [x] ta-r4-W2b-afr-and-ukb-panels-PLAN.md — AFR 661/504 panels, legacy AFR, UKB 337k loader + isolated, re-oriented panels
 - [ ] ta-r4-W2c-qtl-downloads-manifest-and-panel-review-PLAN.md — GTEx v8 QTL downloads, static QTL manifest + cost per scope, Carter data review (human-action)
 - [ ] ta-r4-W2d-apply-review-decisions-PLAN.md — apply Carter's ukb_native (HM3) and qtl_scope decisions before the lock
 - [ ] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d (382 fits)

@@ -26,19 +26,20 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-27 — **TRACK A ta-r4: W2b IN PROGRESS (mid-wave checkpoint, executor still running).** (★ RESUME HERE — LATEST ★)
+## 2026-10-27 — **TRACK A ta-r4: W0a … W2a + W2b DONE. NEXT = W2c (Carter checkpoint). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
 
-- **Committed, unpushed until this checkpoint:** Task 1 AFR 661/504 panels + AFR661 identity + legacy AFR repro `37a391e4`;
-  Task 2 UKB 337k tile loader + real-tile known-answer gate `f6d637aa`; Task 3 UKB native + isect panels and matched 1000G
-  isect panels `fa91305f`; fix `0e621884` (no /rs1 literal in ukb337k_tiles, tile manifest keyed by file, UKB rules in the
-  r_coloc env).
-- **In flight:** UKB fire #4 (`/rs1/.../ta_r4/logs/fire_W2b_ukb_4.log`) reached 52/60 and then the scheduler exited with no
-  error in the log. A full test suite was running as LSF job 426532 at 14:15.
-- **Not done:** UKB build completion and content check, full-suite reconciliation vs W2a (1819/1769/50/0) by name,
-  W2b SUMMARY, ROADMAP tick, wave-close push. Stop at W2c (needs Carter's `carter-approved`).
-- ⚠ Check that the `.rds` step resolves the r_coloc Rscript under Snakemake: `0e621884` removed the pinned fallback from
-  `default_rscript()`.
-- **Resume:** `.planning/HANDOFF.json` → `resume_on_reconnect`.
+- **W2b closed** (T1 `37a391e4`, T2 `f6d637aa`, T3 `fa91305f`, fixes `0e621884` + `1d900305`, plus the wave-close commit, pushed).
+  AFR661 = 504 + ASW 61 + ACB 96. AFR661/AFR504 R4 panels 10 + 10, AFR661 identity 10, legacy AFR 12 (all 12 are use_identity
+  placeholders, as frozen). UKB native 30 / isect 29 / 1000G isect 29. The isect frames are identical 29/29; sign agreement is
+  ≥ 0.990 overall and ≥ 0.999 on mixed-orientation pairs. The real-tile gate gives diag == 1 and agreement 0.999953. All panels
+  are manifested and chmod a-w. FULL 1854/1804/50/0; vs W2a: 0 removed, 0 changed, +35.
+- ⚠ **For Carter at W2c (HM3 / ukb_native, not chosen):** 4 native UKB panels exceed 16,000 (HLA 34,361, PYHIN1 26,050,
+  BMI_5q13_3 24,121, SLC2A9 16,752). AFR BMI_5q13_3 and PYHIN1 also exceed 16,000 in both AFR panels. HLA native has no LD for
+  28-33 Mb (no UKB .npz exists there). Isect covers 71,769 of the 86,035 EUR_1kg_r4 variants (palindromes dropped).
+- ⚠ Still open: hypertension.EUR sdY (W2c), stroke.AFR checksum, and pre-W4 SNP_ID handling. Native UKB SNP_IDs are 174,352 rsid
+  plus 7,667 `chr:pos_A1_A2`.
+- LSF exit-255 ("Cannot open your job file") recurred in 3 W2b fires. Stop, unlock and re-fire when steps stall with no LSF jobs alive.
+- **Next:** W2c-T4 needs Carter's `carter-approved` sign-off; do not start it unprompted.
 
 ## 2026-10-26 — **TRACK A ta-r4: W0a … W1 + W2a DONE. NEXT = W2b. NOTHING RUNNING.** (SUPERSEDED by the 2026-10-27 block above)
 
@@ -2422,7 +2423,7 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-10-27 (latest) - ta-r4 W2b mid-wave checkpoint: Tasks 1-3 + fix committed (37a391e4, f6d637aa, fa91305f, 0e621884); UKB fire #4 stopped 52/60; wave close pending.
+Last activity: 2026-10-27 (latest) - ta-r4 W2b complete (AFR + UKB panels; FULL 1854/1804/50/0, 0 changed vs W2a). Next: W2c (Carter checkpoint).
 Last activity (prior): 2026-10-22 - ta-r4 W1 complete (E-2 fix, default-off; FULL 1800/1750/50/0, 0 changed vs W0d). Next: W2a.
 Last activity (prior): 2026-10-22 - ta-r4 W0b2 complete (Task 3 finished + wave-close; FULL 1660/1614/46/0; OSF anonymous-read 401 on az52u flagged for W4b). Next: W0c.
 Last activity (prior): 2026-10-21 18:45 EDT - SESSION CLOSE mid ta-r4 W0b2 (Track A revived: 25-plan re-analysis phase executing; W0a+W0b1 done; nothing running).

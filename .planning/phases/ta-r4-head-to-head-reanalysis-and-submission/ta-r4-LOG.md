@@ -397,3 +397,26 @@ Chronological record of every action in this phase. Append-only.
   1800+19 = 1819, 1750+19 = 1769; tests/m3 1299/1299, phase1 38, phase2 137, 0 changed. sparse_parent_benchmark.tsv restored.
   Shared conda cache 2188 / f094b37d…9085 / 0 archives before and after (23348 MB before; 0 entries newer). Frozen files 0-diff.
   Commits `8a5c75e2` (T2), `b266e1d8` (T3), wave-close commit follows; fsck clean before/after each.
+
+## 2026-10-27 — W2b executed (AFR 661/504 panels, legacy AFR repro, UKB 337k loader + native/isect panels)
+
+- **Resume.** The stopped session's WIP was verified by content, not presence. Restored 2 purged forensics logs (not committed).
+- **Task 1** (`37a391e4`): AFR504 = AFR.samples (sha256 97ff9e57…); AFR661 = 504 + ASW 61 + ACB 96 (157, 0 overlap); .fam IIDs ==
+  sample lists. 20 R4 panels: n_var == .bim, REF/ALT == .bim A2/A1, asym 0, |diag-1| 0. 10 AFR661 identity payloads identical()
+  frames. Legacy AFR 12 (= frozen 36 AFR fits / 3 traits; TRACK-A-FROZEN-NUMBERS.md:64 + IDENTITY-LD-K2D-FIT-SUMMARY.tsv), **12/12
+  use_identity placeholders**. FINDING afr_panel_size.tsv: BMI_5q13_3 21323/21154 and PYHIN1 20818/20686 > 16000.
+- **Task 2** (`f6d637aa`): RED re-derived (module absent → collection error; 8 sabotages each RED; the two diagonal guards mask
+  each other, both off → 3 RED). Live tile chr12_111000001_114000001: diag == 1 exactly, symmetric; sign agreement 21409/21410 =
+  0.999953 (745 shared, 717 flipped). No-D.R.D control still passed at 0.992760 overall → mixed-orientation assertion added:
+  154/154 = 1.0, control 0/154 RED. Halving control → 3 RED.
+- **Task 3** (`fa91305f`, fixes `0e621884`, `1d900305`): 121 candidate tiles HEADed; 7 chr6 26-35 Mb .npz are 404 → HLA native has
+  a 28-33 Mb hole. 41 files fetched; tile manifest 76 rows (39 gz + 37 npz), size/ETag == HEAD, sha256 == disk. Native 30, isect
+  29, 1000G isect 29; isect frames identical() 29/29; isect sign agreement min 0.990293 (APOL1), mixed min 0.999347. Native > 16000:
+  HLA 34361, PYHIN1 26050, BMI_5q13_3 24121, SLC2A9 16752. Isect 71,769 of 86,035 EUR_1kg_r4 variants (palindromes dropped).
+  Fires: LSF exit-255 losses stalled #1, #2 and #4 (#4 at 52/60: 7 jobs lost) → stopped, unlocked (UKB-only lock), re-fired. UKB
+  rebuilt from scratch twice (declared code input changed); all builds byte-identical (122/122, 147/147). UKB jobs ran in the
+  r_coloc job env (0f343627…, yaml == envs/r_coloc.yml, R 4.4.2).
+- **Wave close.** QUICK 330 passed / 50 deselected, 74.6 s (one load-affected run 144.5 s). HEAVY 46 passed / 4 skipped (14m26s).
+  Pins 39 passed. FULL 1854 ids / 1804 passed / 50 skipped / 0 failed (29m54s, full_W2b.xml). Vs full_W2a.xml: common 1819,
+  removed 0, changed 0, added 35 (loader 30, triangle 4, fetch 1); tests/m3 1299 (1265/34) unchanged, phase1 38, phase2 137.
+  Shared conda cache 2188 / f094b37d… / 0 archives before and after. Frozen files 0-diff. fsck clean before/after each commit.
