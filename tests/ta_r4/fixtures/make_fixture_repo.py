@@ -39,3 +39,37 @@ def make_fixture_repo(tmp_path) -> Path:
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "fixture from working tree")
     return repo
+
+
+def write_fixture_lock(repo, *, locked=True) -> str:
+    """Fixture only (tmp_path): a lock commit of the three configs, then R4-LOCK.json + a W4b-T3 sign-off."""
+    import datetime as dt
+    import json
+    import re
+
+    from ta_r4.r4_lock_gate import LOCK_RECORD_REL, LOCKABLE, SIGNOFF_REL
+    from ta_r4.signoff import record_signoff
+
+    repo = Path(repo)
+    line = f"locked: {'true' if locked else 'false'}"
+    cfgs = []
+    for n in LOCKABLE:
+        rel = f"config/ta_r4/{n}.yaml"
+        p = repo / rel
+        text = p.read_text() if p.exists() else ""
+        text, k = re.subn(r"(?m)^locked:.*$", line, text)
+        if not k:
+            text += ("" if text.endswith("\n") or not text else "\n") + line + "\n"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text)
+        cfgs.append(rel)
+    git(repo, "add", *cfgs)
+    git(repo, "commit", "-q", "--allow-empty", "-m", "fixture lock commit")
+    sha = git(repo, "rev-parse", "HEAD")
+    (repo / LOCK_RECORD_REL).parent.mkdir(parents=True, exist_ok=True)
+    (repo / LOCK_RECORD_REL).write_text(json.dumps({"lock_sha": sha}, indent=1) + "\n")
+    raw = f"carter-approved {dt.date.today().isoformat()}\nlock_sha: {sha}\n"
+    record_signoff("W4b-T3", raw, min_date="2026-10-01", signoff_dir=repo / SIGNOFF_REL)
+    git(repo, "add", LOCK_RECORD_REL, f"{SIGNOFF_REL}/W4b-T3.yaml")
+    git(repo, "commit", "-q", "-m", "fixture lock record + W4b-T3")
+    return sha

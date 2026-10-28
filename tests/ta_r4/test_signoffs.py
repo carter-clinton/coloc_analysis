@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import datetime as dt
+import json
 import re
 import subprocess
 from pathlib import Path
@@ -15,13 +16,13 @@ from pathlib import Path
 import pytest
 import yaml
 
+from ta_r4.r4_lock_gate import LOCK_RECORD_REL
 from ta_r4.signoff import SignoffError, canonical_sha256, record_signoff, verify_signoff
 
 from .conftest import REPO_ROOT
 
 PHASE_REL = ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission"
 SIGNOFF_REL = f"{PHASE_REL}/signoffs"
-SENTINEL_REL = f"{PHASE_REL}/OSF-R4-POSTED.json"
 LOCKABLE = ("coloc_priors", "decision_rules", "simulation")
 PARTIAL_KEYS = ("ci_pos_mcnemar_ns", "ci_pos_mcnemar_opposite", "ci_neg_mcnemar_ns",
                 "ci_neg_mcnemar_opposite")
@@ -128,12 +129,23 @@ def check_locks(repo):
     return probs
 
 
-def check_osf_sentinel(repo):
+def check_lock_record(repo):
     tracked = subprocess.run(
-        ["git", "-C", str(repo), "ls-files", "--error-unmatch", SENTINEL_REL],
+        ["git", "-C", str(repo), "ls-files", "--error-unmatch", LOCK_RECORD_REL],
         capture_output=True, text=True,
     ).returncode == 0
-    return _verify(repo, "W4b-T3")[1] if tracked else []
+    if not tracked:
+        return []
+    fields, probs = _verify(repo, "W4b-T3")
+    if probs:
+        return probs
+    try:
+        sha = json.loads((Path(repo) / LOCK_RECORD_REL).read_text()).get("lock_sha")
+    except (ValueError, AttributeError):
+        return [f"{LOCK_RECORD_REL} is not a JSON object"]
+    if fields["lock_sha"] != sha:
+        return [f"W4b-T3 lock_sha {fields['lock_sha']!r} != {LOCK_RECORD_REL} lock_sha {sha!r}"]
+    return []
 
 
 def check_venue_overlay(repo):
@@ -149,7 +161,7 @@ def check_w9_roadmap(repo):
     return _verify(repo, "W9-T4")[1]
 
 
-CHECKS = (check_all_signoffs_verify, check_review_decisions, check_locks, check_osf_sentinel,
+CHECKS = (check_all_signoffs_verify, check_review_decisions, check_locks, check_lock_record,
           check_venue_overlay, check_w9_roadmap)
 
 
@@ -305,14 +317,18 @@ def test_venue_overlay_requires_w9t1(repo):
     assert check_venue_overlay(repo) == []
 
 
-def test_tracked_osf_sentinel_requires_w4b(repo):
-    s = repo / SENTINEL_REL
-    s.write_text("{}\n")
-    assert check_osf_sentinel(repo) == []          # untracked: not live
-    subprocess.run(["git", "-C", str(repo), "add", SENTINEL_REL], check=True)
-    assert check_osf_sentinel(repo)
-    _sign(repo, "W4b-T3", f"carter-approved {TODAY}\nposted: yes\n")
-    assert check_osf_sentinel(repo) == []
+def test_tracked_lock_record_requires_matching_w4b(repo):
+    sha = "0123456789abcdef0123456789abcdef01234567"
+    rec = repo / LOCK_RECORD_REL
+    rec.write_text(json.dumps({"lock_sha": sha}) + "\n")
+    assert check_lock_record(repo) == []          # untracked: not live
+    subprocess.run(["git", "-C", str(repo), "add", LOCK_RECORD_REL], check=True)
+    assert check_lock_record(repo)                # tracked, no sign-off
+    _sign(repo, "W4b-T3", f"carter-approved {TODAY}\nlock_sha: {'f' * 40}\n")
+    assert any("lock_sha" in p for p in check_lock_record(repo))
+    (repo / SIGNOFF_REL / "W4b-T3.yaml").unlink()
+    _sign(repo, "W4b-T3", f"carter-approved {TODAY}\nlock_sha: {sha}\n")
+    assert check_lock_record(repo) == []
 
 
 # ---------------------------------------------------------------- real repo

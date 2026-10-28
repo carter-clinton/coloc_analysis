@@ -107,11 +107,18 @@ def test_w4a_enum_violations(key, bad):
 @pytest.mark.parametrize("cid,raw", [
     ("W2c-T4", "carter-approved 2026-10-21\nukb_native: both\nqtl_scope: full\n"),
     ("W2c-T4", "carter-approved 2026-10-21\nukb_native: native\nqtl_scope: some\n"),
-    ("W4b-T3", "carter-approved 2026-10-21\nposted: no\n"),
+    ("W4b-T3", "carter-approved 2026-10-21\nposted: yes\n"),
+    ("W4b-T3", "carter-approved 2026-10-21\nlock_sha: abcdef1\n"),
+    ("W4b-T3", "carter-approved 2026-10-21\nlock_sha: " + "A" * 40 + "\n"),
 ])
 def test_other_enum_violations(cid, raw):
     with pytest.raises(SignoffError, match="^WAIT:"):
         _p(raw, cid)
+
+
+def test_w4b_lock_sha_parses():
+    sha = "0123456789abcdef0123456789abcdef01234567"
+    assert _p(f"carter-approved 2026-10-21\nlock_sha: {sha}\n", "W4b-T3")["fields"] == {"lock_sha": sha}
 
 
 def test_unknown_checkpoint():

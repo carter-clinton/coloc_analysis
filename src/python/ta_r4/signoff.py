@@ -23,6 +23,7 @@ SIGNOFF_DIR = PHASE_DIR / "signoffs"
 BRANCHES = ("NON_INFORMATIVE", "NO_SYSTEMATIC_DIFFERENCE", "HETEROGENEOUS",
             "INFLATION_SUPPORTED", "DEFLATION")
 TEXT, FLOAT, INT, SHA256, DATE, OSF_URL = "text", "float", "int", "sha256", "date", "osf_url"
+GIT_SHA = "git_sha"
 
 SCHEMAS: dict[str, dict] = {
     "W2c-T4": {"keys": {"ukb_native": ("native", "hm3"),
@@ -37,7 +38,7 @@ SCHEMAS: dict[str, dict] = {
                         "partial_rule.ci_neg_mcnemar_opposite": BRANCHES,
                         "confirmatory_sha256": SHA256,
                         "draft": ("approved",)}},
-    "W4b-T3": {"keys": {"posted": ("yes",)}},
+    "W4b-T3": {"keys": {"lock_sha": GIT_SHA}},
     "W7-T3": {"keys": {"instructions": TEXT}},
     "W8b-T3": {"keys": {"instructions": TEXT}},
     "W9-T1": {"keys": {"venue": TEXT}},
@@ -81,6 +82,8 @@ def _check_value(key, value, rule):
         ok = re.fullmatch(r"[0-9]+", value) is not None
     elif rule == SHA256:
         ok = re.fullmatch(r"[0-9a-f]{64}", value) is not None
+    elif rule == GIT_SHA:
+        ok = re.fullmatch(r"[0-9a-f]{40}", value) is not None
     elif rule == DATE:
         ok = re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) is not None and _is_date(value)
     elif rule == OSF_URL:
