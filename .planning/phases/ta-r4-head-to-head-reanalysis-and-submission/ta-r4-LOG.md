@@ -509,3 +509,10 @@ trait.hypertension.EUR.sdY: 20.7
   `bash bin/r4_fire.sh repro repro_routeC -n r4_gate_probe_repro` → dry-run lists the probe, rc 0.
 - Records: DEC appended; osf_deviations R4 entry; PLAN-INDEX, CONTEXT (D-05/D-27 superseded lines), VALIDATION and the
   pending W3d/W3e/W4a/W4b/W5a/W5b/W5c/W6/W7 plans now gate on the lock; OSF posting is optional.
+
+## 2026-10-28 — W2d executed (apply W2c-T4 decisions)
+
+- Preconditions: `coloc_priors.yaml` locked: false; `decision_rules.yaml` / `simulation.yaml` not yet created; no R4-LOCK.json.
+  `signoff verify W2c-T4` rc 0 → `{"qtl_scope": "full", "trait.hypertension.EUR.sdY": "20.7", "ukb_native": "native"}`.
+- W2d: ukb_native=native (Carter 2026-10-28), no-op. ARMS['A3_ukb'].panel_dir = EUR_ukb337k_r4; arms.py and
+  overlay_A3_ukb.yaml 0-diff vs HEAD; overlay/isolation/signoffs tests `62 passed`.
