@@ -468,3 +468,4 @@ Chronological record of every action in this phase. Append-only.
   1a887069. Commits `e3afa4dd` (T1), `f288ab82` (T2), packet + wave-close commit follows.
 - **STOP at Task 4.** No sign-off recorded. Carter's 2026-10-27 "carter approved 10-27-2026 / proceed with your recommendations"
   predates the packet and does not match `carter-approved YYYY-MM-DD`; it is not a sign-off.
+- **Pushed.** Wave-close commit `57da00e6`; `git push origin HEAD` → `14318720..57da00e6  HEAD -> m3-W2-aou-deltas`; fsck clean before/after.
