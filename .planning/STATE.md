@@ -26,7 +26,16 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-27 17:05 — **TRACK A ta-r4: W2c Task 1 RUNNING (GTEx QTL downloads, detached).** (★ RESUME HERE — LATEST ★)
+## 2026-10-28 — **TRACK A ta-r4: W2c Tasks 1–3 DONE. WAITING ON CARTER (W2c-T4). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- T1 `e3afa4dd`: 98 GTEx eQTL/sQTL files (180G), all gzip/tabix OK. T2 `f288ab82`: `config/ta_r4/qtl_manifest.tsv` has
+  116,550 rows = 5 × 23,310 features. The compute estimate has 4 scopes; t_row is a fixture lower bound.
+- FINDING: only 412 of the 1,274 frozen QTL tuples have an R4 counterpart. stroke.AFR is GCST90104553 (small vessel stroke).
+- Carter reviews `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W2-REVIEW-PACKET.md` and replies in its §9
+  format. Then: `ta_r4.signoff record W2c-T4 --min-date 2026-10-28 --extra-required trait.hypertension.EUR.sdY`.
+- Full suite 1868 ids / 1818 passed / 50 skipped / 0 failed (vs W2b: +14 added, 0 changed).
+
+## 2026-10-27 17:05 — **TRACK A ta-r4: W2c Task 1 RUNNING (GTEx QTL downloads, detached).** (SUPERSEDED by the 2026-10-28 block above)
 
 - W2c started on Carter's go. Task 1: 98 eQTL Catalogue GTEx files (49 tissues × eqtl/sqtl, 192.1 GB) downloading on
   login01, detached (PID 1793323; `/rs1/.../ta_r4/logs/qtl_fetch.{pid,log}`), ETA ~00:00–01:00 EDT 10-28. Compute nodes

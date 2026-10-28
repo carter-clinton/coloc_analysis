@@ -420,3 +420,51 @@ Chronological record of every action in this phase. Append-only.
   Pins 39 passed. FULL 1854 ids / 1804 passed / 50 skipped / 0 failed (29m54s, full_W2b.xml). Vs full_W2a.xml: common 1819,
   removed 0, changed 0, added 35 (loader 30, triangle 4, fetch 1); tests/m3 1299 (1265/34) unchanged, phase1 38, phase2 137.
   Shared conda cache 2188 / f094b37d… / 0 archives before and after. Frozen files 0-diff. fsck clean before/after each commit.
+
+## 2026-10-28 — W2c Tasks 1–3 executed (GTEx QTL downloads, static QTL manifest, W2 review packet); STOPPED at Task 4
+
+- **Task 1** (`e3afa4dd`). Downloader PID 1793323 `FINISHED todo=98 failed=0`; `RESOLVED_COUNT 98 = 49 tissues x 2 sources`;
+  `HEAD_OK 98 total_bytes 192123270766`. Verify awk → `98 0`. sum(size) + sum(tbi) = `191965693189 + 157577577 = 192123270766`
+  = HEAD_OK total. `du -sh data/r4/downloads/eqtl_catalogue` → `180G`; 98 QTD dirs + empty `_tbi_stage`; `find data/raw -newer
+  fetch_eqtl_catalogue.py` → nothing. Published checksums: the QTD000116, QTD000121, QTS000015 and sumstats/ listings have no md5
+  file (checked 2026-10-28) → all 98 rows `no published checksum`.
+- **Task 2 RED.** First recorded in `33d5f640` (`6 failed, 8 errors`, ImportError) and its controls in `14318720`. Re-derived
+  today (pyc deleted, PYTHONDONTWRITEBYTECODE=1, cmp-restored): module moved aside → `6 failed, 8 errors in 1.06s`; check_schema
+  no-op → `FAILED test_schema_rejects_status_or_tier_column`; `"tier"` appended to COLUMNS → `FAILED
+  test_schema_rejects_status_or_tier_column`, `FAILED test_written_manifest_deterministic`. Committed-manifest controls:
+  `tier` column appended to the TSV → `Left contains one more item: 'tier'` (RED); stroke rows dropped → `assert 93240 ==
+  (23310 * 5)` (RED); restored sha256 0f10d922…4ad8.
+- **Task 2 build** (LSF 429971–429975, 429980 after `Cannot open your job file` on 429975). `review_decisions.yaml` absent →
+  `full`. `scope=full frozen_tissues=49 (src/python/build_tissue_n_lookup.py:25 GTEX_V8_TISSUE_N_FALLBACK) files=98 regions=10
+  traits=5 features=23310 rows=116550`, 205 s. full_a == full_b == committed sha256 `0f10d9223833…4ad8`; tissues_frozen
+  identical to full; eqtl_only == tf+eo `fce5f86b…5c85` (105745 rows, 21149 features). **Reconciliation:** `awk 'NR>1' | wc -l`
+  = **116550** = 5 × **23310** unique (region, source, tissue, feature); dropping qtl_row_id+trait also gives 23310. Per source:
+  eqtl 105745 + sqtl 10805 = 116550. Per region (rows/features): 9p21 4055/811, APOE 30930/6186, APOL1 10070/2014, BMI_5q13_3
+  12195/2439, CXADR_F2RL1 5855/1171, FTO 4905/981, MC4R 5465/1093, PYHIN1 27125/5425, SH2B3 9740/1948, SLC2A9 6210/1242; sum of
+  features 23310. Per trait 23310 × 5. Groups (region, source, qtd) 899 = eqtl 490 + sqtl 409.
+- **Frozen QTL layer re-derived.** Legacy `build_manifest` with gtex_eqtl+gtex_sqtl and the 49-tissue fallback → **1274** rows
+  (= TRACK-A-FROZEN-NUMBERS.md 1274): 10 regions (HLA_6p21 in, BMI_5q13.3 out), EUR, 4 traits (first per region), 13 curated
+  genes. R4 coverage: 412 / 1274 (eqtl 379, sqtl 33). Missing 862 = HLA 98 + SLC2A9 ENSG00000109107 98 + CXADR 98 + F2RL1 98
+  + MC4R 98 + 372 (sqtl 359, eqtl 13 where the gene lacks rows in that tissue). **FINDING** for Task 4 (packet §7).
+- **t_row.** No legacy QTL logs survive (`find results data/r4/known_answer_survivors -path '*qtl*' -name '*.log'` → 0). Fixture
+  timing LSF 429976 (tests/phase2 has no runnable fixture; used the test_qtl_orient 200-variant fixture): `N 15 median_s 2.397
+  min 2.290 max 7.224 median_json_bytes 1355`. Labelled "fixture lower bound, UNMEASURED on real data". Estimate (rows × 3 ×
+  t_row): full 116550 rows / 899 groups / 232.8 core-h / 0.474 GB; tissues_frozen same; eqtl_only and tf+eo 105745 / 490 /
+  211.2 / 0.430.
+- **Deviation.** My first verify ran the r4_heavy determinism test on login01 for ~2.5 min (2 builds); killed. The file was
+  intact (sha256 0f10d922…). All later heavy runs went on LSF.
+- **Open-item evidence (packet §4).** stroke.AFR: local GCST90104553 md5 `c63fdaba…fee4` = published; meta.yaml trait "Small
+  vessel stroke" (EFO_1001504), sample_size 20453. GCST90104549 = "Stroke" (EFO_0000712), 23991, md5 `15d6213c…` = published,
+  sha256 `220d2610…` = inventory sha256_raw. stroke.AFR.tsv.bgz (sha256 bf08ef28…) vs GCST90104553: `raw_rows 5259724 r4_rows
+  5259724 joined_ALT=effect_allele 5259724 joined_flipped 0 unjoined 0`; BETA/SE/P/EAF equal 5259724; N {20271} (LSF 429983).
+  Inventory harmonized all-stroke file sha256 `3c58b250…` = inventory sha256_harmonized (LSF 429984). hypertension sdY: Evangelou
+  2018 Supp. Table 1a SBP SD 20.7 mmHg (UKB+BiLEVE N 458,575), fetched to `data/r4/downloads/evangelou2018_supp/` (sha256
+  a24bdb44…; row added to downloads_sha256.tsv; md5 computed, none published); sdY.est median 10.72 (trait_facts.tsv).
+- **Wave close (LSF 429989, c018n02).** VERIFY test_qtl_manifest.py `14 passed` (7m54s, incl. r4_heavy). QUICK `343 passed, 51
+  deselected`, 96.0 s. HEAVY `47 passed, 4 skipped` (21m22s; the 4 = W5a/W5b-enabled skips). Pins `39 passed`. FULL `1818
+  passed, 50 skipped` (39m58s, full_W2c.xml). Vs full_W2b.xml: common 1854, removed 0, changed 0, added 14 (test_qtl_manifest,
+  all passed); 1854 + 14 = 1868 ids, 1804 + 14 = 1818, 50 + 0 = 50; tests/m3 1299 (1265/34) unchanged. sparse_parent_benchmark.tsv
+  restored. Shared conda cache 2188 / f094b37d… / 0 archives before and after, 0 entries newer. Frozen files 0-diff since
+  1a887069. Commits `e3afa4dd` (T1), `f288ab82` (T2), packet + wave-close commit follows.
+- **STOP at Task 4.** No sign-off recorded. Carter's 2026-10-27 "carter approved 10-27-2026 / proceed with your recommendations"
+  predates the packet and does not match `carter-approved YYYY-MM-DD`; it is not a sign-off.
