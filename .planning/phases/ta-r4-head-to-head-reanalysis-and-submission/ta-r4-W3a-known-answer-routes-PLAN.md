@@ -25,7 +25,7 @@ requirements:
 must_haves:
   truths:
     - "Route L runs the 3dd76df run_susie_rss.R (and every file it sources at that commit), extracted with sha256 to data/r4/legacy_code/; Route C runs the CURRENT frozen script with ld_read_path off and the iter-100 reproduction policy (D-12b, Pattern 4)"
-    - "Both routes run the 96 real-LD fits (8 trait-ancestry x 12 regions) on legacy_repro panels and legacy catalogs, and the k2d identity fits on k2d payloads, all stage repro (exempt from the OSF gate per D-05)"
+    - "Both routes run the 96 real-LD fits (8 trait-ancestry x 12 regions) on legacy_repro panels and legacy catalogs, and the k2d identity fits on k2d payloads, all stage repro (exempt from the lock gate, DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf)"
     - "known_answer_W3a.tsv has one row per (fit, route pair) comparing status, n_CS, cs_sizes and the max |ΔPIP| between Route C and Route L, plus columns comparing each to the frozen record (k2d per-fit; Stage-2 aggregates 48 ok / 24 too_many_variants / 18 non_converged / 6 no_variants; 51/96 non-empty)"
     - "Mismatches are recorded as findings, never tuned away; no policy or code is changed in response to a mismatch (§B.10)"
   artifacts:

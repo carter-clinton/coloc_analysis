@@ -488,23 +488,6 @@ trait.hypertension.EUR.sdY: 20.7
 
 ## 2026-10-28 — quick-261028-kkg: production gate = git lock (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf)
 
-- **Task 1 `26b358e2`:** `ta_r4.r4_lock_gate` + W4b-T3 `lock_sha` schema. RED first: ImportError for `ta_r4.r4_lock_gate`,
-  2 test_signoff failures. Negative control: checks (g)/(h) blinded → 3 drift tests RED; byte-identical restore +
-  `__pycache__` cleared → green.
-- **Task 2 `b119c34e`:** Snakefile, rules and `bin/r4_fire.sh` use the lock gate; `r4_osf_gate.py` and `test_osf_gate.py`
-  deleted (`find_spec` test enforces it). End-to-end negative control: with a fixture lock, an uncommitted edit to a locked
-  path makes the production dry-run refuse with "drifted" (`test_fixture_production_dry_run_passes_with_lock_then_refuses_on_drift`).
-- **tests/ta_r4 by id** (before = pre-Task 1): 394 − 55 removed + 51 added = 390; 386 passed / 4 skipped / 0 failed. Removed
-  ids are only in test_osf_gate (52) and test_signoff(s) (3); added only in test_lock_gate / test_signoff(s); no other id
-  changed outcome. Freeze pins `39 passed`. `run_susie_rss.R` 0-diff.
-- **FULL** 1864 ids / 1814 passed / 50 skipped / 0 failed (37m27s, LSF 430615) vs W2c 1868/1818/50/0: −4 = the ta_r4 delta.
-  sparse_parent_benchmark.tsv restored.
-- **Real repo, after the Task 2 commit:** `bash bin/r4_fire.sh production A3_1kg -n r4_gate_probe` → rc 1,
-  `LockGateError: (a) lock record absent: .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/R4-LOCK.json`;
-  `bash bin/r4_fire.sh repro repro_routeC -n r4_gate_probe_repro` → rc 0 (dry-run).
-
-## 2026-10-28 — quick-261028-kkg: production gate = git lock (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf)
-
 - **Commits.** `26b358e2` feat: `ta_r4.r4_lock_gate` + W4b-T3 schema `lock_sha: <40-hex>` (+ `check_lock_record` in
   test_signoffs, `write_fixture_lock`). `b119c34e` refactor: Snakefile/rules/`bin/r4_fire.sh` use the lock gate;
   `r4_osf_gate.py` and `test_osf_gate.py` deleted.
