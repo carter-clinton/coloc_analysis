@@ -72,8 +72,8 @@ Checks: tests/ta_r4/test_manuscript_r4.py, tests/ta_r4/test_render_manuscript.py
     instruction: "You are a hostile reviewer for a genetics methods journal. For every factual,
     numerical and methodological claim, locate the code, table or manifest in this repository that
     supports it and report every claim that is contradicted, unsupported, overstated, or that
-    conflates coloc.abf with identity-LD SuSiE. Also check that the stated pre-registration matches
-    .planning/amendments/osf-amendment-r4-FINAL.md. Cite file:line for every finding."
+    conflates coloc.abf with identity-LD SuSiE. Also check that the stated analysis lock (lock_sha in R4-LOCK.json) and the Methods match
+    .planning/amendments/osf-amendment-r4-FINAL.md, and flag any claim that R4 was pre-registered on OSF. Cite file:line for every finding."
     Do NOT provide the CONTEXT, RESEARCH, LOG, SUMMARYs or results report. Bank the output verbatim
     under a 3-line header (date, exact command, prompt sha256). Verify the banked file's body sha256
     equals the sha256 of the captured stdout.

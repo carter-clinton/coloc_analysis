@@ -111,7 +111,7 @@ Carter's W7 manuscript instructions: signoffs/W7-T3.yaml `instructions` (verify 
   <read_first>
     - docs/manuscript/id-vs-ref-LD.md (source material only; never edit)
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W7-RESULTS.md and the W7 LOG entry (Carter's instructions)
-    - .planning/amendments/osf-amendment-r4-FINAL.md (Methods must match the pre-registration; deviations stated)
+    - .planning/amendments/osf-amendment-r4-FINAL.md (Methods must match the locked amendment; deviations stated)
     - config/ta_r4/trait_manifest.tsv; manifests/panels_*.tsv; manifests/bmi_allele_restoration_report.tsv; manifests/known_answer_sh2b3.tsv
     - memory feedback_original_research_framing, project_track_a_handle
   </read_first>
@@ -127,8 +127,8 @@ Carter's W7 manuscript instructions: signoffs/W7-T3.yaml `instructions` (verify 
   <action>
     1. Write the template in a neutral format: title, authors (Carter K. Clinton, NCSU ASHES Lab,
        ORCID 0000-0003-2669-8200), Abstract, Introduction, Methods (data; LD panels; arms;
-       fine-mapping policy; colocalization; estimands and decision rules as pre-registered, with
-       the OSF link; known-answer controls; simulation; allele-orientation note; deviations), Results
+       fine-mapping policy; colocalization; estimands and decision rules as locked before production, citing
+       the lock commit from R4-LOCK.json, never "pre-registered on OSF" (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf); known-answer controls; simulation; allele-orientation note; deviations), Results
        (headline branch first, then E1–E8, AFR, QTL, frozen-vs-fixed), Discussion (what the branch
        means and doesn't; limitations including reference mismatch and panel size per Zou 2022; the
        inadmissible regions), Data availability, Code availability (GitHub repo; OSF az52u/pvb5j),

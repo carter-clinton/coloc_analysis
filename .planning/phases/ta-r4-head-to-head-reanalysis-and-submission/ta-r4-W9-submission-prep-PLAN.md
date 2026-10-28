@@ -133,7 +133,7 @@ Sign-offs: python -m ta_r4.signoff verify W8b-T3 / record W9-T1 / record W9-T4 (
        `manuscript_venue.md`. Measure word, abstract, figure and table counts against
        `requirements.tsv`. A limit violation is listed for Carter, not silently cut.
     3. Draft `cover_letter.md` (framing rule: original, hypothesis-driven research; state the
-       pre-registration with OSF links; no "revision" language), `data_availability.md` (every
+       analysis lock commit, never "pre-registered on OSF" for R4 (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf); no "revision" language), `data_availability.md` (every
        source with licence, from `config/ta_r4/data_sources.yaml`), and `code_availability.md`
        (GitHub repo + commit, OSF).
     4. Draft `.planning/amendments/osf-r4-results-record-DRAFT.md`: the pre-registered branch per
