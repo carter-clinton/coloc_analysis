@@ -2874,3 +2874,19 @@ orchestrator's.
 - The known-answer reproduction targets that exact mix. The standard L=10 / max_iter 100 SH2B3
   run is a separate measurement, reported as such.
 - The manuscript states the true provenance of the 1.0.
+
+## 2026-10-28 — DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf: the ta-r4 production gate is the git lock (lock commit ancestor of HEAD + no locked file drift + Carter's W4b-T3 lock_sha); OSF is not required
+
+- **Decider:** Carter, 2026-10-28. He has no OSF token and does not want one; W5 must not depend on OSF.
+- **Supersedes** D-05 / D-27 and PLAN-INDEX rigor upgrade 3 **for production gating only**. `repro` is unchanged.
+- **The gate** (`ta_r4.r4_lock_gate`, offline, no network, no environment variables, no bypass): the
+  git-tracked, committed `$P/R4-LOCK.json` names `lock_sha` (W4b commit A); `lock_sha` is an ancestor of HEAD;
+  `coloc_priors`, `decision_rules` and `simulation` are `locked: true` at `lock_sha`; no `LOCKED_PATHS` file
+  differs from `lock_sha` (committed, working copy or untracked); a valid, tracked W4b-T3 sign-off records
+  the same `lock_sha`.
+- **Consequence accepted by Carter:** R4 cannot claim "pre-registered on OSF". Public wording is
+  "analysis locked in commit <sha> before production".
+- Earlier OSF registrations (pvb5j, az52u, k8w7n) are untouched. Posting the R4 amendment to OSF is optional
+  and never blocks W5.
+- **Implementing commits (quick-261028-kkg):** `26b358e2` (gate + W4b-T3 `lock_sha` schema), `b119c34e` (call sites
+  switched, `r4_osf_gate` removed).

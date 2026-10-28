@@ -43,7 +43,7 @@ must_haves:
 ---
 
 <objective>
-Wave 3e prepares the QTL layer before the OSF post. It harmonizes the QTL inputs (data processing,
+Wave 3e prepares the QTL layer before the lock (W4b). It harmonizes the QTL inputs (data processing,
 which D-05 allows pre-gate) and builds and tests the group runner. The runner executes every
 pre-registered QTL row under the fixed (A3, A2) and pre-fix (legacy) configurations, with the D-02
 fallback applied consistently. All QTL analysis code is then frozen before pre-registration.
@@ -142,10 +142,10 @@ Tissue N lookup: qtl_download.smk build_tissue_n_lookup (mirror its source of ti
        - Rule `r4_qtl_tiers`: runs `assign_tiers.py --sweep` with `config/pph4_thresholds.yaml`.
        - Target lists `R4_QTL_TARGETS(qtl_arm)`.
     5. Dry-run proof: `bash bin/r4_fire.sh production A3_1kg -n <one QTL_A3 group target>` exits
-       non-zero at the fire script's `verify-online` step (sentinel absent); the same for a
+       non-zero at the fire script's lock-gate check (lock record absent); the same for a
        QTL_legacy target under `repro repro_routeL` lists jobs (no gate). Also add a fixture-repo
        test (r4_heavy, reusing `make_fixture_repo`) that a QTL_A3 group target dry-run without a
-       sentinel fails with OsfGateError at DAG time, so the in-rule gate is proven independently of
+       lock record fails with LockGateError at DAG time, so the in-rule gate is proven independently of
        the fire script.
   </action>
   <verify>
@@ -199,7 +199,7 @@ Harmonized counts reconciled. The runner is tested (fallback, coverage, argv). T
 
 <success_criteria>
 The QTL layer can run exhaustively over the pre-registered rows in fixed and pre-fix configurations
-with consistent fallback handling, and all of its code is frozen before the OSF post.
+with consistent fallback handling, and all of its code is frozen before the lock (W4b).
 </success_criteria>
 
 <output>

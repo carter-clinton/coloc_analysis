@@ -35,7 +35,7 @@ must_haves:
     - "The 8 uncovered combinations are exactly: CI > 0 with McNemar non-significant or significant A3>X, and CI < 0 with McNemar non-significant or significant X>A3 (each × kappa ok/not ok); decision_rules.yaml carries one partial_rule key per (CI sign, McNemar state) pair (4 keys), each a draft for Carter to lock in W4a (D-26)"
     - "The confirmatory analysis is fixed pre-lock in decision_rules.yaml `confirmatory:` and implemented by estimands.contrast_stats: rows = primary curated EUR admissible rows (10 regions × 10 pairs = 100), p12_primary, A1 varset matched, reference arm A3_1kg; bootstrap clusters = those 10 regions; CI on the both-have-CS subset; McNemar, kappa and n_both on the both-have-CS subset at PP.H4 >= 0.8; explicit p/CI/kappa → category rules. Negative-control, AFR, p12_sensitivity, A1-allvars, UKB/isect and repro rows never reach classify() (iteration-2 blocker)"
     - "run_aggregation.py (the single entry point for every R4 table) is written and fixture-tested here, before the lock; W7 only runs it (iteration-2 blocker)"
-    - "Estimand outputs are labelled DRAFT unless decision_rules.yaml, coloc_priors.yaml and simulation.yaml all carry locked: true, signoffs/W4a-T3.yaml verifies, AND the offline OSF gate passes for stage production"
+    - "Estimand outputs are labelled DRAFT unless decision_rules.yaml, coloc_priors.yaml and simulation.yaml all carry locked: true, signoffs/W4a-T3.yaml verifies, AND the offline lock gate passes for stage production"
     - "Cross-evaluated purity scores A2 credible sets against the real 1000G R (Pitfall 9)"
     - "coloc_coverage.py proves output ids == the expected (admissible row × production arm of the ancestry + A1_<ANC> matched/allvars × p12 key) set exactly; it is analysis code, so it exists before the lock and the amendment cites it (B2)"
   artifacts:
@@ -62,7 +62,7 @@ must_haves:
 
 <objective>
 Wave 3d writes and tests every estimator (E1–E8), the outcome-branch classifier and the coloc
-coverage tool before the OSF post. The pre-registration can then cite frozen analysis code, the
+coverage tool before the lock (W4b). The pre-registration can then cite frozen analysis code, the
 decision rule is total with a stated precedence, and no production completeness check is written
 after the lock.
 
@@ -91,7 +91,7 @@ Fit JSON keys: status, n_CS / cs fields, d3b_ld_z_consistency_s (estimate_s_rss 
   ld_allele_exact, ld_allele_flipped
 QTL JSON counters (W1): qtl_orient_exact, qtl_orient_flipped, qtl_orient_dropped_*
 Sim TSV (W3c): region, scenario, gen_panel, rep, seed, arm, method, pp_h0..pp_h4, pp_h4_max, n_cs_a, n_cs_b, causal_a, causal_b, r2_causal
-From W0b1/W0b2: ta_r4.arms.production_arms(ancestry), ta_r4.paths.result_dirs, ta_r4.signoff.verify_signoff, ta_r4.r4_osf_gate.{check_osf_gate, verify_online}
+From W0b1/W0b2: ta_r4.arms.production_arms(ancestry), ta_r4.paths.result_dirs, ta_r4.signoff.verify_signoff, ta_r4.r4_lock_gate.check_lock_gate (+ tests/ta_r4/fixtures/make_fixture_repo.write_fixture_lock)
 Branch table (RESEARCH §Estimands, draft per D-26):
   INFLATION_SUPPORTED: McNemar X>A3 at alpha AND bootstrap CI of median ΔPP.H4 excludes 0 (positive)
   NO_SYSTEMATIC_DIFFERENCE: CI includes 0 AND kappa >= 0.6
@@ -109,7 +109,7 @@ smoke_dev Python 3.11: check numpy/pandas availability; implement exact binomial
   <files>config/ta_r4/decision_rules.yaml, src/python/ta_r4/estimands.py, src/python/ta_r4/branch_classifier.py, src/snakemake/scripts/ta_r4/cs_cross_purity.R, tests/ta_r4/test_estimands.py, tests/ta_r4/test_contrast_stats.py, tests/ta_r4/test_branch_classifier.py, tests/ta_r4/test_cs_cross_purity.py</files>
   <read_first>
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-RESEARCH.md §"Estimands and decision rules", §"Pitfall 8", §"Pitfall 9"
-    - src/python/ta_r4/r4_osf_gate.py and src/python/ta_r4/signoff.py (for the FINAL-label check)
+    - src/python/ta_r4/r4_lock_gate.py and src/python/ta_r4/signoff.py (for the FINAL-label check)
     - config/pph4_thresholds.yaml (REQ sweep values)
     - src/legacy/region_analysis/scripts/run_susie_rss.R (grep the JSON key names for estimate_s / kriging; read only)
   </read_first>
@@ -124,7 +124,7 @@ smoke_dev Python 3.11: check numpy/pandas availability; implement exact binomial
     - e2 at all four thresholds; e3 argmax table; e4 no-CS rate per arm = rows with n_cs == 0 on either side / rows
     - e8: false-H4 = share of H3 reps with region PP.H4 >= 0.8, per (arm, r² bin, gen_panel), with a Wilson 95% CI; 0 of 200 → CI upper ≈ 0.0188 (Wilson, z = 1.96)
     - e7 joins known_answer_W3a / known_answer_sh2b3 (frozen side) with R4-A3 rows (fixed side) on fit or pair ids and reports flipped share = flipped / (exact + flipped) per region (fine-map) and per QTL row
-    - Labelling: with any of the three configs unlocked → every output carries `status: DRAFT`. All three locked but no valid W4a-T3 sign-off → DRAFT. All locked + a valid fixture sign-off + a passing offline gate (fixture repo with fixture sentinel and a receipt written by verify_online with a fake fetch) → `status: FINAL`
+    - Labelling: with any of the three configs unlocked → every output carries `status: DRAFT`. All three locked but no valid W4a-T3 sign-off → DRAFT. All locked + a valid fixture sign-off + a passing lock gate (fixture lock record + W4b-T3 fixture sign-off via write_fixture_lock) → `status: FINAL`
     contrast_stats(rows, X, ref, rules) (tests/ta_r4/test_contrast_stats.py; synthetic rows covering every row class):
     - Selection is exactly `rules["confirmatory"]["rows"]`: row_class primary, ancestry EUR, admissible true, p12_key p12_primary, A1 varset matched, arms {X, ref} with ref = A3_1kg. On the real committed manifest the selected row_ids number 100 over 10 regions (asserted)
     - Clusters for the bootstrap = the distinct region_safe of the selected rows (10 on the real manifest), never the 29 incl. negative controls

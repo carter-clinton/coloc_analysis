@@ -67,7 +67,7 @@ Gate + code-state checks: W5a Task 1 steps 1-2 (lock commit A)
     - src/snakemake/rules/ta_r4_coloc.smk; src/python/ta_r4/coloc_coverage.py
   </read_first>
   <action>
-    1. Re-run the gate checks (verify-online, check) and the code-state `git diff --stat` against
+    1. Re-run the lock gate check and the code-state `git diff --stat` against
        lock commit A from W5a Task 1. STOP on either failure.
     2. Dry-run each arm. The expected counts are 290 × 2 = 580 per susie arm, and 1,160 for A1
        (matched + allvars, in the A3_1kg invocation). Fire, then monitor by listing. Do not commit

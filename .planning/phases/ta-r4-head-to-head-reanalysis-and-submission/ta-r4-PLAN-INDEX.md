@@ -38,7 +38,7 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 14 | ta-r4-W3d-estimators-and-branch-classifier-PLAN.md | (E1–E8, confirmatory contrast_stats, coverage + aggregation code, pre-lock) | — | yes |
 | 15 | ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md | (W6 prep, pre-lock) | — | yes |
 | 16 | ta-r4-W4a-amendment-draft-review-locks-PLAN.md | W4 | W4a-T3 lock values + draft approval | no |
-| 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 OSF posting (+ code gate) | no |
+| 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 lock confirmation (+ lock gate) | no |
 | 18 | ta-r4-W5a-eur-production-fits-PLAN.md | W5 | — (code gate) | yes |
 | 19 | ta-r4-W5b-eur-production-coloc-PLAN.md | W5 | — (code gate) | yes |
 | 20 | ta-r4-W5c-afr-secondary-and-simulation-run-PLAN.md | W5 | — (code gate) | yes |
@@ -54,16 +54,18 @@ visible to Carter):
    `confirmatory:` + `estimands.contrast_stats`), the outcome-branch classifier, the coloc coverage
    tool and the aggregation entry point `run_aggregation.py` (E1–E8)**, the **E8
    simulation harness** and the **QTL group runner** (W3c–W3e) are written and tested **before** the
-   OSF post. The amendment cites the commit hashes of the analysis code and of the locked configs
-   (W4b commit A), and W5a–W6 refuse to fire if any analysis file differs from the lock commit. The
+   lock (W4b). The amendment cites the commit hashes of the analysis code and of the locked configs
+   (W4b commit A), and W5a–W6 refuse to fire if any analysis file differs from the lock commit
+   (enforced by `ta_r4.r4_lock_gate`: `LOCKED_PATHS`, lock record `$P/R4-LOCK.json`). The
    analysis is frozen before any production data exists.
 2. The **QTL-coloc manifest** is generated from the downloaded data and committed **before** the
-   OSF post, alongside the trait-pair manifest; its scope is Carter's pre-registered choice among
+   lock (W4b), alongside the trait-pair manifest; its scope is Carter's pre-registered choice among
    outcome-independent filters, with a measured cost per option. Row sets cannot depend on arm outcomes.
-3. The OSF gate checks more than the presence of a sentinel file. The sentinel must be
-   **git-tracked**, and once per fire, on the submit host, the **public OSF API** must report the
-   posted file's sha256 equal to the committed PUBLIC amendment's sha256. Jobs check a host receipt
-   offline. An agent cannot fabricate a posting.
+3. The production gate is the **git lock** (`ta_r4.r4_lock_gate`, DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf). Production
+   passes only if `$P/R4-LOCK.json` is git-tracked and committed, its `lock_sha` (W4b commit A) is an
+   ancestor of HEAD, the three configs are `locked: true` at `lock_sha`, no `LOCKED_PATHS` file differs
+   from `lock_sha` (committed, working copy or untracked), and Carter's W4b-T3 sign-off records the same
+   `lock_sha`. Offline: no network, no environment-variable bypass. OSF posting is optional.
 4. **Brief-blind adversarial review of the amendment's public text** (W4a) as well as of the
    manuscript (W8b), because OSF posting is public and irreversible (memory
    `feedback_internal_validation_cannot_catch_misspecified_premise`).
@@ -110,12 +112,12 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
   edited; see W0b2). Invoke it only through `bin/r4_fire.sh <stage> <arm> <targets...>`, which loads
   `config/pipeline.yaml` + `config/ta_r4/overlay_base.yaml` + `config/ta_r4/overlay_<arm>.yaml`,
   sets `--conda-prefix $R4_CONDA_PREFIX`, `CONDARC=$R4_CONDARC` and
-  `--profile config/ta_r4/cluster_lsf`, and for production runs `r4_osf_gate verify-online` first.
+  `--profile config/ta_r4/cluster_lsf`, and for production runs `r4_lock_gate check` first.
 - **Arms (overlay names):** `A3_1kg`, `A2_identity`, `A3_ukb`, `A3_ukb_isect`, `A3_1kg_isect`, `AFR661_A3`,
   `AFR661_A2`, `AFR504_A3`, `repro_routeC`, `repro_routeL`, `repro_k2d_routeC`,
   `repro_k2d_routeL`, `repro_sh2b3_r2` (13 arms: 8 production, 5 repro). A1 is a coloc-only arm (no fits). There is no `AFR504_A2`: A2 depends only on the variant frame, so the 504-sample sensitivity is A3-only. `A3_ukb` points at `EUR_ukb337k_r4` or, if Carter chooses HM3 at W2c, `EUR_ukb337k_hm3_r4` (W2d).
 - **Result globs:** only through `ta_r4.paths.result_dirs("fits" | "coloc")` (production arms from ARMS; coloc adds `A1_EUR`, `A1_AFR`). Never a hand-written arm list.
-- **Stages:** `repro` (exempt from the OSF gate) and `production` (gated by D-27).
+- **Stages:** `repro` (exempt from the gate) and `production` (gated by the lock gate, DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf).
 - **Traits (EUR):** asthma, bmi, hypertension, stroke, t2d → 10 unordered pairs.
   **Traits (AFR):** asthma, stroke, t2d → 3 pairs.
 - **Admissible EUR regions (10):** FTO_16q12, MC4R_18q21, SH2B3_12q24, APOL1_22q12, PYHIN1_1q23,
@@ -168,13 +170,14 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
 10. **Mismatches in known-answer controls are FINDINGS to report, never numbers to adjust.**
 11. **Public text** (OSF amendment PUBLIC extract, manuscript, cover letter) frames the work as
     original, hypothesis-driven research. Never use "pivot", "revision", "salvage" or "audit-driven fix".
-12. **Never** post to OSF, submit to a journal, spend cloud/AoU money, or create (in the real repo)
-    `$P/OSF-R4-POSTED.json` or a gate receipt under `data/r4/gate/` by hand. Receipts are written
-    only by `r4_osf_gate verify-online`. Fixture sentinels/receipts are allowed only under pytest
-    `tmp_path` fixture repos.
+    R4 is described as "analysis locked in commit <sha> before production", never "pre-registered on OSF".
+12. **Never** post to OSF on Carter's behalf, submit to a journal, or spend cloud/AoU money. Never
+    create `$P/R4-LOCK.json` except in W4b Task 2 with `lock_sha` = commit A; never write
+    `signoffs/W4b-T3.yaml` except via `signoff record` from Carter's verbatim reply. Fixture lock
+    records are allowed only under pytest `tmp_path` fixture repos.
 13. Keep edits simple: the fix, not an essay. Rationale goes in commit messages and the LOG.
-14. **No commits while a production fire is in flight.** In-job gate checks require HEAD == the
-    receipt's head_sha; commit only after the fire ends and its dry-run says "Nothing to be done".
+14. **No commits while a production fire is in flight.** In-job gate checks re-diff the locked paths
+    against the lock commit; commit only after the fire ends and its dry-run says "Nothing to be done".
 15. **Carter sign-off protocol.** At every `checkpoint:human-action`, save Carter's reply
     byte-for-byte and run `python -m ta_r4.signoff record <ID> ...`. A non-zero exit (including a
     bare "approved", the auto-mode string) means WAIT: re-present the checkpoint and write nothing.
@@ -182,8 +185,7 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
     `signoffs/*.yaml` except via `signoff record`. The raw file is written only from the resume
     payload the orchestrator passes, which must be Carter's message pasted verbatim (never a
     summary, paraphrase or auto response). The SUMMARY quotes the resume payload next to the
-    recorded raw_sha256. Carter's sentinel commit (W4b-T3) must not carry a Claude Co-Authored-By
-    trailer. The next plan's first step runs `signoff verify <ID>`.
+    recorded raw_sha256. The next plan's first step runs `signoff verify <ID>`.
 16. **Decisions are made once.** `ukb_native` is decided only at W2c-T4 (not at W4a). W2d refuses
     to run once any config carries `locked: true`.
 
@@ -232,11 +234,11 @@ is presented to Carter. Therefore:
   required `key: value` lines (`ta_r4.signoff.SCHEMAS`). The auto path cannot produce it; a bare
   "approved" is WAIT (§B.15).
 - **Code-level sentinels** back the checkpoints that change state:
-  - OSF gate (W0b2 `r4_osf_gate`): production rules raise at DAG time unless the git-tracked
-    sentinel exists and a per-HEAD receipt from `verify-online` (one OSF API call per fire, submit
-    host) matches it. A wrongly passed checkpoint still cannot start production.
+  - Lock gate (`r4_lock_gate`, DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf): production rules raise at DAG time and in every job
+    unless the lock record, lock commit, locked configs, locked paths and W4b-T3 `lock_sha` all agree.
+    A wrongly passed checkpoint still cannot start production.
   - `tests/ta_r4/test_signoffs.py` (W0b1): `review_decisions.yaml` ⇒ valid W2c-T4; any locked
-    config ⇒ valid W4a-T3 with equal values; tracked sentinel ⇒ valid W4b-T3; venue overlay ⇒ valid
+    config ⇒ valid W4a-T3 with equal values; tracked lock record ⇒ valid W4b-T3 with equal `lock_sha`; venue overlay ⇒ valid
     W9-T1; checked W9 ROADMAP line ⇒ valid W9-T4.
   - `render_manuscript --venue-overlay` refuses without a valid W9-T1; estimand outputs are FINAL
     only with locked configs + valid W4a-T3 + the offline gate passing.
@@ -250,7 +252,7 @@ is presented to Carter. Therefore:
 |---|---|
 | REQ-PUBLIC-DATA-ONLY | W0a (`config/ta_r4/data_sources.yaml` with `license` + `public: true`), W2a, W2b, W2c, W2d (HM3 list entry), W8a (Data availability), W9 |
 | REQ-SUSIE-RSS-POLICY | W0b1 (policy files), W3a (repro policy), W5a (production policy, disclosed), W7 (`min_abs_corr` sweep table), W8a (Methods) |
-| REQ-OSF-PREREG | W0b1 (sign-off sentinels), W0b2 (code gate), W4a (amendment + locks), W4b (PUBLIC + posting gate), W5a–W6 (gate exercised), W9 |
+| REQ-OSF-PREREG | W0b1 (sign-off sentinels), W0b2 (original gate), quick-261028-kkg (lock gate), W4a (amendment + locks), W4b (lock commit A + lock record + W4b-T3), W5a–W6 (gate exercised), W9 |
 | REQ-SNAKEMAKE-CI | W0a (env restore), W0b2 (`Snakefile.ta_r4` dry-run tests, lockfiles), W0d (toy 3-locus `--use-conda` end-to-end), every plan (suite) |
 | REQ-PATH-PARAMETERIZATION | W0a (symlink + literal scan over config/ta_r4, src/python/ta_r4, src/snakemake/scripts/ta_r4, src/snakemake/rules/ta_r4_*.smk, Snakefile.ta_r4), W0b1 (paths module) |
 | REQ-PP.H4-THRESHOLD-SWEEP (supporting) | W3d, W7 |
@@ -266,7 +268,7 @@ is presented to Carter. Therefore:
 | D-02 fallback_abf labelled; no-CS rate reported | W0d T1–T2 (`test_fallback_labelled`), W3d (E4 no-CS rate), W5b, W7 | Full | |
 | D-03 1000G primary + A3-UKB sensitivity | W2a T2, W2b T2–T3, W2d T1, W5a | Full | |
 | D-04 UKB under separate path | W2b T3 (`data/r4/ld/EUR_ukb337k_*`), W2d (hm3 dir), W0b2 T3 (isolation test) | Full | |
-| D-05 amendment posted before production | W4a, W4b T3, W0b2 T2–T3 (gate), W5a/W5b/W5c/W6 T1 (gate + code-state re-check) | Full | |
+| D-05 analysis locked before production (lock gate, DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf) | W4a, W4b T3, W0b2 T2–T3 (gate), W5a/W5b/W5c/W6 T1 (gate + code-state re-check) | Full | |
 | D-06 E-2 fix TDD + before/after + new DEC | W0a T3 (DEC), W1 T1–T3, W3e (QTL_A3/A2 orient on; QTL_legacy pre-fix), W6, W3d + W7 (E7 table), W8a (Methods note) | Full | |
 | D-07 exhaustive EUR 10×10 + QTL; AFR secondary | W0b2 T1 (pair manifest), W2c T2 + W2d T2 (QTL manifest + scope), W5a–W5c, W3e, W6 | Full | |
 | D-08 fresh 4–5k draft; supplementary provenance; brief-blind review | W8a, W8b | Full | new path `docs/manuscript/id-vs-ref-LD-r4.md` |
@@ -288,7 +290,7 @@ is presented to Carter. Therefore:
 | D-24 HLA / BMI_Xq24 inadmissible; HLA-UKB exploratory | W0b2 T1 (manifest `admissible` column), W2b T3, W5a, W7 (`hla_exploratory.tsv`) | Full | HLA UKB fits are exploratory and produce **no coloc row**: no admissible 1000G comparator exists, so no head-to-head is defined |
 | D-25 measured n, trait type, sdY | W2a T1–T3 (panel + trait manifests), W2c T4 (Carter answers), W4a | Full | |
 | D-26 E1–E8 + five branches; κ / n_both locked by Carter | W3d T1 (estimators, `confirmatory:` block + contrast_stats, total ordered classifier, 8 partial_rule combos), W3d T3 (run_aggregation, pre-lock), W4a (e)/(f) rendered from the yaml + T3 (Carter locks), W4b T1 (configs), W7 T1 (frozen code run) | Full | confirmatory set = 100 primary curated EUR rows, 10 clusters (orchestrator default; Carter may change at W4a-T3) |
-| D-27 sentinel file; production refuses without it | W0b2 T2–T3, W4b, W5a T1 | Full | |
+| D-27 lock record; production refuses without it (lock gate, DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf) | W0b2 T2–T3, W4b, W5a T1 | Full | |
 | D-28 no edit to run_susie_rss.R | §B.6; `test_source_freeze_pins` in every §C | Full | |
 
 No decision is partial. No deferred idea (AoU-AFR-LD Track A re-analysis, newer GWAS vintages)

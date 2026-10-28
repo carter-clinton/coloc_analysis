@@ -54,6 +54,7 @@ new GWAS vintages (the audit stays at the vintages of the claims it audits).
   Carter on osf.io/az52u before any production fit runs**. Infrastructure,
   data re-acquisition and known-answer reproduction may run before posting;
   the A1/A2/A3 production comparison may not.
+  Superseded for production gating 2026-10-28 by DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf.
 
 ### E-2 allele orientation (Carter — reverses option A of DEC-2026-08-07)
 - **D-06:** Fix, then report before/after. Make the EUR sumstats-to-panel join
@@ -143,6 +144,7 @@ Orchestrator-locked (rigor rule; Carter may override):
 - **D-27:** OSF gate is a sentinel file Carter commits after posting (GSD `mode: yolo`
   auto-picks the first option at blocking gates — memory
   `feedback_gsd_automode_bypasses_blocking_fire_gates`); production rules refuse to run without it.
+  Superseded for production gating 2026-10-28 by DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf.
 - **D-28:** No edit to code-frozen `src/legacy/region_analysis/scripts/run_susie_rss.R` (pinned by `test_source_freeze_pins`);
   R4 behaviour comes from overlays + receipts/validators per RESEARCH §Architecture.
 

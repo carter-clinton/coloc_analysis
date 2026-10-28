@@ -48,7 +48,7 @@ requirements:
 
 must_haves:
   truths:
-    - "All estimand outputs carry status FINAL (all three configs locked and the OSF gate passing); a DRAFT label anywhere is a failure (D-26)"
+    - "All estimand outputs carry status FINAL (all three configs locked and the lock gate passing); a DRAFT label anywhere is a failure (D-26)"
     - "For each confirmatory contrast (A1_matched vs A3_1kg, A2_identity vs A3_1kg; EUR; p12_primary) the branch is the classifier's output, recorded with every input statistic (n_both, median and mean ΔPP.H4, bootstrap CI, sign-test p, McNemar b/c/p, kappa) and `via`; the headline is that branch, not a narrative choice"
     - "Every estimand is reported twice: on the both-have-CS subset and on all rows with fallback labelled; the per-arm no-CS rate is reported (D-02)"
     - "Secondary/descriptive tables exist: E2 sweep {0.5, 0.7, 0.8, 0.9}; E3 reclassification; E4 structure incl. cross-evaluated purity; E5 diagnostics vs |ΔPP.H4|; E6 A3-UKB vs A3 (native and isect); E7 frozen-vs-fixed (fit yields, SH2B3 pairs, QTL tiers, flipped shares); E8 false-/true-H4 rates with Wilson CIs; p12_sensitivity repeats; AFR secondary; negative-control rows; min_abs_corr sweep"
@@ -107,8 +107,8 @@ Plotting: check matplotlib in smoke_dev python, else ggplot2 in r_coloc; record 
     - .planning/amendments/osf-amendment-r4-FINAL.md §(e)–(g), (m) (lock commit A)
   </read_first>
   <action>
-    1. Code-state check (same path set as W5a Task 1, which includes `src/python/ta_r4/run_aggregation.py`
-       and `estimands.py`): `git diff --stat <lock-commit-A-sha> HEAD -- ...` must be empty. A
+    1. Code-state check (`$PY -m ta_r4.r4_lock_gate check --stage production`, and paste `git diff --stat <lock_sha> HEAD -- $(cd src/python && $PY -m ta_r4.r4_lock_gate paths)`;
+       the set includes `src/python/ta_r4/run_aggregation.py` and `estimands.py`) must be empty. A
        non-empty diff is a STOP and a deviation for Carter. This plan writes no analysis code;
        a needed change to run_aggregation/estimands/branch_classifier is a deviation, not a fix.
     2. `cd src/python && $PY -m ta_r4.run_aggregation --repo ../.. --out ../../docs/manuscript/r4/tables`

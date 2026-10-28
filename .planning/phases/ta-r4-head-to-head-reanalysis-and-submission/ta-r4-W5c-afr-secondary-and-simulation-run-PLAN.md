@@ -66,7 +66,7 @@ Coverage: python -m ta_r4.coloc_coverage --ancestry AFR ...
     - data/r4/findings/afr_panel_size.tsv (regions expected to report too_many_variants)
   </read_first>
   <action>
-    Repeat the gate checks (verify-online, check) and the code-state diff against lock commit A
+    Repeat the lock gate check and the code-state diff against lock commit A
     (W5a Task 1 steps 1-2); STOP on failure. Do not commit while a fire is in flight (§B.14). Dry-run: 30 jobs per arm. Fire the
     three arms and monitor by listing. Write the status TSV (90 rows) and the sha256 manifest.
     Fits whose panel exceeded the variant cap are reported with their status, not dropped. Run

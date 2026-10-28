@@ -68,7 +68,7 @@ Invocations: QTL_A3 under `bin/r4_fire.sh production A3_1kg`; QTL_A2 under `prod
     - src/snakemake/rules/ta_r4_qtl.smk; src/python/ta_r4/run_qtl_group_r4.py
   </read_first>
   <action>
-    Repeat the gate checks (verify-online, check) and the code-state diff against lock commit A
+    Repeat the lock gate check and the code-state diff against lock commit A
     (W5a Task 1 steps 1-2); STOP on failure. Do not commit while a fire is in flight (§B.14). Dry-run each QTL arm. The expected group
     job count equals the distinct (region, source, qtd) groups in the manifest; paste it. Fire,
     monitor by listing `.done` files, and confirm "Nothing to be done" after. Each group job already

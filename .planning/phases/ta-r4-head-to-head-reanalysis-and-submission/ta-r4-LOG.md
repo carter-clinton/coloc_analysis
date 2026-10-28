@@ -485,3 +485,44 @@ trait.hypertension.EUR.sdY: 20.7
 - `config/ta_r4/review_decisions.yaml` written from the recorded `fields` only; `trait_manifest.tsv` hypertension.EUR sdY = 20.7, sdY_source = `Carter 2026-10-28`; 0 UNRESOLVED cells remain.
 - sdY 20.7 = Evangelou 2018 Supp. Table 1a UKB+BiLEVE SBP SD (packet §4); coloc `sdY.est` median 10.72 is the recorded caveat.
 - stroke.AFR (§4b, GCST90104553 small vessel stroke): Carter raised no change; the packet had no reply key for it.
+
+## 2026-10-28 — quick-261028-kkg: production gate = git lock (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf)
+
+- **Task 1 `26b358e2`:** `ta_r4.r4_lock_gate` + W4b-T3 `lock_sha` schema. RED first: ImportError for `ta_r4.r4_lock_gate`,
+  2 test_signoff failures. Negative control: checks (g)/(h) blinded → 3 drift tests RED; byte-identical restore +
+  `__pycache__` cleared → green.
+- **Task 2 `b119c34e`:** Snakefile, rules and `bin/r4_fire.sh` use the lock gate; `r4_osf_gate.py` and `test_osf_gate.py`
+  deleted (`find_spec` test enforces it). End-to-end negative control: with a fixture lock, an uncommitted edit to a locked
+  path makes the production dry-run refuse with "drifted" (`test_fixture_production_dry_run_passes_with_lock_then_refuses_on_drift`).
+- **tests/ta_r4 by id** (before = pre-Task 1): 394 − 55 removed + 51 added = 390; 386 passed / 4 skipped / 0 failed. Removed
+  ids are only in test_osf_gate (52) and test_signoff(s) (3); added only in test_lock_gate / test_signoff(s); no other id
+  changed outcome. Freeze pins `39 passed`. `run_susie_rss.R` 0-diff.
+- **FULL** 1864 ids / 1814 passed / 50 skipped / 0 failed (37m27s, LSF 430615) vs W2c 1868/1818/50/0: −4 = the ta_r4 delta.
+  sparse_parent_benchmark.tsv restored.
+- **Real repo, after the Task 2 commit:** `bash bin/r4_fire.sh production A3_1kg -n r4_gate_probe` → rc 1,
+  `LockGateError: (a) lock record absent: .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/R4-LOCK.json`;
+  `bash bin/r4_fire.sh repro repro_routeC -n r4_gate_probe_repro` → rc 0 (dry-run).
+
+## 2026-10-28 — quick-261028-kkg: production gate = git lock (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf)
+
+- **Commits.** `26b358e2` feat: `ta_r4.r4_lock_gate` + W4b-T3 schema `lock_sha: <40-hex>` (+ `check_lock_record` in
+  test_signoffs, `write_fixture_lock`). `b119c34e` refactor: Snakefile/rules/`bin/r4_fire.sh` use the lock gate;
+  `r4_osf_gate.py` and `test_osf_gate.py` deleted.
+- **RED.** Before the module existed: `ImportError: cannot import name 'r4_lock_gate' from 'ta_r4'` (collection error);
+  test_signoff `2 failed, 36 passed` (`posted: yes` still accepted; valid `lock_sha` reply rejected).
+- **Negative control (unit).** Checks (g)/(h) blinded to `pass`: `-k drift` → `3 failed, 1 passed` (the 1 is the
+  outside-LOCKED_PATHS edit, which must pass). Restored, `cmp` identical, `__pycache__` cleared → `4 passed`.
+- **Negative control (end to end).** Fixture repo, after `write_fixture_lock`: production `r4_gate_probe` dry-run rc 0;
+  an uncommitted edit to `src/python/ta_r4/arms.py` → refused, `LockGateError ... drifted`. In the toy e2e, the
+  uncommitted manifest-row deletion is now refused by the lock gate first; re-locked, it reaches `LD_RECEIPT_REFUSED`.
+- **Reconciliation by id (tests/ta_r4, quick + heavy, LSF 430489 before / 430615 after).** Before 390 passed + 4 skipped.
+  Removed 55 = 52 test_osf_gate + 3 replaced (`test_other_enum_violations[W4b-T3 ... posted: no]`,
+  `test_real_repo[check_osf_sentinel]`, `test_tracked_osf_sentinel_requires_w4b`). Added 51 = 45 test_lock_gate +
+  4 test_signoff + 2 test_signoffs. 390 − 55 + 51 = 386 passed; 4 skipped (same 4 W5a/W5b reasons); 0 changed.
+- **FULL** `1814 passed, 50 skipped` (0 failed; 37m27s) = 1864 ids. Vs full_W2c.xml (1868/1818/50): the same −55/+51,
+  0 changed. Pins `39 passed`. sparse_parent_benchmark.tsv restored. run_susie_rss.R 0-diff.
+- **Real repo.** `bash bin/r4_fire.sh production A3_1kg -n r4_gate_probe` → `LockGateError: (a) lock record absent:
+  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/R4-LOCK.json`, rc 1.
+  `bash bin/r4_fire.sh repro repro_routeC -n r4_gate_probe_repro` → dry-run lists the probe, rc 0.
+- Records: DEC appended; osf_deviations R4 entry; PLAN-INDEX, CONTEXT (D-05/D-27 superseded lines), VALIDATION and the
+  pending W3d/W3e/W4a/W4b/W5a/W5b/W5c/W6/W7 plans now gate on the lock; OSF posting is optional.

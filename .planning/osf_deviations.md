@@ -1187,3 +1187,8 @@ posting decision is **Carter's alone**.
   reasoning, not closed.**
 - ⛔ **The status is unchanged: DRAFTED — NOT POSTED.** An adjudication is **NOT authorization to
   post.** The posting decision is **Carter's alone**.
+
+## 2026-10-28 — R4: the amendment is no longer an OSF posting precondition
+
+Per `DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf`, ta-r4 production is gated by the git lock (W4b commit A),
+not by an OSF posting. If Carter posts the R4 amendment, its URL is recorded here. No OSF record is changed.

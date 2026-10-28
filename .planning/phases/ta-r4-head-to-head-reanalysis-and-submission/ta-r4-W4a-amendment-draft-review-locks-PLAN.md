@@ -28,7 +28,7 @@ must_haves:
     - "extract_paste_block.py deterministically extracts the text strictly between `--- PASTE INTO OSF FROM HERE ---` and `--- PASTE ENDS HERE ---`; that extract is the only public text, and the framing scan and the internal-content scan cover the WHOLE extract (checker W4)"
     - "A brief-blind adversarial review (Codex CLI) attacked the extract against the code before Carter saw it; its output is banked verbatim and every finding is dispositioned"
     - "Carter's lock values are recorded only through a checkpoint:human-action whose reply parses as `carter-approved YYYY-MM-DD` + every required key (signoffs/W4a-T3.yaml); a bare 'approved' is WAIT (B1)"
-    - "The executor NEVER posts to OSF and NEVER creates OSF-R4-POSTED.json"
+    - "The executor never posts to OSF; the R4 amendment text must not claim R4 was pre-registered on OSF (wording per DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf)"
   artifacts:
     - path: ".planning/amendments/osf-amendment-r4-DRAFT.md"
       provides: "draft amendment with ‹CARTER-LOCK› placeholders"

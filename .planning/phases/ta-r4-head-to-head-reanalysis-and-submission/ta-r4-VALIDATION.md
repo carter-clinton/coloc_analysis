@@ -51,8 +51,8 @@ revised: 2026-10-21
 | W0b1-T2 | W0b1 | 2 | B1 sign-off protocol, REQ-OSF-PREREG | T-r4-W0b1-01/04 | bare "approved" rejected; locked config needs sign-off | unit + conditional sentinels | `$PY -m pytest tests/ta_r4/test_signoff.py tests/ta_r4/test_signoffs.py -q` | ❌ W0b1 | ⬜ pending |
 | W0b1-T3 | W0b1 | 2 | §C | — | N/A | QUICK + HEAVY + suite join | `$PY -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 \| tail -2` | ✅ | ⬜ pending |
 | W0b2-T1 | W0b2 | 3 | D-07, D-24, REQ-NEGATIVE-CONTROLS | T-r4-W0b2-05 | outcome-independent manifest | unit + determinism + negative controls | `$PY -m pytest tests/ta_r4/test_null_windows.py tests/ta_r4/test_pair_manifest.py -q` | ❌ W0b2 | ⬜ pending |
-| W0b2-T2 | W0b2 | 3 | D-05/D-27, B5 | T-r4-W0b2-01/02/03 | production refuses without sentinel + receipt; no bypass; offline in jobs | unit (fake fetch) + AST/env/signature | `$PY -m pytest tests/ta_r4/test_osf_gate.py -q -m "not r4_heavy"` | ❌ W0b2 | ⬜ pending |
-| W0b2-T3 | W0b2 | 3 | D-04/D-15, B3, REQ-SNAKEMAKE-CI | T-r4-W0b2-04/06 | fixture-repo refusal; isolation | dry-run on fixture repo (r4_heavy) | `$PY -m pytest tests/ta_r4/test_osf_gate.py tests/ta_r4/test_track_b_isolation.py -q -rs` | ❌ W0b2 | ⬜ pending |
+| W0b2-T2 | W0b2 | 3 | D-05/D-27, B5 | T-r4-W0b2-01/02/03 | production refuses without sentinel + receipt; no bypass; offline in jobs | unit (fake fetch) + AST/env/signature | `$PY -m pytest tests/ta_r4/test_lock_gate.py -q -m "not r4_heavy"` | ❌ W0b2 | ⬜ pending |
+| W0b2-T3 | W0b2 | 3 | D-04/D-15, B3, REQ-SNAKEMAKE-CI | T-r4-W0b2-04/06 | fixture-repo refusal; isolation | dry-run on fixture repo (r4_heavy) | `$PY -m pytest tests/ta_r4/test_lock_gate.py tests/ta_r4/test_track_b_isolation.py -q -rs` | ❌ W0b2 | ⬜ pending |
 | W0b2-T4 | W0b2 | 3 | §C | — | N/A | QUICK + HEAVY + suite join | `$PY -m pytest tests/ta_r4 -q -m "not r4_heavy" && git fsck --connectivity-only 2>&1 \| tail -2` | ✅ | ⬜ pending |
 | W0c-T1 | W0c | 4 | D-13, B4/W1 | T-r4-W0c-01/02 | any identity shape fails the job | unit + live gate (r4_heavy) | `$PY -m pytest tests/ta_r4/test_no_silent_identity.py -q` | ❌ W0c | ⬜ pending |
 | W0c-T2 | W0c | 4 | D-01, D-13, D-28 | T-r4-W0c-03/04 | frozen script armed only by flags | R e2e (r4_heavy) + live gate | `$PY -m pytest tests/ta_r4/test_frozen_script_armed_e2e.py tests/ta_r4/test_arm_variant_sets_identical.py tests/m3/test_source_freeze_pins.py -q` | ❌ W0c | ⬜ pending |
@@ -97,9 +97,9 @@ revised: 2026-10-21
 | W4a-T2 | W4a | 16 | D-05, brief-blind review | T-r4-W4a-03 | findings == dispositions | text test + row count | `grep -c "^\|" $P/ta-r4-W4-AMENDMENT-REVIEW-as-received.md && $PY -m pytest tests/ta_r4/test_amendment_text.py -q && git status --porcelain -- .planning/amendments/osf-...` | ✅ (W4a test) | ⬜ pending |
 | W4a-T3 | W4a | 16 | D-26, B1 | T-r4-W4a-04 | carter-approved + all lock keys | human-action; sign-off verify + DEC count | `(src/python) $PY -m ta_r4.signoff verify W4a-T3 && cd ../.. && grep -c "ta-r4-prereg-locks" .planning/DECISIONS.md` | ❌ W0b1 (signoff.py) | ⬜ pending |
 | W4b-T1 | W4b | 17 | D-26, B1 sentinel | T-r4-W4b-02 | locked configs == sign-off | test_signoffs (lock sentinel live) | `$PY -c "import yaml;print([yaml.safe_load(open(f'config/ta_r4/{n}.yaml'))['locked'] for n in ('coloc_priors','decision_rules','simulation')])" && $PY -m pytest tests/t...` | ✅ (W0b1 test) | ⬜ pending |
-| W4b-T2 | W4b | 17 | D-05/D-27, W4 | T-r4-W4b-03 | PUBLIC == extract(FINAL); gate closed | text test + gate CLI exit 1 | `$PY -m pytest tests/ta_r4/test_amendment_text.py -q -rs && cd src/python && $PY -m ta_r4.r4_osf_gate check --stage production; test $? -ne 0 && echo GATE_CLOSED` | ✅ (W4a test, W0b2 gate) | ⬜ pending |
-| W4b-T3 | W4b | 17 | D-05/D-27, B1, B5 | T-r4-W4b-01/04 | token + verify-online + offline check | human-action; sign-off verify + gate CLI exit 0 | `(src/python) $PY -m ta_r4.signoff verify W4b-T3 && $PY -m ta_r4.r4_osf_gate verify-online --stage production && $PY -m ta_r4.r4_osf_gate check --stage production && ec...` | ✅ (W0b1/W0b2) | ⬜ pending |
-| W5a-T1 | W5a | 18 | D-05, B3, B5 | T-r4-W5a-01 | gate open; code == lock commit A | gate CLI + gate-probe dry-run | `(src/python) $PY -m ta_r4.r4_osf_gate verify-online --stage production && $PY -m ta_r4.r4_osf_gate check --stage production && cd ../.. && bash bin/r4_fire.sh producti...` | ✅ (W0b2) | ⬜ pending |
+| W4b-T2 | W4b | 17 | D-05/D-27, W4 | T-r4-W4b-03 | PUBLIC == extract(FINAL); gate closed | text test + gate CLI exit 1 | `$PY -m pytest tests/ta_r4/test_amendment_text.py -q -rs && cd src/python && $PY -m ta_r4.r4_lock_gate check --stage production; test $? -ne 0 && echo GATE_CLOSED` | ✅ (W4a test, W0b2 gate) | ⬜ pending |
+| W4b-T3 | W4b | 17 | D-05/D-27, B1, B5 | T-r4-W4b-01/04 | token (lock_sha) + offline lock gate | human-action; sign-off verify + gate CLI exit 0 | `(src/python) $PY -m ta_r4.signoff verify W4b-T3 && $PY -m ta_r4.r4_lock_gate check --stage production && echo GATE_OPEN` | ✅ (W0b1/W0b2) | ⬜ pending |
+| W5a-T1 | W5a | 18 | D-05, B3, B5 | T-r4-W5a-01 | gate open; code == lock commit A | gate CLI + gate-probe dry-run | `(src/python) $PY -m ta_r4.r4_lock_gate check --stage production && cd ../.. && bash bin/r4_fire.sh producti...` | ✅ (W0b2) | ⬜ pending |
 | W5a-T2 | W5a | 18 | D-01, D-03, D-07, D-24 | T-r4-W5a-02/03 | validator in every job | output counts | `for a in A3_1kg A2_identity A3_ukb A3_ukb_isect A3_1kg_isect; do echo $a $(ls data/r4/results/$a/fine_mapping/susie/*.json \| wc -l); done` | ✅ (ls) | ⬜ pending |
 | W5a-T3 | W5a | 18 | D-13, D-01 | T-r4-W5a-02 | 0 skips on live gates | live gates (r4_heavy) | `$PY -m pytest tests/ta_r4/test_no_silent_identity.py tests/ta_r4/test_arm_variant_sets_identical.py -q -rs 2>&1 \| tail -3` | ✅ (W0c tests) | ⬜ pending |
 | W5b-T1 | W5b | 19 | D-01, D-07, D-21, B2 | T-r4-W5b-01/04 | exact coverage 4060 | coverage CLI | `(src/python) $PY -m ta_r4.coloc_coverage --ancestry EUR --repo ../..` | ✅ (W3d tool) | ⬜ pending |
@@ -129,7 +129,7 @@ revised: 2026-10-21
 
 Every task has an `<automated>` command, so no 3 consecutive tasks lack automated verification.
 Human-action checkpoints are verified by `python -m ta_r4.signoff verify <ID>` (and, for W4b-T3,
-by the OSF gate CLI), which fails unless Carter's validated reply is recorded.
+by the lock gate CLI), which fails unless Carter's validated reply is recorded.
 
 ---
 
@@ -137,7 +137,7 @@ by the OSF gate CLI), which fails unless Carter's validated reply is recorded.
 
 - [ ] `tests/ta_r4/conftest.py` — overlay-merge helper (`snakemake.utils.update_config`), `r4_heavy` marker, fixture panels and sumstats
 - [ ] `src/python/ta_r4/signoff.py` + `tests/ta_r4/test_signoff.py` + `tests/ta_r4/test_signoffs.py` (W0b1) before any human-action checkpoint
-- [ ] `tests/ta_r4/fixtures/make_fixture_repo.py` (W0b2) for gate dry-runs that stay meaningful after the real sentinel exists
+- [ ] `tests/ta_r4/fixtures/make_fixture_repo.py` (W0b2) for gate dry-runs that stay meaningful after the real lock record exists
 - [ ] every `❌ W0*` test above, committed RED first with its negative control observed failing
 - [ ] re-measured `tests/m3` baseline recorded in `ta-r4-LOG.md`; tag `ta-r4-pre-baseline` pushed
 
@@ -152,7 +152,7 @@ All are `checkpoint:human-action` (auto-mode stops); each leaves a machine-check
 | Panel/trait facts, UKB-native and QTL-scope decisions | D-12a/D-25, W3, W6 | judgement on measured facts | W2c-T4: reply `carter-approved YYYY-MM-DD` + keys; `signoff verify W2c-T4` |
 | Known-answer findings report | D-12/D-17 | mismatches are findings, not failures | W3b-T3; `signoff verify W3b-T3` |
 | Pre-registration lock values + draft approval | D-26 | Carter's decision rule | W4a-T3; `signoff verify W4a-T3`; test_signoffs lock sentinel |
-| OSF R4 amendment posted before production | D-05/D-27 | external posting by Carter | W4b-T3: Carter uploads PUBLIC, commits the sentinel; `signoff verify W4b-T3` + `r4_osf_gate verify-online` + `check` exit 0 |
+| Analysis locked before production (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf) | D-05/D-27 | Carter confirms the lock commit | W4b-T3: Carter replies with `lock_sha`; `signoff verify W4b-T3` + `r4_lock_gate check --stage production` exit 0 |
 | Results review | D-26 | headline is the classifier's branch | W7-T3; `signoff verify W7-T3` |
 | Manuscript scientific accuracy | D-08 | prose claims vs results | brief-blind review + W8b-T3; `signoff verify W8b-T3` |
 | Venue; submission + OSF results record | D-09 | Carter's external actions | W9-T1, W9-T4; `signoff verify` + test_signoffs ROADMAP sentinel |

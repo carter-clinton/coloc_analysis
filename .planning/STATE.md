@@ -26,7 +26,17 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-28 — **TRACK A ta-r4: W2c Tasks 1–3 DONE. WAITING ON CARTER (W2c-T4). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-28 — **TRACK A ta-r4: W2c COMPLETE (ac4e5452). PRODUCTION GATE = GIT LOCK (quick-261028-kkg). NEXT = W3a (W2d no-op: native/full). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- W2c-T4 recorded (`ac4e5452`: native, full, hypertension.EUR sdY 20.7).
+- Production gate is now `ta_r4.r4_lock_gate` (offline; no OSF, no token, no env bypass): `$P/R4-LOCK.json` lock_sha
+  (W4b commit A) ancestor of HEAD, configs locked at it, no LOCKED_PATHS drift, W4b-T3 `lock_sha` equal.
+  `DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf`; commits `26b358e2` + `b119c34e`; `r4_osf_gate` removed.
+  R4 public wording: "analysis locked in commit <sha> before production", never "pre-registered on OSF".
+- FULL 1864 ids / 1814 passed / 50 skipped / 0 failed (vs W2c: −55 osf-gate/replaced ids, +51 lock-gate ids, 0 changed).
+- Next: W3a. Real repo refuses production with "(a) lock record absent" until W4b.
+
+## 2026-10-28 — **TRACK A ta-r4: W2c Tasks 1–3 DONE. WAITING ON CARTER (W2c-T4). NOTHING RUNNING.** (SUPERSEDED by the block above)
 
 - T1 `e3afa4dd`: 98 GTEx eQTL/sQTL files (180G), all gzip/tabix OK. T2 `f288ab82`: `config/ta_r4/qtl_manifest.tsv` has
   116,550 rows = 5 × 23,310 features. The compute estimate has 4 scopes; t_row is a fixture lower bound.
