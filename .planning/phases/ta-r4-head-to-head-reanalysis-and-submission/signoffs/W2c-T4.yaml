@@ -1,0 +1,16 @@
+checkpoint_id: W2c-T4
+raw: |
+  carter-approved 2026-10-28
+  ukb_native: native
+  qtl_scope: full
+  trait.hypertension.EUR.sdY: 20.7
+raw_sha256: 26e3c3020026af8616c5751f9fcacf11988aefeb4f932d693e973b7b8bfa2f3c
+token_date: '2026-10-28'
+min_date: '2026-10-28'
+extra_required:
+- trait.hypertension.EUR.sdY
+fields:
+  ukb_native: native
+  qtl_scope: full
+  trait.hypertension.EUR.sdY: '20.7'
+recorded_utc: '2026-10-28T18:45:41Z'

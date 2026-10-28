@@ -1,0 +1,5 @@
+ukb_native: native
+qtl_scope: full
+trait_facts:
+  trait.hypertension.EUR.sdY: '20.7'
+signoff: signoffs/W2c-T4.yaml

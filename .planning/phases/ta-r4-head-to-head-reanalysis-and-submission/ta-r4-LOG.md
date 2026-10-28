@@ -469,3 +469,19 @@ Chronological record of every action in this phase. Append-only.
 - **STOP at Task 4.** No sign-off recorded. Carter's 2026-10-27 "carter approved 10-27-2026 / proceed with your recommendations"
   predates the packet and does not match `carter-approved YYYY-MM-DD`; it is not a sign-off.
 - **Pushed.** Wave-close commit `57da00e6`; `git push origin HEAD` → `14318720..57da00e6  HEAD -> m3-W2-aou-deltas`; fsck clean before/after.
+
+## 2026-10-28 — W2c Task 4: Carter sign-off recorded
+
+Two earlier replies were WAIT and recorded nothing: `carter-approved 10-28-2026` (signoff rc=1, wrong date format) and a reply with the `<...>` placeholders unfilled (not run). Carter's reply, verbatim:
+
+```
+carter-approved 2026-10-28
+ukb_native: native
+qtl_scope: full
+trait.hypertension.EUR.sdY: 20.7
+```
+
+- `ta_r4.signoff record W2c-T4 --min-date 2026-10-28 --extra-required trait.hypertension.EUR.sdY` → rc 0, `signoffs/W2c-T4.yaml`, raw_sha256 `26e3c3020026af8616c5751f9fcacf11988aefeb4f932d693e973b7b8bfa2f3c`.
+- `config/ta_r4/review_decisions.yaml` written from the recorded `fields` only; `trait_manifest.tsv` hypertension.EUR sdY = 20.7, sdY_source = `Carter 2026-10-28`; 0 UNRESOLVED cells remain.
+- sdY 20.7 = Evangelou 2018 Supp. Table 1a UKB+BiLEVE SBP SD (packet §4); coloc `sdY.est` median 10.72 is the recorded caveat.
+- stroke.AFR (§4b, GCST90104553 small vessel stroke): Carter raised no change; the packet had no reply key for it.
