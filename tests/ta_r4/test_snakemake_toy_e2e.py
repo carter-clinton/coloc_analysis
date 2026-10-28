@@ -1,7 +1,7 @@
 """REQ-SNAKEMAKE-CI: Snakefile.ta_r4 --use-conda end to end on 3 fixture regions, under A3_1kg and A2_identity.
 
 Fits (receipt -> frozen script -> validator), coloc_susie / fallback_abf, and A1 matched + allvars in the A3
-invocation. The gate passes on a fixture sentinel + verify_online receipt that exist only under tmp_path.
+invocation. The gate passes on a fixture lock record + W4b-T3 fixture sign-off, under tmp_path only.
 """
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ import yaml
 
 from .fixtures.build_toy_workflow import (ANC, TOY_ARMS, TOY_REGIONS, TRAIT_A, TRAIT_B, build_toy_workflow, pair_row,
                                           run_toy, toy_targets)
+from .fixtures.make_fixture_repo import git, write_fixture_lock
 from .test_fallback_labelled import METHODS, coloc_result_docs, fallback_violations
 from .test_priors_constant import cross_arm_p12_violations, prior_violations
 
@@ -86,7 +87,8 @@ def test_coloc_outputs_methods_priors_and_gates(toy):
 
 
 def test_negative_control_missing_manifest_row_fails_at_receipt(toy):
-    """Delete the A3 panel manifest row for FIX_2: the forced FIX_2 fit fails in r4_run_finemap at the receipt."""
+    """Delete the A3 panel manifest row for FIX_2: the lock gate refuses the drift; re-locked, the forced FIX_2 fit
+    fails in r4_run_finemap at the receipt."""
     repo, _ = toy
     mp = repo / paths.panel_manifest_path("A3_1kg", ANC)
     rows = list(csv.DictReader(open(mp), delimiter="\t"))
@@ -97,6 +99,11 @@ def test_negative_control_missing_manifest_row_fails_at_receipt(toy):
         w.writeheader()
         w.writerows(keep)
     target = paths.fit_json("A3_1kg", TRAIT_A, ANC, "FIX_2")
+    p = run_toy(repo, "A3_1kg", [target], "--forcerun", "r4_run_finemap", smk=SMK)
+    out = p.stdout + p.stderr
+    assert p.returncode != 0 and "LockGateError" in out and "drifted" in out, out[-2000:]
+    git(repo, "commit", "-qam", "drop the FIX_2 manifest row")
+    write_fixture_lock(repo)
     p = run_toy(repo, "A3_1kg", [target], "--forcerun", "r4_run_finemap", smk=SMK)
     out = p.stdout + p.stderr
     print("NC rc", p.returncode, [ln for ln in out.splitlines() if "LD_RECEIPT_REFUSED" in ln or "Error in rule" in ln])
@@ -115,7 +122,7 @@ def test_coloc_rule_listed_via_fire_script():
 
 
 def test_coloc_rule_refused_without_gate(tmp_path):
-    """No sentinel: the A1 all-variants target (no fit dependency) refuses at the coloc rule's own gate call."""
+    """No lock record: the A1 all-variants target (no fit dependency) refuses at the coloc rule's own gate call."""
     import subprocess
     from .fixtures.make_fixture_repo import make_fixture_repo
     repo = make_fixture_repo(tmp_path)
@@ -124,5 +131,5 @@ def test_coloc_rule_refused_without_gate(tmp_path):
     p = subprocess.run([SMK, target, "-s", "Snakefile.ta_r4", "-d", ".", "-n", "--configfile", *cfg], cwd=repo,
                        capture_output=True, text=True)
     out = p.stdout + p.stderr
-    assert p.returncode != 0 and "OsfGateError" in out and "sentinel absent" in out, out[-2000:]
+    assert p.returncode != 0 and "LockGateError" in out and "lock record absent" in out, out[-2000:]
     assert "rule r4_coloc_A1" in out

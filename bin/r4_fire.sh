@@ -59,12 +59,12 @@ mkdir -p data/r4/logs/lsf
 if [ "$STAGE" = production ]; then
     DIRTY=$(git status --porcelain -- Snakefile.ta_r4 src/python/ta_r4 src/snakemake config/ta_r4 src/legacy)
     if [ -n "$DIRTY" ]; then
-        echo "REFUSED: uncommitted changes in the analysis tree (the receipt binds HEAD):" >&2
+        echo "REFUSED: uncommitted changes in the analysis tree (production runs committed, locked code):" >&2
         echo "$DIRTY" >&2
         exit 2
     fi
-    (cd src/python && "$PY" -m ta_r4.r4_osf_gate verify-online --stage production)
-    echo "Do not commit until this fire ends: in-job gate checks require HEAD == receipt head_sha."
+    (cd src/python && "$PY" -m ta_r4.r4_lock_gate check --stage production)
+    echo "Do not commit locked paths until this fire ends: in-job gate checks re-diff them against the lock commit."
 fi
 
 exec "$SMK" -s Snakefile.ta_r4 \

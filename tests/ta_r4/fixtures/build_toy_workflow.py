@@ -3,8 +3,8 @@
 build_pair_regions(): two-trait fixture regions at their R4 repo-relative paths under `root`
 (panel, bgzipped+tabixed sumstats per trait, catalog, regions CSV, panel manifest, optional A2 payload).
 build_toy_workflow(): a make_fixture_repo() git repo with 3 regions, a 3-row pair manifest, a trait manifest,
-a committed fixture amendment + sentinel and a receipt from verify_online (fake fetch). Fixture gate files
-exist only under tmp_path; the real repo never gets a sentinel or receipt (§B.12).
+a lock record + W4b-T3 fixture sign-off (write_fixture_lock). Fixture gate files exist only under tmp_path;
+the real repo never gets a hand-made lock record (§B.12).
 """
 from __future__ import annotations
 
@@ -32,7 +32,6 @@ REGION_HDR = ["region_id", "ancestry", "chr", "start", "end", "lead_snp", "gene"
               "canonical_pairs"]
 PAIR_HDR = ["row_id", "ancestry", "region_id", "region_safe", "trait_a", "trait_b", "row_class", "admissible",
             "inadmissible_reason", "canonical_pair", "nc_set", "nc_caveat"]
-AMEND_REL = ".planning/amendments/R4_PUBLIC_fixture.md"
 GIT_ID = ["-c", "user.name=R4 Fixture", "-c", "user.email=r4-fixture@example.invalid", "-c", "commit.gpgsign=false"]
 
 
@@ -219,34 +218,16 @@ def _git(repo, *args):
 
 
 def build_toy_workflow(tmp_path):
-    """Fixture repo: 3 regions x 1 pair, A3 panels + A2 payloads, sentinel committed, receipt via verify_online."""
-    from ta_r4.r4_osf_gate import SENTINEL_REL, verify_online
-
-    from .make_fixture_repo import make_fixture_repo
+    """Fixture repo: 3 regions x 1 pair, A3 panels + A2 payloads, lock record + W4b-T3 fixture sign-off, under tmp_path only."""
+    from .make_fixture_repo import make_fixture_repo, write_fixture_lock
     repo = make_fixture_repo(tmp_path)
     link_repo_files(repo, TOY_ARMS)
     build_pair_regions(repo, TOY_REGIONS, fit_arm="A3_1kg", identity_arm="A2_identity")
     _write_tsv(repo / "config/ta_r4/pair_manifest.tsv", PAIR_HDR, [pair_row(r.region_id) for r in TOY_REGIONS])
     write_trait_manifest(repo)
-    (repo / AMEND_REL).parent.mkdir(parents=True, exist_ok=True)
-    (repo / AMEND_REL).write_text("# R4 amendment (fixture)\n")
     _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "toy inputs + fixture amendment")
-    doc = {"osf_url": "https://osf.io/az52u/files/fixture", "osf_file_guid": "fxgid",
-           "posted_utc": "2026-01-01T00:00:00Z", "amendment_path": AMEND_REL,
-           "amendment_sha256": hashlib.sha256((repo / AMEND_REL).read_bytes()).hexdigest(),
-           "head_sha": _git(repo, "rev-parse", "HEAD")}
-    (repo / SENTINEL_REL).parent.mkdir(parents=True, exist_ok=True)
-    (repo / SENTINEL_REL).write_text(json.dumps(doc, indent=1) + "\n")
-    _git(repo, "add", SENTINEL_REL)
-    _git(repo, "commit", "-q", "-m", "fixture sentinel")
-
-    def fake_fetch(guid):
-        raw = json.dumps({"data": {"id": guid, "attributes": {"extra": {"hashes": {"sha256": doc["amendment_sha256"]}}}}})
-        return {"sha256": doc["amendment_sha256"], "md5": "0" * 32, "date_created": doc["posted_utc"],
-                "target_node": "az52u", "raw": raw.encode()}
-
-    verify_online(repo, fetch=fake_fetch)
+    _git(repo, "commit", "-q", "-m", "toy inputs")
+    write_fixture_lock(repo)
     return repo
 
 

@@ -14,7 +14,7 @@ _R4_LEGACY = ARMS[ARM]["validator_mode"] == "legacy_any"
 
 
 def _r4_fit_inputs(w):
-    gate = gate_input(w)  # OSF gate first: production refuses before any path is resolved
+    gate = gate_input(w)  # lock gate first: production refuses before any path is resolved
     d = {
         "gate": gate,
         "sumstats": r4paths.sumstats_path(w.trait, w.ancestry, ARM),

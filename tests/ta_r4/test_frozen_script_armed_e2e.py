@@ -268,7 +268,7 @@ def test_rule_production_arm_refused_without_gate(tmp_path):
     repo = _fixture_repo(tmp_path, arm, region)
     p = _smk(repo, arm, paths.fit_json(arm, TRAIT, ANC, region), "-n")
     out = p.stdout + p.stderr
-    assert p.returncode != 0 and "OsfGateError" in out and "sentinel absent" in out
+    assert p.returncode != 0 and "LockGateError" in out and "lock record absent" in out
 
 
 def test_rule_listed_via_fire_script():

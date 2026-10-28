@@ -1,4 +1,4 @@
-"""Minimal git repo copied from the WORKING TREE for gate dry-runs. Never copies the sentinel or data/."""
+"""Minimal git repo copied from the WORKING TREE for gate dry-runs. Never copies the lock record or data/."""
 from __future__ import annotations
 
 import shutil
@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SENTINEL_NAME = "OSF-R4-POSTED.json"
+LOCK_RECORD_NAME = "R4-LOCK.json"
 COPY_FILES = ("Snakefile.ta_r4", "config/pipeline.yaml")
 COPY_DIRS = ("config/ta_r4", "src/python", "envs")
 GIT_ID = ["-c", "user.name=R4 Fixture", "-c", "user.email=r4-fixture@example.invalid", "-c", "commit.gpgsign=false"]
@@ -22,7 +22,7 @@ def git(repo, *args):
 def make_fixture_repo(tmp_path) -> Path:
     repo = Path(tmp_path) / "fixture_repo"
     repo.mkdir()
-    ignore = shutil.ignore_patterns("__pycache__", "*.pyc", SENTINEL_NAME)
+    ignore = shutil.ignore_patterns("__pycache__", "*.pyc", LOCK_RECORD_NAME)
     for f in COPY_FILES:
         (repo / f).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(REPO_ROOT / f, repo / f)
@@ -33,8 +33,8 @@ def make_fixture_repo(tmp_path) -> Path:
     for smk in sorted((REPO_ROOT / "src/snakemake/rules").glob("ta_r4_*.smk")):
         shutil.copy2(smk, rules / smk.name)
     assert not (repo / "data").exists()
-    assert not list(repo.rglob(SENTINEL_NAME))
-    (repo / ".gitignore").write_text("/data/\n/.snakemake/\n")
+    assert not list(repo.rglob(LOCK_RECORD_NAME))
+    (repo / ".gitignore").write_text("/data/\n/.snakemake/\n__pycache__/\n")
     git(repo, "init", "-q")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "fixture from working tree")
@@ -69,6 +69,7 @@ def write_fixture_lock(repo, *, locked=True) -> str:
     (repo / LOCK_RECORD_REL).parent.mkdir(parents=True, exist_ok=True)
     (repo / LOCK_RECORD_REL).write_text(json.dumps({"lock_sha": sha}, indent=1) + "\n")
     raw = f"carter-approved {dt.date.today().isoformat()}\nlock_sha: {sha}\n"
+    (repo / SIGNOFF_REL / "W4b-T3.yaml").unlink(missing_ok=True)
     record_signoff("W4b-T3", raw, min_date="2026-10-01", signoff_dir=repo / SIGNOFF_REL)
     git(repo, "add", LOCK_RECORD_REL, f"{SIGNOFF_REL}/W4b-T3.yaml")
     git(repo, "commit", "-q", "-m", "fixture lock record + W4b-T3")

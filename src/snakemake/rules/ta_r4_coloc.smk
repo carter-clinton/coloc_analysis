@@ -2,7 +2,7 @@
 
 r4_coloc_pair: coloc.susie on the arm's fits, or the labelled fallback_abf when a fit has 0 credible sets.
 r4_coloc_A1: A1 matched / all-variants, defined only in the A3 invocations (A3_1kg, AFR661_A3).
-The argv is ta_r4.commands.coloc_command, which the tests run as-is. Both rules take the OSF gate first.
+The argv is ta_r4.commands.coloc_command, which the tests run as-is. Both rules take the lock gate first.
 """
 
 import shlex
@@ -22,7 +22,7 @@ def _r4_coloc_row(w, ancestries):
 
 
 def _r4_coloc_inputs(w, mode):
-    gate = gate_input(w)  # OSF gate first: production refuses before any path is resolved
+    gate = gate_input(w)  # lock gate first: production refuses before any path is resolved
     ancs = arm_ancestries(ARM) if mode == "susie" else (r4cmd.A1_FIT_ARMS[ARM],)
     r = _r4_coloc_row(w, ancs)
     anc, reg = r["ancestry"], r["region_safe"]

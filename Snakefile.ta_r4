@@ -16,7 +16,7 @@ configfile: "config/pipeline.yaml"
 sys.path.insert(0, str(Path(workflow.basedir) / "src/python"))
 from ta_r4.arms import ARMS, arm_stage
 from ta_r4 import paths as r4paths
-from ta_r4.r4_osf_gate import SENTINEL_REL, check_osf_gate
+from ta_r4.r4_lock_gate import LOCK_RECORD_REL, check_lock_gate
 
 _R4 = config.get("ta_r4") or {}
 if _R4.get("enabled") is not True or _R4.get("arm") not in ARMS:
@@ -51,15 +51,15 @@ with open(Path(workflow.basedir) / "config/ta_r4/pair_manifest.tsv", newline="")
 
 
 def gate_input(wildcards):
-    """Offline OSF gate at DAG time (memoized per process). Production rules take this as input."""
-    check_osf_gate(Path(workflow.basedir), STAGE)
-    return [SENTINEL_REL] if STAGE == "production" else []
+    """Offline lock gate at DAG time (memoized per process). Production rules take this as input."""
+    check_lock_gate(Path(workflow.basedir), STAGE)
+    return [LOCK_RECORD_REL] if STAGE == "production" else []
 
 
 def repro_gate_input(wildcards):
     if STAGE != "repro":
         raise WorkflowError(f"r4_gate_probe_repro needs a repro arm; {ARM} is {STAGE}")
-    check_osf_gate(Path(workflow.basedir), "repro")
+    check_lock_gate(Path(workflow.basedir), "repro")
     return []
 
 

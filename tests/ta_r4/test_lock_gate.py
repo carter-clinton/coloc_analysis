@@ -341,3 +341,62 @@ def test_real_repo_state():
         assert want in r.stderr and "LockGateError" in r.stderr, r.stderr
     else:
         g.read_lock_sha(REPO_ROOT)
+
+
+def test_osf_gate_module_removed():
+    import importlib.util
+    assert importlib.util.find_spec("ta_r4.r4_osf_gate") is None
+
+
+# --- Snakefile.ta_r4 gate dry-runs on a lock-free fixture repo (B3) -----------------------------
+
+from .fixtures.make_fixture_repo import make_fixture_repo  # noqa: E402
+
+SMK = str(Path(sys.executable).parent / "snakemake")
+
+
+def _dry_run(repo, overlay, target):
+    """Returns (rc, output). Snakemake 7.32.4 logs to stdout under -n, so output is stdout + stderr."""
+    cfg = ["config/pipeline.yaml", "config/ta_r4/overlay_base.yaml", f"config/ta_r4/overlay_{overlay}.yaml"]
+    r = subprocess.run([SMK, target, "-s", str(repo / "Snakefile.ta_r4"), "-d", str(repo), "-n",
+                        "--configfile", *cfg], cwd=repo, capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
+@pytest.fixture(scope="module")
+def fixture_repo(tmp_path_factory):
+    return make_fixture_repo(tmp_path_factory.mktemp("fx"))
+
+
+@pytest.mark.r4_heavy
+def test_fixture_has_no_lock_record(fixture_repo):
+    assert not (fixture_repo / LOCK_RECORD_REL).exists()
+    assert not (fixture_repo / "data").exists()
+    assert (fixture_repo / "Snakefile.ta_r4").read_bytes() == (REPO_ROOT / "Snakefile.ta_r4").read_bytes()
+
+
+@pytest.mark.r4_heavy
+def test_fixture_production_dry_run_refuses(fixture_repo):
+    rc, out = _dry_run(fixture_repo, "A3_1kg", "r4_gate_probe")
+    assert rc != 0
+    assert "LockGateError" in out and "lock record absent" in out, out[-2000:]
+
+
+@pytest.mark.r4_heavy
+def test_fixture_repro_dry_run_passes(fixture_repo):
+    for target in ("r4_gate_probe_repro", "r4_gate_probe"):
+        rc, out = _dry_run(fixture_repo, "repro_routeC", target)
+        assert rc == 0, out[-2000:]
+
+
+@pytest.mark.r4_heavy
+def test_fixture_production_dry_run_passes_with_lock_then_refuses_on_drift(tmp_path):
+    repo = make_fixture_repo(tmp_path)
+    write_fixture_lock(repo)
+    rc, out = _dry_run(repo, "A3_1kg", "r4_gate_probe")
+    assert rc == 0, out[-2000:]
+    assert "r4_gate_probe" in out
+    arms = repo / "src/python/ta_r4/arms.py"
+    arms.write_text(arms.read_text() + "\n# drift\n")
+    rc, out = _dry_run(repo, "A3_1kg", "r4_gate_probe")
+    assert rc != 0 and "LockGateError" in out and "drifted" in out, out[-2000:]
