@@ -2,6 +2,7 @@
 them as-is, so the tests exercise exactly what the rule runs. All paths are repo-relative (cwd = repo)."""
 from __future__ import annotations
 
+import csv
 import sys
 
 from ld_read_path import ld_allele_aware, ld_file_authoritative
@@ -48,6 +49,36 @@ def fit_command(arm, trait, ancestry, region_safe, config, *, region_id=None):
             "--policy", row["policy"],
             "--output", paths.fit_json(arm, trait, ancestry, region_safe)]
     return cmd
+
+
+K2D_RECORD = ".planning/amendments/IDENTITY-LD-K2D-FIT-SUMMARY.tsv"
+REPRO_FIT_ARMS = {"repro_routeC": "real_ld", "repro_routeL": "real_ld",
+                  "repro_k2d_routeC": "k2d", "repro_k2d_routeL": "k2d"}
+
+
+def safe_region_id(region_id):
+    return region_id.replace(".", "_").replace("/", "_")
+
+
+def k2d_record_rows():
+    with open(K2D_RECORD, newline="") as fh:
+        return list(csv.DictReader(fh, delimiter="\t"))
+
+
+def repro_fit_keys(arm):
+    """(trait, ancestry, region_safe) fitted by a W3a repro arm. k2d: the frozen record's rows (95);
+    real-LD: every trait.ancestry x region in that record (8 x 12 = 96)."""
+    kind = REPRO_FIT_ARMS[arm]
+    rows = k2d_record_rows()
+    if kind == "k2d":
+        keys = [(r["trait"], r["ancestry"], safe_region_id(r["region_id"])) for r in rows]
+    else:
+        ta = sorted({(r["trait"], r["ancestry"]) for r in rows})
+        regs = sorted({safe_region_id(r["region_id"]) for r in rows})
+        keys = [(t, a, g) for t, a in ta for g in regs]
+    if len(set(keys)) != len(keys):
+        raise ValueError(f"{arm}: duplicate fit keys in {K2D_RECORD}")
+    return sorted(keys)
 
 
 def receipt_command(arm, trait, ancestry, region_safe):
