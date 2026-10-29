@@ -26,7 +26,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-28 — **TRACK A ta-r4: W2c COMPLETE (ac4e5452). PRODUCTION GATE = GIT LOCK (quick-261028-kkg). NEXT = W3a (W2d no-op: native/full). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-28 — **TRACK A ta-r4: W2d COMPLETE (both no-ops: native / full). NEXT = W3a. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- `signoff verify W2c-T4` rc 0; no config locked. ukb_native=native → A3_ukb stays EUR_ukb337k_r4; qtl_scope=full →
+  qtl_manifest.tsv unchanged (116,550 rows = estimate `full`). No code or data changed; LOG records both no-ops.
+- Commits `99329eca` (T1), `d222f160` (T2), plus the wave-close commit. FULL 1864 / 1814 / 50 / 0 (LSF 431166, full_W2d.xml),
+  0 changed vs post-kkg; tests/m3 1299 unchanged.
+- Next: W3a.
+
+## 2026-10-28 — **TRACK A ta-r4: W2c COMPLETE (ac4e5452). PRODUCTION GATE = GIT LOCK (quick-261028-kkg). NEXT = W3a (W2d no-op: native/full). NOTHING RUNNING.** (SUPERSEDED by the block above)
 
 - W2c-T4 recorded (`ac4e5452`: native, full, hypertension.EUR sdY 20.7).
 - Production gate is now `ta_r4.r4_lock_gate` (offline; no OSF, no token, no env bypass): `$P/R4-LOCK.json` lock_sha

@@ -518,3 +518,7 @@ trait.hypertension.EUR.sdY: 20.7
   overlay_A3_ukb.yaml 0-diff vs HEAD; overlay/isolation/signoffs tests `62 passed`.
 - W2d: qtl_scope=full (Carter 2026-10-28), no-op. qtl_manifest.tsv 0-diff vs HEAD; 116550 rows = qtl_compute_estimate
   `full` n_rows 116550; test_qtl_manifest.py `14 passed` (5m10s).
+- Wave close (LSF 431166, c018n03, HEAD d222f160). QUICK `339 passed, 51 deselected` (107 s). HEAVY `47 passed, 4 skipped`
+  (19m25s; same 4 W5a/W5b skips). Pins `39 passed`. FULL `1814 passed, 50 skipped` (36m26s, full_W2d.xml) = 1864 ids. Vs
+  full_W2c.xml: common 1813, removed 55 / added 51 (the kkg osf→lock-gate swap), changed 0; tests/m3 1299 (1265/34) unchanged.
+  sparse_parent_benchmark.tsv restored. Commits `99329eca` (T1), `d222f160` (T2), wave-close commit follows.
