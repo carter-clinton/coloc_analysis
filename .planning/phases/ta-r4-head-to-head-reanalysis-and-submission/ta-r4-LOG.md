@@ -516,3 +516,5 @@ trait.hypertension.EUR.sdY: 20.7
   `signoff verify W2c-T4` rc 0 → `{"qtl_scope": "full", "trait.hypertension.EUR.sdY": "20.7", "ukb_native": "native"}`.
 - W2d: ukb_native=native (Carter 2026-10-28), no-op. ARMS['A3_ukb'].panel_dir = EUR_ukb337k_r4; arms.py and
   overlay_A3_ukb.yaml 0-diff vs HEAD; overlay/isolation/signoffs tests `62 passed`.
+- W2d: qtl_scope=full (Carter 2026-10-28), no-op. qtl_manifest.tsv 0-diff vs HEAD; 116550 rows = qtl_compute_estimate
+  `full` n_rows 116550; test_qtl_manifest.py `14 passed` (5m10s).
