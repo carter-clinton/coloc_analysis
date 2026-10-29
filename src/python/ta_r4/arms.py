@@ -5,7 +5,9 @@ CURRENT_SCRIPT = "src/legacy/region_analysis/scripts/run_susie_rss.R"
 LEGACY_SCRIPT = "data/r4/legacy_code/run_susie_rss_3dd76df.R"
 POLICY = "config/susie_policy.yaml"
 POLICY_REPRO = "config/ta_r4/susie_policy_repro_iter100.yaml"
-POLICY_L15 = "config/susie_policy_L15.yaml"
+# W3b: the run_susie_rss.R and L15 policy of the R2 lsweep fire (02c4404), extracted by bin/r4_extract_legacy_code.sh.
+R2_SCRIPT = "data/r4/legacy_code/run_susie_rss_02c4404.R"
+R2_POLICY_L15 = "data/r4/legacy_code/02c4404/config/susie_policy_L15.yaml"
 
 
 def _prod(ancestry, panel, validator_mode="real_ld"):
@@ -52,7 +54,7 @@ ARMS: dict[str, dict] = {
     "repro_k2d_routeC": _repro(("EUR", "AFR"), "k2d_identity", CURRENT_SCRIPT, POLICY_REPRO),
     "repro_k2d_routeL": _repro(("EUR", "AFR"), "k2d_identity", LEGACY_SCRIPT, POLICY),
     # L=15 fits for bmi/hypertension/stroke; asthma/t2d reuse the Route L L10 fits (W3b).
-    "repro_sh2b3_r2": _repro(("EUR",), "legacy_repro", CURRENT_SCRIPT, POLICY_L15),
+    "repro_sh2b3_r2": _repro(("EUR",), "legacy_repro", R2_SCRIPT, R2_POLICY_L15),
 }
 
 
