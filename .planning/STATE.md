@@ -26,7 +26,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-28 — **TRACK A ta-r4: W2d COMPLETE (both no-ops: native / full). NEXT = W3a. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-10-29 — **TRACK A ta-r4: W3a MID-WAVE. Repro fires 3 of 4 arms done; k2d Route L at 91/95. Task 3 not started.** (★ RESUME HERE — LATEST ★)
+
+- **Done:** quick-261028-kkg (git-lock gate; 26b358e2, b119c34e, d213c86d, a901275e, 392a75ae). W2d is a no-op (99329eca, d222f160, 2daba532; pushed). W3a Task 1 is committed (49a8f47b, local; not pushed).
+- **Running at close (04:35Z):** the gsd-executor (ab779b645b31c1dcf) is driving `data/r4/tmp/w3a_fire_chain.sh`.
+  - Fits per arm: routeC 96/96, routeL 96/96, k2d_routeC 95/95, k2d_routeL 91/95 (1 LSF job running).
+  - The watchdog killed 2 stalls (the known LSF exit-255 hang); both re-fires reported "Nothing to be done".
+  - **Not disconnect-safe:** the chain is a child of this Claude session. Fits are idempotent, so a re-fire resumes.
+- **Resume:**
+  1. If there is no W3a SUMMARY yet, check `data/r4/logs/w3a_fire_chain.log` for `CHAIN DONE` and the per-arm counts.
+  2. If k2d_routeL is below 95, re-run `bash data/r4/tmp/w3a_fire_chain.sh repro_k2d_routeL`.
+  3. Then run `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission --auto --chain`, which resumes W3a at Task 3: the comparison tool, live test, table, full suite and wave close.
+  4. Spot-check it with a by-id reconciliation against `data/r4/logs/full_W2d.xml` (1864/1814/50/0).
+- **Untracked W3a work in progress:** `src/python/ta_r4/known_answer_compare.py` and `tests/ta_r4/test_known_answer_repro.py`. These belong to the executor; do not stage them from a handoff.
+- **Next gate:** W3b has 3 human-action checkpoints, so the chain stops there for Carter.
+- **Details:** `.planning/HANDOFF.json` `w3a_fire` and `resume_on_reconnect`.
+
+## 2026-10-28 — **TRACK A ta-r4: W2d COMPLETE (both no-ops: native / full). NEXT = W3a. NOTHING RUNNING.** (SUPERSEDED by 2026-10-29 block above)
 
 - `signoff verify W2c-T4` rc 0; no config locked. ukb_native=native → A3_ukb stays EUR_ukb337k_r4; qtl_scope=full →
   qtl_manifest.tsv unchanged (116,550 rows = estimate `full`). No code or data changed; LOG records both no-ops.
@@ -2459,7 +2475,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-10-27 (latest) - ta-r4 W2b complete (AFR + UKB panels; FULL 1854/1804/50/0, 0 changed vs W2a). Next: W2c (Carter checkpoint).
+Last activity: 2026-10-29 (latest) - SESSION CLOSE mid ta-r4 W3a (Task 1 49a8f47b; repro fires 3/4 arms done, k2d_routeL 91/95; Task 3 pending). Next: finish W3a, then W3b (Carter).
+Last activity (prior): 2026-10-27 - ta-r4 W2b complete (AFR + UKB panels; FULL 1854/1804/50/0, 0 changed vs W2a). Next: W2c (Carter checkpoint).
 Last activity (prior): 2026-10-22 - ta-r4 W1 complete (E-2 fix, default-off; FULL 1800/1750/50/0, 0 changed vs W0d). Next: W2a.
 Last activity (prior): 2026-10-22 - ta-r4 W0b2 complete (Task 3 finished + wave-close; FULL 1660/1614/46/0; OSF anonymous-read 401 on az52u flagged for W4b). Next: W0c.
 Last activity (prior): 2026-10-21 18:45 EDT - SESSION CLOSE mid ta-r4 W0b2 (Track A revived: 25-plan re-analysis phase executing; W0a+W0b1 done; nothing running).
