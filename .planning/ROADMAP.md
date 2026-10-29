@@ -685,7 +685,7 @@ Plans:
 - [x] ta-r4-W2b-afr-and-ukb-panels-PLAN.md — AFR 661/504 panels, legacy AFR, UKB 337k loader + isolated, re-oriented panels
 - [ ] ta-r4-W2c-qtl-downloads-manifest-and-panel-review-PLAN.md — GTEx v8 QTL downloads, static QTL manifest + cost per scope, Carter data review (human-action)
 - [ ] ta-r4-W2d-apply-review-decisions-PLAN.md — apply Carter's ukb_native (HM3) and qtl_scope decisions before the lock
-- [ ] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d (382 fits)
+- [x] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d (382 fits)
 - [ ] ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md — SH2B3 R2-exact known answer, findings report, Carter review (human-action)
 - [ ] ta-r4-W3c-simulation-harness-PLAN.md — E8 known-truth simulation harness (pre-lock code)
 - [ ] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators, confirmatory contrast_stats, total ordered branch classifier, coloc coverage + run_aggregation (pre-lock code)

@@ -522,3 +522,41 @@ trait.hypertension.EUR.sdY: 20.7
   (19m25s; same 4 W5a/W5b skips). Pins `39 passed`. FULL `1814 passed, 50 skipped` (36m26s, full_W2d.xml) = 1864 ids. Vs
   full_W2c.xml: common 1813, removed 55 / added 51 (the kkg osf→lock-gate swap), changed 0; tests/m3 1299 (1265/34) unchanged.
   sparse_parent_benchmark.tsv restored. Commits `99329eca` (T1), `d222f160` (T2), wave-close commit follows.
+
+## 2026-10-29 — W3a executed (known-answer routes)
+
+- **Route L code.** `bin/r4_extract_legacy_code.sh 3dd76df`: run_susie_rss.R sources no repo file (library() only), so
+  1 file + the convenience copy; sha256 62fbe9da… (legacy_code_sha256.tsv, 2 rows). Blob 75f2d34 = git object, and the
+  same blob at 0948a76, 1635d37 and 08beb4c: the alternates are byte-identical and were not run.
+  `config/susie_policy.yaml` is 0-diff vs 3dd76df. Commit `49a8f47b`.
+- **Fires** (`data/r4/results/<arm>/fine_mapping/susie`, /rs1). routeC 96, routeL 96, k2d_routeC 95, k2d_routeL 95 = 382;
+  dry-run "Nothing to be done" for each. fits_repro_sha256.tsv 764 rows = 2 × 382. k2d omits bmi.EUR.APOE_19q13
+  (absent from the k2d manifest input; TRACK-A-FROZEN-NUMBERS.md:26). Receipts: real-LD 86 legacy_panel + 10 missing
+  (EUR HLA_6p21 + BMI_Xq24 × 5 traits) = 96; k2d 95 legacy_panel. 15 jobs died at LSF start with exit 255
+  (C 7, L 4, k2dC 1, k2dL 3); a watchdog killed the waiting Snakemake, unlocked and re-fired. No R errors. Commit `741f44b5`.
+- **Route C vs Route L** (known_answer_W3a.tsv, 191 rows = 96 + 95). Equal 96 + differ 0 = 96 (real-LD); equal 95 +
+  differ 0 = 95 (k2d). max |ΔPIP| = 0 on 131 fits with a PIP vector (66 + 65); 60 early exits (30 + 30) have none.
+  No code drift is detected under the reproduction semantics.
+- **vs k2d record** (both routes identical). status 95 + 0 = 95; n_CS 95 + 0 = 95; cs_sizes 47 + 48 = 95.
+  FINDING: the 48 cs_sizes differences are all the non-empty fits. The record's cs_sizes column equals
+  `len("CS<i>")` for i = 1..n_CS on 95/95 rows (e.g. 10 sets → `3;…;3;4`): the summariser iterated CS keys. Aggregates
+  65 ok / 24 too_many_variants / 6 no_variants and non-empty 48/95 equal the record.
+- **vs frozen real-LD** (both routes identical). non-empty 51/96 = 51. Status 44 ok + 22 non_converged + 24
+  too_many_variants + 6 no_variants = 96, vs frozen 48 + 18 + 24 + 6 = 96. FINDING: 4 more fits are non_converged
+  (no per-fit frozen table survives, so which 4 is unknown). Per-fit spots: bmi.EUR.APOE_19q13 non_converged n_CS 6 =
+  frozen (1/1). The 10 surviving 04-21 narrow-validation real-LD fits (FTO + SH2B3, EUR) match on status, n_CS and
+  cs_sizes (10/10). They come from a pre-fire run, not the frozen fire.
+- **Record tension (FINDING).** TRACK-A-FROZEN-NUMBERS.md:72 calls asthma "sole ok SH2B3 EUR fit". Both routes give
+  t2d.EUR.SH2B3_12q24 ok (n_CS 9) as well, as does the 04-21 survivor, and :222 says asthma_vs_t2d was the only SH2B3
+  EUR manifest row (the manifest admits only ok fits). Asthma ld_overlap_fraction 0.0385 is reproduced.
+- Panel-absent EUR HLA_6p21 / BMI_Xq24 (10 fits): 9 exit early (4 too_many_variants HLA, 4 no_variants + t2d
+  too_many_variants Xq24). bmi.EUR.HLA_6p21 is ok n_CS 10 with no panel. The frozen HLA fire used UKBB-LD tiles, so a
+  per-fit difference there would come from the absent panel, not from code drift.
+- Both routes ran in the same R env (r_coloc). Route C ≡ Route L therefore measures code drift only; environment drift
+  since 04-22 is not tested. No policy or code was changed in response to any mismatch (§B.10).
+- **Wave close** (LSF 432078, c017n03, HEAD 741f44b5). QUICK `346 passed, 52 deselected` (100 s). HEAVY `48 passed,
+  4 skipped` (20m28s; same 4 W5a/W5b skips; the live known-answer test RAN). Pins `39 passed`. FULL 1872 ids / 1822
+  passed / 50 skipped / 0 failed (38m31s, full_W3a.xml). Vs full_W2d.xml: common 1864, removed 0, added 8 (all
+  test_known_answer_repro), changed 0; tests/m3 1299 unchanged. sparse_parent_benchmark.tsv restored.
+  run_susie_rss.R 0-diff. A first close job (431883) stopped at QUICK: a `/rs1/researchers` literal in
+  known_answer_compare.py (test_storage_on_rs1). Fixed with `R4_RSCRIPT` / PATH. Commit `26a6bb5f`.

@@ -26,7 +26,18 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-29 — **TRACK A ta-r4: W3a MID-WAVE. Repro fires 3 of 4 arms done; k2d Route L at 91/95. Task 3 not started.** (★ RESUME HERE — LATEST ★)
+## 2026-10-29 — **TRACK A ta-r4: W3a COMPLETE. NEXT = W3b (3 human-action checkpoints). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- W3a commits `49a8f47b` (Route L code + repro targets), `741f44b5` (382 fits manifested), `26a6bb5f` (comparison tool,
+  live test, known_answer_W3a.tsv), plus the wave-close docs commit. Pushed.
+- Fits on /rs1: repro_routeC 96, repro_routeL 96, repro_k2d_routeC 95, repro_k2d_routeL 95 (data/r4/results/<arm>/).
+- Route C ≡ Route L 191/191 (PIPs bitwise equal). k2d: status 95/95, n_CS 95/95; cs_sizes 47/95, a record defect
+  (the column is len("CS<i>")). Real-LD: non-empty 51/96 = frozen; status 44/22/24/6 vs frozen 48/18/24/6 (FINDING).
+  SH2B3 EUR t2d is ok, against the frozen "asthma sole ok" (FINDING). Details: ta-r4-LOG.md 2026-10-29 W3a; SUMMARY.
+- FULL 1872 / 1822 / 50 / 0 (full_W3a.xml) = W2d + 8 added, 0 removed, 0 changed.
+- Next: W3b (SH2B3 known answer + findings; W3b-T3 is a Carter checkpoint).
+
+## 2026-10-29 — **TRACK A ta-r4: W3a MID-WAVE. Repro fires 3 of 4 arms done; k2d Route L at 91/95. Task 3 not started.** (SUPERSEDED by the 2026-10-29 W3a COMPLETE block above)
 
 - **Done:** quick-261028-kkg (git-lock gate; 26b358e2, b119c34e, d213c86d, a901275e, 392a75ae). W2d is a no-op (99329eca, d222f160, 2daba532; pushed). W3a Task 1 is committed (49a8f47b, local; not pushed).
 - **Running at close (04:35Z):** the gsd-executor (ab779b645b31c1dcf) is driving `data/r4/tmp/w3a_fire_chain.sh`.
