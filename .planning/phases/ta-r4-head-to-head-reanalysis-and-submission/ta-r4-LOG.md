@@ -560,3 +560,45 @@ trait.hypertension.EUR.sdY: 20.7
   test_known_answer_repro), changed 0; tests/m3 1299 unchanged. sparse_parent_benchmark.tsv restored.
   run_susie_rss.R 0-diff. A first close job (431883) stopped at QUICK: a `/rs1/researchers` literal in
   known_answer_compare.py (test_storage_on_rs1). Fixed with `R4_RSCRIPT` / PATH. Commit `26a6bb5f`.
+
+## 2026-10-29 — W3b executed (SH2B3 R2-exact known answer, L10/iter-100, findings report); STOPPED at Task 3
+
+Entry written 2026-11-02 from commit `0ef8b029`, `data/r4/logs/fire_w3b_sh2b3.log`, `data/r4/logs/lsf/`, `data/r4/logs/sh2b3_{r2,L10}/`
+and the committed manifests. The W3b work itself ran 2026-10-29 02:20–02:43 EDT. `$W1` = `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W1-susie-rss-l-sweep-SUMMARY.md`,
+`$W2` = `.planning/phases/ta-sh2b3-canonical-and-cache-refresh/ta-sh2b3-W2-canonical-pair-coloc-susie-SUMMARY.md`.
+- **(a) L15 fit code = `02c4404`.** `$W1:219` "21:51:00 — Rule 1 auto-fix applied to `src/legacy/region_analysis/scripts/run_susie_rss.R:38`;
+  commit `02c4404`". The fits R2 used are the 2nd/3rd re-fire attempts after it (`$W1:223` "22:26:04 → 23:01:39 — third re-fire attempt …
+  covered remaining 7 fits (1 L=15 stroke …)"). run_susie_rss.R blob ad2b3e3 at 02c4404, 299b52d and c0f02b6 (`git rev-parse`), i.e. unchanged
+  through the R2 coloc; `git log 02c4404..c0f02b6 -- run_susie_rss.R config/susie_policy_L15.yaml` is empty.
+- **(b) Policy = `config/susie_policy_L15.yaml` at 9c87157, max_iter_primary 500 / max_iter_retry 1000.** `$W1:216` "config/susie_policy_L{15,20,30}.yaml
+  patched (max_iter_primary 100→500, max_iter_retry 200→1000); commit `9c87157`". `git show 02c4404:config/susie_policy_L15.yaml` lines 24–25
+  `max_iter_primary: 500` / `max_iter_retry: 1000`; blob 09da798 at 9c87157, 02c4404 and HEAD.
+- **(c) R2 coloc = `src/snakemake/scripts/run_coloc_susie.R` at `c0f02b6` (blob 4ed2599), la_multitrait_r Rscript.** `$W2:178` "- **Commit:** c0f02b6"
+  (R.utils made optional, `$W2:172-177`); commit time 2026-04-29 23:43:43, and `$W2:63` "LSF dispatch TS=20260429_234353 (re-fire after R.utils
+  Rule 1 auto-fix …)". Dispatcher `bin/fire_canonical_susie_pairs_W2_strategy3.sh` (`$W2:29`, `$W2:159`); its line 11
+  `RSCRIPT=/rs1/researchers/c/ckclinto/conda_envs/la_multitrait_r/bin/Rscript`. la_multitrait_r `conda-meta/history` last entry 2026-04-24 17:31:08,
+  so the env is unchanged since before R2. The R2 fits were swapped into the Stage-2 namespace (`$W2:155`).
+- **Extraction** (`bin/r4_extract_legacy_code.sh`, now path-aware): legacy_code_sha256.tsv 2 + 5 = 7 rows (02c4404 script ×2 + policy; c0f02b6 ×2).
+  arms.repro_sh2b3_r2 points at the extracted 02c4404 script and policy. commands.fit_command and ta_r4_finemap.smk unchanged. Commit `0ef8b029`.
+- **Fire** (`data/r4/tmp/w3b_fire_chain.sh`, R4_R2_RSCRIPT = la_multitrait_r; serial queue). DAG 22 = 3 r4_run_finemap + 9 r4_sh2b3_r2_coloc +
+  9 r4_sh2b3_L10_coloc + 1 r4_sh2b3_all (local). LSF submissions 21 + 1 re-fire = 22 (440330–440672); 440334 (L10 stroke_vs_t2d) died at LSF start ("Cannot open your job file",
+  the W3a exit-255 pattern). At 20/22 the watchdog killed Snakemake, unlocked (`.snakemake/log/2026-10-29T023746…` "Unlocking working directory")
+  and re-fired: 2 steps, 440672 completed. Dry-run "Nothing to be done" (re-checked 2026-11-02). L15 fits written 02:28:33 / 02:31:13 / 02:32:28.
+- **Outputs**: 9 + 9 coloc JSONs; fits_repro_sh2b3_sha256.tsv 3 JSON + 3 fit.rds + 18 coloc = 24 rows (`sha256sum -c` OK 2026-11-02).
+  L15 `.fit.rds` md5 903782e2 / 3dc6fe83 / 4c539b5a = the R2 post-swap md5s in `wave2_dispatch_tracker.json:28-30`.
+- **R2_exact vs frozen R2** (known_answer_sh2b3.tsv, 18 rows = 9 R2_exact + 9 L10_iter100): match 9 + differ 0 = 9; `cmp` byte-identical 9/9.
+  Fingerprint bmi_vs_hypertension n_cs 13 × 5, nsnps 168, hit1/hit2 rs3184504: 5/5. L15 n_CS 13/5/3, ld_overlap 170/589/622, all non_converged
+  niter 1000 L_used 15, policy_hash 456efb68….
+- **L10/iter-100** (separate measurement): bmi–htn 1.0 and htn–stroke 1.0 hold; htn–t2d 3.0943e-08 (R2 1.0).
+- **New findings** (FINDINGS §4/§5/§8): JSON credible_sets vs `.fit.rds` `$sets$cs` eq 37 + differ 29 + no_sets 30 = 96, non-empty 51 vs 25;
+  R1 28 pairs ≥ 1 side zero 14 (JSON) / 22 (rds), 6 FTO EUR pairs non-empty both sides; TRACK-A-FROZEN-NUMBERS.md:357/:361 cite a later commit
+  and later fits; the R2 coloc skipped the chr:pos rewrite (18/18 logs, R.utils absent). No number adjusted (§B.10).
+- Negative controls (2026-11-02, module restored by sha256): TOL 1e-6→1e-30 → `test_tolerance_1e6[5e-07-true]` FAILED; dropping the
+  fingerprint_check from match → `test_bmi_htn_fingerprint_is_absolute_not_relative` FAILED. The original RED run is not on record.
+- FINDINGS edits 2026-11-02: source paths added to §6 (effective max_iter 100, `$W1:218`, Route C niter) and to each §7 line. No number changed.
+- **Wave close** (LSF 481675, c017n04, HEAD 0ef8b029, 2026-11-02). QUICK `360 passed, 54 deselected` (87.7 s). HEAVY `50 passed, 4 skipped`
+  (21m44s; same 4 W5a/W5b skips; both W3b live tests ran). Pins `39 passed`. FULL 1888 ids / 1838 passed / 50 skipped / 0 failed (40m02s,
+  full_W3b.xml). Vs full_W3a.xml: common 1872, removed 0, added 16 (all test_sh2b3_known_answer), changed 0; 1872 − 0 + 16 = 1888;
+  tests/m3 1299 (1265/34) unchanged. sparse_parent_benchmark.tsv restored; run_susie_rss.R 0-diff. An earlier close (440842, 2026-10-29)
+  gave the same ids/outcomes (full_W3b.440842.xml). Commit `57ed36a8`.
+- **Task 3 (W3b-T3, Carter human-action) NOT started.** No sign-off recorded.

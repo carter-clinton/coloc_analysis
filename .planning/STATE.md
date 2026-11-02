@@ -26,7 +26,18 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-10-29 — **TRACK A ta-r4: W3a COMPLETE. NEXT = W3b (3 human-action checkpoints). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-02 — **TRACK A ta-r4: W3b TASKS 1–2 DONE. WAITING ON CARTER AT W3b-T3 (human-action). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- W3b commits `0ef8b029` (R2-exact code extraction + SH2B3 coloc rules), `57ed36a8` (known_answer_sh2b3.tsv, R1 cross-check,
+  findings report), plus the docs commit (LOG, STATE, SUMMARY). Pushed.
+- SH2B3 R2 known answer reproduced byte-for-byte (9/9 coloc JSONs `cmp`-identical; fingerprint 5/5) with run_susie_rss.R at
+  02c4404, susie_policy_L15.yaml 500/1000 (9c87157), run_coloc_susie.R at c0f02b6 under la_multitrait_r. L10/iter-100 (separate):
+  htn–t2d 3.1e-08 vs 1.0. New findings: JSON vs `.fit.rds` credible sets 51/96 vs 25/96; R1 28 pairs 22 empty on the coloc-read sets.
+- FULL 1888 / 1838 / 50 / 0 (full_W3b.xml, LSF 481675) = W3a + 16 added, 0 removed, 0 changed.
+- Next: Carter reads `ta-r4-W3-KNOWN-ANSWER-FINDINGS.md` and replies `carter-approved YYYY-MM-DD` + `instructions:` (W3b-T3).
+  W3c starts only after `signoff verify W3b-T3`. ROADMAP W3b box stays unticked until then.
+
+## 2026-10-29 — **TRACK A ta-r4: W3a COMPLETE. NEXT = W3b (3 human-action checkpoints). NOTHING RUNNING.** (SUPERSEDED by the 2026-11-02 W3b block above)
 
 - W3a commits `49a8f47b` (Route L code + repro targets), `741f44b5` (382 fits manifested), `26a6bb5f` (comparison tool,
   live test, known_answer_W3a.tsv), plus the wave-close docs commit. Pushed.
