@@ -1,0 +1,13 @@
+checkpoint_id: W3b-T3
+raw: |-
+  carter-approved 2026-11-02
+  instructions: proceed. 1. ive read it, 2. lets fix these mismatches, what are the causes? 3. confirm unless there is a reason to use a different one. 4. findings dont change the pre-reg
+raw_sha256: e8800b8e08519403924d9bc4c20790c43e585e6ad20811598af6ed4749bde2cf
+token_date: '2026-11-02'
+min_date: '2026-11-02'
+extra_required: []
+fields:
+  instructions: proceed. 1. ive read it, 2. lets fix these mismatches, what are the
+    causes? 3. confirm unless there is a reason to use a different one. 4. findings
+    dont change the pre-reg
+recorded_utc: '2026-11-02T20:05:23Z'

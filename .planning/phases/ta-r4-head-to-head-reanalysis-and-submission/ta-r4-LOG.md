@@ -602,3 +602,15 @@ and the committed manifests. The W3b work itself ran 2026-10-29 02:20–02:43 ED
   tests/m3 1299 (1265/34) unchanged. sparse_parent_benchmark.tsv restored; run_susie_rss.R 0-diff. An earlier close (440842, 2026-10-29)
   gave the same ids/outcomes (full_W3b.440842.xml). Commit `57ed36a8`.
 - **Task 3 (W3b-T3, Carter human-action) NOT started.** No sign-off recorded.
+
+## 2026-11-02 — W3b-T3 signed off (Carter)
+
+Reply, verbatim:
+
+```
+carter-approved 2026-11-02
+instructions: proceed. 1. ive read it, 2. lets fix these mismatches, what are the causes? 3. confirm unless there is a reason to use a different one. 4. findings dont change the pre-reg
+```
+
+`signoffs/W3b-T3.yaml` raw_sha256 e8800b8e…; `signoff verify W3b-T3` exit 0. D-17 SH2B3 provenance statement confirmed.
+Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of the W3 mismatches (no number adjusted, §B.10).

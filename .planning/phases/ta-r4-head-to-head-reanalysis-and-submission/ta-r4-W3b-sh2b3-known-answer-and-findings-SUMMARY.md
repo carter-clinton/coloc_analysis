@@ -36,12 +36,12 @@ decisions:
   - "L10/iter-100 is reported as a separate measurement, never as the known answer (D-17)"
 metrics:
   duration: "Tasks 1-2 2026-10-29 02:20-02:43 EDT; doc completion + wave close 2026-11-02 (~2.5 h, mostly the 64-min LSF close)"
-  completed: "Tasks 1-2 2026-11-02; Task 3 pending"
+  completed: "2026-11-02"
   tasks: "2 of 3"
   files: 13
 ---
 
-# Phase ta-r4 Plan W3b: SH2B3 Known Answer and Findings Summary (Tasks 1–2; Task 3 pending)
+# Phase ta-r4 Plan W3b: SH2B3 Known Answer and Findings Summary 
 
 The SH2B3 R2 known answer reproduces byte-for-byte in its true configuration: L=15 fits from 02c4404 code with the
 500/1000 policy, plus Stage-2 L=10 asthma/t2d, run through the c0f02b6 coloc script under la_multitrait_r. All 9
@@ -114,10 +114,17 @@ reported no missing or broken links before and after the commit (dangling blobs 
 
 None.
 
-## Task 3 (checkpoint:human-action) — NOT STARTED
+## Task 3 (checkpoint:human-action) — SIGNED OFF 2026-11-02
 
-Carter reviews `ta-r4-W3-KNOWN-ANSWER-FINDINGS.md`. Resume token: first line `carter-approved YYYY-MM-DD`, then `instructions: …`.
-No sign-off file, raw reply file or LOG sign-off entry has been written.
+Resume payload (Carter, verbatim):
+
+```
+carter-approved 2026-11-02
+instructions: proceed. 1. ive read it, 2. lets fix these mismatches, what are the causes? 3. confirm unless there is a reason to use a different one. 4. findings dont change the pre-reg
+```
+
+Recorded by `ta_r4.signoff record W3b-T3 --min-date 2026-11-02` → `signoffs/W3b-T3.yaml`,
+raw_sha256 e8800b8e08519403924d9bc4c20790c43e585e6ad20811598af6ed4749bde2cf; `signoff verify W3b-T3` exit 0.
 
 ## Self-Check: PASSED
 

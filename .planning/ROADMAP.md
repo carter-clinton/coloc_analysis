@@ -686,7 +686,7 @@ Plans:
 - [ ] ta-r4-W2c-qtl-downloads-manifest-and-panel-review-PLAN.md — GTEx v8 QTL downloads, static QTL manifest + cost per scope, Carter data review (human-action)
 - [ ] ta-r4-W2d-apply-review-decisions-PLAN.md — apply Carter's ukb_native (HM3) and qtl_scope decisions before the lock
 - [x] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d (382 fits)
-- [ ] ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md — SH2B3 R2-exact known answer, findings report, Carter review (human-action)
+- [x] ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md — SH2B3 R2-exact known answer, findings report, Carter review (human-action)
 - [ ] ta-r4-W3c-simulation-harness-PLAN.md — E8 known-truth simulation harness (pre-lock code)
 - [ ] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators, confirmatory contrast_stats, total ordered branch classifier, coloc coverage + run_aggregation (pre-lock code)
 - [ ] ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md — QTL harmonization + group runner (pre-lock code)
