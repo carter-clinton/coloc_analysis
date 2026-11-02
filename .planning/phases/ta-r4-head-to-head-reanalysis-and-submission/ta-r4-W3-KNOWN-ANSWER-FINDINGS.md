@@ -52,9 +52,14 @@ against this record. The record lacks bmi.EUR.APOE_19q13 (95 of 96; TRACK-A-FROZ
 
 Source: W3a SUMMARY:137-138. k2d aggregates 65 / 24 / 6 and non-empty 48/95 equal the record (W3a SUMMARY:140).
 
-- FINDING: 4 more fits are non_converged than the frozen split. The per-fit frozen table was purged, so the 4 cannot be named.
-  Surviving per-fit evidence: bmi.EUR.APOE_19q13 non_converged n_CS 6 = frozen (1/1); 10 surviving 04-21 narrow-validation
-  fits (FTO + SH2B3 EUR, a pre-fire run) match 10/10 (W3a SUMMARY:150-153).
+- FINDING: 4 more fits are non_converged than the frozen split. Measured 2026-11-02 (`.planning/debug/ta-r4-w3-status-split-and-r1-fto.md`):
+  the 4 are asthma/bmi/hypertension/t2d.EUR.FTO_16q12. The 04-22 fire fitted all 5 FTO_16q12 EUR traits on the
+  identity-placeholder LD RDS (ld_status variants_exceed_threshold, ld_overlap_fraction 0); on the real 1000G EUR panel these 4
+  are non_converged (stroke FTO is ok either way). Reconciliation, exact: 44 + 4 = 48 ok, 22 − 4 = 18 non_converged, non-empty 51
+  unchanged; ld_loaded 40 − 5 = 35, below-0.5 30 + 3 = 33, FTO min ld_overlap_fraction 0 (all = the 04-25 figure snapshot,
+  1e4b071e). Why the FTO RDS was still a placeholder at fire time is not measured. Surviving per-fit evidence: bmi.EUR.APOE_19q13
+  non_converged n_CS 6 = frozen (1/1); 10 surviving 04-21 narrow-validation fits (FTO + SH2B3 EUR, a pre-fire run) match 10/10
+  (W3a SUMMARY:150-153). TRACK-A-FROZEN-NUMBERS.md ERRATA E4.
 - FINDING (record tension): TRACK-A-FROZEN-NUMBERS.md:72 calls asthma the "sole ok SH2B3 EUR fit". Both routes give
   t2d.EUR.SH2B3_12q24 ok as well (JSON n_CS 9; `$MAN/known_answer_W3a.tsv`), consistent with :222. Asthma
   ld_overlap_fraction 0.0385 is reproduced (W3a SUMMARY:154-156).
@@ -64,8 +69,8 @@ Source: W3a SUMMARY:137-138. k2d aggregates 65 / 24 / 6 and non-empty 48/95 equa
   `.fit.rds`. Reconciliation: 22 non_converged (all equal) + 44 ok (15 equal, 29 differ) + 30 early exits (no `$sets`) = 96;
   51 − 26 = 25.
 - Caveat (carried from W3a): Routes C and L ran in the same R env (`envs/r_coloc.yml` under the ta_r4 conda prefix, susieR
-  0.14.2). C ≡ L measures code drift only. Environment drift since 04-22 was not tested and is a candidate cause of the
-  4-fit difference. New partial evidence from W3b: the Route C and Route L `.fit.rds` for bmi/hypertension/stroke EUR
+  0.14.2). C ≡ L measures code drift only. Environment drift since 04-22 was not tested; it is no longer needed to explain the
+  4-fit difference, which the FTO LD input accounts for exactly (debug file, "Eliminated"). New partial evidence from W3b: the Route C and Route L `.fit.rds` for bmi/hypertension/stroke EUR
   SH2B3 are md5-identical (053444fe… / 3d4b62cf… / 494ea177…) to the Stage-2 files recorded before the R2 swap
   (`.planning/phases/ta-sh2b3-canonical-and-cache-refresh/wave2_dispatch_tracker.json:33-35`). That is 3 fits, all
   non_converged, none of them known to be among the 4. The env question stays open.
@@ -137,13 +142,15 @@ under L10/iter-100. bmi_vs_hypertension (1.0 at rs3184504) and hypertension_vs_s
 
 1. The SH2B3 bmi–hypertension PP.H4 = 1.0 is reproduced byte-for-byte only in its R2 configuration (L=15, max_iter 500/1000, non_converged bmi/htn/stroke fits + Stage-2 L=10 asthma/t2d); state that provenance (D-17). (§5; `$MAN/known_answer_sh2b3.tsv`, `$MAN/fits_repro_sh2b3_sha256.tsv`)
 2. Under standard L=10 / iter-100, bmi–hypertension and hypertension–stroke are also 1.0, but hypertension–t2d is 3.1e-08; the htn–t2d result depends on the configuration. (§6; `$MAN/known_answer_sh2b3.tsv` L10_iter100 rows)
-3. The frozen 51/96 non-empty count counts JSON credible sets; coloc.susie sees 25/96 non-empty `.fit.rds` sets. Define "credible set" by what coloc reads and report the per-arm no-CS rate on that definition (E4). (§4; `$MAN/fit_cs_json_vs_rds.tsv`)
-4. The frozen real-LD status split (48/18) is not reproduced (44/22); the 4 fits cannot be named, and environment drift is untested. (§4; W3a SUMMARY:137-138)
+3. The frozen 51/96 non-empty count counts JSON credible sets; coloc.susie sees 25/96 non-empty `.fit.rds` sets. Define "credible set" by what coloc reads and report the per-arm no-CS rate on that definition (E4). The producer defect is item 10. (§4; `$MAN/fit_cs_json_vs_rds.tsv`)
+4. The frozen real-LD status split (48/18) is not reproduced (44/22). The 4 are asthma/bmi/hypertension/t2d.EUR.FTO_16q12: the 04-22 fire fitted FTO_16q12 EUR on the identity-placeholder LD RDS. (§4; W3a SUMMARY:137-138; `.planning/debug/ta-r4-w3-status-split-and-r1-fto.md`; frozen-file ERRATA E4)
 5. The k2d record's cs_sizes column is a label-length artefact and must not be cited for set sizes. (§3; W3a SUMMARY:146-149)
 6. TRACK-A-FROZEN-NUMBERS.md:72 ("sole ok") contradicts :222 and the reproduction (t2d ok). (§4; `$MAN/known_answer_W3a.tsv`)
 7. TRACK-A-FROZEN-NUMBERS.md:357 and :361 attribute the R2 result to a later commit and later fits; cite c0f02b6 / 02c4404 and `$MAN/fits_repro_sh2b3_sha256.tsv`. (§5)
 8. The R2 coloc ran without the chr:pos name alignment (R.utils absent); variant matching relied on panel rsids. (§5; `data/r4/logs/sh2b3_{r2,L10}/`)
-9. The R1 "28/28 empty" record is reproduced for 22/28 pairs on the sets coloc reads; 6 FTO EUR pairs have credible sets on both sides in the reproduced fits. (§8; `$MAN/r1_structural_crosscheck.tsv`)
+9. R1 (2026-05-06) read the 2026-04-30 V4 fits, not 04-22-semantics fits. Its mechanism sentence ("n_cs_a=0 OR n_cs_b=0") was not measured: 3 FTO EUR pairs (asthma_vs_bmi, asthma_vs_t2d, bmi_vs_t2d) reached coloc.susie (no_posterior shape). The measured R1 fact is non-empty PP.H4 0/28. On the reproduced fits, 6 FTO EUR pairs have sets on both sides. (§8; `$MAN/r1_structural_crosscheck.tsv`; `.planning/debug/ta-r4-w3-status-split-and-r1-fto.md`; frozen-file ERRATA E6)
+10. `run_susie_rss.R:1158` computes the JSON `credible_sets` with `susie_get_cs(fit)` (no Xcorr, so no purity filter), while `fit$sets` in the `.fit.rds` is purity-filtered at min_abs_corr 0.5. Status: fix pending Carter's D-28 decision (quick-261102-log Task 2). (§4; `$MAN/fit_cs_json_vs_rds.tsv`)
+11. Open, not fixed: fits carry LD-panel rsid names (7d54183b override) while sumstats `SNP_ID` is chr:pos; with R.utils present, `run_coloc_susie.R`'s chr:pos rewrite maps 6/1833 (htn) and 8/2372 (t2d) FTO EUR variants and the intersect is 0. (`.planning/debug/ta-r4-w3-status-split-and-r1-fto.md`, LSF 481827 replay; frozen-file ERRATA E7)
 
 ## (8) R1_STRUCTURAL re-examination
 
@@ -163,8 +170,13 @@ Cross-check of the 28 pairs in `ta-r3-W2-r1-targets.tsv` against the reproduced 
 - The coloc-visible count reproduces the recorded mechanism for 22 of 28 pairs.
 - FINDING: 6 pairs have credible sets on both sides in the reproduced `.fit.rds`: FTO_16q12 EUR asthma_vs_bmi (6 × 3),
   asthma_vs_hypertension (6 × 5), asthma_vs_t2d (6 × 7), bmi_vs_hypertension (3 × 5), bmi_vs_t2d (3 × 7),
-  hypertension_vs_t2d (5 × 7). The R1 JSONs were purged, so the fits they were run on cannot be compared. The cause of the
-  difference was not measured.
+  hypertension_vs_t2d (5 × 7). The R1 JSONs were purged. The cause of the difference was not measured at W3b; measured
+  2026-11-02, see `.planning/debug/ta-r4-w3-status-split-and-r1-fto.md`.
+- Measured cause: R1 (2026-05-06 10:14) read `results/fine_mapping/susie` after the 2026-04-30 V4 rebuild (c8ee71a0). V4 FTO
+  EUR n_cs were bmi 7 / hypertension 0 / t2d 2, against reproduced 3 / 5 / 7 (`logs/ta_r3_W3_r2_parity/r2_parity_dispatch.log`,
+  via the debug file). So the 3 hypertension pairs were no_signal in R1. The other 3 (asthma_vs_bmi, asthma_vs_t2d, bmi_vs_t2d)
+  have non-null PP.H0 with null H1–H4 in `d9707dfa:results/multitrait/coloc_summary.tsv`, the no_posterior shape: they reached
+  coloc.susie. The recorded mechanism was not measured; the measured R1 fact is non-empty PP.H4 0/28.
 - On the JSON count, 14 pairs would not be empty on either side. The JSON-vs-`.fit.rds` difference in §4 accounts for
   the 8 pairs between 14 and 22.
 - Pre-specified handling: D-02 (`$P/ta-r4-CONTEXT.md:38-41`). When either trait has 0 credible sets under an arm, the

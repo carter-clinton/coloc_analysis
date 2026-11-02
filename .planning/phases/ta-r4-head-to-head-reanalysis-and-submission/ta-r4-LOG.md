@@ -614,3 +614,18 @@ instructions: proceed. 1. ive read it, 2. lets fix these mismatches, what are th
 
 `signoffs/W3b-T3.yaml` raw_sha256 e8800b8e…; `signoff verify W3b-T3` exit 0. D-17 SH2B3 provenance statement confirmed.
 Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of the W3 mismatches (no number adjusted, §B.10).
+
+## 2026-11-02 — quick-261102-log Task 1: W3 errata + FINDINGS causes
+
+- TRACK-A-FROZEN-NUMBERS.md: `## ERRATA (2026-11-02)` appended, E1–E7 (additions only; `git diff` 14 added / 0 deleted lines).
+- FINDINGS §4 (4 fits named: asthma/bmi/hypertension/t2d.EUR.FTO_16q12, identity-placeholder FTO LD in the 04-22 fire;
+  env-drift caveat no longer needed), §7 items 3/4/9 updated, items 10 (JSON `credible_sets` unfiltered; fix pending Carter's
+  D-28 decision, Task 2) and 11 (latent chr:pos alignment defect, open) added, §8 measured cause (R1 read V4 fits).
+- Counts re-measured from `$MAN/fit_cs_json_vs_rds.tsv`: eq 37 (22 non_converged + 15 ok) + differ 29 (ok) + no sets 30 = 96;
+  non-empty JSON 51, rds 25, JSON-only 26; 51 − 26 = 25. Status: 44 + 4 = 48 ok, 22 − 4 = 18 non_converged (debug file).
+- cs_sizes writer check (E1): `grep -rn IDENTITY-LD-K2D-FIT-SUMMARY bin src` = readers only (fig2/fig3, ta_r4, repro bundle);
+  no writer in code. The TSV was written in ec86832e (quick-260425-ieh), whose PLAN :161 says "len(cs) for each cs in
+  JSON.credible_sets". Current `summarize_finemap_results.py` `summarize_file` on
+  `repro_k2d_routeC/.../stroke.EUR.SH2B3_12q24.json` gives `CS1:1;…;CS8:1;CS9:19;CS10:38` = `len(v)` per set; the record
+  row is `3;3;3;3;3;3;3;3;3;4` = `len(key)`. Verdict: not present in current code; no Task 3 sub-step needed.
+- No code, fit or frozen number changed (§B.10). `run_susie_rss.R` untouched.
