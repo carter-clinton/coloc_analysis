@@ -2890,3 +2890,17 @@ orchestrator's.
   and never blocks W5.
 - **Implementing commits (quick-261028-kkg):** `26b358e2` (gate + W4b-T3 `lock_sha` schema), `b119c34e` (call sites
   switched, `r4_osf_gate` removed).
+
+## 2026-11-03 — DEC-2026-11-03-run-susie-rss-json-cs-purity-unfreeze: D-28 lifted once for the JSON credible-set fix in run_susie_rss.R
+
+- **Decider:** Carter, 2026-11-03. Reply saved verbatim at
+  `.planning/quick/261102-log-ta-r4-w3-mismatch-fixes-credible-set-pur/carter-d28-reply.txt`
+  (sha256 `9db087ad50631a2fd3c10c37c9653ead9aa5ac945348b4e9c0f444b2bdef1199`): "carter-approved 2026-11-03 / d28: unfreeze".
+- **Scope (spent by `53106f8f`):** JSON `credible_sets` = `fit$sets` (what coloc.susie reads); the min_abs_corr sweep and
+  `n_cs_default` use the LD the fit used (identity in the ladder-exhausted branch). Nothing else; D-28 is otherwise in force.
+- **Deviation from the proposed wording:** `fit$sets` instead of recomputing `susie_get_cs(fit, Xcorr = R_cs, ...)`,
+  which would use `R` where a `converged_regularized` fit used `R_reg`. Same intent, equal by construction.
+- **Not changed:** the fit and `.fit.rds` (md5 identical pre/post on the fixture and on repro_routeC t2d.EUR.SH2B3_12q24);
+  Route L / 02c4404 legacy copies; W3a/W3b outputs (not re-run). Route C JSON now differs from Route L JSON on impure-set fits.
+- **Re-pin:** `R_CODE_REF` → `53106f8`. The K-3 containment test diffed `bf04199` against the live file (would go red on any
+  authorized code change); it now diffs `bf04199..656529a` (`K3_FIX_REF`, differential substrate).

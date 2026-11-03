@@ -67,8 +67,8 @@ PY_CODE_REF = "bf16289"
 #: so this pin remains valid ACROSS it -- which is the acceptance demonstration
 #: for the whole rescope. It still means "no CODE has moved since the K-1
 #: closure". On an AUTHORIZED code change, update THIS ONE CONSTANT.
-#: See DEC-2026-08-06-sr4-freeze-scope.
-R_CODE_REF = "bf04199"
+#: See DEC-2026-08-06-sr4-freeze-scope. Re-pinned by quick-261102-log (D-28 unfreeze).
+R_CODE_REF = "53106f8"
 
 #: The numeric-bearing R symbols. Symbol pins are DIAGNOSTICS -- they name WHICH
 #: block moved. The whole-file floor is the SAFETY NET: it covers the ~700-line
@@ -262,6 +262,10 @@ def test_run_susie_rss_symbol_code_is_frozen(symbol):
 #: See DEC-2026-08-06-sr4-freeze-scope.
 K3_PRE_FIX_REF = "bf04199"
 
+#: DIFFERENTIAL SUBSTRATE. The commit that made the K-3 edit. Never re-pin:
+#: the containment test diffs K3_PRE_FIX_REF..K3_FIX_REF, not the live file.
+K3_FIX_REF = "656529a"
+
 #: The corrected K-3 census figures and the wrong ones they replaced.
 K3_CORRECTED = ("1,909", "1,900")
 K3_WRONG = ("1,944", "1,935")
@@ -339,7 +343,7 @@ def test_the_k3_edit_touched_only_two_comment_lines():
     an unauthorized widening of a spent unfreeze, and it must not be possible to
     discover that only by reading a summary.
     """
-    diff = _git("diff", "-U0", K3_PRE_FIX_REF, "--", SUSIE_R_REL).stdout
+    diff = _git("diff", "-U0", K3_PRE_FIX_REF, K3_FIX_REF, "--", SUSIE_R_REL).stdout
     # ⚠ `ln[:1] in "-+"` alone is WRONG: "" is a substring of every string, so
     # the trailing blank from split("\n") counts as a changed line.
     changed = [
