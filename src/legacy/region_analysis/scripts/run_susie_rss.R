@@ -1122,6 +1122,7 @@ if (is.null(ld_result$R)) {
   ld_source <- ld_result$source
   ld_status <- ld_result$status
 }
+R_cs <- R
 
 # REQ-2: structured retry ladder driven by YAML policy (Task 1-01-02).
 # Replaces former 2-step tryCatch (max_iter bump + local regularize_ld with eps=1e-6).
@@ -1148,6 +1149,7 @@ if (is.null(fit)) {
   ))
   ld_status <- paste(ld_status, "fallback_identity", sep = ";")
   ld_source <- "identity_fallback"
+  R_cs <- diag(nrow(subset))
   ladder_out <- run_susie_with_ladder(
     z = subset$z, R = diag(nrow(subset)),
     policy = ladder_policy, n = mean_n
@@ -1155,7 +1157,7 @@ if (is.null(fit)) {
   fit <- ladder_out$fit
   convergence_status <- paste(ladder_out$status, "identity_fallback", sep = ";")
 }
-cs <- susie_get_cs(fit)
+cs <- fit$sets
 
 credible_sets <- list()
 if (!is.null(cs$cs)) {
@@ -1319,7 +1321,7 @@ result$ld_source_mismatch_flag  <- isTRUE(is.numeric(s_estimate) && s_estimate >
 # Post-hoc min_abs_corr sweep (FREE -- no refit, Pattern 4)
 sweep_rows <- lapply(MIN_ABS_CORR_SWEEP, function(macor) {
   cs_m <- tryCatch(
-    susieR::susie_get_cs(fit, Xcorr = R, coverage = COVERAGE, min_abs_corr = macor),
+    susieR::susie_get_cs(fit, Xcorr = R_cs, coverage = COVERAGE, min_abs_corr = macor),
     error = function(e) list(cs = list())
   )
   n_cs <- length(cs_m$cs %||% list())
@@ -1333,7 +1335,7 @@ sweep_rows <- lapply(MIN_ABS_CORR_SWEEP, function(macor) {
 
 # L saturation flag at default macor
 n_cs_default <- tryCatch(
-  length((susieR::susie_get_cs(fit, Xcorr = R, coverage = COVERAGE,
+  length((susieR::susie_get_cs(fit, Xcorr = R_cs, coverage = COVERAGE,
                                min_abs_corr = MIN_ABS_CORR_DEFAULT)$cs) %||% list()),
   error = function(e) NA_integer_
 )
