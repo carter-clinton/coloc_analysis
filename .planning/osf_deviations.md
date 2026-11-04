@@ -1192,3 +1192,24 @@ posting decision is **Carter's alone**.
 
 Per `DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf`, ta-r4 production is gated by the git lock (W4b commit A),
 not by an OSF posting. If Carter posts the R4 amendment, its URL is recorded here. No OSF record is changed.
+
+## 2026-11-04 — R4 amendment — DRAFTED, NOT POSTED
+
+Draft: `.planning/amendments/osf-amendment-r4-DRAFT.md` (ta-r4 W4a). Lock values are placeholders until Carter's W4a-T3
+sign-off. Posting is optional (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf); the production gate is the git lock.
+Deviations from the earlier registered Track A record that the draft discloses:
+
+- **BMI allele restoration (D-18).** REF/ALT restored from the same Yengo 2018 release: 2,327,244 exact of 2,336,269;
+  9,025 palindromic rows dropped (`$MAN/bmi_allele_restoration_report.tsv`).
+- **SH2B3 provenance (D-17).** PP.H4 = 1.0 reproduces only under the R2 configuration (L=15 @ max_iter 500/1000 + Stage-2
+  L=10); under L=10/iter-100 hypertension–t2d is 3.1e-08 (`$P/ta-r4-W3-KNOWN-ANSWER-FINDINGS.md` §5–6).
+- **E-2 fix (D-06).** EUR join allele-aware; QTL betas oriented by the QTL's own alleles; before/after in E7.
+- **osf-correction-v2 retired unposted (D-19).** The amendment's §(i) carries the E-2 finding instead.
+- **Production policy vs frozen effective max_iter (D-12).** Production retry honours max_iter 200 (02c4404); reproduction
+  controls use the frozen effective 100.
+- **AFR substrate (D-20).** 1000G AFR n = 661 primary (504 continental as sensitivity).
+- **Third negative-control set.** 10 GWAS-null windows (`$MAN/null_windows_selection.tsv`, seed 20261021).
+- **W2c decisions (Carter, `signoffs/W2c-T4.yaml`).** `ukb_native: native`; `qtl_scope: full` (116,550 QTL rows).
+- **JSON credible sets (D-28 unfreeze, 53106f8f).** W3a/W3b outputs not re-run; Route C JSON ≠ Route L JSON on impure-set fits.
+
+Status: DRAFTED — NOT POSTED. Not authorization to post.

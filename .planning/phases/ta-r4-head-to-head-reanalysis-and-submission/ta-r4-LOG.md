@@ -734,3 +734,38 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   run_qtl_coloc.R uses the coloc.susie package priors (= yaml now; a p12 change needs a priors flag before the lock).
 - **For W6:** bin/r4_fire.sh still carries the LSF profile. Fire under Slurm with a second `--profile` (local) and a bsub shim,
   or add a Slurm profile. 899 group jobs per QTL arm; per-row cost on real windows is unmeasured.
+
+## 2026-11-04 — W4a Task 1 (extractor + text tests, R4 amendment DRAFT, deviations entry)
+
+- **p12 citation (verified).** Wallace 2020, "Eliciting priors and relaxing the single causal variant assumption in
+  colocalisation analyses", PLoS Genet 16:e1008720. Source: JATS XML from
+  `https://journals.plos.org/plosgenetics/article/file?id=10.1371/journal.pgen.1008720&type=manuscript` (sha256
+  b6af1f883af8eaf2eefd85247a3683e8b54daa8fdc2d68e06b822ab49b8c4347; scratch only). Exact sentences:
+  - Results: "The results suggest that the coloc default of p12= = 10−5 may be overly liberal, with data simulated under H3
+    having posterior support for H4, particularly for smaller samples, and that p12 = 5 × 10−6 may be a more generally robust choice."
+  - Discussion: "Perhaps the most widely applicable are the results of simulations, that suggest values of the order
+    p12 ≈ 5×10−6 lead to robust inference over a range of scenarios, but the adoption of sensitivity analysis will help
+    evalutate robustness of inference to changes in prior parameter values."
+  - ⚠ Closing summary (conflicts): "The simulations here (Fig (4)) suggest that p12 = 5×10−5 provides a reasonable balance
+    between power and false positive calls, but it is unlikely that any single point distribution on p12 captures all prior knowledge."
+  Two sentences support 5e-6; the summary prints 5e-5 (probable typo, not verified). 5e-6 kept as the PROPOSED value; the
+  conflict is stated in the DRAFT §(f) and goes to Carter at W4a-T3.
+- **Plan vs code (measured before writing).** The W0d "Decision needed" (fit-name alignment) is still open in code:
+  `run_coloc_pair_r4.R --mode susie` on repro_routeC SH2B3_12q24 hypertension × stroke →
+  `Error: UNMAPPED_FIT_NAMES: fit_a: 589 of 589 fit variant names (e.g. rs7961935) are neither a sumstats SNP_ID nor
+  CHR:POS in SH2B3_12q24 (LD-panel rsid override?)`, rc 1. Fit names (repro_routeC SH2B3 EUR): hypertension 589/589 rsid,
+  stroke 622/622, t2d 863/863, asthma 147/147, bmi 170/170. hypertension/stroke/t2d sumstats are chr:pos (W2a). So
+  production coloc refuses most EUR pairs as coded. Carried to W4a-T3 as an open decision; the DRAFT §(d) has a
+  ‹CARTER-LOCK› placeholder for the rule. Nothing changed in code.
+- **Plan vs record.** (h)'s R1 line follows FINDINGS §(8) (measured: non-empty PP.H4 0/28; 22/28 zero purity-filtered
+  sets on ≥1 side; 3 FTO pairs reached coloc.susie), not the plan's shorter "no_signal, n_cs 0" wording. (m) names the
+  phase-dir panel manifests as `manifests/panels_*.tsv` (the internal-content scan bans `.planning/`); the text test maps
+  that LOCKED_PATHS entry the same way. The A3-UKB panel is Weissbrod 2020 UKB 337k (data_sources.yaml), not Pan-UKBB.
+- **RED** (`data/r4/tmp/w4a/red_t1.txt`): `ImportError: cannot import name 'extract_paste_block'` (collection error).
+  **GREEN:** `19 passed, 2 skipped` (FINAL/PUBLIC absent, reason printed).
+- **Negative controls** (`data/r4/tmp/w4a/nc_t1_out.txt`; files restored sha256-identical):
+  NC1 "pivot" in DRAFT extract → `test_draft_extract_framing` failed; NC2 ".planning/x" → `test_draft_extract_internal_content`
+  failed; NC3 decision_rules.yaml clusters → `row_id of ...` → 2 failed (confirmatory NC + rendered-block test). In-file NCs
+  (tmp extracts with "Pivot", ".planning/x", checklist/CARTER-LOCK, end-before-start) pass as tests.
+- **DRAFT** extract 2,514 words (≤ ~2,700). Confirmatory sentences pasted from `render_confirmatory(rules)` unchanged.
+- **osf_deviations.md** "R4 amendment — DRAFTED, NOT POSTED" appended; `git diff | grep -c '^-[^-]'` = 0.
