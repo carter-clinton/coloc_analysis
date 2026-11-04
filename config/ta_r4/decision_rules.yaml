@@ -1,0 +1,35 @@
+# config/ta_r4/decision_rules.yaml — R4 estimands and outcome-branch rules (D-26), read at call time by
+# src/python/ta_r4/estimands.py and branch_classifier.py. locked flips to true only in W4b.
+alpha: 0.025
+kappa_cut: 0.6
+n_both_min: 10
+threshold_primary: 0.8
+threshold_secondary: 0.5
+sweep: [0.5, 0.7, 0.8, 0.9]
+bootstrap_B: 10000
+bootstrap_seed: 20261021
+ci_level: 0.95
+region_stat_coloc_susie: pp_h4_max
+precedence: [n_both, ci_includes_0, ci_mcnemar_agree, partial_rule]
+confirmatory:
+  contrasts: [A1_matched_vs_A3_1kg, A2_identity_vs_A3_1kg]
+  reference_arm: A3_1kg
+  rows: {row_class: primary, ancestry: EUR, admissible: true, p12_key: p12_primary, a1_varset: matched}   # 10 curated EUR regions x 10 pairs = 100
+  clusters: region_safe of the confirmatory rows                                                       # 10 regions
+  both_have_cs: {A2_identity_vs_A3_1kg: "both methods coloc_susie", A1_matched_vs_A3_1kg: "A3 method coloc_susie"}
+  ci: {statistic: median_delta_pph4, subset: both_have_cs, method: region_cluster_bootstrap_percentile}
+  mcnemar_kappa: {subset: both_have_cs, call: "region_stat >= threshold_primary"}
+  n_both: {subset: both_have_cs}
+  categories:
+    n_both_ok: "n_both >= n_both_min"
+    ci: "pos if ci_lo > 0; neg if ci_hi < 0; else incl0"
+    mcnemar: "sig_X_gt_A3 if p < alpha and b > c; sig_A3_gt_X if p < alpha and c > b; else ns"
+    kappa_ok: "kappa >= kappa_cut; if kappa undefined, observed_agreement == 1"
+  excluded_from_classifier: [negative_control rows (pre-specified specificity analysis), AFR rows (secondary), p12_sensitivity, A1 allvars, A3_ukb / A3_ukb_isect / A3_1kg_isect (E6), repro arms]
+partial_rule:
+  ci_pos_mcnemar_ns: HETEROGENEOUS
+  ci_pos_mcnemar_opposite: HETEROGENEOUS
+  ci_neg_mcnemar_ns: HETEROGENEOUS
+  ci_neg_mcnemar_opposite: HETEROGENEOUS
+locked: false
+notes: "kappa_cut, n_both_min, the four partial_rule entries and the confirmatory block are Carter's to lock in W4a (D-26); the confirmatory block is the orchestrator's rigor-rule default"
