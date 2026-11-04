@@ -208,14 +208,20 @@ def cluster_bootstrap_ci(values, clusters, B, seed, level=0.95, stat=np.median):
     v = np.asarray(values, dtype=float)
     if v.size < 2:
         return (float("nan"), float("nan"))
+    if np.isnan(v).any():
+        raise ValueError("cluster_bootstrap_ci: NaN in values")
+    nanstat = {np.median: np.nanmedian, np.mean: np.nanmean}.get(stat)
+    if nanstat is None:
+        raise ValueError("cluster_bootstrap_ci: stat must be np.median or np.mean")
     cl = np.asarray(clusters)
     groups = [v[cl == c] for c in sorted(set(cl.tolist()))]
-    rng = np.random.default_rng(seed)
     k = len(groups)
-    stats = np.empty(B)
-    for i in range(B):
-        pick = rng.integers(0, k, size=k)
-        stats[i] = stat(np.concatenate([groups[j] for j in pick]))
+    pad = np.full((k, max(len(g) for g in groups)), np.nan)  # cluster x member, NaN-padded
+    for i, g in enumerate(groups):
+        pad[i, : len(g)] = g
+    picks = np.random.default_rng(seed).integers(0, k, size=(B, k))
+    stats = np.concatenate([nanstat(pad[picks[s: s + 1000]].reshape(len(picks[s: s + 1000]), -1), axis=1)
+                            for s in range(0, B, 1000)])
     a = (1 - level) / 2
     lo, hi = np.percentile(stats, [100 * a, 100 * (1 - a)])
     return (float(lo), float(hi))
@@ -404,6 +410,44 @@ def describe_contrast(rows, X, ref, rules, row_ids, p12_key, both_rule, a1_varse
             "ci_lo": lo, "ci_hi": hi, "sign_p": sign_test(d.tolist()),
             "mcnemar_b": ag["b"], "mcnemar_c": ag["c"], "mcnemar_p": ag["mcnemar_p"],
             "kappa": ag["kappa"], "observed_agreement": ag["observed_agreement"]}
+
+
+def e1_summary(sub, rules) -> dict:
+    """Median and mean delta with region-cluster bootstrap CIs, fallback count and sign test for one subset."""
+    d = sub.delta.to_numpy(dtype=float)
+    cl = sub.region_safe.to_numpy()
+    kw = {"B": int(rules["bootstrap_B"]), "seed": int(rules["bootstrap_seed"]), "level": float(rules["ci_level"])}
+    mlo, mhi = cluster_bootstrap_ci(d, cl, **kw)
+    alo, ahi = cluster_bootstrap_ci(d, cl, stat=np.mean, **kw)
+    nan = float("nan")
+    return {"n": int(d.size), "n_fallback": int(sub.is_fallback.sum()),
+            "median_delta": float(np.median(d)) if d.size else nan, "median_ci_lo": mlo, "median_ci_hi": mhi,
+            "mean_delta": float(np.mean(d)) if d.size else nan, "mean_ci_lo": alo, "mean_ci_hi": ahi,
+            "sign_p": sign_test(d.tolist())}
+
+
+def e6_panel_contrast(rows, rules, row_ids, contrasts, p12_keys) -> pd.DataFrame:
+    """contrasts: (X, ref, variant_set, both_rule). describe_contrast per p12 key, plus median n_snps per side."""
+    out = []
+    for X, ref, vset, rule in contrasts:
+        for k in p12_keys:
+            s = describe_contrast(rows, X, ref, rules, row_ids, k, rule)
+            allr = e1_paired_delta(rows, X, ref, k, rule, row_ids)["all_rows"]
+            out.append({"variant_set": vset, **s,
+                        "median_n_snps_x": float(pd.to_numeric(allr.x_n_snps).median()) if len(allr) else float("nan"),
+                        "median_n_snps_ref": float(pd.to_numeric(allr.ref_n_snps).median()) if len(allr) else float("nan")})
+    return pd.DataFrame(out)
+
+
+def negative_control_rates(rows, threshold) -> pd.DataFrame:
+    """Pre-specified specificity analysis: share of negative-control rows with region PP.H4 >= threshold."""
+    nc = rows[rows.row_class == "negative_control"].copy()
+    nc["h4"] = nc.region_stat >= threshold
+    t = nc.groupby(["nc_set", "label", "p12_key"]).agg(n_rows=("row_id", "size"), n_h4=("h4", "sum")).reset_index()
+    t["n_h4"] = t.n_h4.astype(int)
+    t["share_h4"] = t.n_h4 / t.n_rows
+    t.insert(3, "threshold", threshold)
+    return t
 
 
 def categorize(stats, rules) -> dict:
