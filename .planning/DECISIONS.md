@@ -2954,3 +2954,15 @@ orchestrator's.
   W4a-T3; the W4a-T3 schema is unchanged.
 - A pre-lock measurement suggesting < 7 contributing regions, or < 7 likely discordant regions (k), is a flag for
   Carter; the floor is not lowered.
+
+## 2026-11-04 — DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze: D-28 lifted once for the N1 cap move in run_susie_rss.R
+
+- **Decider:** Carter, 2026-11-04. Reply saved verbatim at
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-n1-unfreeze-reply.txt`
+  (sha256 `869ac2bac5c1ca1f0b6b0366efe5ac7fd3cc96d7f2d6909f780547f460609591`): "N1: unfreeze, Allow".
+  The ", Allow" part is his separate approval of the plan 15.5 measurement run.
+- **Scope:** new option `--cap-after-ld-restriction` (default `false`). `true` moves the SUSIE_MAX_VARIANTS check to
+  after the panel restriction and records `n_variants_pre_ld` and `cap_stage` in the early-exit JSON and RDS.
+  Default `false` keeps Track B finemap.smk, the repro arms and the simulation harness on the 53106f8 behaviour (D-15).
+  Nothing else; D-28 is otherwise in force.
+- **Re-pin:** `R_CODE_REF` → the N1 code commit.
