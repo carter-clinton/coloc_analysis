@@ -26,7 +26,17 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-03 — **TRACK A ta-r4: W3b COMPLETE + quick-261102-log CLOSED (D-28 unfreeze landed). NEXT = W3c. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-03 — **TRACK A ta-r4: W3c COMPLETE (simulation harness; code+config+tests). NEXT = W3d. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- Harness commit `0efac930` (cite in W4a): simulate_coloc_r4.R, config/ta_r4/simulation.yaml (locked: false), ta_r4_sim.smk (r4_sim gated,
+  A3_1kg only, 100 jobs), run_coloc_pair_r4.R coloc_pair_core + main guard, 21 tests. No production simulation run (W5c).
+- SuSiE identity vs frozen script max|dPIP| 0.0 (A2, A3); coloc identity vs CLI max|dPP| 0.0; W0d CLI before/after diff empty; 8 NCs RED.
+- Config key is `n_per_trait` (R yaml reads bare `n:` as FALSE).
+- Scheduler is now **Slurm** (Carter 2026-11-03): `sbatch -p compute -A clintonlab_cpu -q normal -c 8 --mem=32G -t 04:00:00 ...`.
+- FULL 1912 / 1862 / 50 / 0 (Slurm 1672481, `data/r4/tmp/w3c/full_W3c.xml`); vs full_261103.xml: 0 removed, 21 added, 0 changed.
+- Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission --auto --chain` → W3d.
+
+## 2026-11-03 — **TRACK A ta-r4: W3b COMPLETE + quick-261102-log CLOSED (D-28 unfreeze landed). NEXT = W3c. NOTHING RUNNING.** (SUPERSEDED by the 2026-11-03 W3c block above)
 
 - W3b-T3 signed off by Carter (`144cfea0`); W3c may start.
 - quick-261102-log: errata E1–E7 (`2266482b`); D-28 unfreeze — JSON `credible_sets` = `fit$sets` (`53106f8f`,

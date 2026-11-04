@@ -629,3 +629,30 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   `repro_k2d_routeC/.../stroke.EUR.SH2B3_12q24.json` gives `CS1:1;…;CS8:1;CS9:19;CS10:38` = `len(v)` per set; the record
   row is `3;3;3;3;3;3;3;3;3;4` = `len(key)`. Verdict: not present in current code; no Task 3 sub-step needed.
 - No code, fit or frozen number changed (§B.10). `run_susie_rss.R` untouched.
+
+## 2026-11-03 — W3c simulation harness (code + config + tests; no production run)
+
+- Precondition: `signoff verify W3b-T3` exit 0. Carter's instructions: none concern the simulation design; item 4 ("findings dont
+  change the pre-reg") applied — design values as in the plan.
+- **Harness commit `0efac930`** (cite in the W4a amendment): simulate_coloc_r4.R, simulation.yaml (locked: false), ta_r4_sim.smk,
+  run_coloc_pair_r4.R main-guard refactor (coloc_pair_core), tests/ta_r4/test_simulation_harness.py (21 tests: 11 quick, 10 r4_heavy).
+- Harness SuSiE = run_susie_rss.R's `%||%`, `regularize_ld`, `run_susie_with_ladder`, parsed from the frozen file at load time (not copied).
+  run_susie_rss.R 0-diff vs 53106f8.
+- RED: 4 failed + 17 errors (harness file absent, simulation.yaml absent, no rule). GREEN 21 passed.
+- SuSiE identity vs the frozen script via commands.fit_command (fixture, 60 variants): max|dPIP| 0.0 A2_identity (5 CS = 5) and A3_1kg (1 = 1).
+  Coloc identity vs the run_coloc_pair_r4.R CLI on the harness's fits (A1_matched, A2 susie, A3 susie): max|dPP| 0.0.
+- W0d CLI before/after the refactor (4 fixture regions x 2 p12 keys x 3 modes = 24; 20 JSON + 4 UNMAPPED_FIT_NAMES refusals):
+  parsed-dict diff empty; snapshot files byte-identical.
+- Negative controls (8, `-B -p no:cacheprovider`, each restored sha256-identical): frozen call + estimate_residual_variance=TRUE,
+  L-5, harness p12_sensitivity, no PSD clip, seed +1, H3 bin ignored, rule without gate, rule passing --reps-override → each RED.
+- Config key `n_per_trait` (not `n`): R yaml parsed `n:` as FALSE → harness n = numeric(0) → every susie_rss errored. Harness now refuses
+  non-positive/missing numeric config keys.
+- Gate: `bash bin/r4_fire.sh production A3_1kg -n data/r4/results/sim/SH2B3_12q24.H4.gen_1kg.tsv` rc 1,
+  `LockGateError: (a) lock record absent`. Fixture-repo dry runs: no lock → refused; with fixture lock → 100 r4_sim jobs, no --reps-override.
+- Smoke (pre-gate; not an estimate): SH2B3_12q24 gen_1kg H4 and H3_r2_0.6, `--reps-override 2`, data/r4/tmp/sim_smoke/ (window 745,
+  6 rows each; H3_r2_0.6 qualifying pairs 4782; seed rep 1 H4 = 20278622 = 20261021 + 17601).
+- **Scheduler: Slurm from 2026-11-03 (Carter); LSF no longer used.**
+- **Wave close** (Slurm 1672481, c207n03, HEAD 0efac930, 1h05m). QUICK `371 passed, 67 deselected` (97 s). HEAVY `63 passed, 4 skipped`
+  (21m44s; same 4 W5a/W5b skips). Pins `39 passed`. FULL 1912 ids / 1862 passed / 50 skipped / 0 failed (41m56s, data/r4/tmp/w3c/full_W3c.xml).
+  Vs full_261103.xml by id: common 1891, removed 0, added 21 (all test_simulation_harness, all passed), changed 0; 1891 − 0 + 21 = 1912;
+  skips 50 = 50 same ids; tests/m3 1299 (1265/34) unchanged. sparse_parent_benchmark.tsv clean.
