@@ -656,3 +656,34 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   (21m44s; same 4 W5a/W5b skips). Pins `39 passed`. FULL 1912 ids / 1862 passed / 50 skipped / 0 failed (41m56s, data/r4/tmp/w3c/full_W3c.xml).
   Vs full_261103.xml by id: common 1891, removed 0, added 21 (all test_simulation_harness, all passed), changed 0; 1891 − 0 + 21 = 1912;
   skips 50 = 50 same ids; tests/m3 1299 (1265/34) unchanged. sparse_parent_benchmark.tsv clean.
+
+## 2026-11-03 — W3d estimators, branch classifier, coverage, aggregation (code + config + tests; no production data)
+
+- **Analysis-code commits (cite in the W4a amendment, with W0d/W3c/W3e):** `db2bf8c9` (estimands.py, branch_classifier.py,
+  cs_cross_purity.R, decision_rules.yaml draft locked: false), `83b3240d` (coloc_coverage.py), `bd551895` (run_aggregation.py),
+  `aef3be84` (Rscript from PATH, not an /rs1 literal).
+- Real manifest: confirmatory rows 100 over 10 region_safe clusters. Coverage expected EUR 290 × 2 × 7 = 4060 and AFR 30 × 2 × 5 = 300;
+  real-repo CLI `missing=4060` / `missing=300`, rc 1 (no outputs yet).
+- Truth table: 36 combos; via rule1 18 / rule2 6 / rule3 4 / partial_rule 8. Branches excluding partial_rule: NON_INFORMATIVE 18,
+  NO_SYSTEMATIC_DIFFERENCE 3, HETEROGENEOUS 3, INFLATION_SUPPORTED 2, DEFLATION 2.
+  - The 8 partial rows are (pos, ns), (pos, sig_A3_gt_X), (neg, ns) and (neg, sig_X_gt_A3), each × kappa_ok. They are governed by 4
+    keys, all drafted HETEROGENEOUS.
+  - These keys, plus kappa_cut, n_both_min and the confirmatory block, are Carter's decisions in W4a-T3.
+- REDs: T1 49 failed + 33 errors; T2 6 failed; T3 6 failed + 4 errors.
+- Negative controls (each RED, restored sha256-identical):
+  - T1 (4): partial key deleted, precedence swapped, row bootstrap, NC rows in the filter.
+  - T2 (2): `check()` drops missing; CLI with one file removed exits 1.
+  - T3 (4): gate removed, coloc globbed from every results dir, `import math`, NC leak into the confirmatory filter.
+- Cluster bootstrap vectorized (bit-identical to the per-draw loop on the same picks) to hold QUICK under 120 s.
+- **Wave close run 1** (Slurm 1674027, HEAD bd551895): FULL 1 failed, `test_storage_on_rs1::test_no_rs1_or_share_literals_in_r4_config_and_src`
+  (an /rs1 Rscript literal in run_aggregation.py). The code was fixed in aef3be84; the test is unchanged.
+- **Wave close run 2** (Slurm 1674938, c207n09, HEAD aef3be84, 59m36s):
+  - QUICK `470 passed, 67 deselected` (118 s).
+  - HEAVY `63 passed, 4 skipped` (same 4 W5a/W5b skips).
+  - Pins `39 passed`.
+  - FULL 2011 ids / 1961 passed / 50 skipped / 0 failed (`data/r4/tmp/w3d/full_W3d.xml`).
+- **By id vs full_W3c.xml:**
+  - Removed 0, added 99 (all passed: contrast_stats 33, branch_classifier 24, estimands 22, run_aggregation 10, coloc_coverage 6,
+    cs_cross_purity 4), changed 0; 1912 − 0 + 99 = 2011.
+  - Skips: the same 50 ids. tests/m3: 1299 (1265/34), unchanged.
+  - fsck: dangling only. sparse_parent_benchmark.tsv clean.

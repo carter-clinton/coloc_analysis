@@ -26,7 +26,19 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-03 — **TRACK A ta-r4: W3c COMPLETE (simulation harness; code+config+tests). NEXT = W3d. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-03 — **TRACK A ta-r4: W3d COMPLETE (estimators, classifier, coverage, aggregation; code+config+tests). NEXT = W3e. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- Analysis-code commits (cite in W4a): `db2bf8c9` (estimands, branch_classifier, cs_cross_purity.R, decision_rules.yaml draft,
+  locked: false), `83b3240d` (coloc_coverage), `bd551895` (run_aggregation), `aef3be84` (Rscript from PATH).
+- Confirmatory rows 100 / 10 clusters. Coverage expected: EUR 4060, AFR 300. Truth table 36: 18/3/3/2/2 + 8 partial_rule.
+- **For W4a (Carter):** the 4 partial_rule keys (all drafted HETEROGENEOUS), kappa_cut 0.6, n_both_min 10, the confirmatory block.
+- W3e must write `data/r4/results/QTL_*/qtl_tiers.tsv` and `QTL_A3/qtl/*.json` (run_aggregation reads them by fixed path).
+- W7 must run run_aggregation with envs/r_coloc.yml `Rscript` on PATH.
+- QUICK 118 s (budget 120 s; little headroom).
+- FULL 2011 / 1961 / 50 / 0 (Slurm 1674938, `data/r4/tmp/w3d/full_W3d.xml`); vs full_W3c.xml: 0 removed, 99 added, 0 changed.
+- Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission --auto --chain` → W3e.
+
+## 2026-11-03 — **TRACK A ta-r4: W3c COMPLETE (simulation harness; code+config+tests). NEXT = W3d. NOTHING RUNNING.** (SUPERSEDED by the 2026-11-03 W3d block above)
 
 - Harness commit `0efac930` (cite in W4a): simulate_coloc_r4.R, config/ta_r4/simulation.yaml (locked: false), ta_r4_sim.smk (r4_sim gated,
   A3_1kg only, 100 jobs), run_coloc_pair_r4.R coloc_pair_core + main guard, 21 tests. No production simulation run (W5c).
