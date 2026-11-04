@@ -482,11 +482,12 @@ def test_the_mask_invariants_are_load_bearing():
     assert params["filler"].default == "_"
     assert params["keep_newlines"].default is True
 
-    # and on the real file the bug is INVISIBLE -- 818 either way. That is why a
-    # synthetic pin is the only thing that can hold this invariant.
+    # and on the real file the bug is INVISIBLE -- same count either way. That is
+    # why a synthetic pin is the only thing that can hold this invariant.
     real = SUSIE_R.read_text()
-    assert len(code_lines(real, LANG_R)) == 818
-    assert len(_code_lines_from_mask(_mask_r(real, keep_newlines=False), real)) == 818
+    n_real = len(code_lines(real, LANG_R))
+    assert n_real > 0
+    assert len(_code_lines_from_mask(_mask_r(real, keep_newlines=False), real)) == n_real
 
 
 # ==========================================================================

@@ -26,7 +26,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-02 — **TRACK A ta-r4: W3b TASKS 1–2 DONE. WAITING ON CARTER AT W3b-T3 (human-action). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-03 — **TRACK A ta-r4: W3b COMPLETE + quick-261102-log CLOSED (D-28 unfreeze landed). NEXT = W3c. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- W3b-T3 signed off by Carter (`144cfea0`); W3c may start.
+- quick-261102-log: errata E1–E7 (`2266482b`); D-28 unfreeze — JSON `credible_sets` = `fit$sets` (`53106f8f`,
+  DEC-2026-11-03-run-susie-rss-json-cs-purity-unfreeze; `.fit.rds` md5 unchanged); R_CODE_REF re-pinned to 53106f8 (`52760f08`).
+- Wave-close red `test_source_freeze.py::test_the_mask_invariants_are_load_bearing` (hard-coded 818 live-file code lines)
+  rewritten to assert both mask variants agree on the live file (no fixed count; Carter 2026-11-03). NC: appended multi-line
+  string → `821 == 823` fails; restored sha256 identical.
+- FULL 1891 / 1841 / 50 / 0 (LSF 483423, `data/r4/tmp/261102-log/full_261103.xml`); vs full_261102.xml: 0 added, 0 removed,
+  1 changed (that test failed → passed).
+- W3a/W3b outputs were not re-run; Route C JSON now differs from Route L JSON on impure-set fits — state in the W4a amendment.
+- Scheduler: Hazel has both LSF and Slurm live; scheduler choice for future jobs is pending Carter.
+- Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission --auto --chain` → W3c (simulation harness; code+config+tests only).
+
+## 2026-11-02 — **TRACK A ta-r4: W3b TASKS 1–2 DONE. WAITING ON CARTER AT W3b-T3 (human-action). NOTHING RUNNING.** (SUPERSEDED by the 2026-11-03 block above)
 
 - W3b commits `0ef8b029` (R2-exact code extraction + SH2B3 coloc rules), `57ed36a8` (known_answer_sh2b3.tsv, R1 cross-check,
   findings report), plus the docs commit (LOG, STATE, SUMMARY). Pushed.
