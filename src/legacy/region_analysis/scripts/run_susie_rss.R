@@ -700,6 +700,10 @@ option_list <- list(
                            "false the legacy CHR:POS match() runs, first hit,",
                            "REF/ALT ignored. Set from config",
                            "ld_read_path.allele_aware.")),
+  # W3f N1 (DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze).
+  make_option("--cap-after-ld-restriction", type = "character", default = "false",
+              help = paste("'true' | 'false'. When true SUSIE_MAX_VARIANTS is checked",
+                           "after the LD panel restriction instead of before LD loading.")),
   make_option("--variant-list", type = "character", help = "Optional TSV restricting variants (CHR,POS,REF,ALT)"),
   make_option("--credible-set", type = "double", default = 0.95, help = "Credible set probability"),
   make_option("--policy", type = "character", default = "config/susie_policy.yaml",
@@ -743,6 +747,12 @@ ld_allele_aware <- local({
   if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
   if (v %in% c("false", "f", "0", "no"))  return(FALSE)
   stop(sprintf("--ld-allele-aware must be true|false, got %s", opt$`ld-allele-aware`))
+})
+cap_after_ld <- local({
+  v <- tolower(trimws(opt$`cap-after-ld-restriction` %||% "false"))
+  if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
+  if (v %in% c("false", "f", "0", "no"))  return(FALSE)
+  stop(sprintf("--cap-after-ld-restriction must be true|false, got %s", opt$`cap-after-ld-restriction`))
 })
 L_DEFAULT            <- policy$susie$L                    %||% 10L
 COVERAGE             <- policy$susie$coverage             %||% 0.95
@@ -943,7 +953,7 @@ if (nrow(subset) == 0) {
   quit(status = 0)
 }
 
-if (nrow(subset) > SUSIE_MAX_VARIANTS) {
+if (!cap_after_ld && nrow(subset) > SUSIE_MAX_VARIANTS) {
   warning(sprintf(
     "Region %s contains %d variants (limit %d). Skipping fine-mapping.",
     opt$region,
@@ -977,6 +987,8 @@ if (nrow(subset) > SUSIE_MAX_VARIANTS) {
                limit = SUSIE_MAX_VARIANTS), file = fit_rds_path)
   quit(status = 0)
 }
+
+n_variants_pre_ld <- nrow(subset)
 
 attempt <- 1
 repeat {
@@ -1041,6 +1053,42 @@ assert_declared_ld_authoritative(ld_result, ld_authoritative, opt$region, opt$an
 
 if (!is.null(ld_result$subset_idx)) {
   subset <- subset[ld_result$subset_idx]
+}
+
+if (cap_after_ld && nrow(subset) > SUSIE_MAX_VARIANTS) {
+  warning(sprintf(
+    "Region %s contains %d variants after LD restriction (%d before; limit %d). Skipping fine-mapping.",
+    opt$region, nrow(subset), n_variants_pre_ld, SUSIE_MAX_VARIANTS
+  ))
+  result <- list(
+    trait = opt$trait,
+    ancestry = opt$ancestry,
+    method = opt$method,
+    region_id = opt$region,
+    chrom = reg$chr,
+    start = reg$start,
+    end = reg$end,
+    sumstats = opt$sumstats,
+    ld_dir = opt$`ld-dir`,
+    status = "too_many_variants",
+    notes = sprintf("n_variants=%d exceeds SUSIE_MAX_VARIANTS=%d after LD restriction", nrow(subset), SUSIE_MAX_VARIANTS),
+    n_variants = nrow(subset),
+    n_variants_pre_ld = n_variants_pre_ld,
+    cap_stage = "after_ld_restriction",
+    variant_catalog_path = opt$`variant-list`,
+    variant_catalog_attempted = variant_catalog_attempted,
+    variant_catalog_used = used_variant_catalog,
+    variant_catalog_fallback = variant_catalog_fallback
+  )
+  write(toJSON(result, auto_unbox = TRUE, pretty = TRUE), file = opt$output)
+  fit_rds_path <- sub("\\.json$", ".fit.rds", opt$output)
+  saveRDS(list(status = "too_many_variants",
+               region = opt$region,
+               n_variants = nrow(subset),
+               n_variants_pre_ld = n_variants_pre_ld,
+               cap_stage = "after_ld_restriction",
+               limit = SUSIE_MAX_VARIANTS), file = fit_rds_path)
+  quit(status = 0)
 }
 
 # susie_credible_set_yield (2026-04-21): prefer the LD-side variant identifier

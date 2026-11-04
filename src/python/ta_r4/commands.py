@@ -44,6 +44,8 @@ def fit_command(arm, trait, ancestry, region_safe, config, *, region_id=None):
             raise ValueError(f"{arm} {ancestry}: ld_authoritative={auth} ld_allele_aware={aware}, need {want}")
         cmd += ["--ld-file", paths.panel_path(arm, region_safe, ancestry),
                 "--ld-authoritative", auth, "--ld-allele-aware", aware]
+        if not _legacy(arm):
+            cmd += ["--cap-after-ld-restriction", "true"]
     cmd += ["--variant-list", paths.catalog_path(row["route"], region_safe),
             "--credible-set", str(config.get("finemap", {}).get("credible_set", 0.95)),
             "--policy", row["policy"],
