@@ -2904,3 +2904,53 @@ orchestrator's.
   Route L / 02c4404 legacy copies; W3a/W3b outputs (not re-run). Route C JSON now differs from Route L JSON on impure-set fits.
 - **Re-pin:** `R_CODE_REF` → `53106f8`. The K-3 containment test diffed `bf04199` against the live file (would go red on any
   authorized code change); it now diffs `bf04199..656529a` (`K3_FIX_REF`, differential substrate).
+
+## 2026-11-04 — DEC-2026-11-04-ta-r4-w3f-fix-all: W3f fix-up of the brief-blind review findings before the lock (Carter)
+
+- **Decider:** Carter, 2026-11-04. Reply saved verbatim (line 1) at
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-decisions-2026-11-04.txt`
+  (sha256 `4d4aa34ded2fba61cdee801375c3bac58ee15562703e26d20b7d86a964134963`):
+  "fix all as recommended. whats the recommendation for N7?"
+- **Rule:** where an item offered "narrow the text OR widen the code", widen the code.
+- Findings from `ta-r4-W4-AMENDMENT-REVIEW-as-received.md`:
+
+| Item | Target state | Plan |
+|------|--------------|------|
+| N1 | Under `--cap-after-ld-restriction true` the 16,000-variant cap applies to the panel-restricted subset; default false keeps Track B, repro arms and the simulation harness unchanged; every non-legacy R4 fit passes the flag | 15.1 |
+| N2 | Fit names align to summary statistics through the fit's LD panel with an allele check; any unmapped name is a hard error (susie, A1_matched, qtl_abf); SH2B3 hypertension x stroke 0 unmapped | 15.1 |
+| N3 | LOCKED_PATHS covers every live analytical dependency (susie_policy.yaml, pipeline.yaml, qtl_orient.R, qtl_sources.yaml, build_tissue_n_lookup.py, pph4_thresholds.yaml) | 15.2 |
+| N4 | Every production fit, coloc and QTL job verifies the sha256 of its inputs against the committed manifests before reading them | 15.2 |
+| N5 | Every production job re-runs the offline lock gate as its first shell command | 15.2 |
+| N6 | The confirmatory estimator refuses on any missing manifest row; run_aggregation refuses FINAL tables on any missing or extra output | 15.3 |
+| N7 | Exact region-level sign-flip direction test plus n_regions_min 7 (DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor) | 15.3 |
+| N8 | Early-exit fits and empty / no-finite-H4 coloc.susie summaries are method none rows with none_reason (15.1); a row_drops table reports them (15.4) | 15.1, 15.4 |
+| N9 | E4 cross-purity for every fit with credible sets, all native pairs both directions; no-CS rate per pair row, region and fit with named denominator | 15.4 |
+| N10 | E6 recomputes E1-E5 on the sensitivity contrasts with drop counts | 15.4 |
+| N12 | QTL fallback_abf rows keep method label and posteriors; tiering filters method == coloc_susie; every QTL row exported | 15.4 |
+| N14 | The simulation never refits with R = I; rates reported by method; aggregation requires all 100 cells | 15.4 |
+| T1 | data_sources.yaml labels AFR T2D as T2DGGI (Suzuki 2024), matching trait_manifest.tsv | 15.2 |
+
+- N11, N13, N15–N18 and T2–T11 were fixed in DRAFT text at W4a; T12 rejected; T13 noted.
+- The D-28 unfreeze for N1 is not part of this entry: "fix all as recommended" is not an explicit unfreeze.
+
+## 2026-11-04 — DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor: the confirmatory direction test is an exact region-level sign-flip test; n_regions_min 7 (Carter)
+
+- **Decider:** Carter, 2026-11-04. Reply saved verbatim (line 2) at
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-decisions-2026-11-04.txt`
+  (sha256 `4d4aa34ded2fba61cdee801375c3bac58ee15562703e26d20b7d86a964134963`):
+  "go with the recommendation to 'do both' . remmeber we will always choose rigor over speed"
+- **Test:** d_r = b_r − c_r per region on the both_have_cs subset at threshold_primary (b = X calls H4 and A3 does
+  not, c = the reverse); T = Σ_r d_r. All 2^k sign assignments over the k regions with d_r ≠ 0 are enumerated exactly
+  when k ≤ 20, else seeded Monte Carlo with B = bootstrap_B and seed = bootstrap_seed, p = (1 + #{|T*| ≥ |T|}) / (B + 1).
+  Two-sided p = P(|T*| ≥ |T|); direction = sign(T). Category names sig_X_gt_A3 / sig_A3_gt_X / ns and alpha 0.025
+  unchanged. Row-level exact McNemar b, c, p are kept as descriptive output only.
+- **Floor:** `n_regions_min: 7` = distinct regions with ≥ 1 both_have_cs row, checked with n_both_min in n_both_ok
+  (failing → NON_INFORMATIVE). Counting contributing regions (not discordant ones) lets perfect agreement classify as
+  no difference.
+- **Justification:** the floor is necessary, not sufficient. The minimum attainable two-sided p is 2/2^k where k =
+  regions with non-zero d_r; k = 6 gives 0.03125 > 0.025, k = 7 gives 0.015625. So 7 contributing regions with one
+  d_r = 0 (k = 6) still cannot reach significance.
+- **Placement:** inside the `confirmatory:` block, so it is bound by `confirmatory_sha256`, which Carter confirms at
+  W4a-T3; the W4a-T3 schema is unchanged.
+- A pre-lock measurement suggesting < 7 contributing regions, or < 7 likely discordant regions (k), is a flag for
+  Carter; the floor is not lowered.
