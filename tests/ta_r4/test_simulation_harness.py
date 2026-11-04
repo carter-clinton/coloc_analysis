@@ -374,7 +374,10 @@ for (t in c("a", "b")) {{
                    SE = sprintf("%.17g", 1 / sqrt(ctx$n)))
   con <- gzfile(file.path(d, paste0("ss_", t, ".tsv.gz")), "w")
   write.table(ss, con, sep = "\t", quote = FALSE, row.names = FALSE); close(con)
-  for (arm in c("A2", "A3")) saveRDS(res$fits[[arm]][[t]]$fit, file.path(d, sprintf("%s_%s.fit.rds", arm, t)))
+  for (arm in c("A2", "A3")) {{
+    saveRDS(res$fits[[arm]][[t]]$fit, file.path(d, sprintf("%s_%s.fit.rds", arm, t)))
+    write(toJSON(list(ld_file_declared = "{fit}"), auto_unbox = TRUE), file.path(d, sprintf("%s_%s.json", arm, t)))
+  }}
 }}
 write.table(data.frame(trait = c("sima", "simb"), ancestry = "EUR", type = "quant", sdY = 1, N_median = ctx$n),
             file.path(d, "traits.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
@@ -388,13 +391,13 @@ cat(toJSON(lapply(split(r, r$arm), function(x) as.list(x)), auto_unbox = TRUE, d
 @pytest.mark.r4_heavy
 def test_coloc_identity_harness_vs_cli(fx_root, tmp_path):
     d = tmp_path / "cli"
-    rows = r_json(COLOC_ID_R.format(fit=fx_root / "ld/EUR_1kg_isect_r4/SH2B3_12q24.rds",
-                                    ukb=fx_root / "ld/EUR_ukb337k_isect_r4/SH2B3_12q24.rds", out=d))
+    fit_panel = fx_root / "ld/EUR_1kg_isect_r4/SH2B3_12q24.rds"
+    rows = r_json(COLOC_ID_R.format(fit=fit_panel, ukb=fx_root / "ld/EUR_ukb337k_isect_r4/SH2B3_12q24.rds", out=d))
     worst = 0.0
     for arm, mode, fits in (("A1", "A1_matched", "A3"), ("A2", "susie", "A2"), ("A3", "susie", "A3")):
         out = d / f"{arm}.json"
         _ok(_run([RSCRIPT, REPO_ROOT / COLOC_SCRIPT, "--mode", mode, "--fit-a", d / f"{fits}_a.fit.rds",
-                  "--fit-b", d / f"{fits}_b.fit.rds", "--sumstats-a", d / "ss_a.tsv.gz", "--sumstats-b",
+                  "--fit-b", d / f"{fits}_b.fit.rds", "--ld-panel", fit_panel, "--sumstats-a", d / "ss_a.tsv.gz", "--sumstats-b",
                   d / "ss_b.tsv.gz", "--trait-a", "sima", "--trait-b", "simb", "--ancestry", "EUR",
                   "--region-id", "SH2B3_12q24", "--regions-csv", d / "regions.csv", "--trait-manifest",
                   d / "traits.tsv", "--priors", PRIORS, "--p12-key", "p12_primary", "--row-id", "SIM",

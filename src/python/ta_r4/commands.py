@@ -127,7 +127,8 @@ def coloc_command(arm, row, p12_key, mode):
     a, b = row["trait_a"], row["trait_b"]
     cmd = ["Rscript", COLOC_SCRIPT, "--mode", mode]
     if mode != "A1_allvars":
-        cmd += ["--fit-a", paths.fit_rds(arm, a, anc, reg), "--fit-b", paths.fit_rds(arm, b, anc, reg)]
+        cmd += ["--fit-a", paths.fit_rds(arm, a, anc, reg), "--fit-b", paths.fit_rds(arm, b, anc, reg),
+                "--ld-panel", paths.panel_path(arm, reg, anc)]
     out_arm = arm if mode == "susie" else f"A1_{anc}"
     return cmd + ["--sumstats-a", paths.sumstats_path(a, anc, arm), "--sumstats-b", paths.sumstats_path(b, anc, arm),
                   "--trait-a", a, "--trait-b", b, "--ancestry", anc, "--region-id", row["region_id"],

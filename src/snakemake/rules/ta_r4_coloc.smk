@@ -38,6 +38,7 @@ def _r4_coloc_inputs(w, mode):
     if mode != "A1_allvars":
         d["fit_a"] = r4paths.fit_rds(ARM, r["trait_a"], anc, reg)
         d["fit_b"] = r4paths.fit_rds(ARM, r["trait_b"], anc, reg)
+        d["panel"] = r4paths.panel_path(ARM, reg, anc)
     return d
 
 

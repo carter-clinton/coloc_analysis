@@ -28,7 +28,8 @@ KEYS = {"row_id", "arm", "mode", "method", "trait_a", "trait_b", "ancestry", "re
         "sdY_a", "sdY_b", "p12_key", "p1", "p2", "p12", "overlap_min", "trim_by_posterior", "n_cs_a", "n_cs_b",
         "fallback_reason", "n_snps", "variant_set_sha256", *PP, "pp_h4_max", "n_cs_pairs",
         "n_cs_pairs_h4_ge_0.8", "summary", "n_matched_allele", "n_matched_pos_only", "n_allele_mismatch",
-        "n_dropped_duplicate", "n_dropped_unusable", "coloc_version", "susieR_version", "R.version.string"}
+        "n_dropped_duplicate", "n_dropped_unusable", "coloc_version", "susieR_version", "R.version.string",
+        "none_reason", "name_map_a", "name_map_b"}
 SAME, MIX, NULL, OVR = (pair_row(r) for r in ("FIXP_SAME", "FIXP_MIX", "FIXP_NULL", "FIXP_OVR"))
 
 
@@ -240,16 +241,16 @@ def test_align_names_matches_run_coloc_susie(fits, tmp_path):
 
 
 @pytest.mark.r4_heavy
-def test_panel_rsid_override_is_refused_not_dropped(fits, tmp_path):
+def test_panel_rsid_override_maps_through_panel_not_dropped(fits, tmp_path):
     """B's fit names are LD-panel rsids that no sumstats column carries. run_coloc_susie.R silently drops every
-    such column that no CS references; the R4 script stops instead (fail closed; decision handed off)."""
+    such column that no CS references; the R4 script maps every one through the fit's panel (W3f N2)."""
     names_b = fit_names(fits, TRAIT_B, "FIXP_OVR")
     assert names_b[0].startswith("rs")
     legacy, line = _run_legacy_coloc_susie(fits, OVR, tmp_path)
     print("run_coloc_susie.R on the override shape:", line.strip(), "pairs", legacy.get("n_pairs_total"))
     for mode in ("susie", "A1_matched"):
-        p, d = coloc(fits, ARM, OVR, "p12_primary", mode)
-        assert p.returncode != 0 and d is None and "UNMAPPED_FIT_NAMES" in p.stderr, p.stderr[-800:]
+        d = run_ok(fits, OVR, mode)
+        assert d["name_map_b"]["n_names"] == len(names_b) and d["name_map_b"]["n_direct"] == 0
 
 
 # ---- W3e: --mode qtl_abf (GWAS x QTL fallback_abf) ------------------------------------------------------------------

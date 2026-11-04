@@ -42,8 +42,11 @@ def load_manifest(repo) -> pd.DataFrame:
 
 
 def region_stat(row):
-    """(region-level PP.H4, is_fallback): coloc_susie -> pp_h4_max over CS pairs; fallback_abf and A1 -> PP.H4."""
+    """(region-level PP.H4, is_fallback): coloc_susie -> pp_h4_max over CS pairs; fallback_abf and A1 -> PP.H4;
+    none (early exit / empty coloc.susie) -> (nan, False)."""
     method = row["method"]
+    if method == "none":
+        return float("nan"), False
     if method == "coloc_susie":
         return _num(row["pp_h4_max"]), False
     if method == "fallback_abf":

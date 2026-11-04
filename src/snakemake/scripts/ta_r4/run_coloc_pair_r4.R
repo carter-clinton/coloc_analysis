@@ -9,6 +9,8 @@
 #   --mode qtl_abf     GWAS x QTL fallback_abf (D-02 on the QTL layer, W3e): coloc.abf on the variant set
 #                      run_qtl_coloc.R bridges (qtl_bridge(), its steps 3-4c replicated), GWAS beta/se from the
 #                      region sumstats rows of the fit's names, QTL quant with --sdy.
+# Fit names map to sumstats rows through the fit's LD panel (map_fit_names, W3f N2); any unmapped name is an error.
+# Early-exit fits and empty / no-finite-H4 coloc.susie summaries are written as method "none" with none_reason (N8).
 # Priors come only from --priors (p1, p2, the --p12-key value, overlap_min, trim_by_posterior) and are
 # written into every output. Package defaults are never used.
 # coloc_pair_core() is shared with simulate_coloc_r4.R (W3c), which source()s this file; main() runs only as a script.
@@ -46,7 +48,7 @@ coloc_pair_core <- function(fa, fb, ti_a, ti_b, pri, mode, labels = c("trait_a",
   if (!mode %in% c("A1_matched", "susie")) fail("MODE", "coloc_pair_core runs A1_matched or susie, not %s", mode)
   n_cs <- function(f) if (is.null(f$fit)) NA_integer_ else length(f$fit$sets$cs)
   out <- list(n_cs_a = n_cs(fa), n_cs_b = n_cs(fb), fallback_reason = NA_character_, pp_h4_max = NA_real_,
-              n_cs_pairs = NA_integer_, n_cs_pairs_h4_ge_0.8 = NA_integer_)
+              n_cs_pairs = NA_integer_, n_cs_pairs_h4_ge_0.8 = NA_integer_, none_reason = NA_character_)
   pp <- rep(NA_real_, 5)
   zero <- if (mode == "susie") c(if (out$n_cs_a == 0) "n_cs_a==0", if (out$n_cs_b == 0) "n_cs_b==0")
   if (mode == "A1_matched" || length(zero)) {
@@ -59,21 +61,27 @@ coloc_pair_core <- function(fa, fb, ti_a, ti_b, pri, mode, labels = c("trait_a",
                  method = "radix")
     res <- coloc.susie(fa$fit, fb$fit, p1 = pri$p1, p2 = pri$p2, p12 = pri$p12, overlap.min = pri$overlap_min,
                        trim_by_posterior = pri$trim)
-    if (is.null(res$summary) || !"PP.H4.abf" %in% names(res$summary)) {
-      fail("COLOC_SUSIE_EMPTY", "coloc.susie returned no summary (%d shared variants)", length(keys))
+    if (is.null(res$summary) || !"PP.H4.abf" %in% names(res$summary) || !nrow(res$summary)) {
+      method <- "none"
+      out$none_reason <- "coloc_susie_empty"
+      r <- list(summary = list(), n_snps = length(keys), keys = keys)
+    } else {
+      sm <- as.data.table(res$summary)
+      h4 <- sm$PP.H4.abf
+      out$n_cs_pairs <- nrow(sm)
+      out$n_cs_pairs_h4_ge_0.8 <- sum(h4 >= 0.8, na.rm = TRUE)
+      if (any(is.finite(h4))) {
+        best <- which.max(h4)
+        out$pp_h4_max <- h4[best]
+        pp <- unname(unlist(sm[best, sprintf("PP.H%d.abf", 0:4), with = FALSE]))
+      } else {
+        method <- "none"
+        out$none_reason <- "coloc_susie_no_finite_h4"
+      }
+      r <- list(summary = lapply(seq_len(nrow(sm)), function(i) as.list(sm[i])), n_snps = length(keys), keys = keys)
     }
-    sm <- as.data.table(res$summary)
-    h4 <- sm$PP.H4.abf
-    out$n_cs_pairs <- nrow(sm)
-    out$n_cs_pairs_h4_ge_0.8 <- sum(h4 >= 0.8, na.rm = TRUE)
-    if (any(!is.na(h4))) {
-      best <- which.max(h4)
-      out$pp_h4_max <- h4[best]
-      pp <- unname(unlist(sm[best, sprintf("PP.H%d.abf", 0:4), with = FALSE]))
-    }
-    r <- list(summary = lapply(seq_len(nrow(sm)), function(i) as.list(sm[i])), n_snps = length(keys), keys = keys)
   }
-  if (method != "coloc_susie") { pp <- r$pp; out$pp_h4_max <- pp[5] }
+  if (method %in% c("A1_abf_matched", "fallback_abf")) { pp <- r$pp; out$pp_h4_max <- pp[5] }
   list(method = method, pp = pp, r = r, out = out)
 }
 
@@ -115,6 +123,92 @@ read_region <- function(path, reg) {
   # the frozen script's variant name: SNP_ID when present, else CHR:POS
   ss[, name := if (all(is.na(SNP_ID))) cp else ifelse(is.na(SNP_ID), cp, SNP_ID)]
   ss
+}
+
+# --- fit names -> region sumstats rows, through the LD panel the fit was built against (W3f N2) -------------------
+norm_allele <- function(x) toupper(trimws(as.character(x)))
+missing_allele <- function(x) is.na(x) | norm_allele(x) %in% c("", "N", ".", "NA")
+complement <- function(x) chartr("ACGT", "TGCA", x)
+
+# names: fit variant names; ss: read_region() rows; panel: the panel's variants data.frame (SNP_ID, CHR, POS and
+# REF/ALT, else A1/A2 as an unordered set). Returns list(idx = ss row per name, counts); any unmapped name fails.
+map_fit_names <- function(names, ss, panel, label) {
+  n <- length(names)
+  idx <- rep(NA_integer_, n)
+  kind <- rep(NA_character_, n)
+  why <- rep(NA_character_, n)
+  ss_dup <- ss$name[duplicated(ss$name)]
+  direct <- match(names, ss$name)
+  ok_direct <- !is.na(direct) & !names %in% ss_dup
+  idx[ok_direct] <- direct[ok_direct]
+  kind[ok_direct] <- "direct"
+  basis <- NA_character_
+  if (any(!ok_direct)) {
+    pv <- if (is.data.frame(panel)) panel else NULL
+    has_ra <- !is.null(pv) && all(c("REF", "ALT") %in% names(pv))
+    has_a12 <- !is.null(pv) && all(c("A1", "A2") %in% names(pv))
+    basis <- if (has_ra) "REF/ALT" else if (has_a12) "A1/A2_unordered" else "none"
+    pid <- if (is.null(pv)) character(0) else as.character(pv$SNP_ID)
+    pcp <- if (is.null(pv)) character(0) else
+      sprintf("%s:%s", sub("^chr", "", as.character(pv$CHR)), format(as.integer(pv$POS), scientific = FALSE, trim = TRUE))
+    pr <- if (has_ra) norm_allele(pv$REF) else if (has_a12) norm_allele(pv$A2) else rep(NA_character_, length(pid))
+    pa <- if (has_ra) norm_allele(pv$ALT) else if (has_a12) norm_allele(pv$A1) else rep(NA_character_, length(pid))
+    sr <- norm_allele(ss$REF); sa <- norm_allele(ss$ALT)
+    s_miss <- missing_allele(ss$REF) | missing_allele(ss$ALT)
+    for (i in which(!ok_direct)) {
+      hit <- which(pid == names[i])
+      if (!length(hit)) { why[i] <- "absent"; next }
+      if (length(hit) > 1) { why[i] <- "panel_duplicate"; next }
+      rows <- which(ss$cp == pcp[hit])
+      if (!length(rows)) { why[i] <- "no_position"; next }
+      r0 <- pr[hit]; a0 <- pa[hit]
+      if (missing_allele(r0) || missing_allele(a0)) { why[i] <- "panel_no_alleles"; next }
+      snv <- nchar(r0) == 1 && nchar(a0) == 1
+      pal <- snv && complement(r0) == a0
+      cls <- vapply(rows, function(j) {
+        if (s_miss[j]) return("no_alleles")
+        if (sr[j] == r0 && sa[j] == a0) return("exact")
+        if (sr[j] == a0 && sa[j] == r0) return(if (basis == "REF/ALT") "swapped" else "exact")
+        if (snv && !pal && nchar(sr[j]) == 1 && nchar(sa[j]) == 1 &&
+            ((sr[j] == complement(r0) && sa[j] == complement(a0)) ||
+             (sr[j] == complement(a0) && sa[j] == complement(r0)))) return("strand")
+        "mismatch"
+      }, character(1))
+      good <- cls %in% c("exact", "swapped", "strand")
+      if (sum(good) == 1 && !any(cls == "no_alleles")) {
+        idx[i] <- rows[good]; kind[i] <- cls[good]
+      } else if (sum(good) >= 1) {
+        why[i] <- "ambiguous"
+      } else if (any(cls == "no_alleles")) {
+        why[i] <- "no_alleles"
+      } else {
+        why[i] <- "allele_mismatch"
+      }
+    }
+  }
+  bad <- is.na(idx)
+  if (any(bad)) {
+    tab <- table(factor(why[bad], levels = unique(why[bad])))
+    fail("UNMAPPED_FIT_NAMES", "%s: %d of %d fit variant names unmapped (%s); first: %s", label, sum(bad), n,
+         paste(sprintf("%s=%d", names(tab), as.integer(tab)), collapse = ", "), paste(head(names[bad], 5), collapse = ", "))
+  }
+  list(idx = idx, counts = list(n_names = n, n_direct = sum(kind == "direct"), n_panel_exact = sum(kind == "exact"),
+                                n_panel_swapped = sum(kind == "swapped"), n_panel_strand = sum(kind == "strand"),
+                                allele_basis = basis))
+}
+
+# The panel passed on the command line must be the panel the fit read (its JSON: ld_file_declared, else ld_matrix).
+check_fit_panel <- function(fit_path, panel_path, label) {
+  js <- sub("\\.fit\\.rds$", ".json", fit_path)
+  if (!file.exists(js)) fail("FIT_PANEL_MISMATCH", "%s: no fit JSON %s", label, js)
+  d <- jsonlite::fromJSON(js, simplifyVector = TRUE)
+  rec <- d$ld_file_declared %||% d$ld_matrix
+  if (is.null(rec) || is.na(rec) || !nzchar(rec) || !file.exists(rec) || !file.exists(panel_path) ||
+      normalizePath(rec) != normalizePath(panel_path)) {
+    fail("FIT_PANEL_MISMATCH", "%s: --ld-panel %s is not the panel the fit recorded (%s)", label, panel_path,
+         if (is.null(rec)) "none" else rec)
+  }
+  invisible(TRUE)
 }
 
 region_row <- function(regions_csv, rid) {
@@ -269,10 +363,9 @@ qtl_abf_main <- function(opt) {
   if (b$status != "ok") fail("BRIDGE", "%s (%s): no bridged variant set for the fallback", b$status, b$reason)
 
   ss <- read_region(opt$`sumstats-a`, region_row(opt$`regions-csv`, opt$`region-id`))
-  if (any(b$snps %in% ss$name[duplicated(ss$name)])) fail("AMBIGUOUS_FIT_NAMES", "bridged names match >1 sumstats row")
-  idx <- match(b$snps, ss$name)
-  if (anyNA(idx)) fail("UNMAPPED_FIT_NAMES", "%d of %d bridged fit names (e.g. %s) have no sumstats row",
-                       sum(is.na(idx)), length(idx), b$snps[is.na(idx)][1])
+  ld_obj <- readRDS(opt$`ld-matrix`)
+  nm <- map_fit_names(b$snps, ss, if (is.list(ld_obj)) ld_obj$variants else NULL, "gwas_fit")
+  idx <- nm$idx
   r <- run_abf(ss[idx], data.table(BETA = b$qtl$beta, SE = b$qtl$se), b$snps, ti_g, ti_q, P,
                c(opt$`trait-a`, "qtl"))
   pp <- r$pp
@@ -280,7 +373,7 @@ qtl_abf_main <- function(opt) {
                 fallback_reason = opt$`fallback-reason`, trait = opt$`trait-a`, ancestry = opt$ancestry,
                 region_id = opt$`region-id`, type_gwas = ti_g$type, sdY_gwas = ti_g$sdY, N_gwas = ti_g$N,
                 qtl_sdy = sdy, qtl_n = nq, ld_allele_join = opt$`ld-allele-join`, qtl_orient = opt$`qtl-orient`,
-                match_key = b$match_key, ld_key_space = b$ld_key_space,
+                match_key = b$match_key, ld_key_space = b$ld_key_space, name_map = nm$counts,
                 p12_key = opt$`p12-key`, p1 = P$p1, p2 = P$p2, p12 = P$p12, n_snps = r$n_snps,
                 variant_set_sha256 = digest::digest(paste(sort(b$snps, method = "radix"), collapse = "\n"),
                                                     algo = "sha256", serialize = FALSE),
@@ -305,13 +398,13 @@ main <- function() {
     make_option("--row-id"), make_option("--arm"), make_option("--output"),
     make_option("--gwas-fit"), make_option("--qtl-sumstats"), make_option("--ld-matrix"), make_option("--variant-list"),
     make_option("--ld-allele-join"), make_option("--qtl-orient"), make_option("--sdy"), make_option("--sample-size"),
-    make_option("--fallback-reason")
+    make_option("--fallback-reason"), make_option("--ld-panel")
   )))
   if (is.null(opt$mode) || !opt$mode %in% MODES) fail("MODE", "--mode must be one of %s", toString(MODES))
   if (opt$mode == "qtl_abf") return(invisible(qtl_abf_main(opt)))
   need <- c("sumstats-a", "sumstats-b", "trait-a", "trait-b", "ancestry", "region-id", "regions-csv",
             "trait-manifest", "priors", "p12-key", "row-id", "arm", "output")
-  if (opt$mode != "A1_allvars") need <- c("fit-a", "fit-b", need)
+  if (opt$mode != "A1_allvars") need <- c("fit-a", "fit-b", "ld-panel", need)
   for (k in need) if (is.null(opt[[k]]) || !nzchar(opt[[k]])) fail("ARGS", "--%s is required for --mode %s", k, opt$mode)
   labels <- c(opt$`trait-a`, opt$`trait-b`)
 
@@ -329,18 +422,20 @@ main <- function() {
   # --- fits and name alignment -----------------------------------------------------------------------------------
   # Behaviour of run_coloc_susie.R:95-260 (fit names -> common chr:pos key via the source sumstats), except that a
   # fit name with no sumstats row is an error here, not a silently dropped column.
+  panel_cache <- NULL
+  panel_variants <- function() {
+    if (is.null(panel_cache)) {
+      pnl <- readRDS(opt$`ld-panel`)
+      panel_cache <<- list(v = if (is.list(pnl)) pnl$variants else NULL)
+    }
+    panel_cache$v
+  }
   align_names <- function(fit, ss, label) {
     nm <- colnames(fit$lbf_variable)
     if (is.null(nm)) fail("FIT_UNNAMED", "%s fit has no variant names", label)
     real <- nm[nm != "null"]
-    dup <- ss$name[duplicated(ss$name)]
-    if (any(real %in% dup)) fail("AMBIGUOUS_FIT_NAMES", "%s: %d fit names match >1 sumstats row", label, sum(real %in% dup))
-    idx <- match(real, ss$name)
-    if (anyNA(idx)) {
-      fail("UNMAPPED_FIT_NAMES", paste0("%s: %d of %d fit variant names (e.g. %s) are neither a sumstats SNP_ID nor ",
-                                        "CHR:POS in %s (LD-panel rsid override?); refusing to drop them"),
-           label, sum(is.na(idx)), length(real), real[is.na(idx)][1], opt$`region-id`)
-    }
+    m <- map_fit_names(real, ss, panel_variants(), label)
+    idx <- m$idx
     key <- ss$cp[idx]
     if (anyDuplicated(key)) fail("DUPLICATE_KEYS", "%s: two fit variants share a CHR:POS", label)
     map <- setNames(c(key, "null"), c(real, "null"))
@@ -348,17 +443,24 @@ main <- function() {
     for (s in c("alpha", "lbf_variable", "mu", "mu2")) if (!is.null(fit[[s]])) colnames(fit[[s]]) <- ren(colnames(fit[[s]]))
     if (!is.null(fit$pip)) names(fit$pip) <- ren(names(fit$pip))
     if (!is.null(fit$sets$cs)) for (i in seq_along(fit$sets$cs)) names(fit$sets$cs[[i]]) <- ren(names(fit$sets$cs[[i]]))
-    list(fit = fit, keys = key, rows = ss[idx])
+    list(fit = fit, keys = key, rows = ss[idx], name_map = m$counts)
   }
-  load_fit <- function(path, ss, label) {
+  EARLY_EXIT <- c("no_variants", "too_many_variants")
+  read_fit <- function(path, label) {
     fit <- readRDS(path)
-    if (is.null(fit$lbf_variable)) fail("FIT_EARLY_EXIT", "%s fit %s has no lbf_variable (status %s)", label, path,
-                                        if (is.null(fit$status)) "NA" else fit$status)
+    if (is.null(fit$lbf_variable)) {
+      st <- if (is.null(fit$status)) NA_character_ else as.character(fit$status)
+      if (!isTRUE(st %in% EARLY_EXIT)) fail("FIT_EARLY_EXIT", "%s fit %s has no lbf_variable (status %s)", label, path, st)
+      return(list(early_exit = st))
+    }
     if (!inherits(fit, "susie")) class(fit) <- c("susie", class(fit))
-    align_names(fit, ss, label)
+    list(early_exit = NA_character_, fit = fit)
+  }
+  load_fit <- function(raw, path, ss, label) {
+    check_fit_panel(path, opt$`ld-panel`, label)
+    align_names(raw$fit, ss, label)
   }
 
-  missing_allele <- function(x) is.na(x) | toupper(trimws(x)) %in% c("", "N", ".", "NA")
   a1_allvars <- function() {
     prep <- function(ss) {
       ok <- is.finite(ss$BETA) & is.finite(ss$SE) & ss$SE > 0
@@ -401,7 +503,8 @@ main <- function() {
   out <- list(n_cs_a = NA_integer_, n_cs_b = NA_integer_, fallback_reason = NA_character_,
               pp_h4_max = NA_real_, n_cs_pairs = NA_integer_, n_cs_pairs_h4_ge_0.8 = NA_integer_,
               n_matched_allele = NA_integer_, n_matched_pos_only = NA_integer_, n_allele_mismatch = NA_integer_,
-              n_dropped_duplicate = NA_integer_, n_dropped_unusable = NA_integer_)
+              n_dropped_duplicate = NA_integer_, n_dropped_unusable = NA_integer_, none_reason = NA_character_,
+              name_map_a = NULL, name_map_b = NULL)
 
   if (opt$mode == "A1_allvars") {
     r <- a1_allvars()
@@ -409,10 +512,19 @@ main <- function() {
     out[names(r$counts)] <- r$counts
     pp <- r$pp; out$pp_h4_max <- pp[5]
   } else {
-    fa <- load_fit(opt$`fit-a`, ss_a, "fit_a"); fb <- load_fit(opt$`fit-b`, ss_b, "fit_b")
-    res <- coloc_pair_core(fa, fb, ti_a, ti_b, P, opt$mode, labels)
-    method <- res$method; r <- res$r; pp <- res$pp
-    out[names(res$out)] <- res$out
+    raw_a <- read_fit(opt$`fit-a`, "fit_a"); raw_b <- read_fit(opt$`fit-b`, "fit_b")
+    if (!is.na(raw_a$early_exit) || !is.na(raw_b$early_exit)) {
+      method <- "none"
+      out$none_reason <- sprintf("fit_early_exit:%s|%s", raw_a$early_exit, raw_b$early_exit)
+      r <- list(summary = list(), n_snps = NA_integer_, keys = NULL)
+      pp <- rep(NA_real_, 5)
+    } else {
+      fa <- load_fit(raw_a, opt$`fit-a`, ss_a, "fit_a"); fb <- load_fit(raw_b, opt$`fit-b`, ss_b, "fit_b")
+      res <- coloc_pair_core(fa, fb, ti_a, ti_b, P, opt$mode, labels)
+      method <- res$method; r <- res$r; pp <- res$pp
+      out[names(res$out)] <- res$out
+      out$name_map_a <- fa$name_map; out$name_map_b <- fb$name_map
+    }
   }
 
   doc <- c(list(row_id = opt$`row-id`, arm = opt$arm, mode = opt$mode, method = method,
@@ -421,8 +533,8 @@ main <- function() {
                 p12_key = opt$`p12-key`, p1 = P$p1, p2 = P$p2, p12 = P$p12, overlap_min = P$overlap_min,
                 trim_by_posterior = P$trim,
                 n_snps = r$n_snps,
-                variant_set_sha256 = digest::digest(paste(sort(r$keys, method = "radix"), collapse = "\n"),
-                                                    algo = "sha256", serialize = FALSE),
+                variant_set_sha256 = if (is.null(r$keys)) NA_character_ else
+                  digest::digest(paste(sort(r$keys, method = "radix"), collapse = "\n"), algo = "sha256", serialize = FALSE),
                 pp_h0 = pp[1], pp_h1 = pp[2], pp_h2 = pp[3], pp_h3 = pp[4], pp_h4 = pp[5],
                 summary = r$summary,
                 coloc_version = as.character(packageVersion("coloc")),
@@ -433,8 +545,8 @@ main <- function() {
   tmp <- paste0(opt$output, ".tmp")
   write_json(doc, tmp, auto_unbox = TRUE, digits = NA, na = "null", null = "null", pretty = TRUE)
   invisible(file.rename(tmp, opt$output))
-  cat(sprintf("[run_coloc_pair_r4] %s %s %s method=%s n_snps=%d pp_h4_max=%s\n", opt$`row-id`, opt$arm,
-              opt$`p12-key`, method, r$n_snps, format(out$pp_h4_max, digits = 6)))
+  cat(sprintf("[run_coloc_pair_r4] %s %s %s method=%s n_snps=%s pp_h4_max=%s none_reason=%s\n", opt$`row-id`,
+              opt$arm, opt$`p12-key`, method, r$n_snps, format(out$pp_h4_max, digits = 6), out$none_reason))
 }
 
 if (sys.nframe() == 0L) main()
