@@ -114,6 +114,7 @@ decision_rules.yaml confirmatory block (current): contrasts, reference_arm, rows
     - k > exact_max_k: seeded Monte Carlo, p = (1 + #{|T*| >= |T|}) / (B + 1), deterministic for a fixed seed; with exact_max_k forced to 5 on a k = 12 case, the MC p is within 4 binomial SE of the exact p
     - describe_contrast adds n_regions (distinct region_safe of the both_have_cs subset), signflip_T, signflip_k, signflip_p, signflip_method, signflip_direction; keeps mcnemar_b, mcnemar_c, mcnemar_p (descriptive)
     - categorize: n_both_ok = n_both >= n_both_min and n_regions >= confirmatory.n_regions_min; mcnemar = sig_X_gt_A3 if signflip_p < alpha and T > 0; sig_A3_gt_X if signflip_p < alpha and T < 0; else ns. Missing yaml keys (n_regions_min, region_signflip.exact_max_k) raise KeyError/ValueError
+    - 7 contributing regions with d_r = [1,1,1,1,1,1,0] (one region has both_have_cs rows but no discordance): n_regions 7 so n_both_ok can be True, k = 6, p = 0.03125, category mcnemar = ns (the floor is necessary, not sufficient)
     - a case where row-level McNemar is significant but the region-level test is not (e.g. 10 discordant rows b=10, c=0 spread over 3 regions) categorizes mcnemar = ns and n_both_ok False if n_regions < 7
     - enumerate_truth_table counts unchanged: 18/3/3/2/2 + 8 partial_rule; HETEROGENEOUS = 11 with all partial_rule keys HETEROGENEOUS (T13)
   </behavior>
@@ -124,7 +125,7 @@ decision_rules.yaml confirmatory block (current): contrasts, reference_arm, rows
     2. decision_rules.yaml, inside `confirmatory:` (so `confirmatory_sha256` binds it):
        ```yaml
          region_signflip: {subset: both_have_cs, call: "region_stat >= threshold_primary", d_r: "b_r - c_r per region (b = X calls H4 and A3 does not; c = the reverse)", statistic: "T = sum of d_r over regions", p: "two-sided P(|T*| >= |T|) over all 2^k sign assignments of the k regions with d_r != 0", exact_max_k: 20, monte_carlo: "if k > exact_max_k: bootstrap_B draws with bootstrap_seed, p = (1 + #{|T*| >= |T|}) / (B + 1)"}
-         n_regions_min: 7      # distinct regions with >= 1 both_have_cs row; min two-sided sign-flip p = 2/2^k (k=6: 0.03125 > alpha; k=7: 0.015625)
+         n_regions_min: 7      # distinct regions with >= 1 both_have_cs row; necessary, not sufficient: min two-sided sign-flip p = 2/2^k, k = regions with non-zero d_r (k=6: 0.03125 > alpha; k=7: 0.015625)
          n_regions: {subset: both_have_cs}
        ```
        `mcnemar_kappa` keeps `{subset: both_have_cs, call: "region_stat >= threshold_primary"}` (kappa and descriptive
@@ -143,7 +144,7 @@ decision_rules.yaml confirmatory block (current): contrasts, reference_arm, rows
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_region_signflip.py tests/ta_r4/test_contrast_stats.py tests/ta_r4/test_branch_classifier.py tests/ta_r4/test_estimands.py -q -rs</automated>
   </verify>
   <acceptance_criteria>
-    - tests pass; the hand-computed p values are asserted exactly (0.015625, 0.03125, 0.25, 0.25, 1.0, 1.0)
+    - tests pass; the hand-computed p values are asserted exactly (0.015625, 0.03125, 0.25, 0.25, 1.0, 1.0), including the 7-regions-k-6 case (n_regions 7, k 6, p 0.03125, ns)
     - RED output and NC1–NC3 failures pasted in the SUMMARY
     - truth-table counts printed by the test equal 18/3/3/2/2/8 and HETEROGENEOUS total 11
   </acceptance_criteria>

@@ -9,6 +9,7 @@ gap_closure: true
 files_modified:
   - .planning/DECISIONS.md
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-decisions-2026-11-04.txt
+  - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-n1-unfreeze-reply.txt
   - src/legacy/region_analysis/scripts/run_susie_rss.R
   - src/python/ta_r4/commands.py
   - src/python/ta_r4/estimands.py
@@ -29,7 +30,8 @@ requirements:
 
 must_haves:
   truths:
-    - "Carter's 2026-11-04 W3f decisions are recorded verbatim as DEC entries before any code changes (fix all; N7 do both; the scoped D-28 lift for N1)"
+    - "Carter's 2026-11-04 W3f decisions are recorded byte-for-byte as DEC entries before any code changes (fix all; N7 do both)"
+    - "The run_susie_rss.R edit for N1 happens only after a DEC quotes Carter's explicit N1 unfreeze reply verbatim; without it the plan stops before touching the frozen script"
     - "Under --cap-after-ld-restriction true the 16,000-variant cap is applied to the panel-restricted subset; a catalog-joined subset above the cap whose panel-restricted subset is within the cap is fitted, not skipped (Codex N1)"
     - "Without the flag the frozen script behaves as at 53106f8 (Track B, repro arms and the simulation harness unchanged, D-15); every non-legacy R4 fit argv passes the flag"
     - "Fit variant names are aligned to summary statistics through the LD panel the fit was built against, with an allele check; any unmapped name is a hard error naming the count and the first examples (Codex N2), in --mode susie, A1_matched and qtl_abf"
@@ -82,7 +84,7 @@ fit-name alignment, method `none` outputs, tests with observed RED and negative 
 
 Standing rules: PLAN-INDEX §A constants ($REPO, $P, $MAN, $PY, $RSCRIPT, $QUICK, $HEAVY, $FULL), §B
 (explicit-path staging; RED first with observed negative controls; behaviour not text; a count is a claim;
-no branch switching), §C wave close. §B.6 (D-28) is lifted ONLY for the scope written in Task 1's DEC.
+no branch switching), §C wave close. §B.6 (D-28) is lifted ONLY by the unfreeze DEC written in Task 2 step 0 from Carter's explicit reply, and only for its scope.
 Memory rules: feedback_green_assertion_needs_a_negative_control, feedback_grep_gate_matches_text_not_meaning,
 feedback_fix_the_producer_not_just_the_consumer, feedback_check_plan_against_red_before_executing,
 feedback_keep_edits_simple_no_superfluous_prose, reference_gpfs_git_object_store_loss, feedback_multi_terminal_staging.
@@ -126,7 +128,7 @@ src/python/ta_r4/estimands.py:
 <tasks>
 
 <task type="auto">
-  <name>Task 1: Record Carter's W3f decisions (verbatim source file + three DEC entries)</name>
+  <name>Task 1: Record Carter's W3f decisions (byte-for-byte source file + two DEC entries)</name>
   <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-decisions-2026-11-04.txt, .planning/DECISIONS.md</files>
   <read_first>
     - .planning/DECISIONS.md (last two entries, especially DEC-2026-11-03-run-susie-rss-json-cs-purity-unfreeze: format and the D-28 lift precedent)
@@ -134,52 +136,53 @@ src/python/ta_r4/estimands.py:
     - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-CONTEXT.md (D-15, D-28)
   </read_first>
   <action>
-    1. Write `$P/W3f-carter-decisions-2026-11-04.txt` with exactly these two lines (Carter's 2026-11-04 messages as
-       relayed by the orchestrator; a decision record, not a sign-off, not `carter-approved` text):
+    1. Write `$P/W3f-carter-decisions-2026-11-04.txt` with exactly these two lines, byte-for-byte, each ending in a
+       single `\n` (Carter's two 2026-11-04 messages, exact text as supplied by the orchestrator; keep the space before
+       the period and the spelling "remmeber" in line 2; a decision record, not a sign-off, not `carter-approved` text):
        ```
-       fix all as recommended
-       go with the recommendation to 'do both'. remember we will always choose rigor over speed.
+       fix all as recommended. whats the recommendation for N7?
+       go with the recommendation to 'do both' . remmeber we will always choose rigor over speed
        ```
-       Record its `sha256sum`.
-    2. Append three entries at the END of `.planning/DECISIONS.md` (append-only), each citing the file and sha256:
+       Write it with `printf '%s\n' '<line 1>' '<line 2>'` (no editor normalisation) and record its `sha256sum`; the sha256
+       is computed only from this file as written, never from a normalised paraphrase.
+    2. Append two entries at the END of `.planning/DECISIONS.md` (append-only), each citing the file and sha256:
        - `## 2026-11-04 — DEC-2026-11-04-ta-r4-w3f-fix-all: W3f fix-up of the brief-blind review findings before the lock (Carter)`.
-         Quote line 1 verbatim. Rule: where an item offered "narrow the text OR widen the code", widen the code. A
+         Quote line 1 byte-for-byte. Rule: where an item offered "narrow the text OR widen the code", widen the code. A
          table with one row each for N1, N2, N3, N4, N5, N6, N7, N8, N9, N10, N12, N14, T1 giving the target state
          (copy from the must_haves of plans 15.1–15.4) and the implementing plan. N11, N13, N15–N18, T2–T11 were
          fixed in DRAFT text at W4a; T12 rejected; T13 noted.
        - `## 2026-11-04 — DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor: the confirmatory direction test is an exact region-level sign-flip test; n_regions_min 7 (Carter)`.
-         Quote line 2 verbatim. State: d_r = b_r − c_r per region on the both_have_cs subset at threshold_primary
+         Quote line 2 byte-for-byte. State: d_r = b_r − c_r per region on the both_have_cs subset at threshold_primary
          (b = X calls H4 and A3 does not, c = the reverse); T = Σ_r d_r; all 2^k sign assignments over the k regions
          with d_r ≠ 0 enumerated exactly when k ≤ 20, else seeded Monte Carlo with B = bootstrap_B and
          seed = bootstrap_seed, p = (1 + #{|T*| ≥ |T|}) / (B + 1); two-sided p = P(|T*| ≥ |T|); direction = sign(T);
          category names sig_X_gt_A3 / sig_A3_gt_X / ns and alpha 0.025 unchanged; row-level exact McNemar b, c, p
          kept as descriptive output only. `n_regions_min: 7` = distinct regions with ≥ 1 both_have_cs row, checked
-         with n_both_min in n_both_ok (failing → NON_INFORMATIVE). Justification: the minimum attainable two-sided p
-         is 2/2^k; k = 6 gives 0.03125 > 0.025, k = 7 gives 0.015625. Placement: inside the `confirmatory:` block,
+         with n_both_min in n_both_ok (failing → NON_INFORMATIVE); counting contributing regions (not discordant ones)
+         lets perfect agreement classify as no difference. Justification: the floor is necessary, not sufficient: the
+         minimum attainable two-sided p is 2/2^k where k = regions with non-zero d_r; k=6 gives 0.03125 > 0.025, k=7
+         gives 0.015625. So 7 contributing regions with one d_r = 0 (k = 6) still cannot reach significance. Placement: inside the `confirmatory:` block,
          so it is bound by `confirmatory_sha256`, which Carter confirms at W4a-T3; the W4a-T3 schema is unchanged.
-         A pre-lock measurement suggesting < 7 contributing regions is a flag for Carter; the floor is not lowered.
-       - `## 2026-11-04 — DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze: D-28 lifted once for the N1 cap move in run_susie_rss.R`.
-         Authority: line 1 (the N1 recommendation was "cap after the panel restriction"). Scope: new option
-         `--cap-after-ld-restriction` (default `false`); `true` moves the SUSIE_MAX_VARIANTS check to after the panel
-         restriction and records `n_variants_pre_ld` and `cap_stage` in the early-exit JSON and RDS. Default `false`
-         keeps Track B finemap.smk, repro arms and the simulation harness on the 53106f8 behaviour (D-15). Nothing
-         else; D-28 is otherwise in force. Re-pin `R_CODE_REF` to the N1 code commit (Task 2).
-    3. Stage nothing yet; Task 2 commits these files with the N1 code.
+         A pre-lock measurement suggesting < 7 contributing regions, or < 7 likely discordant regions (k), is a flag
+         for Carter; the floor is not lowered.
+       The D-28 unfreeze DEC for N1 is NOT written here: "fix all as recommended" is not an explicit unfreeze, and the
+       orchestrator has asked Carter for one. Task 2 writes it only from his explicit reply.
+    3. Commit the two files (explicit paths): `docs(ta-r4-W3f): Carter's W3f decisions (DEC fix-all, N7)`.
   </action>
   <verify>
-    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && sha256sum .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-decisions-2026-11-04.txt && grep -c "^## 2026-11-04 — DEC-2026-11-04-" .planning/DECISIONS.md && git diff -- .planning/DECISIONS.md | grep -c '^-[^-]' || true</automated>
+    <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && sha256sum .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-decisions-2026-11-04.txt && grep -c "^## 2026-11-04 — DEC-2026-11-04-" .planning/DECISIONS.md && printf '%s\n' "fix all as recommended. whats the recommendation for N7?" "go with the recommendation to 'do both' . remmeber we will always choose rigor over speed" | cmp - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-decisions-2026-11-04.txt</automated>
   </verify>
   <acceptance_criteria>
     - the decisions file is exactly 2 lines and its two lines equal the quoted strings byte-for-byte (`wc -l` = 2; `diff` against a heredoc of the two lines is empty)
-    - DECISIONS.md gains exactly 3 headings matching `^## 2026-11-04 — DEC-2026-11-04-` (count printed = 3) and `git diff -- .planning/DECISIONS.md | grep -c '^-[^-]'` prints 0 (append-only)
-    - each DEC cites the decisions file's sha256 (the value printed by sha256sum appears 3 times in the diff)
+    - DECISIONS.md gains exactly 2 headings matching `^## 2026-11-04 — DEC-2026-11-04-` (count printed = 2) and `git diff HEAD~1 -- .planning/DECISIONS.md | grep -c '^-[^-]'` prints 0 (append-only)
+    - each DEC cites the decisions file's sha256 (the value printed by sha256sum appears 2 times in the added lines), and `cmp` of the file against `printf '%s\n'` of the two exact lines exits 0
   </acceptance_criteria>
   <done>Carter's decisions are on record, verbatim and append-only, before any code changes.</done>
 </task>
 
 <task type="auto" tdd="true">
   <name>Task 2: N1 — cap after the panel restriction (flag-gated frozen-script edit, R4 argv, re-pin)</name>
-  <files>src/legacy/region_analysis/scripts/run_susie_rss.R, src/python/ta_r4/commands.py, tests/ta_r4/test_cap_after_panel.py, tests/m3/test_source_freeze_pins.py</files>
+  <files>.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-n1-unfreeze-reply.txt, .planning/DECISIONS.md, src/legacy/region_analysis/scripts/run_susie_rss.R, src/python/ta_r4/commands.py, tests/ta_r4/test_cap_after_panel.py, tests/m3/test_source_freeze_pins.py</files>
   <read_first>
     - src/legacy/region_analysis/scripts/run_susie_rss.R lines 655-715 (options), 900-1060 (no_variants exit, cap, LD loop, panel subset)
     - tests/ta_r4/test_frozen_script_armed_e2e.py (fixture pattern for running the frozen script on a tiny panel)
@@ -197,7 +200,21 @@ src/python/ta_r4/estimands.py:
     - validate_r4_fits classifies the flag-true early exit as early_exit (status-based) without error
   </behavior>
   <action>
-    1. Commit Task 1's two files first: `git add` the two explicit paths; commit `docs(ta-r4-W3f): Carter's W3f decisions (DEC fix-all, N7, D-28 lift for N1)`.
+    0. BLOCKING PRECONDITION (do this before reading or editing run_susie_rss.R). Carter's explicit N1 unfreeze reply,
+       as supplied by the orchestrator: ‹CARTER-REPLY: N1 unfreeze›
+       - If the line above still reads `‹CARTER-REPLY: N1 unfreeze›`, or the supplied text is not an explicit
+         authorization to edit run_susie_rss.R for N1 (e.g. "N1: unfreeze"), STOP: write nothing, report "N1 blocked:
+         no explicit unfreeze from Carter" and end the plan (Task 3 shares commands.py and does not run either).
+       - Otherwise save the reply byte-for-byte to `$P/W3f-carter-n1-unfreeze-reply.txt` (`printf '%s\n'`, no
+         normalisation), record its sha256, and append to DECISIONS.md
+         `## 2026-11-04 — DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze: D-28 lifted once for the N1 cap move in run_susie_rss.R`
+         quoting the reply verbatim with the file and sha256. Scope: new option `--cap-after-ld-restriction` (default
+         `false`); `true` moves the SUSIE_MAX_VARIANTS check to after the panel restriction and records
+         `n_variants_pre_ld` and `cap_stage` in the early-exit JSON and RDS. Default `false` keeps Track B finemap.smk,
+         repro arms and the simulation harness on the 53106f8 behaviour (D-15). Nothing else; D-28 is otherwise in
+         force. Re-pin `R_CODE_REF` to the N1 code commit (step 6). Commit the two files (explicit paths):
+         `docs(ta-r4-W3f): Carter's N1 unfreeze (DEC, D-28 lift)`.
+       - Verify: `cmp` of the saved file against the supplied text exits 0; the DEC heading count for this id is 1.
     2. RED: write `tests/ta_r4/test_cap_after_panel.py` (r4_heavy: runs the frozen script with $RSCRIPT) with the
        behaviours above plus the commands.py argv test (not heavy). Run it; paste the failure (optparse rejects the
        unknown flag / argv lacks it) into the SUMMARY.
@@ -245,6 +262,7 @@ src/python/ta_r4/estimands.py:
     - ta-r4-LOG.md W4a Task 1 entry "Plan vs code" (the 589/589 probe command) and ta-r4-W3-KNOWN-ANSWER-FINDINGS.md item 11
     - data/r4/results/repro_routeC/fine_mapping/susie/hypertension.EUR.SH2B3_12q24.json (which panel field it records)
     - src/python/ta_r4/paths.py (panel_path for production and repro arms), src/snakemake/rules/ta_r4_coloc.smk
+    - A1_matched shares one panel across both fits (checker I5): both fits of a pair come from the same arm, region and ancestry, so the single --ld-panel = paths.panel_path(arm, region_safe, ancestry) is the panel for fit_a AND fit_b; FIT_PANEL_MISMATCH is checked against each fit's JSON separately
   </read_first>
   <behavior>
     N2 (map_fit_names(names, ss, panel_variants) -> list(idx, counts) or fail):

@@ -181,7 +181,9 @@ STATE.md: the "## 2026-11-04 — TRACK A ta-r4: W4a Tasks 1–2 COMPLETE ... (�
     3. W4a plan: change only the frontmatter line to `depends_on: ["ta-r4-W3f-review-suite-and-close"]`; verify with a
        yaml parse of the frontmatter and `git diff` showing exactly one changed line in that file.
     4. PLAN-INDEX: check that the plan-list rows 15.1–15.6 (added at planning time) and the §E/decision-coverage notes
-       match what ran; correct facts only.
+       match what ran; correct facts only. Explicitly correct two standing rules (append a dated note, keep the old text):
+       §B.6 — add "Lifted once for N1 (cap after LD restriction, flag default false) by DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze on Carter's explicit reply; otherwise in force; R_CODE_REF re-pinned to <sha7>" (if 15.1 stopped at its precondition, write that instead);
+       §B.8 — LSF is superseded: "Cluster jobs via Slurm since 2026-11-03: sbatch -p compute -A clintonlab_cpu -q normal, always -t; Rscript is not on PATH in jobs (use $RSCRIPT)" (bsub_wrapper.sh / queue text marked superseded).
     5. LOG: W3f wave-close entry (review counts and dispositions, FULL reconciliation, sha old → new, HANDOFF fields
        changed, push result).
     6. `git fsck --connectivity-only`; explicit-path commit of the five files (+ the review file and DRAFT if not

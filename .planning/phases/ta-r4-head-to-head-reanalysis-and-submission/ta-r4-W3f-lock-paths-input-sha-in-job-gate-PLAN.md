@@ -203,8 +203,21 @@ config/ta_r4/data_sources.yaml:103 AFR T2D labelled "DIAMANTE 2022"; config/ta_r
        edit it); the DAG-time gate_input stays.
     3. bin/r4_fire.sh: replace the line-66 echo with
        `echo "Do not commit locked paths until this fire ends: every production job re-runs the lock gate before reading inputs and fails on drift from the lock commit."`
-       and make the DIRTY check use the gate's own list: `DIRTY=$(git status --porcelain -- $(cd src/python && "$PY" -m ta_r4.r4_lock_gate paths))`
-       (behaviour test: a modified config/susie_policy.yaml in a fixture copy makes `bin/r4_fire.sh production A3_1kg -n` exit 2 before Snakemake starts, if the script can be exercised in a fixture; otherwise record why it cannot and cover it by the gate tests).
+       and make the DIRTY check use the gate's own list: `DIRTY=$(git status --porcelain -- $(cd src/python && "$PY" -m ta_r4.r4_lock_gate paths))`.
+       MANDATORY behaviour test (checker W3), in test_in_job_gate.py: build a fixture git repo in tmp_path containing
+       bin/r4_fire.sh plus the files it touches before the DIRTY check (copy them; stub `bin/r4_link_storage.sh` as a
+       no-op), and a stub `$PY` (an executable script placed first on PATH or passed via the variable the script reads)
+       whose `-m ta_r4.r4_lock_gate paths` prints the real LOCKED_PATHS and whose `check` would exit 0, and a stub `$SMK`
+       that records it was called. Commit; modify config/susie_policy.yaml (and, parametrized, one file matched only by
+       a glob entry, e.g. src/snakemake/rules/ta_r4_x.smk); run `bash bin/r4_fire.sh production A3_1kg -n`; expect exit 2,
+       "REFUSED" on stderr, and the SMK stub never called. Clean tree → the DIRTY check passes (exit is whatever the stub
+       SMK returns, SMK called). If r4_fire.sh cannot run in the fixture without a change beyond the DIRTY line, make
+       the minimal change (e.g. read PY/SMK from the environment with the current values as defaults) and list it.
+       Glob pathspecs: confirm with a test that each LOCKED_PATHS glob entry (`src/snakemake/rules/ta_r4_*.smk`,
+       `$P/manifests/panels_*.tsv`) passed unquoted through `$(...)` reaches git as a pathspec, not a shell-expanded
+       list that drops untracked/new files: in the fixture, an untracked new `src/snakemake/rules/ta_r4_new.smk` and a
+       modified tracked match must both appear in DIRTY. If shell globbing interferes, disable it for that line
+       (`set -f` around it, or read the list into an array with globbing off) and keep the test.
     4. config/ta_r4/data_sources.yaml: change the AFR T2D label to the trait_manifest.tsv wording (T2DGGI, Suzuki 2024); nothing else.
     5. GREEN. Negative controls (paste): NC1 render the gate only for r4_run_finemap → the parametrized cases for the
        other rules fail; NC2 restore "DIAMANTE 2022" → the label test fails.
@@ -218,6 +231,7 @@ config/ta_r4/data_sources.yaml:103 AFR T2D labelled "DIAMANTE 2022"; config/ta_r
   <acceptance_criteria>
     - tests pass; RED and NC outputs pasted
     - the drift case shows rc 0 before and rc 1 after the fixture commit (both rc values pasted)
+    - the r4_fire.sh fixture test exits 2 with SMK not called for a dirty locked path, including a glob-matched new/untracked rules file; seen RED before the DIRTY-line change (the old list misses config/susie_policy.yaml)
     - `git log origin/m3-W2-aou-deltas..HEAD` is empty after the push
   </acceptance_criteria>
   <done>Each production job checks the lock and its inputs itself; the fire script's claim matches the jobs.</done>

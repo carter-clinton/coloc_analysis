@@ -56,8 +56,8 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 
 W3f (waves 15.1–15.6) is a gap-closure fix-up added 2026-11-04 after the W4a brief-blind review
 (`ta-r4-W4-AMENDMENT-REVIEW-as-received.md`) and Carter's decisions (DEC-2026-11-04-ta-r4-w3f-fix-all,
-DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor). Plan 15.1 lifts §B.6 (D-28) once, for the N1 cap move only
-(DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze). W4a now depends on 15.6.
+DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor). Plan 15.1 lifts §B.6 (D-28) once, for the N1 cap move only, and only after a DEC quotes Carter's explicit
+unfreeze reply (DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze); without it 15.1 stops. W4a now depends on 15.6.
 
 **Rigor upgrades over the research decomposition** (rigor-over-speed rule; recorded here so they are
 visible to Carter):

@@ -26,7 +26,7 @@ must_haves:
     - "The after-fix early-exit count is measured, not assumed: panels with <= 16,000 variants cannot early-exit (post-restriction n <= panel n_var), and every panel above 16,000 is measured with the fixed producer in a no-fit mode (cap 0, outputs only under data/r4/tmp/w3f) — the ~35 previously early-exiting primary rows are re-counted"
     - "No production fit is run: every measurement output is an early-exit JSON whose RDS has no lbf_variable, written only under data/r4/tmp/w3f"
     - "How many of the 10 confirmatory regions are likely to contribute both_have_cs rows is reported per contrast from existing pre-lock fits (labelled a proxy); if fewer than 7 is likely, it is a flag for Carter and the floor is not lowered"
-    - "The DRAFT states every changed behaviour (status gate, input sha256 in-job, the fit-name and early-exit rules replacing their CARTER-LOCK placeholders, sign-flip test and n_regions_min with its 2/2^k justification, E4/E6 widened, completeness/coverage refusal, simulation policy, cap stage, QTL fallback export, frozen paths, W3f commit shas)"
+    - "The DRAFT states every changed behaviour (status gate, input sha256 in-job, the fit-name and early-exit rules replacing their CARTER-LOCK placeholders, sign-flip test and n_regions_min with the necessary-not-sufficient 2/2^k justification (k = regions with non-zero d_r), E4/E6 widened, completeness/coverage refusal, simulation policy, cap stage, QTL fallback export, frozen paths, W3f commit shas)"
     - "confirmatory_sha256 is recomputed and recorded old f6e6e90f... -> new; test_amendment_text passes"
   artifacts:
     - path: "src/python/ta_r4/measure_fit_eligibility.py"
@@ -99,13 +99,16 @@ src/python/ta_r4/extract_paste_block.py: extract(path), render_confirmatory(rule
   </read_first>
   <behavior>
     - measurement_argv(arm, trait, ancestry, region_safe, config, out_dir, rscript): equals fit_command(...) except SUSIE_MAX_VARIANTS=0, "Rscript" -> rscript, --output -> <out_dir>/<arm>/<trait>.<ancestry>.<region>.json; raises if out_dir is not under data/r4/tmp/ or if the output path lies in any paths.result_dirs(...) directory, or if --cap-after-ld-restriction true is absent
+    - argv path audit (checker W4): for every (production arm, trait, ancestry, region) in the run list, every path-valued element of measurement_argv (each value after --sumstats, --regions-csv, --ld-dir, --ld-file, --variant-list, --policy, --output, plus the script path) is either a read-only input (an existing file or the arm's ld_dir_unused() directory that must not exist, opened for reading only by the script) or lies under the tmp out_dir; the only path under out_dir is the --output value, and none lies under paths.result_dirs("fits"|"coloc"). A negative control that leaves --output at fit_json() fails this test
     - summarise(out_dir) -> rows (arm, trait, ancestry, region_safe, status, n_variants_pre_ld, n_variants, cap_stage); raises if any RDS has lbf_variable (a fit happened) or any status is not an early exit
     - eligibility rule: eligible = n_variants (post-restriction) <= 16000; for panels with n_var <= 16000, method = "bound" (n_variants <= n_var <= 16000) and no run is needed
   </behavior>
   <action>
     1. RED → GREEN for measurement_argv / summarise (unit tests, not heavy; one r4_heavy test runs the no-fit mode on
-       the tiny e2e fixture and checks the RDS has no lbf_variable). Negative control: let measurement_argv keep
-       SUSIE_MAX_VARIANTS=16000 → the cap-0 assertion fails (paste).
+       the tiny e2e fixture and checks the RDS has no lbf_variable; the argv path-audit test runs over the real run
+       list). Negative controls (paste): let measurement_argv keep SUSIE_MAX_VARIANTS=16000 → the cap-0 assertion
+       fails; leave --output at fit_json() → the path-audit test fails. The `find -L ... -newer` check below stays as a
+       backstop.
     2. Build the run list: every (production arm, trait, ancestry, admissible region) whose panel n_var > 16000
        (re-derived from the manifests), plus the regression pair asthma x PYHIN1_1q23 and t2d x PYHIN1_1q23 under
        A3_1kg (bound case, measured as a check that n_variants <= panel n_var and n_variants_pre_ld > 16000).
@@ -124,11 +127,17 @@ src/python/ta_r4/extract_paste_block.py: extract(path), render_confirmatory(rule
        repro_routeC (proxy for A3 → A1_matched_vs_A3_1kg both_have_cs) and under both repro_routeC and
        repro_k2d_routeC (proxy for A2_identity_vs_A3_1kg). A region whose repro fits early-exited or are absent is
        "unknown"; ≥ 1 qualifying pair = "likely"; 0 = "unlikely". Write $MAN/w3f_region_contribution_proxy.tsv
-       (region, contrast, n_pairs_both_cs_proxy, n_pairs_unknown, classification, source_arms) and the per-contrast
-       totals. State the proxy's limits in the LOG (earlier panels and policies, pre-orientation-fix joins, pre-fix cap;
+       (region, contrast, n_pairs_both_cs_proxy, n_pairs_unknown, classification, discordant_proxy, source_arms) and the
+       per-contrast totals. Where computable, also report the discordant-region count k (the sign-flip test's k):
+       for A2_identity_vs_A3_1kg, a region is discordant_proxy = true if some proxy pair has region_stat on opposite
+       sides of threshold_primary (0.8) between the k2d and routeC repro coloc outputs, if those outputs exist; for
+       A1_matched_vs_A3_1kg, from A1 vs routeC proxy outputs likewise. Not computable (no proxy coloc outputs) =
+       "unknown"; never fit or coloc anything new to fill it. State the proxy's limits in the LOG (earlier panels and policies, pre-orientation-fix joins, pre-fix cap;
        never an input to any lock value). If "likely" < 7 for either contrast, write
        `FLAG FOR CARTER: n_regions_min 7 may yield NON_INFORMATIVE for <contrast> (likely <n>/10, unknown <m>)`
-       in the LOG; do not change n_regions_min.
+       in the LOG. If the likely discordant count k < 7 for either contrast (where computable), write
+       `FLAG FOR CARTER: likely discordant regions k = <k> < 7 for <contrast>; the sign-flip test cannot reach alpha 0.025 with k < 7 (min p = 2/2^k)`.
+       Do not change n_regions_min.
   </action>
   <verify>
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -m pytest tests/ta_r4/test_measure_fit_eligibility.py -q -rs && /rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11 -c "import csv; r=list(csv.DictReader(open('.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/w3f_fit_eligibility.tsv'),delimiter='\t')); print(len(r), sum(x['method']=='measured' for x in r), sum(x['eligible']=='false' for x in r))"</automated>
@@ -137,7 +146,7 @@ src/python/ta_r4/extract_paste_block.py: extract(path), render_confirmatory(rule
     - tests pass; NC pasted
     - every measured RDS lacks lbf_variable (summarise() raised nothing); no file was written under data/r4/results (`find -L data/r4/results -newer data/r4/tmp/w3f/elig/run.sh -type f | wc -l` prints 0)
     - the asthma x PYHIN1_1q23 A3_1kg row shows n_variants_pre_ld > 16000 and n_variants <= the panel n_var (both numbers pasted)
-    - the LOG states the pre-fix and after-fix early-exit row counts with arithmetic reconciliation, and the per-contrast likely/unknown/unlikely region totals (sum = 10 per contrast), plus the FLAG line if triggered
+    - the LOG states the pre-fix and after-fix early-exit row counts with arithmetic reconciliation, and the per-contrast likely/unknown/unlikely region totals (sum = 10 per contrast) and the discordant count k or "unknown", plus each FLAG line if triggered
   </acceptance_criteria>
   <done>The fixes' effect on fit eligibility and the region floor's likely consequence are measured and on record before Carter locks.</done>
 </task>
@@ -170,9 +179,11 @@ src/python/ta_r4/extract_paste_block.py: extract(path), render_confirmatory(rule
        both arms, and final tables are written only when colocalization coverage is exact (no missing or extra
        outputs). The rendered confirmatory block from plan 15.3 stays verbatim.
     5. (f): NON_INFORMATIVE when n_both < n_both_min or fewer than n_regions_min = 7 regions contribute a both-have-CS
-       row; the direction category (named `mcnemar` in the rules) is decided by the exact region-level sign-flip test
-       (state d_r, T, the 2^k enumeration, the Monte Carlo rule above k = 20, two-sided, alpha); justification: the
-       smallest attainable two-sided p is 2/2^k, so 6 regions (0.03125) cannot reach alpha = 0.025 and 7 (0.015625) can.
+       row (counting contributing regions, not discordant ones, so perfect agreement can classify as no difference);
+       the direction category (named `mcnemar` in the rules) is decided by the exact region-level sign-flip test
+       (state d_r, T, the 2^k enumeration, the Monte Carlo rule above k = 20, two-sided, alpha). Justification: the
+       floor is necessary, not sufficient: the minimum attainable two-sided p is 2/2^k where k = regions with
+       non-zero d_r; k=6 gives 0.03125 > 0.025, k=7 gives 0.015625.
        Keep the 36-combination counts (unchanged; re-derive them from enumerate_truth_table and confirm).
     6. (g): no R = I refit (a fit the ladder cannot produce gives that arm's replicate method `none`); rates per method,
        never pooling `coloc_susie` and `fallback_abf`; aggregation requires all 100 cells with the configured replicates.
