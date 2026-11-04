@@ -26,7 +26,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-03 — **TRACK A ta-r4: W3d COMPLETE (estimators, classifier, coverage, aggregation; code+config+tests). NEXT = W3e. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-04 — **TRACK A ta-r4: W3e COMPLETE (QTL harmonization pre-gate + group runner; all W3 analysis code written). NEXT = W4a (Carter checkpoint). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- Analysis-code commits (cite in W4a): `4d27ac00` (harmonize_qtl_r4.py, r4_qtl_harmonize, qtl_harmonized_sha256.tsv), `0ca16af9`
+  (run_qtl_group_r4.py, run_coloc_pair_r4.R --mode qtl_abf, r4_qtl_group/aggregate/tiers/all). **0ca16af9 = last W3 analysis-code commit.**
+- Harmonized QTL on /rs1: 23,310 files = 23,310 manifest features (eqtl 21,149 + sqtl 2,161), 0 empty (Slurm 1675878).
+- sQTL harmonized per junction, not per gene (the shipped harmonizer mixes 882 junctions of 376 genes); this is a frozen-layer finding.
+- QTL arms: QTL_A3 (A3_1kg), QTL_A2 (A2_identity), production and gated; QTL_legacy (repro_routeL, the pre-fix argv), repro.
+  No-CS rows are labelled fallback_abf; coverage exits 1 on a missing or extra row.
+- **For W4a (Carter):** the W3d items, plus the QTL items: sQTL unit, tiers coloc_susie-only, QTL_legacy tier input (routeL trait-pair
+  coloc via run_coloc_pair_r4.R), below-floor rows kept, QTL coloc.susie priors are the package defaults (a p12 change needs a flag).
+- **For W6:** bin/r4_fire.sh has the LSF profile; fire under Slurm (local `--profile` + bsub shim, or a Slurm profile). 899 groups per arm.
+- QUICK 108 s. FULL 2048 / 1998 / 50 / 0 (Slurm 1677128, `data/r4/tmp/w3e/full_W3e.xml`); vs full_W3d.xml: 0 removed, 37 added, 0 changed.
+- Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission --auto --chain` → W4a (stops at W4a-T3 for Carter).
+
+## 2026-11-03 — **TRACK A ta-r4: W3d COMPLETE (estimators, classifier, coverage, aggregation; code+config+tests). NEXT = W3e. NOTHING RUNNING.** (SUPERSEDED by the 2026-11-04 W3e block above)
 
 - Analysis-code commits (cite in W4a): `db2bf8c9` (estimands, branch_classifier, cs_cross_purity.R, decision_rules.yaml draft,
   locked: false), `83b3240d` (coloc_coverage), `bd551895` (run_aggregation), `aef3be84` (Rscript from PATH).

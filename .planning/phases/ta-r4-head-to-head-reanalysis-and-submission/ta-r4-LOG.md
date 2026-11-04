@@ -687,3 +687,50 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
     cs_cross_purity 4), changed 0; 1912 − 0 + 99 = 2011.
   - Skips: the same 50 ids. tests/m3: 1299 (1265/34), unchanged.
   - fsck: dangling only. sparse_parent_benchmark.tsv clean.
+
+## 2026-11-04 — W3e QTL harmonization (pre-gate) + group runner (code + config + tests; no QTL coloc on real data)
+
+- **Analysis-code commits (cite in the W4a amendment, with W0d/W3c/W3d):** `4d27ac00` (harmonize_qtl_r4.py, r4_qtl_harmonize,
+  qtl_harmonized_sha256.tsv), `0ca16af9` (run_qtl_group_r4.py, run_coloc_pair_r4.R --mode qtl_abf, r4_qtl_group /
+  r4_qtl_aggregate / r4_qtl_tiers / r4_qtl_all). **`0ca16af9` is the last analysis-code commit of W3.**
+- **Harmonization fire** (D-05, pre-gate): `bin/r4_fire.sh repro repro_routeC` inside Slurm 1675878 with a local profile and a
+  refusing `bsub` shim (no LSF; `Provided cores: 8`). Result: 899 groups, `900 of 900 steps (100%) done`, 13.5 min, then
+  `Nothing to be done`.
+  - Files: 23,310 = distinct (source, qtd, molecular_trait_id, region) manifest features 23,310 (eqtl 21,149 + sqtl 2,161).
+  - 0 empty; 0 rehash mismatches; 91,853,028 harmonized rows.
+  - `$MAN/qtl_harmonized_sha256.tsv` has 23,310 rows.
+- **Deviation: sQTL per junction.** The shipped `harmonize_sqtl()` filters on gene_id, so gene-level files mix the junctions of
+  376 genes (882 junctions). The plan's gene_id count, 22,804, is lower by 882 − 376 = 506. The wrapper cuts the window per
+  molecular_trait_id and runs the shipped function. eQTL output equals the shipped CLI; sQTL junction files partition the shipped
+  gene-level rows. **Finding for W4a:** the frozen layer's sQTL rows for multi-junction genes were mixed.
+- **Runner:** QTL_A3 (A3_1kg, EUR_1kg_r4, join + orient), QTL_A2 (A2_identity, EUR_identity_r4, same flags) and QTL_legacy
+  (repro_routeL, legacy_repro, `--ld-allele-join false`, no `--variant-list`, no `--qtl-orient`).
+  - No-CS rows get fallback_abf via `run_coloc_pair_r4.R --mode qtl_abf`, on the bridged set run_qtl_coloc.R uses (equality
+    tested by tracing `coloc::check_dataset`).
+  - Fixture group: 1 coloc_susie and 3 fallback_abf (qtl_n_cs==0 / gwas_n_cs==0 / both) in both arms.
+  - Coverage exits 1 naming any missing or extra row.
+- **Dry runs (HEAD 0ca16af9):**
+  - `production A3_1kg -n <QTL_A3 group>`: rc 1, `LockGateError: (a) lock record absent`.
+  - `repro repro_routeL -n <QTL_legacy group>`: 1 r4_qtl_group job.
+  - `repro repro_routeL -n r4_qtl_all`: 1002 jobs (899 groups + 100 routeL trait-pair coloc + aggregate + tiers + all).
+- **REDs:** T1 ImportError (collection); T2 `15 failed, 15 passed` (R mode and rules absent).
+- **Negative controls** (each RED, restored sha256-identical):
+  - T1 (2): no junction cut, reader not restored.
+  - T2 (8): fallback mislabelled, legacy `--qtl-orient`, coverage drops missing, bridge keeps orientation drops, bridge keys on
+    chrpos, abf on p12_sensitivity, QTL gate removed, every R failure becomes a row.
+- **W0d** CLI snapshot before/after the run_coloc_pair_r4.R refactor: 24 outputs, byte-identical.
+- **Wave close** (Slurm 1677128, c024n04, HEAD 0ca16af9, 56m45s):
+  - QUICK `491 passed, 83 deselected` (108 s). Vs W3d: +21 quick (harmonize 7, runner 14), +16 heavy (runner 9, qtl_abf 7).
+  - HEAVY `79 passed, 4 skipped` (63 + 16; the same 4 W5a/W5b skips).
+  - Pins `39 passed`.
+  - FULL 2048 ids / 1998 passed / 50 skipped / 0 failed (`data/r4/tmp/w3e/full_W3e.xml`).
+- **By id vs full_W3d.xml:**
+  - Removed 0, added 37 (all passed: test_qtl_group_runner 23, test_coloc_pair_r4 7, test_qtl_harmonize_r4 7), changed 0;
+    2011 − 0 + 37 = 2048.
+  - No passed→skipped. tests/m3 1299 (1265/34), unchanged.
+  - fsck: dangling only, before and after each commit. sparse_parent_benchmark.tsv clean.
+- **For W4a (Carter):** sQTL unit = junction (frozen-layer finding); tiers count coloc_susie rows only (fallback_abf reported, not
+  tiered); QTL_legacy tier input = routeL trait-pair coloc via run_coloc_pair_r4.R; below-floor rows kept as method none;
+  run_qtl_coloc.R uses the coloc.susie package priors (= yaml now; a p12 change needs a priors flag before the lock).
+- **For W6:** bin/r4_fire.sh still carries the LSF profile. Fire under Slurm with a second `--profile` (local) and a bsub shim,
+  or add a Slurm profile. 899 group jobs per QTL arm; per-row cost on real windows is unmeasured.
