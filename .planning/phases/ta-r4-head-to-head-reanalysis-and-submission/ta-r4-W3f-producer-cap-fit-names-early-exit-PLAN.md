@@ -201,7 +201,7 @@ src/python/ta_r4/estimands.py:
   </behavior>
   <action>
     0. BLOCKING PRECONDITION (do this before reading or editing run_susie_rss.R). Carter's explicit N1 unfreeze reply,
-       as supplied by the orchestrator: ‹CARTER-REPLY: N1 unfreeze›
+       as supplied by the orchestrator: N1: unfreeze, Allow
        - If the line above still reads `‹CARTER-REPLY: N1 unfreeze›`, or the supplied text is not an explicit
          authorization to edit run_susie_rss.R for N1 (e.g. "N1: unfreeze"), STOP: write nothing, report "N1 blocked:
          no explicit unfreeze from Carter" and end the plan (Task 3 shares commands.py and does not run either).
