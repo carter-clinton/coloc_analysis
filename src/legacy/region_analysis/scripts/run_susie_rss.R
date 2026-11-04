@@ -953,39 +953,41 @@ if (nrow(subset) == 0) {
   quit(status = 0)
 }
 
-if (!cap_after_ld && nrow(subset) > SUSIE_MAX_VARIANTS) {
-  warning(sprintf(
-    "Region %s contains %d variants (limit %d). Skipping fine-mapping.",
-    opt$region,
-    nrow(subset),
-    SUSIE_MAX_VARIANTS
-  ))
-  result <- list(
-    trait = opt$trait,
-    ancestry = opt$ancestry,
-    method = opt$method,
-    region_id = opt$region,
-    chrom = reg$chr,
-    start = reg$start,
-    end = reg$end,
-    sumstats = opt$sumstats,
-    ld_dir = opt$`ld-dir`,
-    status = "too_many_variants",
-    notes = sprintf("n_variants=%d exceeds SUSIE_MAX_VARIANTS=%d", nrow(subset), SUSIE_MAX_VARIANTS),
-    variant_catalog_path = opt$`variant-list`,
-    variant_catalog_attempted = variant_catalog_attempted,
-    variant_catalog_used = used_variant_catalog,
-    variant_catalog_fallback = variant_catalog_fallback
-  )
-  write(toJSON(result, auto_unbox = TRUE, pretty = TRUE), file = opt$output)
-  # Write placeholder .fit.rds so Snakemake's dual-output rule doesn't raise
-  # MissingOutputException for skipped dense regions (PYHIN1, HLA, etc.)
-  fit_rds_path <- sub("\\.json$", ".fit.rds", opt$output)
-  saveRDS(list(status = "too_many_variants",
-               region = opt$region,
-               n_variants = nrow(subset),
-               limit = SUSIE_MAX_VARIANTS), file = fit_rds_path)
-  quit(status = 0)
+if (!cap_after_ld) {
+  if (nrow(subset) > SUSIE_MAX_VARIANTS) {
+    warning(sprintf(
+      "Region %s contains %d variants (limit %d). Skipping fine-mapping.",
+      opt$region,
+      nrow(subset),
+      SUSIE_MAX_VARIANTS
+    ))
+    result <- list(
+      trait = opt$trait,
+      ancestry = opt$ancestry,
+      method = opt$method,
+      region_id = opt$region,
+      chrom = reg$chr,
+      start = reg$start,
+      end = reg$end,
+      sumstats = opt$sumstats,
+      ld_dir = opt$`ld-dir`,
+      status = "too_many_variants",
+      notes = sprintf("n_variants=%d exceeds SUSIE_MAX_VARIANTS=%d", nrow(subset), SUSIE_MAX_VARIANTS),
+      variant_catalog_path = opt$`variant-list`,
+      variant_catalog_attempted = variant_catalog_attempted,
+      variant_catalog_used = used_variant_catalog,
+      variant_catalog_fallback = variant_catalog_fallback
+    )
+    write(toJSON(result, auto_unbox = TRUE, pretty = TRUE), file = opt$output)
+    # Write placeholder .fit.rds so Snakemake's dual-output rule doesn't raise
+    # MissingOutputException for skipped dense regions (PYHIN1, HLA, etc.)
+    fit_rds_path <- sub("\\.json$", ".fit.rds", opt$output)
+    saveRDS(list(status = "too_many_variants",
+                 region = opt$region,
+                 n_variants = nrow(subset),
+                 limit = SUSIE_MAX_VARIANTS), file = fit_rds_path)
+    quit(status = 0)
+  }
 }
 
 n_variants_pre_ld <- nrow(subset)
