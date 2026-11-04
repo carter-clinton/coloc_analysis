@@ -39,6 +39,9 @@ progress:
   blockers must land (and the DRAFT re-present) before the lock; signoffs/W4a-T3.yaml NOT written.
 - FULL 2069 / 2017 / 52 / 0 (Slurm 1680976, `data/r4/tmp/w4a/full_W4a.xml`); vs W3e: 0 removed, 21 added, 0 changed. QUICK 91.9 s
   after marking test_m3_conftest_import_still_works r4_heavy (68.7 s).
+- **Session closed 2026-11-04 ~07:00 EST.** Recommendation given to Carter: HOLD the lock. Decide N1 (cap after panel restriction,
+  recommended), N2 (fit-name alignment rule), N7 (cluster or floor); fix N3–N6, N12, N14, T1 in a W3f fix-up wave (RED first),
+  then re-present the DRAFT with a new confirmatory_sha256. Resume detail: `.planning/HANDOFF.json` → `w4a_checkpoint`, `resume_on_reconnect`.
 
 ## 2026-11-04 — **TRACK A ta-r4: W3e COMPLETE (QTL harmonization pre-gate + group runner; all W3 analysis code written). NEXT = W4a (Carter checkpoint). NOTHING RUNNING.** (SUPERSEDED by the W4a block above)
 
@@ -2561,7 +2564,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-10-29 (latest) - SESSION CLOSE mid ta-r4 W3a (Task 1 49a8f47b; repro fires 3/4 arms done, k2d_routeL 91/95; Task 3 pending). Next: finish W3a, then W3b (Carter).
+Last activity: 2026-11-04 (latest) - SESSION CLOSE at ta-r4 W4a-T3 (Tasks 1-2 a4090fa6/37265d09 pushed; FULL 2069/2017/52/0). Waiting on Carter: lock values + N1/N2/N7 decisions; recommended W3f fix-up before lock. Nothing running.
+Last activity (prior): 2026-10-29 - SESSION CLOSE mid ta-r4 W3a (Task 1 49a8f47b; repro fires 3/4 arms done, k2d_routeL 91/95; Task 3 pending). Next: finish W3a, then W3b (Carter).
 Last activity (prior): 2026-10-27 - ta-r4 W2b complete (AFR + UKB panels; FULL 1854/1804/50/0, 0 changed vs W2a). Next: W2c (Carter checkpoint).
 Last activity (prior): 2026-10-22 - ta-r4 W1 complete (E-2 fix, default-off; FULL 1800/1750/50/0, 0 changed vs W0d). Next: W2a.
 Last activity (prior): 2026-10-22 - ta-r4 W0b2 complete (Task 3 finished + wave-close; FULL 1660/1614/46/0; OSF anonymous-read 401 on az52u flagged for W4b). Next: W0c.
