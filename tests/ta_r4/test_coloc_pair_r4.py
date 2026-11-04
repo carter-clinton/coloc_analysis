@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -249,3 +250,109 @@ def test_panel_rsid_override_is_refused_not_dropped(fits, tmp_path):
     for mode in ("susie", "A1_matched"):
         p, d = coloc(fits, ARM, OVR, "p12_primary", mode)
         assert p.returncode != 0 and d is None and "UNMAPPED_FIT_NAMES" in p.stderr, p.stderr[-800:]
+
+
+# ---- W3e: --mode qtl_abf (GWAS x QTL fallback_abf) ------------------------------------------------------------------
+from .fixtures import qtl_group_fixture as QF  # noqa: E402
+
+from ta_r4 import run_qtl_group_r4 as QG  # noqa: E402
+
+_TRACE = ('suppressPackageStartupMessages(library(coloc)); '
+          'trace("check_dataset", tracer = quote(saveRDS(d$snp, Sys.getenv("BRIDGE_DUMP"))), '
+          'where = asNamespace("coloc"), print = FALSE); source("src/snakemake/scripts/run_qtl_coloc.R")')
+
+
+@pytest.fixture(scope="module")
+def qfx(tmp_path_factory):
+    return QF.build(tmp_path_factory.mktemp("qtl_abf") / "root")
+
+
+def _qrow(trait, feature):
+    return {"qtl_row_id": f"{QF.REGION}__EUR__{trait}__eqtl__{QF.TISSUE}__{feature}", "region_safe": QF.REGION,
+            "trait": trait, "source": "eqtl", "tissue": QF.TISSUE, "qtd": QF.QTD, "gene_id": feature,
+            "molecular_trait_id": feature}
+
+
+def _bridge_of_run_qtl_coloc(root, qtl_arm, row):
+    """run_qtl_coloc.R's own bridged variant set: the snp vector it hands to coloc::check_dataset."""
+    argv = QG.qtl_command(qtl_arm, row, "rq.json", 1.0)
+    dump = root / f"bridge.{qtl_arm}.rds"
+    p = subprocess.run([QF.RSCRIPT, "-e", _TRACE, *argv[2:]], cwd=root, capture_output=True, text=True,
+                       env={**QF.r_env(), "BRIDGE_DUMP": str(dump)})
+    assert p.returncode == 0, p.stderr[-2000:]
+    q = subprocess.run([QF.RSCRIPT, "-e", f'cat(readRDS("{dump}"), sep="\\n")'], capture_output=True, text=True)
+    return [x for x in q.stdout.splitlines() if x]
+
+
+def _qtl_abf(root, qtl_arm, row, out="abf.json", reason="qtl_n_cs==0"):
+    argv = QG.abf_command(qtl_arm, row, QF.REGION, out, 1.0, reason)
+    p = subprocess.run([QF.RSCRIPT, *argv[1:]], cwd=root, capture_output=True, text=True, env=QF.r_env())
+    return p, (json.loads((root / out).read_text()) if p.returncode == 0 else None)
+
+
+@pytest.mark.r4_heavy
+@pytest.mark.parametrize("qtl_arm", ["QTL_A3", "QTL_legacy"])
+@pytest.mark.parametrize("trait, feature", [("tA", QF.FEATURES[0]), ("tB", QF.FEATURES[1])])
+def test_qtl_abf_bridge_equals_run_qtl_coloc(qfx, qtl_arm, trait, feature):
+    ids = _bridge_of_run_qtl_coloc(qfx, qtl_arm, _qrow(trait, feature))
+    p, d = _qtl_abf(qfx, qtl_arm, _qrow(trait, feature))
+    assert p.returncode == 0, p.stderr[-2000:]
+    assert d["n_snps"] == len(ids) == len(set(ids))
+    assert d["variant_set_sha256"] == sha_ids(ids)
+    assert len(ids) == (200 - len(QF.PAL) if qtl_arm == "QTL_A3" else 200)
+
+
+@pytest.mark.r4_heavy
+def test_qtl_abf_pp_equal_direct_coloc_abf(qfx):
+    row = _qrow("tA", QF.FEATURES[1])
+    ids = _bridge_of_run_qtl_coloc(qfx, "QTL_A3", row)
+    p, d = _qtl_abf(qfx, "QTL_A3", row)
+    assert p.returncode == 0, p.stderr[-2000:]
+    keys = "c(" + ",".join(f'"{i}"' for i in ids) + ")"
+    hq = QF.harmonized_path("eqtl", QF.QTD, QF.FEATURES[1], QF.REGION)
+    code = f'''
+suppressPackageStartupMessages({{library(coloc); library(jsonlite)}})
+k <- {keys}
+ss <- data.table::fread(cmd = "gunzip -c data/processed/sumstats_harmonized/tA.EUR.tsv.bgz")
+q <- data.table::fread("{hq}")
+g <- ss[match(k, ss$SNP_ID)]; h <- q[match(k, q$rsid)]
+r <- coloc.abf(list(beta = g$BETA, varbeta = g$SE^2, snp = k, type = "quant", N = 50000, sdY = 1),
+               list(beta = h$beta, varbeta = h$se^2, snp = k, type = "quant", N = 670, sdY = 1),
+               p1 = {PRI["p1"]}, p2 = {PRI["p2"]}, p12 = {PRI["p12_primary"]})
+cat(toJSON(unname(r$summary[2:6]), digits = NA), "\\n")
+'''
+    r = subprocess.run([QF.RSCRIPT, "-e", code], cwd=qfx, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr[-2000:]
+    direct = json.loads(r.stdout.strip().splitlines()[-1])
+    assert [d[k] for k in PP] == direct
+    assert (d["method"], d["mode"], d["p12"], d["n_snps"]) == ("fallback_abf", "qtl_abf", PRI["p12_primary"], len(ids))
+
+
+@pytest.mark.r4_heavy
+def test_qtl_abf_refuses_orient_without_join_and_missing_args(qfx):
+    argv = QG.abf_command("QTL_legacy", _qrow("tA", QF.FEATURES[0]), QF.REGION, "x.json", 1.0, "qtl_n_cs==0")
+    argv[argv.index("--qtl-orient") + 1] = "true"
+    p = subprocess.run([QF.RSCRIPT, *argv[1:]], cwd=qfx, capture_output=True, text=True, env=QF.r_env())
+    assert p.returncode != 0 and "--qtl-orient true requires --ld-allele-join true" in p.stderr
+    argv = QG.abf_command("QTL_A3", _qrow("tA", QF.FEATURES[0]), QF.REGION, "x.json", 1.0, "qtl_n_cs==0")
+    i = argv.index("--sdy")
+    p = subprocess.run([QF.RSCRIPT, *(argv[1:i] + argv[i + 2:])], cwd=qfx, capture_output=True, text=True,
+                       env=QF.r_env())
+    assert p.returncode != 0 and "ARGS: --sdy is required for --mode qtl_abf" in p.stderr
+    assert not (qfx / "x.json").exists()
+
+
+@pytest.mark.r4_heavy
+def test_qtl_abf_refuses_below_the_bridge_floor(qfx, tmp_path):
+    """40 QTL rows: run_qtl_coloc.R would write too_few_snps, so there is no bridged set and no fallback."""
+
+    row = _qrow("tA", QF.FEATURES[0])
+    h = qfx / QF.harmonized_path("eqtl", QF.QTD, QF.FEATURES[0], QF.REGION)
+    keep = h.read_bytes()
+    lines = gzip.decompress(keep).decode().splitlines()
+    h.write_bytes(gzip.compress(("\n".join(lines[:41]) + "\n").encode()))
+    try:
+        p, d = _qtl_abf(qfx, "QTL_A3", row, out="floor.json")
+    finally:
+        h.write_bytes(keep)
+    assert p.returncode != 0 and "BRIDGE: too_few_snps" in p.stderr and d is None
