@@ -769,3 +769,29 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   (tmp extracts with "Pivot", ".planning/x", checklist/CARTER-LOCK, end-before-start) pass as tests.
 - **DRAFT** extract 2,514 words (≤ ~2,700). Confirmatory sentences pasted from `render_confirmatory(rules)` unchanged.
 - **osf_deviations.md** "R4 amendment — DRAFTED, NOT POSTED" appended; `git diff | grep -c '^-[^-]'` = 0.
+
+## 2026-11-04 — W4a Task 2 (brief-blind Codex review of the extract; dispositions; DRAFT fixes)
+
+- Review input: `extract_paste_block --in DRAFT@a4090fa6 --out data/r4/tmp/w4a_review_input.md` (sha256 95a5f928…). Prompt =
+  the plan's instruction + that extract only (sha256 34620f5c…). No CONTEXT/RESEARCH/LOG/summary was given.
+- Attempt 1 (codex-cli 0.141.0, config model gpt-5.5): rc 1, empty output, "model is not supported when using Codex with a
+  ChatGPT account". Probed gpt-5/5.1/5.2/5.3/5.4 codex names: all rejected. `~/.codex/models_cache.json` lists gpt-6.x.
+  codex-cli 0.166.0 installed into a scratch prefix (shared gsd-tools env untouched). Attempt 2: `-m gpt-6.1-sol`, rc 0,
+  40,055 B (sha256 697bfd1f…). Banked verbatim (embedded-bytes check True) in `ta-r4-W4-AMENDMENT-REVIEW-as-received.md`.
+- Findings 31 (18 numbered + 13 table qualifications) = 31 disposition rows. Verified myself: cap order run_susie_rss.R:946
+  before :1042; R4 catalog PYHIN1_1q23 98,393 rows; asthma×PYHIN1 catalog-joined 38,313 (> 16,000) → `too_many_variants` →
+  run_coloc_pair_r4.R FIT_EARLY_EXIT; LOCKED_PATHS lacks config/susie_policy.yaml (read by arms.py:6) and config/pipeline.yaml
+  (bin/r4_fire.sh:71); kriging rule :1297; ladder 3 steps; susieR 0.14.2 estimate_residual_variance default FALSE (measured);
+  UKB n_samples NA; BMI_5q13_3 isect zero-filled 8,635,830; aggregate_qtl_coloc reads `summary` only; sim identity refit :61-64.
+- DRAFT: 26 text replacements so the text describes the code (one script, each match asserted unique); new ‹CARTER-LOCK›
+  early-exit rule in (d); Pre-Paste OPEN row. `test_amendment_text.py` 19 passed / 2 skipped after. Extract 2,799 words
+  (over the ~2,700 guide by ~100; accuracy additions, not trimmed).
+- No analysis code changed. Carter decisions before the lock: N1, N2, N3, N4, N5, N6, N7, N8, N12, N14, T1 (+ optional N9, N10).
+- **§C wave close (W4a-draft; Slurm 1680976, c205n03, HEAD a4090fa6 + uncommitted DRAFT/review edits, 1h35m):**
+  QUICK 510 passed / 2 skipped / 83 deselected in 150.5 s (> 120 s); HEAVY 79 passed / 4 skipped (same 4 W5a/W5b skips);
+  PINS 39 passed; FULL 2069 ids = 2017 passed + 52 skipped + 0 failed (`data/r4/tmp/w4a/full_W4a.xml`).
+  By id vs full_W3e.xml: common 2048, removed 0, added 21 (all test_amendment_text: 19 passed + 2 skipped), changed 0;
+  2048 − 0 + 21 = 2069. tests/m3 1299 (1265 / 34) unchanged. sparse_parent_benchmark.tsv clean.
+- **QUICK budget:** `--durations` on the login node: `test_import_isolation.py::test_m3_conftest_import_still_works` 68.67 s
+  (next slowest 5.72 s). Marked `r4_heavy` (marker only; still runs in HEAVY and FULL; passes, 24 s). QUICK re-timed:
+  509 passed, 2 skipped, 84 deselected in 91.9 s.

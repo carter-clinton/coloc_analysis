@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_PKG = REPO_ROOT / "src" / "python" / "ta_r4"
 
@@ -20,6 +22,7 @@ def test_source_modules_resolve():
         assert Path(mod.__file__).resolve().parent == SRC_PKG, mod.__file__
 
 
+@pytest.mark.r4_heavy  # 68.7 s on 2026-11-04 (QUICK 150.5 s > 120 s budget)
 def test_m3_conftest_import_still_works():
     probe = "tests/m3/test_ld_npz_to_rds.py::test_bm_to_npz_omitted_allele_freq_is_all_nan_and_warns"
     r4 = "tests/ta_r4/test_storage_on_rs1.py::test_check_function_rejects_share_target"

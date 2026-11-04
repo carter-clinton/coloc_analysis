@@ -26,7 +26,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-04 — **TRACK A ta-r4: W3e COMPLETE (QTL harmonization pre-gate + group runner; all W3 analysis code written). NEXT = W4a (Carter checkpoint). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-04 — **TRACK A ta-r4: W4a Tasks 1–2 COMPLETE — waiting on Carter at W4a-T3. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- Committed: `a4090fa6` (extract_paste_block.py, test_amendment_text.py, R4 amendment DRAFT, osf_deviations "DRAFTED, NOT POSTED")
+  and the W4a-draft docs commit (Codex review banked verbatim + 31-row disposition, DRAFT text fixes, LOG, this block).
+- Brief-blind Codex review (gpt-6.1-sol; the configured gpt-5.5 is no longer served) → 31 findings, all verified. **Production
+  blockers found:** 16,000-variant cap applies before panel restriction (≈35 primary rows would FIT_EARLY_EXIT; asthma×PYHIN1
+  38,313 > 16,000), fit-name alignment UNMAPPED_FIT_NAMES (589/589 measured), LOCKED_PATHS omits config/susie_policy.yaml and
+  config/pipeline.yaml (+4 QTL inputs). Further Carter items: N4–N7, N12, N14, T1 (review file disposition table).
+- **W4a-T3 (Carter):** reply `carter-approved YYYY-MM-DD` + p12_primary, kappa_cut, n_both_min, 4 partial_rule keys,
+  `confirmatory_sha256: f6e6e90f83fd14975d3afa04789c3dcf1a9211b8e3ddd38bf23c72f8cbe0e9e3`, `draft: approved`. Code changes for the
+  blockers must land (and the DRAFT re-present) before the lock; signoffs/W4a-T3.yaml NOT written.
+- FULL 2069 / 2017 / 52 / 0 (Slurm 1680976, `data/r4/tmp/w4a/full_W4a.xml`); vs W3e: 0 removed, 21 added, 0 changed. QUICK 91.9 s
+  after marking test_m3_conftest_import_still_works r4_heavy (68.7 s).
+
+## 2026-11-04 — **TRACK A ta-r4: W3e COMPLETE (QTL harmonization pre-gate + group runner; all W3 analysis code written). NEXT = W4a (Carter checkpoint). NOTHING RUNNING.** (SUPERSEDED by the W4a block above)
 
 - Analysis-code commits (cite in W4a): `4d27ac00` (harmonize_qtl_r4.py, r4_qtl_harmonize, qtl_harmonized_sha256.tsv), `0ca16af9`
   (run_qtl_group_r4.py, run_coloc_pair_r4.R --mode qtl_abf, r4_qtl_group/aggregate/tiers/all). **0ca16af9 = last W3 analysis-code commit.**
