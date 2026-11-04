@@ -32,7 +32,7 @@ QTL_TIERS = f"{paths.R4}/results/{{arm}}/qtl_tiers.tsv"
 QTL_JSON_DIR = f"{paths.R4}/results/QTL_A3/qtl"
 TIER_COLS = ["region", "ancestry", "tier", "best_gwas_pph4", "best_qtl_pph4", "resolving_gene", "resolving_tissue",
              "resolving_qtl_source", "all_supporting_sources", "neg_ctrl_set"]
-RSCRIPT = "/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript"
+RSCRIPT = "Rscript"  # from envs/r_coloc.yml on PATH (as commands.py)
 CROSS_PURITY_R = "src/snakemake/scripts/ta_r4/cs_cross_purity.R"
 #: (fit arm, panel arm) pairs scored by cs_cross_purity.R (Pitfall 9).
 CROSS_PURITY = (("A2_identity", "A3_1kg"), ("A3_ukb_isect", "A3_1kg_isect"), ("A3_1kg_isect", "A3_ukb_isect"))
