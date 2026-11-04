@@ -1,0 +1,22 @@
+# config/ta_r4/simulation.yaml — E8 simulation-calibration design (D-23, D-26), read by
+# src/snakemake/scripts/ta_r4/simulate_coloc_r4.R and rule r4_sim. locked flips to true only in W4b.
+# H3 r2_bin: r^2 between the two causal variants under fit_panel, bounds inclusive.
+scenarios:
+  H0: {type: H0}
+  H4: {type: H4}
+  H3_r2_0.3: {type: H3, r2_bin: [0.25, 0.35]}
+  H3_r2_0.6: {type: H3, r2_bin: [0.55, 0.65]}
+  H3_r2_0.9: {type: H3, r2_bin: [0.85, 0.95]}
+gen_panels: {gen_1kg: EUR_1kg_isect_r4, gen_ukb: EUR_ukb337k_isect_r4}
+fit_panel: EUR_1kg_isect_r4
+# window: the window_variants contiguous panel variants centred on the panel midpoint index (all if fewer)
+window_variants: 1000
+n_per_trait: 100000
+causal_z: 7
+reps: 200
+# seed = seed_base + 1-based position of (region, scenario, gen_panel, rep) in the sorted cartesian list
+seed_base: 20261021
+p12_key: p12_primary
+regions: [9p21_CDKN2A, APOE_19q13, APOL1_22q12, BMI_5q13_3, CXADR_F2RL1_6p21, FTO_16q12, MC4R_18q21,
+          PYHIN1_1q23, SH2B3_12q24, SLC2A9_urate]
+locked: false
