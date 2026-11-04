@@ -37,6 +37,12 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 13 | ta-r4-W3c-simulation-harness-PLAN.md | (E8 code, pre-lock) | — | yes |
 | 14 | ta-r4-W3d-estimators-and-branch-classifier-PLAN.md | (E1–E8, confirmatory contrast_stats, coverage + aggregation code, pre-lock) | — | yes |
 | 15 | ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md | (W6 prep, pre-lock) | — | yes |
+| 15.1 | ta-r4-W3f-producer-cap-fit-names-early-exit-PLAN.md | W3f fix-up (review N1, N2, N8; DEC entries) | — | yes |
+| 15.2 | ta-r4-W3f-lock-paths-input-sha-in-job-gate-PLAN.md | W3f fix-up (N3, N4, N5, T1) | — | yes |
+| 15.3 | ta-r4-W3f-signflip-region-floor-coverage-PLAN.md | W3f fix-up (N7 sign-flip + n_regions_min, N6) | — | yes |
+| 15.4 | ta-r4-W3f-reporting-widening-qtl-sim-PLAN.md | W3f fix-up (N8 drops, N9, N10, N12, N14) | — | yes |
+| 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha) | — | yes |
+| 15.6 | ta-r4-W3f-review-suite-and-close-PLAN.md | W3f fix-up (brief-blind re-review, FULL, records, W4a depends_on) | — | yes |
 | 16 | ta-r4-W4a-amendment-draft-review-locks-PLAN.md | W4 | W4a-T3 lock values + draft approval | no |
 | 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 lock confirmation (+ lock gate) | no |
 | 18 | ta-r4-W5a-eur-production-fits-PLAN.md | W5 | — (code gate) | yes |
@@ -47,6 +53,11 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 23 | ta-r4-W8a-manuscript-draft-PLAN.md | W8 | — | yes |
 | 24 | ta-r4-W8b-adversarial-review-PLAN.md | W8 | W8b-T3 submission candidate | no |
 | 25 | ta-r4-W9-submission-prep-PLAN.md | W9 | W9-T1 venue; W9-T4 submitted (+ code sentinels) | no |
+
+W3f (waves 15.1–15.6) is a gap-closure fix-up added 2026-11-04 after the W4a brief-blind review
+(`ta-r4-W4-AMENDMENT-REVIEW-as-received.md`) and Carter's decisions (DEC-2026-11-04-ta-r4-w3f-fix-all,
+DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor). Plan 15.1 lifts §B.6 (D-28) once, for the N1 cap move only
+(DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze). W4a now depends on 15.6.
 
 **Rigor upgrades over the research decomposition** (rigor-over-speed rule; recorded here so they are
 visible to Carter):

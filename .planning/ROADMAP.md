@@ -672,7 +672,7 @@ one contrast, SH2B3, survives).
 REQ-SNAKEMAKE-CI, REQ-PATH-PARAMETERIZATION
 **Dependencies**: Track-A-R3 closeout; `DEC-2026-08-07-e2-orientation-disposition`;
 `DEC-2026-08-12-*` venue/correction decisions; m3-04c-BLAST-RADIUS.md BLOCKER-B.
-**Plans:** 25 plans in 25 sequential waves (index: `ta-r4-PLAN-INDEX.md`; revised after plan-check iteration 1)
+**Plans:** 31 plans in 31 sequential waves (W3f fix-up waves 15.1–15.6 added 2026-11-04) (index: `ta-r4-PLAN-INDEX.md`; revised after plan-check iteration 1)
 
 Plans:
 - [x] ta-r4-W0a-storage-envs-survivors-PLAN.md — durable /rs1 storage, survivor rescue, env restore, DEC entries, test baseline, `ta-r4-pre-baseline` tag
@@ -690,6 +690,12 @@ Plans:
 - [x] ta-r4-W3c-simulation-harness-PLAN.md — E8 known-truth simulation harness (pre-lock code)
 - [x] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators, confirmatory contrast_stats, total ordered branch classifier, coloc coverage + run_aggregation (pre-lock code)
 - [x] ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md — QTL harmonization + group runner (pre-lock code)
+- [ ] ta-r4-W3f-producer-cap-fit-names-early-exit-PLAN.md — W3f: cap after panel restriction (N1), panel-mediated fit-name alignment (N2), method none outputs (N8), DEC entries
+- [ ] ta-r4-W3f-lock-paths-input-sha-in-job-gate-PLAN.md — W3f: LOCKED_PATHS complete (N3), in-job input sha256 (N4), in-job lock gate (N5), AFR T2D label (T1)
+- [ ] ta-r4-W3f-signflip-region-floor-coverage-PLAN.md — W3f: exact region sign-flip test + n_regions_min 7 (N7), completeness + coverage-gated FINAL (N6)
+- [ ] ta-r4-W3f-reporting-widening-qtl-sim-PLAN.md — W3f: row_drops (N8), widened E4/E6 (N9/N10), QTL fallback export (N12), simulation policy (N14)
+- [ ] ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md — W3f: no-fit eligibility recount, region-contribution proxy, DRAFT matches code, new confirmatory_sha256
+- [ ] ta-r4-W3f-review-suite-and-close-PLAN.md — W3f: brief-blind re-review, FULL suite reconciled, records, W4a depends_on
 - [ ] ta-r4-W4a-amendment-draft-review-locks-PLAN.md — R4 amendment draft, public-extract tooling, brief-blind review, Carter locks (human-action)
 - [ ] ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md — lock commit, FINAL + PUBLIC amendment, OSF posting gate (human-action + code gate)
 - [ ] ta-r4-W5a-eur-production-fits-PLAN.md — EUR production fits, five arms (730), live gates
