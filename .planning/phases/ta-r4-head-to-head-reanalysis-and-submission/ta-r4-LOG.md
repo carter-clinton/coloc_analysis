@@ -795,3 +795,15 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
 - **QUICK budget:** `--durations` on the login node: `test_import_isolation.py::test_m3_conftest_import_still_works` 68.67 s
   (next slowest 5.72 s). Marked `r4_heavy` (marker only; still runs in HEAVY and FULL; passes, 24 s). QUICK re-timed:
   509 passed, 2 skipped, 84 deselected in 91.9 s.
+
+## 2026-11-04/05 — W3f 15.1 (N1 cap after LD restriction; N2 fit-name alignment; N8 method none)
+
+- DECs: DEC-2026-11-04-ta-r4-w3f-fix-all, DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor,
+  DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze.
+- Commits: e38a519c, 4a1b9d4a (decisions); 6c6e9546 + 1f771281 (N1, two code commits) with re-pins 3e895261, e5792b8b;
+  7a3415df (N2 + N8); 215ddde3 (differential-substrate argv fix).
+- RED/GREEN/NC under `data/r4/tmp/w3f/`: t2_red 5F/1P → t2_green 6P; t2_nc1, t2_nc2 1F each; t3_red 30F + 2E;
+  t3_nc1 3F, t3_nc2 1F, t3_nc3 1F.
+- SH2B3_12q24 hypertension × stroke: 589 = 0 direct + 589 panel_exact + 0 swapped + 0 strand; 622 = 0 + 622 + 0 + 0; n_snps 583, rc 0.
+- Close (Slurm 1716306): plan verify 104P/1S; QUICK 531P/2S in 185.9 s (over the 120 s budget); HEAVY 1F/95P/4S →
+  test_fit_rds_unchanged_by_the_fix (pre-fix 656529a rejects the N1 flag) → 215ddde3 → 3P (Slurm 1717387); PINS 39P.
