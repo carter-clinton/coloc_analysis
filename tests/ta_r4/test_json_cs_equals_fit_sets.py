@@ -9,6 +9,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+from unittest import mock
 
 import pytest
 
@@ -16,7 +17,7 @@ from .conftest import REPO_ROOT
 from .test_frozen_script_armed_e2e import (ANC, FROZEN_REL, PAYLOAD, REGION, RSCRIPT, TRAIT, _ok, _run,
                                            _write_manifest, build_fixture, fit_arm)
 
-from ta_r4 import paths
+from ta_r4 import commands, paths
 
 pytestmark = pytest.mark.r4_heavy
 
@@ -35,7 +36,17 @@ def _fit(root, script_text=None):
         link = root / FROZEN_REL
         link.unlink()
         link.write_text(script_text)
-    r = fit_arm(root, ARM)
+        real = commands.fit_command
+
+        def pre_fix_argv(*a, **k):  # the substrate predates --cap-after-ld-restriction (W3f N1)
+            cmd = real(*a, **k)
+            i = cmd.index("--cap-after-ld-restriction")
+            return cmd[:i] + cmd[i + 2:]
+
+        with mock.patch.object(commands, "fit_command", pre_fix_argv):
+            r = fit_arm(root, ARM)
+    else:
+        r = fit_arm(root, ARM)
     _ok(r["fit"])
     rds = root / paths.fit_rds(ARM, TRAIT, ANC, REGION)
     p = _ok(_run([RSCRIPT, "-e",
