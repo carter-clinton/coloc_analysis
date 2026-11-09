@@ -20,10 +20,13 @@ confirmatory:
   ci: {statistic: median_delta_pph4, subset: both_have_cs, method: region_cluster_bootstrap_percentile}
   mcnemar_kappa: {subset: both_have_cs, call: "region_stat >= threshold_primary"}
   n_both: {subset: both_have_cs}
+  region_signflip: {subset: both_have_cs, call: "region_stat >= threshold_primary", d_r: "b_r - c_r per region (b = X calls H4 and A3 does not; c = the reverse)", statistic: "T = sum of d_r over regions", p: "two-sided P(|T*| >= |T|) over all 2^k sign assignments of the k regions with d_r != 0", exact_max_k: 20, monte_carlo: "if k > exact_max_k: bootstrap_B draws with bootstrap_seed, p = (1 + #{|T*| >= |T|}) / (B + 1)"}
+  n_regions_min: 7      # distinct regions with >= 1 both_have_cs row; necessary, not sufficient: min two-sided sign-flip p = 2/2^k, k = regions with non-zero d_r (k=6: 0.03125 > alpha; k=7: 0.015625)
+  n_regions: {subset: both_have_cs}
   categories:
-    n_both_ok: "n_both >= n_both_min"
+    n_both_ok: "n_both >= n_both_min and n_regions >= n_regions_min"
     ci: "pos if ci_lo > 0; neg if ci_hi < 0; else incl0"
-    mcnemar: "sig_X_gt_A3 if p < alpha and b > c; sig_A3_gt_X if p < alpha and c > b; else ns"
+    mcnemar: "sig_X_gt_A3 if signflip_p < alpha and T > 0; sig_A3_gt_X if signflip_p < alpha and T < 0; else ns (decided by region_signflip; row-level McNemar is descriptive)"
     kappa_ok: "kappa >= kappa_cut; if kappa undefined, observed_agreement == 1"
   excluded_from_classifier: [negative_control rows (pre-specified specificity analysis), AFR rows (secondary), p12_sensitivity, A1 allvars, A3_ukb / A3_ukb_isect / A3_1kg_isect (E6), repro arms]
 partial_rule:

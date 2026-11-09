@@ -55,6 +55,17 @@ def test_per_branch_counts(rules):
     assert sum(non_partial.values()) + via["partial_rule"] == 36
 
 
+def test_heterogeneous_total_is_11_under_the_proposed_partial_rules(rules):
+    """T13: 3 HETEROGENEOUS by rule 2 + 8 partial-rule rows, all HETEROGENEOUS in the committed yaml."""
+    from ta_r4.branch_classifier import enumerate_truth_table
+
+    assert set(rules["partial_rule"].values()) == {"HETEROGENEOUS"}
+    total = Counter(r["branch"] for r in enumerate_truth_table(rules))
+    print("truth table branch totals:", dict(sorted(total.items())))
+    assert total == {"NON_INFORMATIVE": 18, "NO_SYSTEMATIC_DIFFERENCE": 3, "HETEROGENEOUS": 11,
+                     "INFLATION_SUPPORTED": 2, "DEFLATION": 2}
+
+
 def test_partial_rule_rows_are_exactly_the_uncovered_combinations(rules):
     from ta_r4.branch_classifier import enumerate_truth_table
 

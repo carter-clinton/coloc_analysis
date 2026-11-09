@@ -14,7 +14,8 @@ from .fixtures.estimand_fixtures import doc, manifest, mrow, universe
 
 RULES_PATH = REPO_ROOT / "config/ta_r4/decision_rules.yaml"
 KEYS = {"n_rows", "n_both", "median_delta", "mean_delta", "ci_lo", "ci_hi", "sign_p", "mcnemar_b", "mcnemar_c",
-        "mcnemar_p", "kappa", "observed_agreement", "categories"}
+        "mcnemar_p", "kappa", "observed_agreement", "categories", "n_regions", "signflip_T", "signflip_k",
+        "signflip_p", "signflip_method", "signflip_direction"}
 
 
 @pytest.fixture(scope="module")
@@ -79,7 +80,7 @@ def test_returned_keys_and_counts(uni, rules):
     s = _cs(_rows(docs, man), "A2_identity", rules)
     assert set(s) >= KEYS
     assert set(s["categories"]) == {"n_both_ok", "ci", "mcnemar", "kappa_ok"}
-    assert s["n_rows"] == 50 and s["n_both"] == 50
+    assert s["n_rows"] == 50 and s["n_both"] == 50 and s["n_regions"] == 10
     assert s["median_delta"] > 0 and s["ci_lo"] > 0
     assert s["categories"]["ci"] == "pos" and s["categories"]["n_both_ok"] is True
 
@@ -184,8 +185,8 @@ def test_one_confirmatory_row_moves_the_median(uni, rules):
 # ------------------------------------------------------------------ category rules (each edge case)
 
 def _stats(**kw):
-    s = {"n_both": 20, "ci_lo": -0.1, "ci_hi": 0.1, "mcnemar_p": 0.5, "mcnemar_b": 3, "mcnemar_c": 3,
-         "kappa": 0.7, "observed_agreement": 0.9}
+    s = {"n_both": 20, "n_regions": 10, "ci_lo": -0.1, "ci_hi": 0.1, "mcnemar_p": 0.5, "mcnemar_b": 3,
+         "mcnemar_c": 3, "signflip_p": 0.5, "signflip_T": 0, "kappa": 0.7, "observed_agreement": 0.9}
     s.update(kw)
     return s
 
@@ -198,10 +199,11 @@ def _stats(**kw):
     ({"ci_lo": -0.2, "ci_hi": -1e-12}, "ci", "neg"),
     ({"ci_lo": -0.2, "ci_hi": 0.0}, "ci", "incl0"),
     ({"ci_lo": float("nan"), "ci_hi": float("nan")}, "ci", "incl0"),
-    ({"mcnemar_p": 0.025, "mcnemar_b": 9, "mcnemar_c": 0}, "mcnemar", "ns"),
-    ({"mcnemar_p": 0.0249, "mcnemar_b": 9, "mcnemar_c": 0}, "mcnemar", "sig_X_gt_A3"),
-    ({"mcnemar_p": 0.0249, "mcnemar_b": 0, "mcnemar_c": 9}, "mcnemar", "sig_A3_gt_X"),
-    ({"mcnemar_p": 0.0249, "mcnemar_b": 4, "mcnemar_c": 4}, "mcnemar", "ns"),
+    ({"signflip_p": 0.025, "signflip_T": 9}, "mcnemar", "ns"),
+    ({"signflip_p": 0.0249, "signflip_T": 9}, "mcnemar", "sig_X_gt_A3"),
+    ({"signflip_p": 0.0249, "signflip_T": -9}, "mcnemar", "sig_A3_gt_X"),
+    ({"signflip_p": 0.0249, "signflip_T": 0}, "mcnemar", "ns"),
+    ({"mcnemar_p": 0.0001, "mcnemar_b": 9, "mcnemar_c": 0}, "mcnemar", "ns"),
     ({"kappa": 0.6}, "kappa_ok", True),
     ({"kappa": 0.5999}, "kappa_ok", False),
     ({"kappa": float("nan"), "observed_agreement": 1.0}, "kappa_ok", True),
@@ -218,7 +220,7 @@ def test_category_cutoffs_read_from_rules(rules):
 
     r = copy.deepcopy(rules)
     r["n_both_min"], r["kappa_cut"], r["alpha"] = 5, 0.8, 0.6
-    c = categorize(_stats(n_both=6, kappa=0.7, mcnemar_b=9, mcnemar_c=0), r)
+    c = categorize(_stats(n_both=6, kappa=0.7, signflip_p=0.5, signflip_T=9), r)
     assert (c["n_both_ok"], c["kappa_ok"], c["mcnemar"]) == (True, False, "sig_X_gt_A3")
 
 

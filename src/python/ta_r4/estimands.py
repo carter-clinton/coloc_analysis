@@ -251,6 +251,30 @@ def mcnemar_exact(b, c):
     return _binom_two_sided(b, b + c), direction
 
 
+def region_signflip(d_by_region, *, exact_max_k, B, seed) -> dict:
+    """Two-sided region-level sign-flip test of T = sum of d_r (d_r = b_r - c_r, integers): p = share of sign
+    assignments of the k regions with d_r != 0 with |T*| >= |T|; exact when k <= exact_max_k, else B seeded
+    Monte Carlo draws with p = (1 + count) / (B + 1)."""
+    d = np.array([int(v) for v in d_by_region.values() if int(v) != 0], dtype=np.int64)
+    T, k = int(d.sum()), int(d.size)
+    direction = "X>A3" if T > 0 else ("A3>X" if T < 0 else "none")
+    hits = 0
+    if k <= int(exact_max_k):
+        bits = np.arange(k, dtype=np.int64)
+        for s in range(0, 2 ** k, 1 << 16):
+            idx = np.arange(s, min(s + (1 << 16), 2 ** k), dtype=np.int64)
+            hits += int((np.abs((1 - 2 * ((idx[:, None] >> bits) & 1)) @ d) >= abs(T)).sum())
+        p, method = hits / 2 ** k, "exact"
+    else:
+        B = int(B)
+        rng = np.random.default_rng(int(seed))
+        for s in range(0, B, 1000):
+            signs = 1 - 2 * rng.integers(0, 2, size=(min(1000, B - s), k), dtype=np.int64)
+            hits += int((np.abs(signs @ d) >= abs(T)).sum())
+        p, method = (1 + hits) / (B + 1), "monte_carlo"
+    return {"T": T, "k": k, "p": p, "method": method, "direction": direction}
+
+
 def cohen_kappa(table) -> float:
     (a, b), (c, d) = table
     n = a + b + c + d
@@ -398,7 +422,8 @@ def e8_simulation_rates(sim, threshold, level=0.95) -> pd.DataFrame:
 # ------------------------------------------------------------------ the contrast
 
 def describe_contrast(rows, X, ref, rules, row_ids, p12_key, both_rule, a1_varset=None, threshold=None) -> dict:
-    """Paired statistics on the both-have-CS subset (descriptive; no categories)."""
+    """Paired statistics on the both-have-CS subset (no categories): CI, row-level McNemar (descriptive), kappa and
+    the region-level sign-flip test on d_r = b_r - c_r per region."""
     e1 = e1_paired_delta(rows, X, ref, p12_key, both_rule, row_ids, a1_varset)
     sub = e1["both_have_cs"]
     d = sub.delta.to_numpy(dtype=float)
@@ -406,13 +431,19 @@ def describe_contrast(rows, X, ref, rules, row_ids, p12_key, both_rule, a1_varse
                                   seed=int(rules["bootstrap_seed"]), level=float(rules["ci_level"]))
     thr = float(rules["threshold_primary"] if threshold is None else threshold)
     ag = agreement(sub, thr)
+    x, r = sub.x_stat >= thr, sub.ref_stat >= thr
+    d_r = ((x & ~r).astype(int) - (~x & r).astype(int)).groupby(sub.region_safe).sum()
+    sf = region_signflip(d_r.to_dict(), exact_max_k=rules["confirmatory"]["region_signflip"]["exact_max_k"],
+                         B=int(rules["bootstrap_B"]), seed=int(rules["bootstrap_seed"]))
     return {"contrast": f"{X}_vs_{ref}", "x": X, "ref": ref, "p12_key": p12_key,
-            "n_rows": int(len(e1["all_rows"])), "n_both": int(len(sub)),
+            "n_rows": int(len(e1["all_rows"])), "n_both": int(len(sub)), "n_regions": int(sub.region_safe.nunique()),
             "median_delta": float(np.median(d)) if d.size else float("nan"),
             "mean_delta": float(np.mean(d)) if d.size else float("nan"),
             "ci_lo": lo, "ci_hi": hi, "sign_p": sign_test(d.tolist()),
             "mcnemar_b": ag["b"], "mcnemar_c": ag["c"], "mcnemar_p": ag["mcnemar_p"],
-            "kappa": ag["kappa"], "observed_agreement": ag["observed_agreement"]}
+            "kappa": ag["kappa"], "observed_agreement": ag["observed_agreement"],
+            "signflip_T": sf["T"], "signflip_k": sf["k"], "signflip_p": sf["p"], "signflip_method": sf["method"],
+            "signflip_direction": sf["direction"]}
 
 
 def e1_summary(sub, rules) -> dict:
@@ -454,18 +485,20 @@ def negative_control_rates(rows, threshold) -> pd.DataFrame:
 
 
 def categorize(stats, rules) -> dict:
-    """decision_rules.yaml confirmatory.categories, with alpha / kappa_cut / n_both_min from the top level."""
+    """decision_rules.yaml confirmatory.categories, with alpha / kappa_cut / n_both_min from the top level and
+    n_regions_min from confirmatory. The direction category is the region sign-flip test, not row-level McNemar."""
     lo, hi = stats["ci_lo"], stats["ci_hi"]
     ci = "incl0"
     if not (math.isnan(lo) or math.isnan(hi)):
         ci = "pos" if lo > 0 else ("neg" if hi < 0 else "incl0")
-    p, b, c = stats["mcnemar_p"], stats["mcnemar_b"], stats["mcnemar_c"]
+    p, T = stats["signflip_p"], stats["signflip_T"]
     alpha = float(rules["alpha"])
-    mcn = "sig_X_gt_A3" if (p < alpha and b > c) else ("sig_A3_gt_X" if (p < alpha and c > b) else "ns")
+    mcn = "sig_X_gt_A3" if (p < alpha and T > 0) else ("sig_A3_gt_X" if (p < alpha and T < 0) else "ns")
     k, po = stats["kappa"], stats["observed_agreement"]
     kappa_ok = bool(po == 1) if math.isnan(k) else bool(k >= float(rules["kappa_cut"]))
-    return {"n_both_ok": bool(stats["n_both"] >= int(rules["n_both_min"])), "ci": ci, "mcnemar": mcn,
-            "kappa_ok": kappa_ok}
+    n_both_ok = (stats["n_both"] >= int(rules["n_both_min"])
+                 and stats["n_regions"] >= int(rules["confirmatory"]["n_regions_min"]))
+    return {"n_both_ok": bool(n_both_ok), "ci": ci, "mcnemar": mcn, "kappa_ok": kappa_ok}
 
 
 def contrast_stats(rows, X, ref, rules) -> dict:
@@ -478,6 +511,9 @@ def contrast_stats(rows, X, ref, rules) -> dict:
         raise ValueError(f"unsupported CI statistic {conf['ci']['statistic']!r}")
     call = conf["mcnemar_kappa"]["call"].split(">=")
     thr = rules[call[1].strip()]
+    sf = conf["region_signflip"]
+    if sf["subset"] != "both_have_cs" or sf["call"] != conf["mcnemar_kappa"]["call"]:
+        raise ValueError(f"region_signflip must use the both_have_cs subset and the mcnemar_kappa call: {sf}")
     spec = conf["rows"]
     man = rows.drop_duplicates("row_id")[["row_id", *[k for k in spec if k in rows.columns and k != "p12_key"]]]
     ids = set(select_manifest(man, {k: v for k, v in spec.items() if k != "p12_key"}).row_id)
