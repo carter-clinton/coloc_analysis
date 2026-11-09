@@ -22,7 +22,7 @@ MAN_REL = ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifes
 TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_finemap_structure",
           "e4_no_cs_rate", "e4_cross_purity", "e5_diagnostics", "e6_panel_contrast", "e7_frozen_vs_fixed",
           "e8_simulation_rates", "afr_secondary", "negative_controls", "qtl_layer", "min_abs_corr_sweep",
-          "hla_exploratory", "table1_data")
+          "hla_exploratory", "table1_data", "row_drops")
 PAIRS = [("asthma", "bmi"), ("asthma", "t2d"), ("bmi", "t2d"), ("bmi", "stroke"), ("t2d", "stroke")]
 P12 = ("p12_primary", "p12_sensitivity")
 
@@ -114,7 +114,7 @@ def test_cli_exit_2_without_draft(tmp_path):
     assert not (tmp_path / "out").exists() or not any((tmp_path / "out").iterdir())
 
 
-def test_draft_writes_exactly_17_draft_tables(tmp_path):
+def test_draft_writes_exactly_18_draft_tables(tmp_path):
     from ta_r4.run_aggregation import TABLES as T
 
     build_tree(tmp_path / "repo")
@@ -286,3 +286,22 @@ def test_no_statistics_defined_in_run_aggregation():
             assert not any(w in name for w in ("kappa", "mcnemar", "bootstrap", "wilson", "pvalue", "sign_test"))
     names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
     assert "estimands" in names and "branch_classifier" in names
+
+
+def test_row_drops_and_long_e6_tables(drafted):
+    """N8: row_drops per (family, contrast, p12 key, side); N10: e6 and afr_secondary are E1-E5 + drops."""
+    m, root = drafted
+    rd = _read(root / "out", "row_drops")
+    conf = rd[rd.family == "confirmatory"]
+    assert sorted(set(conf.contrast)) == ["A1_matched_vs_A3_1kg", "A2_identity_vs_A3_1kg"]
+    assert set(conf.p12_key) == set(P12) and set(conf.side) == {"x", "ref"}
+    assert len(conf) == 2 * 2 * 2
+    assert set(conf.n_expected) == {15} and set(conf.n_output) == {15} and set(conf.n_method_none) == {0}
+    assert set(rd.family) == {"confirmatory", "e6", "afr_secondary"}
+    assert set(rd.loc[rd.family == "afr_secondary", "n_expected"]) == {0}
+    for name in ("e6_panel_contrast", "afr_secondary"):
+        t = _read(root / "out", name)
+        assert list(t.columns) == ["variant_set", "contrast", "p12_key", "estimand", "subset", "metric", "value"]
+    e6 = _read(root / "out", "e6_panel_contrast")
+    assert set(e6.estimand) == {"E1", "E2", "E3", "E4", "E5", "drops"}
+    assert set(e6.contrast) == {"A3_ukb_vs_A3_1kg", "A3_ukb_isect_vs_A3_1kg_isect"}

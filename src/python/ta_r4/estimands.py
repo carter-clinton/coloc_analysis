@@ -24,7 +24,9 @@ MANIFEST_REL = "config/ta_r4/pair_manifest.tsv"
 PRIORS_REL = "config/ta_r4/coloc_priors.yaml"
 PP_COLS = ("pp_h0", "pp_h1", "pp_h2", "pp_h3", "pp_h4")
 DOC_COLS = ("row_id", "arm", "mode", "method", "p12_key", *PP_COLS, "pp_h4_max", "n_cs_a", "n_cs_b",
-            "fallback_reason", "n_snps")
+            "fallback_reason", "none_reason", "n_snps")
+EARLY_EXIT = ("no_variants", "too_many_variants")  # validate_r4_fits.EARLY_EXIT
+NONE_REASONS = ("coloc_susie_empty", "coloc_susie_no_finite_h4", "fit_early_exit")  # run_coloc_pair_r4.R
 PARTIAL_KEYS = ("ci_pos_mcnemar_ns", "ci_pos_mcnemar_opposite", "ci_neg_mcnemar_ns", "ci_neg_mcnemar_opposite")
 
 
@@ -312,15 +314,92 @@ def e3_reclassification(p) -> pd.DataFrame:
     return t.value_counts().rename("n").reset_index().sort_values(["class_x", "class_ref"]).reset_index(drop=True)
 
 
-def e4_no_cs_rate(rows) -> pd.DataFrame:
-    """No-CS rate per arm label: rows with n_cs_a == 0 or n_cs_b == 0 / rows (A1 has no fits: excluded)."""
+def _no_cs(r):
+    """Pair row with zero credible sets on either trait (n_cs NA, e.g. an early exit, is not counted)."""
+    return (pd.to_numeric(r.n_cs_a) == 0) | (pd.to_numeric(r.n_cs_b) == 0)
+
+
+def _fit_no_cs(f):
+    """Fits with no credible set: zero sets, or an early exit (n_cs NA)."""
+    return f.n_cs.isna() | (pd.to_numeric(f.n_cs) == 0)
+
+
+def e4_no_cs_rate(rows, fits) -> pd.DataFrame:
+    """No-CS rate at three levels, each with its denominator named: pair_row (rows with n_cs_a == 0 or n_cs_b == 0
+    / pair rows of the arm), region (the same per region), fit (fits with zero sets or an early exit / fits of the
+    arm). A1 has no fits and is excluded."""
     r = rows[~rows.label.astype(str).str.startswith("A1_")].copy()
-    r["no_cs"] = (pd.to_numeric(r.n_cs_a) == 0) | (pd.to_numeric(r.n_cs_b) == 0)
-    g = r.groupby(["ancestry", "row_class", "label", "p12_key"], dropna=False)
-    t = g.agg(n_rows=("row_id", "size"), n_no_cs=("no_cs", "sum")).reset_index()
+    r["no_cs"] = _no_cs(r)
+    out = []
+    for level, by, den in (("pair_row", [], "pair rows of the arm"),
+                           ("region", ["region_safe"], "pair rows of the arm in the region")):
+        g = r.groupby(["ancestry", "row_class", "label", "p12_key", *by], dropna=False)
+        t = g.agg(n_rows=("row_id", "size"), n_no_cs=("no_cs", "sum")).reset_index()
+        out.append(t.assign(level=level, denominator=den))
+    f = fits.assign(no_cs=_fit_no_cs(fits), early=fits.status.isin(EARLY_EXIT))
+    t = f.groupby(["ancestry", "arm"]).agg(n_rows=("trait", "size"), n_no_cs=("no_cs", "sum"),
+                                           n_early_exit=("early", "sum")).reset_index().rename(columns={"arm": "label"})
+    out.append(t.assign(level="fit", denominator="fits of the arm"))
+    cols = ["level", "denominator", "ancestry", "row_class", "label", "p12_key", "region_safe", "n_rows", "n_no_cs",
+            "n_early_exit", "no_cs_rate"]
+    t = pd.concat([x for x in out if len(x)], ignore_index=True) if any(len(x) for x in out) else pd.DataFrame(
+        columns=cols)
+    t = t.reindex(columns=cols)
     t["n_no_cs"] = t.n_no_cs.astype(int)
     t["no_cs_rate"] = t.n_no_cs / t.n_rows
     return t
+
+
+def row_drop_table(rows, manifest, contrasts, p12_keys, a1_varset=None) -> pd.DataFrame:
+    """Outcome states per (contrast, p12 key, side): manifest rows expected, outputs by method (none split by
+    none_reason class), paired rows, both-have-CS rows and paired rows dropped from both_have_cs. contrasts:
+    (X, ref, variant_set, both_rule). The counts must reconcile, else ValueError."""
+    ids = set(manifest.row_id)
+    out = []
+    for X, ref, vset, rule in contrasts:
+        for k in p12_keys:
+            p = paired_frame(rows, X, ref, k, rule, ids, a1_varset)
+            fin = p[p.x_stat.notna() & p.ref_stat.notna()]
+            n_both = int(fin.both_have_cs.sum())
+            for side, label in (("x", X), ("ref", ref)):
+                s = _side_rows(rows, label, ids, k, a1_varset)
+                meth = s.method.astype(str)
+                a1 = meth.str.startswith("A1_abf_")
+                unknown = sorted(set(meth[~a1 & ~meth.isin(["coloc_susie", "fallback_abf", "none"])]))
+                if unknown:
+                    raise ValueError(f"row_drop_table: unknown coloc method(s) {unknown} for {label}")
+                none = s[meth == "none"]
+                cls = none.none_reason.fillna("unspecified").astype(str).str.split(":", n=1).str[0]
+                r = {"contrast": f"{X}_vs_{ref}", "variant_set": vset, "p12_key": k, "side": side, "label": label,
+                     "n_expected": len(ids), "n_output": len(s), "n_coloc_susie": int((meth == "coloc_susie").sum()),
+                     "n_a1": int(a1.sum()), "n_fallback": int((meth == "fallback_abf").sum()),
+                     "n_method_none": len(none)}
+                for c in sorted(set(NONE_REASONS) | set(cls)):
+                    r[f"n_none_{c}"] = int((cls == c).sum())
+                r.update({"n_paired": len(p), "n_paired_finite": len(fin), "n_both_have_cs": n_both,
+                          "n_dropped_not_both_have_cs": len(fin) - n_both})
+                out.append(r)
+            _reconcile(out[-2:])
+    lead = ["contrast", "variant_set", "p12_key", "side", "label", "n_expected", "n_output", "n_coloc_susie", "n_a1",
+            "n_fallback", "n_method_none"]
+    t = pd.DataFrame(out)
+    if not len(t):
+        return pd.DataFrame(columns=lead)
+    rest = [c for c in t.columns if c not in lead]
+    return t[lead + rest].fillna({c: 0 for c in rest if c.startswith("n_none_")}).astype(
+        {c: int for c in rest if c.startswith("n_none_")})
+
+
+def _reconcile(pair):
+    for r in pair:
+        parts = r["n_coloc_susie"] + r["n_a1"] + r["n_fallback"] + r["n_method_none"]
+        none = sum(v for c, v in r.items() if c.startswith("n_none_"))
+        ok = (parts == r["n_output"] and none == r["n_method_none"] and r["n_output"] <= r["n_expected"]
+              and r["n_both_have_cs"] <= r["n_paired_finite"] <= r["n_paired"])
+        if not ok:
+            raise ValueError(f"row_drop_table: counts do not reconcile: {r}")
+    if pair[0]["n_paired"] > min(r["n_output"] for r in pair):
+        raise ValueError(f"row_drop_table: n_paired exceeds an output count: {pair}")
 
 
 def e4_finemap_structure(fits) -> pd.DataFrame:
@@ -460,17 +539,52 @@ def e1_summary(sub, rules) -> dict:
             "sign_p": sign_test(d.tolist())}
 
 
-def e6_panel_contrast(rows, rules, row_ids, contrasts, p12_keys) -> pd.DataFrame:
-    """contrasts: (X, ref, variant_set, both_rule). describe_contrast per p12 key, plus median n_snps per side."""
+def e6_panel_contrast(rows, fits, rules, row_ids, contrasts, p12_keys) -> pd.DataFrame:
+    """contrasts: (X, ref, variant_set, both_rule). Long table of E1-E5 and drops per contrast and p12 key, from the
+    same estimators as the primary contrasts: E1 (e1_summary, median variant counts), E2 (e2_agreement over the sweep)
+    and E3 (e3_reclassification) on both_have_cs and all_rows; E4 no-CS rates (pair rows and fits) and E5
+    (e5_diagnostics medians) per side; drops (row_drop_table)."""
     out = []
+    ids = set(row_ids)
+    regions = set(rows.loc[rows.row_id.isin(ids), "region_safe"])
     for X, ref, vset, rule in contrasts:
         for k in p12_keys:
-            s = describe_contrast(rows, X, ref, rules, row_ids, k, rule)
-            allr = e1_paired_delta(rows, X, ref, k, rule, row_ids)["all_rows"]
-            out.append({"variant_set": vset, **s,
-                        "median_n_snps_x": float(pd.to_numeric(allr.x_n_snps).median()) if len(allr) else float("nan"),
-                        "median_n_snps_ref": float(pd.to_numeric(allr.ref_n_snps).median()) if len(allr) else float("nan")})
-    return pd.DataFrame(out)
+            def add(est, subset, metric, value):
+                out.append({"variant_set": vset, "contrast": f"{X}_vs_{ref}", "p12_key": k, "estimand": est,
+                            "subset": subset, "metric": metric, "value": float(value)})
+
+            for sname, df in e1_paired_delta(rows, X, ref, k, rule, ids).items():
+                for m, v in e1_summary(df, rules).items():
+                    add("E1", sname, m, v)
+                for side in ("x", "ref"):
+                    add("E1", sname, f"median_n_snps_{side}", pd.to_numeric(df[f"{side}_n_snps"]).median())
+                add("E1", sname, "median_n_snps_diff",
+                    (pd.to_numeric(df.x_n_snps) - pd.to_numeric(df.ref_n_snps)).median())
+                for a in e2_agreement(df, rules["sweep"]).to_dict("records"):
+                    for m in ("n", "a", "b", "c", "d", "kappa", "observed_agreement", "mcnemar_p"):
+                        add("E2", sname, f"{m}@{a['threshold']}", a[m])
+                for e in e3_reclassification(df).itertuples():
+                    add("E3", sname, f"{e.class_x}->{e.class_ref}", e.n)
+            for side, label in (("x", X), ("ref", ref)):
+                s = _side_rows(rows, label, ids, k, None)
+                add("E4", "-", f"{side}.pair_row.n_rows", len(s))
+                add("E4", "-", f"{side}.pair_row.n_no_cs", int(_no_cs(s).sum()))
+                if label.startswith("A1_"):
+                    continue
+                anc = set(s.ancestry) or set(rows.loc[rows.row_id.isin(ids), "ancestry"])
+                f = fits[(fits.arm == label) & fits.region_safe.isin(regions) & fits.ancestry.isin(anc)]
+                add("E4", "-", f"{side}.fit.n_rows", len(f))
+                add("E4", "-", f"{side}.fit.n_no_cs", int(_fit_no_cs(f).sum()))
+                d = e5_diagnostics(f)
+                add("E5", "-", f"{side}.n_fits", len(d))
+                add("E5", "-", f"{side}.median_lambda_hat", pd.to_numeric(d.lambda_hat).median())
+                add("E5", "-", f"{side}.median_kriging_n_outliers", pd.to_numeric(d.kriging_n_outliers).median())
+            drops = row_drop_table(rows, pd.DataFrame({"row_id": sorted(ids)}), [(X, ref, vset, rule)], [k])
+            for r in drops.to_dict("records"):
+                for m, v in r.items():
+                    if m.startswith("n_"):
+                        add("drops", "-", f"{r['side']}.{m}", v)
+    return pd.DataFrame(out, columns=["variant_set", "contrast", "p12_key", "estimand", "subset", "metric", "value"])
 
 
 def negative_control_rates(rows, threshold) -> pd.DataFrame:

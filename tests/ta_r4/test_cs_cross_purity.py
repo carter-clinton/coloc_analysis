@@ -32,6 +32,8 @@ v2 <- v; v2$SNP_ID[4] <- "rsY"; v2$POS[5] <- 400L
 saveRDS(list(R = R, variants = v2), file.path(d, "dup.rds"))
 v3 <- v; v3$SNP_ID[1] <- "rsZ"
 saveRDS(list(R = R, variants = v3), file.path(d, "missing.rds"))
+v4 <- v; v4$POS[4] <- 401L
+saveRDS(list(R = R, variants = v4), file.path(d, "missing3.rds"))
 saveRDS(list(R = diag(6), variants = v), file.path(d, "identity.rds"))
 """
 
@@ -43,9 +45,9 @@ def fx(tmp_path_factory):
     return d
 
 
-def _run(fx, panel, out="out.tsv"):
+def _run(fx, panel, out="out.tsv", *extra):
     return subprocess.run([RSCRIPT, str(SCRIPT), "--fit", str(fx / "A2.fit.rds"), "--panel", str(fx / panel),
-                           "--output", str(fx / out)], capture_output=True, text=True)
+                           "--output", str(fx / out), *extra], capture_output=True, text=True)
 
 
 def _read(p):
@@ -63,6 +65,8 @@ def test_cross_purity_against_real_panel(fx):
     assert float(t["L2"]["min_abs_corr"]) == pytest.approx(0.6)
     assert float(t["L3"]["min_abs_corr"]) == 1.0
     assert [t[k]["size"] for k in ("L1", "L2", "L3")] == ["2", "3", "1"]
+    assert [(t[k]["n_cs_variants"], t[k]["n_present"], t[k]["note"]) for k in ("L1", "L2", "L3")] == [
+        ("2", "2", ""), ("3", "3", ""), ("1", "1", "")]
 
 
 def test_identity_panel_gives_zero_for_multi_member_sets(fx):
@@ -78,3 +82,25 @@ def test_refuses_unmatched_or_ambiguous_members(fx, panel, code):
     assert p.returncode != 0
     assert code in p.stderr
     assert not (fx / f"{panel}.tsv").exists()
+
+
+def test_allow_absent_scores_present_members_and_counts_them(fx):
+    """--allow-absent (native panel pairs): absent members are counted, never matched by guess; a CS with fewer
+    than min(2, size) members present gets NA purity."""
+    p = _run(fx, "missing.rds", "abs.tsv", "--allow-absent")
+    assert p.returncode == 0, p.stderr
+    t = _read(fx / "abs.tsv")
+    assert (t["L1"]["n_cs_variants"], t["L1"]["n_present"], t["L1"]["note"]) == ("2", "1", "fewer_than_2_present")
+    assert t["L1"]["min_abs_corr"] == "NA" and t["L1"]["mean_abs_corr"] == "NA"
+    assert float(t["L2"]["min_abs_corr"]) == pytest.approx(0.6) and t["L2"]["note"] == ""
+    assert float(t["L3"]["min_abs_corr"]) == 1.0
+    p = _run(fx, "missing3.rds", "abs3.tsv", "--allow-absent")
+    assert p.returncode == 0, p.stderr
+    t = _read(fx / "abs3.tsv")
+    assert (t["L2"]["n_cs_variants"], t["L2"]["n_present"], t["L2"]["note"]) == ("3", "2", "partial_present")
+    assert float(t["L2"]["min_abs_corr"]) == pytest.approx(0.6) and float(t["L2"]["mean_abs_corr"]) == pytest.approx(0.6)
+
+
+def test_allow_absent_still_refuses_ambiguous(fx):
+    p = _run(fx, "dup.rds", "dup_abs.tsv", "--allow-absent")
+    assert p.returncode != 0 and "AMBIGUOUS" in p.stderr

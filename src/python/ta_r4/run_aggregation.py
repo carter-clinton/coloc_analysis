@@ -24,7 +24,7 @@ from ta_r4.commands import A1_FIT_ARMS, P12_KEYS
 TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_finemap_structure",
           "e4_no_cs_rate", "e4_cross_purity", "e5_diagnostics", "e6_panel_contrast", "e7_frozen_vs_fixed",
           "e8_simulation_rates", "afr_secondary", "negative_controls", "qtl_layer", "min_abs_corr_sweep",
-          "hla_exploratory", "table1_data")
+          "hla_exploratory", "table1_data", "row_drops")
 KNOWN_W3A = f"{paths.MAN}/known_answer_W3a.tsv"
 KNOWN_SH2B3 = f"{paths.MAN}/known_answer_sh2b3.tsv"
 SIM_DIR = f"{paths.R4}/results/sim"
@@ -35,8 +35,11 @@ TIER_COLS = ["region", "ancestry", "tier", "best_gwas_pph4", "best_qtl_pph4", "r
              "resolving_qtl_source", "all_supporting_sources", "neg_ctrl_set"]
 RSCRIPT = "Rscript"  # from envs/r_coloc.yml on PATH (as commands.py)
 CROSS_PURITY_R = "src/snakemake/scripts/ta_r4/cs_cross_purity.R"
-#: (fit arm, panel arm) pairs scored by cs_cross_purity.R (Pitfall 9).
-CROSS_PURITY = (("A2_identity", "A3_1kg"), ("A3_ukb_isect", "A3_1kg_isect"), ("A3_1kg_isect", "A3_ukb_isect"))
+#: (fit arm, panel arm, allow absent members) scored by cs_cross_purity.R (Pitfall 9). Absent members are allowed
+#: only between panels with different variant sets (native UKB/1000G, AFR504/AFR661).
+CROSS_PURITY = (("A2_identity", "A3_1kg", False), ("A3_ukb", "A3_1kg", True), ("A3_1kg", "A3_ukb", True),
+                ("A3_ukb_isect", "A3_1kg_isect", False), ("A3_1kg_isect", "A3_ukb_isect", False),
+                ("AFR661_A2", "AFR661_A3", False), ("AFR504_A3", "AFR661_A3", True), ("AFR661_A3", "AFR504_A3", True))
 #: descriptive contrasts (never classified): (X, ref, variant_set, both_have_cs rule)
 E6 = (("A3_ukb", "A3_1kg", "native", "both methods coloc_susie"),
       ("A3_ukb_isect", "A3_1kg_isect", "isect", "both methods coloc_susie"))
@@ -45,33 +48,41 @@ AFR = (("AFR661_A2", "AFR661_A3", "matched", "both methods coloc_susie"),
        ("AFR504_A3", "AFR661_A3", "matched", "both methods coloc_susie"))
 HLA = ("A3_ukb", "HLA_6p21")
 HLA_NOTE = "exploratory A3_ukb fit; no coloc row: no admissible comparator panel (D-24)"
-PURITY_COLS = ["fit_arm", "panel_arm", "trait", "ancestry", "region_safe", "cs", "size", "min_abs_corr",
-               "mean_abs_corr", "purity_fit", "note"]
+PURITY_COLS = ["fit_arm", "panel_arm", "fit_status", "trait", "ancestry", "region_safe", "cs", "size",
+               "n_cs_variants", "n_present", "min_abs_corr", "mean_abs_corr", "purity_fit", "note"]
 
 
-def _rscript_purity(repo, fit_rds, panel_rds):
+def _rscript_purity(repo, fit_rds, panel_rds, allow_absent):
     tmp = Path(repo) / paths.R4 / "tmp"
     tmp.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=tmp) as td:
         out = Path(td) / "cross_purity.tsv"
         subprocess.run([RSCRIPT, str(Path(repo) / CROSS_PURITY_R), "--fit", str(fit_rds), "--panel", str(panel_rds),
-                        "--output", str(out)], check=True, capture_output=True, text=True)
-        return pd.read_csv(out, sep="\t")
+                        "--output", str(out), *(["--allow-absent"] if allow_absent else [])],
+                       check=True, capture_output=True, text=True)
+        return pd.read_csv(out, sep="\t", keep_default_na=False, na_values=["NA"])
 
 
 def _cross_purity(repo, fits, runner):
+    """Every fit of each fit arm, whatever its status. Fits that exited early, have no RDS / panel, or whose RDS has
+    no credible set get one row with a note; a fit with sets gets one row per set."""
     out = []
-    for fit_arm, panel_arm in CROSS_PURITY:
-        for f in fits[(fits.arm == fit_arm) & (fits.status == "ok")].itertuples():
-            key = {"fit_arm": fit_arm, "panel_arm": panel_arm, "trait": f.trait, "ancestry": f.ancestry,
-                   "region_safe": f.region_safe}
+    for fit_arm, panel_arm, allow_absent in CROSS_PURITY:
+        for f in fits[fits.arm == fit_arm].itertuples():
+            key = {"fit_arm": fit_arm, "panel_arm": panel_arm, "fit_status": f.status, "trait": f.trait,
+                   "ancestry": f.ancestry, "region_safe": f.region_safe}
+            if f.status in estimands.EARLY_EXIT:
+                out.append({**key, "note": "early_exit"})
+                continue
             rds = Path(repo) / paths.fit_rds(fit_arm, f.trait, f.ancestry, f.region_safe)
             panel = Path(repo) / paths.panel_path(panel_arm, f.region_safe)
             if not rds.exists() or not panel.exists():
                 out.append({**key, "note": "fit_rds_missing" if not rds.exists() else "panel_missing"})
                 continue
-            t = runner(repo, rds, panel)
-            out += [{**key, **r, "note": ""} for r in t.to_dict("records")]
+            t = runner(repo, rds, panel, allow_absent)
+            if not len(t):
+                out.append({**key, "note": "no_cs"})
+            out += [{**key, **r} for r in t.to_dict("records")]
     return pd.DataFrame(out, columns=PURITY_COLS)
 
 
@@ -168,11 +179,11 @@ def build_tables(repo, rules, man, rows, fits, purity_runner):
         t[key] = df[lead + [c for c in df.columns if c not in lead]]
 
     t["e4_finemap_structure"] = estimands.e4_finemap_structure(fits)
-    t["e4_no_cs_rate"] = estimands.e4_no_cs_rate(rows)
+    t["e4_no_cs_rate"] = estimands.e4_no_cs_rate(rows, fits)
     t["e4_cross_purity"] = _cross_purity(repo, fits, purity_runner)
     real_ld = [a for a, r in ARMS.items() if r["stage"] == "production" and r["validator_mode"] == "real_ld"]
     t["e5_diagnostics"] = estimands.e5_diagnostics(fits[fits.arm.isin(real_ld)])
-    t["e6_panel_contrast"] = estimands.e6_panel_contrast(rows, rules, ids, E6, P12_KEYS)
+    t["e6_panel_contrast"] = estimands.e6_panel_contrast(rows, fits, rules, ids, E6, P12_KEYS)
 
     layer, qdocs, tiers_frozen, tiers_fixed = _qtl(repo)
     a3_arm = {anc: arm for arm, anc in A1_FIT_ARMS.items()}
@@ -180,7 +191,8 @@ def build_tables(repo, rules, man, rows, fits, purity_runner):
         _read_tsv(Path(repo) / KNOWN_W3A), _read_tsv(Path(repo) / KNOWN_SH2B3), fits, rows, qdocs, a3_arm=a3_arm,
         p12_key=conf["rows"]["p12_key"], qtl_tiers_frozen=tiers_frozen, qtl_tiers_fixed=tiers_fixed)
     t["e8_simulation_rates"] = _e8(repo, rules)
-    t["afr_secondary"] = estimands.e6_panel_contrast(rows, rules, _ids(man, rules, ancestry="AFR"), AFR, P12_KEYS)
+    afr_ids = _ids(man, rules, ancestry="AFR")
+    t["afr_secondary"] = estimands.e6_panel_contrast(rows, fits, rules, afr_ids, AFR, P12_KEYS)
     t["negative_controls"] = estimands.negative_control_rates(rows, float(rules["threshold_primary"]))
     t["qtl_layer"] = layer
     t["min_abs_corr_sweep"] = estimands.min_abs_corr_sweep(fits)
@@ -192,6 +204,16 @@ def build_tables(repo, rules, man, rows, fits, purity_runner):
     obs = rows.groupby(["ancestry", "row_class", "admissible"]).row_id.nunique().rename("n_rows_with_outputs")
     t["table1_data"] = t1.merge(obs.reset_index(), on=["ancestry", "row_class", "admissible"], how="left").fillna(
         {"n_rows_with_outputs": 0}).astype({"n_rows_with_outputs": int})
+    drops = [estimands.row_drop_table(rows, man[man.row_id.isin(ids)],
+                                      [(n.split("_vs_")[0], ref, "confirmatory", conf["both_have_cs"][n])], P12_KEYS,
+                                      a1_varset=a1v).assign(family="confirmatory") for n in conf["contrasts"]]
+    drops.append(estimands.row_drop_table(rows, man[man.row_id.isin(ids)], E6, P12_KEYS).assign(family="e6"))
+    drops.append(estimands.row_drop_table(rows, man[man.row_id.isin(afr_ids)], AFR, P12_KEYS).assign(
+        family="afr_secondary"))
+    rd = pd.concat(drops, ignore_index=True)
+    nc = [c for c in rd.columns if c.startswith("n_none_")]
+    rd[nc] = rd[nc].fillna(0).astype(int)
+    t["row_drops"] = rd[["family", *[c for c in rd.columns if c != "family"]]]
     return t
 
 

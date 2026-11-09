@@ -191,7 +191,7 @@ def test_e3_reclassification_argmax():
 
 
 def test_e4_no_cs_rate():
-    from ta_r4.estimands import e4_no_cs_rate
+    from ta_r4.estimands import e4_no_cs_rate, fit_frame
 
     m = _man3()
     r1, r2, r3 = m.row_id
@@ -200,7 +200,8 @@ def test_e4_no_cs_rate():
             doc(r2, "A2_identity", k, 0.5, n_cs=(1, 1)),
             doc(r3, "A2_identity", k, 0.4, method="fallback_abf", n_cs=(3, 0)),
             doc(r1, "A3_1kg", k, 0.5, n_cs=(1, 1)), doc(r1, "A1_matched", k, 0.5)]
-    t = e4_no_cs_rate(_rows(docs, m)).set_index("label")
+    t = e4_no_cs_rate(_rows(docs, m), fit_frame([]))
+    t = t[t.level == "pair_row"].set_index("label")
     assert t.loc["A2_identity", ["n_rows", "n_no_cs"]].tolist() == [3, 2]
     assert t.loc["A2_identity", "no_cs_rate"] == pytest.approx(2 / 3)
     assert t.loc["A3_1kg", "no_cs_rate"] == 0.0
