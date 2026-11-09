@@ -26,7 +26,18 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-09 — **TRACK A ta-r4: W3f 15.2 COMPLETE (N3, N4, N5, T1). NEXT = 15.3. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-09 — **TRACK A ta-r4: W3f 15.3 COMPLETE (N7, N6). NEXT = 15.4. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- W3f progress: 15.1, 15.2, 15.3 done; 15.4–15.6 pending; then W4a-T3 (Carter lock; decision_rules.yaml locked: false).
+- 15.3 commits: 92caa306 (N7 exact region sign-flip decides the mcnemar category; n_regions_min 7 in n_both_ok), 0ac1a15e
+  (N6 contrast_stats(…, manifest) raises ConfirmatoryIncomplete; run_aggregation FINAL exits 3 on any coverage gap),
+  a36d4ad1 (DRAFT (e) rendered block). SUMMARY: `ta-r4-W3f-signflip-region-floor-coverage-SUMMARY.md`.
+- Interim confirmatory_sha256 9fa410aa…88d5 (was f6e6e90f…e9e3); recomputed in 15.5.
+- Close Slurm 1784345: QUICK 612P/2S in 189 s (over 120 s, for 15.6); HEAVY 115P/4S; PINS 39P.
+- For 15.5: DRAFT (f) prose still says "NON_INFORMATIVE if n_both < n_both_min" (no region floor) and McNemar wording.
+- Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → 15.4.
+
+## 2026-11-09 — **TRACK A ta-r4: W3f 15.2 COMPLETE (N3, N4, N5, T1). NEXT = 15.3. NOTHING RUNNING.** (SUPERSEDED by the 15.3 block above)
 
 - W3f progress: 15.1, 15.2 done; 15.3–15.6 pending; then W4a-T3 (Carter lock; decision_rules.yaml locked: false).
 - 15.2 commits: 82490835 (N3 LOCKED_PATHS 18→29), 6312db61 (N4 in-job sha256 of sumstats/catalogs/QTL), d61fb081 (N5 in-job gate in

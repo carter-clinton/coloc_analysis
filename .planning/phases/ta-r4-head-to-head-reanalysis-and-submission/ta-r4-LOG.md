@@ -837,3 +837,21 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   test_run_aggregation::test_final_label_with_fixture_lock_and_signoff: its fixture left the now-locked known-answer tables
   untracked → gate (h) → status DRAFT. Fixture now commits them (assertions unchanged). QUICK rerun Slurm 1783856: 567P / 2S
   in 137.7 s (566 + 1 = 567; over the 120 s budget, carried to 15.6). FULL not run (plan §C list: QUICK, HEAVY, PINS).
+
+## 2026-11-09 — W3f 15.3 (N7 region sign-flip test + n_regions_min 7; N6 completeness + coverage-gated FINAL)
+
+- Commits: 92caa306 (N7), 0ac1a15e (N6), a36d4ad1 (DRAFT (e) render). Pushed 0ad0b742..a36d4ad1.
+- confirmatory_sha256: old f6e6e90f83fd14975d3afa04789c3dcf1a9211b8e3ddd38bf23c72f8cbe0e9e3 (from
+  `git show 0ad0b742:config/ta_r4/decision_rules.yaml`) -> interim 9fa410aa411fc2c682a4886dd25ca98d5dfd37f6968ecffc1a0a8860003888d5.
+  Command (cwd src/python): `$PY -c "import yaml; from ta_r4.signoff import canonical_sha256;
+  print(canonical_sha256(yaml.safe_load(open('../../config/ta_r4/decision_rules.yaml'))['confirmatory']))"`. Final value: 15.5.
+- Counterexample A (10 rows of one region of 100) on 0ad0b742: ('INFLATION_SUPPORTED', 'rule3_agree'), n_both 10, CI
+  [0.2, 0.2], McNemar p 0.001953125. After N7 alone it is NON_INFORMATIVE, but a cherry-picked set (one row per region over 10
+  regions) is still INFLATION_SUPPORTED (signflip p 0.001953125). After N6 both raise ConfirmatoryIncomplete. Counterexample B
+  (10-row manifest): ('NON_INFORMATIVE', 'rule1_n_both'), n_regions 1.
+- RED/GREEN/NC under data/r4/tmp/w3f3/: t1_red 31F/80P -> t1_green 111P; t1_nc1 (row McNemar) 9F, t1_nc2 (no region term) 5F,
+  t1_nc3 (> for >=) 17F. t2_red 27F/34P -> t2_green 91P; t2_nc1 (ids from rows) 2F, t2_nc2 (no coverage) 3F. t3_red 5F/16P/2S
+  -> t3_green 62P/2S; t3_nc (renderer hard-codes 7) 1F (path0-6 only).
+- Truth table: 18 NON_INFORMATIVE / 3 NO_SYSTEMATIC_DIFFERENCE / 11 HETEROGENEOUS (3 + 8) / 2 INFLATION_SUPPORTED / 2 DEFLATION = 36.
+- Close Slurm 1784345: plan verify 111P / 61P / 62P+2S; QUICK 612P/2S in 189.2 s (567 + 45 new = 612; over 120 s, for 15.6);
+  HEAVY 115P/4S in 32m00s; PINS 39P. FULL not run.
