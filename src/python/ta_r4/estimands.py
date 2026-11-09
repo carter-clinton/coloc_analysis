@@ -481,21 +481,30 @@ def wilson_ci(k, n, level=0.95):
     return (max(0.0, centre - half), min(1.0, centre + half))
 
 
+class SimulationIncomplete(ValueError):
+    """The simulation result files do not hold exactly the configured cells and replicate counts."""
+
+
 def e8_simulation_rates(sim, threshold, level=0.95) -> pd.DataFrame:
-    """Share of reps with region PP.H4 >= threshold per (arm, scenario, gen_panel), pooled over regions:
-    false_H4 under H0/H3 truth, true_H4 under H4 truth; Wilson CI."""
+    """Share of reps with region PP.H4 >= threshold per (arm, method, scenario, gen_panel), pooled over regions:
+    false_H4 under H0/H3 truth, true_H4 under H4 truth; Wilson CI. coloc_susie and fallback_abf rows are never pooled;
+    method none rows are counted (n) with rate NA."""
     s = sim.copy()
     s["stat"] = [region_stat(r)[0] for r in s.to_dict("records")]
     out = []
-    for (arm, sc, gp), g in s.groupby(["arm", "scenario", "gen_panel"]):
+    nan = float("nan")
+    for (arm, method, sc, gp), g in s.groupby(["arm", "method", "scenario", "gen_panel"]):
+        m = re.match(r"^H3_r2_(.+)$", sc)
+        r = {"arm": arm, "method": method, "scenario": sc, "gen_panel": gp, "r2_bin": m.group(1) if m else "",
+             "quantity": "true_H4" if sc == "H4" else "false_H4", "threshold": threshold}
+        if method == "none":
+            out.append({**r, "n": len(g), "k": 0, "rate": nan, "ci_lo": nan, "ci_hi": nan})
+            continue
         n, k = int(g.stat.notna().sum()), int((g.stat >= threshold).sum())
         lo, hi = wilson_ci(k, n, level)
-        m = re.match(r"^H3_r2_(.+)$", sc)
-        out.append({"arm": arm, "scenario": sc, "gen_panel": gp, "r2_bin": m.group(1) if m else "",
-                    "quantity": "true_H4" if sc == "H4" else "false_H4", "threshold": threshold, "n": n, "k": k,
-                    "rate": k / n if n else float("nan"), "ci_lo": lo, "ci_hi": hi})
-    return pd.DataFrame(out, columns=["arm", "scenario", "gen_panel", "r2_bin", "quantity", "threshold", "n", "k",
-                                      "rate", "ci_lo", "ci_hi"])
+        out.append({**r, "n": n, "k": k, "rate": k / n if n else nan, "ci_lo": lo, "ci_hi": hi})
+    return pd.DataFrame(out, columns=["arm", "method", "scenario", "gen_panel", "r2_bin", "quantity", "threshold", "n",
+                                      "k", "rate", "ci_lo", "ci_hi"])
 
 
 # ------------------------------------------------------------------ the contrast

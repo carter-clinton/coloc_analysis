@@ -4,7 +4,8 @@ Reads trait-pair coloc JSONs only from paths.result_dirs('coloc') and fits only 
 frozen side comes from the committed known-answer tables and the QTL_legacy tier table by explicit path. Every
 statistic comes from estimands / branch_classifier. Exits 2 and writes nothing unless estimands.output_status
 is FINAL; exits 3 and writes nothing if FINAL and coloc_coverage finds a missing or extra output (EUR or AFR) or a
-QTL arm's summary or tier table is missing;
+QTL arm's summary or tier table is missing; exits 3 (FINAL and DRAFT) unless every simulation.yaml cell is present
+with the configured replicate count;
 --draft (fixtures only) writes every table labelled DRAFT. Every table carries a coverage header line.
 """
 from __future__ import annotations
@@ -17,6 +18,7 @@ import tempfile
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 from ta_r4 import branch_classifier, coloc_coverage, estimands, paths
 from ta_r4.arms import ARMS
@@ -29,6 +31,8 @@ TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclas
 KNOWN_W3A = f"{paths.MAN}/known_answer_W3a.tsv"
 KNOWN_SH2B3 = f"{paths.MAN}/known_answer_sh2b3.tsv"
 SIM_DIR = f"{paths.R4}/results/sim"
+SIM_CFG = "config/ta_r4/simulation.yaml"
+SIM_ARMS = ("A1", "A2", "A3")
 QTL_ARMS = ("QTL_A3", "QTL_A2", "QTL_legacy")
 QTL_TIERS = f"{paths.R4}/results/{{arm}}/qtl_tiers.tsv"
 QTL_SUMMARY = f"{paths.R4}/results/{{arm}}/qtl_coloc_summary.tsv"  # aggregate_qtl_coloc --with-method-columns
@@ -92,23 +96,51 @@ def _read_tsv(p):
     return pd.read_csv(p, sep="\t", comment="#", dtype=str, keep_default_na=False)
 
 
-def _sim(repo):
-    files = sorted((Path(repo) / SIM_DIR).glob("*.tsv"))
+def expected_sim_cells(repo):
+    """({file name: (region, scenario, gen_panel)}, reps) for every cell of the repo's config/ta_r4/simulation.yaml."""
+    cfg = yaml.safe_load((Path(repo) / SIM_CFG).read_text())
+    cells = {f"{r}.{s}.{g}.tsv": (r, s, g) for r in cfg["regions"] for s in cfg["scenarios"] for g in cfg["gen_panels"]}
+    return cells, int(cfg["reps"])
+
+
+def _sim(repo, *, final):
+    """Every expected cell file, read and checked: status ok with reps rows per arm (A1, A2, A3) and, in FINAL,
+    reps_override=none; or status no_qualifying_pair with 0 rows. A missing, extra or failing file raises
+    SimulationIncomplete."""
+    cells, reps = expected_sim_cells(repo)
+    files = {p.name: p for p in (Path(repo) / SIM_DIR).glob("*.tsv")}
+    bad = [f"missing {n}" for n in sorted(set(cells) - set(files))]
+    bad += [f"extra {n}" for n in sorted(set(files) - set(cells))]
     frames, meta = [], []
-    for p in files:
-        head = [ln for ln in p.read_text().splitlines() if ln.startswith("#")]
-        status = next((ln.split("=", 1)[1] for ln in head if ln.startswith("# status=")), "")
+    for name in sorted(set(cells) & set(files)):
+        p = files[name]
+        head = dict(ln[2:].split("=", 1) for ln in p.read_text().splitlines() if ln.startswith("# ") and "=" in ln
+                    and " " not in ln[2:].split("=", 1)[0])
+        status, override = head.get("status", ""), head.get("reps_override", "")
         df = pd.read_csv(p, sep="\t", comment="#")
-        scenario, gen_panel = p.name[: -len(".tsv")].split(".", 1)[1].rsplit(".", 1)  # {region}.{scenario}.{gen}
-        meta.append({"scenario": scenario, "gen_panel": gen_panel,
-                     "no_qualifying_pair": status == "no_qualifying_pair"})
+        if status == "ok":
+            n_arm = df.arm.value_counts().to_dict() if len(df) else {}
+            if n_arm != {a: reps for a in SIM_ARMS}:
+                bad.append(f"{name}: rows per arm {n_arm} != {reps} x {SIM_ARMS}")
+            if final and override != "none":
+                bad.append(f"{name}: reps_override={override!r} (FINAL requires none)")
+        elif status == "no_qualifying_pair":
+            if len(df):
+                bad.append(f"{name}: status no_qualifying_pair with {len(df)} rows")
+        else:
+            bad.append(f"{name}: status {status!r}")
+        r, sc, g = cells[name]
+        meta.append({"scenario": sc, "gen_panel": g, "no_qualifying_pair": status == "no_qualifying_pair"})
         frames.append(df)
+    if bad:
+        raise estimands.SimulationIncomplete(f"simulation incomplete: {len(bad)} problem(s) over {len(cells)} cells: "
+                                             + "; ".join(bad[:10]))
     sim = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     return sim, pd.DataFrame(meta, columns=["scenario", "gen_panel", "no_qualifying_pair"])
 
 
-def _e8(repo, rules):
-    sim, meta = _sim(repo)
+def _e8(repo, rules, *, final):
+    sim, meta = _sim(repo, final=final)
     cols = ["arm", "scenario", "gen_panel", "region", "method", "pp_h4", "pp_h4_max"]
     sim = sim if len(sim) else pd.DataFrame(columns=cols)
     t = estimands.e8_simulation_rates(sim, float(rules["threshold_primary"]), float(rules["ci_level"]))
@@ -156,7 +188,7 @@ def _ids(man, rules, **override):
     return set(estimands.select_manifest(man, {**spec, **override}).row_id)
 
 
-def build_tables(repo, rules, man, rows, fits, purity_runner):
+def build_tables(repo, rules, man, rows, fits, purity_runner, *, final):
     conf = rules["confirmatory"]
     ref = conf["reference_arm"]
     a1v = conf["rows"].get("a1_varset")
@@ -205,7 +237,7 @@ def build_tables(repo, rules, man, rows, fits, purity_runner):
     t["e7_frozen_vs_fixed"] = estimands.e7_frozen_vs_fixed(
         _read_tsv(Path(repo) / KNOWN_W3A), _read_tsv(Path(repo) / KNOWN_SH2B3), fits, rows, qdocs, a3_arm=a3_arm,
         p12_key=conf["rows"]["p12_key"], qtl_tiers_frozen=tiers_frozen, qtl_tiers_fixed=tiers_fixed)
-    t["e8_simulation_rates"] = _e8(repo, rules)
+    t["e8_simulation_rates"] = _e8(repo, rules, final=final)
     afr_ids = _ids(man, rules, ancestry="AFR")
     t["afr_secondary"] = estimands.e6_panel_contrast(rows, fits, rules, afr_ids, AFR, P12_KEYS)
     t["negative_controls"] = estimands.negative_control_rates(rows, float(rules["threshold_primary"]))
@@ -264,7 +296,12 @@ def run_aggregation(repo, out_dir, *, draft=False, purity_runner=_rscript_purity
         if not draft:
             print("run_aggregation: FINAL refused, QTL summary or tier table missing; nothing written", file=sys.stderr)
             return 3
-    tables = build_tables(repo, rules, man, estimands.load_rows(repo, man), estimands.load_fits(repo), purity_runner)
+    try:
+        tables = build_tables(repo, rules, man, estimands.load_rows(repo, man), estimands.load_fits(repo), purity_runner,
+                              final=not draft)
+    except estimands.SimulationIncomplete as e:
+        print(f"run_aggregation: {e}; nothing written", file=sys.stderr)
+        return 3
     if tuple(tables) != TABLES:
         raise RuntimeError(f"table set {sorted(tables)} != TABLES")
     out_dir.mkdir(parents=True, exist_ok=True)

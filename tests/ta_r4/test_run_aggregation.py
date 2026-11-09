@@ -77,13 +77,17 @@ def build_tree(root, nc_bump=0.0):
     _w(res / "A3_ukb/fine_mapping/susie/asthma.EUR.HLA_6p21.json", _fit(3))
     _w(res / f"repro_sh2b3_r2/coloc/{rows[0]['row_id']}.p12_primary.json",
        dict(doc(rows[0]["row_id"], "repro_sh2b3_r2", "p12_primary", 0.99), p12=1e-5))  # default priors
-    _w(res / "sim/CUR0.H3_r2_0.6.gen_1kg.tsv",
-       "# status=ok\n# reps_override=NA\nregion\tscenario\tgen_panel\trep\tseed\tarm\tmethod\tpp_h0\tpp_h1\tpp_h2"
-       "\tpp_h3\tpp_h4\tpp_h4_max\tn_cs_a\tn_cs_b\tcausal_a\tcausal_b\tr2_causal\n"
-       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA2\tcoloc_susie\t0\t0\t0\t0.1\t0.9\t0.9\t1\t1\t1:1\t1:2\t0.6\n"
-       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA3\tcoloc_susie\t0\t0\t0\t0.9\t0.1\t0.1\t1\t1\t1:1\t1:2\t0.6\n")
-    _w(res / "sim/CUR1.H3_r2_0.9.gen_1kg.tsv", "# status=no_qualifying_pair\nregion\tscenario\tgen_panel\trep\tseed"
-       "\tarm\tmethod\tpp_h0\tpp_h1\tpp_h2\tpp_h3\tpp_h4\tpp_h4_max\tn_cs_a\tn_cs_b\tcausal_a\tcausal_b\tr2_causal\n")
+    sim = yaml.safe_load((REPO_ROOT / "config/ta_r4/simulation.yaml").read_text())
+    sim.update(regions=["CUR0"], scenarios={k: sim["scenarios"][k] for k in ("H3_r2_0.6", "H3_r2_0.9")},
+               gen_panels={"gen_1kg": sim["gen_panels"]["gen_1kg"]}, reps=1)
+    (root / "config/ta_r4/simulation.yaml").write_text(yaml.safe_dump(sim))  # exactly the two cells below
+    sim_head = ("region\tscenario\tgen_panel\trep\tseed\tarm\tmethod\tpp_h0\tpp_h1\tpp_h2\tpp_h3\tpp_h4\tpp_h4_max"
+                "\tn_cs_a\tn_cs_b\tcausal_a\tcausal_b\tr2_causal\tnone_reason\tfit_status_a\tfit_status_b\n")
+    _w(res / "sim/CUR0.H3_r2_0.6.gen_1kg.tsv", "# status=ok\n# reps_override=none\n" + sim_head +
+       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA1\tA1_abf_matched\t0\t0\t0\t0.5\t0.5\t0.5\tNA\tNA\t1:1\t1:2\t0.6\tNA\tNA\tNA\n"
+       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA2\tcoloc_susie\t0\t0\t0\t0.1\t0.9\t0.9\t1\t1\t1:1\t1:2\t0.6\tNA\tok\tok\n"
+       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA3\tcoloc_susie\t0\t0\t0\t0.9\t0.1\t0.1\t1\t1\t1:1\t1:2\t0.6\tNA\tok\tok\n")
+    _w(res / "sim/CUR0.H3_r2_0.9.gen_1kg.tsv", "# status=no_qualifying_pair\n# reps_override=none\n" + sim_head)
     for arm in QTL_ARMS:
         _w(res / f"{arm}/qtl_coloc_summary.tsv", QTL_SUMMARY_HEAD
            + "CUR0__x__eqtl__QTD1__G1\tgtex_eqtl\tLung\tG1\tCUR0\tEUR\t300\t500\t1\t1\t2\tsuccess\t0\t0.01\t0.04"

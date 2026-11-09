@@ -4,6 +4,8 @@
 #   A1: coloc.abf on beta = z/sqrt(n), varbeta = 1/n (quant, sdY 1). A2: SuSiE with R = I. A3: SuSiE with the fit panel.
 #   SuSiE = the frozen run_susie_rss.R ladder (its functions are parsed out of the frozen file, not copied);
 #   coloc = run_coloc_pair_r4.R::coloc_pair_core. Run from the repo root. --reps-override is for smoke runs only.
+#   A fit the ladder cannot produce is not refitted with R = I (production rejects identity substitution): the arm's
+#   row has method "none", none_reason "fit_failed:<status_a>|<status_b>" and NA posteriors.
 suppressPackageStartupMessages({
   library(optparse)
   library(data.table)
@@ -15,7 +17,8 @@ suppressPackageStartupMessages({
 FROZEN_SCRIPT <- "src/legacy/region_analysis/scripts/run_susie_rss.R"
 COLOC_SCRIPT <- "src/snakemake/scripts/ta_r4/run_coloc_pair_r4.R"
 COLUMNS <- c("region", "scenario", "gen_panel", "rep", "seed", "arm", "method", "pp_h0", "pp_h1", "pp_h2", "pp_h3",
-             "pp_h4", "pp_h4_max", "n_cs_a", "n_cs_b", "causal_a", "causal_b", "r2_causal")
+             "pp_h4", "pp_h4_max", "n_cs_a", "n_cs_b", "causal_a", "causal_b", "r2_causal", "none_reason",
+             "fit_status_a", "fit_status_b")
 
 sim_fail <- function(code, ...) stop(sprintf("%s: %s", code, sprintf(...)), call. = FALSE)
 
@@ -49,7 +52,8 @@ read_policy <- function(path) {
        ld_regularization_eps = s$ld_regularization_eps %||% 1e-4)
 }
 
-# The frozen script's fit path: symmetrize + unit diagonal, ladder, identity fallback, annotate_susie.
+# The frozen script's fit path (symmetrize + unit diagonal, ladder, annotate_susie) without its identity fallback.
+# A NULL ladder fit is returned as fit NULL with the ladder status.
 fit_frozen <- function(FZ, z, R, n, pol, coverage, snp_names) {
   R <- (R + t(R)) / 2
   diag(R) <- 1
@@ -58,11 +62,7 @@ fit_frozen <- function(FZ, z, R, n, pol, coverage, snp_names) {
   lo <- FZ$run_susie_with_ladder(z = z, R = R, policy = lp, n = n)
   fit <- lo$fit
   status <- lo$status
-  if (is.null(fit)) {
-    lo <- FZ$run_susie_with_ladder(z = z, R = diag(length(z)), policy = lp, n = n)
-    fit <- lo$fit
-    status <- paste(lo$status, "identity_fallback", sep = ";")
-  }
+  if (is.null(fit)) return(list(fit = NULL, status = status))
   if (!inherits(fit, "susie")) class(fit) <- c("susie", class(fit))
   dimnames(R) <- list(snp_names, snp_names)
   fit <- tryCatch(coloc:::annotate_susie(fit, snp_names, R), error = function(e) fit)
@@ -169,9 +169,17 @@ run_rep <- function(ctx, rep) {
                A3 = lapply(z, fit_frozen, FZ = FZ, R = ctx$R_fit, n = ctx$n, pol = ctx$pol, coverage = ctx$coverage,
                            snp_names = ctx$keys))
   side <- function(fit, t) list(fit = fit, keys = ctx$keys, rows = rows[[t]])
+  susie_arm <- function(f) {
+    if (is.null(f$a$fit) || is.null(f$b$fit)) {
+      return(list(method = "none", pp = rep(NA_real_, 5),
+                  out = list(pp_h4_max = NA_real_, n_cs_a = NA_integer_, n_cs_b = NA_integer_,
+                             none_reason = sprintf("fit_failed:%s|%s", f$a$status, f$b$status))))
+    }
+    CP$coloc_pair_core(side(f$a$fit, "a"), side(f$b$fit, "b"), ti, ti, ctx$pri, "susie")
+  }
   res <- list(A1 = CP$coloc_pair_core(side(NULL, "a"), side(NULL, "b"), ti, ti, ctx$pri, "A1_matched"),
-              A2 = CP$coloc_pair_core(side(fits$A2$a$fit, "a"), side(fits$A2$b$fit, "b"), ti, ti, ctx$pri, "susie"),
-              A3 = CP$coloc_pair_core(side(fits$A3$a$fit, "a"), side(fits$A3$b$fit, "b"), ti, ti, ctx$pri, "susie"))
+              A2 = susie_arm(fits$A2), A3 = susie_arm(fits$A3))
+  status_of <- function(arm, t) if (arm == "A1") NA_character_ else as.character(fits[[arm]][[t]]$status)
   key_of <- function(i) if (is.na(i)) NA_character_ else ctx$keys[i]
   r2 <- if (is.na(cz$a)) NA_real_ else ctx$R_fit[cz$a, cz$b]^2
   out <- rbindlist(lapply(names(res), function(arm) {
@@ -180,7 +188,8 @@ run_rep <- function(ctx, rep) {
                seed = as.integer(seed), arm = arm, method = x$method, pp_h0 = x$pp[1], pp_h1 = x$pp[2],
                pp_h2 = x$pp[3], pp_h3 = x$pp[4], pp_h4 = x$pp[5], pp_h4_max = x$out$pp_h4_max,
                n_cs_a = x$out$n_cs_a, n_cs_b = x$out$n_cs_b, causal_a = key_of(cz$a), causal_b = key_of(cz$b),
-               r2_causal = r2)
+               r2_causal = r2, none_reason = as.character(x$out$none_reason %||% NA_character_),
+               fit_status_a = status_of(arm, "a"), fit_status_b = status_of(arm, "b"))
   }))
   setcolorder(out, COLUMNS)
   list(rows = out, fits = fits, z = z)

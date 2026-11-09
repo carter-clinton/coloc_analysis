@@ -28,7 +28,8 @@ SIM_CFG = "config/ta_r4/simulation.yaml"
 PRIORS = "config/ta_r4/coloc_priors.yaml"
 POLICY = "config/susie_policy.yaml"
 COLUMNS = ["region", "scenario", "gen_panel", "rep", "seed", "arm", "method", "pp_h0", "pp_h1", "pp_h2", "pp_h3",
-           "pp_h4", "pp_h4_max", "n_cs_a", "n_cs_b", "causal_a", "causal_b", "r2_causal"]
+           "pp_h4", "pp_h4_max", "n_cs_a", "n_cs_b", "causal_a", "causal_b", "r2_causal", "none_reason", "fit_status_a",
+           "fit_status_b"]
 METHODS = {"A1": {"A1_abf_matched"}, "A2": {"coloc_susie", "fallback_abf"}, "A3": {"coloc_susie", "fallback_abf"}}
 SCENARIOS = {"H0": {"type": "H0"}, "H4": {"type": "H4"},
              "H3_r2_0.3": {"type": "H3", "r2_bin": [0.25, 0.35]},
