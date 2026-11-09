@@ -129,7 +129,8 @@ if R4_QTL_ARM is not None:
             groups=lambda w: [r4qtl.done_path(w.qtl_arm, reg, src, qtd) for src, qtd, reg in _R4_QTL_GROUPS],
             manifest=r4harm.MANIFEST,
         output:
-            "data/r4/results/{qtl_arm}/qtl_coloc_summary.tsv",
+            summary="data/r4/results/{qtl_arm}/qtl_coloc_summary.tsv",
+            tierable="data/r4/results/{qtl_arm}/qtl_coloc_summary_tierable.tsv",
         log:
             "data/r4/logs/{qtl_arm}/qtl_aggregate.log",
         wildcard_constraints:
@@ -139,13 +140,15 @@ if R4_QTL_ARM is not None:
             py=sys.executable,
         shell:
             "set -euo pipefail\n{params.gate}\n"
-            "{params.py} src/python/aggregate_qtl_coloc.py --json-dir data/r4/results/{wildcards.qtl_arm}/qtl"
-            " --manifest {input.manifest} --output {output} > {log} 2>&1"
+            "({params.py} src/python/aggregate_qtl_coloc.py --json-dir data/r4/results/{wildcards.qtl_arm}/qtl"
+            " --manifest {input.manifest} --output {output.summary} --with-method-columns"
+            " && env PYTHONPATH=src/python {params.py} -m ta_r4.run_qtl_group_r4 --qtl-arm {wildcards.qtl_arm}"
+            " --tierable-summary {output.summary} --out {output.tierable}) > {log} 2>&1"
 
     rule r4_qtl_tiers:
         input:
             gate=_r4_qtl_gate,
-            summary="data/r4/results/{qtl_arm}/qtl_coloc_summary.tsv",
+            summary="data/r4/results/{qtl_arm}/qtl_coloc_summary_tierable.tsv",
             coloc=lambda w: r4qtl.coloc_inputs(w.qtl_arm),
             pph4="config/pph4_thresholds.yaml",
         output:

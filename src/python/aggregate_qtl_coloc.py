@@ -45,6 +45,22 @@ METADATA_COLS = [
     "status",
 ]
 
+# --with-method-columns (ta_r4 run_qtl_group_r4 docs): the row's method and posteriors, fallback_abf included
+METHOD_COLS = ["method", "fallback_reason", "none_status", "pp_h0", "pp_h1", "pp_h2", "pp_h3", "pp_h4"]
+
+
+def method_columns(data: dict, json_path: str) -> dict:
+    """method, fallback_reason, none_status (the status of a method none row) and the doc's top-level pp_h0..pp_h4
+    (for fallback_abf these are the fallback posteriors). A doc without a method is an error."""
+    method = data.get("method")
+    if not method:
+        raise ValueError(f"{Path(json_path).stem}: no method in {json_path}")
+    blank = lambda v: "" if v is None else v  # noqa: E731
+    row = {"method": method, "fallback_reason": blank(data.get("fallback_reason")),
+           "none_status": blank(data.get("status")) if method == "none" else ""}
+    row.update({f"pp_h{i}": blank(data.get(f"pp_h{i}")) for i in range(5)})
+    return row
+
 
 def parse_coloc_json(json_path: str) -> dict:
     """Parse a single QTL coloc JSON file and extract the summary row.
@@ -110,6 +126,11 @@ def main():
         required=True,
         help="Output summary TSV path",
     )
+    parser.add_argument(
+        "--with-method-columns",
+        action="store_true",
+        help="add " + ", ".join(METHOD_COLS) + " (ta_r4 docs); a malformed doc or one without a method is an error",
+    )
     args = parser.parse_args()
 
     # Find all JSON files
@@ -128,6 +149,14 @@ def main():
     n_skipped = 0
     for jf in json_files:
         row = parse_coloc_json(jf)
+        if args.with_method_columns:
+            if row is None:
+                sys.exit(f"aggregate_qtl_coloc: malformed JSON {jf}")
+            try:
+                with open(jf) as f:
+                    row.update(method_columns(json.load(f), jf))
+            except ValueError as e:
+                sys.exit(f"aggregate_qtl_coloc: {e}")
         if row is not None:
             rows.append(row)
         else:
@@ -142,6 +171,7 @@ def main():
         + METADATA_COLS
         + SUMMARY_PP_COLS
         + ["hit1", "hit2"]
+        + (METHOD_COLS if args.with_method_columns else [])
     )
 
     # Write output TSV

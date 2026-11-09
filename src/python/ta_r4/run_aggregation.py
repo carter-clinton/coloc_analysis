@@ -3,7 +3,8 @@
 Reads trait-pair coloc JSONs only from paths.result_dirs('coloc') and fits only from result_dirs('fits'); the E7
 frozen side comes from the committed known-answer tables and the QTL_legacy tier table by explicit path. Every
 statistic comes from estimands / branch_classifier. Exits 2 and writes nothing unless estimands.output_status
-is FINAL; exits 3 and writes nothing if FINAL and coloc_coverage finds a missing or extra output (EUR or AFR);
+is FINAL; exits 3 and writes nothing if FINAL and coloc_coverage finds a missing or extra output (EUR or AFR) or a
+QTL arm's summary or tier table is missing;
 --draft (fixtures only) writes every table labelled DRAFT. Every table carries a coverage header line.
 """
 from __future__ import annotations
@@ -24,12 +25,13 @@ from ta_r4.commands import A1_FIT_ARMS, P12_KEYS
 TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_finemap_structure",
           "e4_no_cs_rate", "e4_cross_purity", "e5_diagnostics", "e6_panel_contrast", "e7_frozen_vs_fixed",
           "e8_simulation_rates", "afr_secondary", "negative_controls", "qtl_layer", "min_abs_corr_sweep",
-          "hla_exploratory", "table1_data", "row_drops")
+          "hla_exploratory", "table1_data", "row_drops", "qtl_rows")
 KNOWN_W3A = f"{paths.MAN}/known_answer_W3a.tsv"
 KNOWN_SH2B3 = f"{paths.MAN}/known_answer_sh2b3.tsv"
 SIM_DIR = f"{paths.R4}/results/sim"
 QTL_ARMS = ("QTL_A3", "QTL_A2", "QTL_legacy")
 QTL_TIERS = f"{paths.R4}/results/{{arm}}/qtl_tiers.tsv"
+QTL_SUMMARY = f"{paths.R4}/results/{{arm}}/qtl_coloc_summary.tsv"  # aggregate_qtl_coloc --with-method-columns
 QTL_JSON_DIR = f"{paths.R4}/results/QTL_A3/qtl"
 TIER_COLS = ["region", "ancestry", "tier", "best_gwas_pph4", "best_qtl_pph4", "resolving_gene", "resolving_tissue",
              "resolving_qtl_source", "all_supporting_sources", "neg_ctrl_set"]
@@ -136,6 +138,19 @@ def _qtl(repo):
     return layer, docs, tiers.get("QTL_legacy"), tiers.get("QTL_A3")
 
 
+def _qtl_rows(repo):
+    """Every row of each QTL arm's qtl_coloc_summary.tsv (coloc_susie, fallback_abf and none), with qtl_arm."""
+    t = [_read_tsv(p).assign(qtl_arm=a) for a in QTL_ARMS
+         for p in [Path(repo) / QTL_SUMMARY.format(arm=a)] if p.exists()]
+    t = pd.concat(t, ignore_index=True) if t else pd.DataFrame(columns=["qtl_coloc_id"]).assign(qtl_arm=None)
+    return t[["qtl_arm", *[c for c in t.columns if c != "qtl_arm"]]]
+
+
+def _qtl_missing(repo):
+    return [p for a in QTL_ARMS for p in (QTL_SUMMARY.format(arm=a), QTL_TIERS.format(arm=a))
+            if not (Path(repo) / p).exists()]
+
+
 def _ids(man, rules, **override):
     spec = {k: v for k, v in rules["confirmatory"]["rows"].items() if k not in ("p12_key", "a1_varset")}
     return set(estimands.select_manifest(man, {**spec, **override}).row_id)
@@ -214,6 +229,7 @@ def build_tables(repo, rules, man, rows, fits, purity_runner):
     nc = [c for c in rd.columns if c.startswith("n_none_")]
     rd[nc] = rd[nc].fillna(0).astype(int)
     t["row_drops"] = rd[["family", *[c for c in rd.columns if c != "family"]]]
+    t["qtl_rows"] = _qtl_rows(repo)
     return t
 
 
@@ -241,6 +257,12 @@ def run_aggregation(repo, out_dir, *, draft=False, purity_runner=_rscript_purity
         print("\n".join(paths_off[:20]), file=sys.stderr)
         if not draft:
             print("run_aggregation: FINAL refused, coloc coverage incomplete; nothing written", file=sys.stderr)
+            return 3
+    qmiss = _qtl_missing(repo)
+    if qmiss:
+        print("\n".join(f"MISSING {p}" for p in qmiss), file=sys.stderr)
+        if not draft:
+            print("run_aggregation: FINAL refused, QTL summary or tier table missing; nothing written", file=sys.stderr)
             return 3
     tables = build_tables(repo, rules, man, estimands.load_rows(repo, man), estimands.load_fits(repo), purity_runner)
     if tuple(tables) != TABLES:

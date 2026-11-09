@@ -22,7 +22,11 @@ MAN_REL = ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifes
 TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_finemap_structure",
           "e4_no_cs_rate", "e4_cross_purity", "e5_diagnostics", "e6_panel_contrast", "e7_frozen_vs_fixed",
           "e8_simulation_rates", "afr_secondary", "negative_controls", "qtl_layer", "min_abs_corr_sweep",
-          "hla_exploratory", "table1_data", "row_drops")
+          "hla_exploratory", "table1_data", "row_drops", "qtl_rows")
+QTL_ARMS = ("QTL_A3", "QTL_A2", "QTL_legacy")
+QTL_SUMMARY_HEAD = ("qtl_coloc_id\tqtl_source\ttissue\tgene_id\tregion\tancestry\tn_snps_overlap\tqtl_n\tqtl_sdy"
+                    "\tn_cs_gwas\tn_cs_qtl\tstatus\tPP.H0.abf\tPP.H1.abf\tPP.H2.abf\tPP.H3.abf\tPP.H4.abf\thit1\thit2"
+                    "\tmethod\tfallback_reason\tnone_status\tpp_h0\tpp_h1\tpp_h2\tpp_h3\tpp_h4\n")
 PAIRS = [("asthma", "bmi"), ("asthma", "t2d"), ("bmi", "t2d"), ("bmi", "stroke"), ("t2d", "stroke")]
 P12 = ("p12_primary", "p12_sensitivity")
 
@@ -80,6 +84,15 @@ def build_tree(root, nc_bump=0.0):
        "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA3\tcoloc_susie\t0\t0\t0\t0.9\t0.1\t0.1\t1\t1\t1:1\t1:2\t0.6\n")
     _w(res / "sim/CUR1.H3_r2_0.9.gen_1kg.tsv", "# status=no_qualifying_pair\nregion\tscenario\tgen_panel\trep\tseed"
        "\tarm\tmethod\tpp_h0\tpp_h1\tpp_h2\tpp_h3\tpp_h4\tpp_h4_max\tn_cs_a\tn_cs_b\tcausal_a\tcausal_b\tr2_causal\n")
+    for arm in QTL_ARMS:
+        _w(res / f"{arm}/qtl_coloc_summary.tsv", QTL_SUMMARY_HEAD
+           + "CUR0__x__eqtl__QTD1__G1\tgtex_eqtl\tLung\tG1\tCUR0\tEUR\t300\t500\t1\t1\t2\tsuccess\t0\t0.01\t0.04"
+             "\t0.05\t0.9\t1:1\t1:2\tcoloc_susie\t\t\t0\t0.01\t0.04\t0.05\t0.9\n"
+           + "CUR1__x__sqtl__QTD3__J1\tgtex_sqtl\tLung\tG3\tCUR1\tEUR\t280\t500\t1\t1\t0\tno_qtl_cs\t\t\t\t\t"
+             "\t\t\tfallback_abf\tqtl_n_cs==0\t\t0.01\t0.01\t0.01\t0.02\t0.95\n")
+        _w(res / f"{arm}/qtl_tiers.tsv", "region\tancestry\ttier\tbest_gwas_pph4\tbest_qtl_pph4\tresolving_gene"
+           "\tresolving_tissue\tresolving_qtl_source\tall_supporting_sources\tneg_ctrl_set\n"
+           "CUR0\tEUR\tTier A\t0.9\t0.9\tG1\tLung\tgtex_eqtl\tgtex_eqtl\t\n")
     for f in ("known_answer_W3a.tsv", "known_answer_sh2b3.tsv"):
         dst = root / MAN_REL / f
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -114,7 +127,7 @@ def test_cli_exit_2_without_draft(tmp_path):
     assert not (tmp_path / "out").exists() or not any((tmp_path / "out").iterdir())
 
 
-def test_draft_writes_exactly_18_draft_tables(tmp_path):
+def test_draft_writes_exactly_19_draft_tables(tmp_path):
     from ta_r4.run_aggregation import TABLES as T
 
     build_tree(tmp_path / "repo")
@@ -305,3 +318,26 @@ def test_row_drops_and_long_e6_tables(drafted):
     e6 = _read(root / "out", "e6_panel_contrast")
     assert set(e6.estimand) == {"E1", "E2", "E3", "E4", "E5", "drops"}
     assert set(e6.contrast) == {"A3_ukb_vs_A3_1kg", "A3_ukb_isect_vs_A3_1kg_isect"}
+
+
+def test_qtl_rows_exports_every_qtl_row_with_its_method(drafted):
+    """N12: every row of each QTL arm's qtl_coloc_summary.tsv, fallback_abf with its label and posterior."""
+    _, root = drafted
+    q = _read(root / "out", "qtl_rows")
+    assert list(q.columns[:2]) == ["qtl_arm", "qtl_coloc_id"]
+    assert len(q) == 2 * len(QTL_ARMS) and set(q.qtl_arm) == set(QTL_ARMS)
+    fb = q[q.method == "fallback_abf"]
+    assert len(fb) == 3 and set(fb.pp_h4) == {0.95} and fb["PP.H4.abf"].isna().all()
+
+
+@pytest.mark.parametrize("missing", ["QTL_A2/qtl_coloc_summary.tsv", "QTL_legacy/qtl_tiers.tsv"])
+def test_final_refuses_a_missing_qtl_table_and_draft_tolerates_it(tmp_path, missing):
+    repo = final_repo(tmp_path)
+    (repo / "data/r4/results" / missing).unlink()
+    out = tmp_path / "out"
+    assert _run(repo, out) == 3
+    assert not out.exists() or not any(out.iterdir())
+    assert _run(repo, out, draft=True) == 0
+    q = _read(out, "qtl_rows")
+    arm = missing.split("/")[0]
+    assert (arm in set(q.qtl_arm)) == missing.endswith("qtl_tiers.tsv")

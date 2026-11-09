@@ -262,6 +262,29 @@ def coloc_inputs(qtl_arm, pair_manifest="config/ta_r4/pair_manifest.tsv", manife
                       if r["admissible"] == "true" and r["ancestry"] == ANCESTRY and r["region_safe"] in regions)
 
 
+def tierable_summary(src, out):
+    """Copy the header and every method == coloc_susie row of an aggregate_qtl_coloc --with-method-columns summary.
+    fallback_abf and none rows are not tiered (D-02); a row with an empty method is an error. Returns (kept, total)."""
+    with open(src) as fh:
+        lines = fh.read().splitlines(keepends=True)
+    head = lines[0].rstrip("\n").split("\t")
+    if "method" not in head:
+        raise ValueError(f"{src}: no method column (aggregate_qtl_coloc.py --with-method-columns)")
+    i = head.index("method")
+    keep = []
+    for n, ln in enumerate(lines[1:], start=2):
+        m = ln.rstrip("\n").split("\t")[i]
+        if not m:
+            raise ValueError(f"{src}:{n}: empty method")
+        if m == "coloc_susie":
+            keep.append(ln)
+    tmp = f"{out}.tmp"
+    with open(tmp, "w") as fh:
+        fh.writelines([lines[0], *keep])
+    os.replace(tmp, out)
+    return len(keep), len(lines) - 1
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--qtl-arm", required=True, choices=sorted(QTL_ARMS))
@@ -272,7 +295,19 @@ def main(argv=None):
     ap.add_argument("--out-dir")
     ap.add_argument("--done", help="written only when coverage passes")
     ap.add_argument("--gwas-coloc-table", help="write the assign_tiers --gwas-coloc table and exit")
+    ap.add_argument("--tierable-summary", help="aggregate summary to filter to method == coloc_susie (with --out)")
+    ap.add_argument("--out", help="output of --tierable-summary")
     a = ap.parse_args(argv)
+    if a.tierable_summary:
+        if not a.out:
+            ap.error("--tierable-summary requires --out")
+        try:
+            kept, total = tierable_summary(a.tierable_summary, a.out)
+        except ValueError as e:
+            sys.stderr.write(f"[run_qtl_group_r4] {e}\n")
+            return 1
+        print(f"[run_qtl_group_r4] {a.qtl_arm} tierable summary: {kept} of {total} rows (method coloc_susie)")
+        return 0
     if a.gwas_coloc_table:
         n = gwas_coloc_table(a.qtl_arm, a.gwas_coloc_table, manifest=a.manifest)
         print(f"[run_qtl_group_r4] {a.qtl_arm} gwas coloc table: {n} rows")
