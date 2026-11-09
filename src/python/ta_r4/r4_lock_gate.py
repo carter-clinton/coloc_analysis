@@ -41,6 +41,17 @@ LOCKED_PATHS = (
     "src/python/ld_panel.py",
     "envs",
     f"{PHASE_REL}/manifests/panels_*.tsv",
+    "config/susie_policy.yaml",
+    "config/pipeline.yaml",
+    "src/snakemake/scripts/qtl_orient.R",
+    "config/qtl_sources.yaml",
+    "src/python/build_tissue_n_lookup.py",
+    "config/pph4_thresholds.yaml",
+    f"{PHASE_REL}/manifests/sumstats_r4_sha256.tsv",
+    f"{PHASE_REL}/manifests/catalogs_sha256.tsv",
+    f"{PHASE_REL}/manifests/qtl_harmonized_sha256.tsv",
+    f"{PHASE_REL}/manifests/known_answer_W3a.tsv",
+    f"{PHASE_REL}/manifests/known_answer_sh2b3.tsv",
 )
 STAGES = ("repro", "production")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")

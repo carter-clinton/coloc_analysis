@@ -400,3 +400,91 @@ def test_fixture_production_dry_run_passes_with_lock_then_refuses_on_drift(tmp_p
     arms.write_text(arms.read_text() + "\n# drift\n")
     rc, out = _dry_run(repo, "A3_1kg", "r4_gate_probe")
     assert rc != 0 and "LockGateError" in out and "drifted" in out, out[-2000:]
+
+
+# --- N3: every live analytical dependency is locked (W3f 15.2) ---------------------------------
+
+_MAN = f"{g.PHASE_REL}/manifests"
+#: Codex N3: shared configs/code read by R4 runs that LOCKED_PATHS omitted.
+N3_PATHS = ("config/susie_policy.yaml", "config/pipeline.yaml", "src/snakemake/scripts/qtl_orient.R",
+            "config/qtl_sources.yaml", "src/python/build_tissue_n_lookup.py", "config/pph4_thresholds.yaml")
+#: Found by the 15.2 dependency measurement (ta-r4-LOG 2026-11-09): read by the in-job input check / aggregation.
+N3_EXTRA = (f"{_MAN}/sumstats_r4_sha256.tsv", f"{_MAN}/catalogs_sha256.tsv", f"{_MAN}/qtl_harmonized_sha256.tsv",
+            f"{_MAN}/known_answer_W3a.tsv", f"{_MAN}/known_answer_sh2b3.tsv")
+#: Measured 2026-11-09 (ta-r4-LOG W3f 15.2 Task 1): every non-data repo file a production R4 run reads -> reader.
+R4_DEPENDENCIES = {
+    "Snakefile.ta_r4": "bin/r4_fire.sh",
+    "bin/r4_fire.sh": "operator",
+    "config/pipeline.yaml": "Snakefile.ta_r4:14 configfile; bin/r4_fire.sh --configfile",
+    "config/ta_r4/overlay_base.yaml": "bin/r4_fire.sh --configfile",
+    "config/ta_r4/overlay_A3_1kg.yaml": "bin/r4_fire.sh --configfile",
+    "config/ta_r4/cluster_lsf/config.yaml": "bin/r4_fire.sh --profile",
+    "config/ta_r4/regions_r4.csv": "Snakefile.ta_r4:31",
+    "config/ta_r4/pair_manifest.tsv": "Snakefile.ta_r4:49",
+    "config/ta_r4/qtl_manifest.tsv": "harmonize_qtl_r4.py:26",
+    "config/ta_r4/trait_manifest.tsv": "commands.py TRAIT_MANIFEST",
+    "config/ta_r4/coloc_priors.yaml": "commands.py COLOC_PRIORS",
+    "config/ta_r4/decision_rules.yaml": "estimands.py:22",
+    "config/ta_r4/simulation.yaml": "ta_r4_sim.smk:14",
+    "config/susie_policy.yaml": "arms.py:6 POLICY -> run_susie_rss.R --policy",
+    "config/qtl_sources.yaml": "harmonize_qtl_r4.py:29 -> run_qtl_group_r4.qtl_sdy",
+    "config/pph4_thresholds.yaml": "ta_r4_qtl.smk:141 -> assign_tiers.py --pph4-config",
+    "src/python/build_tissue_n_lookup.py": "harmonize_qtl_r4.py:22 import -> tissue_n -> --sample-size",
+    "src/snakemake/scripts/qtl_orient.R": "run_qtl_coloc.R:184-188, run_coloc_pair_r4.R:346 source()",
+    "src/snakemake/scripts/ld_allele_join.R": "run_qtl_coloc.R:181, run_coloc_pair_r4.R:345 source()",
+    "src/snakemake/scripts/run_qtl_coloc.R": "run_qtl_group_r4.py:25",
+    "src/snakemake/scripts/plink_ld_to_rds.R": "ta_r4_panels_afr_ukb.smk:37",
+    "src/snakemake/scripts/ta_r4/run_coloc_pair_r4.R": "commands.py COLOC_SCRIPT",
+    "src/snakemake/scripts/ta_r4/simulate_coloc_r4.R": "ta_r4_sim.smk:15",
+    "src/snakemake/scripts/ta_r4/cs_cross_purity.R": "run_aggregation.py:36",
+    "src/legacy/region_analysis/scripts/run_susie_rss.R": "arms.py:4 CURRENT_SCRIPT",
+    "src/python/ta_r4/commands.py": "ta_r4_*.smk",
+    "src/python/assign_tiers.py": "ta_r4_qtl.smk r4_qtl_tiers",
+    "src/python/aggregate_qtl_coloc.py": "ta_r4_qtl.smk r4_qtl_aggregate",
+    "src/python/harmonize_eqtl.py": "harmonize_qtl_r4.py",
+    "src/python/harmonize_sqtl.py": "harmonize_qtl_r4.py",
+    "src/python/ld_read_path.py": "commands.py:9",
+    "src/python/ld_panel.py": "ta_r4_finemap.smk resolve_ld_path",
+    "src/snakemake/rules/ta_r4_finemap.smk": "Snakefile.ta_r4:76 include",
+    "envs/r_coloc.yml": "ta_r4_*.smk conda:",
+    f"{_MAN}/panels_EUR_1kg_r4.tsv": "write_ld_receipt / validate_r4_fits",
+    f"{_MAN}/sumstats_r4_sha256.tsv": "verify_inputs (in-job)",
+    f"{_MAN}/catalogs_sha256.tsv": "verify_inputs (in-job)",
+    f"{_MAN}/qtl_harmonized_sha256.tsv": "verify_inputs via run_qtl_group_r4",
+    f"{_MAN}/known_answer_W3a.tsv": "run_aggregation.py:27",
+    f"{_MAN}/known_answer_sh2b3.tsv": "run_aggregation.py:28",
+}
+
+
+def test_n3_paths_exist_and_are_locked():
+    for p in N3_PATHS + N3_EXTRA:
+        assert (REPO_ROOT / p).is_file(), p
+    assert [p for p in N3_PATHS + N3_EXTRA if p not in LOCKED_PATHS] == []
+
+
+def test_every_measured_dependency_is_covered_by_locked_paths():
+    r = subprocess.run(["git", "ls-files", "--", *LOCKED_PATHS], cwd=REPO_ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    covered = set(r.stdout.splitlines())
+    assert [p for p in R4_DEPENDENCIES if p not in covered] == []
+
+
+@pytest.mark.parametrize("rel", N3_PATHS + N3_EXTRA)
+def test_g_drift_in_each_new_locked_path(tmp_path, rel):
+    repo = _repo(tmp_path)
+    f = repo / rel
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text("x\n")
+    git(repo, "add", rel)
+    git(repo, "commit", "-q", "-m", "dependency")
+    write_fixture_lock(repo)
+    assert check_lock_gate(repo, "production") is None
+    f.write_text("y\n")
+    git(repo, "commit", "-qam", "one-byte change after lock")
+    g._clear_cache()
+    msg = _raises(repo, "(g) locked paths drifted")
+    assert rel in msg
+    f.write_text("x\n")
+    git(repo, "commit", "-qam", "restore")
+    g._clear_cache()
+    assert check_lock_gate(repo, "production") is None
