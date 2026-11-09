@@ -501,8 +501,25 @@ def categorize(stats, rules) -> dict:
     return {"n_both_ok": bool(n_both_ok), "ci": ci, "mcnemar": mcn, "kappa_ok": kappa_ok}
 
 
-def contrast_stats(rows, X, ref, rules) -> dict:
-    """The confirmatory contrast X vs ref on the rows of rules['confirmatory']['rows'] only."""
+class ConfirmatoryIncomplete(ValueError):
+    """The observed outputs do not hold exactly one output per confirmatory manifest row on each side."""
+
+
+def _check_complete(rows, name, sides, ids, p12_key, a1_varset):
+    bad = []
+    for side in sides:
+        n = _side_rows(rows, side, ids, p12_key, a1_varset).row_id.value_counts()
+        missing, dup = sorted(set(ids) - set(n.index)), sorted(n.index[n > 1])
+        if missing or dup:
+            bad.append(f"{side}: {len(missing)} of {len(ids)} missing {missing[:5]}"
+                       + (f", {len(dup)} duplicated {dup[:5]}" if dup else ""))
+    if bad:
+        raise ConfirmatoryIncomplete(f"{name} ({p12_key}): confirmatory outputs incomplete: " + "; ".join(bad))
+
+
+def contrast_stats(rows, X, ref, rules, manifest) -> dict:
+    """The confirmatory contrast X vs ref on the rows of rules['confirmatory']['rows'] only. The expected rows come
+    from the pair manifest; any missing (or duplicated) output on either side raises ConfirmatoryIncomplete."""
     conf = rules["confirmatory"]
     name = f"{X}_vs_{ref}"
     if ref != conf["reference_arm"] or name not in conf["contrasts"]:
@@ -515,8 +532,8 @@ def contrast_stats(rows, X, ref, rules) -> dict:
     if sf["subset"] != "both_have_cs" or sf["call"] != conf["mcnemar_kappa"]["call"]:
         raise ValueError(f"region_signflip must use the both_have_cs subset and the mcnemar_kappa call: {sf}")
     spec = conf["rows"]
-    man = rows.drop_duplicates("row_id")[["row_id", *[k for k in spec if k in rows.columns and k != "p12_key"]]]
-    ids = set(select_manifest(man, {k: v for k, v in spec.items() if k != "p12_key"}).row_id)
+    ids = set(select_manifest(manifest, {k: v for k, v in spec.items() if k not in ("p12_key", "a1_varset")}).row_id)
+    _check_complete(rows, name, (X, ref), ids, spec["p12_key"], spec.get("a1_varset"))
     s = describe_contrast(rows, X, ref, rules, ids, spec["p12_key"], conf["both_have_cs"][name],
                           a1_varset=spec.get("a1_varset"), threshold=thr)
     s["categories"] = categorize(s, rules)

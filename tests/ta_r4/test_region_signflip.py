@@ -142,7 +142,7 @@ def _contrast(spec, rules):
             rows.append(r)
             docs += [doc(r["row_id"], "A2_identity", "p12_primary", x), doc(r["row_id"], "A3_1kg", "p12_primary", ref)]
     man = manifest(rows)
-    return contrast_stats(build_rows(docs, man), "A2_identity", "A3_1kg", rules)
+    return contrast_stats(build_rows(docs, man), "A2_identity", "A3_1kg", rules, man)
 
 
 B, C, N = (0.9, 0.1), (0.1, 0.9), (0.1, 0.1)   # X-only call, ref-only call, no call

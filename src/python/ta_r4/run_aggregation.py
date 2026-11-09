@@ -3,7 +3,8 @@
 Reads trait-pair coloc JSONs only from paths.result_dirs('coloc') and fits only from result_dirs('fits'); the E7
 frozen side comes from the committed known-answer tables and the QTL_legacy tier table by explicit path. Every
 statistic comes from estimands / branch_classifier. Exits 2 and writes nothing unless estimands.output_status
-is FINAL; --draft (fixtures only) writes every table labelled DRAFT.
+is FINAL; exits 3 and writes nothing if FINAL and coloc_coverage finds a missing or extra output (EUR or AFR);
+--draft (fixtures only) writes every table labelled DRAFT. Every table carries a coverage header line.
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ta_r4 import branch_classifier, estimands, paths
+from ta_r4 import branch_classifier, coloc_coverage, estimands, paths
 from ta_r4.arms import ARMS
 from ta_r4.commands import A1_FIT_ARMS, P12_KEYS
 
@@ -139,7 +140,7 @@ def build_tables(repo, rules, man, rows, fits, purity_runner):
     bo = []
     for name in conf["contrasts"]:
         x, r = name.split("_vs_")
-        s = estimands.contrast_stats(rows, x, r, rules)
+        s = estimands.contrast_stats(rows, x, r, rules, man)
         branch, via = branch_classifier.classify(s, rules)
         cat = s.pop("categories")
         bo.append({**s, **cat, "branch": branch, "via": via})
@@ -194,6 +195,12 @@ def build_tables(repo, rules, man, rows, fits, purity_runner):
     return t
 
 
+def _coverage(repo, man):
+    """(header text, {ancestry: (missing, extra)}) from coloc_coverage for EUR and AFR."""
+    res = {a: coloc_coverage.check(coloc_coverage.expected_ids(man, a), repo) for a in ("EUR", "AFR")}
+    return "; ".join(f"{a} missing={len(m)} extra={len(x)}" for a, (m, x) in res.items()), res
+
+
 def run_aggregation(repo, out_dir, *, draft=False, purity_runner=_rscript_purity) -> int:
     repo, out_dir = Path(repo), Path(out_dir)
     status = estimands.output_status(repo)
@@ -205,13 +212,21 @@ def run_aggregation(repo, out_dir, *, draft=False, purity_runner=_rscript_purity
         status = "DRAFT"
     rules = estimands.load_rules(repo)
     man = estimands.load_manifest(repo)
+    cov, res = _coverage(repo, man)
+    print(f"run_aggregation: coverage {cov}", file=sys.stderr)
+    paths_off = [f"{tag} {p}" for m, x in res.values() for tag, s in (("MISSING", m), ("EXTRA", x)) for p in sorted(s)]
+    if paths_off:
+        print("\n".join(paths_off[:20]), file=sys.stderr)
+        if not draft:
+            print("run_aggregation: FINAL refused, coloc coverage incomplete; nothing written", file=sys.stderr)
+            return 3
     tables = build_tables(repo, rules, man, estimands.load_rows(repo, man), estimands.load_fits(repo), purity_runner)
     if tuple(tables) != TABLES:
         raise RuntimeError(f"table set {sorted(tables)} != TABLES")
     out_dir.mkdir(parents=True, exist_ok=True)
     for name in TABLES:
         with open(out_dir / f"{name}.tsv", "w") as fh:
-            fh.write(f"# status={status}\n")
+            fh.write(f"# status={status}\n# coverage={cov}\n")
             tables[name].to_csv(fh, sep="\t", index=False, na_rep="NA")
     return 0
 

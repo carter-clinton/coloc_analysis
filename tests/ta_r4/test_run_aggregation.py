@@ -40,7 +40,8 @@ def _fit(n_cs):
 
 
 def build_tree(root, nc_bump=0.0):
-    """3 curated EUR regions (5 pairs) + 1 NC region (3 pairs); A1 matched/allvars, A2, A3; both p12 keys."""
+    """3 curated EUR regions (5 pairs) + 1 NC region (3 pairs); every EUR production arm and A1 matched/allvars,
+    both p12 keys: complete coloc coverage."""
     root = Path(root)
     rows = [mrow(f"CUR{i}", "EUR", p) for i in range(3) for p in PAIRS]
     rows += [mrow("NC_ABO", "EUR", p, row_class="negative_control", nc_set="blood_group") for p in PAIRS[:3]]
@@ -57,7 +58,8 @@ def build_tree(root, nc_bump=0.0):
         for k in P12:
             base = 0.3 + 0.03 * j + (0.01 if k == "p12_sensitivity" else 0)
             vals = {"A3_1kg": base, "A2_identity": min(base + 0.1 + 0.005 * j, 0.99) + (nc_bump if nc else 0),
-                    "A1_matched": min(base + 0.05, 0.99) + (nc_bump if nc else 0), "A1_allvars": 0.5}
+                    "A1_matched": min(base + 0.05, 0.99) + (nc_bump if nc else 0), "A1_allvars": 0.5,
+                    "A3_ukb": 0.4, "A3_ukb_isect": 0.4, "A3_1kg_isect": 0.4}
             for lab, h4 in vals.items():
                 d = doc(r["row_id"], lab, k, h4)
                 if lab.startswith("A1_"):
@@ -124,7 +126,8 @@ def test_draft_writes_exactly_17_draft_tables(tmp_path):
         assert (out / f"{t}.tsv").read_text().splitlines()[0] == "# status=DRAFT", t
 
 
-def test_final_label_with_fixture_lock_and_signoff(tmp_path):
+def final_repo(tmp_path):
+    """build_tree in a fixture lock repo with a matching W4a-T3 fixture sign-off: output_status FINAL."""
     import datetime as dt
 
     from ta_r4.r4_lock_gate import SIGNOFF_REL
@@ -143,6 +146,11 @@ def test_final_label_with_fixture_lock_and_signoff(tmp_path):
     raw += [f"partial_rule.{k}: {v}" for k, v in dr["partial_rule"].items()]
     raw += [f"confirmatory_sha256: {canonical_sha256(dr['confirmatory'])}", "draft: approved"]
     record_signoff("W4a-T3", "\n".join(raw) + "\n", min_date="2026-10-01", signoff_dir=repo / SIGNOFF_REL)
+    return repo
+
+
+def test_final_label_with_fixture_lock_and_signoff(tmp_path):
+    repo = final_repo(tmp_path)
     out = tmp_path / "out"
     assert _run(repo, out) == 0
     assert all((out / f"{t}.tsv").read_text().startswith("# status=FINAL\n") for t in TABLES)
@@ -175,7 +183,7 @@ def test_branch_outcomes_two_confirmatory_rows(drafted):
     rules = load_rules(root / "repo")
     rows = load_rows(root / "repo")
     for r in b.itertuples():
-        s = contrast_stats(rows, r.x, r.ref, rules)
+        s = contrast_stats(rows, r.x, r.ref, rules, m)
         assert (r.branch, r.via) == classify(s, rules)
         assert r.n_rows == 15 and r.n_both == s["n_both"]
     for t in TABLES:

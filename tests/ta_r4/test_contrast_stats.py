@@ -36,10 +36,10 @@ def _rows(docs, man):
     return build_rows(docs, man)
 
 
-def _cs(rows, x, rules):
+def _cs(rows, man, x, rules):
     from ta_r4.estimands import contrast_stats
 
-    return contrast_stats(rows, x, "A3_1kg", rules)
+    return contrast_stats(rows, x, "A3_1kg", rules, man)
 
 
 def _canon(d):
@@ -59,7 +59,7 @@ def test_real_manifest_confirmatory_rows(rules):
 
 
 def test_selection_is_read_from_the_yaml(tmp_path, rules):
-    from ta_r4.estimands import confirmatory_rows, load_manifest, load_rules
+    from ta_r4.estimands import ConfirmatoryIncomplete, confirmatory_rows, load_manifest, load_rules
 
     y = yaml.safe_load(RULES_PATH.read_text())
     y["confirmatory"]["rows"]["ancestry"] = "AFR"
@@ -69,15 +69,16 @@ def test_selection_is_read_from_the_yaml(tmp_path, rules):
     assert len(afr) == 30 and set(afr.ancestry) == {"AFR"}
     man, docs = universe()
     rows = _rows(docs, man)
-    assert _cs(rows, "A2_identity", rules)["n_rows"] == 50
-    assert _cs(rows, "A2_identity", load_rules(p))["n_rows"] == 0
+    assert _cs(rows, man, "A2_identity", rules)["n_rows"] == 50
+    with pytest.raises(ConfirmatoryIncomplete, match="AREG__AFR"):   # AFR selected; no A2/A3_1kg outputs there
+        _cs(rows, man, "A2_identity", load_rules(p))
 
 
 # ------------------------------------------------------------------ output shape and subsets
 
 def test_returned_keys_and_counts(uni, rules):
     man, docs = uni
-    s = _cs(_rows(docs, man), "A2_identity", rules)
+    s = _cs(_rows(docs, man), man, "A2_identity", rules)
     assert set(s) >= KEYS
     assert set(s["categories"]) == {"n_both_ok", "ci", "mcnemar", "kappa_ok"}
     assert s["n_rows"] == 50 and s["n_both"] == 50 and s["n_regions"] == 10
@@ -98,7 +99,7 @@ def test_clusters_are_the_confirmatory_regions(uni, rules, monkeypatch):
 
     monkeypatch.setattr(estimands, "cluster_bootstrap_ci", spy)
     man, docs = uni
-    _cs(_rows(docs, man), "A2_identity", rules)
+    _cs(_rows(docs, man), man, "A2_identity", rules)
     assert seen["clusters"] == {f"REG{i:02d}" for i in range(10)}
     assert (seen["B"], seen["seed"]) == (10000, 20261021)
 
@@ -116,8 +117,8 @@ def test_both_have_cs_subset_rules(uni, rules):
         if d["row_id"] in ids[3:5] and d["arm"] == "A3_1kg":
             d["method"] = "fallback_abf"
     rows = _rows(docs, man)
-    a2 = _cs(rows, "A2_identity", rules)
-    a1 = _cs(rows, "A1_matched", rules)
+    a2 = _cs(rows, man, "A2_identity", rules)
+    a1 = _cs(rows, man, "A1_matched", rules)
     assert (a2["n_rows"], a2["n_both"]) == (50, 45)
     assert (a1["n_rows"], a1["n_both"]) == (50, 48)
 
@@ -128,7 +129,7 @@ def test_mcnemar_b_c_orientation(rules):
     for i, rid in enumerate(man.row_id):
         x, ref = (0.9, 0.1) if i < 7 else ((0.1, 0.9) if i < 8 else (0.1, 0.1))
         docs += [doc(rid, "A2_identity", "p12_primary", x), doc(rid, "A3_1kg", "p12_primary", ref)]
-    s = _cs(_rows(docs, man), "A2_identity", rules)
+    s = _cs(_rows(docs, man), man, "A2_identity", rules)
     assert (s["mcnemar_b"], s["mcnemar_c"]) == (7, 1)
     assert s["mcnemar_p"] == pytest.approx(2 * 9 / 256)
     assert s["categories"]["mcnemar"] == "ns"
@@ -160,8 +161,8 @@ def test_non_confirmatory_rows_never_move_the_stats(uni, rules, what, pred):
     man, docs = uni
     rules = dict(rules, bootstrap_B=1000)  # selection property; B only sets run time
     for x in ("A2_identity", "A1_matched"):
-        base = _cs(_rows(docs, man), x, rules)
-        pert = _cs(_rows(_perturb(docs, man, pred), man), x, rules)
+        base = _cs(_rows(docs, man), man, x, rules)
+        pert = _cs(_rows(_perturb(docs, man, pred), man), man, x, rules)
         assert _canon(base) == _canon(pert), (what, x)
 
 
@@ -170,7 +171,7 @@ def test_one_confirmatory_row_moves_the_median(uni, rules):
 
     man, docs = uni
     rows = _rows(docs, man)
-    base = _cs(rows, "A2_identity", rules)
+    base = _cs(rows, man, "A2_identity", rules)
     sub = e1_paired_delta(rows, "A2_identity", "A3_1kg", "p12_primary", "both methods coloc_susie")["both_have_cs"]
     sub = sub[sub.row_id.isin(set(man.row_id[man.row_class == "primary"]))].sort_values("delta")
     target = sub.row_id.iloc[len(sub) // 2 - 1]
@@ -178,7 +179,7 @@ def test_one_confirmatory_row_moves_the_median(uni, rules):
     for d in pert:
         if d["row_id"] == target and d["arm"] == "A2_identity" and d["p12_key"] == "p12_primary":
             d["pp_h4"] = d["pp_h4_max"] = 0.0
-    s = _cs(_rows(pert, man), "A2_identity", rules)
+    s = _cs(_rows(pert, man), man, "A2_identity", rules)
     assert s["median_delta"] != base["median_delta"]
 
 
@@ -231,7 +232,7 @@ def test_ci_undefined_for_n_both_below_two(rules, n_both):
     for i, rid in enumerate(man.row_id):
         m = "coloc_susie" if i < n_both else "fallback_abf"
         docs += [doc(rid, "A2_identity", "p12_primary", 0.9), doc(rid, "A3_1kg", "p12_primary", 0.2, method=m)]
-    s = _cs(_rows(docs, man), "A2_identity", rules)
+    s = _cs(_rows(docs, man), man, "A2_identity", rules)
     assert s["n_both"] == n_both and s["n_rows"] == 3
     assert math.isnan(s["ci_lo"]) and math.isnan(s["ci_hi"])
     assert s["categories"]["ci"] == "incl0"
@@ -243,7 +244,7 @@ def test_kappa_undefined_reported_na(rules):
     docs = []
     for rid in man.row_id:
         docs += [doc(rid, "A2_identity", "p12_primary", 0.1), doc(rid, "A3_1kg", "p12_primary", 0.2)]
-    s = _cs(_rows(docs, man), "A2_identity", rules)
+    s = _cs(_rows(docs, man), man, "A2_identity", rules)
     assert math.isnan(s["kappa"]) and s["observed_agreement"] == 1.0
     assert s["categories"]["kappa_ok"] is True
 
@@ -254,6 +255,6 @@ def test_non_confirmatory_contrast_refused(uni, rules):
     man, docs = uni
     rows = _rows(docs, man)
     with pytest.raises(ValueError):
-        contrast_stats(rows, "A3_ukb", "A3_1kg", rules)
+        contrast_stats(rows, "A3_ukb", "A3_1kg", rules, man)
     with pytest.raises(ValueError):
-        contrast_stats(rows, "A2_identity", "A3_ukb", rules)
+        contrast_stats(rows, "A2_identity", "A3_ukb", rules, man)
