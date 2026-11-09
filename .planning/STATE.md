@@ -26,7 +26,16 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-09 — **TRACK A ta-r4: W3f 15.4 COMPLETE (N8 drops, N9, N10, N12, N14). NEXT = 15.5. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-09 16:25 EST — **TRACK A ta-r4: W3f 15.5 INTERRUPTED (session died mid-task, WIP uncommitted). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- 15.5 ran in session `b1f97279-8c68-4ff1-82f1-7f863029cf07`, which died ~14:38 EST. Slurm 1786449 (w3f5_diag) COMPLETED 0:0 before that.
+- Uncommitted WIP (not reviewed by the closing session): `src/python/ta_r4/measure_fit_eligibility.py`, `tests/ta_r4/test_measure_fit_eligibility.py`,
+  `manifests/w3f_fit_eligibility.tsv` (816 lines), `manifests/w3f_region_contribution_proxy.tsv` (21 lines), `osf-amendment-r4-DRAFT.md` (13+/13−).
+- Open at death (UNVERIFIED): only 16,907 of 1,853,501 rsids shared with the GRCh37 BMI file (0.9%) match position in asthma.EUR → likely GRCh38 / liftover needed.
+- Resume: in tmux on login01, `claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07` → "continue 15.5 from the asthma.EUR build check". Details: HANDOFF.json `ta_r4_w3f_15_5_in_progress`.
+- Then 15.6 → W4a-T3 (Carter lock; review 15.4 deviation 5 first).
+
+## 2026-11-09 — **TRACK A ta-r4: W3f 15.4 COMPLETE (N8 drops, N9, N10, N12, N14). NEXT = 15.5. NOTHING RUNNING.** (SUPERSEDED by the 15.5-interrupted block above)
 
 - W3f progress: 15.1–15.4 done; 15.5–15.6 pending; then W4a-T3 (Carter lock; decision_rules.yaml locked: false).
 - 15.4 commits: ade4e9c5 (row_drops; status-agnostic cross-purity over 8 pairs; leveled no-CS rates; E6/afr_secondary = E1–E5 + drops),
@@ -2606,7 +2615,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-04 (latest) - SESSION CLOSE at ta-r4 W4a-T3 (Tasks 1-2 a4090fa6/37265d09 pushed; FULL 2069/2017/52/0). Waiting on Carter: lock values + N1/N2/N7 decisions; recommended W3f fix-up before lock. Nothing running.
+Last activity: 2026-11-09 (latest) - SESSION CLOSE: W3f 15.1-15.4 pushed (fa0ebdb9); 15.5 interrupted (session b1f97279 died, WIP uncommitted); nothing running.
+Last activity (prior): 2026-11-04 - SESSION CLOSE at ta-r4 W4a-T3 (Tasks 1-2 a4090fa6/37265d09 pushed; FULL 2069/2017/52/0). Waiting on Carter: lock values + N1/N2/N7 decisions; recommended W3f fix-up before lock. Nothing running.
 Last activity (prior): 2026-10-29 - SESSION CLOSE mid ta-r4 W3a (Task 1 49a8f47b; repro fires 3/4 arms done, k2d_routeL 91/95; Task 3 pending). Next: finish W3a, then W3b (Carter).
 Last activity (prior): 2026-10-27 - ta-r4 W2b complete (AFR + UKB panels; FULL 1854/1804/50/0, 0 changed vs W2a). Next: W2c (Carter checkpoint).
 Last activity (prior): 2026-10-22 - ta-r4 W1 complete (E-2 fix, default-off; FULL 1800/1750/50/0, 0 changed vs W0d). Next: W2a.
