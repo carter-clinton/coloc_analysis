@@ -81,9 +81,11 @@ Every number in the body is copied from a committed file named here. `$P` = `.pl
 - Bootstrap clusters: region_safe of the confirmatory rows.
 - Both-have-CS subset per contrast (A2_identity_vs_A3_1kg: both methods coloc_susie; A1_matched_vs_A3_1kg: A3 method coloc_susie).
 - Confidence interval: median_delta_pph4 on the both_have_cs subset by region_cluster_bootstrap_percentile, 10000 resamples, seed 20261021, level 0.95.
-- McNemar test and Cohen's kappa: on the both_have_cs subset; a call is region_stat >= threshold_primary (threshold_primary = 0.8; region statistic for coloc_susie rows = pp_h4_max).
+- Cohen's kappa and the row-level McNemar test (descriptive; not used for categories): on the both_have_cs subset; a call is region_stat >= threshold_primary (threshold_primary = 0.8; region statistic for coloc_susie rows = pp_h4_max).
+- Region-level sign-flip test (decides the mcnemar category): on the both_have_cs subset; a call is region_stat >= threshold_primary; d_r = b_r - c_r per region (b = X calls H4 and A3 does not; c = the reverse); T = sum of d_r over regions; p = two-sided P(|T*| >= |T|) over all 2^k sign assignments of the k regions with d_r != 0, exact when k <= 20; if k > exact_max_k: bootstrap_B draws with bootstrap_seed, p = (1 + #{|T*| >= |T|}) / (B + 1) (bootstrap_B = 10000, bootstrap_seed = 20261021).
 - n_both: the size of the both_have_cs subset.
-- Categories (alpha = 0.025): n_both_ok: n_both >= n_both_min. ci: pos if ci_lo > 0; neg if ci_hi < 0; else incl0. mcnemar: sig_X_gt_A3 if p < alpha and b > c; sig_A3_gt_X if p < alpha and c > b; else ns. kappa_ok: kappa >= kappa_cut; if kappa undefined, observed_agreement == 1.
+- n_regions: the number of distinct regions in the both_have_cs subset; n_regions_min = 7.
+- Categories (alpha = 0.025): n_both_ok: n_both >= n_both_min and n_regions >= n_regions_min. ci: pos if ci_lo > 0; neg if ci_hi < 0; else incl0. mcnemar: sig_X_gt_A3 if signflip_p < alpha and T > 0; sig_A3_gt_X if signflip_p < alpha and T < 0; else ns (decided by region_signflip; row-level McNemar is descriptive). kappa_ok: kappa >= kappa_cut; if kappa undefined, observed_agreement == 1.
 - Classifier precedence (first match wins): n_both, ci_includes_0, ci_mcnemar_agree, partial_rule.
 - Never classifier inputs: negative_control rows (pre-specified specificity analysis); AFR rows (secondary); p12_sensitivity; A1 allvars; A3_ukb / A3_ukb_isect / A3_1kg_isect (E6); repro arms.
 

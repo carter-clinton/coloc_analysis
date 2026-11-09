@@ -48,6 +48,7 @@ def render_confirmatory(rules) -> str:
     both = "; ".join(f"{k}: {v}" for k, v in c["both_have_cs"].items())
     ci = c["ci"]
     mk = c["mcnemar_kappa"]
+    sf = c["region_signflip"]
     lines = [
         f"- Contrasts: {_fmt(c['contrasts'])}; reference arm {c['reference_arm']}.",
         f"- Row set: pair-manifest rows with {rows}.",
@@ -55,10 +56,15 @@ def render_confirmatory(rules) -> str:
         f"- Both-have-CS subset per contrast ({both}).",
         f"- Confidence interval: {ci['statistic']} on the {ci['subset']} subset by {ci['method']}, "
         f"{rules['bootstrap_B']} resamples, seed {rules['bootstrap_seed']}, level {rules['ci_level']}.",
-        f"- McNemar test and Cohen's kappa: on the {mk['subset']} subset; a call is {mk['call']} "
-        f"(threshold_primary = {rules['threshold_primary']}; region statistic for coloc_susie rows = "
-        f"{rules['region_stat_coloc_susie']}).",
+        f"- Cohen's kappa and the row-level McNemar test (descriptive; not used for categories): on the "
+        f"{mk['subset']} subset; a call is {mk['call']} (threshold_primary = {rules['threshold_primary']}; region "
+        f"statistic for coloc_susie rows = {rules['region_stat_coloc_susie']}).",
+        f"- Region-level sign-flip test (decides the mcnemar category): on the {sf['subset']} subset; a call is "
+        f"{sf['call']}; d_r = {sf['d_r']}; {sf['statistic']}; p = {sf['p']}, exact when k <= {sf['exact_max_k']}; "
+        f"{sf['monte_carlo']} (bootstrap_B = {rules['bootstrap_B']}, bootstrap_seed = {rules['bootstrap_seed']}).",
         f"- n_both: the size of the {c['n_both']['subset']} subset.",
+        f"- n_regions: the number of distinct regions in the {c['n_regions']['subset']} subset; "
+        f"n_regions_min = {c['n_regions_min']}.",
         f"- Categories (alpha = {rules['alpha']}): n_both_ok: {cat['n_both_ok']}. ci: {cat['ci']}. "
         f"mcnemar: {cat['mcnemar']}. kappa_ok: {cat['kappa_ok']}.",
         f"- Classifier precedence (first match wins): {_fmt(rules['precedence'])}.",

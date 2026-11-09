@@ -143,7 +143,25 @@ def test_render_confirmatory_reads_the_yaml():
     for needle in (str(rules["confirmatory"]["clusters"]), str(rules["threshold_primary"]), str(rules["alpha"]),
                    str(rules["bootstrap_B"]), str(rules["bootstrap_seed"]), "n_both >= n_both_min"):
         assert needle in out
+    sf = rules["confirmatory"]["region_signflip"]
+    for needle in (sf["d_r"], sf["statistic"], sf["p"], sf["monte_carlo"], f"k <= {sf['exact_max_k']}",
+                   f"n_regions_min = {rules['confirmatory']['n_regions_min']}", "row-level McNemar test (descriptive",
+                   "n_regions >= n_regions_min"):
+        assert needle in out, needle
     assert epb.render_confirmatory(rules) == out
+
+
+@pytest.mark.parametrize("path, value", [(("confirmatory", "n_regions_min"), 6),
+                                         (("confirmatory", "region_signflip", "exact_max_k"), 19)])
+def test_confirmatory_check_fails_on_a_changed_signflip_rule(path, value):
+    text = epb.extract(DRAFT)
+    rules = _rules()
+    assert confirmatory_problem(text, rules) == []
+    d = rules
+    for k in path[:-1]:
+        d = d[k]
+    d[path[-1]] = value
+    assert confirmatory_problem(text, rules), f"{path} = {value} must render text the extract lacks"
 
 
 # ------------------------------------------------------------------ the DRAFT
