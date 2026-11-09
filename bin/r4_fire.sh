@@ -7,8 +7,8 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO"
 
-PY=/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11
-SMK=/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake
+PY=${R4_FIRE_PY:-/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11}
+SMK=${R4_FIRE_SMK:-/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/snakemake}
 CONDA_BIN=/rs1/researchers/c/ckclinto/miniconda3/condabin
 R4_CONDA_PREFIX=/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4
 R4_CONDARC=$R4_CONDA_PREFIX/condarc
@@ -57,14 +57,17 @@ bash bin/r4_link_storage.sh >/dev/null
 mkdir -p data/r4/logs/lsf
 
 if [ "$STAGE" = production ]; then
-    DIRTY=$(git status --porcelain -- Snakefile.ta_r4 src/python/ta_r4 src/snakemake config/ta_r4 src/legacy)
+    LOCKED=$(cd src/python && "$PY" -m ta_r4.r4_lock_gate paths)
+    set -f
+    DIRTY=$(git status --porcelain -- $LOCKED)
+    set +f
     if [ -n "$DIRTY" ]; then
         echo "REFUSED: uncommitted changes in the analysis tree (production runs committed, locked code):" >&2
         echo "$DIRTY" >&2
         exit 2
     fi
     (cd src/python && "$PY" -m ta_r4.r4_lock_gate check --stage production)
-    echo "Do not commit locked paths until this fire ends: in-job gate checks re-diff them against the lock commit."
+    echo "Do not commit locked paths until this fire ends: every production job re-runs the lock gate before reading inputs and fails on drift from the lock commit."
 fi
 
 exec "$SMK" -s Snakefile.ta_r4 \

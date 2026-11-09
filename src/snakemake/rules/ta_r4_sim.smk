@@ -61,9 +61,14 @@ if ARM == "A3_1kg":
         resources:
             mem_mb=8000,
         params:
+            gate=shlex.join(r4cmd.gate_command(STAGE)),
             cmd=_r4_sim_cmd,
         shell:
-            "{params.cmd} > {log} 2>&1"
+            r"""
+            set -euo pipefail
+            {params.gate}
+            {params.cmd} > {log} 2>&1
+            """
 
     rule r4_sim_all:
         input:

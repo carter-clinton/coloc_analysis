@@ -7,6 +7,7 @@ A3_1kg, QTL_A2 in A2_identity: production, gated; QTL_legacy in repro_routeL: re
 ta_r4.run_qtl_group_r4.
 """
 
+import shlex
 import sys
 
 from ta_r4 import commands as r4cmd
@@ -57,6 +58,10 @@ def _r4_qtl_gate(w):
     stage = arm_stage(r4qtl.fit_arm(w.qtl_arm))
     check_lock_gate(Path(workflow.basedir), stage)
     return [LOCK_RECORD_REL] if stage == "production" else []
+
+
+def _r4_qtl_gate_cmd(w):
+    return shlex.join(r4cmd.gate_command(arm_stage(r4qtl.fit_arm(w.qtl_arm))))
 
 
 def _r4_qtl_group_inputs(w):
@@ -110,8 +115,10 @@ if R4_QTL_ARM is not None:
         resources:
             mem_mb=config["resources"]["default_mem_mb"],
         params:
+            gate=_r4_qtl_gate_cmd,
             py=sys.executable,
         shell:
+            "set -euo pipefail\n{params.gate}\n"
             "env PYTHONPATH=src/python {params.py} -m ta_r4.run_qtl_group_r4 --qtl-arm {wildcards.qtl_arm}"
             " --region {wildcards.region} --source {wildcards.source} --qtd {wildcards.qtd}"
             " --manifest {input.manifest} --done {output} > {log} 2>&1"
@@ -128,8 +135,10 @@ if R4_QTL_ARM is not None:
         wildcard_constraints:
             qtl_arm=R4_QTL_ARM,
         params:
+            gate=_r4_qtl_gate_cmd,
             py=sys.executable,
         shell:
+            "set -euo pipefail\n{params.gate}\n"
             "{params.py} src/python/aggregate_qtl_coloc.py --json-dir data/r4/results/{wildcards.qtl_arm}/qtl"
             " --manifest {input.manifest} --output {output} > {log} 2>&1"
 
@@ -148,8 +157,10 @@ if R4_QTL_ARM is not None:
         wildcard_constraints:
             qtl_arm=R4_QTL_ARM,
         params:
+            gate=_r4_qtl_gate_cmd,
             py=sys.executable,
         shell:
+            "set -euo pipefail\n{params.gate}\n"
             "(env PYTHONPATH=src/python {params.py} -m ta_r4.run_qtl_group_r4 --qtl-arm {wildcards.qtl_arm}"
             " --gwas-coloc-table {output.gwas} && {params.py} src/python/assign_tiers.py --input {input.summary}"
             " --gwas-coloc {output.gwas} --pph4-config {input.pph4} --output {output.tiers} --sweep"

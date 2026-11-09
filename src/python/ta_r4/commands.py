@@ -95,6 +95,15 @@ def receipt_command(arm, trait, ancestry, region_safe):
     return cmd + (["--legacy-any"] if _legacy(arm) else [])
 
 
+def gate_command(stage):
+    """The offline lock gate, re-run as the first command of every production job (fresh process, no cache)."""
+    if stage == "repro":
+        return ["true"]
+    if stage != "production":
+        raise ValueError(f"stage {stage!r}")
+    return _PY + ["ta_r4.r4_lock_gate", "check", "--stage", "production"]
+
+
 def _verify(arm, manifests, files):
     """Production only: repro catalogs of the NC regions are not in catalogs_sha256.tsv (measured W3f 15.2)."""
     if ARMS[arm]["stage"] != "production":

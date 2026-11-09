@@ -133,7 +133,7 @@ def test_final_label_with_fixture_lock_and_signoff(tmp_path):
 
     repo = make_fixture_repo(tmp_path)
     build_tree(repo)
-    git(repo, "add", "config/ta_r4/pair_manifest.tsv")
+    git(repo, "add", "config/ta_r4/pair_manifest.tsv", f"{MAN_REL}/known_answer_W3a.tsv", f"{MAN_REL}/known_answer_sh2b3.tsv")
     git(repo, "commit", "-q", "-m", "fixture manifest")
     write_fixture_lock(repo)
     dr = yaml.safe_load((repo / "config/ta_r4/decision_rules.yaml").read_text())

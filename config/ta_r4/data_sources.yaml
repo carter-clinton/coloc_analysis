@@ -101,7 +101,7 @@ sources:
     build: GRCh37
     checksum: {sha256: 7cf7723ae0a6e6d05780d76ad53f922ec3a130c47ea38db26b1001911d6e4e8f, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
   sumstats_t2d_AFR:
-    name: T2D AFR (DIAMANTE 2022)
+    name: T2D AFR (T2DGGI AFA, Suzuki 2024)
     url: data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
     license: public summary statistics (config/datasets.yaml diamante2022_t2d)
     public: true
