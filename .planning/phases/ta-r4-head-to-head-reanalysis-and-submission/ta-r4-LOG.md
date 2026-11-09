@@ -807,3 +807,33 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
 - SH2B3_12q24 hypertension × stroke: 589 = 0 direct + 589 panel_exact + 0 swapped + 0 strand; 622 = 0 + 622 + 0 + 0; n_snps 583, rc 0.
 - Close (Slurm 1716306): plan verify 104P/1S; QUICK 531P/2S in 185.9 s (over the 120 s budget); HEAVY 1F/95P/4S →
   test_fit_rds_unchanged_by_the_fix (pre-fix 656529a rejects the N1 flag) → 215ddde3 → 3P (Slurm 1717387); PINS 39P.
+
+## 2026-11-09 — W3f 15.2 (N3 locked paths; N4 in-job input sha256; N5 in-job gate; T1 label)
+
+- Commits: 82490835 (N3), 6312db61 (N4), d61fb081 (N5 + r4_fire.sh + T1). Pushed to origin/m3-W2-aou-deltas.
+- **N3 dependency measurement** (grep of quoted repo paths across Snakefile.ta_r4, ta_r4_*.smk, ta_r4/*.py, bin/r4_fire.sh;
+  `source(`/`file.path(` in the R scripts; repo-local imports of the ta_r4 modules and shared helpers). Live non-data reads not
+  previously locked: config/susie_policy.yaml (arms.py:6), config/pipeline.yaml (Snakefile.ta_r4:14, r4_fire.sh --configfile),
+  src/snakemake/scripts/qtl_orient.R (run_qtl_coloc.R:184-188, run_coloc_pair_r4.R:346), config/qtl_sources.yaml
+  (harmonize_qtl_r4.py:29), src/python/build_tissue_n_lookup.py (harmonize_qtl_r4.py:22), config/pph4_thresholds.yaml
+  (ta_r4_qtl.smk:141); plus, found by the measurement: manifests/{sumstats_r4,catalogs,qtl_harmonized}_sha256.tsv (read by
+  the N4 in-job check) and manifests/known_answer_{W3a,sh2b3}.tsv (run_aggregation.py:27-28). 6 + 5 = 11 entries appended.
+  Not added (builder inputs whose outputs are locked or hash-checked): config/negative_controls.yaml (build_pair_manifest →
+  pair_manifest.tsv, locked), config/regions_curated_grch38.csv + review_decisions (build_qtl_manifest → qtl_manifest.tsv,
+  locked), config/eqtl_catalogue_qtd_map.yaml + manifests/qtl_downloads_sha256.tsv (pre-gate downloads/harmonize → harmonized
+  files, sha-checked in-job), collect_region_variants.py / build_ld_rds.py / ukb337k_tiles (catalogs sha-checked in-job;
+  panels md5-checked by write_ld_receipt). Enforcer: test_lock_gate.py::test_every_measured_dependency_is_covered_by_locked_paths
+  (41-entry R4_DEPENDENCIES).
+- **N4 input listing** (production arms, admissible pair_manifest rows + QTL manifest rows): sumstats 8 listed / 8,
+  catalogs 29 / 29, harmonized QTL 23,310 / 23,310 (116,550 qtl_manifest rows). Repro arms: sumstats 8/8 but catalogs 10/29 —
+  unlisted = 19 data/r4/ld/variants_legacy/NC_*.tsv → verification applied to production arms only (repro renders `true`);
+  QTL_legacy inputs are all listed, so run_qtl_group_r4 verifies every QTL arm. Cost: stroke.EUR 137 MB verifies in 0.8 s.
+- RED/GREEN/NC under data/r4/tmp/w3f2/: t1_red 13F → t1_green 77P/2S; t1_nc (susie_policy removed) 3F.
+  t2_red collection error, t2_red2 11F/10P → 21P; t2_nc1 (skip unlisted) 2F; t2_nc2 (no verify in run_group) 4F.
+  t3_red 16F/3P; fire RED with old DIRTY list (susie_policy dirty → rc 0, SMK called); globbing-on RED (deleted ta_r4_b.smk
+  missed) → set -f → 5P; t3_green 19P (gate rc 0 before drift, 1 after); t3_nc1 (gate only in finemap) 6F/1P; t3_nc2 2F.
+- Task 2 verify Slurm 1782976: 64 passed. Close Slurm 1783263 (c203n05, tree = d61fb081 less the aggregation fixture fix):
+  plan verify T3 104P; HEAVY 115P / 4S (the W5a/W5b skips) in 29m15s; PINS 39P; QUICK 566P / 1F / 2S —
+  test_run_aggregation::test_final_label_with_fixture_lock_and_signoff: its fixture left the now-locked known-answer tables
+  untracked → gate (h) → status DRAFT. Fixture now commits them (assertions unchanged). QUICK rerun Slurm 1783856: 567P / 2S
+  in 137.7 s (566 + 1 = 567; over the 120 s budget, carried to 15.6). FULL not run (plan §C list: QUICK, HEAVY, PINS).

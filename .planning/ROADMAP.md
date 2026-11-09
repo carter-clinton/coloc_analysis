@@ -683,15 +683,15 @@ Plans:
 - [x] ta-r4-W1-e2-orientation-tdd-PLAN.md — E-2 fix: BMI alleles, panel REF/ALT, QTL-beta orientation (TDD, default-off)
 - [x] ta-r4-W2a-eur-panels-catalogs-identity-PLAN.md — 1000G EUR legacy + R4 panels, A2/k2d payloads, trait manifest
 - [x] ta-r4-W2b-afr-and-ukb-panels-PLAN.md — AFR 661/504 panels, legacy AFR, UKB 337k loader + isolated, re-oriented panels
-- [ ] ta-r4-W2c-qtl-downloads-manifest-and-panel-review-PLAN.md — GTEx v8 QTL downloads, static QTL manifest + cost per scope, Carter data review (human-action)
-- [ ] ta-r4-W2d-apply-review-decisions-PLAN.md — apply Carter's ukb_native (HM3) and qtl_scope decisions before the lock
+- [x] ta-r4-W2c-qtl-downloads-manifest-and-panel-review-PLAN.md — GTEx v8 QTL downloads, static QTL manifest + cost per scope, Carter data review (human-action)
+- [x] ta-r4-W2d-apply-review-decisions-PLAN.md — apply Carter's ukb_native (HM3) and qtl_scope decisions before the lock
 - [x] ta-r4-W3a-known-answer-routes-PLAN.md — Route L vs Route C reproduction of the frozen fits + k2d (382 fits)
 - [x] ta-r4-W3b-sh2b3-known-answer-and-findings-PLAN.md — SH2B3 R2-exact known answer, findings report, Carter review (human-action)
 - [x] ta-r4-W3c-simulation-harness-PLAN.md — E8 known-truth simulation harness (pre-lock code)
 - [x] ta-r4-W3d-estimators-and-branch-classifier-PLAN.md — E1-E8 estimators, confirmatory contrast_stats, total ordered branch classifier, coloc coverage + run_aggregation (pre-lock code)
 - [x] ta-r4-W3e-qtl-harmonize-and-group-runner-PLAN.md — QTL harmonization + group runner (pre-lock code)
-- [ ] ta-r4-W3f-producer-cap-fit-names-early-exit-PLAN.md — W3f: cap after panel restriction (N1), panel-mediated fit-name alignment (N2), method none outputs (N8), DEC entries
-- [ ] ta-r4-W3f-lock-paths-input-sha-in-job-gate-PLAN.md — W3f: LOCKED_PATHS complete (N3), in-job input sha256 (N4), in-job lock gate (N5), AFR T2D label (T1)
+- [x] ta-r4-W3f-producer-cap-fit-names-early-exit-PLAN.md — W3f: cap after panel restriction (N1), panel-mediated fit-name alignment (N2), method none outputs (N8), DEC entries
+- [x] ta-r4-W3f-lock-paths-input-sha-in-job-gate-PLAN.md — W3f: LOCKED_PATHS complete (N3), in-job input sha256 (N4), in-job lock gate (N5), AFR T2D label (T1)
 - [ ] ta-r4-W3f-signflip-region-floor-coverage-PLAN.md — W3f: exact region sign-flip test + n_regions_min 7 (N7), completeness + coverage-gated FINAL (N6)
 - [ ] ta-r4-W3f-reporting-widening-qtl-sim-PLAN.md — W3f: row_drops (N8), widened E4/E6 (N9/N10), QTL fallback export (N12), simulation policy (N14)
 - [ ] ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md — W3f: no-fit eligibility recount, region-contribution proxy, DRAFT matches code, new confirmatory_sha256

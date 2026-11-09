@@ -26,7 +26,17 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-05 — **TRACK A ta-r4: W3f 15.1 COMPLETE (N1, N2, N8). NEXT = 15.2. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-09 — **TRACK A ta-r4: W3f 15.2 COMPLETE (N3, N4, N5, T1). NEXT = 15.3. NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- W3f progress: 15.1, 15.2 done; 15.3–15.6 pending; then W4a-T3 (Carter lock; decision_rules.yaml locked: false).
+- 15.2 commits: 82490835 (N3 LOCKED_PATHS 18→29), 6312db61 (N4 in-job sha256 of sumstats/catalogs/QTL), d61fb081 (N5 in-job gate in
+  7 production rules; r4_fire.sh DIRTY = gate paths under set -f; T1 AFR T2D = T2DGGI AFA, Suzuki 2024). SUMMARY:
+  `ta-r4-W3f-lock-paths-input-sha-in-job-gate-SUMMARY.md`.
+- Close: Slurm 1783263 HEAVY 115P/4S, PINS 39P, plan verify 104P; QUICK 567P/2S in 137.7 s (Slurm 1783856; over 120 s, for 15.6).
+- Residual for 15.5/Carter: trait_manifest.tsv t2d AFR evidence text still says data_sources labels it DIAMANTE 2022 (stale).
+- Next: `/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission` → 15.3.
+
+## 2026-11-05 — **TRACK A ta-r4: W3f 15.1 COMPLETE (N1, N2, N8). NEXT = 15.2. NOTHING RUNNING.** (SUPERSEDED by the 2026-11-09 block above)
 
 - W3f progress: 15.1 done; 15.2–15.6 pending; then W4a-T3 (Carter lock; decision_rules.yaml locked: false).
 - 15.1 commits: 6c6e9546 + 1f771281 (N1 cap after LD restriction, flag-gated) + re-pins 3e895261, e5792b8b; 7a3415df (N2 + N8);
