@@ -17,7 +17,7 @@ from pathlib import Path
 
 import yaml
 
-from ta_r4 import paths
+from ta_r4 import paths, verify_inputs
 from ta_r4.arms import ARMS
 from ta_r4.commands import COLOC_PRIORS, COLOC_SCRIPT, TRAIT_MANIFEST
 from ta_r4.harmonize_qtl_r4 import MANIFEST, QTL_SOURCES, group_index, harmonized_path, manifest_rows, tissue_n
@@ -206,10 +206,24 @@ def coverage(odir, expected_ids):
     return sorted(exp - got), sorted(got - exp)
 
 
+INPUT_MANIFESTS = (verify_inputs.QTL_HARMONIZED, verify_inputs.SUMSTATS, verify_inputs.CATALOGS)
+
+
+def group_inputs(qtl_arm, rows):
+    """Every harmonized QTL file, GWAS sumstats file and (allele-join arms) catalog the group's rows read."""
+    fa = fit_arm(qtl_arm)
+    files = {harmonized_path(r["source"], r["qtd"], r["molecular_trait_id"], r["region_safe"]) for r in rows}
+    files |= {paths.sumstats_path(r["trait"], ANCESTRY, fa) for r in rows}
+    if QTL_ARMS[qtl_arm]["ld_allele_join"] == "true":
+        files |= {catalog(qtl_arm, r["region_safe"]) for r in rows}
+    return sorted(files)
+
+
 def run_group(qtl_arm, region, source, qtd, manifest=MANIFEST, odir=None, run=subprocess.run):
     rows = group_rows(manifest_rows(manifest), region, source, qtd)
     if not rows:
         raise ValueError(f"no manifest rows for {region} {source} {qtd}")
+    verify_inputs.verify(group_inputs(qtl_arm, rows), INPUT_MANIFESTS)
     odir = odir or out_dir(qtl_arm)
     tmpdir = f"{paths.R4}/tmp/qtl_runner/{qtl_arm}/{region}.{source}.{qtd}"
     Path(odir).mkdir(parents=True, exist_ok=True)
@@ -265,7 +279,11 @@ def main(argv=None):
         return 0
     if not (a.region and a.source and a.qtd):
         ap.error("--region, --source and --qtd are required")
-    counts, missing, extra = run_group(a.qtl_arm, a.region, a.source, a.qtd, manifest=a.manifest, odir=a.out_dir)
+    try:
+        counts, missing, extra = run_group(a.qtl_arm, a.region, a.source, a.qtd, manifest=a.manifest, odir=a.out_dir)
+    except verify_inputs.InputIntegrityError as e:
+        sys.stderr.write(f"[run_qtl_group_r4] InputIntegrityError: {e}\n")
+        return 1
     print(f"[run_qtl_group_r4] {a.qtl_arm} {a.region} {a.source} {a.qtd} methods={counts}")
     if missing or extra:
         sys.stderr.write(f"[run_qtl_group_r4] COVERAGE FAILED missing={len(missing)} extra={len(extra)}\n")

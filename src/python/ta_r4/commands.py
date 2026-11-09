@@ -6,7 +6,7 @@ import csv
 import sys
 
 from ld_read_path import ld_allele_aware, ld_file_authoritative
-from ta_r4 import paths
+from ta_r4 import paths, verify_inputs
 from ta_r4.arms import ARMS, CURRENT_SCRIPT
 
 SUSIE_MAX_VARIANTS = 16000  # finemap.smk params.susie_max_variants default
@@ -95,6 +95,23 @@ def receipt_command(arm, trait, ancestry, region_safe):
     return cmd + (["--legacy-any"] if _legacy(arm) else [])
 
 
+def _verify(arm, manifests, files):
+    """Production only: repro catalogs of the NC regions are not in catalogs_sha256.tsv (measured W3f 15.2)."""
+    if ARMS[arm]["stage"] != "production":
+        return ["true"]
+    cmd = _PY + ["ta_r4.verify_inputs"]
+    for m in manifests:
+        cmd += ["--manifest", m]
+    for f in files:
+        cmd += ["--file", f]
+    return cmd
+
+
+def verify_command(arm, trait, ancestry, region_safe):
+    return _verify(arm, (verify_inputs.SUMSTATS, verify_inputs.CATALOGS),
+                   (paths.sumstats_path(trait, ancestry, arm), paths.catalog_path(ARMS[arm]["route"], region_safe)))
+
+
 def validate_command(arm, trait, ancestry, region_safe):
     return _PY + ["ta_r4.validate_r4_fits", "--mode", ARMS[arm]["validator_mode"],
                   "--fit", paths.fit_json(arm, trait, ancestry, region_safe),
@@ -135,3 +152,11 @@ def coloc_command(arm, row, p12_key, mode):
                   "--regions-csv", paths.regions_csv(), "--trait-manifest", TRAIT_MANIFEST,
                   "--priors", COLOC_PRIORS, "--p12-key", p12_key, "--row-id", row["row_id"], "--arm", out_arm,
                   "--output", coloc_output(arm, row, p12_key, mode)]
+
+
+def coloc_verify_command(arm, row, mode):
+    if mode not in COLOC_MODES:
+        raise ValueError(f"mode {mode!r}")
+    anc = row["ancestry"]
+    return _verify(arm, (verify_inputs.SUMSTATS,),
+                   (paths.sumstats_path(row["trait_a"], anc, arm), paths.sumstats_path(row["trait_b"], anc, arm)))

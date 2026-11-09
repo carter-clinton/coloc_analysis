@@ -132,6 +132,17 @@ def build_pair_regions(root, regions, fit_arm="A3_1kg", identity_arm=None):
     return root
 
 
+def write_input_manifests(root, sumstats=(), catalogs=(), harmonized=()):
+    """Fixture sha256 records at the R4 manifest paths, read by the in-job input check (ta_r4.verify_inputs)."""
+    from ta_r4 import verify_inputs as V
+    root = Path(root)
+    for rel, key, files in ((V.SUMSTATS, "path", sumstats), (V.CATALOGS, "rel_path", catalogs),
+                            (V.QTL_HARMONIZED, "rel_path", harmonized)):
+        if files:
+            _write_tsv(root / rel, [key, "sha256"],
+                       [{key: f, "sha256": hashlib.sha256((root / f).read_bytes()).hexdigest()} for f in sorted(set(files))])
+
+
 def link_repo_files(root, arms=("A3_1kg",)):
     """Policy/overlays/priors copied; frozen script, src/python and the R4 scripts dir symlinked."""
     root = Path(root)
@@ -225,6 +236,8 @@ def build_toy_workflow(tmp_path):
     build_pair_regions(repo, TOY_REGIONS, fit_arm="A3_1kg", identity_arm="A2_identity")
     _write_tsv(repo / "config/ta_r4/pair_manifest.tsv", PAIR_HDR, [pair_row(r.region_id) for r in TOY_REGIONS])
     write_trait_manifest(repo)
+    write_input_manifests(repo, sumstats=[paths.sumstats_path(t, ANC, a) for a in TOY_ARMS for t in (TRAIT_A, TRAIT_B)],
+                          catalogs=[paths.catalog_path("r4", r.region_id) for r in TOY_REGIONS])
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "toy inputs")
     write_fixture_lock(repo)

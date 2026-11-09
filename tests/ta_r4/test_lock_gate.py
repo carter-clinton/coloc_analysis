@@ -439,6 +439,7 @@ R4_DEPENDENCIES = {
     "src/snakemake/scripts/ta_r4/cs_cross_purity.R": "run_aggregation.py:36",
     "src/legacy/region_analysis/scripts/run_susie_rss.R": "arms.py:4 CURRENT_SCRIPT",
     "src/python/ta_r4/commands.py": "ta_r4_*.smk",
+    "src/python/ta_r4/verify_inputs.py": "commands.verify_command (in-job)",
     "src/python/assign_tiers.py": "ta_r4_qtl.smk r4_qtl_tiers",
     "src/python/aggregate_qtl_coloc.py": "ta_r4_qtl.smk r4_qtl_aggregate",
     "src/python/harmonize_eqtl.py": "harmonize_qtl_r4.py",

@@ -52,6 +52,7 @@ rule r4_run_finemap:
     resources:
         mem_mb=config["resources"]["default_mem_mb"],
     params:
+        verify=lambda w: shlex.join(r4cmd.verify_command(ARM, w.trait, w.ancestry, w.region)),
         check=lambda w, input: "true" if _R4_LEGACY else shlex.join(["test", "-s", input.ld_matrix]),
         receipt=lambda w: shlex.join(r4cmd.receipt_command(ARM, w.trait, w.ancestry, w.region)),
         fit=lambda w: shlex.join(r4cmd.fit_command(ARM, w.trait, w.ancestry, w.region, config,
@@ -60,6 +61,7 @@ rule r4_run_finemap:
     shell:
         r"""
         set -euo pipefail
+        {params.verify}
         {params.check}
         {params.receipt}
         {params.fit}

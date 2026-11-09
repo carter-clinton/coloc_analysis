@@ -123,6 +123,10 @@ def build(root):
     link = root / "src/snakemake/scripts"
     link.parent.mkdir(parents=True, exist_ok=True)
     link.symlink_to(REPO_ROOT / "src/snakemake/scripts")
+    from .build_toy_workflow import write_input_manifests
+    write_input_manifests(root, sumstats=[paths.sumstats_path(t, "EUR", a) for a in ("A3_1kg", "repro_routeL") for t in TRAITS],
+                          catalogs=[paths.catalog_path(k, REGION) for k in ("r4", "legacy")],
+                          harmonized=[harmonized_path("eqtl", QTD, f, REGION) for f in FEATURES])
     (root / "build.out").write_text(r.stdout)
     return root
 

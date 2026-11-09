@@ -65,9 +65,14 @@ rule r4_coloc_pair:
     resources:
         mem_mb=config["resources"]["default_mem_mb"],
     params:
+        verify=lambda w: shlex.join(r4cmd.coloc_verify_command(ARM, _r4_coloc_row(w, arm_ancestries(ARM)), "susie")),
         cmd=lambda w: shlex.join(r4cmd.coloc_command(ARM, _r4_coloc_row(w, arm_ancestries(ARM)), w.p12key, "susie")),
     shell:
-        "{params.cmd} > {log} 2>&1"
+        r"""
+        set -euo pipefail
+        {params.verify} > {log} 2>&1
+        {params.cmd} >> {log} 2>&1
+        """
 
 
 if ARM in r4cmd.A1_FIT_ARMS:
@@ -89,7 +94,13 @@ if ARM in r4cmd.A1_FIT_ARMS:
         resources:
             mem_mb=config["resources"]["default_mem_mb"],
         params:
+            verify=lambda w: shlex.join(r4cmd.coloc_verify_command(
+                ARM, _r4_coloc_row(w, (r4cmd.A1_FIT_ARMS[ARM],)), f"A1_{w.varset}")),
             cmd=lambda w: shlex.join(r4cmd.coloc_command(
                 ARM, _r4_coloc_row(w, (r4cmd.A1_FIT_ARMS[ARM],)), w.p12key, f"A1_{w.varset}")),
         shell:
-            "{params.cmd} > {log} 2>&1"
+            r"""
+            set -euo pipefail
+            {params.verify} > {log} 2>&1
+            {params.cmd} >> {log} 2>&1
+            """

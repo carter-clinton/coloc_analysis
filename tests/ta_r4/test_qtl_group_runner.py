@@ -227,28 +227,44 @@ def test_deleted_output_fails_coverage(runs):
     assert G.coverage(odir, list(ID.values())) == ([], [])
 
 
+def _group_cli(root, odir, done, env):
+    return subprocess.run([sys.executable, "-m", "ta_r4.run_qtl_group_r4",
+                           "--qtl-arm", "QTL_A3", "--region", F.REGION, "--source", "eqtl", "--qtd", F.QTD,
+                           "--manifest", "config/ta_r4/qtl_manifest.tsv", "--out-dir", str(odir), "--done", str(done)],
+                          cwd=root, capture_output=True, text=True, env={**env, "PYTHONPATH": str(REPO_ROOT / "src/python")})
+
+
 @pytest.mark.r4_heavy
 def test_cli_exit_1_names_the_missing_row(runs, tmp_path):
-    """A group whose harmonized file for one feature is absent: that row fails, coverage exits 1 naming it."""
+    """A group whose run_qtl_coloc.R call fails for one feature: that row fails, coverage exits 1 naming it.
+    (Since W3f 15.2 an absent harmonized file fails input verification first: test_cli_absent_harmonized_file_...)"""
     root, _ = runs
-    h = root / harmonized_path("eqtl", F.QTD, F2, F.REGION)
-    keep = h.read_bytes()
-    h.unlink()
-    odir = tmp_path / "out"
-    try:
-        p = subprocess.run([sys.executable, "-m", "ta_r4.run_qtl_group_r4",
-                            "--qtl-arm", "QTL_A3", "--region", F.REGION, "--source", "eqtl", "--qtd", F.QTD,
-                            "--manifest", "config/ta_r4/qtl_manifest.tsv", "--out-dir", str(odir),
-                            "--done", str(tmp_path / "g.done")],
-                           cwd=root, capture_output=True, text=True,
-                           env={**F.r_env(), "PYTHONPATH": str(REPO_ROOT / "src/python")})
-    finally:
-        h.write_bytes(keep)
+    wrap = tmp_path / "bin"
+    wrap.mkdir()
+    (wrap / "Rscript").write_text(f'#!/bin/bash\nfor a in "$@"; do [ "$a" = {F2} ] && exit 3; done\n'
+                                  f'exec {F.RSCRIPT} "$@"\n')
+    (wrap / "Rscript").chmod(0o755)
+    env = F.r_env()
+    p = _group_cli(root, tmp_path / "out", tmp_path / "g.done", {**env, "PATH": f"{wrap}:{env['PATH']}"})
     assert p.returncode == 1, p.stderr[-2000:]
     assert "COVERAGE FAILED missing=2 extra=0" in p.stderr
     for t in F.TRAITS:
         assert f"missing {ID[(t, F2)]}" in p.stderr
     assert not (tmp_path / "g.done").exists()
+
+
+@pytest.mark.r4_heavy
+def test_cli_absent_harmonized_file_fails_input_verification(runs, tmp_path):
+    root, _ = runs
+    rel = harmonized_path("eqtl", F.QTD, F2, F.REGION)
+    keep = (root / rel).read_bytes()
+    (root / rel).unlink()
+    try:
+        p = _group_cli(root, tmp_path / "out", tmp_path / "g.done", F.r_env())
+    finally:
+        (root / rel).write_bytes(keep)
+    assert p.returncode == 1 and "InputIntegrityError" in p.stderr and rel in p.stderr, p.stderr[-2000:]
+    assert not (tmp_path / "g.done").exists() and not (tmp_path / "out").exists()
 
 
 @pytest.mark.r4_heavy
