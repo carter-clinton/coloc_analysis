@@ -855,3 +855,21 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
 - Truth table: 18 NON_INFORMATIVE / 3 NO_SYSTEMATIC_DIFFERENCE / 11 HETEROGENEOUS (3 + 8) / 2 INFLATION_SUPPORTED / 2 DEFLATION = 36.
 - Close Slurm 1784345: plan verify 111P / 61P / 62P+2S; QUICK 612P/2S in 189.2 s (567 + 45 new = 612; over 120 s, for 15.6);
   HEAVY 115P/4S in 32m00s; PINS 39P. FULL not run.
+
+## 2026-11-09 — W3f 15.4 (N8 row_drops; N9/N10 widened E4/E6; N12 QTL fallback export; N14 simulation)
+
+- Commits: ade4e9c5 (N8/N9/N10), bed315d4 (N12), 4d11c047 (N14). TABLES 17 -> 19 (+row_drops, +qtl_rows).
+- RED/GREEN/NC under data/r4/tmp/w3f4/: t1_red 14F/32P -> t1_green 46P; t1_nc1 (status == ok) 1F, t1_nc2 (old e6) 2F,
+  t1_nc3 (fallback as none) 2F (raises). t2_red 11F/49P, t2_red2 5F/1P -> t2_green 60P; t2_nc0 (unconditional columns) 1F,
+  t2_nc1 (summary-only PPs) 1F, t2_nc2 (fallback tiered) 2F. t3_red 13F/35P -> t3_green 81P; t3_nc1 (identity refit) 2F,
+  t3_nc2 (pooled) 2F, t3_nc3 (cell check off) 8F.
+- Track B (phase2 tier/qtl_coloc/sweep + track_b_isolation): 67P before (HEAD script) and 67P after. Default
+  aggregate_qtl_coloc output byte-identical to 319ae8f1.
+- QTL tier equality (full vs tierable): tier and best/resolving columns equal. Measured: all_supporting_sources narrows to
+  sources with coloc_susie rows; the sweep no longer counts a region without coloc_susie rows as Tier C (NaN comparison in
+  assign_tier), n_tier_c 1 -> 0 on the fixture at all 4 thresholds.
+- Committed simulation.yaml: expected_sim_cells = 100 cells, reps 200.
+- Close Slurm 1785577: plan verify 49P / 60P / 48P; QUICK 644P/2S in 181.0 s (612 + 32; over 120 s, for 15.6); HEAVY
+  116P/4S in 32m51s; PINS 39P. FULL not run.
+- For 15.5: DRAFT (e) E4/E6, (g) identity refit and pooling, (l) QTL fallback wording and the OPEN row still describe the
+  pre-15.4 code.
