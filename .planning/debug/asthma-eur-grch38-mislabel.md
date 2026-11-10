@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: fixing
 trigger: "asthma-eur-grch38-mislabel: pinned data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz (sha256 22b28075...) is GRCh38 but labelled GRCh37 (BUILD column + config/ta_r4/data_sources.yaml)"
 created: 2026-11-10
 updated: 2026-11-10
@@ -8,9 +8,9 @@ updated: 2026-11-10
 ## Current Focus
 
 hypothesis: CONFIRMED — asthma.EUR is GBMI GRCh38, never lifted; legacy harmonizer stamps the target build
-test: liftover verification job 1797818 (identity of non-coordinate columns, rsid join vs lifted AFR + GIANT BMI, 1kG REF check, negative controls)
-expecting: ~100% same-pos vs lifted AFR; REF/ALT vs 1kG like the AFR baseline; unlifted fails both
-next_action: CHECKPOINT returned — Carter decides repoint/pin, minus-strand allele handling, catalog/panel rebuild, claim disposition
+test: Carter approved items 1-3 (claims HOLD). Strand-corrected lifts pinned for the r4 route; measurement fits outside the workflow (measure_asthma_fix/) with rebuilt catalogs
+expecting: catalog contamination ~0; asthma.EUR panel-match like controls; non-asthma fits unchanged by the catalog swap
+next_action: catalog rebuild (control first) -> 144 measurement fits -> checkpoint on legacy-route / repro-arm overwrite and the missing Slurm runner
 
 ## Symptoms
 
@@ -64,10 +64,22 @@ started: GBMI release is GRCh38; liftover_asthma_afr.sh lifted only AFR. asthma.
   checked: r4 catalogs data/r4/ld/variants_r4 (31 regions) vs positions of the other 7 Track A files; AFR661/AFR504 panel .bim (built from r4 catalog positions)
   found: positions present ONLY because of pinned asthma.EUR: FTO 5,458/13,456; MC4R 5,298/13,929; SH2B3 4,387/10,483; APOL1 4,614/9,131; HLA 133,483/305,364 (39-50% of every region's catalog). Lifted asthma positions missing from the catalog: 984-22,818 per region. AFR 1kG panels: 0-16 variants per region at those positions (negligible). UKB native panels (catalog positions + allele-set match) NOT measured.
   implication: catalogs must be rebuilt after a repoint (and any catalog-derived panel: UKB native, k2d identity, AFR 1kG), which moves their sha pins.
+- timestamp: 2026-11-10
+  checked: strand-aware lift (Slurm 1798361 EUR, 1798362 AFR from asthma.AFR.grch38_backup) + verify 1798566 (liftover_strand/verify/)
+  found: EUR 27,892,702 = 43,249 unmapped + 1,187 contig + 2,986 chr-change + 1,677 minus-strand non-SNV dropped + 27,843,603 kept (41,167 minus-strand SNVs complemented, 7,000 of them A/T|C/G, listed). AFR 20,274,980 = 39,441 + 1,006 + 1,716 + 912 + 20,231,905 kept (22,936 complemented, 3,948 palindromic). Independent awk re-derivation (complement minus rows, drop dropped rows) md5 == output for both (EUR ebab3e70, AFR dd023ae4). Exact vs 1kG: EUR 98.7805% -> 98.9144%, AFR 99.5630% -> 99.6658%; minus-strand subsets EUR 2.03% -> 94.71%, AFR 0.89% -> 96.85%; residual complement class 24,272 -> 343 (EUR), 16,645 -> 61 (AFR). Same chr+pos: EUR vs AFR 10,992,346/10,992,346, EUR vs GIANT BMI 1,852,819/1,852,819, AFR vs GIANT BMI 1,844,557/1,844,557. NEGATIVE CONTROL: complementing 258,878 plus-strand SNVs (POS%100==0) drops EUR exact to 97.9854% and complement class to 168,632. sha256 EUR 49edfc54..., AFR 8828df14....
+  implication: strand step correct; accepted.
+- timestamp: 2026-11-10
+  checked: pinned asthma.AFR.tsv.bgz (19,695,660 rows) vs new AFR lift (20,231,905) vs backup (20,274,980), keyed on CHR,POS,BETA,SE,P,EAF,N,SNP_ID (afr_diff/)
+  found: pinned-only 3,634 = exactly the new lift's contig + chr-change + minus non-SNV drops; new-only 539,879 = all CHR 23. Every pinned row's values occur in the backup.
+  implication: liftover_asthma_afr.sh wrote "chr23" into the BED (absent from the chain), so the pinned AFR silently lost all of chrX. The new AFR keeps chrX as CHR 23 (BMI_Xq24 region is "X": every trait is no_variants there anyway, pre-existing).
+- timestamp: 2026-11-10
+  checked: rebuild of legacy catalog APOL1 from the ORIGINAL 8 files with smoke_dev python
+  found: sha 6dd7c3b2 != pinned 1cd2ffd0 (allele case and same-position row order differ: unstable sort/dedup is pandas-version dependent)
+  implication: catalogs must be rebuilt with the workflow env python_stats (8f7292f9...); control rerun with it.
 
 ## Resolution
 
 root_cause: GBMI 2021 asthma is GRCh38. src/legacy/region_analysis/scripts/harmonize_sumstats.py stamps BUILD = config genome_build (GRCh37) with no source-build check and no liftover; liftover_asthma_afr.sh lifted only AFR, so asthma.EUR.tsv.bgz kept GRCh38 coordinates under a GRCh37 label, copied into config/ta_r4/data_sources.yaml (build: GRCh37) and the sha pin.
-fix: (code, landed pre-checkpoint) harmonizer refuses when the dataset declares source_build != --build (config/datasets.yaml gbmi_asthma source_build: GRCh38); GRCh37 lift written as a NEW file data/r4/sumstats/asthma.EUR.grch37_lifted.tsv.bgz; position-measured build test over the 8 Track A files. NOT done (checkpoint): repoint paths.sumstats_path / data_sources.yaml / sha pin; any re-fit; any OSF/claim edit.
+fix: (strand + repoint, after Carter approval) liftover script complements minus-strand SNVs / drops minus-strand non-SNVs; new pins data/r4/sumstats/asthma.{EUR,AFR}.grch37_lifted_strand.tsv.bgz; paths.sumstats_path routes r4-route asthma to them; data_sources.yaml + sumstats_r4_sha256.tsv updated. (earlier, landed pre-checkpoint) harmonizer refuses when the dataset declares source_build != --build (config/datasets.yaml gbmi_asthma source_build: GRCh38); GRCh37 lift written as a NEW file data/r4/sumstats/asthma.EUR.grch37_lifted.tsv.bgz; position-measured build test over the 8 Track A files. NOT done (checkpoint): repoint paths.sumstats_path / data_sources.yaml / sha pin; any re-fit; any OSF/claim edit.
 verification: see Evidence (identity, rsid 100% vs native GRCh37, negative controls, REF check, RED->GREEN tests).
 files_changed: [src/legacy/region_analysis/scripts/harmonize_sumstats.py, src/legacy/region_analysis/scripts/dataset_config.py, config/datasets.yaml, src/legacy/region_analysis/scripts/liftover_sumstats_hg38_to_hg19.sh, src/python/ta_r4/sumstats_build.py, tests/ta_r4/fixtures/build_anchors_grch37_grch38.tsv, tests/ta_r4/test_sumstats_build.py, tests/ta_r4/test_harmonizer_source_build.py]

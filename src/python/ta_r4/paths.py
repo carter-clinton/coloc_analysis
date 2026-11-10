@@ -58,6 +58,8 @@ def ld_receipt_json(arm, trait, anc, region_safe):
 def sumstats_path(trait, anc, arm):
     if trait == "bmi" and anc == "EUR" and arms.ARMS[arm]["route"] == "r4":
         return f"{R4}/sumstats/bmi.EUR.r4_alleles.tsv.bgz"  # D-18
+    if trait == "asthma" and arms.ARMS[arm]["route"] == "r4":
+        return f"{R4}/sumstats/asthma.{anc}.grch37_lifted_strand.tsv.bgz"  # debug asthma-eur-grch38-mislabel
     return f"data/processed/sumstats_harmonized/{trait}.{anc}.tsv.bgz"
 
 

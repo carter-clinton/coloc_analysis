@@ -51,20 +51,28 @@ sources:
     checksum: {sha256: 0147fbcd0d12cc917f9c2babe8e6a462b3c51ce7ff885999f310c445c32b6587, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
 
   # The 8 Track A harmonized sumstats; sha256 pinned by .planning/amendments/sha256_manifest_harmonized_m1.tsv
+  # asthma: the GBMI harmonized files are GRCh38 (EUR was never lifted; AFR lost chrX and kept minus-strand
+  # alleles uncomplemented). Lifted with src/legacy/region_analysis/scripts/liftover_sumstats_hg38_to_hg19.sh
+  # (UCSC liftOver, hg38ToHg19 chain md5 ff3031d93792f4cbb86af44055efd903; minus-strand SNVs complemented,
+  # minus-strand non-SNVs dropped). lifted_from = the GRCh38 input; the legacy route still reads legacy_route_input.
   sumstats_asthma_EUR:
     name: asthma EUR (GBMI 2021)
-    url: data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz
+    url: data/r4/sumstats/asthma.EUR.grch37_lifted_strand.tsv.bgz
     license: public summary statistics (config/datasets.yaml gbmi_asthma)
     public: true
     build: GRCh37
-    checksum: {sha256: 22b2807551ca6a5967fa67ba81c7546cc66a7f3b9d0055cd23ddd8d2b3eda137, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    checksum: {sha256: 49edfc54ce3416844c855763ce710d1fd0171da2e9da6722a9fa09d0eb0c7e2b, manifest: .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/sumstats_r4_sha256.tsv}
+    lifted_from: {path: data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz, build: GRCh38, sha256: 22b2807551ca6a5967fa67ba81c7546cc66a7f3b9d0055cd23ddd8d2b3eda137}
+    legacy_route_input: {path: data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz, build: GRCh38, sha256: 22b2807551ca6a5967fa67ba81c7546cc66a7f3b9d0055cd23ddd8d2b3eda137}
   sumstats_asthma_AFR:
     name: asthma AFR (GBMI 2021)
-    url: data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz
+    url: data/r4/sumstats/asthma.AFR.grch37_lifted_strand.tsv.bgz
     license: public summary statistics (config/datasets.yaml gbmi_asthma)
     public: true
     build: GRCh37
-    checksum: {sha256: c9a723f3c900797692f54c6df5ae547840131f79a9a7891490d1670fc09a5c30, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    checksum: {sha256: 8828df143702bc6128cf7872ba789fe76626dbe63344660bd84eb78a91c0c0c0, manifest: .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/sumstats_r4_sha256.tsv}
+    lifted_from: {path: data/processed/sumstats_harmonized/asthma.AFR.grch38_backup.tsv.bgz, build: GRCh38, sha256: ffa899680245c9fa9aae21621d5b879698bb78d0c75d35752d1956de3a45f881}
+    legacy_route_input: {path: data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz, build: GRCh37, sha256: c9a723f3c900797692f54c6df5ae547840131f79a9a7891490d1670fc09a5c30}
   sumstats_bmi_EUR:
     name: BMI EUR (Yengo 2018)
     url: data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz

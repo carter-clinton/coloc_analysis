@@ -10,3 +10,7 @@ data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz	c914e16b6b4e3264993c39db14109
 data/processed/sumstats_harmonized/bmi.EUR.GIANT-UKBB.2018.GRCh37.tsv.bgz	0147fbcd0d12cc917f9c2babe8e6a462b3c51ce7ff885999f310c445c32b6587	42927731	input
 data/r4/sumstats/bmi.EUR.r4_alleles.tsv.bgz	2f87e771c5a20660611c3de5e737f6ab29ec66d45f1a62302532e6dc3bc5b1b4	44379564	output
 data/r4/sumstats/bmi.EUR.r4_alleles.tsv.bgz.tbi	36d01d38ead3e09ba7ba8ae4a9c93ba3a55eaf64a051f2e38c944b65d70f572a	1421927	output
+data/r4/sumstats/asthma.EUR.grch37_lifted_strand.tsv.bgz	49edfc54ce3416844c855763ce710d1fd0171da2e9da6722a9fa09d0eb0c7e2b	666755379	output
+data/r4/sumstats/asthma.EUR.grch37_lifted_strand.tsv.bgz.tbi	430b189508955f7391783dcf39ff46df888198fea663829c1f9890faf8dbc7cc	1754273	output
+data/r4/sumstats/asthma.AFR.grch37_lifted_strand.tsv.bgz	8828df143702bc6128cf7872ba789fe76626dbe63344660bd84eb78a91c0c0c0	449796052	output
+data/r4/sumstats/asthma.AFR.grch37_lifted_strand.tsv.bgz.tbi	cfb6fa075d9cece5e8381f0c8231dee0e078c13d857aa57858c44cf16bea53ee	1679847	output
