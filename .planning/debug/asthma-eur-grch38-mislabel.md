@@ -1,5 +1,5 @@
 ---
-status: fixing
+status: awaiting_human_verify
 trigger: "asthma-eur-grch38-mislabel: pinned data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz (sha256 22b28075...) is GRCh38 but labelled GRCh37 (BUILD column + config/ta_r4/data_sources.yaml)"
 created: 2026-11-10
 updated: 2026-11-10
@@ -10,7 +10,7 @@ updated: 2026-11-10
 hypothesis: CONFIRMED — asthma.EUR is GBMI GRCh38, never lifted; legacy harmonizer stamps the target build
 test: Carter approved items 1-3 (claims HOLD). Strand-corrected lifts pinned for the r4 route; measurement fits outside the workflow (measure_asthma_fix/) with rebuilt catalogs
 expecting: catalog contamination ~0; asthma.EUR panel-match like controls; non-asthma fits unchanged by the catalog swap
-next_action: catalog rebuild (control first) -> 144 measurement fits -> checkpoint on legacy-route / repro-arm overwrite and the missing Slurm runner
+next_action: CHECKPOINT — in-place rebuild of catalogs/panels/arm fits needs (a) a Slurm runner for bin/r4_fire.sh (LSF-only profile) and (b) a decision on overwriting repro-arm known-answer outputs
 
 ## Symptoms
 
@@ -76,6 +76,21 @@ started: GBMI release is GRCh38; liftover_asthma_afr.sh lifted only AFR. asthma.
   checked: rebuild of legacy catalog APOL1 from the ORIGINAL 8 files with smoke_dev python
   found: sha 6dd7c3b2 != pinned 1cd2ffd0 (allele case and same-position row order differ: unstable sort/dedup is pandas-version dependent)
   implication: catalogs must be rebuilt with the workflow env python_stats (8f7292f9...); control rerun with it.
+- timestamp: 2026-11-10
+  checked: catalog rebuild reproducibility control (measure_asthma_fix/catalogs/control, workflow env python_stats 8f7292f9)
+  found: rebuilding variants_legacy/APOL1 from the ORIGINAL 8 files reproduces the pinned sha 1cd2ffd0 only in the workflow's file order (config traits: bmi, t2d EUR, t2d AFR, hypertension, asthma EUR, asthma AFR, stroke EUR, stroke AFR); other orders give 6dd7c3b2 (dedup keep=first).
+  implication: rebuild method validated by identity before use.
+- timestamp: 2026-11-10
+  checked: rebuilt catalogs (12 legacy + 31 r4) in measure_asthma_fix/catalogs/ vs current; contamination = catalog positions present only in the GRCh38 asthma.EUR file and in none of the 8 corrected files (contamination.tsv)
+  found: old 669,105/1,571,591 = 42.58% (per region 30-50%, NC_IRF4 0); new 0/1,044,219. Correct asthma.EUR positions missing from catalog: old 65-22,808 per region, new 0.
+- timestamp: 2026-11-10
+  checked: 144 measurement fits outside the workflow (measure_asthma_fix/fits, fit_cmds.txt = commands.fit_command with sumstats/catalog/output substituted; all rc 0): repro_routeC semantics (legacy panel, snp_id join) asthma.EUR x 12 + 4 other EUR traits x 12 x {old,new catalog}; A3_1kg semantics (EUR_1kg_r4 panel, allele-aware, cap after LD) asthma x 4 claim regions + 4 traits x 4 x {old,new}. fit_summary.tsv, oldcat_vs_newcat.tsv, rds_compare.tsv
+  found: corrected asthma.EUR panel-match fraction (ld_overlap / window): repro SH2B3 0.183 (was 0.038), MC4R 0.339 (0.0035), APOL1 0.320 (0.012), FTO 0.376 (0.353), CXADR 0.351 (0.354); A3 SH2B3 0.188, MC4R 0.339, APOL1 0.326, FTO 0.377. Controls: t2d.EUR (the other dense imputed file) repro 0.26-0.44, A3 0.25-0.40; hypertension/stroke/bmi repro 0.97-1.00, A3 0.85-0.88. Corrected asthma.EUR credible sets (purity 0.5 / JSON): repro SH2B3 0/0, MC4R 0/0, APOL1 0/0, FTO 9/9 singletons (non_converged), CXADR 0/0; A3 SH2B3 0, MC4R 0, APOL1 0, FTO 1 (95 variants). Existing mislabelled record (JSON = unfiltered sets): SH2B3 1 CS/140 (0 at purity 0.5), MC4R 1/5 (0), APOL1 1/43 (0), FTO 6 (6), CXADR 10 x ~4,510 (0).
+  implication: the Fig 1B "SH2B3 asthma.EUR flagship 1 CS/140" was an impure set on mislocated data; corrected data give 0 CS at SH2B3, MC4R, APOL1 in both routes.
+- timestamp: 2026-11-10
+  checked: non-asthma fits, old vs new catalog
+  found: repro_routeC (snp_id join): hypertension 12/12, stroke 12/12, t2d 12/12 JSON-identical; bmi 5/12 identical, all 11 fitted have the same variant set; determinism control (bmi SLC2A9 and SH2B3 re-run on the SAME old catalog) also differs (SLC2A9 5 vs 3 CS, max |dPIP| 0.125) -> bmi legacy fits are not run-to-run reproducible, the catalog is not shown to change them. A3_1kg (allele-aware catalog join): hypertension 0/4, stroke 0/4, t2d 0/4 identical, bmi 3/4: the contaminated catalog REMOVED other traits' variants, e.g. FTO t2d 5,860 -> 8,417, hypertension 1,785 -> 2,292, stroke 1,858 -> 2,416; SH2B3 hypertension 2 CS -> 1, FTO t2d CS sizes unchanged in count.
+  implication: catalogs keep one row per rsid (collect_region_variants primary_key = SNP_ID, keep first): GRCh38 asthma.EUR rows, earlier in file order, evicted the GRCh37 rows of the same rsid (mechanism inferred from code; effect measured). Production (r4 route) fits of EVERY trait would have been affected; legacy-route repro fits of hypertension/stroke/t2d are not.
 
 ## Resolution
 
