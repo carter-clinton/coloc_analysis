@@ -133,6 +133,11 @@ def main():
         config_path=args.datasets_config,
         dataset_name=args.dataset_name,
     )
+    if meta.get("source_build") and meta["source_build"] != args.build:
+        raise ValueError(
+            f"{meta['dataset']} {args.trait}/{args.ancestry} is {meta['source_build']}; this harmonizer "
+            f"does not lift over and would stamp BUILD={args.build}"
+        )
 
     sep = meta.get("sep", "\t")
     compression = meta.get("compression")

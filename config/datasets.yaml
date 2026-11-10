@@ -12,6 +12,7 @@ datasets:
   gbmi_asthma:
     description: "GBMI asthma summary statistics (May 2021 release)."
     base_url: "https://gbmi-sumstats.s3.amazonaws.com"
+    source_build: GRCh38
     defaults:
       compression: "gzip"
       sep: "\t"

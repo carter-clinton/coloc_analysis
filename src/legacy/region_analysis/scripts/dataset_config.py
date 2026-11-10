@@ -128,6 +128,10 @@ def dataset_descriptor(
         "snp_id_columns": ancestry_cfg.get("snp_id_columns")
         or trait_cfg.get("snp_id_columns")
         or defaults.get("snp_id_columns"),
+        "source_build": ancestry_cfg.get("source_build")
+        or trait_cfg.get("source_build")
+        or defaults.get("source_build")
+        or dataset.get("source_build"),
     }
     return descriptor
 
