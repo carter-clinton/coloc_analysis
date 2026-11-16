@@ -54,7 +54,7 @@ then
 fi
 
 bash bin/r4_link_storage.sh >/dev/null
-mkdir -p data/r4/logs/lsf
+mkdir -p data/r4/logs/slurm
 
 if [ "$STAGE" = production ]; then
     LOCKED=$(cd src/python && "$PY" -m ta_r4.r4_lock_gate paths)
@@ -73,4 +73,4 @@ fi
 exec "$SMK" -s Snakefile.ta_r4 \
     --configfile config/pipeline.yaml config/ta_r4/overlay_base.yaml "config/ta_r4/overlay_${ARM}.yaml" \
     --use-conda --conda-prefix "$R4_CONDA_PREFIX" \
-    --profile config/ta_r4/cluster_lsf "$@"
+    --profile config/ta_r4/cluster_slurm "$@"

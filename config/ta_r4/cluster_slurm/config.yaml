@@ -1,0 +1,21 @@
+# ta-r4 Snakemake Slurm profile (LSF retired 2026-11-03). Used only by bin/r4_fire.sh.
+# Jobs inherit the fire shell's environment (--export=ALL: conda on PATH, isolated CONDARC/HOME); every rule that
+# calls Rscript runs in its conda env. runtime = -t minutes; sizes from the LSF max observed (data/r4/logs/lsf).
+cluster: "sbatch --parsable -p compute -A clintonlab_cpu -q normal --export=ALL -c {threads} --mem={resources.mem_mb} -t {resources.runtime} -J r4.{rule} -o data/r4/logs/slurm/%j.{rule}.out -e data/r4/logs/slurm/%j.{rule}.err"
+cluster-status: "config/ta_r4/cluster_slurm/status.sh"
+cluster-cancel: "scancel"
+default-resources:
+  - "mem_mb=8000"
+  - "runtime=60"
+# r4_run_finemap: LSF max 2243 s, 27 GB RSS (8 GB was requested; LSF did not enforce it, Slurm does).
+set-resources:
+  - "r4_run_finemap:mem_mb=48000"
+  - "r4_run_finemap:runtime=180"
+  - "r4_panel_ukb_native:runtime=120"
+jobs: 200
+latency-wait: 120
+max-status-checks-per-second: 1
+use-conda: true
+conda-frontend: conda
+rerun-incomplete: true
+keep-going: true
