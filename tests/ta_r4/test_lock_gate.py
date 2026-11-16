@@ -420,6 +420,7 @@ R4_DEPENDENCIES = {
     "config/ta_r4/overlay_A3_1kg.yaml": "bin/r4_fire.sh --configfile",
     "config/ta_r4/cluster_slurm/config.yaml": "bin/r4_fire.sh --profile",
     "config/ta_r4/cluster_slurm/status.sh": "cluster_slurm/config.yaml cluster-status",
+    "config/ta_r4/cluster_slurm/jobscript.sh": "cluster_slurm/config.yaml jobscript",
     "config/ta_r4/regions_r4.csv": "Snakefile.ta_r4:31",
     "config/ta_r4/pair_manifest.tsv": "Snakefile.ta_r4:49",
     "config/ta_r4/qtl_manifest.tsv": "harmonize_qtl_r4.py:26",

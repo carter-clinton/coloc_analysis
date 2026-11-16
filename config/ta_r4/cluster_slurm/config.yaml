@@ -1,8 +1,11 @@
 # ta-r4 Snakemake Slurm profile (LSF retired 2026-11-03). Used only by bin/r4_fire.sh.
 # Jobs inherit the fire shell's environment (--export=ALL: conda on PATH, isolated CONDARC/HOME); every rule that
-# calls Rscript runs in its conda env. runtime = -t minutes; sizes from the LSF max observed (data/r4/logs/lsf).
-cluster: "sbatch --parsable -p compute -A clintonlab_cpu -q normal --export=ALL -c {threads} --mem={resources.mem_mb} -t {resources.runtime} -J r4.{rule} -o data/r4/logs/slurm/%j.{rule}.out -e data/r4/logs/slurm/%j.{rule}.err"
+# calls Rscript runs in its conda env. cascadelake only (Carter 2026-11-16): OpenBLAS picks its kernel by CPU and
+# non-converged fits differ between the AVX-512 and AVX2 kernels; OPENBLAS_CORETYPE is never set.
+# runtime = -t minutes; sizes from the LSF max observed (data/r4/logs/lsf).
+cluster: "sbatch --parsable -p compute -A clintonlab_cpu -q normal --constraint=cascadelake --export=ALL -c {threads} --mem={resources.mem_mb} -t {resources.runtime} -J r4.{rule} -o data/r4/logs/slurm/%j.{rule}.out -e data/r4/logs/slurm/%j.{rule}.err"
 cluster-status: "config/ta_r4/cluster_slurm/status.sh"
+jobscript: "config/ta_r4/cluster_slurm/jobscript.sh"
 cluster-cancel: "scancel"
 default-resources:
   - "mem_mb=8000"

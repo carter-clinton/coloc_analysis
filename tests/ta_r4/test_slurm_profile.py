@@ -17,8 +17,12 @@ import yaml
 REPO = Path(__file__).resolve().parents[2]
 PROFILE = REPO / "config/ta_r4/cluster_slurm"
 STATUS = PROFILE / "status.sh"
+JOBSCRIPT = PROFILE / "jobscript.sh"
 SMK = str(Path(sys.executable).parent / "snakemake")
 REQUIRED = (("-p", "compute"), ("-A", "clintonlab_cpu"), ("-q", "normal"))
+#: Carter 2026-11-16: OpenBLAS picks its kernel by CPU; pinned fits reproduce only on the AVX-512 kernel
+CONSTRAINT = "--constraint=cascadelake"
+BLAS_ENV = "blas_env=unset,2"  # OPENBLAS_CORETYPE never set; OPENBLAS_VERBOSE=2 logs the selected core
 #: rule -> (runtime minutes, mem_mb) the profile must submit with
 EXPECTED = {"toy_default": (60, 8000), "r4_run_finemap": (180, 48000), "r4_panel_ukb_native": (120, 48000)}
 
@@ -28,23 +32,23 @@ rule all:
 
 rule toy_default:
     output: "out/toy_default.txt"
-    shell: "echo ok > {output}"
+    shell: "echo blas_env=${{OPENBLAS_CORETYPE:-unset}},${{OPENBLAS_VERBOSE:-unset}} >&2; echo ok > {output}"
 
 rule r4_run_finemap:
     output: "out/r4_run_finemap.txt"
     resources: mem_mb=8000
-    shell: "echo ok > {output}"
+    shell: "echo blas_env=${{OPENBLAS_CORETYPE:-unset}},${{OPENBLAS_VERBOSE:-unset}} >&2; echo ok > {output}"
 
 rule r4_panel_ukb_native:
     output: "out/r4_panel_ukb_native.txt"
     resources: mem_mb=48000
-    shell: "echo ok > {output}"
+    shell: "echo blas_env=${{OPENBLAS_CORETYPE:-unset}},${{OPENBLAS_VERBOSE:-unset}} >&2; echo ok > {output}"
 """
 
 FAKE_SBATCH = """#!/usr/bin/env bash
 script="${@: -1}"
 printf '%s\\x1f' "$@" >> "$FAKE_LOG"; printf '\\n' >> "$FAKE_LOG"
-bash "$script" > /dev/null 2>&1
+bash "$script" > /dev/null 2>> "$FAKE_ERR"
 echo $((RANDOM + 1000))
 """
 FAKE_SACCT = '#!/usr/bin/env bash\necho "${FAKE_SACCT_STATE:-COMPLETED}"\n'
@@ -56,10 +60,12 @@ def _bin(d: Path, name: str, body: str):
     p.chmod(0o755)
 
 
-def _run_profile(tmp_path: Path, profile: dict) -> list[list[str]]:
+def _run_profile(tmp_path: Path, profile: dict) -> tuple[list[list[str]], str]:
     work = tmp_path / "w"
     (work / "config/ta_r4/cluster_slurm").mkdir(parents=True)
     shutil.copy2(STATUS, work / "config/ta_r4/cluster_slurm/status.sh")
+    if JOBSCRIPT.is_file():
+        shutil.copy2(JOBSCRIPT, work / "config/ta_r4/cluster_slurm/jobscript.sh")
     prof = tmp_path / "profile"
     prof.mkdir()
     (prof / "config.yaml").write_text(yaml.safe_dump(profile))
@@ -70,19 +76,26 @@ def _run_profile(tmp_path: Path, profile: dict) -> list[list[str]]:
     _bin(fb, "sacct", FAKE_SACCT)
     log = tmp_path / "sbatch.log"
     log.touch()
-    env = dict(os.environ, PATH=f"{fb}:{os.environ['PATH']}", FAKE_LOG=str(log))
+    err = tmp_path / "jobs.err"
+    err.touch()
+    env = dict(os.environ, PATH=f"{fb}:{os.environ['PATH']}", FAKE_LOG=str(log), FAKE_ERR=str(err))
+    env.pop("OPENBLAS_CORETYPE", None)
+    env.pop("OPENBLAS_VERBOSE", None)
     p = subprocess.run([SMK, "--profile", str(prof), "--nolock", "all"],
                        cwd=work, env=env, capture_output=True, text=True, timeout=600)
     assert p.returncode == 0, p.stdout[-3000:] + p.stderr[-3000:]
-    return [ln.split("\x1f")[:-1] for ln in log.read_text().splitlines() if ln]
+    return [ln.split("\x1f")[:-1] for ln in log.read_text().splitlines() if ln], err.read_text()
 
 
 def _flag(argv, f):
     return [argv[i + 1] for i, a in enumerate(argv[:-1]) if a == f]
 
 
-def sbatch_violations(calls: list[list[str]]) -> list[str]:
+def sbatch_violations(calls: list[list[str]], err: str) -> list[str]:
     bad = []
+    for tag in ("r4_placement host=", BLAS_ENV):
+        if err.count(tag) != len(calls):
+            bad.append(f"job stderr has {err.count(tag)} x {tag!r}, expected one per job ({len(calls)})")
     rules = {}
     for argv in calls:
         name = (_flag(argv, "-J") or ["?"])[0].removeprefix("r4.")
@@ -98,6 +111,8 @@ def sbatch_violations(calls: list[list[str]]) -> list[str]:
         m = [a for a in argv if a.startswith("--mem=")]
         if name in EXPECTED and m != [f"--mem={EXPECTED[name][1]}"]:
             bad.append(f"{name}: {m} != --mem={EXPECTED[name][1]}")
+        if [a for a in argv if a.startswith("--constraint")] != [CONSTRAINT]:
+            bad.append(f"{name}: constraint {[a for a in argv if a.startswith('--constraint')]} != [{CONSTRAINT!r}]")
         if "--parsable" not in argv or "--export=ALL" not in argv:
             bad.append(f"{name}: --parsable/--export=ALL missing")
     if sorted(rules) != sorted(EXPECTED):
@@ -112,21 +127,25 @@ def _committed():
 @pytest.mark.r4_heavy
 @pytest.mark.skipif(not Path(SMK).is_file(), reason="snakemake not beside sys.executable")
 def test_committed_profile_submits_every_job_with_required_flags(tmp_path):
-    assert sbatch_violations(_run_profile(tmp_path, _committed())) == []
+    assert sbatch_violations(*_run_profile(tmp_path, _committed())) == []
 
 
 @pytest.mark.r4_heavy
 @pytest.mark.skipif(not Path(SMK).is_file(), reason="snakemake not beside sys.executable")
-@pytest.mark.parametrize("mutation", ["no_t", "no_set_resources", "no_account"])
+@pytest.mark.parametrize("mutation", ["no_t", "no_set_resources", "no_account", "no_constraint", "no_jobscript"])
 def test_checker_fails_on_broken_profiles(tmp_path, mutation):
     prof = _committed()
     if mutation == "no_t":
         prof["cluster"] = prof["cluster"].replace(" -t {resources.runtime}", "")
     elif mutation == "no_set_resources":
         del prof["set-resources"]
-    else:
+    elif mutation == "no_account":
         prof["cluster"] = prof["cluster"].replace(" -A clintonlab_cpu", "")
-    assert sbatch_violations(_run_profile(tmp_path, prof)) != []
+    elif mutation == "no_constraint":
+        prof["cluster"] = prof["cluster"].replace(f" {CONSTRAINT}", "")
+    else:
+        del prof["jobscript"]
+    assert sbatch_violations(*_run_profile(tmp_path, prof)) != []
 
 
 @pytest.mark.parametrize("state,want", [("COMPLETED", "success"), ("RUNNING", "running"), ("PENDING", "running"),
