@@ -10,7 +10,7 @@ updated: 2026-11-16
 hypothesis: CONFIRMED — asthma.EUR is GBMI GRCh38, never lifted; legacy harmonizer stamps the target build
 test: Carter 2026-11-16 chose A (repro arms keep original inputs; corrected inputs -> production arms only; disclosure DRAFT), B (Slurm profile for bin/r4_fire.sh, lands before the W4a lock and changes the fire surface the lock covers), C (BMI legacy-fit non-reproducibility, after the rebuild)
 expecting: rebuilt variants_r4 byte-identical to measure_asthma_fix/catalogs/r4; contamination 0; panels pass manifest checks; live pin test RED -> GREEN after manifest update
-next_action: CHECKPOINT — decide how the Slurm fire surface pins the OpenBLAS kernel (constraint cascadelake vs OPENBLAS_CORETYPE) before the W4a lock
+next_action: when Slurm 1940983 ends: grep r4_placement/Core: in data/r4/logs/slurm/1940983.r4_run_finemap.err (expect Gold 6226R + SkylakeX), run `Rscript measure_asthma_fix/bmi_determinism/compare.R cascadelake.t1.r1` (r_coloc env) and confirm slurm_profile_pin row = 5 CS, ELBO -939909.8796082428, pip_identical TRUE vs pinned; then status resolved
 
 ## Symptoms
 
@@ -122,6 +122,15 @@ started: GBMI release is GRCh38; liftover_asthma_afr.sh lifted only AFR. asthma.
   checked: C — bmi.EUR SLC2A9_urate repro_routeC command (measure_asthma_fix/bmi_determinism; base_cmd.txt, run.sh, run2.sh, compare.R, compare_cascadelake_ref.tsv). Slurm 1939048 (cascadelake c025n04), 1939049 (broadwell c202n07): OPENBLAS_NUM_THREADS 1/2/8 x 2 reps; 1940706 (haswell c207n10) x 2; 1940707 (cascadelake c021n04, OPENBLAS_CORETYPE=Haswell, OpenBLAS reports "Core: Haswell") x 2. Env r_coloc (OpenBLAS 0.3.34 pthreads, DYNAMIC_ARCH)
   found: all fits non_converged at niter 100. cascadelake (AVX-512) x6: 5 CS (1,1,1,2,2), ELBO -939909.8796082428, PIPs bitwise == the pinned repro_routeC fit and == the earlier c020 run. broadwell x6, haswell x2: 3 CS (1,2,2), ELBO -939964.8935116064, bitwise == the earlier c205 run; max |dPIP| vs cascadelake 0.125. cascadelake with the Haswell kernel forced: 3 CS, bitwise == the AVX2 nodes.
   implication: ROOT CAUSE (C): OpenBLAS runtime kernel dispatch by CPU type (SkylakeX/AVX-512 vs Haswell/AVX2 kernels round differently); a non-converged IBSS fit (stopped at max_iter 100) carries the difference into credible sets. Not threads, not randomness, not inputs. Deterministic per kernel. The pinned repro outputs reproduce only under the AVX-512 kernel (LSF hosts c001-c019 are not in the Slurm partition; their CPU type is not measurable now, but their outputs match cascadelake bitwise). The new Slurm profile can place a fit on any of cascadelake (28 nodes), broadwell (39), haswell (45) -> repro re-fires and non-converged production fits would depend on node placement. Needs a decision (kernel pin) before the lock.
+
+- timestamp: 2026-11-16
+  checked: Carter decision (2026-11-16): CASCADELAKE ONLY, no OPENBLAS_CORETYPE. Commit 520ed70f: config/ta_r4/cluster_slurm/config.yaml adds --constraint=cascadelake to every submission (all rules, so dynamically named coloc/QTL/sim rules are covered too); jobscript.sh logs `r4_placement host= cpu=` and sets OPENBLAS_VERBOSE=2 so each OpenBLAS load prints its "Core:" line into data/r4/logs/slurm/<jobid>.<rule>.err (no rule code changed, so no rerun triggers). tests/ta_r4/test_slurm_profile.py extended
+  found: RED first on the committed profile (missing constraint + placement lines: 2 failed), GREEN after (15 passed); negative controls: constraint removed, jobscript removed both fail the checker. test_lock_gate + profile fast tests 63 passed. Real fit through the profile: Slurm 1940983 (r4_run_finemap, Features=cascadelake, 48000 MB, 3 h) submitted by measure_asthma_fix/bmi_determinism/verify_pin.sh -> output bmi_determinism/fits/slurm_profile_pin/ (outside data/r4/results); PENDING in the cascadelake queue at 17:45 (Slurm estimate 21:03)
+  implication: changes the fire surface the W4a/W4b lock covers (config/ta_r4/cluster_slurm/* are LOCKED_PATHS; R4_DEPENDENCIES names jobscript.sh). Cascadelake-only = 28 nodes: expect queue waits. Bitwise check of 1940983 vs the pinned fit still to do.
+- timestamp: 2026-11-16
+  checked: `bash bin/r4_fire.sh repro repro_routeC -n r4_repro_fits`
+  found: Snakemake already plans to re-run all 96 repro_routeC fits (pre-existing, from earlier code changes; unrelated to this session's edits)
+  implication: under decision A, nobody should fire r4_repro_fits without intending to overwrite the known-answer outputs.
 
 ## Resolution
 
