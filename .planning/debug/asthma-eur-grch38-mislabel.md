@@ -1,16 +1,16 @@
 ---
-status: awaiting_human_verify
+status: fixing
 trigger: "asthma-eur-grch38-mislabel: pinned data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz (sha256 22b28075...) is GRCh38 but labelled GRCh37 (BUILD column + config/ta_r4/data_sources.yaml)"
 created: 2026-11-10
-updated: 2026-11-10
+updated: 2026-11-16
 ---
 
 ## Current Focus
 
 hypothesis: CONFIRMED — asthma.EUR is GBMI GRCh38, never lifted; legacy harmonizer stamps the target build
-test: Carter approved items 1-3 (claims HOLD). Strand-corrected lifts pinned for the r4 route; measurement fits outside the workflow (measure_asthma_fix/) with rebuilt catalogs
-expecting: catalog contamination ~0; asthma.EUR panel-match like controls; non-asthma fits unchanged by the catalog swap
-next_action: CHECKPOINT — in-place rebuild of catalogs/panels/arm fits needs (a) a Slurm runner for bin/r4_fire.sh (LSF-only profile) and (b) a decision on overwriting repro-arm known-answer outputs
+test: Carter 2026-11-16 chose A (repro arms keep original inputs; corrected inputs -> production arms only; disclosure DRAFT), B (Slurm profile for bin/r4_fire.sh, lands before the W4a lock and changes the fire surface the lock covers), C (BMI legacy-fit non-reproducibility, after the rebuild)
+expecting: rebuilt variants_r4 byte-identical to measure_asthma_fix/catalogs/r4; contamination 0; panels pass manifest checks; live pin test RED -> GREEN after manifest update
+next_action: in flight — Slurm rebuild of 31 variants_r4 catalogs + 60 catalog-derived production panels (fire log measure_asthma_fix/rebuild/fire.log); then manifests, then C
 
 ## Symptoms
 
@@ -91,6 +91,26 @@ started: GBMI release is GRCh38; liftover_asthma_afr.sh lifted only AFR. asthma.
   checked: non-asthma fits, old vs new catalog
   found: repro_routeC (snp_id join): hypertension 12/12, stroke 12/12, t2d 12/12 JSON-identical; bmi 5/12 identical, all 11 fitted have the same variant set; determinism control (bmi SLC2A9 and SH2B3 re-run on the SAME old catalog) also differs (SLC2A9 5 vs 3 CS, max |dPIP| 0.125) -> bmi legacy fits are not run-to-run reproducible, the catalog is not shown to change them. A3_1kg (allele-aware catalog join): hypertension 0/4, stroke 0/4, t2d 0/4 identical, bmi 3/4: the contaminated catalog REMOVED other traits' variants, e.g. FTO t2d 5,860 -> 8,417, hypertension 1,785 -> 2,292, stroke 1,858 -> 2,416; SH2B3 hypertension 2 CS -> 1, FTO t2d CS sizes unchanged in count.
   implication: catalogs keep one row per rsid (collect_region_variants primary_key = SNP_ID, keep first): GRCh38 asthma.EUR rows, earlier in file order, evicted the GRCh37 rows of the same rsid (mechanism inferred from code; effect measured). Production (r4 route) fits of EVERY trait would have been affected; legacy-route repro fits of hypertension/stroke/t2d are not.
+- timestamp: 2026-11-16
+  checked: which python r4_catalog actually runs: `{PYTHON_BIN}` = sys.executable = smoke_dev python3.11 (pandas 3.0.2), not the declared python_stats env (pandas 2.2.3). Control (Slurm 1938110): legacy APOL1 from the ORIGINAL 8 files in workflow order with smoke_dev python
+  found: sha 1cd2ffd0 == pinned == the python_stats control
+  implication: CORRECTS the 2026-11-10 entry: the 6dd7c3b2 mismatch was file order, not env; the workflow rule as written reproduces the pinned catalogs.
+- timestamp: 2026-11-16
+  checked: B — config/ta_r4/cluster_slurm/{config.yaml,status.sh}; bin/r4_fire.sh now passes --profile config/ta_r4/cluster_slurm (logs data/r4/logs/slurm). tests/ta_r4/test_slurm_profile.py runs real snakemake on the committed profile with fake sbatch/sacct recording argv
+  found: RED first (fire script still on cluster_lsf: 1 failed, 12 passed), GREEN after the switch. Negative controls in the test: profile without -t, without set-resources, without -A each fail the checker. Status script maps COMPLETED/RUNNING/PENDING/TIMEOUT/OUT_OF_MEMORY/FAILED/CANCELLED/NODE_FAIL correctly. Sizing from LSF logs (data/r4/logs/lsf, 1,872 jobs): r4_run_finemap max 2243 s and 27 GB RSS while 8 GB was requested (LSF did not enforce; Slurm does) -> finemap 48000 MB / 180 min; r4_panel_ukb_native max 846 s -> 120 min; everything else max <= 421 s -> default 60 min / rule mem_mb. Rules never measured (sim, qtl, coloc_pair): default 60 min; a timeout is reported failed by status.sh, not hung. Rscript: every rule that calls it has a conda env (plink.yml, r_coloc.yml) or an absolute path (R4_R2_RSCRIPT); jobs get --export=ALL (conda on PATH, isolated CONDARC/HOME from r4_fire.sh). Dry-run via the fire script: exactly 91 jobs (31 r4_catalog, 20 r4_panel_afr_1kg, 10 r4_identity_payload_afr, 30 r4_panel_ukb_native), no repro or other panel output.
+  implication: B changes the fire surface the W4a/W4b lock covers (config/ta_r4 and bin/r4_fire.sh are LOCKED_PATHS; test_lock_gate R4_DEPENDENCIES now names cluster_slurm/config.yaml and status.sh). Must be committed before the lock.
+- timestamp: 2026-11-16
+  checked: which panels read a catalog (ta_r4_panels*.smk)
+  found: variants_r4 -> AFR661_1kg_r4, AFR504_1kg_r4 (--extract range), AFR661_identity_r4 (from AFR661), EUR_ukb337k_r4 (native positions). variants_legacy -> k2d_identity and legacy AFR repro panels (repro only). EUR_1kg_r4, EUR_identity_r4 and both isect panels read no catalog.
+  implication: under A, rebuild variants_r4 + those 4 panel sets only; variants_legacy, k2d and every repro output stay as pinned. Production fits cannot run before the lock (r4_lock_gate fails closed: no R4-LOCK.json / W4b-T3 sign-off).
+- timestamp: 2026-11-16
+  checked: rebuild via `bash bin/r4_fire.sh repro repro_routeC <91 targets>` on Slurm (commit bc5231c6 profile; log measure_asthma_fix/rebuild/fire.log); old variants_r4 backed up to measure_asthma_fix/rebuild/old_variants_r4 (SHA256SUMS)
+  found: 91 of 91 steps, 0 errors. variants_r4 31/31 byte-identical to measure_asthma_fix/catalogs/r4. Contamination on the workflow catalogs (rebuild/contamination_workflow.tsv): 0 in every region (old 411-133,180 per region); correct asthma.EUR positions missing: 0 everywhere. NC_IRF4 catalog byte-unchanged (no asthma.EUR rows in its window). Catalog n_rows old->new: e.g. SH2B3 12,716->11,114, MC4R 17,382->14,940, APOL1 10,991->8,380, FTO 15,315->14,410, HLA 321,079->302,753. Manifests regenerated by rebuild/regen_manifests.py (panel_manifest.write_manifest: symmetric, diag 1, finite; UKB stats columns re-joined; headers unchanged): legacy catalog rows byte-unchanged; source/build/n_samples/ld_source etc. unchanged; only md5/sha256/size/n_var (+UKB n_pairs_zero_filled, n_var_dropped_allele_mismatch) move. n_var old->new: AFR661_1kg_r4 (= AFR661_identity_r4) 9p21 11,869->11,945, APOE 11,383->11,488, APOL1 1,875->1,878, BMI_5q13_3 21,323->21,468, CXADR 8,945->9,033, FTO 3,670->3,677, MC4R 3,252->3,255, PYHIN1 20,818->21,048, SH2B3 2,551->2,566, SLC2A9 15,114->15,458; AFR504_1kg_r4 9p21 11,724->11,802, APOE 11,305->11,418, APOL1 1,887->1,891, BMI_5q13_3 21,154->21,302, CXADR 8,795->8,886, FTO 3,638->3,645, MC4R 3,237->3,240, PYHIN1 20,686->20,913, SH2B3 2,553->2,568, SLC2A9 14,939->15,282; EUR_ukb337k_r4 29 of 30 grow (+7 to +1,319; SH2B3 2,606->2,765, MC4R 3,830->3,910, APOL1 2,313->2,378, FTO 4,008->4,140, HLA 34,361->35,680), NC_IRF4 968 sha unchanged; allele-mismatch drops fall in 26 regions (e.g. SLC2A9 159->113).
+  implication: every panel gains variants (correct GRCh37 rsid rows previously evicted by GRCh38 asthma rows are now in the catalog); no panel lost its build/QC properties.
+- timestamp: 2026-11-16
+  checked: tests/ta_r4/test_live_pins.py (new, r4_heavy: all 43 catalogs + the 4 catalog-derived panel manifests vs disk sha256)
+  found: RED before the manifest update (catalogs: 31 missing during the fire, then 30 of 43 sha mismatches after it; the 12 legacy + NC_IRF4 matched); GREEN after (Slurm 1939777: 5 passed)
+  implication: pins updated; legacy (repro) catalogs verified unchanged by the same test.
 
 ## Resolution
 
