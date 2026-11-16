@@ -1,5 +1,5 @@
 ---
-status: fixing
+status: awaiting_human_verify
 trigger: "asthma-eur-grch38-mislabel: pinned data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz (sha256 22b28075...) is GRCh38 but labelled GRCh37 (BUILD column + config/ta_r4/data_sources.yaml)"
 created: 2026-11-10
 updated: 2026-11-16
@@ -10,7 +10,7 @@ updated: 2026-11-16
 hypothesis: CONFIRMED — asthma.EUR is GBMI GRCh38, never lifted; legacy harmonizer stamps the target build
 test: Carter 2026-11-16 chose A (repro arms keep original inputs; corrected inputs -> production arms only; disclosure DRAFT), B (Slurm profile for bin/r4_fire.sh, lands before the W4a lock and changes the fire surface the lock covers), C (BMI legacy-fit non-reproducibility, after the rebuild)
 expecting: rebuilt variants_r4 byte-identical to measure_asthma_fix/catalogs/r4; contamination 0; panels pass manifest checks; live pin test RED -> GREEN after manifest update
-next_action: in flight — Slurm rebuild of 31 variants_r4 catalogs + 60 catalog-derived production panels (fire log measure_asthma_fix/rebuild/fire.log); then manifests, then C
+next_action: CHECKPOINT — decide how the Slurm fire surface pins the OpenBLAS kernel (constraint cascadelake vs OPENBLAS_CORETYPE) before the W4a lock
 
 ## Symptoms
 
@@ -21,6 +21,13 @@ reproduction: rsid-position joins (scratchpad *.rs files).
 started: GBMI release is GRCh38; liftover_asthma_afr.sh lifted only AFR. asthma.EUR.tsv.bgz mtime Apr 16 2026; .tbi Feb 11 2026 (stale index).
 
 ## Eliminated
+
+- hypothesis: C — BMI legacy fits differ run-to-run because of OpenBLAS thread count
+  evidence: OPENBLAS_NUM_THREADS 1/2/8 (threads verified in /proc/self/status) x 2 reps give bitwise-identical PIPs within a node type (cascadelake 6/6, broadwell 6/6); site /etc/profile.d/hpc.sh exports OMP_NUM_THREADS=1, so the earlier runs were single-threaded anyway
+  timestamp: 2026-11-16
+- hypothesis: C — genuine run-to-run randomness
+  evidence: no seed/sampling in run_susie_rss.R; every repeat on the same node type is bitwise identical (16 of 16 pairs)
+  timestamp: 2026-11-16
 
 ## Evidence
 
@@ -111,6 +118,10 @@ started: GBMI release is GRCh38; liftover_asthma_afr.sh lifted only AFR. asthma.
   checked: tests/ta_r4/test_live_pins.py (new, r4_heavy: all 43 catalogs + the 4 catalog-derived panel manifests vs disk sha256)
   found: RED before the manifest update (catalogs: 31 missing during the fire, then 30 of 43 sha mismatches after it; the 12 legacy + NC_IRF4 matched); GREEN after (Slurm 1939777: 5 passed)
   implication: pins updated; legacy (repro) catalogs verified unchanged by the same test.
+- timestamp: 2026-11-16
+  checked: C — bmi.EUR SLC2A9_urate repro_routeC command (measure_asthma_fix/bmi_determinism; base_cmd.txt, run.sh, run2.sh, compare.R, compare_cascadelake_ref.tsv). Slurm 1939048 (cascadelake c025n04), 1939049 (broadwell c202n07): OPENBLAS_NUM_THREADS 1/2/8 x 2 reps; 1940706 (haswell c207n10) x 2; 1940707 (cascadelake c021n04, OPENBLAS_CORETYPE=Haswell, OpenBLAS reports "Core: Haswell") x 2. Env r_coloc (OpenBLAS 0.3.34 pthreads, DYNAMIC_ARCH)
+  found: all fits non_converged at niter 100. cascadelake (AVX-512) x6: 5 CS (1,1,1,2,2), ELBO -939909.8796082428, PIPs bitwise == the pinned repro_routeC fit and == the earlier c020 run. broadwell x6, haswell x2: 3 CS (1,2,2), ELBO -939964.8935116064, bitwise == the earlier c205 run; max |dPIP| vs cascadelake 0.125. cascadelake with the Haswell kernel forced: 3 CS, bitwise == the AVX2 nodes.
+  implication: ROOT CAUSE (C): OpenBLAS runtime kernel dispatch by CPU type (SkylakeX/AVX-512 vs Haswell/AVX2 kernels round differently); a non-converged IBSS fit (stopped at max_iter 100) carries the difference into credible sets. Not threads, not randomness, not inputs. Deterministic per kernel. The pinned repro outputs reproduce only under the AVX-512 kernel (LSF hosts c001-c019 are not in the Slurm partition; their CPU type is not measurable now, but their outputs match cascadelake bitwise). The new Slurm profile can place a fit on any of cascadelake (28 nodes), broadwell (39), haswell (45) -> repro re-fires and non-converged production fits would depend on node placement. Needs a decision (kernel pin) before the lock.
 
 ## Resolution
 
