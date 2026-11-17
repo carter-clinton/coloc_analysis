@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "asthma-eur-grch38-mislabel: pinned data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz (sha256 22b28075...) is GRCh38 but labelled GRCh37 (BUILD column + config/ta_r4/data_sources.yaml)"
 created: 2026-11-10
 updated: 2026-11-16
@@ -10,7 +10,7 @@ updated: 2026-11-16
 hypothesis: CONFIRMED — asthma.EUR is GBMI GRCh38, never lifted; legacy harmonizer stamps the target build
 test: Carter 2026-11-16 chose A (repro arms keep original inputs; corrected inputs -> production arms only; disclosure DRAFT), B (Slurm profile for bin/r4_fire.sh, lands before the W4a lock and changes the fire surface the lock covers), C (BMI legacy-fit non-reproducibility, after the rebuild)
 expecting: rebuilt variants_r4 byte-identical to measure_asthma_fix/catalogs/r4; contamination 0; panels pass manifest checks; live pin test RED -> GREEN after manifest update
-next_action: when Slurm 1940983 ends: grep r4_placement/Core: in data/r4/logs/slurm/1940983.r4_run_finemap.err (expect Gold 6226R + SkylakeX), run `Rscript measure_asthma_fix/bmi_determinism/compare.R cascadelake.t1.r1` (r_coloc env) and confirm slurm_profile_pin row = 5 CS, ELBO -939909.8796082428, pip_identical TRUE vs pinned; then status resolved
+next_action: none — resolved 2026-11-16 (A, B, rebuild + pins, C, cascadelake pin all verified)
 
 ## Symptoms
 
@@ -132,9 +132,14 @@ started: GBMI release is GRCh38; liftover_asthma_afr.sh lifted only AFR. asthma.
   found: Snakemake already plans to re-run all 96 repro_routeC fits (pre-existing, from earlier code changes; unrelated to this session's edits)
   implication: under decision A, nobody should fire r4_repro_fits without intending to overwrite the known-answer outputs.
 
+- timestamp: 2026-11-16
+  checked: real fit Slurm 1940983 through the committed profile (c020n01); its .err log; measure_asthma_fix/bmi_determinism/compare.R
+  found: .err: `r4_placement host=c020n01 cpu=Intel(R) Xeon(R) Gold 6226R CPU @ 2.90GHz` and `Core: SkylakeX`; fit 5 CS (1,1,1,2,2), ELBO -939909.8796082428, PIPs identical() to the pinned repro_routeC bmi SLC2A9 fit (max |dPIP| 0); the AVX2 control in the same table differs (3 CS, 0.125)
+  implication: the pin works end to end and placement is auditable from the job log.
+
 ## Resolution
 
 root_cause: GBMI 2021 asthma is GRCh38. src/legacy/region_analysis/scripts/harmonize_sumstats.py stamps BUILD = config genome_build (GRCh37) with no source-build check and no liftover; liftover_asthma_afr.sh lifted only AFR, so asthma.EUR.tsv.bgz kept GRCh38 coordinates under a GRCh37 label, copied into config/ta_r4/data_sources.yaml (build: GRCh37) and the sha pin.
-fix: (strand + repoint, after Carter approval) liftover script complements minus-strand SNVs / drops minus-strand non-SNVs; new pins data/r4/sumstats/asthma.{EUR,AFR}.grch37_lifted_strand.tsv.bgz; paths.sumstats_path routes r4-route asthma to them; data_sources.yaml + sumstats_r4_sha256.tsv updated. (earlier, landed pre-checkpoint) harmonizer refuses when the dataset declares source_build != --build (config/datasets.yaml gbmi_asthma source_build: GRCh38); GRCh37 lift written as a NEW file data/r4/sumstats/asthma.EUR.grch37_lifted.tsv.bgz; position-measured build test over the 8 Track A files. NOT done (checkpoint): repoint paths.sumstats_path / data_sources.yaml / sha pin; any re-fit; any OSF/claim edit.
-verification: see Evidence (identity, rsid 100% vs native GRCh37, negative controls, REF check, RED->GREEN tests).
-files_changed: [src/legacy/region_analysis/scripts/harmonize_sumstats.py, src/legacy/region_analysis/scripts/dataset_config.py, config/datasets.yaml, src/legacy/region_analysis/scripts/liftover_sumstats_hg38_to_hg19.sh, src/python/ta_r4/sumstats_build.py, tests/ta_r4/fixtures/build_anchors_grch37_grch38.tsv, tests/ta_r4/test_sumstats_build.py, tests/ta_r4/test_harmonizer_source_build.py]
+fix: (strand + repoint, after Carter approval) liftover script complements minus-strand SNVs / drops minus-strand non-SNVs; new pins data/r4/sumstats/asthma.{EUR,AFR}.grch37_lifted_strand.tsv.bgz; paths.sumstats_path routes r4-route asthma to them; data_sources.yaml + sumstats_r4_sha256.tsv updated. (earlier, landed pre-checkpoint) harmonizer refuses when the dataset declares source_build != --build (config/datasets.yaml gbmi_asthma source_build: GRCh38); GRCh37 lift written as a NEW file data/r4/sumstats/asthma.EUR.grch37_lifted.tsv.bgz; position-measured build test over the 8 Track A files. (2026-11-16) A: repro arms keep original inputs, DRAFT disclosure written (not posted). B: Slurm profile config/ta_r4/cluster_slurm (bc5231c6), cascadelake-only + placement log (520ed70f). Rebuild: 31 variants_r4 + 60 catalog-derived production panels, manifests re-pinned (3b1ff91f). C: root cause OpenBLAS CPU-kernel dispatch on non-converged fits, fixed by the cascadelake pin. NOT done (by design): production fits (lock gate), OSF/claim edits.
+verification: see Evidence (identity, rsid 100% vs native GRCh37, negative controls, REF check, RED->GREEN tests; rebuilt catalogs byte-identical to the measurement rebuild, contamination 0; test_live_pins GREEN; test_slurm_profile RED->GREEN with negative controls; real Slurm fit on cascadelake/SkylakeX bitwise == pinned).
+files_changed: [src/legacy/region_analysis/scripts/harmonize_sumstats.py, src/legacy/region_analysis/scripts/dataset_config.py, config/datasets.yaml, src/legacy/region_analysis/scripts/liftover_sumstats_hg38_to_hg19.sh, src/python/ta_r4/sumstats_build.py, tests/ta_r4/fixtures/build_anchors_grch37_grch38.tsv, tests/ta_r4/test_sumstats_build.py, tests/ta_r4/test_harmonizer_source_build.py, config/ta_r4/cluster_slurm/config.yaml, config/ta_r4/cluster_slurm/status.sh, config/ta_r4/cluster_slurm/jobscript.sh, bin/r4_fire.sh, tests/ta_r4/test_slurm_profile.py, tests/ta_r4/test_lock_gate.py, tests/ta_r4/test_live_pins.py, manifests/catalogs_sha256.tsv, manifests/panels_{AFR661_1kg,AFR504_1kg,AFR661_identity,EUR_ukb337k}_r4.tsv]
