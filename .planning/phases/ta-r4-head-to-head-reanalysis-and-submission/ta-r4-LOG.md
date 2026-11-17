@@ -873,3 +873,48 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   116P/4S in 32m51s; PINS 39P. FULL not run.
 - For 15.5: DRAFT (e) E4/E6, (g) identity refit and pooling, (l) QTL fallback wording and the OPEN row still describe the
   pre-15.4 code.
+
+## 2026-11-16 — W3f 15.5 (eligibility measurement; region-contribution proxy; DRAFT) — STOPPED AT A CARTER DECISION
+
+- Resumed (third executor) from uncommitted WIP; the 11-09 stale eligibility manifest moved to
+  data/r4/tmp/w3f/elig_20261116/STALE_20261109_w3f_fit_eligibility.tsv (not committed). Code + tests f33a582c.
+- Tests: RED 32F/28P (missing features) -> GREEN 60P quick + 4P heavy. NC (all RED, module restored byte-identical):
+  cap 16000 kept 2F; --output left at fit_json 2F; no extra-key check 1F; no bound check 1F; no asthma exclusion 1F;
+  no pin check 1F. Zero-overlap panel under cap 0 stops LD_DECLARED_REJECTED (no fit, no RDS) — review item 4.
+- Measurement: run list 83 = A3_ukb 15 + 3 AFR arms x 6 + 50 A3_1kg EUR primary fits (pre-fix recount; includes both
+  regression keys). Slurm 1946095 (cascadelake, 1 h, 32G): 83/83 COMPLETED 0:0, max RSS 9.5 GB, 83 JSON + RDS +
+  inputs records; summarise() accepted all 83 (exact run list, early exits, no lbf_variable); input sha256 == pins 83/83.
+  `find -L data/r4/results -newer data/r4/tmp/w3f/elig_20261116/meas/run.sh -type f | wc -l` = 0.
+- FINDING (blocks the lock): eligibility_table() raises BoundViolation — A3_1kg asthma 9p21_CDKN2A n_variants 10,399 >
+  panel n_var 7,576. Cause measured: r4 catalogs list one CHR:POS:REF:ALT under two SNP_IDs (chr:pos form + rsid form),
+  30 of 31 catalogs, 248,257 extra rows of 877,756; run_susie_rss.R's allele-key catalog join copies the sumstats row per
+  catalog row and nothing dedups before run_susie_with_ladder (read :760-1250). Independent reproduction of the join
+  (Slurm 1946449, dup/decomp_all.R) equals the script's n_variants and n_variants_pre_ld on 83/83; distinct counts <=
+  panel n_var on 83/83; every measured fit carries duplicates. Downstream run_coloc_pair_r4.R:440 would stop such pairs
+  with DUPLICATE_KEYS. Repro (legacy SNP_ID join) arms are not affected by the 4-key duplication.
+- Counts (current code / duplicates removed), post-restriction > 16,000:
+  A3_1kg 50 primary fits: 4 / 0 (asthma, t2d x BMI_5q13_3, PYHIN1_1q23) -> primary rows hit 14 / 0
+  (2 regions x (10 - C(3,2)) = 2 x 7 = 14). A3_ukb 6 / 4 of 15 (dedup: asthma, t2d x BMI_5q13_3, PYHIN1_1q23).
+  AFR661_A3, AFR661_A2, AFR504_A3 each 4 / 2 of 6 (dedup: asthma x BMI_5q13_3, PYHIN1_1q23).
+  Pre-fix (pre-LD rows > 16,000) on current inputs: 12 A3_1kg fits (asthma, t2d x 9p21, APOE, BMI_5q13_3, CXADR,
+  PYHIN1, SLC2A9) -> 6 x 7 = 42 rows (review: 10 fits -> 35 rows on earlier inputs; CXADR added by the corrected
+  asthma); duplicates removed 11 -> 39.
+  Regression asthma x PYHIN1_1q23 A3_1kg: n_variants_pre_ld 63,742 (> 16,000), n_variants 22,038 > panel 15,236
+  (bound VIOLATED), 12,605 distinct. t2d twin: 57,209 / 21,999 / 12,584.
+- Region-contribution proxy ($MAN/w3f_region_contribution_proxy.tsv; repro_routeC / repro_k2d_routeC fits; asthma pairs
+  excluded, 4 of 10 per region, because the repro fits read the GRCh38-mislocated asthma EUR file; proxy only, earlier
+  panels/policies/joins, never a lock input): A1_matched_vs_A3_1kg likely 8 / unknown 1 / unlikely 1;
+  A2_identity_vs_A3_1kg likely 3 / unknown 2 / unlikely 5 (sums 10). Discordance k: no repro coloc outputs exist, so k
+  is unknown; bound A1 k <= 9, A2 k <= 5.
+  FLAG FOR CARTER: n_regions_min 7 may yield NON_INFORMATIVE for A2_identity_vs_A3_1kg (likely 3/10, unknown 2)
+  FLAG FOR CARTER: likely discordant regions k <= 5 < 7 for A2_identity_vs_A3_1kg (k unknown: 0 true, 5 unknown); the sign-flip test cannot reach alpha 0.025 with k < 7 (min p = 2/2^k)
+  n_regions_min not changed.
+- confirmatory_sha256: old f6e6e90f83fd14975d3afa04789c3dcf1a9211b8e3ddd38bf23c72f8cbe0e9e3 -> new
+  9fa410aa411fc2c682a4886dd25ca98d5dfd37f6968ecffc1a0a8860003888d5 (== 15.3 interim). Truth table 18/3/3/2/2/8 = 36.
+- DRAFT (partial): (c) asthma pins -> strand lifts 49edfc54 / 8828df14 + liftover disclosure; (h) repro-arm asthma
+  disclosure; (k) cap after restriction to the panel + cascadelake/OpenBLAS kernel pin; (m) + 05921ac7, 3b1ff91f,
+  bc5231c6, 520ed70f; Pre-Paste panel sizes (rebuilt), measured counts, OPEN duplicate-key row, proxy + FLAGs, sha.
+  Re-verified unchanged: 8,635,830 (isect panels not rebuilt), EUR 1kG/identity manifests unchanged since b266e1d8,
+  LOCKED_PATHS 29. test_amendment_text 21P/2S. Extract 3,998 words (2,945 at HEAD; target ~3,100). The (k)
+  measured-count clause waits on the duplicate-key decision.
+- QUICK (Slurm 1946214): 719P/2S in 208.6 s (over 120 s; for 15.6).

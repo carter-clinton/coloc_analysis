@@ -26,7 +26,18 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-09 16:25 EST — **TRACK A ta-r4: W3f 15.5 INTERRUPTED (session died mid-task, WIP uncommitted). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-16 — **TRACK A ta-r4: W3f 15.5 STOPPED AT A CARTER DECISION (duplicate catalog keys). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+
+- 15.5 Task 1 measured (Slurm 1946095, 83/83, no fit, nothing under data/r4/results). Code f33a582c; LOG entry 2026-11-16 W3f 15.5.
+- BLOCKER found by the bound check: r4 variant catalogs list one CHR:POS:REF:ALT under two SNP_IDs (30/31 catalogs, 248,257 extra
+  rows); run_susie_rss.R's allele-key catalog join duplicates sumstats rows and nothing dedups before SuSiE → every production fit
+  would carry duplicated variants (coloc would stop with DUPLICATE_KEYS) and the 16,000 cap counts duplicates (A3_1kg: 4 confirmatory
+  fits / 14 rows early-exit now, 0 after dedup). Fix needs a frozen-script / catalog-builder decision from Carter.
+- Proxy: A2_identity_vs_A3_1kg likely 3/10 → FLAG FOR CARTER (n_regions_min 7; k ≤ 5). confirmatory_sha256 9fa410aa…88d5 (unchanged).
+- DRAFT partially updated (asthma lifts + disclosure, repro disclosure, kernel pin, cap stage, commits); (k) counts wait on the fix.
+- Next: Carter decides the dedup fix → implement RED-first → re-measure → finish 15.5 (eligibility manifest, DRAFT (k), SUMMARY) → 15.6.
+
+## 2026-11-09 16:25 EST — **TRACK A ta-r4: W3f 15.5 INTERRUPTED (session died mid-task, WIP uncommitted). NOTHING RUNNING.** (SUPERSEDED by the 2026-11-16 block above)
 
 - 15.5 ran in session `b1f97279-8c68-4ff1-82f1-7f863029cf07`, which died ~14:38 EST. Slurm 1786449 (w3f5_diag) COMPLETED 0:0 before that.
 - Uncommitted WIP (not reviewed by the closing session): `src/python/ta_r4/measure_fit_eligibility.py`, `tests/ta_r4/test_measure_fit_eligibility.py`,
