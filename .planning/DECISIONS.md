@@ -2966,3 +2966,53 @@ orchestrator's.
   Default `false` keeps Track B finemap.smk, the repro arms and the simulation harness on the 53106f8 behaviour (D-15).
   Nothing else; D-28 is otherwise in force.
 - **Re-pin:** `R_CODE_REF` → the N1 code commit.
+
+## 2026-11-17 — DEC-2026-11-17-ta-r4-catalog-unique-allele-key: r4 catalogs carry one row per normalized CHR:POS:REF:ALT; run_susie_rss.R refuses a duplicate (Carter)
+
+- **Decider:** Carter, 2026-11-17. Reply saved verbatim at
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-dupkey-fix-reply-2026-11-17.txt`
+  (sha256 `72a6254ade39b0180b241725be2bf4d981ae1fc2f5b8a5a303a496bce8846653`):
+
+```text
+1. Fix both ends (recommended).
+```
+
+- **Option selected** (15.5 hand-back `data/r4/tmp/w3f/elig_20261116/CHECKPOINT_15.5_handback.md`, sha256
+  `cb52ce1a8ad5b7e8dd4020ad064e022b7998bdeca2716be5eb6806423f0d5ebd`, lines 109-111, copied with `sed -n '109,111p'`):
+
+```text
+  1. **(Recommended) Fix both ends.** The catalog builder writes one row per CHR:POS:REF:ALT for the r4 route (fixes the producer). `run_susie_rss.R` stops if the joined subset still has a duplicate 4-key (a guard, not a silent dedup).
+     - Cost: rebuild the 31 r4 catalogs and re-pin `catalogs_sha256`, plus any catalog-derived panel whose bytes change; a RED-first fixture with duplicated keys; a run_susie_rss.R unfreeze, as with N1, and an `R_CODE_REF` re-pin.
+     - Then re-measure (about 1–2 h on the cascadelake queue) and finish 15.5.
+```
+
+- **Key:** (strip(CHR) with a leading chr/CHR removed, int(strip(POS)), strip(REF).upper(), strip(ALT).upper()).
+  Multi-allelic sites (same CHR:POS, different ordered REF/ALT, including a REF/ALT swap) are different keys and are all kept.
+- **Choice rule** within a key group, in order: (1) SNP_ID form `^rs[0-9]+$` < `^[0-9XYMT]+:[0-9]+$` < other non-empty
+  < empty; (2) among rsids, the smallest integer; (3) a row whose CHR/POS/REF/ALT bytes already equal their normalized
+  form; (4) the lexicographically smallest SNP_ID; (5) first occurrence. Kept lines are byte-identical to the input
+  and stay in input order.
+- The kept row is often not the first occurrence (planning measurement: 234,677 of 248,248 groups), so the choice
+  rule, not file order, decides it.
+- **Why the rsid:** in the QTL bridge (`run_coloc_pair_r4.R` catalog_snp_id / catalog_chrpos spaces) the chr:pos form
+  is always recoverable as catalog_chrpos; an rsid is not.
+- **Alternates are not kept in the catalog.** The 5-column schema (`CHR POS REF ALT SNP_ID`) is unchanged because
+  every consumer reads it. Dropped rows go byte-for-byte to `data/r4/ld/variants_r4_dropped/<region>.tsv`, with the
+  raw catalog at `data/r4/ld/variants_r4_raw/<region>.tsv`; both shas are in `$MAN/catalogs_r4_unique_key.tsv`.
+- **Scope:** r4 route only. `collect_region_variants.py`, the legacy catalogs (`variants_legacy`) and Track B are
+  unchanged (D-15). The legacy catalogs' 29,363 normalized duplicate rows (planning measurement) are out of scope;
+  repro arms join them on SNP_ID (`--ld-allele-aware false`).
+
+## 2026-11-17 — DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze: D-28 lifted once for the duplicate-key guard in run_susie_rss.R
+
+- **Decider:** Carter, 2026-11-17. Same reply file and sha256 as DEC-2026-11-17-ta-r4-catalog-unique-allele-key
+  ("1. Fix both ends (recommended)."). Selecting option 1 authorizes the unfreeze, because its text names "a
+  run_susie_rss.R unfreeze, as with N1, and an `R_CODE_REF` re-pin".
+- **Scope:** new option `--require-unique-allele-key` (default `false`). With `true`, the script stops non-zero with
+  `DUPLICATE_ALLELE_KEYS` when any normalized (CHR,POS,REF,ALT) repeats in the fit subset, checked after the panel
+  restriction and before the post-restriction cap. Nothing is dropped.
+- **Why default false:** `config/pipeline.yaml` sets `ld_read_path.allele_aware: true`, so Track B allele-aware fits
+  read legacy-builder catalogs that also carry duplicates; an unconditional guard would stop Track B (D-15). Repro arms
+  run with `--ld-allele-aware false` and never take the allele-key join. The simulation harness does not pass the flag.
+- Nothing else changes; D-28 is otherwise in force.
+- **Re-pin:** `R_CODE_REF` → the guard commit.
