@@ -41,7 +41,8 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 15.2 | ta-r4-W3f-lock-paths-input-sha-in-job-gate-PLAN.md | W3f fix-up (N3, N4, N5, T1) | — | yes |
 | 15.3 | ta-r4-W3f-signflip-region-floor-coverage-PLAN.md | W3f fix-up (N7 sign-flip + n_regions_min, N6) | — | yes |
 | 15.4 | ta-r4-W3f-reporting-widening-qtl-sim-PLAN.md | W3f fix-up (N8 drops, N9, N10, N12, N14) | — | yes |
-| 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha) | — | yes |
+| 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha). Stopped 2026-11-16 at a Rule-4 checkpoint (duplicate catalog keys); Task 1 code f33a582c + partial DRAFT c3e42237 stand; **remaining work depends on 15.5a** | — | yes |
+| 15.5a | ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md | W3f gap closure (r4 catalogs one row per normalized allele key; flag-gated run_susie_rss.R duplicate-key guard; rebuild + re-pin; no push) | — | yes |
 | 15.6 | ta-r4-W3f-review-suite-and-close-PLAN.md | W3f fix-up (brief-blind re-review, FULL, records, W4a depends_on) | — | yes |
 | 16 | ta-r4-W4a-amendment-draft-review-locks-PLAN.md | W4 | W4a-T3 lock values + draft approval | no |
 | 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 lock confirmation (+ lock gate) | no |
@@ -58,6 +59,22 @@ W3f (waves 15.1–15.6) is a gap-closure fix-up added 2026-11-04 after the W4a b
 (`ta-r4-W4-AMENDMENT-REVIEW-as-received.md`) and Carter's decisions (DEC-2026-11-04-ta-r4-w3f-fix-all,
 DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor). Plan 15.1 lifts §B.6 (D-28) once, for the N1 cap move only, and only after a DEC quotes Carter's explicit
 unfreeze reply (DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze); without it 15.1 stops. W4a now depends on 15.6.
+
+**15.5a (added 2026-11-17).** Plan 15.5 found every r4 fit would carry duplicated variants. The r4 catalogs
+list one CHR:POS:REF:ALT under two or three SNP_IDs (248,257 extra rows of 877,756). Carter chose "1. Fix both ends
+(recommended)." (`W3f-carter-dupkey-fix-reply-2026-11-17.txt`). 15.5a lifts §B.6 (D-28) once more, for the
+flag-gated duplicate-key guard only, under DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze.
+Order: 15.5 Tasks 1 (code) and 2 (partial) done → **15.5a** → 15.5 remainder → 15.6 (whose `depends_on` on 15.5
+now means 15.5 completed after 15.5a). The 15.5 remainder is:
+- Task 1 steps 2–4, re-run on the rebuilt catalogs (cascadelake);
+- `w3f_fit_eligibility.tsv`;
+- Task 2 item 7, the (k) measured-count clause; the Pre-Paste OPEN duplicate-key row resolved; and (c)/(m) for the
+  15.5a commits;
+- Task 3 and its SUMMARY.
+That remainder depends on 15.5a. 15.5a does not push; the 15.5 remainder's §C pushes.
+15.5a does not fix `run_coloc_pair_r4.R:440` (DUPLICATE_KEYS on a shared CHR:POS) or the UKB native multi-allelic
+sites. It measures them per fit (M2), with sumstats duplicates as M1. Any non-zero M1/M2 is a Rule-4 decision for Carter:
+an OPEN row in the DRAFT Pre-Paste that **gates the W4a-T3 lock**. The 15.5 remainder carries that row unresolved.
 
 **Rigor upgrades over the research decomposition** (rigor-over-speed rule; recorded here so they are
 visible to Carter):

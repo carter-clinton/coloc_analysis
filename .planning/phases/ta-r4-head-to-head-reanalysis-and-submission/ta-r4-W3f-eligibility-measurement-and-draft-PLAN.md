@@ -4,7 +4,8 @@ plan: 15.5
 slug: W3f-eligibility-measurement-and-draft
 type: execute
 wave: 15.5
-depends_on: ["ta-r4-W3f-reporting-widening-qtl-sim"]
+depends_on: ["ta-r4-W3f-reporting-widening-qtl-sim", "ta-r4-W3f-catalog-dupkey-producer-and-guard"]
+# 2026-11-17: stopped at a Rule-4 checkpoint (duplicate catalog keys). Remaining work (Task 1 steps 2-4 re-measure, Task 2 item 7 + Pre-Paste OPEN dup row, Task 3, SUMMARY) resumes after 15.5a; any 15.5a M1/M2 OPEN Pre-Paste row stays open (Carter decision) and gates W4a-T3.
 gap_closure: true
 files_modified:
   - src/python/ta_r4/measure_fit_eligibility.py
