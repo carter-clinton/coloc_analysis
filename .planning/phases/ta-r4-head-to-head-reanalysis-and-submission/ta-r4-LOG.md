@@ -918,3 +918,94 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   LOCKED_PATHS 29. test_amendment_text 21P/2S. Extract 3,998 words (2,945 at HEAD; target ~3,100). The (k)
   measured-count clause waits on the duplicate-key decision.
 - QUICK (Slurm 1946214): 719P/2S in 208.6 s (over 120 s; for 15.6).
+
+## 2026-11-18 — W3f 15.5a (r4 catalogs one row per normalized allele key; flag-gated run_susie_rss.R guard; rebuild + re-pin)
+
+- Decision: Carter "1. Fix both ends (recommended)." (`W3f-carter-dupkey-fix-reply-2026-11-17.txt`, sha256 72a6254a…6653;
+  hand-back sha256 cb52ce1a…5ebd). DEC-2026-11-17-ta-r4-catalog-unique-allele-key and
+  DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze appended (c6c450fc; append-only, 0 removed lines).
+- Producer (e9c0d400): `ta_r4.catalog_unique_key` + rule split (`r4_catalog` route legacy only, shell unchanged;
+  `r4_catalog_raw` same collect_region_variants.py command; `r4_catalog_unique`). RED 18F (ModuleNotFoundError) ->
+  GREEN 18P; NC-P1 (no strip/upper) 5F, NC-P2 (CHR:POS key) 4F, NC-P3 (chr:pos above rs) 4F, NC-P4 (pandas
+  re-serialise) 4F; module restored sha256-identical each time. Baseline suites (QUICK + in_job_gate + armed_e2e):
+  per-id identical, +18 additions only (719P/2S + 26P -> 737P/2S + 26P).
+- Guard (13b0821c) + re-pin (3f4d0cb9, `R_CODE_REF` 1f77128 -> 13b0821; K3 refs unchanged): RED 7F/1P; GREEN 90 ids;
+  NC-G1 (guard after cap) 1F, NC-G2 (silent dedup) 2F, NC-G3 (flag dropped from argv) 1F, NC-G4 (default true) 1F;
+  restored sha256-identical. Pins RED 2F/37P -> GREEN 39P. Spec update: test_json_cs_equals_fit_sets pre_fix_argv also
+  strips the new flag. Pre-existing frozen-script suites (test_ld_read_path, test_finemap_receipt_early_exit,
+  test_qtl_coloc_allele_join, test_no_silent_identity, test_simulation_harness): 165P/1S at e9c0d400 (shared clone)
+  and at HEAD, per-id identical.
+- Backup (Slurm 1960208): old_variants_r4 31, 4 panel dirs 60 rds, UKB native stats 30, AFR work dirs 70+70, each
+  copy's SHA256SUMS verified against the live origin; pre_panels.sha256 (90) == backup sums; pre_untouched.sha256 203.
+- Dry-run: r4_catalog_raw 31, r4_catalog_unique 31, r4_panel_afr_1kg 20, r4_identity_payload_afr 10,
+  r4_panel_ukb_native 30 = 122; 0 jobs and empty --list-code-changes / --list-params-changes for the 12 legacy
+  catalogs, 22 repro_routeC panels and 24 k2d targets. Fire: 122 of 122 steps, Slurm 1960869..1961081 (122 jobs,
+  all COMPLETED 0:0); a following dry-run over all 179 targets (controls included): "Nothing to be done".
+- Identity (Slurm 1961192): (a) raw sha256 == old pins 31/31. (b) kept + dropped == raw multiset 31/31; key sets
+  equal 31/31. (c) raw 877,756; dropped exact 248,251 + case_ws 6 = 248,257; kept 629,499 = 877,756 - 248,257;
+  groups 248,239 pairs + 9 triples = 248,248 groups, extra rows 248,239 + 2 x 9 = 248,257; byte-exact key extra
+  248,251, normalized 248,257; SNP_ID forms {chr:pos, rs} 248,234 / {chr:pos, rs, rs} 9 / {rs, rs} 5 (sum 248,248);
+  kept row not the first occurrence in 234,677 of 248,248 groups; 0 normalized duplicates in any kept catalog;
+  CHR:POS extra 294,400 raw -> 46,143 kept at 46,132 sites; 30 of 31 catalogs had duplicates, BMI_Xq24 kept ==
+  raw bytes; empty SNP_ID 14,799 (0 in a duplicate group); whitespace cells 0; lowercase-allele rows 17. Every
+  component equals the planning measurement. (d) 90/90 panel .rds + UKB native stats byte-identical. (e) 203/203
+  untouched files clean.
+- Re-pin (30b13692): catalogs_sha256.tsv 30 r4 rows changed (BMI_Xq24 unchanged), 0 legacy rows. catalogs_r4_unique_key.tsv
+  written (31 regions; totals == (c)). No panel manifest changed. test_live_pins: RED (Slurm 1961205) 2F/35P
+  (30 of 43 catalogs fail verification; unique-key manifest absent) -> GREEN 99P. NC-L1 (uniqueness test at
+  old_variants_r4) 30F/1P; NC-L2 (one multi-allelic row, FTO_16q12 16:53800387 G/A rs12446228, dropped from a tmp
+  copy) fails both kept+dropped==raw and key-set == raw key set.
+- Residual-risk measurement (Slurm 1961203, 9 min; script `data/r4/tmp/w3f/dupkey/measure_m123.R`, not committed).
+  This still approximates `ld_allele_join_indices` (4-key or swapped-allele panel match, palindromic SNVs dropped);
+  it is not the R function itself. Validation on old_variants_r4: restricted rows == measured n_variants 83/83 and
+  distinct == n_variants_distinct 83/83. 815 production fits (A3_1kg, A2_identity, A3_1kg_isect, A3_ukb, A3_ukb_isect
+  145 each; AFR661_A3, AFR661_A2, AFR504_A3 30 each).
+  - Post-restriction 4-key duplicates: old catalogs 1,167,258 extra rows in 815/815 fits; rebuilt catalogs 0 in 0/815.
+  - M1 (sumstats 4-key duplicates per window): 0 of 175 windows.
+  - M2 (duplicated CHR:POS in the fit subset, the run_coloc_pair_r4.R:440 key): 3 of 815 fits, 1 extra row each,
+    all A3_ukb asthma.EUR. Panel level: EUR_ukb337k_r4 34 sites in 14 of the 29 measured regions; every 1kg,
+    identity and isect panel 0. Checker cross-check (`multi.pkl`): 38 sites in 15 regions = my 34 in 14 + HLA_6p21
+    4 sites (HLA has no admissible fit, so it is not in the run list). The plan text's "18 regions" disagrees with the
+    checker's own artifact (15). Of the checker's 6 asthma.EUR both-allele sites, 3 reach the fit subset; at
+    BMI_5q13_3 75952721 (T/A), NC_SLC24A5 48303816 (G/C) and SLC2A9_urate 10203217 (A/T) one allele is a
+    palindromic SNV that the allele-aware panel join drops.
+  - FLAG FOR CARTER (Rule 4): M2 A3_ukb asthma.EUR MC4R_18q21 n=1 keys=18:56541713
+  - FLAG FOR CARTER (Rule 4): M2 A3_ukb asthma.EUR PYHIN1_1q23 n=1 keys=1:160680184
+  - FLAG FOR CARTER (Rule 4): M2 A3_ukb asthma.EUR NC_NULL_06 n=1 keys=6:81514622
+    DRAFT Pre-Paste OPEN row added (gates W4a-T3); test_amendment_text 21P/2S.
+  - M3 (QTL-bridge overlap of approximated fit names with the bound catalog_snp_id / catalog_chrpos spaces, old ->
+    new): max per space unchanged (snp_id 19,159 -> 19,159; chrpos set 941 -> 941; chrpos bridge 207 -> 940). The
+    best-space overlap fell in 39 of 815 fits (sum 1,529,761 -> 1,525,405, -4,356): A3_ukb t2d 29 fits (-4,316,
+    max -735), asthma NC_ABO / NC_TYR in 5 EUR arms x 2 (-8 each arm, max -7). It rose in 0. Two causes, measured
+    (probe data/r4/tmp/w3f/dupkey/m3_probe.R): (i) mixed-form fit names. A3_ukb t2d 9p21_CDKN2A has 9,609 names = 498 chr:pos +
+    9,111 rs; the old snp_id space matched 498 + 7,353 = 7,851, the new one 87 + 7,353 = 7,440, and the chr:pos space
+    matches only the 498 chr:pos names, so no single space now holds both forms. The "chr:pos is always recoverable"
+    premise of the rsid preference holds per variant but not per space for mixed-form fits. (ii) multi-rsid groups:
+    the 14 dropped rows whose SNP_ID is an rsid replaced by a smaller rsid (NC_ABO 8, NC_TYR 1); asthma NC_ABO names
+    are all rsids and 7 of them are the dropped, larger rsid (233 -> 226 on A3_ukb).
+  - FLAG FOR CARTER (M3): bridged overlap decreases in 39 fits (A3_ukb t2d 29; asthma NC_ABO/NC_TYR 10);
+    `data/r4/tmp/w3f/dupkey/m3_decreased.tsv`. Not a Rule-4 gate under the plan; recorded for the QTL layer (W6).
+- Out of scope, for Carter: (1) the 11 non-duplicate lowercase-allele rows in the r4 catalogs (17 lowercase rows
+  minus the 6 case twins) are probably excluded from the UKB native panels by the case-sensitive `_allele_keys`;
+  (2) the legacy catalogs (`variants_legacy`) keep 29,363 normalized duplicate rows (planning measurement), read by
+  Track B allele-aware fits; both unchanged here (D-15).
+- Wave close (no push). QUICK (Slurm 1961268): 738P/2S, 173.4 s wall (over 120 s; carried to 15.6). PINS 39P.
+  HEAVY 244P/5S in 1,897 s. FULL (Slurm 1961269, 2,937 s): 2,463 ids = 2,408P + 53S + 2F vs the W4a baseline
+  (full_W4a.xml, 2,069 ids = 2,017P + 52S): 400 added (all tests/ta_r4), 6 removed, 2 outcome changes, both tests/m3.
+  - The 6 removed ids (test_coloc_pair_r4::test_panel_rsid_override_is_refused_not_dropped,
+    test_contrast_stats::test_category_edges[kw11..kw14], test_run_aggregation::test_draft_writes_exactly_17_draft_tables)
+    are already absent at e9c0d400, before any 15.5a test or code change; they left between W4a and 15.5 (FULL was not
+    run in 15.1-15.5).
+  - The 2 tests/m3 failures (test_variant_catalog_fallback_legacy_semantics::
+    test_the_five_must_not_move_sites_are_byte_identical[too_many_variants_payload] and
+    ::test_the_symbol_scoped_diff_is_exactly_one_removed_line) are PRE-EXISTING: 11P at 6c6e9546^ (4a1b9d4a), 2F/9P at
+    6c6e9546 (15.1 N1 cap move), at 1f771281, and at e9c0d400 (pre-guard), with the same assertion text at HEAD.
+    They pin the too_many_variants payload byte-identical to dc4bbd2, which the authorized N1 cap move changed.
+    Not fixed here (out of scope; logged in deferred-items.md). FLAG FOR CARTER / 15.6: re-scope that pin under
+    DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze.
+  - A test-run side effect (tests/m3/sparse_parent_benchmark.tsv timings) was restored to HEAD, not committed.
+- 15.5 PLAN frontmatter: depends_on + 2026-11-17 note already committed in 79ff8dc2 (nothing to commit).
+- Handoff: 15.5 resumes: re-measure on the rebuilt catalogs, eligibility manifest, DRAFT (k) clause + the dup-key
+  Pre-Paste OPEN row resolved + (c)/(m) for the 15.5a commits, 15.5 Task 3, SUMMARY; any M1/M2 OPEN row stays open
+  until Carter decides and gates W4a-T3. Nothing pushed. Backups kept in `data/r4/tmp/w3f/dupkey/` until the 15.5
+  remainder closes.

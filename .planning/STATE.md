@@ -26,7 +26,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-17 — **TRACK A ta-r4: Carter chose "fix both ends"; plan 15.5a committed; executor RUNNING (Task 1 RED).** (★ RESUME HERE — LATEST ★)
+## 2026-11-18 — **TRACK A ta-r4: W3f 15.5a COMPLETE (r4 catalogs one row per allele key; run_susie_rss.R duplicate-key guard). NEXT = 15.5 remainder. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Carter chose "1. Fix both ends (recommended)." DEC-2026-11-17-ta-r4-catalog-unique-allele-key +
+  DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze (c6c450fc). Producer e9c0d400; guard 13b0821c;
+  R_CODE_REF 1f77128 -> 13b0821 (3f4d0cb9). 31 r4 catalogs rebuilt (122/122 Slurm jobs): 877,756 -> 629,499 rows
+  (248,251 exact + 6 case dropped, kept in variants_r4_dropped/); catalogs_sha256 30 r4 rows re-pinned; every panel
+  byte-identical (90/90); legacy/repro/k2d untouched (203/203).
+- OPEN for Carter (gates W4a-T3; DRAFT Pre-Paste row): M2 = 3 A3_ukb asthma.EUR fits keep a duplicated CHR:POS
+  (MC4R_18q21, PYHIN1_1q23, NC_NULL_06; UKB multi-allelic sites) -> coloc DUPLICATE_KEYS. M1 = 0. FLAG (M3): bridged
+  QTL overlap falls in 39 fits (A3_ukb t2d 29). LOG entry 2026-11-18 W3f 15.5a.
+- FULL 2,408P/53S/2F: the 2 tests/m3 failures (test_variant_catalog_fallback_legacy_semantics, too_many_variants
+  payload pin vs dc4bbd2) are PRE-EXISTING since 6c6e9546 (15.1); 6 ids gone since W4a. See $P/deferred-items.md (15.6).
+- Next: 15.5 remainder (re-measure on rebuilt catalogs, eligibility manifest, DRAFT (k), resolve the 15.5 dup-key
+  OPEN row, (c)/(m) for 15.5a commits, Task 3, SUMMARY, push) -> 15.6. Backups in data/r4/tmp/w3f/dupkey/ (keep).
+  HANDOFF.json `ta_r4_w3f_15_5a` predates this close (not updated here).
+
+## 2026-11-17 — **TRACK A ta-r4: Carter chose "fix both ends"; plan 15.5a committed; executor RUNNING (Task 1 RED).** (SUPERSEDED by the 2026-11-18 15.5a block above)
 
 - **Decision:** at the 15.5 Rule-4 checkpoint (r4 catalogs list one CHR:POS:REF:ALT under two SNP_IDs; 30/31 catalogs; 248,257 extra rows of 877,756 = 248,251 byte-exact + 6 lowercase-allele twins), Carter replied "1. Fix both ends (recommended)." — recorded verbatim in `W3f-carter-dupkey-fix-reply-2026-11-17.txt`.
 - **Plan 15.5a** `ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md`: r4-only unique-key catalog step (legacy builder untouched — shared with Track B), flag-gated `--require-unique-allele-key` hard stop in `run_susie_rss.R` + R_CODE_REF re-pin, 122-job rebuild with ~25 GB panel backup, panels must stay byte-identical, re-pin catalogs. Plan-checker FLAG (10 items) fixed; committed **79ff8dc2**. DEC entries **c6c450fc**.
