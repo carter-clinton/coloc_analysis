@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-11-18T04:50:00Z",
+  "timestamp": "2026-11-18T18:50:00-05:00",
   "phase": "ta-r4",
   "phase_name": "ta-r4-head-to-head-reanalysis-and-submission",
   "phase_dir": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission",
@@ -498,8 +498,8 @@
   ],
   "resume_entry_point_PRIOR_2026_11_09": "Resume session b1f97279 (inside tmux on login01): `claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07`, then: you were interrupted mid-15.5 at the asthma.EUR build check; continue. Fallback (fresh session): /gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission -> 15.5, reusing the WIP in ta_r4_w3f_15_5_in_progress after verifying it.",
   "timestamp_reason_2026_11_17": "session c8312220 close: 15.5a planned/checked/committed; executor mid-Task 1",
-  "headline": "ta-r4 W3f: 15.5 stopped at Rule-4 (r4 catalogs duplicate CHR:POS:REF:ALT under 2 SNP_IDs; 248,257 extra rows / 877,756). Carter chose option 1 (fix both ends) 2026-11-17. Plan 15.5a written, plan-checker FLAG fixed, committed 79ff8dc2. Executor RUNNING as a subagent of session c8312220 (NOT tmux) — at Task 1 RED (18 failing tests in data/r4/tmp/w3f/dupkey/red_t1.txt, 23:46); DEC committed c6c450fc. No Slurm jobs queued at close. Local 2 ahead of origin (not pushed — push forbidden inside 15.5a).",
-  "status": "15.5a IN PROGRESS (Task 1 of 3). 15.5 remainder + 15.6 wait on it.",
+  "headline": "ta-r4 W3f: 15.5 remainder closing (executor subagent in session c8312220; Slurm close_b 1970723 = FULL suite running); plan 15.5b (UKB keep single SNV, Carter a1) committed bb084f24, not pushed; Carter approved pushing bb084f24 together with the 15.5 commits.",
+  "status": "15.5 EXECUTING (final step). 15.5b PLANNED+CHECKED, waits on 15.5 SUMMARY + w3f_fit_eligibility.tsv commit.",
   "ta_r4_w3f_15_5a": {
     "plan": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md",
     "carter_reply": "W3f-carter-dupkey-fix-reply-2026-11-17.txt = \"1. Fix both ends (recommended).\" (authorizes r4-only catalog unique-key producer, flag-gated run_susie_rss.R guard --require-unique-allele-key + R_CODE_REF re-pin, catalog rebuild + re-pin; NOTHING else)",
@@ -519,11 +519,38 @@
     ]
   },
   "resume_on_reconnect": [
+    "If session c8312220 is still alive in tmux 'coloc' on login02: just reattach; the executor continues on its own.",
+    "If it died: on login02 `tmux attach -t coloc` (or `tmux new -s coloc`), then `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Check `git log`, `squeue -u $USER`, close_b_1970723.out.",
+    "If the executor died before committing: SendMessage to a18335bd8bbf594bc to resume it; else spawn a fresh gsd-executor for 15.5 Task 3/SUMMARY from the elig_20261118 outputs (do NOT re-fire the array; 83/83 done).",
+    "Verify the 15.5 hand-back: input pins 83/83, eligibility counts reconciled vs data/r4/tmp/w3f/dupkey/m123_fits.tsv, DRAFT M2 row OPEN pointing at 15.5b, FULL failures only the 2 pre-existing tests/m3 ones.",
+    "Then push (approved): bb084f24 + 15.5 commits. Then execute 15.5b (gsd-executor); its Task 1 commits the 3 untracked W3f-carter-*-2026-11-18 reply files with the DEC.",
+    "Then 15.6 -> W4a-T3 lock (Carter)."
+  ],
+  "resume_entry_point": ".planning/HANDOFF.json ta_r4_w3f_15_5_close + STATE.md 2026-11-18 (evening) block + plan ta-r4-W3f-ukb-panels-biallelic-PLAN.md",
+  "headline_PRIOR_2026_11_17": "ta-r4 W3f: 15.5 stopped at Rule-4 (r4 catalogs duplicate CHR:POS:REF:ALT under 2 SNP_IDs; 248,257 extra rows / 877,756). Carter chose option 1 (fix both ends) 2026-11-17. Plan 15.5a written, plan-checker FLAG fixed, committed 79ff8dc2. Executor RUNNING as a subagent of session c8312220 (NOT tmux) — at Task 1 RED (18 failing tests in data/r4/tmp/w3f/dupkey/red_t1.txt, 23:46); DEC committed c6c450fc. No Slurm jobs queued at close. Local 2 ahead of origin (not pushed — push forbidden inside 15.5a).",
+  "status_PRIOR_2026_11_17": "15.5a IN PROGRESS (Task 1 of 3). 15.5 remainder + 15.6 wait on it.",
+  "resume_on_reconnect_PRIOR_2026_11_17": [
     "Reconnect: tmux attach -t coloc (login01) or claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63 inside tmux. Never --continue.",
     "Check liveness BEFORE acting: mtime of ~/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/c8312220-f76b-46f3-96cc-4d31344a5b63/subagents/agent-a35d2e6fe2356e377.jsonl; squeue -u ckclinto; git log 79ff8dc2..HEAD; ls -lt data/r4/tmp/w3f/dupkey/",
     "If executor finished: read its hand-back, verify claims (counts, panel byte-identity, negative controls), then present to Carter.",
     "If executor died: committed tasks survive; uncommitted WIP (src/python/ta_r4/catalog_unique_key.py, tests/ta_r4/test_catalog_unique_key.py, rule split) = unchecked draft. If it died during Task 3 after panels were rewritten, run the plan STOP-branch restore from data/r4/tmp/w3f/dupkey/old_panels/ (sha256sum -c) before anything else. Re-dispatch a gsd-executor at the first incomplete task.",
     "After 15.5a: resume 15.5 remainder (re-measure cascadelake, w3f_fit_eligibility.tsv, DRAFT (k) clause, SUMMARY) -> 15.6 -> W4a-T3 lock (Carter)."
   ],
-  "resume_entry_point": "HANDOFF.json ta_r4_w3f_15_5a + STATE.md 2026-11-17 RESUME HERE block"
+  "resume_entry_point_PRIOR_2026_11_17": "HANDOFF.json ta_r4_w3f_15_5a + STATE.md 2026-11-17 RESUME HERE block",
+  "ta_r4_w3f_15_5_close": {
+    "session": "c8312220-f76b-46f3-96cc-4d31344a5b63 (tmux 'coloc' on login02 — NOT login01)",
+    "executor_agent_id": "a18335bd8bbf594bc (gsd-executor, plan ta-r4-W3f-eligibility-measurement-and-draft); dies if the claude process exits",
+    "slurm": {
+      "1968979": "re-measurement array, 83/83 COMPLETED",
+      "1970722": "close_a COMPLETED 29m",
+      "1970723": "close_b FULL suite RUNNING (prior FULL 2937 s), out data/r4/tmp/w3f/elig_20261118/close_b_1970723.out, junit full_15_5.xml"
+    },
+    "workdir": "data/r4/tmp/w3f/elig_20261118 (measured_rows.tsv, reconcile_stdout.txt, heavy_15_5.xml, full_15_5.xml)",
+    "uncommitted_executor_wip": [
+      ".planning/amendments/osf-amendment-r4-DRAFT.md",
+      ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-LOG.md",
+      "tests/m3/sparse_parent_benchmark.tsv (check: may be a test side effect — do not commit blindly)"
+    ],
+    "push_approval": "Carter 2026-11-18 18:22: 'push bb084f24 with the 15.5 commits' — push once 15.5 commits are verified"
+  }
 }

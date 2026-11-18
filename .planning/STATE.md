@@ -26,7 +26,19 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-18 (evening) — **TRACK A ta-r4: 15.5a PUSHED; 15.5 remainder EXECUTING (Slurm re-measurement 1968979); plan 15.5b (UKB multi-allelic, Carter a1) PLANNED + CHECKED, waits on 15.5.** (★ RESUME HERE — LATEST ★)
+## 2026-11-18 (late) — **TRACK A ta-r4: W3f 15.5 COMPLETE (re-measured on the rebuilt catalogs; eligibility manifest; DRAFT (k)). NEXT = 15.5b. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Re-measurement Slurm 1968979: 83/83 COMPLETED, input sha256 == current pins 83/83, nothing under data/r4/results.
+  eligibility_table() bound check passes. `$MAN/w3f_fit_eligibility.tsv` 815 rows = 83 measured + 732 bound.
+- Equals 15.5a m123_fits.tsv (restricted_rows, joined_rows) 83/83. Above 16,000 old -> rebuilt: A3_1kg 4 -> 0;
+  A3_ukb 6 -> 4; each AFR arm 4 -> 2 (total 22 -> 10). Confirmatory A3_1kg / A2_identity rows hit: 0 of 100.
+- DRAFT: (k) count clause, (c) unique-key catalogs + guard, (m) + 15.5a commits; dup-key OPEN row -> RESOLVED; M2 row
+  stays OPEN -> 15.5b (gates W4a-T3). Extract 4,127 words. confirmatory_sha256 9fa410aa…88d5 unchanged.
+- Tests: QUICK 738P/2S (192 s wall, over 120 s); PINS 39P; HEAVY 244P/5S; FULL 2,408P/53S/2F, per-id identical to
+  15.5a (2F = deferred tests/m3 legacy_semantics pair -> 15.6).
+- Next: 15.5b (precondition met: 15.5 SUMMARY + w3f_fit_eligibility.tsv committed) -> 15.6 -> W4a-T3 lock (Carter).
+
+## 2026-11-18 (evening) — **TRACK A ta-r4: 15.5a PUSHED; 15.5 remainder EXECUTING (Slurm re-measurement 1968979); plan 15.5b (UKB multi-allelic, Carter a1) PLANNED + CHECKED, waits on 15.5.** (SUPERSEDED by the 2026-11-18 late block above)
 
 - Carter approved the push: 15.5a commits on origin (c3e42237..37b0e9e2).
 - M2 decision: Carter chose (a) biallelic-only UKB panels, then "biallelic only, no --snps-only", then a1 "keep the SNV"
@@ -2665,8 +2677,9 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-17 (latest) - SESSION CLOSE: Carter chose option 1 (fix both ends) for the r4 duplicate catalog keys; plan 15.5a committed (79ff8dc2, DEC c6c450fc); executor running in session c8312220 at Task 1 RED; not pushed.
-Last activity (PRIOR): 2026-11-09 - SESSION CLOSE: W3f 15.1-15.4 pushed (fa0ebdb9); 15.5 interrupted (session b1f97279 died, WIP uncommitted); nothing running.
+Last activity: 2026-11-18 (latest) - SESSION CLOSE: 15.5 closing (executor a18335bd8bbf594bc, Slurm close_b 1970723 FULL running); plan 15.5b (Carter a1 keep-SNV) committed bb084f24, not pushed (push approved with the 15.5 commits); session c8312220 in tmux 'coloc' on login02.
+Last activity (PRIOR): 2026-11-17 - SESSION CLOSE: Carter chose option 1 (fix both ends) for the r4 duplicate catalog keys; plan 15.5a committed (79ff8dc2, DEC c6c450fc); executor running in session c8312220 at Task 1 RED; not pushed.
+Last activity (PRIOR-2): 2026-11-09 - SESSION CLOSE: W3f 15.1-15.4 pushed (fa0ebdb9); 15.5 interrupted (session b1f97279 died, WIP uncommitted); nothing running.
 Last activity (prior): 2026-11-04 - SESSION CLOSE at ta-r4 W4a-T3 (Tasks 1-2 a4090fa6/37265d09 pushed; FULL 2069/2017/52/0). Waiting on Carter: lock values + N1/N2/N7 decisions; recommended W3f fix-up before lock. Nothing running.
 Last activity (prior): 2026-10-29 - SESSION CLOSE mid ta-r4 W3a (Task 1 49a8f47b; repro fires 3/4 arms done, k2d_routeL 91/95; Task 3 pending). Next: finish W3a, then W3b (Carter).
 Last activity (prior): 2026-10-27 - ta-r4 W2b complete (AFR + UKB panels; FULL 1854/1804/50/0, 0 changed vs W2a). Next: W2c (Carter checkpoint).
