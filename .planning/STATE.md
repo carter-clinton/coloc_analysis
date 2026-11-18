@@ -26,7 +26,7 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-18 (late) — **TRACK A ta-r4: W3f 15.5 COMPLETE (re-measured on the rebuilt catalogs; eligibility manifest; DRAFT (k)). NEXT = 15.5b. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-18 (late) — **TRACK A ta-r4: W3f 15.5 COMPLETE (re-measured on the rebuilt catalogs; eligibility manifest; DRAFT (k)). NEXT = 15.5b. NOTHING RUNNING. PUSHED (e8e18e15).** (★ RESUME HERE — LATEST ★)
 
 - Re-measurement Slurm 1968979: 83/83 COMPLETED, input sha256 == current pins 83/83, nothing under data/r4/results.
   eligibility_table() bound check passes. `$MAN/w3f_fit_eligibility.tsv` 815 rows = 83 measured + 732 bound.
