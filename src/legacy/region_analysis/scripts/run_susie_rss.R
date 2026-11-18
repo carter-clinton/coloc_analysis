@@ -704,6 +704,10 @@ option_list <- list(
   make_option("--cap-after-ld-restriction", type = "character", default = "false",
               help = paste("'true' | 'false'. When true SUSIE_MAX_VARIANTS is checked",
                            "after the LD panel restriction instead of before LD loading.")),
+  # W3f 15.5a (DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze).
+  make_option("--require-unique-allele-key", type = "character", default = "false",
+              help = paste("'true' | 'false'. When true the script stops with DUPLICATE_ALLELE_KEYS if a",
+                           "normalized CHR:POS:REF:ALT repeats in the panel-restricted subset.")),
   make_option("--variant-list", type = "character", help = "Optional TSV restricting variants (CHR,POS,REF,ALT)"),
   make_option("--credible-set", type = "double", default = 0.95, help = "Credible set probability"),
   make_option("--policy", type = "character", default = "config/susie_policy.yaml",
@@ -753,6 +757,12 @@ cap_after_ld <- local({
   if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
   if (v %in% c("false", "f", "0", "no"))  return(FALSE)
   stop(sprintf("--cap-after-ld-restriction must be true|false, got %s", opt$`cap-after-ld-restriction`))
+})
+require_unique_key <- local({
+  v <- tolower(trimws(opt$`require-unique-allele-key` %||% "false"))
+  if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
+  if (v %in% c("false", "f", "0", "no"))  return(FALSE)
+  stop(sprintf("--require-unique-allele-key must be true|false, got %s", opt$`require-unique-allele-key`))
 })
 L_DEFAULT            <- policy$susie$L                    %||% 10L
 COVERAGE             <- policy$susie$coverage             %||% 0.95
@@ -1055,6 +1065,15 @@ assert_declared_ld_authoritative(ld_result, ld_authoritative, opt$region, opt$an
 
 if (!is.null(ld_result$subset_idx)) {
   subset <- subset[ld_result$subset_idx]
+}
+
+if (require_unique_key) {
+  k <- paste(toupper(trimws(as.character(subset$CHR))), as.integer(subset$POS),
+             toupper(trimws(as.character(subset$REF))), toupper(trimws(as.character(subset$ALT))), sep = ":")
+  d <- duplicated(k) | duplicated(k, fromLast = TRUE)
+  if (any(d)) stop(sprintf("DUPLICATE_ALLELE_KEYS: region=%s trait=%s ancestry=%s n_dup_rows=%d of %d; first: %s",
+                           opt$region, opt$trait, opt$ancestry, sum(duplicated(k)), length(k),
+                           paste(head(unique(k[d]), 5), collapse = ",")), call. = FALSE)
 }
 
 if (cap_after_ld && nrow(subset) > SUSIE_MAX_VARIANTS) {

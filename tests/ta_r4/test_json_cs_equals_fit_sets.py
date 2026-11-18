@@ -38,10 +38,12 @@ def _fit(root, script_text=None):
         link.write_text(script_text)
         real = commands.fit_command
 
-        def pre_fix_argv(*a, **k):  # the substrate predates --cap-after-ld-restriction (W3f N1)
+        def pre_fix_argv(*a, **k):  # the substrate predates --cap-after-ld-restriction (W3f N1) and the 15.5a guard
             cmd = real(*a, **k)
-            i = cmd.index("--cap-after-ld-restriction")
-            return cmd[:i] + cmd[i + 2:]
+            for flag in ("--cap-after-ld-restriction", "--require-unique-allele-key"):
+                i = cmd.index(flag)
+                cmd = cmd[:i] + cmd[i + 2:]
+            return cmd
 
         with mock.patch.object(commands, "fit_command", pre_fix_argv):
             r = fit_arm(root, ARM)
