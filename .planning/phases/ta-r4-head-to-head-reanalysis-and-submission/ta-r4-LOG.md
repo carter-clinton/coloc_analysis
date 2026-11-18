@@ -1046,11 +1046,4 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   deferred-items.md, 15.6); not fixed. tests/m3/sparse_parent_benchmark.tsv timing rewrite restored to HEAD.
 - OPEN after 15.5: the M2 CHR:POS row (3 A3_ukb asthma fits) -> plan 15.5b (Carter a1), gates W4a-T3. A3_ukb counts
   above (4 fits / 14 rows) are on the current UKB panels; 15.5b rebuilds them and re-measures A3_ukb eligibility.
-- Wave close (no push), cascadelake: QUICK (Slurm 1970722) 738P/2S, 173.0 s pytest / 192.0 s wall (over 120 s;
-  carried to 15.6). PINS 39P. HEAVY 244P/5S, 1,551 s. FULL (Slurm 1970723, 2,673 s): 2,463 ids = 2,408P + 53S + 2F,
-  per-id identical to the 15.5a FULL (0 removed, 0 added, 0 outcome changes); HEAVY per-id identical to 15.5a.
-  The 2 failures are the deferred tests/m3 test_variant_catalog_fallback_legacy_semantics pair (failing since 6c6e9546;
-  deferred-items.md, 15.6). The sparse_parent_benchmark.tsv timing rewrite was restored to HEAD.
-- Not done here (by instruction): push. Plan Task 3 says push; the 15.5 remainder brief forbids it.
-- Remaining OPEN: DRAFT Pre-Paste M2 CHR:POS row (3 A3_ukb asthma fits) -> plan 15.5b (Carter a1); gates W4a-T3.
-  A3_ukb eligibility will be re-measured by 15.5b after the UKB panel rebuild.
+- Push: done by the orchestrator with bb084f24 (Carter approved 2026-11-18 18:22).
