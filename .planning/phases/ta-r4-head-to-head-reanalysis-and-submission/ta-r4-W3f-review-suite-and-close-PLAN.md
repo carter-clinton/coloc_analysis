@@ -4,7 +4,7 @@ plan: 15.6
 slug: W3f-review-suite-and-close
 type: execute
 wave: 15.6
-depends_on: ["ta-r4-W3f-eligibility-measurement-and-draft"]
+depends_on: ["ta-r4-W3f-eligibility-measurement-and-draft", "ta-r4-W3f-ukb-panels-biallelic"]
 gap_closure: true
 files_modified:
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-AMENDMENT-REVIEW-as-received.md

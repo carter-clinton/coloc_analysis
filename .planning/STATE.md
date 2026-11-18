@@ -26,7 +26,22 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-18 — **TRACK A ta-r4: W3f 15.5a COMPLETE (r4 catalogs one row per allele key; run_susie_rss.R duplicate-key guard). NEXT = 15.5 remainder. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-18 (evening) — **TRACK A ta-r4: 15.5a PUSHED; 15.5 remainder EXECUTING (Slurm re-measurement 1968979); plan 15.5b (UKB multi-allelic, Carter a1) PLANNED + CHECKED, waits on 15.5.** (★ RESUME HERE — LATEST ★)
+
+- Carter approved the push: 15.5a commits on origin (c3e42237..37b0e9e2).
+- M2 decision: Carter chose (a) biallelic-only UKB panels, then "biallelic only, no --snps-only", then a1 "keep the SNV"
+  (reply files W3f-carter-{m2-biallelic-ukb,ukb-no-snps-only,ukb-a1-keep-snv}-reply-2026-11-18.txt; untracked BY DESIGN —
+  plan 15.5b Task 1 commits them with the DEC). Rule per CHR:POS: exactly one ACGT SNV among 2+ variants → keep it; else
+  drop the position; single-variant positions unchanged (lone indels stay).
+- Measured: 38 multi-variant positions (31 one-SNV, 7 no-SNV, 0 multi-SNV) → 31 kept, 45 dropped (all indels);
+  UKB native n_var 189,945 → 189,900; the 3 M2 sites (MC4R, NC_NULL_06, PYHIN1) are all one-SNV (PYHIN1 keeps rs184461353).
+- Plan 15.5b `ta-r4-W3f-ukb-panels-biallelic-PLAN.md`: plan-checker PASS with 6 flags, all folded in. Precondition:
+  15.5 SUMMARY + w3f_fit_eligibility.tsv committed. 15.6 now depends_on 15.5 and 15.5b.
+- 15.5 remainder executor: re-measurement array 1968979 (83 tasks; 78 done at 17:28) under elig_20261118; on completion it
+  writes the eligibility manifest, DRAFT (k), SUMMARY. Its uncommitted DRAFT edit is in the tree (do not stage by hand).
+- Next: verify 15.5 hand-back → commit → execute 15.5b → 15.6 → W4a-T3 lock (Carter).
+
+## 2026-11-18 — **TRACK A ta-r4: W3f 15.5a COMPLETE (r4 catalogs one row per allele key; run_susie_rss.R duplicate-key guard). NEXT = 15.5 remainder. NOTHING RUNNING. NOT PUSHED.** (SUPERSEDED by the 2026-11-18 evening block above)
 
 - Carter chose "1. Fix both ends (recommended)." DEC-2026-11-17-ta-r4-catalog-unique-allele-key +
   DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze (c6c450fc). Producer e9c0d400; guard 13b0821c;
