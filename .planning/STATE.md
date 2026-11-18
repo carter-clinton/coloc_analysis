@@ -26,7 +26,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-16 — **TRACK A ta-r4: W3f 15.5 STOPPED AT A CARTER DECISION (duplicate catalog keys). NOTHING RUNNING.** (★ RESUME HERE — LATEST ★)
+## 2026-11-17 — **TRACK A ta-r4: Carter chose "fix both ends"; plan 15.5a committed; executor RUNNING (Task 1 RED).** (★ RESUME HERE — LATEST ★)
+
+- **Decision:** at the 15.5 Rule-4 checkpoint (r4 catalogs list one CHR:POS:REF:ALT under two SNP_IDs; 30/31 catalogs; 248,257 extra rows of 877,756 = 248,251 byte-exact + 6 lowercase-allele twins), Carter replied "1. Fix both ends (recommended)." — recorded verbatim in `W3f-carter-dupkey-fix-reply-2026-11-17.txt`.
+- **Plan 15.5a** `ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md`: r4-only unique-key catalog step (legacy builder untouched — shared with Track B), flag-gated `--require-unique-allele-key` hard stop in `run_susie_rss.R` + R_CODE_REF re-pin, 122-job rebuild with ~25 GB panel backup, panels must stay byte-identical, re-pin catalogs. Plan-checker FLAG (10 items) fixed; committed **79ff8dc2**. DEC entries **c6c450fc**.
+- **In flight at close (23:50 EST):** gsd-executor subagent of session `c8312220-f76b-46f3-96cc-4d31344a5b63` (NOT tmux) at Task 1 RED-first (18 failing tests, `data/r4/tmp/w3f/dupkey/red_t1.txt`). No Slurm jobs queued. Local 2 ahead of origin; push forbidden inside 15.5a.
+- **Open for Carter:** (1) coloc `run_coloc_pair_r4.R:440` keys on CHR:POS — UKB panels have 38 multi-allelic sites; asthma.EUR carries both alleles at 6 (4 confirmatory regions) → 15.5a measures per fit; non-zero = OPEN row gating W4a-T3. (2) n_regions_min 7 vs A2_identity k≤5. (3) 11 lowercase-allele rows likely missing from UKB panels. (4) Track B legacy catalogs carry 29,363 dup keys. (5) DRAFT 3,998 vs ~3,100 words; QUICK 208 s vs 120 s.
+- **Resume:** `.planning/HANDOFF.json` → `resume_on_reconnect` + `ta_r4_w3f_15_5a`. Then 15.5 remainder → 15.6 → W4a-T3 lock.
+
+## 2026-11-16 — **TRACK A ta-r4: W3f 15.5 STOPPED AT A CARTER DECISION (duplicate catalog keys). NOTHING RUNNING.** (SUPERSEDED by 2026-11-17 above)
 
 - 15.5 Task 1 measured (Slurm 1946095, 83/83, no fit, nothing under data/r4/results). Code f33a582c; LOG entry 2026-11-16 W3f 15.5.
 - BLOCKER found by the bound check: r4 variant catalogs list one CHR:POS:REF:ALT under two SNP_IDs (30/31 catalogs, 248,257 extra
@@ -2626,7 +2634,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-09 (latest) - SESSION CLOSE: W3f 15.1-15.4 pushed (fa0ebdb9); 15.5 interrupted (session b1f97279 died, WIP uncommitted); nothing running.
+Last activity: 2026-11-17 (latest) - SESSION CLOSE: Carter chose option 1 (fix both ends) for the r4 duplicate catalog keys; plan 15.5a committed (79ff8dc2, DEC c6c450fc); executor running in session c8312220 at Task 1 RED; not pushed.
+Last activity (PRIOR): 2026-11-09 - SESSION CLOSE: W3f 15.1-15.4 pushed (fa0ebdb9); 15.5 interrupted (session b1f97279 died, WIP uncommitted); nothing running.
 Last activity (prior): 2026-11-04 - SESSION CLOSE at ta-r4 W4a-T3 (Tasks 1-2 a4090fa6/37265d09 pushed; FULL 2069/2017/52/0). Waiting on Carter: lock values + N1/N2/N7 decisions; recommended W3f fix-up before lock. Nothing running.
 Last activity (prior): 2026-10-29 - SESSION CLOSE mid ta-r4 W3a (Task 1 49a8f47b; repro fires 3/4 arms done, k2d_routeL 91/95; Task 3 pending). Next: finish W3a, then W3b (Carter).
 Last activity (prior): 2026-10-27 - ta-r4 W2b complete (AFR + UKB panels; FULL 1854/1804/50/0, 0 changed vs W2a). Next: W2c (Carter checkpoint).

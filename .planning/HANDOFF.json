@@ -1,12 +1,11 @@
 {
   "version": "1.0",
-  "timestamp": "2026-11-09T21:25:00Z",
+  "timestamp": "2026-11-18T04:50:00Z",
   "phase": "ta-r4",
   "phase_name": "ta-r4-head-to-head-reanalysis-and-submission",
   "phase_dir": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission",
   "wave": "UPDATED 2026-08-12 EVENING (quick-260812-ot2 + 260812-ox1 + the five-dimension blast-radius sweep + quick-260812-thz): two clauses of the close-record below are superseded. (a) NEXT is NO LONGER “place ms-correction-v2 -> post osf-correction-v2”: obligation (2) is SKIPPED BY CARTER’S DIRECTION = DEFERRED, NOT DISCHARGED (DEC-2026-08-12-e2-obligation1-venue-and-obligation2-skip); current NEXT = venue pick (Nature-first memo) -> P-1/P-2 closing-sentence choice -> place ms-correction-v2 per the ot2 placement SPEC. (b) THE FIRE SURFACE IS NO LONGER the rcw review directly: it is the READY-TO-FIRE runbook at .planning/quick/260812-ox1-m3-04c-task-3-fire-prep-pre-fire-1-per-r/260812-ox1-READY-TO-FIRE.md, which wraps the corrected review; PRE-FIRE 1 LANDED (5284505) so 1b branch (i) is the live default. || 2026-08-12 CLOSE BODY, PRESERVED: SESSION CLOSE 2026-08-12. One continuous arc since resume on 2026-08-11: FIVE validated quick tasks + a five-way adversarial review. (1) 260811-oku — E-2 disclosure drafts, both framings, decision surface; (2) 260811-pmv — SR4-OPEN evidence dossier (NEVER-FROZEN, all drift traceable); (3) 260811-rcw — m3-04c Task 3 PRE-FIRE gate review, 20/20 L-checks, suites 902/31/0 + 136/1/0 re-run once; (4) 260811-tf3 — Carter DECIDED both open items: E-2 framing = B/CORRECTION (DEC-2026-08-11-e2-framing-correction, obligation 3 DISCHARGED) and SR4-OPEN = NEVER-FROZEN (DEC-2026-08-11-sr4-disposition); (5) Carter then ordered a comprehensive adversarial review (Codex CLI v0.141.0 read-only + 4 blind investigators + /assess-blast-radius) which found 5 blockers -> quick-260812-09a REMEDIATED 21/22 findings (1 reported-with-reason: STATE.md:15 is inside the frontmatter fence), DEC-2026-08-12-adversarial-review-remediation. NET STATE: v2 disclosure pair (260812-09a-SELECTED-PAIR-correction-v2.md) SUPERSEDES tf3's v1 — place/post ONLY v2; the rcw PRE-FIRE review is CORRECTED IN PLACE and is the fire surface; ZERO Carter decisions outstanding. NEXT = Carter's external actions with the v2 texts (journal-policy pre-placement check -> place ms-correction-v2 -> post osf-correction-v2 + record URL/timestamp in osf_deviations.md), then m3-04c Task 3 (the terminal fire gate — NEVER an agent).",
   "headline_2026_08_04": "⛔⛔ m3-04c IS HALTED — ITS HEADLINE must_have IS FALSE AS SPECIFIED. The m3-04b blast-radius sweep (4 independent read-only investigators + orchestrator verification, $0, no perimeter) found the 2026-08-03 panel-unreachability diagnosis is RIGHT BUT ONE LAYER TOO SHALLOW. BLOCKER-1: `{input.ld_matrix}` IS NEVER REFERENCED IN run_finemap's SHELL BLOCK. The R script gets only `--ld-dir {params.ld_dir}` + `--region {params.region_id}` and RECONSTRUCTS its own path at run_susie_rss.R:124-127 as file.path(ld_dir, ancestry, region_id.rds) — ancestry is 'AFR', NEVER 'AFR_aou', and NO rule promotes AFR_aou/*.rds into AFR/ (grep over every .smk + Snakefile = zero hits). On a miss it falls SILENTLY to an identity matrix (run_susie_rss.R:472-474). PROVEN EMPIRICALLY: with the AoU panel present on disk and correctly resolved, resolve_ld_path returns .../AFR_aou/m2_region_00067.rds (exists=True) while SuSiE opens .../AFR/FTO_16q12.rds (exists=False). SO m3-04c T1's ONE-ARGUMENT CHANGE CANNOT MAKE THE PANEL READABLE — the fire would STILL bank a panel nothing reads. This defect is PRE-EXISTING (m3-W3-T2 wired resolve_ld_path into input: only); m3-04b aggravated only the BELIEF, via its docstring. BLOCKER-4 (independent, autonomous, $0): a PARTIAL Stage-A rollup makes assemble_occlusion_catalog.py:352-359 IGNORE EVERY EXCLUDELIST and stamp the result 'stage_a_manifest' — the override fires when the rollup is merely NON-EMPTY, not COMPLETE, and run_native_ld_panel.py:821-831 already swallows the per-region manifest-append exception that creates that state. There is NO completeness check against 276 anywhere. Result = orphaned variants wearing a clean provenance stamp. ⇒ NEXT = a CARTER DECISION on the BLOCKER-1 remedy, then REPLAN m3-04c. DO NOT execute m3-04c as written; DO NOT fire.",
-  "status": "15.5 IN PROGRESS (interrupted, uncommitted WIP on disk); nothing running",
   "status_PRIOR_2026_10_28": "ta-r4 W2c Task 1 IN PROGRESS (GTEx QTL downloads running detached on login01)",
   "no_fire_running": true,
   "nc_state_cost": "$0 for the entire 2026-08-14 -> 08-16 arc. NOTHING running server-side or NC-State-side. ZERO perimeter contact: no gsutil, no gcloud, no bq, no wb, not even read-only control-plane. No LSF jobs (bjobs: \"No unfinished job found\"). The AoU browser agent stood down AT the Step 3 GATE and the VM was NEVER STARTED. Local compute only: read-only text normalization/diff/md5 and two gate-script runs.",
@@ -66,6 +65,7 @@
   "cluster": "AoU_Jupyter_ComputeEngine_20260626b STOPPED since the site-basis sweep (2026-08-20 ~20:11 EDT). Disk persists bfile, repo clone, occ_measure/ (both sweep TSVs; both banked in-repo), step7_vv.txt, region1_window.bim, the failed-notebook record. NEVER DELETE (Standard-disk semantics). Next start = the fire itself, after posting + remediation.",
   "data_state": "UNCHANGED this session — no perimeter contact. AoU AFR native-plink LD panel does NOT exist: bucket .npz = 0/276. data/processed/ld_reference/ does not exist AT ALL on NC-State, so resolve_ld_path returning \"the first EXISTING path\" currently has nothing to return — which is why several of this session's fixes are correct-but-inert wiring.",
   "do_not": [
+    "2026-11-17: inside 15.5a do NOT push, run production fits, re-fire repro, post OSF, take the W4a-T3 lock, change n_regions_min, edit run_coloc_pair_r4.R / UKB panel code / Track B; never re-pin to make a byte-identity check pass",
     "Do not let any agent author \"carter-approved\" text or write signoffs/*.yaml except via `signoff record` from Carter's verbatim paste.",
     "Do not write the real OSF sentinel/receipt or post to OSF — Carter only.",
     "Do not edit src/legacy/region_analysis/scripts/run_susie_rss.R, Snakefile, config/pipeline.yaml or docs/manuscript/id-vs-ref-LD.md in ta-r4.",
@@ -379,17 +379,7 @@
     "Then re-spawn a gsd-executor for W2b wave close only (SUMMARY, full-suite reconciliation vs W2a, STATE/ROADMAP, push). Stop at W2c."
   ],
   "resume_entry_point_PRIOR_2026_10_27_W2b": "/gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission (W2b close, then W2c checkpoint — Carter sign-off)",
-  "headline": "ta-r4 W3f: 15.1-15.4 COMPLETE + pushed (origin == local at fa0ebdb9). 15.5 (eligibility measurement + DRAFT re-present) INTERRUPTED: its session b1f97279 died ~14:38 EST mid-task with WIP uncommitted. NOTHING RUNNING (Slurm empty). Then 15.6 -> W4a-T3 Carter lock.",
   "headline_PRIOR_2026_10_28": "TRACK A ta-r4: W0a..W2b DONE+pushed (HEAD 1a887069). W2c executing: Task 1 = 98 eQTL Catalogue GTEx files (49 tissues x eqtl/sqtl, 192,123,270,766 bytes per HEAD) downloading from EBI FTP at ~7-8 MB/s, ETA ~midnight-01:00 EDT 2026-10-28. Downloader runs on login01 (compute nodes have no internet, measured 2026-10-21), DETACHED (PPID 1, own session): PID 1793323, pidfile/log /rs1/researchers/c/ckclinto/coloc_analysis/ta_r4/logs/qtl_fetch.{pid,log}. Tasks 2-3 (QTL manifest TDD, review packet, full suite, push) follow; then STOP at W2c Task 4 checkpoint:human-action. Carter wrote \"carter approved 10-27-2026 / proceed with your recommendations / --auto --chain\" BEFORE the packet existed: NOT a valid sign-off (wrong format, predates packet) and NOT recorded. Packet must also present evidence (no choice) on stroke.AFR checksum mismatch and hypertension.EUR sdY.",
-  "resume_on_reconnect": [
-    "Check for another live writer first: pgrep -u $USER -af claude; squeue -u $USER; ls -lt ~/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/*.jsonl | head -3; git log -3",
-    "Start/attach tmux on login01 (tmux new -s coloc / tmux attach -t coloc), then claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07 (never --continue)",
-    "Settle the asthma.EUR genome-build question (measure, do not assume) before using the eligibility manifest",
-    "Finish 15.5: verify measure_fit_eligibility tests, regenerate manifests if needed, finish the DRAFT re-present (DRAFT (e) E4/E6, (f), (g), (l) still describe pre-15.4 code), recompute confirmatory_sha256 (interim 9fa410aa...88d5), SUMMARY, commit with explicit paths, push",
-    "Then 15.6 (review suite + wave close; QUICK is 178-181 s vs 120 s budget)",
-    "Then W4a-T3: Carter lock (decision_rules.yaml locked: false). Carter must review 15.4 deviation 5 (fallback-only QTL regions re-tiered out of accidental Tier C) first"
-  ],
-  "resume_entry_point": "Resume session b1f97279 (inside tmux on login01): `claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07`, then: you were interrupted mid-15.5 at the asthma.EUR build check; continue. Fallback (fresh session): /gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission -> 15.5, reusing the WIP in ta_r4_w3f_15_5_in_progress after verifying it.",
   "status_PRIOR_2026_10_28b": "ta-r4 W2c COMPLETE at ac4e5452; production gate is now the git lock (DEC-2026-10-28-ta-r4-w5-gate-git-lock-not-osf, quick-261028-kkg: 26b358e2 + b119c34e); NEXT = W3a (W2d is a no-op: native/full)",
   "headline_PRIOR_2026_10_28b": "TRACK A ta-r4: W2c COMPLETE (W2c-T4 recorded). Production gate = offline git lock (r4_lock_gate: W4b commit A ancestor of HEAD, no LOCKED_PATHS drift, Carter's W4b-T3 lock_sha); OSF not required; R4 wording 'analysis locked in commit <sha> before production'. FULL 1864/1814/50/0. NEXT = W3a. Nothing running.",
   "resume_on_reconnect_PRIOR_2026_10_28b": [
@@ -495,5 +485,45 @@
     ],
     "open_question_at_death": "UNVERIFIED: of 1,853,501 rsids shared between asthma.EUR and the GRCh37 BMI file only 16,907 (0.9%) share a position -> asthma.EUR is likely GRCh38 (or needs liftover). Executor was grepping the records for whether this is already known when it died.",
     "not_touched_by_close_session": "WIP files left uncommitted on purpose; not reviewed or verified by the closing session"
-  }
+  },
+  "headline_PRIOR_2026_11_09": "ta-r4 W3f: 15.1-15.4 COMPLETE + pushed (origin == local at fa0ebdb9). 15.5 (eligibility measurement + DRAFT re-present) INTERRUPTED: its session b1f97279 died ~14:38 EST mid-task with WIP uncommitted. NOTHING RUNNING (Slurm empty). Then 15.6 -> W4a-T3 Carter lock.",
+  "status_PRIOR_2026_11_09": "15.5 IN PROGRESS (interrupted, uncommitted WIP on disk); nothing running",
+  "resume_on_reconnect_PRIOR_2026_11_09": [
+    "Check for another live writer first: pgrep -u $USER -af claude; squeue -u $USER; ls -lt ~/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/*.jsonl | head -3; git log -3",
+    "Start/attach tmux on login01 (tmux new -s coloc / tmux attach -t coloc), then claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07 (never --continue)",
+    "Settle the asthma.EUR genome-build question (measure, do not assume) before using the eligibility manifest",
+    "Finish 15.5: verify measure_fit_eligibility tests, regenerate manifests if needed, finish the DRAFT re-present (DRAFT (e) E4/E6, (f), (g), (l) still describe pre-15.4 code), recompute confirmatory_sha256 (interim 9fa410aa...88d5), SUMMARY, commit with explicit paths, push",
+    "Then 15.6 (review suite + wave close; QUICK is 178-181 s vs 120 s budget)",
+    "Then W4a-T3: Carter lock (decision_rules.yaml locked: false). Carter must review 15.4 deviation 5 (fallback-only QTL regions re-tiered out of accidental Tier C) first"
+  ],
+  "resume_entry_point_PRIOR_2026_11_09": "Resume session b1f97279 (inside tmux on login01): `claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07`, then: you were interrupted mid-15.5 at the asthma.EUR build check; continue. Fallback (fresh session): /gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission -> 15.5, reusing the WIP in ta_r4_w3f_15_5_in_progress after verifying it.",
+  "timestamp_reason_2026_11_17": "session c8312220 close: 15.5a planned/checked/committed; executor mid-Task 1",
+  "headline": "ta-r4 W3f: 15.5 stopped at Rule-4 (r4 catalogs duplicate CHR:POS:REF:ALT under 2 SNP_IDs; 248,257 extra rows / 877,756). Carter chose option 1 (fix both ends) 2026-11-17. Plan 15.5a written, plan-checker FLAG fixed, committed 79ff8dc2. Executor RUNNING as a subagent of session c8312220 (NOT tmux) — at Task 1 RED (18 failing tests in data/r4/tmp/w3f/dupkey/red_t1.txt, 23:46); DEC committed c6c450fc. No Slurm jobs queued at close. Local 2 ahead of origin (not pushed — push forbidden inside 15.5a).",
+  "status": "15.5a IN PROGRESS (Task 1 of 3). 15.5 remainder + 15.6 wait on it.",
+  "ta_r4_w3f_15_5a": {
+    "plan": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md",
+    "carter_reply": "W3f-carter-dupkey-fix-reply-2026-11-17.txt = \"1. Fix both ends (recommended).\" (authorizes r4-only catalog unique-key producer, flag-gated run_susie_rss.R guard --require-unique-allele-key + R_CODE_REF re-pin, catalog rebuild + re-pin; NOTHING else)",
+    "evidence": "data/r4/tmp/w3f/elig_20261116/CHECKPOINT_15.5_handback.md (15.5 executor hand-back, verbatim); work dir data/r4/tmp/w3f/dupkey/",
+    "commits": [
+      "79ff8dc2 plan",
+      "c6c450fc DEC entries"
+    ],
+    "executor": "gsd-executor subagent of session c8312220-f76b-46f3-96cc-4d31344a5b63, started 17:55 EST 2026-11-17; dies if that session disconnects",
+    "reconciled_counts": "byte-exact 248,251 + 6 lowercase-allele twins = 248,257 normalized; 248,239 pairs + 9 triples; after dedup 629,499 rows; 46,143 multi-allelic same-position rows preserved",
+    "open_for_carter": [
+      "coloc CHR:POS stop (run_coloc_pair_r4.R:440): UKB panels have 38 multi-allelic sites/18 regions; asthma.EUR carries both alleles at 6 (incl. 4 confirmatory regions). 15.5a measures per-fit (M2); non-zero -> OPEN row gating W4a-T3; fix options (biallelic-strict UKB panels vs full-allele coloc key) are outside option 1",
+      "n_regions_min=7 vs A2_identity_vs_A3_1kg k<=5 (proxy) -> possible NON_INFORMATIVE; unchanged",
+      "11 non-duplicate lowercase-allele rows likely missing from UKB panels (case-sensitive _allele_keys) — fix? (changes UKB panel bytes)",
+      "Track B allele-aware AFR fits read legacy catalogs with 29,363 dup keys — separate debug?",
+      "DRAFT extract 3,998 words vs ~3,100 target; QUICK 208 s vs 120 s (carried to 15.6)"
+    ]
+  },
+  "resume_on_reconnect": [
+    "Reconnect: tmux attach -t coloc (login01) or claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63 inside tmux. Never --continue.",
+    "Check liveness BEFORE acting: mtime of ~/.claude/projects/-gpfs-common-share01-clintonlab-ckclinto-coloc-analysis/c8312220-f76b-46f3-96cc-4d31344a5b63/subagents/agent-a35d2e6fe2356e377.jsonl; squeue -u ckclinto; git log 79ff8dc2..HEAD; ls -lt data/r4/tmp/w3f/dupkey/",
+    "If executor finished: read its hand-back, verify claims (counts, panel byte-identity, negative controls), then present to Carter.",
+    "If executor died: committed tasks survive; uncommitted WIP (src/python/ta_r4/catalog_unique_key.py, tests/ta_r4/test_catalog_unique_key.py, rule split) = unchecked draft. If it died during Task 3 after panels were rewritten, run the plan STOP-branch restore from data/r4/tmp/w3f/dupkey/old_panels/ (sha256sum -c) before anything else. Re-dispatch a gsd-executor at the first incomplete task.",
+    "After 15.5a: resume 15.5 remainder (re-measure cascadelake, w3f_fit_eligibility.tsv, DRAFT (k) clause, SUMMARY) -> 15.6 -> W4a-T3 lock (Carter)."
+  ],
+  "resume_entry_point": "HANDOFF.json ta_r4_w3f_15_5a + STATE.md 2026-11-17 RESUME HERE block"
 }
