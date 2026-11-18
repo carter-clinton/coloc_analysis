@@ -66,7 +66,7 @@ rule r4_catalog:
     output:
         "data/r4/ld/variants_{route}/{region}.tsv",
     wildcard_constraints:
-        route="legacy|r4",
+        route="legacy",
         region=_wc(s for _, s in REGION_INFOS),
     params:
         region_id=lambda w: REGION_SAFE_TO_ID[w.region],
@@ -82,6 +82,54 @@ rule r4_catalog:
             --regions-csv {input.regions} \
             --harmonized {input.harmonized} \
             --output {output}
+        """
+
+
+# r4 route: the shared builder's output (unchanged command), then one row per normalized allele key
+# (DEC-2026-11-17-ta-r4-catalog-unique-allele-key).
+rule r4_catalog_raw:
+    input:
+        harmonized=CATALOG_SUMSTATS["r4"],
+        regions=CATALOG_REGIONS_CSV["r4"],
+    output:
+        r4paths.catalog_raw_path("{region}"),
+    wildcard_constraints:
+        region=_wc(s for _, s in REGION_INFOS),
+    params:
+        region_id=lambda w: REGION_SAFE_TO_ID[w.region],
+    conda:
+        str(Path(workflow.basedir) / "envs" / "python_stats.yml")
+    threads: 1
+    resources:
+        mem_mb=8000,
+    shell:
+        r"""
+        {PYTHON_BIN} src/legacy/region_analysis/scripts/collect_region_variants.py \
+            --region-id {params.region_id} \
+            --regions-csv {input.regions} \
+            --harmonized {input.harmonized} \
+            --output {output}
+        """
+
+
+rule r4_catalog_unique:
+    input:
+        raw=r4paths.catalog_raw_path("{region}"),
+        code="src/python/ta_r4/catalog_unique_key.py",
+    output:
+        catalog=r4paths.catalog_path("r4", "{region}"),
+        dropped=r4paths.catalog_dropped_path("{region}"),
+    wildcard_constraints:
+        region=_wc(s for _, s in REGION_INFOS),
+    conda:
+        str(Path(workflow.basedir) / "envs" / "python_stats.yml")
+    threads: 1
+    resources:
+        mem_mb=4000,
+    shell:
+        r"""
+        PYTHONPATH=src/python {PYTHON_BIN} -m ta_r4.catalog_unique_key \
+            --in {input.raw} --out {output.catalog} --dropped {output.dropped}
         """
 
 

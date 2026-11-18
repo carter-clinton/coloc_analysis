@@ -69,6 +69,14 @@ def catalog_path(route, region_safe):
     return f"{R4}/ld/variants_{route}/{region_safe}.tsv"
 
 
+def catalog_raw_path(region_safe):
+    return f"{R4}/ld/variants_r4_raw/{region_safe}.tsv"
+
+
+def catalog_dropped_path(region_safe):
+    return f"{R4}/ld/variants_r4_dropped/{region_safe}.tsv"
+
+
 def coloc_json(arm_or_A1, row_id, p12_key, varset=None):
     if arm_or_A1 in ("A1_EUR", "A1_AFR"):
         if varset is None:
