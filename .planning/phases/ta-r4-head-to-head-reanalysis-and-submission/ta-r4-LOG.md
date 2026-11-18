@@ -1009,3 +1009,48 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
   Pre-Paste OPEN row resolved + (c)/(m) for the 15.5a commits, 15.5 Task 3, SUMMARY; any M1/M2 OPEN row stays open
   until Carter decides and gates W4a-T3. Nothing pushed. Backups kept in `data/r4/tmp/w3f/dupkey/` until the 15.5
   remainder closes.
+
+## 2026-11-18 — W3f 15.5 remainder (re-measure on the rebuilt catalogs; eligibility manifest; DRAFT (k); no push)
+
+- Run list re-planned from current code into `data/r4/tmp/w3f/elig_20261118/meas` (fresh dir): 83 tasks, the same 83
+  keys as 1946095; the only argv change is `--require-unique-allele-key true` (15.5a fit_command).
+- Slurm 1968979 (cascadelake, 1 h, 32G): 83/83 COMPLETED 0:0, max RSS 6.7 GB; 83 JSON + RDS + inputs records.
+  summarise() accepted all 83 (exact run list, early exits, no lbf_variable). Input sha256 == current pins 83/83.
+  `find -L data/r4/results -newer data/r4/tmp/w3f/elig_20261118/meas/run.sh -type f | wc -l` = 0.
+- eligibility_table() passes the bound check (n_variants <= panel n_var 83/83). Official
+  `$MAN/w3f_fit_eligibility.tsv`: 815 rows (5 EUR arms x 145 + 3 AFR arms x 30) = 83 measured + 732 bound; not eligible 10.
+- Reconciliation (`reconcile.py`, inline and Slurm 1970719, identical output), each 83 of 83:
+  new n_variants == 15.5a m123_fits.tsv[new].restricted_rows; new n_variants_pre_ld == m123[new].joined_rows;
+  m123[new].restricted_4key_extra == 0; new n_variants == 11-16 n_variants_distinct; new n_variants_pre_ld == 11-16
+  n_pre_ld_distinct; old n_variants == m123[old].restricted_rows; old - new n_variants == m123[old].restricted_4key_extra.
+- Post-restriction > 16,000, old catalogs (1946095) -> rebuilt (1968979) [m123 new]: A3_1kg 4 -> 0 [0] of 50;
+  A3_ukb 6 -> 4 [4] of 15 measured (asthma, t2d x BMI_5q13_3, PYHIN1_1q23); AFR661_A3, AFR661_A2, AFR504_A3 4 -> 2 [2]
+  of 6 each (asthma x BMI_5q13_3, PYHIN1_1q23). Total 22 -> 10 = 4 + 3 x 2.
+- Pair rows hit: A3_1kg / A2_identity primary 0 of 100 (A2 by the bound, max identity panel 15,236); A3_ukb 14 of 100
+  primary = 2 regions x (10 - C(3,2)); each AFR arm 4 of 30 = 2 regions x 2 asthma pairs; negative-control rows 0.
+- Pre-fix recount (pre-LD rows > 16,000), rebuilt catalogs: 11 A3_1kg fits -> 39 primary rows = 5 regions x 7 +
+  CXADR_F2RL1_6p21 1 trait x 4 (= the 11-16 "duplicates removed" figure; 12 -> 42 on the old catalogs; review 10 -> 35
+  on earlier inputs).
+- Regression keys A3_1kg PYHIN1_1q23: asthma n_variants_pre_ld 40,649 (> 16,000), n_variants 12,605 <= panel 15,236
+  (old catalogs 22,038); t2d 36,582 / 12,584 (old 21,999).
+- Proxy unchanged (repro fits, not catalog-dependent; c3e42237). confirmatory_sha256 recomputed:
+  9fa410aa411fc2c682a4886dd25ca98d5dfd37f6968ecffc1a0a8860003888d5 (== 15.3 interim; old f6e6e90f…e9e3). LOCKED_PATHS 29.
+- DRAFT: (k) measured-count clause; (c) one catalog row per allele key + fit refuses a repeated key; (m) + e9c0d400,
+  13b0821c, 30b13692; Pre-Paste measured-count row rewritten (1968979), duplicate-key OPEN row -> RESOLVED (15.5a commits),
+  analysis-code row + 15.5a; M2 CHR:POS row stays OPEN with a pointer to 15.5b (Carter a1). test_amendment_text 21P/2S.
+  Extract 4,127 words (3,998 at 37b0e9e2; target ~3,100). CARTER-LOCK early-exit 0, fit-name 0, total placeholders 9.
+- Wave close (no push). QUICK (Slurm 1970722): 738P/2S, 173.0 s pytest / 192.0 s wall (over 120 s; carried to 15.6).
+  PINS 39P. HEAVY 244P/5S, 1,551 s. FULL (Slurm 1970723, 2,673 s): 2,463 ids = 2,408P + 53S + 2F, per-id identical to
+  the 15.5a FULL (`dupkey/full_15_5a.xml`): 0 removed, 0 added, 0 outcome changes; HEAVY likewise vs heavy_15_5a.xml.
+  The 2 failures are the deferred tests/m3 test_variant_catalog_fallback_legacy_semantics pair (since 6c6e9546;
+  deferred-items.md, 15.6); not fixed. tests/m3/sparse_parent_benchmark.tsv timing rewrite restored to HEAD.
+- OPEN after 15.5: the M2 CHR:POS row (3 A3_ukb asthma fits) -> plan 15.5b (Carter a1), gates W4a-T3. A3_ukb counts
+  above (4 fits / 14 rows) are on the current UKB panels; 15.5b rebuilds them and re-measures A3_ukb eligibility.
+- Wave close (no push), cascadelake: QUICK (Slurm 1970722) 738P/2S, 173.0 s pytest / 192.0 s wall (over 120 s;
+  carried to 15.6). PINS 39P. HEAVY 244P/5S, 1,551 s. FULL (Slurm 1970723, 2,673 s): 2,463 ids = 2,408P + 53S + 2F,
+  per-id identical to the 15.5a FULL (0 removed, 0 added, 0 outcome changes); HEAVY per-id identical to 15.5a.
+  The 2 failures are the deferred tests/m3 test_variant_catalog_fallback_legacy_semantics pair (failing since 6c6e9546;
+  deferred-items.md, 15.6). The sparse_parent_benchmark.tsv timing rewrite was restored to HEAD.
+- Not done here (by instruction): push. Plan Task 3 says push; the 15.5 remainder brief forbids it.
+- Remaining OPEN: DRAFT Pre-Paste M2 CHR:POS row (3 A3_ukb asthma fits) -> plan 15.5b (Carter a1); gates W4a-T3.
+  A3_ukb eligibility will be re-measured by 15.5b after the UKB panel rebuild.

@@ -41,7 +41,7 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 15.2 | ta-r4-W3f-lock-paths-input-sha-in-job-gate-PLAN.md | W3f fix-up (N3, N4, N5, T1) | — | yes |
 | 15.3 | ta-r4-W3f-signflip-region-floor-coverage-PLAN.md | W3f fix-up (N7 sign-flip + n_regions_min, N6) | — | yes |
 | 15.4 | ta-r4-W3f-reporting-widening-qtl-sim-PLAN.md | W3f fix-up (N8 drops, N9, N10, N12, N14) | — | yes |
-| 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha). Stopped 2026-11-16 at a Rule-4 checkpoint (duplicate catalog keys); Task 1 code f33a582c + partial DRAFT c3e42237 stand; **remaining work depends on 15.5a** | — | yes |
+| 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha). Stopped 2026-11-16 at a Rule-4 checkpoint (duplicate catalog keys); Task 1 code f33a582c + partial DRAFT c3e42237 stand; remaining work COMPLETE 2026-11-18 after 15.5a (re-measured, eligibility manifest, DRAFT (k); SUMMARY; not pushed) | — | yes |
 | 15.5a | ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md | W3f gap closure (r4 catalogs one row per normalized allele key; flag-gated run_susie_rss.R duplicate-key guard; rebuild + re-pin; no push) | — | yes |
 | 15.5b | ta-r4-W3f-ukb-panels-biallelic-PLAN.md | W3f gap closure (15.5a M2: UKB native panels keep the single SNV at a multi-variant CHR:POS, else drop the position; no --snps-only; Carter a1 2026-11-18; rebuild + re-pin 30 panels; M2 → 0; A3_ukb eligibility + DRAFT; no push) | — | yes |
 | 15.6 | ta-r4-W3f-review-suite-and-close-PLAN.md | W3f fix-up (brief-blind re-review, FULL, records, W4a depends_on) | — | yes |
