@@ -3060,3 +3060,41 @@ Carter reply (verbatim, selected option): a1: keep the SNV (Recommended)
 - **Not authorized:** `run_coloc_pair_r4.R`, `ukb337k_tiles.py`, the 1000G / AFR / identity / isect panels, the
   catalogs, Track B.
 - Lifts nothing under D-28.
+
+## 2026-11-19 — DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation: the two K-1 pins ignore leading whitespace; the one N1 emit line is allowed (Carter)
+
+- **Decider:** Carter, 2026-11-19, two replies saved verbatim.
+- Reply 1 (Q1, and Q2 on the 15.5b push, done), `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-trackb-pins-and-push-reply-2026-11-19.txt` (sha256
+  `55d716a4ce809fcad7d4c83a4ceaa2606fc6852aff401b65a1339f81985da61d`):
+
+```text
+Question 1 (2026-11-19): Plan 15.6 will stop on the 2 known Track B test failures in tests/m3 (N1 cap move wrapped the default too_many_variants payload in `if (!cap_after_ld) { ... }`, indenting it two spaces; fields and values identical to dc4bbd2). How should I handle these two tests before 15.6?
+Carter reply (verbatim, selected option): Ignore indentation (Recommended)
+
+Question 2 (2026-11-19): Plan 15.5b is done and verified; its 5 commits are local only. Push them to origin now?
+Carter reply (verbatim, selected option): Push now (Recommended)
+```
+
+- Reply 2 (Q3), `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-trackb-n1-emit-line-reply-2026-11-19.txt` (sha256
+  `19c38aafbef0e7459c5a582d397d423a5f088a791615aa1f9806741967f54f12`):
+
+```text
+Question 3 (2026-11-19): Plan 15.5c. With indentation ignored, the diff test's removed side is correct: it removes only `variant_catalog_fallback <- TRUE`, as K-1 intended. The added side still has one line, `variant_catalog_fallback = variant_catalog_fallback`, in the flag-true too_many_variants payload that N1 added (run_susie_rss.R:1102). That line writes the key into the JSON output; it doesn't set it. How should the test treat that line?
+Carter reply (verbatim, selected option): A: Allow the one N1 emit line (Recommended)
+```
+
+- **Scope.** `tests/m3/test_variant_catalog_fallback_legacy_semantics.py` only (gap from the N1 re-indent,
+  DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze), with `PRE_K1_REF` still `dc4bbd2`:
+  - `too_many_variants_payload` is compared line by line after stripping leading spaces/tabs only (equal line count;
+    interior and trailing characters exact). The other four MUST-NOT-MOVE regions stay byte-exact.
+  - In the symbol-scoped diff, a removed and an added line in the same hunk that differ only in leading whitespace
+    cancel as a re-indentation. Removed must be exactly `variant_catalog_fallback <- TRUE`; added must be exactly the
+    one N1 emit line `variant_catalog_fallback = variant_catalog_fallback` (Carter, Q3 A).
+- Two further checks are the planner's, stricter than Carter's choice and not attributed to him: that emit line must
+  sit in the N1 flag-true payload, and the file must carry exactly one more emit line than `dc4bbd2` (2 -> 3).
+- **Not authorized:** any `src/` edit (including `run_susie_rss.R`), changing `PRE_K1_REF`, the module's other 9
+  tests, the other four regions.
+- **15.5c's own §C exceptions (authorized here):** 2 pre-existing tests/m3 outcome changes (failed -> passed); 20 new
+  tests/m3 ids; QUICK and HEAVY not run separately (no src/ or tests/ta_r4 file changes; FULL contains every HEAVY
+  id, re-checked); PINS runs inside FULL.
+- Lifts nothing under D-28.

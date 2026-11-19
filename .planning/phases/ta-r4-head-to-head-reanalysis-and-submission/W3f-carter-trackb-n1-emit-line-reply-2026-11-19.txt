@@ -1,0 +1,2 @@
+Question 3 (2026-11-19): Plan 15.5c. With indentation ignored, the diff test's removed side is correct: it removes only `variant_catalog_fallback <- TRUE`, as K-1 intended. The added side still has one line, `variant_catalog_fallback = variant_catalog_fallback`, in the flag-true too_many_variants payload that N1 added (run_susie_rss.R:1102). That line writes the key into the JSON output; it doesn't set it. How should the test treat that line?
+Carter reply (verbatim, selected option): A: Allow the one N1 emit line (Recommended)
