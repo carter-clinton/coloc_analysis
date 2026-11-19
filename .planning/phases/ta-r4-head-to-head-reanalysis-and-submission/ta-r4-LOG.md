@@ -1047,3 +1047,38 @@ Pre-registration (W4a) unchanged by the findings. Follow-up: cause analysis of t
 - OPEN after 15.5: the M2 CHR:POS row (3 A3_ukb asthma fits) -> plan 15.5b (Carter a1), gates W4a-T3. A3_ukb counts
   above (4 fits / 14 rows) are on the current UKB panels; 15.5b rebuilds them and re-measures A3_ukb eligibility.
 - Push: done by the orchestrator with bb084f24 (Carter approved 2026-11-18 18:22).
+
+## 2026-11-18 — W3f 15.5b (UKB native panels: one variant per CHR:POS, Carter a1; rebuild + re-pin; A3_ukb re-measured; no push)
+
+Executed 2026-11-19. DEC-2026-11-18-ta-r4-ukb-native-multiallelic-a1 (5ca20376).
+- Rule (after build_native's catalog filter): at a CHR:POS with 2+ variants, keep the single ACGT SNV, else drop all;
+  lone variants (indels too) kept. Module `ta_r4.ukb_native_multiallelic`; `r4_panel_ukb_native` calls it;
+  ukb337k_tiles.py and r4_panel_ukb_isect unchanged (526fd5c7). RED → GREEN (T-f RED 1986099, GREEN 1986169);
+  NC-1..NC-8 each observed failing (NC-2 on T-f: 1986252).
+- Control dry-run 1986341 (324 targets): r4_panel_ukb_native 30, nothing else. Code and params listings over the 264
+  non-native targets are empty (the same filter prints the native rds: 1986415). Forcerun isect lists 29.
+- Backup 1986444 (30 + 30 verified; pre_untouched 359 files); restore.sh verify 1986510 OK. Manifest recipe reproduced
+  the committed bytes (1986511). Recount of the live panels before the fire (1986512) equals the planning table in every
+  component.
+- Fire 1986672..1986701: 30 of 30, COMPLETED 0:0. Post-fire dry-run 1987086: Nothing to be done (sidecars included).
+- Identity 1987087: R_new == R_old[keep][:, keep] exactly 30/30. Variants = old − dropped, same order, 30/30.
+  0 duplicated CHR:POS. n_var 189,945 − 45 = 189,900. Dropped 45 = 31 + 2 × 7. Indels 17,116 → 17,071. 15 changed +
+  15 unchanged. Audit 76 = 31 kept_snv + 45 dropped. pre_untouched 359/359.
+  Per region (one_snv/no_snv → dropped): 9p21 2/1→4, APOE 4/1→6, BMI 4/0→4, CXADR 3/0→3, HLA 1/3→7, MC4R 1/0→1,
+  NC_NULL_01 0/1→2, NC_NULL_04/08, NC_OCA2_HERC2, NC_SLC24A5 1/0→1 each, NC_NULL_06/07 2/0→2 each, PYHIN1 6/1→8,
+  SLC2A9 2/0→2. Sums: 31 + 7 = 38 positions; 31 + 14 = 45.
+- Re-pin 3c1ed352: panels_EUR_ukb337k_r4.tsv 15 rows + 4 columns; n_pairs_zero_filled re-derived (BMI −16,119;
+  HLA −126,457; PYHIN1 −36,398); ukb_native_multiallelic_resolved.tsv 76 rows. Live pins: RED 1987088 (15 of 30), NC-L1
+  15 fail / 15 pass + PYHIN1 fail (1987388), LIVE 30/30 (1987562), NC-L2 1 fail (1987562). Verify 1987641: 280 passed.
+- M2 (measure_m123.R unchanged, 1987089): A3_ukb 0 of 145, 0 of 815 overall. 1,340 non-A3_ukb rows identical to 15.5a.
+  Validation non-A3_ukb 68/68; A3_ukb 9/15 vs the old-panel counts (the 6 others lost dropped variants) and 15/15 vs
+  the 15.5b measurement. A3_ukb M3 (new catalogs): restricted_rows −37 over 22 fits; ov_snp_id −14 over 10 fits;
+  ov_chrpos_set −3 / bridge −2; nothing rose.
+- A3_ukb eligibility (1987407, 15/15 COMPLETED, no fit): A3_ukb 145 = 15 measured + 130 bound, not eligible 4 → 4.
+  Table 815 = 83 + 732, not eligible 10. 70 A3_ukb lines changed; the 670 other lines are byte-identical. asthma ×
+  PYHIN1_1q23 22,083 → 22,080 (07dae0c0).
+- DRAFT (07dae0c0): panel sizes 35,673 / 27,268 / 25,156 / 17,980; M2 row RESOLVED; (c) disclosure (31 positions,
+  7 positions / 14 variants removed, 17,071 indels kept); (m) + 526fd5c7, 3c1ed352. (k) unchanged (4 of 145).
+  confirmatory_sha256 9fa410aa…88d5 unchanged. test_amendment_text 21P/2S. Extract 4,127 → 4,208 words.
+- Wave close (no push): QUICK 1987855 748P/2S (171.5 s wall); PINS 39P; HEAVY 306P/5S (1,962 s; vs 15.5: +62, 0 removed, 0 outcome changes); FULL 1987856 2,535 = 2,480P/53S/2F (vs 15.5 full_15_5.xml: +72 tests/ta_r4, 0 removed, 0 outcome changes; 2F = deferred legacy_semantics pair). sparse_parent_benchmark.tsv restored.
+- Not pushed. Backups stay in `data/r4/tmp/w3f/ukbbi/old/` until 15.6.

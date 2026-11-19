@@ -26,7 +26,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-18 (late) — **TRACK A ta-r4: W3f 15.5 COMPLETE (re-measured on the rebuilt catalogs; eligibility manifest; DRAFT (k)). NEXT = 15.5b. NOTHING RUNNING. PUSHED (e8e18e15).** (★ RESUME HERE — LATEST ★)
+## 2026-11-19 — **TRACK A ta-r4: W3f 15.5b COMPLETE (UKB native panels one variant per CHR:POS, Carter a1; M2 0/145). NEXT = 15.6. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 5ca20376 DEC-2026-11-18-ta-r4-ukb-native-multiallelic-a1 + 3 replies; 526fd5c7 builder
+  `ta_r4.ukb_native_multiallelic` + rule + tests; 3c1ed352 30 panels rebuilt + re-pinned; 07dae0c0 A3_ukb eligibility +
+  DRAFT; plus the docs commit (LOG, STATE, SUMMARY).
+- Rebuild (Slurm 1986672..1986701, 30/30): 38 positions in 15 panels, 31 keep the SNV, 7 removed; 45 variants dropped;
+  n_var 189,945 → 189,900; R_new == R_old[keep][:, keep] exactly 30/30; non-native files 359/359 unchanged.
+- M2 (1987089) 0 of 145 A3_ukb fits; non-A3_ukb rows equal 15.5a. A3_ukb re-measured (1987407): 4 of 145 still > 16,000.
+- DRAFT: M2 row RESOLVED (no longer gates W4a-T3); UKB panel sizes; (c) disclosure; (m) + 526fd5c7, 3c1ed352.
+  confirmatory_sha256 9fa410aa…88d5 unchanged. Extract 4,208 words.
+- Tests: QUICK 748P/2S (171 s, over 120 s); PINS 39P; HEAVY 306P/5S; FULL 2,480P/53S/2F, per id vs 15.5: +72 added,
+  0 removed, 0 outcome changes (2F = deferred legacy_semantics pair -> 15.6).
+- Backups: `data/r4/tmp/w3f/ukbbi/old/` (restore.sh). Next: push (Carter) -> 15.6 -> W4a-T3 lock (Carter).
+
+## 2026-11-18 (late) — **TRACK A ta-r4: W3f 15.5 COMPLETE (re-measured on the rebuilt catalogs; eligibility manifest; DRAFT (k)). NEXT = 15.5b. NOTHING RUNNING. PUSHED (e8e18e15).** (SUPERSEDED by the 2026-11-19 15.5b block above)
 
 - Re-measurement Slurm 1968979: 83/83 COMPLETED, input sha256 == current pins 83/83, nothing under data/r4/results.
   eligibility_table() bound check passes. `$MAN/w3f_fit_eligibility.tsv` 815 rows = 83 measured + 732 bound.
