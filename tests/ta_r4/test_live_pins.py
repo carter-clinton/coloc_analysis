@@ -88,3 +88,79 @@ def test_raw_and_dropped_match_unique_key_manifest():
     for region, r in rows.items():
         for d, col in ((RAW_DIR, "raw_sha256"), (DROPPED_DIR, "dropped_sha256")):
             assert hashlib.sha256((REPO / f"{d}/{region}.tsv").read_bytes()).hexdigest() == r[col], (region, col)
+
+
+#: DEC-2026-11-18-ta-r4-ukb-native-multiallelic-a1: at most one variant per CHR:POS in every UKB native panel.
+UKB_NATIVE_DIR = "data/r4/ld/EUR_ukb337k_r4"
+UKB_NATIVE_MANIFEST = f"{paths.MAN}/panels_EUR_ukb337k_r4.tsv"
+UKB_RESOLVED_MANIFEST = f"{paths.MAN}/ukb_native_multiallelic_resolved.tsv"
+_K4 = ["CHR", "POS", "REF", "ALT"]
+
+
+def _ukb_regions():
+    with open(REPO / UKB_NATIVE_MANIFEST, newline="") as fh:
+        return [r["region_safe"] for r in csv.DictReader(fh, delimiter="\t")]
+
+
+_UKB_VARIANTS = {}
+
+
+def _ukb_variants(region):
+    """The variants frame of {UKB_NATIVE_DIR}/{region}.rds (cached per directory; R is discarded)."""
+    import os
+
+    from ta_r4 import ukb337k_tiles
+
+    key = (UKB_NATIVE_DIR, region)
+    if key not in _UKB_VARIANTS:
+        rs = os.environ.get("RSCRIPT", "/rs1/researchers/c/ckclinto/conda_envs/r_coloc/bin/Rscript")
+        _, v = ukb337k_tiles.read_rds(REPO / UKB_NATIVE_DIR / f"{region}.rds", rscript=rs, tmpdir=REPO / "data/r4/tmp")
+        _UKB_VARIANTS[key] = v
+    return _UKB_VARIANTS[key]
+
+
+def _ukb_audit():
+    import pandas as pd
+
+    a = pd.read_csv(REPO / UKB_RESOLVED_MANIFEST, sep="\t", dtype=str, keep_default_na=False)
+    a["POS"] = a["POS"].astype(int)
+    return a
+
+
+@pytest.mark.parametrize("region", _ukb_regions())
+def test_ukb_native_one_variant_per_chrpos(region):
+    v = _ukb_variants(region)
+    dup = v[v.duplicated(["CHR", "POS"], keep=False)]
+    assert dup.empty, f"{region}: duplicated CHR:POS {sorted(set(zip(dup['CHR'], dup['POS'])))[:5]}"
+
+
+@pytest.mark.parametrize("region", _ukb_regions())
+def test_ukb_native_resolution_audit_reconciles(region):
+    from ta_r4.ukb_native_multiallelic import is_snv
+
+    with open(REPO / UKB_NATIVE_MANIFEST, newline="") as fh:
+        m = {r["region_safe"]: r for r in csv.DictReader(fh, delimiter="\t")}[region]
+    a = _ukb_audit()
+    a = a[a["region_safe"] == region]
+    v = _ukb_variants(region)
+    kept, dropped = a[a["action"] == "kept_snv"], a[a["action"] == "dropped"]
+    assert int(m["n_var"]) == len(v)
+    assert int(m["n_var"]) + int(m["n_var_dropped_multiallelic"]) == len(v) + len(dropped)
+    assert len(dropped) == int(m["n_var_dropped_multiallelic"])
+    assert len(kept) == int(m["n_sites_kept_snv"])
+    pos = a.groupby("POS")["action"].apply(set)
+    assert len(pos) == int(m["n_sites_multiallelic"])
+    assert sum(1 for s in pos if "kept_snv" not in s) == int(m["n_sites_dropped_all"])
+    panel = set(zip(v["SNP_ID"], *(v[c].astype(str) for c in _K4)))
+    for _, r in kept.iterrows():
+        assert is_snv(r["REF"], r["ALT"]) and (r["SNP_ID"], r["CHR"], str(r["POS"]), r["REF"], r["ALT"]) in panel, r
+    panel4 = {k[1:] for k in panel}
+    for _, r in dropped.iterrows():
+        assert (r["CHR"], str(r["POS"]), r["REF"], r["ALT"]) not in panel4, r
+
+
+def test_ukb_native_pyhin1_160680184_keeps_rs184461353():
+    v = _ukb_variants("PYHIN1_1q23")
+    at = v[(v["CHR"] == "1") & (v["POS"] == 160680184)]
+    assert list(at["SNP_ID"]) == ["rs184461353"]
+    assert {at["REF"].iloc[0], at["ALT"].iloc[0]} == {"A", "G"}
