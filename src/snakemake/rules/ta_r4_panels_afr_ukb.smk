@@ -172,9 +172,11 @@ rule r4_panel_ukb_native:
         tiles=_ukb_tiles,
         catalog=lambda w: r4paths.catalog_path("r4", w.region),
         code="src/python/ta_r4/ukb337k_tiles.py",
+        code_ma="src/python/ta_r4/ukb_native_multiallelic.py",
     output:
         rds=_tpl("A3_ukb"),
         stats=UKB_STATS.replace("{kind}", "native"),
+        resolved=UKB_STATS.replace("{kind}", "native").replace(".stats.tsv", ".multiallelic_resolved.tsv"),
     wildcard_constraints:
         region=_wc(UKB_NATIVE_REGIONS),
     params:
@@ -189,7 +191,7 @@ rule r4_panel_ukb_native:
         mem_mb=48000,
     shell:
         r"""
-        PYTHONPATH=src/python {PYTHON_BIN} -m ta_r4.ukb337k_tiles build-native \
+        PYTHONPATH=src/python {PYTHON_BIN} -m ta_r4.ukb_native_multiallelic build-native \
             --region-id {params.region_id} --region-safe {wildcards.region} \
             --chr {params.chrom} --start {params.start} --end {params.end} \
             --catalog {input.catalog} --out {output.rds} --stats {output.stats}
