@@ -1,0 +1,1 @@
+biallelic only, no --snps-only

@@ -1,0 +1,3 @@
+Question (2026-11-18): For the UKB panel fix (plan 15.5b): at the 31 positions where UKB has an SNV and an indel, should the panel keep the SNV, as 1000G effectively does (a1), or drop both variants (a2)? Both options fix the coloc CHR:POS stop.
+
+Carter reply (verbatim, selected option): a1: keep the SNV (Recommended)

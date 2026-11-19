@@ -1,0 +1,1 @@
+go with (a), biallelic-only UKB panels

@@ -3016,3 +3016,47 @@ orchestrator's.
   run with `--ld-allele-aware false` and never take the allele-key join. The simulation harness does not pass the flag.
 - Nothing else changes; D-28 is otherwise in force.
 - **Re-pin:** `R_CODE_REF` → the guard commit.
+
+## 2026-11-18 — DEC-2026-11-18-ta-r4-ukb-native-multiallelic-a1: UKB native panels keep the single SNV at a multi-variant CHR:POS, else drop the position; no --snps-only (Carter)
+
+- **Decider:** Carter, 2026-11-18, three replies saved verbatim.
+- 15.5a M2 options (15.5a SUMMARY, M1 / M2 / M3): (a) biallelic-only UKB panels; (b) coloc keys on the full allele key;
+  (c) drop the indel in the affected fits only. Reply 1, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-m2-biallelic-ukb-reply-2026-11-18.txt` (sha256
+  `4d0b22414174958ee942d7a536955f7a8e08ff522b4cc34d7927bbf8f2028738`):
+
+```text
+go with (a), biallelic-only UKB panels
+```
+
+- Reply 2, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-ukb-no-snps-only-reply-2026-11-18.txt` (sha256
+  `38f9bfdcd051c3437827666e12f6c7f765ea1b1296c2cc6f9b922b256dedd7db`):
+
+```text
+biallelic only, no --snps-only
+```
+
+- The a1/a2 sub-question and reply 3, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-ukb-a1-keep-snv-reply-2026-11-18.txt` (sha256
+  `597b6602b975dc9661d1acf2ad552a92997b202677b6f0dd3c1e33056d9bd177`):
+
+```text
+Question (2026-11-18): For the UKB panel fix (plan 15.5b): at the 31 positions where UKB has an SNV and an indel, should the panel keep the SNV, as 1000G effectively does (a1), or drop both variants (a2)? Both options fix the coloc CHR:POS stop.
+
+Carter reply (verbatim, selected option): a1: keep the SNV (Recommended)
+```
+
+- **Rule** (per CHR:POS of the assembled native variant frame, after `build_native`'s catalog allele filter).
+  SNV := len(REF) == 1, len(ALT) == 1, REF and ALT in {A,C,G,T}.
+  - One variant at the position: kept, whatever its type (indels stay; no `--snps-only`).
+  - 2+ variants, exactly one SNV: the SNV is kept, the others dropped (`one_snv`).
+  - 2+ variants, zero SNVs: all dropped (`no_snv`).
+  - 2+ variants, 2+ SNVs: all dropped (`multi_snv`). This is not a tie-break; there is no single SNV to keep.
+- **1000G comparison.** PLINK `--biallelic-only strict` skips VCF records with 2+ ALT alleles; 1000G Phase 3 stores an
+  SNV and an indel at one position as two one-ALT records, and `--snps-only just-acgt` then drops the indel and keeps
+  the SNV (AFR661_1kg_r4 PYHIN1_1q23 keeps rs184461353 at 1:160680184). EUR_1kg_r4 (LDSC 1000G.EUR.QC bfiles) has 0
+  indels and 0 duplicated positions. Remaining difference, disclosed: UKB panels keep indels at single-variant positions.
+- **Scope:** the native builder (new module `src/python/ta_r4/ukb_native_multiallelic.py`, called by
+  `r4_panel_ukb_native`), the 30 native panels, `panels_EUR_ukb337k_r4.tsv` and the native stats, a resolution
+  manifest, the A3_ukb rows of `w3f_fit_eligibility.tsv`, and the DRAFT.
+- **Not authorized:** `run_coloc_pair_r4.R`, `ukb337k_tiles.py`, the 1000G / AFR / identity / isect panels, the
+  catalogs, Track B.
+- Lifts nothing under D-28.
