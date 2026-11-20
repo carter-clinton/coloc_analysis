@@ -26,7 +26,16 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-19 (night) — **TRACK A ta-r4: W3f fix-up COMPLETE (15.6) — W4a-T3 re-presented to Carter with confirmatory_sha256 9fa410aa, plus 12 NEW OPEN items from the re-review. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-20 (morning) — **TRACK A ta-r4: W3f 15.5b/15.5c/15.6 COMPLETE + PUSHED (553c8fc8). 15.7 PLANNING (12 re-review blockers). Nothing on Slurm.** (★ RESUME HERE — LATEST ★)
+
+- 15.5b: UKB native panels one variant per CHR:POS (31 SNVs kept, 45 indels dropped; n_var 189,945→189,900); M2 0/145; pushed 61201774.
+- 15.5c: Track B K-1 pins ignore leading whitespace + allow the one N1 emit line (Carter: "Ignore indentation", "A"); 20 new in-memory tests; FULL 2,555 = 2,502 P / 53 S / 0 F.
+- 15.6: brief-blind Codex re-review banked (sha256 e66f3c96…), 23 findings dispositioned; FULL identical by id to 15.5c; W4a depends_on → 15.6. **12 OPEN production blockers** W3f_F1..F15 in HANDOFF w4a_checkpoint (11 code, F15 disclosure). Orchestrator confirmed F3 (assign_tiers.py:96) and F16 (Wallace correction pgen.1012155, p12 5e-6).
+- Carter 2026-11-20: push (done) + "Plan 15.7 code fix-up (Recommended)". Reply file `W3f-carter-15-6-push-and-15-7-reply-2026-11-20.txt` UNTRACKED (first 15.7 plan commits it).
+- RUNNING: 15.7 gsd-planner subagent of session c8312220 (tmux `coloc`, login03). It verifies each finding vs code, writes 15.7a.. plans, and lists Carter questions (F2 unfreeze vs seeded wrapper; F9 re-run vs disclose; F15 wording).
+- RESUME: `.planning/HANDOFF.json` `resume_on_reconnect` + `ta_r4_w3f_15_7`. W4a-T3 lock waits on 15.7.
+
+## 2026-11-19 (night) — **TRACK A ta-r4: W3f fix-up COMPLETE (15.6) — W4a-T3 re-presented to Carter with confirmatory_sha256 9fa410aa, plus 12 NEW OPEN items from the re-review. NOTHING RUNNING. NOT PUSHED.** (SUPERSEDED by the 2026-11-20 block above)
 
 - Commits (local only; origin at 61201774): 15.5c fb08a75f, dc15a630, 03b60744; 15.6 5a6d4a01 (review banked + DRAFT
   text fixes) and the wave-close docs commit (HANDOFF, STATE, LOG, PLAN-INDEX, W4a depends_on, SUMMARY). Push WITHHELD
@@ -2725,7 +2734,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-18 (latest) - SESSION CLOSE: 15.5 closing (executor a18335bd8bbf594bc, Slurm close_b 1970723 FULL running); plan 15.5b (Carter a1 keep-SNV) committed bb084f24, not pushed (push approved with the 15.5 commits); session c8312220 in tmux 'coloc' on login02.
+Last activity: 2026-11-20 (latest) - SESSION CLOSE: W3f 15.5b, 15.5c, 15.6 complete and pushed (553c8fc8); 15.6 re-review → 12 OPEN blockers; Carter chose 15.7 code fix-up; 15.7 planner running in session c8312220 (tmux coloc, login03).
+Last activity (PRIOR): 2026-11-18 - SESSION CLOSE: 15.5 closing (executor a18335bd8bbf594bc, Slurm close_b 1970723 FULL running); plan 15.5b (Carter a1 keep-SNV) committed bb084f24, not pushed (push approved with the 15.5 commits); session c8312220 in tmux 'coloc' on login02.
 Last activity (PRIOR): 2026-11-17 - SESSION CLOSE: Carter chose option 1 (fix both ends) for the r4 duplicate catalog keys; plan 15.5a committed (79ff8dc2, DEC c6c450fc); executor running in session c8312220 at Task 1 RED; not pushed.
 Last activity (PRIOR-2): 2026-11-09 - SESSION CLOSE: W3f 15.1-15.4 pushed (fa0ebdb9); 15.5 interrupted (session b1f97279 died, WIP uncommitted); nothing running.
 Last activity (prior): 2026-11-04 - SESSION CLOSE at ta-r4 W4a-T3 (Tasks 1-2 a4090fa6/37265d09 pushed; FULL 2069/2017/52/0). Waiting on Carter: lock values + N1/N2/N7 decisions; recommended W3f fix-up before lock. Nothing running.
