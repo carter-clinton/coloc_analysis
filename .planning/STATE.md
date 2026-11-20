@@ -26,7 +26,29 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-19 (late) — **TRACK A ta-r4: W3f 15.5c COMPLETE (tests/m3 K-1 pins ignore leading whitespace; the one N1 emit line allowed; Carter Q1 + Q3 A). NEXT = 15.6. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-19 (night) — **TRACK A ta-r4: W3f fix-up COMPLETE (15.6) — W4a-T3 re-presented to Carter with confirmatory_sha256 9fa410aa, plus 12 NEW OPEN items from the re-review. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only; origin at 61201774): 15.5c fb08a75f, dc15a630, 03b60744; 15.6 5a6d4a01 (review banked + DRAFT
+  text fixes) and the wave-close docs commit (HANDOFF, STATE, LOG, PLAN-INDEX, W4a depends_on, SUMMARY). Push WITHHELD
+  (orchestrator asks Carter). W3f code commits per plan: 15.1 6c6e9546, 1f771281, 7a3415df; 15.2 82490835, 6312db61,
+  d61fb081; 15.3 92caa306, 0ac1a15e, a36d4ad1; 15.4 ade4e9c5, bed315d4, 4d11c047; 15.5a e9c0d400, 13b0821c, 30b13692;
+  15.5b 526fd5c7, 3c1ed352; 15.5c dc15a630.
+- Brief-blind Codex re-review (codex-cli 0.166.0, gpt-6.1-sol, instruction + extract only): output sha256 e66f3c96…,
+  35,587 B, banked verbatim in `$P/ta-r4-W3f-AMENDMENT-REVIEW-as-received.md`. 23 findings (F1–F16 + Q1–Q7) = 23 rows:
+  DRAFT fixed 6; **OPEN for Carter 12** (code: F1 runtime config not validated in-job, F2 unseeded purity subsampling
+  in susieR (run_susie_rss.R, D-28), F3 QTL sweep uses QTL PP.H4 for both sides, F4 sim completeness counts rows,
+  F6 QTL coverage at aggregation, F7 QTL empty summary labelled coloc_susie, F8 NC rates not by method, F9 null-window
+  pool from superseded asthma inputs, F10 cross-panel purity name match, F11 no-CS rate drops early-exit sides,
+  F12 A1 allvars unreported; disclosure: F15 pre-lock pilot fits). Recorded as HANDOFF production_blockers W3f_*.
+- FULL Slurm 1992683 (1:21:20): 2,555 = 2,502 P / 53 S / 0 F; vs full_15_5c.xml identical by id; vs full_W4a.xml:
+  removed = the 6 renames (successors passed), tests/m3 +20 15.5c ids, 0 outcome changes, 1 new skip
+  (test_sumstats_build[sumstats_asthma_AFR-lifted_from]: grch38_backup has no tabix index). check_W4a.py PASS.
+- confirmatory_sha256 9fa410aa411fc2c682a4886dd25ca98d5dfd37f6968ecffc1a0a8860003888d5 (re-measured at HEAD);
+  n_regions_min 7; region-contribution FLAG (A2_identity_vs_A3_1kg likely 3/10, k ≤ 5 < 7). decision_rules.yaml
+  locked: false; no signoff. Carter's reply format unchanged except the sha.
+- Next: Carter — push; decide the 12 OPEN items (a 15.7 code fix-up before the lock, or accept/disclose); then W4a-T3.
+
+## 2026-11-19 (late) — **TRACK A ta-r4: W3f 15.5c COMPLETE (tests/m3 K-1 pins ignore leading whitespace; the one N1 emit line allowed; Carter Q1 + Q3 A). NEXT = 15.6. NOTHING RUNNING. NOT PUSHED.** (SUPERSEDED by the 15.6 W3f-close block above)
 
 - 15.5b was pushed before 15.5c (Carter Q2 "Push now"); start HEAD 61201774 == origin.
 - Commits (local only): fb08a75f DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation + 2 replies + PLAN;

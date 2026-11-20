@@ -1144,3 +1144,36 @@ index c517ffb7..a0ffd52e 100644
 ```
 
 - Not pushed.
+
+## 2026-11-19 — W3f 15.6 wave close (brief-blind re-review; FULL reconciled; records; W4a depends_on)
+
+- Premises re-measured at HEAD 03b60744 before acting: confirmatory_sha256 9fa410aa…88d5 (canonical_sha256 of
+  decision_rules.yaml `confirmatory:`), `locked` False, n_regions_min 7, LOCKED_PATHS 29, extract 4,208 words, HANDOFF
+  w4a_checkpoint untouched since W4a (confirmatory_sha256 still f6e6e90f…), W4a plan 0-line diff vs 72b99064.
+- Review: prompt `data/r4/tmp/w3f/codex_prompt.md` = the W4a wrapper bytes with the new extract (sha256 6bce3707…7339);
+  codex-cli 0.166.0 (W4a scratch prefix), `-m gpt-6.1-sol`, rc 0 first attempt, 12m46s; output 35,587 B sha256 e66f3c96…;
+  banked block byte-equal to raw stdout. 23 findings = 23 rows: DRAFT fixed 6 (F5, F13, F14, F16, Q4, Q6; 7 replacements,
+  `data/r4/tmp/w3f/draft_fix.py`), OPEN for Carter 11 code (F1–F4, F6–F12) + 1 disclosure (F15), optional 1 (Q2), rejected 1
+  (Q1), noted 3 (Q3, Q5, Q7). F16 verified by fetching PLoS Genet e1012155 (2026-05-19; `data/r4/tmp/w3f/ext/`, sha256
+  edfdc74a…). test_amendment_text 21 P / 2 S; NC ("pivot" in the extract) → test_draft_extract_framing FAILED, restored.
+  Extract 4,283 words. Commit 5a6d4a01.
+- §C close Slurm 1992683 (c025n04, HEAD 5a6d4a01, `close_W3f.sh` = close_W4a.sh + junitxml path + RSCRIPT export; --mem 48G
+  as 15.5c, seff 48.00 GB = 100%): QUICK 748 P / 2 S in 150.7 s (over 120 s, as 15.5b); HEAVY 306 P / 5 S (4 W5a/W5b skips +
+  asthma.AFR grch38_backup no tabix index); PINS 39 P; FULL 2,555 = 2,502 P / 53 S / 0 F (47m10s).
+- Reconciliation (`data/r4/tmp/w3f/reconcile_W3f.txt`, `check_W3f.py`): vs full_W4a.xml base 2069 (2017/52) → 2555
+  (2502/53); common 2063, removed 6 (= the deferred-items rename map, each successor passed), added 492 (ta_r4 472, m3 20;
+  491 P + 1 S), changed 0; 2069 − 6 + 492 = 2555; tests/m3 1299 (1265/34) → 1319 (1285/34), common unchanged, added = the 20
+  15.5c ids, all passed. Only new skip: test_sumstats_build::test_provenance_inputs_measured_build_equals_declared
+  [sumstats_asthma_AFR-lifted_from] (no tabix index; skipped in 15.5c too). vs full_15_5c.xml: 0 removed / 0 added / 0
+  changed. `indent/check_W4a.py` pointed at full_W3f.xml (`check_W4a_on_W3f.py`, one-line path change): PASS. Negative
+  controls: check_W3f on full_15_5b.xml FAIL (6 MISS); on a synthetic XML (one ta_r4 id removed, one m3 id failed) FAIL.
+  sparse_parent_benchmark.tsv porcelain empty.
+- HANDOFF.json: N1/N2 + 10 other_code_items RESOLVED with commits (originals under `*_PRE_2026_11_04`); W3f_F1–F12, F15
+  added as production_blockers, W3f_optional under other_code_items; proposed_lock_values confirmatory_sha256 9fa410aa…
+  (old under confirmatory_sha256_PRE_W3f), n_regions_min, confirmatory_direction_test, region_contribution_proxy (+ FLAGs);
+  resume_on_reconnect annotated; suite_baselines_ta_r4_latest → FULL 2555/2502/53/0 (W4a string kept as
+  suite_baselines_ta_r4_W4a); do_not run_susie_rss.R annotated with both lifts (N1 and 15.5a guard — the plan's "N1 only"
+  text predates 15.5a); read_first + the review file. Keys 330 → 359 (all pre-existing strings still contained).
+- PLAN-INDEX: dated notes on §B.6 (two lifts; R_CODE_REF 13b0821) and §B.8 (Slurm); 15.5 row push fact; 15.6 row.
+  W4a plan: depends_on → ["ta-r4-W3f-review-suite-and-close"] (1 line vs 72b99064; tasks untouched).
+- No production fit, no locked: true, no signoff, no OSF. Push WITHHELD (orchestrator to ask Carter).

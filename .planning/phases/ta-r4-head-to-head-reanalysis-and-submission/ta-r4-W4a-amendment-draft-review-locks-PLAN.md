@@ -4,7 +4,7 @@ plan: 16
 slug: W4a-amendment-draft-review-locks
 type: execute
 wave: 16
-depends_on: ["ta-r4-W3e-qtl-harmonize-and-group-runner"]
+depends_on: ["ta-r4-W3f-review-suite-and-close"]
 files_modified:
   - .planning/amendments/osf-amendment-r4-DRAFT.md
   - src/python/ta_r4/extract_paste_block.py

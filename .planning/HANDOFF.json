@@ -68,7 +68,7 @@
     "2026-11-17: inside 15.5a do NOT push, run production fits, re-fire repro, post OSF, take the W4a-T3 lock, change n_regions_min, edit run_coloc_pair_r4.R / UKB panel code / Track B; never re-pin to make a byte-identity check pass",
     "Do not let any agent author \"carter-approved\" text or write signoffs/*.yaml except via `signoff record` from Carter's verbatim paste.",
     "Do not write the real OSF sentinel/receipt or post to OSF — Carter only.",
-    "Do not edit src/legacy/region_analysis/scripts/run_susie_rss.R, Snakefile, config/pipeline.yaml or docs/manuscript/id-vs-ref-LD.md in ta-r4.",
+    "Do not edit src/legacy/region_analysis/scripts/run_susie_rss.R, Snakefile, config/pipeline.yaml or docs/manuscript/id-vs-ref-LD.md in ta-r4. [2026-11-04: lifted once for the N1 cap move only — DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze; 2026-11-17: lifted once more for the flag-gated duplicate-key guard only (13b0821c) — DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze; otherwise in force]",
     "AN AGENT NEVER FIRES, STARTS, STOPS OR DELETES ANY CLOUD RESOURCE — including bucket objects. Carter does all of it.",
     "DELETE Dataproc clusters when done; STOP analysis VMs, never delete them while they hold artifacts.",
     "Do NOT delete bucket data before the inventory record's §5 decisions AND a §6 dry-run that reconciles exactly.",
@@ -421,7 +421,8 @@
   "w4a_checkpoint": {
     "read_first": [
       ".planning/amendments/osf-amendment-r4-DRAFT.md (PASTE block)",
-      ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W4-AMENDMENT-REVIEW-as-received.md (31 findings: 29 confirmed+fixed in text, T12 rejected, T13 noted)"
+      ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W4-AMENDMENT-REVIEW-as-received.md (31 findings: 29 confirmed+fixed in text, T12 rejected, T13 noted)",
+      ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-AMENDMENT-REVIEW-as-received.md (2026-11-19 W3f 15.6 re-review: 23 findings; 6 DRAFT fixed; 11 OPEN code + F15 disclosure = new production_blockers W3f_*)"
     ],
     "proposed_lock_values": {
       "p12_primary": "5e-6 (sensitivity 1e-5; Wallace 2020 summary prints 5e-5 — conflict stated in DRAFT)",
@@ -429,24 +430,52 @@
       "n_both_min": 10,
       "partial_rule": "all 4 keys HETEROGENEOUS",
       "confirmatory_block": "100 EUR rows / 10 clusters",
-      "confirmatory_sha256": "f6e6e90f83fd14975d3afa04789c3dcf1a9211b8e3ddd38bf23c72f8cbe0e9e3",
-      "decision_rules_yaml_locked": false
+      "confirmatory_sha256": "9fa410aa411fc2c682a4886dd25ca98d5dfd37f6968ecffc1a0a8860003888d5",
+      "decision_rules_yaml_locked": false,
+      "confirmatory_sha256_PRE_W3f": "f6e6e90f83fd14975d3afa04789c3dcf1a9211b8e3ddd38bf23c72f8cbe0e9e3",
+      "n_regions_min": "7 (inside confirmatory:, bound by confirmatory_sha256)",
+      "confirmatory_direction_test": "exact region-level sign-flip (DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor)",
+      "region_contribution_proxy": "W3f 15.5, repro fits, asthma pairs excluded, never a lock input ($MAN/w3f_region_contribution_proxy.tsv): A1_matched_vs_A3_1kg likely 8 / unknown 1 / unlikely 1; A2_identity_vs_A3_1kg likely 3 / unknown 2 / unlikely 5; discordance k not computable (no repro coloc outputs); A2 k <= 5. FLAG FOR CARTER: n_regions_min 7 may yield NON_INFORMATIVE for A2_identity_vs_A3_1kg (likely 3/10, unknown 2). FLAG FOR CARTER: likely discordant regions k <= 5 < 7 for A2_identity_vs_A3_1kg"
     },
     "resume_reply_format": "carter-approved YYYY-MM-DD / p12_primary / kappa_cut / n_both_min / 4 partial_rule.* / confirmatory_sha256 / draft: approved — anything else (incl. bare \"approved\") = WAIT",
     "production_blockers": {
-      "N1": "16,000-variant cap applied BEFORE panel restriction (~35 primary rows -> too_many_variants -> FIT_EARLY_EXIT; asthma x PYHIN1 38,313 rows). Recommend cap after restriction.",
-      "N2": "UNMAPPED_FIT_NAMES 589/589 (SH2B3 HTN x stroke): fits carry rsids, sumstats chr:pos (= W3 findings item 11). Needs a name-alignment rule."
+      "N1": "RESOLVED 2026-11-04 W3f 15.1 6c6e9546 + 1f771281 (re-pins 3e895261, e5792b8b; DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze): the 16,000 cap applies after restriction to the LD panel (--cap-after-ld-restriction, flag default false; r4 arms pass it); measured 15.5/15.5b: 10 of 815 fits above 16,000 after restriction, 0 of 100 primary A3_1kg rows",
+      "N2": "RESOLVED 2026-11-04 W3f 15.1 7a3415df (+ 215ddde3 test argv): fit names not in the sumstats are looked up in the fit's LD-panel variant table by position with an allele check (exact / swapped / strand complement for non-palindromic SNVs); unmapped or ambiguous stops the pair; SH2B3 hypertension x stroke 589/589 -> 0 unmapped",
+      "N1_PRE_2026_11_04": "16,000-variant cap applied BEFORE panel restriction (~35 primary rows -> too_many_variants -> FIT_EARLY_EXIT; asthma x PYHIN1 38,313 rows). Recommend cap after restriction.",
+      "N2_PRE_2026_11_04": "UNMAPPED_FIT_NAMES 589/589 (SH2B3 HTN x stroke): fits carry rsids, sumstats chr:pos (= W3 findings item 11). Needs a name-alignment rule.",
+      "W3f_F1": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): runtime config not validated in-job: r4_fire.sh:73-76 forwards \"$@\"; commands.py:50 credible_set from config (override reaches --credible-set); profile constraint overridable; jobscript.sh logs CPU/kernel only. Needs code.",
+      "W3f_F2": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): purity subsampling unseeded: susieR 0.14.2 get_purity samples 100 of a CS > 100 variants; run_susie_rss.R sets no seed / n_purity (D-28 frozen -> unfreeze DEC or seeded wrapper). Needs code.",
+      "W3f_F3": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): QTL PP.H4 sweep: assign_tiers.py:96 assign_tier(best_pph4, best_pph4, ...) uses the QTL PP.H4 as the GWAS value. Needs code.",
+      "W3f_F4": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): simulation completeness: run_aggregation.py:106-128 _sim checks rows per arm only, not distinct replicates 1..reps or row cell labels. Needs code.",
+      "W3f_F6": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): QTL coverage not reconciled at aggregation: run_aggregation.py:181 _qtl_missing = file existence; aggregate_qtl_coloc.py:177-191 warns only. Needs code (or narrow text).",
+      "W3f_F7": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): QTL empty coloc.susie summary: run_qtl_coloc.R:754-762 status success with empty summary; run_qtl_group_r4.py:163 -> method coloc_susie. Needs code (method none + reason).",
+      "W3f_F8": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): negative-control rates pool methods: estimands.py:599 groups by nc_set/label/p12_key; none rows count as non-calls. Needs code (rates by method).",
+      "W3f_F9": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): null-window pool built from superseded asthma inputs (null_windows_selection.tsv:15-16: c9a723f3, 22b28075 unlifted). Needs a pre-lock re-run on production inputs or a disclosure.",
+      "W3f_F10": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): cross-panel purity: cs_cross_purity.R:27-36 matches SNP_ID or the name's own CHR:POS; no resolution through the fit's panel, no allele check. Needs code.",
+      "W3f_F11": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): pair-level no-CS rate: an early exit on either side sets both n_cs NA (run_coloc_pair_r4.R:503-518); estimands.py:317 _no_cs counts explicit zeros only. Needs code.",
+      "W3f_F12": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): A1 allvars computed and required by coverage but not reported (run_aggregation.py:208-211 uses the confirmatory a1 varset only). Needs code or text.",
+      "W3f_F15": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): pre-lock pilot fits on corrected inputs exist (data/r4/measure_asthma_fix/fits: A3_1kg_newcat 20, A3_1kg_oldcat 16, determinism 2, repro_routeC 60 + 48); 'before any production fit exists' needs a disclosure decision (Carter)."
     },
     "other_code_items": {
-      "N3": "LOCKED_PATHS omits susie_policy.yaml, pipeline.yaml, qtl_orient.R, qtl_sources.yaml, build_tissue_n_lookup.py, pph4_thresholds.yaml",
-      "N4": "input sha256s not checked at fit time",
-      "N5": "gate checked at setup only, not per job",
-      "N6": "aggregation does not run coverage check",
-      "N7": "McNemar row-independence + no min region count (Carter statistical call)",
-      "N12": "QTL fallback rows lose label + PPs",
-      "N14": "sim identity-refit + pooled fallback, no 100-cell requirement",
-      "T1": "AFR T2D label DIAMANTE -> T2DGGI (Suzuki 2024)",
-      "N9_N10_optional": "narrow E4/E6 text or widen code"
+      "N3": "RESOLVED 2026-11-09 W3f 15.2 82490835: LOCKED_PATHS 18 -> 29 (the 6 named + 5 measured manifests); enforcer test_lock_gate.py::test_every_measured_dependency_is_covered_by_locked_paths",
+      "N4": "RESOLVED 2026-11-09 W3f 15.2 6312db61: every production fit, coloc and QTL job verifies the sha256 of each summary-statistic, catalog and harmonized-QTL input it reads; mismatch or unlisted input fails the job",
+      "N5": "RESOLVED 2026-11-09 W3f 15.2 d61fb081: lock gate checked when a production run is constructed and again as the first step of every production job; r4_fire.sh comment corrected",
+      "N6": "RESOLVED 2026-11-09 W3f 15.3 0ac1a15e: confirmatory completeness checked in the estimator; FINAL aggregation gated on coloc_coverage",
+      "N7": "RESOLVED 2026-11-09 W3f 15.3 92caa306 (+ a36d4ad1 DRAFT render; DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor): direction category = exact region-level sign-flip test (alpha 0.025); NON_INFORMATIVE below n_regions_min = 7 contributing regions; row-level McNemar descriptive",
+      "N12": "RESOLVED 2026-11-09 W3f 15.4 bed315d4: QTL fallback rows exported with method and posteriors; tiers read coloc_susie rows only by an explicit filter; qtl_rows table",
+      "N14": "RESOLVED 2026-11-09 W3f 15.4 4d11c047: simulation has no identity refit, rates reported by method, every simulation.yaml cell required",
+      "T1": "RESOLVED 2026-11-09 W3f 15.2 d61fb081: data_sources.yaml AFR T2D label = T2DGGI AFA (Suzuki 2024); label test against trait_manifest source_study",
+      "N9_N10_optional": "RESOLVED 2026-11-09 W3f 15.4 ade4e9c5 by widening the code (not narrowing the text): N9 status-agnostic cross-purity + levelled no-CS rates; N10 E6 = E1-E5 + drop counts (N8 row_drops table, same commit)",
+      "N3_PRE_2026_11_04": "LOCKED_PATHS omits susie_policy.yaml, pipeline.yaml, qtl_orient.R, qtl_sources.yaml, build_tissue_n_lookup.py, pph4_thresholds.yaml",
+      "N4_PRE_2026_11_04": "input sha256s not checked at fit time",
+      "N5_PRE_2026_11_04": "gate checked at setup only, not per job",
+      "N6_PRE_2026_11_04": "aggregation does not run coverage check",
+      "N7_PRE_2026_11_04": "McNemar row-independence + no min region count (Carter statistical call)",
+      "N12_PRE_2026_11_04": "QTL fallback rows lose label + PPs",
+      "N14_PRE_2026_11_04": "sim identity-refit + pooled fallback, no 100-cell requirement",
+      "T1_PRE_2026_11_04": "AFR T2D label DIAMANTE -> T2DGGI (Suzuki 2024)",
+      "N9_N10_optional_PRE_2026_11_04": "narrow E4/E6 text or widen code",
+      "W3f_optional": "OPEN 2026-11-19 (W3f 15.6 brief-blind review, ta-r4-W3f-AMENDMENT-REVIEW-as-received.md): optional, locked configs: coloc_priors.yaml citation_check note (Wallace 2026 correction verified, F16); trait_manifest.tsv:4 stale 'not documented' sdY prose (Q2); Q3 panel bytes not re-hashed in-job; Q6 a p12_primary other than 5e-6 stops the QTL layer (run_qtl_group_r4.py:74-81)."
     },
     "carried_decisions_a_to_g": [
       "(a) n_per_trait",
@@ -459,7 +488,7 @@
     ],
     "signoff_written": false
   },
-  "suite_baselines_ta_r4_latest": "FULL 2069/2017/52/0 at W4a (Slurm 1680976, data/r4/tmp/w4a/full_W4a.xml); QUICK 91.9 s",
+  "suite_baselines_ta_r4_latest": "FULL 2555/2502/53/0 at W3f 15.6 (Slurm 1992683, data/r4/tmp/w3f/full_W3f.xml); reconciled by id vs full_W4a.xml (data/r4/tmp/w3f/reconcile_W3f.txt): removed = the 6 deliberate renames, tests/m3 +20 15.5c ids only",
   "scheduler": "Slurm only since 2026-11-03 (sbatch -p compute -A clintonlab_cpu -q normal, always -t). Rscript not on PATH in jobs.",
   "headline_PRIOR_2026_11_04": "ta-r4 W4a Tasks 1-2 COMPLETE + pushed (a4090fa6, 37265d09; origin == local). STOPPED at W4a-T3 (checkpoint:human-action, blocking) waiting on Carter. NOTHING RUNNING. Recommendation given to Carter: do NOT lock yet — fix production blockers N1/N2 (+N3-N6, N12, N14, T1) in a W3f fix-up wave first, then re-present the DRAFT with a new confirmatory_sha256.",
   "status_PRIOR_2026_11_04": "ta-r4 W4a Tasks 1-2 COMPLETE + pushed (a4090fa6, 37265d09; origin == local). STOPPED at W4a-T3 (checkpoint:human-action, blocking) waiting on Carter. NOTHING RUNNING. Recommendation given to Carter: do NOT lock yet — fix production blockers N1/N2 (+N3-N6, N12, N14, T1) in a W3f fix-up wave first, then re-present the DRAFT with a new confirmatory_sha256.",
@@ -519,12 +548,12 @@
     ]
   },
   "resume_on_reconnect": [
-    "If session c8312220 is still alive in tmux 'coloc' on login02: just reattach; the executor continues on its own.",
-    "If it died: on login02 `tmux attach -t coloc` (or `tmux new -s coloc`), then `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Check `git log`, `squeue -u $USER`, close_b_1970723.out.",
-    "If the executor died before committing: SendMessage to a18335bd8bbf594bc to resume it; else spawn a fresh gsd-executor for 15.5 Task 3/SUMMARY from the elig_20261118 outputs (do NOT re-fire the array; 83/83 done).",
-    "Verify the 15.5 hand-back: input pins 83/83, eligibility counts reconciled vs data/r4/tmp/w3f/dupkey/m123_fits.tsv, DRAFT M2 row OPEN pointing at 15.5b, FULL failures only the 2 pre-existing tests/m3 ones.",
-    "Then push (approved): bb084f24 + 15.5 commits. Then execute 15.5b (gsd-executor); its Task 1 commits the 3 untracked W3f-carter-*-2026-11-18 reply files with the DEC.",
-    "Then 15.6 -> W4a-T3 lock (Carter)."
+    "If session c8312220 is still alive in tmux 'coloc' on login02: just reattach; the executor continues on its own. [DONE 2026-11-19: 15.5, 15.5b, 15.5c complete; 15.6 executed (W3f plans 15.1-15.6)]",
+    "If it died: on login02 `tmux attach -t coloc` (or `tmux new -s coloc`), then `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Check `git log`, `squeue -u $USER`, close_b_1970723.out. [DONE 2026-11-19: 15.5, 15.5b, 15.5c complete; 15.6 executed (W3f plans 15.1-15.6)]",
+    "If the executor died before committing: SendMessage to a18335bd8bbf594bc to resume it; else spawn a fresh gsd-executor for 15.5 Task 3/SUMMARY from the elig_20261118 outputs (do NOT re-fire the array; 83/83 done). [DONE 2026-11-19: 15.5, 15.5b, 15.5c complete; 15.6 executed (W3f plans 15.1-15.6)]",
+    "Verify the 15.5 hand-back: input pins 83/83, eligibility counts reconciled vs data/r4/tmp/w3f/dupkey/m123_fits.tsv, DRAFT M2 row OPEN pointing at 15.5b, FULL failures only the 2 pre-existing tests/m3 ones. [DONE 2026-11-19: 15.5, 15.5b, 15.5c complete; 15.6 executed (W3f plans 15.1-15.6)]",
+    "Then push (approved): bb084f24 + 15.5 commits. Then execute 15.5b (gsd-executor); its Task 1 commits the 3 untracked W3f-carter-*-2026-11-18 reply files with the DEC. [DONE 2026-11-19: 15.5, 15.5b, 15.5c complete; 15.6 executed (W3f plans 15.1-15.6)]",
+    "Then 15.6 -> W4a-T3 lock (Carter). [2026-11-19: 15.6 DONE; next = W4a-T3, Carter's reply carries confirmatory_sha256 9fa410aa...88d5]"
   ],
   "resume_entry_point": ".planning/HANDOFF.json ta_r4_w3f_15_5_close + STATE.md 2026-11-18 (evening) block + plan ta-r4-W3f-ukb-panels-biallelic-PLAN.md",
   "headline_PRIOR_2026_11_17": "ta-r4 W3f: 15.5 stopped at Rule-4 (r4 catalogs duplicate CHR:POS:REF:ALT under 2 SNP_IDs; 248,257 extra rows / 877,756). Carter chose option 1 (fix both ends) 2026-11-17. Plan 15.5a written, plan-checker FLAG fixed, committed 79ff8dc2. Executor RUNNING as a subagent of session c8312220 (NOT tmux) — at Task 1 RED (18 failing tests in data/r4/tmp/w3f/dupkey/red_t1.txt, 23:46); DEC committed c6c450fc. No Slurm jobs queued at close. Local 2 ahead of origin (not pushed — push forbidden inside 15.5a).",
@@ -552,5 +581,6 @@
       "tests/m3/sparse_parent_benchmark.tsv (check: may be a test side effect — do not commit blindly)"
     ],
     "push_approval": "Carter 2026-11-18 18:22: 'push bb084f24 with the 15.5 commits' — push once 15.5 commits are verified"
-  }
+  },
+  "suite_baselines_ta_r4_W4a": "FULL 2069/2017/52/0 at W4a (Slurm 1680976, data/r4/tmp/w4a/full_W4a.xml); QUICK 91.9 s"
 }

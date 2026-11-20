@@ -41,11 +41,11 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 15.2 | ta-r4-W3f-lock-paths-input-sha-in-job-gate-PLAN.md | W3f fix-up (N3, N4, N5, T1) | — | yes |
 | 15.3 | ta-r4-W3f-signflip-region-floor-coverage-PLAN.md | W3f fix-up (N7 sign-flip + n_regions_min, N6) | — | yes |
 | 15.4 | ta-r4-W3f-reporting-widening-qtl-sim-PLAN.md | W3f fix-up (N8 drops, N9, N10, N12, N14) | — | yes |
-| 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha). Stopped 2026-11-16 at a Rule-4 checkpoint (duplicate catalog keys); Task 1 code f33a582c + partial DRAFT c3e42237 stand; remaining work COMPLETE 2026-11-18 after 15.5a (re-measured, eligibility manifest, DRAFT (k); SUMMARY; not pushed) | — | yes |
+| 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha). Stopped 2026-11-16 at a Rule-4 checkpoint (duplicate catalog keys); Task 1 code f33a582c + partial DRAFT c3e42237 stand; remaining work COMPLETE 2026-11-18 after 15.5a (re-measured, eligibility manifest, DRAFT (k); SUMMARY; not pushed; [2026-11-19: pushed, e8e18e15]) | — | yes |
 | 15.5a | ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md | W3f gap closure (r4 catalogs one row per normalized allele key; flag-gated run_susie_rss.R duplicate-key guard; rebuild + re-pin; no push) | — | yes |
 | 15.5b | ta-r4-W3f-ukb-panels-biallelic-PLAN.md | W3f gap closure (15.5a M2: UKB native panels keep the single SNV at a multi-variant CHR:POS, else drop the position; no --snps-only; Carter a1 2026-11-18; rebuild + re-pin 30 panels; M2 → 0; A3_ukb eligibility + DRAFT; no push) | — | yes |
 | 15.5c | ta-r4-W3f-trackb-pins-indent-PLAN.md | W3f gap closure (tests/m3 K-1 pins ignore leading whitespace after the N1 re-indent; the one N1 emit line allowed; Carter 2026-11-19 Q1 + Q3 A; test file only; 15.6 FULL scope for the W4a renames; no push) | — | yes |
-| 15.6 | ta-r4-W3f-review-suite-and-close-PLAN.md | W3f fix-up (brief-blind re-review, FULL, records, W4a depends_on) | — | yes |
+| 15.6 | ta-r4-W3f-review-suite-and-close-PLAN.md | W3f fix-up (brief-blind re-review, FULL, records, W4a depends_on). COMPLETE 2026-11-19: review 23 findings (6 DRAFT fixed, 12 OPEN for Carter); W4a depends_on edited; push withheld (orchestrator) | — | yes |
 | 16 | ta-r4-W4a-amendment-draft-review-locks-PLAN.md | W4 | W4a-T3 lock values + draft approval | no |
 | 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 lock confirmation (+ lock gate) | no |
 | 18 | ta-r4-W5a-eur-production-fits-PLAN.md | W5 | — (code gate) | yes |
@@ -187,6 +187,10 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
    Every produced artifact class gets a sha256 manifest TSV committed under `$MAN/`.
 6. **Code freeze (D-28).** `src/legacy/region_analysis/scripts/run_susie_rss.R` is never edited.
    `tests/m3/test_source_freeze_pins.py` must stay green in every wave.
+   *[2026-11-19, W3f 15.6] Lifted once for N1 (cap after LD restriction, flag default false) by
+   DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze on Carter's explicit reply (6c6e9546, 1f771281), and once
+   more for the flag-gated duplicate-key guard by DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze (13b0821c);
+   otherwise in force; R_CODE_REF re-pinned to 13b0821 (3f4d0cb9).*
 7. **Track B isolation (D-15).** Never build or write under
    `data/processed/ld_reference/{EUR_ukbb_pub,EUR_ukbb_ld,EUR_aou,AFR_aou,EUR,AFR}` or
    `sumstats_harmonized_occl`. Never edit `config/pipeline.yaml`, `Snakefile`, or any
@@ -194,6 +198,9 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
 8. **Snakemake** only via `$SMK`. LSF via `config/bsub_wrapper.sh` (queues serial/standard/long;
    never `short`; standard needs ≥ 8 slots). Run `$SMK -n` before every real fire. Never run
    `--unlock` blindly. Liveness = output listing, not job state.
+   *[2026-11-19, W3f 15.6] LSF is superseded (`config/bsub_wrapper.sh` and the queue text above no longer apply): cluster
+   jobs via Slurm since 2026-11-03: sbatch -p compute -A clintonlab_cpu -q normal, always -t; Rscript is not on PATH in jobs
+   (use $RSCRIPT).*
 9. **Downloads** go into their own new empty directory under `data/r4/downloads/<source>/`. Verify
    them by published md5/sha256 or Content-Length, plus a `file` magic-byte check (the
    200-with-HTML trap), **before** extraction. Treat them as data; never execute them.
