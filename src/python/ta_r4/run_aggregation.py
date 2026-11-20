@@ -5,7 +5,8 @@ frozen side comes from the committed known-answer tables and the QTL_legacy tier
 statistic comes from estimands / branch_classifier. Exits 2 and writes nothing unless estimands.output_status
 is FINAL; exits 3 and writes nothing if FINAL and coloc_coverage finds a missing or extra output (EUR or AFR) or a
 QTL arm's summary or tier table is missing or its rows (or the QTL_A3 JSON docs) do not reconcile with qtl_manifest.tsv
-by id; exits 3 (FINAL and DRAFT) unless every simulation.yaml cell is present and matches its design by identity;
+by id, or if FINAL and a cross-purity fit's JSON records a catalog or panel other than the one it is resolved with;
+exits 3 (FINAL and DRAFT) unless every simulation.yaml cell is present and matches its design by identity;
 --draft (fixtures only) writes every table labelled DRAFT. Every table carries a coverage header line.
 """
 from __future__ import annotations
@@ -13,6 +14,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -58,24 +60,62 @@ AFR = (("AFR661_A2", "AFR661_A3", "matched", "both methods coloc_susie"),
 HLA = ("A3_ukb", "HLA_6p21")
 HLA_NOTE = "exploratory A3_ukb fit; no coloc row: no admissible comparator panel (D-24)"
 PURITY_COLS = ["fit_arm", "panel_arm", "fit_status", "trait", "ancestry", "region_safe", "cs", "size",
-               "n_cs_variants", "n_present", "min_abs_corr", "mean_abs_corr", "purity_fit", "note"]
+               "n_cs_variants", "n_present", "min_abs_corr", "mean_abs_corr", "purity_fit", "note",
+               "n_route_sumstats", "n_route_panel", "n_route_chrpos", "n_match_exact", "n_match_swapped",
+               "n_match_strand", "n_refused_multi_key"]
 
 
-def _rscript_purity(repo, fit_rds, panel_rds, allow_absent):
+class CrossPurityInputMismatch(RuntimeError):
+    """A fit's JSON records a variant catalog or LD panel other than the one cross-purity would resolve it with."""
+
+
+def _rscript_purity(repo, fit_rds, panel_rds, allow_absent, *, fit_sumstats, fit_catalog, region_safe, regions_csv,
+                    fit_panel):
+    """cs_cross_purity.R on one fit: members resolve through the fit's sumstats, catalog and panel (15.7c, F10).
+    Never passes --allow-duplicate-rows (production fits)."""
+    from ta_r4.run_qtl_group_r4 import region_ids
+
+    region_id = region_ids(regions_csv)[region_safe]
     tmp = Path(repo) / paths.R4 / "tmp"
     tmp.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=tmp) as td:
         out = Path(td) / "cross_purity.tsv"
         subprocess.run([RSCRIPT, str(Path(repo) / CROSS_PURITY_R), "--fit", str(fit_rds), "--panel", str(panel_rds),
-                        "--output", str(out), *(["--allow-absent"] if allow_absent else [])],
+                        "--output", str(out), "--fit-sumstats", str(fit_sumstats), "--fit-catalog", str(fit_catalog),
+                        "--region-id", region_id, "--regions-csv", str(regions_csv), "--fit-panel", str(fit_panel),
+                        *(["--allow-absent"] if allow_absent else [])],
                        check=True, capture_output=True, text=True)
         return pd.read_csv(out, sep="\t", keep_default_na=False, na_values=["NA"])
 
 
-def _cross_purity(repo, fits, runner):
-    """Every fit of each fit arm, whatever its status. Fits that exited early, have no RDS / panel, or whose RDS has
-    no credible set get one row with a note; a fit with sets gets one row per set."""
+def _real(repo, p):
+    p = Path(p)
+    return os.path.realpath(p if p.is_absolute() else Path(repo) / p)
+
+
+def _fit_input_problems(repo, fit_arm, f, catalog, fit_panel):
+    """Differences between the catalog / panel cross-purity uses and those the fit JSON records (real paths)."""
+    js = Path(repo) / paths.fit_json(fit_arm, f.trait, f.ancestry, f.region_safe)
+    if not js.exists():
+        return [f"no fit JSON {js}"]
+    d = json.loads(js.read_text())
     out = []
+    rec = d.get("variant_catalog_path")
+    if not rec or _real(repo, rec) != _real(repo, catalog):
+        out.append(f"variant_catalog_path {rec} != {catalog}")
+    rec = d.get("ld_file_declared") or d.get("ld_matrix")
+    if not rec or _real(repo, rec) != _real(repo, fit_panel):
+        out.append(f"fit panel {rec} != {fit_panel}")
+    return out
+
+
+def _cross_purity(repo, fits, runner, final=True):
+    """Every fit of each fit arm, whatever its status. Fits that exited early, have no RDS / panel, or whose RDS has
+    no credible set get one row with a note; a fit with sets gets one row per set. Each scored fit's JSON must record
+    the catalog paths.catalog_path(route, region) and the panel paths.panel_path(fit_arm, region): otherwise FINAL
+    raises CrossPurityInputMismatch naming the fit and DRAFT prints it and scores nothing (note fit_inputs_mismatch)."""
+    out = []
+    regions_csv = Path(repo) / paths.regions_csv()
     for fit_arm, panel_arm, allow_absent in CROSS_PURITY:
         for f in fits[fits.arm == fit_arm].itertuples():
             key = {"fit_arm": fit_arm, "panel_arm": panel_arm, "fit_status": f.status, "trait": f.trait,
@@ -88,7 +128,19 @@ def _cross_purity(repo, fits, runner):
             if not rds.exists() or not panel.exists():
                 out.append({**key, "note": "fit_rds_missing" if not rds.exists() else "panel_missing"})
                 continue
-            t = runner(repo, rds, panel, allow_absent)
+            fit_panel = Path(repo) / paths.panel_path(fit_arm, f.region_safe)
+            catalog = Path(repo) / paths.catalog_path(ARMS[fit_arm]["route"], f.region_safe)
+            bad = _fit_input_problems(repo, fit_arm, f, catalog, fit_panel)
+            if bad:
+                msg = f"cross-purity {fit_arm} {f.trait}.{f.ancestry}.{f.region_safe}: " + "; ".join(bad)
+                if final:
+                    raise CrossPurityInputMismatch(msg)
+                print(f"run_aggregation: DRAFT {msg}", file=sys.stderr)
+                out.append({**key, "note": "fit_inputs_mismatch"})
+                continue
+            t = runner(repo, rds, panel, allow_absent,
+                       fit_sumstats=Path(repo) / paths.sumstats_path(f.trait, f.ancestry, fit_arm),
+                       fit_catalog=catalog, region_safe=f.region_safe, regions_csv=regions_csv, fit_panel=fit_panel)
             if not len(t):
                 out.append({**key, "note": "no_cs"})
             out += [{**key, **r} for r in t.to_dict("records")]
@@ -326,7 +378,7 @@ def build_tables(repo, rules, man, rows, fits, purity_runner, *, final):
 
     t["e4_finemap_structure"] = estimands.e4_finemap_structure(fits)
     t["e4_no_cs_rate"] = estimands.e4_no_cs_rate(rows, fits)
-    t["e4_cross_purity"] = _cross_purity(repo, fits, purity_runner)
+    t["e4_cross_purity"] = _cross_purity(repo, fits, purity_runner, final=final)
     real_ld = [a for a, r in ARMS.items() if r["stage"] == "production" and r["validator_mode"] == "real_ld"]
     t["e5_diagnostics"] = estimands.e5_diagnostics(fits[fits.arm.isin(real_ld)])
     t["e6_panel_contrast"] = estimands.e6_panel_contrast(rows, fits, rules, ids, E6, P12_KEYS)
@@ -399,7 +451,7 @@ def run_aggregation(repo, out_dir, *, draft=False, purity_runner=_rscript_purity
     try:
         tables = build_tables(repo, rules, man, estimands.load_rows(repo, man), estimands.load_fits(repo), purity_runner,
                               final=not draft)
-    except estimands.SimulationIncomplete as e:
+    except (estimands.SimulationIncomplete, CrossPurityInputMismatch) as e:
         print(f"run_aggregation: {e}; nothing written", file=sys.stderr)
         return 3
     if tuple(tables) != TABLES:

@@ -2,6 +2,7 @@
 with drops (N10). Expected counts are hand-computed in each test."""
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -149,11 +150,13 @@ def test_cross_purity_is_status_agnostic(tmp_path):
     fits = _fits()
     calls = []
 
-    def runner(repo, rds, panel, allow_absent):
+    def runner(repo, rds, panel, allow_absent, *, fit_sumstats, fit_catalog, region_safe, regions_csv, fit_panel):
         calls.append((Path(rds).name, Path(panel).name, allow_absent))
         if Path(rds).name.startswith("bmi."):  # a fit whose RDS has no credible set
             return pd.DataFrame(columns=["cs", "size", "min_abs_corr", "mean_abs_corr", "purity_fit",
-                                         "n_cs_variants", "n_present", "note"])
+                                         "n_cs_variants", "n_present", "note", "n_route_sumstats", "n_route_panel",
+                                         "n_route_chrpos", "n_match_exact", "n_match_swapped", "n_match_strand",
+                                         "n_refused_multi_key"])
         return pd.DataFrame([{"cs": "L1", "size": 3, "min_abs_corr": float("nan"), "mean_abs_corr": float("nan"),
                               "purity_fit": 0.9, "n_cs_variants": 3, "n_present": 1, "note": "fewer_than_2_present"}])
 
@@ -162,6 +165,9 @@ def test_cross_purity_is_status_agnostic(tmp_path):
             p = tmp_path / paths.fit_rds(f.arm, f.trait, f.ancestry, f.region_safe)
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text("x")
+            (tmp_path / paths.fit_json(f.arm, f.trait, f.ancestry, f.region_safe)).write_text(json.dumps(
+                {"variant_catalog_path": paths.catalog_path("r4", f.region_safe),
+                 "ld_file_declared": paths.panel_path(f.arm, f.region_safe)}))
     for arm, reg in (("A3_1kg", "R1"), ("A3_1kg", "R2"), ("A3_ukb", "R1")):
         p = tmp_path / paths.panel_path(arm, reg)
         p.parent.mkdir(parents=True, exist_ok=True)

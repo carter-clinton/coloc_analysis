@@ -30,11 +30,22 @@ saveRDS(list(R = R, variants = v, ld_source = "fixture", region_id = "R1", ances
         file.path(d, "EUR_1kg_r4.rds"))
 v2 <- v; v2$SNP_ID[4] <- "rsY"; v2$POS[5] <- 400L
 saveRDS(list(R = R, variants = v2), file.path(d, "dup.rds"))
-v3 <- v; v3$SNP_ID[1] <- "rsZ"
+v3 <- v; v3$SNP_ID[1] <- "rsZ"; v3$POS[1] <- 101L
 saveRDS(list(R = R, variants = v3), file.path(d, "missing.rds"))
 v4 <- v; v4$POS[4] <- 401L
 saveRDS(list(R = R, variants = v4), file.path(d, "missing3.rds"))
 saveRDS(list(R = diag(6), variants = v), file.path(d, "identity.rds"))
+# what the fit was built from (15.7c): its sumstats window, catalog and panel (REF = A2, ALT = A1)
+fv <- data.frame(SNP_ID = c(nm, "rs6"), CHR = "1", POS = v$POS, REF = "G", ALT = "A", stringsAsFactors = FALSE)
+con <- gzfile(file.path(d, "ss.tsv.gz"), "w")
+writeLines(c("CHR\tPOS\tREF\tALT\tBETA\tSE\tSNP_ID",
+             sprintf("%s\t%d\t%s\t%s\t0.1\t0.02\t%s", fv$CHR, fv$POS, fv$REF, fv$ALT, fv$SNP_ID)), con)
+close(con)
+write.table(fv[, c("CHR", "POS", "REF", "ALT", "SNP_ID")], file.path(d, "catalog.tsv"), sep = "\t", quote = FALSE,
+            row.names = FALSE)
+fp <- v; fp$REF <- fp$A2; fp$ALT <- fp$A1
+saveRDS(list(R = R, variants = fp), file.path(d, "fit_panel.rds"))
+writeLines(c("region_id,chr,start,end", "R1,1,1,100000"), file.path(d, "regions.csv"))
 """
 
 
@@ -47,7 +58,10 @@ def fx(tmp_path_factory):
 
 def _run(fx, panel, out="out.tsv", *extra):
     return subprocess.run([RSCRIPT, str(SCRIPT), "--fit", str(fx / "A2.fit.rds"), "--panel", str(fx / panel),
-                           "--output", str(fx / out), *extra], capture_output=True, text=True)
+                           "--output", str(fx / out), "--fit-sumstats", str(fx / "ss.tsv.gz"),
+                           "--fit-catalog", str(fx / "catalog.tsv"), "--region-id", "R1",
+                           "--regions-csv", str(fx / "regions.csv"), "--fit-panel", str(fx / "fit_panel.rds"), *extra],
+                          capture_output=True, text=True)
 
 
 def _read(p):

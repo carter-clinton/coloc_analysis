@@ -126,9 +126,22 @@ read_region <- function(path, reg) {
 }
 
 # --- fit names -> region sumstats rows, through the LD panel the fit was built against (W3f N2) -------------------
-norm_allele <- function(x) toupper(trimws(as.character(x)))
-missing_allele <- function(x) is.na(x) | norm_allele(x) %in% c("", "N", ".", "NA")
-complement <- function(x) chartr("ACGT", "TGCA", x)
+# norm_allele, missing_allele, complement and the position + allele classification live in variant_match.R (15.7c),
+# sourced from this file's directory into this file's environment (Rscript and sys.source callers alike).
+local({
+  own <- NULL
+  for (i in rev(seq_len(sys.nframe()))) {
+    f <- sys.function(i)
+    if (identical(f, base::sys.source) || identical(f, base::source)) {
+      own <- get("file", envir = sys.frame(i)); break
+    }
+  }
+  if (is.null(own) || !is.character(own)) {
+    own <- sub("^--file=", "", grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE))[1]
+  }
+  vm <- file.path(if (is.na(own)) "src/snakemake/scripts/ta_r4" else dirname(normalizePath(own)), "variant_match.R")
+  sys.source(vm, envir = parent.env(environment()))
+})
 
 # names: fit variant names; ss: read_region() rows; panel: the panel's variants data.frame (SNP_ID, CHR, POS and
 # REF/ALT, else A1/A2 as an unordered set). Returns list(idx = ss row per name, counts); any unmapped name fails.
@@ -163,26 +176,11 @@ map_fit_names <- function(names, ss, panel, label) {
       if (!length(rows)) { why[i] <- "no_position"; next }
       r0 <- pr[hit]; a0 <- pa[hit]
       if (missing_allele(r0) || missing_allele(a0)) { why[i] <- "panel_no_alleles"; next }
-      snv <- nchar(r0) == 1 && nchar(a0) == 1
-      pal <- snv && complement(r0) == a0
-      cls <- vapply(rows, function(j) {
-        if (s_miss[j]) return("no_alleles")
-        if (sr[j] == r0 && sa[j] == a0) return("exact")
-        if (sr[j] == a0 && sa[j] == r0) return(if (basis == "REF/ALT") "swapped" else "exact")
-        if (snv && !pal && nchar(sr[j]) == 1 && nchar(sa[j]) == 1 &&
-            ((sr[j] == complement(r0) && sa[j] == complement(a0)) ||
-             (sr[j] == complement(a0) && sa[j] == complement(r0)))) return("strand")
-        "mismatch"
-      }, character(1))
-      good <- cls %in% c("exact", "swapped", "strand")
-      if (sum(good) == 1 && !any(cls == "no_alleles")) {
-        idx[i] <- rows[good]; kind[i] <- cls[good]
-      } else if (sum(good) >= 1) {
-        why[i] <- "ambiguous"
-      } else if (any(cls == "no_alleles")) {
-        why[i] <- "no_alleles"
+      m <- match_at_position(r0, a0, sr[rows], sa[rows], s_miss[rows], basis)
+      if (m$status == "matched") {
+        idx[i] <- rows[m$j]; kind[i] <- m$kind
       } else {
-        why[i] <- "allele_mismatch"
+        why[i] <- m$status
       }
     }
   }
