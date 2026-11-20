@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-11-20T06:40:00-05:00",
+  "timestamp": "2026-11-20T14:10:00-05:00",
   "phase": "ta-r4",
   "phase_name": "ta-r4-head-to-head-reanalysis-and-submission",
   "phase_dir": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission",
@@ -527,8 +527,8 @@
   ],
   "resume_entry_point_PRIOR_2026_11_09": "Resume session b1f97279 (inside tmux on login01): `claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07`, then: you were interrupted mid-15.5 at the asthma.EUR build check; continue. Fallback (fresh session): /gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission -> 15.5, reusing the WIP in ta_r4_w3f_15_5_in_progress after verifying it.",
   "timestamp_reason_2026_11_17": "session c8312220 close: 15.5a planned/checked/committed; executor mid-Task 1",
-  "headline": "ta-r4 W3f: 15.6 brief-blind Codex re-review found 12 OPEN production blockers (W3f_F1..F15 in w4a_checkpoint.production_blockers). Carter 2026-11-20 chose Plan 15.7 code fix-up (reply file W3f-carter-15-6-push-and-15-7-reply-2026-11-20.txt, UNTRACKED; the first 15.7 plan commits it). 15.7 planner is verifying each finding against code, then writing small RED-first plans + Carter questions (F2 unfreeze vs seeded wrapper, F9 re-run vs disclose, F15 wording). W4a-T3 lock waits on 15.7.",
-  "status": "W3f 15.5b, 15.5c, 15.6 COMPLETE + PUSHED (origin == 553c8fc8). 15.7 PLANNING in progress (gsd-planner subagent of session c8312220). Nothing on Slurm.",
+  "headline": "ta-r4 W3f 15.7: 11 plans (a,b,c,d,e,f,g,h,h2,i,j) planned + plan-checked over 4 rounds, committed c015a4e4 with 15 Carter decision files and DEC-2026-11-20-ta-r4-w3f-15-7-code-fixup. Carter decisions: Q-F2 A (exact purity, third run_susie_rss.R unfreeze), Q-F2Q i, Q-F3 B (fix sweep for Track B too), Q-F3B A, Q-DEN A, Q-F9 A (re-run null windows; fetch 6 UKB tiles), Q-F15 A + v2 wording, Q-PROXY/Q-PROXYA B/Q-PROXYB A (20 asthma repro pilot fits, then proxy re-run), Q-NREG keep n_regions_min 7. Expected FULL after 15.7: 2,692 = 2,639 P / 53 S / 0 F.",
+  "status": "W3f 15.7 EXECUTING: 15.7a (F1 runtime config guard) code committed 420aa998; closing FULL Slurm 2007035 running. 15.7b..h2 queued (--auto --chain); chain STOPS at 15.7i for Carter v3 F15 approval. Local 3 ahead of origin (fcfd7ca8, c015a4e4, 420aa998), not pushed.",
   "ta_r4_w3f_15_5a": {
     "plan": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md",
     "carter_reply": "W3f-carter-dupkey-fix-reply-2026-11-17.txt = \"1. Fix both ends (recommended).\" (authorizes r4-only catalog unique-key producer, flag-gated run_susie_rss.R guard --require-unique-allele-key + R_CODE_REF re-pin, catalog rebuild + re-pin; NOTHING else)",
@@ -548,11 +548,11 @@
     ]
   },
   "resume_on_reconnect": [
-    "Reattach: on login03 `tmux attach -t coloc`. If session c8312220 died: `tmux new -s coloc`, then `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63` (never --continue).",
-    "Check the 15.7 planner: ls -t .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ | head (look for ta-r4-W3f-*15.7* / new PLAN files) and the agent jsonl mtime under ~/.claude/projects/.../c8312220-.../subagents/agent-a230893f6cd9bfd3b.jsonl. If it died: SendMessage to a230893f6cd9bfd3b to resume, else re-brief a fresh gsd-planner with ta_r4_w3f_15_7.brief.",
-    "When the planner returns: verify its per-finding table against the code yourself (do not trust it), run gsd-plan-checker on each plan, then bring Carter ONE batch of questions (F2, F9, F15, any locked-config/Track-B/frozen-file edit).",
-    "After Carter answers: save replies verbatim, execute 15.7 plans in order (gsd-executor, no push), verify each hand-back, ask Carter before pushing.",
-    "Then W4a-T3 lock (Carter): values in w4a_checkpoint.proposed_lock_values (confirmatory_sha256 9fa410aa...88d5 will change if 15.7 edits the extract/locked paths)."
+    "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`.",
+    "Check 15.7a: git log fcfd7ca8..HEAD (expect a SUMMARY commit after 420aa998), squeue job 2007035, data/r4/tmp/w3f/q157/. If the executor died after FULL: SendMessage a2d260760b1f48547, else fresh gsd-executor to finish wave close from the FULL xml (do not re-run code tasks).",
+    "Verify each executor hand-back against files (FULL per id vs prior plan xml, declared spec updates, no src change outside files_modified) before launching the next plan in ta_r4_w3f_15_7.plan_order.",
+    "Chain STOPS at 15.7i if the pilot-fit recount changes the F15 numbers: show Carter the v3 paragraph; save his typed reply as W3f-carter-15-7-Q-F15V3-reply-<date>.txt + wording-v3 file, then resume.",
+    "Ask Carter before any push. After 15.7j: W4a-T3 lock (Carter)."
   ],
   "resume_entry_point": ".planning/HANDOFF.json ta_r4_w3f_15_5_close + STATE.md 2026-11-18 (evening) block + plan ta-r4-W3f-ukb-panels-biallelic-PLAN.md",
   "headline_PRIOR_2026_11_17": "ta-r4 W3f: 15.5 stopped at Rule-4 (r4 catalogs duplicate CHR:POS:REF:ALT under 2 SNP_IDs; 248,257 extra rows / 877,756). Carter chose option 1 (fix both ends) 2026-11-17. Plan 15.5a written, plan-checker FLAG fixed, committed 79ff8dc2. Executor RUNNING as a subagent of session c8312220 (NOT tmux) — at Task 1 RED (18 failing tests in data/r4/tmp/w3f/dupkey/red_t1.txt, 23:46); DEC committed c6c450fc. No Slurm jobs queued at close. Local 2 ahead of origin (not pushed — push forbidden inside 15.5a).",
@@ -601,6 +601,35 @@
     ],
     "carter_replies_untracked": [
       ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-6-push-and-15-7-reply-2026-11-20.txt"
-    ]
-  }
+    ],
+    "plan_order": [
+      "15.7a runtime-config-guard",
+      "15.7b completeness-by-identity",
+      "15.7c cross-purity-variant-resolution",
+      "15.7d a1-allvars-secondary",
+      "15.7e none-rows-denominators",
+      "15.7f purity-determinism",
+      "15.7g qtl-sweep-gwas-pph4",
+      "15.7h null-window-reselection",
+      "15.7h2 proxy-asthma-refit",
+      "15.7i pilot-fit-disclosure (STOP: Carter approves v3 F15 wording if recount changes 146/108 etc.)",
+      "15.7j 15-7-review-suite-and-close"
+    ],
+    "full_chain": "2555 > a 2587 > b 2618 > c 2636 > d 2642 > e 2654 > f 2667 > g 2678 > h 2682 > h2 2689 > i 2692 > j 2692",
+    "in_flight": "15.7a executor (agent a2d260760b1f48547, session c8312220); FULL Slurm 2007035 close.sh started ~13:12; outputs data/r4/tmp/w3f/q157/",
+    "orchestrator_verified": [
+      "15.7c real-fit routes: 6,282 sumstats + 22,092 panel + 5,064 single-key .N = 33,438, 0 unresolved (planner_probes/f10_real_fit_routes.tsv)",
+      "15.7a gate on 15 real reply files + 14 NC OK; 6 mutation NCs OK"
+    ],
+    "osf": "2026-11-20 anon: pvb5j public 200; az52u 401; file k8w7n 401. Not a production blocker (DEC-2026-10-28 git lock). Posting/visibility is Carter-optional."
+  },
+  "headline_PRIOR_2026_11_20_morning": "ta-r4 W3f: 15.6 brief-blind Codex re-review found 12 OPEN production blockers (W3f_F1..F15 in w4a_checkpoint.production_blockers). Carter 2026-11-20 chose Plan 15.7 code fix-up (reply file W3f-carter-15-6-push-and-15-7-reply-2026-11-20.txt, UNTRACKED; the first 15.7 plan commits it). 15.7 planner is verifying each finding against code, then writing small RED-first plans + Carter questions (F2 unfreeze vs seeded wrapper, F9 re-run vs disclose, F15 wording). W4a-T3 lock waits on 15.7.",
+  "status_PRIOR_2026_11_20_morning": "W3f 15.5b, 15.5c, 15.6 COMPLETE + PUSHED (origin == 553c8fc8). 15.7 PLANNING in progress (gsd-planner subagent of session c8312220). Nothing on Slurm.",
+  "resume_on_reconnect_PRIOR_2026_11_20_morning": [
+    "Reattach: on login03 `tmux attach -t coloc`. If session c8312220 died: `tmux new -s coloc`, then `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63` (never --continue).",
+    "Check the 15.7 planner: ls -t .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ | head (look for ta-r4-W3f-*15.7* / new PLAN files) and the agent jsonl mtime under ~/.claude/projects/.../c8312220-.../subagents/agent-a230893f6cd9bfd3b.jsonl. If it died: SendMessage to a230893f6cd9bfd3b to resume, else re-brief a fresh gsd-planner with ta_r4_w3f_15_7.brief.",
+    "When the planner returns: verify its per-finding table against the code yourself (do not trust it), run gsd-plan-checker on each plan, then bring Carter ONE batch of questions (F2, F9, F15, any locked-config/Track-B/frozen-file edit).",
+    "After Carter answers: save replies verbatim, execute 15.7 plans in order (gsd-executor, no push), verify each hand-back, ask Carter before pushing.",
+    "Then W4a-T3 lock (Carter): values in w4a_checkpoint.proposed_lock_values (confirmatory_sha256 9fa410aa...88d5 will change if 15.7 edits the extract/locked paths)."
+  ]
 }
