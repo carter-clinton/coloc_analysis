@@ -1177,3 +1177,31 @@ index c517ffb7..a0ffd52e 100644
 - PLAN-INDEX: dated notes on §B.6 (two lifts; R_CODE_REF 13b0821) and §B.8 (Slurm); 15.5 row push fact; 15.6 row.
   W4a plan: depends_on → ["ta-r4-W3f-review-suite-and-close"] (1 line vs 72b99064; tasks untouched).
 - No production fit, no locked: true, no signoff, no OSF. Push WITHHELD (orchestrator to ask Carter).
+
+## 2026-11-20 — W3f 15.7a (review F1: runtime config guard; opens 15.7; no push)
+
+- Commit 1 c015a4e4: the 15.6 reply, 12 Carter 15.7 replies, F15 wording v1 + v2 (15 files, sha256 in
+  `data/r4/tmp/w3f/q157/replies.sha256`, also quoted in the DEC), the eleven 15.7 PLAN files, PLAN-INDEX, and
+  DEC-2026-11-20-ta-r4-w3f-15-7-code-fixup (each file quoted via cat; extracted and byte-compared 15/15; NC with one
+  changed byte → DIFF).
+- Reply gate `$Q/gate_reply.py`: 14 NCs (a)–(n) in `$Q/gate_nc.txt`, each with the expected rc and its own named
+  reason (12 → 2; (l), (m) → 0; (k) with both files present → 0); the 12 real reply files → 0 (`$Q/gate_real.txt`;
+  Q-PROXYA / Q-PROXYB question read from the file's line 1). `$Q/close.sh` (= close_W3f.sh + junit path + header),
+  `$Q/check_tmpl.py`.
+- Measured (`$Q/smk_attrs.txt`, c020n03): `config_args` None / ['x=1']; `overwrite_configfiles` = command-line list,
+  absolute, in order; `configfiles` = that + the directive's relative `config/pipeline.yaml`. As planned.
+- RED (`$Q/red_15_7a.txt`): 31 F / 18 P exactly as listed (2–6, 8–13, 15–22, 29–32 + the 8 gate-shell spec updates
+  red; 1, 7, 14, 23–28 + the 4 fire spec updates green), each for the stub/unchanged-code reason.
+- GREEN commit 2 420aa998: `ta_r4/job_guard.py`; `gate_command(stage, arm, config, label)` + `commands.job_label`;
+  5 call sites; Snakefile.ta_r4 parse-time refusal; r4_fire.sh env refusal + allowlist; DRAFT (k) clause.
+  Task 1 verify (sbatch, c020n03 Gold 6226R): 197 P / 2 S; test_job_guard collects 32; ids vs full_W3f.xml 0 removed,
+  0 changes, +32 passed (test_slurm_profile 15 and test_qtl_group_runner 24 identical). Mutation NCs
+  (`$Q/mutation_nc_15_7a.py`): constant digest, no lock gate, no record, bf16 unchecked, OpenBLAS unchecked, set (not
+  ordered) configfile compare → each failed exactly its named tests; files restored byte-for-byte. Non-weakening AST
+  PASS (only _fire_repo, _fire and the two named tests; NC FAIL). test_amendment_text 21 P / 2 S.
+- FULL Slurm 2007035 (c020n03, HEAD 420aa998): QUICK 775 P / 2 S; HEAVY 311 P / 5 S; PINS 39 P; FULL 2,587 = 2,534 P /
+  53 S / 0 F. `check_15_7a.py` PASS vs full_W3f.xml (0 removed, +32, 0 changes, 12 declared passed → passed); NCs
+  (baseline as new; synthetic failed id) FAIL.
+- srun under QOS normal is refused interactively → every verify ran with `sbatch --wait` on the same
+  partition/account/QOS/constraint. A foreign docs commit 61994a1b (HANDOFF/.continue-here) landed during FULL.
+- No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.

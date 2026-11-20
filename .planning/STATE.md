@@ -26,7 +26,13 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-20 (morning) — **TRACK A ta-r4: W3f 15.5b/15.5c/15.6 COMPLETE + PUSHED (553c8fc8). 15.7 PLANNING (12 re-review blockers). Nothing on Slurm.** (★ RESUME HERE — LATEST ★)
+## 2026-11-20 (afternoon) — **TRACK A ta-r4: W3f 15.7a COMPLETE (F1 runtime config guard). NEXT = 15.7b. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): c015a4e4 (15.7 plan set + 15 decision files + DEC-2026-11-20-ta-r4-w3f-15-7-code-fixup), 420aa998 (job guard, fire allowlist, Snakefile refusal, 32 tests, 12 declared spec updates, DRAFT (k)), and the 15.7a records commit.
+- FULL Slurm 2007035: 2,587 = 2,534 P / 53 S / 0 F; vs full_W3f.xml 0 removed / +32 / 0 changes (check_15_7a.py PASS). Base for 15.7b: `data/r4/tmp/w3f/q157/full_15_7a.xml`.
+- Reply gate `data/r4/tmp/w3f/q157/gate_reply.py` built, 14 NCs recorded; all 12 real replies pass. decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-20 (morning) — **TRACK A ta-r4: W3f 15.5b/15.5c/15.6 COMPLETE + PUSHED (553c8fc8). 15.7 PLANNING (12 re-review blockers). Nothing on Slurm.** (SUPERSEDED by the 15.7a block above)
 
 - 15.5b: UKB native panels one variant per CHR:POS (31 SNVs kept, 45 indels dropped; n_var 189,945→189,900); M2 0/145; pushed 61201774.
 - 15.5c: Track B K-1 pins ignore leading whitespace + allow the one N1 emit line (Carter: "Ignore indentation", "A"); 20 new in-memory tests; FULL 2,555 = 2,502 P / 53 S / 0 F.
