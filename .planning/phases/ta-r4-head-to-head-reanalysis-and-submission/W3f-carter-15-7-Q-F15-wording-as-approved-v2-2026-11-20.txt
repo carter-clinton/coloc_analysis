@@ -1,0 +1,19 @@
+**Pre-lock pilot fits.** While the asthma inputs were being
+corrected (c), 146 fits were run outside the production result
+directories: 20 with the production 1000 Genomes EUR panel and
+L = 10 (the five EUR traits at APOL1_22q12, FTO_16q12,
+MC4R_18q21 and SH2B3_12q24, on the variant catalog of that
+time), 18 of the same kind on the earlier catalog, and 108
+reproduction-route fits; and 17 runs of one reproduction fit
+for the numerical-kernel experiment in (k). For these, run
+status, LD overlap, allele classes and the number and size of
+purity-filtered credible sets were inspected: 7 of the 20
+production-panel fits have at least one set (asthma at
+FTO_16q12; BMI at FTO_16q12, MC4R_18q21 and SH2B3_12q24;
+hypertension and stroke at SH2B3_12q24; type 2 diabetes at
+FTO_16q12). To measure the purity subsampling in (k), the
+purity of the 109 credible-set components of the 20 production-panel fits was also recomputed
+exactly (manifests/purity_flip_measurement.tsv). No
+colocalization was run on any pilot fit. Every production fit
+is run after the lock. The pilot fits are listed with
+checksums in manifests/prelock_pilot_fits.tsv.

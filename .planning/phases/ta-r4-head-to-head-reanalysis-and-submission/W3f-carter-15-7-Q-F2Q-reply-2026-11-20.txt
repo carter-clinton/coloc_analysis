@@ -1,0 +1,2 @@
+Question Q-F2Q (2026-11-20): coloc::runsusie in run_qtl_coloc.R, which Track B also uses, has the same random purity on the QTL side. How should it be handled?
+Carter reply (verbatim, selected option): i: Same treatment on the QTL side (Recommended)

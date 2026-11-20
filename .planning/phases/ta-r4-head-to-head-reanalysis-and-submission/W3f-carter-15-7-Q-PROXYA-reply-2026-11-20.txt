@@ -1,0 +1,2 @@
+Question Q-PROXYA (2026-11-20): Correction: when I asked Q-PROXY, I said the proxy re-run would use the corrected asthma inputs. That was wrong. The existing repro fits read the superseded asthma file, so the re-run can only add exact purity, computed after the fact from the stored fits with no refits. Including asthma would need 20 new pilot fits (asthma × 10 regions × 2 repro arms, up to ~40 min and 27–48 GB each). Those would also make the '146' in your F15 paragraph wrong. What should 15.7j do?
+Carter reply (verbatim, selected option): B: Run the 20 asthma fits

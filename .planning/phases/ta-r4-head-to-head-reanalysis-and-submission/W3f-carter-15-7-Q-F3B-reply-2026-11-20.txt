@@ -1,0 +1,2 @@
+Question Q-F3B (2026-11-20): Under your Q-F3 B, the QTL sweep uses the GWAS table wherever one is given. Track B's pph4_threshold_sweep rule (negative_controls.smk) and 6 tests in tests/phase2 call the sweep with no GWAS table, where the tier definitions can't be applied. What should that no-table call do?
+Carter reply (verbatim, selected option): A: Keep it as today, logged as the legacy rule (Recommended)

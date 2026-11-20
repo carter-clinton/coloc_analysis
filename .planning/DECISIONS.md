@@ -3098,3 +3098,209 @@ Carter reply (verbatim, selected option): A: Allow the one N1 emit line (Recomme
   tests/m3 ids; QUICK and HEAVY not run separately (no src/ or tests/ta_r4 file changes; FULL contains every HEAVY
   id, re-checked); PINS runs inside FULL.
 - Lifts nothing under D-28.
+
+## 2026-11-20 — DEC-2026-11-20-ta-r4-w3f-15-7-code-fixup: plan 15.7 fixes the 12 W3f re-review production blockers before W4a-T3 (Carter)
+
+- **Decider:** Carter, 2026-11-20. Fifteen decision files, saved verbatim and quoted here with `cat`.
+
+- The 15.6 reply (Q1 push, done; Q2 opens 15.7), `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-6-push-and-15-7-reply-2026-11-20.txt` (sha256
+  `e1e2de77cd035eaa29e3e0ac7ee2ac34b2286b39eaf1d3db712bf18e05fabbfc`):
+
+```text
+Question 1 (2026-11-20): W3f 15.6 is complete and checked; 5 commits fb08a75f..553c8fc8 (15.5c and 15.6) are local only. Push them to origin?
+Carter reply (verbatim, selected option): Push now (Recommended)
+
+Question 2 (2026-11-20): The brief-blind Codex review of the DRAFT found 12 items recorded as production blockers before W4a-T3 (11 need code: F1, F2, F3, F4, F6, F7, F8, F9, F10, F11, F12; 1 disclosure: F15). How do you want to handle them?
+Carter reply (verbatim, selected option): Plan 15.7 code fix-up (Recommended)
+```
+
+- Q-F2, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F2-reply-2026-11-20.txt` (sha256
+  `5788606334769a728a4fbf4456db987f923c98f15b10556067bfaea3adc52e5a`):
+
+```text
+Question Q-F2 (2026-11-20): For credible sets with more than 100 variants, susieR 0.14.2 computes purity on a random 100-variant subsample, and run_susie_rss.R sets no seed. In the 20 corrected-input pilot fits, 109 components in 12 fits got a random purity, and all were dropped in that draw. That draw decides coloc_susie vs fallback_abf. Track B is unchanged under every option. Which fix?
+Carter reply (verbatim, selected option): A: Exact purity, third unfreeze (Recommended)
+```
+
+- Q-F2Q, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F2Q-reply-2026-11-20.txt` (sha256
+  `63a54f5f70736d5a06bc75c07647ba2c93bd2a18975f1d36cac3d1c9e3ab790e`):
+
+```text
+Question Q-F2Q (2026-11-20): coloc::runsusie in run_qtl_coloc.R, which Track B also uses, has the same random purity on the QTL side. How should it be handled?
+Carter reply (verbatim, selected option): i: Same treatment on the QTL side (Recommended)
+```
+
+- Q-F3, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F3-reply-2026-11-20.txt` (sha256
+  `f869486010dd063adadc2190d08574e793f5e372700560ec6093d71058664703`):
+
+```text
+Question Q-F3 (2026-11-20): The QTL PP.H4 threshold sweep calls assign_tier(best_pph4, best_pph4, ...) at assign_tiers.py:96, using the QTL value as the GWAS value. assign_tiers.py is shared with Track B. All three options replace the DRAFT (l) sentence that describes the faulty sweep. Which fix?
+Carter reply (verbatim, selected option): B: Fix the sweep for Track B too
+```
+
+- Q-F3B, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F3B-reply-2026-11-20.txt` (sha256
+  `b744a8288ae8aff40ab4128a3eb3dbbd59c3b986deb3b4d3758b07b654b1cc1b`):
+
+```text
+Question Q-F3B (2026-11-20): Under your Q-F3 B, the QTL sweep uses the GWAS table wherever one is given. Track B's pph4_threshold_sweep rule (negative_controls.smk) and 6 tests in tests/phase2 call the sweep with no GWAS table, where the tier definitions can't be applied. What should that no-table call do?
+Carter reply (verbatim, selected option): A: Keep it as today, logged as the legacy rule (Recommended)
+```
+
+- Q-DEN, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-DEN-reply-2026-11-20.txt` (sha256
+  `0775b93555759dcea462f83a9cfe11b7364672021934a9daa8aac4766d5b832c`):
+
+```text
+Question Q-DEN (2026-11-20): How should rows with no posterior or no credible-set count enter rates? Today an early exit on either side sets both n_cs to NA, which drops the pair from the no-CS rate; this affects 14/100 A3_ukb primary rows and 4/30 per AFR arm. Negative-control rates aren't split by method, and 'none' rows count as non-calls.
+Carter reply (verbatim, selected option): A: Known states only (Recommended)
+```
+
+- Q-F9, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F9-reply-2026-11-20.txt` (sha256
+  `c2cc991553859fa2e40537edfff92677d16439a5956796d08f1fe81d337cc089`):
+
+```text
+Question Q-F9 (2026-11-20): The 10 null windows were drawn (seed 20261021) from a 2,865-candidate pool built on the superseded, unlifted asthma inputs. On the corrected inputs the same rule gives 2,886 candidates (2,745 shared). All 10 current windows still qualify, but the same seed now keeps only 2 of 10 (11:21500001 and 13:71000001). No fits have been run on null windows, so either choice is outcome-blind. Re-running needs 6 UKB tiles not on disk (~7 GB, public Broad S3, checksummed). Which?
+Carter reply (verbatim, selected option): A: Re-run the selection on the production inputs (Recommended)
+```
+
+- Q-PROXY, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXY-reply-2026-11-20.txt` (sha256
+  `f07eece8e40ba0c5e43ac024a21c5fd4b89a00f54bb7b6ef1e5db98a4829bcdf`):
+
+```text
+Question Q-PROXY (2026-11-20): n_regions_min brief (option D): re-measure the region-contribution proxy after the 15.7 fixes and before the lock? It would use exact purity (15.7f) and the corrected asthma inputs. This is read-only and outcome-blind, the same kind of run as the existing proxy, and it tells you whether the A2_identity 'likely 3 of 10' concern is real. n_regions_min stays 7.
+Carter reply (verbatim, selected option): Add to 15.7j (Recommended)
+```
+
+- Q-PROXYA, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXYA-reply-2026-11-20.txt` (sha256
+  `6597d02e356f41f8c89fd11716277eefa0317a4308338d14371f614ba49908c5`):
+
+```text
+Question Q-PROXYA (2026-11-20): Correction: when I asked Q-PROXY, I said the proxy re-run would use the corrected asthma inputs. That was wrong. The existing repro fits read the superseded asthma file, so the re-run can only add exact purity, computed after the fact from the stored fits with no refits. Including asthma would need 20 new pilot fits (asthma × 10 regions × 2 repro arms, up to ~40 min and 27–48 GB each). Those would also make the '146' in your F15 paragraph wrong. What should 15.7j do?
+Carter reply (verbatim, selected option): B: Run the 20 asthma fits
+```
+
+- Q-PROXYB, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXYB-reply-2026-11-20.txt` (sha256
+  `651c901c7a28462b686ca738c7f33e3f3a2f14a3a95412899a08deb112826f80`):
+
+```text
+Question Q-PROXYB (2026-11-20): 15.7h2: the repro arms apply the 16,000-variant cap BEFORE panel restriction, and corrected asthma EUR is over 16,000 rows in 6 of the 10 confirmatory windows (PYHIN1 41,040; BMI_5q13_3 39,606; SLC2A9 27,374; 9p21 22,998; APOE 20,472; CXADR 16,519). So up to 12 of your 20 asthma fits will stop before fitting and count as 'unknown'; asthma would add a credible-set state at only about 4 regions (FTO, MC4R, SH2B3, APOL1). The other 80 proxy fits used the same cap rule (9 of them early-exited). How do you want to proceed?
+Carter reply (verbatim, selected option): A: Run as planned (Recommended)
+```
+
+- Q-NREG (free text), `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-NREG-reply-2026-11-20.txt` (sha256
+  `2ca9b987cce73317a294db4b024879800d7b5d2dade7d2d49410606fcc05ce18`):
+
+```text
+Question Q-NREG (2026-11-20): n_regions_min decision brief: A keep 7 (recommended), B lower to 5 or 3, C add confirmatory regions for A2, D re-measure the proxy after 15.7 before the lock (recommended alongside A).
+Carter reply (verbatim): yes, A and add D to 15.7j and keep 7
+```
+
+- Q-F15, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-reply-2026-11-20.txt` (sha256
+  `aaff9960248a711c4d2e5c7b4fd77ad24a84c784fe25c1a673c4646d50895877`):
+
+```text
+Question Q-F15 (2026-11-20): The DRAFT says the lock comes 'before any production fit exists', but 146 corrected-input pilot fits exist outside the production directories (plus 17 kernel-experiment runs). They were inspected, never colocalized. 15.7f will also recompute exact purity on 109 of their credible-set components, to measure the F2 subsampling. How should the DRAFT disclose this?
+Carter reply (verbatim, selected option): A: Full disclosure + manifest (Recommended)
+```
+
+- Q-F15W, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15W-reply-2026-11-20.txt` (sha256
+  `5bd31c68a69f2adf34a10aa363017ec02b3804506d4138cc55ba69a763ffef05`):
+
+```text
+Question Q-F15W (2026-11-20): The F15 paragraph you approved says the purity 'of their credible-set components was also recomputed exactly'. 'Their' could be read as all 146 pilot fits, but the measurement covers only the 20 production-panel fits (109 components). Fix the wording?
+Carter reply (verbatim, selected option): Clarify to the 20 fits (Recommended)
+```
+
+- F15 wording v1 (superseded by v2, kept), `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-wording-as-approved-2026-11-20.txt` (sha256
+  `c60e434669cdca6578e3c0445d91f83760c11f66d5a9e47b03c0699438d8439a`):
+
+```text
+**Pre-lock pilot fits.** While the asthma inputs were being
+corrected (c), 146 fits were run outside the production result
+directories: 20 with the production 1000 Genomes EUR panel and
+L = 10 (the five EUR traits at APOL1_22q12, FTO_16q12,
+MC4R_18q21 and SH2B3_12q24, on the variant catalog of that
+time), 18 of the same kind on the earlier catalog, and 108
+reproduction-route fits; and 17 runs of one reproduction fit
+for the numerical-kernel experiment in (k). For these, run
+status, LD overlap, allele classes and the number and size of
+purity-filtered credible sets were inspected: 7 of the 20
+production-panel fits have at least one set (asthma at
+FTO_16q12; BMI at FTO_16q12, MC4R_18q21 and SH2B3_12q24;
+hypertension and stroke at SH2B3_12q24; type 2 diabetes at
+FTO_16q12). To measure the purity subsampling in (k), the
+purity of their credible-set components was also recomputed
+exactly (manifests/purity_flip_measurement.tsv). No
+colocalization was run on any pilot fit. Every production fit
+is run after the lock. The pilot fits are listed with
+checksums in manifests/prelock_pilot_fits.tsv.
+```
+
+- F15 wording v2, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-wording-as-approved-v2-2026-11-20.txt` (sha256
+  `65c3851d21ee0cc0b044c9ee4c4d413dd3eb1c95423ea4d861c12792198b243b`):
+
+```text
+**Pre-lock pilot fits.** While the asthma inputs were being
+corrected (c), 146 fits were run outside the production result
+directories: 20 with the production 1000 Genomes EUR panel and
+L = 10 (the five EUR traits at APOL1_22q12, FTO_16q12,
+MC4R_18q21 and SH2B3_12q24, on the variant catalog of that
+time), 18 of the same kind on the earlier catalog, and 108
+reproduction-route fits; and 17 runs of one reproduction fit
+for the numerical-kernel experiment in (k). For these, run
+status, LD overlap, allele classes and the number and size of
+purity-filtered credible sets were inspected: 7 of the 20
+production-panel fits have at least one set (asthma at
+FTO_16q12; BMI at FTO_16q12, MC4R_18q21 and SH2B3_12q24;
+hypertension and stroke at SH2B3_12q24; type 2 diabetes at
+FTO_16q12). To measure the purity subsampling in (k), the
+purity of the 109 credible-set components of the 20 production-panel fits was also recomputed
+exactly (manifests/purity_flip_measurement.tsv). No
+colocalization was run on any pilot fit. Every production fit
+is run after the lock. The pilot fits are listed with
+checksums in manifests/prelock_pilot_fits.tsv.
+```
+
+- The fifteen sha256 values as recorded in `data/r4/tmp/w3f/q157/replies.sha256` (scratch, under the data/r4 symlink):
+
+```text
+e1e2de77cd035eaa29e3e0ac7ee2ac34b2286b39eaf1d3db712bf18e05fabbfc  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-6-push-and-15-7-reply-2026-11-20.txt
+5788606334769a728a4fbf4456db987f923c98f15b10556067bfaea3adc52e5a  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F2-reply-2026-11-20.txt
+63a54f5f70736d5a06bc75c07647ba2c93bd2a18975f1d36cac3d1c9e3ab790e  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F2Q-reply-2026-11-20.txt
+f869486010dd063adadc2190d08574e793f5e372700560ec6093d71058664703  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F3-reply-2026-11-20.txt
+b744a8288ae8aff40ab4128a3eb3dbbd59c3b986deb3b4d3758b07b654b1cc1b  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F3B-reply-2026-11-20.txt
+0775b93555759dcea462f83a9cfe11b7364672021934a9daa8aac4766d5b832c  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-DEN-reply-2026-11-20.txt
+c2cc991553859fa2e40537edfff92677d16439a5956796d08f1fe81d337cc089  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F9-reply-2026-11-20.txt
+f07eece8e40ba0c5e43ac024a21c5fd4b89a00f54bb7b6ef1e5db98a4829bcdf  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXY-reply-2026-11-20.txt
+6597d02e356f41f8c89fd11716277eefa0317a4308338d14371f614ba49908c5  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXYA-reply-2026-11-20.txt
+651c901c7a28462b686ca738c7f33e3f3a2f14a3a95412899a08deb112826f80  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXYB-reply-2026-11-20.txt
+2ca9b987cce73317a294db4b024879800d7b5d2dade7d2d49410606fcc05ce18  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-NREG-reply-2026-11-20.txt
+aaff9960248a711c4d2e5c7b4fd77ad24a84c784fe25c1a673c4646d50895877  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-reply-2026-11-20.txt
+5bd31c68a69f2adf34a10aa363017ec02b3804506d4138cc55ba69a763ffef05  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15W-reply-2026-11-20.txt
+c60e434669cdca6578e3c0445d91f83760c11f66d5a9e47b03c0699438d8439a  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-wording-as-approved-2026-11-20.txt
+65c3851d21ee0cc0b044c9ee4c4d413dd3eb1c95423ea4d861c12792198b243b  .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-wording-as-approved-v2-2026-11-20.txt
+```
+
+- **Scope (strictly sequential 15.7a → 15.7h → 15.7h2 → 15.7i → 15.7j; PLAN-INDEX 15.7 shared protocol):**
+  - 15.7a `ta-r4-W3f-runtime-config-guard`: F1 (production fire refuses config/profile overrides; in-job config
+    digest, CPU type and OpenBLAS env check). Opens 15.7 under the 15.6 reply, Q2.
+  - 15.7b `ta-r4-W3f-completeness-by-identity`: F4, F6, F7.
+  - 15.7c `ta-r4-W3f-cross-purity-variant-resolution`: F10.
+  - 15.7d `ta-r4-W3f-a1-allvars-secondary`: F12.
+  - 15.7e `ta-r4-W3f-none-rows-denominators`: F8, F11; Q-DEN A (known states only).
+  - 15.7f `ta-r4-W3f-purity-determinism`: F2; Q-F2 A (exact purity, third D-28 lift of run_susie_rss.R); Q-F2Q i
+    (same treatment on the QTL side).
+  - 15.7g `ta-r4-W3f-qtl-sweep-gwas-pph4`: F3; Q-F3 B (fix the sweep for Track B too); Q-F3B A (the no-table call kept
+    as today, logged as the legacy rule).
+  - 15.7h `ta-r4-W3f-null-window-reselection`: F9; Q-F9 A (re-run the selection on the production inputs).
+  - 15.7h2 `ta-r4-W3f-proxy-asthma-refit`: n_regions_min option D; Q-PROXY "Add to 15.7j", moved to 15.7h2 by
+    Q-PROXYA B (run the 20 asthma pilot fits, so the F15 recount includes them); Q-PROXYB A (run as planned despite
+    the expected early exits); Q-NREG free text.
+  - 15.7i `ta-r4-W3f-pilot-fit-disclosure`: F15; Q-F15 A (full disclosure + manifest); Q-F15W (clarify to the 20
+    fits): wording v2 supersedes v1, subject to 15.7i's recount (a differing recount stops for a v3 approval).
+  - 15.7j `ta-r4-W3f-15-7-review-suite-and-close`: DRAFT (m) / Pre-Paste, brief-blind re-review, FULL reconciled per id
+    against full_W3f.xml, HANDOFF, W4a depends_on.
+- **n_regions_min stays 7** (Q-NREG: "yes, A and add D to 15.7j and keep 7").
+- **Not authorized:** a production fit, the W4a-T3 lock (decision_rules.yaml stays `locked: false`), OSF posting, a
+  change to n_regions_min, a push from any 15.7 plan, a re-pin other than of an artifact a plan rebuilds or a file it is
+  authorized to change.
+- Lifts nothing under D-28 itself; 15.7f's lift is the one Q-F2 A names.

@@ -1,0 +1,2 @@
+Question Q-DEN (2026-11-20): How should rows with no posterior or no credible-set count enter rates? Today an early exit on either side sets both n_cs to NA, which drops the pair from the no-CS rate; this affects 14/100 A3_ukb primary rows and 4/30 per AFR arm. Negative-control rates aren't split by method, and 'none' rows count as non-calls.
+Carter reply (verbatim, selected option): A: Known states only (Recommended)

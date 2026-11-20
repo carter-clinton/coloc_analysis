@@ -46,6 +46,17 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 15.5b | ta-r4-W3f-ukb-panels-biallelic-PLAN.md | W3f gap closure (15.5a M2: UKB native panels keep the single SNV at a multi-variant CHR:POS, else drop the position; no --snps-only; Carter a1 2026-11-18; rebuild + re-pin 30 panels; M2 → 0; A3_ukb eligibility + DRAFT; no push) | — | yes |
 | 15.5c | ta-r4-W3f-trackb-pins-indent-PLAN.md | W3f gap closure (tests/m3 K-1 pins ignore leading whitespace after the N1 re-indent; the one N1 emit line allowed; Carter 2026-11-19 Q1 + Q3 A; test file only; 15.6 FULL scope for the W4a renames; no push) | — | yes |
 | 15.6 | ta-r4-W3f-review-suite-and-close-PLAN.md | W3f fix-up (brief-blind re-review, FULL, records, W4a depends_on). COMPLETE 2026-11-19: review 23 findings (6 DRAFT fixed, 12 OPEN for Carter); W4a depends_on edited; push withheld (orchestrator) | — | yes |
+| 15.7a | ta-r4-W3f-runtime-config-guard-PLAN.md | W3f 15.7 gap closure (review F1: production fire refuses config/profile overrides; every production job checks the resolved config digest, CPU type and OpenBLAS env, and records them; commits the 15.7 planning set + Carter reply; no push) | — | yes |
+| 15.7b | ta-r4-W3f-completeness-by-identity-PLAN.md | W3f 15.7 gap closure (F4 simulation completeness by replicate id, cell labels, seed and config sha; F6 QTL rows reconciled against qtl_manifest at aggregation; F7 empty / non-finite QTL coloc.susie → method none; reusable id reconciliation; no push) | — | yes |
+| 15.7c | ta-r4-W3f-cross-purity-variant-resolution-PLAN.md | W3f 15.7 gap closure (F10 cross-panel purity resolves CS members through the fit's own panel by position + alleles; shared R variant matcher extracted from the N2 code; no push) | — | yes |
+| 15.7d | ta-r4-W3f-a1-allvars-secondary-PLAN.md | W3f 15.7 gap closure (F12 A1 allvars secondary table, EUR + AFR; no push) | — | yes |
+| 15.7e | ta-r4-W3f-none-rows-denominators-PLAN.md | W3f 15.7 gap closure (F8 negative-control rates by method; F11 pair-level no-CS keeps the completed side; Carter Q-DEN = A known states only; no push) | Q-DEN reply file (gate, not a signoff) | yes |
+| 15.7f | ta-r4-W3f-purity-determinism-PLAN.md | W3f 15.7 gap closure (F2 exact credible-set purity, GWAS and QTL; Carter Q-F2 = A (third D-28 lift of run_susie_rss.R) and Q-F2Q = i; no push) | Q-F2 reply file | yes |
+| 15.7g | ta-r4-W3f-qtl-sweep-gwas-pph4-PLAN.md | W3f 15.7 gap closure (F3 QTL PP.H4 sweep uses the GWAS PP.H4 wherever a GWAS table is given, Track B included, plus NaN GWAS → below_threshold; the no-table sweep kept as the logged legacy rule; Carter Q-F3 = B, Q-F3B = A; no push) | Q-F3 reply file | yes |
+| 15.7h | ta-r4-W3f-null-window-reselection-PLAN.md | W3f 15.7 gap closure (F9 null-window selection re-run on the production inputs; fetch 6 UKB tiles; rebuild the 8 changed NC_NULL catalogs and panels; Carter Q-F9 = A; no push) | Q-F9 reply file | yes |
+| 15.7h2 | ta-r4-W3f-proxy-asthma-refit-PLAN.md | W3f 15.7 (n_regions_min option D: 20 asthma repro pilot fits on the corrected inputs, outside the result dirs; region-contribution proxy re-run over 5 EUR traits with exact purity; manifest / DRAFT row / HANDOFF; floor stays 7; Carter Q-PROXY, Q-PROXYA B, Q-NREG; no push) | — | yes |
+| 15.7i | ta-r4-W3f-pilot-fit-disclosure-PLAN.md | W3f 15.7 gap closure (F15 pre-lock pilot-fit disclosure + committed pilot-fit manifest; recount including 15.7h2's fits; v2 if unchanged, else STOP for Carter's v3 approval; Carter Q-F15 = A, Q-F15W; no push) | 15.7i-T2 human-action, only if the recount differs from v2 (Q-F15V3) | no |
+| 15.7j | ta-r4-W3f-15-7-review-suite-and-close-PLAN.md | W3f 15.7 close (DRAFT (m)/Pre-Paste; brief-blind Codex re-review; FULL reconciled per id vs full_W3f.xml; HANDOFF w4a_checkpoint; W4a depends_on; no push) | — | yes |
 | 16 | ta-r4-W4a-amendment-draft-review-locks-PLAN.md | W4 | W4a-T3 lock values + draft approval | no |
 | 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 lock confirmation (+ lock gate) | no |
 | 18 | ta-r4-W5a-eur-production-fits-PLAN.md | W5 | — (code gate) | yes |
@@ -60,7 +71,48 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 W3f (waves 15.1–15.6) is a gap-closure fix-up added 2026-11-04 after the W4a brief-blind review
 (`ta-r4-W4-AMENDMENT-REVIEW-as-received.md`) and Carter's decisions (DEC-2026-11-04-ta-r4-w3f-fix-all,
 DEC-2026-11-04-ta-r4-n7-region-signflip-and-floor). Plan 15.1 lifts §B.6 (D-28) once, for the N1 cap move only, and only after a DEC quotes Carter's explicit
-unfreeze reply (DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze); without it 15.1 stops. W4a now depends on 15.6.
+unfreeze reply (DEC-2026-11-04-run-susie-rss-cap-after-ld-restriction-unfreeze); without it 15.1 stops. W4a depended on 15.6; from 15.7j it depends on 15.7j (below).
+
+**15.7 (added 2026-11-20).** The 15.6 brief-blind re-review left 12 production blockers (HANDOFF
+`w4a_checkpoint.production_blockers.W3f_F1…W3f_F15`). Carter chose "Plan 15.7 code fix-up (Recommended)"
+(`W3f-carter-15-6-push-and-15-7-reply-2026-11-20.txt`, committed by 15.7a; DEC-2026-11-20-ta-r4-w3f-15-7-code-fixup).
+Order 15.7a → 15.7h → 15.7h2 → 15.7i → 15.7j, strictly sequential. 15.7e–15.7i gate on Carter's 2026-11-20 replies (each gate re-checks the file).
+Shared protocol, binding on every 15.7 plan:
+- Scratch `Q=data/r4/tmp/w3f/q157/` (15.7a creates it).
+- **Reply gate.** One question per file: `$P/W3f-carter-15-7-<QID>-reply-<YYYY-MM-DD>.txt`, LF line endings,
+  exactly two lines: `Question <QID> (<YYYY-MM-DD>): <question as presented>` then
+  `Carter reply (verbatim, selected option): <option label>`; an optional third line `Carter note (verbatim): …` is
+  allowed. The QID and date in line 1 must equal the file name's. `$PY $Q/gate_reply.py <QID> --question <text>
+  --sha256 <hex> <allowed label>…` (built and negative-controlled in 15.7a) matches the file name exactly (Q-F2 never
+  matches Q-F2Q), requires exactly one such file, refuses CRLF, a malformed or mismatched Question line, a date
+  mismatch, extra or missing lines, a question text different from `--question`, a sha256 different from `--sha256`,
+  and a label not byte-equal to an allowed one; it prints the label and sha256, else exits 2. A free-text answer uses
+  line 2 `Carter reply (verbatim): <text>` and is gated with `--free-text <exact text>` instead of labels. A gated plan
+  whose gate fails STOPs before any edit. Answers given on 2026-11-20: Q-F2 A, Q-F2Q i, Q-F3 B, Q-F3B A, Q-DEN A,
+  Q-F9 A, Q-F15 A, Q-F15W "Clarify to the 20 fits" (wording v2:
+  `W3f-carter-15-7-Q-F15-wording-as-approved-v2-2026-11-20.txt`; v1 is superseded and kept), Q-PROXY "Add to 15.7j",
+  Q-NREG free text "yes, A and add D to 15.7j and keep 7" (n_regions_min stays 7), Q-PROXYA "B: Run the 20 asthma fits"
+  (the proxy re-run moves from 15.7j to 15.7h2, before 15.7i, so the F15 recount includes its 20 pilot fits; 15.7i stops
+  for a v3 F15 wording if the recount differs from v2). Each gated plan carries its
+  question text and file sha256 in a `<question>` block. Q-PROXYB "A: Run as planned (Recommended)" (15.7h2 unchanged). 15.7a commits all fifteen decision files with the
+  planning set.
+- **Close.** `$Q/close.sh <tag>` (15.7a; a copy of `data/r4/tmp/w3f/close_W3f.sh`: QUICK, HEAVY, PINS, FULL, junit
+  `$Q/full_<tag>.xml`) runs under `sbatch -p compute -A clintonlab_cpu -q normal -t 03:00:00 --mem=48G
+  --constraint=cascadelake` (full_W3f.xml ran on cascadelake c025n04). Each plan reconciles per id with
+  `data/r4/tmp/w3f/ukbbi/junit_cmp.py <base> <new>` and its own `$Q/check_<tag>.py`, which exits non-zero on: a
+  removed id other than the plan's declared renames; added ids ≠ the plan's `<new_tests>`; an outcome change on a
+  pre-existing id; any failure; totals ≠ base + N_new. Base chain: `data/r4/tmp/w3f/full_W3f.xml` (2,555 = 2,502 P /
+  53 S / 0 F) → `$Q/full_15_7a.xml` → … ; 15.7j reconciles the cumulative change against full_W3f.xml.
+- **Pre-existing tests** may be edited only in fixture builders, or where a test asserts the exact defect the plan
+  fixes (named by id in the plan, with the reason). Their ids and passed outcomes stay. Anything else is STOP. Every
+  15.7 SUMMARY has a `## Declared spec updates` section listing those ids one per line (or `none`); 15.7j's
+  cumulative check reads them from there.
+- **DRAFT.** Each plan rewrites only the DRAFT sentence(s) describing the behaviour it changes (old string asserted
+  unique, one script) and re-runs `tests/ta_r4/test_amendment_text.py`; 15.7j does (m), the Pre-Paste OPEN row and the
+  review.
+- Each plan closes without `git push`; decision_rules.yaml stays `locked: false`; no production fit, OSF posting,
+  W4a-T3 lock or n_regions_min change; no re-pin except of an artifact the plan rebuilt or a file it was authorized
+  to change, each named in the plan.
 
 **15.5a (added 2026-11-17).** Plan 15.5 found every r4 fit would carry duplicated variants. The r4 catalogs
 list one CHR:POS:REF:ALT under two or three SNP_IDs (248,257 extra rows of 877,756). Carter chose "1. Fix both ends

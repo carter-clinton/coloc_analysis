@@ -1,0 +1,2 @@
+Question Q-F3 (2026-11-20): The QTL PP.H4 threshold sweep calls assign_tier(best_pph4, best_pph4, ...) at assign_tiers.py:96, using the QTL value as the GWAS value. assign_tiers.py is shared with Track B. All three options replace the DRAFT (l) sentence that describes the faulty sweep. Which fix?
+Carter reply (verbatim, selected option): B: Fix the sweep for Track B too

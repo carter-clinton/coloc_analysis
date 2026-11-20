@@ -1,0 +1,2 @@
+Question Q-F15 (2026-11-20): The DRAFT says the lock comes 'before any production fit exists', but 146 corrected-input pilot fits exist outside the production directories (plus 17 kernel-experiment runs). They were inspected, never colocalized. 15.7f will also recompute exact purity on 109 of their credible-set components, to measure the F2 subsampling. How should the DRAFT disclose this?
+Carter reply (verbatim, selected option): A: Full disclosure + manifest (Recommended)

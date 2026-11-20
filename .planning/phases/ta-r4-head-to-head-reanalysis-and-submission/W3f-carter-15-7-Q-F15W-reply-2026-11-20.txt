@@ -1,0 +1,2 @@
+Question Q-F15W (2026-11-20): The F15 paragraph you approved says the purity 'of their credible-set components was also recomputed exactly'. 'Their' could be read as all 146 pilot fits, but the measurement covers only the 20 production-panel fits (109 components). Fix the wording?
+Carter reply (verbatim, selected option): Clarify to the 20 fits (Recommended)

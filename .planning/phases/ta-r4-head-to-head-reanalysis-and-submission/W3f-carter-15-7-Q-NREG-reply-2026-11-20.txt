@@ -1,0 +1,2 @@
+Question Q-NREG (2026-11-20): n_regions_min decision brief: A keep 7 (recommended), B lower to 5 or 3, C add confirmatory regions for A2, D re-measure the proxy after 15.7 before the lock (recommended alongside A).
+Carter reply (verbatim): yes, A and add D to 15.7j and keep 7

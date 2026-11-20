@@ -1,0 +1,2 @@
+Question Q-F2 (2026-11-20): For credible sets with more than 100 variants, susieR 0.14.2 computes purity on a random 100-variant subsample, and run_susie_rss.R sets no seed. In the 20 corrected-input pilot fits, 109 components in 12 fits got a random purity, and all were dropped in that draw. That draw decides coloc_susie vs fallback_abf. Track B is unchanged under every option. Which fix?
+Carter reply (verbatim, selected option): A: Exact purity, third unfreeze (Recommended)

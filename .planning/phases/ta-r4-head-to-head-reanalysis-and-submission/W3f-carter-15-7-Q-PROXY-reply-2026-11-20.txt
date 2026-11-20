@@ -1,0 +1,2 @@
+Question Q-PROXY (2026-11-20): n_regions_min brief (option D): re-measure the region-contribution proxy after the 15.7 fixes and before the lock? It would use exact purity (15.7f) and the corrected asthma inputs. This is read-only and outcome-blind, the same kind of run as the existing proxy, and it tells you whether the A2_identity 'likely 3 of 10' concern is real. n_regions_min stays 7.
+Carter reply (verbatim, selected option): Add to 15.7j (Recommended)

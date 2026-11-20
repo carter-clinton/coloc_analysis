@@ -1,0 +1,5 @@
+Question 1 (2026-11-20): W3f 15.6 is complete and checked; 5 commits fb08a75f..553c8fc8 (15.5c and 15.6) are local only. Push them to origin?
+Carter reply (verbatim, selected option): Push now (Recommended)
+
+Question 2 (2026-11-20): The brief-blind Codex review of the DRAFT found 12 items recorded as production blockers before W4a-T3 (11 need code: F1, F2, F3, F4, F6, F7, F8, F9, F10, F11, F12; 1 disclosure: F15). How do you want to handle them?
+Carter reply (verbatim, selected option): Plan 15.7 code fix-up (Recommended)
