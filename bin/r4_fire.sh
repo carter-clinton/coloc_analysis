@@ -33,6 +33,15 @@ STAGE=$1
 ARM=$2
 shift 2
 
+if [ "$STAGE" = production ]; then
+    for v in R4_FIRE_PY R4_FIRE_SMK; do
+        if [ -n "${!v+set}" ]; then
+            echo "REFUSED: $v is set; a production fire runs the pinned python and snakemake only" >&2
+            exit 2
+        fi
+    done
+fi
+
 for a in "$@"; do
     case "$a" in
         --conda-cleanup-pkgs*) echo "REFUSED: --conda-cleanup-pkgs is never passed (shared-cache incident 2026-10-11)" >&2; exit 2 ;;
@@ -51,6 +60,29 @@ if ARMS[arm]["stage"] != stage:
 PYEOF
 then
     exit 2
+fi
+
+# Production takes targets and these flags only: no --config, --configfile, --profile, --cluster, ... (W3f 15.7a, F1).
+if [ "$STAGE" = production ]; then
+    ARGS=("$@")
+    i=0
+    while [ "$i" -lt "${#ARGS[@]}" ]; do
+        a=${ARGS[$i]}
+        case "$a" in
+            -n|--dry-run|-p|--printshellcmds|-r|--reason|-k|--keep-going|--rerun-incomplete|--quiet|--list|--unlock) ;;
+            -j|--jobs)
+                i=$((i + 1))
+                if [ "$i" -ge "${#ARGS[@]}" ] || ! [[ ${ARGS[$i]} =~ ^[0-9]+$ ]]; then
+                    echo "REFUSED: $a takes one numeric value on a production fire" >&2
+                    exit 2
+                fi ;;
+            ""|-*)
+                echo "REFUSED: a production fire does not take snakemake argument '$a' (allowed: targets, -n/--dry-run," \
+                     "-p/--printshellcmds, -r/--reason, -j/--jobs N, -k/--keep-going, --rerun-incomplete, --quiet, --list, --unlock)" >&2
+                exit 2 ;;
+        esac
+        i=$((i + 1))
+    done
 fi
 
 bash bin/r4_link_storage.sh >/dev/null

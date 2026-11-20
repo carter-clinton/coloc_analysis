@@ -128,7 +128,15 @@ def test_production_shell_begins_with_the_gate(rendered, rule):
     _, _, js = rendered
     mine = [j for j in js if j[0] == rule]
     assert mine, f"{rule} not in the dry-run"
-    assert [c[0] if c else None for _, _, c in mine] == [shlex.join(commands.gate_command("production"))] * len(mine)
+    from ta_r4 import job_guard
+    cfg = job_guard.merged_config_from_files(rendered[0], "A3_1kg")
+    want = []
+    for _, attrs, _ in mine:
+        w = dict(kv.split("=", 1) for kv in attrs["wildcards"].split(", "))
+        arm = Q.fit_arm(w["qtl_arm"]) if rule.startswith("r4_qtl_") else "A3_1kg"
+        label = f"{rule}." + "_".join(f"{k}={v}" for k, v in sorted(w.items()))
+        want.append(shlex.join(commands.gate_command("production", arm, cfg, label=label)))
+    assert [c[0] if c else None for _, _, c in mine] == want
 
 
 def test_fit_shell_verifies_its_inputs_after_the_gate(rendered):
@@ -167,7 +175,15 @@ def test_gate_in_a_job_fails_after_locked_path_drift(rendered):
 
 
 def test_gate_command_stages():
-    assert commands.gate_command("production") == commands._PY + ["ta_r4.r4_lock_gate", "check", "--stage", "production"]
+    from ta_r4 import job_guard
+    cfg = job_guard.merged_config_from_files(REPO_ROOT, "A3_1kg")
+    assert commands.gate_command("production", "A3_1kg", cfg, label="r4_sim.x=1") == commands._PY + [
+        "ta_r4.job_guard", "check", "--stage", "production", "--arm", "A3_1kg",
+        "--config-sha256", job_guard.config_digest(cfg), "--record-dir", "data/r4/logs/job_guard", "--label", "r4_sim.x=1"]
+    for kw in ({"arm": None, "config": cfg, "label": "l"}, {"arm": "A3_1kg", "config": None, "label": "l"},
+               {"arm": "A3_1kg", "config": cfg, "label": None}):
+        with pytest.raises(ValueError):
+            commands.gate_command("production", **kw)
     assert commands.gate_command("repro") == ["true"]
     with pytest.raises(ValueError):
         commands.gate_command("prod")
@@ -189,11 +205,18 @@ def _fire_repo(tmp_path):
         (repo / "src/snakemake/rules").mkdir(parents=True, exist_ok=True)
         (repo / "src/snakemake/rules" / n).write_text("# rules\n")
     (repo / ".gitignore").write_text("/data/\n__pycache__/\n")
+    stub = tmp_path / "stub"
+    stub.mkdir()
+    fire = repo / "bin/r4_fire.sh"
+    text = fire.read_text()
+    for var, name in (("PY", "py"), ("SMK", "smk")):  # the fixture's own copy defaults to the stubs (no env override)
+        text, n = re.subn(rf"(?m)^{var}=\$\{{R4_FIRE_{var}:-[^}}\n]*\}}$",
+                          lambda m, v=var, s=str(stub / name): f"{v}=${{R4_FIRE_{v}:-{s}}}", text)
+        assert n == 1, (var, n)
+    fire.write_text(text)
     git(repo, "init", "-q")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "fire fixture")
-    stub = tmp_path / "stub"
-    stub.mkdir()
     (stub / "py").write_text("#!/usr/bin/env bash\n"
                              'if [ "$1 $2 $3" = "-m ta_r4.r4_lock_gate check" ]; then echo stub gate OK; exit 0; fi\n'
                              f'exec {REAL_PY} "$@"\n')
@@ -203,11 +226,12 @@ def _fire_repo(tmp_path):
     return repo, stub
 
 
-def _fire(repo, stub):
+def _fire(repo, stub, *args, env=None):
     (stub / "smk_called").unlink(missing_ok=True)
-    env = dict(os.environ, R4_FIRE_PY=str(stub / "py"), R4_FIRE_SMK=str(stub / "smk"))
-    p = subprocess.run(["bash", "bin/r4_fire.sh", "production", "A3_1kg", "-n"], cwd=repo, capture_output=True,
-                       text=True, env=env)
+    e = {k: v for k, v in os.environ.items() if k not in ("R4_FIRE_PY", "R4_FIRE_SMK")}
+    e.update(env or {})
+    p = subprocess.run(["bash", "bin/r4_fire.sh", "production", "A3_1kg", *(args or ("-n",))], cwd=repo,
+                       capture_output=True, text=True, env=e)
     return p, (stub / "smk_called").exists()
 
 

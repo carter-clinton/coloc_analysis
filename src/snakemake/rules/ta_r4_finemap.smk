@@ -52,7 +52,7 @@ rule r4_run_finemap:
     resources:
         mem_mb=config["resources"]["default_mem_mb"],
     params:
-        gate=shlex.join(r4cmd.gate_command(STAGE)),
+        gate=lambda w: shlex.join(r4cmd.gate_command(STAGE, ARM, config, label=r4cmd.job_label("r4_run_finemap", w))),
         verify=lambda w: shlex.join(r4cmd.verify_command(ARM, w.trait, w.ancestry, w.region)),
         check=lambda w, input: "true" if _R4_LEGACY else shlex.join(["test", "-s", input.ld_matrix]),
         receipt=lambda w: shlex.join(r4cmd.receipt_command(ARM, w.trait, w.ancestry, w.region)),

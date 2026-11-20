@@ -6,7 +6,7 @@ import csv
 import sys
 
 from ld_read_path import ld_allele_aware, ld_file_authoritative
-from ta_r4 import paths, verify_inputs
+from ta_r4 import job_guard, paths, verify_inputs
 from ta_r4.arms import ARMS, CURRENT_SCRIPT
 
 SUSIE_MAX_VARIANTS = 16000  # finemap.smk params.susie_max_variants default
@@ -95,13 +95,25 @@ def receipt_command(arm, trait, ancestry, region_safe):
     return cmd + (["--legacy-any"] if _legacy(arm) else [])
 
 
-def gate_command(stage):
-    """The offline lock gate, re-run as the first command of every production job (fresh process, no cache)."""
+GUARD_RECORD_DIR = "data/r4/logs/job_guard"
+
+
+def job_label(rule, wildcards):
+    """`<rule>.<sorted wildcards k=v joined by _>`: one job guard record per job."""
+    return f"{rule}." + "_".join(f"{k}={v}" for k, v in sorted(dict(wildcards.items()).items()))
+
+
+def gate_command(stage, arm=None, config=None, label=None):
+    """First command of every production job (fresh process, no cache): ta_r4.job_guard runs the offline lock gate,
+    then checks the job's run-configuration digest (from `config`), the CPU type and the OpenBLAS env. Repro: true."""
     if stage == "repro":
         return ["true"]
     if stage != "production":
         raise ValueError(f"stage {stage!r}")
-    return _PY + ["ta_r4.r4_lock_gate", "check", "--stage", "production"]
+    if arm is None or config is None or label is None:
+        raise ValueError("a production gate_command needs arm, config and label")
+    return _PY + ["ta_r4.job_guard", "check", "--stage", "production", "--arm", arm,
+                  "--config-sha256", job_guard.config_digest(config), "--record-dir", GUARD_RECORD_DIR, "--label", label]
 
 
 def _verify(arm, manifests, files):

@@ -6,6 +6,7 @@ src/snakemake/rules/ta_r4_*.smk files (included in sorted order) and never edit 
 
 import csv
 import glob
+import os
 import sys
 from pathlib import Path
 
@@ -16,6 +17,7 @@ configfile: "config/pipeline.yaml"
 sys.path.insert(0, str(Path(workflow.basedir) / "src/python"))
 from ta_r4.arms import ARMS, arm_stage
 from ta_r4 import paths as r4paths
+from ta_r4.job_guard import CONFIG_FILES
 from ta_r4.r4_lock_gate import LOCK_RECORD_REL, check_lock_gate
 
 _R4 = config.get("ta_r4") or {}
@@ -23,6 +25,16 @@ if _R4.get("enabled") is not True or _R4.get("arm") not in ARMS:
     raise WorkflowError("run via bin/r4_fire.sh (ta_r4.enabled and a known ta_r4.arm are required)")
 ARM = _R4["arm"]
 STAGE = arm_stage(ARM)
+
+# Production takes its run configuration only from the committed files, in merge order (W3f 15.7a, F1); parse time,
+# before gate_input's lock gate.
+if STAGE == "production":
+    _CLI_CONFIGFILES = list(dict.fromkeys(os.path.abspath(p) for p in (workflow.overwrite_configfiles or [])))
+    _WANT_CONFIGFILES = [os.path.abspath(Path(workflow.basedir) / p) for p in CONFIG_FILES(ARM)]
+    if workflow.config_args or _CLI_CONFIGFILES != _WANT_CONFIGFILES:
+        raise WorkflowError("REFUSED: production run configuration differs from the committed configuration files "
+                            f"(--config {list(workflow.config_args or [])}; --configfile {_CLI_CONFIGFILES}; "
+                            f"required --configfile {_WANT_CONFIGFILES} and no --config)")
 
 # Regions: the Snakefile:51-61 safe-id rule.
 REGION_INFOS = []

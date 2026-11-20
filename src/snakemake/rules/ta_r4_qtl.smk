@@ -60,8 +60,12 @@ def _r4_qtl_gate(w):
     return [LOCK_RECORD_REL] if stage == "production" else []
 
 
-def _r4_qtl_gate_cmd(w):
-    return shlex.join(r4cmd.gate_command(arm_stage(r4qtl.fit_arm(w.qtl_arm))))
+def _r4_qtl_gate_cmd(rule):
+    """The gate param of one QTL rule: the job guard on the QTL arm's fit arm (ARM in this invocation)."""
+    def gate(w):
+        fa = r4qtl.fit_arm(w.qtl_arm)
+        return shlex.join(r4cmd.gate_command(arm_stage(fa), fa, config, label=r4cmd.job_label(rule, w)))
+    return gate
 
 
 def _r4_qtl_group_inputs(w):
@@ -115,7 +119,7 @@ if R4_QTL_ARM is not None:
         resources:
             mem_mb=config["resources"]["default_mem_mb"],
         params:
-            gate=_r4_qtl_gate_cmd,
+            gate=_r4_qtl_gate_cmd("r4_qtl_group"),
             py=sys.executable,
         shell:
             "set -euo pipefail\n{params.gate}\n"
@@ -136,7 +140,7 @@ if R4_QTL_ARM is not None:
         wildcard_constraints:
             qtl_arm=R4_QTL_ARM,
         params:
-            gate=_r4_qtl_gate_cmd,
+            gate=_r4_qtl_gate_cmd("r4_qtl_aggregate"),
             py=sys.executable,
         shell:
             "set -euo pipefail\n{params.gate}\n"
@@ -160,7 +164,7 @@ if R4_QTL_ARM is not None:
         wildcard_constraints:
             qtl_arm=R4_QTL_ARM,
         params:
-            gate=_r4_qtl_gate_cmd,
+            gate=_r4_qtl_gate_cmd("r4_qtl_tiers"),
             py=sys.executable,
         shell:
             "set -euo pipefail\n{params.gate}\n"
