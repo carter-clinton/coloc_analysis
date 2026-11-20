@@ -4,7 +4,7 @@ plan: 15.6
 slug: W3f-review-suite-and-close
 type: execute
 wave: 15.6
-depends_on: ["ta-r4-W3f-eligibility-measurement-and-draft", "ta-r4-W3f-ukb-panels-biallelic"]
+depends_on: ["ta-r4-W3f-eligibility-measurement-and-draft", "ta-r4-W3f-ukb-panels-biallelic", "ta-r4-W3f-trackb-pins-indent"]
 gap_closure: true
 files_modified:
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-AMENDMENT-REVIEW-as-received.md
@@ -23,7 +23,7 @@ requirements:
 must_haves:
   truths:
     - "The changed DRAFT extract survived a brief-blind Codex review against the W3f code; output banked verbatim, every finding dispositioned (text fixed, or recorded as an open item for Carter if it needs code)"
-    - "The FULL suite ran under Slurm and is reconciled by test id against data/r4/tmp/w4a/full_W4a.xml (2069 / 2017 / 52 / 0): 0 removed ids, 0 outcome changes in tests/m3, every added skip or fail explained by id; any failure is a STOP"
+    - "The FULL suite ran under Slurm and is reconciled by test id against data/r4/tmp/w4a/full_W4a.xml (2069 / 2017 / 52 / 0): 0 removed ids except exactly the 6 W4a ids in deferred-items.md's rename map, each with its named successor present, 0 outcome changes in tests/m3 on common ids; tests/m3 additions only the 20 15.5c ids (DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation), every added skip or fail explained by id; any failure is a STOP"
     - "All W4a production blockers (N1, N2) and the other code items (N3-N7, N9, N10, N12, N14, T1) are recorded as resolved with their commits in HANDOFF.json w4a_checkpoint; the new confirmatory_sha256 and the proposed n_regions_min 7 are the values presented at W4a-T3"
     - "W4a's frontmatter depends_on points at ta-r4-W3f-review-suite-and-close; W4a's tasks are untouched"
     - "No production fit ran, decision_rules.yaml is still locked: false, and no signoff file or carter-approved text was written"
@@ -127,7 +127,7 @@ STATE.md: the "## 2026-11-04 — TRACK A ta-r4: W4a Tasks 1–2 COMPLETE ... (�
        Wait by output file (END line), not by job state.
     2. Reconcile by id (junit XML parse, not text grep) vs data/r4/tmp/w4a/full_W4a.xml in the reconcile_W4a.txt
        format into data/r4/tmp/w3f/reconcile_W3f.txt: base/new Counters; common/removed/added/changed; the arithmetic
-       line; added outcomes and modules; tests/m3 before → after. Required: removed 0; tests/m3 outcomes unchanged; 0
+       line; added outcomes and modules; tests/m3 before → after. Required: removed 0 except exactly the 6 W4a ids in deferred-items.md's rename map, each with its named successor present; tests/m3 outcomes unchanged on common ids; tests/m3 additions only the 20 15.5c ids (DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation; see deferred-items.md); 0
        failed. Every pre-existing test whose outcome or expectation changed in W3f must be one the plan SUMMARYs list as
        a deliberate spec update (list them by id); every new skip is explained by id (e.g. an r4_heavy test needing a
        tool absent in the job). Any unexplained change or any failure: STOP and report to the orchestrator — do not
@@ -139,8 +139,8 @@ STATE.md: the "## 2026-11-04 — TRACK A ta-r4: W4a Tasks 1–2 COMPLETE ... (�
     <automated>cd /gpfs_common/share01/clintonlab/ckclinto/coloc_analysis && tail -8 data/r4/tmp/w3f/reconcile_W3f.txt && git status --porcelain -- tests/m3/sparse_parent_benchmark.tsv</automated>
   </verify>
   <acceptance_criteria>
-    - reconcile_W3f.txt shows removed 0, changed limited to listed spec updates (ids pasted), failed 0, and an arithmetic line base − removed + added = new that holds
-    - tests/m3 outcome Counter identical before and after
+    - reconcile_W3f.txt shows removed 0 except exactly the 6 W4a ids in deferred-items.md's rename map, each with its named successor present (see deferred-items.md), changed limited to listed spec updates (ids pasted), failed 0, and an arithmetic line base − removed + added = new that holds
+    - tests/m3 outcome Counter identical before and after on common ids; tests/m3 additions only the 20 15.5c ids (DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation) (see deferred-items.md)
     - sparse_parent_benchmark.tsv porcelain empty
   </acceptance_criteria>
   <done>The whole suite is green and every difference from the W4a baseline is accounted for by id.</done>

@@ -26,7 +26,19 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-19 — **TRACK A ta-r4: W3f 15.5b COMPLETE (UKB native panels one variant per CHR:POS, Carter a1; M2 0/145). NEXT = 15.6. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-19 (late) — **TRACK A ta-r4: W3f 15.5c COMPLETE (tests/m3 K-1 pins ignore leading whitespace; the one N1 emit line allowed; Carter Q1 + Q3 A). NEXT = 15.6. NOTHING RUNNING. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- 15.5b was pushed before 15.5c (Carter Q2 "Push now"); start HEAD 61201774 == origin.
+- Commits (local only): fb08a75f DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation + 2 replies + PLAN;
+  dc15a630 test file only (`tests/m3/test_variant_catalog_fallback_legacy_semantics.py`, 11 -> 31 ids; PRE_K1_REF
+  dc4bbd2; no src/ change); plus the docs commit (LOG, STATE, SUMMARY, deferred-items, PLAN-INDEX, 15.6 PLAN).
+- RED 7 F / 24 P -> GREEN 31/31; every in-memory NC observed failing; AST no-weakening clean.
+- FULL Slurm 1990243: 2,555 = 2,502 P / 53 S / 0 F (1:17:45). vs 15.5b: 0 removed, +20 tests/m3, exactly the 2
+  deferred ids failed -> passed. vs W4a: removed = the 6 deliberate renames (successors present), tests/m3 +20 only.
+- 15.6 PLAN: depends_on + scoped FULL allowance (6 renames + 20 tests/m3 ids). deferred-items both RESOLVED.
+- Next: push (orchestrator) -> 15.6 -> W4a-T3 lock (Carter).
+
+## 2026-11-19 — **TRACK A ta-r4: W3f 15.5b COMPLETE (UKB native panels one variant per CHR:POS, Carter a1; M2 0/145). NEXT = 15.6. NOTHING RUNNING. NOT PUSHED.** (SUPERSEDED by the 2026-11-19 15.5c block above)
 
 - Commits (local only): 5ca20376 DEC-2026-11-18-ta-r4-ukb-native-multiallelic-a1 + 3 replies; 526fd5c7 builder
   `ta_r4.ukb_native_multiallelic` + rule + tests; 3c1ed352 30 panels rebuilt + re-pinned; 07dae0c0 A3_ukb eligibility +

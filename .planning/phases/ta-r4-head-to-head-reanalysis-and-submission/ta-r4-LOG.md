@@ -1082,3 +1082,65 @@ Executed 2026-11-19. DEC-2026-11-18-ta-r4-ukb-native-multiallelic-a1 (5ca20376).
   confirmatory_sha256 9fa410aa…88d5 unchanged. test_amendment_text 21P/2S. Extract 4,127 → 4,208 words.
 - Wave close (no push): QUICK 1987855 748P/2S (171.5 s wall); PINS 39P; HEAVY 306P/5S (1,962 s; vs 15.5: +62, 0 removed, 0 outcome changes); FULL 1987856 2,535 = 2,480P/53S/2F (vs 15.5 full_15_5.xml: +72 tests/ta_r4, 0 removed, 0 outcome changes; 2F = deferred legacy_semantics pair). sparse_parent_benchmark.tsv restored.
 - Not pushed. Backups stay in `data/r4/tmp/w3f/ukbbi/old/` until 15.6.
+
+## 2026-11-19 — W3f 15.5c (tests/m3 K-1 pins ignore leading whitespace after the N1 re-indent; the one N1 emit line allowed; 15.6 FULL scope for the W4a renames; no push)
+
+Executed 2026-11-19. DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation (fb08a75f; Carter Q1 "Ignore
+indentation (Recommended)", Q3 "A: Allow the one N1 emit line (Recommended)"; both replies quoted with cat, cmp OK).
+- Gate: start HEAD 61201774, origin..HEAD 0; reply sha256 55d716a4…da61d / 19c38aaf…4f12 match (replies.sha256);
+  Q3 = A line grep 1. Re-measure: module 2 F / 9 P; symbol-scoped (hunk header, raw line) set == the plan's 4 pairs;
+  emit lines 2 (dc4bbd2) -> 3 (HEAD); TOO_MANY_ANCHOR 1/1; default payload 17/17 lines, lstrip-equal, raw unequal,
+  0 trailing ws, no "after LD" / cap_stage.
+- RED (byte-exact / never-cancel / old removed+added stubs): 7 F / 24 P = the 2 original tests + #2, #8, #9, #14, #16;
+  each failure at the stub predicate (lines 358, 415). #1, #17, #20 green under the stub as expected; NCs #3-7, #10-13,
+  #15, #18, #19 green (raise as intended).
+- GREEN dc15a630 (test file only): 31/31; collect-only id list == 11 old + the 20 in <new_tests>.
+- NCs (in memory; on-disk file unchanged each time), observed failure under GREEN:
+  NC-I1 value/reordered/interior_ws/trailing_ws "differs from dc4bbd2 at line 10/5/1/2 beyond leading whitespace";
+  dropped "has 16 lines, dc4bbd2 has 17". NC-I2 mixed/plus4 green (each != old and != head). NC-I3 init_pair /
+  path1_block / no_variants_payload / success_payload each "no longer byte-identical" (+2 indent). NC-I4 and
+  NC-I8[interior] "removed something other than exactly the one authorized line"; NC-I7 "ADDED a code line other than
+  the one N1 emit line". Parity: git and difflib both removed [variant_catalog_fallback <- TRUE], added [the emit],
+  n_reindented 1/1. NC-I5 n_reindented 2 = 1 + 1, predicate green. NC-I6 (cancel off) n 0, emit in removed, removed
+  != [K-1 line]. NC-I8[cross_hunk] n 0, both lines kept.
+- No-weakening: AST of 31 of 34 pre-existing top-level nodes equal (excluded: module docstring + the two rewired tests,
+  both present); PRE_K1_REF "dc4bbd2"; git diff HEAD -- src/ empty; tests/ porcelain = the one file.
+- FULL Slurm 1990243 (close_c.sh, 48G, -t 03:00:00): 2,502 passed, 53 skipped in 4,657 s (wall 4,663 s, 1:17:45),
+  exit 0:0. sparse_parent_benchmark.tsv restored.
+  - vs full_15_5b.xml (check_15_5b.py PASS): 2,535 − 0 removed + 20 added = 2,555; added = the 20 tests/m3 ids, all
+    passed; outcome changes 2 = the deferred pair failed -> passed; 2,480 + 2 + 20 = 2,502 P, 53 S, 0 F; 311/311
+    HEAVY ids (heavy_15_5b.xml) present.
+  - vs full_W4a.xml (check_W4a.py PASS): 2,069 − 6 + 492 = 2,555 (added 472 tests/ta_r4 + 20 tests/m3); removed = the 6
+    renames, each successor present + passed: refused_not_dropped -> maps_through_panel_not_dropped (7a3415df);
+    exactly_17 -> exactly_19 (ade4e9c5, bed315d4); category_edges kw11..kw14 kappa_ok -> kw12..kw15 (92caa306,
+    [kw11-mcnemar-ns] present). tests/m3 1,299 (1,265 P / 34 S) -> 1,319 (1,285 P / 34 S): +20, 0 removed, 0 outcome
+    changes on common ids. Confirmed by git log -S (rename_commits.txt).
+  - Both checkers observed RED in memory against the wrong substrate (full_15_5b.xml as the new run): exit 1 each.
+- 15.5c §C exceptions, authorized by the DEC: 2 tests/m3 outcome changes (failed -> passed); 20 new tests/m3 ids;
+  QUICK and HEAVY not run separately (no src/ or tests/ta_r4 file changed; FULL contains every HEAVY id, checked);
+  PINS (test_source_freeze_pins.py) ran inside FULL.
+- deferred-items.md: both 2026-11-18 items RESOLVED. PLAN-INDEX: 15.5c row.
+- 15.6 PLAN scoped edit (depends_on + the two allowances; 5 lines):
+
+```diff
+diff --git a/.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-review-suite-and-close-PLAN.md b/.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-review-suite-and-close-PLAN.md
+index c517ffb7..a0ffd52e 100644
+--- a/.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-review-suite-and-close-PLAN.md
++++ b/.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-review-suite-and-close-PLAN.md
+@@ -7 +7 @@ wave: 15.6
+-depends_on: ["ta-r4-W3f-eligibility-measurement-and-draft", "ta-r4-W3f-ukb-panels-biallelic"]
++depends_on: ["ta-r4-W3f-eligibility-measurement-and-draft", "ta-r4-W3f-ukb-panels-biallelic", "ta-r4-W3f-trackb-pins-indent"]
+@@ -26 +26 @@ must_haves:
+-    - "The FULL suite ran under Slurm and is reconciled by test id against data/r4/tmp/w4a/full_W4a.xml (2069 / 2017 / 52 / 0): 0 removed ids, 0 outcome changes in tests/m3, every added skip or fail explained by id; any failure is a STOP"
++    - "The FULL suite ran under Slurm and is reconciled by test id against data/r4/tmp/w4a/full_W4a.xml (2069 / 2017 / 52 / 0): 0 removed ids except exactly the 6 W4a ids in deferred-items.md's rename map, each with its named successor present, 0 outcome changes in tests/m3 on common ids; tests/m3 additions only the 20 15.5c ids (DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation), every added skip or fail explained by id; any failure is a STOP"
+@@ -130 +130 @@ STATE.md: the "## 2026-11-04 — TRACK A ta-r4: W4a Tasks 1–2 COMPLETE ... (
+-       line; added outcomes and modules; tests/m3 before → after. Required: removed 0; tests/m3 outcomes unchanged; 0
++       line; added outcomes and modules; tests/m3 before → after. Required: removed 0 except exactly the 6 W4a ids in deferred-items.md's rename map, each with its named successor present; tests/m3 outcomes unchanged on common ids; tests/m3 additions only the 20 15.5c ids (DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation; see deferred-items.md); 0
+@@ -142,2 +142,2 @@ STATE.md: the "## 2026-11-04 — TRACK A ta-r4: W4a Tasks 1–2 COMPLETE ... (
+-    - reconcile_W3f.txt shows removed 0, changed limited to listed spec updates (ids pasted), failed 0, and an arithmetic line base − removed + added = new that holds
+-    - tests/m3 outcome Counter identical before and after
++    - reconcile_W3f.txt shows removed 0 except exactly the 6 W4a ids in deferred-items.md's rename map, each with its named successor present (see deferred-items.md), changed limited to listed spec updates (ids pasted), failed 0, and an arithmetic line base − removed + added = new that holds
++    - tests/m3 outcome Counter identical before and after on common ids; tests/m3 additions only the 20 15.5c ids (DEC-2026-11-19-trackb-legacy-semantics-pins-ignore-indentation) (see deferred-items.md)
+```
+
+- Not pushed.

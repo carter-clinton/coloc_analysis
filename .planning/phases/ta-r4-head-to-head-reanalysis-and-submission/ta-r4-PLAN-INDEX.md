@@ -44,6 +44,7 @@ Plans are therefore labelled in execution order, and the `wave:` frontmatter is 
 | 15.5 | ta-r4-W3f-eligibility-measurement-and-draft-PLAN.md | W3f fix-up (N1 recount, N7 region proxy, DRAFT, sha). Stopped 2026-11-16 at a Rule-4 checkpoint (duplicate catalog keys); Task 1 code f33a582c + partial DRAFT c3e42237 stand; remaining work COMPLETE 2026-11-18 after 15.5a (re-measured, eligibility manifest, DRAFT (k); SUMMARY; not pushed) | — | yes |
 | 15.5a | ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md | W3f gap closure (r4 catalogs one row per normalized allele key; flag-gated run_susie_rss.R duplicate-key guard; rebuild + re-pin; no push) | — | yes |
 | 15.5b | ta-r4-W3f-ukb-panels-biallelic-PLAN.md | W3f gap closure (15.5a M2: UKB native panels keep the single SNV at a multi-variant CHR:POS, else drop the position; no --snps-only; Carter a1 2026-11-18; rebuild + re-pin 30 panels; M2 → 0; A3_ukb eligibility + DRAFT; no push) | — | yes |
+| 15.5c | ta-r4-W3f-trackb-pins-indent-PLAN.md | W3f gap closure (tests/m3 K-1 pins ignore leading whitespace after the N1 re-indent; the one N1 emit line allowed; Carter 2026-11-19 Q1 + Q3 A; test file only; 15.6 FULL scope for the W4a renames; no push) | — | yes |
 | 15.6 | ta-r4-W3f-review-suite-and-close-PLAN.md | W3f fix-up (brief-blind re-review, FULL, records, W4a depends_on) | — | yes |
 | 16 | ta-r4-W4a-amendment-draft-review-locks-PLAN.md | W4 | W4a-T3 lock values + draft approval | no |
 | 17 | ta-r4-W4b-amendment-final-and-posting-gate-PLAN.md | W4 | W4b-T3 lock confirmation (+ lock gate) | no |
