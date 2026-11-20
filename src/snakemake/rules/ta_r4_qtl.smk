@@ -147,7 +147,7 @@ if R4_QTL_ARM is not None:
             "({params.py} src/python/aggregate_qtl_coloc.py --json-dir data/r4/results/{wildcards.qtl_arm}/qtl"
             " --manifest {input.manifest} --output {output.summary} --with-method-columns"
             " && env PYTHONPATH=src/python {params.py} -m ta_r4.run_qtl_group_r4 --qtl-arm {wildcards.qtl_arm}"
-            " --tierable-summary {output.summary} --out {output.tierable}) > {log} 2>&1"
+            " --tierable-summary {output.summary} --out {output.tierable} --manifest {input.manifest}) > {log} 2>&1"
 
     rule r4_qtl_tiers:
         input:

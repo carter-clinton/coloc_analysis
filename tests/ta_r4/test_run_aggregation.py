@@ -4,6 +4,7 @@ from __future__ import annotations
 import ast
 import builtins
 import copy
+import hashlib
 import json
 import shutil
 import subprocess
@@ -29,6 +30,7 @@ QTL_SUMMARY_HEAD = ("qtl_coloc_id\tqtl_source\ttissue\tgene_id\tregion\tancestry
                     "\tmethod\tfallback_reason\tnone_status\tpp_h0\tpp_h1\tpp_h2\tpp_h3\tpp_h4\n")
 PAIRS = [("asthma", "bmi"), ("asthma", "t2d"), ("bmi", "t2d"), ("bmi", "stroke"), ("t2d", "stroke")]
 P12 = ("p12_primary", "p12_sensitivity")
+QTL_IDS = ("CUR0__x__eqtl__QTD1__G1", "CUR1__x__sqtl__QTD3__J1")
 
 
 def _w(p, obj):
@@ -81,13 +83,11 @@ def build_tree(root, nc_bump=0.0):
     sim.update(regions=["CUR0"], scenarios={k: sim["scenarios"][k] for k in ("H3_r2_0.6", "H3_r2_0.9")},
                gen_panels={"gen_1kg": sim["gen_panels"]["gen_1kg"]}, reps=1)
     (root / "config/ta_r4/simulation.yaml").write_text(yaml.safe_dump(sim))  # exactly the two cells below
-    sim_head = ("region\tscenario\tgen_panel\trep\tseed\tarm\tmethod\tpp_h0\tpp_h1\tpp_h2\tpp_h3\tpp_h4\tpp_h4_max"
-                "\tn_cs_a\tn_cs_b\tcausal_a\tcausal_b\tr2_causal\tnone_reason\tfit_status_a\tfit_status_b\n")
-    _w(res / "sim/CUR0.H3_r2_0.6.gen_1kg.tsv", "# status=ok\n# reps_override=none\n" + sim_head +
-       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA1\tA1_abf_matched\t0\t0\t0\t0.5\t0.5\t0.5\tNA\tNA\t1:1\t1:2\t0.6\tNA\tNA\tNA\n"
-       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA2\tcoloc_susie\t0\t0\t0\t0.1\t0.9\t0.9\t1\t1\t1:1\t1:2\t0.6\tNA\tok\tok\n"
-       "CUR0\tH3_r2_0.6\tgen_1kg\t1\t1\tA3\tcoloc_susie\t0\t0\t0\t0.9\t0.1\t0.1\t1\t1\t1:1\t1:2\t0.6\tNA\tok\tok\n")
-    _w(res / "sim/CUR0.H3_r2_0.9.gen_1kg.tsv", "# status=no_qualifying_pair\n# reps_override=none\n" + sim_head)
+    _write_sim(root)
+    (root / "config/ta_r4/qtl_manifest.tsv").write_text("qtl_row_id\tregion_safe\n" + "".join(
+        f"{i}\t{i.split('__')[0]}\n" for i in QTL_IDS))  # exactly the summary ids below
+    for i in QTL_IDS:
+        _w(res / f"QTL_A3/qtl/{i}.json", {"qtl_row_id": i, "qtl_arm": "QTL_A3", "method": "coloc_susie"})
     for arm in QTL_ARMS:
         _w(res / f"{arm}/qtl_coloc_summary.tsv", QTL_SUMMARY_HEAD
            + "CUR0__x__eqtl__QTD1__G1\tgtex_eqtl\tLung\tG1\tCUR0\tEUR\t300\t500\t1\t1\t2\tsuccess\t0\t0.01\t0.04"
@@ -102,6 +102,30 @@ def build_tree(root, nc_bump=0.0):
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(REPO_ROOT / MAN_REL / f, dst)
     return m
+
+
+def _write_sim(root):
+    """The two simulation cells of build_tree's simulation.yaml as simulate_coloc_r4.R writes them: its header lines
+    (config_sha256 of the yaml as it is now) and seeds seed_base + stable_index."""
+    from ta_r4.id_reconcile import stable_index
+
+    root = Path(root)
+    raw = (root / "config/ta_r4/simulation.yaml").read_bytes()
+    cfg, sha = yaml.safe_load(raw), hashlib.sha256(raw).hexdigest()
+    sim_head = ("region\tscenario\tgen_panel\trep\tseed\tarm\tmethod\tpp_h0\tpp_h1\tpp_h2\tpp_h3\tpp_h4\tpp_h4_max"
+                "\tn_cs_a\tn_cs_b\tcausal_a\tcausal_b\tr2_causal\tnone_reason\tfit_status_a\tfit_status_b\n")
+
+    def head(sc, status, nq, reps):
+        return (f"# simulate_coloc_r4 region=CUR0 scenario={sc} gen_panel=gen_1kg\n# reps_override=none\n"
+                f"# status={status}\n# n_qualifying_pairs={nq}\n# window_variants=50 reps={reps} config_sha256={sha}\n")
+
+    seed = cfg["seed_base"] + stable_index(cfg, "CUR0", "H3_r2_0.6", "gen_1kg", 1)
+    res = root / "data/r4/results"
+    _w(res / "sim/CUR0.H3_r2_0.6.gen_1kg.tsv", head("H3_r2_0.6", "ok", 3, 1) + sim_head +
+       f"CUR0\tH3_r2_0.6\tgen_1kg\t1\t{seed}\tA1\tA1_abf_matched\t0\t0\t0\t0.5\t0.5\t0.5\tNA\tNA\t1:1\t1:2\t0.6\tNA\tNA\tNA\n"
+       f"CUR0\tH3_r2_0.6\tgen_1kg\t1\t{seed}\tA2\tcoloc_susie\t0\t0\t0\t0.1\t0.9\t0.9\t1\t1\t1:1\t1:2\t0.6\tNA\tok\tok\n"
+       f"CUR0\tH3_r2_0.6\tgen_1kg\t1\t{seed}\tA3\tcoloc_susie\t0\t0\t0\t0.9\t0.1\t0.1\t1\t1\t1:1\t1:2\t0.6\tNA\tok\tok\n")
+    _w(res / "sim/CUR0.H3_r2_0.9.gen_1kg.tsv", head("H3_r2_0.9", "no_qualifying_pair", 0, 0) + sim_head)
 
 
 def _run(repo, out, **kw):
@@ -153,9 +177,11 @@ def final_repo(tmp_path):
 
     repo = make_fixture_repo(tmp_path)
     build_tree(repo)
-    git(repo, "add", "config/ta_r4/pair_manifest.tsv", f"{MAN_REL}/known_answer_W3a.tsv", f"{MAN_REL}/known_answer_sh2b3.tsv")
+    git(repo, "add", "config/ta_r4/pair_manifest.tsv", "config/ta_r4/qtl_manifest.tsv", f"{MAN_REL}/known_answer_W3a.tsv",
+        f"{MAN_REL}/known_answer_sh2b3.tsv")
     git(repo, "commit", "-q", "-m", "fixture manifest")
     write_fixture_lock(repo)
+    _write_sim(repo)  # the lock commit rewrote simulation.yaml (locked: true): its config_sha256 changed
     dr = yaml.safe_load((repo / "config/ta_r4/decision_rules.yaml").read_text())
     pri = yaml.safe_load((repo / "config/ta_r4/coloc_priors.yaml").read_text())
     raw = [f"carter-approved {dt.date.today().isoformat()}", f"p12_primary: {pri['p12_primary']}",

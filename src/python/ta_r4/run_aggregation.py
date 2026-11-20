@@ -4,13 +4,14 @@ Reads trait-pair coloc JSONs only from paths.result_dirs('coloc') and fits only 
 frozen side comes from the committed known-answer tables and the QTL_legacy tier table by explicit path. Every
 statistic comes from estimands / branch_classifier. Exits 2 and writes nothing unless estimands.output_status
 is FINAL; exits 3 and writes nothing if FINAL and coloc_coverage finds a missing or extra output (EUR or AFR) or a
-QTL arm's summary or tier table is missing; exits 3 (FINAL and DRAFT) unless every simulation.yaml cell is present
-with the configured replicate count;
+QTL arm's summary or tier table is missing or its rows (or the QTL_A3 JSON docs) do not reconcile with qtl_manifest.tsv
+by id; exits 3 (FINAL and DRAFT) unless every simulation.yaml cell is present and matches its design by identity;
 --draft (fixtures only) writes every table labelled DRAFT. Every table carries a coverage header line.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -23,6 +24,7 @@ import yaml
 from ta_r4 import branch_classifier, coloc_coverage, estimands, paths
 from ta_r4.arms import ARMS
 from ta_r4.commands import A1_FIT_ARMS, P12_KEYS
+from ta_r4.id_reconcile import reconcile, stable_index
 
 TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_finemap_structure",
           "e4_no_cs_rate", "e4_cross_purity", "e5_diagnostics", "e6_panel_contrast", "e7_frozen_vs_fixed",
@@ -37,6 +39,7 @@ QTL_ARMS = ("QTL_A3", "QTL_A2", "QTL_legacy")
 QTL_TIERS = f"{paths.R4}/results/{{arm}}/qtl_tiers.tsv"
 QTL_SUMMARY = f"{paths.R4}/results/{{arm}}/qtl_coloc_summary.tsv"  # aggregate_qtl_coloc --with-method-columns
 QTL_JSON_DIR = f"{paths.R4}/results/QTL_A3/qtl"
+QTL_MANIFEST = "config/ta_r4/qtl_manifest.tsv"  # harmonize_qtl_r4.MANIFEST
 TIER_COLS = ["region", "ancestry", "tier", "best_gwas_pph4", "best_qtl_pph4", "resolving_gene", "resolving_tissue",
              "resolving_qtl_source", "all_supporting_sources", "neg_ctrl_set"]
 RSCRIPT = "Rscript"  # from envs/r_coloc.yml on PATH (as commands.py)
@@ -103,25 +106,91 @@ def expected_sim_cells(repo):
     return cells, int(cfg["reps"])
 
 
+def sim_header(text):
+    """{key: value} from every `# ` line of a simulate_coloc_r4.R cell file, each line read as space-separated
+    k=v tokens (tokens without `=` are skipped). A key given twice raises ValueError."""
+    head = {}
+    for ln in text.splitlines():
+        if not ln.startswith("# "):
+            continue
+        for tok in ln[2:].split(" "):
+            if "=" in tok:
+                k, v = tok.split("=", 1)
+                if k in head:
+                    raise ValueError(f"header key {k!r} given twice")
+                head[k] = v
+    return head
+
+
+def _sim_identity(name, df, cell, cfg, reps):
+    """Problems of a status-ok cell: replicate ids per arm, row labels and seeds."""
+    bad = []
+    other = sorted(set(df.arm.astype(str)) - set(SIM_ARMS))
+    if other:
+        bad.append(f"{name}: arms {other} outside {SIM_ARMS}")
+    rec = {a: reconcile(range(1, reps + 1), df.rep[df.arm == a].tolist()) for a in SIM_ARMS}
+    if not all(r.ok for r in rec.values()):
+        bad.append(f"{name}: rep ids per arm != 1..{reps} once each: "
+                   + "; ".join(f"{a} {r.summary(5)}" for a, r in rec.items() if not r.ok))
+    for col, want in zip(("region", "scenario", "gen_panel"), cell):
+        off = df[df[col].astype(str) != want]
+        if len(off):
+            bad.append(f"{name}: {len(off)} row(s) with {col} != {want!r} (e.g. {off[col].iloc[0]!r})")
+    seed_base = int(cfg["seed_base"])
+    n_bad, first = 0, None
+    for rep, seed in zip(df.rep.tolist(), df.seed.tolist()):
+        try:
+            k = int(rep)
+        except (TypeError, ValueError):
+            continue
+        if k != rep or not 1 <= k <= reps:
+            continue  # reported by the replicate-id check
+        want = seed_base + stable_index(cfg, *cell, k)
+        if seed != want:
+            n_bad += 1
+            first = first or f"rep {k} seed {seed!r} != {want}"
+    if n_bad:
+        bad.append(f"{name}: {n_bad} row(s) with seed != seed_base + stable_index (e.g. {first})")
+    return bad
+
+
 def _sim(repo, *, final):
-    """Every expected cell file, read and checked: status ok with reps rows per arm (A1, A2, A3) and, in FINAL,
-    reps_override=none; or status no_qualifying_pair with 0 rows. A missing, extra or failing file raises
-    SimulationIncomplete."""
+    """Every expected cell file, read and checked by identity. Every file: header region / scenario / gen_panel equal
+    the cell and header config_sha256 equals the sha256 of the repo's simulation.yaml. Status ok: per arm (A1, A2,
+    A3) the rep ids are exactly 1..reps once each, every row's labels equal the cell, every seed equals seed_base +
+    stable_index(cell, rep), header reps equals reps and, in FINAL, reps_override=none. Status no_qualifying_pair: 0
+    rows. A missing, extra or failing file raises SimulationIncomplete."""
     cells, reps = expected_sim_cells(repo)
+    cfg_bytes = (Path(repo) / SIM_CFG).read_bytes()
+    cfg, cfg_sha = yaml.safe_load(cfg_bytes), hashlib.sha256(cfg_bytes).hexdigest()
     files = {p.name: p for p in (Path(repo) / SIM_DIR).glob("*.tsv")}
     bad = [f"missing {n}" for n in sorted(set(cells) - set(files))]
     bad += [f"extra {n}" for n in sorted(set(files) - set(cells))]
     frames, meta = [], []
     for name in sorted(set(cells) & set(files)):
         p = files[name]
-        head = dict(ln[2:].split("=", 1) for ln in p.read_text().splitlines() if ln.startswith("# ") and "=" in ln
-                    and " " not in ln[2:].split("=", 1)[0])
+        try:
+            head = sim_header(p.read_text())
+        except ValueError as e:
+            bad.append(f"{name}: {e}")
+            head = {}
         status, override = head.get("status", ""), head.get("reps_override", "")
+        for k, want in zip(("region", "scenario", "gen_panel"), cells[name]):
+            if head.get(k) != want:
+                bad.append(f"{name}: header {k}={head.get(k)!r} != {want!r}")
+        if "config_sha256" not in head:
+            bad.append(f"{name}: no config_sha256 in the header")
+        elif head["config_sha256"] != cfg_sha:
+            bad.append(f"{name}: header config_sha256 {head['config_sha256']} != sha256({SIM_CFG}) {cfg_sha}")
         df = pd.read_csv(p, sep="\t", comment="#")
         if status == "ok":
             n_arm = df.arm.value_counts().to_dict() if len(df) else {}
             if n_arm != {a: reps for a in SIM_ARMS}:
                 bad.append(f"{name}: rows per arm {n_arm} != {reps} x {SIM_ARMS}")
+            elif len(df):
+                bad += _sim_identity(name, df, cells[name], cfg, reps)
+            if head.get("reps") != str(reps):
+                bad.append(f"{name}: header reps={head.get('reps')!r} != {reps}")
             if final and override != "none":
                 bad.append(f"{name}: reps_override={override!r} (FINAL requires none)")
         elif status == "no_qualifying_pair":
@@ -178,9 +247,39 @@ def _qtl_rows(repo):
     return t[["qtl_arm", *[c for c in t.columns if c != "qtl_arm"]]]
 
 
-def _qtl_missing(repo):
-    return [p for a in QTL_ARMS for p in (QTL_SUMMARY.format(arm=a), QTL_TIERS.format(arm=a))
-            if not (Path(repo) / p).exists()]
+def _qtl_doc_ids(repo):
+    qdir = Path(repo) / QTL_JSON_DIR
+    return [str(p.relative_to(qdir))[: -len(".json")] for p in sorted(qdir.rglob("*.json"))] if qdir.is_dir() else []
+
+
+def _qtl_coverage(repo):
+    """Problems ([] = complete): per QTL arm, the summary and tier table exist, the summary's qtl_coloc_id equal
+    qtl_manifest.tsv's qtl_row_id exactly once each and no row has an empty method; the QTL_A3 JSON doc ids (those
+    _qtl reads for E7) equal the manifest ids too."""
+    repo = Path(repo)
+    out = [f"MISSING {p}" for a in QTL_ARMS for p in (QTL_SUMMARY.format(arm=a), QTL_TIERS.format(arm=a))
+           if not (repo / p).exists()]
+    if not (repo / QTL_MANIFEST).exists():
+        return out + [f"MISSING {QTL_MANIFEST}"]
+    expected = _read_tsv(repo / QTL_MANIFEST).qtl_row_id.tolist()
+    for a in QTL_ARMS:
+        p = repo / QTL_SUMMARY.format(arm=a)
+        if not p.exists():
+            continue
+        t = _read_tsv(p)
+        if not {"qtl_coloc_id", "method"} <= set(t.columns):
+            out.append(f"{a} summary: no qtl_coloc_id / method column")
+            continue
+        r = reconcile(expected, t.qtl_coloc_id.tolist())
+        if not r.ok:
+            out.append(f"{a} summary vs {QTL_MANIFEST}: {r.summary()}")
+        empty = t.qtl_coloc_id[t.method == ""].tolist()
+        if empty:
+            out.append(f"{a} summary: {len(empty)} row(s) with an empty method: " + ", ".join(empty[:10]))
+    r = reconcile(expected, _qtl_doc_ids(repo))
+    if not r.ok:
+        out.append(f"QTL_A3 JSON docs ({QTL_JSON_DIR}) vs {QTL_MANIFEST}: {r.summary()}")
+    return out
 
 
 def _ids(man, rules, **override):
@@ -290,11 +389,12 @@ def run_aggregation(repo, out_dir, *, draft=False, purity_runner=_rscript_purity
         if not draft:
             print("run_aggregation: FINAL refused, coloc coverage incomplete; nothing written", file=sys.stderr)
             return 3
-    qmiss = _qtl_missing(repo)
-    if qmiss:
-        print("\n".join(f"MISSING {p}" for p in qmiss), file=sys.stderr)
+    qprob = _qtl_coverage(repo)
+    if qprob:
+        print("\n".join(qprob), file=sys.stderr)
         if not draft:
-            print("run_aggregation: FINAL refused, QTL summary or tier table missing; nothing written", file=sys.stderr)
+            print("run_aggregation: FINAL refused, QTL summary or tier table missing or QTL rows do not reconcile with"
+                  " the manifest; nothing written", file=sys.stderr)
             return 3
     try:
         tables = build_tables(repo, rules, man, estimands.load_rows(repo, man), estimands.load_fits(repo), purity_runner,

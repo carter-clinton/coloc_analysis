@@ -2,6 +2,7 @@
 every (region, scenario, generation panel) cell of the repo's simulation.yaml with the configured replicate count."""
 from __future__ import annotations
 
+import hashlib
 import shutil
 
 import pandas as pd
@@ -106,17 +107,38 @@ HEAD = ("region\tscenario\tgen_panel\trep\tseed\tarm\tmethod\tpp_h0\tpp_h1\tpp_h
         "\tn_cs_b\tcausal_a\tcausal_b\tr2_causal\tnone_reason\tfit_status_a\tfit_status_b\n")
 
 
-def _cell(region, sc, gen, reps, status="ok", override="none", arms=("A1", "A2", "A3")):
-    body = "".join(f"{region}\t{sc}\t{gen}\t{r}\t{r}\t{a}\t{'A1_abf_matched' if a == 'A1' else 'coloc_susie'}\t0\t0\t0"
+def _sim_cfg(reps=2):
+    cfg = yaml.safe_load((REPO_ROOT / "config/ta_r4/simulation.yaml").read_text())
+    cfg.update(regions=["R1", "R2"], scenarios={k: cfg["scenarios"][k] for k in ("H4", "H3_r2_0.9")},
+               gen_panels={"gen_1kg": cfg["gen_panels"]["gen_1kg"]}, reps=reps)
+    return cfg
+
+
+def _seed(cfg, region, sc, gen, r):
+    from ta_r4.id_reconcile import stable_index
+
+    if region not in cfg["regions"]:
+        return 0  # a cell outside the yaml is reported as extra; its rows are never read
+    return cfg["seed_base"] + stable_index(cfg, region, sc, gen, r)
+
+
+def _cell(region, sc, gen, reps, status="ok", override="none", arms=("A1", "A2", "A3"), cfg_reps=2):
+    """A cell file as simulate_coloc_r4.R writes it for sim_repo(reps=cfg_reps): its header lines (config_sha256 of
+    that yaml) and seeds seed_base + stable_index."""
+    cfg = _sim_cfg(cfg_reps)
+    sha = hashlib.sha256(yaml.safe_dump(cfg).encode()).hexdigest()
+    body = "".join(f"{region}\t{sc}\t{gen}\t{r}\t{_seed(cfg, region, sc, gen, r)}\t{a}\t"
+                   f"{'A1_abf_matched' if a == 'A1' else 'coloc_susie'}\t0\t0\t0"
                    f"\t0.1\t0.9\t0.9\t1\t1\t1:1\t1:1\t1\tNA\tNA\tNA\n" for r in range(1, reps + 1) for a in arms)
-    return f"# status={status}\n# reps_override={override}\n{HEAD}" + (body if status == "ok" else "")
+    head = (f"# simulate_coloc_r4 region={region} scenario={sc} gen_panel={gen}\n# reps_override={override}\n"
+            f"# status={status}\n# n_qualifying_pairs=NA\n"
+            f"# window_variants=50 reps={reps if status == 'ok' else 0} config_sha256={sha}\n")
+    return head + HEAD + (body if status == "ok" else "")
 
 
 def sim_repo(root, reps=2):
     """Two regions x H4 / H3_r2_0.9 x gen_1kg = 4 cells; R2.H3_r2_0.9 has no qualifying pair."""
-    cfg = yaml.safe_load((REPO_ROOT / "config/ta_r4/simulation.yaml").read_text())
-    cfg.update(regions=["R1", "R2"], scenarios={k: cfg["scenarios"][k] for k in ("H4", "H3_r2_0.9")},
-               gen_panels={"gen_1kg": cfg["gen_panels"]["gen_1kg"]}, reps=reps)
+    cfg = _sim_cfg(reps)
     (root / "config/ta_r4").mkdir(parents=True, exist_ok=True)
     (root / "config/ta_r4/simulation.yaml").write_text(yaml.safe_dump(cfg))
     d = root / "data/r4/results/sim"
@@ -125,7 +147,7 @@ def sim_repo(root, reps=2):
         for sc in ("H4", "H3_r2_0.9"):
             nq = reg == "R2" and sc == "H3_r2_0.9"
             (d / f"{reg}.{sc}.gen_1kg.tsv").write_text(
-                _cell(reg, sc, "gen_1kg", reps, status="no_qualifying_pair" if nq else "ok"))
+                _cell(reg, sc, "gen_1kg", reps, status="no_qualifying_pair" if nq else "ok", cfg_reps=reps))
     return d
 
 

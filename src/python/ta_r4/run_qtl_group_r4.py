@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
 import re
 import subprocess
@@ -21,6 +22,7 @@ from ta_r4 import paths, verify_inputs
 from ta_r4.arms import ARMS
 from ta_r4.commands import COLOC_PRIORS, COLOC_SCRIPT, TRAIT_MANIFEST
 from ta_r4.harmonize_qtl_r4 import MANIFEST, QTL_SOURCES, group_index, harmonized_path, manifest_rows, tissue_n
+from ta_r4.id_reconcile import reconcile
 
 QTL_SCRIPT = "src/snakemake/scripts/run_qtl_coloc.R"
 QTL_ARMS = {
@@ -130,6 +132,17 @@ def fallback_reason(d):
     return "&".join(z)
 
 
+def _empty_reason(summary):
+    """None when the coloc.susie summary carries a finite PP.H4.abf, else the GWAS pair none reason
+    (run_coloc_pair_r4.R): coloc_susie_empty for an empty or absent summary, coloc_susie_no_finite_h4 otherwise."""
+    if not summary:
+        return "coloc_susie_empty"
+    h4 = summary.get("PP.H4.abf") if isinstance(summary, dict) else None
+    if isinstance(h4, (int, float)) and not isinstance(h4, bool) and math.isfinite(h4):
+        return None
+    return "coloc_susie_no_finite_h4"
+
+
 def _best_pp(summary):
     if isinstance(summary, dict) and "PP.H4.abf" in summary:
         return [summary.get(f"PP.H{i}.abf") for i in range(5)]
@@ -160,7 +173,11 @@ def run_row(qtl_arm, row, region_id, odir, tmpdir, pri, sdy, run=subprocess.run)
         if d["status"] == "success":
             if not (d["n_cs_gwas"] > 0 and d["n_cs_qtl"] > 0):
                 raise ValueError(f"{rid}: success with n_cs {d['n_cs_gwas']}/{d['n_cs_qtl']}")
-            doc["method"] = "coloc_susie"
+            reason = _empty_reason(d.get("summary"))
+            if reason:
+                doc.update(method="none", status=reason, qtl_r_status="success", fallback_reason=None)
+            else:
+                doc["method"] = "coloc_susie"
         elif d["status"] in NO_CS:
             reason = fallback_reason(d)
             fargv = abf_command(qtl_arm, row, region_id, tmp_a, sdy, reason)
@@ -262,14 +279,21 @@ def coloc_inputs(qtl_arm, pair_manifest="config/ta_r4/pair_manifest.tsv", manife
                       if r["admissible"] == "true" and r["ancestry"] == ANCESTRY and r["region_safe"] in regions)
 
 
-def tierable_summary(src, out):
+def tierable_summary(src, out, manifest=None):
     """Copy the header and every method == coloc_susie row of an aggregate_qtl_coloc --with-method-columns summary.
-    fallback_abf and none rows are not tiered (D-02); a row with an empty method is an error. Returns (kept, total)."""
+    fallback_abf and none rows are not tiered (D-02); a row with an empty method is an error. With `manifest`, the
+    summary's qtl_coloc_id must first equal the manifest's qtl_row_id exactly once each (ValueError otherwise, nothing
+    written). Returns (kept, total)."""
     with open(src) as fh:
         lines = fh.read().splitlines(keepends=True)
     head = lines[0].rstrip("\n").split("\t")
     if "method" not in head:
         raise ValueError(f"{src}: no method column (aggregate_qtl_coloc.py --with-method-columns)")
+    if manifest is not None:
+        ids = [ln.rstrip("\n").split("\t")[head.index("qtl_coloc_id")] for ln in lines[1:]]
+        r = reconcile([row["qtl_row_id"] for row in manifest_rows(manifest)], ids)
+        if not r.ok:
+            raise ValueError(f"{src} vs {manifest}: {r.summary()}")
     i = head.index("method")
     keep = []
     for n, ln in enumerate(lines[1:], start=2):
@@ -291,7 +315,7 @@ def main(argv=None):
     ap.add_argument("--region")
     ap.add_argument("--source", choices=sorted(SOURCE_KEY))
     ap.add_argument("--qtd")
-    ap.add_argument("--manifest", default=MANIFEST)
+    ap.add_argument("--manifest", help=f"default {MANIFEST}; --tierable-summary reconciles against it only when given")
     ap.add_argument("--out-dir")
     ap.add_argument("--done", help="written only when coverage passes")
     ap.add_argument("--gwas-coloc-table", help="write the assign_tiers --gwas-coloc table and exit")
@@ -302,20 +326,21 @@ def main(argv=None):
         if not a.out:
             ap.error("--tierable-summary requires --out")
         try:
-            kept, total = tierable_summary(a.tierable_summary, a.out)
+            kept, total = tierable_summary(a.tierable_summary, a.out, manifest=a.manifest)
         except ValueError as e:
             sys.stderr.write(f"[run_qtl_group_r4] {e}\n")
             return 1
         print(f"[run_qtl_group_r4] {a.qtl_arm} tierable summary: {kept} of {total} rows (method coloc_susie)")
         return 0
     if a.gwas_coloc_table:
-        n = gwas_coloc_table(a.qtl_arm, a.gwas_coloc_table, manifest=a.manifest)
+        n = gwas_coloc_table(a.qtl_arm, a.gwas_coloc_table, manifest=a.manifest or MANIFEST)
         print(f"[run_qtl_group_r4] {a.qtl_arm} gwas coloc table: {n} rows")
         return 0
     if not (a.region and a.source and a.qtd):
         ap.error("--region, --source and --qtd are required")
     try:
-        counts, missing, extra = run_group(a.qtl_arm, a.region, a.source, a.qtd, manifest=a.manifest, odir=a.out_dir)
+        counts, missing, extra = run_group(a.qtl_arm, a.region, a.source, a.qtd, manifest=a.manifest or MANIFEST,
+                                           odir=a.out_dir)
     except verify_inputs.InputIntegrityError as e:
         sys.stderr.write(f"[run_qtl_group_r4] InputIntegrityError: {e}\n")
         return 1
