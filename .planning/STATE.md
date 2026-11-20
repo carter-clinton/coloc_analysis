@@ -26,7 +26,13 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-20 (afternoon) — **TRACK A ta-r4: W3f 15.7a COMPLETE (F1 runtime config guard). NEXT = 15.7b. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-20 (evening) — **TRACK A ta-r4: W3f 15.7b COMPLETE (F4 F6 F7 completeness by identity). NEXT = 15.7c. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 5fce26a8 (id_reconcile, _sim identity, _qtl_coverage, tierable --manifest, QTL empty summary → none, 31 tests, DRAFT (l)) and the 15.7b records commit.
+- FULL Slurm 2008417: 2,618 = 2,565 P / 53 S / 0 F; vs full_15_7a.xml 0 removed / +31 / 0 changes (check_15_7b.py PASS). Base for 15.7c: `data/r4/tmp/w3f/q157/full_15_7b.xml`.
+- decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-20 (afternoon) — **TRACK A ta-r4: W3f 15.7a COMPLETE (F1 runtime config guard). NEXT = 15.7b. NOT PUSHED.** (SUPERSEDED by the 15.7b block above)
 
 - Commits (local only): c015a4e4 (15.7 plan set + 15 decision files + DEC-2026-11-20-ta-r4-w3f-15-7-code-fixup), 420aa998 (job guard, fire allowlist, Snakefile refusal, 32 tests, 12 declared spec updates, DRAFT (k)), and the 15.7a records commit.
 - FULL Slurm 2007035: 2,587 = 2,534 P / 53 S / 0 F; vs full_W3f.xml 0 removed / +32 / 0 changes (check_15_7a.py PASS). Base for 15.7b: `data/r4/tmp/w3f/q157/full_15_7a.xml`.

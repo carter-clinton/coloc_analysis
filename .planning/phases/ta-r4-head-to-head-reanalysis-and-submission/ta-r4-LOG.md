@@ -1205,3 +1205,28 @@ index c517ffb7..a0ffd52e 100644
 - srun under QOS normal is refused interactively → every verify ran with `sbatch --wait` on the same
   partition/account/QOS/constraint. A foreign docs commit 61994a1b (HANDOFF/.continue-here) landed during FULL.
 - No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+## 2026-11-20 — W3f 15.7b (review F4 F6 F7: completeness by identity; no push)
+
+- Start 6ff8c0de (`$Q/start_15_7b.txt`). Re-measured (`$Q/measure_15_7b.txt`): stable_index source as planned; yaml 10×5×2 =
+  100 cells, reps 200, seed_base 20261021; qtl_manifest.tsv 116,551 lines, 0 duplicate qtl_row_id; callers as planned.
+- RED Task 1 (`$Q/red_15_7b_t1.txt`, stubs reconcile → ok, stable_index → 0, _sim / _qtl_missing unchanged): 20 F / 4 P
+  exactly as planned (green 1, 5, 14a, 15). 14b failed on ImportError; its NC against the start parser
+  (`$Q/nc_header_parser_15_7b.txt`) FAILs: region / scenario / gen_panel / reps / config_sha256 lost.
+- GREEN: id_reconcile; _sim identity (sim_header, _sim_identity); _qtl_coverage (replaces _qtl_missing, no other caller);
+  tierable_summary(manifest=None) + `--manifest` without default; smk appends `--manifest {input.manifest}`. Fixture
+  builders build_tree / final_repo (+ _write_sim, QTL_IDS) and _cell / sim_repo (+ _sim_cfg, _seed). Task 1 verify 82 P;
+  test_in_job_gate + test_confirmatory_completeness + test_job_guard 60 P, 0 changes vs full_15_7a.
+- AST no-weaken (`$Q/noweaken_15_7b.txt`) PASS: only the four fixture helpers changed, helpers/constants/hashlib added,
+  no test_* changed, order kept. NC (one weakened assertion) FAIL (`$Q/noweaken_15_7b_nc.txt`).
+- RED Task 2 (`$Q/red_15_7b_t2.txt`): 6 F / 1 P as planned (27 green). GREEN run_row `_empty_reason`; 7 P.
+- Mutation NCs (`$Q/mutation_nc_15_7b.txt`, 10 mutations, source md5-restored): each failed its enforcers. Run 1
+  (`$Q/mutation_nc_15_7b_run1_mispredicted.txt`) had two wrong predictions, not code defects: M1 (duplicates ignored)
+  leaves copies_of_rep1 refused by the missing ids 2..reps; M4 `if False:` left the elif mismatch branch live, so it was
+  split M4a / M4b (M4a's missing-token case fails by KeyError, M4b's mismatch case by not raising).
+- DRAFT (l) one sentence (`$Q/draft_15_7b.py`); (g) "exactly the configured 200 replicates per arm" matches, unchanged.
+  test_amendment_text 21 P / 2 S. Commit 5fce26a8.
+- FULL Slurm 2008417 (sbatch --wait, cascadelake c020n03, HEAD 5fce26a8): QUICK 804 P / 2 S; HEAVY 313 P / 5 S; PINS 39 P;
+  FULL 2,618 = 2,565 P / 53 S / 0 F = 2,587 + 31. vs full_15_7a.xml: 0 removed, +31 (all passed), 0 outcome changes,
+  tests/m3 0. check_15_7b.py PASS; NCs (base as new; synthetic failed pre-existing id) FAIL. Declared spec updates: none.
+- No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
