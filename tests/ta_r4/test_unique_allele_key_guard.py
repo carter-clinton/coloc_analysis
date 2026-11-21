@@ -42,9 +42,10 @@ def _argv(cap, flag=None):
     cmd = commands.fit_command(ARM, TRAIT, ANC, REGION, cfg, region_id=REGION)
     assert cmd[1].startswith("SUSIE_MAX_VARIANTS=")
     cmd[1] = f"SUSIE_MAX_VARIANTS={cap}"
-    while FLAG in cmd:
-        i = cmd.index(FLAG)
-        del cmd[i:i + 2]
+    for f in (FLAG, "--exact-purity"):  # 15.7f: the pre-guard substrate (1f77128) predates --exact-purity
+        while f in cmd:
+            i = cmd.index(f)
+            del cmd[i:i + 2]
     if flag is not None:
         cmd += [FLAG, flag]
     return cmd

@@ -44,6 +44,7 @@ run_susie_with_ladder <- function(z, R, policy, n) {
     # patched policy YAMLs failed to lift the cap; verified against susieR 0.14.2.
     args <- list(z = z, R = R_use, L = L_, coverage = cov_, max_iter = max_it)
     if (!is.null(n) && !is.na(n) && is.finite(n)) args$n <- n
+    if (!is.null(policy$n_purity)) args$n_purity <- policy$n_purity
     do.call(susieR::susie_rss, args)
   }
 
@@ -708,6 +709,10 @@ option_list <- list(
   make_option("--require-unique-allele-key", type = "character", default = "false",
               help = paste("'true' | 'false'. When true the script stops with DUPLICATE_ALLELE_KEYS if a",
                            "normalized CHR:POS:REF:ALT repeats in the panel-restricted subset.")),
+  # W3f 15.7f (DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze).
+  make_option("--exact-purity", type = "character", default = "false",
+              help = paste("'true' | 'false'. When true credible-set purity is the minimum |r| over all pairs of",
+                           "set members (n_purity = the number of variants), not a random 100-member subsample.")),
   make_option("--variant-list", type = "character", help = "Optional TSV restricting variants (CHR,POS,REF,ALT)"),
   make_option("--credible-set", type = "double", default = 0.95, help = "Credible set probability"),
   make_option("--policy", type = "character", default = "config/susie_policy.yaml",
@@ -763,6 +768,12 @@ require_unique_key <- local({
   if (v %in% c("true", "t", "1", "yes"))  return(TRUE)
   if (v %in% c("false", "f", "0", "no"))  return(FALSE)
   stop(sprintf("--require-unique-allele-key must be true|false, got %s", opt$`require-unique-allele-key`))
+})
+exact_purity <- local({
+  v <- opt$`exact-purity` %||% "false"
+  if (identical(v, "true"))  return(TRUE)
+  if (identical(v, "false")) return(FALSE)
+  stop(sprintf("--exact-purity must be true|false, got %s", v))
 })
 L_DEFAULT            <- policy$susie$L                    %||% 10L
 COVERAGE             <- policy$susie$coverage             %||% 0.95
@@ -1202,6 +1213,7 @@ ladder_policy <- list(
   max_iter_retry = MAX_ITER_RETRY,
   ld_regularization_eps = LD_REG_EPS
 )
+if (exact_purity) ladder_policy$n_purity <- nrow(subset)
 ladder_out <- run_susie_with_ladder(
   z = subset$z,
   R = R,
@@ -1388,9 +1400,10 @@ result$d3b_ld_z_consistency_s   <- s_estimate
 result$ld_source_mismatch_flag  <- isTRUE(is.numeric(s_estimate) && s_estimate > 0.5)
 
 # Post-hoc min_abs_corr sweep (FREE -- no refit, Pattern 4)
+N_PURITY <- if (exact_purity) nrow(R_cs) else 100
 sweep_rows <- lapply(MIN_ABS_CORR_SWEEP, function(macor) {
   cs_m <- tryCatch(
-    susieR::susie_get_cs(fit, Xcorr = R_cs, coverage = COVERAGE, min_abs_corr = macor),
+    susieR::susie_get_cs(fit, Xcorr = R_cs, coverage = COVERAGE, min_abs_corr = macor, n_purity = N_PURITY),
     error = function(e) list(cs = list())
   )
   n_cs <- length(cs_m$cs %||% list())
@@ -1405,7 +1418,7 @@ sweep_rows <- lapply(MIN_ABS_CORR_SWEEP, function(macor) {
 # L saturation flag at default macor
 n_cs_default <- tryCatch(
   length((susieR::susie_get_cs(fit, Xcorr = R_cs, coverage = COVERAGE,
-                               min_abs_corr = MIN_ABS_CORR_DEFAULT)$cs) %||% list()),
+                               min_abs_corr = MIN_ABS_CORR_DEFAULT, n_purity = N_PURITY)$cs) %||% list()),
   error = function(e) NA_integer_
 )
 l_saturated <- isTRUE(n_cs_default >= L_DEFAULT)

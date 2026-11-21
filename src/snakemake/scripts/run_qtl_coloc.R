@@ -78,6 +78,13 @@ option_list <- list(
                            "true), re-sign QTL beta from its variant_id ALT to the",
                            "bound panel row's ALT (D-06); drop and count palindromic,",
                            "mismatched and unparseable rows.")),
+  # W3f 15.7f (DEC-2026-11-20-ta-r4-qtl-exact-purity-flag).
+  make_option("--exact-purity",  dest = "exact_purity",   type = "character",
+              default = "false",
+              help = paste("'true' or 'false'. When true the QTL SuSiE fit scores",
+                           "credible-set purity over all pairs of set members",
+                           "(n_purity = the number of bridged variants), not a",
+                           "random 100-member subsample.")),
   make_option("--output",        type = "character",
               help = "Output JSON path")
 )
@@ -145,6 +152,12 @@ if (!identical(QTL_ORIENT_FLAG, "true") && !identical(QTL_ORIENT_FLAG, "false"))
                QTL_ORIENT_FLAG), call. = FALSE)
 }
 QTL_ORIENT <- identical(QTL_ORIENT_FLAG, "true")
+EXACT_PURITY_FLAG <- opt$exact_purity %||% "false"
+if (!identical(EXACT_PURITY_FLAG, "true") && !identical(EXACT_PURITY_FLAG, "false")) {
+  stop(sprintf("--exact-purity must be exactly 'true' or 'false', got '%s'",
+               EXACT_PURITY_FLAG), call. = FALSE)
+}
+EXACT_PURITY <- identical(EXACT_PURITY_FLAG, "true")
 if (QTL_ORIENT && !LD_ALLELE_JOIN) {
   stop("--qtl-orient true requires --ld-allele-join true (it re-signs rows bound by the panel bridge)",
        call. = FALSE)
@@ -654,12 +667,14 @@ tryCatch({
 # 7. Fit SuSiE on QTL side
 # -------------------------------------------------------------------------
 qtl_fit <- tryCatch({
-  coloc::runsusie(qtl_data, suffix = 2)
+  if (EXACT_PURITY) coloc::runsusie(qtl_data, suffix = 2, n_purity = length(qtl_data$snp))
+  else coloc::runsusie(qtl_data, suffix = 2)
 }, error = function(e) {
   cat(sprintf("[run_qtl_coloc] runsusie failed: %s, retrying with max_iter=200\n",
               conditionMessage(e)))
   tryCatch({
-    coloc::runsusie(qtl_data, suffix = 2, maxit = 200)
+    if (EXACT_PURITY) coloc::runsusie(qtl_data, suffix = 2, maxit = 200, n_purity = length(qtl_data$snp))
+    else coloc::runsusie(qtl_data, suffix = 2, maxit = 200)
   }, error = function(e2) {
     NULL
   })

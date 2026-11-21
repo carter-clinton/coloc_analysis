@@ -26,10 +26,10 @@ from ta_r4.id_reconcile import reconcile
 
 QTL_SCRIPT = "src/snakemake/scripts/run_qtl_coloc.R"
 QTL_ARMS = {
-    "QTL_A3": {"fit_arm": "A3_1kg", "ld_allele_join": "true", "qtl_orient": "true"},
-    "QTL_A2": {"fit_arm": "A2_identity", "ld_allele_join": "true", "qtl_orient": "true"},
+    "QTL_A3": {"fit_arm": "A3_1kg", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true"},
+    "QTL_A2": {"fit_arm": "A2_identity", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true"},
     # the pre-fix argv (E7): no --variant-list, no --qtl-orient, as qtl_coloc.smk rendered it for EUR
-    "QTL_legacy": {"fit_arm": "repro_routeL", "ld_allele_join": "false", "qtl_orient": None},
+    "QTL_legacy": {"fit_arm": "repro_routeL", "ld_allele_join": "false", "qtl_orient": None, "exact_purity": None},
 }
 SOURCE_KEY = {"eqtl": "gtex_eqtl", "sqtl": "gtex_sqtl"}
 ANCESTRY = "EUR"
@@ -103,6 +103,8 @@ def qtl_command(qtl_arm, row, output, sdy):
         cmd += ["--variant-list", catalog(qtl_arm, reg)]
     if a["qtl_orient"] is not None:
         cmd += ["--qtl-orient", a["qtl_orient"]]
+    if a["exact_purity"] is not None:
+        cmd += ["--exact-purity", a["exact_purity"]]
     return cmd + ["--output", output]
 
 

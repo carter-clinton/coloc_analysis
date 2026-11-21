@@ -58,7 +58,8 @@ fit_frozen <- function(FZ, z, R, n, pol, coverage, snp_names) {
   R <- (R + t(R)) / 2
   diag(R) <- 1
   lp <- list(L = min(pol$L, length(z)), coverage = coverage, max_iter_primary = pol$max_iter_primary,
-             max_iter_retry = pol$max_iter_retry, ld_regularization_eps = pol$ld_regularization_eps)
+             max_iter_retry = pol$max_iter_retry, ld_regularization_eps = pol$ld_regularization_eps,
+             n_purity = length(z))
   lo <- FZ$run_susie_with_ladder(z = z, R = R, policy = lp, n = n)
   fit <- lo$fit
   status <- lo$status
