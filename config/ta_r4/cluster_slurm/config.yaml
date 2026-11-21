@@ -15,6 +15,7 @@ set-resources:
   - "r4_run_finemap:mem_mb=48000"
   - "r4_run_finemap:runtime=180"
   - "r4_panel_ukb_native:runtime=120"
+  - "r4_qtl_group:mem_mb=30000"
 jobs: 200
 latency-wait: 120
 max-status-checks-per-second: 1
