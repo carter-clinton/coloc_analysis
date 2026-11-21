@@ -514,6 +514,9 @@ main <- function() {
     if (!is.na(raw_a$early_exit) || !is.na(raw_b$early_exit)) {
       method <- "none"
       out$none_reason <- sprintf("fit_early_exit:%s|%s", raw_a$early_exit, raw_b$early_exit)
+      if (is.na(raw_a$early_exit)) out$n_cs_a <- length(raw_a$fit$sets$cs %||% list())
+      if (is.na(raw_b$early_exit)) out$n_cs_b <- length(raw_b$fit$sets$cs %||% list())
+      out$early_exit_a <- raw_a$early_exit; out$early_exit_b <- raw_b$early_exit
       r <- list(summary = list(), n_snps = NA_integer_, keys = NULL)
       pp <- rep(NA_real_, 5)
     } else {

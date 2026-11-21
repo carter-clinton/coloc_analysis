@@ -315,8 +315,13 @@ def e3_reclassification(p) -> pd.DataFrame:
 
 
 def _no_cs(r):
-    """Pair row with zero credible sets on either trait (n_cs NA, e.g. an early exit, is not counted)."""
+    """Pair row with a known zero credible sets on either trait (n_cs NA, e.g. an early exit, is not a zero)."""
     return (pd.to_numeric(r.n_cs_a) == 0) | (pd.to_numeric(r.n_cs_b) == 0)
+
+
+def _unknown_cs(r):
+    """Pair row of unknown no-CS state: no known zero and at least one trait without a count (n_cs NA)."""
+    return ~_no_cs(r) & (pd.to_numeric(r.n_cs_a).isna() | pd.to_numeric(r.n_cs_b).isna())
 
 
 def _fit_no_cs(f):
@@ -325,28 +330,31 @@ def _fit_no_cs(f):
 
 
 def e4_no_cs_rate(rows, fits) -> pd.DataFrame:
-    """No-CS rate at three levels, each with its denominator named: pair_row (rows with n_cs_a == 0 or n_cs_b == 0
-    / pair rows of the arm), region (the same per region), fit (fits with zero sets or an early exit / fits of the
-    arm). A1 has no fits and is excluded."""
+    """No-CS rate at three levels, each with its denominator named: pair_row (rows with a known n_cs_a == 0 or
+    n_cs_b == 0 / pair rows of the arm; n_unknown = rows with no known zero and a trait without a count, and
+    no_cs_rate_known = n_no_cs / (n_rows - n_unknown)), region (the same per region), fit (fits with zero sets or an
+    early exit / fits of the arm). A1 has no fits and is excluded."""
     r = rows[~rows.label.astype(str).str.startswith("A1_")].copy()
-    r["no_cs"] = _no_cs(r)
+    r["no_cs"], r["unknown"] = _no_cs(r), _unknown_cs(r)
     out = []
     for level, by, den in (("pair_row", [], "pair rows of the arm"),
                            ("region", ["region_safe"], "pair rows of the arm in the region")):
         g = r.groupby(["ancestry", "row_class", "label", "p12_key", *by], dropna=False)
-        t = g.agg(n_rows=("row_id", "size"), n_no_cs=("no_cs", "sum")).reset_index()
+        t = g.agg(n_rows=("row_id", "size"), n_no_cs=("no_cs", "sum"), n_unknown=("unknown", "sum")).reset_index()
         out.append(t.assign(level=level, denominator=den))
     f = fits.assign(no_cs=_fit_no_cs(fits), early=fits.status.isin(EARLY_EXIT))
     t = f.groupby(["ancestry", "arm"]).agg(n_rows=("trait", "size"), n_no_cs=("no_cs", "sum"),
                                            n_early_exit=("early", "sum")).reset_index().rename(columns={"arm": "label"})
     out.append(t.assign(level="fit", denominator="fits of the arm"))
     cols = ["level", "denominator", "ancestry", "row_class", "label", "p12_key", "region_safe", "n_rows", "n_no_cs",
-            "n_early_exit", "no_cs_rate"]
+            "n_early_exit", "no_cs_rate", "n_unknown", "no_cs_rate_known"]
     t = pd.concat([x for x in out if len(x)], ignore_index=True) if any(len(x) for x in out) else pd.DataFrame(
         columns=cols)
     t = t.reindex(columns=cols)
     t["n_no_cs"] = t.n_no_cs.astype(int)
     t["no_cs_rate"] = t.n_no_cs / t.n_rows
+    known = t.n_rows - t.n_unknown
+    t["no_cs_rate_known"] = (t.n_no_cs / known).where(known > 0)
     return t
 
 
@@ -597,12 +605,25 @@ def e6_panel_contrast(rows, fits, rules, row_ids, contrasts, p12_keys) -> pd.Dat
 
 
 def negative_control_rates(rows, threshold) -> pd.DataFrame:
-    """Pre-specified specificity analysis: share of negative-control rows with region PP.H4 >= threshold."""
+    """Pre-specified specificity analysis: share of negative-control rows with region PP.H4 >= threshold, per
+    (nc_set, label, p12_key) and method: one row per method that occurs, plus with_posterior (every method except
+    none; n_fallback_abf counts its fallback rows). Rows with method none are counted (n_rows) and are in no share
+    denominator (share_h4 NaN on the none row)."""
+    key = ["nc_set", "label", "p12_key"]
     nc = rows[rows.row_class == "negative_control"].copy()
+    nc["method"] = nc.method.astype(str)
     nc["h4"] = nc.region_stat >= threshold
-    t = nc.groupby(["nc_set", "label", "p12_key"]).agg(n_rows=("row_id", "size"), n_h4=("h4", "sum")).reset_index()
-    t["n_h4"] = t.n_h4.astype(int)
-    t["share_h4"] = t.n_h4 / t.n_rows
+    nc["fb"] = nc.method == "fallback_abf"
+    agg = dict(n_rows=("row_id", "size"), n_h4=("h4", "sum"), n_fallback_abf=("fb", "sum"))
+    by_m = nc.groupby([*key, "method"]).agg(**agg).reset_index()
+    groups = nc[key].drop_duplicates()
+    wp = nc[nc.method != "none"].groupby(key).agg(**agg).reset_index()
+    wp = groups.merge(wp, on=key, how="left").fillna({"n_rows": 0, "n_h4": 0, "n_fallback_abf": 0})
+    t = pd.concat([by_m, wp.assign(method="with_posterior")], ignore_index=True)
+    t = t[[*key, "method", "n_rows", "n_h4", "n_fallback_abf"]].sort_values([*key, "method"]).reset_index(drop=True)
+    for c in ("n_rows", "n_h4", "n_fallback_abf"):
+        t[c] = t[c].astype(int)
+    t["share_h4"] = (t.n_h4 / t.n_rows).where((t.method != "none") & (t.n_rows > 0))
     t.insert(3, "threshold", threshold)
     return t
 

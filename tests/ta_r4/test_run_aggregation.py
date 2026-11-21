@@ -244,7 +244,7 @@ def test_row_counts_equal_fixture_admissible_rows(drafted):
     s = e1[e1.level == "summary"]
     assert len(s) == 2 * 2 * 2 and set(s.subset) == {"both_have_cs", "all_rows"}
     nc = _read(root / "out", "negative_controls")
-    assert set(nc.n_rows) == {3}
+    assert set(nc[nc.method != "with_posterior"].groupby(["nc_set", "label", "p12_key"]).n_rows.sum()) == {3}
     sweep = _read(root / "out", "e2_agreement_sweep")
     assert sorted(set(sweep.threshold)) == [0.5, 0.7, 0.8, 0.9]
     for t in ("e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_no_cs_rate", "e6_panel_contrast",
