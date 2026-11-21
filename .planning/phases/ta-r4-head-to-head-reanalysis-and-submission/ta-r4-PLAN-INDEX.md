@@ -206,9 +206,10 @@ export PATH=/rs1/researchers/c/ckclinto/miniconda3/bin:$PATH        # node / con
   CXADR_F2RL1_6p21, BMI_5q13_3 (safe id of `BMI_5q13.3`), 9p21_CDKN2A, APOE_19q13, SLC2A9_urate.
   **Not admissible (D-24):** HLA_6p21 (UKB exploratory fits only; no coloc row), BMI_Xq24 (chrX; no panel).
 - **Negative-control regions (19, EUR):** cosmetic 5 (NC_OCA2_HERC2, NC_SLC24A5, NC_MC1R, NC_TYR, NC_IRF4),
-  blood_group 4 (NC_ABO, NC_RH, NC_FUT1_FUT2, NC_KEL), gwas_null 10 (NC_NULL_01..NC_NULL_10, selected in W0b2;
-  GRCh37 250-kb tiles 1:99500001, 1:218750001, 2:190000001, 3:30750001, 3:178250001, 6:81500001,
-  11:21500001, 13:38500001, 13:71000001, 14:49000001 (start; end = start + 249999)).
+  blood_group 4 (NC_ABO, NC_RH, NC_FUT1_FUT2, NC_KEL), gwas_null 10 (NC_NULL_01..NC_NULL_10, re-selected in W3f 15.7h on the production inputs;
+  GRCh37 250-kb tiles 1:99750001, 1:232000001, 2:202500001, 3:34000001, 3:191500001, 6:82750001,
+  11:21500001, 13:42000001, 13:71000001, 14:49250001 (start; end = start + 249999); the W0b2 draw is kept as
+  `null_windows_selection.superseded-2026-10-21.tsv`).
   `regions_r4.csv` = 12 + 19 = 31 rows; `pair_manifest.tsv` = 346 rows, 320 admissible (290 EUR, 30 AFR).
 - **Confirmatory analysis (pre-lock, W3d; orchestrator default under the rigor rule, Carter may change it at W4a-T3):**
   rows = primary curated EUR admissible rows (10 regions × 10 pairs = 100), p12_primary, A1 varset

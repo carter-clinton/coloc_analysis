@@ -18,6 +18,8 @@ from ta_r4 import select_null_windows as snw
 
 SCRIPT = REPO_ROOT / "src/python/ta_r4/select_null_windows.py"
 SELECTION = MAN_DIR / "null_windows_selection.tsv"
+#: The 2,865-candidate draw from the superseded inputs (W3f 15.7h; DEC-2026-11-20-ta-r4-null-window-reselection).
+SUPERSEDED = MAN_DIR / "null_windows_selection.superseded-2026-10-21.tsv"
 W = 250_000
 EUR = ("asthma", "bmi", "hypertension", "stroke", "t2d")
 AFR = ("asthma", "stroke", "t2d")
@@ -227,7 +229,7 @@ def test_null_windows_respect_exclusions():
 
 @pytest.mark.r4_heavy
 def test_real_selection_reproduces_committed(tmp_path):
-    """Re-run the selector on the 8 sha256-pinned Track A files (~3.5 min)."""
+    """Re-run the selector on the 8 sha256-pinned Track A files (~3.5 min); they produce the superseded selection."""
     s = REPO_ROOT / "data/processed/sumstats_harmonized"
     files = [s / f"{t}.EUR.tsv.bgz" for t in EUR] + [s / f"{t}.AFR.tsv.bgz" for t in AFR]
     cand, sel = tmp_path / "cand.tsv", tmp_path / "sel.tsv"
@@ -238,5 +240,5 @@ def test_real_selection_reproduces_committed(tmp_path):
                         "--candidates-out", str(cand), "--selected-out", str(sel)],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
-    assert sha(sel) == sha(SELECTION)
-    assert f"candidates_sha256\t{sha(cand)}" in SELECTION.read_text()
+    assert sha(sel) == sha(SUPERSEDED)
+    assert f"candidates_sha256\t{sha(cand)}" in SUPERSEDED.read_text()

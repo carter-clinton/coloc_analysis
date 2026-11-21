@@ -1,0 +1,7 @@
+Question 1 (2026-11-21): 15.7h rebuilt the 8 changed control windows. Two pin files outside the plan's file list describe those windows: catalogs_r4_unique_key.tsv and ukb_native_multiallelic_resolved.tsv. They changed only in the control-window rows. Without the re-pin, test_live_pins fails and Task 2 can't close. Should they be committed?
+
+Carter reply (verbatim, selected option): Commit them (Recommended)
+
+Question 2 (2026-11-21): DRAFT PASTE (c) line 80, which is public text, now gives outdated UKB panel counts. The rebuilt panels have 30 SNV-kept positions (was 31), 6 positions / 12 variants removed (was 7 / 14) and 16,843 indels (was 17,071). Fix it in 15.7h, or defer it to 15.7j as an OPEN row?
+
+Carter reply (verbatim, selected option): (a) Fix line 80 now (Recommended)
