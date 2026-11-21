@@ -67,8 +67,8 @@ PY_CODE_REF = "bf16289"
 #: so this pin remains valid ACROSS it -- which is the acceptance demonstration
 #: for the whole rescope. It still means "no CODE has moved since the K-1
 #: closure". On an AUTHORIZED code change, update THIS ONE CONSTANT.
-#: See DEC-2026-08-06-sr4-freeze-scope. Re-pinned by ta-r4-W3f 15.5a (dup-key guard 13b0821, DEC-2026-11-17-run-susie-rss-unique-allele-key-guard-unfreeze).
-R_CODE_REF = "13b0821"
+#: See DEC-2026-08-06-sr4-freeze-scope. Re-pinned by ta-r4-W3f 15.7f (exact purity 57ddb59, DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze).
+R_CODE_REF = "57ddb59"
 
 #: The numeric-bearing R symbols. Symbol pins are DIAGNOSTICS -- they name WHICH
 #: block moved. The whole-file floor is the SAFETY NET: it covers the ~700-line
