@@ -93,16 +93,27 @@ def _fmt_p(p: float) -> str:
     return f"{p:.6g}"
 
 
+def manifest_sha256(manifest, path):
+    """The manifest's sha256 for `path`: by file name (`relative_path` column), or by repo-relative `path` (a
+    trailing-component match). None if absent or ambiguous."""
+    with open(manifest, newline="") as fh:
+        rd = csv.DictReader(fh, delimiter="\t")
+        col = "relative_path" if "relative_path" in (rd.fieldnames or []) else "path"
+        rows = list(rd)
+    parts = Path(path).parts
+    if col == "relative_path":
+        hits = {r["sha256"] for r in rows if r[col] == Path(path).name}
+    else:
+        hits = {r["sha256"] for r in rows if parts[-len(Path(r[col]).parts):] == Path(r[col]).parts}
+    return hits.pop() if len(hits) == 1 else None
+
+
 def select(args) -> int:
-    expected = {}
-    with open(args.sha256_manifest, newline="") as fh:
-        for r in csv.DictReader(fh, delimiter="\t"):
-            expected[r["relative_path"]] = r["sha256"]
     input_sha = {}
     for p in args.sumstats:
-        got = sha256_file(p)
-        if expected.get(Path(p).name) != got:
-            print(f"sha256 mismatch for {p}: manifest {expected.get(Path(p).name)} != {got}", file=sys.stderr)
+        got, want = sha256_file(p), manifest_sha256(args.sha256_manifest, p)
+        if want != got:
+            print(f"sha256 mismatch for {p}: manifest {want} != {got}", file=sys.stderr)
             return 2
         input_sha[Path(p).name] = got
 
