@@ -26,7 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-21 (early morning, later) — **TRACK A ta-r4: W3f 15.7g COMPLETE (F3 the QTL PP.H4 sweep uses the GWAS PP.H4, Track B included; NaN GWAS → below threshold for r4; Carter Q-F3 B, Q-F3B A). NEXT = 15.7h. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-21 (afternoon) — **TRACK A ta-r4: W3f 15.7h COMPLETE (F9 null windows re-selected on the production inputs; 6 UKB tiles; 8 windows rebuilt; Carter Q-F9 A, 15.7h Q1/Q2). NEXT = 15.7h2. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 6fffde86 (DEC-2026-11-20-ta-r4-null-window-reselection), 0e6dda24 (driver path-keyed manifests; 4 tests; new + superseded selection; 12 tile rows), 350cd9b9 (regions_r4.csv; 8 manifests re-pinned on the 8 windows only; eligibility; declared spec update; DRAFT lines 42/80/126; Carter reply file) and the 15.7h records commit.
+- 2,886 candidates; NC_NULL_07/09 kept, 8 changed; every other catalog/panel byte-identical (702/822 files).
+- FULL Slurm 2021566: 2,682 = 2,629 P / 53 S / 0 F; vs full_15_7g.xml 0 removed / +4 / 0 changes (check_15_7h.py PASS). Base for 15.7h2: `data/r4/tmp/w3f/q157/full_15_7h.xml`.
+- decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-21 (early morning, later) — **TRACK A ta-r4: W3f 15.7g COMPLETE (F3 the QTL PP.H4 sweep uses the GWAS PP.H4, Track B included; NaN GWAS → below threshold for r4; Carter Q-F3 B, Q-F3B A). NEXT = 15.7h. NOT PUSHED.** (SUPERSEDED by the 15.7h block above)
 
 - Commits (local only): 90cf52d7 (DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4), 7405ba4a (assign_tiers GWAS-table sweep = full-mode tiers at every threshold; the no-table sweep is the logged legacy rule; `--nan-gwas-below-threshold` via run_qtl_group_r4.tiers_argv for r4_qtl_tiers only; 11 tests; 1 declared spec update; deferred-items; HANDOFF W6 tripwire; DRAFT (l)) and the 15.7g records commit.
 - Track B: its assign_tiers sweep output changes (Carter's choice); the count is not measurable (md5 17ff46db… search: 60 candidates, 0 hits). pph4_threshold_sweep keeps the legacy sweep (deferred-items). QTL_legacy qtl_tiers.tsv: not moved by the sweep fix (synthetic 200 frames, 0 violations); W6 tripwire on a non-zero NaN-GWAS count.

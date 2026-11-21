@@ -1370,3 +1370,38 @@ index c517ffb7..a0ffd52e 100644
   tests/phase2 0, declared spec update passed → passed. check_15_7g.py PASS; its 3 NCs (base as new; synthetic failure
   on the declared id; on a phase2 sweep id) FAIL, rc 1.
 - No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+
+## 2026-11-21 — W3f 15.7h (F9 null-window re-selection on the production inputs; Carter Q-F9 A; no push)
+
+- Gate `$Q/gate_reply.py Q-F9` printed "A: Re-run the selection on the production inputs (Recommended)" and
+  c2cc9915…cc089, rc 0. Start 63083a1d (`$Q/start_15_7h.txt`). DEC-2026-11-20-ta-r4-null-window-reselection (6fffde86).
+- Driver (0e6dda24): `--sha256-manifest` also keyed by `path`. Identity on the superseded inputs (Slurm 2017268): the
+  superseded selection byte for byte, candidates 352c77ec…. Production (Slurm 2017289): 2,886 candidates (a0067cc7…),
+  2,745 shared / 120 dropped / 141 added; seed 20261021 keeps NC_NULL_07 11:21500001 and NC_NULL_09 13:71000001.
+  Old → new: 01 1:99500001 → 1:99750001; 02 1:218750001 → 1:232000001; 03 2:190000001 → 2:202500001;
+  04 3:30750001 → 3:34000001; 05 3:178250001 → 3:191500001; 06 6:81500001 → 6:82750001; 08 13:38500001 → 13:42000001;
+  10 14:49000001 → 14:49250001. Superseded selection kept (sha256 f0df241a…).
+- Tiles: missing = the 6 planned (`$Q/tile_feasibility.txt`); compute nodes cannot reach S3 (Slurm 2017274, curl rc 28);
+  fetched on login02 with fetch_tile (6,470,831,032 bytes, 90 s); re-verified 12/12 incl. multipart ETag (Slurm 2017319);
+  76 → 88 rows; the 20 other autosomal regions' tile choice unchanged.
+- RED Slurm 2017257 (KeyError relative_path; test 3); test 4 RED after the re-selection; GREEN Slurm 2017268, 2017310.
+  NCs NC-1/NC-2 (Slurm 2017530), NC-4, NC-5, NC-D, NC-D2, NC-L (Slurm 2020806) each failed as predicted; files restored.
+- Rebuild: regions_r4.csv 8 rows; pair_manifest unchanged; `bin/r4_fire.sh repro repro_routeC` 48 jobs (Slurm
+  2017707–2017862, 48/48 0:0); post-fire dry-run nothing to do. Snapshot (2017291 / 2017920): 702 of 822 files identical,
+  117 changed = the 8 windows, 3 named files; NC_NULL_07/09 32/32.
+- Re-pin (Slurm 2017965; 2017926 OOM at 16G, nothing written): every other row reproduced byte for byte, then the 8
+  windows' rows replaced in catalogs_sha256, catalogs_r4_unique_key, the 5 EUR panel manifests and
+  ukb_native_multiallelic_resolved (the 2 extra manifests per Carter 2026-11-21 Q1 "Commit them (Recommended)",
+  `W3f-carter-15-7h-repin-and-draft-reply-2026-11-21.txt`). Live pins 160 P; Task 2 verify 61 P / 2 S (Slurm 2020806).
+- Eligibility (Slurm 2018025): 815 = 83 measured + 732 bound, 10 not eligible (unchanged); NC_NULL 250 bound.
+- DRAFT: line 42, (l) line 126; PASTE (c) line 80 (Carter Q2 a) 31 → 30, 7 / 14 → 6 / 12, 17,071 → 16,843 from
+  Slurm 2021384 (the same script reproduces 31 / 7 / 14 / 17,071 on the pre-rebuild panels); line 33 unchanged.
+  Commit 350cd9b9.
+- FULL Slurm 2021566 (cascadelake c020n01, HEAD 350cd9b9): QUICK 851 P / 2 S; HEAVY 330 P / 5 S; PINS 39 P; FULL
+  2,682 = 2,629 P / 53 S / 0 F. vs full_15_7g.xml (`junit_cmp.py`): 0 removed, +4 (all tests/ta_r4, all passed), 0
+  outcome changes, tests/m3 0; declared spec update passed → passed; the 4 other selection-touching ids passed in both.
+  `$Q/check_15_7h.py` CHECK PASS rc 0; its 3 NCs (base as new; synthetic failure on the declared id; on
+  test_regions_r4_is_rebuilt_from_sources) each CHECK FAIL, rc 1 (`$Q/check_15_7h_nc.txt`).
+- Run interrupted ~07:27 by a parent restart; resumed with Carter's approval after re-checking every uncommitted edit.
+- No push, no fit, no colocalization on a null window, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
