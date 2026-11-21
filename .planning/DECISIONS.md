@@ -3328,3 +3328,42 @@ Carter reply (verbatim, selected option): A: Known states only (Recommended)
 - **Not authorized:** region_stat, the confirmatory subset rules, the fit-level no-CS rule, `decision_rules.yaml`
   (stays `locked: false`), a production fit, OSF posting, a push.
 - Lifts nothing under D-28.
+
+## 2026-11-20 — DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze: D-28 lifted once more for exact credible-set purity in run_susie_rss.R (Carter, Q-F2 A)
+
+- **Decider:** Carter, 2026-11-20, reply saved verbatim, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F2-reply-2026-11-20.txt` (sha256
+  `5788606334769a728a4fbf4456db987f923c98f15b10556067bfaea3adc52e5a`; committed in 15.7a; gate_reply.py Q-F2 passed in 15.7f):
+
+```text
+Question Q-F2 (2026-11-20): For credible sets with more than 100 variants, susieR 0.14.2 computes purity on a random 100-variant subsample, and run_susie_rss.R sets no seed. In the 20 corrected-input pilot fits, 109 components in 12 fits got a random purity, and all were dropped in that draw. That draw decides coloc_susie vs fallback_abf. Track B is unchanged under every option. Which fix?
+Carter reply (verbatim, selected option): A: Exact purity, third unfreeze (Recommended)
+```
+
+- **Why:** susieR 0.14.2 `get_purity` scores a credible set of more than `n_purity = 100` variants on
+  `sample(pos, 100)`, and run_susie_rss.R sets neither a seed nor `n_purity`, so whether such a set passes
+  min_abs_corr 0.5 (and so coloc_susie vs fallback_abf) is a random draw (review F2).
+- **Scope (plan 15.7f).** The third §B.6 (D-28) lift in W3f, after N1 and 15.5a. New option `--exact-purity`
+  (default `false`; any value but true/false stops). With `true`, `n_purity` = the number of fitted variants is passed
+  to `susie_rss` (ladder policy) and to the post-hoc min_abs_corr sweep and L-saturation `susie_get_cs` calls, so
+  purity is the minimum over all pairs of set members. Non-legacy production arms pass `true`; the repro arms, the
+  Track B finemap.smk rule and every other caller do not, and their default path is unchanged. Nothing else; D-28 is
+  otherwise in force.
+- **Re-pin:** `R_CODE_REF` → the 15.7f code commit, in its own commit.
+- **Not authorized:** decision_rules.yaml (stays `locked: false`), a production fit, OSF posting, a push.
+
+## 2026-11-20 — DEC-2026-11-20-ta-r4-qtl-exact-purity-flag: run_qtl_coloc.R gets an opt-in exact-purity flag for the r4 QTL arms (Carter, Q-F2Q i)
+
+- **Decider:** Carter, 2026-11-20, reply saved verbatim, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F2Q-reply-2026-11-20.txt` (sha256
+  `63a54f5f70736d5a06bc75c07647ba2c93bd2a18975f1d36cac3d1c9e3ab790e`; committed in 15.7a; gate_reply.py Q-F2Q passed in 15.7f):
+
+```text
+Question Q-F2Q (2026-11-20): coloc::runsusie in run_qtl_coloc.R, which Track B also uses, has the same random purity on the QTL side. How should it be handled?
+Carter reply (verbatim, selected option): i: Same treatment on the QTL side (Recommended)
+```
+
+- **Scope (plan 15.7f).** run_qtl_coloc.R is not D-28 frozen but is shared with Track B, so the change is an opt-in
+  flag with its own entry. New option `--exact-purity` (default `false`; any value but true/false stops). With `true`
+  both `coloc::runsusie` calls (first try and the max_iter 200 retry) pass `n_purity` = the number of bridged variants.
+  `run_qtl_group_r4.qtl_command` passes `true` for QTL_A3 and QTL_A2 only; QTL_legacy, Track B qtl_coloc.smk and
+  sample_null_loci.py do not, and their default path is unchanged.
+- Lifts nothing under D-28. Not authorized: the same list as DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze.
