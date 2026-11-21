@@ -3472,3 +3472,42 @@ Carter reply (verbatim, selected option): A: Run as planned (Recommended)
   colocalization, writing under `data/r4/results`, changing n_regions_min or `decision_rules.yaml` (stays
   `locked: false`), OSF posting, a push.
 - Lifts nothing under D-28.
+
+## 2026-11-21 — DEC-2026-11-21-ta-r4-proxy-exact-purity-scored-matrix: the proxy's exact purity is recomputed on the matrix each fit was scored on (Carter, Q-PURITY A)
+
+- **Decider:** Carter, 2026-11-21, reply saved verbatim (committed in d2b01ee1; Q-PURITY gate passed in 15.7h2:
+  ls-files, diff --quiet HEAD, sha256, last line):
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7h2-purity-matrix-reply-2026-11-21.txt` (sha256
+  `bf5185dc954e8eb9f246fbddccdedb057908c2b8635ab4aa68b968fdd8f614a6`):
+
+```text
+Question (2026-11-21): 15.7h2 stopped before running any fits. A premise in its plan is false: a fit that doesn't converge keeps the run scored on regularised LD (R + 1e-4·I), so its stored purities are the panel value ÷ (1+1e-4). That breaks the plan's exact-match purity check on 6 existing repro fits. The fit output doesn't record which run was kept. How should the check work?
+
+Options offered:
+A: use the scored matrix (Recommended) — Recompute each fit's purity on the matrix it was scored on: panel R for converged fits, cov2cor(R + eps·I) for regularised or non-converged ones. If the regularised matrix doesn't match (a regularised run that errored and was replaced by the unregularised retry), try panel R. Record which matrix matched for each fit; STOP if neither matches to 1e-12.
+B: panel R + ratio check
+C: exempt non-converged
+
+Carter reply (verbatim, selected option): A: use the scored matrix (Recommended)
+```
+
+- **False premise (plan 15.7h2 as at d1498dff).** The exact-purity must-have said "so only n_purity differs from fit
+  time." and checked one matrix per fit: "Identity checks first, per fit: the 95% sets recomputed from alpha equal the
+  stored sets, and for stored sets of ≤ 100 members the recomputed purity equals the stored min.abs.corr within 1e-12;
+  either failing → STOP". Under POLICY_REPRO (max_iter_primary = max_iter_retry = 100) a non_converged fit keeps fit3,
+  scored by susieR 0.14.2 on cov2cor of regularize_ld(R_fit, eps) (run_susie_rss.R:25-27, :51-64); on 6 sets of 5
+  EUR repro_routeC non_converged fits stored / panel purity = 0.9999000100 = 1/(1+eps)
+  (data/r4/tmp/w3f/q157/g157h2/probe_regularized_purity{,_all}.txt). The run stopped before any code or fit.
+- **Rule (plan 15.7h2 revised at 947a7b4a).** Candidates per fit, in order: identity_fallback → identity only;
+  converged_primary / converged_max_iter → R_fit only; converged_regularized → C_reg = cov2cor(sym(R_fit + eps·I))
+  only; non_converged → C_reg, then R_fit only if C_reg fails (labelled panel_fallback: fit3 errored, fit2 kept). The
+  first candidate passing the per-component identity check (stored sets via sets$cs_index equal the recomputed
+  coverage sets; stored sets of ≤ 100 members match stored min.abs.corr within 1e-12; included non-stored components of
+  ≤ 100 members have purity < 0.5; > 100-member components exempt) is the scored matrix, recorded per fit; none
+  passing → STOP. eps = POLICY_REPRO susie.ld_regularization_eps read from the YAML (absent → STOP); coverage =
+  fit$sets$requested_coverage asserted equal to the --credible-set value (config/pipeline.yaml finemap.credible_set);
+  tolerance 1e-12. A non-discriminating fit whose count differs on the other candidate → STOP.
+- **Not authorized:** as DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7 (no production fit, no
+  colocalization, nothing under data/r4/results, n_regions_min stays 7, decision_rules.yaml stays locked: false, no OSF
+  posting, no push).
+- Lifts nothing under D-28.
