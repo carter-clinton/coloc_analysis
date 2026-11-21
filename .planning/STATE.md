@@ -26,7 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-21 (early morning) — **TRACK A ta-r4: W3f 15.7f COMPLETE (F2 exact credible-set purity, GWAS and QTL; Carter Q-F2 A, Q-F2Q i). NEXT = 15.7g. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-21 (early morning, later) — **TRACK A ta-r4: W3f 15.7g COMPLETE (F3 the QTL PP.H4 sweep uses the GWAS PP.H4, Track B included; NaN GWAS → below threshold for r4; Carter Q-F3 B, Q-F3B A). NEXT = 15.7h. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 90cf52d7 (DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4), 7405ba4a (assign_tiers GWAS-table sweep = full-mode tiers at every threshold; the no-table sweep is the logged legacy rule; `--nan-gwas-below-threshold` via run_qtl_group_r4.tiers_argv for r4_qtl_tiers only; 11 tests; 1 declared spec update; deferred-items; HANDOFF W6 tripwire; DRAFT (l)) and the 15.7g records commit.
+- Track B: its assign_tiers sweep output changes (Carter's choice); the count is not measurable (md5 17ff46db… search: 60 candidates, 0 hits). pph4_threshold_sweep keeps the legacy sweep (deferred-items). QTL_legacy qtl_tiers.tsv: not moved by the sweep fix (synthetic 200 frames, 0 violations); W6 tripwire on a non-zero NaN-GWAS count.
+- FULL Slurm 2016509: 2,678 = 2,625 P / 53 S / 0 F; vs full_15_7f.xml 0 removed / +11 / 0 changes, tests/phase2 0 (check_15_7g.py PASS). Base for 15.7h: `data/r4/tmp/w3f/q157/full_15_7g.xml`.
+- decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-21 (early morning) — **TRACK A ta-r4: W3f 15.7f COMPLETE (F2 exact credible-set purity, GWAS and QTL; Carter Q-F2 A, Q-F2Q i). NEXT = 15.7g. NOT PUSHED.** (SUPERSEDED by the 15.7g block above)
 
 - Commits (local only): 29de2a4d (DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze + DEC-2026-11-20-ta-r4-qtl-exact-purity-flag), c3c76ba2 (pre-fix flip + memory measurement manifest; r4_qtl_group:mem_mb=30000), 57ddb59d (--exact-purity in run_susie_rss.R (third D-28 lift) and run_qtl_coloc.R; production arms, QTL_A3/QTL_A2 and the simulation ladder use it; 13 tests; 3 declared spec updates), 38e4080d (R_CODE_REF → 57ddb59), b11b10b6 (DRAFT (k)) and the 15.7f records commit.
 - Pilot exposure: 109 subsampled components in 12 of 20 fits, 0 demonstrated flips (exact min |r| <= 0.024; 0/1,000 seeded draws pass 0.5). Default paths identical to 78f62719 (tests 1 and 11).

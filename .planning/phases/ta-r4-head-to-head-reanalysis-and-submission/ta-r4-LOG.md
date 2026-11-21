@@ -1338,3 +1338,35 @@ index c517ffb7..a0ffd52e 100644
   3 declared spec updates passed → passed. check_15_7f.py PASS; its NCs (base as new; synthetic failure on a declared
   id) FAIL, rc 1.
 - No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+## 2026-11-21 — W3f 15.7g (review F3: the QTL PP.H4 sweep uses the GWAS PP.H4; NaN GWAS rule for r4; Carter Q-F3 B, Q-F3B A; no push)
+
+- Gates: `$Q/gate_reply.py Q-F3` printed "B: Fix the sweep for Track B too" and f8694860…664703, rc 0; `Q-F3B`
+  printed "A: Keep it as today, logged as the legacy rule (Recommended)" and b744a828…1cc1b, rc 0 (`$Q/gate_15_7g.txt`).
+- Start 62353dbe (`$Q/start_15_7g.txt`) = the test literal PRE_157G_REF. DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4
+  (90cf52d7) quotes both replies; Track B assign_tiers sweep output changes by Carter's choice.
+- Track B count: not measurable, no artifact. Read-only md5 search for 17ff46db… (Slurm 2016136; results/,
+  /share/clintonlab/ckclinto, /rs1/researchers/c/ckclinto, depth 6, `*tier*`): 60 candidates, 0 hits.
+- RED (`$Q/red_15_7g.txt`, Slurm 2016160): 10 failed / 1 passed. Tests 1-8, 10, 11 failed on the defect; 9 (full mode
+  without the flag byte-identical to PRE_157G_REF) passed, as planned.
+- GREEN (7405ba4a): sweep_tiers with a GWAS table applies the tier definitions to (best GWAS, best QTL) over the GWAS
+  regions, with tier_b_min from the config; without one it is the pre-15.7g sweep, logged as the legacy rule.
+  `--nan-gwas-below-threshold` (r4_qtl_tiers only, via run_qtl_group_r4.tiers_argv; `--input` order kept); NaN-GWAS
+  group count logged in every mode. Declared spec update: sweep assertions of
+  test_qtl_fallback_export::test_tiers_from_tierable_equal_tiers_from_full (hand derivation `$Q/spec_update_15_7g.txt`).
+  Task 1 verify set (Slurm 2016337, 2016424 after the DRAFT edit): 108 P / 2 S / 0 F; Track B rules and config
+  unchanged.
+- Mutation NCs (`$Q/mutation_nc_15_7g.py`, Slurm 2016362): M1-M13 each fail exactly their predicted tests; phase2
+  never fails; sources md5-restored.
+- QTL_legacy: qtl_tiers.tsv is full mode, untouched by the sweep fix. Synthetic measurement (`$Q/qtl_legacy_tiers_15_7g.py`,
+  Slurm 2016384): 200 frames, 0 violations (flag on: only NaN-GWAS rows move, 194 rows in 126 frames; flag off:
+  byte-identical). Real data: 0 of 100 repro_routeL pair JSONs exist (not measurable before W6). Planning bound
+  re-measured, unchanged. HANDOFF do_not W6 tripwire added (13 → 14 strings).
+- NaN-rule affected groups on real r4 inputs: not measurable (0 of 100 pair JSONs per QTL arm). Logged count on the
+  fixtures: 2 (full and sweep).
+- DRAFT (l) sweep sentence (`$Q/draft_15_7g.py`); test_amendment_text 21 P / 2 S.
+- FULL Slurm 2016509 (cascadelake c020n01, HEAD 7405ba4a): QUICK 849 P / 2 S; HEAVY 328 P / 5 S; PINS 39 P; FULL
+  2,678 = 2,625 P / 53 S / 0 F. vs full_15_7f.xml: 0 removed, +11 (all passed), 0 outcome changes, tests/m3 0,
+  tests/phase2 0, declared spec update passed → passed. check_15_7g.py PASS; its 3 NCs (base as new; synthetic failure
+  on the declared id; on a phase2 sweep id) FAIL, rc 1.
+- No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
