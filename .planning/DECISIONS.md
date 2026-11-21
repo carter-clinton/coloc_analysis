@@ -3367,3 +3367,36 @@ Carter reply (verbatim, selected option): i: Same treatment on the QTL side (Rec
   `run_qtl_group_r4.qtl_command` passes `true` for QTL_A3 and QTL_A2 only; QTL_legacy, Track B qtl_coloc.smk and
   sample_null_loci.py do not, and their default path is unchanged.
 - Lifts nothing under D-28. Not authorized: the same list as DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze.
+
+## 2026-11-20 — DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4: the PP.H4 threshold sweep uses the GWAS PP.H4 wherever a GWAS table is given, Track B included (Carter, Q-F3 B, Q-F3B A)
+
+- **Decider:** Carter, 2026-11-20, replies saved verbatim (committed in 15.7a; gate_reply.py Q-F3 and Q-F3B passed in 15.7g):
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F3-reply-2026-11-20.txt` (sha256
+  `f869486010dd063adadc2190d08574e793f5e372700560ec6093d71058664703`) and
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F3B-reply-2026-11-20.txt` (sha256
+  `b744a8288ae8aff40ab4128a3eb3dbbd59c3b986deb3b4d3758b07b654b1cc1b`):
+
+```text
+Question Q-F3 (2026-11-20): The QTL PP.H4 threshold sweep calls assign_tier(best_pph4, best_pph4, ...) at assign_tiers.py:96, using the QTL value as the GWAS value. assign_tiers.py is shared with Track B. All three options replace the DRAFT (l) sentence that describes the faulty sweep. Which fix?
+Carter reply (verbatim, selected option): B: Fix the sweep for Track B too
+```
+
+```text
+Question Q-F3B (2026-11-20): Under your Q-F3 B, the QTL sweep uses the GWAS table wherever one is given. Track B's pph4_threshold_sweep rule (negative_controls.smk) and 6 tests in tests/phase2 call the sweep with no GWAS table, where the tier definitions can't be applied. What should that no-table call do?
+Carter reply (verbatim, selected option): A: Keep it as today, logged as the legacy rule (Recommended)
+```
+
+- **Scope (plan 15.7g, review F3).**
+  - `assign_tiers.py` (shared with Track B): with a non-empty GWAS table (`--gwas-coloc`; Track B rule `assign_tiers`
+    and r4 rule `r4_qtl_tiers`), the sweep applies the full-mode tier definitions at each threshold to (best GWAS
+    PP.H4, best QTL PP.H4) per (region, ancestry), over the GWAS regions, with tier_b_min from the config. **Track B's
+    `assign_tiers` sweep output changes by Carter's choice.**
+  - Without a GWAS table (Track B rule `pph4_threshold_sweep`; 6 phase2 tests) the sweep keeps today's QTL-as-GWAS
+    rule unchanged and logs a warning naming it as the legacy rule (Q-F3B A); logged in deferred-items.md.
+  - NaN rule, r4 only: `--nan-gwas-below-threshold` (passed only by `r4_qtl_tiers`, through
+    `run_qtl_group_r4.tiers_argv`) makes a NaN or missing best GWAS PP.H4 below_threshold in full mode and the
+    GWAS-table sweep. Without the flag full mode is unchanged. The number of NaN-GWAS groups is logged in every mode.
+  - DRAFT (l) sentence for the sweep.
+- **Not authorized:** Track B rule files (`qtl_coloc.smk`, `negative_controls.smk`), `config/pph4_thresholds.yaml`,
+  `decision_rules.yaml` (stays `locked: false`), a production fit, OSF posting, a push.
+- Lifts nothing under D-28.
