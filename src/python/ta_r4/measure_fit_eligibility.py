@@ -8,7 +8,12 @@ CLI (cwd = repo root, PYTHONPATH=src/python):
   plan      --out-dir D --rscript R               write D/runlist.jsonl + D/run.sh (sbatch array), print its length
   run       --list L --task N                     record input sha256, then run line N (1-based) of the list
   summarise --out-dir D --rscript R --tsv T       eligibility table: measured rows (exactly the run list) + bound rows
-  proxy     --rscript R --tsv T                   region-contribution proxy table, totals and FLAG lines
+  proxy     --rscript R --tsv T [--exact-purity] [--asthma-fit-root D] [--fits-tsv F]
+                                                  region-contribution proxy table, totals and FLAG lines
+
+15.7h2: asthma_pilot_commands() builds the 20 pre-lock asthma repro fits (corrected asthma input, outputs under
+data/r4/measure_asthma_fix/fits); --asthma-fit-root reads asthma from them; --exact-purity recomputes every fitted
+object's set count with exact purity on the matrix it was scored on (DEC-2026-11-21-ta-r4-proxy-exact-purity-scored-matrix).
 """
 from __future__ import annotations
 
@@ -23,7 +28,7 @@ import sys
 from pathlib import Path
 
 from ta_r4 import commands, paths, verify_inputs
-from ta_r4.arms import ARMS, production_arms
+from ta_r4.arms import ARMS, POLICY_REPRO, production_arms
 
 CAP = commands.SUSIE_MAX_VARIANTS
 TMP = f"{paths.R4}/tmp"
@@ -418,14 +423,16 @@ for (p in commandArgs(TRUE)) {
 """
 
 
-def _fit_states(rscript, keys, repo="."):
+def _fit_states(rscript, keys, repo=".", where=None):
+    """{key: fit_cs_state} from the RDS sets stored at fit time. where(key) -> (json, rds) repo-relative."""
     repo = Path(repo)
+    where = where or (lambda k: (paths.fit_json(*k), paths.fit_rds(*k)))
     docs, rds = {}, {}
     for k in keys:
-        j = repo / paths.fit_json(*k)
+        j = repo / where(k)[0]
         docs[k] = json.loads(j.read_text()) if j.is_file() else None
         if docs[k] is not None and docs[k].get("status") not in EARLY:
-            rds[k] = str(repo / paths.fit_rds(*k))
+            rds[k] = str(repo / where(k)[1])
     out = subprocess.run([rscript, "-e", _SETS_R, *rds.values()], check=True, capture_output=True,
                          text=True).stdout if rds else ""
     by_path = dict(ln.split("\t") for ln in out.splitlines())
@@ -433,18 +440,302 @@ def _fit_states(rscript, keys, repo="."):
             for k in keys}
 
 
+# ---- 15.7h2: asthma pilot fits and exact purity on the scored matrix ------------------------------------------------
+
+PILOT_ARMS = ("repro_routeC", "repro_k2d_routeC")
+#: The corrected asthma EUR input (route r4; debug asthma-eur-grch38-mislabel).
+ASTHMA_PILOT_SUMSTATS = paths.sumstats_path("asthma", "EUR", "A3_1kg")
+RESULTS = f"{paths.R4}/results"
+PURITY_TOL = 1e-12
+SCORED = ("identity", "panel", "regularized", "panel_fallback")
+FITS_COLS = ["arm", "trait", "region", "convergence_status", "n_sets_stored", "n_sets_exact", "n_sets_exact_alt",
+             "n_sets_checked", "scored_matrix", "discriminating", "max_abs_purity_diff", "max_abs_resid"]
+VARIANT_MATCH_R = "src/snakemake/scripts/ta_r4/variant_match.R"
+
+
+class PurityIdentityError(RuntimeError):
+    """No scored-matrix candidate reproduces a fit's stored sets, or another exact-purity STOP rule fired."""
+
+
+def pilot_fit_json(root, arm, region_safe):
+    return f"{_norm(root)}/proxy_asthma_{arm}/asthma.EUR.{region_safe}.json"
+
+
+def _set_flag(cmd, flag, value):
+    cmd[cmd.index(flag) + 1] = value
+
+
+def _refuse_results(out):
+    if _under(out, RESULTS):
+        raise ValueError(f"output {out} lies under {RESULTS}")
+
+
+def asthma_pilot_commands(region_ids, out_root, repo="."):
+    """{(arm, region_safe): argv}: each repro arm's commands.fit_command for asthma EUR, with --sumstats the
+    corrected asthma file and --output under out_root/proxy_asthma_<arm>/ (never under data/r4/results)."""
+    out = {}
+    for arm in PILOT_ARMS:
+        cfg = arm_config(arm, repo)
+        for g in sorted(region_ids):
+            cmd = list(commands.fit_command(arm, "asthma", "EUR", g, cfg, region_id=region_ids[g]))
+            _set_flag(cmd, "--sumstats", ASTHMA_PILOT_SUMSTATS)
+            o = pilot_fit_json(out_root, arm, g)
+            _refuse_results(o)
+            _set_flag(cmd, "--output", o)
+            out[(arm, g)] = cmd
+    return out
+
+
+def asthma_pilot_split_commands(region_ids, split_root, rscript, repo="."):
+    """asthma_pilot_commands' argv with three changes: SUSIE_MAX_VARIANTS=0 (every run exits before fitting and
+    records its pre-panel n_variants), Rscript -> the absolute rscript, --output -> split_root/<arm>/."""
+    if not Path(rscript).is_absolute():
+        raise ValueError(f"rscript {rscript} must be absolute (Rscript is not on PATH in Slurm jobs)")
+    out = {}
+    for (arm, g), pilot in asthma_pilot_commands(region_ids, "data/r4/measure_asthma_fix/fits", repo).items():
+        cmd = list(pilot)
+        if cmd[1] != f"SUSIE_MAX_VARIANTS={CAP}" or cmd[2] != "Rscript":
+            raise ValueError(f"unexpected fit_command prefix {cmd[:3]}")
+        cmd[1], cmd[2] = "SUSIE_MAX_VARIANTS=0", rscript
+        o = f"{_norm(split_root)}/{arm}/asthma.EUR.{g}.json"
+        _refuse_results(o)
+        _set_flag(cmd, "--output", o)
+        out[(arm, g)] = cmd
+    return out
+
+
+def regularization_eps(policy_path, repo="."):
+    import yaml
+
+    pol = yaml.safe_load((Path(repo) / policy_path).read_text()) or {}
+    eps = (pol.get("susie") or {}).get("ld_regularization_eps")
+    if eps is None:
+        raise PurityIdentityError(f"PURITY_STOP: {policy_path} has no susie.ld_regularization_eps")
+    return float(eps)
+
+
+def credible_set(arm, repo="."):
+    """The --credible-set value commands.fit_command passes for arm."""
+    return float(str(arm_config(arm, repo).get("finemap", {}).get("credible_set", 0.95)))
+
+
+_EXACT_R = r"""
+suppressPackageStartupMessages({ library(data.table); library(jsonlite) })
+a <- commandArgs(TRUE)
+spec <- fromJSON(a[1], simplifyVector = FALSE)
+source(spec$variant_match)
+eps <- as.numeric(spec$eps); TOL <- as.numeric(spec$tol); tabix <- spec$tabix
+STOP <- function(...) stop(paste0("PURITY_STOP: ", sprintf(...)), call. = FALSE)
+`%||%` <- function(x, y) if (is.null(x)) y else x
+# the pinned call: only Xcorr and min_abs_corr vary
+pinned <- function(fit, X, cov, mac) susieR::susie_get_cs(fit, Xcorr = X, coverage = cov, min_abs_corr = mac,
+  dedup = TRUE, squared = FALSE, check_symmetric = TRUE, n_purity = ncol(X))
+comp <- function(fit, X, cov) {  # every included component (V > 1e-9, non-empty, not a dedup duplicate)
+  g <- pinned(fit, X, cov, 0)
+  if (is.null(g$cs)) return(list(idx = integer(0), pur = numeric(0), size = integer(0)))
+  list(idx = as.integer(g$cs_index), pur = as.numeric(g$purity$min.abs.corr), size = as.integer(lengths(g$cs)))
+}
+check <- function(fit, cp, cov) {  # the identity check of a candidate, per stored set via sets$cs_index
+  st <- fit$sets; ics <- susieR:::in_CS(fit$alpha, cov)
+  sidx <- as.integer(st$cs_index %||% integer(0))
+  if (length(st$cs) != length(sidx)) return(list(ok = FALSE, why = "sets$cs and sets$cs_index differ in length"))
+  resid <- 0; checked <- integer(0); csize <- integer(0)
+  for (j in seq_along(sidx)) {
+    k <- sidx[j]; mem <- which(ics[k, ] != 0)
+    if (!identical(as.integer(unname(st$cs[[j]])), as.integer(mem)))
+      return(list(ok = FALSE, why = sprintf("stored set L%d is not the coverage set of component %d", k, k)))
+    if (length(mem) <= 100) {
+      p <- cp$pur[match(k, cp$idx)]
+      if (is.na(p)) return(list(ok = FALSE, why = sprintf("stored set L%d is not an included component", k)))
+      r <- abs(p - as.numeric(st$purity$min.abs.corr[j]))
+      resid <- max(resid, r)
+      if (r > TOL) return(list(ok = FALSE, why = sprintf("L%d purity residual %.3e", k, r)))
+      checked <- c(checked, k); csize <- c(csize, length(mem))
+    }
+  }
+  for (i in seq_along(cp$idx)) if (!(cp$idx[i] %in% sidx) && cp$size[i] <= 100 && cp$pur[i] >= 0.5)
+    return(list(ok = FALSE, why = sprintf("unstored component %d has purity %.6f >= 0.5", cp$idx[i], cp$pur[i])))
+  list(ok = TRUE, resid = resid, checked = checked, csize = csize)
+}
+creg <- function(R) {  # cov2cor(sym(R + eps I)); R_fit is exactly symmetric, so sym() is the identity here
+  diag(R) <- diag(R) + eps
+  stats::cov2cor((R + t(R)) / 2)
+}
+read_window <- function(d) {
+  hdr <- strsplit(system(sprintf("gunzip -c %s | head -1", shQuote(d$sumstats)), intern = TRUE), "\t")[[1]]
+  w <- system2(tabix, c(d$sumstats, sprintf("%s:%s-%s", d$chrom, d$start, d$end)), stdout = TRUE)
+  ss <- if (length(w)) fread(text = paste(w, collapse = "\n"), header = FALSE, col.names = hdr,
+                             colClasses = "character", sep = "\t") else
+    as.data.table(setNames(replicate(length(hdr), character(0), simplify = FALSE), hdr))
+  for (cn in c("REF", "ALT", "SNP_ID")) if (!cn %in% names(ss)) ss[, (cn) := NA_character_]
+  ss[, POS := as.numeric(POS)]
+  ss[SNP_ID == "" | SNP_ID == "NA", SNP_ID := NA_character_]
+  ss[CHR == as.character(d$chrom) & POS >= as.numeric(d$start) & POS <= as.numeric(d$end)]
+}
+one <- function(f) {
+  d <- fromJSON(f$json)
+  fit <- readRDS(f$rds)
+  cov <- fit$sets$requested_coverage
+  if (is.null(cov) || !isTRUE(all.equal(as.numeric(cov), as.numeric(f$credible_set), tolerance = 0)))
+    STOP("%s: sets$requested_coverage %s != --credible-set %s", f$label, format(cov %||% "NULL"), f$credible_set)
+  conv <- as.character(d$convergence_status %||% "")
+  base <- sub(";identity_fallback$", "", conv)
+  order <- if (grepl("identity_fallback", conv)) "identity" else switch(base,
+    converged_primary = "panel", converged_max_iter = "panel", converged_regularized = "regularized",
+    non_converged = c("regularized", "panel_fallback"),
+    STOP("%s: unknown convergence_status %s", f$label, conv))
+  n <- ncol(fit$alpha); nm <- colnames(fit$lbf_variable)
+  cand <- sort(unique(as.integer(unlist(susieR::susie_get_cs(fit, coverage = cov)$cs))))
+  row <- list(label = f$label, convergence_status = conv, n_sets_stored = length(fit$sets$cs))
+  # map the candidate members to panel rows (15.7c resolve_fit_names, then position + alleles)
+  P <- readRDS(d$ld_file_declared)
+  unmapped <- character(0); idx <- integer(0)
+  if (length(cand)) {
+    res <- resolve_fit_names(nm[cand], read_window(d), fread(d$variant_catalog_path, colClasses = "character"),
+                             P$variants, isTRUE(f$allow_duplicate_rows))
+    p <- panel_alleles(P$variants); pk <- paste(p$chr, p$pos, p$ref, p$alt, sep = ":")
+    idx <- vapply(seq_len(nrow(res)), function(j) {
+      if (res$status[j] != "ok") return(NA_integer_)
+      h <- which(pk == paste(res$chr[j], res$pos[j], res$ref[j], res$alt[j], sep = ":"))
+      if (!length(h)) h <- which(pk == paste(res$chr[j], res$pos[j], res$alt[j], res$ref[j], sep = ":"))
+      if (length(h) == 1) h else NA_integer_
+    }, integer(1))
+    unmapped <- nm[cand][is.na(idx)]
+  }
+  if (length(unmapped)) {
+    rm(P); gc(verbose = FALSE)
+    return(c(row, list(scored_matrix = "unmapped", unmapped = paste(head(unmapped, 10), collapse = ","),
+                       n_unmapped = length(unmapped))))
+  }
+  R_fit <- diag(n)
+  if (!is.null(P$R) && length(cand)) {
+    sub <- as.matrix(P$R)[idx, idx, drop = FALSE]
+    sub <- (sub + t(sub)) / 2; diag(sub) <- 1
+    R_fit[cand, cand] <- sub
+    rm(sub)
+  }
+  rm(P); gc(verbose = FALSE)
+  if (identical(order, "identity")) R_fit <- diag(n)
+  X <- NULL; cp <- NULL; chk <- NULL; label <- NA_character_; why <- character(0)
+  for (o in order) {
+    X <- if (o == "regularized") creg(R_fit) else R_fit
+    cp <- comp(fit, X, cov); chk <- check(fit, cp, cov)
+    if (chk$ok) { label <- o; break }
+    why <- c(why, sprintf("%s: %s", o, chk$why)); X <- NULL; gc(verbose = FALSE)
+  }
+  if (is.na(label)) STOP("%s (%s): no candidate matches the stored sets (%s)", f$label, conv,
+                         paste(why, collapse = "; "))
+  n_exact <- length(pinned(fit, X, cov, 0.5)$cs)
+  if (n_exact != sum(cp$pur >= 0.5)) STOP("%s: pinned count %d != included components at 0.5", f$label, n_exact)
+  multi <- chk$checked[chk$csize >= 2]
+  discriminating <- length(multi) > 0
+  diff <- NA_real_
+  if (label == "identity") {
+    n_alt <- n_exact
+  } else if (label == "panel") {  # analytic: C_reg off-diagonals are R_fit's / (1 + eps)
+    alt <- ifelse(cp$size == 1, cp$pur, cp$pur / (1 + eps))
+    n_alt <- sum(alt >= 0.5)
+    if (discriminating) diff <- max(abs(cp$pur - alt)[match(multi, cp$idx)])
+  } else {  # the other candidate, built directly: R_fit for regularized, C_reg for panel_fallback
+    rm(X); gc(verbose = FALSE)
+    Xa <- if (label == "regularized") R_fit else creg(R_fit)
+    ca <- comp(fit, Xa, cov)
+    n_alt <- length(pinned(fit, Xa, cov, 0.5)$cs)
+    if (discriminating) diff <- max(abs(cp$pur[match(multi, cp$idx)] - ca$pur[match(multi, ca$idx)]))
+    rm(Xa)
+  }
+  if (!discriminating && n_alt != n_exact)
+    STOP("%s (%s): not discriminating and n_sets_exact %d != n_sets_exact_alt %d", f$label, label, n_exact, n_alt)
+  rm(R_fit); gc(verbose = FALSE)
+  c(row, list(n_sets_exact = n_exact, n_sets_exact_alt = n_alt, n_sets_checked = length(chk$checked),
+              scored_matrix = label, discriminating = discriminating, max_abs_purity_diff = diff,
+              max_abs_resid = chk$resid))
+}
+out <- lapply(spec$fits, one)
+writeLines(toJSON(out, auto_unbox = TRUE, digits = NA, na = "string"), a[2])
+"""
+
+
+def _exact_fit_states(rscript, docs, where, repo, policy_path, fits_tsv, pilot):
+    """{key: exact set count, or None if unmapped} for every fitted key (docs[k] not early); writes fits_tsv."""
+    repo = Path(repo)
+    eps = regularization_eps(policy_path, repo)
+    tabix = Path(rscript).parent / "tabix"
+    if not tabix.is_file():
+        raise PurityIdentityError(f"PURITY_STOP: no tabix next to {rscript}")
+    fitted = [k for k in sorted(docs) if docs[k] is not None and docs[k].get("status") not in EARLY]
+    spec = {"variant_match": str(REPO_VARIANT_MATCH), "eps": repr(eps), "tol": repr(PURITY_TOL), "tabix": str(tabix),
+            "fits": [{"label": "|".join(k), "json": where(k)[0], "rds": where(k)[1],
+                      "credible_set": repr(credible_set(k[0], repo)), "allow_duplicate_rows": k not in pilot}
+                     for k in fitted]}
+    import tempfile
+
+    with tempfile.TemporaryDirectory(dir=repo) as td:
+        sp, op, rp = Path(td, "spec.json"), Path(td, "out.json"), Path(td, "exact_purity.R")
+        sp.write_text(json.dumps(spec))
+        rp.write_text(_EXACT_R)  # a script file: Rscript -e would join the lines and a comment would swallow the rest
+        env = dict(os.environ, PATH=f"{Path(rscript).parent}:{os.environ.get('PATH', '')}")
+        p = subprocess.run([rscript, str(rp), str(sp), str(op)], cwd=repo, env=env, capture_output=True,
+                           text=True) if fitted else None
+        if p is not None and (p.returncode != 0 or not op.is_file()):
+            raise PurityIdentityError(p.stderr[-4000:])
+        res = json.loads(op.read_text()) if fitted else []
+    by = dict(zip(fitted, res))
+    rows, states = [], {}
+    for k, r in by.items():
+        if r["scored_matrix"] == "unmapped":
+            print(f"UNKNOWN (unmapped candidate members: {r['n_unmapped']}; first {r['unmapped']}): {r['label']}")
+            states[k] = None
+        else:
+            states[k] = int(r["n_sets_exact"])
+        rows.append({"arm": k[0], "trait": k[1], "region": k[3], "convergence_status": r["convergence_status"],
+                     "n_sets_stored": r["n_sets_stored"], "n_sets_exact": r.get("n_sets_exact", ""),
+                     "n_sets_exact_alt": r.get("n_sets_exact_alt", ""), "n_sets_checked": r.get("n_sets_checked", ""),
+                     "scored_matrix": r["scored_matrix"],
+                     "discriminating": "" if "discriminating" not in r else str(bool(r["discriminating"])),
+                     "max_abs_purity_diff": "" if r.get("max_abs_purity_diff") in (None, "NA") else
+                     repr(float(r["max_abs_purity_diff"])),
+                     "max_abs_resid": "" if r.get("max_abs_resid") in (None, "NA") else repr(float(r["max_abs_resid"]))})
+    if fits_tsv is not None:
+        write_tsv(rows, FITS_COLS, fits_tsv)
+    return states
+
+
+REPO_VARIANT_MATCH = Path(__file__).resolve().parents[3] / VARIANT_MATCH_R
+
+
 def _coloc_doc(repo, arm, region, a, b):
     p = Path(repo) / repro_coloc_json(arm, region, a, b)
     return json.loads(p.read_text()) if p.is_file() else None
 
 
-def region_contribution_proxy(rscript, repo="."):
-    """Per confirmatory region and contrast: proxy both-have-CS pairs from repro fits (asthma pairs excluded:
-    their repro inputs are mislocated), classification, and the discordance proxy from repro coloc outputs."""
+def region_contribution_proxy(rscript, repo=".", exact_purity=False, asthma_fit_root=None, fits_tsv=None,
+                              policy_path=POLICY_REPRO):
+    """Per confirmatory region and contrast: proxy both-have-CS pairs from repro fits, classification, and the
+    discordance proxy from repro coloc outputs. Default: asthma pairs excluded (their repro inputs are mislocated),
+    set counts as stored at fit time. asthma_fit_root: asthma read from the pilot fits there, nothing excluded.
+    exact_purity: every fitted object's count recomputed with exact purity on its scored matrix (fits_tsv rows)."""
     pairs = confirmatory_pairs(repo)
-    kept = {g: [p for p in ps if not set(p) & set(PROXY_EXCLUDED_TRAITS)] for g, ps in pairs.items()}
+    excluded = () if asthma_fit_root is not None else PROXY_EXCLUDED_TRAITS
+    kept = {g: [p for p in ps if not set(p) & set(excluded)] for g, ps in pairs.items()}
     keys = {(a, t, "EUR", g) for arms in PROXY.values() for a in arms for g, ps in kept.items() for p in ps for t in p}
-    st = _fit_states(rscript, sorted(keys), repo)
+    pilot = {k for k in keys if asthma_fit_root is not None and k[1] == "asthma"}
+
+    def where(k):
+        if k in pilot:
+            j = pilot_fit_json(asthma_fit_root, k[0], k[3])
+            return j, j[: -len(".json")] + ".fit.rds"
+        return paths.fit_json(*k), paths.fit_rds(*k)
+
+    if exact_purity:
+        docs = {}
+        for k in sorted(keys):
+            j = Path(repo) / where(k)[0]
+            docs[k] = json.loads(j.read_text()) if j.is_file() else None
+        ex = _exact_fit_states(rscript, docs, where, repo, policy_path, fits_tsv, pilot)
+        st = {k: (fit_cs_state(docs[k], 0) if k not in ex else ex[k]) for k in docs}
+    else:
+        st = _fit_states(rscript, sorted(keys), repo, where)
     rows = []
     for g in sorted(pairs):
         for contrast, arms in PROXY.items():
@@ -528,7 +819,7 @@ def driver_script(list_path, n_tasks, log_dir, repo, py):
     ])
 
 
-def main(argv=None):
+def _parser():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("plan")
@@ -544,7 +835,14 @@ def main(argv=None):
     x = sub.add_parser("proxy")
     x.add_argument("--rscript", required=True)
     x.add_argument("--tsv", required=True)
-    a = ap.parse_args(argv)
+    x.add_argument("--exact-purity", action="store_true")
+    x.add_argument("--asthma-fit-root")
+    x.add_argument("--fits-tsv")
+    return ap
+
+
+def main(argv=None):
+    a = _parser().parse_args(argv)
 
     if a.cmd == "plan":
         if not Path(a.rscript).is_absolute():
@@ -581,7 +879,12 @@ def main(argv=None):
         print(f"rows {len(rows)} measured {sum(r['method'] == 'measured' for r in rows)} "
               f"not_eligible {sum(r['eligible'] == 'false' for r in rows)}")
         return 0
-    rows = region_contribution_proxy(a.rscript)
+    if a.exact_purity and not a.fits_tsv:
+        raise SystemExit("--exact-purity needs --fits-tsv")
+    if a.exact_purity and not Path(a.rscript).is_absolute():
+        raise SystemExit(f"--rscript {a.rscript} must be absolute")
+    rows = region_contribution_proxy(a.rscript, exact_purity=a.exact_purity, asthma_fit_root=a.asthma_fit_root,
+                                     fits_tsv=a.fits_tsv)
     write_tsv(rows, PROXY_COLS, a.tsv)
     totals = proxy_totals(rows)
     for c, t in totals.items():
