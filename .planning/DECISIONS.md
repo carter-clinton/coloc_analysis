@@ -3400,3 +3400,28 @@ Carter reply (verbatim, selected option): A: Keep it as today, logged as the leg
 - **Not authorized:** Track B rule files (`qtl_coloc.smk`, `negative_controls.smk`), `config/pph4_thresholds.yaml`,
   `decision_rules.yaml` (stays `locked: false`), a production fit, OSF posting, a push.
 - Lifts nothing under D-28.
+
+## 2026-11-20 — DEC-2026-11-20-ta-r4-null-window-reselection: the null-window selection is re-run on the production inputs with the unchanged rule and seed (Carter, Q-F9 A)
+
+- **Decider:** Carter, 2026-11-20, reply saved verbatim (committed in 15.7a; gate_reply.py Q-F9 passed in 15.7h):
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F9-reply-2026-11-20.txt` (sha256
+  `c2cc991553859fa2e40537edfff92677d16439a5956796d08f1fe81d337cc089`):
+
+```text
+Question Q-F9 (2026-11-20): The 10 null windows were drawn (seed 20261021) from a 2,865-candidate pool built on the superseded, unlifted asthma inputs. On the corrected inputs the same rule gives 2,886 candidates (2,745 shared). All 10 current windows still qualify, but the same seed now keeps only 2 of 10 (11:21500001 and 13:71000001). No fits have been run on null windows, so either choice is outcome-blind. Re-running needs 6 UKB tiles not on disk (~7 GB, public Broad S3, checksummed). Which?
+Carter reply (verbatim, selected option): A: Re-run the selection on the production inputs (Recommended)
+```
+
+- **Scope (plan 15.7h, review F9).**
+  - `select_null_windows.py` runs on the 8 production inputs (sha256 checked against `sumstats_r4_sha256.tsv` by
+    `path`) with the unchanged rule (window 250,000, pmax 1e-5, min_variants 200, n_select 10) and seed 20261021.
+    The driver also accepts manifests keyed by `path`; no rule change.
+  - The superseded selection (2,865 candidates, built on the unlifted asthma inputs and the original BMI file) is kept
+    as `manifests/null_windows_selection.superseded-2026-10-21.tsv` and disclosed in DRAFT (l).
+  - The 6 UKB tiles the new windows need are fetched from the public Broad S3 bucket with `fetch_tile`
+    (ETag/MD5, Content-Length, magic bytes) and appended to `ukb337k_tiles_sha256.tsv`.
+  - `regions_r4.csv` is re-emitted; the NC_NULL catalogs and the 5 EUR panel sets are rebuilt for the changed
+    windows only and their rows re-pinned; NC_NULL fit eligibility is re-measured (no fitting).
+- **Not authorized:** a change of rule or seed, any fit or colocalization on a null window, catalogs or panels of any
+  other region, Track B paths, `decision_rules.yaml` (stays `locked: false`), n_regions_min, OSF posting, a push.
+- Lifts nothing under D-28.
