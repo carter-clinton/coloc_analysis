@@ -26,7 +26,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-20 (evening) — **TRACK A ta-r4: W3f 15.7b COMPLETE (F4 F6 F7 completeness by identity). NEXT = 15.7c. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-20 (night) — **TRACK A ta-r4: W3f 15.7a + 15.7b COMPLETE; 15.7c FULL RUNNING (Slurm 2010023). Chain --auto continues to 15.7i. NOT PUSHED (3 ahead).** (★ RESUME HERE — LATEST ★)
+
+- 15.7a (F1) 420aa998/6ff8c0de, 15.7b (F4 F6 F7) 5fce26a8/0351c628: FULL 2,587 and 2,618, each verified per id by the orchestrator (0 removed, 0 outcome changes). Pushed through 5fce26a8.
+- 15.7c (F10) code e1422df1: fit-name rebuild 20/20 exact; 9 mutation NCs OK; no-weaken PASS; FULL running (QUICK 820P/2S, HEAVY 315P/5S, PINS 39P). Expect 2,636 = 2,583 P / 53 S / 0 F with 7 declared spec updates. Orchestrator to ask the executor to justify the M5 palindromic-test prediction change from the fixture.
+- Running: session c8312220 in tmux `coloc` on login02 (15.7c executor subagent). Chain runs 15.7d → e → f → g → h → h2 (20 asthma repro pilot fits), STOPS at 15.7i for Carter's v3 F15 paragraph.
+- Side findings (Track B inventory, legacy dup keys) are in HANDOFF `ta_r4_w3f_15_7.side_findings_2026_11_20`; four optional Carter decisions, none urgent.
+- RESUME: `.planning/HANDOFF.json` `resume_on_reconnect` + `ta_r4_w3f_15_7`.
+
+## 2026-11-20 (evening) — **TRACK A ta-r4: W3f 15.7b COMPLETE (F4 F6 F7 completeness by identity). NEXT = 15.7c. NOT PUSHED.** (SUPERSEDED by the 2026-11-20 night block above)
 
 - Commits (local only): 5fce26a8 (id_reconcile, _sim identity, _qtl_coverage, tierable --manifest, QTL empty summary → none, 31 tests, DRAFT (l)) and the 15.7b records commit.
 - FULL Slurm 2008417: 2,618 = 2,565 P / 53 S / 0 F; vs full_15_7a.xml 0 removed / +31 / 0 changes (check_15_7b.py PASS). Base for 15.7c: `data/r4/tmp/w3f/q157/full_15_7b.xml`.
@@ -2746,7 +2754,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-20 (latest) - SESSION CLOSE: W3f 15.5b, 15.5c, 15.6 complete and pushed (553c8fc8); 15.6 re-review → 12 OPEN blockers; Carter chose 15.7 code fix-up; 15.7 planner running in session c8312220 (tmux coloc, login03).
+Last activity: 2026-11-20 night (latest) - SESSION CLOSE: 15.7a, 15.7b complete; 15.7c FULL Slurm 2010023 running; chain continues to 15.7i; session c8312220 in tmux coloc (login02); 3 commits not pushed.
+Last activity (PRIOR): 2026-11-20 - SESSION CLOSE: W3f 15.5b, 15.5c, 15.6 complete and pushed (553c8fc8); 15.6 re-review → 12 OPEN blockers; Carter chose 15.7 code fix-up; 15.7 planner running in session c8312220 (tmux coloc, login03).
 Last activity (PRIOR): 2026-11-18 - SESSION CLOSE: 15.5 closing (executor a18335bd8bbf594bc, Slurm close_b 1970723 FULL running); plan 15.5b (Carter a1 keep-SNV) committed bb084f24, not pushed (push approved with the 15.5 commits); session c8312220 in tmux 'coloc' on login02.
 Last activity (PRIOR): 2026-11-17 - SESSION CLOSE: Carter chose option 1 (fix both ends) for the r4 duplicate catalog keys; plan 15.5a committed (79ff8dc2, DEC c6c450fc); executor running in session c8312220 at Task 1 RED; not pushed.
 Last activity (PRIOR-2): 2026-11-09 - SESSION CLOSE: W3f 15.1-15.4 pushed (fa0ebdb9); 15.5 interrupted (session b1f97279 died, WIP uncommitted); nothing running.
