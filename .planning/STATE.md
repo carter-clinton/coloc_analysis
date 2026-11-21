@@ -26,7 +26,13 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-20 (late night, later) — **TRACK A ta-r4: W3f 15.7d COMPLETE (F12 A1 allvars secondary table). NEXT = 15.7e. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-21 (after midnight) — **TRACK A ta-r4: W3f 15.7e COMPLETE (F8 F11 known-state no-CS, NC rates by method; Carter Q-DEN A). NEXT = 15.7f. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 699fdb23 (DEC-2026-11-20-ta-r4-none-rows-denominators), 8d272492 (early-exit pair docs keep the completed side's n_cs + early_exit_a/b; e4_no_cs_rate n_unknown / no_cs_rate_known; negative_controls long by method + with_posterior; 12 tests; 1 declared spec update; DRAFT (e) (l)) and the 15.7e records commit.
+- FULL Slurm 2012884: 2,654 = 2,601 P / 53 S / 0 F; vs full_15_7d.xml 0 removed / +12 / 0 changes (check_15_7e.py PASS). Confirmatory tables byte-identical to f20b667b on the fixture. Base for 15.7f: `data/r4/tmp/w3f/q157/full_15_7e.xml`.
+- decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-20 (late night, later) — **TRACK A ta-r4: W3f 15.7d COMPLETE (F12 A1 allvars secondary table). NEXT = 15.7e. NOT PUSHED.** (SUPERSEDED by the 15.7e block above)
 
 - Commits (local only): 1cf179d1 (table a1_allvars_secondary, A1_allvars vs A3_1kg EUR and vs AFR661_A3 AFR via e6_panel_contrast; row_drops family a1_allvars; 6 tests; declared rename _19_ → _20_ tables; 1 declared spec update; DRAFT (e)) and the 15.7d records commit.
 - FULL Slurm 2011462: 2,642 = 2,589 P / 53 S / 0 F; vs full_15_7c.xml −1 rename / +7 / 0 changes (check_15_7d.py PASS). Confirmatory tables byte-identical to 7b1e0fd2 on the fixture. Base for 15.7e: `data/r4/tmp/w3f/q157/full_15_7d.xml`.

@@ -1278,3 +1278,24 @@ index c517ffb7..a0ffd52e 100644
   changes, tests/m3 0, declared spec update passed → passed. check_15_7d.py PASS; its NCs (base as new; synthetic
   failure on the declared id) FAIL.
 - No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+## 2026-11-20 — W3f 15.7e (review F8 F11: known-state no-CS and NC rates by method; Carter Q-DEN A; no push)
+
+- Gate: `$Q/gate_reply.py Q-DEN` printed "A: Known states only (Recommended)" and 0775b935…b832c, rc 0 (`$Q/gate_15_7e.txt`).
+- Start f20b667b (`$Q/start_15_7e.txt`) = the test literal PRE_157E_REF. DEC-2026-11-20-ta-r4-none-rows-denominators
+  (699fdb23) quotes the reply file, cmp-identical.
+- RED (`$Q/red_15_7e.txt`): tests 1-5, 7-11 and the declared assert FAIL; 6 and 12 PASS; test_e4_no_cs_rate and
+  test_e4_no_cs_rate_levels_and_denominators PASS with their values, as measured at planning.
+- GREEN (8d272492): R early-exit branch keeps the completed side's n_cs, records early_exit_a / early_exit_b (early-exit
+  docs only; fitted docs' exact key set unchanged); e4_no_cs_rate n_unknown + no_cs_rate_known; negative_control_rates
+  long by method + with_posterior (n_fallback_abf), none share NaN. Declared spec update
+  test_row_counts_equal_fixture_admissible_rows. Task 1 verify + test_coloc_pair_r4.py, Slurm 2012646: 103 P / 2 S.
+- Mutation NCs: light M1-M10 (`$Q/mutation_nc_15_7e_light.txt`) and heavy H1-H2 (Slurm 2012849) each fail exactly
+  their predicted tests, source md5-restored. Heavy run 1 (Slurm 2012775) mispredicted H1 (test 2 also asserts the
+  completed side's n_cs); prediction corrected, no code or test changed. No-weaken AST PASS; its 4 NCs FAIL.
+- DRAFT (e) E4 pair level and (l) NC share rewritten (`$Q/draft_15_7e.py`); test_amendment_text green.
+- FULL Slurm 2012884 (cascadelake c023n03, HEAD 8d272492): QUICK 836 P / 2 S; HEAVY 317 P / 5 S; PINS 39 P; FULL
+  2,654 = 2,601 P / 53 S / 0 F. vs full_15_7d.xml: 0 removed, +12 (all passed), 0 outcome changes, tests/m3 0,
+  declared spec update passed → passed. check_15_7e.py PASS; its NCs (base as new; synthetic failure on the declared
+  id) FAIL.
+- No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
