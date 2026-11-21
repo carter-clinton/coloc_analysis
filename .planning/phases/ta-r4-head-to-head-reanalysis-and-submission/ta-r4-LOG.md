@@ -1259,3 +1259,22 @@ index c517ffb7..a0ffd52e 100644
 - Deviations: a fit-panel check was added beside the catalog check (Rule 2); test 10 is marked r4_heavy; the region id
   is derived in _rscript_purity.
 - No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+## 2026-11-20 — W3f 15.7d (review F12: A1 allvars secondary table; no push)
+
+- Start 7b1e0fd2 (`$Q/start_15_7d.txt`), written into the test as the literal PRE_157D_REF.
+- RED (`$Q/red_15_7d.txt`): tests 1-5 FAIL (table absent; family absent), test 6 PASS, as planned.
+- GREEN (1cf179d1): A1_ALLVARS_EUR / A1_ALLVARS_AFR; table `a1_allvars_secondary` (20th, after afr_secondary) =
+  e6_panel_contrast over the confirmatory EUR ids and the AFR ids, with an ancestry column; row_drops family
+  `a1_allvars`. Declared rename test_draft_writes_exactly_19_draft_tables → _20_ (TABLES tuple gains the table);
+  declared spec update test_row_drops_and_long_e6_tables (family set gains a1_allvars). Task 1 verify 59 P / 2 S.
+- Mutation NCs (`$Q/mutation_nc_15_7d.txt`): 6 mutations, each failing exactly its predicted tests, source md5-restored.
+  Run 1 (`$Q/mutation_nc_15_7d_run1_mispredicted.txt`): M4 also fails test_branch_outcomes_two_confirmatory_rows (it
+  checks via), M5 also fails test 2 (it asserts the AFR n); predictions corrected, no code or test changed.
+  No-weaken AST PASS (`$Q/noweaken_15_7d.txt`); its 5 NCs FAIL.
+- DRAFT (e): one insertion after the AFR sentence (`$Q/draft_15_7d.py`); test_amendment_text green.
+- FULL Slurm 2011462 (cascadelake c020n03, HEAD 1cf179d1): QUICK 826 P / 2 S; HEAVY 315 P / 5 S; PINS 39 P; FULL
+  2,642 = 2,589 P / 53 S / 0 F. vs full_15_7c.xml: removed 1 (the _19_ id), +7 (6 new + _20_, all passed), 0 outcome
+  changes, tests/m3 0, declared spec update passed → passed. check_15_7d.py PASS; its NCs (base as new; synthetic
+  failure on the declared id) FAIL.
+- No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.

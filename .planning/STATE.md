@@ -26,7 +26,13 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-20 (late night) — **TRACK A ta-r4: W3f 15.7c COMPLETE (F10 cross-panel purity variant resolution). NEXT = 15.7d. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-20 (late night, later) — **TRACK A ta-r4: W3f 15.7d COMPLETE (F12 A1 allvars secondary table). NEXT = 15.7e. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 1cf179d1 (table a1_allvars_secondary, A1_allvars vs A3_1kg EUR and vs AFR661_A3 AFR via e6_panel_contrast; row_drops family a1_allvars; 6 tests; declared rename _19_ → _20_ tables; 1 declared spec update; DRAFT (e)) and the 15.7d records commit.
+- FULL Slurm 2011462: 2,642 = 2,589 P / 53 S / 0 F; vs full_15_7c.xml −1 rename / +7 / 0 changes (check_15_7d.py PASS). Confirmatory tables byte-identical to 7b1e0fd2 on the fixture. Base for 15.7e: `data/r4/tmp/w3f/q157/full_15_7d.xml`.
+- decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-20 (late night) — **TRACK A ta-r4: W3f 15.7c COMPLETE (F10 cross-panel purity variant resolution). NEXT = 15.7d. NOT PUSHED.** (SUPERSEDED by the 15.7d block above)
 
 - Commits (local only): e1422df1 (variant_match.R shared matcher; cs_cross_purity.R resolves members through the fit's sumstats, catalog and panel, located by position + alleles; run_aggregation passes them and checks the fit JSON's catalog / panel; 18 tests; 7 declared spec updates; DRAFT (e) E4) and the 15.7c records commit.
 - Fit names rebuilt 20/20 exact on the real pilot fits before RED. FULL Slurm 2010023: 2,636 = 2,583 P / 53 S / 0 F; vs full_15_7b.xml 0 removed / +18 / 0 changes (check_15_7c.py PASS). Base for 15.7d: `data/r4/tmp/w3f/q157/full_15_7c.xml`.
