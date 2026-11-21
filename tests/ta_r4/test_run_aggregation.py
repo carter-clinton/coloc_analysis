@@ -22,8 +22,8 @@ SRC = REPO_ROOT / "src/python/ta_r4/run_aggregation.py"
 MAN_REL = ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests"
 TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_finemap_structure",
           "e4_no_cs_rate", "e4_cross_purity", "e5_diagnostics", "e6_panel_contrast", "e7_frozen_vs_fixed",
-          "e8_simulation_rates", "afr_secondary", "negative_controls", "qtl_layer", "min_abs_corr_sweep",
-          "hla_exploratory", "table1_data", "row_drops", "qtl_rows")
+          "e8_simulation_rates", "afr_secondary", "a1_allvars_secondary", "negative_controls", "qtl_layer",
+          "min_abs_corr_sweep", "hla_exploratory", "table1_data", "row_drops", "qtl_rows")
 QTL_ARMS = ("QTL_A3", "QTL_A2", "QTL_legacy")
 QTL_SUMMARY_HEAD = ("qtl_coloc_id\tqtl_source\ttissue\tgene_id\tregion\tancestry\tn_snps_overlap\tqtl_n\tqtl_sdy"
                     "\tn_cs_gwas\tn_cs_qtl\tstatus\tPP.H0.abf\tPP.H1.abf\tPP.H2.abf\tPP.H3.abf\tPP.H4.abf\thit1\thit2"
@@ -155,7 +155,7 @@ def test_cli_exit_2_without_draft(tmp_path):
     assert not (tmp_path / "out").exists() or not any((tmp_path / "out").iterdir())
 
 
-def test_draft_writes_exactly_19_draft_tables(tmp_path):
+def test_draft_writes_exactly_20_draft_tables(tmp_path):
     from ta_r4.run_aggregation import TABLES as T
 
     build_tree(tmp_path / "repo")
@@ -340,7 +340,7 @@ def test_row_drops_and_long_e6_tables(drafted):
     assert set(conf.p12_key) == set(P12) and set(conf.side) == {"x", "ref"}
     assert len(conf) == 2 * 2 * 2
     assert set(conf.n_expected) == {15} and set(conf.n_output) == {15} and set(conf.n_method_none) == {0}
-    assert set(rd.family) == {"confirmatory", "e6", "afr_secondary"}
+    assert set(rd.family) == {"confirmatory", "e6", "afr_secondary", "a1_allvars"}
     assert set(rd.loc[rd.family == "afr_secondary", "n_expected"]) == {0}
     for name in ("e6_panel_contrast", "afr_secondary"):
         t = _read(root / "out", name)

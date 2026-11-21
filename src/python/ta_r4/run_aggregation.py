@@ -30,8 +30,8 @@ from ta_r4.id_reconcile import reconcile, stable_index
 
 TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclassification", "e4_finemap_structure",
           "e4_no_cs_rate", "e4_cross_purity", "e5_diagnostics", "e6_panel_contrast", "e7_frozen_vs_fixed",
-          "e8_simulation_rates", "afr_secondary", "negative_controls", "qtl_layer", "min_abs_corr_sweep",
-          "hla_exploratory", "table1_data", "row_drops", "qtl_rows")
+          "e8_simulation_rates", "afr_secondary", "a1_allvars_secondary", "negative_controls", "qtl_layer",
+          "min_abs_corr_sweep", "hla_exploratory", "table1_data", "row_drops", "qtl_rows")
 KNOWN_W3A = f"{paths.MAN}/known_answer_W3a.tsv"
 KNOWN_SH2B3 = f"{paths.MAN}/known_answer_sh2b3.tsv"
 SIM_DIR = f"{paths.R4}/results/sim"
@@ -57,6 +57,9 @@ E6 = (("A3_ukb", "A3_1kg", "native", "both methods coloc_susie"),
 AFR = (("AFR661_A2", "AFR661_A3", "matched", "both methods coloc_susie"),
        ("A1_matched", "AFR661_A3", "matched", "AFR661_A3 method coloc_susie"),
        ("AFR504_A3", "AFR661_A3", "matched", "both methods coloc_susie"))
+#: A1 on all variants, secondary and descriptive (D-21): EUR on the confirmatory row ids, AFR on the AFR ids
+A1_ALLVARS_EUR = (("A1_allvars", "A3_1kg", "allvars", "A3_1kg method coloc_susie"),)
+A1_ALLVARS_AFR = (("A1_allvars", "AFR661_A3", "allvars", "AFR661_A3 method coloc_susie"),)
 HLA = ("A3_ukb", "HLA_6p21")
 HLA_NOTE = "exploratory A3_ukb fit; no coloc row: no admissible comparator panel (D-24)"
 PURITY_COLS = ["fit_arm", "panel_arm", "fit_status", "trait", "ancestry", "region_safe", "cs", "size",
@@ -391,6 +394,10 @@ def build_tables(repo, rules, man, rows, fits, purity_runner, *, final):
     t["e8_simulation_rates"] = _e8(repo, rules, final=final)
     afr_ids = _ids(man, rules, ancestry="AFR")
     t["afr_secondary"] = estimands.e6_panel_contrast(rows, fits, rules, afr_ids, AFR, P12_KEYS)
+    av = [estimands.e6_panel_contrast(rows, fits, rules, i, c, P12_KEYS).assign(ancestry=anc)
+          for anc, i, c in (("EUR", ids, A1_ALLVARS_EUR), ("AFR", afr_ids, A1_ALLVARS_AFR))]
+    av = pd.concat(av, ignore_index=True)
+    t["a1_allvars_secondary"] = av[["ancestry", *[c for c in av.columns if c != "ancestry"]]]
     t["negative_controls"] = estimands.negative_control_rates(rows, float(rules["threshold_primary"]))
     t["qtl_layer"] = layer
     t["min_abs_corr_sweep"] = estimands.min_abs_corr_sweep(fits)
@@ -408,6 +415,8 @@ def build_tables(repo, rules, man, rows, fits, purity_runner, *, final):
     drops.append(estimands.row_drop_table(rows, man[man.row_id.isin(ids)], E6, P12_KEYS).assign(family="e6"))
     drops.append(estimands.row_drop_table(rows, man[man.row_id.isin(afr_ids)], AFR, P12_KEYS).assign(
         family="afr_secondary"))
+    drops += [estimands.row_drop_table(rows, man[man.row_id.isin(i)], c, P12_KEYS).assign(family="a1_allvars")
+              for i, c in ((ids, A1_ALLVARS_EUR), (afr_ids, A1_ALLVARS_AFR))]
     rd = pd.concat(drops, ignore_index=True)
     nc = [c for c in rd.columns if c.startswith("n_none_")]
     rd[nc] = rd[nc].fillna(0).astype(int)
