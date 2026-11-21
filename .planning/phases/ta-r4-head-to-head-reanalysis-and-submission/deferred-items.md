@@ -23,3 +23,10 @@
     - test_contrast_stats::test_category_edges[kw11-kappa_ok-True], [kw12-kappa_ok-False], [kw13-kappa_ok-True],
       [kw14-kappa_ok-False] -> [kw12-kappa_ok-True], [kw13-kappa_ok-False], [kw14-kappa_ok-True], [kw15-kappa_ok-False]
       (92caa306, N7 inserted one mcnemar case; [kw11-mcnemar-ns] present)
+
+## 2026-11-21 — 15.7g (review F3; Carter Q-F3 B, Q-F3B A)
+
+- Track B pph4_threshold_sweep (no GWAS table) keeps the legacy QTL-as-GWAS sweep (review F3; Q-F3B A); it is logged
+  as legacy at run time. Rule `pph4_threshold_sweep` (`src/snakemake/rules/negative_controls.smk`) calls
+  `assign_tiers.py --sweep` without `--gwas-coloc`, so the tier definitions cannot be applied; `sweep_tiers` without
+  a GWAS table returns what it returned before 15.7g and logs a warning naming the legacy rule. Not fixed (Carter).

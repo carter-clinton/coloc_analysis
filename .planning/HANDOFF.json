@@ -77,7 +77,8 @@
     "Do NOT quote the superseded Rao-Scott figures (1.652/0.0366, 1.564/0.0556, 1.969) as current.",
     "Do NOT trust gsutil/gcloud EXIT 0 on empty output; use PIPESTATUS[0] after pipes; sum large byte counts with %.0f.",
     "No OSF contact, no Seth contact, by any agent. Never edit the posted amendments in-repo.",
-    "NEVER git add -A / git add . on this GPFS tree — explicit paths only. No worktree isolation."
+    "NEVER git add -A / git add . on this GPFS tree — explicit paths only. No worktree isolation.",
+    "W6 tripwire (15.7g, NaN rule): before E7, read data/r4/logs/QTL_legacy/qtl_tiers.log; if any line `NaN-GWAS groups: N ...` has N > 0 (a QTL region whose GWAS pairs are all method none, so QTL_legacy's qtl_tiers.tsv moved under --nan-gwas-below-threshold), STOP for Carter before E7. Not measurable before W6 (no repro_routeL pair outputs exist)."
   ],
   "prep_landmines": [
     "⚠ NEW 2026-08-04 — .planning/STATE.md's YAML FRONTMATTER DOES NOT PARSE, and has not for a long time. yaml.safe_load fails at line 17 (the `last_activity` scalar) because a 2026-06 entry embeds UNESCAPED DOUBLE QUOTES inside the double-quoted string: `_normalize_bucket(os.environ[\"WORKSPACE_BUCKET\"])`. VERIFIED PRE-EXISTING — `git show HEAD:.planning/STATE.md` fails at the SAME line, so this session's edits neither caused nor worsened it. Nothing has broken because the resume workflow reads the BODY, not the frontmatter. DELIBERATELY NOT FIXED at session close: the repair means rewriting a ~34 KB historical scalar, which is not a freeze-moment edit. Fix it in a dedicated /gsd-quick (switch last_activity to a YAML block scalar `|-`, or single-quote it) if any tool ever needs to parse it.",

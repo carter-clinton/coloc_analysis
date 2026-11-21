@@ -25,6 +25,7 @@ from ta_r4.harmonize_qtl_r4 import MANIFEST, QTL_SOURCES, group_index, harmonize
 from ta_r4.id_reconcile import reconcile
 
 QTL_SCRIPT = "src/snakemake/scripts/run_qtl_coloc.R"
+ASSIGN_TIERS = "src/python/assign_tiers.py"
 QTL_ARMS = {
     "QTL_A3": {"fit_arm": "A3_1kg", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true"},
     "QTL_A2": {"fit_arm": "A2_identity", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true"},
@@ -271,6 +272,12 @@ def gwas_coloc_table(qtl_arm, output, pair_manifest="config/ta_r4/pair_manifest.
             d = json.loads(Path(paths.coloc_json(fit_arm(qtl_arm), r["row_id"], P12_KEY)).read_text())
             w.writerow([r["row_id"], r["region_safe"], ANCESTRY, d["method"], d["pp_h4"]])
     return len(prs)
+
+
+def tiers_argv(summary, gwas, pph4, tiers, sweep, py=sys.executable):
+    """The r4_qtl_tiers assign_tiers.py command: the rule's argument order plus --nan-gwas-below-threshold."""
+    return [py, ASSIGN_TIERS, "--input", summary, "--gwas-coloc", gwas, "--pph4-config", pph4, "--output", tiers,
+            "--sweep", "--sweep-output", sweep, "--nan-gwas-below-threshold"]
 
 
 def coloc_inputs(qtl_arm, pair_manifest="config/ta_r4/pair_manifest.tsv", manifest=MANIFEST):

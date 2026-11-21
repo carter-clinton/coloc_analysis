@@ -144,8 +144,7 @@ def _tiers(summary, gwas, out):
 
 def test_tiers_from_tierable_equal_tiers_from_full(jdir, tmp_path):
     """The old exclusion of fallback rows was implicit (blank PP.H4.abf); the explicit filter changes no tier.
-    Measured side effects: all_supporting_sources narrows to sources with coloc_susie rows, and the sweep no longer
-    counts a region without any coloc_susie row as Tier C."""
+    Measured side effect: all_supporting_sources narrows to sources with coloc_susie rows."""
     assert _agg(AGG, jdir, tmp_path / "m.tsv", "--with-method-columns").returncode == 0
     assert _tierable(tmp_path / "m.tsv", tmp_path / "tierable.tsv").returncode == 0
     gwas = tmp_path / "gwas.tsv"
@@ -163,17 +162,17 @@ def test_tiers_from_tierable_equal_tiers_from_full(jdir, tmp_path):
     assert tier[("R1", "EUR")]["all_supporting_sources"] == "gtex_eqtl"
     assert full[("R2", "EUR")]["all_supporting_sources"] == "gtex_eqtl"
     assert tier[("R2", "EUR")]["all_supporting_sources"] == ""
-    # Sweep mode: on the full summary R2 (no coloc_susie row, best PP.H4.abf NaN) counts as Tier C because NaN fails
-    # every comparison in assign_tier; on the tierable summary it has no row and is not counted.
+    # Sweep mode (15.7g): the tier definitions at each threshold on the GWAS table. R1 (GWAS 0.92, QTL 0.9) is Tier A
+    # at every threshold; R2 (GWAS 0.85, no QTL PP.H4 on either summary) is Tier C at 0.5-0.8 and below at 0.9.
     sweep = {}
     for k in ("full", "tierable"):
         with open(tmp_path / f"t_{k}.tsv.sweep") as fh:
             sweep[k] = {r["threshold"]: r for r in csv.DictReader(fh, delimiter="\t")}
     assert set(sweep["full"]) == set(sweep["tierable"]) == {"0.5", "0.7", "0.8", "0.9"}
-    for thr, f in sweep["full"].items():
-        t = sweep["tierable"][thr]
-        assert (f["n_tier_a"], f["n_tier_b"]) == (t["n_tier_a"], t["n_tier_b"]) == ("1", "0"), thr
-        assert (f["n_tier_c"], t["n_tier_c"]) == ("1", "0"), thr
+    want = {"0.5": ("1", "0", "1"), "0.7": ("1", "0", "1"), "0.8": ("1", "0", "1"), "0.9": ("1", "0", "0")}
+    for k in ("full", "tierable"):
+        for thr, r in sweep[k].items():
+            assert (r["n_tier_a"], r["n_tier_b"], r["n_tier_c"]) == want[thr], (k, thr)
 
 
 @pytest.mark.r4_heavy
