@@ -1299,3 +1299,42 @@ index c517ffb7..a0ffd52e 100644
   declared spec update passed → passed. check_15_7e.py PASS; its NCs (base as new; synthetic failure on the declared
   id) FAIL.
 - No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+## 2026-11-21 — W3f 15.7f (review F2: exact credible-set purity, GWAS and QTL; Carter Q-F2 A, Q-F2Q i; no push)
+
+- Gates: `$Q/gate_reply.py Q-F2` printed "A: Exact purity, third unfreeze (Recommended)" and 57886063…c52e5a, rc 0;
+  `Q-F2Q` printed "i: Same treatment on the QTL side (Recommended)" and 63a54f5f…ab790e, rc 0 (`$Q/gate_15_7f.txt`).
+- Start 78f62719 (`$Q/start_15_7f.txt`) = the test literal PRE_157F_REF. DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze
+  and DEC-2026-11-20-ta-r4-qtl-exact-purity-flag (29de2a4d) quote the reply files, cmp-identical.
+- susieR 0.14.2 `get_purity`: `if (length(pos) > n) pos = sample(pos, n)`, n = n_purity = 100; `susie_get_cs` and
+  `susie_suff_stat` forward `n_purity`; coloc 5.2.3 `runsusie` forwards `...` to `susie_rss`; `annotate_susie` does not
+  recompute purity.
+- Flip measurement (c3c76ba2, before any code change; `$Q/purity_flip_measure.R`, Slurm 2014394 cascadelake c020n04):
+  20 A3_1kg_newcat pilot fits, every panel sha256 = its manifest row, every fit variable resolved (variant_match.R,
+  allow_duplicate_rows). Identity checks (i) 19/19 stored sets = alpha 95% sets, (ii) 19/19 stored purities (all
+  <= 100 members) exact within 1e-12 (non_converged fits on R/(1+eps)). 109 components with V > 1e-9 and a set > 100
+  in 12 fits (reconciled to planning). Exact min |r| 0..0.0243; share of seeds 1..1000 with subsample min >= 0.5 is
+  0.000 for all 109; kept 0/109; demonstrated flips 0 (none of the pilot drops would change under exact purity).
+  Largest set 3,350 (asthma FTO_16q12 L3); 39 of the 109 duplicate an earlier component's set. Peak RSS 14.2 GB
+  (sacct MaxRSS).
+- QTL memory (Slurm 2014452, c021n03; PYHIN1_1q23, 15,236 variants as the set): panel + susie_get_cs 11.1 GB with
+  n_purity 100 and with n_purity all; with the run_qtl_coloc.R / runsusie / susie_rss copies live 19.3 GB, again the
+  same for both (the p x p copies and the symmetry check dominate; exact purity adds nothing measurable at the cap).
+  > 6 GB → `r4_qtl_group:mem_mb=30000` (ceil(19.7 GB x 1.5)), one resource line; test_slurm_profile 15 passed.
+- RED (`$Q/red_15_7f.txt`, Slurm 2014603): 9 failed / 4 passed. Tests 2, 3, 5, 6, 7, 9, 12, 13 failed on the missing
+  flag; 4, 8, 11 passed as planned; 10 passed (it reads the manifest committed in c3c76ba2, not the code). Test 1
+  failed on its own non-vacuity check (seeds 1-3 all drew LOW); widened to the 8 seeds before GREEN.
+- GREEN (57ddb59d): `--exact-purity` in run_susie_rss.R (ladder policy n_purity, sweep and L-saturation) and
+  run_qtl_coloc.R (both runsusie calls); fit_command non-legacy arms, qtl_command QTL_A3 / QTL_A2, simulation ladder.
+  Task 2 verify set (Slurm 2014634, pre-repin): 308 P / 2 S / 9 F, the 9 = 3 freeze pins + 1 imported R pin + 5
+  working-tree-vs-HEAD guards, all resolved by the commits.
+- Re-pin (38e4080d): R_CODE_REF 13b0821 → 57ddb59; pins 3 F / 36 P before, 39 P after.
+- Mutation NCs (`$Q/mutation_nc_15_7f.py`, Slurm 2014781 + 2015125): M1-M11 each fail exactly their predicted tests,
+  sources md5-restored. M9 run 1 (QTL default call + prior_variance 0.05) failed nothing: the prior is re-estimated and
+  the JSON is unchanged (`$Q/mutation_nc_15_7f_run1_M9_weak.txt`); with prior_variance 1e-4 fixed it fails test 11.
+- DRAFT (k) (b11b10b6, `$Q/draft_15_7f.py`); test_amendment_text 21 P / 2 S.
+- FULL Slurm 2015198 (cascadelake c020n01, HEAD b11b10b6): QUICK 839 P / 2 S; HEAVY 327 P / 5 S; PINS 39 P; FULL
+  2,667 = 2,614 P / 53 S / 0 F. vs full_15_7e.xml: 0 removed, +13 (all passed), 0 outcome changes, tests/m3 0,
+  3 declared spec updates passed → passed. check_15_7f.py PASS; its NCs (base as new; synthetic failure on a declared
+  id) FAIL, rc 1.
+- No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.

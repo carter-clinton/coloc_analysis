@@ -26,7 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-21 (after midnight) — **TRACK A ta-r4: W3f 15.7e COMPLETE (F8 F11 known-state no-CS, NC rates by method; Carter Q-DEN A). NEXT = 15.7f. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-21 (early morning) — **TRACK A ta-r4: W3f 15.7f COMPLETE (F2 exact credible-set purity, GWAS and QTL; Carter Q-F2 A, Q-F2Q i). NEXT = 15.7g. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 29de2a4d (DEC-2026-11-20-run-susie-rss-exact-purity-unfreeze + DEC-2026-11-20-ta-r4-qtl-exact-purity-flag), c3c76ba2 (pre-fix flip + memory measurement manifest; r4_qtl_group:mem_mb=30000), 57ddb59d (--exact-purity in run_susie_rss.R (third D-28 lift) and run_qtl_coloc.R; production arms, QTL_A3/QTL_A2 and the simulation ladder use it; 13 tests; 3 declared spec updates), 38e4080d (R_CODE_REF → 57ddb59), b11b10b6 (DRAFT (k)) and the 15.7f records commit.
+- Pilot exposure: 109 subsampled components in 12 of 20 fits, 0 demonstrated flips (exact min |r| <= 0.024; 0/1,000 seeded draws pass 0.5). Default paths identical to 78f62719 (tests 1 and 11).
+- FULL Slurm 2015198: 2,667 = 2,614 P / 53 S / 0 F; vs full_15_7e.xml 0 removed / +13 / 0 changes (check_15_7f.py PASS). Base for 15.7g: `data/r4/tmp/w3f/q157/full_15_7f.xml`.
+- decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-21 (after midnight) — **TRACK A ta-r4: W3f 15.7e COMPLETE (F8 F11 known-state no-CS, NC rates by method; Carter Q-DEN A). NEXT = 15.7f. NOT PUSHED.** (SUPERSEDED by the 15.7f block above)
 
 - Commits (local only): 699fdb23 (DEC-2026-11-20-ta-r4-none-rows-denominators), 8d272492 (early-exit pair docs keep the completed side's n_cs + early_exit_a/b; e4_no_cs_rate n_unknown / no_cs_rate_known; negative_controls long by method + with_posterior; 12 tests; 1 declared spec update; DRAFT (e) (l)) and the 15.7e records commit.
 - FULL Slurm 2012884: 2,654 = 2,601 P / 53 S / 0 F; vs full_15_7d.xml 0 removed / +12 / 0 changes (check_15_7e.py PASS). Confirmatory tables byte-identical to f20b667b on the fixture. Base for 15.7f: `data/r4/tmp/w3f/q157/full_15_7e.xml`.
