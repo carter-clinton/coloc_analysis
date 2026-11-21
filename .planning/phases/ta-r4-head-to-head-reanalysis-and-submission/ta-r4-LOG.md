@@ -1230,3 +1230,32 @@ index c517ffb7..a0ffd52e 100644
   FULL 2,618 = 2,565 P / 53 S / 0 F = 2,587 + 31. vs full_15_7a.xml: 0 removed, +31 (all passed), 0 outcome changes,
   tests/m3 0. check_15_7b.py PASS; NCs (base as new; synthetic failed pre-existing id) FAIL. Declared spec updates: none.
 - No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+## 2026-11-20 — W3f 15.7c (review F10: cross-panel purity variant resolution; no push)
+
+- Start 0351c628 (`$Q/start_15_7c.txt`). The real-fit route probe was re-run (Slurm 2009767, `$Q/c157/f10_real_fit_routes_rerun.tsv`) and is
+  byte-identical to the planning output. Over 20 fits: 33,438 names, 14,063 suffixed. Routes: sumstats 6,282, panel 22,092,
+  chrpos 0, unresolved 0, multi-key 0. Every suffixed name duplicates a single key (5,064 on the sumstats route, 8,999 on the panel route).
+- Name rebuild (`$Q/c157/rebuild_names.R`, same job): an independent emulation of the run_susie_rss.R chain (sumstats
+  read, window, catalog join in catalog order, allele-aware panel match, rsid override, blank → CHR:POS, make.unique)
+  compared to colnames(fit$lbf_variable) with identical(): **20/20 exact**. Override 22,092 names; make.unique 14,063; blank 0.
+- RED (`$Q/red_15_7c.txt`; the start script accepting the new options, variant_match.R absent): 13 F / 5 P as planned
+  (green 3, 5, 8, 9, 15). Test 2's first fixture (C/T, the strand complement of A/G) was corrected to A/C. Its RED
+  was re-confirmed against the start script (`$Q/c157/red_test2_refixture.txt`).
+- GREEN: variant_match.R (classification moved; panel_alleles, panel_keeps, resolve_fit_names); run_coloc_pair_r4.R
+  sources it from its own directory; cs_cross_purity.R takes the five new required arguments plus --allow-duplicate-rows,
+  and gains the route / match-kind / n_refused_multi_key columns; run_aggregation passes the fit's sumstats, catalog,
+  region id, regions csv and panel, and checks the fit JSON's catalog and panel per fit (FINAL exit 3 / DRAFT note).
+  Heavy tests 10 and 18 passed (Slurm 2009922). Superset over 29 regions, both directions: 167,956 of 167,956 kept;
+  no count is asserted. Task 1 verify (Slurm 2009987, sbatch --wait, cascadelake): 114 P / 2 S.
+- Mutation NCs (`$Q/mutation_nc_15_7c.txt`): 9 mutations, each failing exactly its predicted tests, source md5-restored.
+  Run 1 (`$Q/mutation_nc_15_7c_run1_mispredicted.txt`): M5 also fails test 5 (palindromic members resolve through the panel route);
+  M9's old string had the wrong indentation, and the count assertion caught it. No-weaken AST PASS (`$Q/noweaken_15_7c.txt`); its NC FAILs.
+- DRAFT (e) E4: one replacement (`$Q/draft_15_7c.py`); test_amendment_text 21 P / 2 S. Commit e1422df1.
+- FULL Slurm 2010023 (cascadelake c020n03, HEAD e1422df1): QUICK 820 P / 2 S; HEAVY 315 P / 5 S; PINS 39 P; FULL
+  2,636 = 2,583 P / 53 S / 0 F = 2,618 + 18. vs full_15_7b.xml: 0 removed, +18 (all passed), 0 outcome changes,
+  tests/m3 0, 7 declared spec updates passed → passed. check_15_7c.py PASS; its NCs (base as new; synthetic failure on a declared id)
+  FAIL.
+- Deviations: a fit-panel check was added beside the catalog check (Rule 2); test 10 is marked r4_heavy; the region id
+  is derived in _rscript_purity.
+- No push, no production fit, decision_rules.yaml locked: false, no OSF, n_regions_min 7.

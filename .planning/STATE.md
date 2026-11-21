@@ -26,7 +26,13 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-20 (night) — **TRACK A ta-r4: W3f 15.7a + 15.7b COMPLETE; 15.7c FULL RUNNING (Slurm 2010023). Chain --auto continues to 15.7i. NOT PUSHED (3 ahead).** (★ RESUME HERE — LATEST ★)
+## 2026-11-20 (late night) — **TRACK A ta-r4: W3f 15.7c COMPLETE (F10 cross-panel purity variant resolution). NEXT = 15.7d. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): e1422df1 (variant_match.R shared matcher; cs_cross_purity.R resolves members through the fit's sumstats, catalog and panel, located by position + alleles; run_aggregation passes them and checks the fit JSON's catalog / panel; 18 tests; 7 declared spec updates; DRAFT (e) E4) and the 15.7c records commit.
+- Fit names rebuilt 20/20 exact on the real pilot fits before RED. FULL Slurm 2010023: 2,636 = 2,583 P / 53 S / 0 F; vs full_15_7b.xml 0 removed / +18 / 0 changes (check_15_7c.py PASS). Base for 15.7d: `data/r4/tmp/w3f/q157/full_15_7c.xml`.
+- decision_rules.yaml locked: false; n_regions_min 7; no OSF; no push.
+
+## 2026-11-20 (night) — **TRACK A ta-r4: W3f 15.7a + 15.7b COMPLETE; 15.7c FULL RUNNING (Slurm 2010023). Chain --auto continues to 15.7i. NOT PUSHED (3 ahead).** (SUPERSEDED by the 15.7c block above: FULL finished, reconciled)
 
 - 15.7a (F1) 420aa998/6ff8c0de, 15.7b (F4 F6 F7) 5fce26a8/0351c628: FULL 2,587 and 2,618, each verified per id by the orchestrator (0 removed, 0 outcome changes). Pushed through 5fce26a8.
 - 15.7c (F10) code e1422df1: fit-name rebuild 20/20 exact; 9 mutation NCs OK; no-weaken PASS; FULL running (QUICK 820P/2S, HEAVY 315P/5S, PINS 39P). Expect 2,636 = 2,583 P / 53 S / 0 F with 7 declared spec updates. Orchestrator to ask the executor to justify the M5 palindromic-test prediction change from the fixture.
