@@ -3304,3 +3304,27 @@ c60e434669cdca6578e3c0445d91f83760c11f66d5a9e47b03c0699438d8439a  .planning/phas
   change to n_regions_min, a push from any 15.7 plan, a re-pin other than of an artifact a plan rebuilds or a file it is
   authorized to change.
 - Lifts nothing under D-28 itself; 15.7f's lift is the one Q-F2 A names.
+
+## 2026-11-20 — DEC-2026-11-20-ta-r4-none-rows-denominators: pair no-CS and negative-control rates use known states only (Carter, Q-DEN A)
+
+- **Decider:** Carter, 2026-11-20, reply saved verbatim, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-DEN-reply-2026-11-20.txt` (sha256
+  `0775b93555759dcea462f83a9cfe11b7364672021934a9daa8aac4766d5b832c`; committed in 15.7a; gate_reply.py Q-DEN passed in 15.7e):
+
+```text
+Question Q-DEN (2026-11-20): How should rows with no posterior or no credible-set count enter rates? Today an early exit on either side sets both n_cs to NA, which drops the pair from the no-CS rate; this affects 14/100 A3_ukb primary rows and 4/30 per AFR arm. Negative-control rates aren't split by method, and 'none' rows count as non-calls.
+Carter reply (verbatim, selected option): A: Known states only (Recommended)
+```
+
+- **Scope (plan 15.7e, F8 and F11).**
+  - `run_coloc_pair_r4.R`: a pair whose one fit exited early keeps the completed side's `n_cs` (its number of
+    credible sets) and records `early_exit_a` / `early_exit_b`; the early-exit side stays NA.
+  - `estimands.e4_no_cs_rate` (pair_row and region levels): a row is no-CS when either side has a known 0; a row with
+    no known 0 and a side of unknown state is counted in `n_unknown`. `no_cs_rate` stays over all pair rows of the arm;
+    `no_cs_rate_known = n_no_cs / (n_rows - n_unknown)` is added. The fit level is unchanged.
+  - `estimands.negative_control_rates`: one row per method per (nc_set, label, p12_key) (coloc_susie, fallback_abf,
+    A1_abf_matched, A1_abf_allvars, none), plus `with_posterior` (every method except none, fallback counted in
+    `n_fallback_abf`). Rows with method `none` are counted and are in no share denominator.
+  - DRAFT (e) and (l) sentences for these two rates.
+- **Not authorized:** region_stat, the confirmatory subset rules, the fit-level no-CS rule, `decision_rules.yaml`
+  (stays `locked: false`), a production fit, OSF posting, a push.
+- Lifts nothing under D-28.
