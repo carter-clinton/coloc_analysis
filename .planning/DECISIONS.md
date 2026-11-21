@@ -3425,3 +3425,50 @@ Carter reply (verbatim, selected option): A: Re-run the selection on the product
 - **Not authorized:** a change of rule or seed, any fit or colocalization on a null window, catalogs or panels of any
   other region, Track B paths, `decision_rules.yaml` (stays `locked: false`), n_regions_min, OSF posting, a push.
 - Lifts nothing under D-28.
+
+## 2026-11-20 — DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7: n_regions_min stays 7; the region-contribution proxy is re-measured with exact purity over all 5 EUR traits, asthma on 20 pre-lock pilot fits (Carter, Q-NREG A+D, Q-PROXY, Q-PROXYA B, Q-PROXYB A)
+
+- **Decider:** Carter, 2026-11-20, replies saved verbatim (gate_reply.py Q-PROXY, Q-PROXYA, Q-PROXYB and Q-NREG passed
+  in 15.7h2):
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXY-reply-2026-11-20.txt` (sha256
+  `f07eece8e40ba0c5e43ac024a21c5fd4b89a00f54bb7b6ef1e5db98a4829bcdf`)
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXYA-reply-2026-11-20.txt` (sha256
+  `6597d02e356f41f8c89fd11716277eefa0317a4308338d14371f614ba49908c5`)
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-PROXYB-reply-2026-11-20.txt` (sha256
+  `651c901c7a28462b686ca738c7f33e3f3a2f14a3a95412899a08deb112826f80`)
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-NREG-reply-2026-11-20.txt` (sha256
+  `2ca9b987cce73317a294db4b024879800d7b5d2dade7d2d49410606fcc05ce18`)
+
+```text
+Question Q-NREG (2026-11-20): n_regions_min decision brief: A keep 7 (recommended), B lower to 5 or 3, C add confirmatory regions for A2, D re-measure the proxy after 15.7 before the lock (recommended alongside A).
+Carter reply (verbatim): yes, A and add D to 15.7j and keep 7
+```
+
+```text
+Question Q-PROXY (2026-11-20): n_regions_min brief (option D): re-measure the region-contribution proxy after the 15.7 fixes and before the lock? It would use exact purity (15.7f) and the corrected asthma inputs. This is read-only and outcome-blind, the same kind of run as the existing proxy, and it tells you whether the A2_identity 'likely 3 of 10' concern is real. n_regions_min stays 7.
+Carter reply (verbatim, selected option): Add to 15.7j (Recommended)
+```
+
+```text
+Question Q-PROXYA (2026-11-20): Correction: when I asked Q-PROXY, I said the proxy re-run would use the corrected asthma inputs. That was wrong. The existing repro fits read the superseded asthma file, so the re-run can only add exact purity, computed after the fact from the stored fits with no refits. Including asthma would need 20 new pilot fits (asthma × 10 regions × 2 repro arms, up to ~40 min and 27–48 GB each). Those would also make the '146' in your F15 paragraph wrong. What should 15.7j do?
+Carter reply (verbatim, selected option): B: Run the 20 asthma fits
+```
+
+```text
+Question Q-PROXYB (2026-11-20): 15.7h2: the repro arms apply the 16,000-variant cap BEFORE panel restriction, and corrected asthma EUR is over 16,000 rows in 6 of the 10 confirmatory windows (PYHIN1 41,040; BMI_5q13_3 39,606; SLC2A9 27,374; 9p21 22,998; APOE 20,472; CXADR 16,519). So up to 12 of your 20 asthma fits will stop before fitting and count as 'unknown'; asthma would add a credible-set state at only about 4 regions (FTO, MC4R, SH2B3, APOL1). The other 80 proxy fits used the same cap rule (9 of them early-exited). How do you want to proceed?
+Carter reply (verbatim, selected option): A: Run as planned (Recommended)
+```
+
+- **Scope (plan 15.7h2, n_regions_min option D).**
+  - n_regions_min stays 7 (Q-NREG A): `measure_fit_eligibility.N_REGIONS_MIN == 7`; `decision_rules.yaml` unchanged.
+  - Q-PROXY named 15.7j; Q-PROXYA B moved the work into 15.7h2, before 15.7i, so the F15 recount sees the new fits.
+  - 20 asthma fits (asthma × EUR × the 10 confirmatory regions × {repro_routeC, repro_k2d_routeC}) on the corrected
+    asthma EUR file, each with its arm's `commands.fit_command` argv except `--sumstats` and `--output`, written under
+    `data/r4/measure_asthma_fix/fits/proxy_asthma_<arm>/`. They are **pre-lock pilot fits**: never under
+    `data/r4/results`, never a lock input, no colocalization; sha256-manifested; 15.7i recounts and discloses them.
+  - The proxy is re-measured over all 5 EUR traits with exact purity, recomputed after the fact from the stored fits
+    (15.7f's rule); it is read-only with respect to production, outcome-blind and never a lock input.
+- **Not authorized:** production fits or the fire script, re-running the existing 4-trait repro fits, any
+  colocalization, writing under `data/r4/results`, changing n_regions_min or `decision_rules.yaml` (stays
+  `locked: false`), OSF posting, a push.
+- Lifts nothing under D-28.
