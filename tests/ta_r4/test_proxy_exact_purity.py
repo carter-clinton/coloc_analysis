@@ -297,6 +297,18 @@ def test_proxy_reads_asthma_from_the_pilot_root_and_stops_excluding_it(tmp_path)
         (3, 0, 2, 0)
     assert (a2["n_pairs_asthma_excluded"], a2["n_pairs_both_cs_proxy"], a2["n_pairs_unknown"]) == (0, 1, 1)
     assert all(r["n_pairs_asthma_excluded"] == 0 for r in rows.values())
+    # the recorded proxy (Q-DROPASTHMA): exact purity without asthma_fit_root keeps asthma excluded
+    root, d = _sub(tmp_path, "exact_excludes_asthma")
+    with open(root / m.PAIR_MANIFEST, "a") as fh:
+        fh.write("R1__EUR__asthma_vs_bmi\tEUR\tR1\tR1\tasthma\tbmi\tprimary\ttrue\n")
+    _case(root, d, conv="converged_primary", score="panel", comps=("multi", "single1", "null"))
+    _case(root, d, conv="converged_primary", score="panel", comps=("single1", "null"),
+          key=("repro_routeC", "asthma", "EUR", "R1"))
+    _early(root, "repro_k2d_routeC", "asthma")
+    rows_ex, fits = _proxy(root, d)
+    assert fits and not any(t == "asthma" for _, t, _ in fits)
+    default = m.region_contribution_proxy(RSCRIPT, root)
+    assert [r["n_pairs_asthma_excluded"] for r in rows_ex] == [r["n_pairs_asthma_excluded"] for r in default] == [1, 1]
 
 
 def test_n_regions_min_is_7():
