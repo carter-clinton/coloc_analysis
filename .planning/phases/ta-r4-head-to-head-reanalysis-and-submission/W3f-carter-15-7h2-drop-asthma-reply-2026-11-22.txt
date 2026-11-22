@@ -1,0 +1,3 @@
+Question (2026-11-22): 15.7h2 stop B — the 12 corrected-asthma pilot fits mix two builds (window chosen in the corrected GRCh37 frame; positions overwritten from the legacy catalog, which carries the old mislabelled GRCh38 asthma positions). Options discussed: drop asthma from the region-contribution proxy and disclose (recommended); rebuild the legacy catalog in GRCh37 and refit; use as-is, disclosed. Also offered: check whether the production r4 catalog is GRCh37 for asthma.
+
+Carter reply (verbatim): yes, drop asthma and check the production catalog

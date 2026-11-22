@@ -3547,3 +3547,36 @@ Carter reply (verbatim, selected option): A: skip mapping (Recommended)
   (f1f17bef) to fits whose JSON records identity LD, with the recorded-vs-panel cross-check.
 - **Not authorized:** as DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7.
 - Lifts nothing under D-28.
+
+## 2026-11-22 — DEC-2026-11-22-ta-r4-proxy-drop-asthma-build-mix: asthma stays excluded from the region-contribution proxy; the 20 pilot commands are kept as disclosed pre-lock pilot fits only (Carter, Q-DROPASTHMA)
+
+- **Decider:** Carter, 2026-11-22, reply saved verbatim (committed with this DEC; Q-DROPASTHMA gate passed in 15.7h2:
+  sha256, last line):
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7h2-drop-asthma-reply-2026-11-22.txt` (sha256
+  `072f52793cbc0672bc2261fb34aed17d8bd3212f0df9ebe08f2be71c9a0bb402`):
+
+```text
+Question (2026-11-22): 15.7h2 stop B — the 12 corrected-asthma pilot fits mix two builds (window chosen in the corrected GRCh37 frame; positions overwritten from the legacy catalog, which carries the old mislabelled GRCh38 asthma positions). Options discussed: drop asthma from the region-contribution proxy and disclose (recommended); rebuild the legacy catalog in GRCh37 and refit; use as-is, disclosed. Also offered: check whether the production r4 catalog is GRCh37 for asthma.
+
+Carter reply (verbatim): yes, drop asthma and check the production catalog
+```
+
+- **Narrows Q-PROXYA B** ("Run the 20 asthma fits", DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7): the
+  20 pilot commands ran (12 fits, 8 early exits; Slurm 2026078, 2036650, 2036651), but their use in the proxy is
+  withdrawn. They are kept and sha256-manifested as pre-lock pilot fits, never a proxy or lock input; 15.7i counts and
+  discloses the 12 fits (24 files).
+- **Reason.** The legacy catalog (data/r4/ld/variants_legacy) carries the superseded GRCh38 asthma positions, so a
+  corrected-asthma fit through the legacy route mixes builds: run_susie_rss.R windows the sumstats on their own (GRCh37)
+  positions, then joins variants_legacy by SNP_ID and overwrites CHR/POS (run_susie_rss.R:913-918);
+  config/ta_r4/data_sources.yaml:66 records the legacy route's input as the GRCh38 file;
+  data/r4/tmp/w3f/q157/g157h2/coordinate_frames.txt (sha256 652b5d7c…f3ab).
+- **Build check (Slurm 2039532),** data/r4/tmp/w3f/q157/g157h2/buildcheck/build_check.tsv (sha256
+  651163d3d44bd35aaf9fa640608bcc58d685c092c18e7841a6ee3ceeba32a63e), committed as manifests/w3f_157h2_build_check.tsv:
+  in all 31 regions the production catalog variants_r4 is at the GRCh37 positions of the production
+  asthma.EUR.grch37_lifted_strand file, so the production arms are unaffected; variants_legacy is in the GRCh38 frame.
+- **Proxy.** The recorded proxy is the exact-purity run with asthma excluded (no --asthma-fit-root); it must equal the
+  69 non-asthma rows of job 2037096 in every column. A fit with unmapped coverage-set members is labelled unmapped,
+  counted unknown and listed.
+- **Not authorized:** as DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7; no rebuild of the legacy
+  catalog, no refit.
+- Lifts nothing under D-28.
