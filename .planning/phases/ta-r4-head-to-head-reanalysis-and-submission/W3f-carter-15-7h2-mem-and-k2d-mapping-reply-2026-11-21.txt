@@ -1,0 +1,7 @@
+Question 1 (2026-11-21): 15.7h2 stop 1: one of the 2 sample pilot fits (k2d asthma APOE_19q13) peaked at 40.6 GiB (about 43.6 GB), above the plan's 40 GB memory limit. It completed in 51 min within its 48G allocation. 12 fits remain to run; at most 6 are k2d fits of this size, about 5.4 h in total. How should the memory limit be handled?
+
+Carter reply (verbatim, selected option): Raise to 56G (Recommended)
+
+Question 2 (2026-11-21): 15.7h2 stop 2: in the read-only dry run, 22 of 34 k2d fits came out 'unmapped'. The k2d identity panels list each variant twice (e.g. 16:53800200 and rs9940278), so the unique-row lookup fails. k2d's LD is the identity matrix, so the mapping can't change any purity, but 'unmapped' turns those fits' counts into 'unknown' and collapses the A2_identity proxy (likely 3 / unknown 2 / unlikely 5 → likely 1 / unknown 8 / unlikely 1). What should the rule be?
+
+Carter reply (verbatim, selected option): A: skip mapping (Recommended)

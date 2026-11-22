@@ -3511,3 +3511,39 @@ Carter reply (verbatim, selected option): A: use the scored matrix (Recommended)
   colocalization, nothing under data/r4/results, n_regions_min stays 7, decision_rules.yaml stays locked: false, no OSF
   posting, no push).
 - Lifts nothing under D-28.
+
+## 2026-11-21 — DEC-2026-11-21-ta-r4-proxy-k2d-identity-and-56g: k2d pilot fits at --mem=56G with a 90%-of-allocation MaxRSS gate; identity-LD fits skip panel-row mapping (Carter, Q-MEMK2D 1 and 2 A)
+
+- **Decider:** Carter, 2026-11-21, replies saved verbatim (committed with this DEC; Q-MEMK2D gate passed in 15.7h2:
+  sha256, line 3, line 7):
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7h2-mem-and-k2d-mapping-reply-2026-11-21.txt` (sha256
+  `c2783c9b526f29be6a9d576ae89a10e83b8b4bc595e0d5e7b7f153d1acf1030c`):
+
+```text
+Question 1 (2026-11-21): 15.7h2 stop 1: one of the 2 sample pilot fits (k2d asthma APOE_19q13) peaked at 40.6 GiB (about 43.6 GB), above the plan's 40 GB memory limit. It completed in 51 min within its 48G allocation. 12 fits remain to run; at most 6 are k2d fits of this size, about 5.4 h in total. How should the memory limit be handled?
+
+Carter reply (verbatim, selected option): Raise to 56G (Recommended)
+
+Question 2 (2026-11-21): 15.7h2 stop 2: in the read-only dry run, 22 of 34 k2d fits came out 'unmapped'. The k2d identity panels list each variant twice (e.g. 16:53800200 and rs9940278), so the unique-row lookup fails. k2d's LD is the identity matrix, so the mapping can't change any purity, but 'unmapped' turns those fits' counts into 'unknown' and collapses the A2_identity proxy (likely 3 / unknown 2 / unlikely 5 → likely 1 / unknown 8 / unlikely 1). What should the rule be?
+
+Carter reply (verbatim, selected option): A: skip mapping (Recommended)
+```
+
+- **Memory (Q-MEMK2D 1).** repro_k2d_routeC pilot fits run at `--mem=56G`; repro_routeC stays at `--mem=48G`. The cost
+  gate becomes: any fit's MaxRSS over 90% of its own allocation (48G → 45,298,483 KiB; 56G → 52,848,230 KiB) → STOP.
+  Measured: the k2d sample asthma.EUR.APOE_19q13 (Slurm 2026078, --mem=48G) peaked at MaxRSS 42,565,388 KiB (40.6 GiB,
+  43.6 GB) in 50:45, over the earlier 40 GB gate; the routeC sample peaked at 9.1 GiB in 3:17. Both samples are kept.
+  Question 1 says "12 fits remain to run; at most 6 are k2d"; after the 2 samples, 10 fits remain, 5 of them k2d (plus
+  8 early exits). The overstatement is in the conservative direction; the decision stands and the reply file is not
+  edited.
+- **Identity panels (Q-MEMK2D 2 A).** Xcorr is the identity iff the fit's JSON records it: ld_status identity or
+  ld_missing, ld_overlap_zero_fallback TRUE, or convergence_status containing identity_fallback. The recorded LD
+  identity (ld_status / ld_overlap_zero_fallback) must agree with the declared panel's `use_identity && is.null(R)`;
+  disagreement → STOP. identity_fallback is identity without that cross-check. For an identity Xcorr panel-row mapping
+  is skipped: R_fit = I(n), the only candidate is the identity (its per-component identity check still runs) and
+  scored_matrix = identity. Measured: 22 of 34 repro_k2d_routeC rows came back unmapped in the read-only dry run (Slurm
+  2026120), because the k2d identity panels list two rows per allele key (e.g. 16:53800200 and rs9940278).
+- This extends DEC-2026-11-21-ta-r4-proxy-exact-purity-scored-matrix's "identity_fallback → identity only" clause
+  (f1f17bef) to fits whose JSON records identity LD, with the recorded-vs-panel cross-check.
+- **Not authorized:** as DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7.
+- Lifts nothing under D-28.
