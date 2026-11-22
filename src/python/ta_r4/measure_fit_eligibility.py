@@ -580,17 +580,27 @@ one <- function(f) {
     STOP("%s: sets$requested_coverage %s != --credible-set %s", f$label, format(cov %||% "NULL"), f$credible_set)
   conv <- as.character(d$convergence_status %||% "")
   base <- sub(";identity_fallback$", "", conv)
-  order <- if (grepl("identity_fallback", conv)) "identity" else switch(base,
+  P <- readRDS(d$ld_file_declared)
+  # identity Xcorr iff the fit JSON records it; the recorded LD identity must agree with the declared panel
+  ifb <- grepl("identity_fallback", conv)
+  rec_id <- sub(";.*$", "", as.character(d$ld_status %||% "")) %in% c("identity", "ld_missing") ||
+    isTRUE(d$ld_overlap_zero_fallback)
+  panel_id <- isTRUE(P$use_identity) && is.null(P$R)
+  if (!ifb && rec_id != panel_id)
+    STOP("%s: recorded LD identity %s (ld_status %s, ld_overlap_zero_fallback %s) disagrees with the declared panel identity %s (%s)",
+         f$label, rec_id, format(d$ld_status %||% "NULL"), format(d$ld_overlap_zero_fallback %||% "NULL"), panel_id,
+         d$ld_file_declared)
+  identity <- ifb || rec_id
+  order <- if (identity) "identity" else switch(base,
     converged_primary = "panel", converged_max_iter = "panel", converged_regularized = "regularized",
     non_converged = c("regularized", "panel_fallback"),
     STOP("%s: unknown convergence_status %s", f$label, conv))
   n <- ncol(fit$alpha); nm <- colnames(fit$lbf_variable)
   cand <- sort(unique(as.integer(unlist(susieR::susie_get_cs(fit, coverage = cov)$cs))))
   row <- list(label = f$label, convergence_status = conv, n_sets_stored = length(fit$sets$cs))
-  # map the candidate members to panel rows (15.7c resolve_fit_names, then position + alleles)
-  P <- readRDS(d$ld_file_declared)
+  # map the candidate members to panel rows (15.7c resolve_fit_names, then position + alleles); none for the identity
   unmapped <- character(0); idx <- integer(0)
-  if (length(cand)) {
+  if (!identity && length(cand)) {
     res <- resolve_fit_names(nm[cand], read_window(d), fread(d$variant_catalog_path, colClasses = "character"),
                              P$variants, isTRUE(f$allow_duplicate_rows))
     p <- panel_alleles(P$variants); pk <- paste(p$chr, p$pos, p$ref, p$alt, sep = ":")
@@ -608,7 +618,7 @@ one <- function(f) {
                        n_unmapped = length(unmapped))))
   }
   R_fit <- diag(n)
-  if (!is.null(P$R) && length(cand)) {
+  if (!identity && !is.null(P$R) && length(cand)) {
     sub <- as.matrix(P$R)[idx, idx, drop = FALSE]
     sub <- (sub + t(sub)) / 2; diag(sub) <- 1
     R_fit[cand, cand] <- sub

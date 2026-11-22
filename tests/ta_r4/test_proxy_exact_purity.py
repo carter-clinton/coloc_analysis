@@ -47,6 +47,7 @@ R <- blk(R, 1:3, 0.9); R <- blk(R, 10:130, s$r_big)
 P <- if (isTRUE(s$identity_panel)) NULL else R
 v <- data.frame(SNP_ID = sprintf("rs%d", 1:m), CHR = "1", POS = 1000L + 10L * (1:m), REF = "A", ALT = "G",
                 stringsAsFactors = FALSE)
+if (isTRUE(s$dup_panel)) v <- rbind(v, data.frame(SNP_ID = "1:2400", CHR = "1", POS = 2400L, REF = "A", ALT = "G"))
 saveRDS(if (is.null(P)) list(R = NULL, variants = v, use_identity = TRUE, status = "identity") else
         list(R = P, variants = v), s$panel)
 reg <- function(R, e) { Rr <- R + diag(e, nrow(R)); stats::cov2cor((Rr + t(Rr)) / 2) }
@@ -121,13 +122,14 @@ def _early(root, arm, trait, region="R1"):
 
 
 def _case(root, tmp_path, *, conv, score, comps=(), kind="hand", r_big=0.9, eps=2e-4, max_iter=100,
-          drop_sets=False, identity_panel=False, key=KEY):
+          drop_sets=False, identity_panel=False, key=KEY, ld_status="ld_loaded", ozf=False, dup_panel=False):
     arm, trait, anc, reg = key
     rds = root / paths.fit_rds(*key)
     rds.parent.mkdir(parents=True, exist_ok=True)
     panel = root / "data/fx/panel.rds"
     spec = {"nv": NV, "r_big": r_big, "eps": eps, "score": score, "comps": list(comps), "kind": kind,
-            "max_iter": max_iter, "drop_sets": drop_sets, "identity_panel": identity_panel, "rds": str(rds),
+            "max_iter": max_iter, "drop_sets": drop_sets, "identity_panel": identity_panel, "dup_panel": dup_panel,
+            "rds": str(rds),
             "panel": str(panel)}
     sp = tmp_path / f"spec_{arm}_{trait}.json"
     sp.write_text(json.dumps(spec))
@@ -136,7 +138,7 @@ def _case(root, tmp_path, *, conv, score, comps=(), kind="hand", r_big=0.9, eps=
     (root / paths.fit_json(*key)).write_text(json.dumps({
         "status": status, "convergence_status": conv, "sumstats": "data/fx/ss.tsv.gz", "chrom": "1", "start": 1,
         "end": 1000000, "ld_file_declared": "data/fx/panel.rds", "variant_catalog_path": "data/fx/cat.tsv",
-        "policy_hash": "x"}))
+        "ld_status": ld_status, "ld_overlap_zero_fallback": ozf, "policy_hash": "x"}))
     return info
 
 
@@ -150,6 +152,12 @@ def _proxy(root, tmp_path, **kw):
 
 def _row(fits, key=KEY):
     return fits[(key[0], key[1], key[3])]
+
+
+def _sub(tmp_path, name, eps=2e-4):
+    d = tmp_path / name
+    d.mkdir()
+    return _repo(d, eps=eps), d
 
 
 C_REG_COUNT_R = r'''
@@ -186,6 +194,20 @@ def test_identity_ld_counts_unchanged_by_exact_purity(tmp_path):
     _case(root, tmp_path, conv="converged_primary", score="identity", comps=("multi", "single1", "big", "single2"),
           identity_panel=True)
     assert _rcall(IDENTITY_R, root / paths.fit_rds(*KEY)).split() == ["2", "2", "2"]
+    # (a) production path: a repro_k2d_routeC fit recording identity LD, whose identity panel lists the singleton
+    # member rs140's allele key 1:2400:A:G on two rows (rs140 and 1:2400): no mapping, scored on the identity
+    k2d = ("repro_k2d_routeC", "bmi", "EUR", "R1")
+    root, d = _sub(tmp_path, "k2d_dup")
+    _case(root, d, conv="converged_primary", score="identity", comps=("multi", "single1", "big", "single2"),
+          identity_panel=True, dup_panel=True, key=k2d, ld_status="identity", ozf=True)
+    r = _row(_proxy(root, d)[1], k2d)
+    assert (r["scored_matrix"], r["n_sets_exact"], r["n_sets_stored"]) == ("identity", "2", "2")
+    # (b) a fit recording ld_missing beside a real declared panel: the recorded-vs-panel cross-check STOPs
+    root, d = _sub(tmp_path, "ld_missing_real_panel")
+    _case(root, d, conv="converged_primary", score="identity", comps=("single1", "single2", "null"),
+          ld_status="ld_missing", ozf=True)
+    with pytest.raises(m.PurityIdentityError, match="PURITY_STOP.*identity"):
+        _proxy(root, d)
 
 
 # ---- 3: default path ---------------------------------------------------------------------------------------------
@@ -307,12 +329,6 @@ def test_regularised_fit_is_scored_on_the_regularised_matrix(tmp_path):
     j.write_text(j.read_text().replace('"non_converged"', '"converged_primary"'))   # R_fit the only candidate
     with pytest.raises(m.PurityIdentityError, match="PURITY_STOP"):
         _proxy(root, tmp_path)
-
-
-def _sub(tmp_path, name, eps=2e-4):
-    d = tmp_path / name
-    d.mkdir()
-    return _repo(d, eps=eps), d
 
 
 def test_scored_matrix_label_names_the_matrix_that_matched(tmp_path):
