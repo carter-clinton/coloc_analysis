@@ -3580,3 +3580,53 @@ Carter reply (verbatim): yes, drop asthma and check the production catalog
 - **Not authorized:** as DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7; no rebuild of the legacy
   catalog, no refit.
 - Lifts nothing under D-28.
+
+## 2026-11-22 — DEC-2026-11-20-ta-r4-prelock-pilot-fit-disclosure: the DRAFT discloses every pre-lock pilot fit with a sha256 manifest, in the wording Carter approved (Carter, Q-F15 A and Q-F15W)
+
+- **Decider:** Carter, 2026-11-20; replies saved verbatim (gates passed in 15.7i: gate_reply.py label + sha256;
+  data/r4/tmp/w3f/q157/gate_15_7i.txt, with wrong-sha / wrong-label / wrong-v2-sha negative controls RED).
+- Q-F15, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-reply-2026-11-20.txt` (sha256
+  `aaff9960248a711c4d2e5c7b4fd77ad24a84c784fe25c1a673c4646d50895877`):
+
+```text
+Question Q-F15 (2026-11-20): The DRAFT says the lock comes 'before any production fit exists', but 146 corrected-input pilot fits exist outside the production directories (plus 17 kernel-experiment runs). They were inspected, never colocalized. 15.7f will also recompute exact purity on 109 of their credible-set components, to measure the F2 subsampling. How should the DRAFT disclose this?
+Carter reply (verbatim, selected option): A: Full disclosure + manifest (Recommended)
+```
+
+- Q-F15W, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15W-reply-2026-11-20.txt` (sha256
+  `5bd31c68a69f2adf34a10aa363017ec02b3804506d4138cc55ba69a763ffef05`):
+
+```text
+Question Q-F15W (2026-11-20): The F15 paragraph you approved says the purity 'of their credible-set components was also recomputed exactly'. 'Their' could be read as all 146 pilot fits, but the measurement covers only the 20 production-panel fits (109 components). Fix the wording?
+Carter reply (verbatim, selected option): Clarify to the 20 fits (Recommended)
+```
+
+- F15 wording v2, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-wording-as-approved-v2-2026-11-20.txt` (sha256
+  `65c3851d21ee0cc0b044c9ee4c4d413dd3eb1c95423ea4d861c12792198b243b`; v1 superseded):
+
+```text
+**Pre-lock pilot fits.** While the asthma inputs were being
+corrected (c), 146 fits were run outside the production result
+directories: 20 with the production 1000 Genomes EUR panel and
+L = 10 (the five EUR traits at APOL1_22q12, FTO_16q12,
+MC4R_18q21 and SH2B3_12q24, on the variant catalog of that
+time), 18 of the same kind on the earlier catalog, and 108
+reproduction-route fits; and 17 runs of one reproduction fit
+for the numerical-kernel experiment in (k). For these, run
+status, LD overlap, allele classes and the number and size of
+purity-filtered credible sets were inspected: 7 of the 20
+production-panel fits have at least one set (asthma at
+FTO_16q12; BMI at FTO_16q12, MC4R_18q21 and SH2B3_12q24;
+hypertension and stroke at SH2B3_12q24; type 2 diabetes at
+FTO_16q12). To measure the purity subsampling in (k), the
+purity of the 109 credible-set components of the 20 production-panel fits was also recomputed
+exactly (manifests/purity_flip_measurement.tsv). No
+colocalization was run on any pilot fit. Every production fit
+is run after the lock. The pilot fits are listed with
+checksums in manifests/prelock_pilot_fits.tsv.
+```
+
+- **Rule.** v2 is inserted only if every value in it equals a recount from disk. 15.7h2 added 20 asthma pilot
+  outputs (12 fits, 8 early exits; DEC-2026-11-22-ta-r4-proxy-drop-asthma-build-mix), so a differing recount stops
+  15.7i at a human-action checkpoint for Carter to approve a v3 paragraph; nothing is written to the DRAFT before that.
+- **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; n_regions_min stays 7. Lifts nothing under D-28.
