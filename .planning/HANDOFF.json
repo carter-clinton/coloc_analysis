@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-11-21T16:50:00-05:00",
+  "timestamp": "2026-11-22T19:20:00-05:00",
   "phase": "ta-r4",
   "phase_name": "ta-r4-head-to-head-reanalysis-and-submission",
   "phase_dir": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission",
@@ -529,8 +529,8 @@
   ],
   "resume_entry_point_PRIOR_2026_11_09": "Resume session b1f97279 (inside tmux on login01): `claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07`, then: you were interrupted mid-15.5 at the asthma.EUR build check; continue. Fallback (fresh session): /gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission -> 15.5, reusing the WIP in ta_r4_w3f_15_5_in_progress after verifying it.",
   "timestamp_reason_2026_11_17": "session c8312220 close: 15.5a planned/checked/committed; executor mid-Task 1",
-  "headline": "ta-r4 W3f 15.7: a..h done (FULL 15.7h 2,682 = 2,629P/53S/0F, base full_15_7h.xml). 15.7h2 re-plan in progress per Carter A (W3f-carter-15-7h2-purity-matrix-reply-2026-11-21.txt, sha256 bf5185dc…f614a6). Chain (Carter 'proceed --auto --chain') continues h2 -> i -> j; stops at 15.7i only if the F15 recount changes (v3), and stops before W4a-T3 lock.",
-  "status": "W3f 15.7a-h COMPLETE; pushed through 892c4443 (Carter 2026-11-21). 15.7h2 STOPPED at Task 1 Rule-4 (plan premise: regularised/non_converged fits score purity on cov2cor(R+eps*I), ratio 0.9999000100 on 6 repro fits); only its DEC d1498dff committed (local, 1 ahead). Carter chose A (use the scored matrix), reply file untracked. Plan revision by gsd-planner subagent RUNNING in session c8312220 (dies if session drops). No Slurm jobs.",
+  "headline": "ta-r4 W3f 15.7h2: exact credible-set purity on the scored matrix (Carter Q-PURITY A), k2d identity panels skip mapping + 56G (Q-MEMK2D), asthma DROPPED from the region-contribution proxy (Carter 2026-11-22: legacy catalog carries superseded GRCh38 asthma positions -> corrected-asthma repro fits mix builds). Production variants_r4 verified GRCh37 in 31/31 regions (Slurm 2039532, manifests/w3f_157h2_build_check.tsv). 12 asthma pilot fits (24 files) ran = pre-lock pilot fits for 15.7i. Next 15.7i -> 15.7j, chain stops before W4a-T3.",
+  "status": "W3f 15.7h2 IN CLOSE: Task 1-2 committed (688a6220 DEC 1d, 4f3d692a tests, dd5eb803 manifest + build check + proxy without asthma); FULL Slurm 2039942 (close_15_7h2) RUNNING since ~18:20, ~2 h; executor subagent of session c8312220 will reconcile per id vs full_15_7h.xml (target 2,691 = 2,638P/53S/0F) and write LOG/STATE/PLAN-INDEX/SUMMARY. 12 commits ahead of origin (last push 892c4443). Slurm survives a disconnect; the executor does NOT.",
   "ta_r4_w3f_15_5a": {
     "plan": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md",
     "carter_reply": "W3f-carter-dupkey-fix-reply-2026-11-17.txt = \"1. Fix both ends (recommended).\" (authorizes r4-only catalog unique-key producer, flag-gated run_susie_rss.R guard --require-unique-allele-key + R_CODE_REF re-pin, catalog rebuild + re-pin; NOTHING else)",
@@ -550,11 +550,11 @@
     ]
   },
   "resume_on_reconnect": [
-    "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. ⚠ A resumed session once loaded a STALE transcript branch (2026-11-21): run `git log --oneline -8` and trust git + STATE.md over your context.",
-    "Check whether the 15.7h2 plan revision landed: mtime/diff of ta-r4-W3f-proxy-asthma-refit-PLAN.md vs HEAD (unrevised mtime 11-20 11:41). If not revised and the planner is gone, re-spawn gsd-planner with the brief in ta_r4_w3f_15_7h2_replan.",
-    "Run gsd-plan-checker on the revised plan; fix BLOCK/FLAG; commit plan + W3f-carter-15-7h2-purity-matrix-reply-2026-11-21.txt (explicit paths).",
-    "Resume 15.7h2 execution (fresh gsd-executor, or SendMessage to the original 15.7h2 executor if alive) from Task 1 after the DEC; FULL base data/r4/tmp/w3f/q157/full_15_7h.xml.",
-    "Verify hand-back vs files, then 15.7i (recount incl. 15.7h2's fits; STOP for Carter v3 only if numbers differ from v2), then 15.7j. Stop before W4a-T3 lock. Push only when Carter asks (he approved pushes of verified plan sets)."
+    "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Trust `git log --oneline -12` + this file over your context (a resumed session once loaded a stale transcript branch).",
+    "Check 15.7h2 close: `sacct -j 2039942`; git log for a 15.7h2 SUMMARY/records commit after dd5eb803. If the executor died: a fresh gsd-executor finishes Task 3 only from the FULL xml (per-id vs data/r4/tmp/w3f/q157/full_15_7h.xml, $Q/check_15_7h2.py, $Q/new_tests_15_7h2.txt) — do NOT redo Tasks 1-2.",
+    "Verify the hand-back vs files (FULL ids, no src change after dd5eb803 outside the plan, noasthma proxy == job 2037096 non-asthma rows, 40-row pilot manifest).",
+    "Then 15.7i (pilot-fit disclosure recount incl. 12 fits; STOP for Carter v3 only if the numbers differ from v2), then 15.7j. Stop before W4a-T3 lock (Carter).",
+    "Push only when Carter asks (he has approved pushing verified plan sets; last push 892c4443)."
   ],
   "resume_entry_point": ".planning/HANDOFF.json ta_r4_w3f_15_5_close + STATE.md 2026-11-18 (evening) block + plan ta-r4-W3f-ukb-panels-biallelic-PLAN.md",
   "headline_PRIOR_2026_11_17": "ta-r4 W3f: 15.5 stopped at Rule-4 (r4 catalogs duplicate CHR:POS:REF:ALT under 2 SNP_IDs; 248,257 extra rows / 877,756). Carter chose option 1 (fix both ends) 2026-11-17. Plan 15.5a written, plan-checker FLAG fixed, committed 79ff8dc2. Executor RUNNING as a subagent of session c8312220 (NOT tmux) — at Task 1 RED (18 failing tests in data/r4/tmp/w3f/dupkey/red_t1.txt, 23:46); DEC committed c6c450fc. No Slurm jobs queued at close. Local 2 ahead of origin (not pushed — push forbidden inside 15.5a).",
@@ -657,5 +657,40 @@
     "side_issue": "RDS sets$cs vs JSON credible_sets disagree on some fits (stroke.EUR.FTO_16q12 0 vs 1; t2d.EUR.SH2B3_12q24 5 vs 9); planner told to check manifests/fit_cs_json_vs_rds.tsv and cite or add a must-have",
     "planner_brief_scope": "revise must-have 33 + dependent tests/NCs, check eps source per arm and 1e-12 after cov2cor; no commit",
     "pilot_fits_for_15_7i": "0 so far; 20 (40 files) if 15.7h2 runs them"
+  },
+  "status_PRIOR_2026_11_21_evening": "W3f 15.7a-h COMPLETE; pushed through 892c4443 (Carter 2026-11-21). 15.7h2 STOPPED at Task 1 Rule-4 (plan premise: regularised/non_converged fits score purity on cov2cor(R+eps*I), ratio 0.9999000100 on 6 repro fits); only its DEC d1498dff committed (local, 1 ahead). Carter chose A (use the scored matrix), reply file untracked. Plan revision by gsd-planner subagent RUNNING in session c8312220 (dies if session drops). No Slurm jobs.",
+  "headline_PRIOR_2026_11_21_evening": "ta-r4 W3f 15.7: a..h done (FULL 15.7h 2,682 = 2,629P/53S/0F, base full_15_7h.xml). 15.7h2 re-plan in progress per Carter A (W3f-carter-15-7h2-purity-matrix-reply-2026-11-21.txt, sha256 bf5185dc…f614a6). Chain (Carter 'proceed --auto --chain') continues h2 -> i -> j; stops at 15.7i only if the F15 recount changes (v3), and stops before W4a-T3 lock.",
+  "resume_on_reconnect_PRIOR_2026_11_21_evening": [
+    "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. ⚠ A resumed session once loaded a STALE transcript branch (2026-11-21): run `git log --oneline -8` and trust git + STATE.md over your context.",
+    "Check whether the 15.7h2 plan revision landed: mtime/diff of ta-r4-W3f-proxy-asthma-refit-PLAN.md vs HEAD (unrevised mtime 11-20 11:41). If not revised and the planner is gone, re-spawn gsd-planner with the brief in ta_r4_w3f_15_7h2_replan.",
+    "Run gsd-plan-checker on the revised plan; fix BLOCK/FLAG; commit plan + W3f-carter-15-7h2-purity-matrix-reply-2026-11-21.txt (explicit paths).",
+    "Resume 15.7h2 execution (fresh gsd-executor, or SendMessage to the original 15.7h2 executor if alive) from Task 1 after the DEC; FULL base data/r4/tmp/w3f/q157/full_15_7h.xml.",
+    "Verify hand-back vs files, then 15.7i (recount incl. 15.7h2's fits; STOP for Carter v3 only if numbers differ from v2), then 15.7j. Stop before W4a-T3 lock. Push only when Carter asks (he approved pushes of verified plan sets)."
+  ],
+  "ta_r4_w3f_15_7h2_close": {
+    "plan_commits": [
+      "947a7b4a revised",
+      "2c2ecd65 mem+k2d",
+      "389df4fb drop asthma"
+    ],
+    "exec_commits": [
+      "d1498dff DEC",
+      "f1f17bef DEC 1b",
+      "265434df code",
+      "563f4753 DEC 1c",
+      "bcd0310a code 2b",
+      "688a6220 DEC 1d",
+      "4f3d692a tests 2c",
+      "dd5eb803 manifest/build check/proxy"
+    ],
+    "carter_replies": [
+      "W3f-carter-15-7h2-purity-matrix-reply-2026-11-21.txt (A)",
+      "W3f-carter-15-7h2-mem-and-k2d-mapping-reply-2026-11-21.txt (56G; A skip mapping)",
+      "W3f-carter-15-7h2-drop-asthma-reply-2026-11-22.txt (drop asthma + check production catalog)"
+    ],
+    "running": "Slurm 2039942 close_15_7h2 (FULL suite)",
+    "pilot_fits_for_15_7i": "12 fits / 24 files (+8 early-exit outputs, 16 files); data/r4/measure_asthma_fix/fits/proxy_asthma_<arm>/",
+    "orchestrator_resource_change": "repro_k2d_routeC pilots --mem=56G -t 02:00:00 (LOG, not a DEC)",
+    "work_dir": "data/r4/tmp/w3f/q157 (+ g157h2/)"
   }
 }

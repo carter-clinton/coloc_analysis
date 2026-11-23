@@ -26,7 +26,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-21 (evening) — **TRACK A ta-r4: W3f 15.7h PUSHED; 15.7h2 STOPPED at Task 1 (Rule-4 plan premise), Carter chose A, plan revision in progress. NOT RUNNING ON SLURM.** (★ RESUME HERE — LATEST ★)
+## 2026-11-22 (evening) — **TRACK A ta-r4: W3f 15.7h2 IN CLOSE — FULL Slurm 2039942 running; asthma dropped from the proxy (Carter); production catalog verified GRCh37. NOT PUSHED (12 ahead).** (★ RESUME HERE — LATEST ★)
+
+- 15.7h2 replanned three times on executor Rule-4 stops, each answered by Carter: Q-PURITY A (exact purity on the matrix the fit was scored on; regularised fits = cov2cor(R+eps·I)), Q-MEMK2D (k2d pilots 56G; identity panels skip mapping), drop asthma (2026-11-22: variants_legacy carries the superseded GRCh38 asthma positions, so corrected-asthma repro fits mix builds).
+- Production check (Slurm 2039532, manifests/w3f_157h2_build_check.tsv): variants_r4 matches the GRCh37 production asthma file at every joined rsid in 31/31 regions; variants_legacy is GRCh38-framed by design (data_sources.yaml:66).
+- Commits: plan 947a7b4a/2c2ecd65/389df4fb; exec d1498dff, f1f17bef, 265434df, 563f4753, bcd0310a, 688a6220, 4f3d692a, dd5eb803. 12 asthma pilot fits (24 files) ran → 15.7i recount.
+- Running: FULL Slurm 2039942 (target 2,691 = 2,638 P / 53 S / 0 F vs full_15_7h.xml); executor in session c8312220 writes the records. Then 15.7i → 15.7j; stop before W4a-T3.
+- Resume: HANDOFF.json `resume_on_reconnect` + `ta_r4_w3f_15_7h2_close`. decision_rules.yaml locked: false; n_regions_min 7; no OSF.
+
+## 2026-11-21 (evening) — **TRACK A ta-r4: W3f 15.7h PUSHED; 15.7h2 STOPPED at Task 1 (Rule-4 plan premise), Carter chose A, plan revision in progress. NOT RUNNING ON SLURM.** (SUPERSEDED by the 2026-11-22 evening block above)
 
 - Pushed through 892c4443 (Carter 2026-11-21). Local 1 ahead: d1498dff (15.7h2 DEC only).
 - 15.7h2 stop: regularised / non_converged fits keep fit3, scored on cov2cor(R + 1e-4·I) (run_susie_rss.R:51-64); stored purity = panel / (1+eps), ratio 0.9999000100 on 6 EUR repro_routeC fits, so must-have 33's 1e-12 check would fail. No code, tests or fits run.
@@ -2801,7 +2809,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-21 evening (latest) - SESSION CLOSE: 15.7h complete + pushed (892c4443); 15.7h2 stopped Rule-4, Carter A, plan revision in progress; d1498dff local.
+Last activity: 2026-11-22 evening (latest) - SESSION CLOSE: 15.7h2 in close (FULL 2039942 running); asthma dropped from proxy; production catalog GRCh37 verified; 12 commits not pushed.
+Last activity (PRIOR): 2026-11-21 evening - SESSION CLOSE: 15.7h complete + pushed (892c4443); 15.7h2 stopped Rule-4, Carter A, plan revision in progress; d1498dff local.
 Last activity (PRIOR): 2026-11-20 night - SESSION CLOSE: 15.7a, 15.7b complete; 15.7c FULL Slurm 2010023 running; chain continues to 15.7i; session c8312220 in tmux coloc (login02); 3 commits not pushed.
 Last activity (PRIOR): 2026-11-20 - SESSION CLOSE: W3f 15.5b, 15.5c, 15.6 complete and pushed (553c8fc8); 15.6 re-review → 12 OPEN blockers; Carter chose 15.7 code fix-up; 15.7 planner running in session c8312220 (tmux coloc, login03).
 Last activity (PRIOR): 2026-11-18 - SESSION CLOSE: 15.5 closing (executor a18335bd8bbf594bc, Slurm close_b 1970723 FULL running); plan 15.5b (Carter a1 keep-SNV) committed bb084f24, not pushed (push approved with the 15.5 commits); session c8312220 in tmux 'coloc' on login02.
