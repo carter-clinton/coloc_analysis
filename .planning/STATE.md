@@ -26,7 +26,21 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-22 (evening) — **TRACK A ta-r4: W3f 15.7h2 IN CLOSE — FULL Slurm 2039942 running; asthma dropped from the proxy (Carter); production catalog verified GRCh37. NOT PUSHED (12 ahead).** (★ RESUME HERE — LATEST ★)
+## 2026-11-22 (night) — **TRACK A ta-r4: W3f 15.7h2 COMPLETE (exact-purity proxy over the 4 non-asthma EUR traits; asthma excluded, Carter Q-DROPASTHMA). NEXT = 15.7i. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): d1498dff, f1f17bef, 265434df, 563f4753, bcd0310a, 688a6220, 4f3d692a, dd5eb803, plus the records commit.
+- Proxy (Slurm 2039595): equals job 2037096's 69 non-asthma rows in every column; w3f_region_contribution_proxy.tsv byte-identical
+  (0 rows changed): A1_matched likely 8 / unknown 1 / unlikely 1; A2_identity likely 3 / unknown 2 / unlikely 5; k unknown.
+  Exact purity changed no set count; k2d all identity; 5 probe fits regularized; 0 unmapped.
+- 20 asthma pilot commands ran (12 fits, 8 early exits), manifested in manifests/proxy_asthma_pilot_fits_sha256.tsv as pre-lock
+  pilot fits, never a proxy or lock input. 15.7i recounts 12 pilot fits (24 files).
+- Build check (Slurm 2039532): variants_r4 at GRCh37 asthma positions in the 30 of 31 regions with joined rsids (BMI_Xq24 has
+  none); variants_legacy GRCh38-framed.
+- FULL Slurm 2039942: 2,691 = 2,638 P / 53 S / 0 F; vs full_15_7h.xml 0 removed, +9, 0 outcome changes; check_15_7h2.py PASS.
+- NEXT = 15.7i (F15 pilot-fit disclosure recount; it will stop for a v3 F15 wording since the count now includes the 12 pilot
+  fits). Then 15.7j; stop before W4a-T3. decision_rules.yaml locked: false; n_regions_min 7; no OSF; NOT PUSHED.
+
+## 2026-11-22 (evening) — **TRACK A ta-r4: W3f 15.7h2 IN CLOSE — FULL Slurm 2039942 running; asthma dropped from the proxy (Carter); production catalog verified GRCh37. NOT PUSHED (12 ahead).** (SUPERSEDED by the 2026-11-22 night block)
 
 - 15.7h2 replanned three times on executor Rule-4 stops, each answered by Carter: Q-PURITY A (exact purity on the matrix the fit was scored on; regularised fits = cov2cor(R+eps·I)), Q-MEMK2D (k2d pilots 56G; identity panels skip mapping), drop asthma (2026-11-22: variants_legacy carries the superseded GRCh38 asthma positions, so corrected-asthma repro fits mix builds).
 - Production check (Slurm 2039532, manifests/w3f_157h2_build_check.tsv): variants_r4 matches the GRCh37 production asthma file at every joined rsid in 31/31 regions; variants_legacy is GRCh38-framed by design (data_sources.yaml:66).

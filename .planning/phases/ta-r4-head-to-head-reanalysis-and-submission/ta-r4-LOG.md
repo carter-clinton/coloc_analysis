@@ -1405,3 +1405,55 @@ index c517ffb7..a0ffd52e 100644
   test_regions_r4_is_rebuilt_from_sources) each CHECK FAIL, rc 1 (`$Q/check_15_7h_nc.txt`).
 - Run interrupted ~07:27 by a parent restart; resumed with Carter's approval after re-checking every uncommitted edit.
 - No push, no fit, no colocalization on a null window, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+
+## 2026-11-22 — W3f 15.7h2 (n_regions_min option D: exact-purity region-contribution proxy; 20 asthma pilot commands, asthma then excluded; Carter Q-PROXY, Q-PROXYA B, Q-PROXYB A, Q-NREG, Q-PURITY A, Q-MEMK2D, Q-DROPASTHMA; no push)
+
+- Start 892c4443 (`$Q/start_15_7h2.txt`). Gates: gate_reply.py Q-PROXY, Q-PROXYA, Q-PROXYB, Q-NREG rc 0 (`$Q/gate_15_7h2.txt`);
+  Q-PURITY (ls-files, diff, bf5185dc…f614a6, last line; `$Q/gate_15_7h2_purity.txt`); Q-MEMK2D (c2783c9b…1030c, lines 3/7;
+  `$Q/gate_15_7h2_memk2d.txt`); Q-DROPASTHMA (072f5279…b402, last line; `$Q/gate_15_7h2_dropasthma.txt`); each with
+  negative controls observed failing. DECs (each quoting its reply files, cat + cmp rc 0): DEC-2026-11-20-ta-r4-proxy-asthma-refit-keep-n-regions-min-7
+  (d1498dff), DEC-2026-11-21-ta-r4-proxy-exact-purity-scored-matrix (f1f17bef), DEC-2026-11-21-ta-r4-proxy-k2d-identity-and-56g
+  (563f4753), DEC-2026-11-22-ta-r4-proxy-drop-asthma-build-mix (688a6220).
+- Input pins `$Q/proxy_asthma_inputs.tsv` (76098b25…): 39 rows match or recorded (corrected asthma 49edfc54… + .tbi, 10 legacy
+  catalogs, 10 legacy_repro/EUR + 10 k2d_identity/EUR panels, run_susie_rss.R, POLICY_REPRO, regions_r4.csv, pipeline.yaml);
+  tampered-pin NC rc 1. R env (from LSF 431248's snakemake argv): smk_job_envs/ta_r4/0f3436279d4146c376747a0ea5bfd4bf_,
+  r-base 4.4.2 / r-susier 0.14.2 / r-coloc 5.2.3.
+- Stops answered by Carter: (1) Rule-4 before any fit: non_converged repro fits keep fit3, stored purity = panel / (1+eps)
+  (ratio 0.9999000100 on 6 sets of 5 EUR repro_routeC fits) → Q-PURITY A. (2) k2d cost sample over 40 GB and 22/34 k2d rows
+  unmapped in the dry run (Slurm 2026120; k2d identity panels list two rows per allele key) → Q-MEMK2D (56G; identity fits skip
+  mapping). (3) corrected-asthma pilot fits mix builds → Q-DROPASTHMA.
+- Code 265434df (asthma_pilot_commands / _split_commands; region_contribution_proxy exact_purity / asthma_fit_root / fits_tsv /
+  policy_path; CLI flags) and bcd0310a (identity iff the fit JSON records it, cross-checked against the panel); tests 4f3d692a.
+  RED: 8 of 9 (test 2 green by construction; red_15_7h2.xml), then test 2 (a)/(b) on 265434df (red_15_7h2b.xml,
+  g157h2/red_case_b.txt). NC-1..NC-9 each RED on its named test, restores `git diff --quiet -- src` clean, restored tests green
+  (`$Q/negctl_15_7h2.txt` 533311ee…; earlier runs kept in g157h2/).
+- Split Slurm 2025948 (20/20 0:0): 8 too_many_variants (9p21_CDKN2A 18,792; BMI_5q13_3 30,702; PYHIN1_1q23 34,128;
+  SLC2A9_urate 20,523; both arms), 12 fit (APOE_19q13 15,136 and CXADR_F2RL1_6p21 13,913 under the cap; planning expected up to
+  12 early exits).
+- Cost (`$Q/cost_15_7h2.tsv` 3edd5553…): sample Slurm 2026078 at 48G: routeC APOE_19q13 3:17, MaxRSS 9,546,352 KiB; k2d
+  APOE_19q13 50:45, MaxRSS 42,565,388 KiB (84.6% of 48G; over the original 40 GB gate). Remaining 18: Slurm 2036650 (k2d, 56G,
+  -t 02:00:00, an orchestrator resource change, not a Carter decision) max MaxRSS 33,720,796 KiB (CXADR_F2RL1_6p21, 57.4% of 56G,
+  28:06); Slurm 2036651 (routeC, 48G, 1 h) ≤ 8.3 GiB. 20/20 outputs; split reproduced; policy_hash 60c195cb… on all 12 fits;
+  nothing under data/r4/results.
+- Pilot fits: manifests/proxy_asthma_pilot_fits_sha256.tsv (652195c7…), 40 files = 12 fits (24 files) + 8 early exits
+  (16 files), pre-lock pilot fits, never a proxy or lock input. For 15.7i: 12 pilot fits (24 files).
+- Proxy with asthma (Slurm 2037096; evidence only): `$Q/proxy_15_7h2.tsv` 2be5f5e3…986f, `$Q/proxy_15_7h2_fits.tsv`
+  9c44721f…2775; 81 fits rows; routeC asthma CXADR_F2RL1_6p21 unmapped (41 of 4,516 members; the fit ran on catalog positions).
+- Build check (Slurm 2039532): build_check.tsv 651163d3…a63e (committed as manifests/w3f_157h2_build_check.tsv), .py e595233b…,
+  .sh 014ee178…; coordinate_frames.txt 652b5d7c…. variants_r4: 30 of 31 regions have joined rsids, all at the GRCh37 production
+  asthma positions (BMI_Xq24 has 0 joined rsids; NC_IRF4 also matches the GRCh38 file, the builds coincide there).
+  variants_legacy is in the GRCh38 frame (config/ta_r4/data_sources.yaml:66).
+- Recorded proxy (Slurm 2039595, asthma excluded, exact purity): `$Q/proxy_15_7h2_noasthma.tsv` 78e0f85e…7927,
+  `$Q/proxy_15_7h2_noasthma_fits.tsv` fb2ac330…a464. 69 rows, 0 asthma rows; keys and every column equal job 2037096's 69
+  non-asthma rows (`$Q/noasthma_vs_2037096.txt`; NCs one-cell mutation and dropped row both detected). scored_matrix:
+  repro_k2d_routeC identity 34; repro_routeC regularized 21, panel 14; unmapped 0. The 5 probe fits regularized, t2d.SH2B3_12q24
+  panel. stored = exact on every fit (k2d 0 changes). Totals A1_matched likely 8 / unknown 1 / unlikely 1; A2_identity likely 3 /
+  unknown 2 / unlikely 5; k unknown. FLAG lines verbatim in the DRAFT and HANDOFF.
+- w3f_region_contribution_proxy.tsv: the re-run is byte-identical to the committed manifest (cmp), 0 rows changed. DRAFT
+  Pre-Paste proxy row and HANDOFF region_contribution_proxy relabelled (old text under region_contribution_proxy_PRE_2026_11_20);
+  test_amendment_text.py 21 P / 2 S. Commit dd5eb803.
+- FULL Slurm 2039942 (cascadelake c022n01, HEAD dd5eb803, --mem=64G -t 06:00:00): QUICK 860 P / 2 S; HEAVY 330 P / 5 S; PINS 39 P;
+  FULL 2,691 = 2,638 P / 53 S / 0 F (full_15_7h2.xml 50827ce7…). vs full_15_7h.xml: 0 removed, +9 (all passed), 0 outcome
+  changes. `$Q/check_15_7h2.py` CHECK PASS rc 0; its NC (base as new) CHECK FAIL rc 1.
+- No push, no production fit, no colocalization, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
