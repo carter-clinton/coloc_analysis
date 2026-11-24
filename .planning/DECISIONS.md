@@ -3629,4 +3629,54 @@ checksums in manifests/prelock_pilot_fits.tsv.
 - **Rule.** v2 is inserted only if every value in it equals a recount from disk. 15.7h2 added 20 asthma pilot
   outputs (12 fits, 8 early exits; DEC-2026-11-22-ta-r4-proxy-drop-asthma-build-mix), so a differing recount stops
   15.7i at a human-action checkpoint for Carter to approve a v3 paragraph; nothing is written to the DRAFT before that.
+- **Re-approval (15.7i Task 2).** The recount differed from v2 (data/r4/tmp/w3f/q157/pilot_recount.txt: 146 → 166 pilot
+  fits, 108 → 128 reproduction-route fits, 39 of the 128 stopped before fitting = 31 + 8). Gates passed
+  (data/r4/tmp/w3f/q157/gate_15_7i_v3.txt; plan label, wrong-sha and wrong-v3-sha controls RED).
+- Q-F15V3, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15V3-reply-2026-11-24.txt` (sha256
+  `d195a0a43fbdc54ad24c030887f07108e295ed94e4d673cdca7983ae2da4e049`):
+
+```text
+Question Q-F15V3 (2026-11-24): The recount gives 166 pre-lock pilot fits (was 146) and 128 reproduction-route fits (was 108), because 15.7h2 added 20 asthma repro fits. Those 20 were withdrawn from the proxy after Q-DROPASTHMA, so the plan's template wording would have been false; the executor redrafted it. One more gap: v2 never said that 31 of the original 108 repro fits stopped before fitting (24 too_many_variants, 7 no_variants). Which paragraph goes into DRAFT (h)? Use the preview to compare the two versions.
+Carter reply (verbatim, selected option): v3 + all early exits (Recommended)
+```
+
+- F15 wording v3 (supersedes v2; this is the paragraph inserted in DRAFT (h)), `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F15-wording-as-approved-v3-2026-11-24.txt` (sha256
+  `67cb9a11142b806478694f5dc43c14d69e30ab7f545c61b6021d401f2f4c83a1`):
+
+```text
+**Pre-lock pilot fits.** While the asthma inputs were being
+corrected (c) and afterwards, 166 fits were run outside the
+production result directories: 20 with the production 1000
+Genomes EUR panel and L = 10 (the five EUR traits at
+APOL1_22q12, FTO_16q12, MC4R_18q21 and SH2B3_12q24, on the
+variant catalog of that time), 18 of the same kind on the
+earlier catalog, and 128 reproduction-route fits; and 17 runs
+of one reproduction fit for the numerical-kernel experiment in
+(k); 39 of the 128 reproduction-route fits stopped before
+fitting (more than 16,000 variants, or no variants). For
+these, run status, LD overlap, allele classes and the number
+and size of purity-filtered credible sets were inspected: 7 of
+the 20 production-panel fits have at least one set (asthma at
+FTO_16q12; BMI at FTO_16q12, MC4R_18q21 and SH2B3_12q24;
+hypertension and stroke at SH2B3_12q24; type 2 diabetes at
+FTO_16q12). To measure the purity subsampling in (k), the
+purity of the 109 credible-set components of the 20
+production-panel fits was also recomputed exactly
+(manifests/purity_flip_measurement.tsv). 20 of the
+reproduction-route fits are of asthma on the corrected inputs
+(10 regions × 2 reproduction routes), run after the floor was
+fixed at 7 regions to measure the region-contribution proxy
+for the confirmatory region floor; 8 of them are among the 39
+that stopped before fitting. The earlier catalog that route
+reads carries the superseded asthma positions, so these fits
+mix genome builds, and they were withdrawn from that proxy
+(manifests/w3f_region_contribution_proxy.tsv), which uses the
+other four EUR traits only; for it the purity of the credible
+sets of 69 existing reproduction-route fits of those traits
+was recomputed exactly after fitting, without refitting. No
+colocalization was run on any pilot fit. Every production fit
+is run after the lock. The pilot fits are listed with
+checksums in manifests/prelock_pilot_fits.tsv.
+```
+
 - **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; n_regions_min stays 7. Lifts nothing under D-28.

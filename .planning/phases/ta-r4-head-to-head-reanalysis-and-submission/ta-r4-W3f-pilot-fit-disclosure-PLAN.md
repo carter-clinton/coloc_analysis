@@ -67,7 +67,10 @@ Wording v2: `W3f-carter-15-7-Q-F15-wording-as-approved-v2-2026-11-20.txt`, sha25
 Q-F15V3 (only if the recount differs; presented at Task 2):
 Question text: 15.7h2 ran 20 further pilot fits (asthma on the corrected inputs, 10 regions × 2 reproduction routes) for the region-contribution proxy, so the approved F15 paragraph's counts are out of date. Approve this v3 paragraph (recounted numbers, plus one sentence on the 20 fits)?
 Labels: `Approve v3 (Recommended)` / `Edit v3` (an edit is a new wording file, re-presented)
-Pinned on resume: reply file sha256 `<orchestrator pins>`, wording-v3 file sha256 `<orchestrator pins>`.
+Pinned on resume (2026-11-24): reply file `W3f-carter-15-7-Q-F15V3-reply-2026-11-24.txt` sha256
+`d195a0a43fbdc54ad24c030887f07108e295ed94e4d673cdca7983ae2da4e049` (label as presented: `v3 + all early exits (Recommended)`),
+wording-v3 file `W3f-carter-15-7-Q-F15-wording-as-approved-v3-2026-11-24.txt` sha256
+`67cb9a11142b806478694f5dc43c14d69e30ab7f545c61b6021d401f2f4c83a1`.
 </question>
 
 <context>
