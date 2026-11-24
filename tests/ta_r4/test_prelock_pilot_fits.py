@@ -55,3 +55,25 @@ def test_manifest_sha256_match():
         if h != r["sha256"]:
             bad.append(r["path"])
     assert not bad, f"sha256 mismatch: {bad[:5]} ({len(bad)})"
+
+
+#: Approved F15 wording (Carter, Q-F15V3); v1 and v2 are superseded and must not appear in the DRAFT.
+APPROVED = "W3f-carter-15-7-Q-F15-wording-as-approved-v3-2026-11-24.txt"
+SUPERSEDED = ("W3f-carter-15-7-Q-F15-wording-as-approved-2026-11-20.txt",
+              "W3f-carter-15-7-Q-F15-wording-as-approved-v2-2026-11-20.txt")
+DRAFT = REPO_ROOT / ".planning/amendments/osf-amendment-r4-DRAFT.md"
+
+
+def _unwrap(name):
+    return (MAN_DIR.parent / name).read_text().rstrip("\n").replace("\n", " ")
+
+
+def test_draft_paragraph_equals_the_approved_file_unwrapped():
+    text = DRAFT.read_text()
+    para = _unwrap(APPROVED)
+    h = [ln for ln in text.split("\n") if ln.startswith("(h) **Known-answer results (before the lock).**")]
+    assert len(h) == 1 and h[0].endswith(" " + para)
+    assert text.count("**Pre-lock pilot fits.**") == 1
+    for old in SUPERSEDED:
+        assert _unwrap(old) not in text, f"superseded wording present: {old}"
+    assert "before any production-arm fit exists" in text and "before any production fit exists" not in text
