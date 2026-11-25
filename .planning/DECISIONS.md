@@ -3755,3 +3755,27 @@ Carter reply (verbatim, selected option): Approve as written (Recommended)
   15.8d; R5 (multi-key fatal) + R7 (chronology wording) → 15.8e (Q-158R7); brief-blind review and close → 15.8f.
 - **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml stays locked: false;
   n_regions_min stays 7; no re-pin to make a check pass. Lifts nothing under D-28.
+- **R2 outcome (15.8a, 2026-11-25).** The collector replay audit (manifests/catalog_collector_drops.tsv) found
+  162,724 dropped rows with real alleles whose allele key is not in the final r4 catalog (67,626 distinct keys;
+  65,753 of them have the swapped key in the catalog), so 15.8a stopped at Task 2. The orchestrator then measured
+  (read-only, Slurm 2092423) that the fit's catalog join (run_susie_rss.R allele_key branch) is exact on
+  CHR,POS,REF,ALT with nomatch=0, so a sumstats row written in the other orientation than the catalog's is dropped
+  from that trait's fit; share of rows dropped over the 31 r4 regions: hypertension EUR 33.5%, stroke EUR 33.6%,
+  stroke AFR 29.4%, t2d AFR 21.9%, asthma AFR 1.5%, asthma EUR 0.6%, bmi EUR 0%, t2d EUR 0%; exact + both ==
+  joined_rows in 105/105 fits of the 21 regions unchanged since 15.5a (the 8 NC_NULL windows re-selected in 15.7h
+  are the only mismatches). Measurement: data/r4/tmp/w3f/q158/orient_by_fit.tsv (sha256
+  `b154b0fa789c997e4f3ba2497bdfef6a7a0b8f50d8b8cfe6ffe7b9d2fa05c4f1`), script data/r4/tmp/w3f/q158/measure_orient.py
+  (sha256 `6d41729163fd63b1661460b354636d2cf94e817c094405453b0c66d57b1a347e`).
+- Q-158R2, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158R2-reply-2026-11-25.txt` (sha256
+  `4183859f21ffe016b3384043a352a5363def84ab4b9820b410d865508d19bacb`; gated in 15.8a through a staging copy, data/r4/tmp/w3f/q158/gate_158r2.sh,
+  gate_158r2_15_8a.txt; one-byte-changed copy, wrong question text and label A each exit 2):
+
+```text
+Question Q-158R2 (2026-11-25): Q-158R2 (revised after a measurement). The fit's catalog join (run_susie_rss.R) is exact on CHR:POS:REF:ALT. The catalog kept each variant in the orientation of the first trait file that had it, and the other trait files write many variants the other way round, so the join silently drops those rows. Measured over the 31 r4 regions (validated 105/105 against the fits' own join counts), the share of each trait's sumstats rows dropped this way is: hypertension EUR 33.5%, stroke EUR 33.6%, stroke AFR 29.4%, t2d AFR 21.9%, asthma AFR 1.5%, asthma EUR 0.6%, bmi EUR 0%, t2d EUR 0%. No production fit has run yet, but every hypertension, stroke and AFR t2d fit would lose about a fifth to a third of its variants. How should this be fixed?
+Carter reply (verbatim, selected option): D: Harmonize r4 sumstats to one orientation (Recommended)
+```
+
+- **R2: audit done; the lost-key consequence is the orientation drop; fix = Carter D, plan 15.8a2.** 15.8a closes on
+  its B path: the audit module, tests 1-6 and the manifest stay; no test 7; DRAFT (c) is not edited here (15.8a2
+  harmonizes the r4 sumstats to one orientation, then rebuilds catalogs and panels downstream, and rewrites (c)).
+  The review row R2 stays OPEN until 15.8a2.

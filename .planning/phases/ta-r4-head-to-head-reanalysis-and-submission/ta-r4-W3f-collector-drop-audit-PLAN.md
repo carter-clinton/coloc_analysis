@@ -85,6 +85,9 @@ panels (new plan; note: a collector fix that keeps same-rsid rows with other all
 Plan-checker measurement (2026-11-25, current catalogs): 0 rsids with more than one allele key across the 31 r4
 catalogs. The recommendation is A only if no lost key is present in any production
 panel; Task 1 measures that and the printed label follows the measurement.
+Reply (2026-11-25; question revised by the orchestrator after its orientation measurement, Slurm 2092423):
+`W3f-carter-15-8-Q-158R2-reply-2026-11-25.txt`, sha256 `4183859f21ffe016b3384043a352a5363def84ab4b9820b410d865508d19bacb`,
+label `D: Harmonize r4 sumstats to one orientation (Recommended)` (new plan 15.8a2; 15.8a closes on its B path).
 
 **Carter's 2026-11-25 answers** (file `W3f-carter-15-8-<QID>-reply-2026-11-25.txt`, 2 lines, LF; gated by the
 staging copy of the protocol with `--question` = line 1 after `Question <QID> (2026-11-25): ` exactly as quoted below
