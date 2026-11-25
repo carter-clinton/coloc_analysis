@@ -194,3 +194,62 @@ def test_data_sources_record_the_oriented_copies():
         # whose r4 input is the D-18 restored-allele file, not the url's data/processed file
         assert o["from"] == paths.catalog_source_sumstats_path(t, a)
         assert (o["from"] == e["url"]) is ((t, a) != ("bmi", "EUR"))
+
+
+def _rebuild(region):
+    """collect_variants on the 8 oriented files (collector order) written as collect_region_variants.py writes it,
+    then catalog_unique_key as its main() writes the kept and dropped files: (raw, final, dropped) bytes."""
+    import io
+
+    from ta_r4 import catalog_unique_key as CUK
+    from ta_r4 import verify_inputs as V
+    from ta_r4.collector_drop_audit import load_collector, region_window
+
+    inputs = [paths.sumstats_path(t, a, "A3_1kg") for t, a in PAIRS]
+    assert all((REPO_ROOT / p).is_file() for p in inputs)  # the collector skips a missing path silently
+    V.verify(inputs, [V.SUMSTATS], REPO_ROOT)
+    _, chrom, start, end = region_window(region, REPO_ROOT)
+    df = load_collector(REPO_ROOT).collect_variants([str(REPO_ROOT / p) for p in inputs], chrom, start, end)
+    raw = df.to_csv(sep="\t", index=False)
+    kept, dropped, _ = CUK.unique_allele_key(io.StringIO(raw, newline="").readlines())
+    drop = CUK.DROPPED_HEADER + "".join(ln.rstrip("\r\n") + f"\t{s}\t{c}\n" for ln, s, c in dropped)
+    return raw.encode(), "".join(kept).encode(), drop.encode()
+
+
+# 7
+@pytest.mark.r4_heavy
+def test_catalog_is_a_fixed_point_of_the_oriented_inputs():
+    region = "NC_ABO"  # fewest input rows of the 31
+    raw, final, drop = _rebuild(region)
+    assert raw == (REPO_ROOT / paths.catalog_raw_path(region)).read_bytes()
+    assert final == (REPO_ROOT / paths.catalog_path("r4", region)).read_bytes()
+    assert drop == (REPO_ROOT / paths.catalog_dropped_path(region)).read_bytes()
+
+
+FIXED_POINT = MAN_DIR / "catalogs_r4_fixed_point.tsv"
+
+
+# 8
+def test_fixed_point_manifest_matches_disk():
+    import hashlib
+
+    def sha(rel):
+        return hashlib.sha256((REPO_ROOT / rel).read_bytes()).hexdigest()
+
+    with open(FIXED_POINT, newline="") as fh:
+        rows = list(csv.DictReader(fh, delimiter="\t"))
+    with open(MAN_DIR / "catalogs_sha256.tsv", newline="") as fh:
+        final = {r["region_safe"]: r for r in csv.DictReader(fh, delimiter="\t") if r["route"] == "r4"}
+    with open(MAN_DIR / "catalogs_r4_unique_key.tsv", newline="") as fh:
+        uk = {r["region_safe"]: r for r in csv.DictReader(fh, delimiter="\t")}
+    assert len(rows) == 31 and sorted(r["region_safe"] for r in rows) == sorted(final) == sorted(uk)
+    for r in rows:
+        g = r["region_safe"]
+        assert r["equal"] == "true", g
+        for k in ("raw", "final", "dropped"):
+            assert r[f"{k}_sha256_rebuilt"] == r[f"{k}_sha256_pinned"], (g, k)
+        assert r["final_sha256_pinned"] == final[g]["sha256"] == sha(paths.catalog_path("r4", g))
+        assert r["raw_sha256_pinned"] == uk[g]["raw_sha256"] == sha(paths.catalog_raw_path(g))
+        assert r["dropped_sha256_pinned"] == uk[g]["dropped_sha256"] == sha(paths.catalog_dropped_path(g))
+        assert int(r["final_rows"]) == int(final[g]["n_rows"]) == int(uk[g]["n_kept"])
+        assert int(r["raw_rows"]) == int(uk[g]["n_raw"])
