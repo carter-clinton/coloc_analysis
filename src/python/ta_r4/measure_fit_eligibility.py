@@ -444,7 +444,7 @@ def _fit_states(rscript, keys, repo=".", where=None):
 
 PILOT_ARMS = ("repro_routeC", "repro_k2d_routeC")
 #: The corrected asthma EUR input (route r4; debug asthma-eur-grch38-mislabel).
-ASTHMA_PILOT_SUMSTATS = paths.sumstats_path("asthma", "EUR", "A3_1kg")
+ASTHMA_PILOT_SUMSTATS = paths.catalog_source_sumstats_path("asthma", "EUR")
 RESULTS = f"{paths.R4}/results"
 PURITY_TOL = 1e-12
 SCORED = ("identity", "panel", "regularized", "panel_fallback")

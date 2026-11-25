@@ -55,11 +55,23 @@ def ld_receipt_json(arm, trait, anc, region_safe):
     return fit_json(arm, trait, anc, region_safe)[: -len(".json")] + ".ld_receipt.json"
 
 
-def sumstats_path(trait, anc, arm):
-    if trait == "bmi" and anc == "EUR" and arms.ARMS[arm]["route"] == "r4":
+def catalog_source_sumstats_path(trait, anc):
+    """The r4 catalog inputs (and the sources of the oriented copies)."""
+    if trait == "bmi" and anc == "EUR":
         return f"{R4}/sumstats/bmi.EUR.r4_alleles.tsv.bgz"  # D-18
-    if trait == "asthma" and arms.ARMS[arm]["route"] == "r4":
+    if trait == "asthma":
         return f"{R4}/sumstats/asthma.{anc}.grch37_lifted_strand.tsv.bgz"  # debug asthma-eur-grch38-mislabel
+    return f"data/processed/sumstats_harmonized/{trait}.{anc}.tsv.bgz"
+
+
+def oriented_sumstats_path(trait, anc):
+    """catalog_source_sumstats_path in the r4 catalog's orientation (15.8a2)."""
+    return f"{R4}/sumstats/{trait}.{anc}.r4_oriented.tsv.bgz"
+
+
+def sumstats_path(trait, anc, arm):
+    if arms.ARMS[arm]["route"] == "r4":
+        return oriented_sumstats_path(trait, anc)
     return f"data/processed/sumstats_harmonized/{trait}.{anc}.tsv.bgz"
 
 

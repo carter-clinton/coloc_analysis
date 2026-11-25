@@ -64,6 +64,7 @@ sources:
     checksum: {sha256: 49edfc54ce3416844c855763ce710d1fd0171da2e9da6722a9fa09d0eb0c7e2b, manifest: .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/sumstats_r4_sha256.tsv}
     lifted_from: {path: data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz, build: GRCh38, sha256: 22b2807551ca6a5967fa67ba81c7546cc66a7f3b9d0055cd23ddd8d2b3eda137}
     legacy_route_input: {path: data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz, build: GRCh38, sha256: 22b2807551ca6a5967fa67ba81c7546cc66a7f3b9d0055cd23ddd8d2b3eda137}
+    r4_oriented: {path: data/r4/sumstats/asthma.EUR.r4_oriented.tsv.bgz, sha256: 2634c5b4128a1c872bf5daea7bc905c9012c964f9acb3980032f9dd85b4ccbce, from: data/r4/sumstats/asthma.EUR.grch37_lifted_strand.tsv.bgz}
   sumstats_asthma_AFR:
     name: asthma AFR (GBMI 2021)
     url: data/r4/sumstats/asthma.AFR.grch37_lifted_strand.tsv.bgz
@@ -73,6 +74,7 @@ sources:
     checksum: {sha256: 8828df143702bc6128cf7872ba789fe76626dbe63344660bd84eb78a91c0c0c0, manifest: .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/sumstats_r4_sha256.tsv}
     lifted_from: {path: data/processed/sumstats_harmonized/asthma.AFR.grch38_backup.tsv.bgz, build: GRCh38, sha256: ffa899680245c9fa9aae21621d5b879698bb78d0c75d35752d1956de3a45f881}
     legacy_route_input: {path: data/processed/sumstats_harmonized/asthma.AFR.tsv.bgz, build: GRCh37, sha256: c9a723f3c900797692f54c6df5ae547840131f79a9a7891490d1670fc09a5c30}
+    r4_oriented: {path: data/r4/sumstats/asthma.AFR.r4_oriented.tsv.bgz, sha256: ef8896f6ef295cafcac8e1abf13508b2291c248b99e5c6ed10800ee74748ac78, from: data/r4/sumstats/asthma.AFR.grch37_lifted_strand.tsv.bgz}
   sumstats_bmi_EUR:
     name: BMI EUR (Yengo 2018)
     url: data/processed/sumstats_harmonized/bmi.EUR.tsv.bgz
@@ -80,6 +82,7 @@ sources:
     public: true
     build: GRCh37
     checksum: {sha256: c914e16b6b4e3264993c39db141090856e7e7fcdd1cad69405b04a2384acd9a0, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    r4_oriented: {path: data/r4/sumstats/bmi.EUR.r4_oriented.tsv.bgz, sha256: ed3a72763964870d0dbfaaa989e7b72fd002301ff31102e085ee38c702f6fee8, from: data/r4/sumstats/bmi.EUR.r4_alleles.tsv.bgz}
   sumstats_hypertension_EUR:
     name: hypertension EUR (Evangelou 2018)
     url: data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz
@@ -87,6 +90,7 @@ sources:
     public: true
     build: GRCh37
     checksum: {sha256: a740bb261b58cbb9f284139dd0012cb7fc01df24095e9a14833118fac6eba78f, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    r4_oriented: {path: data/r4/sumstats/hypertension.EUR.r4_oriented.tsv.bgz, sha256: 49a337bc77fa23bb21c581155bd18d16aa7e7b3044c801887b1d2047955e80d1, from: data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz}
   sumstats_stroke_EUR:
     name: stroke EUR (datasets.yaml megastroke_metastroke)
     url: data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz
@@ -94,6 +98,7 @@ sources:
     public: true
     build: GRCh37
     checksum: {sha256: 4dafe6152375b57e9b82033e92a3327df8a39f08fcea5dd3c86fda67394c3cd9, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    r4_oriented: {path: data/r4/sumstats/stroke.EUR.r4_oriented.tsv.bgz, sha256: 4b8d42ce93f356872adaa2260c259c5aba00581b7a33fd36013a4291f4fa035e, from: data/processed/sumstats_harmonized/stroke.EUR.tsv.bgz}
   sumstats_stroke_AFR:
     name: stroke AFR (GIGASTROKE 2022 AFR, GCST90104553)
     url: data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz
@@ -101,6 +106,7 @@ sources:
     public: true
     build: GRCh37
     checksum: {sha256: bf08ef2831b03a160857ef420ea448eeb38fac94a68b74359840d28e5d070384, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    r4_oriented: {path: data/r4/sumstats/stroke.AFR.r4_oriented.tsv.bgz, sha256: 27b6e32ebc70e520d495fe4593db745f8cf3418394342d0b533b77f9f585617e, from: data/processed/sumstats_harmonized/stroke.AFR.tsv.bgz}
   sumstats_t2d_EUR:
     name: T2D EUR (DIAMANTE 2022)
     url: data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz
@@ -108,6 +114,7 @@ sources:
     public: true
     build: GRCh37
     checksum: {sha256: 7cf7723ae0a6e6d05780d76ad53f922ec3a130c47ea38db26b1001911d6e4e8f, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    r4_oriented: {path: data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz, sha256: 039d1c010cbc49d19e7d7d999df367843dda9c0f0e0de0ecd59154ca71fb7880, from: data/processed/sumstats_harmonized/t2d.EUR.tsv.bgz}
   sumstats_t2d_AFR:
     name: T2D AFR (T2DGGI AFA, Suzuki 2024)
     url: data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz
@@ -115,3 +122,4 @@ sources:
     public: true
     build: GRCh37
     checksum: {sha256: 23347618a0cb31bd995aa49155ec933b276544e12f71e76279a66493eeb0470c, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
+    r4_oriented: {path: data/r4/sumstats/t2d.AFR.r4_oriented.tsv.bgz, sha256: 33568f858525e3d8373079928d80474b71302de3c59f0f4ac1b38a58f37e697d, from: data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz}

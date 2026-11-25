@@ -64,7 +64,7 @@ class OrientError(RuntimeError):
 
 
 def oriented_path(trait, anc) -> str:
-    return f"{OUT_DIR}/{trait}.{anc}.r4_oriented.tsv.bgz"
+    return paths.oriented_sumstats_path(trait, anc)
 
 
 def source_path(trait, anc) -> str:

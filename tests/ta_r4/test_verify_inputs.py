@@ -242,7 +242,7 @@ def test_qtl_group_cli_exit_1_without_done(tmp_path):
 
 @pytest.mark.r4_heavy
 def test_real_asthma_eur_sumstats_verifies():
-    rel = paths.sumstats_path("asthma", "EUR", "A3_1kg")
+    rel = paths.catalog_source_sumstats_path("asthma", "EUR")
     assert V.verify([rel], [V.SUMSTATS], REPO_ROOT) is None
     with open(REPO_ROOT / V.SUMSTATS, newline="") as fh:
         rec = {r["path"]: r["sha256"] for r in csv.DictReader(fh, delimiter="\t")}

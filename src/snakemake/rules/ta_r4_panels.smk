@@ -13,7 +13,7 @@ if len(TRACK_A_SUMSTATS) != 8:
     raise WorkflowError(f"expected the 8 Track A sumstats, got {TRACK_A_SUMSTATS}")
 CATALOG_SUMSTATS = {
     "legacy": [f"data/processed/sumstats_harmonized/{t}.{a}.tsv.bgz" for t, a in TRACK_A_SUMSTATS],
-    "r4": [r4paths.sumstats_path(t, a, "A3_1kg") for t, a in TRACK_A_SUMSTATS],
+    "r4": [r4paths.catalog_source_sumstats_path(t, a) for t, a in TRACK_A_SUMSTATS],
 }
 CATALOG_REGIONS_CSV = {"legacy": config["paths"]["regions_curated"], "r4": r4paths.regions_csv()}
 

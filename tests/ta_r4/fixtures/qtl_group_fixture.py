@@ -112,6 +112,11 @@ def build(root):
     if paths.catalog_path("legacy", REGION) != paths.catalog_path("r4", REGION):
         (root / paths.catalog_path("legacy", REGION)).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(root / paths.catalog_path("r4", REGION), root / paths.catalog_path("legacy", REGION))
+    for tr in TRAITS:
+        src, dst = f"data/processed/sumstats_harmonized/{tr}.EUR.tsv.bgz", paths.sumstats_path(tr, "EUR", "A3_1kg")
+        if dst != src:
+            (root / dst).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(root / src, root / dst)
     _write_tsv(root / paths.regions_csv(), ["region_id", "ancestry", "chr", "start", "end"],
                [[REGION, "EUR", CHR, START, END]], delim=",")
     _write_tsv(root / "config/ta_r4/trait_manifest.tsv", ["trait", "ancestry", "type", "sdY", "sdY_source", "N_median"],

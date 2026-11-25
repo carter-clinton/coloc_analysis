@@ -295,7 +295,7 @@ def r4_sumstats(repo="."):
 
     with open(Path(repo) / "config/pipeline.yaml") as fh:
         cfg = yaml.safe_load(fh)
-    out = [paths.sumstats_path(t, a, "A3_1kg") for t in cfg["traits"] for a in cfg["trait_ancestries"].get(t, [])]
+    out = [paths.catalog_source_sumstats_path(t, a) for t in cfg["traits"] for a in cfg["trait_ancestries"].get(t, [])]
     if len(out) != 8:
         raise ValueError(f"expected the 8 Track A sumstats, got {out}")
     return out

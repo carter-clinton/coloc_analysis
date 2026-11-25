@@ -47,7 +47,11 @@ def test_argv_cap_is_zero():
 
 def test_argv_reads_the_corrected_asthma_lift():
     ma = _margv()
-    assert ma[ma.index("--sumstats") + 1] == "data/r4/sumstats/asthma.EUR.grch37_lifted_strand.tsv.bgz"
+    assert ma[ma.index("--sumstats") + 1] == "data/r4/sumstats/asthma.EUR.r4_oriented.tsv.bgz"
+    rep = json.loads((REPO_ROOT / "data/r4/tmp/w3f/q158/a2/report_asthma.EUR.json").read_text())
+    assert rep["out"] == "data/r4/sumstats/asthma.EUR.r4_oriented.tsv.bgz"
+    assert rep["src"] == "data/r4/sumstats/asthma.EUR.grch37_lifted_strand.tsv.bgz"
+    assert rep["sha256_src"].startswith("49edfc54")
 
 
 @pytest.mark.parametrize("out", ["data/r4/results/x", "/tmp/x", "data/r4/tmp/../results/A3_1kg",
@@ -133,8 +137,8 @@ def test_bound_row_needs_panel_at_or_below_cap():
 
 def test_pinned_inputs_come_from_the_committed_manifests():
     p = m.pinned_inputs(KEY)
-    assert p["sumstats_path"] == "data/r4/sumstats/asthma.EUR.grch37_lifted_strand.tsv.bgz"
-    assert p["sumstats"].startswith("49edfc54")
+    assert p["sumstats_path"] == "data/r4/sumstats/asthma.EUR.r4_oriented.tsv.bgz"
+    assert p["sumstats"].startswith("2634c5b4")
     assert p["catalog_path"] == "data/r4/ld/variants_r4/PYHIN1_1q23.tsv"
     assert p["panel_path"] == paths.panel_path(*KEY[:1], KEY[3], KEY[2])
     assert all(len(p[k]) == 64 for k in ("sumstats", "catalog", "panel"))

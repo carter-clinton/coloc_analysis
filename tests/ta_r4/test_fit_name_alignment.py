@@ -151,7 +151,7 @@ from ta_r4 import run_qtl_group_r4 as QG  # noqa: E402
 @pytest.mark.r4_heavy
 def test_qtl_abf_maps_bridged_names_through_panel(tmp_path_factory):
     root = QF.build(tmp_path_factory.mktemp("qtl_names") / "root")
-    ssp = root / "data/processed/sumstats_harmonized/tA.EUR.tsv.bgz"
+    ssp = root / paths.sumstats_path("tA", "EUR", "A3_1kg")
     lines = gzip.decompress(ssp.read_bytes()).decode().splitlines()
     hdr = lines[0].split("\t")
     c, p_, s = hdr.index("CHR"), hdr.index("POS"), hdr.index("SNP_ID")

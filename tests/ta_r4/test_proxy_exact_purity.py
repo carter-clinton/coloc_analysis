@@ -249,7 +249,7 @@ def test_asthma_pilot_commands_use_the_corrected_input_and_the_pilot_dir():
         s, o = ref.index("--sumstats") + 1, ref.index("--output") + 1
         assert _diff(argv, ref) == sorted((s, o))
         assert ref[s] == paths.sumstats_path("asthma", "EUR", arm) != CORRECTED
-        assert argv[s] == CORRECTED == paths.sumstats_path("asthma", "EUR", "A3_1kg")
+        assert argv[s] == CORRECTED == paths.catalog_source_sumstats_path("asthma", "EUR")
         assert argv[o] == f"{PILOT_ROOT}/proxy_asthma_{arm}/asthma.EUR.{g}.json"
         assert not m._under(argv[o], f"{paths.R4}/results")
     with pytest.raises(ValueError, match="results"):
