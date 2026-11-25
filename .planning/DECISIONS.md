@@ -3819,3 +3819,12 @@ Carter reply (verbatim, selected option): A: Flip by allele key like other SNPs 
   `f4ecd06606a6f9eb828b57a304da1663078e888494853818ba124ea3618b409c`, committed here and gated there). R2 stays OPEN until 15.8a4.
 - **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml stays locked: false;
   n_regions_min stays 7; no re-pin to make a check pass. Lifts nothing under D-28 (no frozen file is edited).
+- Q-158EL, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158EL-reply-2026-11-25.txt` (sha256 `f4ecd06606a6f9eb828b57a304da1663078e888494853818ba124ea3618b409c`): the 16,000-variant
+  cap applies as pre-registered and the DRAFT counts are updated, conditional on the measured set equalling the
+  estimate set; gated in 15.8a4 (gate_158a2.sh Q-158EL; negative controls a4/gate_nc_15_8a4.txt: one byte changed in
+  a copy, another label, one sha256 character changed, the question typed with its leading QID, each exit 2).
+
+```text
+Question Q-158EL (2026-11-25): (15.8a4, the 16,000-variant cap). With the oriented inputs more rows reach the fits, and the pre-registered cap (16,000 variants after panel restriction; above it the fit is not run and its pair rows are method none) is re-measured. My estimate from the panels (not a fit; it reproduces the current pinned counts exactly): type 2 diabetes AFR x BMI_5q13_3 goes over the cap in AFR661_A3 (14,398 to about 16,966 variants), AFR661_A2 (the same variants) and AFR504_A3 (14,343 to about 16,841), so those 3 fits would not run and in each AFR arm the stroke x type 2 diabetes row of BMI_5q13_3 becomes method none (4 to 5 of 30 rows per arm); type 2 diabetes AFR x PYHIN1_1q23 rises to about 15,832 and 15,718, just under. All other measured fits stay under the cap; every EUR fit's eligibility is unchanged. If the re-measurement shows exactly this set, should the cap apply as pre-registered, with the counts updated in the DRAFT? A different set stops for you again.
+Carter reply (verbatim, selected option): A: Apply the cap as pre-registered and update the counts (Recommended)
+```
