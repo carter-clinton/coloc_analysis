@@ -26,7 +26,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-24 (night) — **TRACK A ta-r4: W3f 15.7i COMPLETE (F15 pre-lock pilot fits disclosed in DRAFT (h) with Carter's v3 wording; manifest committed). NEXT = 15.7j. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-25 — **TRACK A ta-r4: W3f 15.7 CLOSED (15.7j: review banked, FULL 2,694 reconciled vs full_W3f.xml, HANDOFF refreshed). NEXT = 15.8. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 99ab219d (DRAFT (m)/Pre-Paste, brief-blind re-review banked, dispositions), plus the records commit.
+- Review: codex-cli 0.166.0 gpt-6.1-sol, rc 0; output 37,290 B sha256 6d2060d7…1fe0 in
+  ta-r4-W3f-15-7-AMENDMENT-REVIEW-as-received.md; 14 findings = 14 rows (DRAFT fixed 7; OPEN code R4, R6; rejected 1; noted 4).
+- Carter decided R2–R7 (W3f-carter-15-7j-open-items-reply-2026-11-24.txt) and the corrected Q-F3N question (Q-F3NL "Keep
+  legacy rule for QTL_legacy") plus Q-158DIG / Q-158E7R / Q-158R6S / Q-158R7 on 2026-11-25 → all carried to 15.8 (HANDOFF
+  w4a_checkpoint.production_blockers W3f157_*). 15.8a commits those reply files.
+- Q-F3N reply committed; DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4 addendum quotes it and records its wrong premise.
+- 15.7h / 15.7h2 SUMMARYs gained their missing id lists (and 15.7h2's Declared spec updates: none), orchestrator sign-off.
+- FULL Slurm 2086699 (cascadelake c020n02): 2,694 = 2,641 P / 53 S / 0 F = 2,555 + 140 − 1 vs full_W3f.xml; identical to
+  full_15_7i.xml; check_15_7j.py PASS (strict). HANDOFF: all 12 W3f_F* RESOLVED (old text under _PRE_2026_11_20).
+- NEXT = 15.8 (ta-r4-W3f-15-8-review-suite-and-close-PLAN.md and its sub-plans); then W4a-T3 lock presentation. W4a depends_on
+  unchanged (15.8f sets it). decision_rules.yaml locked: false; n_regions_min 7; confirmatory_sha256 9fa410aa…88d5 unchanged;
+  no OSF; NOT PUSHED.
+
+## 2026-11-24 (night) — **TRACK A ta-r4: W3f 15.7i COMPLETE (F15 pre-lock pilot fits disclosed in DRAFT (h) with Carter's v3 wording; manifest committed). NEXT = 15.7j. NOT PUSHED.** (SUPERSEDED by the 2026-11-25 block above)
 
 - Commits (local only): b343872f (DEC), 42f3eb9c (manifest + tests), ac61c486 (Q-F15V3 + v3 files), 46e0b1fe (DRAFT), plus the records commit.
 - Recount: 166 pilot fits (was 146), 128 reproduction-route (was 108), 39 of the 128 stopped before fitting (31 + 8); 20 / 18 / 17

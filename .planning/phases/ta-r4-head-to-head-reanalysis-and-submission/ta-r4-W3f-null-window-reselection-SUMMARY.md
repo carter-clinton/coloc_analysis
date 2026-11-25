@@ -147,3 +147,12 @@ None. The S3 download is the planned trust boundary (T-r4-157h-01), mitigated as
 ## Self-Check: PASSED
 
 Commits 6fffde86, 0e6dda24, 350cd9b9 are ancestors of HEAD; the test file, superseded selection, Carter 15.7h reply file and this SUMMARY exist. Every changed path since 63083a1d is in files_modified or one of the two Carter-approved manifests and the reply file. src/tests/config clean after FULL. decision_rules.yaml locked: false. Nothing pushed.
+
+## New test ids
+
+Records completion, 15.7j, orchestrator sign-off 2026-11-25; copied from `$Q/new_tests_15_7h.txt` (4 ids):
+
+- `tests.ta_r4.test_null_windows_production_pool::test_driver_reproduces_the_superseded_selection`
+- `tests.ta_r4.test_null_windows_production_pool::test_selection_reproduces_from_the_production_inputs`
+- `tests.ta_r4.test_null_windows_production_pool::test_superseded_selection_is_kept`
+- `tests.ta_r4.test_null_windows_production_pool::test_new_window_tiles_do_not_depend_on_what_is_on_disk`

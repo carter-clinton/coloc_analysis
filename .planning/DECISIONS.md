@@ -3401,6 +3401,21 @@ Carter reply (verbatim, selected option): A: Keep it as today, logged as the leg
   `decision_rules.yaml` (stays `locked: false`), a production fit, OSF posting, a push.
 - Lifts nothing under D-28.
 
+- **Addendum 2026-11-25 (15.7j).** Carter confirmed the r4-only NaN rule after the fact (Q-F3N),
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7-Q-F3N-reply-2026-11-24.txt` (sha256
+  `eaafba6ea92203ac546e031951897d306b2b6b77e2e998837ed46086f9a0d3e3`; gate_reply.py rc 0, data/r4/tmp/w3f/q157/gate_15_7j_qf3n.txt):
+
+```text
+Question Q-F3N (2026-11-24): Separate from the sweep fix you approved, the planner found a second, adjacent defect: when a region's best GWAS PP.H4 is NaN (no coloc_susie posterior), assign_tier currently gives it 'Tier C' rather than below_threshold. The plan fixes this for r4 only, behind a new flag (--nan-gwas-below-threshold) in the Track-B-shared assign_tiers.py. Track B output stays byte-identical, and E7's frozen comparator QTL_legacy does not get the flag. I approved that design myself earlier, but it changes r4 tiering beyond your Q-F3 answer, so it's your call. What should 15.7g do?
+Carter reply (verbatim, selected option): A: Fix it for r4 via the flag (Recommended)
+```
+
+  The question's premise was wrong: it says E7's frozen comparator QTL_legacy "does not get the flag". In the code it does:
+  r4_qtl_tiers runs for every R4 QTL arm, QTL_legacy included (fit arm repro_routeL), and `tiers_argv` always passes
+  `--nan-gwas-below-threshold` (found by the 15.7j text-vs-code check). Carter answered the corrected question on 2026-11-25
+  (Q-F3NL, "Keep legacy rule for QTL_legacy (Recommended)"; reply file committed by 15.8a). The QTL_legacy change needs code
+  and is carried to 15.8; until then this DEC's flag reaches QTL_legacy as the code stands.
+
 ## 2026-11-20 — DEC-2026-11-20-ta-r4-null-window-reselection: the null-window selection is re-run on the production inputs with the unchanged rule and seed (Carter, Q-F9 A)
 
 - **Decider:** Carter, 2026-11-20, reply saved verbatim (committed in 15.7a; gate_reply.py Q-F9 passed in 15.7h):

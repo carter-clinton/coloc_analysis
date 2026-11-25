@@ -79,3 +79,23 @@ None.
 
 Commits d1498dff, f1f17bef, 265434df, 563f4753, bcd0310a, 688a6220, 4f3d692a, dd5eb803 are ancestors of HEAD; the test file,
 both manifests and both reply files exist; src/tests clean after FULL; decision_rules.yaml unchanged; nothing pushed.
+
+## New test ids
+
+Records completion, 15.7j, orchestrator sign-off 2026-11-25; copied from `$Q/new_tests_15_7h2.txt` (9 ids):
+
+- `tests.ta_r4.test_proxy_exact_purity::test_exact_purity_set_counts_on_a_fixture`
+- `tests.ta_r4.test_proxy_exact_purity::test_identity_ld_counts_unchanged_by_exact_purity`
+- `tests.ta_r4.test_proxy_exact_purity::test_proxy_default_path_unchanged`
+- `tests.ta_r4.test_proxy_exact_purity::test_asthma_pilot_commands_use_the_corrected_input_and_the_pilot_dir`
+- `tests.ta_r4.test_proxy_exact_purity::test_split_argv_equals_the_pilot_argv_except_cap_rscript_and_output`
+- `tests.ta_r4.test_proxy_exact_purity::test_proxy_reads_asthma_from_the_pilot_root_and_stops_excluding_it`
+- `tests.ta_r4.test_proxy_exact_purity::test_n_regions_min_is_7`
+- `tests.ta_r4.test_proxy_exact_purity::test_regularised_fit_is_scored_on_the_regularised_matrix`
+- `tests.ta_r4.test_proxy_exact_purity::test_scored_matrix_label_names_the_matrix_that_matched`
+
+## Declared spec updates
+
+none
+
+(Records completion, 15.7j, orchestrator sign-off 2026-11-25; check_15_7h2.py declared 0.)

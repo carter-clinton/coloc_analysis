@@ -1529,3 +1529,31 @@ index c517ffb7..a0ffd52e 100644
 - Own slip, fixed before commit: step 1's Pre-Paste F15 row quoted `**Pre-lock pilot fits.**`, which made
   test_prelock_pilot_fits' count assertion 2 ≠ 1 (step 1 had run only test_amendment_text). Row text changed to
   "pre-lock pilot-fit paragraph" in the DRAFT and in draft_15_7j.py.
+
+## 2026-11-25 — W3f 15.7j close: FULL reconciled cumulatively; records completion; HANDOFF / STATE / PLAN-INDEX (no push)
+
+- FULL Slurm 2086699 (`--constraint=cascadelake`, c020n02, HEAD 99ab219d, 64G, 2h13m): QUICK 861 P / 2 S (5m50s; over the
+  120 s guide, as 15.7a–i); HEAVY 332 P / 5 S; PINS 39 P; FULL 2,694 = 2,641 P / 53 S / 0 F (`$Q/full_15_7j.xml` 27b0596e…).
+  src/, tests/, config/ta_r4 clean.
+- `$Q/check_15_7j.py` (ids and declared spec updates parsed from the ten 15.7 SUMMARYs) first STOPPED, rc 3: 15.7h had no
+  id list; 15.7h2 had no id list and no `## Declared spec updates` section (127 of 140 ids). Handed back; orchestrator
+  sign-off 2026-11-25: both SUMMARYs gained `## New test ids` copied from `$Q/new_tests_15_7h.txt` (4) and
+  `$Q/new_tests_15_7h2.txt` (9), and 15.7h2 `## Declared spec updates` none, labelled "records completion, 15.7j". Parser
+  header match widened from "New tests" to "New test".
+- Strict re-run on the same xml (`$Q/reconcile_15_7j_strict.txt`): CHECK PASS rc 0. Per plan 32 + 31 + 18 + 7 + 12 + 13 + 11
+  + 4 + 9 + 3 = 140 (15.7d's 7 = 6 new + the rename successor); vs full_W3f.xml removed 1 = the declared _19_ → _20_ rename
+  (successor passed), added 140 = the SUMMARY union, all passed, 0 outcome changes (27 declared spec-update ids, all passed),
+  2,555 + 140 − 1 = 2,694, skips 53; vs full_15_7i.xml identical by id and outcome (junit_cmp 0/0/0, tests/m3 0). NCs
+  (`$Q/check_15_7j_strict_nc.txt`): base as new FAIL rc 1; Haswell 2080101 FAIL rc 1; a SUMMARY copy without 15.7h2's spec
+  section STOP rc 3.
+- Q-F3N (W3f-carter-15-7-Q-F3N-reply-2026-11-24.txt, sha256 eaafba6e…d3e3, gate rc 0, wrong-label NC rc 2) committed;
+  DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4 addendum quotes it (quoted block cmp-equal to the file; DECISIONS.md insert-only)
+  and records the wrong premise and Carter's corrected answer Q-F3NL 2026-11-25 (→ 15.8).
+- HANDOFF (`$Q/handoff_15_7j.py` → target dict; applied as line edits by `$Q/handoff_15_7j_textual.py` because the file mixes
+  escaped and literal non-ASCII; result == target): 12 W3f_F* → RESOLVED (old under _PRE_2026_11_20); W3f157_R2–R7 +
+  W3f157_QF3N_premise as decided by Carter → 15.8; read_first + the 15.7j review; region_contribution_proxy per 15.7h2 (old
+  under _PRE_2026_11_25, FLAG lines kept); headline / status / suite_baselines_ta_r4_latest / resume_on_reconnect rewritten
+  (old under _PRIOR_2026_11_25); ta_r4_w3f_15_7j_close. Keys 401 → 429; 488 pre-existing strings all present (NC: one PRE
+  key deleted → 1 missing). confirmatory_sha256 9fa410aa…88d5 re-measured, unchanged.
+- W4a PLAN untouched (depends_on stays; 15.8f sets it). PLAN-INDEX 15.7j COMPLETE; STATE ★ block NEXT = 15.8.
+- No push, no fit, no OSF, decision_rules.yaml locked: false, n_regions_min 7, no signoff file.
