@@ -3779,3 +3779,43 @@ Carter reply (verbatim, selected option): D: Harmonize r4 sumstats to one orient
   its B path: the audit module, tests 1-6 and the manifest stay; no test 7; DRAFT (c) is not edited here (15.8a2
   harmonizes the r4 sumstats to one orientation, then rebuilds catalogs and panels downstream, and rewrites (c)).
   The review row R2 stays OPEN until 15.8a2.
+
+## 2026-11-25 — DEC-2026-11-25-ta-r4-sumstats-orientation: the 8 r4 sumstats inputs are written in the r4 catalog's orientation, A/T and C/G SNPs flipped by allele key like any other SNP; catalogs unchanged (Carter, Q-158R2 D, Q-158OR A, Q-158PAL A)
+
+- **Decider:** Carter, 2026-11-25; replies saved verbatim by the orchestrator and gated in 15.8a2 through
+  byte-identical staging copies (data/r4/tmp/w3f/q158/gate_158r2.sh, gate_158a2.sh; negative controls
+  a2/gate_nc_15_8a2.txt: one byte changed in a copy, one character changed in the question text, the question typed
+  with its leading QID, a non-Recommended label, one sha256 character changed, each exit 2).
+- Q-158R2, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158R2-reply-2026-11-25.txt` (sha256 `4183859f21ffe016b3384043a352a5363def84ab4b9820b410d865508d19bacb`): fix the exact-key orientation drop by harmonizing the r4 sumstats.
+
+```text
+Question Q-158R2 (2026-11-25): Q-158R2 (revised after a measurement). The fit's catalog join (run_susie_rss.R) is exact on CHR:POS:REF:ALT. The catalog kept each variant in the orientation of the first trait file that had it, and the other trait files write many variants the other way round, so the join silently drops those rows. Measured over the 31 r4 regions (validated 105/105 against the fits' own join counts), the share of each trait's sumstats rows dropped this way is: hypertension EUR 33.5%, stroke EUR 33.6%, stroke AFR 29.4%, t2d AFR 21.9%, asthma AFR 1.5%, asthma EUR 0.6%, bmi EUR 0%, t2d EUR 0%. No production fit has run yet, but every hypertension, stroke and AFR t2d fit would lose about a fifth to a third of its variants. How should this be fixed?
+Carter reply (verbatim, selected option): D: Harmonize r4 sumstats to one orientation (Recommended)
+```
+
+- Q-158OR, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158OR-reply-2026-11-25.txt` (sha256 `b4a87020eb0ec2965b6239c7c37941dc10207854852e9e7dc555b4990ae6646a`): canonical orientation = the r4 catalog's.
+
+```text
+Question Q-158OR (2026-11-25): (15.8a2, which orientation). Measured: t2d EUR is written in GRCh37 reference orientation (REF equals the 1000 Genomes REF at 658 of 658 anchor SNPs) and asthma nearly so (653 of 658), but bmi, hypertension, stroke and t2d AFR put the effect allele in ALT (about half of anchors reversed). The r4 catalog took each variant's orientation from the first file that named it (mostly bmi for rsids, t2d EUR for chr:pos names), so it is a mix, and 45,383 variants appear in it twice, once each way, under two names. No LD panel is in one orientation either (the 1000G EUR panel has the reference allele as REF at 502 of 656 anchors; UK Biobank and the AFR VCF panels have their own order), and every step after the catalog join already accepts either orientation (panel joins match exact or swapped; coloc matches positions or unordered alleles and does not depend on the sign); only the catalog join is exact. A: flip each trait's rows to the catalog's orientation; catalogs and panels stay byte-identical (checked by rebuilding the catalogs from the flipped files), and each double-entered variant stays, each trait using the entry that matches it. B: flip every file and the catalogs to the GRCh37 reference allele; needs a pinned GRCh37 FASTA, rebuilds and re-pins all 31 catalogs, re-runs the 15.8a audit, and needs a rule for rows whose alleles do not include the reference base; apart from that rule the fits join the same variants either way. Which?
+Carter reply (verbatim, selected option): A: Catalog orientation, catalogs unchanged (Recommended)
+```
+
+- Q-158PAL, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158PAL-reply-2026-11-25.txt` (sha256 `b5cde5c3f787a5c3bdd74c2863398898097183cf07bc85f429d9fbd8394fec13`): A/T and C/G SNPs flipped by allele key.
+
+```text
+Question Q-158PAL (2026-11-25): (15.8a2, A/T and C/G SNPs). Of the 159,969 rows to flip, 28,637 are A/T or C/G SNPs (2,387 with allele frequency 0.4-0.6), where a swap cannot be told apart from a strand flip. Every r4 step that uses an effect's sign already drops these SNPs: the fits' allele-aware panel join (all production arms), and through the fits the cross-panel purity and the QTL bridge. The only step that reads them, A1 on all variants, matches alleles as an unordered pair and uses coloc.abf, which does not depend on the sign. So no reported posterior depends on how they are oriented; the rule changes only the fits' join counters. A: flip them like any other SNP, by allele key (keeps every row; no swapped row is left). B: flip only when the allele frequency is outside 0.4-0.6 and agrees with an unflipped file of the same ancestry; drop the rest from the r4 files. C: drop every A/T or C/G row that would be flipped. Which?
+Carter reply (verbatim, selected option): A: Flip by allele key like other SNPs (Recommended)
+```
+
+- **Decision.** Canonical orientation = the r4 catalog's (Q-158OR A): a sumstats row in an r4 region window whose
+  normalized CHR:POS:REF:ALT key is absent from that region's catalog while the swapped key is present
+  (swapped_only) is flipped (REF and ALT exchanged, BETA sign toggled, EAF := 1 − EAF); every other row is unchanged.
+  A/T and C/G SNPs follow the same rule (Q-158PAL A). The oriented copies are written to
+  data/r4/sumstats/<trait>.<anc>.r4_oriented.tsv.bgz (15.8a2) and pinned in manifests/sumstats_r4_sha256.tsv; the
+  pinned inputs, the 31 r4 catalogs, the panels and Track B's data/processed files are not changed. This supersedes
+  the 15.8a DEC's note that 15.8a2 would rebuild catalogs and panels: under Q-158OR A the catalogs stay
+  byte-identical (15.8a3 proves it as a fixed point). Production consumers switch to the oriented copies in 15.8a3;
+  the eligibility re-measurement and the DRAFT text follow in 15.8a4 (Q-158EL, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158EL-reply-2026-11-25.txt`, sha256
+  `f4ecd06606a6f9eb828b57a304da1663078e888494853818ba124ea3618b409c`, committed here and gated there). R2 stays OPEN until 15.8a4.
+- **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml stays locked: false;
+  n_regions_min stays 7; no re-pin to make a check pass. Lifts nothing under D-28 (no frozen file is edited).

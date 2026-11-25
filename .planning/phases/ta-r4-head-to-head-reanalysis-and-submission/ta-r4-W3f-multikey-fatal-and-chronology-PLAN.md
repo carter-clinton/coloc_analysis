@@ -22,7 +22,7 @@ requirements:
 must_haves:
   truths:
     - "Gates Q-157J and Q-158R7 (`Approve as written (Recommended)`, sha256 a9a6866e…61b8) pass (15.8 protocol); otherwise nothing is edited"
-    - "Measured before the change, with variant_match.R resolve_fit_names only (no cross-panel purity is computed on any pilot fit, so no new pre-lock inspection of results): over every credible-set member name of the 20 production-panel pilot fits (A3_1kg_newcat), resolved through the r4 sumstats, r4 catalog and EUR_1kg_r4 fit panel as cs_cross_purity.R would, the number whose base has more than one allele key; and the catalog-level bound, the number of rsids with more than one normalized allele key in each of the 31 r4 catalogs (plan-checker 2026-11-25: 0), recorded as holding for the current catalogs only. A non-zero member count is a STOP for Carter (production aggregation would now stop with an error)"
+    - "Measured before the change, with variant_match.R resolve_fit_names only (no cross-panel purity is computed on any pilot fit, so no new pre-lock inspection of results): over every credible-set member name of the 20 production-panel pilot fits (A3_1kg_newcat), resolved through the sumstats file each pilot fit recorded (its JSON `sumstats`, the pre-orientation catalog-source file, sha256-verified), the r4 catalog and EUR_1kg_r4 fit panel as cs_cross_purity.R would, the number whose base has more than one allele key; and the catalog-level bound, the number of rsids with more than one normalized allele key in each of the 31 r4 catalogs (plan-checker 2026-11-25: 0), which holds unchanged after 15.8a2-a4 because the catalogs are byte-identical (15.8a3 fixed point, 31/31); and the oriented-input bound, SNP_IDs with more than one catalog-joined allele key in the 8 oriented files (planner 2026-11-25: 0 in all 248 trait × region rows). A non-zero member count is a STOP for Carter (production aggregation would now stop with an error)"
     - "cs_cross_purity.R stops with `REFUSED_MULTI_KEY: <n> of <m> credible-set members of <fit> (first: …)` when any member resolves to more than one allele key without --allow-duplicate-rows, with or without --allow-absent; --allow-duplicate-rows behaviour (the (N+1)-th key in catalog order; BAD_OCCURRENCE) is unchanged; the output columns are unchanged (n_refused_multi_key stays and is 0 in every written row)"
     - "DRAFT (e) E4: `A member whose name resolves to more than one allele key is left out of the purity and counted, and its set is noted.` → `A member whose name resolves to more than one allele key is an error.`"
     - "DRAFT Purpose keeps `before any production-arm fit exists` and gains the R7 sentence Carter approved (Q-158R7) exactly: the inserted text, unwrapped, has sha256 59c2631a6baa441c44754bbf3d55cb1f0eadd7b18356b7af6762d92a557672be (416 characters), asserted before and after insertion; (h) and the approved pilot-fit paragraph are untouched (test_draft_paragraph_equals_the_approved_file_unwrapped green)"
@@ -97,7 +97,7 @@ N_new = 2.
 1. tests/ta_r4/test_cs_cross_purity_resolution.py::`test_multi_key_member_is_fatal_with_or_without_allow_absent`
 2. tests/ta_r4/test_amendment_text.py::`test_purpose_states_gated_production_vs_pilot_fitting` (the phrase, the gate
    sentence and the pilot sentence present in the extract; the old parenthetical absent)
-Expected FULL: base full_15_8d.xml (expected 2,732) + 2 = 2,734. Declared: test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catalog_order_only_when_allowed.
+Expected FULL: base full_15_8d.xml (expected 2,759) + 2 = 2,761. Declared: test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catalog_order_only_when_allowed.
 </new_tests>
 
 <tasks>
@@ -113,13 +113,20 @@ Expected FULL: base full_15_8d.xml (expected 2,732) + 2 = 2,734. Declared: test_
     0. `git rev-parse HEAD > $Q8/start_15_8e.txt`; `bash $Q8/gate_157j.sh`; `bash $Q8/gate_158.sh Q-158R7`.
     1. For each A3_1kg_newcat pilot fit with sets: read only the fit RDS's member names (`colnames(fit$lbf_variable)`
        at `unlist(fit$sets$cs)`; no LD, no purity, no colocalization), and call `resolve_fit_names` (sourced from
-       variant_match.R) with the r4 sumstats window, the r4 catalog and the EUR_1kg_r4 fit panel's variants, without
-       --allow-duplicate-rows. Do not run cs_cross_purity.R on any pilot fit. Slurm `-t 00:30:00 --mem=16G`. Write
+       variant_match.R) with the sumstats window of the file the pilot fit recorded (its JSON `sumstats` field: all 20
+       A3_1kg_newcat fits record the catalog-source paths, e.g. data/processed/sumstats_harmonized/hypertension.EUR.tsv.bgz,
+       not the oriented copies that `paths.sumstats_path` returns after 15.8a3; verify that file against
+       manifests/sumstats_r4_sha256.tsv before reading; a recorded path not in the manifest is STOP), the r4 catalog and
+       the EUR_1kg_r4 fit panel's variants, without --allow-duplicate-rows. Do not run cs_cross_purity.R on any pilot fit. Slurm `-t 00:30:00 --mem=16G`. Write
        `$Q8/multikey_15_8e.tsv` (fit, n_members, n_refused_multi_key, names). A missing input is recorded, not guessed.
        Also the catalog-level bound: for each of the 31 r4 catalogs, rsids with more than one normalized allele key
        (catalog_unique_key.py's key) → `$Q8/multikey_catalogs_15_8e.tsv` (expected 0 everywhere, per the plan-checker;
-       recorded in the SUMMARY as holding for the current catalogs only — a catalog rebuild, e.g. under 15.8a Q-158R2 B,
-       requires re-measuring). A non-zero catalog count with a zero member count is recorded, not a STOP.
+       recorded in the SUMMARY; catalogs unchanged (15.8a3 fixed point 31/31, manifests/catalogs_r4_fixed_point.tsv), so
+       the 0 holds after the orientation step). Also the oriented-input bound: for each of the 8 oriented files
+       (`paths.sumstats_path(t, a, "A3_1kg")`) × 31 regions, SNP_IDs with more than one distinct normalized allele key
+       among rows whose key is in the r4 catalog (sumstats_orient's classification) → `$Q8/multikey_oriented_15_8e.tsv`
+       (planner measurement: 0 in all 248 rows, data/r4/tmp/w3f/q158/planner_15_8a2/orient2.tsv column
+       multikey_sid_after). A non-zero catalog or oriented-input count with a zero member count is recorded, not a STOP.
     2. Total 0 → continue. Non-zero → STOP: present Q-158R5 with the list (checkpoint:human-action semantics, stops
        even under --auto); no edit until Carter's reply file exists and its sha256 is pinned here.
   </action>

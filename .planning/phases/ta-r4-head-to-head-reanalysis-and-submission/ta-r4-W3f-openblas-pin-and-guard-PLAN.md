@@ -4,7 +4,7 @@ plan: 15.8b
 slug: W3f-openblas-pin-and-guard
 type: execute
 wave: 15.8b
-depends_on: ["ta-r4-W3f-collector-drop-audit"]
+depends_on: ["ta-r4-W3f-sumstats-orientation-eligibility-and-draft"]
 gap_closure: true
 files_modified:
   - envs/r_coloc.yml
@@ -116,7 +116,9 @@ in this plan.** `CONDA=/rs1/researchers/c/ckclinto/miniconda3/condabin/conda` ev
   to envs/r_coloc.yml and runs at import (`RSCRIPT = str(_job_env() / "bin/Rscript")`). The pin-file build writes no
   `.yaml` sibling, so after the edit 0 match → `_job_env` uses the locator (fixture-builder edit, ids unchanged). Its 5
   importers are test_qtl_group_runner, test_coloc_pair_r4, test_verify_inputs, test_fit_name_alignment and
-  test_purity_determinism. **Between the Task 2 commit (yaml edited) and the Task 3 build they are expected to fail
+  test_purity_determinism. (15.8a3 already edited this fixture: after the R builder it copies each toy
+  `data/processed/sumstats_harmonized/<tr>.EUR.tsv.bgz` to `paths.sumstats_path(tr, "EUR", "A3_1kg")`, the r4-route
+  oriented path; the `_job_env` edit here is separate and must keep that copy block unchanged.) **Between the Task 2 commit (yaml edited) and the Task 3 build they are expected to fail
   collection** (the located env does not exist yet). That is not to be "fixed"; the Task 3 step 2 re-run of those
   modules is the proof that they work afterwards.
 - tests/ta_r4/test_job_guard.py: `_check` helper :89-91 calls `job_guard.check(REPO_ROOT, ARM, digest, environ=…,
@@ -161,7 +163,7 @@ tests/ta_r4/test_job_guard_blas.py; N_new = 11 (one junit id each, no parametriz
 10. `test_pin_file_equals_the_job_env_explicit_list` (r4_heavy; `str(D) + ".pin.txt"` cmp-equal to the repo pin file;
     the @EXPLICIT URL#md5 lines of `$CONDA list --explicit --md5 -p D` equal those of the repo pin file)
 11. `test_env_lock_manifest_matches_the_job_env` (r4_heavy; conda-meta records, the libopenblas .so sha256, corename row)
-Expected FULL: base full_15_8a.xml (expected 2,701) + 11 = 2,712. Declared spec updates:
+Expected FULL: base full_15_8a4.xml (expected 2,728; 15.8a 2,700 + 15.8a2 14 + 15.8a3 8 + 15.8a4 6) + 11 = 2,739. Declared spec updates:
 tests.ta_r4.test_job_guard::test_guard_writes_the_record (assertion edit, above); `_check` and `_job_env` are
 fixture-builder edits (every test using them keeps its id and passes).
 </new_tests>
@@ -259,7 +261,7 @@ fixture-builder edits (every test using them keeps its id and passes).
     4. DRAFT (k): `with `OPENBLAS_CORETYPE` set, or under a run configuration` (assert unique) → `with
        `OPENBLAS_CORETYPE` set, with an OpenBLAS library other than version <pin> (pinned in the environment, with its
        exact package list), or under a run configuration`. test_amendment_text.py, test_prelock_pilot_fits.py green.
-    5. `$Q8/close.sh 15_8b` under sbatch; `$Q8/check_15_8b.py` (base full_15_8a.xml; NEW = the 11 ids; declared =
+    5. `$Q8/close.sh 15_8b` under sbatch; `$Q8/check_15_8b.py` (base full_15_8a4.xml; NEW = the 11 ids; declared =
        test_guard_writes_the_record). Records: LOG (measurement, identity and its NC, r_coloc users count, the
        setup-envs.sh note, conda_pkgs before/after, NCs, check); PLAN-INDEX 15.8b row; STATE (NEXT = 15.8c; NOT PUSHED);
        SUMMARY with both sections (junit-form ids) and the Track B / m3 notes of must_haves. fsck; commit explicit

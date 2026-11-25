@@ -122,7 +122,7 @@ tests/ta_r4/test_qtl_json_precision.py; N_new = 8.
 8. `test_every_r4_writer_is_classified` (parses the r4 R scripts and run_qtl_coloc.R for write_json / toJSON / fwrite /
    write.table calls by file and call text; each must appear in the test's own table as `exact`, `thresholded=False`
    or `track_b_default`; a new or unclassified writer fails)
-Expected FULL: base full_15_8b.xml (expected 2,712) + 8 = 2,720. Declared spec updates:
+Expected FULL: base full_15_8b.xml (expected 2,739) + 8 = 2,747. Declared spec updates:
 tests.ta_r4.test_purity_determinism::test_qtl_default_path_unchanged_without_the_flag (its `_qtl_run` helper strips
 the new flag), plus any pre-existing test that fails because of the precision change (none expected: the existing
 writer comparisons are tolerance-based, ≤ 1e-12 / ≤ 1e-10; a failing one is edited only in that comparison and named

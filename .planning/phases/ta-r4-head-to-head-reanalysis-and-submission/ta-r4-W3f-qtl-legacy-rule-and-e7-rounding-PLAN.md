@@ -112,7 +112,7 @@ tests/ta_r4/test_qtl_legacy_rule_and_e7_rounding.py; N_new = 6.
    tier at threshold; changed vs changed_qtl_4dp differ as expected)
 6. `test_matched_rounding_changes_nothing_frozen` (sha256 of the inputs and committed tables before == after; outputs only
    under tmp)
-Expected FULL: base full_15_8c.xml (expected 2,720) + 6 = 2,726. Declared:
+Expected FULL: base full_15_8c.xml (expected 2,747) + 6 = 2,753. Declared:
 tests.ta_r4.test_qtl_sweep_gwas_pph4::test_r4_tiers_argv_passes_the_flag_and_keeps_the_input_order, plus any id
 named under <context> or in Task 2 step 3.
 </new_tests>

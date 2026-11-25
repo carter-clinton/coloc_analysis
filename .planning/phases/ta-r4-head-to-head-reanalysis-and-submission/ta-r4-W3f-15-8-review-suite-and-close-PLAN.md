@@ -22,11 +22,11 @@ requirements:
 
 must_haves:
   truths:
-    - "Gates Q-157J and all five 2026-11-25 replies (gate_158.sh Q-158DIG Q-158R6S Q-158E7R Q-F3NL Q-158R7) pass, and every STOP reply named in a 15.8a–e SUMMARY (Q-158R2/R3/R5/R6, if any) re-gates with its pinned sha256"
-    - "DRAFT (m) lists the 15.8 code commits with short labels (collector drop audit; OpenBLAS pin + guard; exact-precision writers; QTL_legacy NaN rule + E7 matched rounding; E7 filtered counts; multi-key fatal), only those that exist; the Pre-Paste gains one RESOLVED row each for R2–R7 and Q-F3N, with commit and plan (or the disclosed sentence's location where Carter kept a limitation); one script, old strings asserted unique; test_amendment_text.py green with its negative control"
+    - "Gates Q-157J and all five 2026-11-25 replies (gate_158.sh Q-158DIG Q-158R6S Q-158E7R Q-F3NL Q-158R7) pass, and Q-158R2 (gate_158r2.sh), Q-158OR, Q-158PAL and Q-158EL (gate_158a2.sh) re-gate with their pinned sha256, and every STOP reply named in a 15.8a–e SUMMARY (15.8a2–a4 included: Q-158FP/Q-158EL2, and Q-158R3/R5/R6, if any) re-gates with its pinned sha256"
+    - "DRAFT (m) lists the 15.8 code commits with short labels (collector drop audit; r4 sumstats in the catalog's orientation (15.8a2); production on the oriented inputs, catalogs a fixed point (15.8a3); eligibility re-measured on the oriented inputs (15.8a4); OpenBLAS pin + guard; exact-precision writers; QTL_legacy NaN rule + E7 matched rounding; E7 filtered counts; multi-key fatal), only those that exist; the Pre-Paste gains one RESOLVED row each for R2–R7 and Q-F3N, with commit and plan (R2: resolved by 15.8a2–a4 under Carter's Q-158R2 D, the 15.8a audit being its measurement; not by 15.8a alone) (or the disclosed sentence's location where Carter kept a limitation); one script, old strings asserted unique; test_amendment_text.py green with its negative control"
     - "Before the review, a text-vs-code table in the LOG maps R2–R7 → code file:line at HEAD → DRAFT clause; a mismatch is fixed in the DRAFT only if the code is what the plan approved, else STOP"
     - "A brief-blind Codex review ran exactly as 15.7j's (same W4a instruction and wrapper lines, codex-cli and model as recorded in disposition_15_7j.md, read-only sandbox, prompt = instruction + extract only, from the repo root); output banked byte-for-byte (sha256 and byte count) in ta-r4-W3f-15-8-AMENDMENT-REVIEW-as-received.md with a disposition table whose row count equals the finding count; each finding verified at the reviewed HEAD with file:line"
-    - "FULL under Slurm (cascadelake) reconciled per id against data/r4/tmp/w3f/q157/full_15_7j.xml: removed == the renames declared in 15.8a–e SUMMARYs (none expected); added == the union of their `New test ids`; outcome changes ⊆ the union of their `Declared spec updates`, each passed; 0 failed; totals == base (2,694 = 2,641 P / 53 S / 0 F) + Σ N_new (expected 7 + 11 + 8 + 6 + 6 + 2 = 40 → 2,734 = 2,681 P / 53 S / 0 F; read from the SUMMARYs, not typed); and against full_15_8e.xml: identical by id"
+    - "FULL under Slurm (cascadelake) reconciled per id against data/r4/tmp/w3f/q157/full_15_7j.xml: removed == the renames declared in the nine 15.8a–e SUMMARYs (15.8a, 15.8a2, 15.8a3, 15.8a4, 15.8b, 15.8c, 15.8c2, 15.8d, 15.8e; none expected); added == the union of their `New test ids`; outcome changes ⊆ the union of their `Declared spec updates`, each passed; 0 failed; totals == base (2,694 = 2,641 P / 53 S / 0 F) + Σ N_new (expected 6 + 14 + 8 + 6 + 11 + 8 + 6 + 6 + 2 = 67 → 2,761 = 2,708 P / 53 S / 0 F (15.8a closed at 2,700 under Carter's Q-158R2 D, no test 7); read from the SUMMARYs, not typed; declared includes 15.8a3's 5 ids); and against full_15_8e.xml: identical by id"
     - "HANDOFF w4a_checkpoint.production_blockers: the seven keys W3f157_R2, W3f157_R3, W3f157_R4, W3f157_R5, W3f157_R6, W3f157_R7 and W3f157_QF3N_premise (committed by 15.7j, b36b99d5, each marked 'decided by Carter → 15.8'; the names are final) must all exist (any missing is STOP); each value is replaced by a RESOLVED line (plan, commit, Carter label) with the old text kept under <key>_PRE_2026_11_24; new review OPEN items added as W3f158_*; resume_on_reconnect rewritten; every pre-existing string value still present"
     - "ta-r4-W4a-amendment-draft-review-locks-PLAN.md frontmatter depends_on == [\"ta-r4-W3f-15-8-review-suite-and-close\"]; `git diff` of that file is that one line"
     - "decision_rules.yaml locked: false; n_regions_min 7; no push, OSF, production fit or W4a-T3 lock"
@@ -63,7 +63,7 @@ The five 2026-11-25 replies (question texts in 15.8a's <question> table), all re
 | Q-158E7R | `W3f-carter-15-8-Q-158E7R-reply-2026-11-25.txt` | `43a4d89900c7225576a9edef1980716db999ca8c3193694305fca2c42376bd09` | `Add a matched-rounding column (Recommended)` |
 | Q-F3NL | `W3f-carter-15-8-Q-F3NL-reply-2026-11-25.txt` | `9b4c0bb009e5262c38262da953e2a009b8c1859447bbb0975a24c68c9162b6a1` | `Keep legacy rule for QTL_legacy (Recommended)` |
 | Q-158R7 | `W3f-carter-15-8-Q-158R7-reply-2026-11-25.txt` | `a9a6866eb9c4b518c7a98206273ddd55fe0cbd4e2e49c1b3d7264d2f69a261b8` | `Approve as written (Recommended)` |
-STOP replies (Q-158R2/R3/R5/R6), if any were asked: re-gated with the sha256 pinned in their plans.
+STOP replies (Q-158R2/R3/R5/R6), if any were asked: re-gated with the sha256 pinned in their plans. Q-158R2 (asked; label `D: Harmonize r4 sumstats to one orientation (Recommended)`, sha256 `4183859f21ffe016b3384043a352a5363def84ab4b9820b410d865508d19bacb`) and the 15.8a2–a4 replies Q-158OR (`b4a87020eb0ec2965b6239c7c37941dc10207854852e9e7dc555b4990ae6646a`), Q-158PAL (`b5cde5c3f787a5c3bdd74c2863398898097183cf07bc85f429d9fbd8394fec13`), Q-158EL (`f4ecd06606a6f9eb828b57a304da1663078e888494853818ba124ea3618b409c`), labels as in ta-r4-W3f-sumstats-orientation-harmonize-PLAN.md and …-eligibility-and-draft-PLAN.md.
 </question>
 
 <context>
@@ -93,12 +93,12 @@ depends_on; removing any HANDOFF string.
   <name>Task 1: DRAFT (m) + Pre-Paste; text-vs-code table; brief-blind review; bank; dispositions (DRAFT text only)</name>
   <files>.planning/amendments/osf-amendment-r4-DRAFT.md, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-15-8-AMENDMENT-REVIEW-as-received.md</files>
   <read_first>
-    - the six 15.8a–e SUMMARYs (15.8c2 included: commits, DRAFT sentences, id lists, Carter replies)
+    - the nine 15.8a–e SUMMARYs (15.8a, 15.8a2, 15.8a3, 15.8a4, 15.8b, 15.8c, 15.8c2, 15.8d, 15.8e: commits, DRAFT sentences, id lists, Carter replies)
     - the 15.7j review file (header, verbatim block and disposition format)
   </read_first>
   <action>
     0. `git rev-parse HEAD > $Q8/start_15_8f.txt`; `bash $Q8/gate_157j.sh`; `bash $Q8/gate_158.sh Q-158DIG Q-158R6S
-       Q-158E7R Q-F3NL Q-158R7`; re-gate any STOP reply with its pinned sha256.
+       Q-158E7R Q-F3NL Q-158R7`; `bash $Q8/gate_158r2.sh`; `bash $Q8/gate_158a2.sh Q-158OR Q-158PAL Q-158EL`; re-gate any STOP reply with its pinned sha256.
     1. DRAFT (one script; old strings asserted unique): (m) adds the 15.8 code commits; Pre-Paste: the 15.7j rows for
        R2–R7 and Q-F3N: add one RESOLVED row each (the Pre-Paste has no 15.7j OPEN rows for them). test_amendment_text.py + test_prelock_pilot_fits.py green.
     2. Text-vs-code table in the LOG (R2–R7, Q-F3N, matched rounding).
@@ -124,7 +124,7 @@ depends_on; removing any HANDOFF string.
     1. `$Q8/close.sh 15_8f` under sbatch (protocol, `--constraint=cascadelake`).
     2. `$Q8/check_15_8f.py`: (a) vs full_15_7j.xml with NEW = union of the `## New test ids` sections (parsed as junit ids,
        `tests.ta_r4.test_x::test_y`, one per line; a line not of that form is STOP) and declared =
-       union of the `## Declared spec updates` sections of the six 15.8a–e SUMMARYs (15.8c2 included), parsed (a SUMMARY missing a
+       union of the `## Declared spec updates` sections of the nine 15.8a–e SUMMARYs (15.8a, 15.8a2, 15.8a3, 15.8a4, 15.8b, 15.8c, 15.8c2, 15.8d, 15.8e), parsed (a SUMMARY missing a
        section is STOP; nothing typed into the check); renames = those the SUMMARYs declare; expect = base totals
        (read from full_15_7j.xml) + Σ N_new. (b) vs full_15_8e.xml: identical by id. Arithmetic line in
        `$Q8/reconcile_15_8f.txt`. Any miss → STOP; no clean-close records.
