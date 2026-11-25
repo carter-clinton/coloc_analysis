@@ -26,7 +26,22 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-26 (morning) — **TRACK A ta-r4: W3f 15.8a COMPLETE; 15.8a2 (r4 sumstats orientation, Carter Q-158R2 D) RUNNING. PUSHED (Carter approved 2026-11-26).** (★ RESUME HERE — LATEST ★)
+## 2026-11-25 (afternoon) — **TRACK A ta-r4: W3f 15.8a2 COMPLETE (8 r4 sumstats copies in the r4 catalog's orientation, identities proven, pinned; no consumer switched). NEXT = 15.8a3. NOT PUSHED (859458f9 and the records commit are local).** (★ RESUME HERE — LATEST ★)
+
+- Commits: 1298b511 (15.8a2-a4 planning set, 15.8b-f amendments, Q-158OR / Q-158PAL / Q-158EL replies,
+  DEC-2026-11-25-ta-r4-sumstats-orientation, PLAN-INDEX rows + chain), 859458f9 (sumstats_orient.py, 14 tests,
+  sumstats_r4_orientation.tsv, sumstats_r4_orientation_eaf.tsv, sumstats_r4_sha256.tsv +16 rows), plus the records commit.
+- data/r4/sumstats/<trait>.<anc>.r4_oriented.tsv.bgz (+ .tbi) for the 8 catalog inputs; 159,969 rows flipped
+  (hypertension 34,871, stroke EUR 36,195, stroke AFR 27,126, t2d AFR 55,567, asthma EUR 2,412, asthma AFR 3,798);
+  swapped_only 0 in 248/248; flips == the 15.8a audit per source file; inputs, catalogs, panels, data/processed unchanged.
+- EAF diagnostic: flipped ≈ unflipped everywhere except asthma EUR (0.0270 vs 0.0047; 14 of the 19 flipped rows with
+  |ΔEAF| > 0.2 are indels). Recorded for 15.8a4 / Carter; not a filter.
+- FULL Slurm 2094979: 2,714 = 2,661 P / 53 S / 0 F; check_15_8a2.py vs full_15_8a.xml PASS (+14, 0 changes); base for
+  15.8a3 = data/r4/tmp/w3f/q158/full_15_8a2.xml.
+- NEXT = 15.8a3 (switch consumers; catalog fixed point 31/31 else STOP Q-158FP). decision_rules.yaml locked: false;
+  n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
+## 2026-11-26 (morning) — **TRACK A ta-r4: W3f 15.8a COMPLETE; 15.8a2 (r4 sumstats orientation, Carter Q-158R2 D) RUNNING. PUSHED (Carter approved 2026-11-26).** (SUPERSEDED by the 15.8a2 block above)
 
 - 15.8a (94ef30e6): collector drops audited; FULL 2,700 = 2,647 P / 53 S / 0 F, per id vs full_15_7j PASS.
 - Finding behind Q-158R2: the fit's catalog join is exact on CHR:POS:REF:ALT, so rows written in the other orientation from the catalog were silently dropped (hypertension EUR 33.5%, stroke EUR 33.6%, stroke AFR 29.4%, t2d AFR 21.9%; validated 105/105 vs fit join counts). Carter: D (harmonize to the catalog orientation, Q-158OR A; A/T-C/G by key, Q-158PAL A; cap as pre-registered, Q-158EL A).

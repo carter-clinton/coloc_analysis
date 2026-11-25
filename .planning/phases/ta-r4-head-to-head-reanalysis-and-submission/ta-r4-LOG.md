@@ -1589,3 +1589,69 @@ index c517ffb7..a0ffd52e 100644
   2,700 = 2,647 P / 53 S / 0 F (full_15_8a.xml 41fdc36e…4d8c). check_15_8a.py against full_15_7j.xml: 0 removed, +6,
   0 changes, CHECK PASS; NC (base as new) FAIL rc 1.
 - Catalog sha256 before == after (95 lines). No push, no fit, no OSF, decision_rules.yaml locked: false, n_regions_min 7.
+
+## 2026-11-25 — W3f 15.8a2 (r4 sumstats in the r4 catalog's orientation; Carter Q-158R2 D, Q-158OR A, Q-158PAL A; no consumer switched; no push)
+
+- Commits (local; see note on bda956a0 below): 1298b511 (15.8a2-a4 PLANs, 15.8b-f amendments, the Q-158OR / Q-158PAL /
+  Q-158EL replies as received, DEC-2026-11-25-ta-r4-sumstats-orientation, PLAN-INDEX 15.8a2-a4 rows + order line + base
+  chain), 859458f9 (sumstats_orient.py, 14 tests, three manifests), plus the records commit. bda956a0 (a HANDOFF/STATE
+  commit made from the orchestrating session during this plan) is not an executor commit.
+- Gates (`$Q8=data/r4/tmp/w3f/q158`): gate_157j.sh, gate_158r2.sh, gate_158a2.sh Q-158OR Q-158PAL (new; `--question` =
+  the plan's text minus its leading `<QID> `, generated from the plan's <question> block), all rc 0. NCs rc 2
+  (a2/gate_nc_15_8a2.txt): one byte changed in a staging copy (Q-158OR, Q-158PAL); one character of the Q-158OR text
+  changed; the question typed with its leading QID; only a non-Recommended label allowed; one sha256 character changed;
+  an unknown QID. Reply sha256: Q-158OR b4a87020…646a, Q-158PAL b5cde5c3…ec13, Q-158EL f4ecd066…409c (committed, gated
+  in 15.8a4), Q-158R2 4183859f…bacb. DEC quotes cmp-equal to the files (NC: one character changed → DIFFER).
+- Sources: CATALOG_SOURCES == paths.sumstats_path(t, a, "A3_1kg") == collector_drop_audit.r4_sumstats() at 1298b511
+  (a2/sources_check.txt). Before-state: 44 files sha256 (a2/sha_before.txt); verify_inputs on the 8 inputs OK.
+- Per file (harmonize reports a2/report_<t>.<a>.json; bgzip/tabix htslib 1.9):
+
+| file | lines | window rows | exact | swapped_only = flipped | both | absent | flipped A/T-C/G | of them EAF 0.4-0.6 | oriented sha256 |
+|---|---|---|---|---|---|---|---|---|---|
+| bmi.EUR | 2,327,244 | 24,881 | 12,906 | 0 | 11,975 | 0 | 0 | 0 | ed3a7276… |
+| t2d.EUR | 25,677,382 | 376,940 | 364,527 | 0 | 12,413 | 0 | 0 | 0 | 039d1c01… |
+| t2d.AFR | 19,257,160 | 253,745 | 153,327 | 55,567 | 44,633 | 218 | 9,748 | 612 | 33568f85… |
+| hypertension.EUR | 7,160,657 | 104,047 | 56,921 | 34,871 | 12,131 | 124 | 5,951 | 611 | 49a337bc… |
+| asthma.EUR | 27,843,603 | 377,364 | 345,303 | 2,412 | 28,378 | 1,271 | 784 | 17 | 2634c5b4… |
+| asthma.AFR | 20,231,905 | 261,183 | 213,118 | 3,798 | 43,446 | 821 | 1,347 | 13 | ef8896f6… |
+| stroke.EUR | 7,511,476 | 107,772 | 59,222 | 36,195 | 12,257 | 98 | 6,227 | 624 | 4b8d42ce… |
+| stroke.AFR | 5,259,724 | 92,221 | 52,293 | 27,126 | 12,579 | 223 | 4,580 | 510 | 27b6e32e… |
+| total | | 1,598,153 | 1,257,617 | 159,969 | 177,812 | 2,755 | 28,637 | 2,387 | |
+
+- Identities (a2/identities.txt, Slurm 2094864; idempotence Slurm 2094863): (a) measure on the 8 catalog-source files ==
+  orient_by_fit.tsv (b154b0fa…c4f1) row for row, 248 rows; (a2) the streaming harmonize counts == the tabix measure per
+  region × trait; (a3) verify_unflip passed on all 8 files (n_flipped, n_lines equal); (a4) duplicate allele keys 12
+  before = 12 after (asthma EUR/AFR × HLA_6p21 only); SNP_IDs with more than one catalog-joined key 0 before, 0 after;
+  (b) on the 8 oriented files swapped_only == 0 in 248/248 rows, after_exact == exact + swapped_only, after_both == both,
+  absent and n_rows unchanged; (c) harmonize() on each oriented file flips 0 rows and its output cmp-equals the
+  decompressed oriented bytes, 8/8 (NC: one byte changed → cmp rc 1); (d) per source file n_flipped == 15.8a audit rows
+  with key false / swapped true and absent == audit rows with both false: t2d AFR 55,567 / 218, hypertension 34,871 /
+  124, asthma EUR 2,412 / 1,271, asthma AFR 3,798 / 821, stroke EUR 36,195 / 98, stroke AFR 27,126 / 223, bmi and t2d
+  EUR 0 / 0; totals 159,969 and 2,755; (e) the 8 inputs, every data/processed file in sumstats_r4_sha256.tsv, the 31
+  catalogs and the manifest: sha256 before == after (44 files) before pinning.
+- Pinned: 16 rows (8 oriented files + .tbi, role output) appended to sumstats_r4_sha256.tsv; `diff` against
+  a2/sumstats_manifest_before.tsv shows only the appended lines; each equals its harmonize report sha256; verify_inputs on
+  16 + 8 OK.
+- EAF diagnostic (manifests/sumstats_r4_orientation_eaf.tsv, not a filter; median |ΔEAF| flipped / unflipped):
+  hypertension 0.0167 / 0.0164, stroke EUR 0.0157 / 0.0155, stroke AFR 0.0057 / 0.0058, t2d AFR 0.0026 / 0.0021, asthma
+  AFR (vs t2d AFR) 0.0019 / 0.0022 with 0 of 2,355 flipped above 0.2, asthma EUR 0.0270 / 0.0047 with 19 of 225 flipped
+  above 0.2. The planner's numbers reproduce except asthma EUR flipped (planner 0.0225, 5 of 204): its asthma_eaf.py kept
+  single-base SNVs only, while this table follows the plan's rule (every non-palindromic row, indels included: 225).
+  Checked: the SNV subset of this run gives 204, 0.0225, 5 above 0.2 (planner exactly); the 21 flipped asthma EUR
+  indels carry 14 of the 19 above 0.2. Recorded for 15.8a4 / Carter, not a filter (unflipped rows are not filtered by
+  EAF either).
+- NCs (`$Q8/nc_15_8a2.txt`): (a) flip on swapped_only or both → test 3 RED; (b) str(-float) BETA → test 2 RED on
+  `0.0100`; (c) str(1 - float) EAF → test 2 RED on `0.8365` (`0.16349999999999998`); (d) duplicate check removed → test 5
+  RED; (e) verify_unflip skips outside-window lines → test 8 RED; (f) test 9 _compare on a copy with one count byte
+  changed → RED; (g) test 10 _check_oriented on the source files → RED; (h) test 11 with one audit count +1 → RED; (i)
+  test 12 with one sha256 character changed in an appended row and in a pre-existing data/processed row → RED both; (j)
+  test 14 on a re-bgzipped oriented stroke.AFR with one SE changed on an unflipped in-window line → RED.
+- Timings: harmonize 1:01-3:22 per file (max RSS 633 MB), verify_unflip 0:14-2:13; tests 9 / 10 / 12 / 14 19 s / 19 s /
+  22 s / 27 s (Slurm 2094929); none near 15 min, none reduced.
+- FULL Slurm 2094979 (cascadelake c020n02, HEAD 859458f9, 2h27m): QUICK 875 P / 2 S; HEAVY 338 P / 5 S; PINS 39 P;
+  FULL 2,714 = 2,661 P / 53 S / 0 F (full_15_8a2.xml 63e6db93…15ef). check_15_8a2.py against full_15_8a.xml: 0 removed,
+  +14 (the 14 new ids, all passed), 0 outcome changes, CHECK PASS; NC (base as new) CHECK FAIL rc 1.
+  tests/m3/sparse_parent_benchmark.tsv restored by close.sh (clean). After the pin, the 44-file sha256 differs from
+  before only in sumstats_r4_sha256.tsv (a2/sha_after.txt).
+- No consumer reads the oriented files (paths.sumstats_path unchanged; 15.8a3 switches). No catalog, panel or
+  data/processed byte changed. No fit, no OSF, decision_rules.yaml locked: false, n_regions_min 7. NEXT = 15.8a3.
