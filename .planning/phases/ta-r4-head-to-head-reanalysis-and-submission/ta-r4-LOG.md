@@ -1489,3 +1489,43 @@ index c517ffb7..a0ffd52e 100644
   `$Q/check_15_7i.py` CHECK PASS rc 0; NCs (base as new; the Haswell run) CHECK FAIL rc 1. Target 2,694 (plan said 2,692 on a
   stale 2,689 base; orchestrator-signed arithmetic correction). 15.7j's FULL base = full_15_7i.xml (2,694).
 - No push, no production fit, no colocalization, decision_rules.yaml locked: false (unchanged), no OSF, n_regions_min 7.
+
+## 2026-11-24 — W3f 15.7j (15.7 close): DRAFT (m)/Pre-Paste, text-vs-code check, brief-blind re-review
+
+- Start HEAD 72e4d1f4 (`$Q/start_15_7j.txt`). DRAFT edit `$Q/draft_15_7j.py` (one script, each old string asserted
+  unique; `$Q/draft_15_7j.txt`): (m) gains the 13 15.7 code/manifest commits with labels (420aa998, 5fce26a8, e1422df1,
+  1cf179d1, 8d272492, 57ddb59d, c3c76ba2, 7405ba4a, 0e6dda24, 350cd9b9, 265434df, bcd0310a, 42f3eb9c); Pre-Paste
+  analysis-code row gains them by plan; the F-list OPEN row → 12 rows (F1 F2 F3 F4 F6 F7 F8 F9 F10 F11 F12 F15). (m)
+  carries 47 distinct shas = 34 (15.6) + 13; `git merge-base --is-ancestor` 47/47 (NC: a bogus sha → rc 128).
+  test_amendment_text 21 P / 2 S.
+- Text-vs-code, F1–F15 at HEAD 72e4d1f4 (code unchanged in 15.7j):
+
+| F | code at HEAD | DRAFT clause | match |
+|---|---|---|---|
+| F1 | src/python/ta_r4/job_guard.py:95-119 (lock gate, config digest, Cascade Lake, OPENBLAS_* env, record); commands.py:108 (first command of every production job); bin/r4_fire.sh:65 (production refuses --config/--configfile/--profile/...) | (k) "each production job refuses to run on another CPU type, with `OPENBLAS_CORETYPE` set, or under a run configuration that differs from the committed configuration files, and records what it checked" | yes |
+| F2 | run_susie_rss.R:713, :772-776, :1216 (`--exact-purity` → n_purity = nrow(subset)); run_qtl_coloc.R:82, :155; commands.py:49 (production arms pass it); simulate_coloc_r4.R:62 (n_purity = length(z)) | (k) "set purity is computed over all pairs of set members, for GWAS and QTL fits and in the simulation" | yes (production; repro arms and QTL_legacy keep susieR's default, and are not estimand inputs except QTL_legacy as the E7 comparator) |
+| F3 | assign_tiers.py:85-118 (sweep with gwas_best → tier definitions; no table → legacy, logged); :310, :359 (`--nan-gwas-below-threshold`); run_qtl_group_r4.py:277-280 (tiers_argv passes it); ta_r4_qtl.smk:152-174 (r4_qtl_tiers for every R4 QTL arm, QTL_legacy included via repro_routeL, run_qtl_group_r4.py:33) | (l) "the PP.H4 threshold sweep applies the tier definitions … and a region whose trait-pair rows have no PP.H4 (all method `none`) is below threshold" | yes for all three R4 QTL arms. NOTE: the Q-F3N question text says QTL_legacy "does not get the flag"; the code gives it the flag (OPEN item for Carter, W3f157_QF3N_premise) |
+| F4 | run_aggregation.py:181-214 (replicate ids 1..reps per arm via id_reconcile.reconcile, row labels, seeds, header config_sha256) | (g) "each with exactly the configured 200 replicates per arm" | yes |
+| F6 | run_aggregation.py:312-328 (QTL summary ids == qtl_manifest qtl_row_id once each; no empty method) | (e) "final tables are written only when colocalization coverage is exact (no missing or extra outputs in any arm)" | yes |
+| F7 | run_qtl_group_r4.py:138-146 (`_empty_reason`: coloc_susie_empty / coloc_susie_no_finite_h4 → none) | (l) "So are rows for which `coloc.susie` returns no summary or no finite PP.H4." | yes |
+| F8 | estimands.py:607-614 (negative_control_rates by (nc_set, label, p12_key) and method, + with_posterior) | (l) "share of rows with S ≥ 0.8 per set, arm and method (…); rows with method `none` are counted and are in no denominator" | yes |
+| F9 | select_null_windows.py:96-114 (manifest_sha256 on the production inputs); manifests/null_windows_selection.tsv (2,886 candidates) + .superseded-2026-10-21.tsv | (l) "10 of the 2,886 candidates on the corrected inputs … an earlier draw from a 2,865-candidate pool … is superseded; 2 of its 10 windows are in the current selection" | yes |
+| F10 | cs_cross_purity.R:4-5, :20, :57-58 (resolve_fit_names, variant_match.R) | (e) E4 "a member being identified through the fit's own summary statistics and panel and located by position and alleles" | yes |
+| F11 | estimands.py:317-326 (`_no_cs` known zero; `_unknown_cs`); run_coloc_pair_r4.R:517 (completed side keeps n_cs) | (e) E4 "a trait whose fit exited early has no count, and a row with no known zero and such a side is counted as unknown; rates over the arm's pair rows and over its rows of known state" | yes |
+| F12 | run_aggregation.py:61-62, :400, :418 (a1_allvars_secondary EUR/AFR; drop family) | (e) E6 "A1 on all variants (`allvars`) is reported the same way against `A3_1kg` (EUR) and `AFR661_A3` (AFR)" | yes |
+| F15 | manifests/prelock_pilot_fits.tsv; tests/ta_r4/test_prelock_pilot_fits.py (disk + sha256 + paragraph == approved v3 file) | (h) **Pre-lock pilot fits.**; Purpose "before any production-arm fit exists" | yes |
+
+  No mismatch requiring a DRAFT change before the review (step 2).
+- Review (brief-blind, as 15.6): prompt `$Q/codex_prompt.md` = 15.6's wrapper bytes (prefix/suffix byte-equal) + the
+  extract (4,909 words, sha256 ab115483…89dc); prompt sha256 a16f75f7…2bc5; codex-cli 0.166.0 (W4a scratch install),
+  `-m gpt-6.1-sol`, read-only, rc 0 first attempt, 21:32:30 → 21:56:02 EST; output 37,290 B sha256 6d2060d7…1fe0,
+  banked in `ta-r4-W3f-15-7-AMENDMENT-REVIEW-as-received.md` (embedded block cmp-equal to raw stdout; NC: one changed
+  word → cmp rc 1). 14 findings (R1–R7 + Q1–Q7) = 14 rows: DRAFT fixed 7 (R2 R3 R5 R7 Q1 Q4 Q5; 6 replacements,
+  `$Q/draft_fix_15_7j.py`), OPEN for Carter (code) 2 (R4 QTL JSON 4-decimal rounding before thresholds; R6 BLAS
+  library unpinned and the committed env lock is not the job env: job env libopenblas 0.3.34, named-env lock 0.3.32),
+  code follow-ups on R2 (collector drops unaudited) and R3 (optional), rejected 1 (R1), noted 4. Plus the executor's
+  Q-F3N premise item (QTL_legacy does get the NaN flag). test_amendment_text + test_prelock_pilot_fits 24 P / 2 S; NC
+  "pivot" → test_draft_extract_framing FAILED, restored sha256-equal. Extract 4,909 → 5,012 words.
+- Own slip, fixed before commit: step 1's Pre-Paste F15 row quoted `**Pre-lock pilot fits.**`, which made
+  test_prelock_pilot_fits' count assertion 2 ≠ 1 (step 1 had run only test_amendment_text). Row text changed to
+  "pre-lock pilot-fit paragraph" in the DRAFT and in draft_15_7j.py.
