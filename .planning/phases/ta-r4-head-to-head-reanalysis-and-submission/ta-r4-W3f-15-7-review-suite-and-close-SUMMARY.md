@@ -81,7 +81,7 @@ Nothing is pushed.
   - suite_baselines_ta_r4_latest = FULL 2694/2641/53/0; resume_on_reconnect is now for 15.8.
   - Keys 401 → 429. All 488 pre-existing strings are present (NC: 1 missing after deleting a PRE key).
 - confirmatory_sha256 is unchanged: 9fa410aa411fc2c682a4886dd25ca98d5dfd37f6968ecffc1a0a8860003888d5.
-- W4a PLAN is untouched (`git diff` empty). Its depends_on stays `["ta-r4-W3f-pilot-fit-disclosure"]` until 15.8f sets it.
+- W4a PLAN is untouched (`git diff` empty). Its depends_on stays `["ta-r4-W3f-review-suite-and-close"]` (the 15.6 plan) until 15.8f sets it.
 
 ## Declared spec updates
 
