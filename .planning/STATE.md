@@ -26,7 +26,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-25 (later) — **TRACK A ta-r4: W3f 15.8a COMPLETE on its B path (R2 collector drops audited; lost keys = the sumstats orientation drop; Carter Q-158R2 D → plan 15.8a2). NEXT = 15.8a2. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-26 (morning) — **TRACK A ta-r4: W3f 15.8a COMPLETE; 15.8a2 (r4 sumstats orientation, Carter Q-158R2 D) RUNNING. PUSHED (Carter approved 2026-11-26).** (★ RESUME HERE — LATEST ★)
+
+- 15.8a (94ef30e6): collector drops audited; FULL 2,700 = 2,647 P / 53 S / 0 F, per id vs full_15_7j PASS.
+- Finding behind Q-158R2: the fit's catalog join is exact on CHR:POS:REF:ALT, so rows written in the other orientation from the catalog were silently dropped (hypertension EUR 33.5%, stroke EUR 33.6%, stroke AFR 29.4%, t2d AFR 21.9%; validated 105/105 vs fit join counts). Carter: D (harmonize to the catalog orientation, Q-158OR A; A/T-C/G by key, Q-158PAL A; cap as pre-registered, Q-158EL A).
+- 15.8a2 RUNNING (executor subagent of session c8312220): 1298b511 planning set; 8 oriented files written; identity jobs Slurm 2094798/2094799; then FULL (expected 2,714).
+- Chain: 15.8a2 -> a3 (switch consumers; catalog fixed point 31/31 else STOP Q-158FP) -> a4 (eligibility; STOP Q-158EL2 if set differs) -> b -> c -> c2 -> d -> e -> f (re-review). Stop before W4a-T3 (Carter).
+- RESUME: `.planning/HANDOFF.json`; reattach `tmux attach -t coloc` (login03) or `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. If the 15.8a2 executor died: check `git log`, `squeue`, $Q8=data/r4/tmp/w3f/q158; resume from the first unfinished task, never redo committed work.
+
+## 2026-11-25 (later) — **TRACK A ta-r4: W3f 15.8a COMPLETE on its B path (R2 collector drops audited; lost keys = the sumstats orientation drop; Carter Q-158R2 D → plan 15.8a2). NEXT = 15.8a2. NOT PUSHED.** (SUPERSEDED by the 2026-11-26 block above)
 
 - Commits (local only): 159c06ad (15.8 planning set + six replies + DEC-2026-11-24-ta-r4-w3f-15-8-open-items), 06b68482
   (collector_drop_audit.py, tests 1-6, manifests/catalog_collector_drops.tsv), 8da7bfbe (Q-158R2 reply + DEC addendum),
@@ -2867,7 +2875,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-22 evening (latest) - SESSION CLOSE: 15.7h2 in close (FULL 2039942 running); asthma dropped from proxy; production catalog GRCh37 verified; 12 commits not pushed.
+Last activity: 2026-11-26 (latest) - 15.8a complete; 15.8a2 running; all commits pushed (Carter approved).
+Last activity (PRIOR): 2026-11-22 evening - SESSION CLOSE: 15.7h2 in close (FULL 2039942 running); asthma dropped from proxy; production catalog GRCh37 verified; 12 commits not pushed.
 Last activity (PRIOR): 2026-11-21 evening - SESSION CLOSE: 15.7h complete + pushed (892c4443); 15.7h2 stopped Rule-4, Carter A, plan revision in progress; d1498dff local.
 Last activity (PRIOR): 2026-11-20 night - SESSION CLOSE: 15.7a, 15.7b complete; 15.7c FULL Slurm 2010023 running; chain continues to 15.7i; session c8312220 in tmux coloc (login02); 3 commits not pushed.
 Last activity (PRIOR): 2026-11-20 - SESSION CLOSE: W3f 15.5b, 15.5c, 15.6 complete and pushed (553c8fc8); 15.6 re-review → 12 OPEN blockers; Carter chose 15.7 code fix-up; 15.7 planner running in session c8312220 (tmux coloc, login03).
