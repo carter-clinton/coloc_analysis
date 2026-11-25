@@ -1557,3 +1557,35 @@ index c517ffb7..a0ffd52e 100644
   key deleted → 1 missing). confirmatory_sha256 9fa410aa…88d5 re-measured, unchanged.
 - W4a PLAN untouched (depends_on stays; 15.8f sets it). PLAN-INDEX 15.7j COMPLETE; STATE ★ block NEXT = 15.8.
 - No push, no fit, no OSF, decision_rules.yaml locked: false, n_regions_min 7, no signoff file.
+
+## 2026-11-25 — W3f 15.8a (R2 collector drop audit; Carter Q-157J, Q-158R2 D; closed on its B path; no push)
+
+- Commits (local only): 159c06ad (15.8 planning set, PLAN-INDEX 15.8 rows + protocol, the six reply files as received,
+  DEC-2026-11-24-ta-r4-w3f-15-8-open-items), 06b68482 (collector_drop_audit.py, tests 1-6, catalog_collector_drops.tsv),
+  8da7bfbe (Q-158R2 reply, DEC addendum, reply sha256 pinned in the plan), plus the records commit.
+- Gates (`$Q8=data/r4/tmp/w3f/q158`): gate_157j.sh (free text with "pin  libopenblas", two spaces), gate_158.sh (5 QIDs),
+  gate_158r2.sh (4183859f…bacb, label D), all rc 0. NCs rc 2: a one-byte-changed staging copy (cmp, and the tool alone
+  via sha256); one space instead of two; an unknown QID; for Q-158R2, a wrong question and label A
+  (gate_nc_15_8a.txt, gate_158r2_15_8a.txt). full_15_7j.xml is identical by id to full_15_7i.xml (2,694 = 2,641 P / 53 S).
+- Premise: collect_region_variants.py drops at rsid keying (:104-123), unnamed repeats (:106-109), :142 (no-op, 0
+  rows), :143-150 and :151-155. The replay holds identity with the unmodified collector, and its TSV is byte-equal to
+  variants_r4_raw, in 31/31 regions (Slurm 2092056). 1,598,153 input = 875,225 kept + 722,928 dropped; 0 rows of class
+  `other`. Classes: exact_duplicate 358,583; rsid_same_key_other_bytes 57,009; rsid_other_allele_key 216,218;
+  unnamed_duplicate 33,842; unnamed_at_named_position 57,119; unnamed_same_position_other_alleles 157;
+  rsid_replaced_allele_less 0; allele_less 0. Per region: manifests/catalog_collector_drops.tsv.
+- Lost keys: 162,724 rows / 67,626 distinct keys (159,969 / 65,753 with the swapped key in the catalog); 39,103 distinct
+  keys are in at least one production panel (Slurm 2092136-2092139). STOP at Task 2 → Q-158R2. The orchestrator measured
+  (Slurm 2092423) that the fit's exact catalog join drops the reversed-orientation rows: hypertension EUR 33.5%, stroke
+  EUR 33.6%, stroke AFR 29.4%, t2d AFR 21.9%, asthma AFR 1.5%, asthma EUR 0.6%, bmi/t2d EUR 0%. Recomputed here from
+  `$Q8/orient_by_fit.tsv` (b154b0fa…c4f1): equal. Carter: "D: Harmonize r4 sumstats to one orientation
+  (Recommended)" → plan 15.8a2.
+- **R2: audit done; the lost-key consequence is the orientation drop; fix = Carter D, plan 15.8a2.** B path: no test 7,
+  no DRAFT (c) edit; review row R2 stays OPEN.
+- Test 6 timed at 603 s in Slurm 2092140 (NC_ABO, the fewest input rows) and 493 s inside FULL; under 15 min, not reduced.
+- NCs (`$Q8/nc_15_8a.txt`): (a)-(d) module mutations RED as planned; identity guards (e3) and (f) refused; (e) refused
+  by the accounting guard instead, and (e2) not discriminating on NC_ABO (82/82 rows at CHR:POS-named positions,
+  checked); test 6 manifest tampering ×3 RED; catalog sha cmp RED; panel-measurement controls as expected.
+- FULL Slurm 2093289 (cascadelake c020n02, HEAD 8da7bfbe, 2h29m): QUICK 866 P / 2 S; HEAVY 333 P / 5 S; PINS 39 P; FULL
+  2,700 = 2,647 P / 53 S / 0 F (full_15_8a.xml 41fdc36e…4d8c). check_15_8a.py against full_15_7j.xml: 0 removed, +6,
+  0 changes, CHECK PASS; NC (base as new) FAIL rc 1.
+- Catalog sha256 before == after (95 lines). No push, no fit, no OSF, decision_rules.yaml locked: false, n_regions_min 7.

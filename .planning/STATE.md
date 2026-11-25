@@ -26,7 +26,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-25 — **TRACK A ta-r4: W3f 15.7 CLOSED (15.7j: review banked, FULL 2,694 reconciled vs full_W3f.xml, HANDOFF refreshed). NEXT = 15.8. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-25 (later) — **TRACK A ta-r4: W3f 15.8a COMPLETE on its B path (R2 collector drops audited; lost keys = the sumstats orientation drop; Carter Q-158R2 D → plan 15.8a2). NEXT = 15.8a2. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): 159c06ad (15.8 planning set + six replies + DEC-2026-11-24-ta-r4-w3f-15-8-open-items), 06b68482
+  (collector_drop_audit.py, tests 1-6, manifests/catalog_collector_drops.tsv), 8da7bfbe (Q-158R2 reply + DEC addendum),
+  plus the records commit.
+- Replay identity with collect_region_variants.py in 31/31 r4 regions; 1,598,153 input = 875,225 kept + 722,928 dropped,
+  0 other; audit files in data/r4/ld/variants_r4_collector_dropped/ (sha256 in the manifest).
+- 162,724 dropped rows (67,626 keys, 65,753 swapped) have an allele key absent from the catalog. The fit's exact join drops
+  the reversed-orientation sumstats rows (hypertension EUR 33.5%, stroke EUR 33.6%, stroke AFR 29.4%, t2d AFR 21.9%).
+  Carter Q-158R2: "D: Harmonize r4 sumstats to one orientation (Recommended)" → 15.8a2, which changes sumstats, then
+  catalogs and panels, and rewrites DRAFT (c). R2 stays OPEN until then. No test 7, no DRAFT edit in 15.8a.
+- FULL Slurm 2093289 (cascadelake): 2,700 = 2,647 P / 53 S / 0 F; check_15_8a.py against full_15_7j.xml PASS (+6, 0
+  changes); base for the next plan = data/r4/tmp/w3f/q158/full_15_8a.xml.
+- NEXT = 15.8a2 (orchestrator-commissioned), then 15.8b…15.8f. decision_rules.yaml locked: false; n_regions_min 7;
+  catalogs and panels unchanged; no OSF; NOT PUSHED.
+
+## 2026-11-25 — **TRACK A ta-r4: W3f 15.7 CLOSED (15.7j: review banked, FULL 2,694 reconciled vs full_W3f.xml, HANDOFF refreshed). NEXT = 15.8. NOT PUSHED.** (SUPERSEDED by the 15.8a block above)
 
 - Commits (local only): 99ab219d (DRAFT (m)/Pre-Paste, brief-blind re-review banked, dispositions), plus the records commit.
 - Review: codex-cli 0.166.0 gpt-6.1-sol, rc 0; output 37,290 B sha256 6d2060d7…1fe0 in
