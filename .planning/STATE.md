@@ -26,7 +26,19 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-22 (night) — **TRACK A ta-r4: W3f 15.7h2 COMPLETE (exact-purity proxy over the 4 non-asthma EUR traits; asthma excluded, Carter Q-DROPASTHMA). NEXT = 15.7i. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+## 2026-11-24 (night) — **TRACK A ta-r4: W3f 15.7i COMPLETE (F15 pre-lock pilot fits disclosed in DRAFT (h) with Carter's v3 wording; manifest committed). NEXT = 15.7j. NOT PUSHED.** (★ RESUME HERE — LATEST ★)
+
+- Commits (local only): b343872f (DEC), 42f3eb9c (manifest + tests), ac61c486 (Q-F15V3 + v3 files), 46e0b1fe (DRAFT), plus the records commit.
+- Recount: 166 pilot fits (was 146), 128 reproduction-route (was 108), 39 of the 128 stopped before fitting (31 + 8); 20 / 18 / 17
+  / 7 of 20 / 109 unchanged; 69 existing repro fits in the exact-purity proxy; 0 colocalization outputs from any pilot fit.
+- manifests/prelock_pilot_fits.tsv lists 366 files (183 fits); tests/ta_r4/test_prelock_pilot_fits.py (3 tests) enforces it and
+  ties DRAFT (h) to W3f-carter-15-7-Q-F15-wording-as-approved-v3-2026-11-24.txt (67cb9a11…83a1).
+- FULL Slurm 2083696 (cascadelake): 2,694 = 2,641 P / 53 S / 0 F; vs full_15_7h2.xml 0 removed, +3, 0 outcome changes; check_15_7i.py
+  PASS. (Slurm 2080101 landed on Haswell and failed the CPU job guard; FULL must run with --constraint=cascadelake.)
+- NEXT = 15.7j; its FULL base is data/r4/tmp/w3f/q157/full_15_7i.xml (2,694). Stop before W4a-T3. W3f-carter-15-7-Q-F3N-reply-2026-11-24.txt
+  stays untracked for 15.7j. decision_rules.yaml locked: false; n_regions_min 7; no OSF; NOT PUSHED.
+
+## 2026-11-22 (night) — **TRACK A ta-r4: W3f 15.7h2 COMPLETE (exact-purity proxy over the 4 non-asthma EUR traits; asthma excluded, Carter Q-DROPASTHMA). NEXT = 15.7i. NOT PUSHED.** (SUPERSEDED by the 2026-11-24 night block above)
 
 - Commits (local only): d1498dff, f1f17bef, 265434df, 563f4753, bcd0310a, 688a6220, 4f3d692a, dd5eb803, plus the records commit.
 - Proxy (Slurm 2039595): equals job 2037096's 69 non-asthma rows in every column; w3f_region_contribution_proxy.tsv byte-identical

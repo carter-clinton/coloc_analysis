@@ -1457,3 +1457,35 @@ index c517ffb7..a0ffd52e 100644
   FULL 2,691 = 2,638 P / 53 S / 0 F (full_15_7h2.xml 50827ce7…). vs full_15_7h.xml: 0 removed, +9 (all passed), 0 outcome
   changes. `$Q/check_15_7h2.py` CHECK PASS rc 0; its NC (base as new) CHECK FAIL rc 1.
 - No push, no production fit, no colocalization, decision_rules.yaml locked: false, no OSF, n_regions_min 7.
+
+## 2026-11-24 — W3f 15.7i (F15 pre-lock pilot-fit disclosure: recount, manifest, v3 wording in DRAFT (h); Carter Q-F15 A, Q-F15W, Q-F15V3; no push)
+
+- Start 61d6eebd (`$Q/start_15_7i.txt`). Gates (`$Q/gate_15_7i.txt`): gate_reply.py Q-F15 aaff9960…5877, Q-F15W 5bd31c68…ef05,
+  v2 sha256 65c3851d…243b, rc 0; NCs wrong sha / wrong label / wrong v2 sha RED. DEC-2026-11-20-ta-r4-prelock-pilot-fit-disclosure
+  quoting all three (cat + cmp rc 0; cross-file cmp RED), b343872f.
+- Recount (`$Q/pilot_recount.txt`): pilot fits 146 → 166, reproduction-route fits 108 → 128 (15.7h2's 20 asthma outputs: 12
+  fitted, 8 too_many_variants); 20 production-panel, 18 earlier-catalog, 17 kernel runs, 7 of 20 with ≥ 1 set (same list), 109
+  purity components unchanged; 39 of the 128 stopped before fitting (31 + 8; too_many_variants 32, no_variants 7); 69 existing
+  repro fits with exact purity in the recorded proxy (plan said 70 at planning); 0 asthma fits in it. recount_matches_v2=false.
+- Coloc search Slurm 2041110 (`$Q/c157i/coloc_search_2041110.out`): 32 coloc-named files since 2026-11-09, 0 mention
+  measure_asthma_fix (only hit the search script); planted plain + gzip NCs found; sacct: no coloc job since 2026-11-09.
+  Slurm 2041108 cancelled (path match hit every file under coloc_analysis/).
+- Manifest manifests/prelock_pilot_fits.tsv (bb7ca0ea…; 366 files = 183 fits × json+rds; builder `$Q/c157i/build_prelock_manifest.py`);
+  15.7h2's 40 asthma files sha256-equal to proxy_asthma_pilot_fits_sha256.tsv. Tests 1-2 RED with the manifest absent
+  (`$Q/red_15_7i.txt`), GREEN; NCs unlisted file / wrong sha / missing file RED, restore byte-identical (`$Q/green_nc_15_7i.txt`). 42f3eb9c.
+- Task 2 STOP (human-action). v3 draft `$Q/F15_wording_v3_draft.txt` (760a1989…): template's proxy sentence false under
+  Q-DROPASTHMA and double-counted the 20, redrafted. Carter: "v3 + all early exits (Recommended)" (draft + 39-of-128 sentence).
+  Gate Q-F15V3 d195a0a4…e049 + v3 sha 67cb9a11…83a1 rc 0; NCs plan label / wrong sha / wrong v3 sha RED (`$Q/gate_15_7i_v3.txt`);
+  word diff vs draft = exactly Carter's two changes; 39 = 31 + 8 confirmed. Reply + wording files, DEC addendum (cmp rc 0),
+  plan <question> pins: ac61c486.
+- DRAFT (`$Q/draft_15_7i.py`): purpose line "production-arm fit" (unique); v3 appended to (h), hard wraps removed (295 words),
+  asserted equal. Test 3 GREEN; NCs pre-insert DRAFT / one number changed / v2 also present RED. test_amendment_text.py 21 P / 2 S
+  (FINAL/PUBLIC absent, as in the base). 46e0b1fe.
+- FULL Slurm 2080101 (c200n03, Haswell; submitted without --constraint=cascadelake): 5 pre-existing tests failed on the job
+  guard's CPU check (test_in_job_gate drift test, 4 test_snakemake_toy_e2e); kept as `$Q/full_15_7i_haswell_2080101.xml` +
+  `$Q/check_15_7i_haswell_2080101.txt` (CHECK FAIL). Resubmitted with the constraint used by every earlier close.
+- FULL Slurm 2083696 (cascadelake c021n03, HEAD 46e0b1fe, --mem=64G -t 06:00:00): QUICK 861 P / 2 S; HEAVY 332 P / 5 S; PINS 39 P;
+  FULL 2,694 = 2,641 P / 53 S / 0 F (full_15_7i.xml 1e2b9312…). vs full_15_7h2.xml: 0 removed, +3 (all passed), 0 outcome changes.
+  `$Q/check_15_7i.py` CHECK PASS rc 0; NCs (base as new; the Haswell run) CHECK FAIL rc 1. Target 2,694 (plan said 2,692 on a
+  stale 2,689 base; orchestrator-signed arithmetic correction). 15.7j's FULL base = full_15_7i.xml (2,694).
+- No push, no production fit, no colocalization, decision_rules.yaml locked: false (unchanged), no OSF, n_regions_min 7.
