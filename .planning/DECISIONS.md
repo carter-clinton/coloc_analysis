@@ -3695,3 +3695,63 @@ checksums in manifests/prelock_pilot_fits.tsv.
 ```
 
 - **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; n_regions_min stays 7. Lifts nothing under D-28.
+
+## 2026-11-25 — DEC-2026-11-24-ta-r4-w3f-15-8-open-items: the 15.7j re-review's open items R2–R7 and the Q-F3N premise are closed by plans 15.8a–15.8f as Carter chose (Carter, Q-157J, Q-158DIG, Q-158R6S, Q-158E7R, Q-F3NL, Q-158R7)
+
+- **Decider:** Carter, 2026-11-24 (Q-157J) and 2026-11-25 (the other five); replies saved verbatim and gated in 15.8a
+  through byte-identical staging copies (data/r4/tmp/w3f/q158/gate_157j.sh, gate_158.sh; output gate_15_8a.txt;
+  negative controls gate_nc_15_8a.txt: one byte changed in a copy, and the Q-157J free text with one space in
+  "pin  libopenblas", each exit 2).
+- Q-157J, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7j-open-items-reply-2026-11-24.txt` (sha256
+  `805afcd812902605dd9797d63c15fb201eae1fd2870db348182c1d38a640503e`): R2 → 15.8a; R3 → 15.8d; R4 → 15.8c; R5 + R7 → 15.8e; R6 → 15.8b.
+
+```text
+Question Q-157J (2026-11-24): 15.7j brief-blind re-review OPEN items R2 (collector drops unaudited), R3 (E7 count definitions), R4 (QTL posteriors rounded to 4 decimals before thresholds), R5 (multi-key member refusal not fatal), R6 (BLAS library not pinned/checked), R7 (chronology wording). How should each be handled?
+Carter reply (verbatim): continue with your recomendations for the open items R4, R6: pin  libopenblas, R2: measured and audited, R3: yes it should be counted, R5 and R7: go with recommendation
+```
+
+- Q-158DIG, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158DIG-reply-2026-11-25.txt` (sha256
+  `ea8fe4cdaf4bbcf802d65e68c75e66d3b095777f0e518e9ed57c088d3246ceb4`): R4 → 15.8c (exact round-trip for every r4 thresholded writer).
+
+```text
+Question Q-158DIG (2026-11-25): Q-158DIG (R4): I recommended 'full precision (digits = NA)'. That was wrong too: in jsonlite, digits = NA means 15 significant digits, not full precision. 0.79999999999999993 is written as 0.8, and only 8.1% of random doubles round-trip; I(17) round-trips 100%. The r4 GWAS pair JSON and the simulation posterior table have the same 15-digit limit, and both feed thresholds. Which fix?
+Carter reply (verbatim, selected option): A: Exact round-trip everywhere r4 thresholds (Recommended)
+```
+
+- Q-158R6S, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158R6S-reply-2026-11-25.txt` (sha256
+  `7b3d1045f770bdea49123a85d58866501a46dbe62b0d9ddf5f9ac6bf36875b2d`): R6 → 15.8b (libopenblas pinned in envs/r_coloc.yml only).
+
+```text
+Question Q-158R6S (2026-11-25): R6 reaches Track B: envs/r_coloc.yml is shared with Track B and m3. Pinning libopenblas there changes their env hash, so their next run rebuilds the env from the r4 pin file. The jobs already load 0.3.34, so the version shouldn't change. Also, the guard checks the BLAS pin in every gated r4 job env; python_stats, plink and qtl_processing are unpinned but currently 0.3.34, so the guard fails closed if any of them drifts. Proceed?
+Carter reply (verbatim, selected option): Proceed, pin r_coloc only (Recommended)
+```
+
+- Q-158E7R, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158E7R-reply-2026-11-25.txt` (sha256
+  `43a4d89900c7225576a9edef1980716db999ca8c3193694305fca2c42376bd09`): E7 matched-rounding column → 15.8c2.
+
+```text
+Question Q-158E7R (2026-11-25): E7 QTL tiers will mix in rounding: under R4, QTL_A3 posteriors become exact, while QTL_legacy keeps 4-decimal posteriors, matching the earlier pipeline. So E7's qtl_tier 'changed' partly reflects rounding, the same kind of problem as R3. The plan only discloses this. What do you want?
+Carter reply (verbatim, selected option): Add a matched-rounding column (Recommended)
+```
+
+- Q-F3NL, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-F3NL-reply-2026-11-25.txt` (sha256
+  `9b4c0bb009e5262c38262da953e2a009b8c1859447bbb0975a24c68c9162b6a1`): QTL_legacy keeps the earlier NaN GWAS PP.H4 rule → 15.8c2.
+
+```text
+Question Q-F3NL (2026-11-25): Q-F3N again: my earlier question was wrong. I told you E7's frozen comparator QTL_legacy 'does not get the flag'. In the code it does: tiers_argv always passes --nan-gwas-below-threshold, and r4_qtl_tiers runs for every R4 QTL arm, QTL_legacy included. So QTL_legacy's tiers also treat a NaN GWAS PP.H4 as below_threshold. What should QTL_legacy do?
+Carter reply (verbatim, selected option): Keep legacy rule for QTL_legacy (Recommended)
+```
+
+- Q-158R7, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158R7-reply-2026-11-25.txt` (sha256
+  `a9a6866eb9c4b518c7a98206273ddd55fe0cbd4e2e49c1b3d7264d2f69a261b8`): R7 Purpose wording → 15.8e.
+
+```text
+Question Q-158R7 (2026-11-25): R7 (15.8e): the planner wrote the Purpose wording you approved under 'go with recommendation', and it will go into public text. It removes '(the pre-lock pilot fits are listed in (h))' and adds the sentence shown in the preview after the 'before any production-arm fit exists' sentence. Approve it?
+Carter reply (verbatim, selected option): Approve as written (Recommended)
+```
+
+- **Mapping.** R2 (collector drops) → 15.8a; R6 (BLAS pin) → 15.8b (Q-158R6S); R4 (QTL/JSON precision) → 15.8c
+  (Q-158DIG); E7 matched rounding + QTL_legacy NaN rule → 15.8c2 (Q-158E7R, Q-F3NL); R3 (E7 count definitions) →
+  15.8d; R5 (multi-key fatal) + R7 (chronology wording) → 15.8e (Q-158R7); brief-blind review and close → 15.8f.
+- **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml stays locked: false;
+  n_regions_min stays 7; no re-pin to make a check pass. Lifts nothing under D-28.

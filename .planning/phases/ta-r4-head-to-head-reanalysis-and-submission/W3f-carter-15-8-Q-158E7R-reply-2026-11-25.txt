@@ -1,0 +1,2 @@
+Question Q-158E7R (2026-11-25): E7 QTL tiers will mix in rounding: under R4, QTL_A3 posteriors become exact, while QTL_legacy keeps 4-decimal posteriors, matching the earlier pipeline. So E7's qtl_tier 'changed' partly reflects rounding, the same kind of problem as R3. The plan only discloses this. What do you want?
+Carter reply (verbatim, selected option): Add a matched-rounding column (Recommended)

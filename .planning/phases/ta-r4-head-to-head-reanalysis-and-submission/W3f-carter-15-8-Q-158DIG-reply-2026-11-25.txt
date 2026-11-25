@@ -1,0 +1,2 @@
+Question Q-158DIG (2026-11-25): Q-158DIG (R4): I recommended 'full precision (digits = NA)'. That was wrong too: in jsonlite, digits = NA means 15 significant digits, not full precision. 0.79999999999999993 is written as 0.8, and only 8.1% of random doubles round-trip; I(17) round-trips 100%. The r4 GWAS pair JSON and the simulation posterior table have the same 15-digit limit, and both feed thresholds. Which fix?
+Carter reply (verbatim, selected option): A: Exact round-trip everywhere r4 thresholds (Recommended)

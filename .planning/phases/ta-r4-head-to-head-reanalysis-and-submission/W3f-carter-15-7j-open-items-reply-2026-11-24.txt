@@ -1,0 +1,2 @@
+Question Q-157J (2026-11-24): 15.7j brief-blind re-review OPEN items R2 (collector drops unaudited), R3 (E7 count definitions), R4 (QTL posteriors rounded to 4 decimals before thresholds), R5 (multi-key member refusal not fatal), R6 (BLAS library not pinned/checked), R7 (chronology wording). How should each be handled?
+Carter reply (verbatim): continue with your recomendations for the open items R4, R6: pin  libopenblas, R2: measured and audited, R3: yes it should be counted, R5 and R7: go with recommendation

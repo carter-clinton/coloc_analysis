@@ -1,0 +1,2 @@
+Question Q-F3NL (2026-11-25): Q-F3N again: my earlier question was wrong. I told you E7's frozen comparator QTL_legacy 'does not get the flag'. In the code it does: tiers_argv always passes --nan-gwas-below-threshold, and r4_qtl_tiers runs for every R4 QTL arm, QTL_legacy included. So QTL_legacy's tiers also treat a NaN GWAS PP.H4 as below_threshold. What should QTL_legacy do?
+Carter reply (verbatim, selected option): Keep legacy rule for QTL_legacy (Recommended)

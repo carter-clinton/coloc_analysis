@@ -1,0 +1,2 @@
+Question Q-158R6S (2026-11-25): R6 reaches Track B: envs/r_coloc.yml is shared with Track B and m3. Pinning libopenblas there changes their env hash, so their next run rebuilds the env from the r4 pin file. The jobs already load 0.3.34, so the version shouldn't change. Also, the guard checks the BLAS pin in every gated r4 job env; python_stats, plink and qtl_processing are unpinned but currently 0.3.34, so the guard fails closed if any of them drifts. Proceed?
+Carter reply (verbatim, selected option): Proceed, pin r_coloc only (Recommended)
