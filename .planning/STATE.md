@@ -26,7 +26,23 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-25 (afternoon) — **TRACK A ta-r4: W3f 15.8a2 COMPLETE (8 r4 sumstats copies in the r4 catalog's orientation, identities proven, pinned; no consumer switched). NEXT = 15.8a3. NOT PUSHED (859458f9 and the records commit are local).** (★ RESUME HERE — LATEST ★)
+## 2026-11-25 (evening) — **TRACK A ta-r4: W3f 15.8a3 COMPLETE (r4 production reads the oriented sumstats; catalogs, collector audit and pilots keep their inputs; catalog fixed point 31/31). NEXT = 15.8a4. NOT PUSHED (9b5876c9, 50a7bad9 and the records commit are local).** (★ RESUME HERE — LATEST ★)
+
+- Commits: 9b5876c9 (paths.catalog_source_sumstats_path / oriented_sumstats_path; sumstats_path route r4 -> oriented;
+  CATALOG_SUMSTATS["r4"], collector_drop_audit.r4_sumstats, ASTHMA_PILOT_SUMSTATS -> catalog sources; data_sources.yaml
+  r4_oriented records; fixture copy; tests 1-6; 5 declared spec updates), 50a7bad9 (manifests/catalogs_r4_fixed_point.tsv,
+  tests 7-8), plus the records commit.
+- Catalog fixed point: rebuilt from the 8 oriented files, raw / final / dropped bytes == pinned in 31/31 regions (Slurm
+  2096913); no Q-158FP; nothing re-pinned; 106 catalog / manifest / panel sha256 before == after. NC (one catalog-defining
+  bmi.EUR row flipped in NC_ABO) -> not equal, test 7 RED.
+- FULL Slurm 2097342: 2,722 = 2,669 P / 53 S / 0 F; check_15_8a3.py vs full_15_8a2.xml PASS (+8, 0 changes, 5 declared
+  passed -> passed); base for 15.8a4 = data/r4/tmp/w3f/q158/full_15_8a3.xml.
+- Note for Carter: data_sources.yaml r4_oriented.from for bmi EUR records the D-18 r4_alleles file (the real source),
+  not the entry's url (SUMMARY deviation 1).
+- NEXT = 15.8a4 (eligibility re-measure on the oriented inputs; STOP Q-158EL2 if the set differs; DRAFT). decision_rules.yaml
+  locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
+## 2026-11-25 (afternoon) — **TRACK A ta-r4: W3f 15.8a2 COMPLETE (8 r4 sumstats copies in the r4 catalog's orientation, identities proven, pinned; no consumer switched). NEXT = 15.8a3. NOT PUSHED (859458f9 and the records commit are local).** (SUPERSEDED by the 15.8a3 block above)
 
 - Commits: 1298b511 (15.8a2-a4 planning set, 15.8b-f amendments, Q-158OR / Q-158PAL / Q-158EL replies,
   DEC-2026-11-25-ta-r4-sumstats-orientation, PLAN-INDEX rows + chain), 859458f9 (sumstats_orient.py, 14 tests,

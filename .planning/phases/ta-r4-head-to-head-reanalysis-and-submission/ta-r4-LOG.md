@@ -1655,3 +1655,104 @@ index c517ffb7..a0ffd52e 100644
   before only in sumstats_r4_sha256.tsv (a2/sha_after.txt).
 - No consumer reads the oriented files (paths.sumstats_path unchanged; 15.8a3 switches). No catalog, panel or
   data/processed byte changed. No fit, no OSF, decision_rules.yaml locked: false, n_regions_min 7. NEXT = 15.8a3.
+
+## 2026-11-25 — W3f 15.8a3 (r4 production reads the oriented sumstats; catalogs, collector audit and pilots keep their inputs; catalog fixed point 31/31; no push)
+
+- Commits (local): 9b5876c9 (paths split + consumer switch, data_sources r4_oriented records, fixture copy, tests 1-6,
+  5 declared spec updates), 50a7bad9 (manifests/catalogs_r4_fixed_point.tsv, tests 7-8), plus the records commit.
+- Gates (`$Q8=data/r4/tmp/w3f/q158`, a3/gates.txt): gate_157j.sh, gate_158r2.sh, gate_158a2.sh Q-158OR Q-158PAL, all
+  rc 0 (sha256 805afcd8…503e, 4183859f…bacb, b4a87020…646a, b5cde5c3…ec13). 15.8a2 closed (SUMMARY 83e17b38,
+  full_15_8a2.xml present). Start HEAD 83e17b38 (a3/start.txt).
+- Before-state: sha256 of the 31 raw / final / dropped r4 catalogs, catalogs_sha256.tsv, catalogs_r4_unique_key.tsv and
+  the 11 panels_*.tsv (106 files, a3/sha_before.txt); paths.sumstats_path for every arm × the 8 pairs (a3/paths_before.tsv).
+- Consumers as executed:
+
+| consumer | arm(s) | reads now |
+|---|---|---|
+| commands.fit_command / verify_command / coloc_command (susie, A1_matched, A1_allvars) / coloc_verify_command | 8 production arms | data/r4/sumstats/<t>.<a>.r4_oriented.tsv.bgz (test 1) |
+| run_qtl_group_r4.abf_command / group_inputs | QTL_A3, QTL_A2 | oriented (test 1) |
+| run_aggregation._cross_purity fit_sumstats | the 8 CROSS_PURITY fit arms | oriented (test 1) |
+| measure_fit_eligibility.pinned_inputs / measurement_argv | production | oriented (declared updates 1-2) |
+| coloc_command, run_qtl_group_r4 | repro arms, QTL_legacy | data/processed/sumstats_harmonized (unchanged, test 2) |
+| ta_r4_panels.smk CATALOG_SUMSTATS["r4"] (r4_catalog_raw) | catalog build | catalog sources (test 4 dry run, collector order) |
+| collector_drop_audit.r4_sumstats | 15.8a audit | catalog sources (test 5) |
+| measure_fit_eligibility.ASTHMA_PILOT_SUMSTATS | pilot fits, region-contribution proxy | the corrected lift (test 5, declared update 3) |
+| sumstats_orient.CATALOG_SOURCES / oriented_path | 15.8a2 harmonizer | unchanged typed sources; oriented_path → paths.oriented_sumstats_path (test 3) |
+
+- Path diff (a3/paths_diff.txt, paths_before → paths_after): each of the 8 production arms × 8 pairs → `.r4_oriented.`
+  (64 changes); each of the 5 repro arms × 8 pairs unchanged (40). catalog_source_sumstats_path over the 8 pairs ==
+  the A3_1kg column at 83e17b38 in collector order == sumstats_orient.CATALOG_SOURCES == set(PRODUCTION_INPUTS).
+- data_sources.yaml: each of the 8 sumstats entries gains `r4_oriented: {path, sha256, from}`; no other key changed
+  (asserted on load). `from` = the file the copy was made from (the 15.8a2 report's src): the entry's url for 7 entries;
+  for bmi EUR it is data/r4/sumstats/bmi.EUR.r4_alleles.tsv.bgz (D-18), not its url (data/processed bmi.EUR) — see
+  SUMMARY deviation 1.
+- RED (`$Q8/red_15_8a3.txt`, Slurm 2096701, old code): tests 1, 3, 6 and declared updates 1-3 FAILED; tests 2, 4, 5
+  PASSED (characterization). Need of declared updates 4-5 after the switch (Slurm 2096713, both unedited):
+  test_qtl_abf_maps_bridged_names_through_panel FAILED (`n_direct` 196 != 0: QTL_A3 read the un-rewritten r4-route copy);
+  test_real_asthma_eur_sumstats_verifies' unedited `rel` = data/r4/sumstats/asthma.EUR.r4_oriented.tsv.bgz (it would
+  have silently changed subject and still passed). Then edited; both pass.
+- Suite after the switch (Slurm 2096746, cascadelake): QUICK tests/ta_r4 880 P / 2 S (15.8a2 875 + 5 new); r4_heavy in
+  the 14 listed files + the new file 86 P / 0 F; per id vs full_15_8a2.xml: 0 outcome changes; the 5 qtl_group_fixture
+  importers (test_qtl_group_runner, test_coloc_pair_r4, test_verify_inputs, test_fit_name_alignment,
+  test_purity_determinism) collect and pass.
+- NCs (`$Q8/nc_15_8a3.txt`, Slurm 2096854; md5-restored, PYTHONDONTWRITEBYTECODE=1): (a) sumstats_path returns the
+  source for A3_ukb → test 1 RED; (b) CATALOG_SUMSTATS["r4"] from sumstats_path → test 4 RED; (c) ASTHMA_PILOT_SUMSTATS
+  from sumstats_path → test 5 and the declared proxy test RED; (d) oriented path for repro_routeC → test 2 RED; (e)
+  r4_sumstats from sumstats_path → test 5 RED. After restore the 5 tests pass.
+- Catalog fixed point (a3/fixed_point.py, Slurm array 2096913_[0-30], 6-7 min per region, max RSS 3.2 GB): per region
+  the 8 oriented files (collector order, all present, verify_inputs OK) → collect_variants → `to_csv(sep="\t",
+  index=False)` → catalog_unique_key.unique_allele_key rendered as its main() writes it; raw, final and dropped bytes
+  equal the pinned files in **31/31** regions (fp_outcome=0; no Q-158FP). Totals: raw 875,225 (= 15.8a n_kept), final
+  627,685, dropped 247,540.
+
+| region | raw rows | final rows | dropped rows | raw / final / dropped sha256 (pinned = rebuilt) | equal |
+|---|---|---|---|---|---|
+| 9p21_CDKN2A | 54,234 | 40,526 | 13,708 | 462a355e… / 5e17c5e5… / f341e1e0… | true |
+| APOE_19q13 | 48,629 | 35,222 | 13,407 | 86a9e906… / eb3cfb66… / e1330262… | true |
+| APOL1_22q12 | 8,380 | 5,983 | 2,397 | 95c29ec5… / d4d5d6b3… / b7338ad1… | true |
+| BMI_5q13_3 | 92,558 | 67,249 | 25,309 | a7f791ca… / 4e646dfb… / 0f8fb21a… | true |
+| BMI_Xq24 | 23,214 | 23,214 | 0 | 1e9b2dd0… / 1e9b2dd0… / 0b65697d… | true |
+| CXADR_F2RL1_6p21 | 37,945 | 27,308 | 10,637 | 242e745c… / 2bd29d9e… / 4256cd44… | true |
+| FTO_16q12 | 14,410 | 10,334 | 4,076 | 09cab294… / 2927a05d… / 80e9b32e… | true |
+| HLA_6p21 | 302,753 | 204,289 | 98,464 | 07f635eb… / 4cacd1e0… / 1751aef3… | true |
+| MC4R_18q21 | 14,940 | 10,871 | 4,069 | 9a1d37df… / 369fa118… / 75265254… | true |
+| NC_ABO | 1,068 | 773 | 295 | 6b05bc23… / 3c7c18fb… / ec917f59… | true |
+| NC_FUT1_FUT2 | 1,362 | 990 | 372 | 253d13b1… / bb125bd6… / 2d5fea2b… | true |
+| NC_IRF4 | 3,276 | 2,372 | 904 | dad5f8a2… / 48fc2b6d… / bea957da… | true |
+| NC_KEL | 1,807 | 1,305 | 502 | 2ff7dc34… / 9df5ec7f… / 7a9a596b… | true |
+| NC_MC1R | 5,774 | 4,112 | 1,662 | 0c02a823… / 1da42c45… / 263175b2… | true |
+| NC_NULL_01 | 6,339 | 4,664 | 1,675 | f3d63ea7… / 5560b375… / bba1b0d6… | true |
+| NC_NULL_02 | 6,122 | 4,432 | 1,690 | f2d66d13… / 9be97e67… / e014d962… | true |
+| NC_NULL_03 | 5,249 | 3,827 | 1,422 | e0bea5df… / 2fc3da8f… / b1373d1d… | true |
+| NC_NULL_04 | 6,094 | 4,512 | 1,582 | 30f1f1dc… / 98279afc… / 7e40f6b0… | true |
+| NC_NULL_05 | 6,553 | 4,730 | 1,823 | 6e486059… / d3c2efad… / c38ac57d… | true |
+| NC_NULL_06 | 6,096 | 4,553 | 1,543 | d6e8c31f… / c0600175… / b1226f84… | true |
+| NC_NULL_07 | 7,878 | 5,614 | 2,264 | 4d80d100… / 2c4f595b… / cfbe6da7… | true |
+| NC_NULL_08 | 6,292 | 4,580 | 1,712 | cbd6a6df… / 7d161599… / df04bd65… | true |
+| NC_NULL_09 | 6,566 | 4,846 | 1,720 | 92e345dd… / 2a62ea7c… / 8ed93c8e… | true |
+| NC_NULL_10 | 6,150 | 4,456 | 1,694 | 6e9402ef… / d15b07a8… / c58fcd36… | true |
+| NC_OCA2_HERC2 | 10,307 | 7,393 | 2,914 | 974873ac… / a03eea07… / fc1f158e… | true |
+| NC_RH | 2,640 | 1,963 | 677 | 2eef61b3… / 2afd9889… / 8887ada3… | true |
+| NC_SLC24A5 | 9,989 | 7,534 | 2,455 | c1c94a97… / 87cbf5fa… / d48c2f7f… | true |
+| NC_TYR | 12,955 | 9,610 | 3,345 | d342f0a8… / a1d0a22a… / 60374fb4… | true |
+| PYHIN1_1q23 | 92,836 | 66,883 | 25,953 | e628afec… / 2dc5023d… / 2a4d382d… | true |
+| SH2B3_12q24 | 11,114 | 8,140 | 2,974 | ef43ebe3… / 08afb93a… / 3f1d9d0e… | true |
+| SLC2A9_urate | 61,695 | 45,400 | 16,295 | 1dca3c9d… / 54091524… / 78c47fd3… | true |
+| total (31) | 875,225 | 627,685 | 247,540 | | 31/31 |
+
+- Fixed-point NC (Slurm 2097246; the first run 2096917 stopped in the NC script before any comparison: `tabix -h` prints
+  no header for a `-S 1` index; fixed): NC_ABO's first final-catalog row from bmi.EUR that is not A/T or C/G is
+  9:136127268 C/T rs9411475; in a window copy of bmi.EUR.r4_oriented with sumstats_orient.flip_fields applied to that row
+  only, fixed_point.py reports raw / final / dropped all **not equal** (raw: 1 row re-oriented, 0 added, 0 removed; final
+  773 → 772, dropped 295 → 296: the flipped key collides with the other entry at that position), and test 7 on the same
+  copy FAILS (byte diff `T` vs `C`). Test 8 with one manifest sha256 character changed FAILS (Slurm 2097324).
+- After (Slurm 2097324): sha256 of the 106 files == before (`cmp a3/sha_before.txt a3/sha_after.txt`); tests 7-8 + the
+  file + test_sumstats_orient.py 22 passed (test 7 208 s, test 8 1.5 s).
+- FULL: Slurm 2097342 (cascadelake c022n03, HEAD 50a7bad9, 2h27m): QUICK 881 P / 2 S; HEAVY 340 P / 5 S; PINS 39 P;
+  FULL 2,722 = 2,669 P / 53 S / 0 F (full_15_8a3.xml 0d538bd6…d988). check_15_8a3.py against full_15_8a2.xml (2,714 =
+  2,661 P / 53 S, read from the file): 0 removed, +8 (the 8 new ids, all passed), 0 outcome changes, the 5 declared
+  ids passed → passed, totals 2,722 / 2,669 / 53 / 0, CHECK PASS (check_15_8a3.txt); NC (base as new) CHECK FAIL rc 1
+  (check_15_8a3_nc.txt). tests/m3/sparse_parent_benchmark.tsv restored by close.sh (clean). The 106-file sha256 is
+  still equal to before after the FULL (a3/sha_after_full.txt).
+- No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7; no catalog, panel, sumstats or
+  data/processed byte changed; Track B unchanged. NOT PUSHED. NEXT = 15.8a4.
