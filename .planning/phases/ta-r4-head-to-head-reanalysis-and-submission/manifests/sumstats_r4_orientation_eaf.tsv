@@ -1,0 +1,15 @@
+# diagnostic, not a filter: |EAF - reference EAF| on the oriented files, non-palindromic rows with numeric EAF in both, joined on the oriented CHR:POS:REF:ALT key within the 31 r4 windows (15.8a2)
+trait	ancestry	class	reference_file	n	median_abs_delta_eaf	n_above_0.2
+bmi	EUR	unflipped	data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz	11013	0.0285	12
+t2d	AFR	flipped	data/r4/sumstats/asthma.AFR.r4_oriented.tsv.bgz	35426	0.0026	1
+t2d	AFR	unflipped	data/r4/sumstats/asthma.AFR.r4_oriented.tsv.bgz	103314	0.0021	1
+hypertension	EUR	flipped	data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz	28907	0.0167	14
+hypertension	EUR	unflipped	data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz	49200	0.0164	32
+asthma	EUR	flipped	data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz	225	0.0270	19
+asthma	EUR	unflipped	data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz	216105	0.0047	525
+asthma	AFR	flipped	data/r4/sumstats/t2d.AFR.r4_oriented.tsv.bgz	2355	0.0019	0
+asthma	AFR	unflipped	data/r4/sumstats/t2d.AFR.r4_oriented.tsv.bgz	136390	0.0022	2
+stroke	EUR	flipped	data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz	29961	0.0157	22
+stroke	EUR	unflipped	data/r4/sumstats/t2d.EUR.r4_oriented.tsv.bgz	51185	0.0155	37
+stroke	AFR	flipped	data/r4/sumstats/asthma.AFR.r4_oriented.tsv.bgz	19820	0.0057	17
+stroke	AFR	unflipped	data/r4/sumstats/asthma.AFR.r4_oriented.tsv.bgz	38132	0.0058	8
