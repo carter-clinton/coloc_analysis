@@ -16,11 +16,13 @@ from pathlib import Path
 import pytest
 
 from ta_r4 import commands, job_guard, r4_lock_gate
-from ta_r4.conda_job_env import R4_CONDA_PREFIX, job_env_dir
+from ta_r4.conda_job_env import job_env_dir
 
 from .conftest import MAN_DIR, REPO_ROOT
+from .fixtures.conda_prefix import r4_conda_prefix
 from .test_job_guard import ARM, CASCADELAKE, CLEAN_ENV, LABEL, blas_prefix, blas_stubs
 
+R4_CONDA_PREFIX = r4_conda_prefix()
 CONDA = "/rs1/researchers/c/ckclinto/miniconda3/condabin/conda"
 NAMED_ENV = Path("/rs1/researchers/c/ckclinto/conda_envs/r_coloc")
 YML = REPO_ROOT / "envs/r_coloc.yml"

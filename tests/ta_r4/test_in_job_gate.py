@@ -24,6 +24,7 @@ from ta_r4.conda_job_env import job_env_dir
 from ta_r4.r4_lock_gate import LOCKED_PATHS
 
 from .conftest import REPO_ROOT
+from .fixtures.conda_prefix import r4_conda_prefix
 from .fixtures.make_fixture_repo import git, make_fixture_repo, write_fixture_lock
 from .test_lock_gate import SMK
 
@@ -217,7 +218,7 @@ def test_coloc_shell_verifies_both_sumstats_after_the_gate(rendered, rule, mode)
 def test_gate_in_a_job_fails_after_locked_path_drift(rendered):
     repo, _, js = rendered
     gate = shlex.split([c for r, _, c in js if r == "r4_run_finemap"][0][0])
-    env = {**os.environ, "CONDA_PREFIX": str(job_env_dir(REPO_ROOT / "envs/r_coloc.yml"))}
+    env = {**os.environ, "CONDA_PREFIX": str(job_env_dir(REPO_ROOT / "envs/r_coloc.yml", r4_conda_prefix()))}
     before = subprocess.run(gate, cwd=repo, capture_output=True, text=True, env=env)
     print("gate rc before drift", before.returncode)
     assert before.returncode == 0, before.stderr

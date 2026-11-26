@@ -12,8 +12,10 @@ from ta_r4 import paths
 from ta_r4.conda_job_env import job_env_dir
 from ta_r4.harmonize_qtl_r4 import QTL_SOURCES, harmonized_path
 
+from .conda_prefix import r4_conda_prefix
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
-R4_CONDA_PREFIX = Path("/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4")
+R4_CONDA_PREFIX = r4_conda_prefix()
 
 
 def _job_env(yml="envs/r_coloc.yml"):

@@ -7,10 +7,8 @@ import hashlib
 import os
 from pathlib import Path
 
-R4_CONDA_PREFIX = "/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r4"
 
-
-def job_env_dir(yml, prefix=R4_CONDA_PREFIX):
+def job_env_dir(yml, prefix):
     yml = Path(yml)
     deploy = yml.with_suffix(".post-deploy.sh")
     if deploy.exists():
