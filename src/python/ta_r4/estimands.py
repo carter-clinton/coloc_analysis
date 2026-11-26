@@ -435,18 +435,47 @@ def _share(flipped, exact):
     return flipped / tot if tot > 0 else float("nan")
 
 
+def round_like_jsonlite_default(x: float) -> float:
+    """The double jsonlite's default toJSON (digits = 4) writes for `x`, as R 4.4 / jsonlite 2.0.0 num_to_char does:
+    for 1e-5 < |x| < 2147483647, 4 decimals by modp_dtoa2 (the scaled fraction truncated, rounded up above one half
+    and at exactly one half only when the truncated last digit is odd); otherwise "%.*g" with
+    ceil(min(15, max(1, log10|x|) + 4)) significant digits. NaN stays NaN."""
+    if math.isnan(x):
+        return x
+    a = abs(x)
+    if 1e-5 < a < 2147483647:
+        whole = int(a)
+        tmp = (a - whole) * 10000.0
+        frac = int(tmp)
+        diff = tmp - frac
+        if diff > 0.5 or (diff == 0.5 and frac & 1):
+            frac += 1
+            if frac >= 10000:
+                frac, whole = 0, whole + 1
+        r = float(f"{whole}.{frac:04d}")
+        return -r if x < 0 else r
+    if a == 0:
+        return x
+    return float("%.*g" % (math.ceil(min(15, max(1, math.log10(a)) + 4)), x))
+
+
 def e7_frozen_vs_fixed(known_w3a, known_sh2b3, fits, rows, qtl_docs, *, a3_arm, p12_key,
-                       qtl_tiers_frozen=None, qtl_tiers_fixed=None) -> pd.DataFrame:
+                       qtl_tiers_frozen=None, qtl_tiers_fixed=None,
+                       qtl_tiers_fixed_4dp=None) -> pd.DataFrame:
     """E-2 frozen (reproduction) vs fixed (R4 A3) table. Sections: fit_yield (W3a Route L real-LD fits),
     sh2b3_pair (W3b R2_exact pairs), flipped_share_region (fine-map, per region), flipped_share_qtl (per QTL row),
-    qtl_tier (QTL_legacy vs QTL_A3 tiers). flipped_share = flipped / (exact + flipped)."""
+    qtl_tier (QTL_legacy vs QTL_A3 tiers). flipped_share = flipped / (exact + flipped). qtl_tier rows also carry
+    fixed_value_qtl_4dp (the QTL_A3 tier from 4-decimal posteriors, `qtl_tiers_fixed_4dp`) and changed_qtl_4dp;
+    other sections, and every row when `qtl_tiers_fixed_4dp` is None, leave both empty."""
     out = []
 
     def add(section, id_, region="", anc="", frozen="", fixed="", n_exact=float("nan"), n_flipped=float("nan"),
-            share=float("nan")):
+            share=float("nan"), fixed_4dp=""):
         out.append({"section": section, "id": id_, "region_safe": region, "ancestry": anc,
                     "frozen_value": frozen, "fixed_value": fixed, "changed": (frozen != fixed) if fixed != "" else pd.NA,
-                    "n_exact": n_exact, "n_flipped": n_flipped, "flipped_share": share})
+                    "n_exact": n_exact, "n_flipped": n_flipped, "flipped_share": share,
+                    "fixed_value_qtl_4dp": fixed_4dp,
+                    "changed_qtl_4dp": (frozen != fixed_4dp) if fixed_4dp != "" else pd.NA})
 
     fi = {(f.arm, f.trait, f.ancestry, f.region_safe): f for f in fits.itertuples()}
     for r in known_w3a[known_w3a["pair"] == "real_ld"].itertuples():
@@ -471,11 +500,15 @@ def e7_frozen_vs_fixed(known_w3a, known_sh2b3, fits, rows, qtl_docs, *, a3_arm, 
         add("flipped_share_qtl", q["id"], n_exact=e, n_flipped=fl, share=share)
     if qtl_tiers_frozen is not None and qtl_tiers_fixed is not None:
         fx = {(r.region, r.ancestry): r.tier for r in qtl_tiers_fixed.itertuples()}
+        f4 = None if qtl_tiers_fixed_4dp is None else {(r.region, r.ancestry): r.tier
+                                                         for r in qtl_tiers_fixed_4dp.itertuples()}
         for r in qtl_tiers_frozen.itertuples():
-            add("qtl_tier", f"{r.region}.{r.ancestry}", r.region, r.ancestry, str(r.tier),
-                str(fx.get((r.region, r.ancestry), "absent")))
+            k = (r.region, r.ancestry)
+            add("qtl_tier", f"{r.region}.{r.ancestry}", r.region, r.ancestry, str(r.tier), str(fx.get(k, "absent")),
+                fixed_4dp="" if f4 is None else str(f4.get(k, "absent")))
     return pd.DataFrame(out, columns=["section", "id", "region_safe", "ancestry", "frozen_value", "fixed_value",
-                                      "changed", "n_exact", "n_flipped", "flipped_share"])
+                                      "changed", "n_exact", "n_flipped", "flipped_share", "fixed_value_qtl_4dp",
+                                      "changed_qtl_4dp"])
 
 
 def wilson_ci(k, n, level=0.95):

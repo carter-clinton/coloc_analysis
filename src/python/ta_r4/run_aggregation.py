@@ -42,6 +42,8 @@ QTL_TIERS = f"{paths.R4}/results/{{arm}}/qtl_tiers.tsv"
 QTL_SUMMARY = f"{paths.R4}/results/{{arm}}/qtl_coloc_summary.tsv"  # aggregate_qtl_coloc --with-method-columns
 QTL_JSON_DIR = f"{paths.R4}/results/QTL_A3/qtl"
 QTL_MANIFEST = "config/ta_r4/qtl_manifest.tsv"  # harmonize_qtl_r4.MANIFEST
+QTL_PP_COLS = ["PP.H0.abf", "PP.H1.abf", "PP.H2.abf", "PP.H3.abf", "PP.H4.abf"]  # aggregate_qtl_coloc.SUMMARY_PP_COLS
+CODE_ROOT = Path(__file__).resolve().parents[3]  # the repo holding src/python/assign_tiers.py
 TIER_COLS = ["region", "ancestry", "tier", "best_gwas_pph4", "best_qtl_pph4", "resolving_gene", "resolving_tissue",
              "resolving_qtl_source", "all_supporting_sources", "neg_ctrl_set"]
 RSCRIPT = "Rscript"  # from envs/r_coloc.yml on PATH (as commands.py)
@@ -294,6 +296,43 @@ def _qtl(repo):
     return layer, docs, tiers.get("QTL_legacy"), tiers.get("QTL_A3")
 
 
+def _qtl_tiers_qtl4dp(repo):
+    """QTL_A3's tier table re-derived from its posteriors rounded as jsonlite's default writes them (E7
+    fixed_value_qtl_4dp): PP.H0.abf … PP.H4.abf of a temporary copy of QTL_A3's qtl_coloc_summary_tierable.tsv are
+    rounded by estimands.round_like_jsonlite_default, then assign_tiers.py runs with QTL_A3's own argv
+    (run_qtl_group_r4.tiers_argv) and QTL_A3's GWAS table and pph4 config; every output is in the temporary directory.
+    None when QTL_A3's tierable summary is absent."""
+    import csv
+
+    from ta_r4 import run_qtl_group_r4
+
+    repo = Path(repo).resolve()
+    d = repo / QTL_TIERS.format(arm="QTL_A3").rsplit("/", 1)[0]
+    summary, gwas = d / "qtl_coloc_summary_tierable.tsv", d / "gwas_coloc_for_tiers.tsv"
+    if not summary.exists():
+        return None
+    if not gwas.exists():
+        raise FileNotFoundError(f"{gwas}: QTL_A3's GWAS table is needed to re-derive its 4-decimal tiers")
+    with tempfile.TemporaryDirectory(prefix="qtl4dp_") as tmp:
+        tmp = Path(tmp)
+        with open(summary, newline="") as fh:
+            rows = list(csv.reader(fh, delimiter="\t"))
+        idx = [rows[0].index(c) for c in QTL_PP_COLS]
+        for r in rows[1:]:
+            for i in idx:
+                if r[i] not in ("", "NA", "nan", "NaN"):
+                    r[i] = repr(estimands.round_like_jsonlite_default(float(r[i])))
+        with open(tmp / "summary_4dp.tsv", "w", newline="") as fh:
+            csv.writer(fh, delimiter="\t", lineterminator="\n").writerows(rows)
+        argv = run_qtl_group_r4.tiers_argv("QTL_A3", str(tmp / "summary_4dp.tsv"), str(gwas),
+                                           str(repo / "config/pph4_thresholds.yaml"), str(tmp / "tiers_4dp.tsv"),
+                                           str(tmp / "tiers_4dp_sweep.tsv"))
+        p = subprocess.run(argv, cwd=CODE_ROOT, capture_output=True, text=True)
+        if p.returncode != 0:
+            raise RuntimeError(f"assign_tiers.py on the 4-decimal QTL_A3 copy failed: {p.stderr[-2000:]}")
+        return _read_tsv(tmp / "tiers_4dp.tsv")
+
+
 def _qtl_rows(repo):
     """Every row of each QTL arm's qtl_coloc_summary.tsv (coloc_susie, fallback_abf and none), with qtl_arm."""
     t = [_read_tsv(p).assign(qtl_arm=a) for a in QTL_ARMS
@@ -390,7 +429,8 @@ def build_tables(repo, rules, man, rows, fits, purity_runner, *, final):
     a3_arm = {anc: arm for arm, anc in A1_FIT_ARMS.items()}
     t["e7_frozen_vs_fixed"] = estimands.e7_frozen_vs_fixed(
         _read_tsv(Path(repo) / KNOWN_W3A), _read_tsv(Path(repo) / KNOWN_SH2B3), fits, rows, qdocs, a3_arm=a3_arm,
-        p12_key=conf["rows"]["p12_key"], qtl_tiers_frozen=tiers_frozen, qtl_tiers_fixed=tiers_fixed)
+        p12_key=conf["rows"]["p12_key"], qtl_tiers_frozen=tiers_frozen, qtl_tiers_fixed=tiers_fixed,
+        qtl_tiers_fixed_4dp=_qtl_tiers_qtl4dp(repo))
     t["e8_simulation_rates"] = _e8(repo, rules, final=final)
     afr_ids = _ids(man, rules, ancestry="AFR")
     t["afr_secondary"] = estimands.e6_panel_contrast(rows, fits, rules, afr_ids, AFR, P12_KEYS)
