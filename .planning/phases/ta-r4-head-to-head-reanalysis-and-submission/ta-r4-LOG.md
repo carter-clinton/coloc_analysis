@@ -1893,3 +1893,27 @@ index c517ffb7..a0ffd52e 100644
   (2,744 read from the file): 0 removed, +8 all passed, 0 outcome changes, 2 declared passed -> passed, CHECK PASS
   (check_15_8c.txt). Base for 15.8c2 = data/r4/tmp/w3f/q158/full_15_8c.xml.
 - No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8c2.
+
+## 2026-11-26 — W3f 15.8c2 (Q-F3NL: --nan-gwas-below-threshold for QTL_A3/QTL_A2 only, QTL_legacy keeps the earlier rule; Q-158E7R: E7 fixed_value_qtl_4dp / changed_qtl_4dp; DRAFT (l)/(e)/Pre-Paste; HANDOFF W6 tripwire superseded; no fit; no push)
+
+- Start af9efc73 (data/r4/tmp/w3f/q158/start_15_8c2.txt). Gates: gate_157j.sh rc 0 (805afcd8…0503e); gate_158.sh
+  Q-F3NL Q-158E7R rc 0 (9b4c0bb0…62b6a1 `Keep legacy rule for QTL_legacy (Recommended)`; 43a4d899…76bd09
+  `Add a matched-rounding column (Recommended)`); gate_15_8c2.txt.
+- Task 1 (258102ee): DEC-2026-11-25-ta-r4-qtl-legacy-nan-rule-and-e7-matched-rounding (dec_15_8c2.py, both replies
+  cmp'd). QTL_ARMS `nan_gwas_below_threshold` (True QTL_A3/QTL_A2, False QTL_legacy); tiers_argv(qtl_arm, …); the
+  r4_qtl_tiers rule passes w.qtl_arm. RED red_15_8c2.txt (Slurm 2112770): 6/6 failed. Declared edit:
+  test_qtl_sweep_gwas_pph4::test_r4_tiers_argv_passes_the_flag_and_keeps_the_input_order (:267, :275 take "QTL_A3").
+  Green Slurm 2112827 (36 P, 1 F: my test 2 harness split `…threshold)`; fixed, Rule 1) and 2112920 (2 P).
+  NCs t1 (Slurm 2112990): flag for every arm -> test 1 fails; literal "QTL_A3" in the rule -> test 2 fails.
+- Task 2 (97ae2574): estimands.round_like_jsonlite_default (jsonlite 2.0.0 num_to_char digits = 4: modp_dtoa2 for
+  1e-5 < |x| < 2^31-1, else %.*g); 0 mismatches vs R default toJSON (r_coloc job env 516ec209…_) on 230,010 values
+  (10^5 uniform, 10^5 log-uniform 1e-300..1, 10^4 in 1e-5..1e-4, 10^4 ties x.xxxx5, 10 named). run_aggregation.
+  _qtl_tiers_qtl4dp (temp copy, PP.H0.abf … PP.H4.abf rounded, assign_tiers.py via tiers_argv("QTL_A3", …), outputs in
+  a temp dir; None without QTL_A3's tierable summary); E7 columns appended. Green Slurm 2113095: 42 P.
+  NCs t2 (Slurm 2113144): round() -> test 3; exact copy -> test 5; columns dropped -> test 4; writes under
+  data/r4/results -> test 6. All md5-restored; ALL NCs FAILED AS REQUIRED AND RESTORED (nc_15_8c2.txt).
+- Task 3 (35cb04f7): DRAFT (l) per-arm rule, (e) E7 4-decimal report, Pre-Paste `passed by r4_qtl_tiers only`
+  (1 occurrence) arm-specific (draft_15_8c2.py); test_amendment_text + test_prelock_pilot_fits 24 P / 2 S (Slurm
+  2113205). HANDOFF do_not 14 -> 15 (handoff_15_8c2.py; 15.7g W6 string kept).
+- FULL (Slurm 2113242, c022n02 Cascade Lake, HEAD 35cb04f7, 2h51m): QUICK 903 P / 2 S, HEAVY 354 P / 5 S, PINS 39 P; FULL 2,758 = 2,705 P / 53 S / 0 F (full_15_8c2.xml, sha256 e69a6fa2…2a8d45); check_15_8c2.py vs full_15_8c.xml (2,752 read from the file): 0 removed, +6 all passed, 0 outcome changes, 1 declared passed -> passed, CHECK PASS (check_15_8c2.txt)
+- No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8d.

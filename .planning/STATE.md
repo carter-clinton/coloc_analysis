@@ -26,6 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
+## 2026-11-26 — **TRACK A ta-r4: W3f 15.8c2 COMPLETE (Q-F3NL: --nan-gwas-below-threshold for QTL_A3/QTL_A2 only, QTL_legacy keeps the earlier rule; Q-158E7R: E7 qtl_tier fixed_value_qtl_4dp / changed_qtl_4dp from jsonlite-rounded QTL_A3 posteriors; DRAFT (l)/(e)/Pre-Paste; HANDOFF W6 tripwire superseded). NEXT = 15.8d. NOT PUSHED (258102ee, 97ae2574, 35cb04f7 + records).**
+
+- Gates Q-157J + Q-F3NL + Q-158E7R rc 0; DEC-2026-11-25-ta-r4-qtl-legacy-nan-rule-and-e7-matched-rounding.
+- Declared spec update: test_qtl_sweep_gwas_pph4::test_r4_tiers_argv_passes_the_flag_and_keeps_the_input_order.
+- FULL (Slurm 2113242, c022n02 Cascade Lake, HEAD 35cb04f7, 2h51m): QUICK 903 P / 2 S, HEAVY 354 P / 5 S, PINS 39 P; FULL 2,758 = 2,705 P / 53 S / 0 F (full_15_8c2.xml, sha256 e69a6fa2…2a8d45); check_15_8c2.py vs full_15_8c.xml (2,752 read from the file): 0 removed, +6 all passed, 0 outcome changes, 1 declared passed -> passed, CHECK PASS (check_15_8c2.txt); base for 15.8d = data/r4/tmp/w3f/q158/full_15_8c2.xml.
+- Expected chain: 15.8d 2,764 → 15.8e 2,766 → 15.8f 2,768.
+- NEXT = 15.8d. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
 ## 2026-11-26 — **TRACK A ta-r4: W3f 15.8c COMPLETE (R4: exact round-trip for every r4 thresholded writer; run_qtl_coloc.R `--json-full-precision` on for QTL_A3/QTL_A2 only, default output byte-identical; run_coloc_pair_r4.R I(17); simulation posteriors %.17g; DRAFT (l)). NEXT = 15.8c2. NOT PUSHED (dc4d8156, eca81966, 635ffc1c + records).**
 
 - Gates Q-157J + Q-158DIG rc 0; DEC-2026-11-24-ta-r4-qtl-json-full-precision-flag; writers_15_8c.tsv measured.
