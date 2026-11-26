@@ -264,7 +264,7 @@ def test_nan_gwas_group_count_is_logged(cfg, tmp_path, caplog):
 
 @pytest.mark.r4_heavy
 def test_r4_tiers_argv_passes_the_flag_and_keeps_the_input_order(rendered):  # noqa: F811
-    assert Q.tiers_argv("S", "G", "P", "T", "W", py="PY") == [
+    assert Q.tiers_argv("QTL_A3", "S", "G", "P", "T", "W", py="PY") == [
         "PY", "src/python/assign_tiers.py", "--input", "S", "--gwas-coloc", "G", "--pph4-config", "P", "--output", "T",
         "--sweep", "--sweep-output", "W", "--nan-gwas-below-threshold"]
     _, _, js = rendered
@@ -272,7 +272,7 @@ def test_r4_tiers_argv_passes_the_flag_and_keeps_the_input_order(rendered):  # n
     assert len(cmds) == 1
     py = re.search(r"(\S+) src/python/assign_tiers\.py", cmds[0]).group(1)
     d = "data/r4/results/QTL_A3"
-    want = shlex.join(Q.tiers_argv(f"{d}/qtl_coloc_summary_tierable.tsv", f"{d}/gwas_coloc_for_tiers.tsv",
+    want = shlex.join(Q.tiers_argv("QTL_A3", f"{d}/qtl_coloc_summary_tierable.tsv", f"{d}/gwas_coloc_for_tiers.tsv",
                                    "config/pph4_thresholds.yaml", f"{d}/qtl_tiers.tsv", f"{d}/qtl_tiers_sweep.tsv",
                                    py=py))
     assert cmds[0].startswith(want + ")"), cmds[0]

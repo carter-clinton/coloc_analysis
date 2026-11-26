@@ -3922,3 +3922,36 @@ Carter reply (verbatim): continue with your recomendations for the open items R4
 Question Q-158DIG (2026-11-25): Q-158DIG (R4): I recommended 'full precision (digits = NA)'. That was wrong too: in jsonlite, digits = NA means 15 significant digits, not full precision. 0.79999999999999993 is written as 0.8, and only 8.1% of random doubles round-trip; I(17) round-trips 100%. The r4 GWAS pair JSON and the simulation posterior table have the same 15-digit limit, and both feed thresholds. Which fix?
 Carter reply (verbatim, selected option): A: Exact round-trip everywhere r4 thresholds (Recommended)
 ```
+
+## 2026-11-26 — DEC-2026-11-25-ta-r4-qtl-legacy-nan-rule-and-e7-matched-rounding: QTL_legacy keeps the earlier NaN-GWAS rule (no --nan-gwas-below-threshold); E7 adds the QTL_A3 tier re-derived from 4-decimal posteriors (Carter, Q-F3NL, Q-158E7R)
+
+- **Decider:** Carter. Q-F3NL, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-F3NL-reply-2026-11-25.txt` (sha256 `9b4c0bb009e5262c38262da953e2a009b8c1859447bbb0975a24c68c9162b6a1`),
+  label `Keep legacy rule for QTL_legacy (Recommended)`; Q-158E7R, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158E7R-reply-2026-11-25.txt` (sha256
+  `43a4d89900c7225576a9edef1980716db999ca8c3193694305fca2c42376bd09`), label
+  `Add a matched-rounding column (Recommended)`. Both gated in 15.8c2 Task 1 step 0 (data/r4/tmp/w3f/q158/gate_157j.sh
+  and gate_158.sh Q-F3NL Q-158E7R, rc 0; record gate_15_8c2.txt), quoted below from the files by
+  data/r4/tmp/w3f/q158/dec_15_8c2.py and `cmp`ed against them.
+- **Scope (plan 15.8c2).** `run_qtl_group_r4.QTL_ARMS` gains a per-arm `nan_gwas_below_threshold` key (True for QTL_A3
+  and QTL_A2, False for QTL_legacy); `tiers_argv(qtl_arm, …)` appends `--nan-gwas-below-threshold` only when it is
+  True, and the r4_qtl_tiers rule passes the wildcard arm. The argument order is otherwise unchanged. assign_tiers.py
+  is not touched.
+- **E7.** qtl_tier rows gain `fixed_value_qtl_4dp` (the QTL_A3 tier re-derived by assign_tiers.py with QTL_A3's own
+  argv on a temporary copy of QTL_A3's qtl_coloc_summary_tierable.tsv whose PP.H0.abf … PP.H4.abf are rounded as
+  jsonlite's default toJSON writes them, `estimands.round_like_jsonlite_default`) and `changed_qtl_4dp`
+  (frozen_value != fixed_value_qtl_4dp). `changed` is unchanged. Other sections leave both empty; both are empty when
+  QTL_A3's tierable summary is absent. The matched run writes only under a temporary directory.
+- **W6 tripwire.** The 15.7g HANDOFF do_not string is kept; a new string supersedes it (render the QTL_legacy
+  r4_qtl_tiers command and check it lacks the flag; record N from QTL_legacy's `NaN-GWAS groups: N` log line in E7's
+  notes).
+- Lifts nothing under D-28. **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml
+  stays locked: false; n_regions_min stays 7; no re-pin to make a check pass.
+
+```text
+Question Q-F3NL (2026-11-25): Q-F3N again: my earlier question was wrong. I told you E7's frozen comparator QTL_legacy 'does not get the flag'. In the code it does: tiers_argv always passes --nan-gwas-below-threshold, and r4_qtl_tiers runs for every R4 QTL arm, QTL_legacy included. So QTL_legacy's tiers also treat a NaN GWAS PP.H4 as below_threshold. What should QTL_legacy do?
+Carter reply (verbatim, selected option): Keep legacy rule for QTL_legacy (Recommended)
+```
+
+```text
+Question Q-158E7R (2026-11-25): E7 QTL tiers will mix in rounding: under R4, QTL_A3 posteriors become exact, while QTL_legacy keeps 4-decimal posteriors, matching the earlier pipeline. So E7's qtl_tier 'changed' partly reflects rounding, the same kind of problem as R3. The plan only discloses this. What do you want?
+Carter reply (verbatim, selected option): Add a matched-rounding column (Recommended)
+```

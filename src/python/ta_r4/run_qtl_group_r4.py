@@ -28,12 +28,13 @@ QTL_SCRIPT = "src/snakemake/scripts/run_qtl_coloc.R"
 ASSIGN_TIERS = "src/python/assign_tiers.py"
 QTL_ARMS = {
     "QTL_A3": {"fit_arm": "A3_1kg", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true",
-               "json_full_precision": "true"},
+               "json_full_precision": "true", "nan_gwas_below_threshold": True},
     "QTL_A2": {"fit_arm": "A2_identity", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true",
-               "json_full_precision": "true"},
+               "json_full_precision": "true", "nan_gwas_below_threshold": True},
     # the pre-fix argv (E7): no --variant-list, no --qtl-orient, as qtl_coloc.smk rendered it for EUR
+    # QTL_legacy keeps the earlier NaN-GWAS rule (no --nan-gwas-below-threshold; Carter Q-F3NL)
     "QTL_legacy": {"fit_arm": "repro_routeL", "ld_allele_join": "false", "qtl_orient": None, "exact_purity": None,
-                   "json_full_precision": None},
+                   "json_full_precision": None, "nan_gwas_below_threshold": False},
 }
 SOURCE_KEY = {"eqtl": "gtex_eqtl", "sqtl": "gtex_sqtl"}
 ANCESTRY = "EUR"
@@ -279,10 +280,12 @@ def gwas_coloc_table(qtl_arm, output, pair_manifest="config/ta_r4/pair_manifest.
     return len(prs)
 
 
-def tiers_argv(summary, gwas, pph4, tiers, sweep, py=sys.executable):
-    """The r4_qtl_tiers assign_tiers.py command: the rule's argument order plus --nan-gwas-below-threshold."""
+def tiers_argv(qtl_arm, summary, gwas, pph4, tiers, sweep, py=sys.executable):
+    """The r4_qtl_tiers assign_tiers.py command for `qtl_arm`: the rule's argument order, plus
+    --nan-gwas-below-threshold when QTL_ARMS[qtl_arm]["nan_gwas_below_threshold"] (QTL_A3, QTL_A2)."""
+    nan = ["--nan-gwas-below-threshold"] if QTL_ARMS[qtl_arm]["nan_gwas_below_threshold"] else []
     return [py, ASSIGN_TIERS, "--input", summary, "--gwas-coloc", gwas, "--pph4-config", pph4, "--output", tiers,
-            "--sweep", "--sweep-output", sweep, "--nan-gwas-below-threshold"]
+            "--sweep", "--sweep-output", sweep, *nan]
 
 
 def coloc_inputs(qtl_arm, pair_manifest="config/ta_r4/pair_manifest.tsv", manifest=MANIFEST):

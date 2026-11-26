@@ -166,8 +166,9 @@ if R4_QTL_ARM is not None:
         params:
             gate=_r4_qtl_gate_cmd("r4_qtl_tiers"),
             py=sys.executable,
-            tiers=lambda w, input, output: shlex.join(r4qtl.tiers_argv(input.summary, output.gwas, input.pph4,
-                                                                       output.tiers, output.sweep, py=sys.executable)),
+            tiers=lambda w, input, output: shlex.join(r4qtl.tiers_argv(w.qtl_arm, input.summary, output.gwas,
+                                                                       input.pph4, output.tiers, output.sweep,
+                                                                       py=sys.executable)),
         shell:
             "set -euo pipefail\n{params.gate}\n"
             "(env PYTHONPATH=src/python {params.py} -m ta_r4.run_qtl_group_r4 --qtl-arm {wildcards.qtl_arm}"
