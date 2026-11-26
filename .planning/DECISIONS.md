@@ -3828,3 +3828,42 @@ Carter reply (verbatim, selected option): A: Flip by allele key like other SNPs 
 Question Q-158EL (2026-11-25): (15.8a4, the 16,000-variant cap). With the oriented inputs more rows reach the fits, and the pre-registered cap (16,000 variants after panel restriction; above it the fit is not run and its pair rows are method none) is re-measured. My estimate from the panels (not a fit; it reproduces the current pinned counts exactly): type 2 diabetes AFR x BMI_5q13_3 goes over the cap in AFR661_A3 (14,398 to about 16,966 variants), AFR661_A2 (the same variants) and AFR504_A3 (14,343 to about 16,841), so those 3 fits would not run and in each AFR arm the stroke x type 2 diabetes row of BMI_5q13_3 becomes method none (4 to 5 of 30 rows per arm); type 2 diabetes AFR x PYHIN1_1q23 rises to about 15,832 and 15,718, just under. All other measured fits stay under the cap; every EUR fit's eligibility is unchanged. If the re-measurement shows exactly this set, should the cap apply as pre-registered, with the counts updated in the DRAFT? A different set stops for you again.
 Carter reply (verbatim, selected option): A: Apply the cap as pre-registered and update the counts (Recommended)
 ```
+
+## 2026-11-26 — DEC-2026-11-26-ta-r4-blas-guard-r-coloc-rules-only: the job guard checks the libopenblas pin only in gated jobs of rules whose conda env is envs/r_coloc.yml; r4_qtl_aggregate and r4_qtl_tiers record that the BLAS was not checked (Carter, Q-158R6G A)
+
+- **Decider:** Carter, 2026-11-26, answering the 15.8b Task 1 step 3 STOP ("a gated production rule has no conda
+  env": r4_qtl_aggregate, r4_qtl_tiers). Gated in 15.8b Task 2 by its full file name (data/r4/tmp/w3f/q158/gate_158.sh
+  Q-158R6G, `F[Q-158R6G]`, not a glob; record gate_15_8b_r6g.txt); negative controls gate_nc_15_8b.txt (one byte
+  changed in the copy, another label, one sha256 character changed, the question with a leading QID added and with its
+  leading QID dropped, each exit 2; the real gate rc 0 after).
+- **The same decision, given twice.** The question was presented twice and Carter chose option A both times; both
+  reply files are committed and quoted below verbatim (`cat`, then `cmp` of each fenced block with its file).
+  - Decision record (gated): `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158R6G-reply-2026-11-26.txt`
+    (sha256 `e766bbbd642280d55e7e176b5887be2b033b9ac65d219a66e102b86a995d8a24`), label
+    `A: BLAS check only for r_coloc rules (Recommended)`.
+  - Earlier presentation of the same question: `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158R6G-reply-2026-11-25.txt`
+    (sha256 `1cdfc554367b6dbac915b12aba3b4693ddb30c6e021883a9c29593bb544b55fa`), label
+    `A: check only r_coloc rules (Recommended)`; also passes gate_reply.py in its own staging copy (gate_15_8b_r6g.txt).
+- **Mapping.** R6 → 15.8b. Narrows DEC-2026-11-24-ta-r4-w3f-15-8-open-items for the guard only: the BLAS check runs
+  in gated jobs of rules whose conda directive is envs/r_coloc.yml (r4_run_finemap, r4_coloc_pair, r4_coloc_A1,
+  r4_sim, r4_qtl_group); r4_qtl_aggregate and r4_qtl_tiers (no conda env; smoke_dev Python, no R) keep today's guard
+  and their job record carries `checked.blas_pinned = "not_checked"` with a reason. The pin stays r_coloc only
+  (Q-158R6S).
+- **How the flag is set.** `commands.rule_gate` derives `--blas-pinned` from Snakemake's own record of each rule's
+  conda directive (`workflow.get_rule(rule).conda_env` → `is_r_coloc_env`); no hand-kept rule list decides it. The
+  measured partition (flagged: the five rules above; unflagged: aggregate, tiers) is pinned by
+  tests.ta_r4.test_in_job_gate::test_gate_blas_flag_follows_each_rules_conda_directive.
+- **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml stays locked: false;
+  n_regions_min stays 7; no re-pin to make a check pass. Lifts nothing under D-28 (no frozen file is edited).
+
+```text
+Question Q-158R6G (2026-11-26): Q-158R6G (15.8b stopped at its own check). Two gated production QTL rules, r4_qtl_aggregate and r4_qtl_tiers, have no conda env. They run in the Snakemake interpreter (smoke_dev Python 3.11; pandas uses pip numpy/scipy's own bundled OpenBLAS), and they load no R and no conda BLAS. The BLAS guard as planned requires the r_coloc pin and an Rscript in CONDA_PREFIX, so it would refuse every production run of these two rules. Or, if fired from a shell with r_coloc active, it would pass by checking a BLAS they never load. How should the guard treat them?
+Carter reply (verbatim, selected option): A: BLAS check only for r_coloc rules (Recommended)
+```
+
+Earlier presentation (2026-11-25 file), same decision:
+
+```text
+Question Q-158R6G (2026-11-25): Plan 15.8b (pinning the OpenBLAS build that R uses for production fits) stopped at a checkpoint its own plan defines. Two gated QTL rules, r4_qtl_aggregate and r4_qtl_tiers, run the production job guard but have no conda env. They run plain Python under the Snakemake interpreter (smoke_dev, whose numpy/scipy ship their own OpenBLAS) and load no R. The new BLAS check as written requires the r_coloc env's libopenblas and Rscript. It would refuse every production run of these two rules, or pass by checking a BLAS they never load. How should the BLAS guard treat them?
+Carter reply (verbatim, selected option): A: check only r_coloc rules (Recommended)
+```
