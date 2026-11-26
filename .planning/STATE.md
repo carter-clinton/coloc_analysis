@@ -26,7 +26,19 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-25 (night) — **TRACK A ta-r4: W3f 15.8a4 COMPLETE (N1 eligibility re-measured on the oriented inputs, identities, re-pinned under Carter Q-158EL A; DRAFT states the orientation step, collector audit and eligibility; R2 RESOLVED). NEXT = 15.8b. NOT PUSHED (5fb24630, cda233a8, 8d8b7bb6 and the records commit are local).** (★ RESUME HERE — LATEST ★)
+## 2026-11-26 — **TRACK A ta-r4: W3f 15.8b COMPLETE (R6: libopenblas=0.3.34 pinned in envs/r_coloc.yml + exact pin file + job env lock manifest; job guard `--blas-pinned` on the 5 r_coloc rules; DRAFT (k) as Q-158KW). NEXT = 15.8c. NOT PUSHED (e47b6a83, cd96833e, b113fcba, e852040a, 99949f41, c54f6412, 3e37c63a and the records commit are local).** (★ RESUME HERE — LATEST ★)
+
+- Env D 516ec209…_ built from the pin file and IDENTITY_OK before any guard code; shared conda_pkgs unchanged; no fit.
+- `--blas-pinned` derived from each rule's conda directive (finemap, coloc_pair, coloc_A1, sim, qtl_group);
+  r4_qtl_aggregate / r4_qtl_tiers record `blas: not_checked` (Q-158R6G A). Track B / m3 rebuild r_coloc on next run.
+- D-11 fix 3e37c63a: job_env_dir(yml, prefix) has no default and no /rs1 literal; tests read the prefix from
+  bin/r4_fire.sh:13 (tests/ta_r4/fixtures/conda_prefix.py). FULL 2106909 (1 F) superseded.
+- FULL Slurm 2108889: 2,744 = 2,691 P / 53 S / 0 F; check_15_8b.py vs full_15_8a4.xml PASS (+16, 0 changes, 11
+  declared passed -> passed); base for 15.8c = data/r4/tmp/w3f/q158/full_15_8b.xml.
+- Expected chain: 15.8c 2,752 → 15.8c2 2,758 → 15.8d 2,764 → 15.8e 2,766 → 15.8f 2,768.
+- NEXT = 15.8c. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
+## 2026-11-25 (night) — **TRACK A ta-r4: W3f 15.8a4 COMPLETE (N1 eligibility re-measured on the oriented inputs, identities, re-pinned under Carter Q-158EL A; DRAFT states the orientation step, collector audit and eligibility; R2 RESOLVED). NEXT = 15.8b. NOT PUSHED (5fb24630, cda233a8, 8d8b7bb6 and the records commit are local).** (SUPERSEDED by the 15.8b block above)
 
 - Gates rc 0 (Q-158EL added to gate_158a2.sh; 4 NCs exit 2). Measurement Slurm 2099709 83/83 COMPLETED (cap 0, no fit).
 - Identities (a) 732/732, (b) 26/26, (c) 83/83, (d), (e) 83/83. Change set == Q-158EL: t2d AFR × BMI_5q13_3 in

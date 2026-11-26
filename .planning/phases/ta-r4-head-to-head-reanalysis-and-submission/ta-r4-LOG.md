@@ -1816,3 +1816,52 @@ index c517ffb7..a0ffd52e 100644
   2,728 / 2,675 / 53 / 0, CHECK PASS (check_15_8a4.txt); NC (base as new) CHECK FAIL rc 1 (check_15_8a4_nc.txt).
   tests/m3/sparse_parent_benchmark.tsv clean.
 - No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8b.
+
+## 2026-11-26 — W3f 15.8b (R6: libopenblas pinned in envs/r_coloc.yml + exact pin file + job env lock manifest; job guard `--blas-pinned` for the five r_coloc rules; DRAFT (k); Carter Q-157J, Q-158R6S, Q-158R6G A, Q-158KW; no fit; no push)
+
+- Commits (local): e47b6a83 (Task 1 locator conda_job_env.job_env_dir == Snakemake Env.address), cd96833e (Q-158KW gated,
+  DEC-2026-11-26-ta-r4-draft-k-blas-wording, plan as executed), b113fcba (Task 2 pin + pin file + env lock manifest),
+  e852040a (Task 3 guard), 99949f41 (Task 4 rule_gate), c54f6412 (Task 5 step 1 DRAFT (k)), 3e37c63a (D-11 fix), plus
+  the records commit. Earlier: 4e47c20d (Q-158R6G gated + DEC-2026-11-26-ta-r4-blas-guard-r-coloc-rules-only, by the
+  executor of the earlier plan version). That executor's out-of-order pin + guard commit caa5e6e3 was reverted in
+  5ee7efe0. Its evidence is archived in `$Q8/b/prior_caa5e6e3/` (MANIFEST.txt) because it was produced before the
+  build-before-wiring order. None of it is evidence for this run.
+- Task 1 (Slurm 2101499, c020n02 Cascade Lake): the measured job env 0f343627…_ loads libopenblas 0.3.32; corename
+  measured (blas_measure_15_8b.txt). Locator NC 0 (realpath(prefix) dropped from the hash) makes test 8 fail (2104875).
+- Order: the env was built and proven identical BEFORE any guard code. Env D 516ec209…_ was built from the pin file
+  (Slurm 2104927; "Using pinnings from", no "Failed to install"; `.pin.txt` sibling cmp-equal; no `.yaml` sibling).
+  IDENTITY_OK: 222/222 URL#md5, libopenblas .so sha256 f1424288…572b, R library 144/144. Identity NCs (i)-(iv) each
+  IDENTITY_DIFF on their own check. Shared cache /rs1/…/conda_pkgs 2188 entries, sorted-ls sha256 38c1cf64…f0d1
+  before == after (CACHE_UNCHANGED). Old env 0f343627…_ kept.
+- Guard (Task 3, Slurm 2105573 RED, 2105815 green 45 passed + NC 11): with `--blas-pinned` it refuses another BLAS
+  (conda-meta record count/version, libblas/liblapack symlinks, runtime version token, Rscript, R-reported BLAS).
+  Without it, the guard reads no BLAS and records `checked.blas_pinned: "not_checked"` and `blas.reason`. 16 NCs t3-1…t3-11,
+  each FAILED-AS-REQUIRED.
+- Flag derivation (Task 4): rule_gate takes `--blas-pinned` from workflow.get_rule(rule).conda_env (is_r_coloc_env).
+  The truth source is Snakemake's own parse (tests/ta_r4/fixtures/rule_conda_envs.py, no rule_gate call); the dry-run
+  `conda-env:` source was disproved (2104600, stop_15_8b_t3.txt). Measured partition 5/2 on the real and gate repos,
+  porcelain equal before/after (2106577). Flagged: r4_run_finemap, r4_coloc_pair, r4_coloc_A1, r4_sim, r4_qtl_group.
+  Unflagged (not_checked): r4_qtl_aggregate, r4_qtl_tiers. RED 2106800 (12 F / 40 P); green 2106819 52 passed;
+  NCs t4-12…t4-17 each fail as required.
+- Track B / m3: 23 rules outside ta_r4 use envs/r_coloc.yml. `.snakemake/conda` has 0 staged yamls. bin/setup-envs.sh's
+  phase-2 fallback solves staged yamls, not the pin file. Track B and m3 rebuild this env on their next run from the pin
+  file at libopenblas 0.3.34.
+- DRAFT (k) (c54f6412): NEW_CLAUSE and NEW_SENTENCE extracted from the Q-158KW reply file (draft_k_15_8b.py), each
+  delimiter/anchor count 1, each string once afterwards.
+- FULL 1 (Slurm 2106909, HEAD c54f6412): 2,744 = 2,690 P / 53 S / 1 F; check_15_8b.py CHECK FAIL on one outcome change:
+  test_storage_on_rs1::test_no_rs1_or_share_literals_in_r4_config_and_src passed -> failed. Cause:
+  src/python/ta_r4/conda_job_env.py:10 `R4_CONDA_PREFIX = "/rs1/researchers/…"` (D-11 banned literal, e47b6a83).
+  Reproduced by QUICK 2107067. Kept as full_15_8b_2106909_1F.xml (sha256 99ee5541…cfec9cc9) + check_15_8b_2106909_1F.txt.
+- Deviation (orchestrator decision; Rule 1): 3e37c63a. The constant was removed and `job_env_dir(yml, prefix)` now
+  requires the prefix. There is no src caller. bin/r4_fire.sh:13 stays the single source. New
+  tests/ta_r4/fixtures/conda_prefix.r4_conda_prefix() does an exact match `^R4_CONDA_PREFIX=(\S+)$` and needs exactly
+  one match, else RuntimeError. Callers: qtl_group_fixture, test_job_guard_blas (tests 8-11 + skip marker), the
+  test_in_job_gate drift test. build_toy_workflow.py:218's own literal (c536547c) was left unchanged (not a
+  job_env_dir caller, not in the D-11 scan). NCs (Slurm 2108827, fix_15_8b_2108827.out): pre-fix storage FAIL
+  (2106909, 2107067); the helper raises on 2 and on 0 assignment lines (tmp copies) and returns the prefix on 1;
+  locator NC 0 fails test 8 on the new signature (rc 1) and it passes after the md5-checked restore. QUICK 897 P / 2 S;
+  guard + locator 54 passed.
+- FULL 2 (Slurm 2108889, c022n03 Cascade Lake, HEAD 3e37c63a, 2h28m): QUICK 897 P / 2 S, HEAVY 346 P / 5 S, PINS 39 P; FULL 2,744 = 2,691 P / 53 S / 0 F (full_15_8b.xml,
+  sha256 ac60ea0d…402d0b). check_15_8b.py vs full_15_8a4.xml (2,728 = 2,675 P / 53 S, read from the file): 0 removed, +16 all passed, 0 outcome changes, 11 declared passed -> passed, totals 2,744 / 2,691 / 53 / 0, CHECK PASS (check_15_8b.txt). Base for 15.8c = data/r4/tmp/w3f/q158/full_15_8b.xml.
+- No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8c.
+  Expected chain now: full_15_8b.xml 2,744 → 15.8c 2,752 → 15.8c2 2,758 → 15.8d 2,764 → 15.8e 2,766 → 15.8f 2,768.
