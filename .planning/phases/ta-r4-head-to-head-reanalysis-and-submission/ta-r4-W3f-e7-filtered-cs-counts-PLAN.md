@@ -97,7 +97,7 @@ tests/ta_r4/test_e7_filtered_counts.py; N_new = 6.
 5. `test_filtered_manifest_is_a_locked_path`
 6. `test_exact_purity_manifest_matches_the_stored_counts` (r4_heavy; reads the committed exact-purity manifest and
    re-derives the stored counts from the 96 RDS)
-Expected FULL: base full_15_8c2.xml (expected 2,753) + 6 = 2,759. Declared: test_e7_frozen_vs_fixed_and_flipped_shares, plus any
+Expected FULL: base full_15_8c2.xml (expected 2,758) + 6 = 2,764. Declared: test_e7_frozen_vs_fixed_and_flipped_shares, plus any
 test_run_aggregation / test_lock_gate / test_amendment_text id whose fixture builder or LOCKED_PATHS listing gains the
 manifest (named in the SUMMARY).
 </new_tests>
