@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import math
 import subprocess
+import types
 from pathlib import Path
 
 import pandas as pd
@@ -174,6 +175,14 @@ def test_confirmatory_tables_unchanged(agg, tmp_path):
     old = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(old)
     assert "a1_allvars_secondary" not in old.TABLES
+    # 15.8d made fit_cs_filtered a required E7 argument; the pre-157d script does not pass it (Carter Q-158DFX)
+    filtered = pd.read_csv(REPO_ROOT / ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/manifests/"
+                           "fit_cs_json_vs_rds.tsv", sep="\t", dtype=str, keep_default_na=False)
+    est = types.ModuleType("estimands_pre_157d_proxy")
+    est.__dict__.update(vars(old.estimands))
+    e7 = old.estimands.e7_frozen_vs_fixed
+    est.e7_frozen_vs_fixed = lambda *a, **k: e7(*a, fit_cs_filtered=filtered, **k)
+    old.estimands = est
     assert old.run_aggregation(root / "repo", tmp_path / "old", draft=True) == 0
     for name in CONFIRMATORY:
         a = (tmp_path / "old" / f"{name}.tsv").read_bytes()

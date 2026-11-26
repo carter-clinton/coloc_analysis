@@ -1,0 +1,2 @@
+Question Q-158DFX (2026-11-26): 15.8d's full suite had 1 failure: test_confirmatory_tables_unchanged. That test runs the old (15.7d-era) aggregation script against today's estimands module, and the old script doesn't pass the new required fit_cs_filtered argument that 15.8d added to E7. It crashes before writing any table. E7 isn't one of the four confirmatory tables, so no confirmatory number moved; it's the test's setup that broke. How should it be fixed?
+Carter reply (verbatim, selected option): Fix the test (Recommended)
