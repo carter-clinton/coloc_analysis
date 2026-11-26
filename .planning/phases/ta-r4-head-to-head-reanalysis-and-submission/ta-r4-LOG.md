@@ -1756,3 +1756,63 @@ index c517ffb7..a0ffd52e 100644
   still equal to before after the FULL (a3/sha_after_full.txt).
 - No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7; no catalog, panel, sumstats or
   data/processed byte changed; Track B unchanged. NOT PUSHED. NEXT = 15.8a4.
+
+## 2026-11-25 — W3f 15.8a4 (N1 eligibility re-measured on the oriented inputs; identities; re-pinned under Carter Q-158EL A; DRAFT orientation step, collector audit and eligibility; R2 resolved; no push)
+
+- Commits (local): 5fb24630 (Q-158EL DEC bullet; the reply itself was committed as received in 1298b511), cda233a8
+  (w3f_fit_eligibility.tsv re-pinned; tests 1-2), 8d8b7bb6 (DRAFT; tests 3-6), plus the records commit.
+- Gates (`$Q8=data/r4/tmp/w3f/q158`, a4/gates.txt): gate_158a2.sh extended with Q-158EL (question = plan line 60 minus
+  its leading `Q-158EL `, equal to reply line 1 after its prefix; sha256 f4ecd066…409c; label `A: Apply the cap as
+  pre-registered and update the counts (Recommended)`). gate_158a2.sh Q-158OR Q-158PAL Q-158EL, gate_157j.sh,
+  gate_158r2.sh: all rc 0. NCs (a4/gate_nc_15_8a4.txt): one byte changed in the copy, another label, one sha256
+  character, the question typed with its QID: each exit 2. 15.8a3 closed (SUMMARY 14a9d265). Start HEAD 14a9d265.
+- Measurement (no fit, SUSIE_MAX_VARIANTS=0): `measure_fit_eligibility plan --out-dir data/r4/tmp/elig_15_8a4
+  --rscript …/r_coloc/bin/Rscript`: 83 tasks, keys == the 83 measured keys of the pinned table, every --sumstats an
+  `.r4_oriented.` copy. Slurm array 2099709 (cascadelake), 83/83 COMPLETED 0:0 (a4/elig_sacct.txt). summarise: 815 rows,
+  83 measured, not eligible 13.
+- Identities (a4/identities.txt, a4/identities.py): (a) 0 of 732 bound rows differ outside sumstats_sha256; (b) bmi /
+  t2d EUR 26 of 26 measured rows unchanged in n_variants_pre_ld and n_variants; (c) n_variants_pre_ld == after_exact +
+  after_both of sumstats_r4_orientation.tsv in 83/83; (d) no n_variants fell; (e) Δn ≤ Δpre-LD in 83/83; measured
+  catalog / panel sha256 and panel_n_var unchanged 83/83. PASS.
+- Eligibility change set == the Q-158EL estimate set (label A → re-pin; Q-158EL2 not asked):
+
+| fit | pre-LD pinned → oriented | after restriction pinned → oriented | eligible |
+|---|---|---|---|
+| AFR661_A3 t2d AFR × BMI_5q13_3 | 23,718 → 28,840 | 14,398 → 16,966 | true → false |
+| AFR661_A2 t2d AFR × BMI_5q13_3 | 23,718 → 28,840 | 14,398 → 16,966 | true → false |
+| AFR504_A3 t2d AFR × BMI_5q13_3 | 23,718 → 28,840 | 14,343 → 16,841 | true → false |
+| AFR661_A3 / A2 t2d AFR × PYHIN1_1q23 | 22,260 → 27,281 | 13,341 → 15,832 | true |
+| AFR504_A3 t2d AFR × PYHIN1_1q23 | 22,260 → 27,281 | 13,265 → 15,718 | true |
+| A3_ukb asthma EUR × SLC2A9_urate | 26,934 → 27,241 | 14,263 → 14,402 | true |
+| A3_ukb hypertension EUR × PYHIN1_1q23 | 7,495 → 10,786 | 6,414 → 9,154 | true |
+
+  Every number equals the planner estimate (postld2.tsv). The 10 already-ineligible fits stay ineligible (asthma rises,
+  t2d EUR unchanged). Not eligible per arm: A3_ukb 4 of 145; AFR661_A3, AFR661_A2, AFR504_A3 3 of 30 each; others 0;
+  total 13 (was 10). Re-pin: a4/w3f_fit_eligibility.new.tsv → manifests/w3f_fit_eligibility.tsv (sha256 4a07d89c…3208
+  → 1058dd64…554f; a4/sha_before.txt, sha_after.txt).
+- NCs (`$Q8/nc_15_8a4.txt`, md5-restored): one measured n_variants_pre_ld +1 → test 1 RED; one row's sumstats_sha256 =
+  the source pin → test 2 RED; framing: `revision` inserted in (c) → test_draft_extract_framing RED; one per-trait count,
+  the 2,755, one oriented sha256 character, the total 13 → tests 3, 4, 5, 6 RED respectively.
+- RED: tests 1-2 against the pinned table (`$Q8/red_15_8a4_t12.txt`: (c) 22,684 != 22,927; source sha256); tests 3-6
+  against the pre-edit DRAFT (`$Q8/red_15_8a4.txt`, 4 failed).
+- DRAFT (a4/draft_15_8a4.py 2099709 83 83; old → new in a4/draft_oldnew.txt; each old string unique): (a0) (c) inputs
+  parenthetical; (a) the 8 oriented sha256 after the inputs list; (b) the collection clause (722,928 rows over 31
+  regions; 162,724 lost keys = 159,969 restored by orientation + 2,755 not fitted); (c) the orientation step (159,969
+  rows: asthma EUR 2,412, asthma AFR 3,798, BMI EUR 0, hypertension EUR 34,871, stroke EUR 36,195, stroke AFR 27,126,
+  type 2 diabetes EUR 0, type 2 diabetes AFR 55,567; A/T and C/G 28,637, dropped from the fits by the allele-aware
+  panel join, kept by the all-variant A1; 31 of 31 catalogs byte-identical); (d) (i) names the step; (e) the
+  measured-counts row appends the oriented-input eligibility (total 13; pre-LD 83/83). test_amendment_text and
+  test_prelock_pilot_fits green (30 passed, 2 skipped = FINAL / PUBLIC absent, as before).
+- For Carter (not a DRAFT edit; the plan does not cover it): 15.8a2 EAF diagnostic
+  (manifests/sumstats_r4_orientation_eaf.tsv). asthma EUR flipped rows: median |ΔEAF| 0.027 vs 0.005 unflipped; 19 of
+  225 above 0.2, 14 of them indels (the SNV subset: 204, 0.0225, 5). Every other file: flipped ≈ unflipped. No row is
+  filtered by EAF.
+- R2 (collector drops unaudited; 15.7j re-review): RESOLVED by 15.8a2-a4: audit (15.8a), sumstats oriented to the
+  catalog (15.8a2), production reads them with the catalogs a fixed point (15.8a3), eligibility re-measured and the
+  DRAFT states the step and the audit (15.8a4). For 15.8f's review row.
+- FULL (Slurm 2100181, cascadelake c020n02, HEAD 8d8b7bb6, 2h34m): QUICK 887 P / 2 S; HEAVY 340 P / 5 S; PINS 39 P;
+  FULL 2,728 = 2,675 P / 53 S / 0 F (full_15_8a4.xml, sha256 a6f2132b…5567). check_15_8a4.py vs full_15_8a3.xml
+  (2,722 = 2,669 P / 53 S, read from the file): 0 removed, +6 (all passed), 0 outcome changes, declared none, totals
+  2,728 / 2,675 / 53 / 0, CHECK PASS (check_15_8a4.txt); NC (base as new) CHECK FAIL rc 1 (check_15_8a4_nc.txt).
+  tests/m3/sparse_parent_benchmark.tsv clean.
+- No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8b.

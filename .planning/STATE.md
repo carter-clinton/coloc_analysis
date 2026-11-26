@@ -26,7 +26,20 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-25 (evening) — **TRACK A ta-r4: W3f 15.8a3 COMPLETE (r4 production reads the oriented sumstats; catalogs, collector audit and pilots keep their inputs; catalog fixed point 31/31). NEXT = 15.8a4. NOT PUSHED (9b5876c9, 50a7bad9 and the records commit are local).** (★ RESUME HERE — LATEST ★)
+## 2026-11-25 (night) — **TRACK A ta-r4: W3f 15.8a4 COMPLETE (N1 eligibility re-measured on the oriented inputs, identities, re-pinned under Carter Q-158EL A; DRAFT states the orientation step, collector audit and eligibility; R2 RESOLVED). NEXT = 15.8b. NOT PUSHED (5fb24630, cda233a8, 8d8b7bb6 and the records commit are local).** (★ RESUME HERE — LATEST ★)
+
+- Gates rc 0 (Q-158EL added to gate_158a2.sh; 4 NCs exit 2). Measurement Slurm 2099709 83/83 COMPLETED (cap 0, no fit).
+- Identities (a) 732/732, (b) 26/26, (c) 83/83, (d), (e) 83/83. Change set == Q-158EL: t2d AFR × BMI_5q13_3 in
+  AFR661_A3 / AFR661_A2 / AFR504_A3 (16,966 / 16,966 / 16,841 > 16,000); PYHIN1_1q23 15,832 / 15,718 stays under. Not
+  eligible 10 → 13. manifests/w3f_fit_eligibility.tsv re-pinned (1058dd64…554f).
+- DRAFT: (c) inputs parenthetical, oriented sha256, orientation step (159,969 flips; 28,637 A/T-C/G dropped from fits,
+  kept by A1; 31/31 catalogs), collector audit (722,928; 162,724 = 159,969 + 2,755 not fitted); (i); measured-counts row.
+- For Carter: asthma EUR EAF diagnostic (flipped median |ΔEAF| 0.027 vs 0.005; 19 of 225 > 0.2, 14 indels); no DRAFT edit.
+- FULL Slurm 2100181: 2,728 = 2,675 P / 53 S / 0 F; check_15_8a4.py vs full_15_8a3.xml PASS (+6, 0 changes); base for
+  15.8b = data/r4/tmp/w3f/q158/full_15_8a4.xml.
+- NEXT = 15.8b. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
+## 2026-11-25 (evening) — **TRACK A ta-r4: W3f 15.8a3 COMPLETE (r4 production reads the oriented sumstats; catalogs, collector audit and pilots keep their inputs; catalog fixed point 31/31). NEXT = 15.8a4. NOT PUSHED (9b5876c9, 50a7bad9 and the records commit are local).** (SUPERSEDED by the 15.8a4 block above)
 
 - Commits: 9b5876c9 (paths.catalog_source_sumstats_path / oriented_sumstats_path; sumstats_path route r4 -> oriented;
   CATALOG_SUMSTATS["r4"], collector_drop_audit.r4_sumstats, ASTHMA_PILOT_SUMSTATS -> catalog sources; data_sources.yaml
