@@ -381,7 +381,7 @@ qtl_abf_main <- function(opt) {
            if (length(b$counts)) setNames(b$counts, paste0("qtl_orient_", names(b$counts))) else list())
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
   tmp <- paste0(opt$output, ".tmp")
-  write_json(doc, tmp, auto_unbox = TRUE, digits = NA, na = "null", null = "null", pretty = TRUE)
+  write_json(doc, tmp, auto_unbox = TRUE, digits = I(17), na = "null", null = "null", pretty = TRUE)
   invisible(file.rename(tmp, opt$output))
   cat(sprintf("[run_coloc_pair_r4] %s %s qtl_abf method=fallback_abf n_snps=%d pp_h4=%s\n", opt$`row-id`, opt$arm,
               r$n_snps, format(pp[5], digits = 6)))
@@ -544,7 +544,7 @@ main <- function() {
            out)
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
   tmp <- paste0(opt$output, ".tmp")
-  write_json(doc, tmp, auto_unbox = TRUE, digits = NA, na = "null", null = "null", pretty = TRUE)
+  write_json(doc, tmp, auto_unbox = TRUE, digits = I(17), na = "null", null = "null", pretty = TRUE)
   invisible(file.rename(tmp, opt$output))
   cat(sprintf("[run_coloc_pair_r4] %s %s %s method=%s n_snps=%s pp_h4_max=%s none_reason=%s\n", opt$`row-id`,
               opt$arm, opt$`p12-key`, method, r$n_snps, format(out$pp_h4_max, digits = 6), out$none_reason))

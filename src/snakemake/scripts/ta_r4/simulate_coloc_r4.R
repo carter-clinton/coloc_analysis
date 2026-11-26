@@ -19,6 +19,9 @@ COLOC_SCRIPT <- "src/snakemake/scripts/ta_r4/run_coloc_pair_r4.R"
 COLUMNS <- c("region", "scenario", "gen_panel", "rep", "seed", "arm", "method", "pp_h0", "pp_h1", "pp_h2", "pp_h3",
              "pp_h4", "pp_h4_max", "n_cs_a", "n_cs_b", "causal_a", "causal_b", "r2_causal", "none_reason",
              "fit_status_a", "fit_status_b")
+#: Written with %.17g so every value is recovered exactly (15.8c, DEC-2026-11-24-ta-r4-qtl-json-full-precision-flag).
+PP_COLUMNS <- c("pp_h0", "pp_h1", "pp_h2", "pp_h3", "pp_h4", "pp_h4_max", "r2_causal")
+fmt17 <- function(v) ifelse(is.na(v), NA_character_, sprintf("%.17g", v))
 
 sim_fail <- function(code, ...) stop(sprintf("%s: %s", code, sprintf(...)), call. = FALSE)
 
@@ -226,6 +229,7 @@ main <- function() {
   dir.create(dirname(opt$out), recursive = TRUE, showWarnings = FALSE)
   tmp <- paste0(opt$out, ".tmp")
   writeLines(head, tmp)
+  for (k in PP_COLUMNS) if (is.double(tab[[k]])) set(tab, j = k, value = fmt17(tab[[k]]))
   fwrite(tab, tmp, sep = "\t", append = TRUE, col.names = TRUE, na = "NA", quote = FALSE)
   invisible(file.rename(tmp, opt$out))
   cat(sprintf("[simulate_coloc_r4] %s %s %s status=%s reps=%d rows=%d\n", opt$region, opt$scenario, opt$gen, status,

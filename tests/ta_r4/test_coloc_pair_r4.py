@@ -320,7 +320,7 @@ g <- ss[match(k, ss$SNP_ID)]; h <- q[match(k, q$rsid)]
 r <- coloc.abf(list(beta = g$BETA, varbeta = g$SE^2, snp = k, type = "quant", N = 50000, sdY = 1),
                list(beta = h$beta, varbeta = h$se^2, snp = k, type = "quant", N = 670, sdY = 1),
                p1 = {PRI["p1"]}, p2 = {PRI["p2"]}, p12 = {PRI["p12_primary"]})
-cat(toJSON(unname(r$summary[2:6]), digits = NA), "\\n")
+cat(toJSON(unname(r$summary[2:6]), digits = I(17)), "\\n")
 '''
     r = subprocess.run([QF.RSCRIPT, "-e", code], cwd=qfx, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr[-2000:]

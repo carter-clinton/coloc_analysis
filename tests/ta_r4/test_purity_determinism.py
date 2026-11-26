@@ -337,9 +337,10 @@ def _qenv(seed, root):
 
 def _qtl_run(root, qtl_arm, row, out, flag, seed=1, script=None):
     cmd = G.qtl_command(qtl_arm, row, out, 1.0)
-    while FLAG in cmd:
-        i = cmd.index(FLAG)
-        del cmd[i:i + 2]
+    for f in (FLAG, "--json-full-precision"):  # 15.8c: the PRE_157F script has neither option
+        while f in cmd:
+            i = cmd.index(f)
+            del cmd[i:i + 2]
     if flag is not None:
         cmd = cmd[:-2] + [FLAG, flag] + cmd[-2:]
     cmd[0] = QF.RSCRIPT

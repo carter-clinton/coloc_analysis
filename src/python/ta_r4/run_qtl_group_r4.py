@@ -27,10 +27,13 @@ from ta_r4.id_reconcile import reconcile
 QTL_SCRIPT = "src/snakemake/scripts/run_qtl_coloc.R"
 ASSIGN_TIERS = "src/python/assign_tiers.py"
 QTL_ARMS = {
-    "QTL_A3": {"fit_arm": "A3_1kg", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true"},
-    "QTL_A2": {"fit_arm": "A2_identity", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true"},
+    "QTL_A3": {"fit_arm": "A3_1kg", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true",
+               "json_full_precision": "true"},
+    "QTL_A2": {"fit_arm": "A2_identity", "ld_allele_join": "true", "qtl_orient": "true", "exact_purity": "true",
+               "json_full_precision": "true"},
     # the pre-fix argv (E7): no --variant-list, no --qtl-orient, as qtl_coloc.smk rendered it for EUR
-    "QTL_legacy": {"fit_arm": "repro_routeL", "ld_allele_join": "false", "qtl_orient": None, "exact_purity": None},
+    "QTL_legacy": {"fit_arm": "repro_routeL", "ld_allele_join": "false", "qtl_orient": None, "exact_purity": None,
+                   "json_full_precision": None},
 }
 SOURCE_KEY = {"eqtl": "gtex_eqtl", "sqtl": "gtex_sqtl"}
 ANCESTRY = "EUR"
@@ -102,6 +105,8 @@ def qtl_command(qtl_arm, row, output, sdy):
            "--policy", ARMS[fa]["policy"], "--ld-allele-join", a["ld_allele_join"]]
     if a["ld_allele_join"] == "true":
         cmd += ["--variant-list", catalog(qtl_arm, reg)]
+    if a["json_full_precision"] is not None:
+        cmd += ["--json-full-precision", a["json_full_precision"]]
     if a["qtl_orient"] is not None:
         cmd += ["--qtl-orient", a["qtl_orient"]]
     if a["exact_purity"] is not None:

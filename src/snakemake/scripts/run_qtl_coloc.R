@@ -85,6 +85,11 @@ option_list <- list(
                            "credible-set purity over all pairs of set members",
                            "(n_purity = the number of bridged variants), not a",
                            "random 100-member subsample.")),
+  # W3f 15.8c (DEC-2026-11-24-ta-r4-qtl-json-full-precision-flag).
+  make_option("--json-full-precision", dest = "json_full_precision", type = "character",
+              default = "false",
+              help = paste("'true' or 'false'. When true the result JSON is written",
+                           "with digits = I(17), so every number is recovered exactly.")),
   make_option("--output",        type = "character",
               help = "Output JSON path")
 )
@@ -158,6 +163,19 @@ if (!identical(EXACT_PURITY_FLAG, "true") && !identical(EXACT_PURITY_FLAG, "fals
                EXACT_PURITY_FLAG), call. = FALSE)
 }
 EXACT_PURITY <- identical(EXACT_PURITY_FLAG, "true")
+JSON_FULL_PRECISION_FLAG <- opt$json_full_precision %||% "false"
+if (!identical(JSON_FULL_PRECISION_FLAG, "true") && !identical(JSON_FULL_PRECISION_FLAG, "false")) {
+  stop(sprintf("--json-full-precision must be exactly 'true' or 'false', got '%s'",
+               JSON_FULL_PRECISION_FLAG), call. = FALSE)
+}
+JSON_FULL_PRECISION <- identical(JSON_FULL_PRECISION_FLAG, "true")
+write_result <- function(x, path) {
+  if (JSON_FULL_PRECISION) {
+    write_json(x, path, auto_unbox = TRUE, pretty = TRUE, na = "null", digits = I(17))
+  } else {
+    write_json(x, path, auto_unbox = TRUE, pretty = TRUE, na = "null")
+  }
+}
 if (QTL_ORIENT && !LD_ALLELE_JOIN) {
   stop("--qtl-orient true requires --ld-allele-join true (it re-signs rows bound by the panel bridge)",
        call. = FALSE)
@@ -292,7 +310,7 @@ write_status_json <- function(status_code, message = NULL) {
   )
   result <- attach_ld_provenance(result)
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
-  write_json(result, opt$output, auto_unbox = TRUE, pretty = TRUE, na = "null")
+  write_result(result, opt$output)
   cat(sprintf("[run_qtl_coloc] %s for %s/%s/%s -- wrote %s\n",
               status_code, opt$gene_id %||% "?", opt$tissue %||% "?",
               opt$region %||% "?", opt$output))
@@ -712,7 +730,7 @@ if (n_cs_qtl == 0) {
   )
   result <- attach_ld_provenance(result)
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
-  write_json(result, opt$output, auto_unbox = TRUE, pretty = TRUE, na = "null")
+  write_result(result, opt$output)
   cat(sprintf("[run_qtl_coloc] no_qtl_cs for %s/%s -- wrote %s\n",
               opt$gene_id %||% "?", opt$tissue %||% "?", opt$output))
   quit(status = 0)
@@ -737,7 +755,7 @@ if (n_cs_gwas == 0) {
   )
   result <- attach_ld_provenance(result)
   dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
-  write_json(result, opt$output, auto_unbox = TRUE, pretty = TRUE, na = "null")
+  write_result(result, opt$output)
   cat(sprintf("[run_qtl_coloc] no_gwas_cs for %s/%s -- wrote %s\n",
               opt$gene_id %||% "?", opt$tissue %||% "?", opt$output))
   quit(status = 0)
@@ -795,6 +813,6 @@ output <- attach_ld_provenance(output)
 # 11. Write output JSON
 # -------------------------------------------------------------------------
 dir.create(dirname(opt$output), recursive = TRUE, showWarnings = FALSE)
-write_json(output, opt$output, auto_unbox = TRUE, pretty = TRUE, na = "null")
+write_result(output, opt$output)
 cat(sprintf("[run_qtl_coloc] wrote %s with %d pairwise rows (n_cs_gwas=%d, n_cs_qtl=%d)\n",
             opt$output, nrow(summary_dt), n_cs_gwas, n_cs_qtl))
