@@ -1865,3 +1865,31 @@ index c517ffb7..a0ffd52e 100644
   sha256 ac60ea0d…402d0b). check_15_8b.py vs full_15_8a4.xml (2,728 = 2,675 P / 53 S, read from the file): 0 removed, +16 all passed, 0 outcome changes, 11 declared passed -> passed, totals 2,744 / 2,691 / 53 / 0, CHECK PASS (check_15_8b.txt). Base for 15.8c = data/r4/tmp/w3f/q158/full_15_8b.xml.
 - No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8c.
   Expected chain now: full_15_8b.xml 2,744 → 15.8c 2,752 → 15.8c2 2,758 → 15.8d 2,764 → 15.8e 2,766 → 15.8f 2,768.
+
+## 2026-11-26 — W3f 15.8c (R4: exact round-trip for every r4 thresholded writer; run_qtl_coloc.R `--json-full-precision` for QTL_A3/QTL_A2, Track B and QTL_legacy byte-identical; DRAFT (l); Carter Q-157J R4, Q-158DIG A; no fit; no push)
+
+- Start 4d7419d1 (data/r4/tmp/w3f/q158/start_15_8c.txt = PRE_158C_REF). Gates: gate_157j.sh rc 0 (sha256 805afcd8…0503e),
+  gate_158.sh Q-158DIG rc 0 (ea8fe4cd…ceb4, label `A: Exact round-trip everywhere r4 thresholds (Recommended)`); gate_15_8c.txt.
+- Task 1 (dc4d8156): DEC-2026-11-24-ta-r4-qtl-json-full-precision-flag, both replies quoted from the files and cmp'd
+  (dec_15_8c.py). Writer inventory writers_15_8c.tsv (writers_15_8c.R/.py, r_coloc job env 516ec209…_, jsonlite 2.0.0,
+  data.table 1.16.4; parsed in Python from R's %a): 10^5 uniform doubles round-trip 0% (jsonlite default), 8.07%
+  (digits=NA, fwrite, write.table), 100% (I(17), %.17g); 0.8 - 2^-53 only through I(17) / %.17g. Thresholded: the
+  run_qtl_coloc.R result JSON, run_coloc_pair_r4.R :384 (qtl_abf_main) and :547 (main), simulate_coloc_r4.R :229.
+  Not thresholded: cs_cross_purity.R, measure_trait_facts.R (record only), saveRDS payloads, run_susie_rss.R (D-28),
+  python report formats (select_null_windows min_p, restore_bmi_alleles rate, sh2b3_known_answer columns). No scope growth.
+- Task 2 (eca81966): RED red_15_8c.txt (Slurm 2110683): 6 failed, 2 passed; the 2 (tests 2 and 6) pin unchanged
+  behaviour and pass by construction before the change; their failing is shown by NCs 2 and 3. Green (Slurm 2110735):
+  182 passed, 1 failed: test_coloc_pair_r4::test_qtl_abf_pp_equal_direct_coloc_abf, an exact `==` of the qtl_abf JSON
+  against a coloc.abf oracle printed with digits = NA (6.676449210020358e-05 vs 6.67644921002036e-05). Edited only that
+  oracle (:323 digits = NA -> I(17)); declared; re-run passed (green2_15_8c.txt). No tolerance-based test edited.
+- NCs nc_15_8c.txt (Slurm 2110820, all 8 tests per NC): helper ignores the flag -> tests 3, 4 fail; helper always full
+  -> test 2 (and 3, 4) fail; QTL_legacy given the flag -> tests 5, 6 fail; pair writer digits = NA -> test 7 (and 8)
+  fail; simulation format removed -> test 7 fails; validation removed -> test 1 fails; scratch unclassified write_json
+  in ta_r4 -> test 8 fails. Each md5-restored (scratch file removed); ALL NCs FAILED AS REQUIRED AND RESTORED.
+- Task 3 (635ffc1c): DRAFT (l) sentence after the coloc_priors.yaml refusal sentence (anchor unique); (g) states no
+  precision (asserted), unchanged; test_amendment_text + test_prelock_pilot_fits 24 P / 2 S (draft_l_15_8c.txt).
+- FULL (Slurm 2110960, c020n03 Cascade Lake, HEAD 635ffc1c, 2h49m): QUICK 899 P / 2 S, HEAVY 352 P / 5 S, PINS 39 P;
+  FULL 2,752 = 2,699 P / 53 S / 0 F (full_15_8c.xml, sha256 ac058269…39d245). check_15_8c.py vs full_15_8b.xml
+  (2,744 read from the file): 0 removed, +8 all passed, 0 outcome changes, 2 declared passed -> passed, CHECK PASS
+  (check_15_8c.txt). Base for 15.8c2 = data/r4/tmp/w3f/q158/full_15_8c.xml.
+- No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8c2.

@@ -26,6 +26,16 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
+## 2026-11-26 — **TRACK A ta-r4: W3f 15.8c COMPLETE (R4: exact round-trip for every r4 thresholded writer; run_qtl_coloc.R `--json-full-precision` on for QTL_A3/QTL_A2 only, default output byte-identical; run_coloc_pair_r4.R I(17); simulation posteriors %.17g; DRAFT (l)). NEXT = 15.8c2. NOT PUSHED (dc4d8156, eca81966, 635ffc1c + records).**
+
+- Gates Q-157J + Q-158DIG rc 0; DEC-2026-11-24-ta-r4-qtl-json-full-precision-flag; writers_15_8c.tsv measured.
+- Declared spec updates: test_purity_determinism::test_qtl_default_path_unchanged_without_the_flag (helper strips the
+  flag); test_coloc_pair_r4::test_qtl_abf_pp_equal_direct_coloc_abf (:323 oracle digits = NA -> I(17)).
+- FULL Slurm 2110960: 2,752 = 2,699 P / 53 S / 0 F; check_15_8c.py vs full_15_8b.xml PASS; base for 15.8c2 =
+  data/r4/tmp/w3f/q158/full_15_8c.xml.
+- Expected chain: 15.8c2 2,758 → 15.8d 2,764 → 15.8e 2,766 → 15.8f 2,768.
+- NEXT = 15.8c2. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
 ## 2026-11-26 — **TRACK A ta-r4: W3f 15.8b COMPLETE (R6: libopenblas=0.3.34 pinned in envs/r_coloc.yml + exact pin file + job env lock manifest; job guard `--blas-pinned` on the 5 r_coloc rules; DRAFT (k) as Q-158KW). NEXT = 15.8c. NOT PUSHED (e47b6a83, cd96833e, b113fcba, e852040a, 99949f41, c54f6412, 3e37c63a and the records commit are local).** (★ RESUME HERE — LATEST ★)
 
 - Env D 516ec209…_ built from the pin file and IDENTITY_OK before any guard code; shared conda_pkgs unchanged; no fit.
