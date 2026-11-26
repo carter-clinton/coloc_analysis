@@ -3,7 +3,10 @@ them as-is, so the tests exercise exactly what the rule runs. All paths are repo
 from __future__ import annotations
 
 import csv
+import os
+import shlex
 import sys
+from pathlib import Path
 
 from ld_read_path import ld_allele_aware, ld_file_authoritative
 from ta_r4 import job_guard, paths, verify_inputs
@@ -104,17 +107,45 @@ def job_label(rule, wildcards):
     return f"{rule}." + "_".join(f"{k}={v}" for k, v in sorted(dict(wildcards.items()).items()))
 
 
-def gate_command(stage, arm=None, config=None, label=None):
+R_COLOC_YML = "envs/r_coloc.yml"
+
+
+def is_r_coloc_env(conda_env, basedir):
+    """Whether a rule's conda directive (Snakemake's `rule.conda_env`, stored as given: our directives are absolute
+    str) is <basedir>/envs/r_coloc.yml. None (no conda env) -> False; relative, callable or other types -> ValueError."""
+    if conda_env is None:
+        return False
+    if callable(conda_env) or not isinstance(conda_env, (str, os.PathLike)) or not os.path.isabs(conda_env):
+        raise ValueError(f"conda env {conda_env!r}: expected None or an absolute path")
+    return os.path.realpath(conda_env) == os.path.realpath(Path(basedir) / R_COLOC_YML)
+
+
+def gate_command(stage, arm=None, config=None, label=None, *, blas_pinned=None):
     """First command of every production job (fresh process, no cache): ta_r4.job_guard runs the offline lock gate,
-    then checks the job's run-configuration digest (from `config`), the CPU type and the OpenBLAS env. Repro: true."""
+    then checks the job's run-configuration digest (from `config`), the CPU type and the OpenBLAS env; with
+    blas_pinned=True (rules whose conda env is envs/r_coloc.yml, Q-158R6G A) also the pinned libopenblas
+    (`--blas-pinned`). blas_pinned must be exactly True or False for production. Repro: true."""
     if stage == "repro":
         return ["true"]
     if stage != "production":
         raise ValueError(f"stage {stage!r}")
     if arm is None or config is None or label is None:
         raise ValueError("a production gate_command needs arm, config and label")
+    if blas_pinned is not True and blas_pinned is not False:
+        raise ValueError(f"a production gate_command needs blas_pinned True or False, not {blas_pinned!r}")
     return _PY + ["ta_r4.job_guard", "check", "--stage", "production", "--arm", arm,
-                  "--config-sha256", job_guard.config_digest(config), "--record-dir", GUARD_RECORD_DIR, "--label", label]
+                  "--config-sha256", job_guard.config_digest(config), "--record-dir", GUARD_RECORD_DIR, "--label", label
+                  ] + (["--blas-pinned"] if blas_pinned else [])
+
+
+def rule_gate(workflow, rule, stage, arm, config, wildcards):
+    """The gate shell line of one job of `rule`: --blas-pinned iff Snakemake's record of the rule's conda directive
+    (workflow.get_rule(rule).conda_env) is envs/r_coloc.yml. workflow.get_rule raises on an unknown rule name."""
+    if stage == "repro":
+        return shlex.join(["true"])
+    conda_env = workflow.get_rule(rule).conda_env
+    return shlex.join(gate_command(stage, arm, config, label=job_label(rule, wildcards),
+                                   blas_pinned=is_r_coloc_env(conda_env, workflow.basedir)))
 
 
 def _verify(arm, manifests, files):

@@ -175,7 +175,7 @@ def test_guard_runs_the_lock_gate_first(tmp_path, monkeypatch):
 
 def test_gate_command_production_is_the_guard():
     cfg = job_guard.merged_config_from_files(REPO_ROOT, ARM)
-    assert commands.gate_command("production", ARM, cfg, label=LABEL) == commands._PY + [
+    assert commands.gate_command("production", ARM, cfg, label=LABEL, blas_pinned=False) == commands._PY + [
         "ta_r4.job_guard", "check", "--stage", "production", "--arm", ARM,
         "--config-sha256", job_guard.config_digest(cfg), "--record-dir", "data/r4/logs/job_guard", "--label", LABEL]
 

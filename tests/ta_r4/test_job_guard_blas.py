@@ -237,3 +237,27 @@ def test_env_lock_manifest_matches_the_job_env():
                     "value": hashlib.sha256(so.read_bytes()).hexdigest()}]
     assert [r["value"] for r in rows if r["kind"] == "corename"] == ["SkylakeX"]
     assert {r["kind"] for r in rows} == {"package", "libopenblas_sha256", "corename"}
+
+
+# ---- gate_command / is_r_coloc_env: the flag follows the rule's conda directive (Task 4) ----------------------------
+
+def test_gate_command_flags_only_the_r_coloc_env(tmp_path):
+    yml = str(REPO_ROOT / "envs/r_coloc.yml")
+    assert commands.is_r_coloc_env(yml, REPO_ROOT) is True
+    link = tmp_path / "link_r_coloc.yml"
+    link.symlink_to(yml)
+    assert commands.is_r_coloc_env(str(link), REPO_ROOT) is True
+    assert commands.is_r_coloc_env(Path(yml), str(REPO_ROOT)) is True
+    assert commands.is_r_coloc_env(None, REPO_ROOT) is False
+    assert commands.is_r_coloc_env(str(REPO_ROOT / "envs/python_stats.yml"), REPO_ROOT) is False
+    for bad in ("envs/r_coloc.yml", lambda w: yml, 1):
+        with pytest.raises(ValueError):
+            commands.is_r_coloc_env(bad, REPO_ROOT)
+    cfg = job_guard.merged_config_from_files(REPO_ROOT, ARM)
+    off = commands.gate_command("production", ARM, cfg, label=LABEL, blas_pinned=False)
+    assert "--blas-pinned" not in off and off[-2:] == ["--label", LABEL]
+    assert commands.gate_command("production", ARM, cfg, label=LABEL, blas_pinned=True) == off + ["--blas-pinned"]
+    for kw in ({"blas_pinned": None}, {}, {"blas_pinned": 1}):
+        with pytest.raises(ValueError, match="blas_pinned"):
+            commands.gate_command("production", ARM, cfg, label=LABEL, **kw)
+    assert commands.gate_command("repro") == ["true"]

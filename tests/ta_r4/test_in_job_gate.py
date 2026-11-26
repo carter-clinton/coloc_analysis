@@ -5,6 +5,7 @@ The rendered shells come from `$SMK -n -p` on a fixture repo with a fixture lock
 from __future__ import annotations
 
 import csv
+import json
 import os
 import re
 import shlex
@@ -19,6 +20,7 @@ import yaml
 from ta_r4 import commands, paths
 from ta_r4 import harmonize_qtl_r4 as H
 from ta_r4 import run_qtl_group_r4 as Q
+from ta_r4.conda_job_env import job_env_dir
 from ta_r4.r4_lock_gate import LOCKED_PATHS
 
 from .conftest import REPO_ROOT
@@ -123,8 +125,29 @@ def rendered(tmp_path_factory):
     return repo, row, jobs(out)
 
 
+SMOKE_PY = "/rs1/researchers/c/ckclinto/conda_envs/smoke_dev/bin/python3.11"
+NAMED_R_COLOC = "/rs1/researchers/c/ckclinto/conda_envs/r_coloc"
+R_COLOC_RULES = {"r4_run_finemap", "r4_coloc_pair", "r4_coloc_A1", "r4_sim", "r4_qtl_group"}
+NO_ENV_RULES = {"r4_qtl_aggregate", "r4_qtl_tiers"}
+
+
+@pytest.fixture(scope="module")
+def rule_envs(rendered):
+    """{rule: conda_env} from Snakemake's own parse of the gate repo's Snakefile.ta_r4 (fixtures/rule_conda_envs.py)."""
+    repo = rendered[0]
+    p = subprocess.run([SMOKE_PY, str(REPO_ROOT / "tests/ta_r4/fixtures/rule_conda_envs.py"), str(repo), "A3_1kg"],
+                       cwd=repo, capture_output=True, text=True)
+    assert p.returncode == 0, p.stderr[-3000:]
+    return json.loads(p.stdout.strip().splitlines()[-1])
+
+
+def _is_r_coloc(rule_envs, repo, rule):
+    env = rule_envs[rule]
+    return isinstance(env, str) and os.path.realpath(env) == os.path.realpath(repo / "envs/r_coloc.yml")
+
+
 @pytest.mark.parametrize("rule", PRODUCTION_RULES)
-def test_production_shell_begins_with_the_gate(rendered, rule):
+def test_production_shell_begins_with_the_gate(rendered, rule_envs, rule):
     _, _, js = rendered
     mine = [j for j in js if j[0] == rule]
     assert mine, f"{rule} not in the dry-run"
@@ -135,8 +158,44 @@ def test_production_shell_begins_with_the_gate(rendered, rule):
         w = dict(kv.split("=", 1) for kv in attrs["wildcards"].split(", "))
         arm = Q.fit_arm(w["qtl_arm"]) if rule.startswith("r4_qtl_") else "A3_1kg"
         label = f"{rule}." + "_".join(f"{k}={v}" for k, v in sorted(w.items()))
-        want.append(shlex.join(commands.gate_command("production", arm, cfg, label=label)))
+        want.append(shlex.join(commands.gate_command("production", arm, cfg, label=label,
+                                                     blas_pinned=_is_r_coloc(rule_envs, rendered[0], rule))))
     assert [c[0] if c else None for _, _, c in mine] == want
+
+
+def test_gate_blas_flag_follows_each_rules_conda_directive(rendered, rule_envs):
+    repo, _, js = rendered
+    gated = [(r, c) for r, _, c in js if c and "ta_r4.job_guard" in shlex.split(c[0])]
+    assert {r for r, _ in gated} == set(PRODUCTION_RULES)
+    for r in PRODUCTION_RULES:
+        assert r in rule_envs and (rule_envs[r] is None or isinstance(rule_envs[r], str)), (r, rule_envs.get(r))
+    flagged, unflagged = set(), set()
+    for r, c in gated:
+        has_flag = "--blas-pinned" in shlex.split(c[0])
+        assert has_flag == _is_r_coloc(rule_envs, repo, r), (r, rule_envs[r], c[0])
+        (flagged if has_flag else unflagged).add(r)
+    assert flagged and flagged == R_COLOC_RULES, flagged
+    assert unflagged == NO_ENV_RULES, unflagged
+    assert flagged | unflagged == set(PRODUCTION_RULES)
+
+
+def test_flagged_gate_refuses_another_blas_and_unflagged_gate_records_not_checked(rendered):
+    from ta_r4 import job_guard
+    repo, _, js = rendered
+    fit = shlex.split([c for r, _, c in js if r == "r4_run_finemap"][0][0])
+    p = subprocess.run(fit, cwd=repo, capture_output=True, text=True, env={**os.environ, "CONDA_PREFIX": NAMED_R_COLOC})
+    pin = job_guard.libopenblas_pin(repo)
+    assert p.returncode == 1 and f"conda-meta libopenblas version 0.3.32 != pin {pin}" in p.stderr, p.stderr[-2000:]
+    agg = shlex.split([c for r, _, c in js if r == "r4_qtl_aggregate"][0][0])
+    label = agg[agg.index("--label") + 1]
+    q = subprocess.run(agg, cwd=repo, capture_output=True, text=True,
+                       env={k: v for k, v in os.environ.items() if k != "CONDA_PREFIX"})
+    assert q.returncode == 0, q.stderr[-2000:]
+    recs = list((repo / commands.GUARD_RECORD_DIR).glob(f"*.{label}.json"))
+    assert len(recs) == 1, recs
+    rec = json.loads(recs[0].read_text())
+    assert rec["checked"]["blas_pinned"] == "not_checked"
+    assert rec["blas"]["reason"] == job_guard.BLAS_NOT_CHECKED_REASON
 
 
 def test_fit_shell_verifies_its_inputs_after_the_gate(rendered):
@@ -158,7 +217,8 @@ def test_coloc_shell_verifies_both_sumstats_after_the_gate(rendered, rule, mode)
 def test_gate_in_a_job_fails_after_locked_path_drift(rendered):
     repo, _, js = rendered
     gate = shlex.split([c for r, _, c in js if r == "r4_run_finemap"][0][0])
-    before = subprocess.run(gate, cwd=repo, capture_output=True, text=True)
+    env = {**os.environ, "CONDA_PREFIX": str(job_env_dir(REPO_ROOT / "envs/r_coloc.yml"))}
+    before = subprocess.run(gate, cwd=repo, capture_output=True, text=True, env=env)
     print("gate rc before drift", before.returncode)
     assert before.returncode == 0, before.stderr
     pol = repo / "config/susie_policy.yaml"
@@ -166,7 +226,7 @@ def test_gate_in_a_job_fails_after_locked_path_drift(rendered):
     pol.write_text(keep + "# drift\n")
     git(repo, "commit", "-qam", "drift after lock")
     try:
-        after = subprocess.run(gate, cwd=repo, capture_output=True, text=True)
+        after = subprocess.run(gate, cwd=repo, capture_output=True, text=True, env=env)
     finally:
         pol.write_text(keep)
         git(repo, "commit", "-qam", "restore")
@@ -177,13 +237,13 @@ def test_gate_in_a_job_fails_after_locked_path_drift(rendered):
 def test_gate_command_stages():
     from ta_r4 import job_guard
     cfg = job_guard.merged_config_from_files(REPO_ROOT, "A3_1kg")
-    assert commands.gate_command("production", "A3_1kg", cfg, label="r4_sim.x=1") == commands._PY + [
+    assert commands.gate_command("production", "A3_1kg", cfg, label="r4_sim.x=1", blas_pinned=False) == commands._PY + [
         "ta_r4.job_guard", "check", "--stage", "production", "--arm", "A3_1kg",
         "--config-sha256", job_guard.config_digest(cfg), "--record-dir", "data/r4/logs/job_guard", "--label", "r4_sim.x=1"]
     for kw in ({"arm": None, "config": cfg, "label": "l"}, {"arm": "A3_1kg", "config": None, "label": "l"},
                {"arm": "A3_1kg", "config": cfg, "label": None}):
-        with pytest.raises(ValueError):
-            commands.gate_command("production", **kw)
+        with pytest.raises(ValueError, match="needs arm, config and label"):
+            commands.gate_command("production", blas_pinned=False, **kw)
     assert commands.gate_command("repro") == ["true"]
     with pytest.raises(ValueError):
         commands.gate_command("prod")

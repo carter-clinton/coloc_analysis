@@ -61,7 +61,7 @@ if ARM == "A3_1kg":
         resources:
             mem_mb=8000,
         params:
-            gate=lambda w: shlex.join(r4cmd.gate_command(STAGE, ARM, config, label=r4cmd.job_label("r4_sim", w))),
+            gate=lambda w: r4cmd.rule_gate(workflow, "r4_sim", STAGE, ARM, config, w),
             cmd=_r4_sim_cmd,
         shell:
             r"""

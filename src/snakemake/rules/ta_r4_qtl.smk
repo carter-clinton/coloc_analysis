@@ -64,7 +64,7 @@ def _r4_qtl_gate_cmd(rule):
     """The gate param of one QTL rule: the job guard on the QTL arm's fit arm (ARM in this invocation)."""
     def gate(w):
         fa = r4qtl.fit_arm(w.qtl_arm)
-        return shlex.join(r4cmd.gate_command(arm_stage(fa), fa, config, label=r4cmd.job_label(rule, w)))
+        return r4cmd.rule_gate(workflow, rule, arm_stage(fa), fa, config, w)
     return gate
 
 
