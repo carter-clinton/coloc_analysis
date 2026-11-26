@@ -3867,3 +3867,25 @@ Earlier presentation (2026-11-25 file), same decision:
 Question Q-158R6G (2026-11-25): Plan 15.8b (pinning the OpenBLAS build that R uses for production fits) stopped at a checkpoint its own plan defines. Two gated QTL rules, r4_qtl_aggregate and r4_qtl_tiers, run the production job guard but have no conda env. They run plain Python under the Snakemake interpreter (smoke_dev, whose numpy/scipy ship their own OpenBLAS) and load no R. The new BLAS check as written requires the r_coloc env's libopenblas and Rscript. It would refuse every production run of these two rules, or pass by checking a BLAS they never load. How should the BLAS guard treat them?
 Carter reply (verbatim, selected option): A: check only r_coloc rules (Recommended)
 ```
+
+## 2026-11-26 — DEC-2026-11-26-ta-r4-draft-k-blas-wording: DRAFT (k) states the OpenBLAS pin for jobs in the R environment and the not_checked record of the QTL aggregation and tier jobs, in the wording Carter approved (Carter, Q-158KW)
+
+- **Decider:** Carter, 2026-11-26. Gated in 15.8b Task 2 step 0 by its full file name (data/r4/tmp/w3f/q158/gate_158.sh
+  Q-158KW, `F[Q-158KW]`; record gate_15_8b_kw.txt, which also re-runs gate_157j.sh, Q-158R6S and Q-158R6G, all rc 0);
+  negative controls gate_nc_15_8b.txt (one byte changed in the copy, label `Other (free text)`, one sha256 character
+  changed, the question with a leading `Q-158KW` added, each exit 2; the real three-QID gate rc 0 after). The gate
+  records of the earlier plan version that DEC-2026-11-26-ta-r4-blas-guard-r-coloc-rules-only names are archived in
+  data/r4/tmp/w3f/q158/b/prior_caa5e6e3/ (MANIFEST.txt); this run's re-gate is gate_15_8b_kw.txt.
+- **Follows** DEC-2026-11-26-ta-r4-blas-guard-r-coloc-rules-only (Q-158R6G A); that entry is not edited.
+- **Reply file:** `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158KW-reply-2026-11-26.txt`
+  (sha256 `1f641dccebaae2f6539a9e563330546e2f6867767093011e12f574e2f378b99a`), label `Approve as written (Recommended)`.
+- **Wording.** The approved replacement clause and new sentence go into DRAFT (k) exactly as 15.8b Task 5 step 1
+  specifies, extracted from the reply file, never retyped. Any change to that wording is a new question to Carter.
+  (The question says "for Task 4"; after the plan's reorder that step is Task 5 step 1; the text is unchanged.)
+- **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml stays locked: false;
+  n_regions_min stays 7; no re-pin to make a check pass. Lifts nothing under D-28.
+
+```text
+Question Q-158KW (2026-11-26): Revising 15.8b for your answer A adds new public wording to the amendment's SuSiE policy paragraph, (k). Currently: "…each production job refuses to run on another CPU type, with `OPENBLAS_CORETYPE` set, or under a run configuration that differs from the committed configuration files…". Proposed: "…with `OPENBLAS_CORETYPE` set, with an OpenBLAS library other than version 0.3.34 in a job that runs in the R environment (the version is pinned there, with its exact package list), or under a run configuration that differs…", followed by a new sentence: "The QTL aggregation and tier jobs run no R; their job records state that the OpenBLAS library was not checked." Approve this wording for Task 4?
+Carter reply (verbatim, selected option): Approve as written (Recommended)
+```
