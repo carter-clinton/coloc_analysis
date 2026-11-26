@@ -3889,3 +3889,36 @@ Carter reply (verbatim, selected option): A: check only r_coloc rules (Recommend
 Question Q-158KW (2026-11-26): Revising 15.8b for your answer A adds new public wording to the amendment's SuSiE policy paragraph, (k). Currently: "…each production job refuses to run on another CPU type, with `OPENBLAS_CORETYPE` set, or under a run configuration that differs from the committed configuration files…". Proposed: "…with `OPENBLAS_CORETYPE` set, with an OpenBLAS library other than version 0.3.34 in a job that runs in the R environment (the version is pinned there, with its exact package list), or under a run configuration that differs…", followed by a new sentence: "The QTL aggregation and tier jobs run no R; their job records state that the OpenBLAS library was not checked." Approve this wording for Task 4?
 Carter reply (verbatim, selected option): Approve as written (Recommended)
 ```
+
+## 2026-11-26 — DEC-2026-11-24-ta-r4-qtl-json-full-precision-flag: run_qtl_coloc.R gets an opt-in `--json-full-precision` flag for the r4 QTL arms; the r4 pair JSON and the simulation posteriors are written to exact round-trip (Carter, Q-157J R4, Q-158DIG A)
+
+- **Decider:** Carter. Q-157J, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7j-open-items-reply-2026-11-24.txt` (sha256 `805afcd812902605dd9797d63c15fb201eae1fd2870db348182c1d38a640503e`),
+  the clause `continue with your recomendations for the open items R4`; Q-158DIG, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158DIG-reply-2026-11-25.txt` (sha256
+  `ea8fe4cdaf4bbcf802d65e68c75e66d3b095777f0e518e9ed57c088d3246ceb4`), label
+  `A: Exact round-trip everywhere r4 thresholds (Recommended)`. Both re-gated in 15.8c Task 1 step 0
+  (data/r4/tmp/w3f/q158/gate_157j.sh and gate_158.sh Q-158DIG, rc 0; record gate_15_8c.txt). Both quoted below from
+  the files by data/r4/tmp/w3f/q158/dec_15_8c.py and `cmp`ed against them.
+- **Measured (15.8c Task 1, r_coloc job env, jsonlite 2.0.0, data.table 1.16.4; data/r4/tmp/w3f/q158/writers_15_8c.tsv,
+  parsed in Python from R's `%a` values).** Of 10⁵ uniform doubles, jsonlite's default (4 decimals) round-trips 0%,
+  `digits = NA`, fwrite and write.table 8.07%, `digits = I(17)` and `sprintf("%.17g")` 100%; 0.8 − 2⁻⁵³ round-trips
+  only through the last two.
+- **Scope (plan 15.8c).** run_qtl_coloc.R is not D-28 frozen but is shared with Track B, so the change is an opt-in
+  flag, as in DEC-2026-11-20-ta-r4-qtl-exact-purity-flag. New option `--json-full-precision` (default `false`; any value
+  but true/false stops). With `true` the four result writes pass `digits = I(17)`; with `false` each is the pre-15.8c
+  call unchanged. `run_qtl_group_r4.qtl_command` passes `true` for QTL_A3 and QTL_A2 only, before `--qtl-orient`;
+  QTL_legacy (the E7 comparator), Track B qtl_coloc.smk and sample_null_loci.py do not, and their output is
+  byte-identical. run_coloc_pair_r4.R (r4-only) writes both result JSONs with `digits = I(17)`; simulate_coloc_r4.R
+  writes pp_h0 … pp_h4_max and r2_causal with `sprintf("%.17g")` (NA stays NA). The other r4 writers are not
+  thresholded (writers_15_8c.tsv) and are unchanged; run_susie_rss.R stays D-28 frozen.
+- Lifts nothing under D-28. **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml
+  stays locked: false; n_regions_min stays 7; no re-pin to make a check pass.
+
+```text
+Question Q-157J (2026-11-24): 15.7j brief-blind re-review OPEN items R2 (collector drops unaudited), R3 (E7 count definitions), R4 (QTL posteriors rounded to 4 decimals before thresholds), R5 (multi-key member refusal not fatal), R6 (BLAS library not pinned/checked), R7 (chronology wording). How should each be handled?
+Carter reply (verbatim): continue with your recomendations for the open items R4, R6: pin  libopenblas, R2: measured and audited, R3: yes it should be counted, R5 and R7: go with recommendation
+```
+
+```text
+Question Q-158DIG (2026-11-25): Q-158DIG (R4): I recommended 'full precision (digits = NA)'. That was wrong too: in jsonlite, digits = NA means 15 significant digits, not full precision. 0.79999999999999993 is written as 0.8, and only 8.1% of random doubles round-trip; I(17) round-trips 100%. The r4 GWAS pair JSON and the simulation posterior table have the same 15-digit limit, and both feed thresholds. Which fix?
+Carter reply (verbatim, selected option): A: Exact round-trip everywhere r4 thresholds (Recommended)
+```
