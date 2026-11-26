@@ -251,10 +251,15 @@ def test_e7_frozen_vs_fixed_and_flipped_shares():
     rows = _rows([doc(rid, "A3_1kg", "p12_primary", 0.42), doc(rid, "A3_1kg", "p12_sensitivity", 0.9)], m)
     qtl = [{"id": "q1", "qtl_orient_exact": 3, "qtl_orient_flipped": 1},
            {"id": "q2", "qtl_orient_exact": None, "qtl_orient_flipped": None}]
-    t = e7_frozen_vs_fixed(w3a, sh, fits, rows, qtl, a3_arm={"EUR": "A3_1kg"}, p12_key="p12_primary")
+    fc = pd.DataFrame({"trait": ["bmi", "t2d"], "ancestry": ["EUR"] * 2, "region_safe": ["R1", "R1"],
+                       "status": ["ok", "non_converged"], "n_cs_json": ["2", "0"], "n_cs_rds_sets": ["1", "0"],
+                       "eq": ["false", "true"]})
+    t = e7_frozen_vs_fixed(w3a, sh, fits, rows, qtl, a3_arm={"EUR": "A3_1kg"}, p12_key="p12_primary",
+                           fit_cs_filtered=fc)
     fy = t[t.section == "fit_yield"].set_index("id")
     assert set(fy.index) == {"bmi.EUR.R1", "t2d.EUR.R1"}
-    assert fy.loc["bmi.EUR.R1", ["frozen_value", "fixed_value"]].tolist() == ["ok;n_cs=2", "ok;n_cs=1"]
+    assert fy.loc["bmi.EUR.R1", ["frozen_value", "fixed_value", "frozen_value_json_unfiltered"]].tolist() == \
+        ["ok;n_cs=1", "ok;n_cs=1", "ok;n_cs=2"]
     assert fy.loc["t2d.EUR.R1", "fixed_value"] == "ok;n_cs=3"
     sp = t[t.section == "sh2b3_pair"].set_index("id")
     assert sp.index.tolist() == [rid]

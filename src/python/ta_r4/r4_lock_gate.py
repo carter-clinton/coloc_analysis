@@ -51,6 +51,7 @@ LOCKED_PATHS = (
     f"{PHASE_REL}/manifests/catalogs_sha256.tsv",
     f"{PHASE_REL}/manifests/qtl_harmonized_sha256.tsv",
     f"{PHASE_REL}/manifests/known_answer_W3a.tsv",
+    f"{PHASE_REL}/manifests/fit_cs_json_vs_rds.tsv",
     f"{PHASE_REL}/manifests/known_answer_sh2b3.tsv",
 )
 STAGES = ("repro", "production")

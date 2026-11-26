@@ -97,7 +97,7 @@ def build_tree(root, nc_bump=0.0):
         _w(res / f"{arm}/qtl_tiers.tsv", "region\tancestry\ttier\tbest_gwas_pph4\tbest_qtl_pph4\tresolving_gene"
            "\tresolving_tissue\tresolving_qtl_source\tall_supporting_sources\tneg_ctrl_set\n"
            "CUR0\tEUR\tTier A\t0.9\t0.9\tG1\tLung\tgtex_eqtl\tgtex_eqtl\t\n")
-    for f in ("known_answer_W3a.tsv", "known_answer_sh2b3.tsv"):
+    for f in ("known_answer_W3a.tsv", "known_answer_sh2b3.tsv", "fit_cs_json_vs_rds.tsv"):
         dst = root / MAN_REL / f
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(REPO_ROOT / MAN_REL / f, dst)
@@ -178,7 +178,7 @@ def final_repo(tmp_path):
     repo = make_fixture_repo(tmp_path)
     build_tree(repo)
     git(repo, "add", "config/ta_r4/pair_manifest.tsv", "config/ta_r4/qtl_manifest.tsv", f"{MAN_REL}/known_answer_W3a.tsv",
-        f"{MAN_REL}/known_answer_sh2b3.tsv")
+        f"{MAN_REL}/known_answer_sh2b3.tsv", f"{MAN_REL}/fit_cs_json_vs_rds.tsv")
     git(repo, "commit", "-q", "-m", "fixture manifest")
     write_fixture_lock(repo)
     _write_sim(repo)  # the lock commit rewrote simulation.yaml (locked: true): its config_sha256 changed

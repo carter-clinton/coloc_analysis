@@ -148,8 +148,9 @@ def _e7(repo, t4):
     fits = pd.DataFrame(columns=["arm", "trait", "ancestry", "region_safe", "status", "n_cs", "ld_allele_exact",
                                  "ld_allele_flipped"])
     rows = pd.DataFrame(columns=["row_id", "label", "p12_key", "region_stat"])
+    fc = pd.DataFrame(columns=["trait", "ancestry", "region_safe", "status", "n_cs_json", "n_cs_rds_sets", "eq"])
     return estimands.e7_frozen_vs_fixed(e, s, fits, rows, [], a3_arm={"EUR": "A3_1kg"}, p12_key="p12_primary",
-                                        qtl_tiers_frozen=frozen, qtl_tiers_fixed=fixed, qtl_tiers_fixed_4dp=t4)
+                                        fit_cs_filtered=fc, qtl_tiers_frozen=frozen, qtl_tiers_fixed=fixed, qtl_tiers_fixed_4dp=t4)
 
 
 def test_e7_qtl_tier_has_the_matched_rounding_columns(tmp_path):
@@ -157,8 +158,8 @@ def test_e7_qtl_tier_has_the_matched_rounding_columns(tmp_path):
     t4 = run_aggregation._qtl_tiers_qtl4dp(repo)
     assert t4 is not None
     t = _e7(repo, t4)
-    assert list(t.columns)[-2:] == ["fixed_value_qtl_4dp", "changed_qtl_4dp"]
-    assert list(t.columns)[:-2] == ["section", "id", "region_safe", "ancestry", "frozen_value", "fixed_value",
+    assert list(t.columns)[-3:-1] == ["fixed_value_qtl_4dp", "changed_qtl_4dp"]
+    assert list(t.columns)[:-3] == ["section", "id", "region_safe", "ancestry", "frozen_value", "fixed_value",
                                     "changed", "n_exact", "n_flipped", "flipped_share"]
     q = t[t.section == "qtl_tier"].set_index("id")
     assert q.loc["R2.EUR", "fixed_value_qtl_4dp"] == "Tier B" and q.loc["R2.EUR", "changed_qtl_4dp"] == False  # noqa

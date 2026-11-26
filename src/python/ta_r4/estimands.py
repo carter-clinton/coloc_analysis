@@ -459,30 +459,47 @@ def round_like_jsonlite_default(x: float) -> float:
     return float("%.*g" % (math.ceil(min(15, max(1, math.log10(a)) + 4)), x))
 
 
-def e7_frozen_vs_fixed(known_w3a, known_sh2b3, fits, rows, qtl_docs, *, a3_arm, p12_key,
+def e7_frozen_vs_fixed(known_w3a, known_sh2b3, fits, rows, qtl_docs, *, a3_arm, p12_key, fit_cs_filtered,
                        qtl_tiers_frozen=None, qtl_tiers_fixed=None,
                        qtl_tiers_fixed_4dp=None) -> pd.DataFrame:
     """E-2 frozen (reproduction) vs fixed (R4 A3) table. Sections: fit_yield (W3a Route L real-LD fits),
     sh2b3_pair (W3b R2_exact pairs), flipped_share_region (fine-map, per region), flipped_share_qtl (per QTL row),
     qtl_tier (QTL_legacy vs QTL_A3 tiers). flipped_share = flipped / (exact + flipped). qtl_tier rows also carry
     fixed_value_qtl_4dp (the QTL_A3 tier from 4-decimal posteriors, `qtl_tiers_fixed_4dp`) and changed_qtl_4dp;
-    other sections, and every row when `qtl_tiers_fixed_4dp` is None, leave both empty."""
+    other sections, and every row when `qtl_tiers_fixed_4dp` is None, leave both empty. fit_yield frozen_value is the
+    earlier fit's purity-filtered set count (`fit_cs_filtered` = manifests/fit_cs_json_vs_rds.tsv, n_cs_rds_sets; NA
+    for an early exit); frozen_value_json_unfiltered keeps the earlier JSON count (n_cs_L), fit_yield rows only."""
     out = []
 
     def add(section, id_, region="", anc="", frozen="", fixed="", n_exact=float("nan"), n_flipped=float("nan"),
-            share=float("nan"), fixed_4dp=""):
+            share=float("nan"), fixed_4dp="", unfiltered=""):
         out.append({"section": section, "id": id_, "region_safe": region, "ancestry": anc,
                     "frozen_value": frozen, "fixed_value": fixed, "changed": (frozen != fixed) if fixed != "" else pd.NA,
                     "n_exact": n_exact, "n_flipped": n_flipped, "flipped_share": share,
                     "fixed_value_qtl_4dp": fixed_4dp,
-                    "changed_qtl_4dp": (frozen != fixed_4dp) if fixed_4dp != "" else pd.NA})
+                    "changed_qtl_4dp": (frozen != fixed_4dp) if fixed_4dp != "" else pd.NA,
+                    "frozen_value_json_unfiltered": unfiltered})
 
     fi = {(f.arm, f.trait, f.ancestry, f.region_safe): f for f in fits.itertuples()}
+    fc = {}
+    for c in fit_cs_filtered.itertuples():
+        k = (c.trait, c.ancestry, c.region_safe)
+        if k in fc:
+            raise ValueError(f"E7: fit_cs_filtered has more than one row for {k}")
+        fc[k] = c
     for r in known_w3a[known_w3a["pair"] == "real_ld"].itertuples():
-        f = fi.get((a3_arm.get(r.ancestry), r.trait, r.ancestry, r.region_safe))
+        k = (r.trait, r.ancestry, r.region_safe)
+        c = fc.get(k)
+        if c is None:
+            raise KeyError(f"E7: no fit_cs_filtered row for the real_ld fit {k}")
+        if (str(c.status), str(c.n_cs_json)) != (str(r.status_L), str(r.n_cs_L)):
+            raise ValueError(f"E7: fit_cs_filtered row {k} (status {c.status}, n_cs_json {c.n_cs_json}) does not "
+                             f"match known_answer_W3a (status {r.status_L}, n_cs {r.n_cs_L})")
+        n = "NA" if pd.isna(c.n_cs_rds_sets) or str(c.n_cs_rds_sets) == "NA" else int(c.n_cs_rds_sets)
+        f = fi.get((a3_arm.get(r.ancestry), *k))
         fixed = "absent" if f is None else f"{f.status};n_cs={'NA' if pd.isna(f.n_cs) else int(f.n_cs)}"
         add("fit_yield", f"{r.trait}.{r.ancestry}.{r.region_safe}", r.region_safe, r.ancestry,
-            f"{r.status_L};n_cs={r.n_cs_L}", fixed)
+            f"{r.status_L};n_cs={n}", fixed, unfiltered=f"{r.status_L};n_cs={r.n_cs_L}")
     ri = {(r.row_id, r.label): r for r in rows[rows.p12_key == p12_key].itertuples()}
     for r in known_sh2b3[known_sh2b3["config_label"] == "R2_exact"].itertuples():
         anc = r.pair_id.split("__")[1]
@@ -508,7 +525,7 @@ def e7_frozen_vs_fixed(known_w3a, known_sh2b3, fits, rows, qtl_docs, *, a3_arm, 
                 fixed_4dp="" if f4 is None else str(f4.get(k, "absent")))
     return pd.DataFrame(out, columns=["section", "id", "region_safe", "ancestry", "frozen_value", "fixed_value",
                                       "changed", "n_exact", "n_flipped", "flipped_share", "fixed_value_qtl_4dp",
-                                      "changed_qtl_4dp"])
+                                      "changed_qtl_4dp", "frozen_value_json_unfiltered"])
 
 
 def wilson_ci(k, n, level=0.95):

@@ -34,6 +34,7 @@ TABLES = ("branch_outcomes", "e1_paired_delta", "e2_agreement_sweep", "e3_reclas
           "min_abs_corr_sweep", "hla_exploratory", "table1_data", "row_drops", "qtl_rows")
 KNOWN_W3A = f"{paths.MAN}/known_answer_W3a.tsv"
 KNOWN_SH2B3 = f"{paths.MAN}/known_answer_sh2b3.tsv"
+FIT_CS_FILTERED = f"{paths.MAN}/fit_cs_json_vs_rds.tsv"
 SIM_DIR = f"{paths.R4}/results/sim"
 SIM_CFG = "config/ta_r4/simulation.yaml"
 SIM_ARMS = ("A1", "A2", "A3")
@@ -429,7 +430,8 @@ def build_tables(repo, rules, man, rows, fits, purity_runner, *, final):
     a3_arm = {anc: arm for arm, anc in A1_FIT_ARMS.items()}
     t["e7_frozen_vs_fixed"] = estimands.e7_frozen_vs_fixed(
         _read_tsv(Path(repo) / KNOWN_W3A), _read_tsv(Path(repo) / KNOWN_SH2B3), fits, rows, qdocs, a3_arm=a3_arm,
-        p12_key=conf["rows"]["p12_key"], qtl_tiers_frozen=tiers_frozen, qtl_tiers_fixed=tiers_fixed,
+        p12_key=conf["rows"]["p12_key"], fit_cs_filtered=_read_tsv(Path(repo) / FIT_CS_FILTERED),
+        qtl_tiers_frozen=tiers_frozen, qtl_tiers_fixed=tiers_fixed,
         qtl_tiers_fixed_4dp=_qtl_tiers_qtl4dp(repo))
     t["e8_simulation_rates"] = _e8(repo, rules, final=final)
     afr_ids = _ids(man, rules, ancestry="AFR")
