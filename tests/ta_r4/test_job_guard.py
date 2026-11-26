@@ -86,9 +86,45 @@ def gate_passes(monkeypatch):
     return calls
 
 
-def _check(tmp_path, digest, *, environ=None, cpuinfo=CASCADELAKE, label=LABEL):
-    return job_guard.check(REPO_ROOT, ARM, digest, environ=dict(CLEAN_ENV if environ is None else environ),
-                           cpuinfo=cpuinfo, record_dir=tmp_path / "rec", label=label)
+def blas_prefix(root, pin, *, meta_versions=None, libblas_to=None, rscript=True):
+    """A fake conda prefix that passes every --blas-pinned check for `pin` unless one argument changes it: conda-meta
+    libopenblas records (`meta_versions`), libblas.so.3's target (`libblas_to`), bin/Rscript (`rscript`)."""
+    root = Path(root)
+    (root / "conda-meta").mkdir(parents=True)
+    for i, v in enumerate([pin] if meta_versions is None else meta_versions):
+        (root / "conda-meta" / f"libopenblas-{v}-pthreads_h{i}_0.json").write_text(
+            json.dumps({"name": "libopenblas", "version": v, "build": f"pthreads_h{i}_0"}))
+    lib = root / "lib"
+    lib.mkdir()
+    so = lib / f"libopenblasp-r{pin}.so"
+    so.write_text("dummy\n")
+    (lib / "libblas.so.3").symlink_to(so.name if libblas_to is None else libblas_to)
+    (lib / "liblapack.so.3").symlink_to(so.name)
+    if rscript:
+        (root / "bin").mkdir()
+        (root / "bin" / "Rscript").write_text("#!/bin/sh\n")
+    return root
+
+
+def blas_stubs(prefix, pin):
+    """(blas_probe, r_blas_probe) stubs returning the pinned runtime config and the prefix's pinned library."""
+    so = str(Path(prefix) / "lib" / f"libopenblasp-r{pin}.so")
+    return (lambda library: (f"OpenBLAS {pin} DYNAMIC_ARCH NO_AFFINITY SkylakeX MAX_THREADS=128", "SkylakeX"),
+            lambda rscript: so)
+
+
+def _check(tmp_path, digest, *, environ=None, cpuinfo=CASCADELAKE, label=LABEL, blas_pinned=True):
+    env = dict(CLEAN_ENV if environ is None else environ)
+    kw = {}
+    if blas_pinned is True:
+        pin = job_guard.libopenblas_pin(REPO_ROOT)
+        prefix = tmp_path / "blas_prefix"
+        if not prefix.exists():
+            blas_prefix(prefix, pin)
+        env.setdefault("CONDA_PREFIX", str(prefix))
+        kw["blas_probe"], kw["r_blas_probe"] = blas_stubs(prefix, pin)
+    return job_guard.check(REPO_ROOT, ARM, digest, environ=env, cpuinfo=cpuinfo, record_dir=tmp_path / "rec",
+                           label=label, blas_pinned=blas_pinned, **kw)
 
 
 def test_guard_refuses_a_digest_mismatch(tmp_path, gate_passes):
@@ -113,7 +149,8 @@ def test_guard_writes_the_record(tmp_path, gate_passes):
     assert rec["config_sha256"] == d and rec["credible_set"] == 0.95 and rec["arm"] == ARM and rec["label"] == LABEL
     assert rec["openblas_env"] == {"OPENBLAS_NUM_THREADS": "1", "OPENBLAS_VERBOSE": "2"}
     assert rec["cpu"]["family"] == 6 and rec["cpu"]["model"] == 85 and "Xeon" in rec["cpu"]["model_name"]
-    assert rec["checked"] == {"lock_gate": True, "config_digest": True, "cpu_cascadelake": True, "kernel_env": True}
+    assert rec["checked"] == {"lock_gate": True, "config_digest": True, "cpu_cascadelake": True, "kernel_env": True,
+                              "blas_pinned": True}
     assert rec["host"] and rec["slurm_job_id"] == "4242"
     assert rec["ld_flags"] == {"EUR": {"ld_authoritative": "true", "ld_allele_aware": "true"}}
     _check(tmp_path, d, label="r4_sim.gen=gen_1kg_region=SH2B3_12q24_scenario=H0")
@@ -137,7 +174,7 @@ def test_guard_runs_the_lock_gate_first(tmp_path, monkeypatch):
 
 def test_gate_command_production_is_the_guard():
     cfg = job_guard.merged_config_from_files(REPO_ROOT, ARM)
-    assert commands.gate_command("production", ARM, cfg, label=LABEL) == commands._PY + [
+    assert commands.gate_command("production", ARM, cfg, label=LABEL, blas_pinned=False) == commands._PY + [
         "ta_r4.job_guard", "check", "--stage", "production", "--arm", ARM,
         "--config-sha256", job_guard.config_digest(cfg), "--record-dir", "data/r4/logs/job_guard", "--label", LABEL]
 
