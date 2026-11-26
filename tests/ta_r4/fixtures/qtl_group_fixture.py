@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 from ta_r4 import paths
+from ta_r4.conda_job_env import job_env_dir
 from ta_r4.harmonize_qtl_r4 import QTL_SOURCES, harmonized_path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -17,10 +18,9 @@ R4_CONDA_PREFIX = Path("/rs1/researchers/c/ckclinto/conda_envs/smk_job_envs/ta_r
 
 def _job_env(yml="envs/r_coloc.yml"):
     """The Snakemake job env built from `yml` (the R the rules run: has R.utils, which fread needs for .gz)."""
-    text = (REPO_ROOT / yml).read_text()
-    hit = [y.with_suffix("") for y in R4_CONDA_PREFIX.glob("*_.yaml") if y.read_text() == text]
-    assert len(hit) == 1, f"{len(hit)} job envs match {yml}"
-    return hit[0]
+    d = job_env_dir(REPO_ROOT / yml, R4_CONDA_PREFIX)
+    assert d.is_dir(), f"job env {d} for {yml} not built"
+    return d
 
 
 RSCRIPT = str(_job_env() / "bin/Rscript")
