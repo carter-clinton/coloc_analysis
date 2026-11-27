@@ -97,7 +97,7 @@ N_new = 2.
 1. tests/ta_r4/test_cs_cross_purity_resolution.py::`test_multi_key_member_is_fatal_with_or_without_allow_absent`
 2. tests/ta_r4/test_amendment_text.py::`test_purpose_states_gated_production_vs_pilot_fitting` (the phrase, the gate
    sentence and the pilot sentence present in the extract; the old parenthetical absent)
-Expected FULL: base full_15_8d.xml (expected 2,759) + 2 = 2,761. Declared: test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catalog_order_only_when_allowed.
+Expected FULL: base full_15_8d.xml (expected 2,764) + 2 = 2,766. Declared: test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catalog_order_only_when_allowed.
 </new_tests>
 
 <tasks>
