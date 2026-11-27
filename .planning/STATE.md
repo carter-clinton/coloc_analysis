@@ -26,7 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
-## 2026-11-27 — **TRACK A ta-r4: W3f 15.8f COMPLETE at the Q-158AEIW STOP (Carter Q-158AEIM: asthma EUR's 225 flipped rows and a seeded 4,525-row unflipped control measured against pinned GRCh38 and 1000G Phase 3 GRCh37; DRAFT (c) sentence filled, NOT inserted). NEXT = Carter Q-158AEIW, then 15.8g. NOT PUSHED (773f64cb, 4fa9b6a7, 1a2cc6c6 + records).** (★ RESUME HERE — LATEST ★)
+## 2026-11-27 (morning) — **TRACK A ta-r4: W3f 15.8f done to its STOP; Carter HELD the asthma EUR sentence (Q-158AEIW); 15.8f2 (EAF complement check) EXECUTING; 15.8g HELD. NOT PUSHED (13 ahead).** (★ RESUME HERE — LATEST ★)
+
+- 15.8d (2c1ed5dc; Q-158DFX test fix), 15.8e (9ba532f8; 0/123 multi-key members; R7 Purpose sentence inserted, sha256-checked), 15.8f (02d11967; GRCh38 FASTA + 1000G VCFs pinned; orientation_eaf.py; FULL 2,768 / 0 F) complete.
+- 15.8f measurement: the lift explains the flips (196/199 low-gap flipped SNVs: GRCh38 REF ≠ GRCh37; control 0/4,525) but not the 14 high-gap indels (0 of 14; the Q-158AEI premise was wrong). 16/19 high-gap rows: asthma EAF + t2d EAF ≈ 1 (orchestrator check) → Carter: Hold — do not insert.
+- 15.8f2 (measurement only; names-only pilot reads; verdict + verdict_with_1kg; source chain from GBMI raw; exposure) plan-checked twice; executing; STOPs at Q-158EAFC. Then 15.8g re-plan.
+- Resume: HANDOFF.json `resume_on_reconnect` + `ta_r4_w3f_15_8_progress`. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF, no push.
+
+## 2026-11-27 — **TRACK A ta-r4: W3f 15.8f COMPLETE at the Q-158AEIW STOP (Carter Q-158AEIM: asthma EUR's 225 flipped rows and a seeded 4,525-row unflipped control measured against pinned GRCh38 and 1000G Phase 3 GRCh37; DRAFT (c) sentence filled, NOT inserted). NEXT = Carter Q-158AEIW, then 15.8g. NOT PUSHED (773f64cb, 4fa9b6a7, 1a2cc6c6 + records).** (SUPERSEDED by the 2026-11-27 morning block above)
 
 - Gates (10 QIDs + Q-157J, R2, OR/PAL/EL) rc 0; DEC-2026-11-26-ta-r4-asthma-eur-eaf-disclose-no-filter. AEIM reply was already committed (456ae994): gated as tracked (deviation).
 - GRCh38_mapDamage registered (data_sources grch38_fasta_mapdamage; 24/24 primary lengths); 1000G VCFs + FASTA + lifted.bed pinned (two house manifests).
@@ -2974,7 +2981,8 @@ The following narrative reflects the project state immediately before the 2026-0
 Phase: 02 (3-way-qtl-colocalization) — RECOVERY Stage 2 narrow validation COMPLETE, awaiting user LSF fire
 Plan: RECOVERY — `.planning/phases/02-3-way-qtl-colocalization/RECOVERY_PLAN.md` (4 stages; Stages 1, 1d, 3-first-pass, 2-narrow DONE)
 Status: recovery_stage_2_awaiting_fire -> Carter fires production re-fit -> Stage 4 (CP#1-final decision)
-Last activity: 2026-11-26 (latest) - 15.8a complete; 15.8a2 running; all commits pushed (Carter approved).
+Last activity: 2026-11-27 morning (latest) - 15.8f done to AEIW stop; Carter Hold; 15.8f2 executing; 15.8g held; 13 commits not pushed.
+Last activity (PRIOR): 2026-11-26 (latest) - 15.8a complete; 15.8a2 running; all commits pushed (Carter approved).
 Last activity (PRIOR): 2026-11-22 evening - SESSION CLOSE: 15.7h2 in close (FULL 2039942 running); asthma dropped from proxy; production catalog GRCh37 verified; 12 commits not pushed.
 Last activity (PRIOR): 2026-11-21 evening - SESSION CLOSE: 15.7h complete + pushed (892c4443); 15.7h2 stopped Rule-4, Carter A, plan revision in progress; d1498dff local.
 Last activity (PRIOR): 2026-11-20 night - SESSION CLOSE: 15.7a, 15.7b complete; 15.7c FULL Slurm 2010023 running; chain continues to 15.7i; session c8312220 in tmux coloc (login02); 3 commits not pushed.

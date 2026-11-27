@@ -1,7 +1,7 @@
 {
   "status_PRIOR_2026_11_26": "W3f 15.7j COMPLETE 2026-11-25 (99ab219d review + records commit); 15.8 planned (W3f157_* items); W4a depends_on left for 15.8f; decision_rules.yaml locked: false; nothing pushed (last push 892c4443).",
   "version": "1.0",
-  "timestamp": "2026-11-26T10:15:00-05:00",
+  "timestamp": "2026-11-27T10:45:00-05:00",
   "phase": "ta-r4",
   "phase_name": "ta-r4-head-to-head-reanalysis-and-submission",
   "phase_dir": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission",
@@ -555,9 +555,9 @@
   ],
   "resume_entry_point_PRIOR_2026_11_09": "Resume session b1f97279 (inside tmux on login01): `claude --resume b1f97279-8c68-4ff1-82f1-7f863029cf07`, then: you were interrupted mid-15.5 at the asthma.EUR build check; continue. Fallback (fresh session): /gsd-execute-phase ta-r4-head-to-head-reanalysis-and-submission -> 15.5, reusing the WIP in ta_r4_w3f_15_5_in_progress after verifying it.",
   "timestamp_reason_2026_11_17": "session c8312220 close: 15.5a planned/checked/committed; executor mid-Task 1",
-  "headline": "ta-r4 W3f 15.7 CLOSED (15.7j): all 12 W3f_F* production blockers RESOLVED (15.7a-15.7i); brief-blind re-review banked (14 findings, 7 DRAFT fixed); R2-R7 + Q-F3N premise decided by Carter 2026-11-24/25 -> 15.8. FULL 2,694 reconciled. Next 15.8, then W4a-T3 lock presentation. NOT PUSHED.",
+  "headline": "ta-r4 W3f 15.8: asthma EUR flipped rows — the GRCh38→GRCh37 lift explains the flips (196/199 low-gap SNVs; 0/4,525 control), NOT the 14 high-gap indels (0; 9 match GRCh37, 5 undetermined). 16/19 high-gap rows have asthma EAF + t2d EAF ≈ 1 (opposite-allele labelling suspected). 15.8f2 measures this against t2d/hypertension/BMI/stroke EUR + 1000G EUR_AF (verdict and verdict_with_1kg), source chain from GBMI raw, indel form, exposure; STOP Q-158EAFC (Hold / Disclose only / Treat as a data defect / Other).",
   "headline_PRIOR_2026_11_25": "ta-r4 W3f 15.7h2: exact credible-set purity on the scored matrix (Carter Q-PURITY A), k2d identity panels skip mapping + 56G (Q-MEMK2D), asthma DROPPED from the region-contribution proxy (Carter 2026-11-22: legacy catalog carries superseded GRCh38 asthma positions -> corrected-asthma repro fits mix builds). Production variants_r4 verified GRCh37 in 31/31 regions (Slurm 2039532, manifests/w3f_157h2_build_check.tsv). 12 asthma pilot fits (24 files) ran = pre-lock pilot fits for 15.7i. Next 15.7i -> 15.7j, chain stops before W4a-T3.",
-  "status": "W3f 15.8a COMPLETE (94ef30e6; collector audit; Carter Q-158R2 D). 15.8a2 RUNNING (executor subagent of session c8312220): planning set committed 1298b511, 8 oriented sumstats written under data/r4/sumstats/*.r4_oriented.tsv.bgz, identity jobs Slurm 2094798 (array) + 2094799 queued; then FULL (expected 2,714). Chain 15.8a2 -> a3 -> a4 -> b -> c -> c2 -> d -> e -> f, stops before W4a-T3 (Carter). Carter approved push 2026-11-26; decision_rules.yaml locked: false; n_regions_min 7.",
+  "status": "W3f 15.8a-e COMPLETE; 15.8f COMPLETE to its Q-158AEIW STOP (02d11967; FULL 2,768/0F). Carter answered AEIW 'Hold — do not insert' (2026-11-27; reply W3f-carter-15-8-Q-158AEIW-reply-2026-11-27.txt sha256 c06539ae…ae2e, written by orchestrator, committed by 15.8f2 Task 1). 15.8f2 (asthma EUR EAF complement check, measurement only, names-only pilot reads) plan-checked twice, EXECUTING as a subagent of session c8312220 (dies with the session); ends at blocking Q-158EAFC. 15.8g (insert/review/close) HELD. 13 commits ahead of origin (last push before 15.8d).",
   "status_PRIOR_2026_11_25": "W3f 15.7h2 IN CLOSE: Task 1-2 committed (688a6220 DEC 1d, 4f3d692a tests, dd5eb803 manifest + build check + proxy without asthma); FULL Slurm 2039942 (close_15_7h2) RUNNING since ~18:20, ~2 h; executor subagent of session c8312220 will reconcile per id vs full_15_7h.xml (target 2,691 = 2,638P/53S/0F) and write LOG/STATE/PLAN-INDEX/SUMMARY. 12 commits ahead of origin (last push 892c4443). Slurm survives a disconnect; the executor does NOT.",
   "ta_r4_w3f_15_5a": {
     "plan": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-catalog-dupkey-producer-and-guard-PLAN.md",
@@ -578,11 +578,10 @@
     ]
   },
   "resume_on_reconnect": [
-    "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Trust `git log --oneline -12` + this file over your context.",
-    "15.7 is closed (15.7j SUMMARY). Next is 15.8: ta-r4-W3f-15-8-review-suite-and-close-PLAN.md and its sub-plans (collector-drop-audit, e7-filtered-cs-counts, ...); 15.8a commits the 15-8 reply files and W3f-carter-15-7j-open-items-reply-2026-11-24.txt.",
-    "w4a_checkpoint.production_blockers W3f157_* are Carter-decided items carried to 15.8; W4a-T3 lock presentation only after 15.8 closes (15.8f sets W4a depends_on).",
-    "Push only when Carter asks (last push 892c4443).",
-    "LATEST 2026-11-27 (15.8f): await Carter's Q-158AEIW reply (the orchestrator writes the reply file and states its sha256), then 15.8g (ta-r4-W3f-15-8-insert-review-and-close-PLAN.md). 15.8f is COMPLETE at the Q-158AEIW STOP; NOT PUSHED. The W3f157_* keys are resolved by 15.8g."
+    "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. FIRST run ListAgents: a resumed session has twice revived STALE background agents (TaskStop them) and once loaded a stale transcript branch — trust `git log --oneline -15` + this file.",
+    "Check 15.8f2: git log for its Task 1 commit (PLAN + DEC + AEIW reply), squeue/sacct for its jobs. If its executor died, a fresh gsd-executor resumes 15.8f2 from the last committed task (plan file ta-r4-W3f-asthma-eur-eaf-complement-check-PLAN.md); never redo committed tasks.",
+    "At Q-158EAFC: verify the package against files (table sha256, counts reproduce), present to Carter with options Hold first; the ORCHESTRATOR writes his reply file and states its sha256.",
+    "Then re-plan 15.8g per his answer (new sentence → new approval → insertion, review, FULL, close). Stop before W4a-T3 lock (Carter). Push only when Carter asks."
   ],
   "resume_on_reconnect_PRIOR_2026_11_25": [
     "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Trust `git log --oneline -12` + this file over your context (a resumed session once loaded a stale transcript branch).",
@@ -736,5 +735,44 @@
     "review": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-15-7-AMENDMENT-REVIEW-as-received.md; codex out sha256 6d2060d718e0e200746d47faf8f5263c9aff28c530d0313151ff7c3ede4b1fe0 (37,290 B)",
     "full": "Slurm 2086699 2694/2641/53/0; check_15_7j.py PASS after records completion of 15.7h/15.7h2 SUMMARYs"
   },
-  "suite_baselines_ta_r4_latest_PRE_15_8f": "FULL 2694/2641/53/0 at W3f 15.7j (Slurm 2086699, cascadelake c020n02, HEAD 99ab219d, data/r4/tmp/w3f/q157/full_15_7j.xml sha256 27b0596e); reconciled per id vs full_W3f.xml (2555 + 140 - 1 rename = 2694, 0 outcome changes; check_15_7j.py PASS) and identical to full_15_7i.xml"
+  "suite_baselines_ta_r4_latest_PRE_15_8f": "FULL 2694/2641/53/0 at W3f 15.7j (Slurm 2086699, cascadelake c020n02, HEAD 99ab219d, data/r4/tmp/w3f/q157/full_15_7j.xml sha256 27b0596e); reconciled per id vs full_W3f.xml (2555 + 140 - 1 rename = 2694, 0 outcome changes; check_15_7j.py PASS) and identical to full_15_7i.xml",
+  "status_PRIOR_2026_11_27_am": "W3f 15.8a COMPLETE (94ef30e6; collector audit; Carter Q-158R2 D). 15.8a2 RUNNING (executor subagent of session c8312220): planning set committed 1298b511, 8 oriented sumstats written under data/r4/sumstats/*.r4_oriented.tsv.bgz, identity jobs Slurm 2094798 (array) + 2094799 queued; then FULL (expected 2,714). Chain 15.8a2 -> a3 -> a4 -> b -> c -> c2 -> d -> e -> f, stops before W4a-T3 (Carter). Carter approved push 2026-11-26; decision_rules.yaml locked: false; n_regions_min 7.",
+  "headline_PRIOR_2026_11_27_am": "ta-r4 W3f 15.7 CLOSED (15.7j): all 12 W3f_F* production blockers RESOLVED (15.7a-15.7i); brief-blind re-review banked (14 findings, 7 DRAFT fixed); R2-R7 + Q-F3N premise decided by Carter 2026-11-24/25 -> 15.8. FULL 2,694 reconciled. Next 15.8, then W4a-T3 lock presentation. NOT PUSHED.",
+  "resume_on_reconnect_PRIOR_2026_11_27_am": [
+    "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Trust `git log --oneline -12` + this file over your context.",
+    "15.7 is closed (15.7j SUMMARY). Next is 15.8: ta-r4-W3f-15-8-review-suite-and-close-PLAN.md and its sub-plans (collector-drop-audit, e7-filtered-cs-counts, ...); 15.8a commits the 15-8 reply files and W3f-carter-15-7j-open-items-reply-2026-11-24.txt.",
+    "w4a_checkpoint.production_blockers W3f157_* are Carter-decided items carried to 15.8; W4a-T3 lock presentation only after 15.8 closes (15.8f sets W4a depends_on).",
+    "Push only when Carter asks (last push 892c4443).",
+    "LATEST 2026-11-27 (15.8f): await Carter's Q-158AEIW reply (the orchestrator writes the reply file and states its sha256), then 15.8g (ta-r4-W3f-15-8-insert-review-and-close-PLAN.md). 15.8f is COMPLETE at the Q-158AEIW STOP; NOT PUSHED. The W3f157_* keys are resolved by 15.8g."
+  ],
+  "ta_r4_w3f_15_8_progress": {
+    "complete": {
+      "15.8a": "94ef30e6",
+      "15.8a2": "83e17b38",
+      "15.8a3": "14a9d265",
+      "15.8a4": "82339a6d",
+      "15.8b": "4d7419d1",
+      "15.8c": "af9efc73",
+      "15.8c2": "c02425dd",
+      "15.8d": "2c1ed5dc (Q-158DFX test fix b1b5aa00)",
+      "15.8e": "9ba532f8 (0/123 multi-key)",
+      "15.8f": "02d11967 (stops at AEIW)"
+    },
+    "full_chain": "15.8d 2,764 → 15.8e 2,766 → 15.8f 2,768 → 15.8f2 2,770 → 15.8g (re-plan; was 2,769)",
+    "full_memory": "FULL MaxRSS 66.9 GiB at 15.8f → request 96G cascadelake",
+    "carter_replies_2026_11_26_27": [
+      "Q-158DFX Fix the test",
+      "Q-158AEIM Measure it first",
+      "Q-158AEIW Hold — do not insert"
+    ],
+    "orchestrator_decisions": [
+      "15.8f split at AEIW into 15.8f/15.8g",
+      "pilot fits names-only in 15.8f2 (no PIP/lead reads)",
+      "FULL mem 64G→96G",
+      "k2d -t etc. are resource changes, logged not DEC"
+    ],
+    "open_handoff_items": [
+      "W3f158_asthma_eur_grch37_fasta (GRCh37 FASTA absent; 617 control / 6 flipped rows GRCh37-undetermined)"
+    ]
+  }
 }
