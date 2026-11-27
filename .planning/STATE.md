@@ -26,6 +26,15 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
+## 2026-11-27 — **TRACK A ta-r4: W3f 15.8f COMPLETE at the Q-158AEIW STOP (Carter Q-158AEIM: asthma EUR's 225 flipped rows and a seeded 4,525-row unflipped control measured against pinned GRCh38 and 1000G Phase 3 GRCh37; DRAFT (c) sentence filled, NOT inserted). NEXT = Carter Q-158AEIW, then 15.8g. NOT PUSHED (773f64cb, 4fa9b6a7, 1a2cc6c6 + records).** (★ RESUME HERE — LATEST ★)
+
+- Gates (10 QIDs + Q-157J, R2, OR/PAL/EL) rc 0; DEC-2026-11-26-ta-r4-asthma-eur-eaf-disclose-no-filter. AEIM reply was already committed (456ae994): gated as tracked (deviation).
+- GRCh38_mapDamage registered (data_sources grch38_fasta_mapdamage; 24/24 primary lengths); 1000G VCFs + FASTA + lifted.bed pinned (two house manifests).
+- orientation_eaf.py rebuilds sumstats_r4_orientation_eaf.tsv byte for byte (7ad5ce50…80c0); only src change.
+- Sentence sha256 238768d4a3b2c5157ed128d4f4041b797ee893eefe0b8253f50546b7b736e776 (data/r4/tmp/w3f/q158/aeiw_sentence_15_8f.txt); cross-tab sha256 ce4a15cf6cadf7976c47a142f0c3573cff7e7d06b8b4a51be9875f7d0bb2b844; rows sha256 b21e4235dd6695baa9f07297e3a35172b9c0f229c02440cbc6efb8dee5aacc54.
+- FULL (Slurm 2119705, c020n01, HEAD 1a2cc6c6): 2,768 = 2,715 P / 53 S / 0 F (full_15_8f.xml); check_15_8f.py PASS vs 15.7j and 15.8e.
+- NEXT = Carter Q-158AEIW (Hold — do not insert / Approve as written / Reword / Leave the reference comparison out), then 15.8g. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
 ## 2026-11-27 — **TRACK A ta-r4: W3f 15.8e COMPLETE (R5: a cross-panel purity member with several allele keys stops cs_cross_purity.R with REFUSED_MULTI_KEY; R7: DRAFT Purpose separates gated production execution from pilot fitting, Carter Q-158R7 wording byte-for-byte; DRAFT (e) E4). NEXT = 15.8f. NOT PUSHED (f4e4e567 + records).**
 
 - Gates Q-157J + Q-158R7 rc 0. Multi-key members of the 20 production-panel pilot fits: 0 of 123 (catalog bound 0/31, oriented-input bound 0/248); no Q-158R5.
@@ -60,7 +69,7 @@ progress:
 - Expected chain: 15.8c2 2,758 → 15.8d 2,764 → 15.8e 2,766 → 15.8f 2,768.
 - NEXT = 15.8c2. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
 
-## 2026-11-26 — **TRACK A ta-r4: W3f 15.8b COMPLETE (R6: libopenblas=0.3.34 pinned in envs/r_coloc.yml + exact pin file + job env lock manifest; job guard `--blas-pinned` on the 5 r_coloc rules; DRAFT (k) as Q-158KW). NEXT = 15.8c. NOT PUSHED (e47b6a83, cd96833e, b113fcba, e852040a, 99949f41, c54f6412, 3e37c63a and the records commit are local).** (★ RESUME HERE — LATEST ★)
+## 2026-11-26 — **TRACK A ta-r4: W3f 15.8b COMPLETE (R6: libopenblas=0.3.34 pinned in envs/r_coloc.yml + exact pin file + job env lock manifest; job guard `--blas-pinned` on the 5 r_coloc rules; DRAFT (k) as Q-158KW). NEXT = 15.8c. NOT PUSHED (e47b6a83, cd96833e, b113fcba, e852040a, 99949f41, c54f6412, 3e37c63a and the records commit are local).** (★ SUPERSEDED 2026-11-27 by the 15.8f block ★)
 
 - Env D 516ec209…_ built from the pin file and IDENTITY_OK before any guard code; shared conda_pkgs unchanged; no fit.
 - `--blas-pinned` derived from each rule's conda directive (finemap, coloc_pair, coloc_A1, sim, qtl_group);

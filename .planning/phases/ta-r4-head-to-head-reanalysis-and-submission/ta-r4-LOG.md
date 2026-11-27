@@ -1986,3 +1986,82 @@ index c517ffb7..a0ffd52e 100644
   passed, 0 outcome changes, 1 declared passed -> passed, CHECK PASS (check_15_8e.txt). Checker NC (Slurm 2118515,
   check_nc_15_8e.txt): base as NEW -> CHECK FAIL rc 1. sparse_parent_benchmark.tsv restored.
 - No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8f.
+
+## 2026-11-27 — W3f 15.8f (Carter Q-158AEIM "Measure it first": asthma EUR flipped rows measured against pinned GRCh38 and 1000G Phase 3 GRCh37 with an unflipped control; DRAFT (c) sentence filled, NOT inserted; stops at Q-158AEIW; no fit; no push)
+
+- Start 456ae994 (data/r4/tmp/w3f/q158/start_15_8f.txt). Gates (gate_15_8f.txt): gate_157j.sh rc 0; gate_158.sh
+  Q-158DIG Q-158R6S Q-158E7R Q-F3NL Q-158R7 Q-158R6G Q-158KW Q-158DFX Q-158AEI Q-158AEIM rc 0 (DFX, AEI, AEIM added to
+  gate_158.sh as the KW block, `F[]` full file names, question `sed`-copied); AEIM `tail -n 1` = `Carter reply
+  (verbatim, selected option): Measure it first`; tracked-file checks (ls-files, diff vs HEAD, added-in commit, sha256)
+  OK on R6G ×2 (4e47c20d), KW (cd96833e), DFX (b1b5aa00), AEI (4e47c20d), AEIM (456ae994); gate_158r2.sh rc 0;
+  gate_158a2.sh Q-158OR Q-158PAL Q-158EL rc 0; no other STOP reply was asked (Q-158FP/EL2/R3/R5: none). Gate NCs
+  (gate_nc_15_8f.txt): mutate / label / sha256 character → rc 2 for each of DFX, AEI, AEIM (9/9); tracked-check NC
+  (wrong pin commit + sha) and tail NC fail; real gates rc 0 after.
+- **Deviation (orchestrator-directed):** the Q-158AEIM reply file was already committed in 456ae994 with the 15.8f/15.8g
+  plans, so it is gated as tracked and unchanged vs HEAD (added-in 456ae994, sha256 b2a13e9c…90e8, last line asserted),
+  and commit 0b holds DECISIONS.md only.
+- 773f64cb: DEC-2026-11-26-ta-r4-asthma-eur-eaf-disclose-no-filter (dec_15_8f.py; AEI then AEIM quoted with `cat`,
+  each `cmp`-equal to its reply file; the rest of DECISIONS.md byte-equal to DECISIONS.pre_15_8f.md).
+- GRCh38 reference (Slurm 2119477): GRCh38_mapDamage.fa.fai 455 contigs, the 24 primary lengths equal the published
+  GRCh38 values (24/24; NC chr1 +1 → mismatch); no `.dict` beside the FASTA; GRCh37 FASTA re-search of
+  /rs1/researchers/c/ckclinto, /share/clintonlab/ckclinto and data/ (depth 6) found none (positive control: the same
+  find with the GRCh38 name prints the FASTA, Slurm 2119488). Symlink data/r4/inputs/grch38_fasta →
+  /rs1/researchers/c/ckclinto/GRCh38_genome/GRCh38_mapDamage (data/r4 is gitignored; recorded here and in the
+  data_sources entry).
+- 4fa9b6a7: config/ta_r4/data_sources.yaml gains `grch38_fasta_mapdamage` (url data/r4/inputs/grch38_fasta, build
+  GRCh38, public: true, checksum null); the prior 14 entries equal by yaml load (ds_append_15_8f.py). This is a
+  config/ta_r4 change that the W4a-T3 lock will hash (LOCKED_PATHS directory; the lock has not happened).
+  manifests/grch37_reference_sha256.tsv (48 files: chrN.vcf.gz + .tbi, N = 1-22, X, Y) and
+  manifests/grch38_reference_sha256.tsv (FASTA, .fai, work_EUR/lifted.bed), house format, Slurm 2119488 (c020n02);
+  test_storage_on_rs1 / test_data_sources_labels / test_sumstats_orient_consumers / test_sumstats_build 32 P / 1 S
+  (pre-existing asthma.AFR grch38_backup has no tabix index). NCs (t1_nc_15_8f.txt): non-hex sha / duplicate row →
+  manifest_violations 1 each; public: false → data_source_violations 1.
+- Why both `checksum:` stay null: each entry is a directory of files and the yaml checksum field holds one file's
+  md5/size; the per-file sha256 pins live in the two manifests. The GRCh37 pin also covers the VCFs that
+  src/snakemake/rules/ta_r4_panels_afr_ukb.smk reads as ONEKG_VCF_R4.
+- Task 2. RED (Slurm 2119534, red_15_8f.txt): A and B ImportError (module absent). Identity first (Slurm 2119559,
+  eaf_rebuild_15_8f.py): render_eaf_manifest(eaf_diffs(".", TABIX)) `cmp`-equal to manifests/sumstats_r4_orientation_eaf.tsv,
+  sha256 7ad5ce50abfb6255da90c7eec98d760308a96c2d1eac348d4b8194e6239080c0. Carve-out: `git grep -l orientation_eaf --
+  src workflow 'Snakefile*' config | grep -vx src/python/ta_r4/orientation_eaf.py` empty; no `tests` import (ast); no
+  /rs1, /share, /gpfs_common literal; test_storage_on_rs1 green and its literal scan covers the module (NC: a banned
+  literal appended to a copy → 1 violation, literal_nc_15_8f.txt).
+- Join and column rules. Rows = the 15.8a2 EAF join (oriented asthma EUR vs t2d EUR oriented file, 31 r4 windows,
+  non-palindromic, numeric EAF both sides; flipped iff swapped_only). GRCh38 position through
+  data/r4/sumstats/liftover_strand/work_EUR/lifted.bed by input line (candidates: chrom chr<CHR> (23 → X) and end ==
+  lifted POS; input lines read from data/processed/sumstats_harmonized/asthma.EUR.tsv.bgz, sha256 = its
+  sumstats_r4_sha256.tsv pin; kept if SNP_ID equal and REF/ALT equal (strand +) or complemented (strand −); exactly
+  one must remain, else raise; one lifted.bed pass for both groups). Why: it identifies the source row without
+  depending on SNP_ID being present or unique (SNP_ID is empty on many of these rows) and gives the strand.
+  grch38_ref_match = samtools faidx of REF_GRCh38's span (undetermined: contig absent, span past the end, an N);
+  grch37_ref_match = lifted REF vs the in-span REF bases of the 1000G records tabix returns for [POS, POS+len−1]
+  (END/SVLEN/symbolic ALT never used; records must agree; '.' uncovered; true all covered and equal, false any
+  covered differs, else undetermined); lift_changed_ref = grch38 ∧ ¬grch37, source_ref_not_grch38 = ¬grch38 (Kleene);
+  catalog_ref_grch37_match = REF_oriented vs GRCh37 at its own length.
+- Control sampling rule: asthma EUR unflipped rows of the same join; seed 20261127; strata class (SNV iff
+  len(REF) == len(ALT) == 1) × (abs_delta_eaf > 0.2); every row of a > 0.2 stratum; from each <= 0.2 stratum
+  random.Random(seed).sample of the rows sorted by (CHR, POS, REF, ALT, SNP_ID), min(2000, N); output in join order.
+  Populations SNV>0.2 474, SNV<=0.2 198,095, indel>0.2 51, indel<=0.2 17,485 (sum 216,105; > 0.2 sum 525 = the
+  aggregate). Sample 4,525.
+- Per-row manifest (Slurm 2119572, eaf_rows_15_8f.py): 225 rows, median 0.0270, 19 above 0.2, SNV/indel 204/21, 14
+  indels above 0.2 (all = the aggregate). Cross-tab data/r4/tmp/w3f/q158/aeiw_crosstab_15_8f.tsv (sha256 ce4a15cf6cadf7976c47a142f0c3573cff7e7d06b8b4a51be9875f7d0bb2b844); 19-row table
+  data/r4/tmp/w3f/q158/aeiw_rows_15_8f.tsv (sha256 b21e4235dd6695baa9f07297e3a35172b9c0f229c02440cbc6efb8dee5aacc54); every group's column counts sum to its row count (asserted).
+- Base-level GRCh38 check of the FASTA (no `.dict` with M5, so no per-contig md5): control grch38_ref_match 4,525 true /
+  0 false / 0 undetermined (100%); not a STOP.
+- Tests A and B green (Slurm 2119604, c020n01, green_ab_15_8f_2119604.xml): A 311 s, B 0.8 s. NCs (Slurm 2119624,
+  -t 4h, 64G, PYTHONDONTWRITEBYTECODE=1, nc_15_8f.txt; each in-place, restored by copy from nc_bak/, sha256 equal
+  after): (vi) one sha256 character in grch37 / grch38 reference manifests → A fails at the pin (4 s / 48 s); (i)
+  abs_delta_eaf → A fails; (ii) the asthma EUR flipped median → A fails at the byte rebuild; (iii) one value of each
+  of the five tri-state columns → A fails (5/5); (viii) one control grch37_ref_match flipped → A fails; control line-1
+  seed changed → A fails; (vii) side effect appended to the module → B fails (tmp cwd not empty), nc_side_effect
+  removed. 12/12 fail; all files at the pre-NC sha256 after.
+- Sentence (data/r4/tmp/w3f/q158/aeiw_sentence_15_8f.txt, sha256 238768d4a3b2c5157ed128d4f4041b797ee893eefe0b8253f50546b7b736e776) filled by aeiw_15_8f.py from the manifests (a ≥ 1 form);
+  NOT inserted. 1a2cc6c6: module, test file, both per-row manifests; `git diff --name-status 456ae994 HEAD -- src` ==
+  `A src/python/ta_r4/orientation_eaf.py`.
+- FULL (Slurm 2119705, c020n01 Cascade Lake, HEAD 1a2cc6c6, 2h26m11s, --mem=96G; MaxRSS 70,193,116 KiB (66.9 GiB) of 96G): QUICK 911 P / 2 S, HEAVY 356 P / 5 S,
+  PINS 39 P; FULL 2,768 = 2,715 P / 53 S / 0 F (full_15_8f.xml, sha256 48315f252c4b98c1e87a3cf621a81c08ddedd25865022a7b0541c149f82cf16b); check_15_8f.py PASS
+  (reconcile_15_8f.txt): (a) vs full_15_7j.xml, 2,694 + 72 (parsed from the nine 15.8a–e SUMMARYs: 6 + 14 + 8 + 6 +
+  16 + 8 + 6 + 6 + 2) + 2 = 2,768, 0 removed, 0 outcome changes, 22 declared passed -> passed (1 declared id new within
+  15.8, checked as added); (b) vs full_15_8e.xml: 0 removed, +2 (this plan's ids, passed), every other id identical.
+  Checker NC (Slurm 2119706): full_15_8e.xml as NEW → CHECK FAIL rc 1. sparse_parent_benchmark.tsv restored.
+- No production fit, no OSF, no lock, no DRAFT edit; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED.
+  NEXT = Carter Q-158AEIW (the orchestrator writes the reply and its sha256), then 15.8g.

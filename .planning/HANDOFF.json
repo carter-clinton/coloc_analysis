@@ -479,7 +479,9 @@
       "W3f157_R5": "decided by Carter 2026-11-24/25 -> 15.8 (W3f 15.7j brief-blind re-review, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-15-7-AMENDMENT-REVIEW-as-received.md; .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7j-open-items-reply-2026-11-24.txt: 'R5 and R7: go with recommendation'): cross-panel purity leaves out refused_multi_key members (counted, noted); disclosed in DRAFT E4 (15.7j) -> 15.8",
       "W3f157_R6": "decided by Carter 2026-11-24/25 -> 15.8 (W3f 15.7j brief-blind re-review, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-15-7-AMENDMENT-REVIEW-as-received.md; .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7j-open-items-reply-2026-11-24.txt: 'R6: pin libopenblas'; W3f-carter-15-8-Q-158R6S-reply-2026-11-25.txt 'Proceed, pin r_coloc only (Recommended)'): job envs load libopenblas 0.3.34, envs/r_coloc.yml does not pin it, the committed env lock is the named r_coloc env (0.3.32); the job guard checks CPU and OPENBLAS_* env only -> 15.8",
       "W3f157_R7": "decided by Carter 2026-11-24/25 -> 15.8 (W3f 15.7j brief-blind re-review, .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-15-7-AMENDMENT-REVIEW-as-received.md; .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-7j-open-items-reply-2026-11-24.txt: 'R5 and R7: go with recommendation'; W3f-carter-15-8-Q-158R7-reply-2026-11-25.txt 'Approve as written (Recommended)'): Purpose chronology wording; 15.7j added '(the pre-lock pilot fits are listed in (h))'; approved replacement in 15.8 (15.8e)",
-      "W3f157_QF3N_premise": "decided by Carter 2026-11-25 -> 15.8 (W3f-carter-15-8-Q-F3NL-reply-2026-11-25.txt 'Keep legacy rule for QTL_legacy (Recommended)'): the Q-F3N question said QTL_legacy does not get --nan-gwas-below-threshold; the code gives it the flag (run_qtl_group_r4.py:33, :277-280; ta_r4_qtl.smk:152-174); found by the 15.7j text-vs-code check; DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4 addendum 2026-11-25"
+      "W3f157_QF3N_premise": "decided by Carter 2026-11-25 -> 15.8 (W3f-carter-15-8-Q-F3NL-reply-2026-11-25.txt 'Keep legacy rule for QTL_legacy (Recommended)'): the Q-F3N question said QTL_legacy does not get --nan-gwas-below-threshold; the code gives it the flag (run_qtl_group_r4.py:33, :277-280; ta_r4_qtl.smk:152-174); found by the 15.7j text-vs-code check; DEC-2026-11-20-ta-r4-qtl-sweep-gwas-pph4 addendum 2026-11-25",
+      "W3f158f_Q158AEIW_pending": "15.8f stopped at Q-158AEIW (2026-11-27; executor wrote no reply): DRAFT (c) asthma EUR EAF sentence filled from the measurement (sha256 238768d4a3b2c5157ed128d4f4041b797ee893eefe0b8253f50546b7b736e776 at data/r4/tmp/w3f/q158/aeiw_sentence_15_8f.txt); cross-tab data/r4/tmp/w3f/q158/aeiw_crosstab_15_8f.tsv (sha256 ce4a15cf6cadf7976c47a142f0c3573cff7e7d06b8b4a51be9875f7d0bb2b844); rows data/r4/tmp/w3f/q158/aeiw_rows_15_8f.tsv (sha256 b21e4235dd6695baa9f07297e3a35172b9c0f229c02440cbc6efb8dee5aacc54). 15.8g inserts only after approval; the orchestrator writes Carter's reply file W3f-carter-15-8-Q-158AEIW-reply-<date>.txt and states its sha256. `Hold — do not insert` = nothing inserted.",
+      "W3f158_asthma_eur_grch37_fasta": "OPEN (15.8f): 6 of the 225 asthma EUR flipped rows and 617 of the 4,525 unflipped control rows are grch37_ref_match undetermined against the 1000 Genomes Phase 3 records (no record covers every base of the span); deciding them needs a GRCh37 FASTA download (hs37d5.fa.gz, the VCF header URL) — Carter's call."
     },
     "other_code_items": {
       "N3": "RESOLVED 2026-11-09 W3f 15.2 82490835: LOCKED_PATHS 18 -> 29 (the 6 named + 5 measured manifests); enforcer test_lock_gate.py::test_every_measured_dependency_is_covered_by_locked_paths",
@@ -513,7 +515,7 @@
     ],
     "signoff_written": false
   },
-  "suite_baselines_ta_r4_latest": "FULL 2694/2641/53/0 at W3f 15.7j (Slurm 2086699, cascadelake c020n02, HEAD 99ab219d, data/r4/tmp/w3f/q157/full_15_7j.xml sha256 27b0596e); reconciled per id vs full_W3f.xml (2555 + 140 - 1 rename = 2694, 0 outcome changes; check_15_7j.py PASS) and identical to full_15_7i.xml",
+  "suite_baselines_ta_r4_latest": "FULL 2768/2715/53/0 at W3f 15.8f (Slurm 2119705, cascadelake c020n01, HEAD 1a2cc6c6, data/r4/tmp/w3f/q158/full_15_8f.xml); reconciled per id vs full_15_7j.xml (2,694 + 72 + 2) and vs full_15_8e.xml (+2 ids, all else identical); check_15_8f.py PASS",
   "suite_baselines_ta_r4_latest_PRIOR_2026_11_25": "FULL 2555/2502/53/0 at W3f 15.6 (Slurm 1992683, data/r4/tmp/w3f/full_W3f.xml); reconciled by id vs full_W4a.xml (data/r4/tmp/w3f/reconcile_W3f.txt): removed = the 6 deliberate renames, tests/m3 +20 15.5c ids only",
   "scheduler": "Slurm only since 2026-11-03 (sbatch -p compute -A clintonlab_cpu -q normal, always -t). Rscript not on PATH in jobs.",
   "headline_PRIOR_2026_11_04": "ta-r4 W4a Tasks 1-2 COMPLETE + pushed (a4090fa6, 37265d09; origin == local). STOPPED at W4a-T3 (checkpoint:human-action, blocking) waiting on Carter. NOTHING RUNNING. Recommendation given to Carter: do NOT lock yet — fix production blockers N1/N2 (+N3-N6, N12, N14, T1) in a W3f fix-up wave first, then re-present the DRAFT with a new confirmatory_sha256.",
@@ -579,7 +581,8 @@
     "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Trust `git log --oneline -12` + this file over your context.",
     "15.7 is closed (15.7j SUMMARY). Next is 15.8: ta-r4-W3f-15-8-review-suite-and-close-PLAN.md and its sub-plans (collector-drop-audit, e7-filtered-cs-counts, ...); 15.8a commits the 15-8 reply files and W3f-carter-15-7j-open-items-reply-2026-11-24.txt.",
     "w4a_checkpoint.production_blockers W3f157_* are Carter-decided items carried to 15.8; W4a-T3 lock presentation only after 15.8 closes (15.8f sets W4a depends_on).",
-    "Push only when Carter asks (last push 892c4443)."
+    "Push only when Carter asks (last push 892c4443).",
+    "LATEST 2026-11-27 (15.8f): await Carter's Q-158AEIW reply (the orchestrator writes the reply file and states its sha256), then 15.8g (ta-r4-W3f-15-8-insert-review-and-close-PLAN.md). 15.8f is COMPLETE at the Q-158AEIW STOP; NOT PUSHED. The W3f157_* keys are resolved by 15.8g."
   ],
   "resume_on_reconnect_PRIOR_2026_11_25": [
     "Reattach: login02 `tmux attach -t coloc`; if dead `claude --resume c8312220-f76b-46f3-96cc-4d31344a5b63`. Trust `git log --oneline -12` + this file over your context (a resumed session once loaded a stale transcript branch).",
@@ -732,5 +735,6 @@
     ],
     "review": ".planning/phases/ta-r4-head-to-head-reanalysis-and-submission/ta-r4-W3f-15-7-AMENDMENT-REVIEW-as-received.md; codex out sha256 6d2060d718e0e200746d47faf8f5263c9aff28c530d0313151ff7c3ede4b1fe0 (37,290 B)",
     "full": "Slurm 2086699 2694/2641/53/0; check_15_7j.py PASS after records completion of 15.7h/15.7h2 SUMMARYs"
-  }
+  },
+  "suite_baselines_ta_r4_latest_PRE_15_8f": "FULL 2694/2641/53/0 at W3f 15.7j (Slurm 2086699, cascadelake c020n02, HEAD 99ab219d, data/r4/tmp/w3f/q157/full_15_7j.xml sha256 27b0596e); reconciled per id vs full_W3f.xml (2555 + 140 - 1 rename = 2694, 0 outcome changes; check_15_7j.py PASS) and identical to full_15_7i.xml"
 }
