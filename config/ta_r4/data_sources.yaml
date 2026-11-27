@@ -123,3 +123,11 @@ sources:
     build: GRCh37
     checksum: {sha256: 23347618a0cb31bd995aa49155ec933b276544e12f71e76279a66493eeb0470c, manifest: .planning/amendments/sha256_manifest_harmonized_m1.tsv}
     r4_oriented: {path: data/r4/sumstats/t2d.AFR.r4_oriented.tsv.bgz, sha256: 33568f858525e3d8373079928d80474b71302de3c59f0f4ac1b38a58f37e697d, from: data/processed/sumstats_harmonized/t2d.AFR.tsv.bgz}
+
+  grch38_fasta_mapdamage:
+    name: GRCh38 FASTA + .fai (GRCh38_mapDamage local build; 455 contigs, bare names)
+    url: data/r4/inputs/grch38_fasta
+    license: 'GRCh38 (Genome Reference Consortium, public); provenance: local build GRCh38_mapDamage, primary contig lengths verified'
+    public: true
+    build: GRCh38
+    checksum: null

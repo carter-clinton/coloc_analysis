@@ -1,0 +1,4 @@
+rel_path	size_bytes	sha256	source
+data/r4/inputs/grch38_fasta/GRCh38_mapDamage.fa	3249410678	344399202c8609ced43fca2ba6fd171a83a6f2558d2cc7ced065de0bcfc34f98	GRCh38 by 24/24 primary contig lengths; GRCh38_mapDamage build
+data/r4/inputs/grch38_fasta/GRCh38_mapDamage.fa.fai	18547	14774090c21e8dadebf4267e320289a8f2fb7f98435af8f5caf1b4891b52b8c3	GRCh38 by 24/24 primary contig lengths; GRCh38_mapDamage build
+data/r4/sumstats/liftover_strand/work_EUR/lifted.bed	1015902591	b46c21fbc8b93c143a950161e2404d103abc55a6f06d683a08b013c800e80f9b	script_used.sh liftOver output; name = input line
