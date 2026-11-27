@@ -26,6 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
+## 2026-11-27 — **TRACK A ta-r4: W3f 15.8e COMPLETE (R5: a cross-panel purity member with several allele keys stops cs_cross_purity.R with REFUSED_MULTI_KEY; R7: DRAFT Purpose separates gated production execution from pilot fitting, Carter Q-158R7 wording byte-for-byte; DRAFT (e) E4). NEXT = 15.8f. NOT PUSHED (f4e4e567 + records).**
+
+- Gates Q-157J + Q-158R7 rc 0. Multi-key members of the 20 production-panel pilot fits: 0 of 123 (catalog bound 0/31, oriented-input bound 0/248); no Q-158R5.
+- Declared spec update: test_cs_cross_purity_resolution::test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catalog_order_only_when_allowed.
+- FULL (Slurm 2118513, c020n03, HEAD f4e4e567, 64G; MaxRSS 64/64 GB, exit 0): 2,766 = 2,713 P / 53 S / 0 F (full_15_8e.xml, sha256 982d7ed8…4c89d89); check_15_8e.py vs full_15_8d.xml CHECK PASS; base for 15.8f = data/r4/tmp/w3f/q158/full_15_8e.xml.
+- Expected chain: 15.8f 2,768.
+- NEXT = 15.8f. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
 ## 2026-11-26 — **TRACK A ta-r4: W3f 15.8d COMPLETE (R3: E7 fit_yield frozen side = the earlier fits' purity-filtered set count, JSON count kept as frozen_value_json_unfiltered; fit_cs_json_vs_rds.tsv in LOCKED_PATHS (30); DRAFT (e)/(m)/Pre-Paste). NEXT = 15.8e. NOT PUSHED (ca776492, f9afd684, cf02643d, b1b5aa00 + records).**
 
 - Gate Q-157J rc 0. 96-fit stored vs exact-purity identity: 66 eq true, 30 early exits NA; no Q-158R3.

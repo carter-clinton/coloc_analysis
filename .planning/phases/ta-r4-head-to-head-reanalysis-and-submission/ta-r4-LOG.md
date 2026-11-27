@@ -1959,3 +1959,30 @@ index c517ffb7..a0ffd52e 100644
   the file): 0 removed, +6 all passed, 0 outcome changes, 3 declared passed -> passed, CHECK PASS (check_15_8d.txt).
   Run 1's CHECK FAIL is the check's negative control. sparse_parent_benchmark.tsv restored.
 - No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8e.
+
+## 2026-11-26 — W3f 15.8e (R5: a cross-panel purity member with several allele keys is an error, REFUSED_MULTI_KEY; R7: Purpose as gated production vs pilot fitting, Carter Q-158R7 wording sha256-pinned; Carter Q-157J R5/R7; no fit; no push)
+
+- Start 95af37b7 (data/r4/tmp/w3f/q158/start_15_8e.txt). Gates: gate_157j.sh rc 0 (805afcd8…0503e); gate_158.sh
+  Q-158R7 rc 0 (a9a6866e…61b8, `Approve as written (Recommended)`). Gate NCs (gate_nc_15_8e.txt): mutated staging copy
+  rc 2 on both; changed free text rc 2; both rc 0 again.
+- Task 1 (Slurm 2118320, c205n10, 4m38s, 16G; scratch only): multikey_15_8e.R, resolve_fit_names only, no
+  --allow-duplicate-rows; recorded sumstats (5 files, sha256 = sumstats_r4_sha256.tsv), r4 catalog (sha256 =
+  catalogs_r4_fixed_point final), EUR_1kg_r4 fit panel variants; no LD, no purity, cs_cross_purity.R not run on any
+  pilot fit. 20 fits, 7 with sets, 123 members (74 ok, 49 duplicate_row), **0 refused_multi_key** (also 0 with the
+  pre-dedup catalog the fit JSONs record). Catalog bound 0 over 31 catalogs; oriented-input bound 0 in 248 rows
+  (8/8 oriented sha256 match). NCs (MK_NC=1): 4 members / 30 catalogs / 241 rows flagged. No Q-158R5.
+- Task 2 (f4e4e567): cs_cross_purity.R fatal vector += "refused_multi_key"; header :7-9 says "an error
+  (REFUSED_MULTI_KEY) unless --allow-duplicate-rows". DRAFT (draft_15_8e.py, old strings unique): (e) E4 "… is an
+  error."; Purpose drops " (the pre-lock pilot fits are listed in (h))" and gains the R7 sentence (416 chars, sha256
+  59c2631a…72be asserted before and in place, present once); DRAFT 26cb7d33…2e0d → e172a8ab…4f2f. 2 new tests
+  (test_multi_key_member_is_fatal_with_or_without_allow_absent, one id looping both flag sets;
+  test_purpose_states_gated_production_vs_pilot_fitting); declared spec update of
+  test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catalog_order_only_when_allowed (production
+  block asserts REFUSED_MULTI_KEY). RED Slurm 2118377 3 F. Green Slurm 2118424 71 P / 2 S. NCs Slurm 2118480
+  (nc_15_8e.txt): vector entry removed → test 1 F; old parenthetical restored → test 2 F; md5/sha256 restored.
+- FULL (Slurm 2118513, c020n03 Cascade Lake, HEAD f4e4e567, 2h13m49s, --mem=64G; sacct MaxRSS 64.0 GiB of 64G, exit 0):
+  QUICK 910 P / 2 S, HEAVY 355 P / 5 S, PINS 39 P; FULL 2,766 = 2,713 P / 53 S / 0 F (full_15_8e.xml, sha256
+  982d7ed8…4c89d89); check_15_8e.py (Slurm 2119223) vs full_15_8d.xml (2,764 read from the file): 0 removed, +2 all
+  passed, 0 outcome changes, 1 declared passed -> passed, CHECK PASS (check_15_8e.txt). Checker NC (Slurm 2118515,
+  check_nc_15_8e.txt): base as NEW -> CHECK FAIL rc 1. sparse_parent_benchmark.tsv restored.
+- No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8f.
