@@ -3985,3 +3985,28 @@ Carter reply (verbatim, selected option): Disclose, no filter (Recommended)
 Question Q-158AEIM (2026-11-26): Correction to your Q-158AEI question (Nov 26). It said 14 of the 19 asthma EUR flipped rows above 0.2 are indels "at places where the GRCh38→GRCh37 lift changed the reference allele". The 14 indels were measured, but the lift explanation never was: it was a planner's guess, and the lift script only changes positions (it keeps the GRCh38 REF/ALT). Your choice to disclose with no filter still stands. How should the DRAFT (c) sentence handle the explanation?
 Carter reply (verbatim, selected option): Measure it first
 ```
+
+## 2026-11-27 — DEC-2026-11-27-ta-r4-asthma-eur-eaf-sentence-held: the filled DRAFT (c) asthma EUR EAF sentence is not inserted; 15.8g waits on the complement check 15.8f2 and a newly approved sentence (Carter, Q-158AEIW)
+
+- **Decider:** Carter, 2026-11-27. Q-158AEIW, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158AEIW-reply-2026-11-27.txt`
+  (sha256 `c06539ae941b756927a4567d7a522c67d73527796c7bf7af2fb454910e63ae2e`), label `Hold — do not insert` (last line asserted with `tail -n 1`). Gated in 15.8f2 Task 1
+  step 1 by full file name (data/r4/tmp/w3f/q158/gate_158.sh Q-158AEIW, `F[]`; record gate_15_8f2.txt); negative
+  controls gate_nc_15_8f2.txt (one byte changed in the copy, label `Approve as written`, one sha256 character changed,
+  each exit 2; the real gate rc 0 after; a wrong expected tail line and a wrong table sha256 each fail). The two table
+  sha256 values in its line 1 equal `sha256sum` of aeiw_crosstab_15_8f.tsv and aeiw_rows_15_8f.tsv and
+  aeiw_tables_15_8f.sha256. Quoted below from the file by data/r4/tmp/w3f/q158/dec_15_8f2.py and `cmp`ed against it.
+- **Measured (15.8f; lift_changed_ref true, read by dec_15_8f2.py from data/r4/tmp/w3f/q158/aeiw_crosstab_15_8f.tsv,
+  sha256 `ce4a15cf6cadf7976c47a142f0c3573cff7e7d06b8b4a51be9875f7d0bb2b844`, re-checked):** flipped indels above 0.2: 0 of 14 (9 false, 5 undetermined); flipped indels at or below 0.2: 0 of 7; flipped SNVs above 0.2: 1 of 5; flipped SNVs at or below 0.2: 196 of 199; unflipped control: 0 of 4,525.
+- **Relayed context (not in the reply file; not a measurement):** the orchestrator's hand check that 16 of the 19
+  flipped rows above 0.2 (12 of the 14 indels) have |EAF + EAF_t2d − 1| < 0.1, and the 5:73331273 example (oriented
+  asthma GA/G EAF 0.993201; t2d.EUR GA/G EAF 0.0151), are context for plan 15.8f2, which measures them key by key.
+- **Consequence:** the 15.8f sentence (data/r4/tmp/w3f/q158/aeiw_sentence_15_8f.txt, sha256 `238768d4a3b2c5157ed128d4f4041b797ee893eefe0b8253f50546b7b736e776`) is
+  withdrawn. Any later DRAFT (c) sentence is filled from 15.8f2's manifests (and any correction Carter orders at
+  Q-158EAFC) and approved in its own question; 15.8g is held behind 15.8f2 and re-planned after that approval.
+- **Not authorized:** no production fit, no OSF posting, no push, no W4a-T3 lock; decision_rules.yaml stays
+  locked: false; n_regions_min stays 7; no re-pin to make a check pass; no DRAFT edit. Lifts nothing under D-28.
+
+```text
+Question Q-158AEIW (2026-11-27): DRAFT (c) asthma EUR EAF sentence, filled from the measurement you asked for in Q-158AEIM. Sentence: «As a diagnostic, not a filter: in asthma EUR the 225 rows flipped to the catalog's orientation agree less well in effect-allele frequency with the EUR type 2 diabetes file than its other rows (median |ΔEAF| 0.027 vs 0.005; 19 of 225 above 0.2, 14 of them indels). The file's REF allele matches the GRCh38 reference at 219 of the 225 (6 do not; 0 could not be checked against GRCh38); of the 15 matching rows above 0.2 the GRCh37 reference at the lifted position differs from that REF at 1, and of the 204 at or below 0.2 at 196 (5 matching rows could not be checked against the 1000 Genomes Phase 3 GRCh37 records). In a seeded sample of 4,525 of the file's unflipped rows (all 525 above 0.2 and up to 2,000 per allele class at or below it), the REF matches GRCh38 at 4,525 (0 do not; 0 could not be checked against GRCh38); of the 525 matching rows above 0.2 the GRCh37 reference differs at 0, and of the 4,000 at or below 0.2 at 0 (617 could not be checked against the GRCh37 records). Rows are flipped by allele key and no frequency filter is applied.». Insert this sentence? Tables: data/r4/tmp/w3f/q158/aeiw_crosstab_15_8f.tsv sha256 ce4a15cf6cadf7976c47a142f0c3573cff7e7d06b8b4a51be9875f7d0bb2b844; data/r4/tmp/w3f/q158/aeiw_rows_15_8f.tsv sha256 b21e4235dd6695baa9f07297e3a35172b9c0f229c02440cbc6efb8dee5aacc54
+Carter reply (verbatim, selected option): Hold — do not insert
+```

@@ -4,7 +4,7 @@ plan: 15.8g
 slug: W3f-15-8-insert-review-and-close
 type: execute
 wave: 15.8g
-depends_on: ["ta-r4-W3f-15-8-review-suite-and-close"]
+depends_on: ["ta-r4-W3f-15-8-review-suite-and-close", "ta-r4-W3f-asthma-eur-eaf-complement-check"]
 gap_closure: true
 files_modified:
   - .planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158AEIW-reply-<date>.txt   # written by the orchestrator; committed as received
@@ -49,6 +49,14 @@ must_haves:
       via: "RESOLVED / OPEN entries"
       pattern: "W3f158_|RESOLVED 2026-11"
 ---
+<hold_note>
+2026-11-27: Carter answered Q-158AEIW "Hold — do not insert"
+(DEC-2026-11-27-ta-r4-asthma-eur-eaf-sentence-held). This plan does not run as written. The 15.8f sentence
+($Q8/aeiw_sentence_15_8f.txt) is withdrawn; a new (c) sentence must be filled from 15.8f2's manifests (and any
+correction Carter orders at Q-158EAFC) and re-approved by Carter in its own question, after which this plan is
+re-planned: its gate list adds Q-158AEIW and Q-158EAFC, its FULL base becomes full_15_8f2.xml and its SUMMARY
+set adds 15.8f2.
+</hold_note>
 
 <objective>
 Close 15.8 after Carter's Q-158AEIW approval: insert the approved DRAFT (c) sentence, bring DRAFT (m) and the
