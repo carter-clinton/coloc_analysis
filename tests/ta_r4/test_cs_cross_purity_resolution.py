@@ -398,19 +398,18 @@ def test_duplicate_row_suffix_is_refused_unless_allowed(tmp_path):
     assert t["L1"]["n_present"] == "3" and float(t["L1"]["min_abs_corr"]) == pytest.approx(0.5)
 
 
+MULTI_KEY = ([("rsM", 100, "A", "G"), ("rsM", 100, "A", "C"), ("rs2", 200, "C", "T")],   # ss
+             [("rsM", 100, "A", "C"), ("rsM", 100, "A", "G"), ("rs2", 200, "C", "T")],   # catalog
+             [("rsM", 100, "A", "C"), ("rsMb", 100, "A", "G"), ("rs2", 200, "C", "T")],  # other panel
+             [(1, 3, 0.7), (2, 3, 0.2), (1, 2, 0.9)], {"L1": [1, 3], "L2": [2, 3]})
+
+
 def test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catalog_order_only_when_allowed(tmp_path):
-    """rsM names two keys (1:100 A/C, then A/G in catalog order) plus rs2: production refuses both rsM members
-    (not matched, counted, noted); --allow-duplicate-rows maps rsM -> A/C and rsM.1 -> A/G; rsM.2 is an error."""
-    ss = [("rsM", 100, "A", "G"), ("rsM", 100, "A", "C"), ("rs2", 200, "C", "T")]
-    cat = [("rsM", 100, "A", "C"), ("rsM", 100, "A", "G"), ("rs2", 200, "C", "T")]
-    other = [("rsM", 100, "A", "C"), ("rsMb", 100, "A", "G"), ("rs2", 200, "C", "T")]
-    r = [(1, 3, 0.7), (2, 3, 0.2), (1, 2, 0.9)]
-    cs = {"L1": [1, 3], "L2": [2, 3]}
+    """rsM names two keys (1:100 A/C, then A/G in catalog order) plus rs2: production stops with REFUSED_MULTI_KEY
+    (15.8e R5); --allow-duplicate-rows maps rsM -> A/C and rsM.1 -> A/G; rsM.2 is an error."""
+    ss, cat, other, r, cs = MULTI_KEY
     p, t = case(tmp_path / "prod", ["rsM", "rsM.1", "rs2"], cs, ss, other, catalog=cat, r=r)
-    assert p.returncode == 0, p.stderr
-    for k in ("L1", "L2"):
-        assert (t[k]["n_present"], t[k]["n_refused_multi_key"]) == ("1", "1")
-        assert t[k]["note"] == "fewer_than_2_present;refused_multi_key" and t[k]["min_abs_corr"] == "NA"
+    assert p.returncode != 0 and "REFUSED_MULTI_KEY" in p.stderr and "rsM" in p.stderr, p.stderr
     p, t = case(tmp_path / "pre", ["rsM", "rsM.1", "rs2"], cs, ss, other, "--allow-duplicate-rows", catalog=cat, r=r)
     assert p.returncode == 0, p.stderr
     assert float(t["L1"]["min_abs_corr"]) == pytest.approx(0.7) and float(t["L2"]["min_abs_corr"]) == pytest.approx(0.2)
@@ -418,6 +417,15 @@ def test_multi_key_base_is_refused_and_counted_in_production_and_chosen_by_catal
     p, _ = case(tmp_path / "bad", ["rsM", "rsM.2", "rs2"], cs, ss, other, "--allow-duplicate-rows", catalog=cat, r=r)
     assert p.returncode != 0 and "BAD_OCCURRENCE" in p.stderr and "rsM.2" in p.stderr, p.stderr
 
+
+
+def test_multi_key_member_is_fatal_with_or_without_allow_absent(tmp_path):
+    ss, cat, other, r, cs = MULTI_KEY
+    for sub, flags in (("strict", ()), ("allow_absent", ("--allow-absent",))):
+        p, t = case(tmp_path / sub, ["rsM", "rsM.1", "rs2"], cs, ss, other, *flags, catalog=cat, r=r)
+        assert p.returncode != 0 and t is None, (sub, p.stderr)
+        assert "REFUSED_MULTI_KEY" in p.stderr and "rsM" in p.stderr, (sub, p.stderr)
+        assert not (tmp_path / sub / "out.tsv").exists() and not (tmp_path / sub / "out.tsv.tmp").exists(), sub
 
 SUPERSET = r'''
 suppressPackageStartupMessages(library(jsonlite))

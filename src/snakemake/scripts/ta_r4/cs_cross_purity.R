@@ -5,8 +5,8 @@
 # resolve_fit_names: --fit-sumstats rows in the --region-id window that are in --fit-catalog and kept by
 # --fit-panel, else the --fit-panel rsid, else a unique CHR:POS in --fit-panel; a `.N` duplicate row is
 # DUPLICATE_ROW unless --allow-duplicate-rows, which is for measuring pre-15.5a fits only; a base with several keys
-# is refused and counted (n_refused_multi_key, note refused_multi_key) unless --allow-duplicate-rows, which takes the
-# (N+1)-th key in catalog order). No route is UNRESOLVED. The key is located in --panel by position + alleles (exact,
+# is an error (REFUSED_MULTI_KEY) unless --allow-duplicate-rows, which takes the (N+1)-th key in catalog order).
+# No route is UNRESOLVED. The key is located in --panel by position + alleles (exact,
 # swapped, or the strand complement of a non-palindromic SNV): one match is present, several are AMBIGUOUS, none is
 # absent. Absent members are errors (UNMATCHED) unless --allow-absent; then they are counted (n_present <
 # n_cs_variants, note partial_present) and a CS with fewer than min(2, size) members present has NA purity (note
@@ -55,7 +55,7 @@ cs <- fit$sets$cs
 pur <- fit$sets$purity
 members <- unique(nm[unlist(cs)])
 res <- resolve_fit_names(members, ss, catalog, fpv, isTRUE(opt$`allow-duplicate-rows`))
-for (code in c("duplicate_row", "bad_occurrence", "unresolved")) {
+for (code in c("duplicate_row", "refused_multi_key", "bad_occurrence", "unresolved")) {
   b <- res$name[res$status == code]
   if (length(b)) fail(toupper(code), "%d of %d credible-set members of %s (first: %s)", length(b), length(members),
                       opt$fit, paste(head(b, 5), collapse = ", "))

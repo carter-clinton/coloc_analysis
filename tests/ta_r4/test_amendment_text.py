@@ -194,6 +194,20 @@ def test_draft_extract_makes_no_osf_preregistration_claim():
     assert OSF_PREREG_CLAIM.search("R4 was pre-registered on OSF.")   # the pattern itself discriminates
 
 
+
+def test_purpose_states_gated_production_vs_pilot_fitting():
+    """15.8e R7 (Carter Q-158R7): the Purpose keeps the phrase, states the lock gate and the pilot fits; no parenthetical."""
+    purpose = [ln for ln in epb.extract(DRAFT).split("\n") if ln.startswith("**Purpose:**")]
+    assert len(purpose) == 1
+    p = purpose[0]
+    assert "before any production-arm fit exists, the arms," in p
+    assert ("Production-arm fits run only after the lock, through the lock gate described in the status paragraph"
+            " above.") in p
+    assert ("The pilot fits listed in (h) ran before the lock, outside that gate, on the corrected inputs and partly on"
+            " the production EUR panel, and were inspected; the lock therefore separates gated production execution"
+            " from pilot fitting, and does not mean that no fitted result was seen before the analysis was fixed.") in p
+    assert "(the pre-lock pilot fits are listed in (h))" not in p
+
 # ------------------------------------------------------------------ FINAL / PUBLIC (W4b)
 
 def _need(path):
