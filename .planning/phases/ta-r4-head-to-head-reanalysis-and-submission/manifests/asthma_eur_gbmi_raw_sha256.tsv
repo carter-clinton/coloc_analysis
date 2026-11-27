@@ -1,0 +1,2 @@
+rel_path	size_bytes	sha256	source
+data/raw/region_analysis/sumstats/asthma.EUR.raw.gz	986179593	83fec73908cebc20ec896597b36c9aee47527bd90aceaabf82154d18df682a88	GBMI 2021 Asthma_Bothsex_eur_inv_var_meta_GBMI_052021_nbbkgt1.txt.gz per config/datasets.yaml gbmi_asthma, base_url https://gbmi-sumstats.s3.amazonaws.com; per config, not checksum-verified; seeded 1,000-row sample across all chromosomes equal to the harmonized GRCh38 input
