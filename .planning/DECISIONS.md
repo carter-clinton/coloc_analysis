@@ -3955,3 +3955,33 @@ Carter reply (verbatim, selected option): Keep legacy rule for QTL_legacy (Recom
 Question Q-158E7R (2026-11-25): E7 QTL tiers will mix in rounding: under R4, QTL_A3 posteriors become exact, while QTL_legacy keeps 4-decimal posteriors, matching the earlier pipeline. So E7's qtl_tier 'changed' partly reflects rounding, the same kind of problem as R3. The plan only discloses this. What do you want?
 Carter reply (verbatim, selected option): Add a matched-rounding column (Recommended)
 ```
+
+## 2026-11-26 — DEC-2026-11-26-ta-r4-asthma-eur-eaf-disclose-no-filter: asthma EUR rows stay flipped by allele key with no frequency filter; the EAF diagnostic is disclosed in DRAFT (c) after it is measured, in wording Carter approves (Carter, Q-158AEI, Q-158AEIM)
+
+- **Decider:** Carter, 2026-11-26. Q-158AEI, `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158AEI-reply-2026-11-26.txt`
+  (sha256 `fa00fcb41adf4e9e5778e67e68ba6408a815a5a369795cdb5f96d539f37396ea`), label `Disclose, no filter (Recommended)`; its correction Q-158AEIM,
+  `.planning/phases/ta-r4-head-to-head-reanalysis-and-submission/W3f-carter-15-8-Q-158AEIM-reply-2026-11-26.txt` (sha256 `b2a13e9c8366d6296c42b50438188c34d1b5ce6e3aaebbe082628e1277c590e8`),
+  label `Measure it first` (last line asserted with `tail -n 1`). Both gated in 15.8f Task 1 step 1 by full file name
+  (data/r4/tmp/w3f/q158/gate_158.sh Q-158AEI Q-158AEIM, `F[]`; record gate_15_8f.txt); negative controls
+  gate_nc_15_8f.txt (one byte changed in the copy, label `Other (free text)`, one sha256 character changed, each exit 2;
+  the real gate rc 0 after). Both quoted below from the files by data/r4/tmp/w3f/q158/dec_15_8f.py and `cmp`ed against them.
+- **Policy.** The flip rule stays by allele key, with no frequency filter (Q-158PAL A; unflipped rows are not filtered
+  by EAF either). The asthma EUR EAF diagnostic is disclosed in DRAFT (c) after the reference measurement of plan 15.8f;
+  the wording is Carter's decision at Q-158AEIW and is inserted only by 15.8g after approval.
+- **Correction.** The Q-158AEI question's explanation, that the asthma EUR indels above 0.2 sit "at places where the
+  GRCh38→GRCh37 lift changed the reference allele", was a planner's guess
+  (ta-r4-W3f-sumstats-orientation-harmonize-PLAN.md:154-155), not a measurement; the lift script changes only positions
+  and keeps the GRCh38 REF/ALT. Q-158AEIM corrects it and asks for the measurement first. Only the counts measured in
+  15.8f may enter the sentence.
+- **Not authorized:** no production fit, no OSF posting, no W4a-T3 lock; decision_rules.yaml stays locked: false;
+  n_regions_min stays 7; no re-pin to make a check pass; no DRAFT edit in 15.8f. Lifts nothing under D-28.
+
+```text
+Question Q-158AEI (2026-11-26): Asthma EUR flipped rows (found in 15.8a2, recorded in 15.8a4). After orientation, asthma EUR's 225 flipped rows agree less well with an unflipped same-ancestry file on allele frequency than its other rows do: median |ΔEAF| 0.027 vs 0.005, and 19 of 225 above 0.2. 14 of those 19 are indels, at places where the GRCh38→GRCh37 lift changed the reference allele; SNVs alone look close to normal (5 above 0.2). Every other trait's flipped rows match its unflipped ones. The flip rule (your Q-158PAL A) goes by allele key and filters nothing by frequency. Do you want a rule for these?
+Carter reply (verbatim, selected option): Disclose, no filter (Recommended)
+```
+
+```text
+Question Q-158AEIM (2026-11-26): Correction to your Q-158AEI question (Nov 26). It said 14 of the 19 asthma EUR flipped rows above 0.2 are indels "at places where the GRCh38→GRCh37 lift changed the reference allele". The 14 indels were measured, but the lift explanation never was: it was a planner's guess, and the lift script only changes positions (it keeps the GRCh38 REF/ALT). Your choice to disclose with no filter still stands. How should the DRAFT (c) sentence handle the explanation?
+Carter reply (verbatim, selected option): Measure it first
+```
