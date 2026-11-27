@@ -26,6 +26,14 @@ progress:
 
 > **NOTE:** the `status` / `stopped_at` frontmatter fields above are the **2026-05-21/22 catastrophe-era record** (kept as history). Current state is this section + `.planning/phases/m3-aou-afr-ld-panel-build/` plans. **`.planning/HANDOFF.json` is CURRENT as of 2026-07-16 and is AUTHORITATIVE for resume** (this note's old "HANDOFF is STALE" warning was itself stale and is withdrawn). ⚠ **CORRECTED 2026-09-16** — `.planning/HANDOFF.json` was last rewritten at `c93e97b` and its stale fields were refreshed by `quick-260916-vqp` (blast-radius finding B1). **Where this note, `HANDOFF.json` and the ★ RESUME HERE ★ block below disagree, the ★ RESUME HERE ★ block WINS** — it is refreshed at every session close.
 
+## 2026-11-26 — **TRACK A ta-r4: W3f 15.8d COMPLETE (R3: E7 fit_yield frozen side = the earlier fits' purity-filtered set count, JSON count kept as frozen_value_json_unfiltered; fit_cs_json_vs_rds.tsv in LOCKED_PATHS (30); DRAFT (e)/(m)/Pre-Paste). NEXT = 15.8e. NOT PUSHED (ca776492, f9afd684, cf02643d, b1b5aa00 + records).**
+
+- Gate Q-157J rc 0. 96-fit stored vs exact-purity identity: 66 eq true, 30 early exits NA; no Q-158R3.
+- Declared spec updates: test_estimands::test_e7_frozen_vs_fixed_and_flipped_shares; test_qtl_legacy_rule_and_e7_rounding::test_e7_qtl_tier_has_the_matched_rounding_columns; test_a1_allvars_secondary::test_confirmatory_tables_unchanged (Carter Q-158DFX "Fix the test (Recommended)", sha256 dbe60868…154d).
+- FULL run 2 (Slurm 2117279, c026n02, HEAD b1b5aa00, 64G; seff peak 64/64 GB): 2,764 = 2,711 P / 53 S / 0 F (full_15_8d.xml, sha256 849b31a2…9761e4); check_15_8d.py vs full_15_8c2.xml CHECK PASS; base for 15.8e = data/r4/tmp/w3f/q158/full_15_8d.xml.
+- Expected chain: 15.8e 2,766 → 15.8f 2,768.
+- NEXT = 15.8e. decision_rules.yaml locked: false; n_regions_min 7; no fit, no OSF; NOT PUSHED.
+
 ## 2026-11-26 — **TRACK A ta-r4: W3f 15.8c2 COMPLETE (Q-F3NL: --nan-gwas-below-threshold for QTL_A3/QTL_A2 only, QTL_legacy keeps the earlier rule; Q-158E7R: E7 qtl_tier fixed_value_qtl_4dp / changed_qtl_4dp from jsonlite-rounded QTL_A3 posteriors; DRAFT (l)/(e)/Pre-Paste; HANDOFF W6 tripwire superseded). NEXT = 15.8d. NOT PUSHED (258102ee, 97ae2574, 35cb04f7 + records).**
 
 - Gates Q-157J + Q-F3NL + Q-158E7R rc 0; DEC-2026-11-25-ta-r4-qtl-legacy-nan-rule-and-e7-matched-rounding.

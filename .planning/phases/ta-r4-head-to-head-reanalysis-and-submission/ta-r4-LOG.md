@@ -1917,3 +1917,45 @@ index c517ffb7..a0ffd52e 100644
   2113205). HANDOFF do_not 14 -> 15 (handoff_15_8c2.py; 15.7g W6 string kept).
 - FULL (Slurm 2113242, c022n02 Cascade Lake, HEAD 35cb04f7, 2h51m): QUICK 903 P / 2 S, HEAVY 354 P / 5 S, PINS 39 P; FULL 2,758 = 2,705 P / 53 S / 0 F (full_15_8c2.xml, sha256 e69a6fa2…2a8d45); check_15_8c2.py vs full_15_8c.xml (2,752 read from the file): 0 removed, +6 all passed, 0 outcome changes, 1 declared passed -> passed, CHECK PASS (check_15_8c2.txt)
 - No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8d.
+
+## 2026-11-26 — W3f 15.8d (R3: E7 fit_yield frozen side = the earlier fits' purity-filtered set count, JSON count kept as frozen_value_json_unfiltered; fit_cs_json_vs_rds.tsv locked, LOCKED_PATHS 29 -> 30; DRAFT (e)/(m)/Pre-Paste; Carter Q-157J R3, Q-158DFX; no fit; no push)
+
+- Start c02425dd (data/r4/tmp/w3f/q158/start_15_8d.txt). Gate: gate_157j.sh rc 0 (805afcd8…0503e; original sha256sum matches).
+- Task 1 (ca776492): manifests/fit_cs_repro_routeL_exact_purity.tsv (sha256 2640f510…af01f). 96 rows: 66 fitted, all
+  eq true (n_cs_exact = n_cs_rds_sets); 30 early exits NA. 25 fits have a candidate component over 100 members (up to
+  15,846); 0 stored (kept) sets over 100 members; every stored set is the same-member candidate of its component
+  (Slurm 2115132 / 2115173 / 2115237, susieR 0.14.2; 2115173 exposed a bug in my membership check — no-Xcorr
+  susie_get_cs returns no cs_index — fixed to match by component name). Method: susieR 0.14.2 get_purity subsamples only
+  a set over n_purity = 100 members and returns the minimum |r| over the sampled pairs, which is >= the all-pairs
+  minimum; so exact purity <= stored purity, a dropped component stays dropped, and only a kept set over 100 members
+  could change a count. None exists, so stored == exact on all 66 without the scored matrix. Deviation: the 15.7h2
+  scored-matrix routine was not used (it reads `ld_file_declared`, present in 0 of the 96 route-L JSONs). No Q-158R3 STOP.
+- Task 2 (f9afd684): estimands.e7_frozen_vs_fixed(…, fit_cs_filtered=) required keyword: fit_yield frozen =
+  `<status_L>;n_cs=<n_cs_rds_sets>`; frozen_value_json_unfiltered (last column, after fixed_value_qtl_4dp /
+  changed_qtl_4dp) = the old `<status_L>;n_cs=<n_cs_L>`, fit_yield rows only; `changed` = frozen != fixed. A missing
+  row, a duplicate row, or a status / n_cs_json mismatch with W3a raises. run_aggregation.FIT_CS_FILTERED;
+  r4_lock_gate.LOCKED_PATHS += manifests/fit_cs_json_vs_rds.tsv after known_answer_W3a.tsv. RED red_15_8d.txt 6/6 F.
+  Green Slurm 2115273 141 P. NCs Slurm 2115317 (nc_15_8d.txt): frozen back to n_cs_L -> tests 1, 3; silent fallback on
+  a missing row -> test 4; manifest dropped from LOCKED_PATHS -> test 5; tmp copy with asthma.AFR.9p21_CDKN2A
+  n_cs_exact 0 -> 1, test 6 pointed at it -> test 6. ALL NCs FAILED AS REQUIRED AND RESTORED.
+- Early exits: the 30 early-exit fits (24 too_many_variants, 6 no_variants in fit_cs_json_vs_rds.tsv) move from
+  `n_cs=0` to `n_cs=NA` on the frozen side, so `changed` shifts for those rows (it now matches a fixed-side NA).
+- Task 3 (cf02643d): draft_15_8d.py: (e) E7 `(both sides count purity-filtered credible sets; the earlier fit JSON's
+  count, which includes impure sets (h), is reported alongside)`; (m) names `manifests/fit_cs_json_vs_rds.tsv`;
+  Pre-Paste `LOCKED_PATHS` (30 entries; re-checked W3f 15.8d), 30 = len(LOCKED_PATHS) measured; old strings unique.
+  test_amendment_text + test_prelock_pilot_fits 24 P / 2 S.
+- FULL run 1 (Slurm 2115350, HEAD cf02643d, --mem=48G, seff peak 48.00 GB of 48 GB): 2,764 = 2,710 P / 53 S / 1 F;
+  test_a1_allvars_secondary::test_confirmatory_tables_unchanged: the PRE_157D_REF run_aggregation calls today's E7
+  without fit_cs_filtered (TypeError before any table). check_15_8d.py CHECK FAIL (check_15_8d_run1.txt; junit kept as
+  full_15_8d_run1_2115350.xml, sha256 5748b0de…79029e). Rule-4 STOP -> Carter Q-158DFX: "Fix the test (Recommended)"
+  (W3f-carter-15-8-Q-158DFX-reply-2026-11-26.txt, sha256 dbe60868e73171d992d6bb204070cc372608a9cb7489b35c865168bbcbac154d).
+- Fix (b1b5aa00): that test only: the pre-157d module gets an estimands proxy whose e7_frozen_vs_fixed passes the
+  committed fit_cs_json_vs_rds.tsv; the four confirmatory tables still compared byte for byte; `git diff --quiet
+  cf02643d -- src` rc 0. NCs Slurm 2117242 (nc_15_8d_dfx.txt): wrapper removed -> TypeError; e1_paired_delta row order
+  reversed in the current aggregation -> byte diff; md5-restored; targeted test 1 P before and after.
+- FULL run 2 (Slurm 2117279, c026n02 Cascade Lake, HEAD b1b5aa00, 2h36m, --mem=64G: orchestrator's resource change after
+  run 1's 48/48 GB; seff peak 64.00 GB of 64 GB): QUICK 908 P / 2 S, HEAVY 355 P / 5 S, PINS 39 P; FULL 2,764 =
+  2,711 P / 53 S / 0 F (full_15_8d.xml, sha256 849b31a2…9761e4); check_15_8d.py vs full_15_8c2.xml (2,758 read from
+  the file): 0 removed, +6 all passed, 0 outcome changes, 3 declared passed -> passed, CHECK PASS (check_15_8d.txt).
+  Run 1's CHECK FAIL is the check's negative control. sparse_parent_benchmark.tsv restored.
+- No production fit, no OSF, no lock; decision_rules.yaml locked: false, n_regions_min 7. NOT PUSHED. NEXT = 15.8e.
