@@ -1,0 +1,2 @@
+Question Q-158AEIM (2026-11-26): Correction to your Q-158AEI question (Nov 26). It said 14 of the 19 asthma EUR flipped rows above 0.2 are indels "at places where the GRCh38→GRCh37 lift changed the reference allele". The 14 indels were measured, but the lift explanation never was: it was a planner's guess, and the lift script only changes positions (it keeps the GRCh38 REF/ALT). Your choice to disclose with no filter still stands. How should the DRAFT (c) sentence handle the explanation?
+Carter reply (verbatim, selected option): Measure it first
